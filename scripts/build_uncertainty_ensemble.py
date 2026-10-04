@@ -48,9 +48,10 @@ registered in ``outputs/planning_v1/run_register/``. Nothing is written under ``
         [--development-read "<what was read before this run>"] [--replace --reason "<why>"] [--verify]
 
 Every run is reported. Once a unit has been measured against a flood level, the run writes and registers a
-receipt whatever happens next, and returns 3 when it could not compute the ensemble: the receipt then gives the
-stage and a code, and the message is in the file outside Git. A second run needs ``--replace --reason``; its
-receipt names every earlier run and a copy of the superseded files is kept outside Git. ``--verify`` computes
+receipt whatever happens next, a failed check or any other error, and returns 3 when it could not compute the
+ensemble: the receipt then gives the stage, a code and the type of the error, and the message is in the file
+outside Git. A second run needs ``--replace --reason``; the receipt it replaces is read and checked before the
+run starts, its receipt names every earlier run and a copy of the superseded files is kept outside Git. ``--verify`` computes
 everything again with the generation time of the receipt, compares the file outside Git byte for byte and the
 whole receipt except its run-specific fields, and writes nothing. ``--check-inputs`` makes the input checks and
 writes nothing: it lays no flood layer over a unit and computes no component. Measuring the season envelope of
@@ -99,8 +100,13 @@ from floodguard import uncertainty_ensemble as ensemble  # noqa: E402
 from floodguard.normalisation import PUBLIC_LEVEL  # noqa: E402
 from floodguard.planning_overlay import is_public_web_path  # noqa: E402
 
-RECEIPT_SCHEMA = "floodguard.uncertainty_ensemble_run_receipt.v1"
-RESULTS_SCHEMA = "floodguard.uncertainty_ensemble_units.v1"
+RECEIPT_SCHEMA = "floodguard.uncertainty_ensemble_run_receipt.v2"
+RESULTS_SCHEMA = "floodguard.uncertainty_ensemble_units.v2"
+REPLACEABLE_RECEIPT_SCHEMAS: tuple[str, ...] = ("floodguard.uncertainty_ensemble_run_receipt.v1", RECEIPT_SCHEMA)
+"""The receipts a second run may replace. Version 2 (after the review of 4 October 2026): a share that is labelled as
+taken over the cells run keeps a failed cell in its denominator; the headline record gives the other reading of the
+protocol's set and every pair of levels declared cut line 6 could keep; the receipt says which of its counts state
+a value of a single unit; the distance of the minus and plus levels is read from the protocol."""
 DOCS = e8_builder.DOCS
 OUTPUT_DIR = e8_builder.OUTPUT_DIR
 REGISTER_DIR = e8_builder.REGISTER_DIR
@@ -121,8 +127,9 @@ RESIDENT_TOLERANCE = e8_builder.RESIDENT_TOLERANCE
 EXIT_WRITTEN, EXIT_REFUSED, EXIT_NOT_COMPUTED = 0, 2, 3
 """0: the ensemble was computed and written. 2: refused before a unit was measured against a flood level; nothing
 is written. 3: units were measured and the ensemble was not computed; the receipt is written and registered."""
-STAGE_ACCESS, STAGE_AS_PROVIDED, STAGE_MEASUREMENT, STAGE_ENSEMBLE, STAGE_DEFAULT_CELL = (
-    "access_runs", "as_provided_runs_against_the_e5_table", "unit_measurements", "ensemble_cells", "default_cell_against_the_e8_rows")
+STAGE_ACCESS, STAGE_AS_PROVIDED, STAGE_MEASUREMENT, STAGE_ENSEMBLE, STAGE_DEFAULT_CELL, STAGE_FIGURES = (
+    "access_runs", "as_provided_runs_against_the_e5_table", "unit_measurements", "ensemble_cells", "default_cell_against_the_e8_rows",
+    "figures_of_the_receipt")
 RUN_SPECIFIC_KEYS: tuple[str, ...] = ("timing_seconds", "implementation", "development_reads")
 RECEIPT_KEYS_NOT_RECOMPUTED: tuple[str, ...] = ("generated_at_utc", "run_kind", "outputs", "timestamps", "supersedes", "run_history")
 
@@ -141,13 +148,24 @@ CONFIDENCE_BASIS = (
     "cells says how far the result depends on those choices and nothing about its distance from what happened. This "
     "line is the confidence of the run as evidence; the confidence class of each unit under rule v1 is in the results."
 )
-ASSUMPTIONS = [
-    "A closure is a modelled assumption of closure rule v1 (closure_basis), not an observed closure. A flood "
-    "intersection does not prove that a road was closed.",
-    "A flood input is used as provided. A product 4009 layer is a preliminary agency extent that was not checked in "
-    "the field (Field_Validation=0), and FloodGuard did not validate it. The minus and plus levels are the same layer "
-    "shrunk and grown by 20 m (one pixel; protocol v1b, owner choice 2); neither is a lower or an upper bound of the "
-    "water, and the level as provided is not a central estimate.",
+ONE_PIXEL_SOURCE = "planning_protocol_v1b.json /ensemble_grid/core_axes/0/one_pixel_m (owner choice 2)"
+
+
+def assumptions(one_pixel_m: float) -> list[str]:
+    """Return the assumptions of a run, with the distance of the minus and plus levels as the protocol states it."""
+
+    return [
+        "A closure is a modelled assumption of closure rule v1 (closure_basis), not an observed closure. A flood "
+        "intersection does not prove that a road was closed.",
+        "A flood input is used as provided. A product 4009 layer is a preliminary agency extent that was not checked in "
+        "the field (Field_Validation=0), and FloodGuard did not validate it. The minus and plus levels are the same layer "
+        f"shrunk and grown by {one_pixel_m:g} m (one pixel; protocol v1b, owner choice 2); neither is a lower or an upper "
+        "bound of the water, and the level as provided is not a central estimate.",
+        *ASSUMPTIONS_OF_EVERY_RUN,
+    ]
+
+
+ASSUMPTIONS_OF_EVERY_RUN = [
     "Residents are modelled WorldPop 2020 counts. A cell counts for the unit whose polygon holds its centre, and a "
     "resident is inside a flood extent when the cell centre is.",
     "The strict, central and permissive closure levels are the three levels of closure rule v1. None of them is a "
@@ -176,11 +194,16 @@ NOT_COMPUTED = [
     "the outcomes of class rule v2 triggers B, C and D", "an overlay", "a public projection",
     "accepted FPPS and accepted class (tier T4 is locked)", "an ensemble of case O1",
 ]
-CHANGE_NOTICE_E10_STEP = (
-    "In plan task E10 the same chain was then run with the layer shrunk and grown by 20 m and under the strict, central "
-    "and permissive levels of closure rule v1, and each result was scored under two pairs of vulnerability anchors and "
-    "five weight presets."
-)
+
+
+def change_notice_step(one_pixel_m: float) -> str:
+    """Return the sentence that carries a product 4009 change notice on by the step of this task."""
+
+    return (f"In plan task E10 the same chain was then run with the layer shrunk and grown by {one_pixel_m:g} m and under "
+            "the strict, central and permissive levels of closure rule v1, and each result was scored under two pairs of "
+            "vulnerability anchors and five weight presets.")
+
+
 VALUES_SENTENCE = "This file holds values derived from the layer, not the layer."
 
 
@@ -332,7 +355,7 @@ def levels_not_run(grid: ensemble.EnsembleGrid, e5_receipt: Mapping[str, Any]) -
     facilities = grid.axis(ensemble.FACILITIES_AXIS).levels
     listed = [ensemble.LevelNotRun(
         ensemble.FACILITIES_AXIS, level, "facility_set_needs_a_walking_context_of_record_and_the_pitch_level",
-        f"The {level} facility set adds DDPM located shelters, reached by walking within 30 minutes, at the pitch "
+        "This facility set adds DDPM located shelters, reached by walking within 30 minutes, at the pitch "
         f"level (protocol v1b facility_sets, owner choice 7). {basis}. "
         + ("No access table exists for the subset of the shelters this set keeps. " if level != facilities[-1] else "")
         + "The set is not approximated from the candidate tables.",
@@ -354,7 +377,8 @@ def prepare(case_id: str, frame_set: Any, external: Path, boundaries: Path, *, d
     """Make every input check of a run and return what was read. No unit is measured against a flood level.
 
     The checks of the task E8 builder come first, through its own function; then the registered E8 run, the
-    grid of the protocols in force, and the closure extents of the three flood levels.
+    grid of the protocols in force, the closure extents of the three flood levels, and the distance by which task
+    E1 shrank and grew the minus and plus levels, which must be the one protocol v1b states.
 
     Raises:
         BuildError, ValueError: an input check refused the run.
@@ -376,6 +400,10 @@ def prepare(case_id: str, frame_set: Any, external: Path, boundaries: Path, *, d
     target = results_path(case_id, frame_set, external)
     if is_public_web_path(target):
         raise BuildError("this script writes nothing under apps/web/public")
+    written_with = (found.record.get("levels") or {}).get("one_pixel_m")
+    if not isinstance(written_with, (int, float)) or isinstance(written_with, bool) or float(written_with) != grid.one_pixel_m:
+        raise BuildError(f"the input record of the flood input states the one-pixel distance {written_with!r}; protocol v1b "
+                         f"states {grid.one_pixel_m:g} m for the minus and the plus level")
     found.grid, found.e8_run, found.closure_extents, found.closure_extents_read = grid, e8_run, extents, extents_read
     found.not_run = levels_not_run(grid, e5_receipt)
     found.results_target = target
@@ -509,19 +537,40 @@ def measurements_of_the_cells(found: SimpleNamespace, runs: Sequence[Mapping[str
     if measurements.get(default_key) != base:
         raise StageError(STAGE_MEASUREMENT, "default_combination_differs_from_the_e8_measurements",
                          "the measurements of the default combination are not the measurements task E8 makes")
-    levels = flood_inputs.LEVELS
-    ordered = all(areas[levels[0]][unit.unit_id]["flooded_non_permanent_water_land_area"]
-                  <= areas[levels[1]][unit.unit_id]["flooded_non_permanent_water_land_area"] + 1e-6
-                  <= areas[levels[2]][unit.unit_id]["flooded_non_permanent_water_land_area"] + 2e-6 for unit in base)
-    exposed = all(unit.residents_inside_flood_extent[levels[0]] <= unit.residents_inside_flood_extent[levels[1]] + 1e-9
-                  <= unit.residents_inside_flood_extent[levels[2]] + 2e-9 for unit in base)
+    wanted = [(flood_level, closure_level, LEVEL, VINTAGE_RUN)
+              for flood_level in flood_inputs.LEVELS for closure_level in closure_rules.LEVELS]
+    if sorted(measurements) != sorted(wanted):
+        raise StageError(STAGE_MEASUREMENT, "access_runs_are_not_the_nine_combinations",
+                         "the access runs do not hold each flood level under each closure level once")
+    # Both checks read the measurements that are handed to the ensemble, not the tables they were taken from.
+    own_level = all(
+        listed[position].flooded_non_permanent_water_land_area == areas[key[0]][unit.unit_id]["flooded_non_permanent_water_land_area"]
+        and listed[position].residents_inside_flood_extent[flood_inputs.AS_PROVIDED] == unit.residents_inside_flood_extent[key[0]]
+        for key, listed in measurements.items() for position, unit in enumerate(base))
+    if not own_level:
+        raise StageError(STAGE_MEASUREMENT, "a_combination_does_not_carry_the_flood_measurements_of_its_own_level",
+                         "a combination was handed the flooded land or the residents inside the extent of another flood level")
+
+    def not_smaller_at_a_larger_level(value: Any, tolerance: float) -> bool:
+        return all(
+            first <= second + tolerance <= third + 2 * tolerance
+            for closure_level in closure_rules.LEVELS for position in range(len(base))
+            for first, second, third in [tuple(value(measurements[(flood_level, closure_level, LEVEL, VINTAGE_RUN)][position])
+                                               for flood_level in flood_inputs.LEVELS)])
+
+    ordered = not_smaller_at_a_larger_level(lambda unit: unit.flooded_non_permanent_water_land_area, 1e-6)
+    exposed = not_smaller_at_a_larger_level(lambda unit: unit.residents_inside_flood_extent[flood_inputs.AS_PROVIDED], 1e-9)
     return measurements, losing, {
         **checks,
         "combinations_measured": len(measurements),
         "residents_and_baseline_counts_same_in_every_access_run": True,
         "default_combination_is_the_measurement_of_task_e8": True,
+        "each_combination_carries_the_flood_measurements_of_its_own_level": True,
         "flooded_land_not_smaller_at_a_larger_flood_level_in_every_unit": bool(ordered),
         "residents_inside_not_fewer_at_a_larger_flood_level_in_every_unit": bool(exposed),
+        "flood_level_checks_read": "The measurements handed to the ensemble: for each unit and closure level, the flooded "
+                                   "land and the residents inside the extent of the minus, the as-provided and the plus "
+                                   "combination.",
     }
 
 
@@ -551,12 +600,36 @@ def cells_by_status(table: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
     }
 
 
-def cells_in_which_every_unit_has_one_class(summary: Mapping[str, Any] | None) -> int:
-    """Count the cells whose class counts state the class of each unit: every unit of the case in one class."""
+def counts_of_single_units(single_units: Mapping[str, Any] | None) -> dict[str, Any]:
+    """Say what the whole-case counts of a receipt state about single units (open point E10-OP10).
 
-    if not summary:
-        return 0
-    return sum(1 for counts in summary["class_counts_by_cell"].values() if max(counts.values()) == summary["units"])
+    ``single_units`` is ``summary.counts_that_state_a_value_of_a_single_unit`` of the ensemble, or ``None`` for
+    a run that computed no ensemble. The receipt names no unit beside a value; this block says which of its
+    counts state the class of a single unit all the same, so that nobody reads the receipt as holding none.
+    """
+
+    if single_units is None:
+        return {"states_a_value_of_a_single_unit": False, "cells_in_which_every_unit_has_one_class": 0,
+                "classes_one_unit_alone_holds_in_the_default_cell": [], "cells_in_which_such_a_class_has_another_count": 0,
+                "cells_whose_class_counts_differ_from_the_default_cell": 0, "units_with_more_than_one_class_over_the_cells_run": 0,
+                "what": "The run computed no ensemble, so the receipt holds no count of units by class."}
+    return {
+        **{key: single_units[key] for key in (
+            "states_a_value_of_a_single_unit", "cells_in_which_every_unit_has_one_class",
+            "classes_one_unit_alone_holds_in_the_default_cell", "cells_in_which_such_a_class_has_another_count",
+            "cells_whose_class_counts_differ_from_the_default_cell", "units_with_more_than_one_class_over_the_cells_run")},
+        "what": single_units["what"],
+        "where": "result.summary.class_counts_by_cell, read with reference_class_counts, class_counts_over_every_unit_cell, "
+                 "units_by_number_of_classes_over_the_cells_run and retention_over_the_cells_run of the same summary.",
+        "who_can_read_them": "Whoever knows the class of each unit in the default cell, which is the row of the task E8 run "
+                             "of the case. Those rows are in a file outside Git; where committed files let a reader work "
+                             "them out (the README of the output folder says so for each case), the counts here follow "
+                             "single units through the cells.",
+        "cannot_be_rebuilt_from_committed_files": "The class of a unit in a cell of the minus or plus flood level rests on "
+                                                  "the access runs of that level, whose unit rows are outside Git (open "
+                                                  "point E10-OP8). What these counts state of such a cell cannot be worked "
+                                                  "out from the other committed files.",
+    }
 
 
 def licence_of_the_run(found: SimpleNamespace) -> dict[str, Any] | None:
@@ -568,8 +641,8 @@ def licence_of_the_run(found: SimpleNamespace) -> dict[str, Any] | None:
     if found.licence is None:
         return None
     notice = str(found.licence["change_notice"])
-    carried = (notice.replace(VALUES_SENTENCE, f"{CHANGE_NOTICE_E10_STEP} {VALUES_SENTENCE}") if VALUES_SENTENCE in notice
-               else f"{notice} {CHANGE_NOTICE_E10_STEP}")
+    step = change_notice_step(found.grid.one_pixel_m)
+    carried = notice.replace(VALUES_SENTENCE, f"{step} {VALUES_SENTENCE}") if VALUES_SENTENCE in notice else f"{notice} {step}"
     return {
         **found.licence,
         "applies_to": "Every figure of this run that is derived from UNOSAT/GISTDA product 4009: the closure counts, the "
@@ -589,8 +662,9 @@ def build(case_id: str, frame_set: Any, external: Path, boundaries: Path, *, gen
     """Check every input, make the access runs, run the ensemble and assemble the receipt (nothing is written).
 
     The input checks of :func:`prepare` raise, and the caller then writes nothing. From the first access run on,
-    nothing raises to the caller for a refusal: whatever stops the run is reported in the receipt, with the
-    stage and a code, because every run on real units is reported.
+    nothing raises to the caller: whatever stops the run, a check of this builder or any other error, is
+    reported in the receipt, with the stage, a code and the type of the error, because every run on real units
+    is reported.
 
     Raises:
         BuildError, ValueError: see :func:`prepare`. No unit was measured against a flood level.
@@ -615,6 +689,7 @@ def build(case_id: str, frame_set: Any, external: Path, boundaries: Path, *, gen
     measurement_checks: dict[str, Any] | None = None
     result: dict[str, Any] | None = None
     default_cell_check: dict[str, Any] | None = None
+    figures: dict[str, Any] | None = None
     try:
         clock = time.perf_counter()
         access = access_runs(case_id, found, services, arguments)
@@ -640,22 +715,36 @@ def build(case_id: str, frame_set: Any, external: Path, boundaries: Path, *, gen
             "result": "PASS", "rows": len(result["reference_rows"]), "rows_sha256": digest,
             "what": "The rows of the default cell, assembled by this run from the inputs, have the SHA-256 of the rows "
                     "the registered task E8 receipt records: every value of every unit, leave-one-component-out included."}
-    except ValueError as error:
-        code = error.code if isinstance(error, StageError) else "check_failed"
+        stage = STAGE_FIGURES
+        figures = {
+            "access_summary": whole_frame_access(access["runs"]),
+            "edges_ordered": _edges_ordered(access["runs"]),
+            "access_unit_rows_sha256": digest_of([{"flood_level": run["flood_level"], "closure_level": run["closure_level"],
+                                                    "units": run[PUBLIC_SERVICES]["units"]} for run in access["runs"]]),
+            "units_sha256": digest_of(result["units"]),
+            "single_units": dict(result["summary"]["counts_that_state_a_value_of_a_single_unit"]),
+        }
+    except Exception as error:  # noqa: BLE001 - every run on real units is reported, whatever stopped it
+        # Not only the refusal of a check (a ValueError): an error of a geometry library, a missing key or a file that
+        # cannot be read would otherwise end a run on real units with a traceback and no receipt.
+        expected = isinstance(error, ValueError)
+        code = error.code if isinstance(error, StageError) else "check_failed" if expected else "unexpected_error"
         stage = error.stage if isinstance(error, StageError) else stage
-        result, default_cell_check, access, as_provided_check, measurement_checks = None, None, None, None, None
+        result, default_cell_check, access, as_provided_check, measurement_checks, figures = None, None, None, None, None, None
         refusal = {"code": code, "stage": stage, "error": type(error).__name__, "message": str(error)}
         refusal_for_the_receipt = {
             "code": code, "stage": stage, "error": type(error).__name__,
-            "message": "A check stopped the run after its units had been measured against a flood level. The run is "
+            "message": ("A check stopped the run" if expected else "An error that is not a check of this builder stopped the run")
+                       + " after its units had been measured against a flood level. The run is "
                        "reported here because every run on real units is reported. No figure of the run is reported, "
                        "for a unit or for the whole frame: a result that fails a check is not a result. The message of "
-                       "the check, which may name units, is in the file outside Git that this receipt binds."}
+                       "the " + ("check" if expected else "error") + ", which may name units, is in the file outside Git "
+                       "that this receipt binds."}
 
     summary = None if result is None else result["summary"]
     below_public = found.eligibility != rights.PUBLIC_LEVEL
-    one_class = cells_in_which_every_unit_has_one_class(summary)
-    access_summary = None if access is None else whole_frame_access(access["runs"])
+    single_units = None if figures is None else figures["single_units"]
+    access_summary = None if figures is None else figures["access_summary"]
     receipt = {
         "schema_version": RECEIPT_SCHEMA,
         "plan_task": "E10: uncertainty_ensemble.py + LOCO + headline rule; 540 cells per lane reported",
@@ -693,8 +782,9 @@ def build(case_id: str, frame_set: Any, external: Path, boundaries: Path, *, gen
                                        if not any(item.axis == axis.name and item.level == level for item in found.not_run)]
                            for axis in grid.axes},
             "levels_not_run": [item.as_record() for item in found.not_run],
-            "one_pixel_m": {"minus": 20, "plus": 20, "source": "planning_protocol_v1b.json /ensemble_grid/core_axes/0/one_pixel_m "
-                                                               "(owner choice 2); the levels are those task E1 wrote"},
+            "one_pixel_m": {"minus": grid.one_pixel_m, "plus": grid.one_pixel_m, "source": ONE_PIXEL_SOURCE,
+                            "input_record_of_task_e1": record["levels"]["one_pixel_m"],
+                            "note": "The levels are those task E1 wrote; its input record states the same distance."},
             "closure_rule": {"version": closure_rules.CLOSURE_RULE_VERSION, "levels": list(closure_rules.LEVELS),
                              "length_thresholds_m": arguments["length_thresholds_m"], "delay_factor_k": arguments["delay_factor_k"],
                              "strict_delay_rule": arguments["strict_delay_rule"],
@@ -737,21 +827,25 @@ def build(case_id: str, frame_set: Any, external: Path, boundaries: Path, *, gen
             "levels_and_git": rights.LEVELS_AND_GIT,
             "figures_of_local_level_layers_in_this_receipt": {
                 "what": "This receipt is committed. It holds the closure counts and whole-frame resident counts of the "
-                        "access runs, and counts of units and cells for the whole case. It puts no unit beside a value. "
-                        "When the lineage is below the public level those counts come from a lineage below the public "
-                        "level; the file that holds the values of each unit is outside Git.",
+                        "access runs, and counts of units and cells for the whole case. It names no unit beside a value. "
+                        "Some of its counts state a value of a single unit all the same "
+                        "(counts_that_state_a_value_of_a_single_unit). When the lineage is below the public level those "
+                        "counts come from a lineage below the public level; the file that holds the values of each unit "
+                        "is outside Git.",
                 "figures": ([{"where": "access_runs and result.summary", "publication_eligibility": found.eligibility,
                               "flood_layer_rights_level": flood.grant.rights_level,
                               "figures": "The closure counts and whole-frame resident counts of nine access runs; the number "
                                          "of units by class in each cell, by retention and by headline status."}]
                             if below_public and access_summary is not None else []),
-                "cells_in_which_every_unit_has_one_class": one_class,
+                "counts_that_state_a_value_of_a_single_unit": counts_of_single_units(single_units),
                 "what_the_counts_give_away": "In a cell where every unit of the case has one class, the class count states "
                                              "the class of each unit listed in parameters.unit_ids, and so does a count of "
-                                             "units that covers every unit. For those counts the receipt in Git says the "
-                                             "same as the file outside Git (open point E8-OP7).",
-                "for_the_owners": "Open points E1-OP1, E8-OP5 and E8-OP7: whether a level below public allows these counts "
-                                  "in Git.",
+                                             "units that covers every unit. A class that one unit alone holds in the "
+                                             "default cell marks that unit, and its count in each cell says whether the "
+                                             "unit holds it there. For those counts the receipt in Git says the same as "
+                                             "the file outside Git (open points E8-OP7 and E10-OP10).",
+                "for_the_owners": "Open points E1-OP1, E8-OP5, E8-OP7 and E10-OP10: whether a level below public allows "
+                                  "these counts in Git.",
             },
             "written_under_apps_web_public": False,
         },
@@ -771,10 +865,9 @@ def build(case_id: str, frame_set: Any, external: Path, boundaries: Path, *, gen
                 "against_calculate_total_access_all_same": all(row["same"] for row in access["checks"]["reference"]),
                 "shorter_routes_in_a_flooded_run": access["checks"]["shorter_routes_in_a_flooded_run"],
                 "residents_gaining_access": access["checks"]["residents_gaining_access"],
-                "intersected_edges_not_fewer_at_a_larger_flood_level": _edges_ordered(access["runs"]),
+                "intersected_edges_not_fewer_at_a_larger_flood_level": figures["edges_ordered"],
             },
-            "unit_rows_sha256": digest_of([{"flood_level": run["flood_level"], "closure_level": run["closure_level"],
-                                            "units": run[PUBLIC_SERVICES]["units"]} for run in access["runs"]]),
+            "unit_rows_sha256": figures["access_unit_rows_sha256"],
         },
         "measurement_checks": measurement_checks,
         "result": {
@@ -782,7 +875,7 @@ def build(case_id: str, frame_set: Any, external: Path, boundaries: Path, *, gen
             "not_computed_because": refusal_for_the_receipt,
             "default_cell_against_the_e8_rows": default_cell_check,
             "summary": summary,
-            "units_sha256": None if result is None else digest_of(result["units"]),
+            "units_sha256": None if figures is None else figures["units_sha256"],
             "units_sha256_note": "The SHA-256 of the per-unit results alone, in a canonical form: every value of every unit "
                                  "in every cell, without the generation time and the header text of the file that holds "
                                  "them. Two runs that computed the same results have the same value here.",
@@ -794,7 +887,7 @@ def build(case_id: str, frame_set: Any, external: Path, boundaries: Path, *, gen
         },
         "open_points": [dict(point) for point in ensemble.OPEN_POINTS],
         "not_computed": NOT_COMPUTED,
-        "assumptions": ASSUMPTIONS,
+        "assumptions": assumptions(grid.one_pixel_m),
         "limitations": LIMITATIONS,
         "implementation": {
             "base_commit": commit,
@@ -910,25 +1003,108 @@ def _outputs(built: SimpleNamespace, root: Path, external: Path) -> tuple[dict[s
     return {"ensemble": {"files": listed}}, files
 
 
-def superseded_run(previous: Mapping[str, Any], receipt_path: Path, built: SimpleNamespace, replace_reason: str, archive: Path, *,
-                   root: Path, external: Path) -> dict[str, Any]:
-    """Describe the run a new run replaces, compare the two and keep a copy of the replaced files outside Git."""
+def receipt_to_replace(receipt_path: Path, case_id: str) -> tuple[dict[str, Any], str, dict[str, str]]:
+    """Read the receipt a second run replaces and check it, before any unit is measured.
 
-    receipt_sha256 = sha256_file(receipt_path)
-    bound = bound_outputs(previous["outputs"])
+    A receipt that cannot be read, is not a receipt of this task for the case, or does not bind its outputs
+    refuses the run here, so that nothing found in the old receipt can stop a run after its units were measured.
+
+    Returns:
+        The parsed receipt, its SHA-256 and the outputs it binds (label to SHA-256).
+
+    Raises:
+        BuildError: when the receipt cannot be read or is not a receipt of this task for the case.
+    """
+
+    try:
+        data = receipt_path.read_bytes()
+        previous = json.loads(data.decode("ascii"))
+    except (OSError, ValueError) as error:
+        raise BuildError(f"the receipt to replace cannot be read ({type(error).__name__}); nothing was measured") from error
+    if (not isinstance(previous, dict) or previous.get("schema_version") not in REPLACEABLE_RECEIPT_SCHEMAS
+            or (previous.get("parameters") or {}).get("case_id") != case_id):
+        raise BuildError(f"the receipt to replace is not a receipt of this task for case {case_id}; nothing was measured")
+    try:
+        bound = dict(bound_outputs(previous["outputs"]))
+    except (KeyError, TypeError, AttributeError, ValueError) as error:
+        raise BuildError(f"the receipt to replace does not bind its outputs ({type(error).__name__}); nothing was measured") from error
+    history = previous.get("run_history") or []
+    if not isinstance(history, list) or not all(isinstance(entry, dict) for entry in history):
+        raise BuildError("the receipt to replace does not list its earlier runs as records; nothing was measured")
+    return previous, sha256_bytes(data), bound
+
+
+def cells_digest(units: Any) -> str | None:
+    """Return the SHA-256 of every cell of every unit alone: FPPS, class, reason code and leave-one-component-out.
+
+    The summaries of a unit record (headline, shares, ranks) are left out, so two runs that scored every cell
+    the same have the same value here even when the record gained or lost a summary field.
+    """
+
+    try:
+        return digest_of([{"unit_id": unit["unit_id"], "cells": unit["cells"]} for unit in units])
+    except (KeyError, TypeError, ValueError):
+        return None
+
+
+def unit_fields_that_differ(old_units: Any, new_units: Any) -> list[str] | None:
+    """Return the fields of the per-unit records whose value differs between two runs, in any unit; None if not comparable."""
+
+    try:
+        if [unit["unit_id"] for unit in old_units] != [unit["unit_id"] for unit in new_units]:
+            return None
+        return sorted({key for old, new in zip(old_units, new_units) for key in {*old, *new}
+                       if key not in old or key not in new or _canonical(old[key]) != _canonical(new[key])})
+    except (KeyError, TypeError, ValueError):
+        return None
+
+
+def superseded_run(previous: Mapping[str, Any], receipt_sha256: str, bound: Mapping[str, str], receipt_path: Path,
+                   built: SimpleNamespace, replace_reason: str, archive: Path, *, root: Path, external: Path) -> dict[str, Any]:
+    """Describe the run a new run replaces, compare the two and keep a copy of the replaced files outside Git.
+
+    The old receipt was read and checked before the run (:func:`receipt_to_replace`). Nothing here raises: a
+    file that cannot be copied or read back is reported as such, because the run it belongs to is reported.
+    """
+
     stamp = str(previous.get("generated_at_utc", "unknown")).replace(":", "").replace("-", "")
     folder = archive / stamp
-    folder.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(receipt_path, folder / receipt_path.name)
-    kept = [{"path": path_label(folder / receipt_path.name, root, external), "sha256": receipt_sha256, "what": "receipt"}]
+    kept: list[dict[str, Any]] = []
+    old_units: Any = None
+
+    def keep(source: Path, sha256: str, what: str) -> None:
+        entry = {"path": path_label(folder / source.name, root, external), "sha256": sha256, "what": what, "copied": True}
+        try:
+            folder.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(source, folder / source.name)
+        except OSError as error:
+            entry.update({"copied": False, "error": type(error).__name__})
+        kept.append(entry)
+
+    keep(receipt_path, receipt_sha256, "receipt")
     for label, digest in bound.items():
         path = external_path(label, external) if label.startswith(EXTERNAL_LABEL) else root / label
-        if path.is_file() and sha256_file(path) == digest:
-            shutil.copyfile(path, folder / path.name)
-            kept.append({"path": path_label(folder / path.name, root, external), "sha256": digest, "what": "file the receipt bound"})
+        try:
+            same = path.is_file() and sha256_file(path) == digest
+        except OSError:
+            same = False
+        if not same:
+            kept.append({"path": label, "sha256": digest, "what": "file the receipt bound", "copied": False,
+                         "error": "the file is missing or no longer has the bytes the receipt bound"})
+            continue
+        keep(path, digest, "file the receipt bound")
+        if path.name != LICENCE_NOTICE_NAME:
+            try:
+                old_units = json.loads(path.read_text(encoding="ascii")).get("units")
+            except (OSError, ValueError, AttributeError):
+                old_units = None
     old, new = previous.get("result") or {}, built.receipt["result"]
+    new_units = built.document.get("units")
     units_same = None if not old.get("units_sha256") or not new.get("units_sha256") else old["units_sha256"] == new["units_sha256"]
+    old_cells = None if old_units is None else cells_digest(old_units)
+    new_cells = None if new_units is None else cells_digest(new_units)
     summary_same = _canonical(old.get("summary")) == _canonical(new.get("summary"))
+    old_summary, new_summary = old.get("summary") or {}, new.get("summary") or {}
     old_access = (previous.get("access_runs") or {}).get("unit_rows_sha256")
     new_access = (built.receipt.get("access_runs") or {}).get("unit_rows_sha256")
     return {
@@ -937,16 +1113,27 @@ def superseded_run(previous: Mapping[str, Any], receipt_path: Path, built: Simpl
         "reason": replace_reason,
         "result_same": bool(summary_same and units_same is True),
         "summary_same": summary_same,
+        "summary_fields_that_differ": sorted(key for key in {*old_summary, *new_summary}
+                                             if key not in old_summary or key not in new_summary
+                                             or _canonical(old_summary[key]) != _canonical(new_summary[key])),
         "units_same": units_same,
         "units_sha256_of_the_superseded_run": old.get("units_sha256"),
         "units_sha256_of_this_run": new.get("units_sha256"),
+        "unit_cells_same": None if old_cells is None or new_cells is None else old_cells == new_cells,
+        "unit_cells_sha256_of_the_superseded_run": old_cells,
+        "unit_cells_sha256_of_this_run": new_cells,
+        "unit_record_fields_that_differ": None if old_units is None or new_units is None else unit_fields_that_differ(old_units, new_units),
         "access_unit_rows_same": None if old_access is None or new_access is None else old_access == new_access,
         "lineage_inputs_same": dict(previous.get("lineage_input_sha256") or {}) == dict(built.receipt["lineage_input_sha256"]),
-        "outputs_of_the_superseded_run": bound,
+        "outputs_of_the_superseded_run": dict(bound),
         "copies_kept_outside_git": kept,
         "note": "result_same is true only when the counts of the whole case are the same (summary_same) and the per-unit "
                 "results are the same (units_same: the SHA-256 of the results alone, which covers every value of every "
-                "unit in every cell). The superseded receipt is named by its SHA-256 and copied outside Git with the "
+                "unit in every cell and every summary of a unit). unit_cells_same compares the cells alone, read back "
+                "from the file the superseded receipt bound: the FPPS, the class, the reason code and "
+                "leave-one-component-out of every unit in every cell that was run, without the summaries of a unit; "
+                "unit_record_fields_that_differ and summary_fields_that_differ name the fields whose value changed, was "
+                "added or was dropped. The superseded receipt is named by its SHA-256 and copied outside Git with the "
                 "files it bound; run_history lists every earlier run.",
     }
 
@@ -957,12 +1144,14 @@ def run(case_id: str, frame_set: Any, external: Path, boundaries: Path, *, docs:
     """Check the inputs, compute the ensemble, write its file and its receipt and register the receipt.
 
     Once a unit has been measured against a flood level, the receipt is written and registered whatever the run
-    found (:func:`build`). Every run is reported.
+    found (:func:`build`). Every run is reported. The receipt a second run replaces is read and checked before
+    the run starts, so nothing in it can stop the run later.
 
     Raises:
         FileExistsError: when the receipt exists and no replacement reason is given.
         FileNotFoundError: when a replacement is asked for and no receipt exists.
-        BuildError, ValueError: an input check refused the run; nothing is written.
+        BuildError, ValueError: an input check refused the run, or the receipt to replace cannot be read;
+            nothing is written and no unit was measured.
     """
 
     receipt_path = receipt_path_for(case_id, frame_set, output_dir)
@@ -970,19 +1159,21 @@ def run(case_id: str, frame_set: Any, external: Path, boundaries: Path, *, docs:
         raise FileExistsError("the receipt exists; a second run needs --replace --reason")
     if replace_reason is not None and not receipt_path.exists():
         raise FileNotFoundError("--replace needs an existing receipt")
+    replaced = None if replace_reason is None else receipt_to_replace(receipt_path, case_id)
     started = e5_builder.utc_now()
     clock = time.perf_counter()
     built = build(case_id, frame_set, external, boundaries, generated_at_utc=started, docs=docs, root=root, output_dir=output_dir,
                   register_dir=register_dir, registry=registry, git_commit=git_commit, development_reads=development_reads)
     outputs, files = _outputs(built, root, external)
     supersedes, history = None, None
-    if replace_reason is not None:
-        previous = json.loads(receipt_path.read_text(encoding="ascii"))
-        supersedes = superseded_run(previous, receipt_path, built, replace_reason,
+    if replaced is not None and replace_reason is not None:
+        previous, previous_sha256, previous_bound = replaced
+        supersedes = superseded_run(previous, previous_sha256, previous_bound, receipt_path, built, replace_reason,
                                     stage_folder(case_id, frame_set, external) / SUPERSEDED_FOLDER, root=root, external=external)
         history = [dict(entry) for entry in previous.get("run_history") or []]
         history.append({"generated_at_utc": supersedes["generated_at_utc"], "receipt_sha256": supersedes["receipt_sha256"],
                         "superseded_because": replace_reason, "result_same_as_the_run_that_replaced_it": supersedes["result_same"],
+                        "unit_cells_same_as_the_run_that_replaced_it": supersedes["unit_cells_same"],
                         "units_sha256": supersedes["units_sha256_of_the_superseded_run"],
                         "outputs_sha256": dict(supersedes["outputs_of_the_superseded_run"]),
                         "copies_kept_outside_git": [dict(item) for item in supersedes["copies_kept_outside_git"]]})
@@ -1092,6 +1283,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         summary = run(args.case, frame_set, external, boundaries,
                       replace_reason=args.reason.strip() if args.replace else None, development_reads=args.development_read)
     except (FileExistsError, FileNotFoundError, ValueError) as error:
+        # Every refusal that reaches this line was raised before a unit was measured: the input checks, and the
+        # reading of the receipt to replace. From the first access run on, build() reports whatever stops the run.
         print(f"REFUSED: {error}", file=sys.stderr)
         return EXIT_REFUSED
     print(json.dumps(summary))

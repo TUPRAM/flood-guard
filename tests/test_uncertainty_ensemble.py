@@ -12,6 +12,7 @@ import copy
 from dataclasses import replace
 from datetime import date
 import json
+import math
 from pathlib import Path
 import shutil
 from typing import Any
@@ -97,6 +98,42 @@ def with_shelter(measured: pa.UnitMeasurements) -> pa.UnitMeasurements:
     return replace(measured, access_gap_inputs={**measured.access_gap_inputs, "ddpm_located_shelter": dict(SHELTER)})
 
 
+def moving_with_the_anchors(number: int = 1) -> pa.UnitMeasurements:
+    """An invented unit that is class E on the P10 / P90 anchors and class D on P5 / P95 under the default weights.
+
+    Flood likelihood 50 (4 of 40 flooded, anchor 0.20), exposure 40, and a dependent share of 0.36: just above the
+    national P10, so the vulnerability value is about 7 on P10 / P90 and about 26 on P5 / P95. The FPPS is about
+    34.1 on the first pair and about 36.0 on the second.
+    """
+
+    return unit(number, flooded_non_permanent_water_land_area=4.0, children_0_14=200.0, older_60_plus=232.0)
+
+
+def by_hand_fpps(values: dict[str, float], raw: dict[str, float], dropped: str | None = None) -> float:
+    """The FPPS under raw weights, with one component left out if named: the weighted sum over the sum of the weights.
+
+    Written out here, without ``preset_header`` or ``leave_one_component_out_weights``: protocol v1a normalises a
+    preset to sum to 1, and leave-one-component-out sets one weight to 0 and renormalises the other four.
+    """
+
+    weights = {name: 0.0 if name == dropped else raw[name] for name in SCORE_COMPONENTS}
+    return math.fsum(weights[name] * values[name] for name in SCORE_COMPONENTS) / math.fsum(weights.values())
+
+
+def by_hand_class(values: dict[str, float], fpps: float) -> str:
+    """Class rule v1 for a medium-confidence row, written out from protocol v1a ``class_rules.v1``."""
+
+    if fpps < 35:
+        return "E"
+    if values["exposure_0_100"] >= 70 and values["access_gap_0_100"] >= 70:
+        return "A"
+    if values["road_criticality_0_100"] >= 75 and values["access_gap_0_100"] >= 55:
+        return "B"
+    if values["exposure_0_100"] >= 65 and values["access_gap_0_100"] >= 50:
+        return "C"
+    return "D"
+
+
 NOT_RUN_TODAY = [
     ue.LevelNotRun("facilities", "corroborated", "invented_reason_shelters", "An invented reason for a test.", ("FX-OP1",)),
     ue.LevelNotRun("facilities", "all_listed", "invented_reason_shelters", "An invented reason for a test.", ("FX-OP1",)),
@@ -145,6 +182,10 @@ def test_the_grid_has_exactly_the_axes_levels_and_cells_protocol_v1b_states(grid
     assert grid.public_cells == 180 and len(ue.scope_cell_ids(grid, "public")) == 180 and len(ue.scope_cell_ids(grid, "pitch")) == 540
     assert "180 cells of the public facility set only" in grid.retention_for_public_overlays
     assert grid.cells_after_cut_line_6 == 135
+    # The distance of the minus and the plus level is the one protocol v1b states, not a number of this module.
+    pixel = section["core_axes"][0]["one_pixel_m"]
+    assert grid.one_pixel_m == pixel["minus"] == pixel["plus"] == pixel["vector_products"] == 20
+    assert ue.grid_record(grid)["one_pixel_m"] == 20.0
     record = ue.grid_record(grid)
     assert [axis["levels_as_protocol_v1b_states_them"] for axis in record["axes"]] == [axis["levels"] for axis in section["core_axes"]]
     assert record["headline_rule"]["class_retention_min"] == 0.6 and record["reporting"] == "All cells of every lane are reported."
@@ -168,6 +209,11 @@ def test_a_protocol_that_states_another_grid_is_refused(protocols: Any) -> None:
         (lambda d: grid_of(d)["core_axes"].pop(), "v1b", "core axes"),
         (lambda d: grid_of(d)["core_axes"][0]["levels"].pop(), "v1b", "number of distinct levels"),
         (lambda d: grid_of(d)["core_axes"][0]["levels"].__setitem__(0, "half (10 m erosion)"), "v1b", "flood level"),
+        (lambda d: grid_of(d)["core_axes"][0]["levels"].__setitem__(0, "minus (one pixel / 10 m erosion)"), "v1b",
+         "another one-pixel distance"),
+        (lambda d: grid_of(d)["core_axes"][0]["one_pixel_m"].update(plus=10), "v1b", "one positive one-pixel distance"),
+        (lambda d: grid_of(d)["core_axes"][0]["one_pixel_m"].update(minus=0, plus=0, vector_products=0), "v1b",
+         "one positive one-pixel distance"),
         (lambda d: grid_of(d)["core_axes"][1]["levels"].__setitem__(1, "central (k = 5)"), "v1b", "delay factor"),
         (lambda d: grid_of(d)["core_axes"][2]["levels"].__setitem__(1, "confirmed"), "v1b", "facility sets"),
         (lambda d: grid_of(d)["core_axes"][3]["levels"].__setitem__(1, "2030 projection"), "v1b", "population vintage"),
@@ -192,6 +238,15 @@ def test_a_protocol_that_states_another_grid_is_refused(protocols: Any) -> None:
         with pytest.raises(ue.EnsembleError, match=words):
             ue.grid_from_protocols(*changed(edit, which))
     assert ue.grid_from_protocols(v1a, v1b).core_cells_per_lane == 540, "the files as signed are read"
+
+    # A protocol that states another distance for both levels, in the words of the level and in one_pixel_m, is read
+    # with that distance: nothing in this module holds the 20 m of the files in force.
+    def ten_metres(document: dict[str, Any]) -> None:
+        grid_of(document)["core_axes"][0]["levels"][0] = "minus (one pixel / 10 m erosion)"
+        grid_of(document)["core_axes"][0]["one_pixel_m"].update(minus=10, plus=10, vector_products=10)
+
+    other = ue.grid_from_protocols(*changed(ten_metres))
+    assert other.one_pixel_m == 10.0 and ue.grid_record(other)["one_pixel_m"] == 10.0
 
 
 def test_nothing_is_read_from_a_protocol_that_is_not_in_force(tmp_path: Path, grid: ue.EnsembleGrid, rules: pa.AssessmentRules,
@@ -287,13 +342,79 @@ def test_the_headline_stays_not_evaluated_while_cells_of_the_protocol_set_have_n
     none = ue.headline_record(grid, reference_class=None, kept=0, with_a_class=0, protocol_cells=180, over="invented cells")
     assert none["status"] == "not_evaluated" and none["retention_over_the_cells_run"] is None and "GR1" in none["not_evaluated_because"]
     # The share over the cells declared cut line 6 would leave is reported beside the record, never as the headline.
+    after_cut = {"cells": 45, "cells_keeping_the_reference_class": 40, "retention": 40 / 45, "at_or_above_the_minimum": True}
     cut = ue.headline_record(grid, reference_class="B", kept=80, with_a_class=90, protocol_cells=180, over="invented cells",
-                             kept_after_cut_line_6=40, cells_after_cut_line_6=45)
-    assert cut["status"] == "not_evaluated" and cut["after_declared_cut_line_6"]["retention"] == pytest.approx(40 / 45)
-    assert cut["after_declared_cut_line_6"]["at_or_above_the_minimum"] is True and "not the headline" in cut["after_declared_cut_line_6"]["note"]
+                             after_declared_cut_line_6=after_cut)
+    assert cut["status"] == "not_evaluated" and cut["after_declared_cut_line_6"] == after_cut
     for kept, classed, cells in ((5, 4, 10), (-1, 4, 10), (3, 11, 10), (0, 0, 0)):
         with pytest.raises(ue.EnsembleError, match="whole cells"):
             ue.headline_record(grid, reference_class="D", kept=kept, with_a_class=classed, protocol_cells=cells, over="invented cells")
+    with pytest.raises(ue.EnsembleError, match="whole cells"):
+        ue.headline_record(grid, reference_class="D", kept=3, with_a_class=5, cells_run=4, protocol_cells=10, over="invented cells")
+    with pytest.raises(ue.EnsembleError, match="whole cells"):
+        ue.headline_record(grid, reference_class="D", kept=3, with_a_class=5, cells_run=11, protocol_cells=10, over="invented cells")
+
+
+def test_a_cell_that_was_run_and_failed_stays_in_the_denominator_of_the_share_over_the_cells_run(grid: ue.EnsembleGrid) -> None:
+    """90 cells were run, 10 of them failed and 80 keep the class: the share over the cells run is 80 of 90, not 1."""
+
+    record = ue.headline_record(grid, reference_class="D", kept=80, with_a_class=80, cells_run=90, protocol_cells=180,
+                                over="invented cells")
+    assert (record["cells_run"], record["cells_with_a_class"], record["cells_run_without_a_class"]) == (90, 80, 10)
+    assert record["retention_over_the_cells_run"] == pytest.approx(80 / 90) != 1.0
+    # For the bounds a failed cell is a cell without a class, like a cell that was not run.
+    assert record["bounds_over_the_protocol_set"] == {"lower": 80 / 180, "upper": 1.0, "cells_without_a_class": 100}
+    assert "failed cells included in the denominator" in record["not_evaluated_because"]
+    # With every cell of the set run and ten of them failed, the rule is still not evaluated: ten cells have no class.
+    whole = ue.headline_record(grid, reference_class="D", kept=170, with_a_class=170, cells_run=180, protocol_cells=180,
+                               over="invented cells")
+    assert whole["status"] == "not_evaluated" and whole["retention_over_the_cells_run"] == pytest.approx(170 / 180)
+    assert whole["outcome_fixed_by_the_bounds"] == "at_or_above_the_minimum"
+
+
+def test_the_other_reading_of_the_protocol_set_and_the_levels_cut_line_6_could_keep(grid: ue.EnsembleGrid) -> None:
+    """Two readings the protocols leave open (E10-OP11, E10-OP12): both are reported and no status is set from them."""
+
+    reading = ue.protocol_set_reading(grid, kept=90, with_a_class=90, cells=540, over="the 540 core cells")
+    assert reading["class_retention"] is None and reading["at_or_above_the_minimum"] is None
+    assert reading["bounds"] == {"lower": 90 / 540, "upper": 1.0, "cells_without_a_class": 450}
+    assert reading["outcome_fixed_by_the_bounds"] is None
+    assert ue.protocol_set_reading(grid, kept=9, with_a_class=450, cells=540, over="x")["outcome_fixed_by_the_bounds"] == "below_the_minimum"
+    assert ue.protocol_set_reading(grid, kept=324, with_a_class=400, cells=540, over="x")["outcome_fixed_by_the_bounds"] == "at_or_above_the_minimum"
+    whole = ue.protocol_set_reading(grid, kept=324, with_a_class=540, cells=540, over="x")
+    assert whole["class_retention"] == pytest.approx(0.6) and whole["at_or_above_the_minimum"] is True and whole["bounds"] is None
+    with pytest.raises(ue.EnsembleError, match="whole cells"):
+        ue.protocol_set_reading(grid, kept=5, with_a_class=4, cells=540, over="x")
+    record = ue.headline_record(grid, reference_class="B", kept=90, with_a_class=90, protocol_cells=180, over="invented cells",
+                                other_reading=reading)
+    assert record["status"] == "not_evaluated", "no status is set from the other reading"
+    assert record["other_reading_of_the_protocol_set"]["bounds"]["lower"] == pytest.approx(1 / 6)
+    assert "E10-OP11" in record["other_reading_of_the_protocol_set"]["note"]
+
+    # Cut line 6: 45 cells for each of the four pairs of levels it could keep, among the 180 cells of the public set.
+    public = [cell for cell in ue.cells(grid) if cell["facilities"] == "public"]
+    run = [cell for cell in public if cell["population_vintage"] == "worldpop_2020"]
+    classed = {ue.cell_id(cell): "E" if cell["vulnerability_anchors"] == "P10_P90" or cell["weights"] != "vulnerability_heavy" else "D"
+               for cell in run}
+    cut = ue.cut_line_6_record(grid, reference_class="E", classed=classed, cells_of_the_set=public)
+    assert cut["levels_kept"] == {"population_vintage": "worldpop_2020", "vulnerability_anchors": "P10_P90"}
+    assert cut["levels_kept_are"] == "the levels of the default cell"
+    assert (cut["cells"], cut["cells_with_a_class"], cut["cells_keeping_the_reference_class"], cut["retention"]) == (45, 45, 45, 1.0)
+    others = cut["other_levels_the_cut_could_keep"]
+    assert [item["levels_kept"] for item in others] == [
+        {"population_vintage": "worldpop_2020", "vulnerability_anchors": "P5_P95"},
+        {"population_vintage": "rescaled_2024", "vulnerability_anchors": "P10_P90"},
+        {"population_vintage": "rescaled_2024", "vulnerability_anchors": "P5_P95"}]
+    # With the P5 / P95 anchors kept, the nine cells of the vulnerability-heavy weights are class D: 36 of 45.
+    assert (others[0]["cells"], others[0]["cells_keeping_the_reference_class"]) == (45, 36)
+    assert others[0]["retention"] == pytest.approx(36 / 45) and others[0]["at_or_above_the_minimum"] is True
+    # A pair whose cells were not run has no share.
+    assert all((item["cells"], item["cells_with_a_class"], item["retention"], item["at_or_above_the_minimum"]) == (45, 0, None, None)
+               for item in others[1:])
+    assert "E10-OP12" in cut["note"] and "not the headline" in cut["note"]
+    assert ue.cut_line_6_record(grid, reference_class=None, classed=classed, cells_of_the_set=public) is None
+    with pytest.raises(ue.EnsembleError, match="cut line 6"):
+        ue.cut_line_6_record(grid, reference_class="E", classed=classed, cells_of_the_set=public[:-1])
 
 
 # ---------------------------------------------------------------------------
@@ -319,20 +440,59 @@ def test_the_default_cell_and_its_leave_one_component_out_are_the_row_of_task_e8
     on_p5_p95 = {**values, "vulnerability_context_0_100": row["components"]["vulnerability_context_0_100"]["anchor_sensitivity"]["value_0_100"]}
     cells = {cell["cell_id"]: cell for cell in found["cells"]}
     assert len(cells) == 90 and all(cell["status"] == "computed" for cell in cells.values())
+    assert on_p5_p95["vulnerability_context_0_100"] != values["vulnerability_context_0_100"]
+    by_hand_loo: dict[str, list[float]] = {name: [] for name in SCORE_COMPONENTS}
     for preset, raw in grid.weight_presets_raw.items():
         for anchors, numbers in (("P10_P90", values), ("P5_P95", on_p5_p95)):
-            expected = pa.scoring_block(numbers, "medium", False, ue.preset_header(header, raw))
             cell = cells[f"as_provided|central|public|worldpop_2020|{anchors}|{preset}"]
+            # The FPPS and the class of the cell, and of each leave-one-component-out, written out by hand from the raw
+            # weights of protocol v1a: nothing of the expectation comes from the module under test.
+            fpps = by_hand_fpps(numbers, raw)
+            assert cell["fpps_0_100"] == pytest.approx(fpps, abs=0.006), (preset, anchors)
+            assert cell["action_class"] == by_hand_class(numbers, cell["fpps_0_100"]), (preset, anchors)
+            assert set(cell["leave_one_component_out"]) == set(SCORE_COMPONENTS)
+            for dropped in SCORE_COMPONENTS:
+                without = by_hand_fpps(numbers, raw, dropped)
+                entry = cell["leave_one_component_out"][dropped]
+                assert entry["fpps_0_100"] == pytest.approx(without, abs=0.006), (preset, anchors, dropped)
+                assert entry["action_class"] == by_hand_class(numbers, entry["fpps_0_100"]), (preset, anchors, dropped)
+                by_hand_loo[dropped].append(entry["fpps_0_100"])
+            # The same cell through the scoring block of task E8, for every other field of the block.
+            expected = pa.scoring_block(numbers, "medium", False, ue.preset_header(header, raw))
             assert {key: cell[key] for key in expected} == expected, (preset, anchors)
+    # One leave-one-component-out of a preset that is not the default, in full. access_heavy has the raw weights 0.30,
+    # 0.25, 0.35, 0.15 and 0.10; without the flood likelihood the other four are divided by their sum, 0.85.
+    without_flood = (0.25 * values["exposure_0_100"] + 0.35 * values["access_gap_0_100"] + 0.15 * values["road_criticality_0_100"]
+                     + 0.10 * values["vulnerability_context_0_100"]) / 0.85
+    under_default = (0.25 * values["exposure_0_100"] + 0.20 * values["access_gap_0_100"] + 0.15 * values["road_criticality_0_100"]
+                     + 0.10 * values["vulnerability_context_0_100"]) / 0.70
+    assert abs(without_flood - under_default) > 0.5, "the two presets give another value, so the check below tells them apart"
+    heavy = cells["as_provided|central|public|worldpop_2020|P10_P90|access_heavy"]["leave_one_component_out"]["flood_likelihood_0_100"]
+    assert heavy["fpps_0_100"] == pytest.approx(round(without_flood, 2), abs=0.006)
+    assert found["reference_cell"]["leave_one_component_out"]["flood_likelihood_0_100"]["fpps_0_100"] == pytest.approx(
+        round(under_default, 2), abs=0.006)
+    # Leave-one-component-out over the cells: this unit has the same measurements in every combination, so the ten
+    # values by hand (five presets by two pairs of anchors) are all there is.
+    for dropped, entry in found["leave_one_component_out_over_the_cells"].items():
+        assert entry["fpps_0_100"]["min"] == min(by_hand_loo[dropped]) and entry["fpps_0_100"]["max"] == max(by_hand_loo[dropped])
+        assert len(set(by_hand_loo[dropped])) > 1, "the presets give more than one value"
     # One preset by hand: access_heavy raises the access weight to 0.35 and the scorer divides every weight by 1.15.
     by_hand = (0.30 * values["flood_likelihood_0_100"] + 0.25 * values["exposure_0_100"] + 0.35 * values["access_gap_0_100"]
                + 0.15 * values["road_criticality_0_100"] + 0.10 * values["vulnerability_context_0_100"]) / 1.15
     assert cells["as_provided|central|public|worldpop_2020|P10_P90|access_heavy"]["fpps_0_100"] == pytest.approx(round(by_hand, 2))
     # The summary of leave-one-component-out over the cells holds every cell that was run.
     assert all(entry["cells"] == 90 for entry in found["leave_one_component_out_over_the_cells"].values())
-    # The one-at-a-time flood anchors are applied to the default cell alone.
+    # The one-at-a-time flood anchors are applied to the default cell alone: the P10 / P90 anchors and the default
+    # weights. A quarter of the land is flooded, so the flood likelihood is 100 at the anchor 0.10 and 83.33 at 0.30.
     anchors = found["one_at_a_time"]["flood_likelihood_anchor"]
     assert [item["flood_anchor"] for item in anchors] == [0.1, 0.3] and all(item["action_class"] == "D" for item in anchors)
+    default_raw = grid.weight_presets_raw["default"]
+    for item, likelihood in zip(anchors, (100.0, 100 * 0.25 / 0.30)):
+        assert item["flood_likelihood_0_100"] == pytest.approx(likelihood)
+        on_default = by_hand_fpps({**values, "flood_likelihood_0_100": likelihood}, default_raw)
+        on_other_anchors = by_hand_fpps({**on_p5_p95, "flood_likelihood_0_100": likelihood}, default_raw)
+        assert abs(on_default - on_other_anchors) > 0.03, "the two pairs of anchors give another FPPS"
+        assert item["fpps_0_100"] == pytest.approx(on_default, abs=0.006)
     assert found["one_at_a_time"]["terrain_remoteness_proxy"]["status"] == "not_run"
     assert found["one_at_a_time"]["class_rule_v1_and_v2"]["v1_class"] == "D"
     assert found["equity_eed_and_eer"]["status"] == "not_computed"
@@ -359,6 +519,13 @@ def test_a_public_run_today_reports_the_share_over_the_cells_run_and_headlines_n
         assert "public facility set" in headline["over"]
     assert second["headline_stability"]["after_declared_cut_line_6"]["cells"] == 45
     assert second["headline_stability"]["after_declared_cut_line_6"]["retention"] == pytest.approx(30 / 45)
+    assert second["headline_stability"]["after_declared_cut_line_6"]["levels_kept"] == {
+        "population_vintage": "worldpop_2020", "vulnerability_anchors": "P10_P90"}
+    # The other reading of the protocol's set (E10-OP11): the same counts over the 540 core cells, and no status.
+    other = second["headline_stability"]["other_reading_of_the_protocol_set"]
+    assert (other["cells"], other["cells_with_a_class"], other["cells_keeping_the_reference_class"]) == (540, 90, 60)
+    assert other["bounds"] == {"lower": 60 / 540, "upper": 510 / 540, "cells_without_a_class": 450} and other["class_retention"] is None
+    assert "540 core cells" in other["over"] and "E10-OP11" in second["headline_stability"]["over"]
     # The range of the FPPS, the rank and the people losing 30-minute access over the access runs.
     assert second["fpps_0_100"]["count"] == 90 and second["fpps_0_100"]["min"] < 35 <= second["fpps_0_100"]["max"]
     assert first["rank"] == {"best": 1, "worst": 1, "cells_ranked": 90, "among_units": 2, "rule": first["rank"]["rule"]}
@@ -382,9 +549,27 @@ def test_a_public_run_today_reports_the_share_over_the_cells_run_and_headlines_n
     assert kept["units_keeping_the_class_in_every_cell_run"] == 1 and kept["units_keeping_the_class_in_at_least_the_minimum_share"] == 2
     assert kept["units_keeping_the_class_in_less_than_the_minimum_share"] == 0
     assert summary["outcome_fixed_by_the_bounds_counts"] == {"at_or_above_the_minimum": 0, "below_the_minimum": 0, "not_fixed": 2}
-    assert summary["after_declared_cut_line_6"] == {"cells": 45, "units_at_or_above_the_minimum": 2, "units_below_the_minimum": 0,
-                                                    "units_without_a_class_in_every_one_of_those_cells": 0,
-                                                    "note": summary["after_declared_cut_line_6"]["note"]}
+    kept_levels = {"population_vintage": "worldpop_2020", "vulnerability_anchors": "P10_P90"}
+    counted = {"cells": 45, "units_at_or_above_the_minimum": 2, "units_below_the_minimum": 0,
+               "units_keeping_the_class_in_every_one_of_those_cells": 1, "units_without_a_class_in_every_one_of_those_cells": 0}
+    not_run = {"cells": 45, "units_at_or_above_the_minimum": 0, "units_below_the_minimum": 0,
+               "units_keeping_the_class_in_every_one_of_those_cells": 0, "units_without_a_class_in_every_one_of_those_cells": 2}
+    assert summary["after_declared_cut_line_6"] == {
+        "levels_kept": kept_levels, **counted, "levels_kept_are": "the levels of the default cell",
+        "other_levels_the_cut_could_keep": [
+            {"levels_kept": {**kept_levels, "vulnerability_anchors": "P5_P95"}, **counted},
+            {"levels_kept": {"population_vintage": "rescaled_2024", "vulnerability_anchors": "P10_P90"}, **not_run},
+            {"levels_kept": {"population_vintage": "rescaled_2024", "vulnerability_anchors": "P5_P95"}, **not_run}],
+        "note": summary["after_declared_cut_line_6"]["note"]}
+    assert "E10-OP12" in summary["after_declared_cut_line_6"]["note"]
+    assert summary["other_reading_of_the_protocol_set"]["cells"] == 540
+    assert summary["other_reading_of_the_protocol_set"]["outcome_fixed_by_the_bounds_counts"] == {
+        "at_or_above_the_minimum": 0, "below_the_minimum": 0, "not_fixed": 2}
+    # What the counts state about single units (E10-OP10): where both units are class D, the count says so of each.
+    single = summary["counts_that_state_a_value_of_a_single_unit"]
+    assert single["cells_in_which_every_unit_has_one_class"] == 60 and single["classes_one_unit_alone_holds_in_the_default_cell"] == []
+    assert single["cells_whose_class_counts_differ_from_the_default_cell"] == 30
+    assert single["units_with_more_than_one_class_over_the_cells_run"] == 1 and single["states_a_value_of_a_single_unit"] is True
     assert summary["units_whose_fpps_lies_on_both_sides_of_the_class_e_threshold"] == 1
     assert summary["class_counts_by_cell"]["minus|strict|public|worldpop_2020|P10_P90|default"] == {"D": 1, "E": 1}
     assert summary["class_counts_by_cell"]["plus|central|public|worldpop_2020|P5_P95|road_heavy"] == {"D": 2}
@@ -415,6 +600,9 @@ def test_a_whole_grid_on_invented_units_is_headlined_by_the_rule(grid: ue.Ensemb
     assert (third["status"], third["class_retention"]) == ("unstable_verify", pytest.approx(180 / 540))
     assert third["fallback_text"] == grid.fallback_text and second["fallback_text"] is None
     assert third["reference_class"] == "D" and third["bounds_over_the_protocol_set"] is None
+    assert third["other_reading_of_the_protocol_set"] is None and result["summary"]["other_reading_of_the_protocol_set"] is None
+    assert third["after_declared_cut_line_6"]["cells"] == 135 and len(third["after_declared_cut_line_6"]["other_levels_the_cut_could_keep"]) == 3
+    assert all(item["retention"] is not None for item in third["after_declared_cut_line_6"]["other_levels_the_cut_could_keep"])
     assert result["summary"]["headline_status_counts"] == {"not_evaluated": 0, "headline_eligible": 2, "unstable_verify": 1}
     # The retention is the share of the cells whose class equals the class of the default cell, counted by hand.
     cells = result["units"][1]["cells"]
@@ -428,6 +616,9 @@ def test_a_whole_grid_on_invented_units_is_headlined_by_the_rule(grid: ue.Ensemb
     headline = at_public["units"][2]["headline_stability"]
     assert headline["cells_of_the_protocol_set"] == 180 and "public facility set" in headline["over"]
     assert (headline["status"], headline["class_retention"]) == ("unstable_verify", pytest.approx(60 / 180))
+    # The status above follows the 180 cells. Over the 540 core cells the same unit has bounds and no retention.
+    assert headline["other_reading_of_the_protocol_set"]["bounds"] == {"lower": 60 / 540, "upper": 420 / 540, "cells_without_a_class": 360}
+    assert headline["other_reading_of_the_protocol_set"]["outcome_fixed_by_the_bounds"] is None
     with pytest.raises(ue.EnsembleError, match="public facility set only"):
         ue.run_ensemble(grid, rules, case(), flood(), measurements, routing_context_id=ROUTING_ID)
 
@@ -453,6 +644,22 @@ def test_a_cell_that_fails_is_reported_and_never_dropped(grid: ue.EnsembleGrid, 
     assert summary["unit_cells_failed_by_stage_and_error"] == {"access_runs:AccessDiffError": 20, "row_assembly:PlanningAssessmentError": 10}
     assert summary["cells_ranked"] == 70, "a cell in which a unit has no FPPS is not ranked"
     assert second["headline_stability"]["cells_with_a_class"] == 70 and second["headline_stability"]["status"] == "not_evaluated"
+    # The first unit is class D in every cell that has a result, and ten of its 90 cells failed. Every share that is
+    # labelled as taken over the cells run keeps those ten in its denominator: 80 of 90, not 80 of 80.
+    kept = first["headline_stability"]
+    assert (kept["cells_run"], kept["cells_with_a_class"], kept["cells_run_without_a_class"]) == (90, 80, 10)
+    assert kept["cells_keeping_the_reference_class"] == 80 and kept["retention_over_the_cells_run"] == pytest.approx(80 / 90)
+    assert kept["bounds_over_the_protocol_set"] == {"lower": 80 / 180, "upper": 1.0, "cells_without_a_class": 100}
+    assert first["class_shares"]["D"] == pytest.approx(80 / 90) and first["share_of_the_cells_run_that_failed"] == pytest.approx(10 / 90)
+    assert sum(first["class_shares"].values()) == pytest.approx(80 / 90) and "failed cells included" in first["class_shares_over"]
+    assert second["headline_stability"]["retention_over_the_cells_run"] == pytest.approx(70 / 90)
+    counted = summary["retention_over_the_cells_run"]
+    assert counted["units_keeping_the_class_in_every_cell_run"] == 0, "a unit with a failed cell does not keep its class in every cell run"
+    assert counted["units_keeping_the_class_in_at_least_the_minimum_share"] == 2 and counted["units_without_a_class_to_keep"] == 0
+    # Cut line 6 with the levels of the default cell: the failed combinations leave cells without a class, so no share.
+    assert first["headline_stability"]["after_declared_cut_line_6"]["retention"] is None
+    assert first["headline_stability"]["after_declared_cut_line_6"]["cells_with_a_class"] == 40
+    assert summary["after_declared_cut_line_6"]["units_without_a_class_in_every_one_of_those_cells"] == 2
     assert [item["status"] for item in second["routing_combinations"]].count("failed") == 2
     # A component that is not computed is not a failure: the cell is low confidence and class E, and it is counted.
     nobody = {service: {**counts, "baseline_access_residents": 0.0, "newly_lost_residents": 0.0}
@@ -473,6 +680,78 @@ def test_a_cell_that_fails_is_reported_and_never_dropped(grid: ue.EnsembleGrid, 
         run_public(grid, rules, {key: ue.MeasurementFailure("access_runs", "X", "invented") for key in PUBLIC_KEYS})
     with pytest.raises(ue.EnsembleError, match="same units in the same order"):
         run_public(grid, rules, {key: [unit(1), unit(2)] if key != failed_key else [unit(2), unit(1)] for key in PUBLIC_KEYS})
+
+
+def test_one_at_a_time_and_cut_line_6_keep_the_anchors_of_the_default_cell(grid: ue.EnsembleGrid, rules: pa.AssessmentRules) -> None:
+    """A unit whose class differs between the two pairs of anchors: E on P10 / P90 (the default cell), D on P5 / P95."""
+
+    measured = moving_with_the_anchors()
+    row = pa.assess_unit(rules, case(), flood(), pa.ClosureSpec("closure_rule_v1", rules.reference_closure_level), measured,
+                         routing_context_id=ROUTING_ID)
+    values = {name: row["components"][name]["value_0_100"] for name in SCORE_COMPONENTS}
+    on_p5_p95 = {**values, "vulnerability_context_0_100": row["components"]["vulnerability_context_0_100"]["anchor_sensitivity"]["value_0_100"]}
+    default_raw = grid.weight_presets_raw["default"]
+    assert values["flood_likelihood_0_100"] == pytest.approx(50.0)
+    assert by_hand_fpps(values, default_raw) < 35 <= by_hand_fpps(on_p5_p95, default_raw), "the unit this test needs"
+    found = run_public(grid, rules, {key: [measured] for key in PUBLIC_KEYS})["units"][0]
+    cells = {cell["cell_id"]: cell for cell in found["cells"]}
+    assert found["reference_cell"]["action_class"] == "E" and found["reference_cell"]["action_reason_code"] == "low_priority_score"
+    assert cells["as_provided|central|public|worldpop_2020|P5_P95|default"]["action_class"] == "D"
+    # One at a time: a tenth of the land is flooded, so the flood likelihood is 100 at the anchor 0.10 and 33.33 at
+    # 0.30. Each is scored on the P10 / P90 anchors of the default cell; on P5 / P95 the FPPS would be about 1.9 higher.
+    anchors = found["one_at_a_time"]["flood_likelihood_anchor"]
+    for item, likelihood in zip(anchors, (100.0, 100 * 0.10 / 0.30)):
+        expected = by_hand_fpps({**values, "flood_likelihood_0_100": likelihood}, default_raw)
+        other = by_hand_fpps({**on_p5_p95, "flood_likelihood_0_100": likelihood}, default_raw)
+        assert other - expected > 1.5 and item["fpps_0_100"] == pytest.approx(expected, abs=0.006)
+        assert item["action_class"] == by_hand_class(values, item["fpps_0_100"])
+    assert [item["action_class"] for item in anchors] == ["D", "E"]
+    # Cut line 6: the classes are counted here from the cells, pair by pair, and compared with the record.
+    def kept_with(anchors_level: str) -> int:
+        return sum(1 for identifier, cell in cells.items()
+                   if identifier.split("|")[3:5] == ["worldpop_2020", anchors_level] and cell["action_class"] == "E")
+
+    cut = found["headline_stability"]["after_declared_cut_line_6"]
+    assert kept_with("P10_P90") != kept_with("P5_P95"), "the two pairs of anchors keep the class in another number of cells"
+    assert cut["levels_kept"] == {"population_vintage": "worldpop_2020", "vulnerability_anchors": "P10_P90"}
+    assert (cut["cells"], cut["cells_keeping_the_reference_class"]) == (45, kept_with("P10_P90"))
+    assert cut["retention"] == pytest.approx(kept_with("P10_P90") / 45)
+    other_pair = cut["other_levels_the_cut_could_keep"][0]
+    assert other_pair["levels_kept"]["vulnerability_anchors"] == "P5_P95"
+    assert (other_pair["cells"], other_pair["cells_keeping_the_reference_class"]) == (45, kept_with("P5_P95"))
+    assert found["headline_stability"]["cells_keeping_the_reference_class"] == kept_with("P10_P90") + kept_with("P5_P95")
+
+
+def test_the_counts_that_state_a_value_of_a_single_unit_are_counted() -> None:
+    """Open point E10-OP10, on invented counts: a count names no unit and can state the class of one all the same."""
+
+    default = {"B": 1, "D": 3, "E": 4}
+    summary = {"units": 8, "reference_class_counts": {"A": 0, **default, "C": 0, "no_class": 0},
+               "units_by_number_of_classes_over_the_cells_run": {"1": 6, "2": 2},
+               "class_counts_by_cell": {"first": dict(default), "second": {"D": 4, "E": 4}, "third": {"B": 1, "D": 4, "E": 3},
+                                        "fourth": dict(default)}}
+    counted = ue.counts_that_state_single_units(summary)
+    assert counted["classes_one_unit_alone_holds_in_the_default_cell"] == ["B"]
+    assert counted["cells_in_which_such_a_class_has_another_count"] == 1, "the cell in which no unit is class B"
+    assert counted["cells_whose_class_counts_differ_from_the_default_cell"] == 2
+    assert counted["cells_in_which_every_unit_has_one_class"] == 0 and counted["units_with_more_than_one_class_over_the_cells_run"] == 2
+    assert counted["states_a_value_of_a_single_unit"] is True and "names no unit" in counted["what"]
+    # Every unit in one class in every cell: each count states the class of each unit.
+    every = ue.counts_that_state_single_units({
+        "units": 8, "reference_class_counts": {"E": 8, "no_class": 0}, "units_by_number_of_classes_over_the_cells_run": {"1": 8},
+        "class_counts_by_cell": {"first": {"E": 8}, "second": {"E": 8}}})
+    assert every["cells_in_which_every_unit_has_one_class"] == 2 and every["states_a_value_of_a_single_unit"] is True
+    assert every["classes_one_unit_alone_holds_in_the_default_cell"] == [] and every["cells_whose_class_counts_differ_from_the_default_cell"] == 0
+    # Two classes with two units each, the same in every cell: no count states the class of a single unit.
+    none = ue.counts_that_state_single_units({
+        "units": 4, "reference_class_counts": {"D": 2, "E": 2}, "units_by_number_of_classes_over_the_cells_run": {"1": 4},
+        "class_counts_by_cell": {"first": {"D": 2, "E": 2}, "second": {"D": 2, "E": 2}}})
+    assert none["states_a_value_of_a_single_unit"] is False
+    # A unit under guardrail GR1 has no class: the one unit without a class is not a class one unit holds.
+    gr1 = ue.counts_that_state_single_units({
+        "units": 3, "reference_class_counts": {"D": 2, "no_class": 1}, "units_by_number_of_classes_over_the_cells_run": {"1": 3},
+        "class_counts_by_cell": {"first": {"D": 2, "no_class": 1}}})
+    assert gr1["classes_one_unit_alone_holds_in_the_default_cell"] == [] and gr1["states_a_value_of_a_single_unit"] is False
 
 
 def test_a_unit_under_gr1_has_no_class_to_retain(grid: ue.EnsembleGrid, rules: pa.AssessmentRules) -> None:
@@ -506,7 +785,7 @@ def test_cell_measurements_change_the_flood_level_and_the_access_counts_and_noth
 
 
 def test_the_open_points_are_listed_and_the_wording_passes_the_shared_lint() -> None:
-    assert [point["id"] for point in ue.OPEN_POINTS] == [f"E10-OP{number}" for number in range(1, 10)]
+    assert [point["id"] for point in ue.OPEN_POINTS] == [f"E10-OP{number}" for number in range(1, 13)]
     assert all(point["for_the_owners"].strip() and point["signed_files_say"].strip() and point["what_this_task_does"].strip()
                for point in ue.OPEN_POINTS)
     by_id = {point["id"]: point for point in ue.OPEN_POINTS}
@@ -515,6 +794,18 @@ def test_the_open_points_are_listed_and_the_wording_passes_the_shared_lint() -> 
     assert "E5-OP5" in by_id["E10-OP3"]["signed_files_say"]
     assert "uses_ensemble_output" in by_id["E10-OP4"]["signed_files_say"]
     assert "No axis is named" in by_id["E10-OP6"]["what_this_task_does"]
+    # The display of a class that is not headlined is put to the owners with the words of guardrail GR8.
+    assert "Otherwise it is shown as unstable: verify." in by_id["E10-OP1"]["signed_files_say"]
+    assert "sets no display" in by_id["E10-OP1"]["for_the_owners"]
+    # The precedent the owners' answered choice 12 names is quoted, and the level still waits for their answer.
+    assert "bridge_worldpop_age_access.py" in by_id["E10-OP2"]["signed_files_say"]
+    assert "Confirm or reject it" in by_id["E10-OP2"]["for_the_owners"] and "stays not run until then" in by_id["E10-OP2"]["for_the_owners"]
+    assert (ROOT / "scripts" / "bridge_worldpop_age_access.py").is_file()
+    choices = (DOCS / "planning_protocol_v1b_owner_choices.md").read_text(encoding="utf-8")
+    assert "the way `bridge_worldpop_age_access.py` already spreads 2024 counts over 2020 cells" in choices
+    assert "class_counts_by_cell" in by_id["E10-OP10"]["what_this_task_does"] and "Git history" in by_id["E10-OP10"]["what_this_task_does"]
+    assert "'For a public overlay" in by_id["E10-OP11"]["signed_files_say"] and "540 core cells" in by_id["E10-OP11"]["for_the_owners"]
+    assert "(540 to 135 cells)" in by_id["E10-OP12"]["signed_files_say"]
     lint = load_rules(ROOT / "apps" / "web" / "src" / "lib" / "replay-wording-rules.json")
     sources = ["src/floodguard/uncertainty_ensemble.py", "scripts/build_uncertainty_ensemble.py"]
     items = [(name, "\n".join(python_strings((ROOT / name).read_text(encoding="utf-8")))) for name in sources]

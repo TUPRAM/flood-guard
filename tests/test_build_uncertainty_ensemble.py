@@ -11,12 +11,15 @@ and is refused before any input of a unit is read; the refusal is worded from tw
 
 from __future__ import annotations
 
+from dataclasses import replace
 import hashlib
 import importlib.util
 import json
+import math
 from pathlib import Path
 import shutil
 import sys
+from types import SimpleNamespace
 from typing import Any
 
 import pytest
@@ -68,6 +71,25 @@ def run(world: dict[str, Any], **changes: Any) -> dict[str, Any]:
                       **arguments_of(world, git_commit="0123abc", **changes))
 
 
+# The invented flood is the box (100, 100) to (300, 500) m; unit 1 is the land south of y = 300 m, 2,000 m by 800 m, less
+# 2,500 m2 of permanent water that lies inside the flood. The flooded land of unit 1 outside that water, by hand:
+LAND_OF_UNIT_1_M2 = 2_000 * 800 - 2_500
+FLOODED_LAND_OF_UNIT_1_M2 = {
+    # Shrunk by 20 m: 160 m by 180 m, and 30 m by 30 m of the water is still inside.
+    "minus": 160 * 180 - 30 * 30,
+    "as_provided": 200 * 200 - 2_500,
+    # Grown by 20 m with round corners: 240 m by 220 m less the two corners south of the flood, each a 20 m square
+    # without its quarter disc. (The layer draws a quarter circle with 16 segments, about 1 m2 less than a disc.)
+    "plus": 240 * 220 - 2 * (20 * 20 - math.pi * 20 * 20 / 4) - 2_500,
+}
+
+
+def flood_likelihood_by_hand(flood_level: str) -> float:
+    """100 x min(1, flooded share of the land outside permanent water / 0.20), for unit 1 of the invented frame."""
+
+    return 100 * min(1.0, FLOODED_LAND_OF_UNIT_1_M2[flood_level] / LAND_OF_UNIT_1_M2 / 0.20)
+
+
 def nothing_was_written(world: dict[str, Any]) -> bool:
     return (not (world["output_dir"] / RECEIPT_NAME).exists() and not (world["register_dir"] / RECEIPT_NAME).exists()
             and not (world["external"] / STAGE).exists())
@@ -97,6 +119,7 @@ def test_a_run_on_an_invented_frame_reports_every_cell_and_headlines_nothing(tmp
     entry = json.loads((world["register_dir"] / RECEIPT_NAME).read_text(encoding="ascii"))
     assert entry == {"path": f"outputs/planning_v1/{RECEIPT_NAME}", "sha256": hashlib.sha256(receipt_path.read_bytes()).hexdigest()}
     assert receipt["protocol_sha256"] == fx.HASHES and receipt["run_kind"] == "first_run" and receipt["status"] == "run_receipt"
+    assert receipt["schema_version"] == runner.RECEIPT_SCHEMA == "floodguard.uncertainty_ensemble_run_receipt.v2"
     assert receipt["confidence_class"] == "low" and receipt["official_warning"] is False and receipt["assumptions"]
     assert receipt["operational_status"] == "non_operational" and receipt["source_timestamp"] == "2030-01-11"
     assert receipt["generated_at_utc"] == summary["generated_at_utc"]
@@ -124,6 +147,12 @@ def test_a_run_on_an_invented_frame_reports_every_cell_and_headlines_nothing(tmp
         "facilities": ["public"], "population_vintage": ["worldpop_2020"], "vulnerability_anchors": ["P10_P90", "P5_P95"],
         "weights": ["default", "access_heavy", "exposure_heavy", "road_heavy", "vulnerability_heavy"]}
     assert receipt["parameters"]["grid"]["core_cells_per_lane"] == 540
+    # The distance of the minus and plus levels is the one of the grid, and the input record of task E1 states the same.
+    assert receipt["parameters"]["one_pixel_m"] == {
+        "minus": 20.0, "plus": 20.0, "source": runner.ONE_PIXEL_SOURCE, "input_record_of_task_e1": 20.0,
+        "note": receipt["parameters"]["one_pixel_m"]["note"]}
+    assert receipt["parameters"]["grid"]["one_pixel_m"] == 20.0
+    assert any("shrunk and grown by 20 m (one pixel" in line for line in receipt["assumptions"])
 
     # The access runs: nine, by the unchanged task E5 runner; those at the level as provided reproduce the E5 table.
     access = receipt["access_runs"]
@@ -142,6 +171,9 @@ def test_a_run_on_an_invented_frame_reports_every_cell_and_headlines_nothing(tmp
     assert checks["combinations_measured"] == 9 and checks["default_combination_is_the_measurement_of_task_e8"] is True
     assert checks["residents_and_baseline_counts_same_in_every_access_run"] is True
     assert checks["flooded_land_not_smaller_at_a_larger_flood_level_in_every_unit"] is True
+    assert checks["residents_inside_not_fewer_at_a_larger_flood_level_in_every_unit"] is True
+    assert checks["each_combination_carries_the_flood_measurements_of_its_own_level"] is True
+    assert "measurements handed to the ensemble" in checks["flood_level_checks_read"]
 
     # The default cell is the rows the registered task E8 receipt records.
     result = receipt["result"]
@@ -158,7 +190,17 @@ def test_a_run_on_an_invented_frame_reports_every_cell_and_headlines_nothing(tmp
     assert "FX-E8-U1" not in json.dumps({key: receipt[key] for key in ("result", "access_runs", "measurement_checks", "cells")}), (
         "the receipt holds counts for the case, not a unit's values")
     assert receipt["licence"] is None, "the invented flood input is not product 4009"
-    assert {point["id"] for point in receipt["open_points"]} == {f"E10-OP{number}" for number in range(1, 10)}
+    assert {point["id"] for point in receipt["open_points"]} == {f"E10-OP{number}" for number in range(1, 13)}
+    # The receipt names no unit beside a value and says which of its counts state a value of a single unit all the same
+    # (open point E10-OP10): class B is held by one unit in the default cell, and no unit has it in ten cells.
+    declared = receipt["rights"]["figures_of_local_level_layers_in_this_receipt"]
+    assert "names no unit beside a value" in declared["what"] and "puts no unit beside a value" not in json.dumps(receipt)
+    single = declared["counts_that_state_a_value_of_a_single_unit"]
+    assert single["states_a_value_of_a_single_unit"] is True and single["classes_one_unit_alone_holds_in_the_default_cell"] == ["B"]
+    assert single["cells_in_which_such_a_class_has_another_count"] == 10 == single["cells_whose_class_counts_differ_from_the_default_cell"]
+    assert single["cells_in_which_every_unit_has_one_class"] == 0 and single["units_with_more_than_one_class_over_the_cells_run"] == 1
+    assert "E10-OP8" in single["cannot_be_rebuilt_from_committed_files"] and "E10-OP10" in declared["for_the_owners"]
+    assert counts["counts_that_state_a_value_of_a_single_unit"]["classes_one_unit_alone_holds_in_the_default_cell"] == ["B"]
 
     # The file outside Git: every cell of every unit, the summaries, and the access runs of the minus and plus levels.
     document = json.loads(raw.decode("ascii"))
@@ -182,6 +224,16 @@ def test_a_run_on_an_invented_frame_reports_every_cell_and_headlines_nothing(tmp
     assert first["people_losing_30_minute_access"]["hospital"]["min"] == 0.0
     assert first["people_losing_30_minute_access"]["hospital"]["max"] == 5000.0
     assert first["fpps_swing"]["by_axis"]["facilities"]["measured"] is False
+    # The flood likelihood of each combination is that of its own flood level, by hand; the exposure is the same at the
+    # three levels here, because the one cell of unit 1 inside the flood is inside all three.
+    by_level = {level: flood_likelihood_by_hand(level) for level in ("minus", "as_provided", "plus")}
+    assert by_level["minus"] == pytest.approx(8.7324, abs=1e-4) and by_level["as_provided"] == pytest.approx(11.7371, abs=1e-4)
+    assert by_level["plus"] == pytest.approx(15.690, abs=1e-3)
+    assert len(first["routing_combinations"]) == 9
+    for item in first["routing_combinations"]:
+        components = item["components"]
+        assert components["flood_likelihood_0_100"] == pytest.approx(by_level[item["flood_input_single_state"]], abs=0.002), item
+        assert components["exposure_0_100"] == pytest.approx(100 * 400 / 5500), item
     # Unit 2 has 50 residents: guardrail GR1, no class in any cell, so no class to retain.
     assert second["class_counts"]["no_class"] == 90 and second["headline_stability"]["reference_class"] is None
     assert [(item["flood_level"], item["closure_level"]) for item in document["access_runs"]["runs"]] == [
@@ -213,10 +265,16 @@ def test_a_second_run_needs_a_reason_and_names_the_run_it_replaces(tmp_path: Pat
     assert receipt["supersedes"]["reason"] == "An invented reason for a second run."
     assert receipt["supersedes"]["result_same"] is True and receipt["supersedes"]["units_same"] is True
     assert receipt["supersedes"]["access_unit_rows_same"] is True and receipt["supersedes"]["lineage_inputs_same"] is True
+    # The cells alone are compared too, read back from the file the first receipt bound, and the fields that differ are named.
+    assert receipt["supersedes"]["unit_cells_same"] is True and receipt["supersedes"]["summary_fields_that_differ"] == []
+    assert receipt["supersedes"]["unit_record_fields_that_differ"] == []
+    assert len(receipt["supersedes"]["unit_cells_sha256_of_this_run"]) == 64
+    assert all(item["copied"] is True for item in receipt["supersedes"]["copies_kept_outside_git"])
     assert receipt["supersedes"]["outputs_of_the_superseded_run"] == {first["files"][0]: hashlib.sha256(old_results).hexdigest()}
     history = receipt["run_history"]
     assert len(history) == 1 and history[0]["receipt_sha256"] == first["receipt_sha256"]
     assert history[0]["result_same_as_the_run_that_replaced_it"] is True
+    assert history[0]["unit_cells_same_as_the_run_that_replaced_it"] is True
     # The superseded receipt and the file it bound are kept outside Git.
     kept = {Path(item["path"]).name: item["sha256"] for item in receipt["supersedes"]["copies_kept_outside_git"]}
     assert kept == {RECEIPT_NAME: first["receipt_sha256"], RESULTS_NAME: hashlib.sha256(old_results).hexdigest()}
@@ -227,6 +285,177 @@ def test_a_second_run_needs_a_reason_and_names_the_run_it_replaces(tmp_path: Pat
     with pytest.raises(FileNotFoundError, match="existing receipt"):
         fresh = world_with_an_e8_run(tmp_path / "other")
         run(fresh, replace_reason="Nothing to replace.")
+
+
+def test_the_flood_likelihood_the_exposure_and_the_30_minute_losses_are_those_of_the_cell(tmp_path: Path,
+                                                                                          monkeypatch: pytest.MonkeyPatch) -> None:
+    """A second invented frame in which the three flood levels hold other residents and 15 and 30 minutes differ.
+
+    Two invented cells that touch no road are placed at the edge of the invented flood: one 10 m inside its west
+    edge (inside the extent as provided and grown, outside the extent shrunk by 20 m), one 10 m outside its east
+    edge (inside the grown extent only). And the street to the 4,600 residents at q takes 20 minutes, so they reach
+    the hospital and the main road within 30 minutes and not within 15.
+    """
+
+    monkeypatch.setattr(fx, "CELL_SITES", {**fx.CELL_SITES, "c5": (None, (110.0, 200.0)), "c6": (None, (310.0, 200.0))})
+    monkeypatch.setattr(fx, "STREETS", [street if street[0] != "r-q" else (*street[:4], 0.6) for street in fx.STREETS])
+    world = world_with_an_e8_run(tmp_path, {**fx.RESIDENTS, "c5": 500.0, "c6": 200.0})
+    summary = run(world)
+    assert summary["computed"] is True
+    receipt = json.loads((world["output_dir"] / RECEIPT_NAME).read_text(encoding="ascii"))
+    document = json.loads((world["external"] / STAGE / RESULTS_NAME).read_text(encoding="ascii"))
+    first = document["units"][0]
+    # Residents of unit 1: c1 400, c4 4,600, c5 500, c6 200. Inside the extent: c1 at every level, c5 from the level as
+    # provided on, c6 at the plus level only.
+    residents = 400 + 4600 + 500 + 200
+    exposure = {"minus": 100 * 400 / residents, "as_provided": 100 * 900 / residents, "plus": 100 * 1100 / residents}
+    seen: dict[str, set[tuple[float, float]]] = {level: set() for level in exposure}
+    assert len(first["routing_combinations"]) == 9
+    for item in first["routing_combinations"]:
+        level, components = item["flood_input_single_state"], item["components"]
+        assert components["flood_likelihood_0_100"] == pytest.approx(flood_likelihood_by_hand(level), abs=0.002), item
+        assert components["exposure_0_100"] == pytest.approx(exposure[level]), item
+        seen[level].add((components["flood_likelihood_0_100"], components["exposure_0_100"]))
+    assert all(len(values) == 1 for values in seen.values()), "one flood likelihood and one exposure for each flood level"
+    (minus,), (provided,), (plus,) = (tuple(seen[level]) for level in ("minus", "as_provided", "plus"))
+    assert minus[0] < provided[0] < plus[0] and minus[1] < provided[1] < plus[1], "minus < as provided < plus, in both components"
+    checks = receipt["measurement_checks"]
+    assert checks["flooded_land_not_smaller_at_a_larger_flood_level_in_every_unit"] is True
+    assert checks["residents_inside_not_fewer_at_a_larger_flood_level_in_every_unit"] is True
+    # The residents losing access within 30 minutes are counted at 30 minutes. In unit 1, under the flood as provided,
+    # all 5,000 connected residents lose the hospital and the main road; within 15 minutes only the 400 at r1 had either.
+    losing = first["people_losing_30_minute_access"]
+    assert losing["hospital"]["max"] == 5000.0 and losing["main_road_entry"]["max"] == 5000.0
+    assert losing["hospital"]["threshold_minutes"] == 30 and losing["hospital"]["count"] == 9
+    e5_rows = {row["closure_level"]: row for row in world["access_table"]["runs"]}
+    lost = e5_rows["central"]["units"][0]["access"]["main_road_entry"]["thresholds_minutes"]
+    assert (lost["15"]["newly_lost_residents"], lost["30"]["newly_lost_residents"]) == (400.0, 5000.0), "the fixture tells them apart"
+    # The whole frame adds the 50 residents of unit 2, who lose both services too.
+    whole = {(item["flood_level"], item["closure_level"]): item for item in receipt["access_runs"]["runs"]}
+    assert whole[("as_provided", "central")]["newly_lost_residents_within_30_minutes"] == {"hospital": 5050.0, "main_road_entry": 5050.0}
+    assert whole[("as_provided", "central")]["access_gap_inputs"]["main_road_entry"]["newly_lost_residents"] == 450.0, (
+        "the access-gap threshold of the main-road entry is 15 minutes")
+
+
+@pytest.mark.parametrize("error", [RuntimeError("an invented error of a geometry library"), KeyError("an invented key"),
+                                   OSError("an invented file that cannot be read")])
+def test_an_error_that_is_not_a_check_still_ends_in_a_registered_receipt(tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+                                                                         error: Exception) -> None:
+    """Once the units are measured, any error is reported: not only the refusal of a check (a ValueError)."""
+
+    assert not isinstance(error, ValueError)
+    world = world_with_an_e8_run(tmp_path)
+    real = runner.flood_inputs.flooded_land_areas
+    calls = {"count": 0}
+
+    def fails_on_another_level(*arguments: Any, **keywords: Any) -> Any:
+        # The first two calls measure the two units as task E8 does; the next lays another flood level over a unit.
+        calls["count"] += 1
+        if calls["count"] > 2:
+            raise error
+        return real(*arguments, **keywords)
+
+    monkeypatch.setattr(runner.flood_inputs, "flooded_land_areas", fails_on_another_level)
+    summary = run(world)
+    assert summary["computed"] is False and summary["not_computed_because"] == "unexpected_error"
+    receipt_path = world["output_dir"] / RECEIPT_NAME
+    receipt = json.loads(receipt_path.read_text(encoding="ascii"))
+    entry = json.loads((world["register_dir"] / RECEIPT_NAME).read_text(encoding="ascii"))
+    assert entry["sha256"] == hashlib.sha256(receipt_path.read_bytes()).hexdigest(), "the run is registered"
+    reported = receipt["result"]["not_computed_because"]
+    assert (reported["code"], reported["stage"], reported["error"]) == ("unexpected_error", "unit_measurements", type(error).__name__)
+    assert reported["message"].startswith("An error that is not a check of this builder stopped the run")
+    assert "invented" not in json.dumps(receipt["result"]), "the message of the error, which may name units, is outside Git"
+    assert receipt["result"]["summary"] is None and receipt["access_runs"] is None and receipt["measurement_checks"] is None
+    declared = receipt["rights"]["figures_of_local_level_layers_in_this_receipt"]
+    assert declared["figures"] == [] and declared["counts_that_state_a_value_of_a_single_unit"]["states_a_value_of_a_single_unit"] is False
+    document = json.loads((world["external"] / STAGE / RESULTS_NAME).read_text(encoding="ascii"))
+    assert document["units"] is None and "invented" in document["not_computed_because"]["message"]
+
+
+def test_the_receipt_to_replace_is_read_before_any_unit_is_measured(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """A receipt that cannot be read refuses a second run before it starts, not after its units were measured."""
+
+    world = world_with_an_e8_run(tmp_path)
+    run(world)
+    receipt_path = world["output_dir"] / RECEIPT_NAME
+    good = receipt_path.read_bytes()
+    register_entry = (world["register_dir"] / RECEIPT_NAME).read_bytes()
+    results = (world["external"] / STAGE / RESULTS_NAME).read_bytes()
+
+    def must_not_run(*_arguments: Any, **_keywords: Any) -> Any:
+        raise AssertionError("no unit may be measured when the receipt to replace cannot be read")
+
+    monkeypatch.setattr(runner, "build", must_not_run)
+    parsed = json.loads(good)
+    broken = [
+        (good[:200], "cannot be read"),                                                       # not JSON
+        (good.replace(b'"run_receipt"', b'"run_receipt\xc3\xa9"', 1), "cannot be read"),      # not ASCII
+        (runner.encode({**parsed, "schema_version": "floodguard.another_receipt.v1"}), "not a receipt of this task"),
+        (runner.encode({**parsed, "parameters": {**parsed["parameters"], "case_id": "FX-OTHER"}}), "not a receipt of this task"),
+        (runner.encode({key: value for key, value in parsed.items() if key != "outputs"}), "does not bind its outputs"),
+        (runner.encode({**parsed, "run_history": "none"}), "does not list its earlier runs"),
+        (runner.encode([parsed]), "not a receipt of this task"),
+    ]
+    for data, words in broken:
+        receipt_path.write_bytes(data)
+        with pytest.raises(runner.BuildError, match=words):
+            run(world, replace_reason="An invented reason for a second run.")
+        assert receipt_path.read_bytes() == data, "nothing is written"
+        assert (world["register_dir"] / RECEIPT_NAME).read_bytes() == register_entry
+        assert (world["external"] / STAGE / RESULTS_NAME).read_bytes() == results
+        assert not (world["external"] / STAGE / runner.SUPERSEDED_FOLDER).exists()
+    # The receipt as the first run wrote it is read and checked, and the second run goes ahead.
+    receipt_path.write_bytes(good)
+    monkeypatch.undo()
+    again = run(world, replace_reason="An invented reason for a second run.")
+    assert again["computed"] is True
+    # A receipt of schema version 1, as the first runs of this task wrote it, can be replaced too.
+    previous, sha256, bound = runner.receipt_to_replace(receipt_path, CASE)
+    assert sha256 == again["receipt_sha256"] and list(bound) == again["files"]
+    receipt_path.write_bytes(runner.encode({**previous, "schema_version": "floodguard.uncertainty_ensemble_run_receipt.v1"}))
+    assert runner.receipt_to_replace(receipt_path, CASE)[0]["schema_version"].endswith(".v1")
+
+
+def test_the_distance_of_the_minus_and_plus_levels_is_the_one_the_protocol_states(tmp_path: Path,
+                                                                                   monkeypatch: pytest.MonkeyPatch) -> None:
+    """The receipt, the assumptions and the change notice take the distance from the grid; task E1 must have used it."""
+
+    grid = runner.ensemble.load_grid(DOCS / "planning_protocol_v1a.json", DOCS / "planning_protocol_v1b.json", DOCS / "RECEIPTS.jsonl")
+    assert grid.one_pixel_m == 20.0
+    assert "shrunk and grown by 20 m (one pixel" in runner.assumptions(grid.one_pixel_m)[1]
+    assert "shrunk and grown by 10 m (one pixel" in runner.assumptions(10.0)[1] and "20 m" not in " ".join(runner.assumptions(10.0))
+    assert "shrunk and grown by 10 m and under" in runner.change_notice_step(10.0) and "20" not in runner.change_notice_step(10.0)
+    assert len(runner.assumptions(20.0)) == 8 and runner.assumptions(20.0)[-1].endswith("Class E never means safe.")
+    # The change notice of a product 4009 run is carried on with the distance of the grid.
+    notice = "Changed by an invented step. " + runner.VALUES_SENTENCE
+    found = SimpleNamespace(licence={"name": "an invented licence", "change_notice": notice}, grid=replace(grid, one_pixel_m=10.0))
+    carried = runner.licence_of_the_run(found)["change_notice"]
+    assert "shrunk and grown by 10 m" in carried and carried.endswith(runner.VALUES_SENTENCE) and "20 m" not in carried
+    # A protocol that states another distance than the one task E1 wrote its levels with refuses the run.
+    world = world_with_an_e8_run(tmp_path)
+    monkeypatch.setattr(runner.ensemble, "load_grid", lambda *_arguments: replace(grid, one_pixel_m=10.0))
+    with pytest.raises(runner.BuildError, match="one-pixel distance 20.0; protocol v1b states 10 m"):
+        run(world)
+    assert nothing_was_written(world)
+    monkeypatch.undo()
+    # An input record that states no distance is refused too.
+    record_path = world["flood_folder"] / runner.flood_inputs.INPUT_RECORD_NAME
+    monkeypatch.setattr(runner.e8_builder, "prepare", _without_the_distance(runner.e8_builder.prepare))
+    with pytest.raises(runner.BuildError, match="one-pixel distance None"):
+        run(world)
+    assert nothing_was_written(world) and record_path.is_file()
+
+
+def _without_the_distance(prepare: Any) -> Any:
+    """Wrap the input checks of task E8 so that the input record they return states no one-pixel distance."""
+
+    def wrapped(*arguments: Any, **keywords: Any) -> Any:
+        found = prepare(*arguments, **keywords)
+        found.record = {key: value for key, value in found.record.items() if key != "levels"}
+        return found
+
+    return wrapped
 
 
 def test_the_builder_refuses_before_any_unit_is_measured_and_then_writes_nothing(tmp_path: Path) -> None:

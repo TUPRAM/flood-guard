@@ -24,7 +24,11 @@ declared choice.
   is computed over the 180 cells of the public facility set only". Guardrail GR8: a class is headlined only at a
   retention of at least 0.6. The rule is evaluated only when every cell of the set the protocol names has a
   class. Otherwise the headline stays ``not_evaluated``, and the record gives the share over the cells that were
-  run, labelled as such, and the lowest and highest retention the missing cells could still give.
+  run, labelled as such, and the lowest and highest retention the missing cells could still give. A cell that
+  was run and failed stays in the denominator of every share taken over the cells run. Where the protocols leave
+  a reading open, the record gives both and sets no status from either: the 540 core cells beside the 180 cells
+  of the public facility set (open point E10-OP11), and every pair of levels declared cut line 6 could keep
+  (open point E10-OP12).
 * **The outputs protocol v1b names for a unit** (``ensemble_grid.per_tambon_outputs``): the range of the FPPS, the
   share of cells in each class, the percent of cells keeping the class, the best and worst rank, the people
   losing 30-minute access over the access runs, the FPPS swing along each axis, and leave-one-component-out over
@@ -86,8 +90,11 @@ OPEN_POINTS: tuple[Mapping[str, str], ...] = (
                             "'For a public overlay, class retention is computed over the 180 cells of the public "
                             "facility set only, and the overlay says so.' Protocol v1a guardrail GR8: 'A class is "
                             "headlined only if it keeps at least 60 percent retention over the single-state ensemble.' "
-                            "None of them says what retention is while a part of those cells cannot be run. Plan 8.4 "
-                            "declares a conditional cut (line 6) that would leave 135 cells, 45 of them public.",
+                            "The rule goes on: 'Otherwise it is shown as unstable: verify.' The demo-tambon rule of v1a: "
+                            "'If no unit is headline-eligible, it is the highest-FPPS unit, shown as unstable: verify.' "
+                            "None of them says what retention is while a part of those cells cannot be run, nor how a "
+                            "class is shown while its retention is not evaluated. Plan 8.4 declares a conditional cut "
+                            "(line 6) that would leave 135 cells, 45 of them public.",
         "what_this_task_does": "The rule is evaluated only when every cell of the set the protocol names has a class. "
                                "Otherwise every headline stays not_evaluated. Beside it the record gives the share of "
                                "the cells that were run and keep the class, labelled as a share of the cells run, and "
@@ -98,7 +105,9 @@ OPEN_POINTS: tuple[Mapping[str, str], ...] = (
         "for_the_owners": "Whether retention may be taken over the cells that can be run, and from how many cells on; or "
                           "whether the headline waits for the whole set; or whether cut line 6 is invoked. Also whether "
                           "a class that cannot reach the minimum whatever the missing cells give may be shown as "
-                          "unstable already.",
+                          "unstable already. And how a class of task E8 is shown until then: guardrail GR8 knows two "
+                          "displays, headlined or 'unstable: verify', and no class is headline-eligible today. This "
+                          "task writes no page and no overlay and sets no display.",
     },
     {
         "id": "E10-OP2",
@@ -108,14 +117,26 @@ OPEN_POINTS: tuple[Mapping[str, str], ...] = (
                             "ratio of the cell's 2024 total to the sum of the 2020 counts inside the cell; a cell whose "
                             "2020 sum is zero keeps zero. The formula does not say which 1 km cell a 100 m count is "
                             "inside (floodguard.age_exposure records that the two Thai grids do not nest), nor what a "
-                            "positive 2020 count becomes in a 1 km cell with no 2024 total.",
+                            "positive 2020 count becomes in a 1 km cell with no 2024 total. The owners' record may "
+                            "already hold both answers: docs/proposal_execution/planning_protocol_v1b_owner_choices.md, "
+                            "entry 12, recommends option A because it 'matches the plan's words and the way "
+                            "`bridge_worldpop_age_access.py` already spreads 2024 counts over 2020 cells', and the "
+                            "owners answered A (decision log R12). That script (scripts/bridge_worldpop_age_access.py, "
+                            "allocate_cell_masses) puts a 2020 demand cell in the 1 km cell that holds its centre, "
+                            "within its unit, and reports the 2020 residents whose 1 km cell has no usable 2024 count "
+                            "as a figure of their own "
+                            "('2020_demand_population_without_age_source_support'): they are neither set to zero nor "
+                            "given a 2024 count. Protocol v1b itself does not name the script.",
         "what_this_task_does": "The level is not run and not approximated. No stage builds the rescaled demand; the "
                                "formula exists as a pure function (floodguard.age_exposure.rescale_2020_counts_to_2024) "
                                "that decides neither point. Every cell of the level is reported as not run. Whether a "
                                "2020 count of the frame lies in a 1 km cell with no 2024 total was not measured here.",
-        "for_the_owners": "The two rules the formula leaves out, or the decision to invoke declared cut line 6. With "
-                          "them, the level needs no new access run: travel times do not depend on the vintage, the "
-                          "resident counts of each cell do.",
+        "for_the_owners": "Whether the two rules of that script are the two rules of the rescale: the 1 km cell that "
+                          "holds the centre of the 100 m cell, and a positive 2020 count with no 2024 total reported as "
+                          "unsupported, neither zero nor rescaled. Confirm or reject it; or give two other rules; or "
+                          "invoke declared cut line 6. The level stays not run until then. With the two rules it needs "
+                          "no new access run: travel times do not depend on the vintage, the resident counts of each "
+                          "cell do.",
     },
     {
         "id": "E10-OP3",
@@ -202,6 +223,58 @@ OPEN_POINTS: tuple[Mapping[str, str], ...] = (
                                "case O1 has no run.",
         "for_the_owners": "Whether one at a time means from the default cell.",
     },
+    {
+        "id": "E10-OP10",
+        "point": "Counts for the whole case that state a value of a single unit.",
+        "signed_files_say": "Guardrail GR6 takes the minimum rights level across the lineage of an overlay and speaks of "
+                            "apps/web/public/ only. Nothing says whether a count that states the class of one unit in "
+                            "one cell may stand in a committed receipt when the lineage is below the public level "
+                            "(open points E1-OP1, E8-OP5 and E8-OP7 ask the same of other figures).",
+        "what_this_task_does": "The receipt in Git holds, for each cell that was run, the number of units in each class "
+                               "(result.summary.class_counts_by_cell), and names no unit beside a value. Those counts "
+                               "state values of single units all the same: where every unit has one class, the class "
+                               "of each; and where one unit alone holds a class in the default cell, that unit can be "
+                               "followed through the cells by whoever knows which unit it is. The receipt says how "
+                               "many such cells and classes it holds "
+                               "(rights.figures_of_local_level_layers_in_this_receipt). Unlike the rows of task E8, "
+                               "the class of a unit in a cell of the minus or plus flood level cannot be rebuilt from "
+                               "committed files: the access tables of those levels are outside Git (E10-OP8). The "
+                               "counts have been in the receipts since the first runs of this task and are in the Git "
+                               "history.",
+        "for_the_owners": "Whether such counts may stand in Git. If not, class_counts_by_cell and every sentence that "
+                          "follows a single unit through the cells leave the receipt and the README of the output "
+                          "folder and are kept in the file outside Git only; what is in the Git history stays there "
+                          "unless the owners decide otherwise.",
+    },
+    {
+        "id": "E10-OP11",
+        "point": "The cells retention is taken over, for an output that is not a public overlay.",
+        "signed_files_say": "Protocol v1b ensemble_grid.headline_rule: 'Retention is the share of the 540 core cells'. "
+                            "facility_sets.shelters_in_the_ensemble: 'For a public overlay, class retention is computed "
+                            "over the 180 cells of the public facility set only, and the overlay says so.' The second "
+                            "sentence is written for a public overlay. The results of this task are not an overlay, and "
+                            "their publication eligibility follows their lineage, which may be below the public level.",
+        "what_this_task_does": "A run at the public level reads the public facility set only and takes the 180 cells of "
+                               "that set as the set of the rule, whatever the publication eligibility of its results; "
+                               "should every one of the 180 have a class, the rule would be evaluated over them. Beside "
+                               "it every record gives the same counts and bounds over the 540 core cells "
+                               "(other_reading_of_the_protocol_set). No status is set from either today.",
+        "for_the_owners": "Which set applies to a result that is not a public overlay: the 180 cells of the public "
+                          "facility set, because it reads that set only, or the 540 core cells, because the sentence "
+                          "on the 180 cells is written for a public overlay.",
+    },
+    {
+        "id": "E10-OP12",
+        "point": "The levels declared cut line 6 would keep.",
+        "signed_files_say": "Protocol v1b ensemble_grid.declared_cuts.cut_line_6 and plan 8.4: 'Population-vintage and "
+                            "vulnerability-anchor axes (540 to 135 cells).' The cut names the two axes and the number "
+                            "of cells that stay, not the level of each axis that stays.",
+        "what_this_task_does": "The share after the cut is given with the levels of the default cell kept (WorldPop 2020 "
+                               "and the P10 / P90 anchors), and the record says so. The same share is given for every "
+                               "other pair of levels the cut could keep, where all of its cells were run "
+                               "(other_levels_the_cut_could_keep). None of them is the headline.",
+        "for_the_owners": "Which level of each of the two axes stays when the cut is invoked.",
+    },
 )
 """What the signed files leave open for this task. None of it is decided here."""
 
@@ -246,6 +319,8 @@ class EnsembleGrid:
     runs: str
     reporting: str
     protocol_sha256: Mapping[str, str | None]
+    one_pixel_m: float
+    """The distance of the minus and the plus flood level, in metres (``core_axes[0].one_pixel_m``, owner choice 2)."""
 
     def axis(self, name: str) -> Axis:
         """Return one axis by name."""
@@ -299,6 +374,7 @@ def _grid(v1a: Mapping[str, Any], v1b: Mapping[str, Any], hashes: dict[str, str 
     words = {name: tuple(str(level) for level in stated[name]["levels"]) for name in AXES}
 
     flood = tuple(_match_one(level, flood_inputs.LEVELS, "flood") for level in words[FLOOD_AXIS])
+    one_pixel_m = _one_pixel_m(stated[FLOOD_AXIS], words[FLOOD_AXIS])
     passability = tuple(_match_one(level, closure_rules.LEVELS, "passability") for level in words[PASSABILITY_AXIS])
     for level, text in zip(passability, words[PASSABILITY_AXIS]):
         factor = re.search(r"\(k = (\d+)\)", text)
@@ -369,8 +445,28 @@ def _grid(v1a: Mapping[str, Any], v1b: Mapping[str, Any], hashes: dict[str, str 
         weight_presets_raw=presets, one_at_a_time=tuple(str(item) for item in section["one_at_a_time"]),
         per_tambon_outputs=tuple(str(item) for item in section["per_tambon_outputs"]), declared_cuts=cuts,
         cells_after_cut_line_6=after_cut, runs=str(section["runs"]), reporting=str(section["reporting"]),
-        protocol_sha256=dict(hashes),
+        protocol_sha256=dict(hashes), one_pixel_m=one_pixel_m,
     )
+
+
+def _one_pixel_m(axis: Mapping[str, Any], words: Sequence[str]) -> float:
+    """Read the distance of the minus and the plus flood level from protocol v1b: one number for both.
+
+    ``one_pixel_m`` gives the distance for the minus level, the plus level and vector products (owner choice 2).
+    Where the words of a level name a distance in metres, it must be that number, so a receipt of this task
+    never states a distance the protocol does not.
+    """
+
+    pixel = axis["one_pixel_m"]
+    distances = {float(pixel[key]) for key in ("minus", "plus", "vector_products")}
+    if len(distances) != 1 or not next(iter(distances)) > 0:
+        raise EnsembleError("protocol v1b does not give one positive one-pixel distance for the minus and the plus level")
+    distance = next(iter(distances))
+    for text in words:
+        named = re.search(r"(\d+(?:\.\d+)?) m(?![A-Za-z])", text)
+        if named is not None and float(named.group(1)) != distance:
+            raise EnsembleError(f"the flood level {text!r} names another one-pixel distance than one_pixel_m ({distance:g} m)")
+    return distance
 
 
 def _reference_cell(text: str, axes: Sequence[Axis]) -> dict[str, str]:
@@ -417,6 +513,7 @@ def grid_record(grid: EnsembleGrid) -> dict[str, Any]:
                   "/scoring_frame/weight_presets; the retention minimum also from v1a guardrail GR8",
         "axes": [{"axis": axis.name, "levels": list(axis.levels), "levels_as_protocol_v1b_states_them": list(axis.protocol_levels),
                   "count": len(axis.levels)} for axis in grid.axes],
+        "one_pixel_m": grid.one_pixel_m,
         "core_cells_per_lane": grid.core_cells_per_lane,
         "routing_combinations_per_lane": grid.routing_combinations_per_lane,
         "cells_of_the_public_facility_set": grid.public_cells,
@@ -462,7 +559,9 @@ def scope_cell_ids(grid: EnsembleGrid, level: str) -> list[str]:
     """Return the cells class retention is taken over at one level: all 540, or the public facility set alone.
 
     Protocol v1b: retention is the share of the core cells; for a public overlay it "is computed over the 180
-    cells of the public facility set only".
+    cells of the public facility set only". A run at the public level reads that facility set only and takes
+    its cells, whether or not its results are a public overlay; the protocol does not say which set applies
+    then (open point E10-OP11), and :func:`run_ensemble` reports the other reading beside it.
     """
 
     if level not in (PUBLIC_LEVEL, PITCH_LEVEL):
@@ -583,6 +682,93 @@ def _at_least(kept: int, total: int, minimum: float) -> bool:
     return Fraction(kept, total) >= Fraction(str(minimum))
 
 
+def protocol_set_reading(grid: EnsembleGrid, *, kept: int, with_a_class: int, cells: int, over: str) -> dict[str, Any]:
+    """Return what one reading of the protocol's set gives: its retention, or the bounds the missing cells leave.
+
+    With every cell of the set classed, ``class_retention`` is the share that keeps the class of the default
+    cell. Otherwise it is null and ``bounds`` gives the lowest and the highest retention the cells without a
+    class could still give; ``outcome_fixed_by_the_bounds`` says on which side of the minimum both lie, if they
+    lie on one. No headline status is read from this record.
+
+    Raises:
+        EnsembleError: for counts that cannot be.
+    """
+
+    if not 0 <= kept <= with_a_class <= cells or cells <= 0:
+        raise EnsembleError("retention counts whole cells: kept <= cells with a class <= cells of the protocol's set")
+    missing = cells - with_a_class
+    minimum = grid.class_retention_min
+    lower_at_least, upper_at_least = _at_least(kept, cells, minimum), _at_least(kept + missing, cells, minimum)
+    return {
+        "over": over,
+        "cells": cells,
+        "cells_with_a_class": with_a_class,
+        "cells_keeping_the_reference_class": kept,
+        "class_retention": None if missing else kept / cells,
+        "at_or_above_the_minimum": None if missing else lower_at_least,
+        "bounds": None if not missing else {"lower": kept / cells, "upper": (kept + missing) / cells,
+                                           "cells_without_a_class": missing},
+        "outcome_fixed_by_the_bounds": None if not missing else (
+            BOUNDS_AT_OR_ABOVE if lower_at_least else (None if upper_at_least else BOUNDS_BELOW)),
+    }
+
+
+def cut_line_6_record(grid: EnsembleGrid, *, reference_class: str | None, classed: Mapping[str, str],
+                      cells_of_the_set: Sequence[Mapping[str, str]]) -> dict[str, Any] | None:
+    """Return the share of cells keeping the class over the cells declared cut line 6 would leave.
+
+    Protocol v1b ``declared_cuts.cut_line_6`` (plan 8.4) cuts the population-vintage and the vulnerability-anchor
+    axis and does not say which level of each stays (open point E10-OP12). The record gives the share with the
+    levels of the default cell kept and, under ``other_levels_the_cut_could_keep``, the same share for every
+    other pair of levels. A pair whose cells do not all have a class has no share. None of them is the headline:
+    the cut is conditional and the owners have not invoked it.
+
+    Args:
+        grid: The grid of the protocols.
+        reference_class: The v1 class of the unit in the default cell, or ``None``.
+        classed: ``cell identifier -> v1 class`` for the cells of the protocol's set that have a class.
+        cells_of_the_set: The cells of the protocol's set, each with its six levels.
+
+    Returns:
+        The record, or ``None`` for a unit with no class in the default cell.
+
+    Raises:
+        EnsembleError: when a pair of levels does not hold the cells the cut would leave.
+    """
+
+    if reference_class is None:
+        return None
+    default = (grid.reference_cell[VINTAGE_AXIS], grid.reference_cell[ANCHORS_AXIS])
+    pairs = list(itertools.product(grid.axis(VINTAGE_AXIS).levels, grid.axis(ANCHORS_AXIS).levels))
+    expected = len(cells_of_the_set) // len(pairs)
+    options: dict[tuple[str, str], dict[str, Any]] = {}
+    for vintage, anchors in pairs:
+        identifiers = [cell_id(cell) for cell in cells_of_the_set if (cell[VINTAGE_AXIS], cell[ANCHORS_AXIS]) == (vintage, anchors)]
+        if len(identifiers) != expected or not expected:
+            raise EnsembleError("declared cut line 6 does not leave the same cells for every pair of levels it could keep")
+        found = [classed[identifier] for identifier in identifiers if identifier in classed]
+        whole = len(found) == len(identifiers)
+        kept = sum(1 for value in found if value == reference_class)
+        options[(vintage, anchors)] = {
+            "levels_kept": {VINTAGE_AXIS: vintage, ANCHORS_AXIS: anchors},
+            "cells": len(identifiers),
+            "cells_with_a_class": len(found),
+            "cells_keeping_the_reference_class": kept if whole else None,
+            "retention": kept / len(identifiers) if whole else None,
+            "at_or_above_the_minimum": _at_least(kept, len(identifiers), grid.class_retention_min) if whole else None,
+        }
+    return {
+        **options[default],
+        "levels_kept_are": "the levels of the default cell",
+        "other_levels_the_cut_could_keep": [options[pair] for pair in pairs if pair != default],
+        "note": "The share over the cells that declared cut line 6 of plan 8.4 would leave. It is not the headline: the "
+                "cut is conditional and the owners have not invoked it (open point E10-OP1). The cut names the two axes "
+                "it drops and not the level of each that stays: the figures here keep the levels of the default cell, "
+                "and other_levels_the_cut_could_keep gives the same share for every other pair of levels. A pair whose "
+                "cells do not all have a class has no share (open point E10-OP12).",
+    }
+
+
 def headline_record(
     grid: EnsembleGrid,
     *,
@@ -591,8 +777,9 @@ def headline_record(
     with_a_class: int,
     protocol_cells: int,
     over: str,
-    kept_after_cut_line_6: int | None = None,
-    cells_after_cut_line_6: int | None = None,
+    cells_run: int | None = None,
+    after_declared_cut_line_6: Mapping[str, Any] | None = None,
+    other_reading: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Apply the headline-stability rule to one unit (protocol v1a guardrail GR8; protocol v1b ``headline_rule``).
 
@@ -606,22 +793,32 @@ def headline_record(
     give. Where both lie on one side of the minimum, ``outcome_fixed_by_the_bounds`` says which; the status is
     not set from it.
 
+    A cell that was run and has no class (it failed) stays in the denominator of
+    ``retention_over_the_cells_run``: that share is taken over ``cells_run``, never over the cells with a
+    class alone. For the bounds such a cell is a cell without a class, like a cell that was not run.
+
     Args:
         grid: The grid of the protocols.
         reference_class: The v1 class of the unit in the default cell, or ``None`` when it has none.
         kept: The cells of the protocol's set whose class equals it.
         with_a_class: The cells of the protocol's set that have a class.
-        protocol_cells: The size of the protocol's set (540, or 180 for a public output).
+        protocol_cells: The size of the protocol's set (540, or 180 for a run at the public level).
         over: The protocol's set, in words.
-        kept_after_cut_line_6, cells_after_cut_line_6: The same two counts over the cells declared cut line 6
-            would leave, when every one of them has a class; reported beside the record and never as the headline.
+        cells_run: The cells of the protocol's set that were run, failed cells included; ``with_a_class``
+            when it is not given.
+        after_declared_cut_line_6: The record of :func:`cut_line_6_record`; reported beside the record and
+            never as the headline.
+        other_reading: The record of :func:`protocol_set_reading` for the other set the protocol could mean
+            (open point E10-OP11); reported beside the record, and no status is set from it.
 
     Raises:
-        EnsembleError: for counts that cannot be: negative, more kept than classed, more classed than the set.
+        EnsembleError: for counts that cannot be: negative, more kept than classed, more classed than run, more
+            run than the set.
     """
 
-    if not 0 <= kept <= with_a_class <= protocol_cells or protocol_cells <= 0:
-        raise EnsembleError("retention counts whole cells: kept <= cells with a class <= cells of the protocol's set")
+    run = with_a_class if cells_run is None else cells_run
+    if not 0 <= kept <= with_a_class <= run <= protocol_cells or protocol_cells <= 0:
+        raise EnsembleError("retention counts whole cells: kept <= cells with a class <= cells run <= cells of the protocol's set")
     record: dict[str, Any] = {
         "guardrail": GUARDRAIL_GR8,
         "status": HEADLINE_NOT_EVALUATED,
@@ -630,7 +827,9 @@ def headline_record(
         "reference_class": reference_class,
         "over": over,
         "cells_of_the_protocol_set": protocol_cells,
+        "cells_run": run,
         "cells_with_a_class": with_a_class,
+        "cells_run_without_a_class": run - with_a_class,
         "cells_keeping_the_reference_class": kept,
         "retention_over_the_cells_run": None,
         "bounds_over_the_protocol_set": None,
@@ -638,38 +837,35 @@ def headline_record(
         "not_evaluated_because": None,
         "fallback_text": None,
         "after_declared_cut_line_6": None,
+        "other_reading_of_the_protocol_set": None if other_reading is None else {
+            **other_reading,
+            "note": "Protocol v1b states the cells of the public facility set 'for a public overlay'. Which set is the "
+                    "set of the rule for a result that is not a public overlay is open point E10-OP11. No status is set "
+                    "from this reading."},
     }
     if reference_class is None:
         record["not_evaluated_because"] = ("The unit has no binding class in the default cell (guardrail GR1, or the "
                                            "default cell has no result), so no class can be retained.")
         return record
-    if with_a_class:
-        record["retention_over_the_cells_run"] = kept / with_a_class
-    if kept_after_cut_line_6 is not None and cells_after_cut_line_6:
-        record["after_declared_cut_line_6"] = {
-            "cells": cells_after_cut_line_6, "cells_keeping_the_reference_class": kept_after_cut_line_6,
-            "retention": kept_after_cut_line_6 / cells_after_cut_line_6,
-            "at_or_above_the_minimum": _at_least(kept_after_cut_line_6, cells_after_cut_line_6, grid.class_retention_min),
-            "note": "The share over the cells that declared cut line 6 of plan 8.4 would leave. It is not the headline: "
-                    "the cut is conditional and the owners have not invoked it (open point E10-OP1).",
-        }
-    if with_a_class == protocol_cells:
-        stable = _at_least(kept, protocol_cells, grid.class_retention_min)
-        record.update({"status": HEADLINE_ELIGIBLE if stable else HEADLINE_UNSTABLE, "class_retention": kept / protocol_cells,
+    if run:
+        record["retention_over_the_cells_run"] = kept / run
+    if after_declared_cut_line_6 is not None:
+        record["after_declared_cut_line_6"] = dict(after_declared_cut_line_6)
+    reading = protocol_set_reading(grid, kept=kept, with_a_class=with_a_class, cells=protocol_cells, over=over)
+    if reading["class_retention"] is not None:
+        stable = bool(reading["at_or_above_the_minimum"])
+        record.update({"status": HEADLINE_ELIGIBLE if stable else HEADLINE_UNSTABLE, "class_retention": reading["class_retention"],
                        "fallback_text": None if stable else grid.fallback_text})
         return record
     missing = protocol_cells - with_a_class
-    lower_at_least = _at_least(kept, protocol_cells, grid.class_retention_min)
-    upper_at_least = _at_least(kept + missing, protocol_cells, grid.class_retention_min)
     record.update({
-        "bounds_over_the_protocol_set": {"lower": kept / protocol_cells, "upper": (kept + missing) / protocol_cells,
-                                         "cells_without_a_class": missing},
-        "outcome_fixed_by_the_bounds": BOUNDS_AT_OR_ABOVE if lower_at_least else (None if upper_at_least else BOUNDS_BELOW),
+        "bounds_over_the_protocol_set": reading["bounds"],
+        "outcome_fixed_by_the_bounds": reading["outcome_fixed_by_the_bounds"],
         "not_evaluated_because": (
             f"{missing} of the {protocol_cells} cells the protocol takes retention over have no class: they were not "
             "run, or failed. The protocols state no retention over a part of those cells (open point E10-OP1). "
-            "retention_over_the_cells_run is a share of the cells that were run and is not the retention of the "
-            "headline rule."),
+            "retention_over_the_cells_run is a share of the cells that were run, failed cells included in the "
+            "denominator, and is not the retention of the headline rule."),
     })
     return record
 
@@ -908,8 +1104,10 @@ def run_ensemble(
     levels_of = {cell["cell_id"]: {name: cell[name] for name in AXES} for cell in run_cells}
     reference_id = cell_id(grid.reference_cell)
     reference_key = routing_key(grid.reference_cell)
-    cut_ids = {cell["cell_id"] for cell in table if cell["cell_id"] in scope
-               and cell[VINTAGE_AXIS] == grid.reference_cell[VINTAGE_AXIS] and cell[ANCHORS_AXIS] == grid.reference_cell[ANCHORS_AXIS]}
+    cells_of_the_set = [cell for cell in table if cell["cell_id"] in scope]
+    if len(cells_of_the_set) // (len(grid.axis(VINTAGE_AXIS).levels) * len(grid.axis(ANCHORS_AXIS).levels)) != (
+            grid.cells_after_cut_line_6 // (1 if level == PITCH_LEVEL else len(grid.axis(FACILITIES_AXIS).levels))):
+        raise EnsembleError("the cells of the protocol's set are not the cells declared cut line 6 counts")
 
     # One scoring block for each distinct set of values, confidence and weights: units and cells may share one.
     scored_blocks: dict[tuple[Any, ...], dict[str, Any]] = {}
@@ -946,7 +1144,8 @@ def run_ensemble(
         for position, unit_id in enumerate(sorted(unit_order, key=lambda item: (-float(scores[item]), item)), start=1):
             ranks[unit_id][identifier] = position
 
-    over = (f"the {len(scope)} cells of the public facility set (protocol v1b facility_sets.shelters_in_the_ensemble)"
+    over = (f"the {len(scope)} cells of the public facility set (protocol v1b facility_sets.shelters_in_the_ensemble, which "
+            "states them for a public overlay: open point E10-OP11)"
             if level == PUBLIC_LEVEL else f"the {len(scope)} core cells (protocol v1b ensemble_grid.headline_rule)")
     units: list[dict[str, Any]] = []
     for unit_id in unit_order:
@@ -965,15 +1164,18 @@ def run_ensemble(
         reference_class = None if reference is None else reference["action_class"]
         in_scope = {identifier: item for identifier, item in computed.items() if identifier in scope}
         classed = {identifier: item["action_class"] for identifier, item in in_scope.items() if item["action_class"] is not None}
-        kept = sum(1 for value in classed.values() if value == reference_class)
-        cut_classed = [classed[identifier] for identifier in cut_ids if identifier in classed]
-        whole_cut = len(cut_classed) == len(cut_ids) == grid.cells_after_cut_line_6 // (
-            1 if level == PITCH_LEVEL else len(grid.axis(FACILITIES_AXIS).levels))
+        kept = sum(1 for value in classed.values() if value == reference_class) if reference_class is not None else 0
+        # The other set the protocol could mean for a run at the public level: the 540 core cells (open point E10-OP11).
+        classed_anywhere = [item["action_class"] for item in computed.values() if item["action_class"] is not None]
+        other_reading = None if level == PITCH_LEVEL or reference_class is None else protocol_set_reading(
+            grid, kept=sum(1 for value in classed_anywhere if value == reference_class), with_a_class=len(classed_anywhere),
+            cells=len(table), over=f"the {len(table)} core cells (protocol v1b ensemble_grid.headline_rule)")
         headline = headline_record(
-            grid, reference_class=reference_class, kept=kept if reference_class is not None else 0,
-            with_a_class=len(classed), protocol_cells=len(scope), over=over,
-            kept_after_cut_line_6=sum(1 for value in cut_classed if value == reference_class) if whole_cut else None,
-            cells_after_cut_line_6=len(cut_ids) if whole_cut else None)
+            grid, reference_class=reference_class, kept=kept, with_a_class=len(classed), protocol_cells=len(scope), over=over,
+            cells_run=sum(1 for identifier in mine if identifier in scope),
+            after_declared_cut_line_6=cut_line_6_record(grid, reference_class=reference_class, classed=classed,
+                                                        cells_of_the_set=cells_of_the_set),
+            other_reading=other_reading)
         fpps = {identifier: float(item["fpps_0_100"]) for identifier, item in computed.items() if item["fpps_0_100"] is not None}
         loco: dict[str, Any] = {}
         for dropped in SCORE_COMPONENTS:
@@ -1014,8 +1216,11 @@ def run_ensemble(
             "cells_with_a_component_not_computed": sum(1 for item in computed.values() if item["components_not_computed"]),
             "fpps_0_100": _spread(list(fpps.values())),
             "class_counts": _class_counts([item["action_class"] for item in computed.values()]),
-            "class_shares": ({key: count / len(computed) for key, count in
-                              _class_counts([item["action_class"] for item in computed.values()]).items()} if computed else None),
+            "class_shares": ({key: count / len(mine) for key, count in
+                              _class_counts([item["action_class"] for item in computed.values()]).items()} if mine else None),
+            "class_shares_over": "The cells run (cells_run), failed cells included in the denominator: with a failed cell "
+                                 "the shares add up to less than 1.",
+            "share_of_the_cells_run_that_failed": len(failed) / len(mine) if mine else None,
             "headline_stability": headline,
             "rank": {"best": min(ranks[unit_id].values()) if ranks[unit_id] else None,
                      "worst": max(ranks[unit_id].values()) if ranks[unit_id] else None,
@@ -1078,19 +1283,41 @@ def case_summary(grid: EnsembleGrid, table: Sequence[Mapping[str, Any]], units: 
     minimum = grid.class_retention_min
 
     def retention(unit: Mapping[str, Any]) -> tuple[int, int] | None:
+        """The cells keeping the class and the cells run, failed cells included: a failed cell keeps no class."""
+
         record = unit["headline_stability"]
-        if record["reference_class"] is None or not record["cells_with_a_class"]:
+        if record["reference_class"] is None or not record["cells_run"]:
             return None
-        return int(record["cells_keeping_the_reference_class"]), int(record["cells_with_a_class"])
+        return int(record["cells_keeping_the_reference_class"]), int(record["cells_run"])
 
     shares = [retention(unit) for unit in units]
-    fixed = Counter(unit["headline_stability"]["outcome_fixed_by_the_bounds"] or "not_fixed" for unit in units
-                    if unit["headline_stability"]["status"] == HEADLINE_NOT_EVALUATED
-                    and unit["headline_stability"]["reference_class"] is not None)
-    after_cut = [unit["headline_stability"]["after_declared_cut_line_6"] for unit in units
-                 if unit["headline_stability"]["after_declared_cut_line_6"] is not None]
+    not_evaluated = [unit["headline_stability"] for unit in units
+                     if unit["headline_stability"]["status"] == HEADLINE_NOT_EVALUATED
+                     and unit["headline_stability"]["reference_class"] is not None]
+    fixed = Counter(record["outcome_fixed_by_the_bounds"] or "not_fixed" for record in not_evaluated)
+    other = [record["other_reading_of_the_protocol_set"] for record in not_evaluated
+             if record["other_reading_of_the_protocol_set"] is not None]
+    other_fixed = Counter(record["outcome_fixed_by_the_bounds"] or "not_fixed" for record in other if record["bounds"] is not None)
+    cut_records = [unit["headline_stability"]["after_declared_cut_line_6"] for unit in units]
+
+    def cut_counts(options: Sequence[Mapping[str, Any] | None]) -> dict[str, Any]:
+        """Count the units on each side of the minimum over the cells one pair of kept levels would leave."""
+
+        with_a_share = [item for item in options if item is not None and item["retention"] is not None]
+        stated = next((item for item in options if item is not None), None)
+        return {
+            "levels_kept": None if stated is None else dict(stated["levels_kept"]),
+            "cells": None if stated is None else stated["cells"],
+            "units_at_or_above_the_minimum": sum(1 for item in with_a_share if item["at_or_above_the_minimum"]),
+            "units_below_the_minimum": sum(1 for item in with_a_share if not item["at_or_above_the_minimum"]),
+            "units_keeping_the_class_in_every_one_of_those_cells": sum(
+                1 for item in with_a_share if item["cells_keeping_the_reference_class"] == item["cells"]),
+            "units_without_a_class_in_every_one_of_those_cells": len(units) - len(with_a_share),
+        }
+
+    pairs = max((len(item["other_levels_the_cut_could_keep"]) for item in cut_records if item is not None), default=0)
     e_threshold = 35.0
-    return {
+    summary = {
         "units": len(units),
         "level": level,
         "core_cells_per_lane": len(table),
@@ -1112,8 +1339,9 @@ def case_summary(grid: EnsembleGrid, table: Sequence[Mapping[str, Any]], units: 
         "units_by_number_of_classes_over_the_cells_run": dict(sorted(Counter(
             str(sum(1 for key in CLASS_KEYS if unit["class_counts"][key])) for unit in units).items())),
         "retention_over_the_cells_run": {
-            "what": "The share of the cells that were run in which a unit keeps the class of its default cell. It is "
-                    "not the retention of the headline rule unless every cell of the protocol's set was run.",
+            "what": "The share of the cells that were run in which a unit keeps the class of its default cell. A cell "
+                    "that was run and failed counts as run and keeps no class. It is not the retention of the headline "
+                    "rule unless every cell of the protocol's set was run.",
             "class_retention_min": minimum,
             "units_keeping_the_class_in_every_cell_run": sum(1 for item in shares if item is not None and item[0] == item[1]),
             "units_keeping_the_class_in_at_least_the_minimum_share": sum(
@@ -1125,13 +1353,23 @@ def case_summary(grid: EnsembleGrid, table: Sequence[Mapping[str, Any]], units: 
         "headline_status_counts": {status: sum(1 for unit in units if unit["headline_stability"]["status"] == status)
                                    for status in (HEADLINE_NOT_EVALUATED, HEADLINE_ELIGIBLE, HEADLINE_UNSTABLE)},
         "outcome_fixed_by_the_bounds_counts": {key: fixed.get(key, 0) for key in (BOUNDS_AT_OR_ABOVE, BOUNDS_BELOW, "not_fixed")},
-        "after_declared_cut_line_6": None if not after_cut else {
-            "cells": after_cut[0]["cells"],
-            "units_at_or_above_the_minimum": sum(1 for item in after_cut if item["at_or_above_the_minimum"]),
-            "units_below_the_minimum": sum(1 for item in after_cut if not item["at_or_above_the_minimum"]),
-            "units_without_a_class_in_every_one_of_those_cells": len(units) - len(after_cut),
+        "other_reading_of_the_protocol_set": None if not other else {
+            "over": other[0]["over"],
+            "cells": other[0]["cells"],
+            "outcome_fixed_by_the_bounds_counts": {key: other_fixed.get(key, 0) for key in (BOUNDS_AT_OR_ABOVE, BOUNDS_BELOW, "not_fixed")},
+            "note": "The same counts with the core cells as the set of the rule. Which set applies to a result that is "
+                    "not a public overlay is open point E10-OP11; no status is set from either.",
+        },
+        "after_declared_cut_line_6": None if all(item is None for item in cut_records) else {
+            **cut_counts(cut_records),
+            "levels_kept_are": "the levels of the default cell",
+            "other_levels_the_cut_could_keep": [
+                cut_counts([None if item is None else item["other_levels_the_cut_could_keep"][index] for item in cut_records])
+                for index in range(pairs)],
             "note": "Counts over the cells that declared cut line 6 would leave. Not the headline: the owners have not "
-                    "invoked the cut (open point E10-OP1).",
+                    "invoked the cut (open point E10-OP1). The cut does not say which level of its two axes stays: the "
+                    "first counts keep the levels of the default cell, and other_levels_the_cut_could_keep gives the "
+                    "counts for every other pair (open point E10-OP12).",
         },
         "units_whose_fpps_lies_on_both_sides_of_the_class_e_threshold": sum(
             1 for unit in units if unit["fpps_0_100"] is not None and unit["fpps_0_100"]["min"] < e_threshold <= unit["fpps_0_100"]["max"]),
@@ -1145,6 +1383,42 @@ def case_summary(grid: EnsembleGrid, table: Sequence[Mapping[str, Any]], units: 
         "class_counts_by_cell": by_cell,
         "class_counts_by_cell_note": "For each cell that was run, the number of units in each class; a class no unit has "
                                      "in the cell is left out.",
-        "note": "Counts for the whole case. No value is put beside a unit here; a count that covers every unit states "
-                "that value for each unit all the same.",
+        "note": "Counts for the whole case. No unit is named beside a value here. Some counts state a value of a single "
+                "unit all the same: a count that covers every unit states that value for each unit, and a class that "
+                "one unit alone holds in the default cell marks that unit in every cell (open point E10-OP10; "
+                "counts_that_state_a_value_of_a_single_unit counts them).",
+    }
+    summary["counts_that_state_a_value_of_a_single_unit"] = counts_that_state_single_units(summary)
+    return summary
+
+
+def counts_that_state_single_units(summary: Mapping[str, Any]) -> dict[str, Any]:
+    """Count the whole-case counts of a summary that state a value of a single unit (open point E10-OP10).
+
+    A count names no unit. It states the class of a single unit all the same in two cases, and this function
+    counts both: a cell in which every unit of the case has one class, and a class that exactly one unit
+    holds in the default cell, whose count in every other cell says whether that unit holds it there. It also
+    counts the cells whose class counts differ from those of the default cell: each says that a unit changed
+    class, and between which classes.
+    """
+
+    units = int(summary["units"])
+    by_cell = summary["class_counts_by_cell"]
+    reference = {key: count for key, count in summary["reference_class_counts"].items() if count}
+    alone = sorted(key for key, count in reference.items() if count == 1 and key != NO_CLASS)
+    one_class = sum(1 for counts in by_cell.values() if counts and max(counts.values()) == units)
+    return {
+        "cells_in_which_every_unit_has_one_class": one_class,
+        "classes_one_unit_alone_holds_in_the_default_cell": alone,
+        "cells_in_which_such_a_class_has_another_count": sum(
+            1 for counts in by_cell.values() if any(counts.get(key, 0) != 1 for key in alone)),
+        "cells_whose_class_counts_differ_from_the_default_cell": sum(1 for counts in by_cell.values() if dict(counts) != reference),
+        "units_with_more_than_one_class_over_the_cells_run": sum(
+            count for classes, count in summary["units_by_number_of_classes_over_the_cells_run"].items() if int(classes) > 1),
+        "states_a_value_of_a_single_unit": bool(one_class or alone),
+        "what": "A count names no unit. Two kinds of count state the class of a single unit all the same. In a cell where "
+                "every unit of the case has one class, class_counts_by_cell states the class of each unit. And a class "
+                "that one unit alone holds in the default cell marks that unit: in every cell, the count of that class "
+                "says whether the unit holds it there, for whoever knows which unit it is. A cell whose counts differ "
+                "from those of the default cell says that a unit changed class there, and between which classes.",
     }

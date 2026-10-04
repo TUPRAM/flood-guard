@@ -18,7 +18,9 @@ import math
 import pandas as pd
 import pytest
 
-from floodguard import equity, replay_equity
+# The replay's rule is checked against equity metric version 1, the code it was written beside;
+# floodguard.equity itself is version 2.0 since the scoring line was merged in.
+from floodguard import equity_v1 as equity, replay_equity
 from floodguard.replay_equity import (
     DENOMINATOR,
     MINIMUM_GROUP_SIZE,

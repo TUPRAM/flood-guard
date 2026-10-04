@@ -47,7 +47,8 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / "src"))
 
-from floodguard.equity import compute_equity_gap  # noqa: E402
+# Metric version 1, the code the replay's rule was written beside; floodguard.equity itself is version 2.0.
+from floodguard.equity_v1 import compute_equity_gap  # noqa: E402
 from floodguard.replay_equity import (  # noqa: E402
     DENOMINATOR,
     MINIMUM_GROUP_SIZE,

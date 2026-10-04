@@ -688,6 +688,10 @@ def test_the_mae_sai_frame_set_states_its_cases_its_services_and_the_level_of_ea
         "adm3_pcode", "adm3_name", "adm3_name1", "lang1")
     for title_en, title_th, frame in mae_sai.case_titles.values():
         assert "Mae Sai" in title_en and "แม่สาย" in title_th and frame == "Mae Sai, 8 tambons"
+        assert "น้ำค้าง" not in title_th, "the Thai word for dew is not the word for water that remains after a flood"
+    # Residual water: water that still remains, as the replay page words a remaining extent. A scenario is named as one.
+    assert "น้ำที่ยังเหลืออยู่ปลายฤดู 22 ตุลาคม พ.ศ. 2567" in mae_sai.case_titles["O2"][1]
+    assert "สถานการณ์จำลอง" in mae_sai.case_titles["SE1"][1] and "พ.ศ. 2567" in mae_sai.case_titles["SE1"][1]
     assert runner.overlay_input_id("unosat_4009:CHIANGRAI_20240801_20241012_AccumulatedFlood") == (
         "unosat_4009.chiangrai_20240801_20241012_accumulatedflood")
     with pytest.raises(runner.BuildError, match="cannot be written as an input identifier"):

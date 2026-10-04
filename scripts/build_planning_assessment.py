@@ -289,8 +289,10 @@ FRAME_SETS: dict[str, FrameSet] = {
             "SE1": ("Case SE1: 2024 season envelope scenario, Mae Sai (8 tambons)",
                     "กรณี SE1: สถานการณ์จำลองขอบเขตน้ำท่วมสะสมตลอดฤดูกาล พ.ศ. 2567 อำเภอแม่สาย (8 ตำบล)",
                     "Mae Sai, 8 tambons"),
+            # "Water still remaining late in the season", in the words the replay page uses for a remaining extent
+            # (น้ำที่ยังเหลืออยู่). The first wording, น้ำค้าง, is the Thai word for dew.
             "O2": ("Case O2: late-season residual water, 22 October 2024, Mae Sai (8 tambons)",
-                   "กรณี O2: น้ำค้างปลายฤดู 22 ตุลาคม พ.ศ. 2567 อำเภอแม่สาย (8 ตำบล)",
+                   "กรณี O2: น้ำที่ยังเหลืออยู่ปลายฤดู 22 ตุลาคม พ.ศ. 2567 อำเภอแม่สาย (8 ตำบล)",
                    "Mae Sai, 8 tambons"),
         },
         rights_input={"SE1": rights.PRODUCT_4009, "O2": rights.PRODUCT_4009},
@@ -1168,10 +1170,11 @@ def build(case_id: str, frame_set: FrameSet, external: Path, boundaries: Path, *
             "flood_layer": {"rights_level": flood.grant.rights_level, "basis": flood.grant.rights_level_basis},
             "levels_and_git": rights.LEVELS_AND_GIT,
             "figures_of_local_level_layers_in_this_receipt": {
-                "what": "This receipt is committed. It holds counts of rows for the whole case (result.summary), no value "
-                        "of a single unit and no unit of a row that could not be written. When the overlay is below the "
-                        "public level those counts come from a lineage below the public level; the overlay itself is "
-                        "outside Git.",
+                "what": "This receipt is committed. It holds counts of rows for the whole case (result.summary, or "
+                        "result.rows_as_computed.summary when the overlay was not written), no value of a single unit "
+                        "and no unit of a row that could not be written. When the lineage is below the public level "
+                        "those counts come from a lineage below the public level; the overlay, or the report that "
+                        "holds the rows as computed, is outside Git.",
                 "figures": ([{"where": "result.summary" if as_computed_record is None else "result.rows_as_computed.summary",
                               "publication_eligibility": eligibility,
                               "figures": "The number of rows by class, reason code, confidence class and failed "

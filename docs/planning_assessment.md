@@ -204,8 +204,11 @@ outside Git. One recorded owner decision on that review changes the level; the r
 - **Where a public overlay sits.** `outputs/planning_v1/overlays/`. The web folder is written by a later task.
 - **Rows of a case overlay.** One row for each reporting unit in the lane of the case. No engine row and no locked
   T4 row is added: the protocols do not say which overlay carries them (points 1 and 10 of the overlay page).
-- **Thai case titles.** Written by the AI agent. No team language check has been made. The Thai unit names are
-  those of HDX COD-AB (`adm3_name1`, where `lang1` says `th`).
+- **Thai case titles.** Written by the AI agent. No Thai speaker of the team has checked them: on 5 October 2026 an
+  owner left the Thai wording to the agent, because the team has nobody to check it. The agent read both titles
+  again and corrected one: the title of case O2 said น้ำค้าง for residual water, which is the Thai word for dew; it
+  now says น้ำที่ยังเหลืออยู่ปลายฤดู (water that still remains late in the season), the wording the replay page uses
+  for a remaining extent. The Thai unit names are those of HDX COD-AB (`adm3_name1`, where `lang1` says `th`).
 
 ## Points the protocols leave open
 

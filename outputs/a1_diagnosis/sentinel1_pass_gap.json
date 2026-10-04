@@ -1,6 +1,6 @@
 {
   "schema_version": "floodguard.a1_diagnosis_figures.v1",
-  "generated_at_utc": "2026-10-04T20:35:45Z",
+  "generated_at_utc": "2026-10-04T22:14:47Z",
   "plan_task": "A1 (abstention diagnosis: why threshold-only change detection failed at the 16 Sep pass)",
   "figure_id": "sentinel1_pass_gap",
   "title": "Sentinel-1 passes over Mae Sai in September 2024 and the gap between 6 and 15 September",
@@ -107,25 +107,29 @@
     "replay_keyframes_for_context": {
       "what": "Two keyframes of the Mae Sai replay, set beside the passes. The replay's stage is an illustrative keyframe curve shaped to the event chronology (lane SCN, tier T1); no gauge record exists for September 2024. They are not observations of when the water rose or peaked.",
       "stated_in": "docs/demo/replay_numbers.md",
+      "read_at_run_time": true,
       "onset_keyframe": {
-        "utc": "2024-09-10T11:15:00Z",
-        "in_thailand": "10 Sep 18:15 ICT",
         "key": "stage.onset_knot",
+        "in_thailand": "10 Sep 18:15 ICT",
+        "utc": "2024-09-10T11:15:00Z",
+        "replay_days": 1.760417,
         "inside_the_gap": true,
         "hours_after_the_pass_of_6_september": 95.73,
         "hours_before_the_pass_of_15_september_utc": 132.02,
         "days_before_the_pass_of_15_september_utc": 5.5
       },
       "modelled_peak_keyframe": {
-        "utc": "2024-09-12T05:00:00Z",
-        "in_thailand": "12 Sep 12:00 ICT",
         "key": "stage.peak",
+        "in_thailand": "12 Sep 12:00 ICT",
+        "utc": "2024-09-12T05:00:00Z",
+        "replay_days": 3.5,
         "inside_the_gap": true,
         "hours_after_the_pass_of_6_september": 137.48,
         "hours_before_the_pass_of_15_september_utc": 90.27,
         "days_before_the_pass_of_15_september_utc": 3.76
       }
-    }
+    },
+    "other_radar_acquisitions_dated_inside_the_gap": "Sentinel-1 was not the only radar. Committed files name other radar acquisitions dated inside the gap: a RADARSAT-2 analysis by GISTDA of 10 September 2024 (docs/demo/replay_numbers.md, key cal.gistda) and ALOS-2 acquisitions of 14 and 15 September 2024 (planning protocol v1a, case O4, which needs permission; the protocol gives the dates and no time of day). None of their data is cleared for this lane and none was read."
   },
   "plan_figure": {
     "stated_in_the_plan": "no pass between 6 Sep 11:31 and 15 Sep 23:16 UTC",
@@ -145,13 +149,15 @@
   },
   "does_not_show": [
     "When the flood rose or fell: the pass times say when the radar looked, not what the water did.",
-    "That no other satellite looked in the gap: the snapshot holds Sentinel-1 only.",
+    "That no other satellite looked in the gap: the snapshot holds Sentinel-1 only, and committed files name RADARSAT-2 and ALOS-2 acquisitions dated inside it.",
     "Today's catalogue: the snapshot was not taken again, and a product of another mode or type would not be in it."
   ],
   "limits": [
     "The pass times say when the radar looked. They do not say when the water rose or fell.",
     "The snapshot is one catalogue, one point and one product type. A pass that produced no IW GRDH dual-polarisation product over that point is not in it.",
-    "The catalogue was not queried again in this run."
+    "The catalogue was not queried again in this run.",
+    "Sentinel-1 was not the only radar. Committed files name other radar acquisitions dated inside the gap: a RADARSAT-2 analysis by GISTDA of 10 September 2024 (docs/demo/replay_numbers.md, key cal.gistda) and ALOS-2 acquisitions of 14 and 15 September 2024 (planning protocol v1a, case O4, which needs permission; the protocol gives the dates and no time of day). None of their data is cleared for this lane and none was read.",
+    "The two replay keyframes are illustrative scenario values. If the replay is baked again, docs/demo/replay_numbers.md changes and this figure needs a new run."
   ],
   "licence": null,
   "attributions": [

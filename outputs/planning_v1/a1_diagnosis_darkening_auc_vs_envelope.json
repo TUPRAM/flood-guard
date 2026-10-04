@@ -1,6 +1,6 @@
 {
   "schema_version": "floodguard.a1_diagnosis_run_receipt.v1",
-  "generated_at_utc": "2026-10-04T20:36:06Z",
+  "generated_at_utc": "2026-10-04T22:15:47Z",
   "plan_task": "A1 (abstention diagnosis: why threshold-only change detection failed at the 16 Sep pass)",
   "figure_id": "darkening_auc_vs_envelope",
   "title": "Separation of the VH darkening at the 16 September 2024 pass against the 2024 season envelope, AOI-01",
@@ -11,9 +11,10 @@
   "confidence_basis": "A statistic of own radar layers (tier T2, unqualified, approximate geocoding) against an unvalidated preliminary agency extent used as a season envelope (UNOSAT product 4009 with GISTDA; Field_Validation=0). No reference of any kind was used; nothing here says how correct a layer is.",
   "assumptions": [
     "The accumulated layer of product 4009 is a 2024 season envelope: every area mapped as water at some time between 1 August and October 2024, with no date per patch. It is not an event map of September 2024, it was not checked in the field (Field_Validation=0), and FloodGuard did not validate it. A figure measured against it is a comparison with a season envelope, not a validation.",
-    "One image pair: 3 September 2024 23:16 UTC and 15 September 2024 23:16 UTC (16 September 06:16 in Thailand), both descending on relative orbit 135. The second image was taken several days after the flood peak.",
+    "One image pair: 3 September 2024 23:16 UTC and 15 September 2024 23:16 UTC (16 September 06:16 in Thailand), both descending on relative orbit 135. The second image was taken several days after the keyframe the Mae Sai replay sets for the modelled peak. That keyframe is illustrative: no gauge record gives the time of the peak.",
     "The radar values are the stored sigma0 rasters of tasks A2 and A4: sigma0 from the SAFE calibration table, thermal noise not removed, 10 m cells, averaged here to 20 m.",
-    "A cell is in the comparison when its centre lies in AOI-01 and in a Thai tambon, it is not permanent water under the reading, and it has a radar value on both dates."
+    "A cell is in the comparison when its centre lies in AOI-01 and in a Thai tambon, it is not permanent water under the reading, and it has a radar value on both dates. The second set of cells keeps only those with a GLO-30 slope under 5 degrees.",
+    "The smoothing window is a free choice. The 5 by 5 window is the one of the exploratory script; the other windows are given so that the choice can be seen."
   ],
   "protocol_sha256": {
     "planning_protocol_v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
@@ -23,24 +24,62 @@
   "status": "run_receipt",
   "status_note": "Receipt of one diagnosis run, made with protocol v1a and v1b in force. Every run is reported: a second run of this figure writes a new receipt that names this one.",
   "run_kind": "superseding_run",
-  "computes": "The rank statistic (area under the ROC curve) of the VH darkening between 3 and 15 September 2024 against the product 4009 accumulated layer, on 20 m cells of AOI-01 on the Thai side, for two geocodings and three ways of leaving out permanent water. No threshold is applied and no layer is written.",
+  "computes": "The rank statistic (area under the ROC curve) of the VH darkening between 3 and 15 September 2024 against the product 4009 accumulated layer, on 20 m cells of AOI-01 on the Thai side, for two geocodings, three ways of leaving out permanent water, two sets of cells and six smoothing windows. No threshold is applied and no layer is written.",
+  "measured_against": "vs a season envelope, not an event map",
+  "licence": {
+    "applies_to": "every figure of this file that is measured against UNOSAT/GISTDA product 4009",
+    "name": "CC BY-SA 4.0",
+    "url": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "credit": "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009",
+    "share_alike": "Every layer or table derived from product 4009 is shared under CC BY-SA 4.0, in its own file, with the attribution and a change notice. Keeping product 4009 derivatives in their own files is a caution, not legal advice.",
+    "change_notice": "Changed by FloodGuard: clipped to AOI-01 (resources/aoi/aoi-01_mae_sai_core.geojson); geometry repaired (make_valid; 2 parts repaired); reprojected from EPSG:4326 to EPSG:32647; rasterised to 20 m cells by cell centre; the radar darkening was then ranked against the cells of the layer. Source: UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009, CC BY-SA 4.0.",
+    "standard_sentence": "unvalidated preliminary agency extent (UNOSAT product 4009 with GISTDA; Field_Validation=0), used as provided under CC BY-SA 4.0. FloodGuard did not validate it.",
+    "used_as": "a 2024 season envelope (lane SCN-ENV): a comparison layer, never an event map and never a reference",
+    "rights_record": {
+      "path": "docs/proposal_execution/rights_basis_4009_v1.json",
+      "sha256": "531ab40beb2b3e80a02d6de0d4d7d791b299176af0b192bfe105ca23c7e50cb3"
+    },
+    "not_legal_advice": true
+  },
+  "attributions": [
+    "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009, CC BY-SA 4.0",
+    "Contains modified Copernicus Sentinel data 2024",
+    "Copernicus DEM GLO-30: (c) DLR e.V. 2010-2014 and (c) Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved",
+    "JRC Global Surface Water (EC JRC/Google)",
+    "ESA WorldCover 2021 v200 (CC BY 4.0)",
+    "HDX Thailand COD-AB boundaries"
+  ],
   "protocol_state": {
     "v1a": "in_force",
     "v1b": "in_force"
   },
   "script": {
     "path": "scripts/diagnostics/darkening_auc_vs_envelope.py",
-    "sha256": "343bc13301cef45cada73e233f3989ce74e8e709048aec858c4afd6ace7cff5b"
+    "sha256": "62d42c8153414c55f97fbadfe3e11780fbe1df101c2c4cd1ff2065fb260b0770"
   },
   "implementation": {
-    "base_commit": "02de0a7ff514324b467510ff54bf298637b74234",
+    "base_commit": "b26e5d2c641d1ee0319fcf39a595a097ffecf3cd",
     "base_commit_note": "The commit the working tree was on. The files below are the ones this run loaded, identified by their own SHA-256, committed or not.",
     "files_sha256": {
-      "scripts/diagnostics/darkening_auc_vs_envelope.py": "343bc13301cef45cada73e233f3989ce74e8e709048aec858c4afd6ace7cff5b",
-      "src/floodguard/abstention_diagnosis.py": "c49eb8e0c03751acad6b4ac9b2ebf5d3f242ea0d1f7fe0be402dbb6da050f699",
-      "src/floodguard/diagnosis_run.py": "dc53ef3f7fb4baa89ecbbf23f30bd5e09fa7517dc93b9bc0f1e9aafbac8b20ca",
-      "src/floodguard/diagnosis_layers.py": "c0c294a4c4e6bc7d0502251c365534d6d7ec9c08aee33596e40df4677a85a759"
-    }
+      "scripts/diagnostics/darkening_auc_vs_envelope.py": "62d42c8153414c55f97fbadfe3e11780fbe1df101c2c4cd1ff2065fb260b0770",
+      "src/floodguard/abstention_diagnosis.py": "95707c004f72c931153583fc6360bb102a6e9cf3e2bb155608010b02bcc1b4d5",
+      "src/floodguard/diagnosis_run.py": "d8a145887c9da9a26f8f3016f9af8d3a538fa4fd3f8f11a8f4d63585a5bdd978",
+      "src/floodguard/diagnosis_layers.py": "373c62ba1e4e7cd19e5ca89ad7167ccaaf14ad4c7198434285c27cb4749bcaae"
+    },
+    "software": {
+      "python": "3.11.8",
+      "numpy": "2.2.6",
+      "rasterio": "1.4.4",
+      "gdal": "3.10.3",
+      "pyproj": "3.7.2",
+      "proj": "9.5.1",
+      "shapely": "2.1.2",
+      "geos": "3.13.1",
+      "pyogrio": "0.13.0",
+      "geopandas": "1.1.4",
+      "pandas": "3.0.6"
+    },
+    "software_note": "The libraries the run had loaded when it finished. A figure can move in its last decimals under another version of GDAL, PROJ, GEOS or numpy; --verify reports the versions beside the comparison."
   },
   "parameters": {
     "cell_m": 20.0,
@@ -54,9 +93,24 @@
       "nothing_left_out": "no cell is left out as permanent water"
     },
     "footprint_layer_read": false,
+    "sets_of_cells": [
+      "all_cells",
+      "slope_under_5_degrees"
+    ],
+    "flat_slope_limit_degrees": 5.0,
+    "dem_resampling": "bilinear onto the 20 m grid",
+    "slope_rule": "central differences over 20 m cells, in degrees",
     "polarisation": "VH",
     "block_mean_of_source_cells": "2 by 2, on linear sigma0",
     "boxcar_cells": 5,
+    "boxcar_windows_cells": [
+      1,
+      3,
+      5,
+      9,
+      15,
+      25
+    ],
     "boxcar_rule": "mean of the cells with a value; no value when half the window or less has one",
     "geocodings": [
       "gcp_polynomial",
@@ -64,7 +118,9 @@
     ],
     "exploratory_reading": {
       "geocoding": "gcp_polynomial",
-      "permanent_water": "jrc_surface_water"
+      "permanent_water": "jrc_surface_water",
+      "cells": "all_cells",
+      "window_cells": 5
     }
   },
   "inputs": {
@@ -117,6 +173,11 @@
       "path": "<external_data_workspace>/open_context/esa_worldcover/ESA_WorldCover_10m_2021_v200_N18E099_Map.tif",
       "sha256": "e02c02859074bc0ff0cf1bed21b074520be46c4385e0071c327c173e0ec9f4eb",
       "bytes": 80234221
+    },
+    "dem_glo30_n20_e099": {
+      "path": "<external_data_workspace>/open_context/copernicus_dem_glo30/Copernicus_DSM_COG_10_N20_00_E099_00_DEM.tif",
+      "sha256": "8965f85514b577b4b606c658412bfe3d713c0abf478d237539af309d8edb3757",
+      "bytes": 44909388
     },
     "radar": {
       "gcp_polynomial": {
@@ -193,25 +254,25 @@
     "sentinel_1": "No signed rights record covers the Sentinel-1 data (open points E1-OP2 and A1-OP5). Statistics for the whole area are committed with the Copernicus attribution; no radar layer is written."
   },
   "timestamps": {
-    "run_started_at_utc": "2026-10-04T20:35:49Z",
-    "run_finished_at_utc": "2026-10-04T20:36:06Z"
+    "run_started_at_utc": "2026-10-04T22:15:29Z",
+    "run_finished_at_utc": "2026-10-04T22:15:47Z"
   },
   "outputs": {
     "figures": {
       "path": "outputs/a1_diagnosis/darkening_auc_vs_envelope.json",
-      "sha256": "9fe584c2f64844caf9737b0d3623659f01c2f48987a8a710ddfbc1bdc6535ce3",
-      "bytes": 16462
+      "sha256": "43af7055f6ef0689563438d503bbaf939f6e9a9562e2a4a5ce75b614b30d7fd9",
+      "bytes": 35103
     }
   },
   "supersedes": {
-    "receipt_sha256": "eaadcb091140fa26f1268cceb95341a349cd90f65e1764a64ca692a4f2c5c387",
-    "figures_sha256": "b9ccb27e12b0b4f4b93742e0cde301be45363d8c556bda491341ce893f70ba87",
-    "generated_at_utc": "2026-10-04T20:29:11Z",
-    "reason": "After the first run each reading gained the complement of its value (auc_of_brightening, one minus the value) and the figures gained a note on how a value below one half reads. No input, no parameter and no rule changed, and no value of the first run changed.",
+    "receipt_sha256": "9e7ced2eda47be3e02d73c12a682e652bd84ec10b18eb945484ca985cf0d30a1",
+    "figures_sha256": "9fe584c2f64844caf9737b0d3623659f01c2f48987a8a710ddfbc1bdc6535ce3",
+    "generated_at_utc": "2026-10-04T20:36:06Z",
+    "reason": "Review of 4 October 2026 (UTC): the figure was given for one smoothing window, which no signed file names, and on all cells only. It is now given for six windows and also on the cells with a slope under 5 degrees. The text no longer states the time of the flood peak as a fact, and it says what the exploratory script had computed. The receipt gains the licence block, the label and the library versions.",
     "figures_same": false,
     "copies_kept": [
-      "<external_data_workspace>/proposal_execution/planning_v1/a1_diagnosis/superseded_runs/20261004T202911Z_darkening_auc_vs_envelope/a1_diagnosis_darkening_auc_vs_envelope.json",
-      "<external_data_workspace>/proposal_execution/planning_v1/a1_diagnosis/superseded_runs/20261004T202911Z_darkening_auc_vs_envelope/darkening_auc_vs_envelope.json"
+      "<external_data_workspace>/proposal_execution/planning_v1/a1_diagnosis/superseded_runs/20261004T203606Z_darkening_auc_vs_envelope/a1_diagnosis_darkening_auc_vs_envelope.json",
+      "<external_data_workspace>/proposal_execution/planning_v1/a1_diagnosis/superseded_runs/20261004T203606Z_darkening_auc_vs_envelope/darkening_auc_vs_envelope.json"
     ]
   },
   "run_history": {
@@ -223,19 +284,29 @@
         "figures_sha256": "b9ccb27e12b0b4f4b93742e0cde301be45363d8c556bda491341ce893f70ba87",
         "run_kind": "first_run",
         "superseded_because": "After the first run each reading gained the complement of its value (auc_of_brightening, one minus the value) and the figures gained a note on how a value below one half reads. No input, no parameter and no rule changed, and no value of the first run changed."
+      },
+      {
+        "generated_at_utc": "2026-10-04T20:36:06Z",
+        "run_started_at_utc": "2026-10-04T20:35:49Z",
+        "run_finished_at_utc": "2026-10-04T20:36:06Z",
+        "receipt_sha256": "9e7ced2eda47be3e02d73c12a682e652bd84ec10b18eb945484ca985cf0d30a1",
+        "figures_sha256": "9fe584c2f64844caf9737b0d3623659f01c2f48987a8a710ddfbc1bdc6535ce3",
+        "run_kind": "superseding_run",
+        "superseded_because": "Review of 4 October 2026 (UTC): the figure was given for one smoothing window, which no signed file names, and on all cells only. It is now given for six windows and also on the cells with a slope under 5 degrees. The text no longer states the time of the flood peak as a fact, and it says what the exploratory script had computed. The receipt gains the licence block, the label and the library versions."
       }
     ]
   },
   "development_reads": [
     "4 October 2026, about 18:00 to 20:25 UTC, while the scripts were written and before any run: the headers of the stored sigma0, slope and land-cover rasters of tasks A2 and A4, of the GLO-30 tile and of the two JRC tiles were read (size, grid, bands, tags); the receipt of the retired M2 run was read for its keys and its grid, with the header of its mask; AOI-01 and the two radar receipts were read. No cell value was read and no figure was computed.",
-    "The same evening, before any run: the statistics module was tried on invented numbers only (random draws; no file of the external data workspace was opened)."
+    "The same evening, before any run: the statistics module was tried on invented numbers only (random draws; no file of the external data workspace was opened).",
+    "4 October 2026, about 21:40 to 22:10 UTC (5 October in local time), after the review of the first runs and before the superseding runs: the committed figures files and receipts were read; the eight superseded copies kept outside Git were read for their run times and their SHA-256; the text of five exploratory scripts of the plan session was read, to check what they had computed and that the guard refuses such text. None of them was run. No raster and no flood layer was opened and no cell value was read. The two figures that read nothing outside Git (the pass list and the one-population simulation) were computed once without writing, to try the changed scripts; no other figure was computed."
   ],
   "open_points": [
     {
       "id": "A1-OP2",
       "point": "The definition behind the plan's figure 0.421 (darkening of VH against the season envelope).",
       "signed_files_say": "Plan row A1 and disclosure item EK-07 of protocol v1a give the figure and no definition. The exploratory script that produced it was never committed.",
-      "what_was_done": "The definition of the exploratory script was rebuilt from cleared files: 20 m cells, a 5 by 5 mean, VH before minus VH after in dB, the cells of AOI-01 on the Thai side outside JRC surface water. Two things differ and are stated: the radar values are calibrated sigma0 (the exploratory run used uncalibrated amplitudes), and the Thai side is taken from the COD-AB boundaries (the exploratory run used the product's analysis extent, which is held at the local level and is not read here)."
+      "what_was_done": "The definition of the exploratory script was rebuilt from cleared files: 20 m cells, a 5 by 5 mean, VH before minus VH after in dB, the cells of AOI-01 on the Thai side outside JRC surface water. Two things differ and are stated: the radar values are calibrated sigma0 (the exploratory run used uncalibrated amplitudes), and the Thai side is taken from the COD-AB boundaries (the exploratory run used the product's analysis extent, which is held at the local level and is not read here). The 5 by 5 mean is the window of that script; neither the plan nor a protocol names a window, so the figure is also given for windows of 1, 3, 9, 15 and 25 cells, and no window is named the window of record. The script ranked seven features against the same layer on one printed line: the darkening of VH, the same change read as brightening, the absolute change of VH and of VV, the negated VH after the event, the negated height and the negated slope. Only 0.421 was carried into the plan. The reading 'auc_of_brightening' here is the second of those features; the absolute changes and the VH after the event are not computed here, because the plan does not list them."
     },
     {
       "id": "A1-OP3",
@@ -260,11 +331,18 @@
       "point": "Whether the product 4009 rights record covers a diagnosis comparison.",
       "signed_files_say": "The record lists its uses (use_in_this_track): the comparison with the replay model is the only comparison it names, and its limitations say it does not cover use as machine-learning labels or as a qualified reference. Plan row A1 allows these figures 'after the 4009 signature'.",
       "what_was_done": "The accumulated layer is used as a comparison layer only: no model was fitted to it and nothing is called a reference. Every figure carries the licence, the credit, a change notice and the label 'vs a season envelope, not an event map'."
+    },
+    {
+      "id": "A1-OP10",
+      "point": "On which cells a rank statistic against the season envelope is taken.",
+      "signed_files_say": "Plan row A1 names no domain. Plan row A2 removes slopes of 5 degrees or more from the UN-SPIDER practice, the A2/A4 result reports its areas by that slope class, and the exploratory script looked at the cells under 5 degrees as well. Protocol v1a announces a HAND and slope mask for M1-v2 and gives no limit (open point A4-OP2).",
+      "what_was_done": "Each rank statistic is given on two sets of cells: every cell of AOI-01 on the Thai side, and the cells of that set whose GLO-30 slope is under 5 degrees. On the first set a terrain feature mostly tells hill from plain. Neither set is named the domain of record."
     }
   ],
   "not_computed": [
     "a flood candidate or any threshold",
     "any comparison of the candidates of tasks A2 and A4 with product 4009",
+    "the absolute change of VH or of VV and the VH after the event (features of the exploratory script that plan row A1 does not list)",
     "the analysis extent of the product (rights level local; not read)",
     "an interval for the statistic",
     "FPPS",

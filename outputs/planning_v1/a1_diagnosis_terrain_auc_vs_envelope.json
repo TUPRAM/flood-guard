@@ -1,6 +1,6 @@
 {
   "schema_version": "floodguard.a1_diagnosis_run_receipt.v1",
-  "generated_at_utc": "2026-10-04T20:36:23Z",
+  "generated_at_utc": "2026-10-04T22:16:05Z",
   "plan_task": "A1 (abstention diagnosis: why threshold-only change detection failed at the 16 Sep pass)",
   "figure_id": "terrain_auc_vs_envelope",
   "title": "Separation of low and flat ground against the 2024 season envelope, AOI-01",
@@ -13,7 +13,7 @@
     "The accumulated layer of product 4009 is a 2024 season envelope: every area mapped as water at some time between 1 August and October 2024, with no date per patch. It is not an event map of September 2024, it was not checked in the field (Field_Validation=0), and FloodGuard did not validate it. A figure measured against it is a comparison with a season envelope, not a validation.",
     "GLO-30 is a surface model: it holds roofs and tree tops, so built-up and wooded ground reads higher than it is.",
     "The height is warped bilinearly from 1 arc-second cells to the 20 m grid, and the slope is taken from that grid.",
-    "A cell is in the comparison when its centre lies in AOI-01 and in a Thai tambon and it is not permanent water under the reading. No radar value is needed."
+    "A cell is in the comparison when its centre lies in AOI-01 and in a Thai tambon and it is not permanent water under the reading. No radar value is needed. The second set of cells keeps only those with a slope under 5 degrees."
   ],
   "protocol_sha256": {
     "planning_protocol_v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
@@ -23,24 +23,61 @@
   "status": "run_receipt",
   "status_note": "Receipt of one diagnosis run, made with protocol v1a and v1b in force. Every run is reported: a second run of this figure writes a new receipt that names this one.",
   "run_kind": "superseding_run",
-  "computes": "The rank statistic (area under the ROC curve) of two terrain features of the Copernicus GLO-30 surface model, low elevation and low slope, against the product 4009 accumulated layer, on 20 m cells of AOI-01 on the Thai side, with permanent water left out three ways. No radar image is read and no layer is written.",
+  "computes": "The rank statistic (area under the ROC curve) of two terrain features of the Copernicus GLO-30 surface model, low elevation and low slope, against the product 4009 accumulated layer, on 20 m cells of AOI-01 on the Thai side, with permanent water left out three ways and on two sets of cells. No radar image is read and no layer is written.",
+  "measured_against": "vs a season envelope, not an event map",
+  "licence": {
+    "applies_to": "every figure of this file that is measured against UNOSAT/GISTDA product 4009",
+    "name": "CC BY-SA 4.0",
+    "url": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "credit": "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009",
+    "share_alike": "Every layer or table derived from product 4009 is shared under CC BY-SA 4.0, in its own file, with the attribution and a change notice. Keeping product 4009 derivatives in their own files is a caution, not legal advice.",
+    "change_notice": "Changed by FloodGuard: clipped to AOI-01 (resources/aoi/aoi-01_mae_sai_core.geojson); geometry repaired (make_valid; 2 parts repaired); reprojected from EPSG:4326 to EPSG:32647; rasterised to 20 m cells by cell centre; two terrain features were then ranked against the cells of the layer. Source: UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009, CC BY-SA 4.0.",
+    "standard_sentence": "unvalidated preliminary agency extent (UNOSAT product 4009 with GISTDA; Field_Validation=0), used as provided under CC BY-SA 4.0. FloodGuard did not validate it.",
+    "used_as": "a 2024 season envelope (lane SCN-ENV): a comparison layer, never an event map and never a reference",
+    "rights_record": {
+      "path": "docs/proposal_execution/rights_basis_4009_v1.json",
+      "sha256": "531ab40beb2b3e80a02d6de0d4d7d791b299176af0b192bfe105ca23c7e50cb3"
+    },
+    "not_legal_advice": true
+  },
+  "attributions": [
+    "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009, CC BY-SA 4.0",
+    "Copernicus DEM GLO-30: (c) DLR e.V. 2010-2014 and (c) Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved",
+    "JRC Global Surface Water (EC JRC/Google)",
+    "ESA WorldCover 2021 v200 (CC BY 4.0)",
+    "HDX Thailand COD-AB boundaries"
+  ],
   "protocol_state": {
     "v1a": "in_force",
     "v1b": "in_force"
   },
   "script": {
     "path": "scripts/diagnostics/terrain_auc_vs_envelope.py",
-    "sha256": "f1ecbe3793a06a334f853c650d88ded7c2b6b06ab197703a4401dae1b02eaee5"
+    "sha256": "0c3e2135ce1f24178e9ebf145e995b8625042fc79aaf4f125c76157fd307a8a4"
   },
   "implementation": {
-    "base_commit": "02de0a7ff514324b467510ff54bf298637b74234",
+    "base_commit": "b26e5d2c641d1ee0319fcf39a595a097ffecf3cd",
     "base_commit_note": "The commit the working tree was on. The files below are the ones this run loaded, identified by their own SHA-256, committed or not.",
     "files_sha256": {
-      "scripts/diagnostics/terrain_auc_vs_envelope.py": "f1ecbe3793a06a334f853c650d88ded7c2b6b06ab197703a4401dae1b02eaee5",
-      "src/floodguard/abstention_diagnosis.py": "c49eb8e0c03751acad6b4ac9b2ebf5d3f242ea0d1f7fe0be402dbb6da050f699",
-      "src/floodguard/diagnosis_run.py": "dc53ef3f7fb4baa89ecbbf23f30bd5e09fa7517dc93b9bc0f1e9aafbac8b20ca",
-      "src/floodguard/diagnosis_layers.py": "c0c294a4c4e6bc7d0502251c365534d6d7ec9c08aee33596e40df4677a85a759"
-    }
+      "scripts/diagnostics/terrain_auc_vs_envelope.py": "0c3e2135ce1f24178e9ebf145e995b8625042fc79aaf4f125c76157fd307a8a4",
+      "src/floodguard/abstention_diagnosis.py": "95707c004f72c931153583fc6360bb102a6e9cf3e2bb155608010b02bcc1b4d5",
+      "src/floodguard/diagnosis_run.py": "d8a145887c9da9a26f8f3016f9af8d3a538fa4fd3f8f11a8f4d63585a5bdd978",
+      "src/floodguard/diagnosis_layers.py": "373c62ba1e4e7cd19e5ca89ad7167ccaaf14ad4c7198434285c27cb4749bcaae"
+    },
+    "software": {
+      "python": "3.11.8",
+      "numpy": "2.2.6",
+      "rasterio": "1.4.4",
+      "gdal": "3.10.3",
+      "pyproj": "3.7.2",
+      "proj": "9.5.1",
+      "shapely": "2.1.2",
+      "geos": "3.13.1",
+      "pyogrio": "0.13.0",
+      "geopandas": "1.1.4",
+      "pandas": "3.0.6"
+    },
+    "software_note": "The libraries the run had loaded when it finished. A figure can move in its last decimals under another version of GDAL, PROJ, GEOS or numpy; --verify reports the versions beside the comparison."
   },
   "parameters": {
     "cell_m": 20.0,
@@ -54,6 +91,11 @@
       "nothing_left_out": "no cell is left out as permanent water"
     },
     "footprint_layer_read": false,
+    "sets_of_cells": [
+      "all_cells",
+      "slope_under_5_degrees"
+    ],
+    "flat_slope_limit_degrees": 5.0,
     "dem_resampling": "bilinear onto the 20 m grid",
     "slope_rule": "central differences over 20 m cells, in degrees",
     "features": [
@@ -155,25 +197,25 @@
     }
   },
   "timestamps": {
-    "run_started_at_utc": "2026-10-04T20:36:08Z",
-    "run_finished_at_utc": "2026-10-04T20:36:23Z"
+    "run_started_at_utc": "2026-10-04T22:15:49Z",
+    "run_finished_at_utc": "2026-10-04T22:16:05Z"
   },
   "outputs": {
     "figures": {
       "path": "outputs/a1_diagnosis/terrain_auc_vs_envelope.json",
-      "sha256": "619feaf6c5e8297b9e6f0ab9a8675238264a439ecb38cff3e05a314a01b7d418",
-      "bytes": 13991
+      "sha256": "8bd183dbc9974f40c4c31f7620fb397c9de9a9aceb920d09f7774f1d2a94503a",
+      "bytes": 20034
     }
   },
   "supersedes": {
-    "receipt_sha256": "bde21782390183760c09d7ab69e59896186621b5438f155c16581192765c5628",
-    "figures_sha256": "76f4bf3622655e9600d4ef8846e80434499f57e9adc5a18f7611a2018fd00b96",
-    "generated_at_utc": "2026-10-04T20:29:40Z",
-    "reason": "After the first run two sentences were reworded: they called the expected value high, and the measured values are between 0.6 and 0.7. No input, no parameter and no rule changed.",
-    "figures_same": true,
+    "receipt_sha256": "3de1ad9dc3bd73046b41e7c59ae015e687fd006ec54cecc949f4667c71a7b3ef",
+    "figures_sha256": "619feaf6c5e8297b9e6f0ab9a8675238264a439ecb38cff3e05a314a01b7d418",
+    "generated_at_utc": "2026-10-04T20:36:23Z",
+    "reason": "Review of 4 October 2026 (UTC): the figure was presented as a first computation. The exploratory script of the plan session had computed both features against the same layer, and the text now says so. Each reading is now also given on the cells with a slope under 5 degrees, because on all cells a terrain feature mostly tells hill from plain. The receipt gains the licence block, the label and the library versions.",
+    "figures_same": false,
     "copies_kept": [
-      "<external_data_workspace>/proposal_execution/planning_v1/a1_diagnosis/superseded_runs/20261004T202940Z_terrain_auc_vs_envelope/a1_diagnosis_terrain_auc_vs_envelope.json",
-      "<external_data_workspace>/proposal_execution/planning_v1/a1_diagnosis/superseded_runs/20261004T202940Z_terrain_auc_vs_envelope/terrain_auc_vs_envelope.json"
+      "<external_data_workspace>/proposal_execution/planning_v1/a1_diagnosis/superseded_runs/20261004T203623Z_terrain_auc_vs_envelope/a1_diagnosis_terrain_auc_vs_envelope.json",
+      "<external_data_workspace>/proposal_execution/planning_v1/a1_diagnosis/superseded_runs/20261004T203623Z_terrain_auc_vs_envelope/terrain_auc_vs_envelope.json"
     ]
   },
   "run_history": {
@@ -185,19 +227,29 @@
         "figures_sha256": "76f4bf3622655e9600d4ef8846e80434499f57e9adc5a18f7611a2018fd00b96",
         "run_kind": "first_run",
         "superseded_because": "After the first run two sentences were reworded: they called the expected value high, and the measured values are between 0.6 and 0.7. No input, no parameter and no rule changed."
+      },
+      {
+        "generated_at_utc": "2026-10-04T20:36:23Z",
+        "run_started_at_utc": "2026-10-04T20:36:08Z",
+        "run_finished_at_utc": "2026-10-04T20:36:23Z",
+        "receipt_sha256": "3de1ad9dc3bd73046b41e7c59ae015e687fd006ec54cecc949f4667c71a7b3ef",
+        "figures_sha256": "619feaf6c5e8297b9e6f0ab9a8675238264a439ecb38cff3e05a314a01b7d418",
+        "run_kind": "superseding_run",
+        "superseded_because": "Review of 4 October 2026 (UTC): the figure was presented as a first computation. The exploratory script of the plan session had computed both features against the same layer, and the text now says so. Each reading is now also given on the cells with a slope under 5 degrees, because on all cells a terrain feature mostly tells hill from plain. The receipt gains the licence block, the label and the library versions."
       }
     ]
   },
   "development_reads": [
     "4 October 2026, about 18:00 to 20:25 UTC, while the scripts were written and before any run: the headers of the stored sigma0, slope and land-cover rasters of tasks A2 and A4, of the GLO-30 tile and of the two JRC tiles were read (size, grid, bands, tags); the receipt of the retired M2 run was read for its keys and its grid, with the header of its mask; AOI-01 and the two radar receipts were read. No cell value was read and no figure was computed.",
-    "The same evening, before any run: the statistics module was tried on invented numbers only (random draws; no file of the external data workspace was opened)."
+    "The same evening, before any run: the statistics module was tried on invented numbers only (random draws; no file of the external data workspace was opened).",
+    "4 October 2026, about 21:40 to 22:10 UTC (5 October in local time), after the review of the first runs and before the superseding runs: the committed figures files and receipts were read; the eight superseded copies kept outside Git were read for their run times and their SHA-256; the text of five exploratory scripts of the plan session was read, to check what they had computed and that the guard refuses such text. None of them was run. No raster and no flood layer was opened and no cell value was read. The two figures that read nothing outside Git (the pass list and the one-population simulation) were computed once without writing, to try the changed scripts; no other figure was computed."
   ],
   "open_points": [
     {
       "id": "A1-OP1",
       "point": "Which terrain feature the plan means by 'terrain AUC vs 4009'.",
       "signed_files_say": "Plan row A1: 'terrain AUC vs 4009 (to compute)'. No feature, no grid and no domain is named. Protocol v1a announces a HAND and slope mask for M1-v2 on Mae Sai without a HAND source or a limit (open point A4-OP2).",
-      "what_was_done": "Two features of the Copernicus GLO-30 surface model were measured on the 20 m grid: low elevation and low slope. HAND was not computed: no HAND raster and no drainage rule is in the signed files or on disk. Neither figure is named the terrain figure of the plan."
+      "what_was_done": "Two features of the Copernicus GLO-30 surface model were measured on the 20 m grid: low elevation and low slope. They were taken from the exploratory script of the plan session, which was never committed: it ranked the negated height and the negated slope against the same layer and printed both values on the line that gave 0.421. Those two values are in no committed file, so this is the first computation from cleared files and the first recorded value; it is not the first time the figure was seen. HAND was not computed: no HAND raster and no drainage rule is in the signed files or on disk. Neither figure is named the terrain figure of the plan."
     },
     {
       "id": "A1-OP4",
@@ -210,6 +262,12 @@
       "point": "Whether the product 4009 rights record covers a diagnosis comparison.",
       "signed_files_say": "The record lists its uses (use_in_this_track): the comparison with the replay model is the only comparison it names, and its limitations say it does not cover use as machine-learning labels or as a qualified reference. Plan row A1 allows these figures 'after the 4009 signature'.",
       "what_was_done": "The accumulated layer is used as a comparison layer only: no model was fitted to it and nothing is called a reference. Every figure carries the licence, the credit, a change notice and the label 'vs a season envelope, not an event map'."
+    },
+    {
+      "id": "A1-OP10",
+      "point": "On which cells a rank statistic against the season envelope is taken.",
+      "signed_files_say": "Plan row A1 names no domain. Plan row A2 removes slopes of 5 degrees or more from the UN-SPIDER practice, the A2/A4 result reports its areas by that slope class, and the exploratory script looked at the cells under 5 degrees as well. Protocol v1a announces a HAND and slope mask for M1-v2 and gives no limit (open point A4-OP2).",
+      "what_was_done": "Each rank statistic is given on two sets of cells: every cell of AOI-01 on the Thai side, and the cells of that set whose GLO-30 slope is under 5 degrees. On the first set a terrain feature mostly tells hill from plain. Neither set is named the domain of record."
     }
   ],
   "not_computed": [

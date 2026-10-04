@@ -1,9 +1,9 @@
 {
   "schema_version": "floodguard.a1_diagnosis_figures.v1",
-  "generated_at_utc": "2026-10-04T20:35:41Z",
+  "generated_at_utc": "2026-10-04T22:14:46Z",
   "plan_task": "A1 (abstention diagnosis: why threshold-only change detection failed at the 16 Sep pass)",
   "figure_id": "bvf_unimodal_gaussian",
-  "title": "Between-class variance fraction of one bell-shaped population against the 0.72 gate",
+  "title": "Between-class variance fraction of one normal (bell-shaped) population against the 0.72 gate",
   "official_warning": false,
   "operational_status": "non_operational",
   "source_timestamp": "not applicable: theory and simulation, no observation",
@@ -25,7 +25,7 @@
   "script": "scripts/diagnostics/bvf_unimodal_gaussian.py",
   "plan_statement": "BVF theory/simulation (a unimodal Gaussian gives 0.637 < 0.72)",
   "measured_against": null,
-  "computes": "The between-class variance fraction of a normal population in theory and through the frozen M2 Otsu kernel, and the separation two populations need before the kernel accepts a window. No image is read.",
+  "computes": "The between-class variance fraction of a normal population in theory and through the frozen M2 Otsu kernel, the separation two normal populations need before the kernel accepts a window, and the fraction of one flat-topped population. No image is read.",
   "figures": {
     "gate": 0.72,
     "theory_normal_population_split_at_its_mean": 0.63662,
@@ -110,7 +110,54 @@
         "largest_separation_tried": 6.0
       }
     ],
-    "two_populations_note": "Both populations are normal with one standard deviation. The separation is the distance between their means in standard deviations. The first column of each row is the share of the window in the second population."
+    "two_populations_note": "Both populations are normal with one standard deviation. The separation is the distance between their means in standard deviations. The first column of each row is the share of the window in the second population.",
+    "one_flat_topped_population": {
+      "what": "One uniform population, with no second class: a single population that is not bell-shaped.",
+      "theory_uniform_population_split_at_its_mean": 0.75,
+      "theory_formula": "(R/4)^2 / (R^2/12) = 3/4, for a width R",
+      "above_the_gate_in_theory": true,
+      "simulated_windows_through_the_m2_kernel": [
+        {
+          "samples_per_window": 4096,
+          "windows": 200,
+          "between_variance_fraction_min": 0.738538,
+          "between_variance_fraction_mean": 0.74935,
+          "between_variance_fraction_max": 0.762492,
+          "windows_passing_the_gate": 200,
+          "windows_the_kernel_accepts": 200,
+          "reason_counts": {
+            "accepted": 200
+          }
+        },
+        {
+          "samples_per_window": 16384,
+          "windows": 200,
+          "between_variance_fraction_min": 0.744724,
+          "between_variance_fraction_mean": 0.749481,
+          "between_variance_fraction_max": 0.755077,
+          "windows_passing_the_gate": 200,
+          "windows_the_kernel_accepts": 200,
+          "reason_counts": {
+            "accepted": 200
+          }
+        },
+        {
+          "samples_per_window": 65536,
+          "windows": 200,
+          "between_variance_fraction_min": 0.747101,
+          "between_variance_fraction_mean": 0.749538,
+          "between_variance_fraction_max": 0.752459,
+          "windows_passing_the_gate": 200,
+          "windows_the_kernel_accepts": 200,
+          "reason_counts": {
+            "accepted": 200
+          }
+        }
+      ],
+      "simulated_windows": 600,
+      "simulated_windows_the_kernel_accepted": 600,
+      "reading": "The gate declines one normal population. It does not decline every single population, so a window that passes it is not shown to hold two."
+    }
   },
   "plan_figure": {
     "stated_in_the_plan": "a unimodal Gaussian gives 0.637 < 0.72",
@@ -122,10 +169,12 @@
   "does_not_show": [
     "Anything about Mae Sai or about any image: it is arithmetic and simulation.",
     "That a window which failed the gate held no flood.",
+    "That a window which passes the gate holds two populations: one flat-topped population passes it.",
     "That real change values are normal: speckle is not, and a real window is a mixture of land covers."
   ],
   "limits": [
-    "The figure says what one population gives the gate. It does not say what the windows at Mae Sai held.",
+    "The figure says what one normal population gives the gate. It does not say what the windows at Mae Sai held.",
+    "The result holds for a normal population. A single population of another shape can score higher: a flat-topped one passes the gate.",
     "The two-population table uses equal standard deviations. A flood class that is narrower or wider than the land around it needs a different separation.",
     "The kernel has two more tests (class share and mean separation); a window can pass the gate and still be declined."
   ],

@@ -1,6 +1,6 @@
 {
   "schema_version": "floodguard.a1_diagnosis_figures.v1",
-  "generated_at_utc": "2026-10-04T20:28:45Z",
+  "generated_at_utc": "2026-10-04T22:15:27Z",
   "plan_task": "A1 (abstention diagnosis: why threshold-only change detection failed at the 16 Sep pass)",
   "figure_id": "pilot_grid_vs_envelope",
   "title": "Share of the 2024 season envelope inside AOI-01 that the M2 pilot grid leaves out",

@@ -1,6 +1,6 @@
 {
   "schema_version": "floodguard.a1_diagnosis_figures.v1",
-  "generated_at_utc": "2026-10-04T20:28:05Z",
+  "generated_at_utc": "2026-10-04T22:14:49Z",
   "plan_task": "A1 (abstention diagnosis: why threshold-only change detection failed at the 16 Sep pass)",
   "figure_id": "m2_windows_mae_sai",
   "title": "The 81 windows of the retired M2 run at Mae Sai against the 0.72 gate",

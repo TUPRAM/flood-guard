@@ -1,6 +1,6 @@
 {
   "schema_version": "floodguard.a1_diagnosis_figures.v1",
-  "generated_at_utc": "2026-10-04T20:36:23Z",
+  "generated_at_utc": "2026-10-04T22:16:05Z",
   "plan_task": "A1 (abstention diagnosis: why threshold-only change detection failed at the 16 Sep pass)",
   "figure_id": "terrain_auc_vs_envelope",
   "title": "Separation of low and flat ground against the 2024 season envelope, AOI-01",
@@ -13,7 +13,7 @@
     "The accumulated layer of product 4009 is a 2024 season envelope: every area mapped as water at some time between 1 August and October 2024, with no date per patch. It is not an event map of September 2024, it was not checked in the field (Field_Validation=0), and FloodGuard did not validate it. A figure measured against it is a comparison with a season envelope, not a validation.",
     "GLO-30 is a surface model: it holds roofs and tree tops, so built-up and wooded ground reads higher than it is.",
     "The height is warped bilinearly from 1 arc-second cells to the 20 m grid, and the slope is taken from that grid.",
-    "A cell is in the comparison when its centre lies in AOI-01 and in a Thai tambon and it is not permanent water under the reading. No radar value is needed."
+    "A cell is in the comparison when its centre lies in AOI-01 and in a Thai tambon and it is not permanent water under the reading. No radar value is needed. The second set of cells keeps only those with a slope under 5 degrees."
   ],
   "protocol_sha256": {
     "planning_protocol_v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
@@ -26,7 +26,7 @@
   "script": "scripts/diagnostics/terrain_auc_vs_envelope.py",
   "plan_statement": "terrain AUC vs 4009 (to compute)",
   "measured_against": "vs a season envelope, not an event map",
-  "computes": "The rank statistic (area under the ROC curve) of two terrain features of the Copernicus GLO-30 surface model, low elevation and low slope, against the product 4009 accumulated layer, on 20 m cells of AOI-01 on the Thai side, with permanent water left out three ways. No radar image is read and no layer is written.",
+  "computes": "The rank statistic (area under the ROC curve) of two terrain features of the Copernicus GLO-30 surface model, low elevation and low slope, against the product 4009 accumulated layer, on 20 m cells of AOI-01 on the Thai side, with permanent water left out three ways and on two sets of cells. No radar image is read and no layer is written.",
   "figures": {
     "features": {
       "low_elevation": "surface height of GLO-30 in metres, negated: larger where the ground is lower",
@@ -74,22 +74,47 @@
           "envelope_cells_left_out_as_permanent_water": 117,
           "cells": 211964,
           "envelope_cells": 38233,
-          "envelope_share_of_the_cells": 0.180375
+          "envelope_share_of_the_cells": 0.180375,
+          "slope_under_5_degrees": {
+            "cells": 155387,
+            "envelope_cells": 37246,
+            "envelope_share_of_the_cells": 0.239698
+          }
         },
         "worldcover_class_80": {
           "cells_left_out_as_permanent_water": 776,
           "envelope_cells_left_out_as_permanent_water": 302,
           "cells": 211382,
           "envelope_cells": 38048,
-          "envelope_share_of_the_cells": 0.179996
+          "envelope_share_of_the_cells": 0.179996,
+          "slope_under_5_degrees": {
+            "cells": 154810,
+            "envelope_cells": 37062,
+            "envelope_share_of_the_cells": 0.239403
+          }
         },
         "nothing_left_out": {
           "cells_left_out_as_permanent_water": 0,
           "envelope_cells_left_out_as_permanent_water": 0,
           "cells": 212158,
           "envelope_cells": 38350,
-          "envelope_share_of_the_cells": 0.180762
+          "envelope_share_of_the_cells": 0.180762,
+          "slope_under_5_degrees": {
+            "cells": 155578,
+            "envelope_cells": 37363,
+            "envelope_share_of_the_cells": 0.240156
+          }
         }
+      },
+      "sets_of_cells": {
+        "all_cells": "every cell of AOI-01 on the Thai side that the permanent-water reading keeps",
+        "slope_under_5_degrees": "the cells of that set whose slope is under 5 degrees; the slope is taken by central differences from the GLO-30 height warped bilinearly onto the grid"
+      },
+      "slope_in_the_domain": {
+        "cells_with_no_slope_value": 0,
+        "share_of_envelope_cells_under_the_limit": 0.974263,
+        "share_of_other_cells_under_the_limit": 0.680147,
+        "limit_degrees": 5.0
       }
     },
     "elevation_in_the_domain_m": {
@@ -101,6 +126,7 @@
       {
         "feature": "low_elevation",
         "permanent_water": "jrc_surface_water",
+        "cells": "all_cells",
         "auc": 0.616479,
         "cells_inside_the_layer": 38233,
         "cells_outside_the_layer": 173731,
@@ -111,6 +137,7 @@
       {
         "feature": "low_slope",
         "permanent_water": "jrc_surface_water",
+        "cells": "all_cells",
         "auc": 0.67974,
         "cells_inside_the_layer": 38233,
         "cells_outside_the_layer": 173731,
@@ -121,6 +148,7 @@
       {
         "feature": "low_elevation",
         "permanent_water": "worldcover_class_80",
+        "cells": "all_cells",
         "auc": 0.616969,
         "cells_inside_the_layer": 38048,
         "cells_outside_the_layer": 173334,
@@ -131,6 +159,7 @@
       {
         "feature": "low_slope",
         "permanent_water": "worldcover_class_80",
+        "cells": "all_cells",
         "auc": 0.680089,
         "cells_inside_the_layer": 38048,
         "cells_outside_the_layer": 173334,
@@ -141,6 +170,7 @@
       {
         "feature": "low_elevation",
         "permanent_water": "nothing_left_out",
+        "cells": "all_cells",
         "auc": 0.616149,
         "cells_inside_the_layer": 38350,
         "cells_outside_the_layer": 173808,
@@ -151,53 +181,145 @@
       {
         "feature": "low_slope",
         "permanent_water": "nothing_left_out",
+        "cells": "all_cells",
         "auc": 0.680119,
         "cells_inside_the_layer": 38350,
         "cells_outside_the_layer": 173808,
         "cells_left_out_for_no_value": 0,
         "median_slope_degrees_inside_the_layer": 0.62,
         "median_slope_degrees_outside_the_layer": 1.64
+      },
+      {
+        "feature": "low_elevation",
+        "permanent_water": "jrc_surface_water",
+        "cells": "slope_under_5_degrees",
+        "auc": 0.445428,
+        "cells_inside_the_layer": 37246,
+        "cells_outside_the_layer": 118141,
+        "cells_left_out_for_no_value": 0,
+        "median_elevation_m_inside_the_layer": 386.62,
+        "median_elevation_m_outside_the_layer": 384.67
+      },
+      {
+        "feature": "low_slope",
+        "permanent_water": "jrc_surface_water",
+        "cells": "slope_under_5_degrees",
+        "auc": 0.544209,
+        "cells_inside_the_layer": 37246,
+        "cells_outside_the_layer": 118141,
+        "cells_left_out_for_no_value": 0,
+        "median_slope_degrees_inside_the_layer": 0.6,
+        "median_slope_degrees_outside_the_layer": 0.75
+      },
+      {
+        "feature": "low_elevation",
+        "permanent_water": "worldcover_class_80",
+        "cells": "slope_under_5_degrees",
+        "auc": 0.445591,
+        "cells_inside_the_layer": 37062,
+        "cells_outside_the_layer": 117748,
+        "cells_left_out_for_no_value": 0,
+        "median_elevation_m_inside_the_layer": 386.6,
+        "median_elevation_m_outside_the_layer": 384.66
+      },
+      {
+        "feature": "low_slope",
+        "permanent_water": "worldcover_class_80",
+        "cells": "slope_under_5_degrees",
+        "auc": 0.544296,
+        "cells_inside_the_layer": 37062,
+        "cells_outside_the_layer": 117748,
+        "cells_left_out_for_no_value": 0,
+        "median_slope_degrees_inside_the_layer": 0.6,
+        "median_slope_degrees_outside_the_layer": 0.75
+      },
+      {
+        "feature": "low_elevation",
+        "permanent_water": "nothing_left_out",
+        "cells": "slope_under_5_degrees",
+        "auc": 0.445032,
+        "cells_inside_the_layer": 37363,
+        "cells_outside_the_layer": 118215,
+        "cells_left_out_for_no_value": 0,
+        "median_elevation_m_inside_the_layer": 386.65,
+        "median_elevation_m_outside_the_layer": 384.67
+      },
+      {
+        "feature": "low_slope",
+        "permanent_water": "nothing_left_out",
+        "cells": "slope_under_5_degrees",
+        "auc": 0.544822,
+        "cells_inside_the_layer": 37363,
+        "cells_outside_the_layer": 118215,
+        "cells_left_out_for_no_value": 0,
+        "median_slope_degrees_inside_the_layer": 0.59,
+        "median_slope_degrees_outside_the_layer": 0.75
       }
     ],
     "smallest_and_largest_auc_by_feature": {
-      "low_elevation": [
-        0.616149,
-        0.616969
-      ],
-      "low_slope": [
-        0.67974,
-        0.680119
-      ]
+      "all_cells": {
+        "low_elevation": [
+          0.616149,
+          0.616969
+        ],
+        "low_slope": [
+          0.67974,
+          0.680119
+        ]
+      },
+      "slope_under_5_degrees": {
+        "low_elevation": [
+          0.445032,
+          0.445591
+        ],
+        "low_slope": [
+          0.544209,
+          0.544822
+        ]
+      }
     },
-    "not_named_the_terrain_figure_of_the_plan": "The plan names no terrain feature (open point A1-OP1). Both features are given; neither is the figure of record.",
+    "not_named_the_terrain_figure_of_the_plan": "The plan names no terrain feature and no set of cells (open points A1-OP1 and A1-OP10). Both features are given on both sets of cells; none is the figure of record.",
     "no_interval_is_given": "Neighbouring cells are not independent, so an interval computed from the cell count would be far too narrow. None is given."
   },
   "plan_figure": {
     "stated_in_the_plan": "terrain AUC vs 4009 (to compute)",
     "plan_value": null,
     "measured": {
-      "low_elevation": {
-        "smallest": 0.616149,
-        "largest": 0.616969
+      "all_cells": {
+        "low_elevation": {
+          "smallest": 0.616149,
+          "largest": 0.616969
+        },
+        "low_slope": {
+          "smallest": 0.67974,
+          "largest": 0.680119
+        }
       },
-      "low_slope": {
-        "smallest": 0.67974,
-        "largest": 0.680119
+      "slope_under_5_degrees": {
+        "low_elevation": {
+          "smallest": 0.445032,
+          "largest": 0.445591
+        },
+        "low_slope": {
+          "smallest": 0.544209,
+          "largest": 0.544822
+        }
       }
     },
     "reproduced": null,
-    "note": "The plan gives no value and no feature: this is the first computation of the figure."
+    "note": "The plan gives no value and no feature. This is the first computation from cleared files and the first recorded value. It is not the first time the figure was seen: the exploratory script of the plan session ranked the negated height and the negated slope against the same layer and printed both values on the line that gave 0.421. Those values are in no committed file, and the two features were taken from that script (open point A1-OP1)."
   },
   "does_not_show": [
     "A flood or a flood extent: terrain is the same before, during and after an event.",
-    "That terrain can map a flood: a value above one half says that the season envelope lies on lower and flatter ground than the rest.",
+    "That terrain can map a flood: on all cells a value above one half mostly tells the plain from the hills around it.",
     "How correct anything is: the envelope is not a reference.",
     "HAND (height above the nearest drainage): none is computed."
   ],
   "limits": [
     "Terrain does not change with an event. The figure describes where the season envelope lies, not when or whether a place was flooded.",
-    "The envelope holds water of the whole season, with no date per patch. Low, flat ground beside a river is where such water collects, so a value above one half is expected and is not evidence that a terrain rule maps a flood.",
+    "AOI-01 holds hills and plain. On all cells a terrain feature can separate the envelope simply because the envelope lies on the plain: domain.slope_in_the_domain gives the share of envelope cells and of other cells under 5 degrees. The readings on the cells with a slope under 5 degrees leave the hills out.",
     "Elevation is absolute height, not height above the river, so low elevation can separate plain from hill as much as wet from dry.",
+    "The envelope holds water of the whole season, with no date per patch. A value above one half is not evidence that a terrain rule maps a flood.",
     "No interval is given: the cells are not independent.",
     "The envelope is not a reference and the figure is not a validation."
   ],
@@ -228,7 +350,7 @@
       "id": "A1-OP1",
       "point": "Which terrain feature the plan means by 'terrain AUC vs 4009'.",
       "signed_files_say": "Plan row A1: 'terrain AUC vs 4009 (to compute)'. No feature, no grid and no domain is named. Protocol v1a announces a HAND and slope mask for M1-v2 on Mae Sai without a HAND source or a limit (open point A4-OP2).",
-      "what_was_done": "Two features of the Copernicus GLO-30 surface model were measured on the 20 m grid: low elevation and low slope. HAND was not computed: no HAND raster and no drainage rule is in the signed files or on disk. Neither figure is named the terrain figure of the plan."
+      "what_was_done": "Two features of the Copernicus GLO-30 surface model were measured on the 20 m grid: low elevation and low slope. They were taken from the exploratory script of the plan session, which was never committed: it ranked the negated height and the negated slope against the same layer and printed both values on the line that gave 0.421. Those two values are in no committed file, so this is the first computation from cleared files and the first recorded value; it is not the first time the figure was seen. HAND was not computed: no HAND raster and no drainage rule is in the signed files or on disk. Neither figure is named the terrain figure of the plan."
     },
     {
       "id": "A1-OP4",
@@ -241,6 +363,12 @@
       "point": "Whether the product 4009 rights record covers a diagnosis comparison.",
       "signed_files_say": "The record lists its uses (use_in_this_track): the comparison with the replay model is the only comparison it names, and its limitations say it does not cover use as machine-learning labels or as a qualified reference. Plan row A1 allows these figures 'after the 4009 signature'.",
       "what_was_done": "The accumulated layer is used as a comparison layer only: no model was fitted to it and nothing is called a reference. Every figure carries the licence, the credit, a change notice and the label 'vs a season envelope, not an event map'."
+    },
+    {
+      "id": "A1-OP10",
+      "point": "On which cells a rank statistic against the season envelope is taken.",
+      "signed_files_say": "Plan row A1 names no domain. Plan row A2 removes slopes of 5 degrees or more from the UN-SPIDER practice, the A2/A4 result reports its areas by that slope class, and the exploratory script looked at the cells under 5 degrees as well. Protocol v1a announces a HAND and slope mask for M1-v2 and gives no limit (open point A4-OP2).",
+      "what_was_done": "Each rank statistic is given on two sets of cells: every cell of AOI-01 on the Thai side, and the cells of that set whose GLO-30 slope is under 5 degrees. On the first set a terrain feature mostly tells hill from plain. Neither set is named the domain of record."
     }
   ],
   "not_computed": [

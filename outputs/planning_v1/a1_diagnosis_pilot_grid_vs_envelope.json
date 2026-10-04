@@ -1,6 +1,6 @@
 {
   "schema_version": "floodguard.a1_diagnosis_run_receipt.v1",
-  "generated_at_utc": "2026-10-04T20:28:45Z",
+  "generated_at_utc": "2026-10-04T22:15:27Z",
   "plan_task": "A1 (abstention diagnosis: why threshold-only change detection failed at the 16 Sep pass)",
   "figure_id": "pilot_grid_vs_envelope",
   "title": "Share of the 2024 season envelope inside AOI-01 that the M2 pilot grid leaves out",
@@ -22,8 +22,27 @@
   "run": "Share of the 2024 season envelope inside AOI-01 that the M2 pilot grid leaves out",
   "status": "run_receipt",
   "status_note": "Receipt of one diagnosis run, made with protocol v1a and v1b in force. Every run is reported: a second run of this figure writes a new receipt that names this one.",
-  "run_kind": "first_run",
+  "run_kind": "superseding_run",
   "computes": "The area of the product 4009 accumulated layer inside AOI-01, and the share of it outside the pilot grid of the retired M2 run. Areas only; no radar image is read and no layer is written.",
+  "measured_against": "vs a season envelope, not an event map",
+  "licence": {
+    "applies_to": "every figure of this file that is measured against UNOSAT/GISTDA product 4009",
+    "name": "CC BY-SA 4.0",
+    "url": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "credit": "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009",
+    "share_alike": "Every layer or table derived from product 4009 is shared under CC BY-SA 4.0, in its own file, with the attribution and a change notice. Keeping product 4009 derivatives in their own files is a caution, not legal advice.",
+    "change_notice": "Changed by FloodGuard: clipped to AOI-01 (resources/aoi/aoi-01_mae_sai_core.geojson); geometry repaired (make_valid; 2 parts repaired); reprojected from EPSG:4326 to EPSG:32647; not rasterised; areas were then measured against the pilot grid of the M2 run. Source: UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009, CC BY-SA 4.0.",
+    "standard_sentence": "unvalidated preliminary agency extent (UNOSAT product 4009 with GISTDA; Field_Validation=0), used as provided under CC BY-SA 4.0. FloodGuard did not validate it.",
+    "used_as": "a 2024 season envelope (lane SCN-ENV): a comparison layer, never an event map and never a reference",
+    "rights_record": {
+      "path": "docs/proposal_execution/rights_basis_4009_v1.json",
+      "sha256": "531ab40beb2b3e80a02d6de0d4d7d791b299176af0b192bfe105ca23c7e50cb3"
+    },
+    "not_legal_advice": true
+  },
+  "attributions": [
+    "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009, CC BY-SA 4.0"
+  ],
   "protocol_state": {
     "v1a": "in_force",
     "v1b": "in_force"
@@ -33,14 +52,26 @@
     "sha256": "ac16b6df4f2a9ae061e1c7cb7b99e1d9ebd5fc2e0a477eedeba15a4a1a2e5604"
   },
   "implementation": {
-    "base_commit": "02de0a7ff514324b467510ff54bf298637b74234",
+    "base_commit": "b26e5d2c641d1ee0319fcf39a595a097ffecf3cd",
     "base_commit_note": "The commit the working tree was on. The files below are the ones this run loaded, identified by their own SHA-256, committed or not.",
     "files_sha256": {
       "scripts/diagnostics/pilot_grid_vs_envelope.py": "ac16b6df4f2a9ae061e1c7cb7b99e1d9ebd5fc2e0a477eedeba15a4a1a2e5604",
-      "src/floodguard/abstention_diagnosis.py": "c49eb8e0c03751acad6b4ac9b2ebf5d3f242ea0d1f7fe0be402dbb6da050f699",
-      "src/floodguard/diagnosis_run.py": "dc53ef3f7fb4baa89ecbbf23f30bd5e09fa7517dc93b9bc0f1e9aafbac8b20ca",
-      "src/floodguard/diagnosis_layers.py": "c0c294a4c4e6bc7d0502251c365534d6d7ec9c08aee33596e40df4677a85a759"
-    }
+      "src/floodguard/abstention_diagnosis.py": "95707c004f72c931153583fc6360bb102a6e9cf3e2bb155608010b02bcc1b4d5",
+      "src/floodguard/diagnosis_run.py": "d8a145887c9da9a26f8f3016f9af8d3a538fa4fd3f8f11a8f4d63585a5bdd978",
+      "src/floodguard/diagnosis_layers.py": "373c62ba1e4e7cd19e5ca89ad7167ccaaf14ad4c7198434285c27cb4749bcaae"
+    },
+    "software": {
+      "python": "3.11.8",
+      "numpy": "2.2.6",
+      "pyproj": "3.7.2",
+      "proj": "9.5.1",
+      "shapely": "2.1.2",
+      "geos": "3.13.1",
+      "pyogrio": "0.13.0",
+      "geopandas": "1.1.4",
+      "pandas": "3.0.6"
+    },
+    "software_note": "The libraries the run had loaded when it finished. A figure can move in its last decimals under another version of GDAL, PROJ, GEOS or numpy; --verify reports the versions beside the comparison."
   },
   "parameters": {
     "envelope_level": "as_provided",
@@ -124,24 +155,45 @@
     }
   },
   "timestamps": {
-    "run_started_at_utc": "2026-10-04T20:28:32Z",
-    "run_finished_at_utc": "2026-10-04T20:28:45Z"
+    "run_started_at_utc": "2026-10-04T22:15:08Z",
+    "run_finished_at_utc": "2026-10-04T22:15:27Z"
   },
   "outputs": {
     "figures": {
       "path": "outputs/a1_diagnosis/pilot_grid_vs_envelope.json",
-      "sha256": "b4957307942025cc925e660e49f6e242fa282646f8bce31844086a045d3bd603",
+      "sha256": "6376a5d023cd728876dd4d67a690c24485d642d5b365fe4728412b30f5d3abd0",
       "bytes": 6764
     }
   },
-  "supersedes": null,
+  "supersedes": {
+    "receipt_sha256": "58da99959caad8d02b2bb4c18b9f1697ddbee6f7c456418415fb640c51edf26c",
+    "figures_sha256": "b4957307942025cc925e660e49f6e242fa282646f8bce31844086a045d3bd603",
+    "generated_at_utc": "2026-10-04T20:28:45Z",
+    "reason": "Review of 4 October 2026 (UTC): the receipt held figures derived from product 4009 without the change notice and the label; it now carries the licence block and the label of its figures file, and the library versions. The shared modules changed. No rule of this figure changed.",
+    "figures_same": true,
+    "copies_kept": [
+      "<external_data_workspace>/proposal_execution/planning_v1/a1_diagnosis/superseded_runs/20261004T202845Z_pilot_grid_vs_envelope/a1_diagnosis_pilot_grid_vs_envelope.json",
+      "<external_data_workspace>/proposal_execution/planning_v1/a1_diagnosis/superseded_runs/20261004T202845Z_pilot_grid_vs_envelope/pilot_grid_vs_envelope.json"
+    ]
+  },
   "run_history": {
     "rule": "Protocol v1b, change_control: every run is reported. Each earlier run of this figure is listed with the SHA-256 of its receipt and of its figures file.",
-    "earlier_runs": []
+    "earlier_runs": [
+      {
+        "generated_at_utc": "2026-10-04T20:28:45Z",
+        "run_started_at_utc": "2026-10-04T20:28:32Z",
+        "run_finished_at_utc": "2026-10-04T20:28:45Z",
+        "receipt_sha256": "58da99959caad8d02b2bb4c18b9f1697ddbee6f7c456418415fb640c51edf26c",
+        "figures_sha256": "b4957307942025cc925e660e49f6e242fa282646f8bce31844086a045d3bd603",
+        "run_kind": "first_run",
+        "superseded_because": "Review of 4 October 2026 (UTC): the receipt held figures derived from product 4009 without the change notice and the label; it now carries the licence block and the label of its figures file, and the library versions. The shared modules changed. No rule of this figure changed."
+      }
+    ]
   },
   "development_reads": [
     "4 October 2026, about 18:00 to 20:25 UTC, while the scripts were written and before any run: the headers of the stored sigma0, slope and land-cover rasters of tasks A2 and A4, of the GLO-30 tile and of the two JRC tiles were read (size, grid, bands, tags); the receipt of the retired M2 run was read for its keys and its grid, with the header of its mask; AOI-01 and the two radar receipts were read. No cell value was read and no figure was computed.",
-    "The same evening, before any run: the statistics module was tried on invented numbers only (random draws; no file of the external data workspace was opened)."
+    "The same evening, before any run: the statistics module was tried on invented numbers only (random draws; no file of the external data workspace was opened).",
+    "4 October 2026, about 21:40 to 22:10 UTC (5 October in local time), after the review of the first runs and before the superseding runs: the committed figures files and receipts were read; the eight superseded copies kept outside Git were read for their run times and their SHA-256; the text of five exploratory scripts of the plan session was read, to check what they had computed and that the guard refuses such text. None of them was run. No raster and no flood layer was opened and no cell value was read. The two figures that read nothing outside Git (the pass list and the one-population simulation) were computed once without writing, to try the changed scripts; no other figure was computed."
   ],
   "open_points": [
     {

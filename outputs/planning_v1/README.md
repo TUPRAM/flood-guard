@@ -91,3 +91,60 @@ The other four tambons have no such cell. Over the frame there are 31 distinct b
 The first version of this section (first run) gave figures from two reads of the rasters that no receipt recorded. A review found two of its details wrong: the window it described as reaching 20.25 N stopped one grid row short (544 cells and 116,786 residents, against 572 and 120,085 for the window above), and the latitude it gave for the largest border cell was one row off. Those reads are replaced by the reading above.
 
 **Points the protocol leaves open** (`open_points` in the table and the receipt; none was decided here): how cells that lie partly outside every unit are treated (E7-OP1); whether a range enters the vulnerability component, and which (E7-OP2); and whether a tambon's share is rounded before it enters the component (E7-OP3: the protocol rounds the anchors to six decimal places and says nothing about a unit's share).
+
+### Plan task E1: the flood inputs of the Mae Sai cases
+
+| File | What it is | Status | Written by |
+|---|---|---|---|
+| `e1_flood_inputs_mae_sai.json` | The receipt of the flood-input run for cases SE1 and O2 over the Mae Sai frame (plan task E1; plan sections 3.1 stage P1, 3.2 and 4.1). For each case: the input record (source, SHA-256, source timestamp, lane, tier, temporal relation, rights, confidence, assumptions), the repair counts, the area of each level (minus, as provided, plus) inside the reporting frame and inside the routing context, the area of each level on and off permanent water, and the product footprint. Also the permanent water of the reporting frame, the acceptance check of plan row E1, the SHA-256 of every layer written outside Git, every earlier run (`run_history`) and the points the signed files leave open (`open_points`) | `run_receipt`, third run (`run_kind: superseding_run`). It holds areas for a whole frame only: no value for a single tambon, no component, no FPPS, no A–E class and no ensemble. The layers of all three runs have the same bytes | `scripts/build_flood_inputs.py --frame mae_sai` (rules in `src/floodguard/flood_inputs.py`; rights in `src/floodguard/rights.py`). It refuses to run unless both protocols are in force and the rights registry allows every layer; a second run needs `--replace --reason`; `--verify` computes every layer again and compares it with the receipt |
+
+The figures below that come from UNOSAT/GISTDA product 4009 are shared under CC BY-SA 4.0. Credit: UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009. Changed by FloodGuard: each layer was repaired, projected to EPSG:32647, clipped to the frames named here and, for the minus and plus levels, shrunk or grown by 20 m; the areas were then measured. The layers are unvalidated preliminary agency extents (Field_Validation=0), used as provided; FloodGuard did not validate them. The permanent water comes from ESA WorldCover 2021 v200 (CC BY 4.0; © ESA WorldCover project 2021 / Contains modified Copernicus Sentinel data (2021) processed by ESA WorldCover consortium).
+
+**What the run does, and where each rule comes from.**
+
+- **Inputs** (protocol v1a, `case_portfolio` and `date_rule`). SE1 is the accumulated layer `CHIANGRAI_20240801_20241012_AccumulatedFlood`: lane SCN-ENV, tier T1, `season_window`. Its `Sensor_Date` attribute says 22 October 2024, and it is still a season window: it has no date per patch. O2 is `CHIANGRAI_20241022_FloodExtent`: lane OBS, tier T3, acquired on 22 October 2024, the case's own reference date, so `event_aligned`. O1 (own radar candidates) has a loader and an interface (`load_o1`, `RADAR_RECEIPT_KEYS`) and no run: no candidate has been delivered.
+- **Rights** (plan row G6; protocol v1a guardrail GR6). The registry reads `docs/proposal_execution/rights_basis_4009_v1.json` through `floodguard.rights_basis`, refuses any use without a confirmed record, and checks the archive against the size and SHA-256 the record names before a layer is opened. The record names the accumulated layer as its layer in scope, so SE1 is at rights level `public`; the layer of 22 October and the analysis extent are at `local`, and a write of them under `apps/web/public/` is refused (open point E1-OP1). This run writes nothing there.
+- **Repair.** `make_valid` on the polygon parts whose bounding box comes within 20 m of the bounding box of a frame, with the count.
+- **Levels** (protocol v1b, `ensemble_grid`, owner choice 2). Minus and plus are 20 m negative and positive buffers of the repaired layer in EPSG:32647, made before the clip, so a frame edge is not moved. No level is a central estimate.
+- **Frames.** The reporting frame is the union of the eight tambons of protocol v1a (305.554 km²). The routing context is the corridor polygon of record of protocol v1b (827.399 km²).
+- **Permanent water** (protocol v1a, `scoring_frame`: ESA WorldCover 2021 v200, class 80, in every case). The scoring frame names permanent water for the flood-likelihood component only, so the extents are not cut by it. The run writes the permanent water of the reporting frame as its own layer and reports the area of each level on and off it.
+
+**What the run measured, for whole frames.**
+
+| | SE1, accumulated layer | O2, layer of 22 October 2024 |
+|---|---|---|
+| Polygon parts in the layer; invalid | 896; 42 | 917; 9 |
+| Parts read; repaired | 262; 7 | 290; 3 |
+| Of these within reach of the reporting frame; repaired | 86; 3 | 181; 2 |
+| Reporting frame: minus / as provided / plus | 71.693 / 77.732 / 83.132 km² | 1.589 / 3.686 / 6.151 km² |
+| Routing context: minus / as provided / plus | 121.439 / 132.058 / 142.803 km² | 2.985 / 6.611 / 10.843 km² |
+| As provided, on permanent water (reporting frame) | 0.508 km² | 0.058 km² |
+| Rights level | `public` | `local` |
+
+- Permanent water is 0.989 km² of the reporting frame (16,915 cells of class 80 in the window read; no cell without a land-cover value).
+- The product footprint (`CHIANGRAI_20240801_20241022_AnalysisExtent`) covers the whole reporting frame and 87.3% of the corridor polygon. The context build keeps roads inside the 26 tha_admin3 polygons that meet the corridor; that part is 722.434 km², and 20 square metres of it lie outside the footprint. The rest of the corridor lies across the national border.
+- The three levels of O2 differ widely: the layer is made of narrow patches, and a 20 m erosion removes every part narrower than 40 m.
+- 21 files, 112.5 MB, are written outside Git under `<external_data_workspace>/proposal_execution/planning_v1/` (`se1_mae_sai/e1_flood_input/`, `o2_mae_sai/e1_flood_input/`, `mae_sai_frame/e1_flood_input/`): for each case six extents, two footprint layers, the licence notice of the rights record and `input_record.json`; for the frame the permanent-water layer. Each layer is GeoJSON in EPSG:32647 on a 1 mm grid and carries its licence, credit and change notice. `floodguard.flood_inputs.read_written_input` reads a case folder back and refuses a file whose SHA-256 is not the one its record names.
+
+**Acceptance of plan row E1** ("clip reproduces 15.34 km² for 4009 in AOI-01; repair count; ±1 px layers"). AOI-01 is `resources/aoi/aoi-01_mae_sai_core.geojson`. The accumulated layer, as provided, clipped to it measures 15.337 km² in EPSG:32647, which rounds to 15.34: reproduced. On the WGS 84 ellipsoid the same clip is 15.346 km². The plan row does not say which layer or which area measure it means; the layer of 22 October gives 0.048 km².
+
+**The runs, all on 4 October 2026.** Every run computed the same layers (compared by SHA-256).
+
+| Generated | Run | What it wrote |
+|---|---|---|
+| before the first run | Reads made while the code was written: the layer listing and part counts, both layers clipped to AOI-01, a timing of the buffers near the corridor, and the tags of the WorldCover tile. They are listed in the receipt under `development_reads` | Nothing. No value for a single tambon was computed |
+| 12:04:48Z | First run | 21 layers and a receipt (SHA-256 `f96446a1…9c7d`); replaced eight minutes later and never committed, so only its hash remains, in `run_history` |
+| between the first two runs | One more read: the written footprint layer set beside the tambons that meet the corridor | Nothing. The later runs compute the same check and record it (`footprint_check`) |
+| 12:12:55Z | Superseding run: it added the footprint check, two open points and the file list of each input record. `--verify` after it found the same bytes | The same layers and a receipt (SHA-256 `2af752fa…d772`); replaced five minutes later and never committed. One of its sentences was wrong: it said that a superseded receipt stays in the Git history |
+| 12:17:45Z | Superseding run: it corrected that sentence, added `run_history` and reworded the footprint check. `--verify` after it found the same bytes | The same layers and the receipt as it is here |
+
+**Points the signed files leave open** (`open_points` in the receipt; none was decided by the code):
+
+- **E1-OP1, rights of the layer of 22 October.** The record names only the accumulated layer, and decision R6 allows publication "as a season envelope only". The layer is read under the confirmed record and held at `local`. Plan 4.1 expects one record for both layers; the owners say whether the record covers it.
+- **E1-OP2, rights of the radar source data.** No signed record covers the Sentinel-1 data the O1 candidates are made from. `load_o1` refuses a candidate until one is registered.
+- **E1-OP3, permanent-water area.** The protocol gives the source and the class, not how a 10 m grid becomes an area. The run takes the footprint of every class-80 cell.
+- **E1-OP4, shape of the buffer.** Round joins, 16 segments per quarter circle; the protocol gives the distance only.
+- **E1-OP5 and E1-OP6, raster inputs.** The one-pixel levels of a raster are made as the same 20 m buffer of its polygonised cells; the 5-pixel rule of the closure rule needs a cell neighbourhood (4 or 8), and no closure extent is built without it.
+- **E1-OP7, the calendar of the three-day rule.** Thailand time or UTC; no case is near the edge.
+- **E1-OP8, the change-notice template of the rights record.** It is written for a raster of the district; the vector layers state their own changes in the record's order.
+- **E1-OP9, an unconfirmed record.** Plan 4.1 would let the inputs run at the local level; the registry refuses any use. The record is confirmed, so nothing is refused today.

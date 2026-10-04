@@ -1,0 +1,1280 @@
+{
+  "schema_version": "floodguard.flood_inputs_run_receipt.v1",
+  "generated_at_utc": "2026-10-04T12:17:45Z",
+  "run_kind": "superseding_run",
+  "plan_task": "E1: flood_inputs.py + rights.py + tests",
+  "run": "Flood inputs of cases SE1 and O2 over the Mae Sai frame",
+  "status": "run_receipt",
+  "status_note": "Receipt of one run on real frames, made with protocol v1a and v1b in force. Every run is reported: a second run writes a new receipt that names this one. The layers are outside Git and are bound here by SHA-256.",
+  "official_warning": false,
+  "operational_status": "non_operational",
+  "can_feed_decision_layer": false,
+  "computes": "The flood-input layers of cases SE1 and O2 over the Mae Sai frame: each extent as provided and at the minus and plus one-pixel levels, clipped to the reporting frame and to the routing context, the product footprint, and the permanent water of the reporting frame. Areas are for a whole frame. No FPPS, no component value, no A-E class, no ensemble and no value for a single tambon.",
+  "source_timestamp": "2024-08-01/2024-10-22",
+  "source_timestamps": {
+    "product_4009": "2024-08-01/2024-10-22",
+    "SE1": "2024-08-01/2024-10-12",
+    "O2": "2024-10-22",
+    "permanent_water": "2021-01-01/2021-12-31",
+    "tambon_boundaries_valid_on": [
+      "2022-01-22"
+    ]
+  },
+  "confidence_class": "low",
+  "confidence_basis": "The flood layers are unvalidated preliminary agency extents (UNOSAT product 4009 with GISTDA; Field_Validation=0), used as provided; FloodGuard did not validate them. Nothing here was checked against an independent source.",
+  "protocol_sha256": {
+    "planning_protocol_v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+    "planning_protocol_v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+  },
+  "protocol_state": {
+    "v1a": "in_force",
+    "v1b": "in_force"
+  },
+  "licence": {
+    "applies_to": "Every figure and file of this run that is derived from UNOSAT/GISTDA product 4009: the areas, the part counts and the layers of cases SE1 and O2.",
+    "name": "CC BY-SA 4.0",
+    "full_name": "Creative Commons Attribution-ShareAlike 4.0 International",
+    "spdx_id": "CC-BY-SA-4.0",
+    "url": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "legal_code_url": "https://creativecommons.org/licenses/by-sa/4.0/legalcode",
+    "credit": "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009",
+    "share_alike": "Every layer or table derived from product 4009 is shared under CC BY-SA 4.0, in its own file, with the attribution and a change notice. Keeping product 4009 derivatives in their own files is a caution, not legal advice.",
+    "standard_sentence": "unvalidated preliminary agency extent (UNOSAT product 4009 with GISTDA; Field_Validation=0), used as provided under CC BY-SA 4.0. FloodGuard did not validate it.",
+    "change_notice": "Changed by FloodGuard: each product 4009 layer was repaired (make_valid), projected from EPSG:4326 to EPSG:32647, clipped to the frames named here and, for the minus and plus levels, shrunk or grown by 20 m; the areas in this file were then measured. Each layer file states its own change notice. Source: UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009, CC BY-SA 4.0.",
+    "other_inputs": [
+      {
+        "id": "esa-worldcover",
+        "name": "ESA WorldCover 2021 v200 (ESA_WorldCover_10m_2021_v200_N18E099_Map.tif)",
+        "licence": "CC-BY 4.0 - https://creativecommons.org/licenses/by/4.0/",
+        "attribution": "ESA WorldCover project 2021 / Contains modified Copernicus Sentinel data (2021) processed by ESA WorldCover consortium",
+        "used_for": "The permanent water of the reporting frame, and the area of each level on and off it."
+      },
+      {
+        "id": "cod-ab",
+        "name": "HDX Thailand COD-AB subdistrict boundaries (tha_admin3)",
+        "licence": "CC BY-IGO",
+        "attribution": "OCHA / HDX Thailand COD-AB",
+        "used_for": "The reporting frame: the eight tambon polygons."
+      },
+      {
+        "id": "osm",
+        "name": "OpenStreetMap roads, through the corridor polygon of record",
+        "licence": "ODbL 1.0",
+        "attribution": "(c) OpenStreetMap contributors",
+        "used_for": "The routing context: the corridor polygon was built along OpenStreetMap routes."
+      }
+    ],
+    "not_legal_advice": true
+  },
+  "parameters": {
+    "frame_set": "mae_sai",
+    "cases": [
+      "SE1",
+      "O2"
+    ],
+    "unit_ids": [
+      "TH570901",
+      "TH570902",
+      "TH570903",
+      "TH570904",
+      "TH570905",
+      "TH570906",
+      "TH570908",
+      "TH570909"
+    ],
+    "analysis_crs": "EPSG:32647",
+    "coordinate_grid_m": 0.001,
+    "one_pixel_m": 20.0,
+    "one_pixel_source": "planning_protocol_v1b.json /ensemble_grid/core_axes (flood_input_single_state) /one_pixel_m",
+    "buffer": {
+      "join_style": "round",
+      "segments_per_quarter_circle": 16
+    },
+    "levels": [
+      "minus",
+      "as_provided",
+      "plus"
+    ],
+    "level_rule": "Protocol v1b, ensemble_grid.core_axes (flood_input_single_state), owner choice 2: 20 m for the minus and the plus level and for every input, raster or vector; a vector product gets a 20 m negative or positive buffer in EPSG:32647. The buffer is applied to the repaired product before the clip, so a frame edge is neither eroded nor grown. No level is labelled central (protocol v1a, date_rule.flood_uncertainty_axis).",
+    "repair_method": "make_valid",
+    "recency_window_days": 3,
+    "permanent_water": {
+      "source": "ESA WorldCover 2021 v200",
+      "class": 80,
+      "rule": "Protocol v1a, scoring_frame.components.flood_likelihood_0_100: the component is the flooded share of the unit's non-permanent-water land, and permanent water is ESA WorldCover 2021 v200 class 80 in every case. The scoring frame names permanent water for this component only, so the extents are written as they are and are not cut by it; exposure and closures read the whole extent."
+    },
+    "layers_read": {
+      "SE1": "CHIANGRAI_20240801_20241012_AccumulatedFlood",
+      "O2": "CHIANGRAI_20241022_FloodExtent",
+      "footprint": "CHIANGRAI_20240801_20241022_AnalysisExtent"
+    }
+  },
+  "inputs": {
+    "product_4009_archive": {
+      "path": "<external_data_workspace>/unosat/unosat_4009_chiang_rai_2024/FL20240912THA_GDB.zip",
+      "sha256": "1fe3243c2bc986d4111bb3d82aff292abccf7fb1bb1dd722747e994618b66e85",
+      "bytes": 27977189,
+      "geodatabase": "FL20240912THA.gdb",
+      "is_the_archive_the_rights_record_names": true
+    },
+    "rights_record_4009": {
+      "path": "docs/proposal_execution/rights_basis_4009_v1.json",
+      "sha256": "531ab40beb2b3e80a02d6de0d4d7d791b299176af0b192bfe105ca23c7e50cb3",
+      "record_status": "confirmed"
+    },
+    "licence_notice_4009": {
+      "path": "docs/proposal_execution/rights_basis_4009_v1_NOTICE.txt",
+      "sha256": "acaafc1b83a5fe5d72a9f50e0e0efe476517328f581c5c487fb2e0a1290de1df",
+      "bytes": 8230
+    },
+    "tambon_boundaries": {
+      "path": "<external_data_workspace>/open_context/hdx_cod_ab/tha_admin_boundaries.gdb.zip",
+      "sha256": "09e62345481bb80030ff6779e074bfb2c16629b70ae1e373ebd31945f1c6e0d8",
+      "bytes": 174679979,
+      "layer": "tha_admin3",
+      "unit_id_field": "adm3_pcode",
+      "units": 8,
+      "valid_on": [
+        "2022-01-22"
+      ]
+    },
+    "routing_geometry": {
+      "path": "outputs/planning_v1/corridor_of_record.geojson",
+      "sha256": "4e49d5eca2f7522e2de10cf81cc68b4ebcbea036225d1b862f4a80cb1affbac2",
+      "bytes": 173044
+    },
+    "permanent_water_raster": {
+      "path": "<external_data_workspace>/open_context/esa_worldcover/ESA_WorldCover_10m_2021_v200_N18E099_Map.tif",
+      "sha256": "e02c02859074bc0ff0cf1bed21b074520be46c4385e0071c327c173e0ec9f4eb",
+      "bytes": 80234221,
+      "source": "ESA WorldCover 2021 v200"
+    },
+    "aoi_01": {
+      "path": "resources/aoi/aoi-01_mae_sai_core.geojson",
+      "sha256": "d837a1b058c86739150bb6b844f9dcfdedf32feb83be99194e855430d4a613c2",
+      "bytes": 5752,
+      "area_km2_epsg32647": 104.730496
+    },
+    "planning_protocol_v1a": {
+      "path": "docs/proposal_execution/planning_protocol_v1a.json",
+      "sha256": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954"
+    },
+    "planning_protocol_v1b": {
+      "path": "docs/proposal_execution/planning_protocol_v1b.json",
+      "sha256": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+    },
+    "protocol_receipts": {
+      "path": "docs/proposal_execution/RECEIPTS.jsonl",
+      "sha256": "06b0721ecba63467cc0e4f614cb5463ce480bf9bfb596653f5189f869795c59a",
+      "bytes": 107182
+    }
+  },
+  "rights": {
+    "registry": "floodguard.rights.REGISTERED_RECORDS",
+    "registered_inputs": [
+      "copernicus_sentinel2_l2a_automated_track",
+      "unosat_4009"
+    ],
+    "rule": "A layer is read only when the registry finds a confirmed rights record for its input, and the archive has the size and SHA-256 that record names. A write under apps/web/public/ needs rights level public; this run writes nothing there.",
+    "grants": {
+      "SE1": {
+        "input_id": "unosat_4009",
+        "layer": "CHIANGRAI_20240801_20241012_AccumulatedFlood",
+        "record_id": "rights_basis_4009_v1",
+        "record_path": "docs/proposal_execution/rights_basis_4009_v1.json",
+        "record_sha256": "531ab40beb2b3e80a02d6de0d4d7d791b299176af0b192bfe105ca23c7e50cb3",
+        "record_schema": "floodguard.rights_basis_4009.v1",
+        "record_status": "confirmed",
+        "confirmed_by": [
+          "Putu",
+          "Rachmania"
+        ],
+        "confirmed_on": "2026-10-02",
+        "licence": {
+          "name": "CC BY-SA 4.0",
+          "full_name": "Creative Commons Attribution-ShareAlike 4.0 International",
+          "spdx_id": "CC-BY-SA-4.0",
+          "url": "https://creativecommons.org/licenses/by-sa/4.0/",
+          "legal_code_url": "https://creativecommons.org/licenses/by-sa/4.0/legalcode"
+        },
+        "attribution": "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009",
+        "share_alike": "Every layer or table derived from product 4009 is shared under CC BY-SA 4.0, in its own file, with the attribution and a change notice. Keeping product 4009 derivatives in their own files is a caution, not legal advice.",
+        "rights_level": "public",
+        "rights_level_basis": "The confirmed record rights_basis_4009_v1 names this layer as its layer in scope. Layers derived from it may be published under CC BY-SA 4.0 with the credit and a change notice, as a season envelope only (decisions D2, D3 and R6).",
+        "not_legal_advice": true
+      },
+      "O2": {
+        "input_id": "unosat_4009",
+        "layer": "CHIANGRAI_20241022_FloodExtent",
+        "record_id": "rights_basis_4009_v1",
+        "record_path": "docs/proposal_execution/rights_basis_4009_v1.json",
+        "record_sha256": "531ab40beb2b3e80a02d6de0d4d7d791b299176af0b192bfe105ca23c7e50cb3",
+        "record_schema": "floodguard.rights_basis_4009.v1",
+        "record_status": "confirmed",
+        "confirmed_by": [
+          "Putu",
+          "Rachmania"
+        ],
+        "confirmed_on": "2026-10-02",
+        "licence": {
+          "name": "CC BY-SA 4.0",
+          "full_name": "Creative Commons Attribution-ShareAlike 4.0 International",
+          "spdx_id": "CC-BY-SA-4.0",
+          "url": "https://creativecommons.org/licenses/by-sa/4.0/",
+          "legal_code_url": "https://creativecommons.org/licenses/by-sa/4.0/legalcode"
+        },
+        "attribution": "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009",
+        "share_alike": "Every layer or table derived from product 4009 is shared under CC BY-SA 4.0, in its own file, with the attribution and a change notice. Keeping product 4009 derivatives in their own files is a caution, not legal advice.",
+        "rights_level": "local",
+        "rights_level_basis": "The confirmed record rights_basis_4009_v1 covers the product and its archive under CC BY-SA 4.0 (decision D2), but it names only CHIANGRAI_20240801_20241012_AccumulatedFlood as its layer in scope, and decision R6 allows publication as a season envelope only. This layer is read and processed outside Git; nothing derived from it is written into public web files until the owners extend the record.",
+        "not_legal_advice": true
+      }
+    },
+    "footprint_layer_grant": {
+      "input_id": "unosat_4009",
+      "layer": "CHIANGRAI_20240801_20241022_AnalysisExtent",
+      "record_id": "rights_basis_4009_v1",
+      "record_path": "docs/proposal_execution/rights_basis_4009_v1.json",
+      "record_sha256": "531ab40beb2b3e80a02d6de0d4d7d791b299176af0b192bfe105ca23c7e50cb3",
+      "record_schema": "floodguard.rights_basis_4009.v1",
+      "record_status": "confirmed",
+      "confirmed_by": [
+        "Putu",
+        "Rachmania"
+      ],
+      "confirmed_on": "2026-10-02",
+      "licence": {
+        "name": "CC BY-SA 4.0",
+        "full_name": "Creative Commons Attribution-ShareAlike 4.0 International",
+        "spdx_id": "CC-BY-SA-4.0",
+        "url": "https://creativecommons.org/licenses/by-sa/4.0/",
+        "legal_code_url": "https://creativecommons.org/licenses/by-sa/4.0/legalcode"
+      },
+      "attribution": "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009",
+      "share_alike": "Every layer or table derived from product 4009 is shared under CC BY-SA 4.0, in its own file, with the attribution and a change notice. Keeping product 4009 derivatives in their own files is a caution, not legal advice.",
+      "rights_level": "local",
+      "rights_level_basis": "The confirmed record rights_basis_4009_v1 covers the product and its archive under CC BY-SA 4.0 (decision D2), but it names only CHIANGRAI_20240801_20241012_AccumulatedFlood as its layer in scope, and decision R6 allows publication as a season envelope only. This layer is read and processed outside Git; nothing derived from it is written into public web files until the owners extend the record.",
+      "not_legal_advice": true
+    },
+    "output_rights_level": {
+      "SE1": "public",
+      "O2": "local"
+    },
+    "written_under_apps_web_public": false
+  },
+  "frames": {
+    "reporting_frame": {
+      "label": "the eight Mae Sai subdistricts of protocol v1a (HDX Thailand COD-AB, layer tha_admin3)",
+      "area_km2": 305.554125,
+      "units": [
+        "TH570901",
+        "TH570902",
+        "TH570903",
+        "TH570904",
+        "TH570905",
+        "TH570906",
+        "TH570908",
+        "TH570909"
+      ]
+    },
+    "routing_context": {
+      "label": "the Mae Sai routing corridor of protocol v1b (outputs/planning_v1/corridor_of_record.geojson)",
+      "area_km2": 827.39923,
+      "units": []
+    }
+  },
+  "frame_note": "The reporting frame is the union of the eight tambon polygons. The demand area of the context build is that union clipped to AOI-02 (protocol v1b, owner choice 21), which is 214.5 square metres smaller. The routing context is the corridor polygon; the context build keeps the road segments inside it.",
+  "footprint_check": {
+    "what": "Where the product says nothing, the water is unknown, not absent. The analysis extent of the product is its footprint; the two shares say how much of each frame it covers. The corridor polygon reaches across the national border, where the context holds no road, so the last figure gives how much of the part that can hold roads the footprint leaves out.",
+    "routing_context_that_can_hold_roads": {
+      "rule": "Protocol v1b, corridor_polygon.context_call.reporting_geometry: the union of the COD-AB tha_admin3 polygons that intersect the corridor polygon. The context build limits road segments to it.",
+      "tha_admin3_units_meeting_the_routing_context": 26,
+      "area_km2": 722.433534,
+      "share_of_routing_context": 0.873138
+    },
+    "by_case": {
+      "SE1": {
+        "footprint_layer": "CHIANGRAI_20240801_20241022_AnalysisExtent",
+        "share_of_reporting_frame": 1.0,
+        "share_of_routing_context": 0.873138,
+        "routing_context_that_can_hold_roads_outside_the_footprint_km2": 2e-05
+      },
+      "O2": {
+        "footprint_layer": "CHIANGRAI_20240801_20241022_AnalysisExtent",
+        "share_of_reporting_frame": 1.0,
+        "share_of_routing_context": 0.873138,
+        "routing_context_that_can_hold_roads_outside_the_footprint_km2": 2e-05
+      }
+    }
+  },
+  "permanent_water": {
+    "rule": "Protocol v1a, scoring_frame.components.flood_likelihood_0_100: the component is the flooded share of the unit's non-permanent-water land, and permanent water is ESA WorldCover 2021 v200 class 80 in every case. The scoring frame names permanent water for this component only, so the extents are written as they are and are not cut by it; exposure and closures read the whole extent.",
+    "source": "ESA WorldCover 2021 v200",
+    "class": 80,
+    "file": "ESA_WorldCover_10m_2021_v200_N18E099_Map.tif",
+    "sha256": "e02c02859074bc0ff0cf1bed21b074520be46c4385e0071c327c173e0ec9f4eb",
+    "bytes": 80234221,
+    "raster_crs": "EPSG:4326",
+    "cell_size": [
+      8.333333333333333e-05,
+      8.333333333333333e-05
+    ],
+    "product_version": "V2.0.0",
+    "time_start": "2021-01-01T00:00:00Z",
+    "time_end": "2021-12-31T23:59:59Z",
+    "licence": "CC-BY 4.0 - https://creativecommons.org/licenses/by/4.0/",
+    "attribution": "ESA WorldCover project 2021 / Contains modified Copernicus Sentinel data (2021) processed by ESA WorldCover consortium",
+    "window": {
+      "col_off": 9726,
+      "row_off": 6418,
+      "width": 2715,
+      "height": 2491
+    },
+    "cells_read": 6763065,
+    "class_cells_in_window": 16915,
+    "no_value_cells_in_window": 0,
+    "frame": "reporting_frame",
+    "frame_km2": 305.554125,
+    "permanent_water_km2": 0.988898,
+    "non_permanent_water_km2": 304.565226,
+    "no_land_cover_value_km2": 0.0,
+    "measurement": "The footprint of every cell of the class, projected vertex by vertex to EPSG:32647, clipped to the frame and snapped to a 1 mm grid; areas by polygon overlay (open point E1-OP3)."
+  },
+  "flood_inputs": {
+    "SE1": {
+      "schema_version": "floodguard.flood_input.v1",
+      "flood_inputs_version": "flood_inputs_v1",
+      "case_id": "SE1",
+      "input_id": "unosat_4009:CHIANGRAI_20240801_20241012_AccumulatedFlood",
+      "input_name": "UNOSAT/GISTDA product 4009, accumulated layer",
+      "lane": "SCN-ENV",
+      "tier": "T1",
+      "temporal_relation": "season_window",
+      "case_reference_date": null,
+      "acquisition_date": null,
+      "season_window": [
+        "2024-08-01",
+        "2024-10-12"
+      ],
+      "source_timestamp": "2024-08-01/2024-10-12",
+      "source": {
+        "layer": "CHIANGRAI_20240801_20241012_AccumulatedFlood",
+        "layer_attributes": {
+          "Field_Validation": 0,
+          "Sensor_Date": "2024-10-22",
+          "EventCode": "FL20240912THA",
+          "Water_Class": 7,
+          "Confidence_ID": 4
+        },
+        "archive": {
+          "file_name": "FL20240912THA_GDB.zip",
+          "sha256": "1fe3243c2bc986d4111bb3d82aff292abccf7fb1bb1dd722747e994618b66e85",
+          "bytes": 27977189
+        },
+        "footprint_layer": "CHIANGRAI_20240801_20241022_AnalysisExtent"
+      },
+      "geometry_kind": "vector",
+      "rights": {
+        "input_id": "unosat_4009",
+        "layer": "CHIANGRAI_20240801_20241012_AccumulatedFlood",
+        "record_id": "rights_basis_4009_v1",
+        "record_path": "docs/proposal_execution/rights_basis_4009_v1.json",
+        "record_sha256": "531ab40beb2b3e80a02d6de0d4d7d791b299176af0b192bfe105ca23c7e50cb3",
+        "record_schema": "floodguard.rights_basis_4009.v1",
+        "record_status": "confirmed",
+        "confirmed_by": [
+          "Putu",
+          "Rachmania"
+        ],
+        "confirmed_on": "2026-10-02",
+        "licence": {
+          "name": "CC BY-SA 4.0",
+          "full_name": "Creative Commons Attribution-ShareAlike 4.0 International",
+          "spdx_id": "CC-BY-SA-4.0",
+          "url": "https://creativecommons.org/licenses/by-sa/4.0/",
+          "legal_code_url": "https://creativecommons.org/licenses/by-sa/4.0/legalcode"
+        },
+        "attribution": "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009",
+        "share_alike": "Every layer or table derived from product 4009 is shared under CC BY-SA 4.0, in its own file, with the attribution and a change notice. Keeping product 4009 derivatives in their own files is a caution, not legal advice.",
+        "rights_level": "public",
+        "rights_level_basis": "The confirmed record rights_basis_4009_v1 names this layer as its layer in scope. Layers derived from it may be published under CC BY-SA 4.0 with the credit and a change notice, as a season envelope only (decisions D2, D3 and R6).",
+        "not_legal_advice": true
+      },
+      "confidence_class": "low",
+      "confidence_basis": "An unvalidated preliminary agency extent (Field_Validation=0), used as provided; FloodGuard did not validate it. This is the confidence of the layer as evidence. The confidence class of a unit under confidence rule v1 is not computed here.",
+      "assumptions": [
+        "The layer is used as provided: a preliminary agency extent that was not checked in the field (Field_Validation=0). FloodGuard did not validate it.",
+        "Every vertex is projected to EPSG:32647 as it is, and areas are measured there. Coordinates are snapped to a 1 mm grid.",
+        "The minus and plus levels are 20 m buffers of the repaired layer (protocol v1b, owner choice 2). They are perturbations of one product state, not a range of flood depth or of time.",
+        "Permanent water (ESA WorldCover 2021 v200, class 80) does not cut the extent. It is left out of the flood-likelihood areas only, as the scoring frame of protocol v1a states.",
+        "The layer holds every area mapped as water at some time in the season, with no date per patch. It is a scenario (lane SCN-ENV): every area is treated as flooded at once. It is not an observation of any day and not the water of September 2024."
+      ],
+      "official_warning": false,
+      "operational_status": "non_operational",
+      "can_feed_decision_layer": false,
+      "used_as_provided": true,
+      "field_validation": 0,
+      "standard_sentence": "unvalidated preliminary agency extent (UNOSAT product 4009 with GISTDA; Field_Validation=0), used as provided under CC BY-SA 4.0. FloodGuard did not validate it.",
+      "credit": "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009",
+      "not_an_observation_of_any_day": true,
+      "sensor_date_attribute": "2024-10-22",
+      "season_window_note": "The layer name gives 1 August to 12 October 2024; the product text and the layer's Sensor_Date attribute run to 22 October 2024. Whichever end date is right, the layer is a season window (protocol v1a, DR-A10).",
+      "analysis_crs": "EPSG:32647",
+      "coordinate_grid_m": 0.001,
+      "frames": {
+        "reporting_frame": {
+          "label": "the eight Mae Sai subdistricts of protocol v1a (HDX Thailand COD-AB, layer tha_admin3)",
+          "area_km2": 305.554125,
+          "units": [
+            "TH570901",
+            "TH570902",
+            "TH570903",
+            "TH570904",
+            "TH570905",
+            "TH570906",
+            "TH570908",
+            "TH570909"
+          ],
+          "source": {
+            "path": "<external_data_workspace>/open_context/hdx_cod_ab/tha_admin_boundaries.gdb.zip",
+            "sha256": "09e62345481bb80030ff6779e074bfb2c16629b70ae1e373ebd31945f1c6e0d8",
+            "bytes": 174679979,
+            "layer": "tha_admin3",
+            "unit_id_field": "adm3_pcode",
+            "units": 8,
+            "valid_on": [
+              "2022-01-22"
+            ],
+            "unit_ids": [
+              "TH570901",
+              "TH570902",
+              "TH570903",
+              "TH570904",
+              "TH570905",
+              "TH570906",
+              "TH570908",
+              "TH570909"
+            ],
+            "unit_list": "planning_protocol_v1a.json /case_portfolio/mae_sai_reporting_frame/units"
+          }
+        },
+        "routing_context": {
+          "label": "the Mae Sai routing corridor of protocol v1b (outputs/planning_v1/corridor_of_record.geojson)",
+          "area_km2": 827.39923,
+          "units": [],
+          "source": {
+            "path": "outputs/planning_v1/corridor_of_record.geojson",
+            "sha256": "4e49d5eca2f7522e2de10cf81cc68b4ebcbea036225d1b862f4a80cb1affbac2",
+            "bytes": 173044,
+            "named_in": "planning_protocol_v1b.json /corridor_polygon/geometry_file"
+          }
+        }
+      },
+      "repair": {
+        "method": "make_valid",
+        "source_parts": 896,
+        "source_parts_invalid": 42,
+        "parts_read": 262,
+        "parts_repaired": 7,
+        "parts_repaired_after_projection": 0,
+        "reach_m": 20.0,
+        "by_frame": {
+          "reporting_frame": {
+            "parts_within_reach": 86,
+            "parts_repaired": 3
+          },
+          "routing_context": {
+            "parts_within_reach": 262,
+            "parts_repaired": 7
+          }
+        },
+        "note": "A part is read when its bounding box comes within reach_m of the bounding box of a frame. parts_repaired counts the invalid ones among the parts read; source_parts_invalid counts every invalid part of the layer."
+      },
+      "levels": {
+        "rule": "Protocol v1b, ensemble_grid.core_axes (flood_input_single_state), owner choice 2: 20 m for the minus and the plus level and for every input, raster or vector; a vector product gets a 20 m negative or positive buffer in EPSG:32647. The buffer is applied to the repaired product before the clip, so a frame edge is neither eroded nor grown. No level is labelled central (protocol v1a, date_rule.flood_uncertainty_axis).",
+        "one_pixel_m": 20.0,
+        "buffer": {
+          "join_style": "round",
+          "segments_per_quarter_circle": 16
+        },
+        "none_is_central": true,
+        "by_level": {
+          "minus": {
+            "reporting_frame": {
+              "area_m2": 71692981.746,
+              "area_km2": 71.692982,
+              "polygons": 111,
+              "vertices": 571247,
+              "area_on_permanent_water_km2": 0.492688,
+              "area_outside_permanent_water_km2": 71.200294
+            },
+            "routing_context": {
+              "area_m2": 121439314.003,
+              "area_km2": 121.439314,
+              "polygons": 209,
+              "vertices": 804909
+            }
+          },
+          "as_provided": {
+            "reporting_frame": {
+              "area_m2": 77732378.756,
+              "area_km2": 77.732379,
+              "polygons": 46,
+              "vertices": 579838,
+              "area_on_permanent_water_km2": 0.508244,
+              "area_outside_permanent_water_km2": 77.224135
+            },
+            "routing_context": {
+              "area_m2": 132057898.193,
+              "area_km2": 132.057898,
+              "polygons": 109,
+              "vertices": 730668
+            }
+          },
+          "plus": {
+            "reporting_frame": {
+              "area_m2": 83132107.029,
+              "area_km2": 83.132107,
+              "polygons": 34,
+              "vertices": 682262,
+              "area_on_permanent_water_km2": 0.511848,
+              "area_outside_permanent_water_km2": 82.620259
+            },
+            "routing_context": {
+              "area_m2": 142802751.631,
+              "area_km2": 142.802752,
+              "polygons": 82,
+              "vertices": 922388
+            }
+          }
+        }
+      },
+      "footprint": {
+        "repair": {
+          "method": "make_valid",
+          "source_parts": 1,
+          "source_parts_invalid": 0,
+          "parts_read": 1,
+          "parts_repaired": 0,
+          "parts_repaired_after_projection": 0,
+          "reach_m": 0.0,
+          "by_frame": {
+            "reporting_frame": {
+              "parts_within_reach": 1,
+              "parts_repaired": 0
+            },
+            "routing_context": {
+              "parts_within_reach": 1,
+              "parts_repaired": 0
+            }
+          },
+          "note": "A part is read when its bounding box comes within reach_m of the bounding box of a frame. parts_repaired counts the invalid ones among the parts read; source_parts_invalid counts every invalid part of the layer."
+        },
+        "by_frame": {
+          "reporting_frame": {
+            "area_m2": 305554124.689,
+            "area_km2": 305.554125,
+            "polygons": 1,
+            "vertices": 6449,
+            "share_of_frame": 1.0
+          },
+          "routing_context": {
+            "area_m2": 722433531.536,
+            "area_km2": 722.433532,
+            "polygons": 1,
+            "vertices": 3510,
+            "share_of_frame": 0.873138
+          }
+        }
+      },
+      "permanent_water": {
+        "rule": "Protocol v1a, scoring_frame.components.flood_likelihood_0_100: the component is the flooded share of the unit's non-permanent-water land, and permanent water is ESA WorldCover 2021 v200 class 80 in every case. The scoring frame names permanent water for this component only, so the extents are written as they are and are not cut by it; exposure and closures read the whole extent.",
+        "source": "ESA WorldCover 2021 v200",
+        "class": 80,
+        "file": "ESA_WorldCover_10m_2021_v200_N18E099_Map.tif",
+        "sha256": "e02c02859074bc0ff0cf1bed21b074520be46c4385e0071c327c173e0ec9f4eb",
+        "bytes": 80234221,
+        "raster_crs": "EPSG:4326",
+        "cell_size": [
+          8.333333333333333e-05,
+          8.333333333333333e-05
+        ],
+        "product_version": "V2.0.0",
+        "time_start": "2021-01-01T00:00:00Z",
+        "time_end": "2021-12-31T23:59:59Z",
+        "licence": "CC-BY 4.0 - https://creativecommons.org/licenses/by/4.0/",
+        "attribution": "ESA WorldCover project 2021 / Contains modified Copernicus Sentinel data (2021) processed by ESA WorldCover consortium",
+        "window": {
+          "col_off": 9726,
+          "row_off": 6418,
+          "width": 2715,
+          "height": 2491
+        },
+        "cells_read": 6763065,
+        "class_cells_in_window": 16915,
+        "no_value_cells_in_window": 0,
+        "frame": "reporting_frame",
+        "frame_km2": 305.554125,
+        "permanent_water_km2": 0.988898,
+        "non_permanent_water_km2": 304.565226,
+        "no_land_cover_value_km2": 0.0,
+        "measurement": "The footprint of every cell of the class, projected vertex by vertex to EPSG:32647, clipped to the frame and snapped to a 1 mm grid; areas by polygon overlay (open point E1-OP3)."
+      },
+      "protocol_sha256": {
+        "planning_protocol_v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+        "planning_protocol_v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+      }
+    },
+    "O2": {
+      "schema_version": "floodguard.flood_input.v1",
+      "flood_inputs_version": "flood_inputs_v1",
+      "case_id": "O2",
+      "input_id": "unosat_4009:CHIANGRAI_20241022_FloodExtent",
+      "input_name": "UNOSAT/GISTDA product 4009, 22 Oct 2024 layer",
+      "lane": "OBS",
+      "tier": "T3",
+      "temporal_relation": "event_aligned",
+      "case_reference_date": "2024-10-22",
+      "acquisition_date": "2024-10-22",
+      "season_window": null,
+      "source_timestamp": "2024-10-22",
+      "source": {
+        "layer": "CHIANGRAI_20241022_FloodExtent",
+        "layer_attributes": {
+          "Field_Validation": 0,
+          "Sensor_Date": "2024-10-22",
+          "EventCode": "FL20240912THA",
+          "Water_Class": 2,
+          "Confidence_ID": 4
+        },
+        "archive": {
+          "file_name": "FL20240912THA_GDB.zip",
+          "sha256": "1fe3243c2bc986d4111bb3d82aff292abccf7fb1bb1dd722747e994618b66e85",
+          "bytes": 27977189
+        },
+        "footprint_layer": "CHIANGRAI_20240801_20241022_AnalysisExtent"
+      },
+      "geometry_kind": "vector",
+      "rights": {
+        "input_id": "unosat_4009",
+        "layer": "CHIANGRAI_20241022_FloodExtent",
+        "record_id": "rights_basis_4009_v1",
+        "record_path": "docs/proposal_execution/rights_basis_4009_v1.json",
+        "record_sha256": "531ab40beb2b3e80a02d6de0d4d7d791b299176af0b192bfe105ca23c7e50cb3",
+        "record_schema": "floodguard.rights_basis_4009.v1",
+        "record_status": "confirmed",
+        "confirmed_by": [
+          "Putu",
+          "Rachmania"
+        ],
+        "confirmed_on": "2026-10-02",
+        "licence": {
+          "name": "CC BY-SA 4.0",
+          "full_name": "Creative Commons Attribution-ShareAlike 4.0 International",
+          "spdx_id": "CC-BY-SA-4.0",
+          "url": "https://creativecommons.org/licenses/by-sa/4.0/",
+          "legal_code_url": "https://creativecommons.org/licenses/by-sa/4.0/legalcode"
+        },
+        "attribution": "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009",
+        "share_alike": "Every layer or table derived from product 4009 is shared under CC BY-SA 4.0, in its own file, with the attribution and a change notice. Keeping product 4009 derivatives in their own files is a caution, not legal advice.",
+        "rights_level": "local",
+        "rights_level_basis": "The confirmed record rights_basis_4009_v1 covers the product and its archive under CC BY-SA 4.0 (decision D2), but it names only CHIANGRAI_20240801_20241012_AccumulatedFlood as its layer in scope, and decision R6 allows publication as a season envelope only. This layer is read and processed outside Git; nothing derived from it is written into public web files until the owners extend the record.",
+        "not_legal_advice": true
+      },
+      "confidence_class": "low",
+      "confidence_basis": "An unvalidated preliminary agency extent (Field_Validation=0), used as provided; FloodGuard did not validate it. This is the confidence of the layer as evidence. The confidence class of a unit under confidence rule v1 is not computed here.",
+      "assumptions": [
+        "The layer is used as provided: a preliminary agency extent that was not checked in the field (Field_Validation=0). FloodGuard did not validate it.",
+        "Every vertex is projected to EPSG:32647 as it is, and areas are measured there. Coordinates are snapped to a 1 mm grid.",
+        "The minus and plus levels are 20 m buffers of the repaired layer (protocol v1b, owner choice 2). They are perturbations of one product state, not a range of flood depth or of time.",
+        "Permanent water (ESA WorldCover 2021 v200, class 80) does not cut the extent. It is left out of the flood-likelihood areas only, as the scoring frame of protocol v1a states.",
+        "The layer is dated 22 October 2024 and is its own case: late-season residual water. It is not a lower level of the September flood and does not describe the September event."
+      ],
+      "official_warning": false,
+      "operational_status": "non_operational",
+      "can_feed_decision_layer": false,
+      "used_as_provided": true,
+      "field_validation": 0,
+      "standard_sentence": "unvalidated preliminary agency extent (UNOSAT product 4009 with GISTDA; Field_Validation=0), used as provided under CC BY-SA 4.0. FloodGuard did not validate it.",
+      "credit": "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009",
+      "label": "late-season residual water, 22 Oct 2024",
+      "acquisition_time_precision": "date only; the layer gives no time of day",
+      "analysis_crs": "EPSG:32647",
+      "coordinate_grid_m": 0.001,
+      "frames": {
+        "reporting_frame": {
+          "label": "the eight Mae Sai subdistricts of protocol v1a (HDX Thailand COD-AB, layer tha_admin3)",
+          "area_km2": 305.554125,
+          "units": [
+            "TH570901",
+            "TH570902",
+            "TH570903",
+            "TH570904",
+            "TH570905",
+            "TH570906",
+            "TH570908",
+            "TH570909"
+          ],
+          "source": {
+            "path": "<external_data_workspace>/open_context/hdx_cod_ab/tha_admin_boundaries.gdb.zip",
+            "sha256": "09e62345481bb80030ff6779e074bfb2c16629b70ae1e373ebd31945f1c6e0d8",
+            "bytes": 174679979,
+            "layer": "tha_admin3",
+            "unit_id_field": "adm3_pcode",
+            "units": 8,
+            "valid_on": [
+              "2022-01-22"
+            ],
+            "unit_ids": [
+              "TH570901",
+              "TH570902",
+              "TH570903",
+              "TH570904",
+              "TH570905",
+              "TH570906",
+              "TH570908",
+              "TH570909"
+            ],
+            "unit_list": "planning_protocol_v1a.json /case_portfolio/mae_sai_reporting_frame/units"
+          }
+        },
+        "routing_context": {
+          "label": "the Mae Sai routing corridor of protocol v1b (outputs/planning_v1/corridor_of_record.geojson)",
+          "area_km2": 827.39923,
+          "units": [],
+          "source": {
+            "path": "outputs/planning_v1/corridor_of_record.geojson",
+            "sha256": "4e49d5eca2f7522e2de10cf81cc68b4ebcbea036225d1b862f4a80cb1affbac2",
+            "bytes": 173044,
+            "named_in": "planning_protocol_v1b.json /corridor_polygon/geometry_file"
+          }
+        }
+      },
+      "repair": {
+        "method": "make_valid",
+        "source_parts": 917,
+        "source_parts_invalid": 9,
+        "parts_read": 290,
+        "parts_repaired": 3,
+        "parts_repaired_after_projection": 0,
+        "reach_m": 20.0,
+        "by_frame": {
+          "reporting_frame": {
+            "parts_within_reach": 181,
+            "parts_repaired": 2
+          },
+          "routing_context": {
+            "parts_within_reach": 290,
+            "parts_repaired": 3
+          }
+        },
+        "note": "A part is read when its bounding box comes within reach_m of the bounding box of a frame. parts_repaired counts the invalid ones among the parts read; source_parts_invalid counts every invalid part of the layer."
+      },
+      "levels": {
+        "rule": "Protocol v1b, ensemble_grid.core_axes (flood_input_single_state), owner choice 2: 20 m for the minus and the plus level and for every input, raster or vector; a vector product gets a 20 m negative or positive buffer in EPSG:32647. The buffer is applied to the repaired product before the clip, so a frame edge is neither eroded nor grown. No level is labelled central (protocol v1a, date_rule.flood_uncertainty_axis).",
+        "one_pixel_m": 20.0,
+        "buffer": {
+          "join_style": "round",
+          "segments_per_quarter_circle": 16
+        },
+        "none_is_central": true,
+        "by_level": {
+          "minus": {
+            "reporting_frame": {
+              "area_m2": 1589071.209,
+              "area_km2": 1.589071,
+              "polygons": 169,
+              "vertices": 28640,
+              "area_on_permanent_water_km2": 0.01609,
+              "area_outside_permanent_water_km2": 1.572981
+            },
+            "routing_context": {
+              "area_m2": 2984822.39,
+              "area_km2": 2.984822,
+              "polygons": 279,
+              "vertices": 51498
+            }
+          },
+          "as_provided": {
+            "reporting_frame": {
+              "area_m2": 3685819.226,
+              "area_km2": 3.685819,
+              "polygons": 111,
+              "vertices": 8125,
+              "area_on_permanent_water_km2": 0.057995,
+              "area_outside_permanent_water_km2": 3.627824
+            },
+            "routing_context": {
+              "area_m2": 6610567.989,
+              "area_km2": 6.610568,
+              "polygons": 188,
+              "vertices": 14101
+            }
+          },
+          "plus": {
+            "reporting_frame": {
+              "area_m2": 6150911.571,
+              "area_km2": 6.150912,
+              "polygons": 105,
+              "vertices": 42337,
+              "area_on_permanent_water_km2": 0.08996,
+              "area_outside_permanent_water_km2": 6.060951
+            },
+            "routing_context": {
+              "area_m2": 10842844.411,
+              "area_km2": 10.842844,
+              "polygons": 168,
+              "vertices": 73895
+            }
+          }
+        }
+      },
+      "footprint": {
+        "repair": {
+          "method": "make_valid",
+          "source_parts": 1,
+          "source_parts_invalid": 0,
+          "parts_read": 1,
+          "parts_repaired": 0,
+          "parts_repaired_after_projection": 0,
+          "reach_m": 0.0,
+          "by_frame": {
+            "reporting_frame": {
+              "parts_within_reach": 1,
+              "parts_repaired": 0
+            },
+            "routing_context": {
+              "parts_within_reach": 1,
+              "parts_repaired": 0
+            }
+          },
+          "note": "A part is read when its bounding box comes within reach_m of the bounding box of a frame. parts_repaired counts the invalid ones among the parts read; source_parts_invalid counts every invalid part of the layer."
+        },
+        "by_frame": {
+          "reporting_frame": {
+            "area_m2": 305554124.689,
+            "area_km2": 305.554125,
+            "polygons": 1,
+            "vertices": 6449,
+            "share_of_frame": 1.0
+          },
+          "routing_context": {
+            "area_m2": 722433531.536,
+            "area_km2": 722.433532,
+            "polygons": 1,
+            "vertices": 3510,
+            "share_of_frame": 0.873138
+          }
+        }
+      },
+      "permanent_water": {
+        "rule": "Protocol v1a, scoring_frame.components.flood_likelihood_0_100: the component is the flooded share of the unit's non-permanent-water land, and permanent water is ESA WorldCover 2021 v200 class 80 in every case. The scoring frame names permanent water for this component only, so the extents are written as they are and are not cut by it; exposure and closures read the whole extent.",
+        "source": "ESA WorldCover 2021 v200",
+        "class": 80,
+        "file": "ESA_WorldCover_10m_2021_v200_N18E099_Map.tif",
+        "sha256": "e02c02859074bc0ff0cf1bed21b074520be46c4385e0071c327c173e0ec9f4eb",
+        "bytes": 80234221,
+        "raster_crs": "EPSG:4326",
+        "cell_size": [
+          8.333333333333333e-05,
+          8.333333333333333e-05
+        ],
+        "product_version": "V2.0.0",
+        "time_start": "2021-01-01T00:00:00Z",
+        "time_end": "2021-12-31T23:59:59Z",
+        "licence": "CC-BY 4.0 - https://creativecommons.org/licenses/by/4.0/",
+        "attribution": "ESA WorldCover project 2021 / Contains modified Copernicus Sentinel data (2021) processed by ESA WorldCover consortium",
+        "window": {
+          "col_off": 9726,
+          "row_off": 6418,
+          "width": 2715,
+          "height": 2491
+        },
+        "cells_read": 6763065,
+        "class_cells_in_window": 16915,
+        "no_value_cells_in_window": 0,
+        "frame": "reporting_frame",
+        "frame_km2": 305.554125,
+        "permanent_water_km2": 0.988898,
+        "non_permanent_water_km2": 304.565226,
+        "no_land_cover_value_km2": 0.0,
+        "measurement": "The footprint of every cell of the class, projected vertex by vertex to EPSG:32647, clipped to the frame and snapped to a 1 mm grid; areas by polygon overlay (open point E1-OP3)."
+      },
+      "protocol_sha256": {
+        "planning_protocol_v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+        "planning_protocol_v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+      }
+    }
+  },
+  "acceptance": {
+    "plan_row": "E1: clip reproduces 15.34 km2 for 4009 in AOI-01; repair count; +/-1 px layers",
+    "aoi_01": {
+      "path": "resources/aoi/aoi-01_mae_sai_core.geojson",
+      "sha256": "d837a1b058c86739150bb6b844f9dcfdedf32feb83be99194e855430d4a613c2",
+      "bytes": 5752,
+      "area_km2_epsg32647": 104.730496
+    },
+    "expected_km2": 15.34,
+    "layers": {
+      "SE1": {
+        "layer": "CHIANGRAI_20240801_20241012_AccumulatedFlood",
+        "clip_km2_epsg32647": 15.336778,
+        "clip_km2_geodesic_wgs84": 15.345576,
+        "repair": {
+          "method": "make_valid",
+          "source_parts": 896,
+          "source_parts_invalid": 42,
+          "parts_read": 21,
+          "parts_repaired": 2,
+          "parts_repaired_after_projection": 0
+        }
+      },
+      "O2": {
+        "layer": "CHIANGRAI_20241022_FloodExtent",
+        "clip_km2_epsg32647": 0.047679,
+        "clip_km2_geodesic_wgs84": 0.047707,
+        "repair": {
+          "method": "make_valid",
+          "source_parts": 917,
+          "source_parts_invalid": 9,
+          "parts_read": 3,
+          "parts_repaired": 0,
+          "parts_repaired_after_projection": 0
+        }
+      }
+    },
+    "reproduced": true,
+    "reproduced_by": "the accumulated layer, as provided, clipped to AOI-01, area in EPSG:32647 rounded to two decimals",
+    "note": "The plan row does not say which product 4009 layer or which area measure gives the figure. reproduced compares the area of the accumulated layer in EPSG:32647, rounded to two decimals. Its area on the WGS 84 ellipsoid and the layer of 22 October 2024 are shown beside it."
+  },
+  "outputs": {
+    "frame": {
+      "folder": "<external_data_workspace>/proposal_execution/planning_v1/mae_sai_frame/e1_flood_input",
+      "files": [
+        {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/mae_sai_frame/e1_flood_input/permanent_water__reporting_frame.geojson",
+          "sha256": "a92e168c56b1fddbabf772171ba140a303e2b48f1007d7da1223b5d7c4d150ee",
+          "bytes": 152245,
+          "what": "permanent_water",
+          "frame": "reporting_frame"
+        }
+      ]
+    },
+    "SE1": {
+      "folder": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e1_flood_input",
+      "files": [
+        {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e1_flood_input/flood_extent__minus__reporting_frame.geojson",
+          "sha256": "bb02ec6f3fb56d79745eb208ffc8d5ff6e2e621f6de5efd8e569facc79727824",
+          "bytes": 14159939,
+          "what": "flood_extent",
+          "level": "minus",
+          "frame": "reporting_frame"
+        },
+        {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e1_flood_input/flood_extent__minus__routing_context.geojson",
+          "sha256": "51391c6b06830da49d904d653e0bcc100a03258e9e9b7eaf8dc3b9f712bb1033",
+          "bytes": 19950704,
+          "what": "flood_extent",
+          "level": "minus",
+          "frame": "routing_context"
+        },
+        {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e1_flood_input/flood_extent__as_provided__reporting_frame.geojson",
+          "sha256": "7140bcb7c319d43983ff931b44cfe1e8338f4f857ea7196c879e02755788bcab",
+          "bytes": 14372576,
+          "what": "flood_extent",
+          "level": "as_provided",
+          "frame": "reporting_frame"
+        },
+        {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e1_flood_input/flood_extent__as_provided__routing_context.geojson",
+          "sha256": "8a6b9df069cc1cd4b84b7c5fdb30bcf344a0111f0e19fd2ee388799b62112b58",
+          "bytes": 18110287,
+          "what": "flood_extent",
+          "level": "as_provided",
+          "frame": "routing_context"
+        },
+        {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e1_flood_input/flood_extent__plus__reporting_frame.geojson",
+          "sha256": "e85fef610ff6ae283fadcbca7551191dced2773d3dec72b62f53a1635181d32a",
+          "bytes": 16910435,
+          "what": "flood_extent",
+          "level": "plus",
+          "frame": "reporting_frame"
+        },
+        {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e1_flood_input/flood_extent__plus__routing_context.geojson",
+          "sha256": "8e8440f60e748d86bdb64c0ee8a9c8a994729ba219edce01f823c3083b07f478",
+          "bytes": 22861172,
+          "what": "flood_extent",
+          "level": "plus",
+          "frame": "routing_context"
+        },
+        {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e1_flood_input/product_footprint__reporting_frame.geojson",
+          "sha256": "5f723544a327fc7cbb92610fce002be2751854a44022a9e374644902ab9d0830",
+          "bytes": 163357,
+          "what": "product_footprint",
+          "frame": "reporting_frame"
+        },
+        {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e1_flood_input/product_footprint__routing_context.geojson",
+          "sha256": "e630ef491aaa41e7e19789e9c339dd20d677184a6e407997a363bcf0bdb28ae7",
+          "bytes": 90711,
+          "what": "product_footprint",
+          "frame": "routing_context"
+        },
+        {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e1_flood_input/LICENSE_NOTICE.txt",
+          "sha256": "acaafc1b83a5fe5d72a9f50e0e0efe476517328f581c5c487fb2e0a1290de1df",
+          "bytes": 8230,
+          "what": "licence_notice"
+        },
+        {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e1_flood_input/input_record.json",
+          "sha256": "80df880b2d3b9b038d1dbbdcdc66b80e3c0f0cf8404d8e573108e7ffeece4193",
+          "bytes": 14151,
+          "what": "input_record"
+        }
+      ]
+    },
+    "O2": {
+      "folder": "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e1_flood_input",
+      "files": [
+        {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e1_flood_input/flood_extent__minus__reporting_frame.geojson",
+          "sha256": "0bdb7417a5a36fe9f068236df79d173af2f2373581f0294fcfa5e1f2df569161",
+          "bytes": 714188,
+          "what": "flood_extent",
+          "level": "minus",
+          "frame": "reporting_frame"
+        },
+        {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e1_flood_input/flood_extent__minus__routing_context.geojson",
+          "sha256": "203bd0704cdae68453da92f2617bb0cddf33ace50eb1fb82a4b315fa7b26ae60",
+          "bytes": 1281108,
+          "what": "flood_extent",
+          "level": "minus",
+          "frame": "routing_context"
+        },
+        {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e1_flood_input/flood_extent__as_provided__reporting_frame.geojson",
+          "sha256": "ec25e3fbe6f269d2a5c42b6395af8a5a7f9810314a13b81fc275053bf3ba905c",
+          "bytes": 205390,
+          "what": "flood_extent",
+          "level": "as_provided",
+          "frame": "reporting_frame"
+        },
+        {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e1_flood_input/flood_extent__as_provided__routing_context.geojson",
+          "sha256": "a68fa9e57bf3d50ad75d382095b7e0d34b4675415a54f60f2d7d54cdfa8b9094",
+          "bytes": 353728,
+          "what": "flood_extent",
+          "level": "as_provided",
+          "frame": "routing_context"
+        },
+        {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e1_flood_input/flood_extent__plus__reporting_frame.geojson",
+          "sha256": "ed71a548848af0b86ff1fe33a083be1b465f1514daa2998ef2836392150a25fa",
+          "bytes": 1053138,
+          "what": "flood_extent",
+          "level": "plus",
+          "frame": "reporting_frame"
+        },
+        {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e1_flood_input/flood_extent__plus__routing_context.geojson",
+          "sha256": "576ad3e6b5cfc6a42a465b12f0676ee36ec2e3ebf63ba86c1d2ae76372eb0b11",
+          "bytes": 1835318,
+          "what": "flood_extent",
+          "level": "plus",
+          "frame": "routing_context"
+        },
+        {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e1_flood_input/product_footprint__reporting_frame.geojson",
+          "sha256": "10d9cd3eac80421acdc5aec570af0998dfb28911f057f40bc91f2f07664d08aa",
+          "bytes": 163263,
+          "what": "product_footprint",
+          "frame": "reporting_frame"
+        },
+        {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e1_flood_input/product_footprint__routing_context.geojson",
+          "sha256": "2f98a177fa50b3576ff68013c9e71fdcb1d691fd9ab33275a82b1277a8dcd28e",
+          "bytes": 90617,
+          "what": "product_footprint",
+          "frame": "routing_context"
+        },
+        {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e1_flood_input/LICENSE_NOTICE.txt",
+          "sha256": "acaafc1b83a5fe5d72a9f50e0e0efe476517328f581c5c487fb2e0a1290de1df",
+          "bytes": 8230,
+          "what": "licence_notice"
+        },
+        {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e1_flood_input/input_record.json",
+          "sha256": "809ec42fd7e668f6b860585c7c9d3107963ed1fc048eb844e8b34b473fdf8294",
+          "bytes": 13946,
+          "what": "input_record"
+        }
+      ]
+    }
+  },
+  "development_reads": {
+    "what": "Reads of the same inputs made while the code was written, before this run. They wrote no file and computed no value for a single tambon. They are listed because every run is reported.",
+    "reads": [
+      "Layer listing of the product archive and a count of the polygon parts of the three Chiang Rai layers (accumulated: 896 parts, 42 invalid; 22 October: 917 parts, 9 invalid; analysis extent: 1 part).",
+      "Both flood layers clipped to AOI-01 as provided, to look for the 15.34 km2 of plan row E1 (accumulated: 15.337 km2 in EPSG:32647 and 15.346 km2 on the ellipsoid; 22 October: 0.048 km2).",
+      "A timing of the 20 m buffers on the parts whose bounding box meets the corridor polygon, with 16, 8 and 4 segments per quarter circle (accumulated: 733.0 km2 of parts read, 132.1 km2 inside the corridor; 22 October: 12.5 km2 of parts read, 6.6 km2 inside the corridor).",
+      "The grid, the nodata value and the tags of the WorldCover tile. No cell was read.",
+      "After the first run (2026-10-04T12:04:48Z): the written footprint layer of the routing context set beside the tha_admin3 polygons that meet the corridor (corridor 827.4 km2, of which 105.0 km2 outside the footprint; 722.4 km2 inside the 26 polygons that meet it, of which 20 square metres outside the footprint). The later runs compute the same check and record it.",
+      "After the second run (2026-10-04T12:12:55Z): --verify computed the 21 files again and found the bytes that receipt bound."
+    ]
+  },
+  "open_points": [
+    {
+      "id": "E1-OP1",
+      "point": "Rights level of the product 4009 layer of 22 October 2024 (case O2) and of the analysis extent.",
+      "signed_files_say": "The rights record names CHIANGRAI_20240801_20241012_AccumulatedFlood as its layer in scope, and decision R6 allows publication 'as a season envelope only (D3)'. Plan 4.1 rows 3 and 4 expect one record for both layers.",
+      "what_this_module_does": "Reads both layers under the confirmed record (decision D2 covers the product). The accumulated layer is at level public; every other layer of the archive is at level local, and a public write of it is refused.",
+      "for_the_owners": "Whether the record covers the 22 October layer and the analysis extent for publication."
+    },
+    {
+      "id": "E1-OP2",
+      "point": "No rights record exists for the source data of the own radar candidates (case O1).",
+      "signed_files_say": "Nothing. The only other record in the repository covers Sentinel-2 scenes and is not signed by a human.",
+      "what_this_module_does": "load_o1 refuses a candidate whose rights_input_id has no confirmed record.",
+      "for_the_owners": "A signed record for the Copernicus Sentinel-1 data the candidates are made from."
+    },
+    {
+      "id": "E1-OP3",
+      "point": "How the 10 m WorldCover grid becomes an area of permanent water.",
+      "signed_files_say": "Source and class only (ESA WorldCover 2021 v200, class 80).",
+      "what_this_module_does": "Takes the footprint of every class-80 cell as permanent water, projects it to EPSG:32647 and measures areas by polygon overlay. A cell with no land-cover value is not counted as water; its area is reported.",
+      "for_the_owners": "Whether another rule is wanted, for example cell centres, or a treatment of cells with no value."
+    },
+    {
+      "id": "E1-OP4",
+      "point": "Shape of the one-pixel buffer.",
+      "signed_files_say": "A 20 m negative or positive buffer in EPSG:32647; no join style and no arc resolution.",
+      "what_this_module_does": "Round joins with 16 segments per quarter circle (the shapely default).",
+      "for_the_owners": "Nothing, unless another shape is wanted."
+    },
+    {
+      "id": "E1-OP5",
+      "point": "The one-pixel levels of a raster input.",
+      "signed_files_say": "20 m for every input, raster or vector. For a raster: 'one pixel / 20 m erosion' and 'one pixel buffer', with no cell neighbourhood (4 or 8) and no rule for cells with no answer.",
+      "what_this_module_does": "Polygonises the flood cells and applies the same 20 m buffer as for a vector product. It refuses a one-pixel raster whose cells are not 20 m.",
+      "for_the_owners": "Whether a cell-based erosion and dilation is wanted instead, and with which neighbourhood."
+    },
+    {
+      "id": "E1-OP6",
+      "point": "Which cells form one polygon when polygons under 5 pixels are dropped from a T2 raster.",
+      "signed_files_say": "Protocol v1b closure_rule_v1.parameters: polygons under 5 pixels are dropped before intersection. Nothing on whether cells that touch at a corner belong to one polygon.",
+      "what_this_module_does": "Takes the neighbourhood as an argument and builds no closure extent without it.",
+      "for_the_owners": "4-neighbourhood or 8-neighbourhood."
+    },
+    {
+      "id": "E1-OP7",
+      "point": "The calendar in which the days between an acquisition and the case reference date are counted.",
+      "signed_files_say": "Acquisition within +/-3 days of the case reference date. Protocol v1a writes the O1 acquisition in Thailand time (16 Sep 2024 06:16 ICT); it is 15 Sep 23:16 in UTC.",
+      "what_this_module_does": "Counts whole days between two calendar dates and takes the acquisition date as it is given. No case is near the three-day edge.",
+      "for_the_owners": "Thailand time or UTC, if a later input falls near the edge."
+    },
+    {
+      "id": "E1-OP8",
+      "point": "The change-notice template of the product 4009 rights record.",
+      "signed_files_say": "The template reads 'clipped to Mae Sai district (...)' and 'rasterised to ... m cells'. It was written for the replay's raster of the district.",
+      "what_this_module_does": "Writes its own notice for each vector layer, with the record's four steps in the record's order: the clip geometry (which can be the corridor), the repair count, the projection, the 20 m buffer of a minus or plus level, and 'not rasterised'.",
+      "for_the_owners": "Whether the record's template should be widened to vector layers and to other clips."
+    },
+    {
+      "id": "E1-OP9",
+      "point": "What an unconfirmed rights record allows.",
+      "signed_files_say": "Plan 4.1 lets the two product 4009 inputs run at the local level if the record is not signed. The task for this module asks for a refusal of any use without a confirmed record.",
+      "what_this_module_does": "Refuses every use and every public write until the record is confirmed. The record is confirmed, so nothing is refused today.",
+      "for_the_owners": "Which of the two applies, should a later record be pending."
+    }
+  ],
+  "not_computed": [
+    "flood-likelihood component",
+    "exposure component",
+    "any other component",
+    "FPPS",
+    "A-E class",
+    "would-be class",
+    "ensemble cell",
+    "closed or delayed edges",
+    "access loss",
+    "any value for a single tambon",
+    "own radar candidates of case O1 (none has been delivered)"
+  ],
+  "assumptions": [
+    "The product 4009 layers are used as provided: preliminary agency extents that were not checked in the field (Field_Validation=0). FloodGuard did not validate them.",
+    "The accumulated layer is a season envelope with no date per patch (lane SCN-ENV). It is a scenario in which every area mapped as water in the season is treated as flooded at once; it is not an observation of any day and not the water of September 2024.",
+    "The layer of 22 October 2024 is its own dated case, late-season residual water. It does not describe the September event.",
+    "The minus and plus levels are 20 m buffers of the repaired layer, in EPSG:32647 (protocol v1b, owner choice 2). They are perturbations of one product state and no level is a central estimate.",
+    "Every vertex is projected to EPSG:32647 as it is and areas are measured there, so an area is about 0.06 percent below its geodesic value near 99.9 E. Coordinates are snapped to a 1 mm grid.",
+    "Permanent water is every ESA WorldCover 2021 v200 cell of class 80, taken by its footprint. It does not cut the extents; it is left out of the flood-likelihood areas only, as the scoring frame of protocol v1a states.",
+    "The reporting frame is the union of the eight tambon polygons of the 2022 COD-AB layer. The flood layers are from 2024 and the land-cover map from 2021."
+  ],
+  "limitations": [
+    "A flood extent is not a closure. Whether an edge is closed is a modelled assumption of the closure rule, which this run does not apply.",
+    "The minus level removes every part of the extent narrower than 40 m, and the plus level joins parts less than 40 m apart. The three levels of a layer made of narrow patches therefore differ widely; see the areas by level.",
+    "The season envelope holds water of August and of early October as well. Its area is not the area flooded on any day.",
+    "The third-party satellite imagery UNOSAT and GISTDA used to make the product is not relicensed by these files, and UNOSAT and GISTDA do not endorse FloodGuard or its use of the product.",
+    "The layers are written outside Git. The receipt binds them by SHA-256; --verify computes them again from the inputs."
+  ],
+  "implementation": {
+    "base_commit": "4624f8df5a88321031174afb573ccceb045ad674",
+    "base_commit_note": "The commit the working tree was on. The files below are the ones this run loaded, identified by their own SHA-256, committed or not.",
+    "builder_sha256": "1d55b9f55222a52bef7ccf523cdd6f4a7f6aa445396889c1747f42bf88d36cf7",
+    "flood_inputs_module_sha256": "355926c52105ed4ba281a6459ec1d36d20f3e1d809fa57794b64a9afbf12c1d5",
+    "rights_module_sha256": "847327fd0831102e8ca3814b20fc2772fe9aff445f174def97dffd500212f742",
+    "rights_basis_module_sha256": "32419611a9d71b429c25a714ebecb7152f6d8bc9f654d0ca5af00e41d38c0c23",
+    "flood_inputs_version": "flood_inputs_v1",
+    "software": {
+      "python": "3.11.8",
+      "numpy": "2.2.6",
+      "shapely": "2.1.2",
+      "geos": "3.13.1",
+      "pyproj": "3.7.2",
+      "proj": "9.5.1",
+      "pyogrio": "0.13.0",
+      "rasterio": "1.4.4",
+      "gdal": "3.10.3"
+    }
+  },
+  "timing_seconds": {
+    "frames_and_permanent_water": 2.1,
+    "case_SE1": 69.5,
+    "case_O2": 3.9,
+    "acceptance_check": 11.8
+  },
+  "timestamps": {
+    "run_started_at_utc": "2026-10-04T12:17:45Z",
+    "run_finished_at_utc": "2026-10-04T12:19:12Z",
+    "note": "generated_at_utc is the start of the run; the input records carry the same time."
+  },
+  "supersedes": {
+    "receipt_sha256": "2af752fa5f104dbf2e4a34ca5a9104c844efd774bb56ad8141deee181b1ad772",
+    "generated_at_utc": "2026-10-04T12:12:55Z",
+    "reason": "Corrects a sentence of the second receipt, which said that a superseded receipt stays in the Git history (the first two receipts were replaced before any commit), adds run_history and rewords the footprint check; the layers are computed again from the same inputs.",
+    "layers_same": true,
+    "layers_that_differ": [],
+    "note": "The superseded receipt is named here by its SHA-256, and run_history lists every earlier run. A receipt that was replaced before it was committed is not in the Git history: only its SHA-256 remains. The layers are compared by SHA-256; an input record carries its generation time and is left out of the comparison."
+  },
+  "run_history": [
+    {
+      "generated_at_utc": "2026-10-04T12:04:48Z",
+      "receipt_sha256": "f96446a1da0d0dfde25d0f4f6cb9b8da99bf5239800e1d51da74cc3555f69c7d",
+      "superseded_because": "Adds the footprint check of the routing context, two open points (E1-OP8, E1-OP9) and the list of files in each input record; the layers are computed again from the same inputs.",
+      "layers_same_as_the_run_that_replaced_it": true
+    },
+    {
+      "generated_at_utc": "2026-10-04T12:12:55Z",
+      "receipt_sha256": "2af752fa5f104dbf2e4a34ca5a9104c844efd774bb56ad8141deee181b1ad772",
+      "superseded_because": "Corrects a sentence of the second receipt, which said that a superseded receipt stays in the Git history (the first two receipts were replaced before any commit), adds run_history and rewords the footprint check; the layers are computed again from the same inputs.",
+      "layers_same_as_the_run_that_replaced_it": true
+    }
+  ]
+}

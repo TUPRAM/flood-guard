@@ -1,0 +1,557 @@
+{
+  "schema_version": "floodguard.radar_candidates_run_receipt.v1",
+  "generated_at_utc": "2026-10-04T14:27:47Z",
+  "plan_task": "A2 (UN-SPIDER reproduction) and A4 (M1-literal and M1-v2 on the eight-tambon union)",
+  "run": "Radar flood candidates of case O1, eight Mae Sai tambons, three methods",
+  "status": "run_receipt",
+  "status_note": "Receipt of one run on real units, made with protocol v1a and v1b in force. Every run is reported: a second run writes a new receipt that names this one.",
+  "run_role": "sensitivity_run_not_in_the_plan",
+  "official_warning": false,
+  "operational_status": "non_operational",
+  "computes": "Radar flood candidates of tier T2 for the eight Mae Sai tambons, with coverage, cells without an answer, candidate area, validity layers and threshold levels. No FPPS, no A-E class and no ensemble.",
+  "source_timestamp": "2024-09-15T23:16:01Z",
+  "source_timestamps": {
+    "pre_event_image_utc": "2024-09-03T23:16:00Z",
+    "post_event_image_utc": "2024-09-15T23:16:01Z",
+    "post_event_image_in_thailand": "2024-09-16 06:16 ICT",
+    "worldcover": "2021",
+    "boundaries": "COD-AB tha_admin3 (2022)"
+  },
+  "confidence_class": "low",
+  "confidence_basis": "Own unqualified candidates of tier T2 from one Sentinel-1 pair, with no terrain correction by a qualified processor and no reference of any kind. Nothing here was checked against a flood map.",
+  "protocol_sha256": {
+    "planning_protocol_v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+    "planning_protocol_v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+  },
+  "protocol_state": {
+    "v1a": "in_force",
+    "v1b": "in_force"
+  },
+  "m1_v2_frozen_binding": {
+    "frozen_config_sha256": "2bfcb0c6ebf4b79402afa63c56209f2c5cda26491f08883d67908195b6c64a68",
+    "code_sha256": {
+      "src/floodguard/geoid_m1_benchmark.py": "26d98f5cbdbcdcb1eeafe0b83a6e44b0ff4c9c7fb245078469952d95829e409f",
+      "src/floodguard/sar_change_v2.py": "3127b370303b08902dc545442f7aa5a2aa54d283b471c0d65f5899c9c19e1134"
+    },
+    "planning_protocol_v1a_sha256": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+    "freeze_receipt_sha256": "736d92887e0f536077a704af7f70270b81b7779a1f1b6dcbe36865cbf6edf3ee"
+  },
+  "parameters": {
+    "case": "O1",
+    "unit_list_source": "planning_protocol_v1a.json/case_portfolio/mae_sai_reporting_frame/units",
+    "unit_ids": [
+      "TH570901",
+      "TH570902",
+      "TH570903",
+      "TH570904",
+      "TH570905",
+      "TH570906",
+      "TH570908",
+      "TH570909"
+    ],
+    "boundary_layer": "tha_admin3",
+    "grid": {
+      "crs": "EPSG:32647",
+      "cell_m": 10.0,
+      "width": 3072,
+      "height": 4096,
+      "bounds": [
+        583680.0,
+        2232320.0,
+        614400.0,
+        2273280.0
+      ],
+      "tile_lattice": "The lattice of the GEOID-Flood sample: tiles of 1024 by 1024 cells of 10 m whose corners are whole multiples of 10,240 m in the UTM zone. Here: UTM zone 47N.",
+      "tiles_in_the_bounding_box": [
+        "E057N221",
+        "E058N221",
+        "E059N221",
+        "E057N220",
+        "E058N220",
+        "E059N220",
+        "E057N219",
+        "E058N219",
+        "E059N219",
+        "E057N218",
+        "E058N218",
+        "E059N218"
+      ],
+      "tiles_holding_part_of_the_frame": [
+        "E058N221",
+        "E057N220",
+        "E058N220",
+        "E059N220",
+        "E057N219",
+        "E058N219",
+        "E059N219",
+        "E057N218",
+        "E058N218"
+      ]
+    },
+    "geocoding": "annotation_grid_with_cell_height",
+    "geocoding_label": "sensitivity geocoding, not in the plan: annotation grid with a DEM height for every cell",
+    "gcp_polynomial": {
+      "order_asked_of_gdal": "none: GDAL chooses the order from the number of control points",
+      "order_found": {
+        "pre": 2,
+        "post": 2
+      },
+      "found_by": "floodguard.sentinel1_sigma0.gcp_polynomial_order",
+      "used_for": "the displacement check only; this run is not warped with the polynomial"
+    },
+    "height_datum_reading": "annotation_heights_are_ellipsoidal_and_dem_is_above_the_geoid",
+    "window_margin_degrees": 0.03,
+    "resampling": "bilinear on linear sigma0",
+    "permanent_water_class": 80,
+    "jrc_perennial_months": 10,
+    "dem_slope_block": 3,
+    "slope_class_edges_degrees": [
+      5.0,
+      10.0,
+      20.0
+    ],
+    "un_spider": {
+      "polarisation": "vh",
+      "smoothing": "focal_mean_circle_on_db",
+      "smoothing_radius_m": 50.0,
+      "difference": "after_db_divided_by_before_db",
+      "difference_threshold": 1.25,
+      "perennial_water": "removed_before_the_connected_pixel_rule",
+      "min_connected_cells": 8,
+      "connectivity": "eight_connected",
+      "max_slope": 5.0,
+      "slope_unit": "degrees",
+      "slope_rule": "cells_with_slope_at_or_above_max_slope_are_removed_last"
+    },
+    "m1_literal": {
+      "speckle_filter": "lee_local_statistics",
+      "speckle_window_pixels": 5,
+      "equivalent_looks": 4.4,
+      "threshold_feature": "delta_vh_db_post_minus_pre",
+      "threshold_method": "otsu_on_all_valid_pixels_of_the_image",
+      "candidate_rule": "delta_vh_below_threshold_and_below_zero",
+      "isolated_speckle_cleaning": "majority_3x3_at_least_5_of_9",
+      "histogram": {
+        "lower_db": -25.0,
+        "upper_db": 25.0,
+        "bin_width_db": 0.1
+      }
+    },
+    "m1_v2": {
+      "ashman_d_min": 2.0,
+      "block_pixels": 64,
+      "channel": "vh",
+      "direction": "darkening",
+      "equivalent_looks": 4.4,
+      "histogram": {
+        "bin_width_db": 0.1,
+        "lower_db": -25.0,
+        "upper_db": 25.0
+      },
+      "isolated_speckle_cleaning": "majority_3x3_at_least_5_of_9",
+      "kittler_illingworth_rule": "interior_minimum_between_fitted_modes",
+      "min_block_valid_fraction": 0.5,
+      "min_component_weight": 0.1,
+      "min_threshold_class_fraction": 0.01,
+      "speckle_filter": "refined_lee_7x7",
+      "threshold_method": "kittler_illingworth",
+      "threshold_scope": "per_tile"
+    },
+    "threshold_shifts_db": [
+      -1.0,
+      0.0,
+      1.0
+    ],
+    "displacement_check": {
+      "search_cells": 120,
+      "pair_search_cells": 20,
+      "pair_agreement_m": 2.0,
+      "min_water_cells": 2000,
+      "lattice_step": 8,
+      "height_datum_readings_m": {
+        "annotation_heights_and_dem_share_one_datum": 0.0,
+        "annotation_heights_are_ellipsoidal_and_dem_is_above_the_geoid": -35.0
+      }
+    },
+    "coverage_min": 0.8,
+    "abstention_max": 0.2
+  },
+  "inputs": {
+    "pre_event_safe": {
+      "path": "<external_data_workspace>/sentinel1_original_safe/S1A_IW_GRDH_1SDV_20240903T231600_20240903T231625_055507_06C5C9_72F7.SAFE.zip",
+      "sha256": "42433d6cfb55118abe21e6faabef56343cefc9f28817cd31eb9386d32f56543d",
+      "bytes": 1721841197,
+      "acquisition_manifest": {
+        "sha256_in_the_acquisition_manifest": "42433d6cfb55118abe21e6faabef56343cefc9f28817cd31eb9386d32f56543d",
+        "processing_allowed_in_the_manifest": "False",
+        "reason_in_the_manifest": "reference mask status remains unresolved; do not run baseline yet"
+      },
+      "matches_the_acquisition_manifest": true
+    },
+    "post_event_safe": {
+      "path": "<external_data_workspace>/sentinel1_original_safe/S1A_IW_GRDH_1SDV_20240915T231601_20240915T231626_055682_06CCBA_08DA.SAFE.zip",
+      "sha256": "ff4a604f57c9eb88421904659c7201d07b54b35a3bff6f3447ee548c40f6755b",
+      "bytes": 1722117830,
+      "acquisition_manifest": {
+        "sha256_in_the_acquisition_manifest": "ff4a604f57c9eb88421904659c7201d07b54b35a3bff6f3447ee548c40f6755b",
+        "processing_allowed_in_the_manifest": "False",
+        "reason_in_the_manifest": "reference mask status remains unresolved; do not run baseline yet"
+      },
+      "matches_the_acquisition_manifest": true
+    },
+    "tambon_boundaries": {
+      "path": "<external_data_workspace>/open_context/hdx_cod_ab/tha_admin_boundaries.gdb.zip",
+      "sha256": "09e62345481bb80030ff6779e074bfb2c16629b70ae1e373ebd31945f1c6e0d8",
+      "bytes": 174679979,
+      "layer": "tha_admin3",
+      "units_read": 8,
+      "repaired_geometries": 0
+    },
+    "worldcover": {
+      "path": "<external_data_workspace>/open_context/esa_worldcover/ESA_WorldCover_10m_2021_v200_N18E099_Map.tif",
+      "sha256": "e02c02859074bc0ff0cf1bed21b074520be46c4385e0071c327c173e0ec9f4eb",
+      "bytes": 80234221
+    },
+    "dem_west": {
+      "path": "<external_data_workspace>/open_context/copernicus_dem_glo30/Copernicus_DSM_COG_10_N20_00_E099_00_DEM.tif",
+      "sha256": "8965f85514b577b4b606c658412bfe3d713c0abf478d237539af309d8edb3757",
+      "bytes": 44909388
+    },
+    "dem_east": {
+      "path": "<external_data_workspace>/open_context/copernicus_dem_glo30/Copernicus_DSM_COG_10_N20_00_E100_00_DEM.tif",
+      "sha256": "353574d52c8d93f0e650207acf4c9045bcebe02bb956b30ca1596cb2dafa17bf",
+      "bytes": 45691771
+    },
+    "jrc_seasonality": {
+      "path": "<external_data_workspace>/open_context/jrc_global_surface_water/seasonality_90E_30Nv1_4_2021.tif",
+      "sha256": "4d934d022e6631e487b6f048ed5d740c9e828ba613779ecf54fa3b57fd5f9383",
+      "bytes": 30249852
+    },
+    "acquisition_manifest": {
+      "path": "<external_data_workspace>/sentinel1_original_safe/cdse_mae_sai_acquisition_manifest.csv",
+      "sha256": "6ea1b440a6c9faa35ea9c74fc036c255b5a74549b68db25d0b2355ffe23b1133",
+      "bytes": 1628
+    },
+    "planning_protocol_v1a": {
+      "path": "docs/proposal_execution/planning_protocol_v1a.json",
+      "sha256": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954"
+    },
+    "planning_protocol_v1b": {
+      "path": "docs/proposal_execution/planning_protocol_v1b.json",
+      "sha256": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+    },
+    "protocol_receipts": {
+      "path": "docs/proposal_execution/RECEIPTS.jsonl",
+      "sha256": "06b0721ecba63467cc0e4f614cb5463ce480bf9bfb596653f5189f869795c59a"
+    },
+    "m1_v2_frozen_config": {
+      "path": "docs/proposal_execution/automated_track/geoid_m1_v2_frozen_config.json",
+      "sha256": "2bfcb0c6ebf4b79402afa63c56209f2c5cda26491f08883d67908195b6c64a68"
+    },
+    "m1_v2_freeze_receipt": {
+      "path": "docs/proposal_execution/automated_track/geoid_m1_v2_freeze_receipt.json",
+      "sha256": "736d92887e0f536077a704af7f70270b81b7779a1f1b6dcbe36865cbf6edf3ee"
+    },
+    "geoid_benchmark_results": {
+      "path": [
+        "outputs/geoid_m1_benchmark_v2_derived_checks.json",
+        "outputs/geoid_m1_benchmark_v2_summary.json"
+      ],
+      "sha256": [
+        "b29b0839ccdf9974f7b54f3a5b4c9d9f0605c6073bbc39dbd70d6c15a1dc938a",
+        "f3ad859128bff30610a77af21f720b57dba6514f3759789b32f2287f27ffefae"
+      ]
+    }
+  },
+  "implementation": {
+    "base_commit": "c6d0cecd75f254aeced07c9c3ab34cc9a380bb79",
+    "base_commit_note": "The commit the working tree was on. The files below are the ones this run loaded, identified by their own SHA-256, committed or not.",
+    "builder_sha256": "851fc4d095ed2067f57d9d73762cd2005f3c7196c3759da0a7e32ede93082d6b",
+    "radar_candidates_sha256": "0d6fdbd8ce4bcd22ce4628208f2af47055cceb1e1ae9e4dd15ab5e22dcf5ece0",
+    "sentinel1_sigma0_sha256": "b94fc3bbfce0ee0d6c5654f4d51ae9e7e7c86d577fd7b415cdba22f7a7ea1e0a",
+    "sar_change_v2_sha256": "3127b370303b08902dc545442f7aa5a2aa54d283b471c0d65f5899c9c19e1134",
+    "confidence_sha256": "acb762cf56e41c86b4af40a5ce8108072b87e2dd7d35e86f56487bfa59eb54f0",
+    "software": {
+      "python": "3.11.8",
+      "numpy": "2.2.6",
+      "scipy": "1.17.1",
+      "rasterio": "1.4.4",
+      "gdal": "3.10.3",
+      "pyproj": "3.7.2",
+      "shapely": "2.1.2",
+      "pyogrio": "0.13.0"
+    }
+  },
+  "open_points": [
+    {
+      "id": "A4-OP1",
+      "point": "Geocoding of the fallback path: the displacement, its two parts, and the offset between the two dates.",
+      "protocol_says": "Plan row A4: without SNAP, a GCP warp with the sigmaNought table, labelled 'approximate geocoding: GCP affine, no DEM terrain correction'.",
+      "what_this_run_does": "The run of record warps each date with GDAL's control-point polynomial. The radar layers are displaced along the range direction, for two reasons that add up (geolocation_check.expected_from_geometry, parts). First, the control points sit at the heights of a coarse terrain model, above the Mae Sai plain. Second, the polynomial does not pass through the control points (geolocation_check.gcp_polynomial). Each date has its own polynomial, so the two images of the run of record are also offset from each other (geolocation_check.pre_against_post gives the measured offset). All three methods compare the dates cell by cell; what the offset does to the candidates was not measured. The three methods were run a second time with a mapping that uses a height per cell, as a sensitivity run with its own table and receipt; it replaces nothing.",
+      "for_the_owners": "Which layers case O1 uses: the run of record (the plan's fallback: displaced, and its two dates offset from each other), the sensitivity run (a mapping the plan does not name), a warp that passes through the control points (it would take away the polynomial part and should take away the offset between the dates, but not the height part; the plan does not name it and it was not run), or a SNAP terrain correction once SNAP is installed."
+    },
+    {
+      "id": "A4-OP2",
+      "point": "HAND and slope mask for M1-v2 on Mae Sai.",
+      "protocol_says": "Protocol v1a (geoid_split.limits): 'M1-v2 is fixed slope-free on GEOID and the HAND/slope mask is applied on Mae Sai as a disclosed difference.' No HAND source, no HAND limit and no slope limit is given, and the proposal's 'steep terrain' has no number either.",
+      "what_this_run_does": "Applies no HAND or slope mask to M1-literal or M1-v2: both are run as they were on GEOID. The candidate area of each method is reported by slope class so that a limit can be chosen with the figures in view of everyone.",
+      "for_the_owners": "The HAND source and limit and the slope limit, or a decision to leave the mask out."
+    },
+    {
+      "id": "A4-OP3",
+      "point": "Which coverage the 0.80 condition means, and over what the 0.20 condition is taken.",
+      "protocol_says": "v1a C3: 'unit valid coverage inside the product footprint or analysis extent'. v1a t2_skill_bar: 'mae_sai_abstention_fraction_max 0.2' and 'mae_sai_unit_coverage_min 0.8'. Neither says whether coverage is valid radar input or cells with an answer, nor whether abstention is per unit or for the frame.",
+      "what_this_run_does": "Reports both coverage readings per unit and the abstention share per unit and for the frame, and evaluates the conditions under each reading.",
+      "for_the_owners": "The reading of record."
+    },
+    {
+      "id": "A4-OP4",
+      "point": "Permanent water in M1-literal and M1-v2.",
+      "protocol_says": "Proposal Method 1, step 5: 'Remove permanent water and steep terrain'. v1a fixes permanent water as WorldCover class 80 for the scoring frame. Neither says that the candidate raster itself is cut.",
+      "what_this_run_does": "Leaves the candidate rasters as the frozen functions return them and gives every area twice: all candidate cells, and candidate cells outside class 80.",
+      "for_the_owners": "Whether the flood-input reader removes class 80 or the candidate raster does."
+    },
+    {
+      "id": "A4-OP6",
+      "point": "How M1-literal and M1-v2 are tiled on Mae Sai.",
+      "protocol_says": "Nothing. M1-v2 was frozen on GEOID tiles of 1024 by 1024 cells of 10 m and declines a whole tile at a time; the protocol does not say how a frame that is not made of such tiles is cut.",
+      "what_this_run_does": "Uses the lattice of the GEOID sample in UTM zone 47N (tile corners at multiples of 10,240 m). Nine tiles hold part of the frame. Each tile is run whole, with the land outside the eight tambons that it holds, and the result is cut to the frame afterwards. Another lattice origin would give other tiles and could give other declined tiles; none was tried.",
+      "for_the_owners": "To confirm the lattice, or to state another tiling rule."
+    },
+    {
+      "id": "A2-OP1",
+      "point": "Layers of the UN-SPIDER practice that are not on disk.",
+      "protocol_says": "Plan row A2: 'UN-SPIDER recommended practice, ratio 1.25, untuned', on the local 3/15 September pair. The practice masks JRC seasonality of 10 months or more and slopes from the HydroSHEDS 3 arc-second DEM, on terrain-corrected Earth Engine backscatter with thermal noise removed.",
+      "what_this_run_does": "Uses WorldCover class 80 for perennial water (the JRC tile on disk ends at 100 E and the frame reaches 100.04 E) and Copernicus GLO-30 averaged to 3 arc-seconds for the slope. The JRC result on the part of the frame the tile covers is given as a sensitivity note. No copy of the practice's script is in the repository: its steps were written from the published script as the agent knows it and need a check by the GeoAI owner.",
+      "for_the_owners": "A check of UnSpiderConfig against the published script; whether to download the JRC tile 100E_30N (decision D11 stops downloads)."
+    },
+    {
+      "id": "A4-OP5",
+      "point": "The 3 September SAFE in the July acquisition manifest.",
+      "protocol_says": "The manifest marks both SAFE files 'processing_allowed False: reference mask status remains unresolved; do not run baseline yet'. Decision R14 says that note gates the finals baseline, not rights, and allows the replay to read the file. Plan rows A2 and A4 name this pair.",
+      "what_this_run_does": "Reads both files, as the plan rows say.",
+      "for_the_owners": "To confirm that R14 covers plan tasks A2 and A4 as well as the replay."
+    },
+    {
+      "id": "A4-OP7",
+      "point": "The label says 'GCP affine'; the warp that ran is not affine.",
+      "protocol_says": "Plan row A4 gives the label 'approximate geocoding: GCP affine, no DEM terrain correction' for the GCP warp. It says nothing else about the transform: no polynomial order, and no word on whether each date is fitted on its own.",
+      "what_this_run_does": "Warps each date with GDAL's control-point polynomial and asks for no order, as the replay's bake does. GDAL then chooses the order itself and does not report it. geolocation_check.gcp_polynomial gives the order found for each date and how far an affine fit lies from it. The label is kept word for word, because the plan prescribes it; it names a transform that was not run.",
+      "for_the_owners": "Whether the label is reworded to name the transform that ran, or the warp is rerun as an affine fit so that the label is true (a new run; none was made), and whether the order is fixed in the code and no longer left to GDAL."
+    },
+    {
+      "id": "A4-OP8",
+      "point": "The Sentinel-1 layers of the replay are made with the same warp.",
+      "protocol_says": "Nothing. Neither protocol and no plan row speaks of the geocoding of the replay's Sentinel-1 layers.",
+      "what_this_run_does": "Nothing to the replay. scripts/build_mae_sai_flood_timeline.py (sentinel1_vv) reads the 3 September archive this run reads and copies of the 6 and 15 September passes, and warps each with the same call: the product's control points, moved into the image window, fitted by GDAL's polynomial. The displacement measured here was not measured on the replay's layers, and the replay's bake was not changed or rerun in this lane. That its layers are displaced by a similar distance is an inference from the identical warp, not a measurement.",
+      "for_the_owners": "For the owners of the replay: to measure the displacement of its Sentinel-1 layers against mapped permanent water, and to decide what the page changes or says if the displacement is there."
+    },
+    {
+      "id": "A4-OP9",
+      "point": "The +1 dB level of M1-literal is cut at 0 dB.",
+      "protocol_says": "Protocol v1b (ensemble_grid, t2_levels_by_input): 'M1-literal: Otsu threshold -1 / 0 / +1 dB', accepted by the owners 'as a default and nothing more'. It does not say what happens to the second clause of the rule (delta-VH below 0 dB) when the threshold is moved.",
+      "what_this_run_does": "Moves the Otsu threshold and keeps the second clause, so a moved threshold above 0 dB is cut at 0 dB. Each tile says what took effect (threshold_levels in its whole_tile block), and methods.m1_literal.threshold_levels.upper_level lists the tiles. Where the Otsu threshold is 0 dB or more, the +1 dB level is the central level again. The band is therefore narrower above the central level than below it by construction, not because of the data.",
+      "for_the_owners": "Whether the +1 dB level keeps the below-zero clause (as here), drops it, or is defined another way. The ensemble lane reads these levels as the flood-state axis of M1-literal."
+    },
+    {
+      "id": "A2-OP2",
+      "point": "The minus and plus levels of the UN-SPIDER reproduction are not written.",
+      "protocol_says": "Protocol v1b (ensemble_grid, t2_levels_by_input): 'UN-SPIDER reproduction: minus / as-provided / plus one pixel on the output extent; the ratio 1.25 is not tuned', with 20 m for the minus and the plus level (owner choice 2). It does not say how 20 m is taken on a 10 m raster (two cells, and in which neighbourhood), nor whether the candidate builder or the flood-input reader makes the two levels. Plan row A2 asks for the area and the statement.",
+      "what_this_run_does": "Writes the as-provided extent only (un_spider_candidate.tif) and lists the two levels under not_computed.",
+      "for_the_owners": "Who makes the two levels, and with which neighbourhood."
+    }
+  ],
+  "not_computed": [
+    "FPPS",
+    "A-E class",
+    "would-be class",
+    "ensemble cell",
+    "exposure",
+    "road closure",
+    "access loss",
+    "confidence class of a unit",
+    "any comparison with UNOSAT/GISTDA product 4009",
+    "A6-prime classifier",
+    "M1-v2 Otsu comparator",
+    "HAND or slope mask for M1-literal and M1-v2",
+    "minus and plus one-pixel levels of the UN-SPIDER reproduction (protocol v1b, ensemble_grid)",
+    "the effect of the offset between the two dates on the candidates",
+    "the displacement of the replay's Sentinel-1 layers"
+  ],
+  "assumptions": [
+    "One image pair: 3 September 2024 23:16 UTC and 15 September 2024 23:16 UTC (16 September 06:16 in Thailand), both descending on relative orbit 135. The post-event image is 12 days after the pre-event image and several days after the flood peak, so a candidate is residual water at that pass at most.",
+    "Sigma0 comes from the digital numbers and the sigmaNought look-up table of the SAFE annotation. Thermal noise is not removed and no orbit file is applied.",
+    "Geocoding uses the geolocation grid of the product annotation with the Copernicus GLO-30 height of every cell, taken as 35 m lower above the ellipsoid than above the geoid. This mapping is not in the plan and is not SNAP terrain correction: it has no orbit file, and layover and shadow are not handled. geolocation_check gives the displacement it leaves.",
+    "Linear sigma0 is resampled bilinearly to a 10 m grid in EPSG:32647. Resampling changes the speckle statistics; the speckle filters still assume 4.4 looks, as frozen.",
+    "A cell belongs to the tambon that holds its centre (2022 COD-AB tha_admin3 polygons). Areas are cell counts times 100 m2 on the EPSG:32647 grid.",
+    "M1-literal and M1-v2 are run one tile at a time on the lattice of the GEOID sample (1024 by 1024 cells of 10 m, corners at multiples of 10,240 m), because M1-v2 was frozen on such tiles and declines a whole tile at a time. A tile holds everything inside it, including land outside the eight tambons.",
+    "Permanent water is ESA WorldCover 2021 class 80 (protocol v1a). The slope layer is Copernicus GLO-30 averaged to 3 arc-seconds, in place of the HydroSHEDS DEM of the UN-SPIDER practice.",
+    "The context layers (tambons, land cover, slope) are in map geometry, and the radar layers meet them to within about a cell where the terrain is gentle."
+  ],
+  "limits": [
+    "One pair of images, twelve days apart. The second was taken on 16 September 2024 at 06:16 in Thailand, several days after the flood peak: residual water only. Nothing here describes the peak.",
+    "Approximate geocoding in the run of record: no cell-level or road-level use until the displacement is removed. The sensitivity run removes most of it with a mapping the plan does not name.",
+    "The two images of this run agree with each other to within 2 m (geolocation_check.pre_against_post, a sub-cell estimate). The run of record states its own offset in its table.",
+    "No qualified reference exists for Mae Sai. The layers are not validated, and no figure here says how correct a layer is.",
+    "Tier 2 own candidates: verify before action.",
+    "Radar shadow and layover are not flagged; that needs the terrain-corrected geometry of the SNAP path.",
+    "Urban areas, wet soil, crops that changed between the two dates and wind on water all change the backscatter. A candidate cell is a cell that became darker, not a cell that was seen under water.",
+    "The UN-SPIDER practice divides one dB value by another. Where the smoothed pre-event VH is above 0 dB (a few very bright cells) its quotient means the opposite of what it means elsewhere."
+  ],
+  "timestamps": {
+    "run_started_at_utc": "2026-10-04T14:24:45Z",
+    "run_finished_at_utc": "2026-10-04T14:27:47Z"
+  },
+  "operator_notes": [
+    "Fourth sensitivity run, made after a review of the third run (commit c6d0cec) and after the fourth run of the run of record. The third run (generated 2026-10-04T12:52:26Z) is kept outside Git under radar_o1_superseded_runs and in the Git history.",
+    "The checks made before the fourth run of the run of record are listed in its receipt; they computed no change image and no candidate and wrote no file."
+  ],
+  "outputs": {
+    "table": {
+      "path": "outputs/planning_v1/radar_o1_mae_sai_v1_height_aware_sensitivity.json",
+      "sha256": "9156d655e4cf98d0194a92bc45d32f3e60642f1a8f06f1d74beddd369ccc8b07",
+      "bytes": 164556
+    },
+    "rasters": [
+      {
+        "path": "<external_data_workspace>/proposal_execution/planning_v1/o1_mae_sai/radar_o1_v1_height_aware_sensitivity/frame_units.tif",
+        "sha256": "22cf1bebb27d40166b0d34fef500db100609ee422581a6b13ab6ebe4af6ee787",
+        "bytes": 51382,
+        "kept_outside_git": true
+      },
+      {
+        "path": "<external_data_workspace>/proposal_execution/planning_v1/o1_mae_sai/radar_o1_v1_height_aware_sensitivity/context_worldcover_2021.tif",
+        "sha256": "8a467b00ea42659943ef2c25a3eba50a5a381823f27e555778fc381fe5e9c30a",
+        "bytes": 889894,
+        "kept_outside_git": true
+      },
+      {
+        "path": "<external_data_workspace>/proposal_execution/planning_v1/o1_mae_sai/radar_o1_v1_height_aware_sensitivity/context_slope_degrees.tif",
+        "sha256": "3d8b5bb51bd8d5fab9ed72cb91593d45b9973d23ccbb6be456c818458d7c670b",
+        "bytes": 33111522,
+        "kept_outside_git": true
+      },
+      {
+        "path": "<external_data_workspace>/proposal_execution/planning_v1/o1_mae_sai/radar_o1_v1_height_aware_sensitivity/sigma0_pre_20240903.tif",
+        "sha256": "416a3e308ac84e1e31dce1a46a182c874f1d316e3d6d7d0d8554de2203809a17",
+        "bytes": 82108399,
+        "kept_outside_git": true
+      },
+      {
+        "path": "<external_data_workspace>/proposal_execution/planning_v1/o1_mae_sai/radar_o1_v1_height_aware_sensitivity/sigma0_post_20240915.tif",
+        "sha256": "942a7e155aed38cff04f0c34265ced975f6829cf739785119550e3c5745dc957",
+        "bytes": 82139222,
+        "kept_outside_git": true
+      },
+      {
+        "path": "<external_data_workspace>/proposal_execution/planning_v1/o1_mae_sai/radar_o1_v1_height_aware_sensitivity/un_spider_candidate.tif",
+        "sha256": "781f1d8045bfa55291633b08a30b0808ec6d503dcb3bbd9014063f6e7b72916e",
+        "bytes": 81543,
+        "kept_outside_git": true
+      },
+      {
+        "path": "<external_data_workspace>/proposal_execution/planning_v1/o1_mae_sai/radar_o1_v1_height_aware_sensitivity/un_spider_reason.tif",
+        "sha256": "46174d930d530bf276fe5a1bb093234793f9e9fd6a3ceece33d8b347b1f9e258",
+        "bytes": 72475,
+        "kept_outside_git": true
+      },
+      {
+        "path": "<external_data_workspace>/proposal_execution/planning_v1/o1_mae_sai/radar_o1_v1_height_aware_sensitivity/un_spider_score.tif",
+        "sha256": "d3d31e9249b3c0bb2944d7ab6158c974a810d6bb1c7123476bd19f7fb69ecdf7",
+        "bytes": 8506632,
+        "kept_outside_git": true
+      },
+      {
+        "path": "<external_data_workspace>/proposal_execution/planning_v1/o1_mae_sai/radar_o1_v1_height_aware_sensitivity/m1_literal_candidate.tif",
+        "sha256": "caaa83a180e1e4e6f63436a5cda503e5193884052e25ae3238b0fb43082cb9b9",
+        "bytes": 346990,
+        "kept_outside_git": true
+      },
+      {
+        "path": "<external_data_workspace>/proposal_execution/planning_v1/o1_mae_sai/radar_o1_v1_height_aware_sensitivity/m1_literal_reason.tif",
+        "sha256": "0a21e20d7dd097fb5ad762cc977067bf334027319a5faddf47300def2be08665",
+        "bytes": 63224,
+        "kept_outside_git": true
+      },
+      {
+        "path": "<external_data_workspace>/proposal_execution/planning_v1/o1_mae_sai/radar_o1_v1_height_aware_sensitivity/m1_literal_score.tif",
+        "sha256": "9d0a5365539a0250c04ef1bf4ce710fcec2be82126fcdad7bb8820fa9fa2e51b",
+        "bytes": 10387607,
+        "kept_outside_git": true
+      },
+      {
+        "path": "<external_data_workspace>/proposal_execution/planning_v1/o1_mae_sai/radar_o1_v1_height_aware_sensitivity/m1_literal_threshold_levels.tif",
+        "sha256": "981663bfe1deea41dae12fc4ad3e78b9ba376a2e01b8b43e4c2aa8b8ce4734ab",
+        "bytes": 508438,
+        "kept_outside_git": true
+      },
+      {
+        "path": "<external_data_workspace>/proposal_execution/planning_v1/o1_mae_sai/radar_o1_v1_height_aware_sensitivity/m1_v2_candidate.tif",
+        "sha256": "9db42771d886a4e5e291363b76dc0ceda33934335dd451b1698344262bf66587",
+        "bytes": 73685,
+        "kept_outside_git": true
+      },
+      {
+        "path": "<external_data_workspace>/proposal_execution/planning_v1/o1_mae_sai/radar_o1_v1_height_aware_sensitivity/m1_v2_reason.tif",
+        "sha256": "17b12cc97454588779dfb1f26ca99eefce05cd21096437b165fd71c9896fb3cf",
+        "bytes": 70001,
+        "kept_outside_git": true
+      },
+      {
+        "path": "<external_data_workspace>/proposal_execution/planning_v1/o1_mae_sai/radar_o1_v1_height_aware_sensitivity/m1_v2_score.tif",
+        "sha256": "517dd0e11ff8c6a3814140c481bf201af1cd47a7e686bedc772b58a3c97c8e18",
+        "bytes": 10860014,
+        "kept_outside_git": true
+      },
+      {
+        "path": "<external_data_workspace>/proposal_execution/planning_v1/o1_mae_sai/radar_o1_v1_height_aware_sensitivity/m1_v2_threshold_levels.tif",
+        "sha256": "84c11eb0e416ad259504c49a885d0459b33733a55cafdc6da864af3fa9df5fb9",
+        "bytes": 87613,
+        "kept_outside_git": true
+      }
+    ]
+  },
+  "supersedes": {
+    "table_sha256": "5c3f0846b6e37c538b053a746f95286a050cf7281d6958650bfd29205309e30b",
+    "receipt_sha256": "351342ba01f8fe88dbffa15149d78d0403684714ec11ecd2c1c29201913b93f8",
+    "generated_at_utc": "2026-10-04T12:52:26Z",
+    "reason": "After a review of the third run: the table gains the offset between the two dates to a fraction of a cell, the order and the misfit of GDAL's control-point polynomial with the two parts of the displacement, a stated outcome of the T2 skill bar (a pass for one tambon alone is no longer written as a plain pass), the cut of the +1 dB level of M1-literal at 0 dB, and four more open points (A4-OP7, A4-OP8, A4-OP9, A2-OP2), with A4-OP1 reworded; no method and no input was changed.",
+    "same_frame_and_unit_figures": true,
+    "copies_kept_outside_git": [
+      "<external_data_workspace>/proposal_execution/planning_v1/o1_mae_sai/radar_o1_superseded_runs/20261004T125226Z_radar_o1_mae_sai_v1_height_aware_sensitivity.json",
+      "<external_data_workspace>/proposal_execution/planning_v1/o1_mae_sai/radar_o1_superseded_runs/20261004T125226Z_radar_o1_mae_sai_v1_height_aware_sensitivity_receipt.json"
+    ],
+    "note": "The superseded table and receipt are named by SHA-256 and copied outside Git. They are in the Git history only if they were committed.",
+    "runs_before_the_superseded_one": {
+      "table_sha256": "e9ea731cae91fe6ad1aa0521ff778e646a6019c6842dbf05df63b6b3b4297958",
+      "receipt_sha256": "8c73f98bea72b4a5e800786ac0fa2e54b2d712da9077896b9434260116cf78e3",
+      "generated_at_utc": "2026-10-04T12:38:41Z",
+      "reason": "Wording only: three denials in the second sensitivity run were not in the form the shared wording lint lists (not validated, not an independent check); the method code and the inputs are unchanged.",
+      "same_frame_and_unit_figures": true,
+      "copies_kept_outside_git": [
+        "<external_data_workspace>/proposal_execution/planning_v1/o1_mae_sai/radar_o1_superseded_runs/20261004T123841Z_radar_o1_mae_sai_v1_height_aware_sensitivity.json",
+        "<external_data_workspace>/proposal_execution/planning_v1/o1_mae_sai/radar_o1_superseded_runs/20261004T123841Z_radar_o1_mae_sai_v1_height_aware_sensitivity_receipt.json"
+      ],
+      "note": "The superseded table and receipt are named by SHA-256 and copied outside Git. They are in the Git history only if they were committed.",
+      "runs_before_the_superseded_one": {
+        "table_sha256": "9c141c16761a0fc6089a817c233792943c4f09bf2927947cfd3787c79ae62b51",
+        "receipt_sha256": "3f84f14b5a60828db9684b5e30b8f29ec75ee3892eca212e8877b74fa4815e39",
+        "generated_at_utc": "2026-10-04T12:26:45Z",
+        "reason": "The first sensitivity run stated one limit wrongly (the post-event image is not twelve days after the flood began; the two images are twelve days apart) and its file names held a word the outputs test reserves; the method code and the inputs are unchanged.",
+        "same_frame_and_unit_figures": true,
+        "copies_kept_outside_git": [
+          "<external_data_workspace>/proposal_execution/planning_v1/o1_mae_sai/radar_o1_superseded_runs/20261004T122645Z_radar_o1_mae_sai_v1_height_aware_sensitivity.json",
+          "<external_data_workspace>/proposal_execution/planning_v1/o1_mae_sai/radar_o1_superseded_runs/20261004T122645Z_radar_o1_mae_sai_v1_height_aware_sensitivity_receipt.json"
+        ],
+        "note": "The superseded table and receipt are named by SHA-256 and copied outside Git. They are in the Git history only if they were committed."
+      }
+    }
+  },
+  "run_of_record": {
+    "table": "radar_o1_mae_sai_v1.json",
+    "receipt": "radar_o1_mae_sai_v1_receipt.json",
+    "table_sha256": "f60d0c68fb831a3f67307603ff450f16fb9f94ad1880fb4c222c951c2ca3e819",
+    "receipt_sha256": "62beed7f4c62d19701bc72626180aa2557d4a6f529a8b46429e94c471664b5b2",
+    "note": "This sensitivity run replaces nothing. The run of record is the fallback of plan row A4."
+  }
+}

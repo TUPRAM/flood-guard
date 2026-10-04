@@ -54,9 +54,9 @@ What the table and the inspector do:
 
 Where stage 2 differs from the plan:
 
-- **Row heights.** The clock card is taller than the plan's 164 px, so the rows cannot be 50 px at 1440 x 800. On a mouse the eight rows share the height of the card: 42 px in English and 39 px in Thai at 1440 x 800, up to 50 px where there is room, never under 33 px. On a touch screen and on a tablet they are 44 px and the table scrolls inside its card.
+- **Row heights.** The clock card is taller than the plan's 164 px, so the rows cannot be 50 px at 1440 x 800. On a mouse the eight rows share the height of the card: 44 px in English and 41 px in Thai at 1440 x 800 with the controls closed, up to 50 px where there is room, never under 33 px. On a touch screen and on a tablet they are 44 px and the table scrolls inside its card.
 - **Controls behind a button on a short screen.** On a screen up to 840 px tall and on a tablet, the three controls start behind the options button in the head of the table, so the eight rows and the footer fit. On a taller desktop they are open.
-- **The clock card** gives the table a few pixels on a short screen, and its first figure has a wider column in Thai: 201 px tall in English and 219 px in Thai at 1440 x 800.
+- **The clock card** gives the table a few pixels on a short screen, and its first figure has a wider column in Thai: 191 px tall in English and 209 px in Thai at 1440 x 800.
 - **"Not issued yet"** stands in the footer of the table, and every dash chip says it on hover and to a screen reader. The plan group is 112 px wide and has no room for the words.
 - **The "+" mark** is on every row where more than half of the residents had no shelter of the set in reach before the flood. With the 2024 set that is six rows, not only the four the plan names.
 - **Ordering by planning** is switched off until the chosen case gives a unit a planning position.

@@ -210,9 +210,12 @@ export function CommandTambonDetailBody({ language, hour, detail, set, peak, pea
                   <ul>
                     {place.reports.map((report) => (
                       <li key={report.id}>
-                        <span>{depths ? reportedDepthText(report, depths, language) : report.depth.statement[language]}</span>
-                        <span className={styles.modelTag}>{reportedDepthOutcome(report.consistency, language)}</span>
-                        <a href={report.source.url} target="_blank" rel="noopener noreferrer">{report.source.publisher}, {formatShortDate(report.source.published, language)}</a>
+                        {/* The whole record is the link to its source, so the target is as tall as the record. */}
+                        <a href={report.source.url} target="_blank" rel="noopener noreferrer" data-command-record={report.id}>
+                          <span>{depths ? reportedDepthText(report, depths, language) : report.depth.statement[language]}</span>
+                          <span className={styles.modelTag}>{reportedDepthOutcome(report.consistency, language)}</span>
+                          <span className={styles.sourceLink}>{report.source.publisher}, {formatShortDate(report.source.published, language)}</span>
+                        </a>
                       </li>
                     ))}
                   </ul>

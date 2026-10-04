@@ -1,0 +1,115 @@
+{
+  "fixture": "planning-assessment-overlay.fixture.json",
+  "written_by": "apps/web/scripts/planning-overlay-fixture.py",
+  "file_sha256": "7fd732509607f54d30dbe847de18857c7e16523ff9e83180980391198640a8a3",
+  "summary": {
+    "case_id": "FX-CASE-01",
+    "dataset_mode": "fixture_demo",
+    "publication_eligibility": "local",
+    "protocol_sha256": {
+      "v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+      "v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+    },
+    "row_count": 26,
+    "unit_count": 21,
+    "rows_by_tier": {
+      "T0": 6,
+      "T1": 4,
+      "T2": 2,
+      "T3": 13,
+      "T4": 1,
+      "none": 0
+    },
+    "rows_by_lane": {
+      "OBS": 15,
+      "SCN": 2,
+      "SCN-ENV": 2,
+      "ENG": 6,
+      "none": 1
+    },
+    "rows_by_temporal_relation": {
+      "event_aligned": 16,
+      "dated_other": 1,
+      "season_window": 2,
+      "none": 7
+    },
+    "rows_by_confidence_class": {
+      "low": 12,
+      "medium": 13,
+      "none": 1
+    },
+    "rows_by_confidence_kind": {
+      "observed": 15,
+      "scenario": 4,
+      "declared": 6,
+      "none": 1
+    },
+    "rows_by_binding_class": {
+      "A": 3,
+      "B": 2,
+      "C": 3,
+      "D": 3,
+      "E": 13,
+      "none": 2
+    },
+    "rows_by_reason_code": {
+      "low_confidence": 11,
+      "low_priority_score": 2,
+      "life_safety_exposure": 3,
+      "critical_route_access": 2,
+      "essential_service_access": 3,
+      "resilience": 3,
+      "insufficient_denominator": 1,
+      "none": 1
+    },
+    "rows_by_would_be_class": {
+      "A": 3,
+      "B": 1,
+      "C": 2,
+      "D": 3,
+      "E": 1,
+      "none": 16
+    },
+    "rows_by_v2_result": {
+      "A": 1,
+      "B": 2,
+      "C": 1,
+      "D": 1,
+      "E": 11,
+      "no_v2_trigger": 2,
+      "none": 8
+    },
+    "rows_by_headline_status": {
+      "not_evaluated": 22,
+      "headline_eligible": 3,
+      "unstable_verify": 1,
+      "none": 0
+    },
+    "failed_condition_counts": {
+      "C1_tier": 3,
+      "C2_recency": 1,
+      "C3_coverage": 1,
+      "C4_input_uncertainty": 2,
+      "C5_components": 1,
+      "C6_residents": 1,
+      "C7_baseline_no_route": 2,
+      "C8_hospital": 3
+    },
+    "basis_value_counts": {
+      "pass": 131,
+      "fail": 14,
+      "by_construction": 0,
+      "by_scenario_declaration": 7
+    },
+    "rows_under_gr1": 1,
+    "rows_without_fpps": 2,
+    "obs_rows_not_event_aligned": 1,
+    "inputs_by_rights_level": {
+      "local": 1,
+      "pitch": 1,
+      "public": 8,
+      "none": 0
+    },
+    "content_sha256": "91bb9d7d4bebd4c74297b02ec6bd45751dc0b303b23cbc72d689508c8eaee166"
+  }
+}

@@ -1,0 +1,1263 @@
+{
+  "about": "Refusal cases for the planning assessment overlay. Each case changes the fixture (planning-assessment-overlay.fixture.json) and names the refusal code both parsers must give. checked_by lists who must refuse it: schema (the JSON schema alone), python (floodguard.planning_overlay), typescript (planning-assessment-overlay.ts) and python_with_protocols (the Python validator with the two protocol files in force). The web parser does not recompute the A-E class from the class rule; the cases that need the scorer are checked by python only. Every value here is invented for a test.",
+  "patch_format": "Each step names a row by row_id or an input by input_id (or neither, for the overlay itself), a path of keys and list positions, and either set (a value) or delete (true).",
+  "cases": [
+    {
+      "id": "unknown-tier",
+      "refuses": "unknown_tier",
+      "basis": "v1a evidence_tier_model.tiers: T0 to T4 only",
+      "checked_by": [
+        "schema",
+        "python",
+        "typescript"
+      ],
+      "patch": [
+        {
+          "row": "FX-CASE-01:obs-t3-class-a",
+          "path": [
+            "tier"
+          ],
+          "set": "T5"
+        }
+      ]
+    },
+    {
+      "id": "class-above-e-with-low-confidence",
+      "refuses": "class_above_e_without_medium_confidence",
+      "basis": "v1a invariants_at_every_tier: no class above E without derived medium confidence",
+      "checked_by": [
+        "schema",
+        "python",
+        "typescript"
+      ],
+      "patch": [
+        {
+          "row": "FX-CASE-01:obs-t3-c3-coverage",
+          "path": [
+            "action_class"
+          ],
+          "set": "D"
+        },
+        {
+          "row": "FX-CASE-01:obs-t3-c3-coverage",
+          "path": [
+            "action_reason_code"
+          ],
+          "set": "resilience"
+        }
+      ]
+    },
+    {
+      "id": "own-candidate-above-e",
+      "refuses": "class_above_e_without_medium_confidence",
+      "basis": "v1a t2_skill_bar.consequence: T2 never yields a binding class above E unless the condition passes",
+      "checked_by": [
+        "schema",
+        "python",
+        "typescript"
+      ],
+      "patch": [
+        {
+          "row": "FX-CASE-01:obs-t2-c1-own-candidate",
+          "path": [
+            "action_class"
+          ],
+          "set": "C"
+        },
+        {
+          "row": "FX-CASE-01:obs-t2-c1-own-candidate",
+          "path": [
+            "action_reason_code"
+          ],
+          "set": "essential_service_access"
+        }
+      ]
+    },
+    {
+      "id": "accepted-fpps-on-the-overlay",
+      "refuses": "accepted_value_not_null",
+      "basis": "v1a invariants_at_every_tier: accepted_fpps and accepted_action_class are null below T4",
+      "checked_by": [
+        "schema",
+        "python",
+        "typescript"
+      ],
+      "patch": [
+        {
+          "path": [
+            "accepted_fpps"
+          ],
+          "set": 80.68
+        }
+      ]
+    },
+    {
+      "id": "accepted-action-class-on-a-row",
+      "refuses": "accepted_value_not_null",
+      "basis": "v1a invariants_at_every_tier: accepted_fpps and accepted_action_class are null below T4",
+      "checked_by": [
+        "schema",
+        "python",
+        "typescript"
+      ],
+      "patch": [
+        {
+          "row": "FX-CASE-01:obs-t3-class-a",
+          "path": [
+            "accepted_action_class"
+          ],
+          "set": "A"
+        }
+      ]
+    },
+    {
+      "id": "gr7-obs-dated-other-above-e",
+      "refuses": "temporal_honesty_gr7",
+      "basis": "v1a guardrails GR7_temporal_honesty",
+      "checked_by": [
+        "schema",
+        "python",
+        "typescript"
+      ],
+      "patch": [
+        {
+          "row": "FX-CASE-01:obs-t3-class-a",
+          "path": [
+            "temporal_relation"
+          ],
+          "set": "dated_other"
+        }
+      ]
+    },
+    {
+      "id": "gr7-obs-season-window-above-e",
+      "refuses": "temporal_honesty_gr7",
+      "basis": "v1a guardrails GR7_temporal_honesty",
+      "checked_by": [
+        "schema",
+        "python",
+        "typescript"
+      ],
+      "patch": [
+        {
+          "row": "FX-CASE-01:obs-t3-class-b",
+          "path": [
+            "temporal_relation"
+          ],
+          "set": "season_window"
+        }
+      ]
+    },
+    {
+      "id": "official-warning-true",
+      "refuses": "official_warning_not_false",
+      "basis": "v1a invariants_at_every_tier: official_warning is false",
+      "checked_by": [
+        "schema",
+        "python",
+        "typescript"
+      ],
+      "patch": [
+        {
+          "path": [
+            "official_warning"
+          ],
+          "set": true
+        }
+      ]
+    },
+    {
+      "id": "operational-status-planning-only",
+      "refuses": "operational_status_not_non_operational",
+      "basis": "v1a invariants_at_every_tier: operational_status is non_operational",
+      "checked_by": [
+        "schema",
+        "python",
+        "typescript"
+      ],
+      "patch": [
+        {
+          "path": [
+            "operational_status"
+          ],
+          "set": "planning_only"
+        }
+      ]
+    },
+    {
+      "id": "high-confidence",
+      "refuses": "high_confidence_not_assigned",
+      "basis": "v1a confidence_rule_v1.high: requires T4, never assigned",
+      "checked_by": [
+        "schema",
+        "python",
+        "typescript"
+      ],
+      "patch": [
+        {
+          "row": "FX-CASE-01:obs-t3-class-a",
+          "path": [
+            "confidence",
+            "confidence_class"
+          ],
+          "set": "high"
+        }
+      ]
+    },
+    {
+      "id": "t4-row-with-an-fpps",
+      "refuses": "t4_locked_row_carries_values",
+      "basis": "v1a evidence_tier_model tier T4: locked, not reached in this release",
+      "checked_by": [
+        "schema",
+        "python",
+        "typescript"
+      ],
+      "patch": [
+        {
+          "row": "FX-CASE-01:t4-locked",
+          "path": [
+            "fpps_0_100"
+          ],
+          "set": 50
+        }
+      ]
+    },
+    {
+      "id": "t4-row-with-a-class",
+      "refuses": "t4_locked_row_carries_values",
+      "basis": "v1a evidence_tier_model tier T4: locked, not reached in this release",
+      "checked_by": [
+        "schema",
+        "python",
+        "typescript"
+      ],
+      "patch": [
+        {
+          "row": "FX-CASE-01:t4-locked",
+          "path": [
+            "action_class"
+          ],
+          "set": "A"
+        },
+        {
+          "row": "FX-CASE-01:t4-locked",
+          "path": [
+            "action_reason_code"
+          ],
+          "set": "life_safety_exposure"
+        }
+      ]
+    },
+    {
+      "id": "tier-in-the-wrong-lane",
+      "refuses": "tier_lane_mismatch",
+      "basis": "v1a evidence_tier_model.tiers: T3 belongs to lane OBS",
+      "checked_by": [
+        "schema",
+        "python",
+        "typescript"
+      ],
+      "patch": [
+        {
+          "row": "FX-CASE-01:obs-t3-class-a",
+          "path": [
+            "lane"
+          ],
+          "set": "SCN"
+        }
+      ]
+    },
+    {
+      "id": "gr1-unit-given-class-e",
+      "refuses": "gr1_no_class",
+      "basis": "v1a guardrails GR1_minimum_denominators (DR-A09): no binding class",
+      "checked_by": [
+        "schema",
+        "python",
+        "typescript"
+      ],
+      "patch": [
+        {
+          "row": "FX-CASE-01:obs-t3-c6-gr1-no-class",
+          "path": [
+            "action_class"
+          ],
+          "set": "E"
+        }
+      ]
+    },
+    {
+      "id": "gr1-unit-given-class-e-and-low-confidence",
+      "refuses": "gr1_no_class",
+      "basis": "v1a guardrails GR1_minimum_denominators (DR-A09): insufficient_denominator ahead of low_confidence",
+      "checked_by": [
+        "schema",
+        "python",
+        "typescript"
+      ],
+      "patch": [
+        {
+          "row": "FX-CASE-01:obs-t3-c6-gr1-no-class",
+          "path": [
+            "action_class"
+          ],
+          "set": "E"
+        },
+        {
+          "row": "FX-CASE-01:obs-t3-c6-gr1-no-class",
+          "path": [
+            "action_reason_code"
+          ],
+          "set": "low_confidence"
+        }
+      ]
+    },
+    {
+      "id": "gr1-unit-given-a-would-be-class",
+      "refuses": "gr1_no_class",
+      "basis": "v1a guardrails GR1_minimum_denominators (DR-A09): no would-be class",
+      "checked_by": [
+        "schema",
+        "python",
+        "typescript"
+      ],
+      "patch": [
+        {
+          "row": "FX-CASE-01:obs-t3-c6-gr1-no-class",
+          "path": [
+            "would_be_class"
+          ],
+          "set": "D"
+        }
+      ]
+    },
+    {
+      "id": "gr1-unit-given-a-v2-class",
+      "refuses": "gr1_no_class",
+      "basis": "v1a guardrails GR1_minimum_denominators (DR-A09): no v2 class",
+      "checked_by": [
+        "schema",
+        "python",
+        "typescript"
+      ],
+      "patch": [
+        {
+          "row": "FX-CASE-01:obs-t3-c6-gr1-no-class",
+          "path": [
+            "class_v2",
+            "result"
+          ],
+          "set": "E"
+        }
+      ]
+    },
+    {
+      "id": "no-class-without-gr1",
+      "refuses": "gr1_no_class",
+      "basis": "v1a class_rules.v1: every unit of at least 100 residents gets a class",
+      "checked_by": [
+        "schema",
+        "python",
+        "typescript"
+      ],
+      "patch": [
+        {
+          "row": "FX-CASE-01:obs-t3-c3-coverage",
+          "path": [
+            "action_class"
+          ],
+          "set": null
+        },
+        {
+          "row": "FX-CASE-01:obs-t3-c3-coverage",
+          "path": [
+            "action_reason_code"
+          ],
+          "set": "insufficient_denominator"
+        },
+        {
+          "row": "FX-CASE-01:obs-t3-c3-coverage",
+          "path": [
+            "would_be_class"
+          ],
+          "set": null
+        }
+      ]
+    },
+    {
+      "id": "low-confidence-with-the-score-reason",
+      "refuses": "low_confidence_forces_e",
+      "basis": "v1a class_rules.v1.reason_codes: low_confidence",
+      "checked_by": [
+        "schema",
+        "python",
+        "typescript"
+      ],
+      "patch": [
+        {
+          "row": "FX-CASE-01:obs-t3-c3-coverage",
+          "path": [
+            "action_reason_code"
+          ],
+          "set": "low_priority_score"
+        }
+      ]
+    },
+    {
+      "id": "reason-code-of-another-class",
+      "refuses": "reason_code_mismatch",
+      "basis": "v1a class_rules.v1.reason_codes",
+      "checked_by": [
+        "schema",
+        "python",
+        "typescript"
+      ],
+      "patch": [
+        {
+          "row": "FX-CASE-01:obs-t3-class-d",
+          "path": [
+            "action_reason_code"
+          ],
+          "set": "essential_service_access"
+        }
+      ]
+    },
+    {
+      "id": "class-not-given-by-rule-v1",
+      "refuses": "class_rule_mismatch",
+      "basis": "v1a class_rules.v1.rules, recomputed with scoring.py",
+      "checked_by": [
+        "python"
+      ],
+      "patch": [
+        {
+          "row": "FX-CASE-01:obs-t3-class-d",
+          "path": [
+            "action_class"
+          ],
+          "set": "C"
+        },
+        {
+          "row": "FX-CASE-01:obs-t3-class-d",
+          "path": [
+            "action_reason_code"
+          ],
+          "set": "essential_service_access"
+        }
+      ]
+    },
+    {
+      "id": "would-be-class-on-a-medium-row",
+      "refuses": "would_be_class_mismatch",
+      "basis": "v1a class_rules.v1.would_be_class: low-confidence rows only",
+      "checked_by": [
+        "schema",
+        "python",
+        "typescript"
+      ],
+      "patch": [
+        {
+          "row": "FX-CASE-01:obs-t3-class-a",
+          "path": [
+            "would_be_class"
+          ],
+          "set": "A"
+        }
+      ]
+    },
+    {
+      "id": "would-be-class-missing-on-a-low-row",
+      "refuses": "would_be_class_mismatch",
+      "basis": "v1a class_rules.v1.would_be_class",
+      "checked_by": [
+        "python",
+        "typescript"
+      ],
+      "patch": [
+        {
+          "row": "FX-CASE-01:obs-t3-c3-coverage",
+          "path": [
+            "would_be_class"
+          ],
+          "set": null
+        }
+      ]
+    },
+    {
+      "id": "would-be-class-not-the-scorer-rerun",
+      "refuses": "would_be_class_mismatch",
+      "basis": "v1a class_rules.v1.would_be_class, recomputed with scoring.py",
+      "checked_by": [
+        "python"
+      ],
+      "patch": [
+        {
+          "row": "FX-CASE-01:obs-t3-c3-coverage",
+          "path": [
+            "would_be_class"
+          ],
+          "set": "A"
+        }
+      ]
+    },
+    {
+      "id": "v2-shown-as-binding",
+      "refuses": "structure",
+      "basis": "v1a class_rules.v2.binding: false (decision D6)",
+      "checked_by": [
+        "schema",
+        "python",
+        "typescript"
+      ],
+      "patch": [
+        {
+          "row": "FX-CASE-01:obs-t3-class-a",
+          "path": [
+            "class_v2",
+            "binding"
+          ],
+          "set": true
+        }
+      ]
+    },
+    {
+      "id": "v2-not-labelled-secondary",
+      "refuses": "structure",
+      "basis": "v1a class_rules.v2.label_when_shown: secondary",
+      "checked_by": [
+        "schema",
+        "python",
+        "typescript"
+      ],
+      "patch": [
+        {
+          "row": "FX-CASE-01:obs-t3-class-a",
+          "path": [
+            "class_v2",
+            "label"
+          ],
+          "set": "binding"
+        }
+      ]
+    },
+    {
+      "id": "v2-above-e-with-low-confidence",
+      "refuses": "v2_result_inconsistent",
+      "basis": "v1a class_rules.v2.triggers E: low confidence",
+      "checked_by": [
+        "schema",
+        "python",
+        "typescript"
+      ],
+      "patch": [
+        {
+          "row": "FX-CASE-01:obs-t3-c3-coverage",
+          "path": [
+            "class_v2",
+            "result"
+          ],
+          "set": "D"
+        }
+      ]
+    },
+    {
+      "id": "no-v2-trigger-with-a-trigger-met",
+      "refuses": "v2_result_inconsistent",
+      "basis": "v1a class_rules.v2.evaluation (DR-A08)",
+      "checked_by": [
+        "python",
+        "typescript"
+      ],
+      "patch": [
+        {
+          "row": "FX-CASE-01:obs-t3-no-v2-trigger",
+          "path": [
+            "class_v2",
+            "trigger_evidence",
+            2,
+            "met"
+          ],
+          "set": true
+        }
+      ]
+    },
+    {
+      "id": "v2-not-the-first-trigger-met",
+      "refuses": "v2_result_inconsistent",
+      "basis": "v1a class_rules.v2.evaluation.order (DR-A08)",
+      "checked_by": [
+        "python",
+        "typescript"
+      ],
+      "patch": [
+        {
+          "row": "FX-CASE-01:obs-t3-class-a",
+          "path": [
+            "class_v2",
+            "result"
+          ],
+          "set": "B"
+        }
+      ]
+    },
+    {
+      "id": "scenario-confidence-shown-as-observed",
+      "refuses": "confidence_record_mismatch",
+      "basis": "v1a confidence_rule_v1.scenario_rows (DR-A07): never shown or counted as observed confidence",
+      "checked_by": [
+        "schema",
+        "python",
+        "typescript"
+      ],
+      "patch": [
+        {
+          "row": "FX-CASE-01:scn-t1-agency-base-class-a",
+          "path": [
+            "confidence",
+            "confidence_kind"
+          ],
+          "set": "observed"
+        }
+      ]
+    },
+    {
+      "id": "basis-says-pass-but-the-condition-is-listed-as-failed",
+      "refuses": "confidence_record_mismatch",
+      "basis": "v1a confidence_rule_v1.basis_record",
+      "checked_by": [
+        "python",
+        "typescript"
+      ],
+      "patch": [
+        {
+          "row": "FX-CASE-01:obs-t3-c3-coverage",
+          "path": [
+            "confidence",
+            "basis",
+            "C3_coverage"
+          ],
+          "set": "pass"
+        }
+      ]
+    },
+    {
+      "id": "obs-row-judged-against-another-reference-date",
+      "refuses": "confidence_record_mismatch",
+      "basis": "v1a confidence_rule_v1 C2: within +/-3 days of the case reference date",
+      "checked_by": [
+        "python",
+        "typescript"
+      ],
+      "patch": [
+        {
+          "row": "FX-CASE-01:obs-t3-class-a",
+          "path": [
+            "confidence",
+            "measurements",
+            "case_reference_date"
+          ],
+          "set": "2030-01-12"
+        }
+      ]
+    },
+    {
+      "id": "event-aligned-outside-the-recency-window",
+      "refuses": "temporal_relation_mismatch",
+      "basis": "v1a date_rule.rule: strict, +/-3 days",
+      "checked_by": [
+        "python",
+        "typescript"
+      ],
+      "patch": [
+        {
+          "row": "FX-CASE-01:obs-t3-c2-not-event-aligned",
+          "path": [
+            "temporal_relation"
+          ],
+          "set": "event_aligned"
+        }
+      ]
+    },
+    {
+      "id": "assumed-component",
+      "refuses": "assumed_component_in_a_row",
+      "basis": "v1a evidence_tier_model.no_assumed_components_in_obs_or_scn (DR-A05)",
+      "checked_by": [
+        "python",
+        "typescript"
+      ],
+      "patch": [
+        {
+          "row": "FX-CASE-01:obs-t3-class-a",
+          "path": [
+            "confidence",
+            "measurements",
+            "component_status",
+            "exposure_0_100"
+          ],
+          "set": "assumed"
+        }
+      ]
+    },
+    {
+      "id": "component-missing-but-recorded-as-computed",
+      "refuses": "component_mismatch",
+      "basis": "v1a confidence_rule_v1 C5: all five components computed",
+      "checked_by": [
+        "python",
+        "typescript"
+      ],
+      "patch": [
+        {
+          "row": "FX-CASE-01:obs-t3-class-a",
+          "path": [
+            "components",
+            "exposure_0_100"
+          ],
+          "set": null
+        }
+      ]
+    },
+    {
+      "id": "synthetic-value-in-a-case-row",
+      "refuses": "component_mismatch",
+      "basis": "v1a evidence_tier_model: synthetic values belong to lane ENG",
+      "checked_by": [
+        "python",
+        "typescript"
+      ],
+      "patch": [
+        {
+          "row": "FX-CASE-01:obs-t3-class-a",
+          "path": [
+            "components",
+            "exposure_0_100"
+          ],
+          "set": {
+            "component": "exposure_0_100",
+            "value_0_100": 80,
+            "synthetic": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "fpps-not-the-weighted-sum",
+      "refuses": "fpps_mismatch",
+      "basis": "v1a scoring_frame.formula",
+      "checked_by": [
+        "python",
+        "typescript"
+      ],
+      "patch": [
+        {
+          "row": "FX-CASE-01:obs-t3-class-d",
+          "path": [
+            "fpps_0_100"
+          ],
+          "set": 55.5
+        }
+      ]
+    },
+    {
+      "id": "leave-one-out-fpps-changed",
+      "refuses": "leave_one_component_out_mismatch",
+      "basis": "v1a scoring_frame.leave_one_component_out (DR-A02)",
+      "checked_by": [
+        "python",
+        "typescript"
+      ],
+      "patch": [
+        {
+          "row": "FX-CASE-01:obs-t3-class-a",
+          "path": [
+            "leave_one_component_out",
+            "exposure_0_100",
+            "fpps_0_100"
+          ],
+          "set": 10
+        }
+      ]
+    },
+    {
+      "id": "weights-do-not-sum-to-one",
+      "refuses": "scoring_frame_inconsistent",
+      "basis": "v1a scoring_frame.weights and leave_one_component_out (DR-A02)",
+      "checked_by": [
+        "python",
+        "typescript"
+      ],
+      "patch": [
+        {
+          "path": [
+            "scoring_frame",
+            "weights",
+            "exposure_0_100"
+          ],
+          "set": 0.3
+        }
+      ]
+    },
+    {
+      "id": "leave-one-out-weights-keep-the-dropped-component",
+      "refuses": "scoring_frame_inconsistent",
+      "basis": "v1a scoring_frame.leave_one_component_out (DR-A02)",
+      "checked_by": [
+        "python",
+        "typescript"
+      ],
+      "patch": [
+        {
+          "path": [
+            "scoring_frame",
+            "leave_one_component_out_weights",
+            "exposure_0_100",
+            "exposure_0_100"
+          ],
+          "set": 0.25
+        },
+        {
+          "path": [
+            "scoring_frame",
+            "leave_one_component_out_weights",
+            "exposure_0_100",
+            "flood_likelihood_0_100"
+          ],
+          "set": 0.15
+        }
+      ]
+    },
+    {
+      "id": "component-hash-of-another-protocol",
+      "refuses": "protocol_hash_mismatch",
+      "basis": "v1a change_control: outputs carry protocol_sha256",
+      "checked_by": [
+        "python",
+        "typescript"
+      ],
+      "patch": [
+        {
+          "row": "FX-CASE-01:obs-t3-class-a",
+          "path": [
+            "components",
+            "exposure_0_100",
+            "protocol_sha256",
+            "v1b"
+          ],
+          "set": "0000000000000000000000000000000000000000000000000000000000000000"
+        }
+      ]
+    },
+    {
+      "id": "headline-eligible-below-the-retention-minimum",
+      "refuses": "headline_stability_inconsistent",
+      "basis": "v1a guardrails GR8_headline_stability",
+      "checked_by": [
+        "schema",
+        "python",
+        "typescript"
+      ],
+      "patch": [
+        {
+          "row": "FX-CASE-01:obs-t3-class-a",
+          "path": [
+            "headline_stability",
+            "class_retention"
+          ],
+          "set": 0.3
+        }
+      ]
+    },
+    {
+      "id": "headline-for-a-unit-with-no-class",
+      "refuses": "headline_stability_inconsistent",
+      "basis": "v1a guardrails GR8_headline_stability",
+      "checked_by": [
+        "schema",
+        "python",
+        "typescript"
+      ],
+      "patch": [
+        {
+          "row": "FX-CASE-01:obs-t3-c6-gr1-no-class",
+          "path": [
+            "headline_stability",
+            "status"
+          ],
+          "set": "headline_eligible"
+        },
+        {
+          "row": "FX-CASE-01:obs-t3-c6-gr1-no-class",
+          "path": [
+            "headline_stability",
+            "class_retention"
+          ],
+          "set": 0.9
+        }
+      ]
+    },
+    {
+      "id": "public-overlay-with-a-local-input",
+      "refuses": "publication_eligibility_not_lineage_minimum",
+      "basis": "v1a guardrails GR6_publication_eligibility",
+      "checked_by": [
+        "python",
+        "typescript"
+      ],
+      "patch": [
+        {
+          "path": [
+            "publication_eligibility"
+          ],
+          "set": "public"
+        }
+      ]
+    },
+    {
+      "id": "product-4009-input-without-licence-and-credit",
+      "refuses": "product_4009_licence_missing",
+      "basis": "decision D2 and rights_basis_4009_v1.json: CC BY-SA 4.0, credit and change notice",
+      "checked_by": [
+        "python",
+        "typescript"
+      ],
+      "patch": [
+        {
+          "input": "fx_local_only_layer",
+          "path": [
+            "name"
+          ],
+          "set": "UNOSAT/GISTDA product 4009 (name used by this refusal test only)"
+        }
+      ]
+    },
+    {
+      "id": "lineage-names-no-flood-input",
+      "refuses": "lineage_unresolved",
+      "basis": "v1a guardrails GR3_lane_purity",
+      "checked_by": [
+        "python",
+        "typescript"
+      ],
+      "patch": [
+        {
+          "row": "FX-CASE-01:obs-t3-class-a",
+          "path": [
+            "lineage",
+            "flood_input_id"
+          ],
+          "set": "fx_routing_context"
+        }
+      ]
+    },
+    {
+      "id": "row-id-repeated",
+      "refuses": "duplicate_id",
+      "basis": "one row per unit, lane and flood input",
+      "checked_by": [
+        "python",
+        "typescript"
+      ],
+      "patch": [
+        {
+          "row": "FX-CASE-01:obs-t3-class-b",
+          "path": [
+            "row_id"
+          ],
+          "set": "FX-CASE-01:obs-t3-class-a"
+        }
+      ]
+    },
+    {
+      "id": "fixture-unit-not-labelled",
+      "refuses": "fixture_label_missing",
+      "basis": "task E11: a fixture is labelled 'fixture, not a place'",
+      "checked_by": [
+        "python",
+        "typescript"
+      ],
+      "patch": [
+        {
+          "row": "FX-CASE-01:obs-t3-class-a",
+          "path": [
+            "unit_name_en"
+          ],
+          "set": "Unlabelled unit 01"
+        }
+      ]
+    },
+    {
+      "id": "unknown-reason-code",
+      "refuses": "structure",
+      "basis": "v1a class_rules.v1.reason_codes and added_reason_code",
+      "checked_by": [
+        "schema",
+        "python",
+        "typescript"
+      ],
+      "patch": [
+        {
+          "row": "FX-CASE-01:obs-t3-class-a",
+          "path": [
+            "action_reason_code"
+          ],
+          "set": "validated_flood"
+        }
+      ]
+    },
+    {
+      "id": "unknown-lane",
+      "refuses": "structure",
+      "basis": "v1a evidence_tier_model.lanes",
+      "checked_by": [
+        "schema",
+        "python",
+        "typescript"
+      ],
+      "patch": [
+        {
+          "row": "FX-CASE-01:obs-t3-class-a",
+          "path": [
+            "lane"
+          ],
+          "set": "LIVE"
+        }
+      ]
+    },
+    {
+      "id": "unknown-temporal-relation",
+      "refuses": "structure",
+      "basis": "v1a date_rule.temporal_relation_values",
+      "checked_by": [
+        "schema",
+        "python",
+        "typescript"
+      ],
+      "patch": [
+        {
+          "row": "FX-CASE-01:obs-t3-class-a",
+          "path": [
+            "temporal_relation"
+          ],
+          "set": "same_event"
+        }
+      ]
+    },
+    {
+      "id": "unknown-basis-value",
+      "refuses": "structure",
+      "basis": "v1a confidence_rule_v1.basis_record",
+      "checked_by": [
+        "schema",
+        "python",
+        "typescript"
+      ],
+      "patch": [
+        {
+          "row": "FX-CASE-01:obs-t3-class-a",
+          "path": [
+            "confidence",
+            "basis",
+            "C3_coverage"
+          ],
+          "set": "assumed_ok"
+        }
+      ]
+    },
+    {
+      "id": "unknown-field",
+      "refuses": "structure",
+      "basis": "the schema is closed (additionalProperties false)",
+      "checked_by": [
+        "schema",
+        "python",
+        "typescript"
+      ],
+      "patch": [
+        {
+          "path": [
+            "live_alert_level"
+          ],
+          "set": 3
+        }
+      ]
+    },
+    {
+      "id": "row-without-assumptions",
+      "refuses": "structure",
+      "basis": "AGENTS.md: every output carries its assumptions",
+      "checked_by": [
+        "schema",
+        "python",
+        "typescript"
+      ],
+      "patch": [
+        {
+          "row": "FX-CASE-01:obs-t3-class-a",
+          "path": [
+            "assumptions"
+          ],
+          "delete": true
+        }
+      ]
+    },
+    {
+      "id": "overlay-without-source-timestamp",
+      "refuses": "structure",
+      "basis": "AGENTS.md: every output carries a source timestamp",
+      "checked_by": [
+        "schema",
+        "python",
+        "typescript"
+      ],
+      "patch": [
+        {
+          "path": [
+            "source_timestamp"
+          ],
+          "delete": true
+        }
+      ]
+    },
+    {
+      "id": "engine-row-with-a-flood-input",
+      "refuses": "structure",
+      "basis": "v1a evidence_tier_model lane ENG: synthetic, not a place",
+      "checked_by": [
+        "schema",
+        "python",
+        "typescript"
+      ],
+      "patch": [
+        {
+          "row": "FX-CASE-01:eng-t0-class-a",
+          "path": [
+            "flood_input"
+          ],
+          "set": "Fixture agency extent A (invented, not a product)"
+        }
+      ]
+    },
+    {
+      "id": "scenario-row-without-a-declaration",
+      "refuses": "structure",
+      "basis": "v1a evidence_tier_model tier T1: a declared perturbation or assumption",
+      "checked_by": [
+        "schema",
+        "python",
+        "typescript"
+      ],
+      "patch": [
+        {
+          "row": "FX-CASE-01:scn-t1-agency-base-class-a",
+          "path": [
+            "scenario"
+          ],
+          "set": null
+        }
+      ]
+    },
+    {
+      "id": "component-value-not-the-frame-value",
+      "refuses": "component_not_frame_record",
+      "basis": "v1a guardrails GR2_no_max_normalisation",
+      "checked_by": [
+        "python_with_protocols"
+      ],
+      "patch": [
+        {
+          "row": "FX-CASE-01:obs-t3-class-d",
+          "path": [
+            "components",
+            "exposure_0_100",
+            "value_0_100"
+          ],
+          "set": 100
+        }
+      ]
+    },
+    {
+      "id": "confidence-measurement-changed",
+      "refuses": "confidence_not_rule_record",
+      "basis": "v1a confidence_rule_v1, re-derived with confidence.py",
+      "checked_by": [
+        "python_with_protocols"
+      ],
+      "patch": [
+        {
+          "row": "FX-CASE-01:obs-t3-c3-coverage",
+          "path": [
+            "confidence",
+            "measurements",
+            "unit_valid_coverage"
+          ],
+          "set": 0.95
+        }
+      ]
+    },
+    {
+      "id": "coverage-by-construction-outside-its-scope",
+      "refuses": "confidence_not_rule_record",
+      "basis": "v1a confidence_rule_v1 C3: by construction for product 4009 in the eight Mae Sai tambons only",
+      "checked_by": [
+        "python_with_protocols"
+      ],
+      "patch": [
+        {
+          "row": "FX-CASE-01:obs-t3-class-a",
+          "path": [
+            "confidence",
+            "basis",
+            "C3_coverage"
+          ],
+          "set": "by_construction"
+        },
+        {
+          "row": "FX-CASE-01:obs-t3-class-a",
+          "path": [
+            "confidence",
+            "measurements",
+            "coverage_by_construction"
+          ],
+          "set": true
+        }
+      ]
+    },
+    {
+      "id": "protocol-hash-not-in-force",
+      "refuses": "protocol_not_in_force",
+      "basis": "v1a change_control.receipt",
+      "checked_by": [
+        "python_with_protocols"
+      ],
+      "patch": [
+        {
+          "path": [
+            "protocol_sha256",
+            "v1a"
+          ],
+          "set": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ]
+    },
+    {
+      "id": "frame-weights-changed",
+      "refuses": "frame_not_protocol_frame",
+      "basis": "v1a scoring_frame.weights",
+      "checked_by": [
+        "python_with_protocols"
+      ],
+      "patch": [
+        {
+          "path": [
+            "scoring_frame",
+            "weights",
+            "exposure_0_100"
+          ],
+          "set": 0.3
+        }
+      ]
+    }
+  ]
+}

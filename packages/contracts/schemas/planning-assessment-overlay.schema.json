@@ -1,0 +1,3034 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://floodguard.th/contracts/planning-assessment-overlay.schema.json",
+  "title": "FloodGuard planning assessment overlay",
+  "description": "The planning assessment of one case under the signed planning protocols v1a and v1b: one row per unit, lane and flood input, with its evidence tier, the five component records and their echoed inputs, the FPPS, the binding v1 class with its reason code, the would-be class, the v2 class as a secondary axis, the confidence record and its basis, leave-one-component-out, the headline-stability slot, and the rights, input and protocol hashes. Planning guidance for preparedness and post-event prioritisation: not an official warning, non-operational, and accepted_fpps and accepted_action_class stay null because the qualified tier T4 is locked. Class E never means safe. Cross-field arithmetic (FPPS, class rule, would-be class, leave-one-component-out, lineage, rights minimum) is checked by floodguard.planning_overlay and by the web parser.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "schema_id",
+    "dataset_mode",
+    "operational_status",
+    "official_warning",
+    "can_feed_decision_layer",
+    "accepted_fpps",
+    "accepted_action_class",
+    "source_timestamp",
+    "generated_at",
+    "source_name",
+    "data_version",
+    "git_commit",
+    "case",
+    "protocol_sha256",
+    "evidence_tier_model_version",
+    "normalisation_version",
+    "confidence_rule_version",
+    "class_rule_version",
+    "secondary_class_rule_version",
+    "scoring_frame",
+    "publication_eligibility",
+    "inputs",
+    "assumptions",
+    "rows"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "schema_id": {
+      "const": "https://floodguard.th/contracts/planning-assessment-overlay.schema.json"
+    },
+    "dataset_mode": {
+      "enum": [
+        "fixture_demo",
+        "candidate"
+      ]
+    },
+    "operational_status": {
+      "const": "non_operational"
+    },
+    "official_warning": {
+      "const": false
+    },
+    "can_feed_decision_layer": {
+      "const": false
+    },
+    "accepted_fpps": {
+      "type": "null"
+    },
+    "accepted_action_class": {
+      "type": "null"
+    },
+    "source_timestamp": {
+      "$ref": "#/$defs/instant"
+    },
+    "generated_at": {
+      "$ref": "#/$defs/instant"
+    },
+    "source_name": {
+      "$ref": "#/$defs/text"
+    },
+    "data_version": {
+      "$ref": "#/$defs/text"
+    },
+    "git_commit": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{7,40}$"
+    },
+    "case": {
+      "$ref": "#/$defs/case"
+    },
+    "protocol_sha256": {
+      "$ref": "#/$defs/protocolSha256"
+    },
+    "evidence_tier_model_version": {
+      "const": "evidence_tiers_v1"
+    },
+    "normalisation_version": {
+      "const": "planning_frame_v1"
+    },
+    "confidence_rule_version": {
+      "const": "confidence_rule_v1"
+    },
+    "class_rule_version": {
+      "const": "class_rule_v1"
+    },
+    "secondary_class_rule_version": {
+      "const": "class_rule_v2"
+    },
+    "scoring_frame": {
+      "$ref": "#/$defs/scoringFrame"
+    },
+    "publication_eligibility": {
+      "$ref": "#/$defs/publicationLevel"
+    },
+    "inputs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/input"
+      }
+    },
+    "assumptions": {
+      "$ref": "#/$defs/assumptions"
+    },
+    "rows": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/row"
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "dataset_mode": {
+            "const": "fixture_demo"
+          }
+        },
+        "required": [
+          "dataset_mode"
+        ]
+      },
+      "then": {
+        "properties": {
+          "case": {
+            "properties": {
+              "kind": {
+                "const": "fixture"
+              }
+            }
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "case": {
+            "properties": {
+              "kind": {
+                "const": "portfolio_case"
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "text": {
+      "type": "string",
+      "minLength": 1
+    },
+    "score": {
+      "description": "A value on the 0-100 scale.",
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "share": {
+      "description": "A share between 0 and 1.",
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "count": {
+      "description": "A measured quantity (residents, area): finite and not negative.",
+      "type": "number",
+      "minimum": 0
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "isoDate": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "instant": {
+      "description": "A date and time with a time zone (RFC 3339).",
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?(Z|[+-][0-9]{2}:[0-9]{2})$"
+    },
+    "inputId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_.-]{1,63}$"
+    },
+    "tier": {
+      "description": "Evidence tier (protocol v1a evidence_tier_model.tiers). T4 is locked in this release.",
+      "enum": [
+        "T0",
+        "T1",
+        "T2",
+        "T3",
+        "T4"
+      ]
+    },
+    "lane": {
+      "description": "Lane (protocol v1a evidence_tier_model.lanes).",
+      "enum": [
+        "OBS",
+        "SCN",
+        "SCN-ENV",
+        "ENG"
+      ]
+    },
+    "temporalRelation": {
+      "description": "Protocol v1a date_rule.temporal_relation_values.",
+      "enum": [
+        "event_aligned",
+        "dated_other",
+        "season_window"
+      ]
+    },
+    "actionClass": {
+      "description": "A-E action class (protocol v1a class_rules.v1.class_names).",
+      "enum": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E"
+      ]
+    },
+    "actionReasonCode": {
+      "description": "The six reason codes of class rule v1 and the one code the planning overlay adds (protocol v1a class_rules.v1.reason_codes and added_reason_code).",
+      "enum": [
+        "low_confidence",
+        "low_priority_score",
+        "life_safety_exposure",
+        "critical_route_access",
+        "essential_service_access",
+        "resilience",
+        "insufficient_denominator"
+      ]
+    },
+    "assignedConfidenceClass": {
+      "description": "A confidence class a row may carry. high requires tier T4, which is locked, so it is never assigned (protocol v1a confidence_rule_v1.high).",
+      "enum": [
+        "low",
+        "medium"
+      ]
+    },
+    "basisValue": {
+      "description": "Protocol v1a confidence_rule_v1.basis_record.",
+      "enum": [
+        "pass",
+        "fail",
+        "by_construction",
+        "by_scenario_declaration"
+      ]
+    },
+    "passFail": {
+      "enum": [
+        "pass",
+        "fail"
+      ]
+    },
+    "conditionId": {
+      "description": "The eight conditions of confidence rule v1.",
+      "enum": [
+        "C1_tier",
+        "C2_recency",
+        "C3_coverage",
+        "C4_input_uncertainty",
+        "C5_components",
+        "C6_residents",
+        "C7_baseline_no_route",
+        "C8_hospital"
+      ]
+    },
+    "componentName": {
+      "enum": [
+        "flood_likelihood_0_100",
+        "exposure_0_100",
+        "access_gap_0_100",
+        "road_criticality_0_100",
+        "vulnerability_context_0_100"
+      ]
+    },
+    "publicationLevel": {
+      "description": "Guardrail GR6: local, pitch or public, lowest first.",
+      "enum": [
+        "local",
+        "pitch",
+        "public"
+      ]
+    },
+    "assumptions": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/text"
+      }
+    },
+    "protocolSha256": {
+      "description": "SHA-256 of the two signed protocol files the values were produced under (protocol v1a change_control).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "v1a",
+        "v1b"
+      ],
+      "properties": {
+        "v1a": {
+          "$ref": "#/$defs/sha256"
+        },
+        "v1b": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "weights": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "flood_likelihood_0_100",
+        "exposure_0_100",
+        "access_gap_0_100",
+        "road_criticality_0_100",
+        "vulnerability_context_0_100"
+      ],
+      "properties": {
+        "flood_likelihood_0_100": {
+          "$ref": "#/$defs/share"
+        },
+        "exposure_0_100": {
+          "$ref": "#/$defs/share"
+        },
+        "access_gap_0_100": {
+          "$ref": "#/$defs/share"
+        },
+        "road_criticality_0_100": {
+          "$ref": "#/$defs/share"
+        },
+        "vulnerability_context_0_100": {
+          "$ref": "#/$defs/share"
+        }
+      }
+    },
+    "case": {
+      "description": "The case the overlay belongs to. A fixture case is invented and is not a place.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "case_id",
+        "kind",
+        "title_en",
+        "title_th",
+        "frame",
+        "case_reference_date",
+        "fixture_notice"
+      ],
+      "properties": {
+        "case_id": {
+          "$ref": "#/$defs/text"
+        },
+        "kind": {
+          "enum": [
+            "fixture",
+            "portfolio_case"
+          ]
+        },
+        "title_en": {
+          "$ref": "#/$defs/text"
+        },
+        "title_th": {
+          "$ref": "#/$defs/text"
+        },
+        "frame": {
+          "$ref": "#/$defs/text"
+        },
+        "case_reference_date": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/isoDate"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "fixture_notice": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/text"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "fixture"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "fixture_notice": {
+                "type": "string",
+                "pattern": "not a place"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "fixture_notice": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "input": {
+      "description": "One input in the lineage of the overlay, with its hash and its rights level.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "input_id",
+        "role",
+        "name",
+        "sha256",
+        "rights_level",
+        "licence",
+        "attribution",
+        "change_notice",
+        "source_timestamp"
+      ],
+      "properties": {
+        "input_id": {
+          "$ref": "#/$defs/inputId"
+        },
+        "role": {
+          "enum": [
+            "flood_input",
+            "routing_context",
+            "population",
+            "age_structure",
+            "boundaries",
+            "facilities",
+            "permanent_water",
+            "other"
+          ]
+        },
+        "name": {
+          "$ref": "#/$defs/text"
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "rights_level": {
+          "$ref": "#/$defs/publicationLevel"
+        },
+        "licence": {
+          "$ref": "#/$defs/text"
+        },
+        "attribution": {
+          "$ref": "#/$defs/text"
+        },
+        "change_notice": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/text"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "source_timestamp": {
+          "$ref": "#/$defs/text"
+        }
+      }
+    },
+    "accessService": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "service",
+        "mode",
+        "threshold_minutes",
+        "level"
+      ],
+      "properties": {
+        "service": {
+          "$ref": "#/$defs/text"
+        },
+        "mode": {
+          "$ref": "#/$defs/text"
+        },
+        "threshold_minutes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "level": {
+          "enum": [
+            "public",
+            "pitch"
+          ]
+        }
+      }
+    },
+    "permanentWater": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source",
+        "class"
+      ],
+      "properties": {
+        "source": {
+          "$ref": "#/$defs/text"
+        },
+        "class": {
+          "type": "integer"
+        }
+      }
+    },
+    "scoringFrame": {
+      "description": "The frame header exactly as floodguard.normalisation.frame_record returns it: weights, anchors, the leave-one-component-out weights and the disclosure that one flood input drives 4 of 5 components (guardrail GR3).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "normalisation_version",
+        "normalisation_rule",
+        "weights",
+        "flood_anchor",
+        "flood_anchor_sensitivity_one_at_a_time",
+        "flood_anchor_disclosure",
+        "permanent_water",
+        "exposure_kind",
+        "access_services",
+        "vulnerability_anchor_version",
+        "vulnerability_anchors",
+        "vulnerability_anchor_sensitivity",
+        "vulnerability_anchor_receipt_sha256",
+        "leave_one_component_out_weights",
+        "lane_disclosure",
+        "protocol_sha256"
+      ],
+      "properties": {
+        "normalisation_version": {
+          "const": "planning_frame_v1"
+        },
+        "normalisation_rule": {
+          "$ref": "#/$defs/text"
+        },
+        "weights": {
+          "$ref": "#/$defs/weights"
+        },
+        "flood_anchor": {
+          "$ref": "#/$defs/share"
+        },
+        "flood_anchor_sensitivity_one_at_a_time": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/share"
+          }
+        },
+        "flood_anchor_disclosure": {
+          "$ref": "#/$defs/text"
+        },
+        "permanent_water": {
+          "$ref": "#/$defs/permanentWater"
+        },
+        "exposure_kind": {
+          "const": "share_only"
+        },
+        "access_services": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/accessService"
+          }
+        },
+        "vulnerability_anchor_version": {
+          "const": "national_vulnerability_anchors_v1"
+        },
+        "vulnerability_anchors": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "lower",
+            "upper",
+            "values"
+          ],
+          "properties": {
+            "lower": {
+              "$ref": "#/$defs/text"
+            },
+            "upper": {
+              "$ref": "#/$defs/text"
+            },
+            "values": {
+              "type": "object",
+              "minProperties": 2,
+              "propertyNames": {
+                "pattern": "^P[0-9]{1,2}$"
+              },
+              "additionalProperties": {
+                "$ref": "#/$defs/share"
+              }
+            }
+          }
+        },
+        "vulnerability_anchor_sensitivity": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "lower",
+            "upper"
+          ],
+          "properties": {
+            "lower": {
+              "$ref": "#/$defs/text"
+            },
+            "upper": {
+              "$ref": "#/$defs/text"
+            }
+          }
+        },
+        "vulnerability_anchor_receipt_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "leave_one_component_out_weights": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "flood_likelihood_0_100",
+            "exposure_0_100",
+            "access_gap_0_100",
+            "road_criticality_0_100",
+            "vulnerability_context_0_100"
+          ],
+          "properties": {
+            "flood_likelihood_0_100": {
+              "$ref": "#/$defs/weights"
+            },
+            "exposure_0_100": {
+              "$ref": "#/$defs/weights"
+            },
+            "access_gap_0_100": {
+              "$ref": "#/$defs/weights"
+            },
+            "road_criticality_0_100": {
+              "$ref": "#/$defs/weights"
+            },
+            "vulnerability_context_0_100": {
+              "$ref": "#/$defs/weights"
+            }
+          }
+        },
+        "lane_disclosure": {
+          "$ref": "#/$defs/text"
+        },
+        "protocol_sha256": {
+          "$ref": "#/$defs/protocolSha256"
+        }
+      }
+    },
+    "floodLikelihoodRecord": {
+      "description": "As floodguard.normalisation.flood_likelihood returns it.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "component",
+        "value_0_100",
+        "normalisation_version",
+        "protocol_sha256",
+        "definition",
+        "inputs",
+        "flooded_share",
+        "anchor",
+        "anchor_sensitivity_one_at_a_time",
+        "anchor_disclosure",
+        "permanent_water"
+      ],
+      "properties": {
+        "component": {
+          "const": "flood_likelihood_0_100"
+        },
+        "value_0_100": {
+          "$ref": "#/$defs/score"
+        },
+        "normalisation_version": {
+          "const": "planning_frame_v1"
+        },
+        "protocol_sha256": {
+          "$ref": "#/$defs/protocolSha256"
+        },
+        "definition": {
+          "$ref": "#/$defs/text"
+        },
+        "inputs": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "flooded_non_permanent_water_land_area",
+            "non_permanent_water_land_area"
+          ],
+          "properties": {
+            "flooded_non_permanent_water_land_area": {
+              "$ref": "#/$defs/count"
+            },
+            "non_permanent_water_land_area": {
+              "$ref": "#/$defs/count"
+            }
+          }
+        },
+        "flooded_share": {
+          "$ref": "#/$defs/share"
+        },
+        "anchor": {
+          "$ref": "#/$defs/share"
+        },
+        "anchor_sensitivity_one_at_a_time": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "anchor",
+              "value_0_100"
+            ],
+            "properties": {
+              "anchor": {
+                "$ref": "#/$defs/share"
+              },
+              "value_0_100": {
+                "$ref": "#/$defs/score"
+              }
+            }
+          }
+        },
+        "anchor_disclosure": {
+          "$ref": "#/$defs/text"
+        },
+        "permanent_water": {
+          "$ref": "#/$defs/permanentWater"
+        }
+      }
+    },
+    "exposureRecord": {
+      "description": "As floodguard.normalisation.exposure returns it.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "component",
+        "value_0_100",
+        "normalisation_version",
+        "protocol_sha256",
+        "definition",
+        "inputs",
+        "exposed_share",
+        "kind"
+      ],
+      "properties": {
+        "component": {
+          "const": "exposure_0_100"
+        },
+        "value_0_100": {
+          "$ref": "#/$defs/score"
+        },
+        "normalisation_version": {
+          "const": "planning_frame_v1"
+        },
+        "protocol_sha256": {
+          "$ref": "#/$defs/protocolSha256"
+        },
+        "definition": {
+          "$ref": "#/$defs/text"
+        },
+        "inputs": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "residents_inside_flood_extent",
+            "unit_residents"
+          ],
+          "properties": {
+            "residents_inside_flood_extent": {
+              "$ref": "#/$defs/count"
+            },
+            "unit_residents": {
+              "$ref": "#/$defs/count"
+            }
+          }
+        },
+        "exposed_share": {
+          "$ref": "#/$defs/share"
+        },
+        "kind": {
+          "const": "share_only"
+        }
+      }
+    },
+    "accessGapRecord": {
+      "description": "As floodguard.normalisation.access_gap returns it.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "component",
+        "value_0_100",
+        "normalisation_version",
+        "protocol_sha256",
+        "definition",
+        "inputs",
+        "services",
+        "baseline_access_residents_all_services",
+        "publication_level"
+      ],
+      "properties": {
+        "component": {
+          "const": "access_gap_0_100"
+        },
+        "value_0_100": {
+          "$ref": "#/$defs/score"
+        },
+        "normalisation_version": {
+          "const": "planning_frame_v1"
+        },
+        "protocol_sha256": {
+          "$ref": "#/$defs/protocolSha256"
+        },
+        "definition": {
+          "$ref": "#/$defs/text"
+        },
+        "inputs": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "services"
+          ],
+          "properties": {
+            "services": {
+              "type": "object",
+              "minProperties": 1,
+              "additionalProperties": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "mode",
+                  "threshold_minutes",
+                  "baseline_access_residents",
+                  "newly_lost_residents"
+                ],
+                "properties": {
+                  "mode": {
+                    "$ref": "#/$defs/text"
+                  },
+                  "threshold_minutes": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "baseline_access_residents": {
+                    "$ref": "#/$defs/count"
+                  },
+                  "newly_lost_residents": {
+                    "$ref": "#/$defs/count"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "services": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "service",
+              "mode",
+              "threshold_minutes",
+              "baseline_access_residents",
+              "newly_lost_residents",
+              "newly_lost_share"
+            ],
+            "properties": {
+              "service": {
+                "$ref": "#/$defs/text"
+              },
+              "mode": {
+                "$ref": "#/$defs/text"
+              },
+              "threshold_minutes": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "baseline_access_residents": {
+                "$ref": "#/$defs/count"
+              },
+              "newly_lost_residents": {
+                "$ref": "#/$defs/count"
+              },
+              "newly_lost_share": {
+                "oneOf": [
+                  {
+                    "$ref": "#/$defs/share"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "baseline_access_residents_all_services": {
+          "$ref": "#/$defs/count"
+        },
+        "publication_level": {
+          "enum": [
+            "public",
+            "pitch"
+          ]
+        }
+      }
+    },
+    "roadCriticalityRecord": {
+      "description": "As floodguard.normalisation.road_criticality returns it.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "component",
+        "value_0_100",
+        "normalisation_version",
+        "protocol_sha256",
+        "definition",
+        "inputs",
+        "share_losing_all_routes"
+      ],
+      "properties": {
+        "component": {
+          "const": "road_criticality_0_100"
+        },
+        "value_0_100": {
+          "$ref": "#/$defs/score"
+        },
+        "normalisation_version": {
+          "const": "planning_frame_v1"
+        },
+        "protocol_sha256": {
+          "$ref": "#/$defs/protocolSha256"
+        },
+        "definition": {
+          "$ref": "#/$defs/text"
+        },
+        "inputs": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "residents_losing_all_routes",
+            "residents_with_baseline_route"
+          ],
+          "properties": {
+            "residents_losing_all_routes": {
+              "$ref": "#/$defs/count"
+            },
+            "residents_with_baseline_route": {
+              "$ref": "#/$defs/count"
+            }
+          }
+        },
+        "share_losing_all_routes": {
+          "$ref": "#/$defs/share"
+        }
+      }
+    },
+    "vulnerabilityRecord": {
+      "description": "As floodguard.normalisation.vulnerability_context returns it.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "component",
+        "value_0_100",
+        "normalisation_version",
+        "protocol_sha256",
+        "definition",
+        "inputs",
+        "dependent_share",
+        "anchors",
+        "anchor_sensitivity",
+        "anchor_version",
+        "anchor_receipt_sha256",
+        "caveat"
+      ],
+      "properties": {
+        "component": {
+          "const": "vulnerability_context_0_100"
+        },
+        "value_0_100": {
+          "$ref": "#/$defs/score"
+        },
+        "normalisation_version": {
+          "const": "planning_frame_v1"
+        },
+        "protocol_sha256": {
+          "$ref": "#/$defs/protocolSha256"
+        },
+        "definition": {
+          "$ref": "#/$defs/text"
+        },
+        "inputs": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "children_0_14",
+            "older_60_plus",
+            "residents"
+          ],
+          "properties": {
+            "children_0_14": {
+              "$ref": "#/$defs/count"
+            },
+            "older_60_plus": {
+              "$ref": "#/$defs/count"
+            },
+            "residents": {
+              "$ref": "#/$defs/count"
+            }
+          }
+        },
+        "dependent_share": {
+          "$ref": "#/$defs/share"
+        },
+        "anchors": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "lower",
+            "lower_value",
+            "upper",
+            "upper_value"
+          ],
+          "properties": {
+            "lower": {
+              "$ref": "#/$defs/text"
+            },
+            "lower_value": {
+              "$ref": "#/$defs/share"
+            },
+            "upper": {
+              "$ref": "#/$defs/text"
+            },
+            "upper_value": {
+              "$ref": "#/$defs/share"
+            }
+          }
+        },
+        "anchor_sensitivity": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "lower",
+            "lower_value",
+            "upper",
+            "upper_value",
+            "value_0_100"
+          ],
+          "properties": {
+            "lower": {
+              "$ref": "#/$defs/text"
+            },
+            "lower_value": {
+              "$ref": "#/$defs/share"
+            },
+            "upper": {
+              "$ref": "#/$defs/text"
+            },
+            "upper_value": {
+              "$ref": "#/$defs/share"
+            },
+            "value_0_100": {
+              "$ref": "#/$defs/score"
+            }
+          }
+        },
+        "anchor_version": {
+          "const": "national_vulnerability_anchors_v1"
+        },
+        "anchor_receipt_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "caveat": {
+          "$ref": "#/$defs/text"
+        }
+      }
+    },
+    "syntheticComponent": {
+      "description": "A synthetic component value of an engine row (tier T0, lane ENG): a fixture or boundary-grid value, not a place and not a frame v1 record.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "component",
+        "value_0_100",
+        "synthetic"
+      ],
+      "properties": {
+        "component": {
+          "$ref": "#/$defs/componentName"
+        },
+        "value_0_100": {
+          "$ref": "#/$defs/score"
+        },
+        "synthetic": {
+          "const": true
+        }
+      }
+    },
+    "components": {
+      "description": "The five FPPS components. A frame v1 record echoes its inputs; null says the protocol states no value for the unit (the component is not computed).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "flood_likelihood_0_100",
+        "exposure_0_100",
+        "access_gap_0_100",
+        "road_criticality_0_100",
+        "vulnerability_context_0_100"
+      ],
+      "properties": {
+        "flood_likelihood_0_100": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/floodLikelihoodRecord"
+            },
+            {
+              "$ref": "#/$defs/syntheticComponent"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "exposure_0_100": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/exposureRecord"
+            },
+            {
+              "$ref": "#/$defs/syntheticComponent"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "access_gap_0_100": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/accessGapRecord"
+            },
+            {
+              "$ref": "#/$defs/syntheticComponent"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "road_criticality_0_100": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/roadCriticalityRecord"
+            },
+            {
+              "$ref": "#/$defs/syntheticComponent"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "vulnerability_context_0_100": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/vulnerabilityRecord"
+            },
+            {
+              "$ref": "#/$defs/syntheticComponent"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "t2SkillCondition": {
+      "description": "As floodguard.confidence.t2_skill_condition returns it (protocol v1a t2_skill_bar).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "flood_input",
+        "status",
+        "passes",
+        "conditions",
+        "failed_conditions",
+        "measurements",
+        "thresholds",
+        "metric_wording",
+        "protocol_v1a_sha256"
+      ],
+      "properties": {
+        "flood_input": {
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "declared_unable_to_meet",
+            "not_evaluated_by_the_rule",
+            "evaluated"
+          ]
+        },
+        "passes": {
+          "type": "boolean"
+        },
+        "conditions": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "geoid_held_out_test_iou_min",
+            "mae_sai_abstention_fraction_max",
+            "mae_sai_unit_coverage_min",
+            "recency_window_days"
+          ],
+          "properties": {
+            "geoid_held_out_test_iou_min": {
+              "$ref": "#/$defs/passFail"
+            },
+            "mae_sai_abstention_fraction_max": {
+              "$ref": "#/$defs/passFail"
+            },
+            "mae_sai_unit_coverage_min": {
+              "$ref": "#/$defs/passFail"
+            },
+            "recency_window_days": {
+              "$ref": "#/$defs/passFail"
+            }
+          }
+        },
+        "failed_conditions": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "geoid_held_out_test_iou_min",
+              "mae_sai_abstention_fraction_max",
+              "mae_sai_unit_coverage_min",
+              "recency_window_days"
+            ]
+          }
+        },
+        "measurements": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "geoid_held_out_test_iou",
+            "abstention_fraction",
+            "unit_valid_coverage",
+            "recency_days"
+          ],
+          "properties": {
+            "geoid_held_out_test_iou": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/share"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "abstention_fraction": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/share"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "unit_valid_coverage": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/share"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "recency_days": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        },
+        "thresholds": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "geoid_held_out_test_iou_min",
+            "mae_sai_abstention_fraction_max",
+            "mae_sai_unit_coverage_min",
+            "recency_window_days"
+          ],
+          "properties": {
+            "geoid_held_out_test_iou_min": {
+              "$ref": "#/$defs/count"
+            },
+            "mae_sai_abstention_fraction_max": {
+              "$ref": "#/$defs/count"
+            },
+            "mae_sai_unit_coverage_min": {
+              "$ref": "#/$defs/count"
+            },
+            "recency_window_days": {
+              "$ref": "#/$defs/count"
+            }
+          }
+        },
+        "metric_wording": {
+          "$ref": "#/$defs/text"
+        },
+        "protocol_v1a_sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "guardrailGr1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "applies",
+        "unit_residents_min_for_class",
+        "no_binding_class",
+        "no_would_be_class",
+        "no_v2_class"
+      ],
+      "properties": {
+        "id": {
+          "const": "GR1_minimum_denominators"
+        },
+        "applies": {
+          "type": "boolean"
+        },
+        "unit_residents_min_for_class": {
+          "$ref": "#/$defs/count"
+        },
+        "no_binding_class": {
+          "type": "boolean"
+        },
+        "no_would_be_class": {
+          "type": "boolean"
+        },
+        "no_v2_class": {
+          "type": "boolean"
+        }
+      }
+    },
+    "derivedConfidence": {
+      "description": "The confidence record exactly as floodguard.confidence.derive_confidence returns it (rule v1, per unit and lane).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "unit_id",
+        "lane",
+        "tier",
+        "flood_input",
+        "scenario_base",
+        "confidence_rule_version",
+        "confidence_class",
+        "confidence_kind",
+        "basis",
+        "failed_conditions",
+        "reason_code",
+        "guardrail_gr1",
+        "t2_skill_condition",
+        "measurements",
+        "thresholds",
+        "uses_ensemble_output",
+        "rights_are_an_input",
+        "protocol_v1a_sha256",
+        "assumptions"
+      ],
+      "properties": {
+        "unit_id": {
+          "$ref": "#/$defs/text"
+        },
+        "lane": {
+          "enum": [
+            "OBS",
+            "SCN",
+            "SCN-ENV"
+          ]
+        },
+        "tier": {
+          "enum": [
+            "T1",
+            "T2",
+            "T3"
+          ]
+        },
+        "flood_input": {
+          "type": "string"
+        },
+        "scenario_base": {
+          "enum": [
+            "agency_product_as_provided",
+            "own_t2_candidate",
+            null
+          ]
+        },
+        "confidence_rule_version": {
+          "const": "confidence_rule_v1"
+        },
+        "confidence_class": {
+          "$ref": "#/$defs/assignedConfidenceClass"
+        },
+        "confidence_kind": {
+          "enum": [
+            "observed",
+            "scenario"
+          ]
+        },
+        "basis": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "C1_tier",
+            "C2_recency",
+            "C3_coverage",
+            "C4_input_uncertainty",
+            "C5_components",
+            "C6_residents",
+            "C7_baseline_no_route",
+            "C8_hospital"
+          ],
+          "properties": {
+            "C1_tier": {
+              "$ref": "#/$defs/basisValue"
+            },
+            "C2_recency": {
+              "$ref": "#/$defs/basisValue"
+            },
+            "C3_coverage": {
+              "$ref": "#/$defs/basisValue"
+            },
+            "C4_input_uncertainty": {
+              "$ref": "#/$defs/basisValue"
+            },
+            "C5_components": {
+              "$ref": "#/$defs/basisValue"
+            },
+            "C6_residents": {
+              "$ref": "#/$defs/basisValue"
+            },
+            "C7_baseline_no_route": {
+              "$ref": "#/$defs/basisValue"
+            },
+            "C8_hospital": {
+              "$ref": "#/$defs/basisValue"
+            }
+          }
+        },
+        "failed_conditions": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/conditionId"
+          }
+        },
+        "reason_code": {
+          "enum": [
+            "low_confidence",
+            "insufficient_denominator",
+            null
+          ]
+        },
+        "guardrail_gr1": {
+          "$ref": "#/$defs/guardrailGr1"
+        },
+        "t2_skill_condition": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/t2SkillCondition"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "measurements": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "recency_days",
+            "acquisition_date",
+            "case_reference_date",
+            "unit_valid_coverage",
+            "coverage_by_construction",
+            "exposure_plus_one_pixel_0_100",
+            "exposure_minus_one_pixel_0_100",
+            "exposure_plus_minus_one_pixel_points",
+            "t2_abstention_fraction",
+            "component_status",
+            "unit_residents",
+            "baseline_vehicle_no_route_share",
+            "hospitals_reachable_at_baseline"
+          ],
+          "properties": {
+            "recency_days": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "acquisition_date": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/isoDate"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "case_reference_date": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/isoDate"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "unit_valid_coverage": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/share"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "coverage_by_construction": {
+              "type": "boolean"
+            },
+            "exposure_plus_one_pixel_0_100": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/score"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "exposure_minus_one_pixel_0_100": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/score"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "exposure_plus_minus_one_pixel_points": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/score"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "t2_abstention_fraction": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/share"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "component_status": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "flood_likelihood_0_100",
+                "exposure_0_100",
+                "access_gap_0_100",
+                "road_criticality_0_100",
+                "vulnerability_context_0_100"
+              ],
+              "properties": {
+                "flood_likelihood_0_100": {
+                  "enum": [
+                    "computed",
+                    "assumed",
+                    "not_computed"
+                  ]
+                },
+                "exposure_0_100": {
+                  "enum": [
+                    "computed",
+                    "assumed",
+                    "not_computed"
+                  ]
+                },
+                "access_gap_0_100": {
+                  "enum": [
+                    "computed",
+                    "assumed",
+                    "not_computed"
+                  ]
+                },
+                "road_criticality_0_100": {
+                  "enum": [
+                    "computed",
+                    "assumed",
+                    "not_computed"
+                  ]
+                },
+                "vulnerability_context_0_100": {
+                  "enum": [
+                    "computed",
+                    "assumed",
+                    "not_computed"
+                  ]
+                }
+              }
+            },
+            "unit_residents": {
+              "$ref": "#/$defs/count"
+            },
+            "baseline_vehicle_no_route_share": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/share"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "hospitals_reachable_at_baseline": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/count"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        },
+        "thresholds": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "recency_window_days",
+            "unit_valid_coverage_min",
+            "exposure_plus_minus_one_pixel_max_points",
+            "exposure_plus_minus_one_pixel_float_guard_points",
+            "t2_abstention_fraction_max",
+            "unit_residents_min",
+            "baseline_vehicle_no_route_share_max",
+            "hospitals_reachable_at_baseline_min"
+          ],
+          "properties": {
+            "recency_window_days": {
+              "$ref": "#/$defs/count"
+            },
+            "unit_valid_coverage_min": {
+              "$ref": "#/$defs/count"
+            },
+            "exposure_plus_minus_one_pixel_max_points": {
+              "$ref": "#/$defs/count"
+            },
+            "exposure_plus_minus_one_pixel_float_guard_points": {
+              "$ref": "#/$defs/count"
+            },
+            "t2_abstention_fraction_max": {
+              "$ref": "#/$defs/count"
+            },
+            "unit_residents_min": {
+              "$ref": "#/$defs/count"
+            },
+            "baseline_vehicle_no_route_share_max": {
+              "$ref": "#/$defs/count"
+            },
+            "hospitals_reachable_at_baseline_min": {
+              "$ref": "#/$defs/count"
+            }
+          }
+        },
+        "uses_ensemble_output": {
+          "const": false
+        },
+        "rights_are_an_input": {
+          "const": false
+        },
+        "protocol_v1a_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "assumptions": {
+          "$ref": "#/$defs/assumptions"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "confidence_class": {
+                "const": "medium"
+              }
+            },
+            "required": [
+              "confidence_class"
+            ]
+          },
+          "then": {
+            "properties": {
+              "failed_conditions": {
+                "maxItems": 0
+              },
+              "reason_code": {
+                "type": "null"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "failed_conditions": {
+                "minItems": 1
+              },
+              "reason_code": {
+                "enum": [
+                  "low_confidence",
+                  "insufficient_denominator"
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "declaredConfidence": {
+      "description": "The confidence of an engine row (tier T0): declared per row, not derived by rule v1 (protocol v1a evidence_tier_model, tier T0).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "confidence_class",
+        "confidence_kind",
+        "declaration"
+      ],
+      "properties": {
+        "confidence_class": {
+          "$ref": "#/$defs/assignedConfidenceClass"
+        },
+        "confidence_kind": {
+          "const": "declared"
+        },
+        "declaration": {
+          "$ref": "#/$defs/text"
+        }
+      }
+    },
+    "closureRule": {
+      "description": "Protocol v1b closure_rule_v1: the level used, and closure_basis, because a flood intersection does not prove a road closure.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "level",
+        "closure_basis"
+      ],
+      "properties": {
+        "version": {
+          "const": "closure_rule_v1"
+        },
+        "level": {
+          "enum": [
+            "strict",
+            "central",
+            "permissive"
+          ]
+        },
+        "closure_basis": {
+          "type": "string",
+          "pattern": "^modelled_from_.+"
+        }
+      }
+    },
+    "lineage": {
+      "description": "Guardrail GR3 (lane purity): the one flood input, the one routing context and the one closure rule of the row.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "flood_input_id",
+        "routing_context_id",
+        "closure_rule"
+      ],
+      "properties": {
+        "flood_input_id": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/inputId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "routing_context_id": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/inputId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "closure_rule": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/closureRule"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "scenario": {
+      "description": "The scenario declaration of a tier T1 row: the named perturbation or assumption.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "declaration"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/text"
+        },
+        "declaration": {
+          "$ref": "#/$defs/text"
+        }
+      }
+    },
+    "triggerEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "trigger",
+        "met",
+        "evidence"
+      ],
+      "properties": {
+        "trigger": {
+          "$ref": "#/$defs/actionClass"
+        },
+        "met": {
+          "type": "boolean"
+        },
+        "evidence": {
+          "$ref": "#/$defs/text"
+        }
+      }
+    },
+    "classV2": {
+      "description": "Class rule v2: a predeclared secondary axis, never binding (decision D6). no_v2_trigger is reported as 'no v2 trigger met'; null says the unit gets no v2 class under guardrail GR1.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "class_rule_version",
+        "label",
+        "binding",
+        "result",
+        "trigger_evidence"
+      ],
+      "properties": {
+        "class_rule_version": {
+          "const": "class_rule_v2"
+        },
+        "label": {
+          "const": "secondary"
+        },
+        "binding": {
+          "const": false
+        },
+        "result": {
+          "enum": [
+            "A",
+            "B",
+            "C",
+            "D",
+            "E",
+            "no_v2_trigger",
+            null
+          ]
+        },
+        "trigger_evidence": {
+          "type": "array",
+          "maxItems": 5,
+          "items": {
+            "$ref": "#/$defs/triggerEvidence"
+          }
+        }
+      }
+    },
+    "leaveOneComponentOut": {
+      "description": "For each component: the FPPS with that component's weight at 0 and the other four renormalised, and the v1 class of that FPPS (drafter reading DR-A02).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "flood_likelihood_0_100",
+        "exposure_0_100",
+        "access_gap_0_100",
+        "road_criticality_0_100",
+        "vulnerability_context_0_100"
+      ],
+      "properties": {
+        "flood_likelihood_0_100": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "fpps_0_100",
+            "action_class"
+          ],
+          "properties": {
+            "fpps_0_100": {
+              "$ref": "#/$defs/score"
+            },
+            "action_class": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/actionClass"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        },
+        "exposure_0_100": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "fpps_0_100",
+            "action_class"
+          ],
+          "properties": {
+            "fpps_0_100": {
+              "$ref": "#/$defs/score"
+            },
+            "action_class": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/actionClass"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        },
+        "access_gap_0_100": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "fpps_0_100",
+            "action_class"
+          ],
+          "properties": {
+            "fpps_0_100": {
+              "$ref": "#/$defs/score"
+            },
+            "action_class": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/actionClass"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        },
+        "road_criticality_0_100": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "fpps_0_100",
+            "action_class"
+          ],
+          "properties": {
+            "fpps_0_100": {
+              "$ref": "#/$defs/score"
+            },
+            "action_class": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/actionClass"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        },
+        "vulnerability_context_0_100": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "fpps_0_100",
+            "action_class"
+          ],
+          "properties": {
+            "fpps_0_100": {
+              "$ref": "#/$defs/score"
+            },
+            "action_class": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/actionClass"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "headlineStability": {
+      "description": "Guardrail GR8: a class is headlined only with at least 60 percent retention over the single-state ensemble; otherwise it is shown as unstable: verify. The slot stays not_evaluated until the ensemble has run.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "guardrail",
+        "status",
+        "class_retention",
+        "class_retention_min"
+      ],
+      "properties": {
+        "guardrail": {
+          "const": "GR8_headline_stability"
+        },
+        "status": {
+          "enum": [
+            "not_evaluated",
+            "headline_eligible",
+            "unstable_verify"
+          ]
+        },
+        "class_retention": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/share"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "class_retention_min": {
+          "const": 0.6
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "not_evaluated"
+              }
+            },
+            "required": [
+              "status"
+            ]
+          },
+          "then": {
+            "properties": {
+              "class_retention": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "headline_eligible"
+              }
+            },
+            "required": [
+              "status"
+            ]
+          },
+          "then": {
+            "properties": {
+              "class_retention": {
+                "type": "number",
+                "minimum": 0.6,
+                "maximum": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "unstable_verify"
+              }
+            },
+            "required": [
+              "status"
+            ]
+          },
+          "then": {
+            "properties": {
+              "class_retention": {
+                "type": "number",
+                "minimum": 0,
+                "exclusiveMaximum": 0.6
+              }
+            }
+          }
+        }
+      ]
+    },
+    "row": {
+      "description": "One unit in one lane with one flood input. The binding class is the v1 class (action_class); would_be_class is never binding; class_v2 is a labelled secondary axis.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "row_id",
+        "unit_id",
+        "unit_name_en",
+        "unit_name_th",
+        "tier",
+        "lane",
+        "temporal_relation",
+        "flood_input",
+        "scenario",
+        "lineage",
+        "normalisation_version",
+        "components",
+        "fpps_0_100",
+        "confidence",
+        "action_class",
+        "action_reason_code",
+        "would_be_class",
+        "class_v2",
+        "leave_one_component_out",
+        "headline_stability",
+        "accepted_fpps",
+        "accepted_action_class",
+        "source_timestamp",
+        "assumptions"
+      ],
+      "properties": {
+        "row_id": {
+          "$ref": "#/$defs/text"
+        },
+        "unit_id": {
+          "$ref": "#/$defs/text"
+        },
+        "unit_name_en": {
+          "$ref": "#/$defs/text"
+        },
+        "unit_name_th": {
+          "$ref": "#/$defs/text"
+        },
+        "tier": {
+          "$ref": "#/$defs/tier"
+        },
+        "lane": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/lane"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "temporal_relation": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/temporalRelation"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "flood_input": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/text"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "scenario": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/scenario"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "lineage": {
+          "$ref": "#/$defs/lineage"
+        },
+        "normalisation_version": {
+          "const": "planning_frame_v1"
+        },
+        "components": {
+          "$ref": "#/$defs/components"
+        },
+        "fpps_0_100": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/score"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "confidence": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/derivedConfidence"
+            },
+            {
+              "$ref": "#/$defs/declaredConfidence"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "action_class": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/actionClass"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "action_reason_code": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/actionReasonCode"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "would_be_class": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/actionClass"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "class_v2": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/classV2"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "leave_one_component_out": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/leaveOneComponentOut"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "headline_stability": {
+          "$ref": "#/$defs/headlineStability"
+        },
+        "accepted_fpps": {
+          "type": "null"
+        },
+        "accepted_action_class": {
+          "type": "null"
+        },
+        "source_timestamp": {
+          "$ref": "#/$defs/instant"
+        },
+        "assumptions": {
+          "$ref": "#/$defs/assumptions"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "tier": {
+                "const": "T0"
+              }
+            },
+            "required": [
+              "tier"
+            ]
+          },
+          "then": {
+            "properties": {
+              "lane": {
+                "const": "ENG"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "tier": {
+                "const": "T1"
+              }
+            },
+            "required": [
+              "tier"
+            ]
+          },
+          "then": {
+            "properties": {
+              "lane": {
+                "enum": [
+                  "SCN",
+                  "SCN-ENV"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "tier": {
+                "enum": [
+                  "T2",
+                  "T3"
+                ]
+              }
+            },
+            "required": [
+              "tier"
+            ]
+          },
+          "then": {
+            "properties": {
+              "lane": {
+                "const": "OBS"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "tier": {
+                "const": "T4"
+              }
+            },
+            "required": [
+              "tier"
+            ]
+          },
+          "then": {
+            "properties": {
+              "lane": {
+                "type": "null"
+              },
+              "temporal_relation": {
+                "type": "null"
+              },
+              "flood_input": {
+                "type": "null"
+              },
+              "scenario": {
+                "type": "null"
+              },
+              "lineage": {
+                "properties": {
+                  "flood_input_id": {
+                    "type": "null"
+                  },
+                  "routing_context_id": {
+                    "type": "null"
+                  },
+                  "closure_rule": {
+                    "type": "null"
+                  }
+                }
+              },
+              "components": {
+                "properties": {
+                  "flood_likelihood_0_100": {
+                    "type": "null"
+                  },
+                  "exposure_0_100": {
+                    "type": "null"
+                  },
+                  "access_gap_0_100": {
+                    "type": "null"
+                  },
+                  "road_criticality_0_100": {
+                    "type": "null"
+                  },
+                  "vulnerability_context_0_100": {
+                    "type": "null"
+                  }
+                }
+              },
+              "fpps_0_100": {
+                "type": "null"
+              },
+              "confidence": {
+                "type": "null"
+              },
+              "action_class": {
+                "type": "null"
+              },
+              "action_reason_code": {
+                "type": "null"
+              },
+              "would_be_class": {
+                "type": "null"
+              },
+              "class_v2": {
+                "type": "null"
+              },
+              "leave_one_component_out": {
+                "type": "null"
+              },
+              "headline_stability": {
+                "properties": {
+                  "status": {
+                    "const": "not_evaluated"
+                  }
+                }
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "confidence": {
+                "type": "object"
+              },
+              "action_reason_code": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "tier": {
+                "const": "T0"
+              }
+            },
+            "required": [
+              "tier"
+            ]
+          },
+          "then": {
+            "properties": {
+              "temporal_relation": {
+                "type": "null"
+              },
+              "flood_input": {
+                "type": "null"
+              },
+              "lineage": {
+                "properties": {
+                  "flood_input_id": {
+                    "type": "null"
+                  },
+                  "routing_context_id": {
+                    "type": "null"
+                  },
+                  "closure_rule": {
+                    "type": "null"
+                  }
+                }
+              },
+              "confidence": {
+                "$ref": "#/$defs/declaredConfidence"
+              },
+              "class_v2": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "tier": {
+                "enum": [
+                  "T1",
+                  "T2",
+                  "T3"
+                ]
+              }
+            },
+            "required": [
+              "tier"
+            ]
+          },
+          "then": {
+            "properties": {
+              "temporal_relation": {
+                "$ref": "#/$defs/temporalRelation"
+              },
+              "flood_input": {
+                "type": "string",
+                "minLength": 1
+              },
+              "lineage": {
+                "properties": {
+                  "flood_input_id": {
+                    "type": "string"
+                  },
+                  "routing_context_id": {
+                    "type": "string"
+                  },
+                  "closure_rule": {
+                    "type": "object"
+                  }
+                }
+              },
+              "confidence": {
+                "$ref": "#/$defs/derivedConfidence"
+              },
+              "class_v2": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "tier": {
+                "const": "T1"
+              }
+            },
+            "required": [
+              "tier"
+            ]
+          },
+          "then": {
+            "properties": {
+              "scenario": {
+                "type": "object"
+              },
+              "confidence": {
+                "properties": {
+                  "confidence_kind": {
+                    "const": "scenario"
+                  }
+                }
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "scenario": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "tier": {
+                "enum": [
+                  "T2",
+                  "T3"
+                ]
+              }
+            },
+            "required": [
+              "tier"
+            ]
+          },
+          "then": {
+            "properties": {
+              "confidence": {
+                "properties": {
+                  "confidence_kind": {
+                    "const": "observed"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "lane": {
+                "const": "OBS"
+              },
+              "temporal_relation": {
+                "enum": [
+                  "dated_other",
+                  "season_window"
+                ]
+              }
+            },
+            "required": [
+              "lane",
+              "temporal_relation"
+            ]
+          },
+          "then": {
+            "properties": {
+              "action_class": {
+                "enum": [
+                  "E",
+                  null
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "confidence": {
+                "type": "object",
+                "properties": {
+                  "confidence_class": {
+                    "const": "low"
+                  }
+                },
+                "required": [
+                  "confidence_class"
+                ]
+              }
+            },
+            "required": [
+              "confidence"
+            ]
+          },
+          "then": {
+            "properties": {
+              "action_class": {
+                "enum": [
+                  "E",
+                  null
+                ]
+              },
+              "action_reason_code": {
+                "enum": [
+                  "low_confidence",
+                  "insufficient_denominator"
+                ]
+              },
+              "class_v2": {
+                "properties": {
+                  "result": {
+                    "enum": [
+                      "E",
+                      null
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "would_be_class": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action_reason_code": {
+                "const": "insufficient_denominator"
+              }
+            },
+            "required": [
+              "action_reason_code"
+            ]
+          },
+          "then": {
+            "properties": {
+              "action_class": {
+                "type": "null"
+              },
+              "would_be_class": {
+                "type": "null"
+              },
+              "class_v2": {
+                "properties": {
+                  "result": {
+                    "type": "null"
+                  },
+                  "trigger_evidence": {
+                    "maxItems": 0
+                  }
+                }
+              },
+              "leave_one_component_out": {
+                "properties": {
+                  "flood_likelihood_0_100": {
+                    "properties": {
+                      "action_class": {
+                        "type": "null"
+                      }
+                    }
+                  },
+                  "exposure_0_100": {
+                    "properties": {
+                      "action_class": {
+                        "type": "null"
+                      }
+                    }
+                  },
+                  "access_gap_0_100": {
+                    "properties": {
+                      "action_class": {
+                        "type": "null"
+                      }
+                    }
+                  },
+                  "road_criticality_0_100": {
+                    "properties": {
+                      "action_class": {
+                        "type": "null"
+                      }
+                    }
+                  },
+                  "vulnerability_context_0_100": {
+                    "properties": {
+                      "action_class": {
+                        "type": "null"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "confidence": {
+                "type": "object",
+                "properties": {
+                  "guardrail_gr1": {
+                    "type": "object",
+                    "properties": {
+                      "applies": {
+                        "const": true
+                      }
+                    },
+                    "required": [
+                      "applies"
+                    ]
+                  }
+                },
+                "required": [
+                  "guardrail_gr1"
+                ]
+              }
+            },
+            "required": [
+              "confidence"
+            ]
+          },
+          "then": {
+            "properties": {
+              "action_class": {
+                "type": "null"
+              },
+              "action_reason_code": {
+                "const": "insufficient_denominator"
+              },
+              "would_be_class": {
+                "type": "null"
+              },
+              "class_v2": {
+                "properties": {
+                  "result": {
+                    "type": "null"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "tier": {
+                "enum": [
+                  "T0",
+                  "T1",
+                  "T2",
+                  "T3"
+                ]
+              },
+              "action_class": {
+                "type": "null"
+              }
+            },
+            "required": [
+              "tier",
+              "action_class"
+            ]
+          },
+          "then": {
+            "properties": {
+              "action_reason_code": {
+                "const": "insufficient_denominator"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action_class": {
+                "const": "A"
+              }
+            },
+            "required": [
+              "action_class"
+            ]
+          },
+          "then": {
+            "properties": {
+              "action_reason_code": {
+                "const": "life_safety_exposure"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action_class": {
+                "const": "B"
+              }
+            },
+            "required": [
+              "action_class"
+            ]
+          },
+          "then": {
+            "properties": {
+              "action_reason_code": {
+                "const": "critical_route_access"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action_class": {
+                "const": "C"
+              }
+            },
+            "required": [
+              "action_class"
+            ]
+          },
+          "then": {
+            "properties": {
+              "action_reason_code": {
+                "const": "essential_service_access"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action_class": {
+                "const": "D"
+              }
+            },
+            "required": [
+              "action_class"
+            ]
+          },
+          "then": {
+            "properties": {
+              "action_reason_code": {
+                "const": "resilience"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action_class": {
+                "const": "E"
+              }
+            },
+            "required": [
+              "action_class"
+            ]
+          },
+          "then": {
+            "properties": {
+              "action_reason_code": {
+                "enum": [
+                  "low_confidence",
+                  "low_priority_score"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action_class": {
+                "type": "null"
+              }
+            },
+            "required": [
+              "action_class"
+            ]
+          },
+          "then": {
+            "properties": {
+              "headline_stability": {
+                "properties": {
+                  "status": {
+                    "const": "not_evaluated"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

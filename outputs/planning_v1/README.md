@@ -334,6 +334,7 @@ O2 is the layer of 22 October 2024: late-season residual water. It does not desc
 | after those runs, and again after the superseding run | Reads, not runs: the SE1 report and the O2 overlay outside Git were read to write this section and the run report; and the check named above computed two components of SE1 from the committed E5 table | Nothing |
 | 17:59:18Z to 17:59:24Z | **Case O2, superseding run.** The Thai title in the overlay header said น้ำค้าง for residual water, which is the Thai word for dew; it now says น้ำที่ยังเหลืออยู่ปลายฤดู (commit `a62e5dc`). No rule, no input and no value of a tambon changed: `supersedes.result_same` is true | The receipt and the overlay as they are now |
 | 17:59:25Z to 17:59:52Z | `--verify` of the O2 run and, again, of the SE1 run, with the code of commit `a62e5dc` | Nothing. Both the same bytes |
+| 18:21:59Z to 18:22:31Z | `--verify` of both runs once more, after the receipts were committed (`317434d`) | Nothing. Both the same bytes |
 
 **Points the signed files leave open** (`open_points` in both receipts, except E8-OP8; none was decided by the code):
 

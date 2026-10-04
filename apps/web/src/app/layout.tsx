@@ -20,7 +20,7 @@ export const metadata: Metadata = {
 };
 
 /** Pages where the floating app-status pill would cover the page's own map and timeline controls: it hides itself there. */
-const AUTO_HIDE_AVAILABILITY_PATHS = ["/studio/cases/"] as const;
+const AUTO_HIDE_AVAILABILITY_PATHS = ["/studio/cases/", "/command/exercise/"] as const;
 
 export const viewport: Viewport = {
   width: "device-width",

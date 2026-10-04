@@ -676,3 +676,8 @@ export const COMMAND_DRAWER_SOURCES = {
   dated: { en: "Dated", th: "วันที่ของข้อมูล" },
   showAll: { en: "Show all", th: "แสดงทั้งหมด" },
 } as const satisfies Record<string, Localized>;
+
+/** "data r4" / "ข้อมูลชุด r4": the revision of the replay data, in the map credits. */
+export function commandDataTag(revision: string, language: Language): string {
+  return language === "th" ? `ข้อมูลชุด ${revision}` : `data ${revision}`;
+}

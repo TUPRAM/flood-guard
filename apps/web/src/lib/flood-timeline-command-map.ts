@@ -126,6 +126,22 @@ export function areaBounds(geometries: readonly AreaGeometry[]): LatLngBox | nul
   return Number.isFinite(west) ? [[south, west], [north, east]] : null;
 }
 
+/** Bounds of a set of points (`[lat, lon]`), `padDeg` degrees wider on every side; null without a point. */
+export function pointsBounds(points: readonly (readonly [number, number])[], padDeg = 0): LatLngBox | null {
+  if (points.length === 0) return null;
+  let south = Infinity;
+  let west = Infinity;
+  let north = -Infinity;
+  let east = -Infinity;
+  for (const [lat, lon] of points) {
+    south = Math.min(south, lat);
+    north = Math.max(north, lat);
+    west = Math.min(west, lon);
+    east = Math.max(east, lon);
+  }
+  return [[south - padDeg, west - padDeg], [north + padDeg, east + padDeg]];
+}
+
 function ringArea(ring: Ring): number {
   let twice = 0;
   for (let a = 0, b = ring.length - 1; a < ring.length; b = a, a += 1) twice += (ring[b][0] - ring[a][0]) * (ring[b][1] + ring[a][1]);
@@ -288,4 +304,36 @@ export function commandScaleBar(metresPerPx: number, maxPixels: number): { metre
   let metres: number = SCALE_LENGTHS_M[0];
   for (const length of SCALE_LENGTHS_M) if (length / metresPerPx <= maxPixels) metres = length;
   return { metres, pixels: metres / metresPerPx };
+}
+
+// --- Clipping the water to the district ------------------------------------------------------------------
+
+/**
+ * The cells of `cells` that lie inside a mask, and the same selection of a parallel array (the hatch stripe of each
+ * low-confidence cell). `mask` holds one sample per cell, `stride` bytes apart starting at `offset` (the alpha bytes
+ * of canvas image data are `stride` 4, `offset` 3); a sample of 128 or more is inside.
+ *
+ * The page draws modelled water inside the eight subdistricts only: the figures count nothing outside them, and the
+ * veil there says "not modelled".
+ */
+export function cellsInMask(
+  cells: Uint32Array,
+  mask: ArrayLike<number>,
+  stride = 1,
+  offset = 0,
+  parallel?: Uint8Array | null,
+): { cells: Uint32Array; parallel: Uint8Array | null } {
+  if (parallel && parallel.length !== cells.length) throw new Error("The parallel array must have one entry per cell");
+  let count = 0;
+  for (let index = 0; index < cells.length; index += 1) if (mask[cells[index] * stride + offset] >= 128) count += 1;
+  const kept = new Uint32Array(count);
+  const keptParallel = parallel ? new Uint8Array(count) : null;
+  let cursor = 0;
+  for (let index = 0; index < cells.length; index += 1) {
+    if (!(mask[cells[index] * stride + offset] >= 128)) continue;
+    kept[cursor] = cells[index];
+    if (keptParallel && parallel) keptParallel[cursor] = parallel[index];
+    cursor += 1;
+  }
+  return { cells: kept, parallel: keptParallel };
 }

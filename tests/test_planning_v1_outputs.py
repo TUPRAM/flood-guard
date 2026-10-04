@@ -3,8 +3,9 @@
 AGENTS.md asks every output for a source timestamp, a confidence and its
 assumptions. These tests read the committed files only. They compute no FPPS,
 no A-E class and no ensemble. A file written before protocol v1b came into
-force names no tambon. A file written after it may, and it names the two
-signed protocol files by SHA-256.
+force names no tambon. A file written after it may; it names the two signed
+protocol files by SHA-256, and it is a run receipt or is bound, by path and
+SHA-256, in the outputs of one.
 """
 
 from __future__ import annotations
@@ -24,7 +25,7 @@ ROOT = Path(__file__).resolve().parents[1]
 OUTPUTS = ROOT / "outputs" / "planning_v1"
 PROTOCOL = ROOT / "docs" / "proposal_execution" / "planning_protocol_v1b.json"
 RECEIPTS = ROOT / "docs" / "proposal_execution" / "RECEIPTS.jsonl"
-UTC =re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
+UTC = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
 DOCUMENTATION = {"README.md"}
 FILES = sorted(path for path in OUTPUTS.iterdir() if path.name not in DOCUMENTATION) if OUTPUTS.is_dir() else []
 
@@ -97,13 +98,42 @@ RECORDED = _recorded_protocols()
 
 
 def _written_with_v1b_in_force(path: Path) -> bool:
-    """A file names the signed v1b by SHA-256 only if it was written after v1b came into force."""
+    """A file was written with v1b in force when it was generated at or after the v1b receipt line.
 
-    return "v1b" in RECORDED and RECORDED["v1b"]["sha256"].encode("ascii") in path.read_bytes()
+    The split is by time, as in tests/test_planning_protocol.py, and not by what the file says about itself: a
+    later file that names no protocol must fail the tests below, not pass as an earlier file.
+    """
+
+    made = max(document["generated_at_utc"] for document in _documents(path))
+    return "v1b" in RECORDED and made >= RECORDED["v1b"]["time_utc"]
 
 
 BEFORE_V1B = [path for path in FILES if not _written_with_v1b_in_force(path)]
 UNDER_V1B = [path for path in FILES if _written_with_v1b_in_force(path)]
+
+
+def _is_run_receipt(path: Path) -> bool:
+    """A run receipt is a JSON file whose top level lists what the run wrote, under ``outputs``."""
+
+    return path.suffix == ".json" and "outputs" in json.loads(path.read_bytes().decode("ascii"))
+
+
+def _bound_outputs(value: Any) -> list[tuple[str, str]]:
+    """Return every (path, sha256) pair in a receipt's ``outputs``, however the receipt nests them."""
+
+    found: list[tuple[str, str]] = []
+    if isinstance(value, dict):
+        if isinstance(value.get("path"), str) and isinstance(value.get("sha256"), str):
+            found.append((value["path"], value["sha256"]))
+        for child in value.values():
+            found.extend(_bound_outputs(child))
+    elif isinstance(value, list):
+        for child in value:
+            found.extend(_bound_outputs(child))
+    return found
+
+
+RUN_RECEIPTS = [path for path in UNDER_V1B if _is_run_receipt(path)]
 
 
 @pytest.mark.parametrize("path", BEFORE_V1B, ids=lambda path: path.name)
@@ -121,7 +151,44 @@ def test_an_output_written_with_v1b_in_force_names_both_signed_protocols(path: P
     assert RECORDED["v1a"]["sha256"] in text and RECORDED["v1b"]["sha256"] in text
     assert _sha256(PROTOCOL) == RECORDED["v1b"]["sha256"]
     for document in _documents(path):
-        assert document["generated_at_utc"] > RECORDED["v1b"]["time_utc"], path.name
+        assert document["generated_at_utc"] >= RECORDED["v1b"]["time_utc"], path.name
+
+
+@pytest.mark.parametrize("path", UNDER_V1B, ids=lambda path: path.name)
+def test_an_output_written_with_v1b_in_force_is_a_receipt_or_is_bound_by_one(path: Path) -> None:
+    """Every run is reported (v1b change_control): no file written since the signing stands without a receipt."""
+
+    if _is_run_receipt(path):
+        return
+    relative = path.relative_to(ROOT).as_posix()
+    binding = [receipt.name for receipt in RUN_RECEIPTS
+               if (relative, _sha256(path)) in _bound_outputs(json.loads(receipt.read_bytes().decode("ascii"))["outputs"])]
+    assert binding, f"no run receipt in outputs/planning_v1 binds {path.name} by path and SHA-256"
+
+
+@pytest.mark.parametrize("path", RUN_RECEIPTS, ids=lambda path: path.name)
+def test_a_run_receipt_binds_the_committed_files_it_names_and_its_inputs(path: Path) -> None:
+    receipt = json.loads(path.read_bytes().decode("ascii"))
+    bound = _bound_outputs(receipt["outputs"])
+    assert bound, f"{path.name} binds no output by path and SHA-256"
+    for relative, sha256 in bound:
+        target = ROOT / relative
+        # An output the receipt keeps outside Git is bound by its SHA-256 alone; a committed one must match.
+        if target.exists():
+            assert _sha256(target) == sha256, f"{path.name} names other bytes for {relative}"
+    assert isinstance(receipt.get("inputs"), dict) and receipt["inputs"], path.name
+    assert re.search(r"[0-9a-f]{64}", json.dumps(receipt["inputs"])), "inputs are named by SHA-256"
+
+
+def test_the_receipt_rule_sees_the_files_written_since_the_signing() -> None:
+    """The helpers above find the receipts and their outputs; an unbound file would not pass."""
+
+    assert _bound_outputs({"a": {"path": "x", "sha256": "1"}, "b": [{"path": "y", "sha256": "2", "c": {"path": "z"}}],
+                           "d": {"sha256": "3"}}) == [("x", "1"), ("y", "2")]
+    if not UNDER_V1B:
+        pytest.skip("no output written since protocol v1b came into force on this checkout")
+    assert RUN_RECEIPTS, "files written since the signing, and no receipt among them"
+    assert set(BEFORE_V1B).isdisjoint(UNDER_V1B) and len(BEFORE_V1B) + len(UNDER_V1B) == len(FILES)
 
 
 def test_join_logs_and_corridors_match_their_spike_receipts() -> None:

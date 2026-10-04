@@ -1,6 +1,6 @@
 {
   "schema_version": "floodguard.age_exposure_run_receipt.v1",
-  "generated_at_utc": "2026-10-04T08:21:33Z",
+  "generated_at_utc": "2026-10-04T09:12:35Z",
   "plan_task": "E7: age_exposure.py + vulnerability (dependent share per unit)",
   "run": "Dependent share per unit, case frame mae_sai (8 units)",
   "status": "run_receipt",
@@ -97,6 +97,17 @@
       "cells_any_touching"
     ],
     "wholly_inside_min_fraction": 0.999999999,
+    "in_layer_min_fraction": 0.9999,
+    "boundary_layer_units_for_border_cells": 7425,
+    "grid_reading_share_group_decimals": 6,
+    "grid_reading_share_group_min_cells": 20,
+    "grid_reading_share_cluster_gap": 0.0001,
+    "grid_reading_frame_window": {
+      "row_off": 0,
+      "col_off": 296,
+      "height": 26,
+      "width": 28
+    },
     "projection_for_areas": "EPSG:32647"
   },
   "inputs": {
@@ -215,11 +226,107 @@
   "consistency_with_national_anchors": {
     "anchor_receipt_path": "outputs/planning_v1/national_vulnerability_anchors_v1.json",
     "anchor_receipt_sha256": "2ad161d4c67cbe1567fbb853fe951da3ffb257f06088fbc80e8e297938c73a59",
-    "same_code_bytes_as_the_anchor_run": {
-      "allocation_module": true,
-      "normalisation_module": true,
-      "anchors_builder": true
+    "rule": "Refused unless every pinned function has the source, and every pinned constant the value, it had in the national-anchor run, and the input bytes are the same. A whole file that differs elsewhere is recorded here and does not refuse the run.",
+    "code": {
+      "allocation_module": {
+        "module": "floodguard.evidence_age_surface",
+        "file_sha256": "d7572d205aad805869f1363bc4e67a66fe6ee7a198525b67be41a59266a5832b",
+        "file_sha256_in_the_anchor_run": "d7572d205aad805869f1363bc4e67a66fe6ee7a198525b67be41a59266a5832b",
+        "whole_file_same": true,
+        "function_source_sha256": {
+          "_coverage": "55523ec8ee8f24363b4db5cf6985fd7243e81d9e41380a547546f03c91fe9bcc",
+          "summarize_geometry": "e97109ac8a5bbcdf3bdf10ac366fc6c4edbf4a7c8112dcfd9653ccfe401284ec"
+        },
+        "functions_same": {
+          "_coverage": true,
+          "summarize_geometry": true
+        },
+        "constants_found": {
+          "AGE_BANDS": [
+            "00",
+            "01",
+            "05",
+            "10",
+            "15",
+            "20",
+            "25",
+            "30",
+            "35",
+            "40",
+            "45",
+            "50",
+            "55",
+            "60",
+            "65",
+            "70",
+            "75",
+            "80",
+            "85",
+            "90"
+          ],
+          "CHILD_BANDS": [
+            "00",
+            "01",
+            "05",
+            "10"
+          ],
+          "OLDER_BANDS": [
+            "60",
+            "65",
+            "70",
+            "75",
+            "80",
+            "85",
+            "90"
+          ]
+        },
+        "constants_same": {
+          "AGE_BANDS": true,
+          "CHILD_BANDS": true,
+          "OLDER_BANDS": true
+        }
+      },
+      "normalisation_module": {
+        "module": "floodguard.normalisation",
+        "file_sha256": "18add3a251a136dbf34ffb2dfc467e177904797f80178c9b363366a264d0b07e",
+        "file_sha256_in_the_anchor_run": "18add3a251a136dbf34ffb2dfc467e177904797f80178c9b363366a264d0b07e",
+        "whole_file_same": true,
+        "function_source_sha256": {
+          "dependent_share": "415b8492cd43046849951c1e10fd41db53f0d6a096a0df192026b5c6ccd0ff15"
+        },
+        "functions_same": {
+          "dependent_share": true
+        },
+        "constants_found": {},
+        "constants_same": {}
+      },
+      "anchors_builder": {
+        "module": "build_national_vulnerability_anchors",
+        "file_sha256": "38129401bb81dce40945573a7071cfe16c9b2f1adca9a150ee9c7f94b16a7d3c",
+        "file_sha256_in_the_anchor_run": "38129401bb81dce40945573a7071cfe16c9b2f1adca9a150ee9c7f94b16a7d3c",
+        "whole_file_same": true,
+        "function_source_sha256": {
+          "check_age_sources": "2d769e534acfbaee708691f18331db2bf7fab07d5252de2543484891736b7262",
+          "read_units": "cfa84cabfca9a46f20dce0e85675b5a8a2c8b451fec7a3a72876a8f96085be7b",
+          "sha256_file": "652665f0f043986854628abba3353c72d5381c7224dd03043da3faac54a3cfdd"
+        },
+        "functions_same": {
+          "check_age_sources": true,
+          "read_units": true,
+          "sha256_file": true
+        },
+        "constants_found": {
+          "BOUNDARY_LAYER": "tha_admin3",
+          "UNIT_ID_FIELD": "adm3_pcode"
+        },
+        "constants_same": {
+          "BOUNDARY_LAYER": true,
+          "UNIT_ID_FIELD": true
+        }
+      }
     },
+    "pinned_functions_and_constants_same": true,
+    "whole_files_same": true,
     "same_input_bytes_as_the_anchor_run": {
       "age_acquisition_manifest": true,
       "age_rasters": true,
@@ -227,13 +334,13 @@
     },
     "all_same": true,
     "national_unit_table_recomputed": false,
-    "note": "The counts come from the functions that produced the anchors, with the same SHA-256 as in the anchor receipt, and from the same input bytes. The national unit table behind the anchors was not computed again, so its SHA-256 was not rechecked here."
+    "note": "The counts come from the functions that produced the anchors and from the same input bytes. The three files have the SHA-256 the anchor receipt records. The check compares source text and constant values; it does not cover the libraries, whose versions are under implementation.software. The national unit table behind the anchors was not computed again, so its SHA-256 was not rechecked here."
   },
   "implementation": {
-    "base_commit": "c3df131979ce5520f15bf0a94d8b4b98f04bb9b6",
-    "base_commit_note": "The commit the working tree was on. The files below are identified by their own SHA-256, committed or not.",
-    "builder_sha256": "9cb168aa6f3ce7d1fbf1105883429062327955f65be2a3f6e774d6c2ba398510",
-    "age_exposure_module_sha256": "4b2c19b6391845ebed3870a0afbb9fb7780cc9208eac4cbaa4dc3841fbcd4d7e",
+    "base_commit": "f6dd422d23b060b77bb4555294122c891f01971f",
+    "base_commit_note": "The commit the working tree was on. The files below are the ones this run loaded, identified by their own SHA-256, committed or not.",
+    "builder_sha256": "ed9dd7262cc022c99382b9c2eaed29d0dbc46096d3e9aea4ce8ecc1ab14c80dc",
+    "age_exposure_module_sha256": "07acdd7d2f5ae152cba8a135db1f8c4f91bf4b9a979ea59c832fe539a45ec278",
     "allocation_module_sha256": "d7572d205aad805869f1363bc4e67a66fe6ee7a198525b67be41a59266a5832b",
     "normalisation_module_sha256": "18add3a251a136dbf34ffb2dfc467e177904797f80178c9b363366a264d0b07e",
     "anchors_builder_sha256": "38129401bb81dce40945573a7071cfe16c9b2f1adca9a150ee9c7f94b16a7d3c",
@@ -249,6 +356,29 @@
       "pyogrio": "0.13.0"
     }
   },
+  "open_points": [
+    {
+      "id": "E7-OP1",
+      "point": "Cells that lie partly outside every unit of the boundary layer.",
+      "protocol_says": "Reading DR-B04 (v1b national_vulnerability_anchors.method.allocation): a cell's counts go to a tambon by the projected-area fraction of the cell inside the tambon. Nothing on a cell that no set of units covers in full.",
+      "what_this_file_does": "Follows DR-B04 as written, as the national anchors did. Each unit row reports the cells concerned under cells_partly_outside_every_unit, and border_cells counts them once for the frame. No rule is changed.",
+      "for_the_owners": "Whether such cells keep the area allocation, give their whole count to the part inside the layer, or are left out. The choice moves the share of a border unit."
+    },
+    {
+      "id": "E7-OP2",
+      "point": "A range for a unit's dependent share.",
+      "protocol_says": "Nothing. Plan 1.3 (MVP-02) and plan 5 item 5 give a range for residents inside a flood input, [known, known + unsupported], and none for a unit's share.",
+      "what_this_file_does": "Shows the share under two other allocations of the same cells beside the value of record. They are not a bound on the allocation error.",
+      "for_the_owners": "Whether a range enters the vulnerability component, and which one."
+    },
+    {
+      "id": "E7-OP3",
+      "point": "Rounding of a unit's dependent share.",
+      "protocol_says": "The national anchors are rounded to six decimal places. Nothing on a unit's share.",
+      "what_this_file_does": "Writes shares and counts at full double precision.",
+      "for_the_owners": "Whether the share is rounded before it enters the vulnerability component."
+    }
+  ],
   "not_computed": [
     "vulnerability component (0-100)",
     "FPPS",
@@ -262,25 +392,87 @@
     "WorldPop Global2 R2025A 2024 age counts are modelled estimates at about 1 km, not observed counts.",
     "A cell's counts are spread evenly over the cell, so a unit takes the share of each cell that its area covers. Within a cell the age composition is taken as uniform.",
     "Units are the 2022 COD-AB tha_admin3 polygons. Boundaries (2022), age counts (2024) and the cases' 2020 demand and 2026 roads have different vintages.",
-    "The counts are computed by the code and from the input bytes that produced the national vulnerability anchors, so a unit's share can be compared with those anchors.",
-    "The low/high range re-allocates the same cells two other ways. The plan gives no formula for it; it is not a confidence interval."
+    "The counts are computed by the functions and from the input bytes that produced the national vulnerability anchors, so a unit's share can be compared with those anchors.",
+    "Low and high are the smallest and the largest share under three allocations of the same cells. The plan gives no formula for them; they are not a bound on the allocation error and not a confidence interval.",
+    "A cell that lies partly outside every unit of the boundary layer is allocated by area like any other cell (reading DR-B04 as written). Nothing is adjusted for such cells."
   ],
   "limitations": [
-    "A unit of a few dozen 1 km cells has many cells that lie only partly inside it. The range shows how much that can move the share; it does not cover the error of the modelled counts themselves.",
+    "A unit of a few dozen 1 km cells has many cells that lie only partly inside it. Low and high are the share under three allocations of those cells. They are not a bound on the allocation error: another allocation can give a share outside them. They do not cover the error of the modelled counts either.",
+    "A narrow range does not show a precise share. Where the cells around a unit carry the same age composition, every allocation gives the same share (age_grid_reading).",
+    "Cells that lie partly outside every unit of the boundary layer (for this frame, cells that straddle the national border) may hold residents who live outside the layer, and their age composition is that of the whole cell. Reading DR-B04 does not say how they are treated. cells_partly_outside_every_unit shows, for each unit, how many there are, how many of the unit's residents come from them and at what share, and how many of their residents go to no unit.",
     "Area with no valid age count carries no count. It is reported as unsupported area, not as zero residents.",
     "The plan's range for age-resolved exposure, [known, known + unsupported], needs resident counts inside a flood input. No flood input is read here, so that range is not in this file.",
     "A dependent share is not a measure of need in any place, and it is not the vulnerability component."
   ],
   "timestamps": {
-    "run_started_at_utc": "2026-10-04T08:21:28Z",
-    "run_finished_at_utc": "2026-10-04T08:21:33Z"
+    "run_started_at_utc": "2026-10-04T09:12:29Z",
+    "run_finished_at_utc": "2026-10-04T09:12:35Z"
   },
   "outputs": [
     {
       "path": "outputs/planning_v1/age_exposure_mae_sai_v1.json",
-      "sha256": "d42a03fa95d531321dfffe4270e8d5634a8f7d9229a7fc6c7caede9f21a2f536",
-      "bytes": 21495,
+      "sha256": "68d4935ddf9f905dd4512c516924049be5303bae5a501a27bcff060106da16cb",
+      "bytes": 33064,
       "unit_count": 8
     }
-  ]
+  ],
+  "supersedes": {
+    "table_sha256": "d42a03fa95d531321dfffe4270e8d5634a8f7d9229a7fc6c7caede9f21a2f536",
+    "receipt_sha256": "bff97db91c307d55edd3c7d1b0d1b844fb8965bf4aadd55f0e44907ab5697f7e",
+    "generated_at_utc": "2026-10-04T08:21:33Z",
+    "reason": "Review of 4 October 2026: the table now reports the cells that lie partly outside every tha_admin3 unit and a reading of the age grid, and words the range as three allocations and not a bound; the code check now binds the functions the share depends on; no rule and no figure of record was changed.",
+    "same_as_superseded": {
+      "figures_of_record": true,
+      "allocation_figures": true,
+      "input_hashes": true,
+      "protocol_sha256": true,
+      "allocation": true,
+      "age_groups": true
+    },
+    "all_same": true,
+    "compared": {
+      "figures_of_record": [
+        "unit_id",
+        "status",
+        "residents",
+        "children_0_14",
+        "older_60_plus",
+        "other_15_59",
+        "dependent_share",
+        "dependent_share_unavailable_reason",
+        "age_cells",
+        "area",
+        "band_mask_mismatch"
+      ],
+      "allocation_figures": [
+        "allocation_range.low",
+        "allocation_range.high",
+        "allocation_range.projected_area_fraction",
+        "allocation_range.cells_wholly_inside",
+        "allocation_range.cells_any_touching"
+      ]
+    },
+    "unit_rows_identical": false,
+    "unit_row_keys_added": [
+      "cells_partly_outside_every_unit"
+    ],
+    "unit_row_keys_removed": [],
+    "allocation_range_keys_added": [
+      "other_allocations_available",
+      "value_of_record_between_the_two_other_allocations"
+    ],
+    "allocation_range_keys_removed": [
+      "extremes_available",
+      "value_of_record_between_the_two_extremes"
+    ],
+    "table_keys_added": [
+      "age_grid_reading",
+      "border_cells",
+      "border_cells_rule",
+      "border_cells_rule_status",
+      "open_points"
+    ],
+    "table_keys_removed": [],
+    "note": "The superseded table and receipt stay in the Git history. Figures are compared after recomputing everything from the same inputs: the figures of record and the three allocations of every unit, field by field. A row can gain or lose other fields and still have the same figures (unit_rows_identical, unit_row_keys_added, unit_row_keys_removed)."
+  }
 }

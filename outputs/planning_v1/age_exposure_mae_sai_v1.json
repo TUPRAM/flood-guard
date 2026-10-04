@@ -1,6 +1,6 @@
 {
   "schema_version": "floodguard.age_exposure.v1",
-  "generated_at_utc": "2026-10-04T08:21:33Z",
+  "generated_at_utc": "2026-10-04T09:12:35Z",
   "receipt_file": "outputs/planning_v1/age_exposure_mae_sai_v1_receipt.json",
   "age_exposure_version": "age_exposure_v1",
   "plan_task": "E7: age_exposure.py + vulnerability (dependent share per unit)",
@@ -57,12 +57,14 @@
   "allocation": "Each 1 km cell's counts go to a unit by the fraction of the cell's projected area (EPSG:32647) inside the unit, on cells where all 20 age bands are valid (protocol v1b national_vulnerability_anchors.method.allocation, drafter reading DR-B04; floodguard.evidence_age_surface.summarize_geometry).",
   "allocation_in_protocol_v1b": "Each 1 km cell's counts are allocated to a tambon by the projected-area fraction of the cell inside the tambon, as in scripts/bridge_worldpop_age_access.py.",
   "caveat": "Modelled 1 km age composition; not observed. Mixed vintages are disclosed: 2020 demand, 2024 age, 2022 boundaries, 2026 OSM.",
-  "range_rule": "Low and high are the smallest and the largest dependent share over three allocations of the same cells: the projected-area fraction (the value of record), only the cells wholly inside the unit, and every cell that touches the unit counted in full. It shows how far the 1 km cell size can move the share. It is not a confidence interval and it does not cover the error of the modelled age counts.",
-  "range_rule_status": "Not in the plan and not in the protocol. Plan 1.3 (MVP-02) and plan 5 item 5 give a range for residents inside a flood input, [known, known + unsupported], and no formula for the effect of the 1 km cell size on a unit's share. The two allocation extremes are shown so a reader can see that effect; the owners have not decided how, or whether, the range enters the vulnerability component.",
+  "range_rule": "Low and high are the smallest and the largest dependent share under three allocations of the same cells: the projected-area fraction (the value of record), only the cells wholly inside the unit, and every cell that touches the unit counted in full. They are three allocations, not a bound on the allocation error: another allocation can give a share outside them. Where the cells around a unit carry the same age composition the three agree, so a narrow range does not show that the share is precise. It is not a confidence interval and it does not cover the error of the modelled age counts.",
+  "range_rule_status": "Not in the plan and not in the protocol. Plan 1.3 (MVP-02) and plan 5 item 5 give a range for residents inside a flood input, [known, known + unsupported], and no formula for the effect of the 1 km cell size on a unit's share. Two other allocations of the same cells are shown beside the value of record; the owners have not decided how, or whether, a range enters the vulnerability component (open_points, E7-OP2).",
   "age_cells_rule": "The number of distinct 1 km cells of the age grid that overlap the unit and carry a valid count in all 20 age bands. A cell on the unit's edge counts once, whatever share of it is inside.",
   "unsupported_area_rule": "The part of the unit's projected area (EPSG:32647) that lies in cells with no valid count in at least one of the 20 age bands, or outside the age grid. It has no age count: it is unknown, not zero.",
+  "border_cells_rule": "A valid cell lies partly outside every unit when the units of the boundary layer together cover less than the whole of its projected area (EPSG:32647): for a unit on the national border, a cell that straddles the border. Under the allocation of record the unit takes such a cell's counts by its area share like any other cell, the part of the cell's count that falls outside the layer goes to no unit, and the cell's age composition is that of the whole cell, which may include residents who live outside the layer. Reading DR-B04 does not say how such a cell is treated; nothing is adjusted here.",
+  "border_cells_rule_status": "A description, not a rule of the protocol. The boundary layer is tha_admin3 (7425 units). A cell counts as inside the layer when its units cover at least 0.9999 of its projected area. Reading DR-B04 is silent on such cells (open_points, E7-OP1).",
   "counts_unit": "modelled 2024 residents",
-  "share_precision": "Shares and counts are written at full double precision. The protocol rounds the national anchors to six decimal places and states no rounding for a unit's share.",
+  "share_precision": "Shares and counts are written at full double precision. The protocol rounds the national anchors to six decimal places and states no rounding for a unit's share (open_points, E7-OP3).",
   "unit_count": 8,
   "units": [
     {
@@ -89,8 +91,19 @@
           "residents": 43269.80312133394,
           "dependent_share": 0.3887722622304585
         },
-        "extremes_available": 2,
-        "value_of_record_between_the_two_extremes": true
+        "other_allocations_available": 2,
+        "value_of_record_between_the_two_other_allocations": true
+      },
+      "cells_partly_outside_every_unit": {
+        "measured": true,
+        "cells": 8,
+        "residents_the_unit_takes_from_them": 7535.903951442259,
+        "share_of_the_units_residents": 0.2971380758775711,
+        "dependent_share_of_what_the_unit_takes_from_them": 0.3553634708991616,
+        "residents_from_the_other_cells": 17825.71935848069,
+        "dependent_share_from_the_other_cells": 0.405550711949896,
+        "residents_of_those_cells_in_no_unit": 6131.25894713821,
+        "area_of_those_cells_in_no_unit_km2": 1.9244209566026456
       },
       "age_cells": {
         "with_valid_counts": 42,
@@ -135,8 +148,19 @@
           "residents": 13562.079514659476,
           "dependent_share": 0.4107247982944075
         },
-        "extremes_available": 2,
-        "value_of_record_between_the_two_extremes": true
+        "other_allocations_available": 2,
+        "value_of_record_between_the_two_other_allocations": true
+      },
+      "cells_partly_outside_every_unit": {
+        "measured": true,
+        "cells": 0,
+        "residents_the_unit_takes_from_them": 0.0,
+        "share_of_the_units_residents": 0.0,
+        "dependent_share_of_what_the_unit_takes_from_them": null,
+        "residents_from_the_other_cells": 8759.42466091965,
+        "dependent_share_from_the_other_cells": 0.4075848105251208,
+        "residents_of_those_cells_in_no_unit": 0.0,
+        "area_of_those_cells_in_no_unit_km2": 0.0
       },
       "age_cells": {
         "with_valid_counts": 73,
@@ -181,8 +205,19 @@
           "residents": 8746.392840775661,
           "dependent_share": 0.40338342549817957
         },
-        "extremes_available": 2,
-        "value_of_record_between_the_two_extremes": true
+        "other_allocations_available": 2,
+        "value_of_record_between_the_two_other_allocations": true
+      },
+      "cells_partly_outside_every_unit": {
+        "measured": true,
+        "cells": 15,
+        "residents_the_unit_takes_from_them": 1150.3928545905987,
+        "share_of_the_units_residents": 0.14967652558122127,
+        "dependent_share_of_what_the_unit_takes_from_them": 0.39556081256067566,
+        "residents_from_the_other_cells": 6535.467370474176,
+        "dependent_share_from_the_other_cells": 0.40555187599573683,
+        "residents_of_those_cells_in_no_unit": 192.77395664808864,
+        "area_of_those_cells_in_no_unit_km2": 2.688154766225292
       },
       "age_cells": {
         "with_valid_counts": 75,
@@ -227,8 +262,19 @@
           "residents": 13266.202389339509,
           "dependent_share": 0.40555070725766124
         },
-        "extremes_available": 2,
-        "value_of_record_between_the_two_extremes": true
+        "other_allocations_available": 2,
+        "value_of_record_between_the_two_other_allocations": true
+      },
+      "cells_partly_outside_every_unit": {
+        "measured": true,
+        "cells": 0,
+        "residents_the_unit_takes_from_them": 0.0,
+        "share_of_the_units_residents": 0.0,
+        "dependent_share_of_what_the_unit_takes_from_them": null,
+        "residents_from_the_other_cells": 10188.002733936546,
+        "dependent_share_from_the_other_cells": 0.4055507080827128,
+        "residents_of_those_cells_in_no_unit": 0.0,
+        "area_of_those_cells_in_no_unit_km2": 0.0
       },
       "age_cells": {
         "with_valid_counts": 74,
@@ -273,8 +319,19 @@
           "residents": 5596.831897521857,
           "dependent_share": 0.405576026398334
         },
-        "extremes_available": 2,
-        "value_of_record_between_the_two_extremes": true
+        "other_allocations_available": 2,
+        "value_of_record_between_the_two_other_allocations": true
+      },
+      "cells_partly_outside_every_unit": {
+        "measured": true,
+        "cells": 0,
+        "residents_the_unit_takes_from_them": 0.0,
+        "share_of_the_units_residents": 0.0,
+        "dependent_share_of_what_the_unit_takes_from_them": null,
+        "residents_from_the_other_cells": 4554.733726107885,
+        "dependent_share_from_the_other_cells": 0.4055604436939761,
+        "residents_of_those_cells_in_no_unit": 0.0,
+        "area_of_those_cells_in_no_unit_km2": 0.0
       },
       "age_cells": {
         "with_valid_counts": 74,
@@ -319,8 +376,19 @@
           "residents": 29269.19531691703,
           "dependent_share": 0.40550273446443935
         },
-        "extremes_available": 2,
-        "value_of_record_between_the_two_extremes": true
+        "other_allocations_available": 2,
+        "value_of_record_between_the_two_other_allocations": true
+      },
+      "cells_partly_outside_every_unit": {
+        "measured": true,
+        "cells": 5,
+        "residents_the_unit_takes_from_them": 97.32562735981503,
+        "share_of_the_units_residents": 0.0045558600415686505,
+        "dependent_share_of_what_the_unit_takes_from_them": 0.3969407791871322,
+        "residents_from_the_other_cells": 21265.408625184158,
+        "dependent_share_from_the_other_cells": 0.40555070914594626,
+        "residents_of_those_cells_in_no_unit": 27.87033275396368,
+        "area_of_those_cells_in_no_unit_km2": 1.024589219457559
       },
       "age_cells": {
         "with_valid_counts": 48,
@@ -365,8 +433,19 @@
           "residents": 4972.472863856703,
           "dependent_share": 0.40556598183923104
         },
-        "extremes_available": 2,
-        "value_of_record_between_the_two_extremes": true
+        "other_allocations_available": 2,
+        "value_of_record_between_the_two_other_allocations": true
+      },
+      "cells_partly_outside_every_unit": {
+        "measured": true,
+        "cells": 0,
+        "residents_the_unit_takes_from_them": 0.0,
+        "share_of_the_units_residents": 0.0,
+        "dependent_share_of_what_the_unit_takes_from_them": null,
+        "residents_from_the_other_cells": 3196.9194558101044,
+        "dependent_share_from_the_other_cells": 0.4055533713679442,
+        "residents_of_those_cells_in_no_unit": 0.0,
+        "area_of_those_cells_in_no_unit_km2": 0.0
       },
       "age_cells": {
         "with_valid_counts": 62,
@@ -411,8 +490,19 @@
           "residents": 7943.205099846527,
           "dependent_share": 0.4056743097366447
         },
-        "extremes_available": 2,
-        "value_of_record_between_the_two_extremes": true
+        "other_allocations_available": 2,
+        "value_of_record_between_the_two_other_allocations": true
+      },
+      "cells_partly_outside_every_unit": {
+        "measured": true,
+        "cells": 4,
+        "residents_the_unit_takes_from_them": 97.7790878319302,
+        "share_of_the_units_residents": 0.014434845723057149,
+        "dependent_share_of_what_the_unit_takes_from_them": 0.4074627010317963,
+        "residents_from_the_other_cells": 6676.043764721676,
+        "dependent_share_from_the_other_cells": 0.40555854324946294,
+        "residents_of_those_cells_in_no_unit": 27.25906560490058,
+        "area_of_those_cells_in_no_unit_km2": 0.6886771776917043
       },
       "age_cells": {
         "with_valid_counts": 68,
@@ -432,6 +522,119 @@
         "reconciliation_residual_km2": 2.042810365310288e-14
       },
       "band_mask_mismatch": false
+    }
+  ],
+  "border_cells": {
+    "what": "The cells that lie partly outside every unit of the boundary layer, counted once over the units of the frame. A cell can overlap two units, so the per-unit figures do not add up to these.",
+    "measured": true,
+    "distinct_cells": 31,
+    "residents_in_those_cells": 15203.669964305125,
+    "residents_the_frames_units_take_from_them": 8881.401521224603,
+    "residents_of_those_cells_in_no_unit": 6317.95250078414,
+    "area_of_those_cells_in_no_unit_km2": 6.039157506358917
+  },
+  "age_grid_reading": {
+    "what": "A reading of the input age grid, not of any unit. Populated cells are grouped by their dependent share rounded to a stated number of decimal places; a group counts when it holds at least a stated number of cells. In the window of the frame the shares are also sorted and cut into clusters wherever two neighbouring shares differ by more than a stated gap.",
+    "frame_window_rule": "The smallest window of the age grid, in rows and columns, that holds every cell overlapping a unit of the frame.",
+    "frame_window": {
+      "row_off": 0,
+      "col_off": 296,
+      "height": 26,
+      "width": 28,
+      "bounds_west_south_east_north": [
+        99.80833221410003,
+        20.250000255000003,
+        100.04166554650003,
+        20.4666669208
+      ],
+      "cells": 728,
+      "cells_with_valid_counts": 572,
+      "cells_without_valid_counts": 156,
+      "valid_cells_with_zero_residents": 0,
+      "populated_cells": 572,
+      "residents": 120084.52117156977,
+      "dependent_share_of_all_residents": 0.4012050079529686,
+      "same_share_groups": {
+        "decimals": 6,
+        "min_cells": 20,
+        "groups": 5,
+        "cells": 460,
+        "residents": 92075.83948369231,
+        "share_of_populated_cells": 0.8041958041958042
+      },
+      "share_clusters": {
+        "gap": 0.0001,
+        "min_cells": 20,
+        "clusters": [
+          {
+            "lowest_share": 0.40554686392443234,
+            "highest_share": 0.4058605171750157,
+            "cells": 402,
+            "residents": 87804.96322855452
+          },
+          {
+            "lowest_share": 0.40659958395192947,
+            "highest_share": 0.406778132134985,
+            "cells": 110,
+            "residents": 11657.982504977728
+          },
+          {
+            "lowest_share": 0.4409101435446259,
+            "highest_share": 0.4409105539015734,
+            "cells": 20,
+            "residents": 3689.8666850160807
+          }
+        ],
+        "smaller_clusters": {
+          "clusters": 29,
+          "cells": 40,
+          "residents": 16931.708753021434,
+          "lowest_share": 0.3314465669674036,
+          "highest_share": 0.4399295761047192
+        }
+      }
+    },
+    "whole_grid": {
+      "height": 1782,
+      "width": 995,
+      "cells": 1773090,
+      "cells_with_valid_counts": 488659,
+      "cells_without_valid_counts": 1284431,
+      "valid_cells_with_zero_residents": 22,
+      "populated_cells": 488637,
+      "residents": 71689208.00417362,
+      "dependent_share_of_all_residents": 0.3649826065818528,
+      "same_share_groups": {
+        "decimals": 6,
+        "min_cells": 20,
+        "groups": 1826,
+        "cells": 436874,
+        "residents": 59108654.47699677,
+        "share_of_populated_cells": 0.8940665565644845
+      }
+    }
+  },
+  "open_points": [
+    {
+      "id": "E7-OP1",
+      "point": "Cells that lie partly outside every unit of the boundary layer.",
+      "protocol_says": "Reading DR-B04 (v1b national_vulnerability_anchors.method.allocation): a cell's counts go to a tambon by the projected-area fraction of the cell inside the tambon. Nothing on a cell that no set of units covers in full.",
+      "what_this_file_does": "Follows DR-B04 as written, as the national anchors did. Each unit row reports the cells concerned under cells_partly_outside_every_unit, and border_cells counts them once for the frame. No rule is changed.",
+      "for_the_owners": "Whether such cells keep the area allocation, give their whole count to the part inside the layer, or are left out. The choice moves the share of a border unit."
+    },
+    {
+      "id": "E7-OP2",
+      "point": "A range for a unit's dependent share.",
+      "protocol_says": "Nothing. Plan 1.3 (MVP-02) and plan 5 item 5 give a range for residents inside a flood input, [known, known + unsupported], and none for a unit's share.",
+      "what_this_file_does": "Shows the share under two other allocations of the same cells beside the value of record. They are not a bound on the allocation error.",
+      "for_the_owners": "Whether a range enters the vulnerability component, and which one."
+    },
+    {
+      "id": "E7-OP3",
+      "point": "Rounding of a unit's dependent share.",
+      "protocol_says": "The national anchors are rounded to six decimal places. Nothing on a unit's share.",
+      "what_this_file_does": "Writes shares and counts at full double precision.",
+      "for_the_owners": "Whether the share is rounded before it enters the vulnerability component."
     }
   ],
   "not_computed": [
@@ -473,11 +676,14 @@
     "WorldPop Global2 R2025A 2024 age counts are modelled estimates at about 1 km, not observed counts.",
     "A cell's counts are spread evenly over the cell, so a unit takes the share of each cell that its area covers. Within a cell the age composition is taken as uniform.",
     "Units are the 2022 COD-AB tha_admin3 polygons. Boundaries (2022), age counts (2024) and the cases' 2020 demand and 2026 roads have different vintages.",
-    "The counts are computed by the code and from the input bytes that produced the national vulnerability anchors, so a unit's share can be compared with those anchors.",
-    "The low/high range re-allocates the same cells two other ways. The plan gives no formula for it; it is not a confidence interval."
+    "The counts are computed by the functions and from the input bytes that produced the national vulnerability anchors, so a unit's share can be compared with those anchors.",
+    "Low and high are the smallest and the largest share under three allocations of the same cells. The plan gives no formula for them; they are not a bound on the allocation error and not a confidence interval.",
+    "A cell that lies partly outside every unit of the boundary layer is allocated by area like any other cell (reading DR-B04 as written). Nothing is adjusted for such cells."
   ],
   "limitations": [
-    "A unit of a few dozen 1 km cells has many cells that lie only partly inside it. The range shows how much that can move the share; it does not cover the error of the modelled counts themselves.",
+    "A unit of a few dozen 1 km cells has many cells that lie only partly inside it. Low and high are the share under three allocations of those cells. They are not a bound on the allocation error: another allocation can give a share outside them. They do not cover the error of the modelled counts either.",
+    "A narrow range does not show a precise share. Where the cells around a unit carry the same age composition, every allocation gives the same share (age_grid_reading).",
+    "Cells that lie partly outside every unit of the boundary layer (for this frame, cells that straddle the national border) may hold residents who live outside the layer, and their age composition is that of the whole cell. Reading DR-B04 does not say how they are treated. cells_partly_outside_every_unit shows, for each unit, how many there are, how many of the unit's residents come from them and at what share, and how many of their residents go to no unit.",
     "Area with no valid age count carries no count. It is reported as unsupported area, not as zero residents.",
     "The plan's range for age-resolved exposure, [known, known + unsupported], needs resident counts inside a flood input. No flood input is read here, so that range is not in this file.",
     "A dependent share is not a measure of need in any place, and it is not the vulnerability component."

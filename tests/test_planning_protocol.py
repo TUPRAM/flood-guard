@@ -1125,7 +1125,9 @@ def test_owner_choices_sheet_ticks_no_box_the_owners_did_not_answer() -> None:
 
 
 
-def test_v1b_lists_every_engineering_run_with_its_receipt(protocols: dict[str, dict[str, Any]]) -> None:
+def test_v1b_lists_every_engineering_run_with_its_receipt(
+    protocols: dict[str, dict[str, Any]], receipts: list[dict[str, Any]]
+) -> None:
     runs = protocols["v1b"]["blinding"]["runs_before_v1b_is_in_force"]
     receipts_named = [run["receipt"] for run in runs]
     assert len(receipts_named) == len(set(receipts_named))
@@ -1139,15 +1141,23 @@ def test_v1b_lists_every_engineering_run_with_its_receipt(protocols: dict[str, d
             assert run["per_unit_values_note"].strip()
         for earlier in run.get("earlier_runs", []):
             assert earlier["generated_at_utc"] < run["generated_at_utc"] and len(earlier["evidence_sha256"]) == 64
-    # The list is of the runs made before v1b came into force. The signed file cannot list a later run; such a
-    # run names the signed v1b by its SHA-256 in what it writes (tests/test_planning_v1_outputs.py checks that).
-    signed_v1b = hashlib.sha256(PROTOCOL_PATHS["v1b"].read_bytes()).hexdigest().encode("ascii")
+    # v1b is not edited once its SHA-256 is recorded, so it lists the runs made before that receipt line. A run made
+    # after it is reported by its own receipt, which must name the bytes of both protocol files in force.
+    in_force_since = [receipt["time_utc"] for receipt in receipts
+                      if "planning_protocol_v1b_sha256" in (receipt.get("output_hashes") or {})]
+    before_force, after_force = [], []
+    for path in sorted((ROOT / "outputs" / "planning_v1").glob("*.json")):
+        if "grade_join_log" in path.name:
+            continue
+        made = json.loads(path.read_text(encoding="ascii"))["generated_at_utc"]
+        (after_force if in_force_since and made >= in_force_since[0] else before_force).append(path)
+    for path in after_force:
+        text = path.read_text(encoding="ascii")
+        for name in ("v1a", "v1b"):
+            sha256 = hashlib.sha256(PROTOCOL_PATHS[name].read_bytes()).hexdigest()
+            assert sha256 in text, f"{path.name} was written after v1b came into force and does not name {name}'s SHA-256"
     committed = sorted(
-        [
-            path.relative_to(ROOT).as_posix()
-            for path in (ROOT / "outputs" / "planning_v1").glob("*.json")
-            if "grade_join_log" not in path.name and signed_v1b not in path.read_bytes()
-        ]
+        [path.relative_to(ROOT).as_posix() for path in before_force]
         # Planning-frame builds name tambons, so their receipts sit beside the frames, not in outputs/.
         + [path.relative_to(ROOT).as_posix() for path in (ROOT / "resources" / "planning_frames").glob("*_receipt.json")]
     )

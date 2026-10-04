@@ -3,9 +3,11 @@
  *
  * Scans three bodies of text with the shared rules in `replay-wording-rules.json`:
  *   1. every string in the replay's source files (literals, templates and JSX text, in English and Thai), which also
- *      covers the captions drawn into the exported PNG and video;
+ *      covers the captions drawn into the exported PNG and video, and the files of the Command exercise replay
+ *      (`mae-sai-command-*`, `mae-sai-map-kit`, `flood-timeline-command*`);
  *   2. every text value of the served manifest;
- *   3. the reader-visible text of the main panels rendered with that manifest, in both languages.
+ *   3. the reader-visible text of the main panels rendered with that manifest, in both languages, and the lines the
+ *      Command exercise copy builds from the replay data, in both languages.
  * It must pass on the current text and fail on one seeded bad string per rule. The Python twin is
  * `tests/test_replay_wording_lint.py`.
  */
@@ -35,19 +37,46 @@ import { ReportedDepthsSources } from "@/components/mae-sai-reported-depths";
 import { SeasonEnvelopeCaption, SeasonEnvelopeChip, SeasonEnvelopeLegend, type SeasonEnvelopeState } from "@/components/mae-sai-season-envelope";
 import {
   districtStats,
+  formatHourStamp,
   hourlyStages,
   roadCut,
   roadCutGroups,
   tFromDate,
   TIMELINE_MANIFEST_URL,
+  type AreaGeometry,
   type FacilityProps,
   type GeoCollection,
   type Language,
   type LineGeometry,
+  type Localized,
   type RoadProps,
   type TambonProps,
   type TimelineManifest,
 } from "./flood-timeline";
+import { buildCommandModel, changeSinceHourBefore, COMMAND_SHELTER_SETS, districtFiguresAt } from "./flood-timeline-command";
+import {
+  COMMAND_BANNER,
+  COMMAND_CLOCK,
+  COMMAND_DRAWER,
+  COMMAND_FIGURES,
+  COMMAND_LANE_ORDER,
+  commandBannerLine,
+  commandBaseText,
+  commandChangeLine,
+  commandDataLine,
+  commandDrawerHeading,
+  commandFigureCells,
+  commandHourOf,
+  commandHourShort,
+  commandLaneMeaning,
+  commandLaneTag,
+  commandLifeAtRisk,
+  commandMoment,
+  commandMomentShort,
+  commandOpenItems,
+  commandPhaseLine,
+  commandPlaceRecordLine,
+} from "./flood-timeline-command-copy";
 import { parseSeasonEnvelopeDocument, shippableEnvelope } from "./flood-timeline-envelope";
 import { reportedDepthPopup, shippableReportedDepths } from "./flood-timeline-reported-depths";
 import {
@@ -224,6 +253,53 @@ function renderedPanels(language: Language): { name: string; html: string }[] {
   ];
 }
 
+// --- 4. The Command exercise copy as the page builds it ------------------------------------------------------
+
+/**
+ * Every line of the Command exercise copy in one language: each `{ en, th }` entry, and the lines its functions build
+ * from the served replay data (the banner, the clock, the figures of several replay hours for both shelter sets, what
+ * changed since the hour before, the lane tags and the drawer's headings). Joined lines are linted as built, so two
+ * clean parts cannot join into a banned claim.
+ */
+function commandCopyLines(language: Language): string[] {
+  const access = manifest.access!;
+  const model = buildCommandModel({
+    manifest,
+    roads: readJson<GeoCollection<LineGeometry, RoadProps>>(manifest.vectors.roads.href).features,
+    tambons: readJson<GeoCollection<AreaGeometry, TambonProps>>(manifest.vectors.tambons.href).features,
+    nodes: parseAccessNodes(new Uint8Array(readFileSync(resolve(publicRoot, access.nodes.href.replace(/^\//, "")))), access),
+  });
+  const blocks: Record<string, Localized>[] = [COMMAND_BANNER, COMMAND_CLOCK, COMMAND_FIGURES, COMMAND_DRAWER];
+  const hours = [0, 36, 44, 45, 60, 84, 85, 100, 153, 200, 264];
+  const depthCounts = manifest.reported_depths!.counts.all;
+  return [
+    ...blocks.flatMap((block) => Object.values(block).map((text) => text[language])),
+    ...COMMAND_LANE_ORDER.flatMap((lane) => [commandLaneTag(lane, language), commandLaneMeaning(lane, language)]),
+    commandBannerLine(language),
+    ...manifest.phases.map((phase) => commandPhaseLine(phase.label, model.stages[84], language)),
+    ...hours.flatMap((hour) => [
+      `${commandMoment(hour, language)} · ${commandHourOf(hour, language)}`,
+      `${commandMomentShort(hour, language)} · ${commandHourShort(hour, language)}`,
+      ...COMMAND_SHELTER_SETS.flatMap((set) => {
+        const change = changeSinceHourBefore(model, hour, set);
+        const cells = commandFigureCells(districtFiguresAt(model, hour, set), language);
+        return [
+          ...cells.map((cell) => [cell.value, cell.caption, ...(cell.sub ? [cell.sub] : []), cell.meaning].join(" · ")),
+          commandChangeLine(change, change.sinceHour === null ? "" : formatHourStamp(change.sinceHour, language), language, 9).text,
+        ];
+      }),
+    ]),
+    commandBaseText(model.sets.reported.withinReachBefore, language),
+    commandOpenItems(3, language),
+    commandLifeAtRisk(1, language),
+    commandPlaceRecordLine({ located: model.placeRecords.located, consistent: depthCounts.consistent, wet: depthCounts.model_wet, dry: depthCounts.model_dry }, language),
+    commandDrawerHeading("assumptions", manifest.assumptions.length, language),
+    commandDrawerHeading("limits", manifest.limitations.length, language),
+    commandDrawerHeading("sources", manifest.sources.length, language),
+    commandDataLine(manifest.revision, "3 Oct 2026", "3-19 Sep 2024", language),
+  ];
+}
+
 function corpus(): { source: string; text: string }[] {
   const sources = replaySourceFiles().flatMap((file) =>
     sourceStrings(readFileSync(resolve(webRoot, file), "utf8"), file).map((text) => ({ source: file, text })));
@@ -245,7 +321,9 @@ function corpus(): { source: string; text: string }[] {
     ...renderedPanels("en"),
     ...renderedPanels("th"),
   ].map(({ name, html }) => ({ source: name, text: visibleText(html) }));
-  return [...sources, ...manifestText, ...popups, ...rendered];
+  // The Command exercise copy, one item per language, as the page builds its lines.
+  const command = (["en", "th"] as const).map((language) => ({ source: `Command exercise copy (${language})`, text: commandCopyLines(language).join("\n") }));
+  return [...sources, ...manifestText, ...popups, ...rendered, ...command];
 }
 
 const lint = (items: { source: string; text: string }[]) => items.flatMap(({ source, text }) => findWordingViolations(text, source));
@@ -374,11 +452,21 @@ describe("Replay wording lint: current text", () => {
       "src/components/mae-sai-flood-timeline.tsx", "src/components/mae-sai-evacuation-panels.tsx", "src/components/mae-sai-observed-panels.tsx",
       "src/components/mae-sai-replay-export.tsx", "src/lib/flood-timeline.ts", "src/lib/flood-timeline-copy.ts",
       "src/lib/flood-timeline-evacuation.ts", "src/lib/flood-timeline-link.ts", "src/app/studio/cases/mae-sai-2024/page.tsx",
+      // The Command exercise replay: the shared map kit, the pure figures and the copy.
+      "src/components/mae-sai-map-kit.tsx", "src/lib/flood-timeline-command.ts", "src/lib/flood-timeline-command-copy.ts",
     ]) expect(files).toContain(file);
     const sources = new Set(items.map((item) => item.source));
     for (const file of files) expect(sources.has(file), file).toBe(true);
     expect(items.filter((item) => item.source.startsWith("timeline.json")).length).toBeGreaterThan(100);
-    expect(items.filter((item) => / \((en|th)\)$/.test(item.source)).length).toBe(75);
+    // 75 rendered panels of the Studio replay, and the Command exercise copy in its two languages.
+    expect(items.filter((item) => / \((en|th)\)$/.test(item.source)).length).toBe(77);
+    const commandCopy = items.filter((item) => item.source.startsWith("Command exercise copy ("));
+    expect(commandCopy.map((item) => item.source)).toEqual(["Command exercise copy (en)", "Command exercise copy (th)"]);
+    expect(commandCopy[0].text).toContain("Exercise replay · Mae Sai, September 2024 · reconstructed, not real-time · not an official warning");
+    expect(commandCopy[0].text).toContain("~7,100 · lost shelter access · of ~34,500 in reach");
+    expect(commandCopy[0].text).toContain("It has not been reviewed by a native speaker.");
+    expect(commandCopy[1].text).toContain("ฝึกซ้อมย้อนดูเหตุการณ์ · แม่สาย กันยายน 2567 (2024) · จำลองย้อนหลัง ไม่ใช่ข้อมูลเรียลไทม์ · ไม่ใช่คำเตือนทางการ");
+    expect(commandCopy[1].text).toContain("ถนนที่เริ่มสัญจรไม่ได้: ");
     // Reported depths: the Sources entry and the legend in both languages, and the popup of every located report.
     expect(items.filter((item) => item.source.startsWith("reported-depth popup ")).length).toBe(24);
     const depthText = items.filter((item) => /ReportedDepths|reported depths|reported-depth popup/.test(item.source)).map((item) => item.text).join(" ");
@@ -434,7 +522,10 @@ describe("Replay wording lint: current text", () => {
     const envelopeSource = items.find((item) => item.source === "src/components/mae-sai-season-envelope.tsx")!;
     const envelopeFile = items.find((item) => item.source === "unosat4009/envelope.json $.comparison.use")!;
     const envelopeRendered = items.find((item) => item.source === "ExternalChecks with the season envelope (en)")!;
-    const targets = [source, manifestItem, rendered, envelopeSource, envelopeFile, envelopeRendered];
+    // The Command exercise replay: its copy file, and the lines it builds in Thai.
+    const commandSource = items.find((item) => item.source === "src/lib/flood-timeline-command-copy.ts")!;
+    const commandBuilt = items.find((item) => item.source === "Command exercise copy (th)")!;
+    const targets = [source, manifestItem, rendered, envelopeSource, envelopeFile, envelopeRendered, commandSource, commandBuilt];
     // The rest of the corpus is clean (the test above), so only the planted items need linting again.
     const others = items.filter((item) => !targets.includes(item));
     expect(lint(others)).toEqual([]);

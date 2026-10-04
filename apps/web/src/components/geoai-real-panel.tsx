@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { EvidenceNotice } from "@/components/evidence-notice";
 import { StatePill } from "@/components/state-pill";
 import { formatConfidence } from "@/lib/format";
+import { parseGeoaiResearchBundle } from "@/lib/geoai-research-bundle";
 import type { Language } from "@/lib/types";
 
 import styles from "./geoai-real-panel.module.css";
@@ -104,7 +105,10 @@ export function GeoaiRealPanel({
           const actual = Array.from(new Uint8Array(hash), (byte) => byte.toString(16).padStart(2, "0")).join("");
           if (actual !== archiveRecord.sha256) throw new Error("Historical report checksum mismatch");
         }
-        return JSON.parse(new TextDecoder().decode(bytes)) as GeoaiRealBundle;
+        // Nothing is shown unless the report states its own limits (not an official warning, candidate tier,
+        // report only, cannot feed the decision layer) and its display fields are well formed.
+        const checked: GeoaiRealBundle = parseGeoaiResearchBundle(JSON.parse(new TextDecoder().decode(bytes)));
+        return checked;
       })
       .then((data: GeoaiRealBundle) => {
         if (active) setBundle(data);

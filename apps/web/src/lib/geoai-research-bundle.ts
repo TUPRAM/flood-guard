@@ -30,7 +30,9 @@ const record = (v: unknown): v is Record<string, unknown> => v !== null && typeo
 const text = (v: unknown): v is string => typeof v === "string" && v.length > 0;
 const finite = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
 const stringMap = (v: unknown) => record(v) && Object.values(v).every(text);
-const image = (v: unknown) => text(v) && /^\/geoai\/[a-zA-Z0-9_-]+\.(png|jpe?g|webp)$/.test(v);
+// A preview is a local file: `/geoai/<name>` in the report, or `/studies/mae-sai-geoai/<revision>/<hash>-<name>` in
+// the frozen copy of the same report that the study library's historical page reads.
+const image = (v: unknown) => text(v) && /^\/(?:geoai|studies\/mae-sai-geoai\/[a-zA-Z0-9_-]+)\/[a-zA-Z0-9_-]+\.(png|jpe?g|webp)$/.test(v);
 const method = (v: unknown): v is Record<string, unknown> => record(v) && ["letter", "name", "book", "metric", "detail"].every((key) => text(v[key]));
 
 /** Reject missing governance assertions or malformed display data; do not infer eligibility. */

@@ -347,16 +347,33 @@ export interface MarkerCluster {
 }
 
 /**
- * Group markers that lie within `radius` pixels of the first marker of a group. A marker on its own is a group of
- * one. The result depends only on the order of the points, so the same view always clusters the same way.
+ * Group markers that lie within `radius` pixels of the first marker of a group; then merge groups whose middles lie
+ * within `radius` of each other, so two count marks never stand on top of one another. A marker on its own is a group
+ * of one. The result depends only on the order of the points, so the same view always clusters the same way.
  */
 export function clusterMarkers(points: readonly ClusterPoint[], radius: number = CLUSTER_RADIUS_PX): MarkerCluster[] {
-  const groups: number[][] = [];
+  let groups: number[][] = [];
   points.forEach((point, index) => {
     const group = groups.find((members) => Math.hypot(points[members[0]].x - point.x, points[members[0]].y - point.y) <= radius);
     if (group) group.push(index);
     else groups.push([index]);
   });
+  const middle = (members: readonly number[]) => ({
+    x: members.reduce((sum, index) => sum + points[index].x, 0) / members.length,
+    y: members.reduce((sum, index) => sum + points[index].y, 0) / members.length,
+  });
+  for (let merged = true; merged;) {
+    merged = false;
+    for (let a = 0; a < groups.length && !merged; a += 1) {
+      for (let b = a + 1; b < groups.length && !merged; b += 1) {
+        const first = middle(groups[a]);
+        const second = middle(groups[b]);
+        if (Math.hypot(first.x - second.x, first.y - second.y) > radius) continue;
+        groups = [...groups.slice(0, a), [...groups[a], ...groups[b]].sort((x, y) => x - y), ...groups.slice(a + 1, b), ...groups.slice(b + 1)];
+        merged = true;
+      }
+    }
+  }
   return groups.map((members) => ({
     members,
     x: members.reduce((sum, index) => sum + points[index].x, 0) / members.length,

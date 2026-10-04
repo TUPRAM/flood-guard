@@ -462,7 +462,10 @@ describe("Inspector of a subdistrict (region D, Detail)", () => {
     expect(text(empty)).toContain("Select a subdistrict in the table to see its detail.");
     expect(empty).toMatch(/aria-label="Close the card"/);
     const known = html(<MaeSaiCommandInspector language="th" tab="known" onTab={noop} onClose={noop} detail={null} known={<CommandKnownPlaceholder language="th" />} />);
-    expect(text(known)).toContain("ยังไม่ได้จัดทำรายการสิ่งที่มีรายงานหรือสังเกตได้แล้วถึงชั่วโมงนี้ของการย้อนดู");
+    expect(text(known)).toContain("รายการสิ่งที่มีรายงานหรือสังเกตได้จะแสดงเมื่อโหลดข้อมูลการย้อนดูเสร็จ");
+    // The tab of "Known by now" carries the number of rows once the list is there.
+    const counted = html(<MaeSaiCommandInspector language="en" tab="known" onTab={noop} onClose={noop} detail={null} known={<p>rows</p>} knownCount={35} />);
+    expect(text(counted)).toContain("Known by now (35)");
     const chip = html(<CommandCardChip language="en" label="Detail: แม่สาย" onOpen={noop} />);
     expect(chip).toMatch(/aria-expanded="false" data-region="D" data-command-card="chip"/);
     expect(text(chip)).toBe("Detail: แม่สาย");

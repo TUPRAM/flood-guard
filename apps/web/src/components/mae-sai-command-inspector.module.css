@@ -11,6 +11,7 @@
 .cardTabs button:focus-visible { outline-offset: -3px; }
 .cardBody { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
 .cardBody:focus-visible { outline-offset: -3px; }
+.cardBody[data-tab="known"] { display: flex; flex-direction: column; overflow: hidden; }
 .cardChip { position: absolute; z-index: 11; top: calc(var(--c-margin) + 44px + var(--c-gap)); right: calc(var(--c-margin) + var(--c-rail) + var(--c-gap)); display: inline-flex; align-items: center; justify-content: center; gap: 7px; max-width: 280px; min-width: 168px; height: 36px; padding: 0 14px; border: 0; border-radius: 18px; background: var(--c-panel); color: var(--c-ink); box-shadow: var(--c-shadow); font-size: 12.5px; }
 .cardChip::after { content: ""; position: absolute; inset: -4px 0; }
 .cardChip:hover { background: var(--c-tint); }

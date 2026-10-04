@@ -34,6 +34,7 @@ import {
   commandSetMeaning,
   commandText,
 } from "@/lib/flood-timeline-command-copy";
+import { commandKnownCount } from "@/lib/flood-timeline-command-reports-copy";
 import { COMMAND_PLANNING_CASES, type CommandOrderBy, type CommandPlanningCase, type CommandPlanningCell, type CommandTableRow } from "@/lib/flood-timeline-command-table";
 
 import exercise from "./mae-sai-command-exercise.module.css";
@@ -294,6 +295,8 @@ export interface CommandQueueProps {
   onTab?: (tab: CommandLeftTab) => void;
   detail?: ReactNode;
   known?: ReactNode;
+  /** How many rows "Known by now" holds at this replay hour: printed on its tab. */
+  knownCount?: number;
 }
 
 /** Region B2: the card of the subdistrict table. */
@@ -341,7 +344,7 @@ export function MaeSaiCommandQueue(props: CommandQueueProps) {
         <div className={styles.tabs} role="tablist" aria-label={t(COMMAND_TABLE.tabs)}>
           {COMMAND_LEFT_TABS.map((id) => (
             <button key={id} type="button" role="tab" aria-selected={id === tab} aria-controls={panelId} onClick={() => onTab?.(id)} data-command-tab={id}>
-              {t(tabLabel[id])}
+              {id === "known" && props.knownCount !== undefined ? commandKnownCount(tabLabel[id], props.knownCount, language) : t(tabLabel[id])}
             </button>
           ))}
         </div>

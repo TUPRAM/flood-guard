@@ -124,7 +124,7 @@
   .tabs button:focus-visible { outline-offset: -3px; }
   .tabBar .optionsButton { align-self: center; width: 44px; height: 44px; margin-left: 0; border-radius: 50%; }
   .tabBar .optionsButton::after { display: none; }
-  .tabPanel[data-tab="detail"], .tabPanel[data-tab="known"] { overflow-y: auto; overscroll-behavior: contain; }
+  .tabPanel[data-tab="detail"] { overflow-y: auto; overscroll-behavior: contain; }
   .controls { grid-template-columns: auto minmax(0, 1fr); row-gap: 6px; padding: 7px 10px 6px; }
   .control:nth-child(2) { justify-self: end; justify-items: end; }
   .control:nth-child(3) { grid-column: 1 / -1; justify-self: start; justify-items: start; }

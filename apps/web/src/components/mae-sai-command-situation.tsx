@@ -5,13 +5,18 @@
  * hour. The replay time is the largest text of the page; under it stand the phase and the assumed river stage, then
  * the three model figures with their captions, the line that says what changed since the hour before, and from
  * 13 Sep the model-limit chip. Every figure here is a T1 scenario (model) with low confidence, rounded as such.
- * In focus mode the card is one line.
+ * Two things on the card are not model figures and say so: the count of open exercise items (invented, plain digits,
+ * under the exercise tag), and the chip that says how many place records have a point and at how many of those the
+ * model is dry. In focus mode the card is one line.
  */
 
 import { useMemo } from "react";
 
 import { formatHourStamp, phaseAt, type Language, type TimelineManifest } from "@/lib/flood-timeline";
 import { changeSinceHourBefore, clampCommandHour, commandStage, districtFiguresAt, type CommandModel, type CommandShelterSet } from "@/lib/flood-timeline-command";
+import type { PlaceRecordTally } from "@/lib/flood-timeline-command-feed";
+import type { ExerciseCounts } from "@/lib/flood-timeline-command-incidents";
+import { COMMAND_EXERCISE, commandOpenItemsText, commandRecordTallyChip, commandRecordTallyLine } from "@/lib/flood-timeline-command-reports-copy";
 import {
   COMMAND_CLOCK,
   COMMAND_FIGURES,
@@ -29,11 +34,15 @@ import {
 } from "@/lib/flood-timeline-command-copy";
 
 import styles from "./mae-sai-command-exercise.module.css";
+import { EXERCISE_MARKER_VIEWBOX, exerciseMarkerNodes, MarkerGlyph } from "./mae-sai-command-markers";
+
+/** The small "!!" octagon beside the count of life-at-risk items: the same drawing as the marker. */
+const LIFE_GLYPH = exerciseMarkerNodes({ shape: "octagon", size: 36, symbol: "!!", fill: "#D55E00", symbolColour: "#ffffff", halo: false, outline: "none", closed: false, showsCallsign: false, showsWaiting: false });
 
 /** Phases in which the model dries faster than the ground did: the card says so. */
 const MODEL_LIMIT_PHASES: readonly string[] = ["receding", "gone"];
 
-export function MaeSaiCommandSituation({ language, hour, manifest, model, set = "reported", collapsed = false, failed = false, onRetry }: {
+export function MaeSaiCommandSituation({ language, hour, manifest, model, set = "reported", exercise = null, tally = null, onRecords, collapsed = false, failed = false, onRetry }: {
   language: Language;
   /** Whole replay hour, 0 … 264. */
   hour: number;
@@ -42,6 +51,12 @@ export function MaeSaiCommandSituation({ language, hour, manifest, model, set = 
   model: CommandModel | null;
   /** The shelter set the access figure counts: the one the table's switch has chosen. */
   set?: CommandShelterSet;
+  /** Counted exercise items at this replay hour; null while the exercise file has not loaded or its items are switched off. */
+  exercise?: ExerciseCounts | null;
+  /** How the model reads at the points of the place records known by now; null until the replay data has loaded. */
+  tally?: PlaceRecordTally | null;
+  /** The place-record chip was pressed: the page opens "Known by now". */
+  onRecords?: () => void;
   /** Focus mode: one 44 px line. */
   collapsed?: boolean;
   /** The replay data could not be loaded. */
@@ -90,7 +105,16 @@ export function MaeSaiCommandSituation({ language, hour, manifest, model, set = 
             <span className={styles.phaseLong}>{commandPhaseLine(phase.label, stage, language)}</span>
             <span className={styles.phaseShort}>{commandPhaseShortLine(phase.label, stage, language)}</span>
           </p>
-          <div className={styles.figuresHead}><span className={styles.laneTag}>{t(COMMAND_FIGURES.modelTag)}</span></div>
+          <div className={styles.figuresHead}>
+            <span className={styles.laneTag}>{t(COMMAND_FIGURES.modelTag)}</span>
+            <span className={styles.figuresRule} aria-hidden="true" />
+            {/* Reported against model: how many place records have a point by now, and at how many the model is dry. */}
+            {tally && tally.located > 0 && (
+              <button type="button" className={styles.recordChip} onClick={onRecords} title={commandRecordTallyLine(tally, language)} aria-label={commandRecordTallyLine(tally, language)} data-command-record-chip>
+                {commandRecordTallyChip(tally, language)}
+              </button>
+            )}
+          </div>
           <ul className={styles.figures} aria-label={t(COMMAND_FIGURES.label)}>
             {cells.map((cell) => (
               <li key={cell.id} className={styles.figure} title={cell.meaning} data-figure={cell.id}>
@@ -99,14 +123,33 @@ export function MaeSaiCommandSituation({ language, hour, manifest, model, set = 
                 {cell.sub && <small>{cell.sub}</small>}
               </li>
             ))}
-            {/* The fourth figure, open exercise items, arrives with the exercise calls; its slot is kept. */}
-            <li className={`${styles.figure} ${styles.figureSlot}`} data-figure="exerciseItems" title={t(COMMAND_FIGURES.noExerciseItems)}>
-              <strong aria-hidden="true">–</strong>
-              <span>{t(COMMAND_SITUATION.exerciseSlot)}</span>
-              <small className={styles.srOnly}>{t(COMMAND_FIGURES.noExerciseItems)}</small>
-            </li>
+            {/* The fourth figure is a plain count of invented items, under the exercise tag: it is not a model figure. */}
+            {exercise ? (
+              <li className={`${styles.figure} ${styles.figureExercise}`} data-figure="exerciseItems" data-open={exercise.open} data-life={exercise.lifeAtRisk} title={commandOpenItemsText(exercise.open, exercise.lifeAtRisk, language)}>
+                <strong aria-hidden="true">{exercise.open}<b className={styles.exTag}>{t(COMMAND_EXERCISE.short)}</b></strong>
+                <span aria-hidden="true">{t(COMMAND_EXERCISE.openCaption)}</span>
+                <small aria-hidden="true" data-life={exercise.lifeAtRisk > 0 ? "true" : "false"}>
+                  {exercise.lifeAtRisk > 0 && <><MarkerGlyph nodes={LIFE_GLYPH} viewBox={EXERCISE_MARKER_VIEWBOX} size={15} />{exercise.lifeAtRisk} {t(COMMAND_EXERCISE.atRisk)}</>}
+                </small>
+                <span className={styles.srOnly}>{commandOpenItemsText(exercise.open, exercise.lifeAtRisk, language)}</span>
+              </li>
+            ) : (
+              <li className={`${styles.figure} ${styles.figureSlot}`} data-figure="exerciseItems" title={t(COMMAND_EXERCISE.itemsOff)}>
+                <strong aria-hidden="true">–</strong>
+                <span>{t(COMMAND_SITUATION.exerciseSlot)}</span>
+                <small className={styles.srOnly}>{t(COMMAND_EXERCISE.itemsOff)}</small>
+              </li>
+            )}
           </ul>
           <div className={styles.notes} data-limit={limit ? "on" : "off"} lang={language}>
+            {/* A tablet has three figure columns: the open exercise items stand on this line there. */}
+            {exercise && (
+              <p className={styles.exerciseLine} title={commandOpenItemsText(exercise.open, exercise.lifeAtRisk, language)} data-command-exercise-line>
+                <b className={styles.exTag}>{t(COMMAND_EXERCISE.short)}</b>
+                <span>{exercise.open} {t(COMMAND_EXERCISE.openCaption)}</span>
+                {exercise.lifeAtRisk > 0 && <span className={styles.exerciseLife}><MarkerGlyph nodes={LIFE_GLYPH} viewBox={EXERCISE_MARKER_VIEWBOX} size={15} />{exercise.lifeAtRisk}</span>}
+              </p>
+            )}
             {changeLine && <p className={styles.change} title={changeLine.text} data-command-change>{changeLine.text}</p>}
             {limit && <p className={styles.limitChip} title={t(COMMAND_FIGURES.modelLimit)} data-command-limit>{t(COMMAND_SITUATION.modelLimitShort)}</p>}
           </div>

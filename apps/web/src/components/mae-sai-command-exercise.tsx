@@ -3,10 +3,12 @@
 /**
  * The Command exercise replay (Mae Sai, September 2024): a full-screen map that replays the flood hour by hour for
  * people who coordinate rescue, as an exercise and after-action tool. This file is the shell: it loads the replay
- * data, keeps the replay hour (play, steps, speeds, keys, the hour in the address bar), the selected subdistrict and
- * the choices of the table, and lays the panels over the map. The page is a reconstruction of a 2024 event: it is not
- * real-time, not an official warning and not a dispatch system, and every modelled figure is low confidence. The
- * banner says so on every screen.
+ * data, keeps the replay hour (play, steps, speeds, keys, the hour in the address bar), what is selected (a
+ * subdistrict, an invented item of the exercise, or the reports saved on this device) and the choices of the table,
+ * and lays the panels over the map. It also keeps the mode of the exercise: in trainee mode nothing of a later replay
+ * hour is shown; hindsight mode shows everything. The page is a reconstruction of a 2024 event: it is not real-time,
+ * not an official warning and not a dispatch system, and every modelled figure is low confidence. The banner says so
+ * on every screen.
  *
  * Regions (plan section 3): A banner, B1 clock and figures, B2 subdistrict table, C navigation, D right card (detail
  * and what is known), E tool rail, F time dock, G legend, H watermark and credits, I one-line notice.
@@ -14,22 +16,51 @@
 
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState, useSyncExternalStore } from "react";
 
-import type { Language } from "@/lib/flood-timeline";
+import type { Language, Localized } from "@/lib/flood-timeline";
 import { buildCommandModel, commandStage, holdTambonOrder, tambonOrderByHour, tambonRowsAt, type CommandModel, type CommandShelterSet } from "@/lib/flood-timeline-command";
 import { COMMAND_INSPECTOR, COMMAND_MAP, COMMAND_NAV, commandDetailChip, commandFindKindText, commandText, commandToleranceText } from "@/lib/flood-timeline-command-copy";
 import {
+  loadCommandEnvelope,
+  loadCommandExercise,
   loadCommandHand,
   loadCommandOverlays,
   loadCommandPeakSummary,
   loadCommandReplay,
+  type CommandEnvelope,
   type CommandHandRaster,
   type CommandReplayData,
 } from "@/lib/flood-timeline-command-data";
+import {
+  buildCommandFeed,
+  DEFAULT_COMMAND_MODE,
+  feedAt,
+  feedEventHours,
+  placeRecordsAt,
+  placeRecordTally,
+  type CommandFeedPlace,
+  type CommandMode,
+} from "@/lib/flood-timeline-command-feed";
+import {
+  arrivedExerciseItems,
+  deviceReportsByTambon,
+  exerciseArrivals,
+  exerciseCounts,
+  exerciseHandling,
+  lifeAtRiskHours,
+  modelDepthAt,
+  mostUrgentItem,
+  tambonsWithoutReports,
+  type ExerciseFile,
+  type ExerciseHandlingMap,
+  type ExerciseItem,
+} from "@/lib/flood-timeline-command-incidents";
 import { reportedSiteWetAt } from "@/lib/flood-timeline-command-map";
+import { COMMAND_FEED, commandKnownCount, commandNewItemsNotice } from "@/lib/flood-timeline-command-reports-copy";
 import {
   commandDayChips,
   commandEventStops,
   commandKeyAction,
+  commandMarkStops,
   commandPhaseSpans,
   commandReplayReducer,
   commandSpeed,
@@ -63,6 +94,7 @@ import {
 import { countedInReportedSet } from "@/lib/flood-timeline-evacuation";
 import { clearRect, type ScreenRect } from "@/lib/flood-timeline-layout";
 import { useLanguage } from "@/lib/use-language";
+import { useStoredPublicReports } from "@/lib/use-public-reports";
 
 import {
   CommandBanner,
@@ -76,7 +108,9 @@ import {
   CommandViewPopover,
   CommandWatermark,
 } from "./mae-sai-command-chrome";
+import { MaeSaiCommandFeed } from "./mae-sai-command-feed";
 import { findEntryNames, MaeSaiCommandFind } from "./mae-sai-command-find";
+import { CommandDeviceDetailBody, CommandItemDetailBody } from "./mae-sai-command-incident";
 import {
   CommandCardChip,
   CommandDetailEmpty,
@@ -86,7 +120,8 @@ import {
   type CommandCardTab,
   type CommandPeakStatus,
 } from "./mae-sai-command-inspector";
-import { MaeSaiCommandMap, type CommandBasemap, type CommandFitTarget, type CommandMapHandle, type CommandMapPlace, type CommandMapView } from "./mae-sai-command-map";
+import { MaeSaiCommandMap, type CommandBasemap, type CommandEnvelopeLayer, type CommandFitTarget, type CommandMapHandle, type CommandMapPlace, type CommandMapView } from "./mae-sai-command-map";
+import type { CommandMarkerFrame, CommandReportSelection } from "./mae-sai-command-markers";
 import { MaeSaiCommandQueue, type CommandLeftTab } from "./mae-sai-command-queue";
 import { MaeSaiCommandSituation } from "./mae-sai-command-situation";
 import { MaeSaiCommandTimebar, type CommandPhaseBandItem } from "./mae-sai-command-timebar";
@@ -94,6 +129,17 @@ import styles from "./mae-sai-command-exercise.module.css";
 
 /** The address bar is rewritten at most this often while the replay hour changes. */
 const LINK_WRITE_MS = 300;
+/** While the replay plays, the line that says an invented item has arrived stays this long. */
+const ARRIVAL_NOTICE_MS = 8000;
+const NO_ITEMS: readonly ExerciseItem[] = [];
+const NO_HOURS: ReadonlySet<number> = new Set();
+/** Until the act flow is built every invented item is new: nothing has been acknowledged, assigned or closed. */
+const NO_HANDLING: ExerciseHandlingMap = new Map();
+
+/** What is selected: a subdistrict of the table, or a report on the map. Never both. */
+interface CommandSelection { tambon: string | null; report: CommandReportSelection | null; fit: number }
+/** The invented items a step forward brought, for the one-line notice. */
+interface CommandArrival { hour: number; ids: string[]; calls: number; reports: number; lifeAtRisk: boolean }
 
 type LoadState = { status: "loading" } | { status: "error" } | { status: "ready"; data: CommandReplayData; model: CommandModel };
 /** The panels that open over the map; one at a time, so they never cover each other. The legend and the right card are two of them. */
@@ -132,6 +178,16 @@ function keyTarget(target: EventTarget | null): CommandKeyTarget {
   if (target.isContentEditable || target.closest("textarea, select, input:not([type='checkbox']):not([type='range']), [contenteditable]:not([contenteditable='false'])")) return "field";
   if (target.closest("button, a[href], summary, input[type='checkbox'], [role='button']")) return "control";
   return "page";
+}
+
+/** A place of "Known by now" as the map marks it: the Thai name first, the romanised name and its stated tolerance. */
+function feedPlaceOnMap(place: CommandFeedPlace, language: Language): CommandMapPlace | null {
+  if (place.lat === null || place.lon === null) return null;
+  return {
+    target: { type: "point", lat: place.lat, lon: place.lon, toleranceM: place.toleranceM, siteId: place.siteId },
+    title: place.th,
+    lines: [place.en, ...(place.toleranceM ? [commandToleranceText(place.toleranceM, language)] : [])],
+  };
 }
 
 /** A found name as the map marks it: the Thai name first, then what kind of name it is and how closely it is placed. */
@@ -177,11 +233,20 @@ export function MaeSaiCommandExercise({ initial }: {
   const [positionFrom, setPositionFrom] = useState<CommandPlanningCase>(DEFAULT_POSITION_CASE);
   const [optionsChoice, setOptionsChoice] = useState<boolean | null>(null);
   const [hold, setHold] = useReducer(commandHoldReducer, NO_COMMAND_HOLD);
-  // The selection: one subdistrict, shown in the right card (on a tablet, in the tabs of the left column).
-  const [selection, setSelection] = useState<{ id: string | null; fit: number }>({ id: null, fit: 0 });
+  // The selection: one subdistrict or one report, shown in the right card (on a tablet, in the tabs of the left column).
+  const [selection, setSelection] = useState<CommandSelection>({ tambon: null, report: null, fit: 0 });
   const [cardTab, setCardTab] = useState<CommandCardTab>("detail");
   const [leftTab, setLeftTab] = useState<CommandLeftTab>("queue");
-  const [found, setFound] = useState<CommandFindEntry | null>(null);
+  // A place the reader asked the map to show: a name of the find-place box, or a place of "Known by now".
+  const [found, setFound] = useState<{ entry: CommandFindEntry } | { place: CommandFeedPlace } | null>(null);
+  // The exercise: what it shows of the future, its invented items, and whether playback pauses for a life-at-risk item.
+  const [mode, setMode] = useState<CommandMode>(DEFAULT_COMMAND_MODE);
+  const [exerciseFile, setExerciseFile] = useState<ExerciseFile | null>(null);
+  const [itemsOn, setItemsOn] = useState(true);
+  const [pauseOnLife, setPauseOnLife] = useState(true);
+  const [arrival, setArrival] = useState<CommandArrival | null>(null);
+  const [envelope, setEnvelope] = useState<CommandEnvelope | null>(null);
+  const deviceReports = useStoredPublicReports();
   const reducedMotion = useMediaQuery(REDUCED_MOTION_QUERY);
   const tablet = useMediaQuery(TABLET_QUERY);
   const compact = useMediaQuery(COMPACT_QUERY);
@@ -192,6 +257,7 @@ export function MaeSaiCommandExercise({ initial }: {
   const languageRef = useRef<Language>(language);
   const shownOrder = useRef<readonly string[] | null>(null);
   const lastLinkWrite = useRef(0);
+  const lastHour = useRef<number | null>(null);
   useEffect(() => {
     languageRef.current = language;
   }, [language]);
@@ -207,8 +273,12 @@ export function MaeSaiCommandExercise({ initial }: {
       if (link.language && link.language !== languageRef.current) setLanguage(link.language);
       setLinkReady(true);
       try {
+        // The invented items of the exercise are a file of their own: without it the replay still runs.
+        loadCommandExercise(signal).then((file) => { if (!signal.aborted) setExerciseFile(file); }, () => undefined);
         const data = await loadCommandReplay(signal);
         if (signal.aborted) return;
+        // The season envelope is drawn in hindsight mode only; its raster loads in the background.
+        loadCommandEnvelope(data.manifest, signal).then((layer) => { if (!signal.aborted) setEnvelope(layer); }, () => undefined);
         // The water raster loads on its own: the figures, the roads and the clock do not wait for it.
         loadCommandHand(data.manifest, signal).then(
           (raster) => { if (!signal.aborted) setHand(raster); },
@@ -242,7 +312,21 @@ export function MaeSaiCommandExercise({ initial }: {
   const { hour, playing, speed, focus } = replay;
   const stageNow = model ? commandStage(model, hour) : 0;
 
-  const stops = useMemo(() => (manifest && model ? commandEventStops(manifest, model.stages) : []), [manifest, model]);
+  // --- "Known by now": every dated row of the replay data, cut at the replay hour in trainee mode --------
+  const feed = useMemo(() => (manifest && model ? buildCommandFeed(manifest, model, shelterSet) : null), [manifest, model, shelterSet]);
+  const feedRows = useMemo(() => (feed ? feedAt(feed, hour, mode) : null), [feed, hour, mode]);
+  // The event buttons stop at every hour that has a mark on the track; before the data has loaded, at the phases.
+  const stops = useMemo(() => (feed ? commandMarkStops(feedEventHours(feed)) : manifest && model ? commandEventStops(manifest, model.stages) : []), [feed, manifest, model]);
+  const recordsNow = useMemo(() => placeRecordsAt(manifest?.reported_depths?.reports ?? [], hour, mode), [manifest, hour, mode]);
+  const tally = useMemo(() => (manifest ? placeRecordTally(recordsNow) : null), [manifest, recordsNow]);
+
+  // --- The exercise: invented items on the replay clock, and the reports saved on this device ----------------
+  const items = itemsOn && exerciseFile ? exerciseFile.items : NO_ITEMS;
+  const handling = NO_HANDLING;
+  const counts = useMemo(() => (exerciseFile && itemsOn ? exerciseCounts(items, hour, handling) : null), [exerciseFile, itemsOn, items, hour, handling]);
+  const pauseAt = useMemo(() => (pauseOnLife ? lifeAtRiskHours(items) : NO_HOURS), [pauseOnLife, items]);
+  const tambonIds = useMemo(() => model?.tambons.map((tambon) => tambon.id) ?? [], [model]);
+  const deviceByTambon = useMemo(() => deviceReportsByTambon(deviceReports, tambonIds), [deviceReports, tambonIds]);
   const days = useMemo(() => (manifest ? commandDayChips(manifest.days) : []), [manifest]);
   const phases = useMemo<CommandPhaseBandItem[]>(() => {
     if (!manifest) return [];
@@ -258,7 +342,28 @@ export function MaeSaiCommandExercise({ initial }: {
 
   // --- The table: this hour's rows, their order (held while the reader is in the table) and the plan cells ----
   const orders = useMemo(() => (model ? tambonOrderByHour(model, shelterSet) : null), [model, shelterSet]);
-  const rowsNow = useMemo(() => (model ? tambonRowsAt(model, hour, shelterSet) : null), [model, hour, shelterSet]);
+  const recordPlaces = useMemo(() => (data ? placeRecordsOfTambons(data.manifest.reported_depths?.reports ?? [], data.tambons.features) : null), [data]);
+  // The place records of each subdistrict that the mode shows at this hour: in trainee mode, those published by now.
+  const placesNow = useMemo(() => {
+    if (!recordPlaces) return null;
+    const known = new Set(recordsNow.map((report) => report.id));
+    return new Map([...recordPlaces].map(([id, places]) => [id, places
+      .map((place) => ({ ...place, reports: place.reports.filter((report) => known.has(report.id)) }))
+      .filter((place) => place.reports.length > 0)] as const));
+  }, [recordPlaces, recordsNow]);
+  const rowsNow = useMemo(() => {
+    if (!model) return null;
+    const rows = tambonRowsAt(model, hour, shelterSet);
+    if (!placesNow) return rows;
+    return rows.map((row) => ({ ...row, placeRecords: (placesNow.get(row.id) ?? []).reduce((sum, place) => sum + place.reports.length, 0) }));
+  }, [model, hour, shelterSet, placesNow]);
+  // Residents in modelled water and no place record or invented item by this hour: the map says "no reports received".
+  const noReports = useMemo(() => {
+    if (!rowsNow) return [];
+    const withRecords = new Set(rowsNow.filter((row) => row.placeRecords > 0).map((row) => row.id));
+    const withItems = new Set(arrivedExerciseItems(items, hour).map((item) => item.tambonId));
+    return tambonsWithoutReports(rowsNow, withRecords, withItems);
+  }, [rowsNow, items, hour]);
   const rowsBefore = useMemo(() => (model ? tambonRowsBefore(model, hour, shelterSet) : null), [model, hour, shelterSet]);
   const scale = useMemo(() => (model ? lostAccessScale(model) : 1), [model]);
   const cells = useMemo(() => ({ O1: planningCells(overlays.O1, "O1"), SE1: planningCells(overlays.SE1, "SE1") }), [overlays]);
@@ -278,53 +383,101 @@ export function MaeSaiCommandExercise({ initial }: {
   const onHold = useCallback((source: CommandHoldSource, held: boolean) => setHold({ source, held, order: shownOrder.current }), []);
   const onDrag = useCallback((dragging: boolean) => onHold("drag", dragging), [onHold]);
 
-  // --- The selected subdistrict and its inspector ---------------------------------------------------------
-  const selected = selection.id;
+  // --- The selected subdistrict or report, and its inspector ----------------------------------------------
+  const selected = selection.tambon;
+  const selectedReport = selection.report;
+  const selectedItem = selectedReport?.type === "exercise" ? items.find((item) => item.id === selectedReport.id && item.hour <= hour) ?? null : null;
+  const selectedDevice = selectedReport?.type === "device" ? model?.tambons.find((tambon) => tambon.id === selectedReport.tambonId) ?? null : null;
   const facilityProps = useMemo(() => data?.facilities.features.map((feature) => feature.properties) ?? [], [data]);
-  const recordPlaces = useMemo(() => (data ? placeRecordsOfTambons(data.manifest.reported_depths?.reports ?? [], data.tambons.features) : null), [data]);
   const detail = useMemo(() => (model && selected ? tambonDetailAt(model, facilityProps, hour, shelterSet, selected) : null), [model, facilityProps, hour, shelterSet, selected]);
   const findIndex = useMemo(() => (data ? buildCommandFindIndex({ manifest: data.manifest, tambons: data.tambons.features, facilities: data.facilities.features, roads: data.roads.features }) : []), [data]);
   const select = useCallback((id: string) => {
-    setSelection((current) => ({ id, fit: current.fit + 1 }));
+    setSelection((current) => ({ tambon: id, report: null, fit: current.fit + 1 }));
+    setFound(null);
+    setCardTab("detail");
+    setLeftTab("detail");
+    setOpenPanel("card");
+  }, []);
+  /** An invented item or a device sign was chosen (its marker's "Assign" or "Details", or the notice of a new item). */
+  const selectReport = useCallback((report: CommandReportSelection) => {
+    setSelection((current) => ({ tambon: null, report, fit: current.fit + 1 }));
     setFound(null);
     setCardTab("detail");
     setLeftTab("detail");
     setOpenPanel("card");
   }, []);
   const deselect = useCallback(() => {
-    setSelection((current) => (current.id === null ? current : { id: null, fit: current.fit }));
+    setSelection((current) => (current.tambon === null && current.report === null ? current : { tambon: null, report: null, fit: current.fit }));
     setLeftTab("queue");
     setOpenPanel((current) => (current === "card" ? null : current));
   }, []);
-  // The map fits the selected subdistrict once the card has opened, so the fit uses the clear rectangle beside it.
+  // The map moves to what was selected once the card has opened, so the move uses the clear rectangle beside it: a
+  // selected thing is never under a panel.
   useEffect(() => {
-    if (!selection.id || !mapReady) return;
-    const id = selection.id;
-    const frame = window.requestAnimationFrame(() => map.current?.fitTambon(id));
+    if (!mapReady || (!selection.tambon && !selection.report)) return;
+    const { tambon, report } = selection;
+    const frame = window.requestAnimationFrame(() => {
+      if (tambon) map.current?.fitTambon(tambon);
+      else if (report) map.current?.focusReport(report);
+    });
     return () => window.cancelAnimationFrame(frame);
   }, [selection, mapReady]);
   // A found place keeps its mark until another thing is chosen; its name follows the page language.
+  const shownPlace = useCallback((language: Language): CommandMapPlace | null => {
+    if (!found) return null;
+    return "entry" in found ? placeOnMap(found.entry, language) : feedPlaceOnMap(found.place, language);
+  }, [found]);
   useEffect(() => {
-    if (mapReady) map.current?.showPlace(found ? placeOnMap(found, language) : null);
-  }, [found, language, mapReady]);
+    if (mapReady) map.current?.showPlace(shownPlace(language));
+  }, [shownPlace, language, mapReady]);
   const pickPlace = useCallback((entry: CommandFindEntry) => {
     if (!entry.target) return;
     if (entry.target.type === "tambon") {
       select(entry.target.id);
       return;
     }
-    setFound(entry);
+    setFound({ entry });
     setOpenPanel(null);
     // Once the box has closed, the place is brought inside the clear rectangle.
     window.requestAnimationFrame(() => map.current?.showPlace(placeOnMap(entry, languageRef.current), true));
   }, [select]);
+  /** A place link of "Known by now": the map shows the place inside the clear rectangle; time does not change. */
+  const showFeedPlace = useCallback((place: CommandFeedPlace) => {
+    if (place.lat === null || place.lon === null) return;
+    setFound({ place });
+    window.requestAnimationFrame(() => map.current?.showPlace(feedPlaceOnMap(place, languageRef.current), true));
+  }, []);
 
-  // --- Playback: one replay hour per beat of the chosen speed -------------------------------------------
+  // --- Playback: one replay hour per beat of the chosen speed. It pauses at the hour a life-at-risk item of the
+  // exercise arrives, unless the reader has switched that off.
   useEffect(() => {
     if (!playing) return;
-    const timer = window.setInterval(() => dispatch({ type: "tick" }), commandSpeed(speed).hourMs);
+    const timer = window.setInterval(() => dispatch({ type: "tick", pauseAt }), commandSpeed(speed).hourMs);
     return () => window.clearInterval(timer);
-  }, [playing, speed]);
+  }, [playing, speed, pauseAt]);
+
+  // --- The notice of new invented items: what a step forward brought. A jump back takes it away.
+  useEffect(() => {
+    const before = lastHour.current;
+    lastHour.current = hour;
+    if (before === null || hour === before) return;
+    const arrivals = hour > before ? exerciseArrivals(items, before, hour) : [];
+    const calls = arrivals.filter((item) => item.kind === "call").length;
+    setArrival(arrivals.length === 0
+      ? (current) => (hour < before || (current && current.hour > hour) ? null : current)
+      : { hour, ids: arrivals.map((item) => item.id), calls, reports: arrivals.length - calls, lifeAtRisk: arrivals.some((item) => item.urgency === "life_at_risk") });
+  }, [hour, items]);
+  useEffect(() => {
+    if (!arrival || !playing) return;
+    const timer = window.setTimeout(() => setArrival((current) => (current === arrival ? null : current)), ARRIVAL_NOTICE_MS);
+    return () => window.clearTimeout(timer);
+  }, [arrival, playing]);
+  const openArrival = useCallback(() => {
+    if (!arrival) return;
+    const item = mostUrgentItem(items.filter((entry) => arrival.ids.includes(entry.id)));
+    setArrival(null);
+    if (item) selectReport({ type: "exercise", id: item.id });
+  }, [arrival, items, selectReport]);
 
   // --- The hour in the address bar: the same `t` as on the Studio replay --------------------------------
   useEffect(() => {
@@ -355,7 +508,7 @@ export function MaeSaiCommandExercise({ initial }: {
         case "escape":
           // Escape closes what is open, then clears the selection, then leaves focus mode.
           if (openPanel && openPanel !== "card") setOpenPanel(null);
-          else if (selected || openPanel === "card") deselect();
+          else if (selected || selectedReport || openPanel === "card") deselect();
           else if (found) setFound(null);
           else if (focus) dispatch({ type: "focus", on: false });
           else return;
@@ -383,7 +536,7 @@ export function MaeSaiCommandExercise({ initial }: {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [ready, stops, openPanel, focus, selected, found, deselect]);
+  }, [ready, stops, openPanel, focus, selected, selectedReport, found, deselect]);
 
   // --- The clear rectangle: the part of the map no panel covers, measured when a fit or a popup asks -----
   const getClear = useCallback((): ScreenRect => {
@@ -406,17 +559,42 @@ export function MaeSaiCommandExercise({ initial }: {
   const onMapReady = useCallback(() => setMapReady(true), []);
 
   const basemapFallback = basemap === "street" && (tileIssue || !online);
+  // One line at a time: what failed, then an invented item that has just arrived, then the basemap note.
+  const arrivalNotice = arrival ? commandNewItemsNotice(arrival.calls, arrival.reports, arrival.lifeAtRisk && !playing && arrival.hour === hour && pauseOnLife, language) : null;
   const notice = handFailed
     ? commandText(COMMAND_MAP.waterError, language)
-    : mapReady && basemapFallback ? commandText(COMMAND_MAP.basemapFallback, language) : null;
+    : arrivalNotice ?? (mapReady && basemapFallback ? commandText(COMMAND_MAP.basemapFallback, language) : null);
+
+  // --- What the map draws of the reports, and the season envelope of hindsight mode ------------------------
+  const reportFrame = useMemo<CommandMarkerFrame | null>(() => (data ? { hour, mode, items, handling, device: deviceByTambon, noReports, selected: selectedReport } : null),
+    [data, hour, mode, items, handling, deviceByTambon, noReports, selectedReport]);
+  const envelopeLayer = useMemo<CommandEnvelopeLayer | null>(() => (mode === "hindsight" && envelope ? { cells: envelope.cells, credit: envelope.block.map_credit } : null), [mode, envelope]);
+  const tambonName = (id: string): Localized | null => model?.tambons.find((tambon) => tambon.id === id) ?? null;
+  // The modelled depth at the selected item's point, at this replay hour (model, low confidence; no current).
+  const itemDepth = selectedItem && manifest && hand
+    ? modelDepthAt({ codes: hand.codes, factorKeys: hand.factorKeys, width: manifest.hand.width, height: manifest.hand.height, bounds: manifest.bounds, step: manifest.hand.step_m, channelCode: manifest.hand.channel_code, neverCode: manifest.hand.never_code },
+      selectedItem.point.lat, selectedItem.point.lon, stageNow)
+    : handFailed ? null : undefined;
 
   const selectedRow = selected ? rowsNow?.find((row) => row.id === selected) ?? null : null;
-  const detailPanel = detail && selected ? (
+  const detailPanel = selectedItem && exerciseFile ? (
+    <CommandItemDetailBody language={language} hour={hour} item={selectedItem} handling={exerciseHandling(handling, selectedItem.id)} tambon={tambonName(selectedItem.tambonId)} depth={itemDepth} rule={exerciseFile.rule} />
+  ) : selectedDevice ? (
+    <CommandDeviceDetailBody language={language} tambon={selectedDevice} reports={deviceByTambon.get(selectedDevice.id) ?? []} />
+  ) : detail && selected ? (
     <CommandTambonDetailBody language={language} hour={hour} detail={detail} set={shelterSet} peak={peaks.records.get(selected) ?? null} peakStatus={peaks.status}
-      places={recordPlaces?.get(selected) ?? []} depths={manifest?.reported_depths ?? null} unlocated={model?.placeRecords.unlocated ?? 0}
+      places={placesNow?.get(selected) ?? []} depths={manifest?.reported_depths ?? null} unlocated={recordsNow.filter((report) => !report.point).length}
       cells={{ O1: cells.O1.get(selected) ?? null, SE1: cells.SE1.get(selected) ?? null }} facts={facts} />
   ) : null;
-  const knownPanel = <CommandKnownPlaceholder language={language} />;
+  const knownPanel = feedRows
+    ? <MaeSaiCommandFeed language={language} hour={hour} mode={mode} onMode={setMode} items={feedRows} tally={tally} depths={manifest?.reported_depths ?? null} onPlace={showFeedPlace} />
+    : <CommandKnownPlaceholder language={language} />;
+  const knownCount = feedRows?.length;
+  const chipLabel = selectedRow
+    ? commandDetailChip(selectedRow.th, language)
+    : selectedItem ? commandDetailChip(selectedItem.id, language)
+      : selectedDevice ? commandDetailChip(selectedDevice.th, language)
+        : knownCount === undefined ? commandText(COMMAND_INSPECTOR.chipKnown, language) : commandKnownCount(COMMAND_FEED.title, knownCount, language);
   const cardOpen = openPanel === "card" && !tablet;
   const openCard = (tab: CommandCardTab) => {
     setCardTab(tab);
@@ -424,7 +602,8 @@ export function MaeSaiCommandExercise({ initial }: {
   };
 
   return (
-    <main id="main-content" className={`command-page ${styles.page}`} data-command-exercise data-focus={focus ? "on" : "off"} data-hour={hour} data-selected={selected ?? undefined}
+    <main id="main-content" className={`command-page ${styles.page}`} data-command-exercise data-focus={focus ? "on" : "off"} data-hour={hour} data-mode={mode} data-selected={selected ?? undefined}
+      data-selected-report={selectedItem?.id ?? selectedDevice?.id ?? undefined}
       data-command-ready={mapReady && ready && (hand !== null || handFailed) ? "true" : "false"} lang={language}>
       <CommandBanner language={language} onInfo={() => setDialog("info")} infoOpen={dialog === "info"} />
       <div ref={stage} className={styles.stage}>
@@ -432,37 +611,37 @@ export function MaeSaiCommandExercise({ initial }: {
         <a className={styles.skipLink} href="#command-time">{commandText(COMMAND_NAV.skip, language)}</a>
         {data && (
           <MaeSaiCommandMap data={data} hand={hand} hour={hour} stage={stageNow} playing={playing} language={language} basemap={basemap} facilities={facilities} selected={selected}
+            reports={reportFrame} envelope={envelopeLayer} onReportAction={selectReport}
             getClear={getClear} reducedMotion={reducedMotion} onReady={onMapReady} onBasemapIssue={setTileIssue} onView={setView} handle={map} />
         )}
         <CommandWatermark />
-        <CommandCredits language={language} view={view} revision={manifest?.revision ?? null} />
+        <CommandCredits language={language} view={view} revision={manifest?.revision ?? null} layerCredit={envelopeLayer?.credit ?? null} />
         <div className={styles.left}>
-          <MaeSaiCommandSituation language={language} hour={hour} manifest={manifest} model={model} set={shelterSet} collapsed={focus} failed={load.status === "error"} onRetry={retry} />
+          <MaeSaiCommandSituation language={language} hour={hour} manifest={manifest} model={model} set={shelterSet} exercise={counts} tally={tally}
+            onRecords={() => { setCardTab("known"); setLeftTab("known"); setOpenPanel("card"); }} collapsed={focus} failed={load.status === "error"} onRetry={retry} />
           <MaeSaiCommandQueue language={language} rows={tableRows} selected={selected} onSelect={select} set={shelterSet} onSet={setShelterSet} setSites={setSites}
             orderBy={orderBy} onOrderBy={setOrderBy} canOrderByPlanning={canOrderByPlanning} positionFrom={positionFrom} onPositionFrom={setPositionFrom}
             pending={order?.pending ?? false} onHold={onHold} optionsOpen={optionsChoice ?? !compact} onOptions={setOptionsChoice}
             collapsed={focus} failed={load.status === "error"} layout={tablet ? "tablet" : "desktop"} tab={leftTab} onTab={setLeftTab}
-            detail={detailPanel ?? <CommandDetailEmpty language={language} />} known={knownPanel} />
+            detail={detailPanel ?? <CommandDetailEmpty language={language} />} known={knownPanel} knownCount={knownCount} />
         </div>
-        <CommandNotice message={notice} language={language} />
+        <CommandNotice message={notice} language={language} onSelect={!handFailed && arrivalNotice ? openArrival : undefined} />
         <CommandNav language={language} hour={hour} menuOpen={openPanel === "menu"} onMenu={(open) => setOpenPanel(open ? "menu" : null)}
           onLanguage={setLanguage} onHelp={() => setDialog("help")} basemap={basemap} onBasemap={switchBasemap} />
         {!tablet && (cardOpen
-          ? <MaeSaiCommandInspector language={language} tab={cardTab} onTab={setCardTab} onClose={deselect} detail={detailPanel} known={knownPanel} />
-          : (
-            <CommandCardChip language={language} label={selectedRow ? commandDetailChip(selectedRow.th, language) : commandText(COMMAND_INSPECTOR.chipKnown, language)}
-              onOpen={() => openCard(selectedRow ? "detail" : "known")} />
-          ))}
+          ? <MaeSaiCommandInspector language={language} tab={cardTab} onTab={setCardTab} onClose={deselect} detail={detailPanel} known={knownPanel} knownCount={knownCount} />
+          : <CommandCardChip language={language} label={chipLabel} onOpen={() => openCard(detailPanel ? "detail" : "known")} />)}
         <CommandToolRail language={language} focus={focus} basemap={basemap} nextFit={nextFit} viewOpen={openPanel === "view"} findOpen={openPanel === "find"} disabled={!mapReady}
           onView={() => toggle("view")} onBasemap={switchBasemap} onZoom={(delta) => map.current?.zoomBy(delta)} onFit={fit} onFind={() => toggle("find")} onFocus={() => dispatch({ type: "focus" })} />
         {openPanel === "view" && (
-          <CommandViewPopover language={language} facilities={facilities} facilityCount={data?.facilities.features.length ?? 0} onFacilities={setFacilities} onClose={() => setOpenPanel(null)} />
+          <CommandViewPopover language={language} facilities={facilities} facilityCount={data?.facilities.features.length ?? 0} onFacilities={setFacilities} onClose={() => setOpenPanel(null)}
+            exercise={exerciseFile ? { count: exerciseFile.items.length, items: itemsOn, onItems: setItemsOn, pause: pauseOnLife, onPause: setPauseOnLife } : undefined} />
         )}
         {openPanel === "find" && <MaeSaiCommandFind language={language} index={findIndex} onPick={pickPlace} onClose={() => setOpenPanel(null)} />}
-        <CommandLegend language={language} open={openPanel === "legend"} onToggle={(open) => setOpenPanel(open ? "legend" : null)} facilities={facilities} unmodelledRoads={unmodelledRoads} wetSites={wetSites} />
+        <CommandLegend language={language} open={openPanel === "legend"} onToggle={(open) => setOpenPanel(open ? "legend" : null)} facilities={facilities} unmodelledRoads={unmodelledRoads} wetSites={wetSites} mode={mode} />
         <div id="command-time" tabIndex={-1}>
           <MaeSaiCommandTimebar language={language} hour={hour} playing={playing} speed={speed} collapsed={focus} disabled={!ready} days={days} phases={phases} stops={stops}
-            rainfall={manifest?.rainfall ?? null} onDrag={onDrag}
+            rainfall={manifest?.rainfall ?? null} feed={feed} mode={mode} onMode={setMode} onDrag={onDrag}
             onTogglePlay={() => dispatch({ type: "toggle_play" })} onStep={(hours) => dispatch({ type: "step", hours })} onSeek={(next) => dispatch({ type: "seek", hour: next })}
             onEvent={(direction) => dispatch({ type: "event", direction, stops })} onSpeed={(next) => dispatch({ type: "speed", speed: next })} />
         </div>

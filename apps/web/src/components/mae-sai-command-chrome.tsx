@@ -10,7 +10,7 @@
  * replay data.
  */
 
-import { ChevronDown, ChevronUp, CircleHelp, Info, Layers, LocateFixed, Map as MapIcon, Maximize2, Menu, Minimize2, Minus, Plus, Scan, Search, X } from "lucide-react";
+import { ArrowRight, ChevronDown, ChevronUp, CircleHelp, Info, Layers, LocateFixed, Map as MapIcon, Maximize2, Menu, Minimize2, Minus, Plus, Scan, Search, X } from "lucide-react";
 import { useEffect, useId, useRef, type ReactNode, type Ref } from "react";
 
 import { formatDateWithYear, lowConfidenceRgba, rgbaCss, type Language, type Localized, type TimelineManifest } from "@/lib/flood-timeline";
@@ -37,11 +37,16 @@ import {
   commandSourceSpan,
   commandText,
 } from "@/lib/flood-timeline-command-copy";
+import type { CommandMode } from "@/lib/flood-timeline-command-feed";
+import { exerciseMarkerSpec } from "@/lib/flood-timeline-command-incidents";
+import { COMMAND_LEGEND_REPORTS, COMMAND_MARKERS, COMMAND_MODE, commandDeviceSign, commandWaitingShort } from "@/lib/flood-timeline-command-reports-copy";
 import { COMMAND_WATER_RGBA, commandScaleBar } from "@/lib/flood-timeline-command-map";
 import { studioReplayHref } from "@/lib/flood-timeline-command-replay";
 import { localizedText } from "@/lib/flood-timeline-copy";
 
 import type { CommandBasemap, CommandFitTarget, CommandMapView } from "./mae-sai-command-map";
+import { clusterMarkerNodes, EXERCISE_MARKER_VIEWBOX, exerciseMarkerNodes, MarkerGlyph, placeRecordMarkerNodes } from "./mae-sai-command-markers";
+import { ENVELOPE_SWATCH_BACKGROUND } from "./mae-sai-season-envelope";
 import styles from "./mae-sai-command-exercise.module.css";
 
 /** The address of this page while it is tried out; it moves to the Command root in a later change. */
@@ -313,12 +318,26 @@ export function CommandToolRail({ language, focus, basemap, nextFit, viewOpen, f
   );
 }
 
-/** The view popover: the Rescue preset (the only one built so far) and the key facilities, off until asked for. */
-export function CommandViewPopover({ language, facilities, facilityCount, onFacilities, onClose, popoverRef }: {
+/** What the view popover offers for the exercise: its invented items, and the pause when a life-at-risk item arrives. */
+export interface CommandExerciseOptions {
+  /** How many invented items the exercise file holds. */
+  count: number;
+  items: boolean;
+  onItems: (shown: boolean) => void;
+  pause: boolean;
+  onPause: (pause: boolean) => void;
+}
+
+/**
+ * The view popover: the Rescue preset (the only one built so far), the key facilities (off until asked for), and the
+ * options of the exercise.
+ */
+export function CommandViewPopover({ language, facilities, facilityCount, onFacilities, exercise, onClose, popoverRef }: {
   language: Language;
   facilities: boolean;
   facilityCount: number;
   onFacilities: (visible: boolean) => void;
+  exercise?: CommandExerciseOptions;
   onClose: () => void;
   popoverRef?: Ref<HTMLDivElement>;
 }) {
@@ -351,6 +370,21 @@ export function CommandViewPopover({ language, facilities, facilityCount, onFaci
           <small>{t(COMMAND_TOOLS.facilitiesNote)}</small>
         </label>
       </fieldset>
+      {exercise && (
+        <fieldset className={styles.choiceGroup} data-command-exercise-options>
+          <legend className={styles.choiceLegend}>{t(COMMAND_MODE.exercise)}</legend>
+          <label className={styles.choice} lang={language}>
+            <input type="checkbox" checked={exercise.items} onChange={(event) => exercise.onItems(event.currentTarget.checked)} data-command-items />
+            <span>{t(COMMAND_MODE.items)} ({exercise.count})</span>
+            <small>{t(COMMAND_MODE.itemsNote)}</small>
+          </label>
+          <label className={styles.choice} lang={language}>
+            <input type="checkbox" checked={exercise.pause} disabled={!exercise.items} onChange={(event) => exercise.onPause(event.currentTarget.checked)} data-command-pause />
+            <span>{t(COMMAND_MODE.pause)}</span>
+            <small>{t(COMMAND_MODE.pauseNote)}</small>
+          </label>
+        </fieldset>
+      )}
     </div>
   );
 }
@@ -361,11 +395,22 @@ const STAR_PATH = "M12 1.8l3.1 6.6 7.2.9-5.3 5 1.4 7.1L12 17.9l-6.4 3.5L7 14.3l-
 const LOW_STRIPE = rgbaCss(lowConfidenceRgba(COMMAND_WATER_RGBA.shallow, true));
 const LOW_WASH = rgbaCss(lowConfidenceRgba(COMMAND_WATER_RGBA.shallow, false));
 
-/** The legend chip, and the open legend: a grid of what the map draws so far. The two never show together. */
-export function CommandLegend({ language, open, onToggle, facilities, unmodelledRoads, wetSites, legendRef }: {
+/** The legend draws the markers a little closer than the map does, so their symbols stay readable at 30 px. */
+const LEGEND_ITEM_VIEWBOX = "-20 -20 40 40";
+const LEGEND_RECORD_VIEWBOX = "-16 -23 37 37";
+const glyph = (kind: "call" | "report", urgency: "life_at_risk" | "urgent" | "information", status: "new" | "assigned" | "done" = "new") =>
+  <MarkerGlyph nodes={exerciseMarkerNodes(exerciseMarkerSpec({ kind, urgency }, status))} viewBox={LEGEND_ITEM_VIEWBOX} size={30} />;
+
+/**
+ * The legend chip, and the open legend: the marker grammar as a grid, the water and road keys, and the places. The
+ * chip and the open legend never show together.
+ */
+export function CommandLegend({ language, open, onToggle, facilities, unmodelledRoads, wetSites, mode = "trainee", legendRef }: {
   language: Language;
   open: boolean;
   onToggle: (open: boolean) => void;
+  /** Trainee mode draws a shelter that is not yet reported as an outline; hindsight mode draws the season envelope. */
+  mode?: CommandMode;
   /** The key facilities are on the map. */
   facilities: boolean;
   /** The replay data holds road pieces outside the model. */
@@ -395,6 +440,7 @@ export function CommandLegend({ language, open, onToggle, facilities, unmodelled
         <li><i className={styles.swatch} style={{ background: rgbaCss(COMMAND_WATER_RGBA.deep) }} />{t(COMMAND_LEGEND.deep)}</li>
         <li><i className={styles.swatch} style={{ background: `repeating-linear-gradient(135deg, ${LOW_STRIPE} 0 2px, ${LOW_WASH} 2px 6px)` }} />{t(COMMAND_LEGEND.lowConfidence)}</li>
         <li><i className={styles.swatch} style={{ background: "#cdd2d0" }} />{t(COMMAND_LEGEND.veil)}</li>
+        {mode === "hindsight" && <li className={styles.legendSpan}><i className={styles.swatch} style={{ background: ENVELOPE_SWATCH_BACKGROUND, border: "1px solid #8fa1b4" }} />{t(COMMAND_MARKERS.envelope)}</li>}
       </ul>
       <h3>{t(COMMAND_LEGEND.roads)}</h3>
       <ul className={styles.legendGrid} lang={language}>
@@ -407,12 +453,36 @@ export function CommandLegend({ language, open, onToggle, facilities, unmodelled
       <ul className={`${styles.legendGrid} ${styles.legendWide}`} lang={language}>
         <li><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d={STAR_PATH} fill="#17616e" stroke="#ffffff" strokeWidth="1.5" strokeLinejoin="round" /></svg>{t(COMMAND_LEGEND.shelter)}</li>
         {wetSites && <li><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d={STAR_PATH} fill="#ffffff" stroke="#17616e" strokeWidth="1.7" strokeLinejoin="round" /><path d="M3.5 21 20.5 3" stroke="#12262d" strokeWidth="2.4" strokeLinecap="round" /></svg>{t(COMMAND_LEGEND.shelterWet)}</li>}
+        {mode === "trainee" && <li><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d={STAR_PATH} fill="#ffffff" stroke="#17616e" strokeWidth="1.5" strokeDasharray="2.6 2" strokeLinejoin="round" /></svg>{t(COMMAND_LEGEND_REPORTS.sitePending)}</li>}
         <li><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 2.5l9.5 9.5-9.5 9.5L2.5 12z" fill="#12262d" stroke="#ffffff" strokeWidth="1.6" strokeLinejoin="round" /></svg>{t(COMMAND_LEGEND.commandCentre)}</li>
         {facilities && <li><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="12" cy="12" r="6" fill="#ffffff" stroke="#12262d" strokeWidth="2" /></svg>{t(COMMAND_LEGEND.facility)}</li>}
         {facilities && <li><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="12" cy="12" r="7" fill="#2f86c4" stroke="#ffffff" strokeWidth="2" /></svg>{t(COMMAND_LEGEND.facilityWet)}</li>}
         <li><i className={styles.swatchLine} style={{ borderTopWidth: 1.5, borderTopStyle: "dashed", borderTopColor: "#5f6f73" }} />{t(COMMAND_LEGEND.boundary)}</li>
       </ul>
-      <p className={styles.legendNote} lang={language}>{t(COMMAND_LEGEND.note)}</p>
+      <h3>{t(COMMAND_LEGEND_REPORTS.records)}</h3>
+      <ul className={`${styles.legendGrid} ${styles.legendWide}`} lang={language} data-legend="records">
+        <li><MarkerGlyph nodes={placeRecordMarkerNodes(3, false)} viewBox={LEGEND_RECORD_VIEWBOX} size={30} />{t(COMMAND_LEGEND_REPORTS.bubble)}</li>
+        <li title={t(COMMAND_MARKERS.modelDryMeaning)}><MarkerGlyph nodes={placeRecordMarkerNodes(2, true)} viewBox={LEGEND_RECORD_VIEWBOX} size={30} />{t(COMMAND_MARKERS.modelDry)}</li>
+      </ul>
+      <h3>{t(COMMAND_LEGEND_REPORTS.exercise)}</h3>
+      <ul className={styles.legendGrid} lang={language} data-legend="exercise">
+        <li>{glyph("call", "life_at_risk")}{t(COMMAND_LEGEND_REPORTS.callLife)}</li>
+        <li>{glyph("call", "urgent")}{t(COMMAND_LEGEND_REPORTS.callUrgent)}</li>
+        <li>{glyph("call", "information")}{t(COMMAND_LEGEND_REPORTS.callInfo)}</li>
+        <li>{glyph("report", "information")}{t(COMMAND_LEGEND_REPORTS.report)}</li>
+        <li>{glyph("call", "urgent", "new")}{t(COMMAND_LEGEND_REPORTS.stateNew)}</li>
+        <li>{glyph("call", "urgent", "assigned")}{t(COMMAND_LEGEND_REPORTS.stateSolid)}</li>
+        <li>{glyph("call", "urgent", "done")}{t(COMMAND_LEGEND_REPORTS.stateClosed)}</li>
+        <li><span className={styles.legendPill} lang={language}>BOAT-2 · {commandWaitingShort(6, language)}</span>{t(COMMAND_LEGEND_REPORTS.waiting)}</li>
+      </ul>
+      <h3>{t(COMMAND_LEGEND_REPORTS.other)}</h3>
+      <ul className={`${styles.legendGrid} ${styles.legendWide}`} lang={language} data-legend="other">
+        <li><span className={styles.legendSign} lang={language}>{commandDeviceSign(2, language)}</span>{t(COMMAND_LEGEND_REPORTS.device)}</li>
+        <li title={t(COMMAND_MARKERS.noReportsMeaning)}><span className={styles.legendNoReports} lang={language}>{t(COMMAND_MARKERS.noReports)}</span>{t(COMMAND_LEGEND_REPORTS.noReports)}</li>
+        <li><MarkerGlyph nodes={clusterMarkerNodes(7, 2)} viewBox={EXERCISE_MARKER_VIEWBOX} size={30} />{t(COMMAND_LEGEND_REPORTS.cluster)}</li>
+        <li><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="rgb(18 38 45 / 4%)" stroke="#12262d" strokeWidth="1.2" strokeDasharray="3 3" /></svg>{t(COMMAND_MARKERS.tolerance)}</li>
+      </ul>
+      <p className={styles.legendNote} lang={language}>{t(COMMAND_LEGEND.note)} {t(COMMAND_LEGEND_REPORTS.urgencyRule)}</p>
     </div>
   );
 }
@@ -429,7 +499,13 @@ export function CommandWatermark({ tiles = 120 }: { tiles?: number }) {
 }
 
 /** Scale bar and map credits, above the time dock. The street map and the roads are OpenStreetMap data. */
-export function CommandCredits({ language, view, revision }: { language: Language; view: CommandMapView | null; revision: string | null }) {
+export function CommandCredits({ language, view, revision, layerCredit = null }: {
+  language: Language;
+  view: CommandMapView | null;
+  revision: string | null;
+  /** The short credit of a layer that is on the map only at times: the 2024 season envelope in hindsight mode. */
+  layerCredit?: string | null;
+}) {
   const bar = view ? commandScaleBar(view.metresPerPixel, 110) : null;
   return (
     <div className={styles.credits} data-command-credits aria-label={pick(COMMAND_MAP.credits, language)} role="group" lang={language}>
@@ -439,14 +515,23 @@ export function CommandCredits({ language, view, revision }: { language: Languag
           <i className={styles.scaleBar} style={{ width: Math.round(bar.pixels) }} />
         </span>
       )}
-      <span className={styles.creditText}>{COMMAND_CREDITS.osm} · {COMMAND_CREDITS.terrain}{revision ? ` · ${commandDataTag(revision, language)}` : ""}</span>
+      <span className={styles.creditText}>{COMMAND_CREDITS.osm} · {COMMAND_CREDITS.terrain}{layerCredit ? ` · ${layerCredit}` : ""}{revision ? ` · ${commandDataTag(revision, language)}` : ""}</span>
     </div>
   );
 }
 
 // --- I. Notice ---------------------------------------------------------------------------------------------
 
-/** One line at the top centre of the map. It says what the page did or could not do; it is never a warning. */
-export function CommandNotice({ message, language }: { message: string | null; language: Language }) {
-  return <div role="status" data-region="I" lang={language}>{message && <p className={styles.notice} data-command-notice>{message}</p>}</div>;
+/**
+ * One line at the top centre of the map. It says what the page did or could not do, or that an invented item of the
+ * exercise has arrived; it is never a warning. With `onSelect` the line is a button that shows what it names.
+ */
+export function CommandNotice({ message, language, onSelect }: { message: string | null; language: Language; onSelect?: () => void }) {
+  return (
+    <div role="status" data-region="I" lang={language}>
+      {message && (onSelect
+        ? <button type="button" className={styles.notice} onClick={onSelect} data-command-notice="action">{message}<ArrowRight size={14} aria-hidden="true" style={{ marginLeft: 8, marginRight: 0 }} /></button>
+        : <p className={styles.notice} data-command-notice>{message}</p>)}
+    </div>
+  );
 }

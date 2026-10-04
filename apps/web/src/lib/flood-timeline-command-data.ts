@@ -1,8 +1,9 @@
 /**
  * Loads the replay files of the Command exercise replay (Mae Sai, September 2024) in the browser: the manifest, the
  * three vector files, the access node file and the terrain raster the water is painted from. The same r4 files as the
- * Studio replay, read with the same decoders. Also the two optional planning overlays of the table's plan group and
- * the per-subdistrict summary of the export pack. This module uses `fetch` and, as a fallback decoder, a canvas.
+ * Studio replay, read with the same decoders. Also the two optional planning overlays of the table's plan group, the
+ * per-subdistrict summary of the export pack, the file of invented exercise items and the raster of the 2024 season
+ * envelope. This module uses `fetch` and, as a fallback decoder, a canvas.
  */
 
 import {
@@ -22,9 +23,11 @@ import {
   type PngRaster,
   type PointGeometry,
   type RoadProps,
+  type SeasonEnvelopeBlock,
   type TambonProps,
   type TimelineManifest,
 } from "./flood-timeline";
+import { EXERCISE_FILE_URL, parseExerciseFile, type ExerciseFile } from "./flood-timeline-command-incidents";
 import {
   COMMAND_OVERLAY_HREFS,
   COMMAND_PLANNING_CASES,
@@ -34,6 +37,7 @@ import {
   type CommandOverlays,
   type CommandPeakRecord,
 } from "./flood-timeline-command-table";
+import { envelopeCells, shippableEnvelope } from "./flood-timeline-envelope";
 import { parseAccessNodes, type AccessNodes } from "./flood-timeline-evacuation";
 
 /** The files the page cannot draw anything without. */
@@ -131,6 +135,40 @@ export async function loadCommandPeakSummary(manifest: Pick<TimelineManifest, "e
   const file = manifest.exports?.files.find((item) => item.id === "tambon_replay_summary");
   if (!file) return new Map();
   return parsePeakSummary(await fetchJson<unknown>(file.href, signal));
+}
+
+/**
+ * The invented items of the exercise. The file is optional: one that is missing, or that the parser refuses (an item
+ * without the "EX-" id, a phone number, an urgency that does not follow from its stated facts), shows no item at all.
+ */
+export async function loadCommandExercise(signal: AbortSignal): Promise<ExerciseFile | null> {
+  try {
+    const response = await fetch(EXERCISE_FILE_URL, { signal });
+    if (!response.ok) return null;
+    return parseExerciseFile(await response.json());
+  } catch {
+    return null;
+  }
+}
+
+/** The 2024 season envelope for hindsight mode: its block of the manifest (label, credit, licence) and its cells on the water grid. */
+export interface CommandEnvelope { block: SeasonEnvelopeBlock; cells: Uint32Array }
+
+/**
+ * The season envelope (UNOSAT and GISTDA product 4009), a scenario layer. It is used only when the manifest ships it
+ * with its label, caption, licence and credit, and its raster is on the replay's water grid; anything else gives null
+ * and hindsight mode then has no envelope.
+ */
+export async function loadCommandEnvelope(manifest: TimelineManifest, signal: AbortSignal): Promise<CommandEnvelope | null> {
+  const block = shippableEnvelope(manifest);
+  if (!block) return null;
+  try {
+    const bytes = await fetchBytes(block.files.raster.href, signal);
+    const raster = typeof DecompressionStream === "function" ? await decodePng(bytes, inflateZlib) : await decodeWithCanvas(bytes);
+    return { block, cells: envelopeCells(raster, manifest.hand.width, manifest.hand.height) };
+  } catch {
+    return null;
+  }
 }
 
 /** The terrain raster of the water layer. It loads on its own: the figures and the roads do not wait for it. */

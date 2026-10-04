@@ -1,8 +1,9 @@
 "use client";
 
 /**
- * Region D of the Command exercise replay: the right card, with two tabs. "Detail" is the inspector of the selected
- * subdistrict; "Known by now" will list what had been reported or observed by the replay hour (not built yet).
+ * Region D of the Command exercise replay: the right card, with two tabs. "Detail" is the inspector of what is
+ * selected (a subdistrict here; an invented item or a device sign in `mae-sai-command-incident`); "Known by now" lists
+ * what had been reported or observed by the replay hour (`mae-sai-command-feed`).
  *
  * The inspector keeps the two kinds of figure apart, as the table does (decision D7). Its top half follows the replay
  * hour: model figures of the subdistrict, low confidence, with the summary at the modelled peak and the place records
@@ -38,6 +39,7 @@ import {
   commandText,
   commandUnlocatedRecords,
 } from "@/lib/flood-timeline-command-copy";
+import { commandKnownCount } from "@/lib/flood-timeline-command-reports-copy";
 import {
   COMMAND_PLANNING_CASES,
   type CommandPeakRecord,
@@ -241,7 +243,7 @@ export function CommandTambonDetailBody({ language, hour, detail, set, peak, pea
   );
 }
 
-/** What the "Known by now" tab says until its list is built. */
+/** What the "Known by now" tab says until the replay data has loaded. */
 export function CommandKnownPlaceholder({ language }: { language: Language }) {
   return (
     <div className={styles.placeholder} lang={language} data-command-known>
@@ -262,10 +264,12 @@ export function CommandDetailEmpty({ language }: { language: Language }) {
 }
 
 /** Region D: the right card of a desktop, left of the tool rail. The legend and this card are never open together. */
-export function MaeSaiCommandInspector({ language, tab, onTab, onClose, detail, known }: {
+export function MaeSaiCommandInspector({ language, tab, onTab, onClose, detail, known, knownCount }: {
   language: Language;
   tab: CommandCardTab;
   onTab: (tab: CommandCardTab) => void;
+  /** How many rows "Known by now" holds at this replay hour: printed on its tab. */
+  knownCount?: number;
   /** Closes the card and clears the selection. */
   onClose: () => void;
   /** The inspector of the selected subdistrict; null while nothing is selected. */
@@ -280,14 +284,17 @@ export function MaeSaiCommandInspector({ language, tab, onTab, onClose, detail, 
       <div className={styles.cardHead}>
         <div className={styles.cardTabs} role="tablist" aria-label={t(COMMAND_INSPECTOR.label)}>
           {COMMAND_CARD_TABS.map((id) => (
-            <button key={id} type="button" role="tab" aria-selected={id === tab} aria-controls={panel} onClick={() => onTab(id)} data-command-card-tab={id}>{t(label[id])}</button>
+            <button key={id} type="button" role="tab" aria-selected={id === tab} aria-controls={panel} onClick={() => onTab(id)} data-command-card-tab={id}>
+              {id === "known" && knownCount !== undefined ? commandKnownCount(label[id], knownCount, language) : t(label[id])}
+            </button>
           ))}
         </div>
         <button type="button" className={exercise.closeButton} onClick={onClose} aria-label={t(detail ? COMMAND_INSPECTOR.deselect : COMMAND_INSPECTOR.close)} title={t(detail ? COMMAND_INSPECTOR.deselect : COMMAND_INSPECTOR.close)} data-command-card-close>
           <X size={18} aria-hidden="true" />
         </button>
       </div>
-      <div id={panel} className={styles.cardBody} role="tabpanel" tabIndex={0} data-tab={tab}>
+      {/* The list of "Known by now" scrolls on its own, under its fixed first lines. */}
+      <div id={panel} className={styles.cardBody} role="tabpanel" tabIndex={tab === "detail" ? 0 : undefined} data-tab={tab}>
         {tab === "detail" ? detail ?? <CommandDetailEmpty language={language} /> : known}
       </div>
     </aside>

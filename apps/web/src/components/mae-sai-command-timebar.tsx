@@ -2,14 +2,16 @@
 
 /**
  * Region F of the Command exercise replay: the time dock. From the left: previous event, play or pause, next event,
- * minus and plus one hour and the three speeds; then the eleven day chips over the track. The track carries the
- * phase band with the phase names printed in it and, on a desktop, the hourly rain of the two gauges (observed).
- * Everything right of the playhead is hatched: it is not yet known at this replay hour.
- * In focus mode the dock is one line: play, the replay time and a plain slider.
+ * minus and plus one hour and the three speeds, with the switch between trainee and hindsight mode under them; then
+ * the eleven day chips over the track. The track has three thin rows: the event marks (filled for what was reported
+ * or observed, hollow for an event of the model; marks closer than 6 px merge into one with a count), the phase band
+ * with the phase names printed in it and, on a desktop, the hourly rain of the two gauges (observed).
+ * In trainee mode everything right of the playhead is hatched and holds no mark: it is not yet known at this replay
+ * hour. In focus mode the dock is one line: play, the replay time and a plain slider.
  */
 
 import { Pause, Play, RotateCcw, SkipBack, SkipForward } from "lucide-react";
-import { memo } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 
 import type { Language, Localized, Rainfall } from "@/lib/flood-timeline";
 import { clampCommandHour, COMMAND_LAST_HOUR } from "@/lib/flood-timeline-command";
@@ -22,6 +24,8 @@ import {
   commandSliderText,
   commandText,
 } from "@/lib/flood-timeline-command-copy";
+import { feedEventMarks, type CommandFeedItem, type CommandMode } from "@/lib/flood-timeline-command-feed";
+import { COMMAND_FEED } from "@/lib/flood-timeline-command-reports-copy";
 import {
   COMMAND_SPEEDS,
   commandDayIndex,
@@ -34,7 +38,11 @@ import {
   type CommandSpeedId,
 } from "@/lib/flood-timeline-command-replay";
 
+import { CommandModeSwitch } from "./mae-sai-command-feed";
 import styles from "./mae-sai-command-exercise.module.css";
+
+/** The width of the track the marks are laid out for until it has been measured (the desktop design size). */
+const DEFAULT_TRACK_PX = 940;
 
 /** A phase of the band with the label of the replay data. */
 export interface CommandPhaseBandItem extends CommandPhaseSpan { label: Localized }
@@ -54,7 +62,7 @@ const RainRow = memo(function RainRow({ rainfall }: { rainfall: Pick<Rainfall, "
   );
 });
 
-export function MaeSaiCommandTimebar({ language, hour, playing, speed, collapsed = false, disabled = false, days, phases, stops, rainfall, onTogglePlay, onStep, onSeek, onEvent, onSpeed, onDrag }: {
+export function MaeSaiCommandTimebar({ language, hour, playing, speed, collapsed = false, disabled = false, days, phases, stops, rainfall, feed = null, mode = "trainee", onMode, onTogglePlay, onStep, onSeek, onEvent, onSpeed, onDrag }: {
   language: Language;
   /** Whole replay hour, 0 … 264. */
   hour: number;
@@ -69,6 +77,11 @@ export function MaeSaiCommandTimebar({ language, hour, playing, speed, collapsed
   stops: readonly CommandEventStop[];
   /** Observed hourly rain of the gauges; null hides the row. */
   rainfall: Pick<Rainfall, "stations" | "hourly_mm"> | null;
+  /** The rows of "Known by now" for the whole replay: each one with a time is a mark on the track. */
+  feed?: readonly CommandFeedItem[] | null;
+  /** Trainee mode hides what lies after the replay hour; hindsight shows everything. */
+  mode?: CommandMode;
+  onMode?: (mode: CommandMode) => void;
   onTogglePlay: () => void;
   onStep: (hours: number) => void;
   onSeek: (hour: number) => void;
@@ -86,6 +99,21 @@ export function MaeSaiCommandTimebar({ language, hour, playing, speed, collapsed
   const activeDay = commandDayIndex(at, days.length);
   const speedIndex = COMMAND_SPEEDS.findIndex((item) => item.id === speed);
   const nextSpeed = COMMAND_SPEEDS[(speedIndex + 1) % COMMAND_SPEEDS.length].id;
+  const hindsight = mode === "hindsight";
+  // The marks merge by their distance on screen, so the track is measured.
+  const track = useRef<HTMLDivElement | null>(null);
+  const [trackWidth, setTrackWidth] = useState(DEFAULT_TRACK_PX);
+  useEffect(() => {
+    const element = track.current;
+    if (!element || typeof ResizeObserver !== "function") return;
+    const observer = new ResizeObserver(([entry]) => {
+      const width = Math.round(entry.contentRect.width);
+      if (width > 0) setTrackWidth(width);
+    });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+  const marks = feed ? feedEventMarks(feed, trackWidth / COMMAND_LAST_HOUR, { upTo: hindsight ? COMMAND_LAST_HOUR : at }) : [];
   // A drag ends wherever the pointer is let go, so the end is heard on the window.
   const startDrag = () => {
     if (!onDrag) return;
@@ -136,7 +164,12 @@ export function MaeSaiCommandTimebar({ language, hour, playing, speed, collapsed
         <button type="button" className={`${styles.ctl} ${styles.speedCycle}`} onClick={() => onSpeed(nextSpeed)} aria-label={`${t(COMMAND_TIMEBAR.speed)}: ${t(COMMAND_SPEED_COPY[speed].meaning)}`} title={t(COMMAND_SPEED_COPY[speed].meaning)}>
           {t(COMMAND_SPEED_COPY[speed].short)}
         </button>
-        <p className={styles.speedNote}>{t(COMMAND_SPEED_COPY[speed].meaning)}</p>
+        {/* Under the buttons: the switch between the two modes. The speed in words is the name of each speed button. */}
+        <div className={styles.modeRow}>
+          {onMode
+            ? <CommandModeSwitch language={language} mode={mode} onMode={onMode} />
+            : <p className={styles.speedNote}>{t(COMMAND_SPEED_COPY[speed].meaning)}</p>}
+        </div>
       </div>
 
       <div className={styles.timeline}>
@@ -148,7 +181,15 @@ export function MaeSaiCommandTimebar({ language, hour, playing, speed, collapsed
             </button>
           ))}
         </div>
-        <div className={styles.track}>
+        <div ref={track} className={styles.track} data-mode={mode}>
+          {/* Marks are read, not pressed: the event buttons and the keys [ and ] reach them. */}
+          <div className={styles.marks} role="img" aria-label={t(COMMAND_FEED.marks)} data-command-marks={marks.length}>
+            {marks.map((mark) => (
+              <i key={mark.firstHour} style={{ left: pct(commandHourShare(mark.hour)) }} data-filled={mark.filled ? "true" : "false"} data-count={mark.count} data-hour={mark.firstHour}>
+                {mark.count > 1 ? mark.count : null}
+              </i>
+            ))}
+          </div>
           <div className={styles.phaseBand} role="img" aria-label={`${t(COMMAND_TIMEBAR.phases)}: ${phases.map((phase) => commandText(phase.label, language)).join(", ")}`}>
             {phases.map((phase) => (
               <span key={phase.id} className={styles.phase} data-phase={phase.id} style={{ width: pct((phase.to - phase.from) / COMMAND_LAST_HOUR) }} lang={language}>
@@ -159,12 +200,13 @@ export function MaeSaiCommandTimebar({ language, hour, playing, speed, collapsed
           </div>
           {rainfall && (
             <div className={styles.rain} role="img" aria-label={t(COMMAND_TIMEBAR.rain)}>
-              <RainRow rainfall={rainfall} />
+              {/* In trainee mode the rain of later hours is not drawn. */}
+              <div className={styles.rainBars} style={hindsight ? undefined : { clipPath: `inset(0 ${pct(1 - share)} 0 0)` }}><RainRow rainfall={rainfall} /></div>
               <span className={styles.rainLabel} aria-hidden="true">{t(COMMAND_TIMEBAR.rainShort)}</span>
             </div>
           )}
           <div className={styles.line} aria-hidden="true"><i style={{ width: pct(share) }} /></div>
-          {!atEnd && <div className={styles.future} style={{ left: pct(share) }} data-command-future><span>{t(COMMAND_TIMEBAR.notYetKnown)}</span></div>}
+          {!atEnd && !hindsight && <div className={styles.future} style={{ left: pct(share) }} data-command-future><span>{t(COMMAND_TIMEBAR.notYetKnown)}</span></div>}
           <div className={styles.playhead} style={{ left: pct(share) }} aria-hidden="true" />
           <input type="range" className={styles.range} min={0} max={COMMAND_LAST_HOUR} step={1} value={at} disabled={disabled}
             onChange={(event) => onSeek(Number(event.currentTarget.value))} onPointerDown={startDrag}

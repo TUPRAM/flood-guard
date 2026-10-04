@@ -4,7 +4,9 @@
  * The map of the Command exercise replay (Mae Sai, September 2024): a pale full-screen Leaflet map under the page's
  * floating panels. It draws the modelled water of the replay hour in two tones of one blue (hatched where confidence
  * is lowest), a grey veil outside the eight subdistricts, the roads in four line styles, the subdistrict outlines with
- * their Thai-first names, the shelters reported in use in 2024 and the district command centre.
+ * their Thai-first names, the shelters reported in use in 2024 and the district command centre, and the reports: the
+ * 2024 place records, the invented items of the exercise and the sign of the reports saved on this device. In
+ * hindsight mode it also draws the 2024 season envelope, a scenario layer that is not an observation for any replay hour.
  *
  * Everything that follows the replay hour is a T1 scenario (model) with low confidence. The map moves only when the
  * reader asks: every fit, zoom and popup stays inside the clear rectangle the page measures between its panels.
@@ -16,6 +18,8 @@ import { useEffect, useImperativeHandle, useRef, useState, type Ref } from "reac
 import { FACTOR_LUT_SIZE, facilityWet, formatDateWithYear, lutEquals, paintDepth, paintLowConfidence, projectToFrame, type FacilityProps, type Language, type ReportedShelter, type RoadProps } from "@/lib/flood-timeline";
 import { COMMAND_CREDITS, COMMAND_FIGURES, COMMAND_MAP, commandFacilityType, commandText } from "@/lib/flood-timeline-command-copy";
 import type { CommandHandRaster, CommandReplayData } from "@/lib/flood-timeline-command-data";
+import { reportedSiteHour } from "@/lib/flood-timeline-command-feed";
+import { CLUSTER_BELOW_ZOOM, modelDepthAt } from "@/lib/flood-timeline-command-incidents";
 import {
   areaBounds,
   areaLabelPoint,
@@ -32,10 +36,13 @@ import {
   type CommandRoadStyle,
   type LatLngBox,
 } from "@/lib/flood-timeline-command-map";
+import { COMMAND_MARKERS } from "@/lib/flood-timeline-command-reports-copy";
 import type { CommandFindTarget } from "@/lib/flood-timeline-command-table";
+import { envelopeHatch, paintEnvelope } from "@/lib/flood-timeline-envelope";
 import { countedInReportedSet, reportedSiteRole } from "@/lib/flood-timeline-evacuation";
-import { clearRectPadding, popupFitInRect, type ScreenRect } from "@/lib/flood-timeline-layout";
+import { clearRectPadding, panIntoRect, popupFitInRect, type ScreenRect } from "@/lib/flood-timeline-layout";
 
+import { mountCommandMarkers, type CommandMarkerFrame, type CommandReportAction, type CommandReportSelection } from "./mae-sai-command-markers";
 import { createCanvasOverlay, keyboardPopups, MAP_POPUP_FRAME_CLASS, popupElement, tooltipElement, type PopupLine } from "./mae-sai-map-kit";
 import styles from "./mae-sai-command-exercise.module.css";
 
@@ -68,7 +75,12 @@ export interface CommandMapHandle {
   fitTambon: (id: string) => void;
   /** Mark a found place and, when asked, bring it inside the clear rectangle; null takes the mark away. */
   showPlace: (place: CommandMapPlace | null, fit?: boolean) => void;
+  /** Bring a selected report inside the clear rectangle, so it is never under a panel. */
+  focusReport: (selection: CommandReportSelection) => void;
 }
+
+/** The 2024 season envelope as the map draws it in hindsight mode: its cells on the water grid, and its short credit. */
+export interface CommandEnvelopeLayer { cells: Uint32Array; credit: string }
 
 /** The scale of the map as the page prints it under the scale bar. */
 export interface CommandMapView { metresPerPixel: number; zoom: number }
@@ -79,6 +91,8 @@ interface MapController {
   setSelected: (id: string | null) => void;
   setBasemap: (basemap: CommandBasemap, fallback: boolean) => void;
   setFacilities: (visible: boolean) => void;
+  setReports: (frame: CommandMarkerFrame) => void;
+  setEnvelope: (envelope: CommandEnvelopeLayer | null) => void;
   refreshText: () => void;
 }
 interface RoadEntry { layer: Path; props: RoadProps; style: CommandRoadStyle }
@@ -112,6 +126,8 @@ const DIAMOND_PATH = "M12 2.5l9.5 9.5-9.5 9.5L2.5 12z";
 const STAR_ICON = `<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path d="${STAR_PATH}"/></svg>`;
 /** A reported shelter whose mapped point is in modelled water at this hour: a hollow star struck through. */
 const STAR_WET_ICON = `<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path d="${STAR_PATH}"/><path data-part="slash" d="M3.5 21 20.5 3"/></svg>`;
+/** In trainee mode, a shelter no source has reported yet at the replay hour: a dashed outline of the star. */
+const STAR_PENDING_ICON = `<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path d="${STAR_PATH}"/></svg>`;
 const DIAMOND_ICON = `<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="${DIAMOND_PATH}"/></svg>`;
 
 /** "15 Sep 2024", or "15 Sep 2024 or earlier" for a bound; the text itself when it is not a date. */
@@ -137,7 +153,7 @@ function placeLabel(thai: string, roman: string): HTMLElement {
   return root;
 }
 
-export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, basemap, facilities, selected = null, getClear, reducedMotion, onReady, onBasemapIssue, onView, handle }: {
+export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, basemap, facilities, selected = null, reports = null, envelope = null, getClear, reducedMotion, onReady, onBasemapIssue, onView, onReportAction, handle }: {
   data: CommandReplayData;
   /** The terrain raster of the water layer; null until it has loaded (the roads and the figures do not wait for it). */
   hand: CommandHandRaster | null;
@@ -151,6 +167,10 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
   facilities: boolean;
   /** The subdistrict selected in the table: it is outlined on the map. */
   selected?: string | null;
+  /** The reports on the map at this replay hour: place records, invented items and the signs of this device; null until they are known. */
+  reports?: CommandMarkerFrame | null;
+  /** The 2024 season envelope (a scenario layer): drawn in hindsight mode only, so null in trainee mode. */
+  envelope?: CommandEnvelopeLayer | null;
   /** The clear rectangle between the page's panels, in the map's own pixels, measured when it is asked for. */
   getClear: () => ScreenRect;
   reducedMotion: boolean;
@@ -158,6 +178,8 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
   /** True while the street tiles fail to load: the terrain shading is shown in their place. */
   onBasemapIssue?: (issue: boolean) => void;
   onView?: (view: CommandMapView) => void;
+  /** "Assign" or "Details" was pressed in the popup of an invented item or of a device sign. */
+  onReportAction?: (selection: CommandReportSelection, action: CommandReportAction) => void;
   handle?: Ref<CommandMapHandle>;
 }) {
   const element = useRef<HTMLDivElement | null>(null);
@@ -168,18 +190,19 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
   const languageRef = useRef(language);
   const clearRef = useRef(getClear);
   const motionRef = useRef(reducedMotion);
-  const callbacks = useRef({ onReady, onBasemapIssue, onView });
+  const callbacks = useRef({ onReady, onBasemapIssue, onView, onReportAction });
   useEffect(() => {
     languageRef.current = language;
     clearRef.current = getClear;
     motionRef.current = reducedMotion;
-    callbacks.current = { onReady, onBasemapIssue, onView };
+    callbacks.current = { onReady, onBasemapIssue, onView, onReportAction };
   });
   useImperativeHandle(handle, () => ({
     zoomBy: (delta) => mapHandle.current?.zoomBy(delta),
     fit: (target) => mapHandle.current?.fit(target),
     fitTambon: (id) => mapHandle.current?.fitTambon(id),
     showPlace: (place, fit) => mapHandle.current?.showPlace(place, fit),
+    focusReport: (selection) => mapHandle.current?.focusReport(selection),
   }), []);
 
   // --- Mount -------------------------------------------------------------------------------------------
@@ -189,6 +212,7 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
     let mounted: LeafletMap | null = null;
     let resizeObserver: ResizeObserver | undefined;
     let removeMapKeys: (() => void) | undefined;
+    let removeMarkers: (() => void) | undefined;
 
     async function mount() {
       const L = await import("leaflet");
@@ -224,7 +248,7 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
       map.setMinZoom(Math.max(8, map.getZoom() - 1.5));
 
       for (const [name, zIndex] of [
-        ["fg-imagery", 250], ["fg-water", 350], ["fg-veil", 370], ["fg-tambons", 380], ["fg-highlight", 390], ["fg-roads", 400],
+        ["fg-imagery", 250], ["fg-water", 350], ["fg-envelope", 352], ["fg-veil", 370], ["fg-tambons", 380], ["fg-highlight", 390], ["fg-roads", 400],
         ["fg-selection", 430], ["fg-labels", 440], ["fg-facilities", 450], ["fg-shelters", 460], ["fg-reported-depths", 462],
       ] as const) {
         const pane = map.createPane(name);
@@ -349,10 +373,10 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
         interactive: false,
         style: () => ({ color: "#5f6f73", weight: 1.2, opacity: 0.9, dashArray: "6 5", fill: false }),
       } as GeoJSONOptions & { renderer: Renderer }).addTo(map);
-      for (const feature of data.tambons.features) {
-        const point = areaLabelPoint(feature.geometry);
+      const labelPoints = data.tambons.features.map((feature) => ({ ...feature.properties, point: areaLabelPoint(feature.geometry) }));
+      for (const { th, en, point } of labelPoints) {
         if (!point) continue;
-        L.marker([point[1], point[0]], { pane: "fg-labels", icon: labelIcon(placeLabel(feature.properties.th, feature.properties.en)), interactive: false, keyboard: false }).addTo(map);
+        L.marker([point[1], point[0]], { pane: "fg-labels", icon: labelIcon(placeLabel(th, en)), interactive: false, keyboard: false }).addTo(map);
       }
 
       // --- Roads: one canvas, restyled piece by piece when the modelled state changes.
@@ -408,7 +432,10 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
       map.on("popupclose", () => { openPopups = Math.max(0, openPopups - 1); });
       const { keyboardPopup, remove } = keyboardPopups(map, () => openPopups > 0);
       removeMapKeys = remove;
-      const siteMarkers: { marker: Marker; site: ReportedShelter; command: boolean; wet: boolean }[] = [];
+      // In trainee mode a site is known from the day of its first dated 2024 source: before it a shelter is a dashed
+      // outline and the command centre is not on the map.
+      const siteMarkers: { marker: Marker; site: ReportedShelter; command: boolean; wet: boolean; fromHour: number | null; pending: boolean }[] = [];
+      const sitePending = (site: ReportedShelter) => siteMarkers.find((entry) => entry.site === site)?.pending ?? false;
       const siteTitle = (site: ReportedShelter, command: boolean) => `${text(command ? COMMAND_MAP.commandCentre : COMMAND_MAP.shelter)}: ${thai() ? site.name_th : site.name_en}`;
       const sitePopup = (site: ReportedShelter, command: boolean) => {
         const lang = languageRef.current;
@@ -418,6 +445,7 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
         const lines: PopupLine[] = [
           { text: site.name_th, tone: "title", lang: "th" },
           { text: site.name_en, tone: "muted", lang: "en" },
+          ...(sitePending(site) ? [{ text: text(COMMAND_MARKERS.siteNotYet), tone: "alert" as const }] : []),
           { text: `${text(command ? COMMAND_MAP.commandCentre : COMMAND_MAP.shelter)} · ${text(COMMAND_MAP.reported)}` },
           { text: `${text(COMMAND_MAP.firstUse)}: ${firstUseText(site.first_use, lang)}`, tone: "muted" },
           ...(command ? [] : [occupancy
@@ -430,9 +458,12 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
         ];
         return popupElement(lines, site.sources.map((source) => ({ href: source.url, text: `${source.publisher}, ${source.date}: ${source.title}` })));
       };
-      const siteIcon = (command: boolean, wet: boolean) => (command
+      const siteIcon = (command: boolean, wet: boolean, pending = false) => (command
         ? L.divIcon({ className: styles.commandIcon, html: DIAMOND_ICON, iconSize: [44, 44], iconAnchor: [22, 22], popupAnchor: [0, -10] })
-        : L.divIcon({ className: `${styles.shelterIcon}${wet ? ` ${styles.shelterIconWet}` : ""}`, html: wet ? STAR_WET_ICON : STAR_ICON, iconSize: [44, 44], iconAnchor: [22, 22], popupAnchor: [0, -11] }));
+        : L.divIcon({
+          className: `${styles.shelterIcon}${pending ? ` ${styles.shelterIconPending}` : wet ? ` ${styles.shelterIconWet}` : ""}`,
+          html: pending ? STAR_PENDING_ICON : wet ? STAR_WET_ICON : STAR_ICON, iconSize: [44, 44], iconAnchor: [22, 22], popupAnchor: [0, -11],
+        }));
       const labelSite = (entry: (typeof siteMarkers)[number]) => entry.marker.getElement()?.setAttribute("aria-label", siteTitle(entry.site, entry.command));
       for (const site of m.shelters?.reported ?? []) {
         if (site.lat === null || site.lon === null) continue;
@@ -446,7 +477,7 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
         keyboardPopup(marker);
         marker.bindTooltip(() => tooltipElement([[siteTitle(site, command), "title"], [text(COMMAND_MAP.select), "muted"]]), { direction: "top", offset: [0, -12] });
         tooltipLayers.push(marker);
-        const entry = { marker, site, command, wet: false };
+        const entry = { marker, site, command, wet: false, fromHour: reportedSiteHour(site), pending: false };
         marker.on("add", () => labelSite(entry));
         marker.addTo(map);
         siteMarkers.push(entry);
@@ -461,8 +492,80 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
       };
       refreshText();
 
-      // --- The selected subdistrict: a dark outline over a white casing, above the roads and under the names.
+      // --- The selected subdistrict, a found place and the tolerance of a report share one layer above the roads.
       const selectionRenderer = L.svg({ pane: "fg-selection", padding: 0.6 });
+
+      // --- The reports: place records, invented items of the exercise, and the signs of this device.
+      const depthAt = (lat: number, lon: number): number | null | undefined => {
+        const raster = applied?.hand;
+        if (!raster) return undefined;
+        return modelDepthAt({ codes: raster.codes, factorKeys: raster.factorKeys, width: m.hand.width, height: m.hand.height, bounds: m.bounds, step: m.hand.step_m, channelCode: m.hand.channel_code, neverCode: m.hand.never_code }, lat, lon, applied?.stage ?? 0);
+      };
+      const markerLayer = mountCommandMarkers({
+        L, map, manifest: m, tambons: labelPoints,
+        language: () => languageRef.current,
+        popupFit: (width) => popupFitInRect(clearRef.current(), size(), width),
+        keyboardPopup,
+        depthAt,
+        onAction: (selection, action) => callbacks.current.onReportAction?.(selection, action),
+        fitBox: (box) => {
+          map.closePopup();
+          fitTo(box, !motionRef.current);
+        },
+        panes: { markers: "fg-reported-depths", labels: "fg-labels", selection: "fg-selection" },
+        selectionRenderer,
+      });
+      removeMarkers = markerLayer.remove;
+      let reportFrame: CommandMarkerFrame | null = null;
+      const syncSites = () => {
+        if (!reportFrame) return;
+        for (const entry of siteMarkers) {
+          const pending = reportFrame.mode === "trainee" && entry.fromHour !== null && reportFrame.hour < entry.fromHour;
+          if (pending === entry.pending) continue;
+          entry.pending = pending;
+          if (entry.command) {
+            if (pending) entry.marker.remove();
+            else entry.marker.addTo(map);
+          } else {
+            entry.marker.setIcon(siteIcon(false, entry.wet, pending));
+            labelSite(entry);
+          }
+          if (entry.marker.isPopupOpen()) entry.marker.getPopup()?.update();
+        }
+      };
+
+      // --- The 2024 season envelope (scenario): its cells on the water grid, hatched on a canvas of its own above the
+      // water. Nothing here reads the replay hour: the layer is on in hindsight mode and off in trainee mode.
+      let envelopeLayer: { overlay: ImageOverlay; context: CanvasRenderingContext2D; image: ImageData; pixels: Uint32Array; cells: Uint32Array; hatchKey: string } | null = null;
+      const paintEnvelopeLayer = () => {
+        if (!envelopeLayer) return;
+        const west = map.latLngToLayerPoint(modelBounds.getNorthWest()).x;
+        const east = map.latLngToLayerPoint(modelBounds.getSouthEast()).x;
+        const hatch = envelopeHatch(Math.abs(east - west) / m.hand.width);
+        const key = `${hatch.period}:${hatch.dark}:${hatch.light}`;
+        if (key === envelopeLayer.hatchKey) return;
+        paintEnvelope(envelopeLayer.cells, m.hand.width, envelopeLayer.pixels, hatch, LITTLE_ENDIAN);
+        envelopeLayer.context.putImageData(envelopeLayer.image, 0, 0);
+        envelopeLayer.hatchKey = key;
+      };
+      const setEnvelope = (next: CommandEnvelopeLayer | null) => {
+        if (envelopeLayer && (!next || next.cells !== envelopeLayer.cells)) {
+          envelopeLayer.overlay.remove();
+          envelopeLayer = null;
+        }
+        if (!next || envelopeLayer) return;
+        const element = document.createElement("canvas");
+        element.width = m.hand.width;
+        element.height = m.hand.height;
+        const target = element.getContext("2d");
+        if (!target) return;
+        const picture = target.createImageData(element.width, element.height);
+        const overlay = createCanvasOverlay(L, element, modelBounds, { pane: "fg-envelope", opacity: 1, className: styles.envelopeLayer, attribution: next.credit }).addTo(map);
+        envelopeLayer = { overlay, context: target, image: picture, pixels: new Uint32Array(picture.data.buffer), cells: next.cells, hatchKey: "" };
+        paintEnvelopeLayer();
+      };
+
+      // --- The selected subdistrict: a dark outline over a white casing, above the roads and under the names.
       let selectionLayers: Layer[] = [];
       let shownSelection: string | null = null;
       const setSelected = (id: string | null) => {
@@ -535,6 +638,7 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
           roadScale = next;
           styleRoads(appliedStage(), true);
         }
+        paintEnvelopeLayer();
         reportView();
       });
       map.on("moveend", reportView);
@@ -567,7 +671,7 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
             const wet = !entry.command && reportedSiteWetAt(entry.site, frame.stage);
             if (wet === entry.wet) continue;
             entry.wet = wet;
-            entry.marker.setIcon(siteIcon(entry.command, wet));
+            if (!entry.pending) entry.marker.setIcon(siteIcon(entry.command, wet));
             labelSite(entry);
           }
           refreshText();
@@ -587,7 +691,16 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
           if (!visible && map.hasLayer(facilityGroup)) facilityGroup.remove();
         },
         setSelected,
-        refreshText,
+        setReports(frame) {
+          reportFrame = frame;
+          markerLayer.update(frame);
+          syncSites();
+        },
+        setEnvelope,
+        refreshText() {
+          refreshText();
+          markerLayer.refreshText();
+        },
       };
       mapHandle.current = {
         zoomBy(delta) {
@@ -601,6 +714,18 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
         },
         fitTambon,
         showPlace,
+        focusReport(selection) {
+          const point = markerLayer.pointOf(selection);
+          if (!point) return;
+          map.closePopup();
+          // At the district zoom an item is inside a count mark: the map goes to the town zoom around it.
+          if (selection.type === "exercise" && map.getZoom() < CLUSTER_BELOW_ZOOM) {
+            fitTo([[point[0] - 0.0075, point[1] - 0.0075], [point[0] + 0.0075, point[1] + 0.0075]], !motionRef.current);
+            return;
+          }
+          const pan = panIntoRect(map.latLngToContainerPoint(point), clearRef.current(), 64);
+          if (pan.x !== 0 || pan.y !== 0) map.panBy([pan.x, pan.y], { animate: !motionRef.current });
+        },
       };
       resizeObserver = new ResizeObserver(() => map.invalidateSize());
       resizeObserver.observe(element.current);
@@ -613,6 +738,7 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
       disposed = true;
       resizeObserver?.disconnect();
       removeMapKeys?.();
+      removeMarkers?.();
       controller.current = null;
       mapHandle.current = null;
       setReady(false);
@@ -637,6 +763,13 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
   useEffect(() => {
     if (ready) controller.current?.setSelected(selected);
   }, [ready, selected]);
+  // The reports follow every replay hour: they are not throttled like the water, and they read the depth the water shows.
+  useEffect(() => {
+    if (ready && reports) controller.current?.setReports(reports);
+  }, [ready, reports, hand, stage]);
+  useEffect(() => {
+    if (ready) controller.current?.setEnvelope(envelope);
+  }, [ready, envelope]);
   useEffect(() => {
     if (ready) controller.current?.refreshText();
   }, [ready, language]);

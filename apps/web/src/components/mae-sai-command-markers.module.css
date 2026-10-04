@@ -1,0 +1,50 @@
+/* Markers of the reports on the map of the Command exercise replay, and their popups.
+   Every marker is inline SVG in a 44 px target. Urgency colours are used on exercise markers only; a place record is
+   a white speech bubble with a dark outline, and a sign of this device is white with a dashed outline.
+   The tokens (--c-*) are set on the page root. */
+.pinIcon { display: grid; place-items: center; border: 0; border-radius: 50%; background: none; }
+.pinIcon:focus-visible { outline: 3px solid var(--c-focus); outline-offset: -3px; }
+.pin { position: relative; display: grid; place-items: center; width: 44px; height: 44px; }
+.pin svg { display: block; overflow: visible; filter: drop-shadow(0 1px 1.5px rgb(12 39 64 / 38%)); }
+.pin svg text { font-family: var(--c-font-head); font-weight: 700; }
+/* The line under an exercise marker: the callsign once assigned, and the waiting clock in replay hours. */
+.pinLine { position: absolute; top: calc(50% + var(--half, 13px) + 3px); left: 50%; display: inline-flex; align-items: center; gap: 3px; padding: 0 4px; border: 1px solid #12262d; border-radius: 3px; background: #ffffff; color: #12262d; font-family: var(--c-font-mono); font-size: 9.5px; font-weight: 500; line-height: 13px; white-space: nowrap; transform: translateX(-50%); pointer-events: none; }
+.pinLine:lang(th) { font-family: var(--c-font); font-size: 10px; line-height: 15px; }
+.pinLine:empty { display: none; }
+.pinLine svg { filter: none; }
+.selectedPin .pin::before { content: ""; position: absolute; inset: -1px; border: 2.2px solid #12262d; border-radius: 50%; box-shadow: 0 0 0 2px rgb(255 255 255 / 90%); pointer-events: none; }
+
+/* The sign of the reports saved on this device, above a subdistrict's name; "no reports received" below it. */
+.signIcon { border: 0; background: none; }
+.deviceSign { position: absolute; left: 0; bottom: 20px; display: inline-flex; align-items: center; gap: 4px; padding: 0 6px; border: 1px dashed #12262d; border-radius: 4px; background: #ffffff; color: #12262d; font-family: var(--c-font-mono); font-size: 9.5px; font-weight: 500; line-height: 16px; white-space: nowrap; transform: translateX(-50%); box-shadow: 0 1px 2px rgb(12 39 64 / 22%); cursor: pointer; }
+.deviceSign:lang(th) { font-family: var(--c-font); font-size: 10.5px; line-height: 18px; }
+/* The sign is 18 px to the eye and 44 px to the finger. */
+.deviceSign::after { content: ""; position: absolute; inset: -13px -4px; }
+.signIcon:focus-visible { outline: none; }
+.signIcon:focus-visible .deviceSign { outline: 3px solid var(--c-focus); outline-offset: 2px; }
+.signIcon[data-selected="true"] .deviceSign { border-style: solid; border-width: 1.5px; }
+.noReports { position: absolute; left: 0; top: 19px; padding: 0 5px; border: 1px dotted #8a979b; border-radius: 3px; background: rgb(246 248 245 / 82%); color: #5d6b70; font-family: var(--c-font); font-size: 9.5px; line-height: 14px; white-space: nowrap; transform: translateX(-50%); pointer-events: none; }
+.noReports:lang(th) { font-size: 10px; line-height: 16px; }
+
+/* --- Popups: text nodes only, at most six lines for an invented item or a device sign, then two actions ---- */
+.itemPopup { display: grid; gap: 3px; min-width: 232px; font-family: var(--c-font); font-size: 12px; line-height: 1.45; color: #223650; }
+.itemPopup:lang(th) { line-height: 1.55; }
+.itemPopup p { margin: 0 !important; }
+.itemPopup [data-line="title"] { justify-self: start; padding: 0 6px; border-radius: 4px; background: #fde6d2; color: #12262d; font-family: var(--c-font-mono); font-size: 10px; font-weight: 500; line-height: 18px; }
+.itemPopup:lang(th) [data-line="title"] { font-family: var(--c-font); font-size: 11px; line-height: 20px; }
+.itemPopup[data-kind="device"] [data-line="title"] { border: 1px dashed #12262d; background: #ffffff; }
+.itemPopup [data-line="place"] { color: #12262d; font-size: 13px; font-weight: 600; }
+.itemPopup [data-line="state"] { color: #12262d; font-weight: 600; }
+.itemPopup [data-line="model"], .itemPopup [data-line="when"], .itemPopup [data-line="meta"] { color: #526a82; font-size: 11.5px; }
+.popupActions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px; }
+.popupActions button { min-height: 44px; padding: 0 12px; border: 1px solid #0c2740; border-radius: 8px; background: #ffffff; color: #0c2740; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.popupActions button:first-child { background: #0c2740; color: #ffffff; }
+.popupActions button:hover { filter: brightness(1.12); }
+.popupActions button:focus-visible { outline: 3px solid var(--c-focus); outline-offset: 2px; }
+/* A place record keeps the replay's own popup: one section per record, with its source. */
+.recordSection { display: grid; gap: .2rem; }
+.recordSection + .recordSection { margin-top: .45rem; padding-top: .45rem; border-top: 1px solid #e3e8f1; }
+
+/* --- Glyphs of the legend: the same drawings as the markers ---------------------------------------------- */
+.glyph { display: block; margin: 0 auto; overflow: visible; }
+.glyph text { font-family: var(--c-font-head); font-weight: 700; }

@@ -162,9 +162,9 @@ describe("Command clock and figures (region B1)", () => {
     expect(english).toMatch(/data-figure="roads"><strong>~164 km<\/strong><span>roads impassable<\/span><small>of 307 km<\/small>/);
     expect(text(english)).toContain("Model · low confidence");
     for (const exact of ["7,086", "7086", "16,060", "16060", "163.8", "163.77"]) expect(english, exact).not.toContain(exact);
-    // The fourth figure, open exercise items, keeps its slot and says there is none yet.
+    // The fourth figure, open exercise items, keeps its slot; without the exercise file it says the items are off.
     expect(english).toContain('data-figure="exerciseItems"');
-    expect(text(english)).toContain("No exercise items yet");
+    expect(text(english)).toContain("Exercise items are switched off");
     const thai = situation(84, "th");
     expect(thai).toMatch(/<strong>~7,100<\/strong><span>สูญเสียการเข้าถึงที่พักพิง<\/span><small>จาก ~34,500 คนในระยะเดิน<\/small>/);
     expect(thai).toMatch(/<strong>~164 กม.<\/strong><span>ถนนสัญจรไม่ได้<\/span>/);
@@ -342,7 +342,7 @@ describe("Command navigation, tools and legend (regions C, E, G)", () => {
     expect(off).toMatch(/<input type="checkbox" data-command-facilities="true"\/>/);
     expect(html(<CommandViewPopover language="en" facilities facilityCount={42} onFacilities={noop} onClose={noop} />)).toMatch(/<input type="checkbox" data-command-facilities="true" checked=""\/>/);
     // The Evidence view is named, and said to be not built yet.
-    expect(text(off)).toContain("Not built yet: candidate sites, satellite images and the season envelope");
+    expect(text(off)).toContain("Not built yet: candidate sites and satellite images. The 2024 season envelope is drawn in hindsight mode.");
   });
 
   it("is a chip until opened, then a grid of what the map draws", () => {

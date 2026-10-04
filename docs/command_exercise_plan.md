@@ -68,6 +68,53 @@ Where stage 2 differs from the plan:
 
 Known side effects: the two overlay files do not exist, so a browser shows two "404" lines in its console on every load of the page; and importing `ACTION_TEXT` brings the module of the Command workspace into this page's bundle.
 
+**Stage 3 (5 Oct 2026): reports on the map and "Known by now".** Built: section 6 (stage A) and section 9. Files, under `apps/web/`:
+
+- `public/exercises/mae-sai-2024/injects.v1.json`: 14 invented items (2 at life at risk, 4 urgent, 8 of information), in English and Thai;
+- `src/lib/flood-timeline-command-incidents.ts`: the typed parser of that file, the urgency rule, how each marker state is drawn, the clusters, the reports saved on this device per subdistrict, the "no reports received" rule and the modelled depth at a point;
+- `src/lib/flood-timeline-command-feed.ts`: the pure function `knownBy(t)`, the rows it cuts, the marks of the time track and the place records known by an hour;
+- `src/lib/flood-timeline-command-reports-copy.ts`: the wording of the markers, the popups, the list and the two modes;
+- `src/components/mae-sai-command-markers.tsx` with its style sheet (the drawings as inline SVG, the popups from text nodes, the layer on the map), `mae-sai-command-feed.tsx` with its style sheet (the list and the mode switch) and `mae-sai-command-incident.tsx` (the inspector of an invented item and of a device sign);
+- `useStoredPublicReports` in `src/lib/use-public-reports.ts`: the reports the Public page saved in this browser, read only, with a `storage` listener.
+
+What stage 3 does:
+
+- **Markers.** A white speech bubble with a count for the 2024 place records, with a small dashed badge where the model is dry at the point. An octagon for an invented call for help and a rounded square for an invented report. Urgency by symbol, size and colour together; handling state by outline; hours waited under the marker, in replay time. A dashed circle of the stated tolerance when a marker is opened or selected. Below zoom 13, markers within 40 px merge into a count mark that shows "!!" and that count when it holds a life-at-risk item; a tap zooms to it.
+- **Popups.** Built from text nodes with the shared builder. An invented item and a device sign have at most six lines, then Assign and Details. A place record keeps the replay's own popup. In trainee mode a bubble lists only the records published by the replay hour.
+- **Exercise items.** Each has an id "EX-nn", a replay hour, a kind, a depth band, a people band and needs. The parser refuses a file that is not marked as simulated, an id without "EX-", an urgency that does not follow from the stated facts, and any text shaped like a phone number, a soi, a house number or a person's title. Tests check that no item shares a run of five words with a place record, and that every point lies inside its stated tolerance of a community point and inside its stated subdistrict.
+- **Reports saved on this device.** A dashed sign above the subdistrict's name with the count. Its popup reads "This device · the date saved · not part of the 2024 replay · tambon (subdistrict) only". A note stays behind a tap. The Public report page says, in the competition build, that the note also appears on this device's Command exercise map.
+- **Known by now.** A fixed first line ("No public hourly river-level record for the Sai was found."), then the sentence about the place records with a point, then the rows, newest first, grouped by day, each with its lane tag. A place with a point is a link that moves the map. Once the reader has scrolled, new rows do not move the list and a button offers to jump to the newest.
+- **Two modes.** Trainee mode (the default) hides everything after the replay hour. Hindsight mode shows every row, the 2024 season envelope on the map with its credit, and its standard sentence and full credit in the list.
+- **Time track.** Filled marks for reported or observed rows, hollow marks for events of the model. The event buttons and the keys `[` and `]` stop at the hours of the marks.
+- **Situation card.** The count of open exercise items in plain digits under the exercise tag, with the count at life at risk. A chip says how many place records have a point by now and at how many the model is dry.
+- **Notice and pause.** A step forward that brings an invented item shows "New exercise call (n)"; pressing it opens the item. Playback pauses at the hour a life-at-risk item arrives; the view popover switches that off.
+
+Where stage 3 differs from the plan:
+
+- **The urgency rule has two steps.** The plan lists four stated facts in one sentence. The build reads them as: life at risk for people on a roof, or water at chest height or above with people present; urgent for an infant or a bedridden person, or no food for a day; information otherwise. The rule is printed in the legend and under every item.
+- **Where the invented items stand.** Each item has a point of its own, 130 to 310 m from the community point and inside the stated tolerance, so that markers do not cover each other at the town zoom.
+- **Rows of the list.** A place record is one row per statement (17 rows for the 21 records), with one link per place. Shelters are one row per day. Rain is listed when an hour reaches 10 mm after an hour under it (8 rows at one gauge, 1 at the other), at the end of that hour. A model row for a subdistrict's first loss of shelter access is listed from 10 residents on, and follows the shelter set the table counts.
+- **Day-only dates.** An article with a date and no time counts from the end of that day (the plan's rule). A shelter counts from the start of its day: the day of first use where the data gives an exact date, otherwise the first source dated in 2024. So the command centre is on the map from 11 Sep, as the plan says, and the 14 sites of the list published on 16 Sep appear on 16 Sep. One site first used on 21 Sep is listed in hindsight only.
+- **The situation line** follows the mode. In trainee mode it counts the place records published by the replay hour (11 with a point at hour 84, because one article is dated 13 Sep); in hindsight it reads 12, 1, 2 and 9. The clock card carries a short chip; the full sentence is the second line of "Known by now".
+- **Marks.** Marks closer than 6 px merge; a mark that already holds several reaches 11 px, so its count never covers a neighbour.
+- **Count marks.** After the 40 px rule, two count marks whose middles are within 40 px merge too. At the town zoom, bubbles closer than 28 px share one bubble, as on the Studio replay.
+- **Trainee mode on the map.** A shelter is a dashed outline until the day it is first reported; the command centre is not drawn before its day. The access figures still assume every counted site for the whole replay.
+- **Invented items arrive at their hour in both modes.** They are the script of the exercise, not evidence, and they are never in "Known by now".
+- **Handling.** Every item is "new" until stage 4. Assign and Details both open the inspector, which says that assigning, the brief and closing are not built yet.
+- **"No reports received"** is a grey mark under the subdistrict's name on the map. The table row keeps its count of place records, which follows the mode.
+- **The fourth figure on a tablet** stands on the line under the three model figures, because the card has three columns there.
+- **The speed in words** under the transport buttons gave way to the mode switch; each speed button still names its speed.
+- **No "plea" tag** (owner decision 4) and no SOS practice mark (owner decision 5).
+
+Not in this stage: the Evidence view, the facilitator sheet, the act flow (stage 4), and the offline list.
+
+Open points for the owners after stage 3:
+
+1. The two-step urgency rule above.
+2. The 14 invented items: their places, hours and wording, in both languages.
+3. Whether a shelter should count from the start or from the end of its day in trainee mode.
+4. The Thai text was written by an AI assistant and no native speaker has read it.
+
 Prepared 4 Oct 2026 for Putu and Rachmania; corrected by the critic the same day. The repo was read only on the branch `claude/unify-lineages`, in a local checkout; nothing was edited, built or run. All paths below are relative to the repo root.
 
 Terms used in this plan:

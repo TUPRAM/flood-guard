@@ -83,6 +83,9 @@
 .shelterIcon svg { fill: var(--c-site); stroke: #ffffff; stroke-width: 1.5; stroke-linejoin: round; filter: drop-shadow(0 1px 1.5px rgb(12 39 64 / 35%)); }
 .shelterIconWet svg { fill: #ffffff; stroke: var(--c-site); stroke-width: 1.7; }
 .shelterIconWet svg [data-part="slash"] { fill: none; stroke: #12262d; stroke-width: 2.4; stroke-linecap: round; }
+/* Trainee mode: a shelter no source has reported yet at the replay hour is a dashed outline. */
+.shelterIconPending svg { fill: rgb(255 255 255 / 62%); stroke: var(--c-site); stroke-width: 1.4; stroke-dasharray: 2.6 2; filter: none; }
+.envelopeLayer { image-rendering: auto; opacity: .78; }
 .commandIcon svg { fill: #12262d; stroke: #ffffff; stroke-width: 1.6; stroke-linejoin: round; filter: drop-shadow(0 1px 1.5px rgb(12 39 64 / 35%)); }
 .shelterIcon:focus-visible, .commandIcon:focus-visible { outline: 3px solid var(--c-focus); outline-offset: -8px; }
 
@@ -116,7 +119,12 @@
 .phaseLine { color: var(--c-muted); font-size: 12px; }
 .phaseShort, .hourShort { display: none; }
 .figuresHead { display: flex; align-items: center; gap: 8px; margin: 7px 0 5px; }
-.figuresHead::after { content: ""; flex: 1 1 auto; height: 1px; background: var(--c-line); }
+.figuresRule { flex: 1 1 auto; min-width: 8px; height: 1px; background: var(--c-line); }
+/* Solid means reported. The chip says how the model reads at the points of the place records known by now. */
+.recordChip { position: relative; flex: none; max-width: 62%; overflow: hidden; padding: 0 6px; border: 1px solid #8fa1b4; border-radius: 4px; background: #ffffff; color: var(--c-muted); font-size: 10px; font-weight: 600; line-height: 1.6; letter-spacing: .02em; white-space: nowrap; text-overflow: ellipsis; }
+.recordChip::after { content: ""; position: absolute; inset: -14px 0; }
+.recordChip:hover { background: var(--c-tint); color: var(--c-ink); }
+.recordChip:lang(th) { font-size: 11px; letter-spacing: 0; }
 /* Dashed means modelled. Every modelled figure of the card sits under this tag. */
 .laneTag { padding: 0 6px; border: 1px dashed #8fa1b4; border-radius: 4px; color: var(--c-muted); font-size: 10px; font-weight: 600; line-height: 1.6; letter-spacing: .03em; white-space: nowrap; }
 .laneTag:lang(th) { font-size: 11px; letter-spacing: 0; }
@@ -128,6 +136,13 @@
 .figure:lang(th) span, .figure:lang(th) small { font-size: 11px; line-height: 1.5; }
 .figure small { opacity: .92; }
 .figureSlot strong { color: #8fa1b4; }
+/* The count of open exercise items: plain digits under the amber exercise tag, and the life-at-risk count with its glyph. */
+.figureExercise strong { display: flex; align-items: center; gap: 5px; }
+.exTag { padding: 0 4px; border-radius: 3px; background: var(--c-exercise); color: #1c2733; font-family: var(--c-font-mono); font-size: 9px; font-weight: 700; line-height: 14px; letter-spacing: .04em; }
+.figureExercise small { display: flex; align-items: center; gap: 3px; min-height: 15px; opacity: 1; white-space: nowrap; }
+.figureExercise small[data-life="true"] { color: var(--c-ink); font-weight: 600; }
+.figureExercise small svg, .exerciseLife svg { flex: none; margin: 0; }
+.exerciseLine { display: none; }
 /* Two lines, always: the "what changed" line, and from 13 Sep the model-limit chip in place of its second line. */
 .notes { display: flex; flex-direction: column; justify-content: flex-start; gap: 2px; height: 36px; margin-top: 7px; overflow: hidden; }
 .notes:lang(th) { height: 40px; }
@@ -177,7 +192,8 @@
 .tool:hover:not(:disabled) { background: var(--c-tint); }
 .tool[aria-pressed="true"], .tool[aria-expanded="true"], .tool[aria-pressed="true"]:hover:not(:disabled), .tool[aria-expanded="true"]:hover:not(:disabled) { background: var(--c-accent); color: #ffffff; }
 .tool:disabled { color: #a9b6c4; box-shadow: 0 1px 2px rgb(12 39 64 / 8%); }
-.popover { position: absolute; z-index: 20; top: 50%; right: calc(var(--c-margin) + var(--c-rail) + var(--c-gap)); width: 280px; padding: 12px 14px 14px; transform: translateY(-166px); }
+/* The view popover stands beside the rail and ends above the legend chip. */
+.popover { position: absolute; z-index: 20; right: calc(var(--c-margin) + var(--c-rail) + var(--c-gap)); bottom: calc(var(--c-margin) + var(--c-dock) + 2 * var(--c-gap) + 36px); width: 280px; max-height: calc(100% - var(--c-dock) - 176px); overflow: auto; padding: 12px 14px 14px; scrollbar-width: thin; }
 .popoverHead { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
 .popoverHead h2 { font-family: var(--c-font-head); font-size: 14px; font-weight: 600; }
 .iconButton { position: relative; display: grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--c-muted); }
@@ -190,21 +206,32 @@
 .choice[data-disabled="true"] { color: #8fa1b4; }
 .choiceGroup { margin: 0; padding: 0; border: 0; }
 .choiceGroup + .choiceGroup { margin-top: 4px; padding-top: 4px; border-top: 1px solid var(--c-line); }
+.choiceLegend { float: left; width: 100%; padding: 4px 0 0; color: var(--c-muted); font-size: 10px; font-weight: 700; line-height: 1.6; letter-spacing: .08em; text-transform: uppercase; }
+.choiceLegend:lang(th) { font-size: 11px; letter-spacing: 0; }
+.choiceLegend + .choice { clear: both; }
 
 /* --- G. Legend ---------------------------------------------------------------------------------------- */
 .legendChip { position: absolute; z-index: 11; right: calc(var(--c-margin) + var(--c-rail) + var(--c-gap)); bottom: calc(var(--c-margin) + var(--c-dock) + var(--c-gap)); display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 120px; height: 36px; padding: 0 14px; border: 0; border-radius: 18px; background: var(--c-panel); color: var(--c-ink); box-shadow: var(--c-shadow); font-size: 12.5px; }
 .legendChip::after { content: ""; position: absolute; inset: -4px 0; }
 .legendChip:hover { background: var(--c-tint); }
-.legend { position: absolute; z-index: 12; right: calc(var(--c-margin) + var(--c-rail) + var(--c-gap)); bottom: calc(var(--c-margin) + var(--c-dock) + var(--c-gap)); width: 280px; max-height: calc(100% - var(--c-dock) - 96px); overflow: auto; padding: 10px 14px 12px; }
+.legend { position: absolute; z-index: 12; right: calc(var(--c-margin) + var(--c-rail) + var(--c-gap)); bottom: calc(var(--c-margin) + var(--c-dock) + var(--c-gap)); width: 280px; max-height: calc(100% - var(--c-dock) - 132px); overflow: auto; padding: 10px 14px 12px; scrollbar-width: thin; }
 .legend h3 { margin: 8px 0 3px; color: var(--c-muted); font-size: 10px; font-weight: 700; line-height: 1.6; letter-spacing: .08em; text-transform: uppercase; }
 .legend h3:lang(th) { font-size: 11px; letter-spacing: 0; }
 .legendGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 3px 10px; padding: 0; list-style: none; }
 .legendGrid li { display: grid; grid-template-columns: 26px 1fr; align-items: center; gap: 6px; min-height: 20px; font-size: 11px; line-height: 1.35; }
+.legendGrid[data-legend] li { grid-template-columns: 30px 1fr; min-height: 30px; }
 .legendGrid:lang(th) li { line-height: 1.5; }
 .legendWide { grid-template-columns: 1fr; }
 .swatch { display: block; width: 24px; height: 12px; border-radius: 3px; }
 .swatchLine { display: block; width: 24px; height: 0; border-top-style: solid; }
 .legend svg { display: block; margin: 0 auto; }
+.legendSpan { grid-column: 1 / -1; }
+/* The signs of the map as they are drawn there: the callsign and waiting line, the sign of this device, "no reports received". */
+.legendGrid li:has(.legendPill), .legendGrid li:has(.legendSign), .legendGrid li:has(.legendNoReports) { grid-column: 1 / -1; grid-template-columns: auto minmax(0, 1fr); gap: 8px; }
+.legendPill { padding: 0 4px; border: 1px solid #12262d; border-radius: 3px; background: #ffffff; color: #12262d; font-family: var(--c-font-mono); font-size: 9.5px; font-weight: 500; line-height: 13px; white-space: nowrap; }
+.legendSign { padding: 0 6px; border: 1px dashed #12262d; border-radius: 4px; background: #ffffff; color: #12262d; font-family: var(--c-font-mono); font-size: 9.5px; font-weight: 500; line-height: 16px; white-space: nowrap; }
+.legendNoReports { padding: 0 5px; border: 1px dotted #8a979b; border-radius: 3px; color: #5d6b70; font-size: 9.5px; line-height: 14px; white-space: nowrap; }
+.legendPill:lang(th), .legendSign:lang(th), .legendNoReports:lang(th) { font-family: var(--c-font); font-size: 10px; line-height: 16px; }
 .legendNote { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--c-line); color: var(--c-muted); font-size: 10.5px; line-height: 1.45; }
 .legendNote:lang(th) { font-size: 11px; line-height: 1.5; }
 
@@ -220,6 +247,10 @@
 .creditText { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 
 /* --- I. One-line notice ------------------------------------------------------------------------------- */
+.page button.notice { border: 0; font: inherit; font-size: 11.5px; cursor: pointer; }
+.page button.notice::after { content: ""; position: absolute; inset: -8px 0; }
+.page button.notice:hover { background: #1f3c46; }
+.notice svg { flex: none; margin-right: 7px; }
 .notice { position: absolute; z-index: 13; top: var(--c-margin); left: 50%; display: flex; align-items: center; max-width: min(520px, calc(100% - 2 * var(--c-left) - 80px)); min-height: 28px; padding: 3px 14px; border-radius: 14px; background: #12262d; color: #ffffff; font-size: 11.5px; transform: translateX(-50%); }
 
 /* --- F. Time dock ------------------------------------------------------------------------------------- */
@@ -239,30 +270,37 @@
 .speeds button:hover:not([aria-pressed="true"]) { background: var(--c-tint); }
 .speeds button:focus-visible { position: relative; z-index: 1; }
 .speedCycle { display: none; min-width: 56px; width: auto; padding: 0 8px; white-space: nowrap; }
+.modeRow { grid-column: 1 / -1; display: flex; align-items: center; min-width: 0; min-height: 18px; }
 .speedNote { grid-column: 1 / -1; overflow: hidden; color: var(--c-muted); font-size: 11px; line-height: 1.45; white-space: nowrap; text-overflow: ellipsis; }
-.timeline { position: relative; flex: 1 1 auto; display: grid; grid-template-rows: 30px minmax(0, 1fr); gap: 2px; min-width: 0; }
+.timeline { position: relative; flex: 1 1 auto; display: grid; grid-template-rows: 26px minmax(0, 1fr); gap: 2px; min-width: 0; }
 .days { position: relative; }
-.day { position: absolute; top: 0; z-index: 2; display: grid; place-items: center; width: calc(100% * 24 / 264); height: 30px; padding: 0; border: 0; background: none; }
+.day { position: absolute; top: 0; z-index: 2; display: grid; place-items: center; width: calc(100% * 24 / 264); height: 26px; padding: 0; border: 0; background: none; }
 /* A day chip is 22 px to the eye; its target is its whole day wide and 44 px tall. */
-.day::before { content: ""; position: absolute; inset: -8px 0 -6px; }
+.day::before { content: ""; position: absolute; inset: -8px 0 -10px; }
 .day > span { position: relative; min-width: 30px; padding: 0 8px; border: 1px solid var(--c-line); border-radius: 11px; background: #ffffff; color: var(--c-ink); font-family: var(--c-font-mono); font-size: 11px; font-weight: 500; line-height: 20px; }
 .day:hover > span { background: var(--c-tint); }
 .day[aria-current="true"] > span { border-color: var(--c-accent); background: var(--c-accent); color: #ffffff; }
 .track { position: relative; min-height: 0; }
 .track:has(.range:focus-visible) { outline: 3px solid var(--c-focus); outline-offset: 3px; border-radius: 4px; }
-.phaseBand { position: absolute; top: 0; right: 0; left: 0; display: flex; height: 18px; overflow: hidden; border-radius: 4px; }
-.phase { flex: none; overflow: hidden; padding: 0 0 0 6px; border-right: 1px solid #ffffff; color: #1c3147; font-size: 10px; line-height: 18px; white-space: nowrap; }
+/* Three thin rows: the event marks, the phases, the rain. */
+.marks { position: absolute; top: 0; right: 0; left: 0; height: 11px; pointer-events: none; }
+.marks i { position: absolute; top: 2px; display: grid; place-items: center; box-sizing: border-box; min-width: 7px; height: 7px; padding: 0; border: 1.3px solid var(--c-ink); border-radius: 4px; background: #ffffff; color: var(--c-ink); font-family: var(--c-font-mono); font-size: 8px; font-style: normal; font-weight: 700; line-height: 1; transform: translateX(-50%); }
+.marks i[data-filled="true"] { background: var(--c-ink); color: #ffffff; }
+.marks i:not([data-count="1"]) { top: 0; min-width: 13px; height: 11px; padding: 0 2px; border-radius: 6px; }
+.phaseBand { position: absolute; top: 13px; right: 0; left: 0; display: flex; height: 16px; overflow: hidden; border-radius: 4px; }
+.phase { flex: none; overflow: hidden; padding: 0 0 0 6px; border-right: 1px solid #ffffff; color: #1c3147; font-size: 10px; line-height: 16px; white-space: nowrap; }
 .phase:lang(th) { font-size: 10.5px; }
 .phase:last-child { border-right: 0; }
 .phase[data-phase="dry"], .phase[data-phase="gone"] { background: #e3e8ee; }
 .phase[data-phase="onset"], .phase[data-phase="receding"] { background: #c9d9e8; }
 .phase[data-phase="peak"] { background: #9dbdd9; }
 .phaseShortName { display: none; }
-.rain { position: absolute; right: 0; bottom: 0; left: 0; top: 21px; }
+.rain { position: absolute; right: 0; bottom: 0; left: 0; top: 31px; }
+.rainBars { position: absolute; inset: 0; }
 .rain svg { display: block; width: 100%; height: 100%; }
 .rainLabel { position: absolute; left: 4px; top: 0; color: var(--c-muted); font-size: 9.5px; line-height: 1.5; text-shadow: 0 0 2px #ffffff, 1px 0 0 #ffffff, -1px 0 0 #ffffff, 0 1px 0 #ffffff; pointer-events: none; }
 /* Everything right of the playhead is not yet known at this replay hour. */
-.future { position: absolute; top: 0; right: 0; bottom: 0; display: grid; place-items: end center; overflow: hidden; border-radius: 0 4px 4px 0; background: repeating-linear-gradient(-45deg, rgb(255 255 255 / 66%) 0 6px, rgb(110 126 140 / 46%) 6px 7.5px); container-type: inline-size; pointer-events: none; }
+.future { position: absolute; top: 12px; right: 0; bottom: 0; display: grid; place-items: end center; overflow: hidden; border-radius: 0 4px 4px 0; background: repeating-linear-gradient(-45deg, rgb(255 255 255 / 66%) 0 6px, rgb(110 126 140 / 46%) 6px 7.5px); container-type: inline-size; pointer-events: none; }
 .future span { padding: 0 6px 1px; color: var(--c-ink); font-size: 11px; line-height: 1.5; white-space: nowrap;
   text-shadow: 0 0 3px #ffffff, 2px 0 0 #ffffff, -2px 0 0 #ffffff, 0 2px 0 #ffffff, 0 -2px 0 #ffffff, 1.5px 1.5px 0 #ffffff, -1.5px 1.5px 0 #ffffff, 1.5px -1.5px 0 #ffffff, -1.5px -1.5px 0 #ffffff; }
 @container (max-width: 190px) { .future span { display: none; } }
@@ -274,7 +312,7 @@
 .line, .focusPlay, .focusTime { display: none; }
 /* Focus mode: play, the replay time and a plain slider on one 44 px line. */
 .dock[data-collapsed="true"] { align-items: center; gap: 12px; padding: 0 16px 0 4px; }
-.dock[data-collapsed="true"] .transport, .dock[data-collapsed="true"] .days, .dock[data-collapsed="true"] .phaseBand, .dock[data-collapsed="true"] .rain, .dock[data-collapsed="true"] .future { display: none; }
+.dock[data-collapsed="true"] .transport, .dock[data-collapsed="true"] .days, .dock[data-collapsed="true"] .marks, .dock[data-collapsed="true"] .phaseBand, .dock[data-collapsed="true"] .rain, .dock[data-collapsed="true"] .future { display: none; }
 .dock[data-collapsed="true"] .focusPlay { display: grid; flex: none; width: 44px; height: 44px; border: 0; background: none; color: var(--c-ink); place-items: center; }
 .dock[data-collapsed="true"] .focusPlay > span { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 9px; background: var(--c-accent); color: #ffffff; }
 .dock[data-collapsed="true"] .focusTime { display: block; flex: none; font-size: 13px; font-weight: 600; white-space: nowrap; }
@@ -346,20 +384,24 @@
   .clockShort, .phaseShort, .hourShort { display: inline; }
   .clockTime { font-size: 19px; }
   .figures, .figures:lang(th) { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 8px; }
-  .figureSlot { display: none; }
+  .figureSlot, .figureExercise { display: none; }
   .figure strong { font-size: 18px; }
   .figure small { display: none; }
-  .change { display: none; }
-  .notes, .notes:lang(th) { height: 20px; margin-top: 5px; }
+  .change, .recordChip { display: none; }
+  .notes, .notes:lang(th) { flex-direction: row; align-items: center; gap: 8px; height: 20px; margin-top: 5px; }
+  .exerciseLine { flex: none; display: flex; align-items: center; gap: 5px; color: var(--c-ink); font-size: 11px; line-height: 18px; white-space: nowrap; }
+  .exerciseLife { display: inline-flex; align-items: center; gap: 2px; font-weight: 600; }
+  .limitChip { flex: 0 1 auto; min-width: 0; }
   .dock { gap: 12px; padding: 6px 12px 6px 10px; }
   .transport { grid-template-columns: repeat(3, 44px) 4px repeat(2, 44px) 4px auto; grid-template-rows: 44px; }
-  .speeds, .speedNote { display: none; }
+  .speeds, .speedNote, .modeRow { display: none; }
   .speedCycle { display: grid; }
-  .timeline { grid-template-rows: 28px minmax(0, 1fr); }
-  .day { height: 28px; }
-  .day::before { inset: -8px 0; }
+  .timeline { grid-template-rows: 26px minmax(0, 1fr); }
+  .day { height: 26px; }
+  .day::before { inset: -9px 0; }
   .rain { display: none; }
-  .phaseBand { top: 6px; }
+  .phaseBand { top: 14px; height: 18px; }
+  .phase { line-height: 18px; }
   .phaseName { display: none; }
   .phaseShortName { display: inline; }
   .legend { max-height: calc(100% - var(--c-dock) - 40px); }

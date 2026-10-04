@@ -39,8 +39,8 @@ export const COMMAND_START_HOUR = 36;
 /** A replay hour the "previous event" and "next event" buttons stop at. */
 export interface CommandEventStop {
   hour: number;
-  /** The start or the end of the replay, the first hour of a phase, or the hour of the highest assumed stage. */
-  kind: "start" | "phase" | "peak" | "end";
+  /** The start or the end of the replay, the first hour of a phase, the hour of the highest assumed stage, or an hour with a mark on the time track. */
+  kind: "start" | "phase" | "peak" | "end" | "mark";
   /** The phase that starts at this hour, for a phase stop. */
   phaseId?: string;
 }
@@ -62,6 +62,15 @@ export function commandEventStops(manifest: Pick<TimelineManifest, "phases" | "s
   if (stages.length > 0 && stages[peak] > 0 && !stops.has(peak)) stops.set(peak, { hour: peak, kind: "peak" });
   stops.set(COMMAND_LAST_HOUR, { hour: COMMAND_LAST_HOUR, kind: "end" });
   return [...stops.values()].sort((a, b) => a.hour - b.hour);
+}
+
+/**
+ * The stops of the event buttons once the marks of the time track are known: the start, every hour that has a mark
+ * (a reported or observed item, or an event of the model) and the end.
+ */
+export function commandMarkStops(hours: readonly number[]): CommandEventStop[] {
+  const unique = [...new Set([0, ...hours.map(clampCommandHour), COMMAND_LAST_HOUR])].sort((a, b) => a - b);
+  return unique.map((hour) => ({ hour, kind: hour === 0 ? "start" : hour === COMMAND_LAST_HOUR ? "end" : "mark" }));
 }
 
 /** The first stop after `hour`, or null at the last one. */
@@ -118,8 +127,8 @@ export interface CommandReplayState {
 export type CommandReplayAction =
   | { type: "seek"; hour: number }
   | { type: "step"; hours: number }
-  /** One beat of playback: the next replay hour. */
-  | { type: "tick" }
+  /** One beat of playback: the next replay hour. Playback pauses when that hour is one of `pauseAt` (a life-at-risk item of the exercise arrives). */
+  | { type: "tick"; pauseAt?: ReadonlySet<number> }
   | { type: "toggle_play" }
   | { type: "pause" }
   | { type: "speed"; speed: CommandSpeedId }
@@ -144,7 +153,11 @@ export function commandReplayReducer(state: CommandReplayState, action: CommandR
   switch (action.type) {
     case "seek": return at(action.hour);
     case "step": return at(state.hour + action.hours);
-    case "tick": return state.playing ? at(state.hour + 1) : state;
+    case "tick": {
+      if (!state.playing) return state;
+      const next = at(state.hour + 1);
+      return action.pauseAt?.has(next.hour) && next.playing ? { ...next, playing: false } : next;
+    }
     case "toggle_play":
       if (state.playing) return { ...state, playing: false };
       return state.hour >= COMMAND_LAST_HOUR ? { ...state, hour: 0, playing: true } : { ...state, playing: true };

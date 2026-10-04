@@ -375,10 +375,13 @@ export function feedMarkItems(feed: readonly CommandFeedItem[]): CommandFeedItem
   return feed.filter((item) => !item.hindsightOnly && item.precision !== "held" && item.precision !== "none" && item.fromHour >= 0 && item.fromHour <= COMMAND_LAST_HOUR);
 }
 
+/** A merged mark is a wider pill with its count: a mark closer than this to its first hour joins it, so the pill covers no neighbour. */
+export const MERGED_MARK_REACH_PX = 11;
+
 /**
  * The marks of the track. Marks that would stand closer than `minGapPx` to the first mark of a group merge into one
- * with a count; a merged mark is filled when it holds an observed or reported row. In trainee mode the marks after
- * the replay hour are left out: the future is hidden.
+ * with a count (a mark that already holds several reaches `MERGED_MARK_REACH_PX`); a merged mark is filled when it
+ * holds an observed or reported row. In trainee mode the marks after the replay hour are left out: the future is hidden.
  */
 export function feedEventMarks(feed: readonly CommandFeedItem[], pxPerHour: number, options: { upTo?: number; minGapPx?: number } = {}): CommandEventMark[] {
   const minGap = options.minGapPx ?? 6;
@@ -388,7 +391,7 @@ export function feedEventMarks(feed: readonly CommandFeedItem[], pxPerHour: numb
     if (item.fromHour > upTo) break;
     const filled = item.lane !== "model";
     const last = marks[marks.length - 1];
-    if (last && (item.fromHour - last.firstHour) * pxPerHour < minGap) {
+    if (last && (item.fromHour - last.firstHour) * pxPerHour < (last.count > 1 && minGap > 0 ? Math.max(minGap, MERGED_MARK_REACH_PX) : minGap)) {
       last.count += 1;
       last.sum += item.fromHour;
       last.hour = last.sum / last.count;

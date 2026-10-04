@@ -236,7 +236,7 @@ describe("Clusters of the district zoom", () => {
       { x: 100, y: 100, count: 3, lifeAtRisk: false },
       { x: 120, y: 110, count: 1, lifeAtRisk: true },
       { x: 139, y: 100, count: 1, lifeAtRisk: false },
-      { x: 141, y: 100, count: 1, lifeAtRisk: false },
+      { x: 190, y: 100, count: 1, lifeAtRisk: false },
       { x: 400, y: 300, count: 2, lifeAtRisk: true },
     ]);
     expect(CLUSTER_RADIUS_PX).toBe(40);
@@ -245,6 +245,18 @@ describe("Clusters of the district zoom", () => {
     expect(clusters[0].x).toBeCloseTo((100 + 120 + 139) / 3);
     expect(clusters[2]).toMatchObject({ total: 2, lifeAtRisk: 1, x: 400, y: 300 });
     expect(clusterMarkers([])).toEqual([]);
+  });
+
+  it("merges two groups whose middles are within 40 px, so two count marks never stand on each other", () => {
+    // The fourth marker is 41 px from the first, so it starts a group; that group's middle is 21 px from the first group's.
+    const clusters = clusterMarkers([
+      { x: 100, y: 100, count: 3, lifeAtRisk: false },
+      { x: 120, y: 110, count: 1, lifeAtRisk: true },
+      { x: 139, y: 100, count: 1, lifeAtRisk: false },
+      { x: 141, y: 100, count: 1, lifeAtRisk: true },
+    ]);
+    expect(clusters.map((cluster) => cluster.members)).toEqual([[0, 1, 2, 3]]);
+    expect(clusters[0]).toMatchObject({ total: 6, lifeAtRisk: 2 });
   });
 });
 

@@ -16,9 +16,26 @@ What this path does and does not do:
 * Thermal noise is not removed. Orbit files are not applied.
 * Geocoding: the product's ground control points, fitted by GDAL's GCP
   polynomial, as ``scripts/build_mae_sai_flood_timeline.py`` reads the same
-  archives. The control points sit at the heights of a coarse terrain model,
-  so a cell whose true height differs is displaced along the range direction
-  by about ``(control height - true height) / tan(incidence)``.
+  archives. GDAL is asked for no order and chooses one itself; it does not
+  report it, so :func:`gcp_polynomial_order` finds it. For a product's full
+  set of control points it is a second-order polynomial, not an affine fit.
+
+That geocoding displaces a cell along the range direction, for two reasons
+that add up:
+
+* Height. The control points sit at the heights of a coarse terrain model,
+  so a cell whose true height differs from the height the control points
+  have around it is displaced by about
+  ``(control height - true height) / tan(incidence)``.
+* Misfit. A low-order polynomial does not pass through the control points:
+  their positions follow that coarse terrain model, which no smooth surface
+  over the whole image follows. :func:`gcp_polynomial_residuals` gives the
+  misfit at the control points and :func:`interpolate_control_points` an
+  interpolation that passes through every one of them, to compare with.
+
+Each date has its own control points and so its own polynomial. Two dates
+warped this way are therefore not registered to each other exactly;
+:func:`estimate_displacement` measures the offset to a fraction of a cell.
 
 The module also holds a second mapping, :class:`HeightAwareMapping`, which
 uses the same annotation grid with a height for every map cell. It exists to
@@ -452,8 +469,9 @@ def warp_gcp_polynomial(window: Sigma0Window, grid: RasterGrid) -> np.ndarray:
     """Warp a calibrated window to a map grid with the product's control points.
 
     This is the plan's fallback geocoding: GDAL fits its GCP polynomial to the
-    control points and resamples linear sigma0 bilinearly. No terrain model
-    is used. Cells outside the image are NaN.
+    control points and resamples linear sigma0 bilinearly. No order is asked
+    for, so GDAL chooses it (see :func:`gcp_polynomial_order`). No terrain
+    model is used. Cells outside the image are NaN.
     """
 
     from rasterio.warp import Resampling, reproject
@@ -471,6 +489,142 @@ def warp_gcp_polynomial(window: Sigma0Window, grid: RasterGrid) -> np.ndarray:
         resampling=Resampling.bilinear,
     )
     return destination
+
+
+# ---------------------------------------------------------------------------
+# What the control-point polynomial is, and how far it lies from its points
+# ---------------------------------------------------------------------------
+
+
+def polynomial_terms(x: np.ndarray, y: np.ndarray, order: int) -> np.ndarray:
+    """The terms of a two-variable polynomial of one order, one column each.
+
+    Order 1 has 3 terms (an affine fit), order 2 has 6 and order 3 has 10.
+    """
+
+    if order < 1:
+        raise Sentinel1Error("a polynomial needs an order of at least 1")
+    first = np.asarray(x, dtype="float64").ravel()
+    second = np.asarray(y, dtype="float64").ravel()
+    if first.shape != second.shape:
+        raise Sentinel1Error("x and y must have the same number of values")
+    return np.column_stack(
+        [first ** (total - power) * second**power for total in range(order + 1) for power in range(total + 1)]
+    )
+
+
+def _control_point_arrays(gcps: Sequence[Any]) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    if len(gcps) < 3:
+        raise Sentinel1Error("a control-point fit needs at least three points")
+    x = np.array([point.x for point in gcps], dtype="float64")
+    y = np.array([point.y for point in gcps], dtype="float64")
+    row = np.array([point.row for point in gcps], dtype="float64")
+    col = np.array([point.col for point in gcps], dtype="float64")
+    return x, y, row, col
+
+
+def _gdal_image_coordinates(gcps: Sequence[Any], x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Image row and column of map positions under GDAL's own control-point polynomial."""
+
+    from rasterio.transform import GCPTransformer
+
+    rows, cols = GCPTransformer(list(gcps)).rowcol(np.ravel(x), np.ravel(y), op=lambda value: value)
+    return np.asarray(rows, dtype="float64"), np.asarray(cols, dtype="float64")
+
+
+def gcp_polynomial_order(
+    gcps: Sequence[Any], *, max_order: int = 3, tolerance_px: float = 0.01, lattice: int = 24
+) -> dict[str, Any]:
+    """Find the order of the polynomial that GDAL fits to a set of control points.
+
+    The warp asks GDAL for no order, GDAL chooses one from the number of
+    points and does not say which. This fits a least-squares polynomial of
+    each order from 1 to ``max_order`` to the control points (map position to
+    image position, the direction a warp uses) and compares it with GDAL's
+    own transformer on a lattice over the extent of the points.
+
+    Returns the number of control points, the largest difference in image
+    cells for each order that the points can support, the orders whose fit
+    reproduces GDAL's within ``tolerance_px``, and ``order``: that order when
+    exactly one reproduces it, otherwise ``None`` (control points that lie on
+    a plane are reproduced by every order).
+    """
+
+    x, y, row, col = _control_point_arrays(gcps)
+    if max_order < 1 or lattice < 2 or tolerance_px <= 0:
+        raise Sentinel1Error("max_order, lattice and tolerance_px must be positive")
+    centre_x, centre_y = float(x.mean()), float(y.mean())
+    scale = max(float(np.ptp(x)), float(np.ptp(y)))
+    if scale <= 0:
+        raise Sentinel1Error("the control points share one position")
+    mesh_x, mesh_y = np.meshgrid(np.linspace(x.min(), x.max(), lattice), np.linspace(y.min(), y.max(), lattice))
+    gdal_rows, gdal_cols = _gdal_image_coordinates(gcps, mesh_x, mesh_y)
+    differences: dict[str, float | None] = {}
+    for order in range(1, max_order + 1):
+        design = polynomial_terms((x - centre_x) / scale, (y - centre_y) / scale, order)
+        if design.shape[0] < design.shape[1]:
+            differences[str(order)] = None  # Too few points for this order.
+            continue
+        sample = polynomial_terms((mesh_x - centre_x) / scale, (mesh_y - centre_y) / scale, order)
+        fitted_rows = sample @ np.linalg.lstsq(design, row, rcond=None)[0]
+        fitted_cols = sample @ np.linalg.lstsq(design, col, rcond=None)[0]
+        differences[str(order)] = round(
+            float(max(np.abs(fitted_rows - gdal_rows).max(), np.abs(fitted_cols - gdal_cols).max())), 4
+        )
+    reproduce = [int(order) for order, value in differences.items() if value is not None and value <= tolerance_px]
+    return {
+        "control_points": int(x.size),
+        "max_difference_from_gdal_px_by_order": differences,
+        "tolerance_px": tolerance_px,
+        "orders_that_reproduce_gdal": reproduce,
+        "order": reproduce[0] if len(reproduce) == 1 else None,
+    }
+
+
+def gcp_polynomial_residuals(gcps: Sequence[Any]) -> tuple[np.ndarray, np.ndarray]:
+    """How far GDAL's control-point polynomial lies from each control point, in image cells.
+
+    Returns the row and the column of each control point minus the row and
+    the column the polynomial gives for its map position, in the order of
+    ``gcps``. A positive column value means the polynomial reads the image
+    at a smaller sample (nearer to the sensor) than the control point says.
+    """
+
+    x, y, row, col = _control_point_arrays(gcps)
+    fitted_rows, fitted_cols = _gdal_image_coordinates(gcps, x, y)
+    return row - fitted_rows, col - fitted_cols
+
+
+def interpolate_control_points(
+    geolocation: GeolocationGrid, crs: str, x: np.ndarray, y: np.ndarray
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Image line, image sample and control-point height at map positions.
+
+    A thin-plate spline through every point of the annotation grid: the
+    mapping the control points define for a target at their own heights, with
+    no polynomial in between and no terrain height. ``x`` and ``y`` are map
+    coordinates in ``crs`` (metres). The third array is the control-point
+    height interpolated the same way.
+    """
+
+    from pyproj import Transformer
+    from scipy.interpolate import RBFInterpolator
+
+    shape = np.shape(x)
+    if np.shape(y) != shape:
+        raise Sentinel1Error("x and y must share a shape")
+    grid_x, grid_y = Transformer.from_crs("EPSG:4326", crs, always_xy=True).transform(
+        geolocation.longitude, geolocation.latitude
+    )
+    points = np.column_stack([np.ravel(grid_x), np.ravel(grid_y)]) / 1000.0
+    query = np.column_stack([np.ravel(x), np.ravel(y)]) / 1000.0
+    lines = np.broadcast_to(geolocation.lines[:, None], geolocation.height.shape)
+    pixels = np.broadcast_to(geolocation.pixels[None, :], geolocation.height.shape)
+    fields = [
+        RBFInterpolator(points, np.ravel(values), kernel="thin_plate_spline")(query).reshape(shape)
+        for values in (lines, pixels, geolocation.height)
+    ]
+    return fields[0], fields[1], fields[2]
 
 
 # ---------------------------------------------------------------------------
@@ -655,6 +809,14 @@ def estimate_displacement(
     ``at_search_edge`` says that the best shift is on the edge of the search
     window, where it cannot be trusted.
 
+    ``east_cells_subcell`` and ``north_cells_subcell`` refine the shift to a
+    fraction of a cell: the vertex of the parabola through the correlation at
+    the best shift and at its two neighbours, east-west and north-south
+    separately. They are estimates, good to a few tenths of a cell, and equal
+    the whole-cell shift when it lies on the edge of the search window.
+    ``correlation_at_zero_shift`` is the correlation of the layers as they
+    are.
+
     The layers must be positively related (for a water mask and backscatter,
     pass the negated backscatter).
     """
@@ -686,12 +848,37 @@ def estimate_displacement(
             if value > best[0]:
                 best = (value, row_shift, col_shift)
     value, row_shift, col_shift = best
+    at_edge = abs(row_shift) == max_shift_cells or abs(col_shift) == max_shift_cells
+    fine_row, fine_col = float(row_shift), float(col_shift)
+    if not at_edge:
+
+        def at(row: int, col: int) -> float:
+            return float(correlation[row % shape[0], col % shape[1]])
+
+        fine_row += _parabola_vertex(at(row_shift - 1, col_shift), value, at(row_shift + 1, col_shift))
+        fine_col += _parabola_vertex(at(row_shift, col_shift - 1), value, at(row_shift, col_shift + 1))
     # correlation[d] sums reference[p] * image[p - d]: the image content sits at p - d.
     return {
         "east_cells": -col_shift,
         "north_cells": row_shift,
         "correlation": round(value, 6),
-        "at_search_edge": abs(row_shift) == max_shift_cells or abs(col_shift) == max_shift_cells,
+        "at_search_edge": at_edge,
+        "east_cells_subcell": round(-fine_col, 3) + 0.0,
+        "north_cells_subcell": round(fine_row, 3) + 0.0,
+        "correlation_at_zero_shift": round(float(correlation[0, 0]), 6),
         "valid_cells": count,
         "max_shift_cells": max_shift_cells,
     }
+
+
+def _parabola_vertex(before: float, peak: float, after: float) -> float:
+    """Offset of the vertex of the parabola through three equally spaced values, from the middle one.
+
+    The middle value is the largest of the three, so the offset lies within
+    half a step; a flat triple gives zero.
+    """
+
+    curvature = before - 2.0 * peak + after
+    if curvature >= 0.0:
+        return 0.0
+    return float(np.clip(0.5 * (before - after) / curvature, -0.5, 0.5))

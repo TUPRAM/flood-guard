@@ -396,6 +396,14 @@ def m1_literal_tile(
     returns. The levels repeat its last two steps with the Otsu threshold
     moved by -1, 0 and +1 dB; the level at 0 dB must equal the candidate.
 
+    M1-literal flags a cell only where delta-VH is below the threshold and
+    below 0 dB. That second clause is kept at every level, so a level whose
+    moved threshold is above 0 dB is cut at 0 dB. Where the Otsu threshold is
+    0 dB or more, the +1 dB level is the central level again; where it lies
+    between -1 and 0 dB, the +1 dB level moves by less than 1 dB. The summary
+    says for each level whether it was cut (``effective_threshold_db``,
+    ``cut_at_0_db``, ``plus_level``); see :func:`literal_level_cut`.
+
     Returns the candidate, the change score (delta-VH in dB, post minus pre,
     after the Lee filter), the level raster and the summary.
     """
@@ -431,9 +439,49 @@ def m1_literal_tile(
             "shifts_db": list(THRESHOLD_SHIFTS_DB),
             "applied_to": "the Otsu threshold on delta-VH; a lower threshold is stricter",
             "candidate_cells": cells,
+            **literal_level_cut(threshold),
         },
     }
     return candidate, delta_vh, nested_levels(layers, answered), summary
+
+
+PLUS_LEVEL_FULL_SHIFT: str = "full_shift"
+PLUS_LEVEL_CUT: str = "cut_at_0_db"
+PLUS_LEVEL_SAME_AS_CENTRAL: str = "identical_to_the_central_level"
+
+
+def literal_level_cut(threshold: float | None) -> dict[str, Any]:
+    """Say what the below-zero clause of M1-literal does to each threshold level.
+
+    M1-literal flags a cell where delta-VH is below the Otsu threshold and
+    below 0 dB, so the threshold that takes effect at a level is the smaller
+    of the moved threshold and 0 dB. ``plus_level`` names the outcome for the
+    +1 dB level: the full shift (the Otsu threshold is -1 dB or lower), cut
+    at 0 dB (between -1 and 0 dB), or identical to the central level (0 dB or
+    higher, where the central level is itself cut at 0 dB).
+    """
+
+    clause = ("M1-literal flags a cell only where delta-VH is below the threshold and below 0 dB; the second "
+              "clause is kept at every level, so a moved threshold above 0 dB is cut at 0 dB.")
+    if threshold is None:
+        return {"below_zero_clause": clause, "effective_threshold_db": None, "cut_at_0_db": None,
+                "plus_level": None, "plus_level_shift_that_took_effect_db": None}
+    moved = {_shift_key(shift): round(float(threshold) + shift, 6) for shift in THRESHOLD_SHIFTS_DB}
+    effective = {key: round(min(value, 0.0), 4) + 0.0 for key, value in moved.items()}
+    central, plus = effective[_shift_key(0.0)], effective[_shift_key(max(THRESHOLD_SHIFTS_DB))]
+    if plus == central:
+        outcome = PLUS_LEVEL_SAME_AS_CENTRAL
+    elif moved[_shift_key(max(THRESHOLD_SHIFTS_DB))] > 0.0:
+        outcome = PLUS_LEVEL_CUT
+    else:
+        outcome = PLUS_LEVEL_FULL_SHIFT
+    return {
+        "below_zero_clause": clause,
+        "effective_threshold_db": effective,
+        "cut_at_0_db": {key: value > 0.0 for key, value in moved.items()},
+        "plus_level": outcome,
+        "plus_level_shift_that_took_effect_db": round(plus - central, 4) + 0.0,
+    }
 
 
 def m1_v2_tile(

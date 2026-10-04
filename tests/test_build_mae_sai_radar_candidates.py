@@ -290,6 +290,18 @@ def test_every_method_finds_the_darkened_block_and_counts_it_per_unit(run: dict[
     levels = table["methods"]["m1_v2"]["threshold_levels"]["frame_km2"]
     assert levels["strictest"] <= levels["central"] <= levels["loosest"]
     assert levels["central"] == areas["m1_v2"]
+    # M1-literal says for its one tile what the below-zero clause left of the +1 dB level.
+    literal = table["methods"]["m1_literal"]
+    upper = literal["threshold_levels"]["upper_level"]
+    listed = (upper["tiles_with_the_full_shift"] + upper["tiles_cut_at_0_db"]
+              + upper["tiles_identical_to_the_central_level"] + upper["tiles_without_a_threshold"])
+    assert listed == ["E058N220"] and upper["cap_db"] == 0.0
+    whole = literal["tiles"][0]["whole_tile"]
+    assert upper["otsu_threshold_db_by_tile"] == {"E058N220": whole["otsu_threshold_delta_vh_db"]}
+    assert upper["shift_that_took_effect_db_by_tile"]["E058N220"] == pytest.approx(
+        min(whole["otsu_threshold_delta_vh_db"] + 1.0, 0.0) - min(whole["otsu_threshold_delta_vh_db"], 0.0))
+    assert "cut at 0 dB" in literal["threshold_levels"]["levels"]
+    assert "upper_level" not in table["methods"]["m1_v2"]["threshold_levels"]
     tile = table["methods"]["m1_v2"]["tiles"][0]
     assert tile["tile"] == "E058N220" and tile["whole_tile"]["abstained"] is False
     assert tile["declined"] is False and tile["declined_because"] is None
@@ -321,15 +333,95 @@ def test_the_t2_skill_bar_is_evaluated_with_the_signed_rule(run: dict[str, objec
     assert "declared unable" in skill["methods"]["m1_literal"]["result"]
     v2 = skill["methods"]["m1_v2"]
     assert v2["status_in_protocol_v1a"] == "evaluated" and v2["geoid_held_out_test_iou_used"] == 0.411164
-    # On the synthetic tile the frozen method answers everywhere, so the Mae Sai conditions pass there.
-    assert v2["units_passing_all_four_conditions"]["answer_coverage"] == UNIT_IDS
+    # On the synthetic tile the frozen method answers everywhere, so the Mae Sai conditions pass there under
+    # every reading, for the frame and for every unit: only then is the outcome "met".
+    assert v2[builder.PER_UNIT_KEY] == {"input_coverage": UNIT_IDS, "answer_coverage": UNIT_IDS}
+    assert v2["outcome_of_record"] == v2["outcome_of_this_evaluation"] == "met"
+    assert v2["per_unit_reading"].startswith("same_as_the_outcome") and v2["units_whose_outcome_is_undecided"] == []
+    assert v2["passes_for_the_input_as_a_whole"]["answer_coverage"] is True
     assert "meets the three Mae Sai conditions in every tambon" in v2["result"]
-    assert v2["units"][0]["coverage_reading"]["input_coverage"]["conditions"] == {
+    reading = v2["units"][0]["coverage_reading"]["input_coverage"]
+    assert reading["conditions"] == {
         "geoid_held_out_test_iou_min": "pass", "mae_sai_abstention_fraction_max": "pass",
         "mae_sai_unit_coverage_min": "pass", "recency_window_days": "pass",
     }
+    # A pass for one unit is never written as a plain pass (open point A4-OP3).
+    assert reading[builder.PER_UNIT_PASS_KEY] is True and "passes" not in reading
+    assert "units_passing_all_four_conditions" not in v2
     # The declared-unable methods never pass, whatever their numbers.
-    assert skill["methods"]["m1_literal"]["units_passing_all_four_conditions"]["answer_coverage"] == []
+    for name in ("m1_literal", "un_spider"):
+        unable = skill["methods"][name]
+        assert unable[builder.PER_UNIT_KEY] == {"input_coverage": [], "answer_coverage": []}
+        assert unable["outcome_of_record"] == "not_met" and unable["per_unit_reading"].startswith("not_applicable")
+        assert "declares this input unable" in unable["outcome_note"]
+
+
+def test_the_skill_outcome_never_turns_one_reading_into_a_pass() -> None:
+    both = {"input_coverage": True, "answer_coverage": True}
+    neither = {"input_coverage": False, "answer_coverage": False}
+    every = {"input_coverage": ["A", "B"], "answer_coverage": ["A", "B"]}
+    met = builder.skill_outcome(True, both, every, 2)
+    assert met["outcome"] == "met" and met["units_whose_outcome_is_undecided"] == []
+    # The frame fails and one unit passes on its own: not met, and that unit is undecided, not passing.
+    one = builder.skill_outcome(True, neither, {"input_coverage": ["B"], "answer_coverage": ["B"]}, 2)
+    assert one["outcome"] == "not_met" and one["per_unit_reading"] == "undecided (open point A4-OP3)"
+    assert one["units_whose_outcome_is_undecided"] == ["B"]
+    assert "no pass is of record for any tambon" in one["outcome_note"]
+    # The frame fails everywhere and no unit passes: not met under every reading.
+    none = builder.skill_outcome(True, neither, {"input_coverage": [], "answer_coverage": []}, 2)
+    assert none["outcome"] == "not_met" and none["per_unit_reading"].startswith("same_as_the_outcome")
+    # The two coverage readings disagree for the frame: undecided, never met.
+    split = builder.skill_outcome(True, {"input_coverage": True, "answer_coverage": False},
+                                  {"input_coverage": ["A", "B"], "answer_coverage": ["A"]}, 2)
+    assert split["outcome"] == "undecided" and split["units_whose_outcome_is_undecided"] == ["A", "B"]
+    # The frame passes but one unit does not pass on its own: undecided as well.
+    partly = builder.skill_outcome(True, both, {"input_coverage": ["A"], "answer_coverage": ["A"]}, 2)
+    assert partly["outcome"] == "undecided"
+    unable = builder.skill_outcome(False, neither, {"input_coverage": [], "answer_coverage": []}, 2)
+    assert unable["outcome"] == "not_met" and unable["per_unit_reading"].startswith("not_applicable")
+
+
+def test_the_offset_between_the_dates_is_worded_from_the_measurement() -> None:
+    offset = {"east_m_subcell": 8.8, "north_m_subcell": -1.5}
+    assert builder.pair_offset_words(offset) == (False, "about 9 m east and about 2 m south")
+    limits = builder.limits_for(offset)
+    assert len(limits) == len(builder.LIMITS) + 1
+    assert "are not registered to each other" in limits[2] and "about 9 m east" in limits[2]
+    assert "was not measured" in limits[2] and "is little affected" not in " ".join(limits)
+    assert "offset from each other" in builder.pair_offset_difference_from_geoid(offset)
+    aligned = {"east_m_subcell": 0.1, "north_m_subcell": -0.1}
+    assert builder.pair_offset_words(aligned) == (True, "to within 2 m")
+    assert "agree with each other to within 2 m" in builder.limits_for(aligned)[2]
+    assert "states its own offset" in builder.limits_for(aligned, of_record=False)[2]
+    assert "agree with each other to within 2 m" in builder.pair_offset_difference_from_geoid(aligned)
+    # The order of the polynomial is said as it was found, and an affine fit is called one only when it is one.
+    assert "order 2: GDAL's own choice, not an affine fit" in builder.assumptions_for("gcp_polynomial", [2, 2])[2]
+    assert "order 1, an affine fit" in builder.assumptions_for("gcp_polynomial", [1, 1])[2]
+    assert "GDAL chooses the order" in builder.assumptions_for("gcp_polynomial", [None, None])[2]
+    assert "GDAL chooses the order" in builder.assumptions_for("gcp_polynomial", [2, 1])[2]
+    assert "{order}" not in " ".join(builder.assumptions_for("annotation_grid_with_cell_height", [2, 2]))
+
+
+def test_open_points_and_what_is_not_computed_cover_the_review() -> None:
+    ids = [point["id"] for point in builder.OPEN_POINTS]
+    assert len(ids) == len(set(ids)) and set(ids) == {
+        "A4-OP1", "A4-OP2", "A4-OP3", "A4-OP4", "A4-OP5", "A4-OP6", "A4-OP7", "A4-OP8", "A4-OP9",
+        "A2-OP1", "A2-OP2",
+    }
+    for point in builder.OPEN_POINTS:
+        assert all(point[key].strip() for key in ("point", "protocol_says", "what_this_run_does", "for_the_owners"))
+    by_id = {point["id"]: point for point in builder.OPEN_POINTS}
+    assert "does not pass through the control points" in by_id["A4-OP1"]["what_this_run_does"]
+    assert "was not measured" in by_id["A4-OP1"]["what_this_run_does"]
+    assert "names a transform that was not run" in by_id["A4-OP7"]["what_this_run_does"]
+    assert "not a measurement" in by_id["A4-OP8"]["what_this_run_does"]
+    assert "build_mae_sai_flood_timeline.py" in by_id["A4-OP8"]["what_this_run_does"]
+    assert "cut at 0 dB" in by_id["A4-OP9"]["what_this_run_does"]
+    assert "minus / as-provided / plus one pixel" in by_id["A2-OP2"]["protocol_says"]
+    assert any("UN-SPIDER" in item and "one-pixel levels" in item for item in builder.NOT_COMPUTED)
+    # The replay's bake does warp with the call this builder describes: control points moved into the window.
+    replay = (ROOT / "scripts" / "build_mae_sai_flood_timeline.py").read_text(encoding="utf-8")
+    assert "def sentinel1_vv(" in replay and "gcps=shifted" in replay
 
 
 def test_the_displacement_check_finds_none_on_an_exact_geometry(run: dict[str, object]) -> None:
@@ -337,7 +429,32 @@ def test_the_displacement_check_finds_none_on_an_exact_geometry(run: dict[str, o
     record = check["control_point_warp"]
     assert (record["whole_grid"]["east_m"], record["whole_grid"]["north_m"]) == (0.0, 0.0)
     assert record["tiles"]["E058N220"]["measured"] is True
-    assert check["pre_against_post"]["east_m"] == 0.0 and check["pre_against_post"]["north_m"] == 0.0
+    pair = check["pre_against_post"]
+    assert pair["east_m"] == 0.0 and pair["north_m"] == 0.0
+    # The sub-cell estimate is good to a metre or two: with no offset at all it reads up to 1 m here.
+    assert abs(pair["east_m_subcell"]) < 2.0 and abs(pair["north_m_subcell"]) < 2.0
+    assert abs(pair["frame_cells_only"]["east_m_subcell"]) < 2.0
+    assert 0.0 < pair["correlation_at_zero_shift"] <= pair["correlation"]
+    # Nine control points on a plane: an affine fit and the second order reproduce GDAL alike, so no single
+    # order is found, the polynomial passes through its points, and the misfit over the frame is nil.
+    fit = check["gcp_polynomial"]
+    for role in ("pre", "post"):
+        assert fit[role]["control_points"] == 9 and fit[role]["order"] is None
+        assert fit[role]["orders_that_reproduce_gdal"] == [1, 2]
+        assert fit[role]["residual_at_the_control_points_m"]["along_range"]["max_abs"] < 0.1
+        assert abs(fit[role]["misfit_over_the_frame_m"]["along_range_m"]["median"]) < 1.0
+        assert len(fit[role]["control_points_nearest_the_frame"]) == 4
+    assert abs(fit["post_minus_pre"]["along_range_m"]["median"]) < 0.1
+    assert fit["label_of_the_plan"] == s1.PLAN_FALLBACK_LABEL and "A4-OP7" in fit["label_note"]
+    assert run["receipt"]["parameters"]["gcp_polynomial"]["order_found"] == {"pre": None, "post": None}
+    assert "GDAL chooses the order" in run["table"]["geocoding"]["transform"]
+    assert "could not be told" in run["table"]["geocoding"]["label_note"]
+    assert builder.label_note([2, 2]).endswith("order 2, not the affine fit the label names (open point A4-OP7).")
+    assert builder.label_note([1, 1]).endswith("of order 1: an affine fit.")
+    assert "GDAL chooses the order" in run["table"]["assumptions"][2]
+    assert "agree with each other to within 2 m" in run["table"]["limits"][2]
+    assert run["table"]["limits"] == run["receipt"]["limits"]
+    assert "agree with each other to within 2 m" in run["table"]["methods"]["m1_v2"]["disclosed_differences_from_geoid"][-1]
     same = check["height_aware_mapping"]["readings"]["annotation_heights_and_dem_share_one_datum"]
     assert (same["whole_grid"]["east_m"], same["whole_grid"]["north_m"]) == (0.0, 0.0)
     expected = check["expected_from_geometry"]["readings"]["annotation_heights_and_dem_share_one_datum"]
@@ -347,6 +464,16 @@ def test_the_displacement_check_finds_none_on_an_exact_geometry(run: dict[str, o
     # Cells 35 m lower than the control points lie 35 / tan(37 degrees) = 46 m from them along the range. The
     # synthetic samples are 10.4 m wide and the figure counts them as 10 m, as the annotation states.
     assert abs(abs(other["frame"]["along_range_m"]["median"]) - 35.0 / np.tan(np.radians(37.0))) < 3.0
+    # All of it comes from the height of the control points here, none from the polynomial, and the two parts
+    # add up to the whole for every cell.
+    parts = check["expected_from_geometry"]["parts"]["annotation_heights_are_ellipsoidal_and_dem_is_above_the_geoid"]
+    assert parts["control_point_height_part_along_range_m"]["median"] == pytest.approx(
+        other["frame"]["along_range_m"]["median"], abs=1.0)
+    assert abs(parts["polynomial_misfit_part_along_range_m"]["median"]) < 1.0
+    assert parts["largest_gap_between_the_sum_of_the_parts_and_the_whole_m"] < 0.01
+    means = parts["mean_along_range_m"]
+    assert means["control_point_height_part"] + means["polynomial_misfit_part"] == pytest.approx(means["whole"], abs=0.11)
+    assert check["expected_from_geometry"]["control_point_height_over_the_frame_m"]["median"] == pytest.approx(400.0, abs=0.5)
     assert "Not the plan's fallback path" in check["height_aware_mapping"]["status"]
 
 
@@ -437,6 +564,11 @@ def test_the_sensitivity_run_has_its_own_files_and_replaces_nothing(
     assert table["geocoding"]["height_datum_reading"] == builder.HEIGHT_AWARE_DATUM_READING
     assert table["t2_skill_bar"]["evaluation_of_record"] is False
     assert "Not the evaluation of record" in table["t2_skill_bar"]["evaluation_note"]
+    for entry in table["t2_skill_bar"]["methods"].values():
+        assert entry["outcome_of_record"] is None and entry["outcome_of_this_evaluation"] in ("met", "not_met")
+        assert entry["outcome_note"].startswith("Not the evaluation of record")
+    assert table["geocoding"]["label_note"] is None and "no polynomial" in table["geocoding"]["transform"]
+    assert "displacement check only" in receipt["parameters"]["gcp_polynomial"]["used_for"]
     assert "Not a flood input of case O1 unless the owners decide so" in table["o1_flood_input_interface"]["use_restriction"]
     assert receipt["run_of_record"] == {
         "table": builder.TABLE_NAME, "receipt": builder.RECEIPT_NAME, "table_sha256": record_table,
@@ -503,7 +635,7 @@ def test_the_skill_sentence_says_frame_and_tambons_apart() -> None:
                              "passes_for_every_unit_by_answer_coverage": len(passing) == 8},
                 "recency_passes": True,
             },
-            "units_passing_all_four_conditions": {"input_coverage": passing, "answer_coverage": passing},
+            builder.PER_UNIT_KEY: {"input_coverage": passing, "answer_coverage": passing},
         }
 
     mixed = builder.skill_sentence("m1_v2", entry(["TH570908"], 0.7726), rule)

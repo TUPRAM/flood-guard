@@ -23,8 +23,12 @@ applied and the result is warped with the product's ground control points
 (``floodguard.sentinel1_sigma0``). The uncalibrated amplitude is never used.
 
 That geocoding displaces the radar layers by several hundred metres at Mae
-Sai, because the control points sit at the heights of a coarse terrain model.
-Each run measures the displacement (``geolocation_check``). A second run,
+Sai, for two reasons that add up: the control points sit at the heights of a
+coarse terrain model, above the Mae Sai plain, and GDAL's control-point
+polynomial (second order for these products, not an affine fit) does not
+pass through the control points. Each date has its own polynomial, so the
+two images of the run of record are also offset from each other. Each run
+measures all of this (``geolocation_check``). A second run,
 ``--geocoding annotation_grid_with_cell_height``, repeats the three methods
 with a mapping that uses a DEM height for every cell. It is a sensitivity
 run and not in the plan: the run of record is the plan's fallback, and the
@@ -129,6 +133,9 @@ DEM_SLOPE_BLOCK = 3  # GLO-30 cells averaged to the 3 arc-second spacing of the 
 SLOPE_CLASS_EDGES = (5.0, 10.0, 20.0)
 DISPLACEMENT_SEARCH_CELLS = 120
 PAIR_SEARCH_CELLS = 20
+# The sub-cell estimate of the offset between the two dates is itself good to a metre or two (on the synthetic
+# pair of the tests, which has no offset, it reads up to 1 m). Below this size an offset is worded as agreement.
+PAIR_AGREEMENT_M = 2.0
 DISPLACEMENT_MIN_WATER_CELLS = 2000
 DISPLACEMENT_LATTICE_STEP = 8
 # No geoid model is on disk. The annotation does not say whether its heights are above the ellipsoid or above
@@ -168,6 +175,18 @@ REQUIRED_STATEMENT_A2 = (
     "Reproduces UN-SPIDER practice; {area} km2 of residual water at 16 Sep 06:16 ICT; "
     "the published 93.38% OA does not transfer"
 )
+# The outcome of the T2 skill bar for an input, as a later lane may read it. Protocol v1a: "A T2 input is low
+# confidence unless all four conditions pass." It does not say whether the two Mae Sai conditions are taken per
+# tambon or for the frame (open point A4-OP3), so a pass that holds for one tambon only is never written as a
+# pass: it is listed under PER_UNIT_KEY and the outcome says that the reading is undecided.
+OUTCOME_MET = "met"
+OUTCOME_NOT_MET = "not_met"
+OUTCOME_UNDECIDED = "undecided"
+PER_UNIT_KEY = "units_passing_only_if_the_conditions_are_read_per_unit"
+PER_UNIT_PASS_KEY = "passes_if_read_per_unit"
+PER_UNIT_UNDECIDED = "undecided (open point A4-OP3)"
+PER_UNIT_NOT_APPLICABLE = "not_applicable (protocol v1a declares this input unable to meet the bar)"
+PER_UNIT_SAME = "same_as_the_outcome (every reading gives the same answer for every tambon)"
 R15_CAVEATS = [
     "The GEOID result (0.411) is not distinguishable from 0.40 on 14 tiles.",
     "67.9% of the GEOID test cells had no answer.",
@@ -193,9 +212,10 @@ ASSUMPTIONS = [
 ]
 GEOCODING_ASSUMPTIONS = {
     s1.GEOCODING_GCP_POLYNOMIAL: {
-        "geocoding": "Geocoding is the product's ground control points fitted by GDAL's GCP polynomial, with no "
-                     "terrain model (plan row A4 fallback). Cells are displaced along the radar range "
-                     "direction; geolocation_check gives the measured and the expected displacement.",
+        "geocoding": "Geocoding is the product's ground control points fitted by GDAL's GCP polynomial{order}, "
+                     "each date with its own fit and with no terrain model (plan row A4 fallback). Cells are "
+                     "displaced along the radar range direction and the two dates are offset from each other; "
+                     "geolocation_check gives the measured displacement, its two parts and the offset.",
         "alignment": "The context layers (tambons, land cover, slope) are in map geometry. The radar layers "
                      "are displaced, so a mask or a tambon boundary does not meet the radar cell it was "
                      "meant for.",
@@ -212,11 +232,72 @@ GEOCODING_ASSUMPTIONS = {
 }
 
 
-def assumptions_for(geocoding: str) -> list[str]:
-    """The assumptions of a run with the sentences that depend on its geocoding filled in."""
+def polynomial_order_clause(orders: Sequence[int | None]) -> str:
+    """Words for the order of the control-point polynomial that was found for each date."""
 
-    return [line.format(**GEOCODING_ASSUMPTIONS[geocoding]) if line.startswith("{") else line
-            for line in ASSUMPTIONS]
+    found = set(orders)
+    if len(found) != 1 or None in found:
+        return " (GDAL chooses the order; see geolocation_check.gcp_polynomial)"
+    order = next(iter(found))
+    if order == 1:
+        return " (order 1, an affine fit: GDAL's own choice)"
+    return f" (order {order}: GDAL's own choice, not an affine fit)"
+
+
+def assumptions_for(geocoding: str, orders: Sequence[int | None] = (None,)) -> list[str]:
+    """The assumptions of a run with the sentences that depend on its geocoding filled in.
+
+    ``orders`` are the orders of the control-point polynomial found for the
+    two dates (``geolocation_check.gcp_polynomial``).
+    """
+
+    filled = {key: text.replace("{order}", polynomial_order_clause(orders))
+              for key, text in GEOCODING_ASSUMPTIONS[geocoding].items()}
+    return [line.format(**filled) if line.startswith("{") else line for line in ASSUMPTIONS]
+
+
+def pair_offset_words(pair: Mapping[str, Any]) -> tuple[bool, str]:
+    """Say how far the pre-event image lies from the post-event image, from the measured sub-cell offset.
+
+    Returns whether the two images agree to within ``PAIR_AGREEMENT_M``, and the words.
+    """
+
+    east, north = float(pair["east_m_subcell"]), float(pair["north_m_subcell"])
+    if max(abs(east), abs(north)) < PAIR_AGREEMENT_M:
+        return True, f"to within {PAIR_AGREEMENT_M:g} m"
+    return False, (f"about {abs(east):.0f} m {'east' if east >= 0 else 'west'} and about {abs(north):.0f} m "
+                   f"{'north' if north >= 0 else 'south'}")
+
+
+def limits_for(pair: Mapping[str, Any], of_record: bool = True) -> list[str]:
+    """The limits of a run, with the measured offset between its two images."""
+
+    agree, words = pair_offset_words(pair)
+    if agree:
+        offset = (f"The two images of this run agree with each other {words} "
+                  "(geolocation_check.pre_against_post, a sub-cell estimate)."
+                  + ("" if of_record else " The run of record states its own offset in its table."))
+    else:
+        offset = (f"The two images of this run are not registered to each other: the pre-event content lies "
+                  f"{words} of the post-event content (geolocation_check.pre_against_post, a sub-cell estimate; "
+                  "a cell is 10 m). Each date is warped with its own control-point polynomial. All three methods "
+                  "compare the two dates cell by cell, so the offset adds change that is not on the ground "
+                  "wherever the backscatter has an edge. What that does to the candidates was not measured.")
+    return [*LIMITS[:2], offset, *LIMITS[2:]]
+
+
+def pair_offset_difference_from_geoid(pair: Mapping[str, Any]) -> str:
+    """The sentence on the offset between the two dates for ``disclosed_differences_from_geoid``."""
+
+    agree, words = pair_offset_words(pair)
+    tail = ("The two dates of a GEOID tile came on one grid from their publisher; the offset between them was "
+            "not measured here.")
+    if agree:
+        return (f"The two dates of this run agree with each other {words} "
+                f"(geolocation_check.pre_against_post). {tail}")
+    return (f"The two dates of this run are offset from each other: the pre-event content lies {words} of the "
+            "post-event content (geolocation_check.pre_against_post), because each date is warped with its own "
+            f"control-point polynomial. M1-v2 compares the dates cell by cell. {tail}")
 LIMITS = [
     "One pair of images, twelve days apart. The second was taken on 16 September 2024 at 06:16 in Thailand, "
     "several days after the flood peak: residual water only. Nothing here describes the peak.",
@@ -235,21 +316,34 @@ NOT_COMPUTED = [
     "FPPS", "A-E class", "would-be class", "ensemble cell", "exposure", "road closure", "access loss",
     "confidence class of a unit", "any comparison with UNOSAT/GISTDA product 4009", "A6-prime classifier",
     "M1-v2 Otsu comparator", "HAND or slope mask for M1-literal and M1-v2",
+    "minus and plus one-pixel levels of the UN-SPIDER reproduction (protocol v1b, ensemble_grid)",
+    "the effect of the offset between the two dates on the candidates",
+    "the displacement of the replay's Sentinel-1 layers",
 ]
 OPEN_POINTS = [
     {
         "id": "A4-OP1",
-        "point": "Geocoding of the fallback path.",
+        "point": "Geocoding of the fallback path: the displacement, its two parts, and the offset between the "
+                 "two dates.",
         "protocol_says": "Plan row A4: without SNAP, a GCP warp with the sigmaNought table, labelled "
                          "'approximate geocoding: GCP affine, no DEM terrain correction'.",
-        "what_this_run_does": "The run of record does exactly that. The product's control points sit at the heights of a coarse "
-                              "terrain model that is several hundred metres above the Mae Sai plain, so the "
-                              "radar layers are displaced along the range direction. geolocation_check gives "
-                              "the measured displacement and what a mapping with a height per cell "
-                              "leaves. The three methods were run a second time with that mapping, as a "
+        "what_this_run_does": "The run of record warps each date with GDAL's control-point polynomial. The radar "
+                              "layers are displaced along the range direction, for two reasons that add up "
+                              "(geolocation_check.expected_from_geometry, parts). First, the control points sit "
+                              "at the heights of a coarse terrain model, above the Mae Sai plain. Second, the "
+                              "polynomial does not pass through the control points "
+                              "(geolocation_check.gcp_polynomial). Each date has its own polynomial, so the two "
+                              "images of the run of record are also offset from each other "
+                              "(geolocation_check.pre_against_post gives the measured offset). All three "
+                              "methods compare the dates cell by cell; what the offset does to the candidates "
+                              "was not measured. The three "
+                              "methods were run a second time with a mapping that uses a height per cell, as a "
                               "sensitivity run with its own table and receipt; it replaces nothing.",
-        "for_the_owners": "Which layers case O1 uses: the run of record (the plan's fallback, displaced), "
-                          "the sensitivity run (a mapping the plan does not name), or a SNAP terrain "
+        "for_the_owners": "Which layers case O1 uses: the run of record (the plan's fallback: displaced, and its "
+                          "two dates offset from each other), the sensitivity run (a mapping the plan does not "
+                          "name), a warp that passes through the control points (it would take away the "
+                          "polynomial part and should take away the offset between the dates, but not the "
+                          "height part; the plan does not name it and it was not run), or a SNAP terrain "
                           "correction once SNAP is installed.",
     },
     {
@@ -323,6 +417,68 @@ OPEN_POINTS = [
                          "Plan rows A2 and A4 name this pair.",
         "what_this_run_does": "Reads both files, as the plan rows say.",
         "for_the_owners": "To confirm that R14 covers plan tasks A2 and A4 as well as the replay.",
+    },
+    {
+        "id": "A4-OP7",
+        "point": "The label says 'GCP affine'; the warp that ran is not affine.",
+        "protocol_says": "Plan row A4 gives the label 'approximate geocoding: GCP affine, no DEM terrain "
+                         "correction' for the GCP warp. It says nothing else about the transform: no polynomial "
+                         "order, and no word on whether each date is fitted on its own.",
+        "what_this_run_does": "Warps each date with GDAL's control-point polynomial and asks for no order, as "
+                              "the replay's bake does. GDAL then chooses the order itself and does not report "
+                              "it. geolocation_check.gcp_polynomial gives the order found for each date and how "
+                              "far an affine fit lies from it. The label is kept word for word, because the "
+                              "plan prescribes it; it names a transform that was not run.",
+        "for_the_owners": "Whether the label is reworded to name the transform that ran, or the warp is rerun "
+                          "as an affine fit so that the label is true (a new run; none was made), and whether "
+                          "the order is fixed in the code and no longer left to GDAL.",
+    },
+    {
+        "id": "A4-OP8",
+        "point": "The Sentinel-1 layers of the replay are made with the same warp.",
+        "protocol_says": "Nothing. Neither protocol and no plan row speaks of the geocoding of the replay's "
+                         "Sentinel-1 layers.",
+        "what_this_run_does": "Nothing to the replay. scripts/build_mae_sai_flood_timeline.py (sentinel1_vv) "
+                              "reads the 3 September archive this run reads and copies of the 6 and 15 "
+                              "September passes, and warps each with the same call: the product's control "
+                              "points, moved into the image window, fitted by GDAL's polynomial. The "
+                              "displacement measured here was not measured on the replay's layers, and the "
+                              "replay's bake was not changed or rerun in this lane. That its layers are "
+                              "displaced by a similar distance is an inference from the identical warp, not a "
+                              "measurement.",
+        "for_the_owners": "For the owners of the replay: to measure the displacement of its Sentinel-1 layers "
+                          "against mapped permanent water, and to decide what the page changes or says if the "
+                          "displacement is there.",
+    },
+    {
+        "id": "A4-OP9",
+        "point": "The +1 dB level of M1-literal is cut at 0 dB.",
+        "protocol_says": "Protocol v1b (ensemble_grid, t2_levels_by_input): 'M1-literal: Otsu threshold -1 / 0 / "
+                         "+1 dB', accepted by the owners 'as a default and nothing more'. It does not say what "
+                         "happens to the second clause of the rule (delta-VH below 0 dB) when the threshold "
+                         "is moved.",
+        "what_this_run_does": "Moves the Otsu threshold and keeps the second clause, so a moved threshold above "
+                              "0 dB is cut at 0 dB. Each tile says what took effect (threshold_levels in its "
+                              "whole_tile block), and methods.m1_literal.threshold_levels.upper_level lists the "
+                              "tiles. Where the Otsu threshold is 0 dB or more, the +1 dB level is the central "
+                              "level again. The band is therefore narrower above the central level than below "
+                              "it by construction, not because of the data.",
+        "for_the_owners": "Whether the +1 dB level keeps the below-zero clause (as here), drops it, or is "
+                          "defined another way. The ensemble lane reads these levels as the flood-state axis "
+                          "of M1-literal.",
+    },
+    {
+        "id": "A2-OP2",
+        "point": "The minus and plus levels of the UN-SPIDER reproduction are not written.",
+        "protocol_says": "Protocol v1b (ensemble_grid, t2_levels_by_input): 'UN-SPIDER reproduction: minus / "
+                         "as-provided / plus one pixel on the output extent; the ratio 1.25 is not tuned', with "
+                         "20 m for the minus and the plus level (owner choice 2). It does not say how 20 m is "
+                         "taken on a 10 m raster (two cells, and in which neighbourhood), nor whether the "
+                         "candidate builder or the flood-input reader makes the two levels. Plan row A2 asks "
+                         "for the area and the statement.",
+        "what_this_run_does": "Writes the as-provided extent only (un_spider_candidate.tif) and lists the two "
+                              "levels under not_computed.",
+        "for_the_owners": "Who makes the two levels, and with which neighbourhood.",
     },
 ]
 
@@ -703,6 +859,96 @@ def displacement_against_water(
     return result
 
 
+def _spread(values: np.ndarray) -> dict[str, float]:
+    """The 5th percentile, the median and the 95th percentile, to a tenth."""
+
+    return {key: round(float(np.percentile(values, level)), 1) + 0.0
+            for key, level in (("p05", 5), ("median", 50), ("p95", 95))}
+
+
+def pair_offset(pre_db: np.ndarray, post_db: np.ndarray, in_frame: np.ndarray, cell_m: float) -> dict[str, Any]:
+    """Measure where the pre-event image content lies relative to the post-event image content.
+
+    Whole cells and a sub-cell estimate, over every cell of the grid and over
+    the cells of the frame alone. No candidate is involved.
+    """
+
+    both = np.isfinite(pre_db) & np.isfinite(post_db)
+
+    def measured(mask: np.ndarray) -> dict[str, Any]:
+        result = s1.estimate_displacement(-post_db, -pre_db, mask, max_shift_cells=PAIR_SEARCH_CELLS)
+        return {
+            **_metres(result, cell_m),
+            "east_m_subcell": round(result["east_cells_subcell"] * cell_m, 1) + 0.0,
+            "north_m_subcell": round(result["north_cells_subcell"] * cell_m, 1) + 0.0,
+            "correlation_at_zero_shift": result["correlation_at_zero_shift"],
+        }
+
+    return {
+        "what": "Where the pre-event image content lies relative to the post-event image content, in "
+                "the images of this run. east_m and north_m are whole cells. east_m_subcell and north_m_subcell "
+                "are an estimate to a fraction of a cell: the vertex of the parabola through the correlation "
+                "at the best whole-cell shift and its two neighbours. Another estimator can differ by a metre "
+                "or two. correlation_at_zero_shift is the correlation of the two images as the methods read "
+                "them.",
+        **measured(both),
+        "frame_cells_only": measured(both & in_frame),
+    }
+
+
+def polynomial_positions(window: s1.Sigma0Window, lon: np.ndarray, lat: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Image line and sample of map positions under GDAL's control-point polynomial, counted as the annotation counts.
+
+    GDAL counts image coordinates from the corner of the first sample; the
+    annotation counts samples, so a sample centre is half a cell further in
+    GDAL's count. That half cell is taken off here.
+    """
+
+    from rasterio.transform import GCPTransformer
+
+    rows, cols = GCPTransformer(list(window.gcps)).rowcol(lon.ravel(), lat.ravel(), op=lambda value: value)
+    return (np.asarray(rows, dtype="float64").reshape(lon.shape) + window.row_offset - 0.5,
+            np.asarray(cols, dtype="float64").reshape(lon.shape) + window.col_offset - 0.5)
+
+
+def control_point_fit(
+    window: s1.Sigma0Window, crs: str, frame_centre: tuple[float, float], spacing: tuple[float, float]
+) -> dict[str, Any]:
+    """Describe GDAL's control-point polynomial of one date: its order and its misfit at the control points.
+
+    ``spacing`` is the range and the azimuth pixel spacing in metres. The
+    residual is the control point minus the polynomial, so a positive range
+    value means the polynomial reads the image nearer to the sensor than the
+    control point says.
+    """
+
+    from pyproj import Transformer
+
+    order = s1.gcp_polynomial_order(window.gcps)
+    row_residual, col_residual = s1.gcp_polynomial_residuals(window.gcps)
+    along_range, along_azimuth = col_residual * spacing[0], row_residual * spacing[1]
+    source = window.gcp_crs.to_wkt() if hasattr(window.gcp_crs, "to_wkt") else window.gcp_crs
+    x, y = Transformer.from_crs(source, crs, always_xy=True).transform(
+        [point.x for point in window.gcps], [point.y for point in window.gcps])
+    distance = np.hypot(np.asarray(x) - frame_centre[0], np.asarray(y) - frame_centre[1])
+    nearest = [
+        {"longitude": round(float(window.gcps[index].x), 3), "latitude": round(float(window.gcps[index].y), 3),
+         "height_m": round(float(window.gcps[index].z), 1), "distance_from_the_frame_centre_km": round(float(distance[index]) / 1000.0, 1),
+         "along_range_residual_m": round(float(along_range[index]), 1) + 0.0}
+        for index in np.argsort(distance, kind="stable")[:4]
+    ]
+
+    def size(values: np.ndarray) -> dict[str, float]:
+        return {"rms": round(float(np.sqrt(np.mean(values * values))), 1),
+                "max_abs": round(float(np.abs(values).max()), 1)}
+
+    return {
+        **order,
+        "residual_at_the_control_points_m": {"along_range": size(along_range), "along_azimuth": size(along_azimuth)},
+        "control_points_nearest_the_frame": nearest,
+    }
+
+
 def geolocation_check(
     images: Mapping[str, np.ndarray], windows: Mapping[str, Mapping[str, s1.Sigma0Window]],
     inputs: BuildInputs, grid: s1.RasterGrid, tiles: Sequence[rc.LatticeTile], water: np.ndarray,
@@ -710,22 +956,24 @@ def geolocation_check(
 ) -> dict[str, Any]:
     """Measure the displacement of the radar layers. No candidate is read or written here.
 
-    Three things are measured on the pre-event VH image, whatever geocoding
-    the run uses: where its dark cells lie relative to mapped permanent water
-    under the control-point warp of the plan's fallback; the same under the
-    mapping that uses the DEM height of every cell (two readings of the
-    height datum); and, cell by cell, how far the two mappings place the same
-    cell apart in the image. ``images`` are the images of the run; its
-    pre-event and post-event images are compared with each other.
+    Measured on the pre-event VH image, whatever geocoding the run uses:
+    where its dark cells lie relative to mapped permanent water under the
+    control-point warp of the plan's fallback; the same under the mapping
+    that uses the DEM height of every cell (two readings of the height
+    datum); and, cell by cell, how far the two mappings place the same cell
+    apart in the image, split into the part that comes from the height of
+    the control points and the part that comes from the misfit of GDAL's
+    polynomial. The polynomial of each date is described (its order, its
+    misfit at the control points and over the frame), and the two dates are
+    compared. ``images`` are the images of the run; its pre-event and
+    post-event images are compared with each other to a fraction of a cell.
     """
 
     from pyproj import Transformer
-    from rasterio.transform import GCPTransformer
 
     window = windows["pre"]["vh"]
     pre_vh_db = _db(images["pre"][1])
     post_vh_db = _db(images["post"][1])
-    both = np.isfinite(pre_vh_db) & np.isfinite(post_vh_db)
     check: dict[str, Any] = {
         "what": "Displacement of the radar layers, measured on the pre-event VH image against ESA WorldCover "
                 "2021 class 80 (permanent water). Positive east_m and north_m: the image content lies east "
@@ -737,12 +985,7 @@ def geolocation_check(
             "status": "The fallback of plan row A4 and the geocoding of the run of record.",
             **displacement_against_water(_db(s1.warp_gcp_polynomial(window, grid)), water, grid, tiles),
         },
-        "pre_against_post": {
-            "what": "Where the pre-event image content lies relative to the post-event image content, in "
-                    "the images of this run.",
-            **_metres(s1.estimate_displacement(-post_vh_db, -pre_vh_db, both, max_shift_cells=PAIR_SEARCH_CELLS),
-                      grid.cell_m),
-        },
+        "pre_against_post": pair_offset(pre_vh_db, post_vh_db, unit_index > 0, grid.cell_m),
     }
     geolocation = s1.read_geolocation_grid(inputs.pre_safe, "vh")
     mapping = s1.HeightAwareMapping.from_geolocation_grid(geolocation, grid.crs)
@@ -762,37 +1005,94 @@ def geolocation_check(
         "readings": readings,
     }
 
-    # How far apart the two mappings place the same cell in the image, on a thinned lattice.
+    # How far apart the mappings place the same cell in the image, on a thinned lattice. Three mappings are
+    # compared: GDAL's control-point polynomial (the warp of the run of record), a spline that passes through
+    # every control point (the control points at their own heights, with no polynomial in between), and the
+    # mapping that uses the DEM height of every cell.
     step = DISPLACEMENT_LATTICE_STEP
     x, y = grid.cell_centres()
     mesh_x, mesh_y = np.meshgrid(x[::step], y[::step])
     lon, lat = Transformer.from_crs(grid.crs, "EPSG:4326", always_xy=True).transform(mesh_x, mesh_y)
-    polynomial_rows, polynomial_cols = GCPTransformer(list(window.gcps)).rowcol(
-        lon.ravel(), lat.ravel(), op=lambda value: value)
-    # GDAL counts image coordinates from the corner of the first sample; the annotation counts samples, so a
-    # sample centre is half a cell further in GDAL's count.
-    polynomial_rows = np.asarray(polynomial_rows, dtype="float64").reshape(mesh_x.shape) + window.row_offset - 0.5
-    polynomial_cols = np.asarray(polynomial_cols, dtype="float64").reshape(mesh_x.shape) + window.col_offset - 0.5
-    spacing = float(s1.read_product_metadata(inputs.pre_safe)["range_pixel_spacing_m"])
     thinned_units = unit_index[::step, ::step]
+    in_frame = thinned_units > 0
+    frame_centre = (float(mesh_x[in_frame].mean()), float(mesh_y[in_frame].mean()))
+    polynomial: dict[str, tuple[np.ndarray, np.ndarray]] = {}
+    exact: dict[str, tuple[np.ndarray, np.ndarray]] = {}
+    misfit: dict[str, tuple[np.ndarray, np.ndarray]] = {}
+    fits: dict[str, Any] = {}
+    control_height = np.zeros(mesh_x.shape)
+    for role, path in (("pre", inputs.pre_safe), ("post", inputs.post_safe)):
+        product = s1.read_product_metadata(path)
+        spacings = (float(product["range_pixel_spacing_m"]), float(product["azimuth_pixel_spacing_m"]))
+        polynomial[role] = polynomial_positions(windows[role]["vh"], lon, lat)
+        grid_of_date = geolocation if role == "pre" else s1.read_geolocation_grid(path, "vh")
+        exact_rows, exact_cols, heights = s1.interpolate_control_points(grid_of_date, grid.crs, mesh_x, mesh_y)
+        exact[role] = (exact_rows, exact_cols)
+        if role == "pre":
+            control_height, spacing, azimuth_spacing = heights, spacings[0], spacings[1]
+        misfit[role] = ((exact_cols - polynomial[role][1]) * spacings[0],
+                        (exact_rows - polynomial[role][0]) * spacings[1])
+        fits[role] = {
+            **control_point_fit(windows[role]["vh"], grid.crs, frame_centre, spacings),
+            "misfit_over_the_frame_m": {"along_range_m": _spread(misfit[role][0][in_frame]),
+                                        "along_azimuth_m": _spread(misfit[role][1][in_frame])},
+        }
+    affine = [fits[role]["max_difference_from_gdal_px_by_order"].get("1") for role in ("pre", "post")]
+    check["gcp_polynomial"] = {
+        "what": "The polynomial GDAL fits to the control points of each date, which is the warp of the run of "
+                "record. order is the order found (the warp asks GDAL for none, GDAL chooses and does not "
+                "report it). residual_at_the_control_points_m is the control point minus the polynomial. "
+                "misfit_over_the_frame_m is the image position of each frame cell under a spline that passes "
+                f"through every control point minus its position under the polynomial, on every {step}th cell; "
+                "it includes the half cell by which GDAL's count of image samples differs from the "
+                "annotation's. A positive along-range value means the polynomial reads the image nearer to the "
+                "sensor, so the content it shows lies that far towards far range.",
+        "order_asked_of_gdal": "none: GDAL chooses the order from the number of control points",
+        "found_by": "floodguard.sentinel1_sigma0.gcp_polynomial_order",
+        "label_of_the_plan": s1.PLAN_FALLBACK_LABEL,
+        "label_note": "The label is the plan's, word for word. An affine fit is a polynomial of order 1. "
+                      "max_difference_from_gdal_px_by_order gives, under '1', how many image cells an affine "
+                      "fit to the same control points lies from the polynomial that ran (open point A4-OP7).",
+        "affine_fit_max_difference_px": {"pre": affine[0], "post": affine[1]},
+        "pre": fits["pre"],
+        "post": fits["post"],
+        "post_minus_pre": {
+            "what": "The misfit of the post-event polynomial minus that of the pre-event polynomial, cell by "
+                    "cell over the frame. A positive along-range value means the post-event content lies "
+                    "that far further towards far range than the pre-event content: the two dates are "
+                    "offset from each other by it. pre_against_post measures the same offset on the images.",
+            "along_range_m": _spread((misfit["post"][0] - misfit["pre"][0])[in_frame]),
+            "along_azimuth_m": _spread((misfit["post"][1] - misfit["pre"][1])[in_frame]),
+        },
+    }
+
+    polynomial_rows, polynomial_cols = polynomial["pre"]
+    exact_rows, exact_cols = exact["pre"]
     expected: dict[str, Any] = {}
+    parts: dict[str, Any] = {}
     for name, (rows, cols) in coordinates.items():
         along_range = (cols[::step, ::step] - polynomial_cols) * spacing
-        along_azimuth = (rows[::step, ::step] - polynomial_rows) * spacing
-
-        def spread(values: np.ndarray) -> dict[str, float]:
-            return {key: round(float(np.percentile(values, level)), 1)
-                    for key, level in (("p05", 5), ("median", 50), ("p95", 95))}
-
-        in_frame = thinned_units > 0
+        along_azimuth = (rows[::step, ::step] - polynomial_rows) * azimuth_spacing
         expected[name] = {
-            "frame": {"along_range_m": spread(along_range[in_frame]),
-                      "along_azimuth_m": spread(along_azimuth[in_frame])},
+            "frame": {"along_range_m": _spread(along_range[in_frame]),
+                      "along_azimuth_m": _spread(along_azimuth[in_frame])},
             "units": {
-                unit_id: {"along_range_m": spread(along_range[thinned_units == position]),
-                          "along_azimuth_m": spread(along_azimuth[thinned_units == position])}
+                unit_id: {"along_range_m": _spread(along_range[thinned_units == position]),
+                          "along_azimuth_m": _spread(along_azimuth[thinned_units == position])}
                 for position, unit_id in enumerate(unit_ids, start=1)
             },
+        }
+        from_height = (cols[::step, ::step] - exact_cols) * spacing
+        parts[name] = {
+            "control_point_height_part_along_range_m": _spread(from_height[in_frame]),
+            "polynomial_misfit_part_along_range_m": _spread(misfit["pre"][0][in_frame]),
+            "mean_along_range_m": {
+                "whole": round(float(along_range[in_frame].mean()), 1) + 0.0,
+                "control_point_height_part": round(float(from_height[in_frame].mean()), 1) + 0.0,
+                "polynomial_misfit_part": round(float(misfit["pre"][0][in_frame].mean()), 1) + 0.0,
+            },
+            "largest_gap_between_the_sum_of_the_parts_and_the_whole_m": round(
+                float(np.abs(from_height + misfit["pre"][0] - along_range)[in_frame].max()), 3) + 0.0,
         }
     distance = np.hypot(mapping.x0 - (grid.west + grid.width * grid.cell_m / 2),
                         mapping.y0 - (grid.north - grid.height * grid.cell_m / 2))
@@ -807,8 +1107,22 @@ def geolocation_check(
         "range_direction_bearing_degrees": round(float(bearing), 1),
         "incidence_angle_degrees_near_the_frame": round(float(np.degrees(np.arctan(mapping.tan_incidence[centre]))), 2),
         "annotation_height_near_the_frame_m": round(float(geolocation.height[centre]), 1),
+        "annotation_height_near_the_frame_note": "The height of the one control point nearest the centre of "
+                                                 "the grid. The control points around the frame have other "
+                                                 "heights; control_point_height_over_the_frame_m interpolates "
+                                                 "them.",
+        "control_point_height_over_the_frame_m": _spread(control_height[in_frame]),
         "median_dem_height_of_the_frame_m": round(float(np.nanmedian(height[unit_index > 0])), 1),
         "readings": expected,
+        "parts": {
+            "what": "The along-range displacement of each reading, split in two, cell by cell: the part that "
+                    "comes from the height of the control points (the height-aware mapping minus a spline "
+                    "that passes through every control point) and the part that comes from the misfit of "
+                    "GDAL's polynomial (that spline minus the polynomial). The two add up to the whole for "
+                    "every cell, and so do their means over the frame (mean_along_range_m); the medians of "
+                    "the parts need not add up to the median of the whole.",
+            **parts,
+        },
     }
     return check
 
@@ -849,6 +1163,60 @@ def method_table(
                 candidate, in_frame, layers["worldcover"], WORLDCOVER_CLASSES, cell_area_km2=cell_area_km2),
             "by_slope_class": rc.strata_areas(
                 candidate, in_frame, slope_class, slope_labels, cell_area_km2=cell_area_km2),
+        },
+    }
+
+
+def geocoding_transform(geocoding: str, orders: Sequence[int | None]) -> str:
+    """Name the transform a run used to put the image on the map grid."""
+
+    if geocoding == s1.GEOCODING_GCP_POLYNOMIAL:
+        return ("GDAL's control-point polynomial" + polynomial_order_clause(orders)
+                + ", one fit for each date; no terrain model")
+    return ("the geolocation grid of the annotation, interpolated by a thin-plate spline, with the DEM height "
+            "of every cell; no polynomial")
+
+
+def label_note(orders: Sequence[int | None]) -> str:
+    """Set the plan's label against the transform that ran, from the order found for each date."""
+
+    found = set(orders)
+    if len(found) != 1 or None in found:
+        return ("The label is the plan's, word for word. The order of the polynomial that ran could not be told "
+                "from these control points (geolocation_check.gcp_polynomial).")
+    order = next(iter(found))
+    if order == 1:
+        return "The label is the plan's, word for word. The polynomial that ran is of order 1: an affine fit."
+    return ("The label is the plan's, word for word. The transform that ran is a polynomial of order "
+            f"{order}, not the affine fit the label names (open point A4-OP7).")
+
+
+def literal_upper_level(tiles: Sequence[rc.LatticeTile], summaries: Mapping[str, Mapping[str, Any]]) -> dict[str, Any]:
+    """Say, tile by tile, what the +1 dB level of M1-literal is once the below-zero clause has cut it."""
+
+    def named(outcome: str | None) -> list[str]:
+        return [tile.name for tile in tiles if summaries[tile.name]["threshold_levels"]["plus_level"] == outcome]
+
+    return {
+        "levels": "strictest, central and loosest level (protocol v1b: the Otsu threshold moved by 1 dB each "
+                  "way). The loosest level is cut at 0 dB: see upper_level.",
+        "upper_level": {
+            "what": "M1-literal flags a cell only where delta-VH is below the threshold and below 0 dB. The "
+                    "second clause is kept at every level, so the loosest level is the Otsu threshold moved by "
+                    "+1 dB only in the tiles whose Otsu threshold is -1 dB or lower. In the other tiles it is "
+                    "cut at 0 dB, and where the Otsu threshold is 0 dB or more it is the central level again. "
+                    "The band is narrower above the central level than below it by construction "
+                    "(open point A4-OP9).",
+            "cap_db": 0.0,
+            "tiles_with_the_full_shift": named(rc.PLUS_LEVEL_FULL_SHIFT),
+            "tiles_cut_at_0_db": named(rc.PLUS_LEVEL_CUT),
+            "tiles_identical_to_the_central_level": named(rc.PLUS_LEVEL_SAME_AS_CENTRAL),
+            "tiles_without_a_threshold": named(None),
+            "otsu_threshold_db_by_tile": {tile.name: summaries[tile.name]["otsu_threshold_delta_vh_db"]
+                                          for tile in tiles},
+            "shift_that_took_effect_db_by_tile": {
+                tile.name: summaries[tile.name]["threshold_levels"]["plus_level_shift_that_took_effect_db"]
+                for tile in tiles},
         },
     }
 
@@ -917,16 +1285,66 @@ def geoid_condition(rule: confidence.ConfidenceRule) -> dict[str, Any]:
     }
 
 
+def skill_outcome(
+    evaluated: bool, frame_passes: Mapping[str, bool], per_unit: Mapping[str, Sequence[str]], count: int
+) -> dict[str, Any]:
+    """State the outcome of the T2 skill bar for one input, so that no reading is taken for a decision.
+
+    ``frame_passes`` says, for each coverage reading, whether the four
+    conditions pass for the input as a whole: the frame-wide share without an
+    answer and the smallest coverage of any unit. ``per_unit`` lists, for
+    each coverage reading, the units that pass when the conditions are read
+    per unit.
+
+    The outcome is ``met`` only when every reading passes for the frame and
+    for every unit, ``not_met`` when no reading passes for the frame, and
+    ``undecided`` otherwise. A unit that passes only when the conditions are
+    read per unit is listed as undecided: protocol v1a does not say whether
+    one unit can pass on its own (open point A4-OP3).
+    """
+
+    undecided = sorted({unit for units in per_unit.values() for unit in units})
+    everywhere = all(frame_passes.values()) and all(len(units) == count for units in per_unit.values())
+    if everywhere:
+        value, undecided, reading = OUTCOME_MET, [], PER_UNIT_SAME
+        note = "Every reading of the Mae Sai conditions passes, for the frame and for every tambon."
+    elif not any(frame_passes.values()):
+        value = OUTCOME_NOT_MET
+        if not evaluated:
+            undecided, reading = [], PER_UNIT_NOT_APPLICABLE
+            note = "Protocol v1a declares this input unable to meet the T2 skill bar, whatever its figures are."
+        elif undecided:
+            reading = PER_UNIT_UNDECIDED
+            note = ("The input as a whole does not pass under any reading. Read per tambon, the conditions pass "
+                    f"in {', '.join(undecided)} only. Protocol v1a does not say whether one tambon can pass on "
+                    "its own (open point A4-OP3), so no pass is of record for any tambon and a later lane must "
+                    "not read one from this table.")
+        else:
+            reading = PER_UNIT_SAME
+            note = "The input does not pass under any reading, for the frame or for any tambon."
+    else:
+        value, reading = OUTCOME_UNDECIDED, PER_UNIT_UNDECIDED
+        note = ("The readings of the Mae Sai conditions disagree for the frame (open point A4-OP3). No pass is "
+                "of record, and a later lane must not read one from this table.")
+    return {"outcome": value, "per_unit_reading": reading, "units_whose_outcome_is_undecided": undecided,
+            "outcome_note": note}
+
+
 def t2_skill_bar(
     rule: confidence.ConfidenceRule, tables: Mapping[str, Mapping[str, Any]], geoid: Mapping[str, Any],
-    acquisition_utc: str, reference: date,
+    acquisition_utc: str, reference: date, *, of_record: bool = True,
 ) -> dict[str, Any]:
     """Evaluate the T2 skill bar of protocol v1a with ``confidence.t2_skill_condition``.
 
     The rule is applied per unit, as ``floodguard.confidence`` applies it,
-    once with each coverage reading. The frame-wide abstention share is given
-    beside it. The acquisition date is the Thai calendar date of the
-    post-event image, as protocol v1a writes it for case O1.
+    once with each coverage reading, and once for the input as a whole (the
+    frame-wide share without an answer and the smallest coverage of any
+    unit). The acquisition date is the Thai calendar date of the post-event
+    image, as protocol v1a writes it for case O1.
+
+    A pass for a single unit is written as ``passes_if_read_per_unit``, never
+    as a pass: see :func:`skill_outcome`. ``outcome_of_record`` is the
+    outcome when ``of_record`` is true and ``None`` in a sensitivity run.
     """
 
     acquired_local = local_date(acquisition_utc)
@@ -970,7 +1388,7 @@ def t2_skill_bar(
                     abstention_fraction=row["abstention_fraction"], unit_valid_coverage=row[reading],
                     acquisition_date=acquired_local, case_reference_date=reference,
                 )
-                readings[reading] = {"passes": outcome["passes"], "conditions": outcome["conditions"],
+                readings[reading] = {PER_UNIT_PASS_KEY: outcome["passes"], "conditions": outcome["conditions"],
                                      "failed_conditions": outcome["failed_conditions"]}
                 status = outcome["status"]
             units.append({
@@ -984,9 +1402,35 @@ def t2_skill_bar(
         input_units = sum(row["input_coverage"] >= rule.skill_unit_coverage_min for row in table["units"])
         answer_units = sum(row["answer_coverage"] >= rule.skill_unit_coverage_min for row in table["units"])
         count = len(table["units"])
+        per_unit = {
+            reading: [unit["unit_id"] for unit in units if unit["coverage_reading"][reading][PER_UNIT_PASS_KEY]]
+            for reading in ("input_coverage", "answer_coverage")
+        }
+        frame_passes = {
+            reading: bool(confidence.t2_skill_condition(
+                rule, flood_input=flood_input, geoid_held_out_test_iou=iou[name],
+                abstention_fraction=frame["abstention_fraction"],
+                unit_valid_coverage=min(row[reading] for row in table["units"]),
+                acquisition_date=acquired_local, case_reference_date=reference,
+            )["passes"])
+            for reading in ("input_coverage", "answer_coverage")
+        }
+        outcome = skill_outcome(status == confidence.SKILL_EVALUATED, frame_passes, per_unit, count)
         result["methods"][name] = {
             "flood_input": flood_input,
             "status_in_protocol_v1a": status,
+            "outcome_of_record": outcome["outcome"] if of_record else None,
+            "outcome_of_this_evaluation": outcome["outcome"],
+            "outcome_note": outcome["outcome_note"] if of_record else (
+                "Not the evaluation of record: the outcome of record is in the table of the run of record. "
+                + outcome["outcome_note"]),
+            "per_unit_reading": outcome["per_unit_reading"],
+            "units_whose_outcome_is_undecided": outcome["units_whose_outcome_is_undecided"],
+            "passes_for_the_input_as_a_whole": {
+                "what": "The four conditions applied once to the input: the frame-wide share of cells without "
+                        "an answer and the smallest coverage of any tambon, under each coverage reading.",
+                **frame_passes,
+            },
             "geoid_held_out_test_iou_used": iou[name],
             "mae_sai_conditions": {
                 "abstention": {
@@ -1003,10 +1447,7 @@ def t2_skill_bar(
                 },
                 "recency_passes": result["recency"]["passes"],
             },
-            "units_passing_all_four_conditions": {
-                reading: [unit["unit_id"] for unit in units if unit["coverage_reading"][reading]["passes"]]
-                for reading in ("input_coverage", "answer_coverage")
-            },
+            PER_UNIT_KEY: per_unit,
             "units": units,
         }
     return result
@@ -1029,7 +1470,7 @@ def skill_sentence(name: str, entry: Mapping[str, Any], rule: confidence.Confide
     every = (abstention["passes_for_every_unit"] and coverage["passes_for_every_unit_by_answer_coverage"]
              and conditions["recency_passes"])
     frame_passes = abstention["frame_at_most_max"] and conditions["recency_passes"]
-    passing = entry["units_passing_all_four_conditions"]["answer_coverage"]
+    passing = entry[PER_UNIT_KEY]["answer_coverage"]
     label = rc.FLOOD_INPUT_NAMES[name]
     frame_clause = (
         f"For the frame as a whole, {abstention['frame_abstention_fraction']:.3f} of the cells have no answer, "
@@ -1107,7 +1548,6 @@ def build(
         raise ValueError(f"unknown geocoding: {geocoding}")
     run_role, label = GEOCODINGS[geocoding]["role"], GEOCODINGS[geocoding]["label"]
     of_record = run_role == RUN_OF_RECORD
-    assumptions = assumptions_for(geocoding)
     protocols, protocol_sha256 = protocol_binding(docs)
     rule = confidence.load_confidence_rule(docs / "planning_protocol_v1a.json", docs / "RECEIPTS.jsonl")
     try:
@@ -1136,6 +1576,9 @@ def build(
     images, windows, products = read_pair(inputs, grid, geocoding, height)
     valid_input = sar.valid_radiometry(images["pre"], images["post"])
     geolocation = geolocation_check(images, windows, inputs, grid, tiles, permanent_water, height, unit_index, unit_ids)
+    polynomial_orders = [geolocation["gcp_polynomial"][role]["order"] for role in ("pre", "post")]
+    assumptions = assumptions_for(geocoding, polynomial_orders)
+    limits = limits_for(geolocation["pre_against_post"], of_record)
 
     thresholds = {"coverage_min": rule.skill_unit_coverage_min, "abstention_max": rule.skill_abstention_fraction_max}
     layers = {"unit_index": unit_index, "valid_input": valid_input, "permanent_water": permanent_water,
@@ -1204,6 +1647,8 @@ def build(
             "tiles_declined": sorted(tile for tile, item in summaries.items() if item["abstained"]),
             "threshold_levels": rc.level_areas(levels, unit_index, unit_ids, cell_area_km2=cell_area_km2),
         }
+        if name == "m1_literal":
+            tables[name]["threshold_levels"].update(literal_upper_level(tiles, summaries))
         rasters[name] = {"candidate": candidate, "reason": reason,
                          "score": np.where(in_frame, score, np.nan).astype("float32"), "levels": levels}
     tables["m1_v2"]["frozen_binding"] = {key: value for key, value in binding.items() if key != "parameters"}
@@ -1212,10 +1657,12 @@ def build(
         "No HAND or slope mask is applied (see open point A4-OP2).",
         "The pre-event and post-event images are 12 days apart on one track; on GEOID they were almost four "
         "months apart and on different orbit directions.",
+        pair_offset_difference_from_geoid(geolocation["pre_against_post"]),
     ]
 
     geoid = geoid_condition(rule)
-    skill = t2_skill_bar(rule, tables, geoid, products["post"]["acquisition_start_utc"], frame["case_reference_date"])
+    skill = t2_skill_bar(rule, tables, geoid, products["post"]["acquisition_start_utc"], frame["case_reference_date"],
+                         of_record=of_record)
     for name in rc.METHODS:
         skill["methods"][name]["result"] = skill_sentence(name, skill["methods"][name], rule)
     skill["evaluation_of_record"] = of_record
@@ -1272,6 +1719,8 @@ def build(
         ),
         **common,
         "geocoding": {"label": label, "method": geocoding,
+                      "transform": geocoding_transform(geocoding, polynomial_orders),
+                      "label_note": label_note(polynomial_orders) if of_record else None,
                       "radiometry": "sigma0 from the sigmaNought look-up table of the SAFE annotation",
                       "resampling": "bilinear on linear sigma0",
                       "height_datum_reading": None if of_record else HEIGHT_AWARE_DATUM_READING},
@@ -1314,7 +1763,7 @@ def build(
         "open_points": OPEN_POINTS,
         "not_computed": NOT_COMPUTED,
         "assumptions": assumptions,
-        "limits": LIMITS,
+        "limits": limits,
     }
     commit = subprocess.run(["git", "rev-parse", "HEAD"], cwd=root, capture_output=True, text=True, check=False)
     manifest_note = None
@@ -1383,6 +1832,13 @@ def build(
             "grid": grid_record,
             "geocoding": geocoding,
             "geocoding_label": label,
+            "gcp_polynomial": {
+                "order_asked_of_gdal": "none: GDAL chooses the order from the number of control points",
+                "order_found": {"pre": polynomial_orders[0], "post": polynomial_orders[1]},
+                "found_by": "floodguard.sentinel1_sigma0.gcp_polynomial_order",
+                "used_for": ("the geocoding of both dates of this run and the displacement check" if of_record
+                             else "the displacement check only; this run is not warped with the polynomial"),
+            },
             "height_datum_reading": None if of_record else HEIGHT_AWARE_DATUM_READING,
             "window_margin_degrees": s1.WINDOW_MARGIN_DEGREES,
             "resampling": "bilinear on linear sigma0",
@@ -1396,6 +1852,7 @@ def build(
             "threshold_shifts_db": list(rc.THRESHOLD_SHIFTS_DB),
             "displacement_check": {
                 "search_cells": DISPLACEMENT_SEARCH_CELLS, "pair_search_cells": PAIR_SEARCH_CELLS,
+                "pair_agreement_m": PAIR_AGREEMENT_M,
                 "min_water_cells": DISPLACEMENT_MIN_WATER_CELLS, "lattice_step": DISPLACEMENT_LATTICE_STEP,
                 "height_datum_readings_m": HEIGHT_DATUM_READINGS,
             },
@@ -1413,7 +1870,7 @@ def build(
         "open_points": OPEN_POINTS,
         "not_computed": NOT_COMPUTED,
         "assumptions": assumptions,
-        "limits": LIMITS,
+        "limits": limits,
     }
     files = {
         "frame_units.tif": (unit_index, 0, ["tambon number in the order of the table; 0 outside the frame"]),

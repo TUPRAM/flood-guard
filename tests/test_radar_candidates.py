@@ -478,3 +478,47 @@ def test_flood_input_names_are_the_ones_protocol_v1a_uses() -> None:
     assert rc.FLOOD_INPUT_NAMES["m1_v2"] in v1a["t2_skill_bar"]["evaluated_by_the_rule"]
     case = next(case for case in v1a["case_portfolio"]["cases"] if case["id"] == "O1")
     assert set(rc.FLOOD_INPUT_NAMES.values()) <= set(case["flood_inputs"])
+
+
+def test_the_below_zero_clause_cuts_the_plus_level_of_m1_literal() -> None:
+    # An Otsu threshold of -1 dB or lower: the +1 dB level is the threshold moved by a full dB.
+    low = rc.literal_level_cut(-1.9)
+    assert low["plus_level"] == rc.PLUS_LEVEL_FULL_SHIFT and low["plus_level_shift_that_took_effect_db"] == 1.0
+    assert low["effective_threshold_db"] == {"-1_db": -2.9, "0_db": -1.9, "+1_db": -0.9}
+    assert low["cut_at_0_db"] == {"-1_db": False, "0_db": False, "+1_db": False}
+    edge = rc.literal_level_cut(-1.0)
+    assert edge["plus_level"] == rc.PLUS_LEVEL_FULL_SHIFT and edge["effective_threshold_db"]["+1_db"] == 0.0
+    # Between -1 and 0 dB the moved threshold is above 0 dB and the clause cuts it there.
+    middle = rc.literal_level_cut(-0.2)
+    assert middle["plus_level"] == rc.PLUS_LEVEL_CUT and middle["plus_level_shift_that_took_effect_db"] == 0.2
+    assert middle["effective_threshold_db"]["+1_db"] == 0.0 and middle["cut_at_0_db"]["+1_db"] is True
+    # At 0 dB or more the central level is itself cut at 0 dB, and the +1 dB level is the same extent.
+    for threshold in (0.0, 0.1):
+        high = rc.literal_level_cut(threshold)
+        assert high["plus_level"] == rc.PLUS_LEVEL_SAME_AS_CENTRAL
+        assert high["plus_level_shift_that_took_effect_db"] == 0.0
+        assert high["effective_threshold_db"]["0_db"] == high["effective_threshold_db"]["+1_db"] == 0.0
+    assert rc.literal_level_cut(0.1)["cut_at_0_db"] == {"-1_db": False, "0_db": True, "+1_db": True}
+    assert rc.literal_level_cut(None)["plus_level"] is None
+    assert "below 0 dB" in low["below_zero_clause"]
+
+
+def test_m1_literal_tile_says_which_level_the_clause_cut() -> None:
+    pre, post, _ = _flooded_tile(5)
+    _, _, _, summary = rc.m1_literal_tile(pre, post)
+    block = summary["threshold_levels"]
+    threshold = summary["otsu_threshold_delta_vh_db"]
+    assert block["effective_threshold_db"]["+1_db"] == round(min(threshold + 1.0, 0.0), 4)
+    assert block == {**block, **rc.literal_level_cut(threshold)}
+
+    # A tile without change has an Otsu threshold near 0 dB: the +1 dB level is cut there, and where the
+    # threshold is 0 dB or more the +1 dB level is the central level again, cell for cell.
+    flat_pre, flat_post = _pair(np.random.default_rng(13), np.zeros((128, 128)))
+    _, _, levels, flat = rc.m1_literal_tile(flat_pre, flat_post)
+    cut = flat["threshold_levels"]
+    assert flat["otsu_threshold_delta_vh_db"] > -1.0
+    assert cut["plus_level"] in (rc.PLUS_LEVEL_CUT, rc.PLUS_LEVEL_SAME_AS_CENTRAL)
+    assert cut["plus_level_shift_that_took_effect_db"] < 1.0 and cut["cut_at_0_db"]["+1_db"] is True
+    if cut["plus_level"] == rc.PLUS_LEVEL_SAME_AS_CENTRAL:
+        assert cut["candidate_cells"]["+1_db"] == cut["candidate_cells"]["0_db"]
+        assert not (levels == 1).any()  # No cell is a candidate at the loosest level only.

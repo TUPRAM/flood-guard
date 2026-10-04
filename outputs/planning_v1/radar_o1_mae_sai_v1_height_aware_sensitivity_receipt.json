@@ -1,6 +1,6 @@
 {
   "schema_version": "floodguard.radar_candidates_run_receipt.v1",
-  "generated_at_utc": "2026-10-04T12:52:26Z",
+  "generated_at_utc": "2026-10-04T14:27:47Z",
   "plan_task": "A2 (UN-SPIDER reproduction) and A4 (M1-literal and M1-v2 on the eight-tambon union)",
   "run": "Radar flood candidates of case O1, eight Mae Sai tambons, three methods",
   "status": "run_receipt",
@@ -90,6 +90,15 @@
     },
     "geocoding": "annotation_grid_with_cell_height",
     "geocoding_label": "sensitivity geocoding, not in the plan: annotation grid with a DEM height for every cell",
+    "gcp_polynomial": {
+      "order_asked_of_gdal": "none: GDAL chooses the order from the number of control points",
+      "order_found": {
+        "pre": 2,
+        "post": 2
+      },
+      "found_by": "floodguard.sentinel1_sigma0.gcp_polynomial_order",
+      "used_for": "the displacement check only; this run is not warped with the polynomial"
+    },
     "height_datum_reading": "annotation_heights_are_ellipsoidal_and_dem_is_above_the_geoid",
     "window_margin_degrees": 0.03,
     "resampling": "bilinear on linear sigma0",
@@ -156,6 +165,7 @@
     "displacement_check": {
       "search_cells": 120,
       "pair_search_cells": 20,
+      "pair_agreement_m": 2.0,
       "min_water_cells": 2000,
       "lattice_step": 8,
       "height_datum_readings_m": {
@@ -254,11 +264,11 @@
     }
   },
   "implementation": {
-    "base_commit": "aa6ea1f96f723529560c1e80ecf69e5b481d8946",
+    "base_commit": "c6d0cecd75f254aeced07c9c3ab34cc9a380bb79",
     "base_commit_note": "The commit the working tree was on. The files below are the ones this run loaded, identified by their own SHA-256, committed or not.",
-    "builder_sha256": "e675b47dc086a3cc31b994dd5b0e63c9f8040af06a0896ee9a7c528f6de06bac",
-    "radar_candidates_sha256": "042f4a2d37e787be8e424dd445a2042b65dd0e183f57fa793f52fecff7309d68",
-    "sentinel1_sigma0_sha256": "b296d02b4d500023fa6ae21d848c5ab2f7140d915a0d31669450277c491d4ada",
+    "builder_sha256": "851fc4d095ed2067f57d9d73762cd2005f3c7196c3759da0a7e32ede93082d6b",
+    "radar_candidates_sha256": "0d6fdbd8ce4bcd22ce4628208f2af47055cceb1e1ae9e4dd15ab5e22dcf5ece0",
+    "sentinel1_sigma0_sha256": "b94fc3bbfce0ee0d6c5654f4d51ae9e7e7c86d577fd7b415cdba22f7a7ea1e0a",
     "sar_change_v2_sha256": "3127b370303b08902dc545442f7aa5a2aa54d283b471c0d65f5899c9c19e1134",
     "confidence_sha256": "acb762cf56e41c86b4af40a5ce8108072b87e2dd7d35e86f56487bfa59eb54f0",
     "software": {
@@ -275,10 +285,10 @@
   "open_points": [
     {
       "id": "A4-OP1",
-      "point": "Geocoding of the fallback path.",
+      "point": "Geocoding of the fallback path: the displacement, its two parts, and the offset between the two dates.",
       "protocol_says": "Plan row A4: without SNAP, a GCP warp with the sigmaNought table, labelled 'approximate geocoding: GCP affine, no DEM terrain correction'.",
-      "what_this_run_does": "The run of record does exactly that. The product's control points sit at the heights of a coarse terrain model that is several hundred metres above the Mae Sai plain, so the radar layers are displaced along the range direction. geolocation_check gives the measured displacement and what a mapping with a height per cell leaves. The three methods were run a second time with that mapping, as a sensitivity run with its own table and receipt; it replaces nothing.",
-      "for_the_owners": "Which layers case O1 uses: the run of record (the plan's fallback, displaced), the sensitivity run (a mapping the plan does not name), or a SNAP terrain correction once SNAP is installed."
+      "what_this_run_does": "The run of record warps each date with GDAL's control-point polynomial. The radar layers are displaced along the range direction, for two reasons that add up (geolocation_check.expected_from_geometry, parts). First, the control points sit at the heights of a coarse terrain model, above the Mae Sai plain. Second, the polynomial does not pass through the control points (geolocation_check.gcp_polynomial). Each date has its own polynomial, so the two images of the run of record are also offset from each other (geolocation_check.pre_against_post gives the measured offset). All three methods compare the dates cell by cell; what the offset does to the candidates was not measured. The three methods were run a second time with a mapping that uses a height per cell, as a sensitivity run with its own table and receipt; it replaces nothing.",
+      "for_the_owners": "Which layers case O1 uses: the run of record (the plan's fallback: displaced, and its two dates offset from each other), the sensitivity run (a mapping the plan does not name), a warp that passes through the control points (it would take away the polynomial part and should take away the offset between the dates, but not the height part; the plan does not name it and it was not run), or a SNAP terrain correction once SNAP is installed."
     },
     {
       "id": "A4-OP2",
@@ -321,6 +331,34 @@
       "protocol_says": "The manifest marks both SAFE files 'processing_allowed False: reference mask status remains unresolved; do not run baseline yet'. Decision R14 says that note gates the finals baseline, not rights, and allows the replay to read the file. Plan rows A2 and A4 name this pair.",
       "what_this_run_does": "Reads both files, as the plan rows say.",
       "for_the_owners": "To confirm that R14 covers plan tasks A2 and A4 as well as the replay."
+    },
+    {
+      "id": "A4-OP7",
+      "point": "The label says 'GCP affine'; the warp that ran is not affine.",
+      "protocol_says": "Plan row A4 gives the label 'approximate geocoding: GCP affine, no DEM terrain correction' for the GCP warp. It says nothing else about the transform: no polynomial order, and no word on whether each date is fitted on its own.",
+      "what_this_run_does": "Warps each date with GDAL's control-point polynomial and asks for no order, as the replay's bake does. GDAL then chooses the order itself and does not report it. geolocation_check.gcp_polynomial gives the order found for each date and how far an affine fit lies from it. The label is kept word for word, because the plan prescribes it; it names a transform that was not run.",
+      "for_the_owners": "Whether the label is reworded to name the transform that ran, or the warp is rerun as an affine fit so that the label is true (a new run; none was made), and whether the order is fixed in the code and no longer left to GDAL."
+    },
+    {
+      "id": "A4-OP8",
+      "point": "The Sentinel-1 layers of the replay are made with the same warp.",
+      "protocol_says": "Nothing. Neither protocol and no plan row speaks of the geocoding of the replay's Sentinel-1 layers.",
+      "what_this_run_does": "Nothing to the replay. scripts/build_mae_sai_flood_timeline.py (sentinel1_vv) reads the 3 September archive this run reads and copies of the 6 and 15 September passes, and warps each with the same call: the product's control points, moved into the image window, fitted by GDAL's polynomial. The displacement measured here was not measured on the replay's layers, and the replay's bake was not changed or rerun in this lane. That its layers are displaced by a similar distance is an inference from the identical warp, not a measurement.",
+      "for_the_owners": "For the owners of the replay: to measure the displacement of its Sentinel-1 layers against mapped permanent water, and to decide what the page changes or says if the displacement is there."
+    },
+    {
+      "id": "A4-OP9",
+      "point": "The +1 dB level of M1-literal is cut at 0 dB.",
+      "protocol_says": "Protocol v1b (ensemble_grid, t2_levels_by_input): 'M1-literal: Otsu threshold -1 / 0 / +1 dB', accepted by the owners 'as a default and nothing more'. It does not say what happens to the second clause of the rule (delta-VH below 0 dB) when the threshold is moved.",
+      "what_this_run_does": "Moves the Otsu threshold and keeps the second clause, so a moved threshold above 0 dB is cut at 0 dB. Each tile says what took effect (threshold_levels in its whole_tile block), and methods.m1_literal.threshold_levels.upper_level lists the tiles. Where the Otsu threshold is 0 dB or more, the +1 dB level is the central level again. The band is therefore narrower above the central level than below it by construction, not because of the data.",
+      "for_the_owners": "Whether the +1 dB level keeps the below-zero clause (as here), drops it, or is defined another way. The ensemble lane reads these levels as the flood-state axis of M1-literal."
+    },
+    {
+      "id": "A2-OP2",
+      "point": "The minus and plus levels of the UN-SPIDER reproduction are not written.",
+      "protocol_says": "Protocol v1b (ensemble_grid, t2_levels_by_input): 'UN-SPIDER reproduction: minus / as-provided / plus one pixel on the output extent; the ratio 1.25 is not tuned', with 20 m for the minus and the plus level (owner choice 2). It does not say how 20 m is taken on a 10 m raster (two cells, and in which neighbourhood), nor whether the candidate builder or the flood-input reader makes the two levels. Plan row A2 asks for the area and the statement.",
+      "what_this_run_does": "Writes the as-provided extent only (un_spider_candidate.tif) and lists the two levels under not_computed.",
+      "for_the_owners": "Who makes the two levels, and with which neighbourhood."
     }
   ],
   "not_computed": [
@@ -335,7 +373,10 @@
     "any comparison with UNOSAT/GISTDA product 4009",
     "A6-prime classifier",
     "M1-v2 Otsu comparator",
-    "HAND or slope mask for M1-literal and M1-v2"
+    "HAND or slope mask for M1-literal and M1-v2",
+    "minus and plus one-pixel levels of the UN-SPIDER reproduction (protocol v1b, ensemble_grid)",
+    "the effect of the offset between the two dates on the candidates",
+    "the displacement of the replay's Sentinel-1 layers"
   ],
   "assumptions": [
     "One image pair: 3 September 2024 23:16 UTC and 15 September 2024 23:16 UTC (16 September 06:16 in Thailand), both descending on relative orbit 135. The post-event image is 12 days after the pre-event image and several days after the flood peak, so a candidate is residual water at that pass at most.",
@@ -350,6 +391,7 @@
   "limits": [
     "One pair of images, twelve days apart. The second was taken on 16 September 2024 at 06:16 in Thailand, several days after the flood peak: residual water only. Nothing here describes the peak.",
     "Approximate geocoding in the run of record: no cell-level or road-level use until the displacement is removed. The sensitivity run removes most of it with a mapping the plan does not name.",
+    "The two images of this run agree with each other to within 2 m (geolocation_check.pre_against_post, a sub-cell estimate). The run of record states its own offset in its table.",
     "No qualified reference exists for Mae Sai. The layers are not validated, and no figure here says how correct a layer is.",
     "Tier 2 own candidates: verify before action.",
     "Radar shadow and layover are not flagged; that needs the terrain-corrected geometry of the SNAP path.",
@@ -357,18 +399,18 @@
     "The UN-SPIDER practice divides one dB value by another. Where the smoothed pre-event VH is above 0 dB (a few very bright cells) its quotient means the opposite of what it means elsewhere."
   ],
   "timestamps": {
-    "run_started_at_utc": "2026-10-04T12:49:37Z",
-    "run_finished_at_utc": "2026-10-04T12:52:26Z"
+    "run_started_at_utc": "2026-10-04T14:24:45Z",
+    "run_finished_at_utc": "2026-10-04T14:27:47Z"
   },
   "operator_notes": [
-    "Third sensitivity run. The first one (generated 2026-10-04T12:26:45Z) wrote radar_candidates_mae_sai_o1_v1_height_aware_sensitivity.json and its receipt; the second (12:38:41Z) corrected one limit and the file names. Neither was committed. Both are kept outside Git under radar_o1_superseded_runs, the first also as written under first_run_as_written.",
-    "A sensitivity run, made after the run of record and with its result in view. The geocoding and its height-datum reading were fixed in the committed code (c1d6307) before any candidate was computed."
+    "Fourth sensitivity run, made after a review of the third run (commit c6d0cec) and after the fourth run of the run of record. The third run (generated 2026-10-04T12:52:26Z) is kept outside Git under radar_o1_superseded_runs and in the Git history.",
+    "The checks made before the fourth run of the run of record are listed in its receipt; they computed no change image and no candidate and wrote no file."
   ],
   "outputs": {
     "table": {
       "path": "outputs/planning_v1/radar_o1_mae_sai_v1_height_aware_sensitivity.json",
-      "sha256": "5c3f0846b6e37c538b053a746f95286a050cf7281d6958650bfd29205309e30b",
-      "bytes": 140271
+      "sha256": "9156d655e4cf98d0194a92bc45d32f3e60642f1a8f06f1d74beddd369ccc8b07",
+      "bytes": 164556
     },
     "rasters": [
       {
@@ -470,34 +512,46 @@
     ]
   },
   "supersedes": {
-    "table_sha256": "e9ea731cae91fe6ad1aa0521ff778e646a6019c6842dbf05df63b6b3b4297958",
-    "receipt_sha256": "8c73f98bea72b4a5e800786ac0fa2e54b2d712da9077896b9434260116cf78e3",
-    "generated_at_utc": "2026-10-04T12:38:41Z",
-    "reason": "Wording only: three denials in the second sensitivity run were not in the form the shared wording lint lists (not validated, not an independent check); the method code and the inputs are unchanged.",
+    "table_sha256": "5c3f0846b6e37c538b053a746f95286a050cf7281d6958650bfd29205309e30b",
+    "receipt_sha256": "351342ba01f8fe88dbffa15149d78d0403684714ec11ecd2c1c29201913b93f8",
+    "generated_at_utc": "2026-10-04T12:52:26Z",
+    "reason": "After a review of the third run: the table gains the offset between the two dates to a fraction of a cell, the order and the misfit of GDAL's control-point polynomial with the two parts of the displacement, a stated outcome of the T2 skill bar (a pass for one tambon alone is no longer written as a plain pass), the cut of the +1 dB level of M1-literal at 0 dB, and four more open points (A4-OP7, A4-OP8, A4-OP9, A2-OP2), with A4-OP1 reworded; no method and no input was changed.",
     "same_frame_and_unit_figures": true,
     "copies_kept_outside_git": [
-      "<external_data_workspace>/proposal_execution/planning_v1/o1_mae_sai/radar_o1_superseded_runs/20261004T123841Z_radar_o1_mae_sai_v1_height_aware_sensitivity.json",
-      "<external_data_workspace>/proposal_execution/planning_v1/o1_mae_sai/radar_o1_superseded_runs/20261004T123841Z_radar_o1_mae_sai_v1_height_aware_sensitivity_receipt.json"
+      "<external_data_workspace>/proposal_execution/planning_v1/o1_mae_sai/radar_o1_superseded_runs/20261004T125226Z_radar_o1_mae_sai_v1_height_aware_sensitivity.json",
+      "<external_data_workspace>/proposal_execution/planning_v1/o1_mae_sai/radar_o1_superseded_runs/20261004T125226Z_radar_o1_mae_sai_v1_height_aware_sensitivity_receipt.json"
     ],
     "note": "The superseded table and receipt are named by SHA-256 and copied outside Git. They are in the Git history only if they were committed.",
     "runs_before_the_superseded_one": {
-      "table_sha256": "9c141c16761a0fc6089a817c233792943c4f09bf2927947cfd3787c79ae62b51",
-      "receipt_sha256": "3f84f14b5a60828db9684b5e30b8f29ec75ee3892eca212e8877b74fa4815e39",
-      "generated_at_utc": "2026-10-04T12:26:45Z",
-      "reason": "The first sensitivity run stated one limit wrongly (the post-event image is not twelve days after the flood began; the two images are twelve days apart) and its file names held a word the outputs test reserves; the method code and the inputs are unchanged.",
+      "table_sha256": "e9ea731cae91fe6ad1aa0521ff778e646a6019c6842dbf05df63b6b3b4297958",
+      "receipt_sha256": "8c73f98bea72b4a5e800786ac0fa2e54b2d712da9077896b9434260116cf78e3",
+      "generated_at_utc": "2026-10-04T12:38:41Z",
+      "reason": "Wording only: three denials in the second sensitivity run were not in the form the shared wording lint lists (not validated, not an independent check); the method code and the inputs are unchanged.",
       "same_frame_and_unit_figures": true,
       "copies_kept_outside_git": [
-        "<external_data_workspace>/proposal_execution/planning_v1/o1_mae_sai/radar_o1_superseded_runs/20261004T122645Z_radar_o1_mae_sai_v1_height_aware_sensitivity.json",
-        "<external_data_workspace>/proposal_execution/planning_v1/o1_mae_sai/radar_o1_superseded_runs/20261004T122645Z_radar_o1_mae_sai_v1_height_aware_sensitivity_receipt.json"
+        "<external_data_workspace>/proposal_execution/planning_v1/o1_mae_sai/radar_o1_superseded_runs/20261004T123841Z_radar_o1_mae_sai_v1_height_aware_sensitivity.json",
+        "<external_data_workspace>/proposal_execution/planning_v1/o1_mae_sai/radar_o1_superseded_runs/20261004T123841Z_radar_o1_mae_sai_v1_height_aware_sensitivity_receipt.json"
       ],
-      "note": "The superseded table and receipt are named by SHA-256 and copied outside Git. They are in the Git history only if they were committed."
+      "note": "The superseded table and receipt are named by SHA-256 and copied outside Git. They are in the Git history only if they were committed.",
+      "runs_before_the_superseded_one": {
+        "table_sha256": "9c141c16761a0fc6089a817c233792943c4f09bf2927947cfd3787c79ae62b51",
+        "receipt_sha256": "3f84f14b5a60828db9684b5e30b8f29ec75ee3892eca212e8877b74fa4815e39",
+        "generated_at_utc": "2026-10-04T12:26:45Z",
+        "reason": "The first sensitivity run stated one limit wrongly (the post-event image is not twelve days after the flood began; the two images are twelve days apart) and its file names held a word the outputs test reserves; the method code and the inputs are unchanged.",
+        "same_frame_and_unit_figures": true,
+        "copies_kept_outside_git": [
+          "<external_data_workspace>/proposal_execution/planning_v1/o1_mae_sai/radar_o1_superseded_runs/20261004T122645Z_radar_o1_mae_sai_v1_height_aware_sensitivity.json",
+          "<external_data_workspace>/proposal_execution/planning_v1/o1_mae_sai/radar_o1_superseded_runs/20261004T122645Z_radar_o1_mae_sai_v1_height_aware_sensitivity_receipt.json"
+        ],
+        "note": "The superseded table and receipt are named by SHA-256 and copied outside Git. They are in the Git history only if they were committed."
+      }
     }
   },
   "run_of_record": {
     "table": "radar_o1_mae_sai_v1.json",
     "receipt": "radar_o1_mae_sai_v1_receipt.json",
-    "table_sha256": "9324f88b48f8e35d123b353063edd8a3e2d9315b6d5ef137047d8b8965968bb5",
-    "receipt_sha256": "86f4d3c5ba1b17042be16a3be26f645dbeb6e389ff9540b021434cfb80f926a1",
+    "table_sha256": "f60d0c68fb831a3f67307603ff450f16fb9f94ad1880fb4c222c951c2ca3e819",
+    "receipt_sha256": "62beed7f4c62d19701bc72626180aa2557d4a6f529a8b46429e94c471664b5b2",
     "note": "This sensitivity run replaces nothing. The run of record is the fallback of plan row A4."
   }
 }

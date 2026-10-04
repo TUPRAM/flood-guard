@@ -1,6 +1,6 @@
 {
   "schema_version": "floodguard.radar_candidates.v1",
-  "generated_at_utc": "2026-10-04T12:52:26Z",
+  "generated_at_utc": "2026-10-04T14:27:47Z",
   "receipt_file": "outputs/planning_v1/radar_o1_mae_sai_v1_height_aware_sensitivity_receipt.json",
   "plan_task": "A2 (UN-SPIDER reproduction) and A4 (M1-literal and M1-v2 on the eight-tambon union)",
   "case": {
@@ -36,6 +36,8 @@
   "geocoding": {
     "label": "sensitivity geocoding, not in the plan: annotation grid with a DEM height for every cell",
     "method": "annotation_grid_with_cell_height",
+    "transform": "the geolocation grid of the annotation, interpolated by a thin-plate spline, with the DEM height of every cell; no polynomial",
+    "label_note": null,
     "radiometry": "sigma0 from the sigmaNought look-up table of the SAFE annotation",
     "resampling": "bilinear on linear sigma0",
     "height_datum_reading": "annotation_heights_are_ellipsoidal_and_dem_is_above_the_geoid"
@@ -280,11 +282,23 @@
       }
     },
     "pre_against_post": {
-      "what": "Where the pre-event image content lies relative to the post-event image content, in the images of this run.",
+      "what": "Where the pre-event image content lies relative to the post-event image content, in the images of this run. east_m and north_m are whole cells. east_m_subcell and north_m_subcell are an estimate to a fraction of a cell: the vertex of the parabola through the correlation at the best whole-cell shift and its two neighbours. Another estimator can differ by a metre or two. correlation_at_zero_shift is the correlation of the two images as the methods read them.",
       "east_m": 0.0,
       "north_m": 0.0,
       "correlation": 0.691596,
-      "at_search_edge": false
+      "at_search_edge": false,
+      "east_m_subcell": 0.1,
+      "north_m_subcell": -0.1,
+      "correlation_at_zero_shift": 0.691596,
+      "frame_cells_only": {
+        "east_m": 0.0,
+        "north_m": 0.0,
+        "correlation": 0.694325,
+        "at_search_edge": false,
+        "east_m_subcell": 0.2,
+        "north_m_subcell": -0.1,
+        "correlation_at_zero_shift": 0.694325
+      }
     },
     "height_aware_mapping": {
       "geocoding": "annotation_grid_with_cell_height",
@@ -440,11 +454,171 @@
         }
       }
     },
+    "gcp_polynomial": {
+      "what": "The polynomial GDAL fits to the control points of each date, which is the warp of the run of record. order is the order found (the warp asks GDAL for none, GDAL chooses and does not report it). residual_at_the_control_points_m is the control point minus the polynomial. misfit_over_the_frame_m is the image position of each frame cell under a spline that passes through every control point minus its position under the polynomial, on every 8th cell; it includes the half cell by which GDAL's count of image samples differs from the annotation's. A positive along-range value means the polynomial reads the image nearer to the sensor, so the content it shows lies that far towards far range.",
+      "order_asked_of_gdal": "none: GDAL chooses the order from the number of control points",
+      "found_by": "floodguard.sentinel1_sigma0.gcp_polynomial_order",
+      "label_of_the_plan": "approximate geocoding: GCP affine, no DEM terrain correction",
+      "label_note": "The label is the plan's, word for word. An affine fit is a polynomial of order 1. max_difference_from_gdal_px_by_order gives, under '1', how many image cells an affine fit to the same control points lies from the polynomial that ran (open point A4-OP7).",
+      "affine_fit_max_difference_px": {
+        "pre": 81.806,
+        "post": 81.8411
+      },
+      "pre": {
+        "control_points": 210,
+        "max_difference_from_gdal_px_by_order": {
+          "1": 81.806,
+          "2": 0.0,
+          "3": 110.6535
+        },
+        "tolerance_px": 0.01,
+        "orders_that_reproduce_gdal": [
+          2
+        ],
+        "order": 2,
+        "residual_at_the_control_points_m": {
+          "along_range": {
+            "rms": 272.1,
+            "max_abs": 1011.9
+          },
+          "along_azimuth": {
+            "rms": 3.3,
+            "max_abs": 11.4
+          }
+        },
+        "control_points_nearest_the_frame": [
+          {
+            "longitude": 99.896,
+            "latitude": 20.437,
+            "height_m": 785.0,
+            "distance_from_the_frame_centre_km": 8.2,
+            "along_range_residual_m": 149.6
+          },
+          {
+            "longitude": 100.019,
+            "latitude": 20.414,
+            "height_m": 550.0,
+            "distance_from_the_frame_centre_km": 12.6,
+            "along_range_residual_m": 419.0
+          },
+          {
+            "longitude": 99.86,
+            "latitude": 20.255,
+            "height_m": 685.0,
+            "distance_from_the_frame_centre_km": 13.1,
+            "along_range_residual_m": 238.9
+          },
+          {
+            "longitude": 99.981,
+            "latitude": 20.233,
+            "height_m": 610.0,
+            "distance_from_the_frame_centre_km": 16.2,
+            "along_range_residual_m": 289.3
+          }
+        ],
+        "misfit_over_the_frame_m": {
+          "along_range_m": {
+            "p05": 137.1,
+            "median": 260.7,
+            "p95": 394.2
+          },
+          "along_azimuth_m": {
+            "p05": 3.2,
+            "median": 3.7,
+            "p95": 4.1
+          }
+        }
+      },
+      "post": {
+        "control_points": 210,
+        "max_difference_from_gdal_px_by_order": {
+          "1": 81.8411,
+          "2": 0.0,
+          "3": 116.8311
+        },
+        "tolerance_px": 0.01,
+        "orders_that_reproduce_gdal": [
+          2
+        ],
+        "order": 2,
+        "residual_at_the_control_points_m": {
+          "along_range": {
+            "rms": 273.1,
+            "max_abs": 1002.4
+          },
+          "along_azimuth": {
+            "rms": 3.3,
+            "max_abs": 11.4
+          }
+        },
+        "control_points_nearest_the_frame": [
+          {
+            "longitude": 99.895,
+            "latitude": 20.437,
+            "height_m": 785.0,
+            "distance_from_the_frame_centre_km": 8.2,
+            "along_range_residual_m": 159.0
+          },
+          {
+            "longitude": 100.018,
+            "latitude": 20.415,
+            "height_m": 550.0,
+            "distance_from_the_frame_centre_km": 12.5,
+            "along_range_residual_m": 428.5
+          },
+          {
+            "longitude": 99.859,
+            "latitude": 20.255,
+            "height_m": 685.0,
+            "distance_from_the_frame_centre_km": 13.2,
+            "along_range_residual_m": 246.5
+          },
+          {
+            "longitude": 99.98,
+            "latitude": 20.234,
+            "height_m": 610.0,
+            "distance_from_the_frame_centre_km": 16.2,
+            "along_range_residual_m": 296.7
+          }
+        ],
+        "misfit_over_the_frame_m": {
+          "along_range_m": {
+            "p05": 146.8,
+            "median": 270.9,
+            "p95": 404.9
+          },
+          "along_azimuth_m": {
+            "p05": 3.2,
+            "median": 3.7,
+            "p95": 4.1
+          }
+        }
+      },
+      "post_minus_pre": {
+        "what": "The misfit of the post-event polynomial minus that of the pre-event polynomial, cell by cell over the frame. A positive along-range value means the post-event content lies that far further towards far range than the pre-event content: the two dates are offset from each other by it. pre_against_post measures the same offset on the images.",
+        "along_range_m": {
+          "p05": 8.8,
+          "median": 9.9,
+          "p95": 12.6
+        },
+        "along_azimuth_m": {
+          "p05": 0.0,
+          "median": 0.0,
+          "p95": 0.0
+        }
+      }
+    },
     "expected_from_geometry": {
       "what": "Image position of each cell under the height-aware mapping minus its position under the control-point warp, in metres, on every 8th cell. A positive along-range value means the control-point warp reads the image nearer to the sensor than it should, so the content it shows lies that far towards far range of its true place.",
       "range_direction_bearing_degrees": 280.5,
       "incidence_angle_degrees_near_the_frame": 36.92,
       "annotation_height_near_the_frame_m": 785.0,
+      "annotation_height_near_the_frame_note": "The height of the one control point nearest the centre of the grid. The control points around the frame have other heights; control_point_height_over_the_frame_m interpolates them.",
+      "control_point_height_over_the_frame_m": {
+        "p05": 572.6,
+        "median": 684.8,
+        "p95": 800.7
+      },
       "median_dem_height_of_the_frame_m": 381.8,
       "readings": {
         "annotation_heights_and_dem_share_one_datum": {
@@ -670,6 +844,45 @@
               }
             }
           }
+        }
+      },
+      "parts": {
+        "what": "The along-range displacement of each reading, split in two, cell by cell: the part that comes from the height of the control points (the height-aware mapping minus a spline that passes through every control point) and the part that comes from the misfit of GDAL's polynomial (that spline minus the polynomial). The two add up to the whole for every cell, and so do their means over the frame (mean_along_range_m); the medians of the parts need not add up to the median of the whole.",
+        "annotation_heights_and_dem_share_one_datum": {
+          "control_point_height_part_along_range_m": {
+            "p05": -219.7,
+            "median": 367.6,
+            "p95": 490.3
+          },
+          "polynomial_misfit_part_along_range_m": {
+            "p05": 137.1,
+            "median": 260.7,
+            "p95": 394.2
+          },
+          "mean_along_range_m": {
+            "whole": 567.6,
+            "control_point_height_part": 308.3,
+            "polynomial_misfit_part": 259.3
+          },
+          "largest_gap_between_the_sum_of_the_parts_and_the_whole_m": 0.0
+        },
+        "annotation_heights_are_ellipsoidal_and_dem_is_above_the_geoid": {
+          "control_point_height_part_along_range_m": {
+            "p05": -173.6,
+            "median": 414.4,
+            "p95": 536.8
+          },
+          "polynomial_misfit_part_along_range_m": {
+            "p05": 137.1,
+            "median": 260.7,
+            "p95": 394.2
+          },
+          "mean_along_range_m": {
+            "whole": 614.4,
+            "control_point_height_part": 355.1,
+            "polynomial_misfit_part": 259.3
+          },
+          "largest_gap_between_the_sum_of_the_parts_and_the_whole_m": 0.0
         }
       }
     }
@@ -1454,7 +1667,20 @@
                 "-1_db": 217855,
                 "0_db": 429255,
                 "+1_db": 429255
-              }
+              },
+              "below_zero_clause": "M1-literal flags a cell only where delta-VH is below the threshold and below 0 dB; the second clause is kept at every level, so a moved threshold above 0 dB is cut at 0 dB.",
+              "effective_threshold_db": {
+                "-1_db": -0.8,
+                "0_db": 0.0,
+                "+1_db": 0.0
+              },
+              "cut_at_0_db": {
+                "-1_db": false,
+                "0_db": true,
+                "+1_db": true
+              },
+              "plus_level": "identical_to_the_central_level",
+              "plus_level_shift_that_took_effect_db": 0.0
             }
           }
         },
@@ -1501,7 +1727,20 @@
                 "-1_db": 211508,
                 "0_db": 504626,
                 "+1_db": 504626
-              }
+              },
+              "below_zero_clause": "M1-literal flags a cell only where delta-VH is below the threshold and below 0 dB; the second clause is kept at every level, so a moved threshold above 0 dB is cut at 0 dB.",
+              "effective_threshold_db": {
+                "-1_db": -1.0,
+                "0_db": 0.0,
+                "+1_db": 0.0
+              },
+              "cut_at_0_db": {
+                "-1_db": false,
+                "0_db": false,
+                "+1_db": true
+              },
+              "plus_level": "identical_to_the_central_level",
+              "plus_level_shift_that_took_effect_db": 0.0
             }
           }
         },
@@ -1549,7 +1788,20 @@
                 "-1_db": 208938,
                 "0_db": 442223,
                 "+1_db": 442223
-              }
+              },
+              "below_zero_clause": "M1-literal flags a cell only where delta-VH is below the threshold and below 0 dB; the second clause is kept at every level, so a moved threshold above 0 dB is cut at 0 dB.",
+              "effective_threshold_db": {
+                "-1_db": -1.0,
+                "0_db": 0.0,
+                "+1_db": 0.0
+              },
+              "cut_at_0_db": {
+                "-1_db": false,
+                "0_db": false,
+                "+1_db": true
+              },
+              "plus_level": "identical_to_the_central_level",
+              "plus_level_shift_that_took_effect_db": 0.0
             }
           }
         },
@@ -1594,7 +1846,20 @@
                 "-1_db": 106111,
                 "0_db": 198969,
                 "+1_db": 404899
-              }
+              },
+              "below_zero_clause": "M1-literal flags a cell only where delta-VH is below the threshold and below 0 dB; the second clause is kept at every level, so a moved threshold above 0 dB is cut at 0 dB.",
+              "effective_threshold_db": {
+                "-1_db": -2.5,
+                "0_db": -1.5,
+                "+1_db": -0.5
+              },
+              "cut_at_0_db": {
+                "-1_db": false,
+                "0_db": false,
+                "+1_db": false
+              },
+              "plus_level": "full_shift",
+              "plus_level_shift_that_took_effect_db": 1.0
             }
           }
         },
@@ -1642,7 +1907,20 @@
                 "-1_db": 224166,
                 "0_db": 481254,
                 "+1_db": 481254
-              }
+              },
+              "below_zero_clause": "M1-literal flags a cell only where delta-VH is below the threshold and below 0 dB; the second clause is kept at every level, so a moved threshold above 0 dB is cut at 0 dB.",
+              "effective_threshold_db": {
+                "-1_db": -0.9,
+                "0_db": 0.0,
+                "+1_db": 0.0
+              },
+              "cut_at_0_db": {
+                "-1_db": false,
+                "0_db": true,
+                "+1_db": true
+              },
+              "plus_level": "identical_to_the_central_level",
+              "plus_level_shift_that_took_effect_db": 0.0
             }
           }
         },
@@ -1690,7 +1968,20 @@
                 "-1_db": 124002,
                 "0_db": 200145,
                 "+1_db": 360040
-              }
+              },
+              "below_zero_clause": "M1-literal flags a cell only where delta-VH is below the threshold and below 0 dB; the second clause is kept at every level, so a moved threshold above 0 dB is cut at 0 dB.",
+              "effective_threshold_db": {
+                "-1_db": -2.9,
+                "0_db": -1.9,
+                "+1_db": -0.9
+              },
+              "cut_at_0_db": {
+                "-1_db": false,
+                "0_db": false,
+                "+1_db": false
+              },
+              "plus_level": "full_shift",
+              "plus_level_shift_that_took_effect_db": 1.0
             }
           }
         },
@@ -1734,7 +2025,20 @@
                 "-1_db": 137031,
                 "0_db": 350920,
                 "+1_db": 572771
-              }
+              },
+              "below_zero_clause": "M1-literal flags a cell only where delta-VH is below the threshold and below 0 dB; the second clause is kept at every level, so a moved threshold above 0 dB is cut at 0 dB.",
+              "effective_threshold_db": {
+                "-1_db": -1.7,
+                "0_db": -0.7,
+                "+1_db": 0.0
+              },
+              "cut_at_0_db": {
+                "-1_db": false,
+                "0_db": false,
+                "+1_db": true
+              },
+              "plus_level": "cut_at_0_db",
+              "plus_level_shift_that_took_effect_db": 0.7
             }
           }
         },
@@ -1778,7 +2082,20 @@
                 "-1_db": 212569,
                 "0_db": 491351,
                 "+1_db": 491351
-              }
+              },
+              "below_zero_clause": "M1-literal flags a cell only where delta-VH is below the threshold and below 0 dB; the second clause is kept at every level, so a moved threshold above 0 dB is cut at 0 dB.",
+              "effective_threshold_db": {
+                "-1_db": -1.0,
+                "0_db": 0.0,
+                "+1_db": 0.0
+              },
+              "cut_at_0_db": {
+                "-1_db": false,
+                "0_db": false,
+                "+1_db": true
+              },
+              "plus_level": "identical_to_the_central_level",
+              "plus_level_shift_that_took_effect_db": 0.0
             }
           }
         },
@@ -1822,14 +2139,27 @@
                 "-1_db": 216784,
                 "0_db": 475327,
                 "+1_db": 475327
-              }
+              },
+              "below_zero_clause": "M1-literal flags a cell only where delta-VH is below the threshold and below 0 dB; the second clause is kept at every level, so a moved threshold above 0 dB is cut at 0 dB.",
+              "effective_threshold_db": {
+                "-1_db": -0.9,
+                "0_db": 0.0,
+                "+1_db": 0.0
+              },
+              "cut_at_0_db": {
+                "-1_db": false,
+                "0_db": true,
+                "+1_db": true
+              },
+              "plus_level": "identical_to_the_central_level",
+              "plus_level_shift_that_took_effect_db": 0.0
             }
           }
         }
       ],
       "tiles_declined": [],
       "threshold_levels": {
-        "levels": "strictest, central and loosest threshold (protocol v1b: the threshold moved by 1 dB each way)",
+        "levels": "strictest, central and loosest level (protocol v1b: the Otsu threshold moved by 1 dB each way). The loosest level is cut at 0 dB: see upper_level.",
         "frame_km2": {
           "strictest": 55.6534,
           "central": 116.3639,
@@ -1875,6 +2205,48 @@
             "strictest": 8.1509,
             "central": 17.459,
             "loosest": 18.6104
+          }
+        },
+        "upper_level": {
+          "what": "M1-literal flags a cell only where delta-VH is below the threshold and below 0 dB. The second clause is kept at every level, so the loosest level is the Otsu threshold moved by +1 dB only in the tiles whose Otsu threshold is -1 dB or lower. In the other tiles it is cut at 0 dB, and where the Otsu threshold is 0 dB or more it is the central level again. The band is narrower above the central level than below it by construction (open point A4-OP9).",
+          "cap_db": 0.0,
+          "tiles_with_the_full_shift": [
+            "E059N220",
+            "E058N219"
+          ],
+          "tiles_cut_at_0_db": [
+            "E059N219"
+          ],
+          "tiles_identical_to_the_central_level": [
+            "E058N221",
+            "E057N220",
+            "E058N220",
+            "E057N219",
+            "E057N218",
+            "E058N218"
+          ],
+          "tiles_without_a_threshold": [],
+          "otsu_threshold_db_by_tile": {
+            "E058N221": 0.2,
+            "E057N220": 0.0,
+            "E058N220": 0.0,
+            "E059N220": -1.5,
+            "E057N219": 0.1,
+            "E058N219": -1.9,
+            "E059N219": -0.7,
+            "E057N218": 0.0,
+            "E058N218": 0.1
+          },
+          "shift_that_took_effect_db_by_tile": {
+            "E058N221": 0.0,
+            "E057N220": 0.0,
+            "E058N220": 0.0,
+            "E059N220": 1.0,
+            "E057N219": 0.0,
+            "E058N219": 1.0,
+            "E059N219": 0.7,
+            "E057N218": 0.0,
+            "E058N218": 0.0
           }
         }
       }
@@ -2823,7 +3195,8 @@
       "disclosed_differences_from_geoid": [
         "GEOID tiles were terrain-corrected by their publisher; these are geocoded as this run states.",
         "No HAND or slope mask is applied (see open point A4-OP2).",
-        "The pre-event and post-event images are 12 days apart on one track; on GEOID they were almost four months apart and on different orbit directions."
+        "The pre-event and post-event images are 12 days apart on one track; on GEOID they were almost four months apart and on different orbit directions.",
+        "The two dates of this run agree with each other to within 2 m (geolocation_check.pre_against_post). The two dates of a GEOID tile came on one grid from their publisher; the offset between them was not measured here."
       ]
     }
   },
@@ -2873,6 +3246,16 @@
       "un_spider": {
         "flood_input": "UN-SPIDER reproduction",
         "status_in_protocol_v1a": "declared_unable_to_meet",
+        "outcome_of_record": null,
+        "outcome_of_this_evaluation": "not_met",
+        "outcome_note": "Not the evaluation of record: the outcome of record is in the table of the run of record. Protocol v1a declares this input unable to meet the T2 skill bar, whatever its figures are.",
+        "per_unit_reading": "not_applicable (protocol v1a declares this input unable to meet the bar)",
+        "units_whose_outcome_is_undecided": [],
+        "passes_for_the_input_as_a_whole": {
+          "what": "The four conditions applied once to the input: the frame-wide share of cells without an answer and the smallest coverage of any tambon, under each coverage reading.",
+          "input_coverage": false,
+          "answer_coverage": false
+        },
         "geoid_held_out_test_iou_used": null,
         "mae_sai_conditions": {
           "abstention": {
@@ -2891,7 +3274,7 @@
           },
           "recency_passes": true
         },
-        "units_passing_all_four_conditions": {
+        "units_passing_only_if_the_conditions_are_read_per_unit": {
           "input_coverage": [],
           "answer_coverage": []
         },
@@ -2904,7 +3287,7 @@
             "answer_coverage": 1.0,
             "coverage_reading": {
               "input_coverage": {
-                "passes": false,
+                "passes_if_read_per_unit": false,
                 "conditions": {
                   "geoid_held_out_test_iou_min": "fail",
                   "mae_sai_abstention_fraction_max": "pass",
@@ -2916,7 +3299,7 @@
                 ]
               },
               "answer_coverage": {
-                "passes": false,
+                "passes_if_read_per_unit": false,
                 "conditions": {
                   "geoid_held_out_test_iou_min": "fail",
                   "mae_sai_abstention_fraction_max": "pass",
@@ -2937,7 +3320,7 @@
             "answer_coverage": 1.0,
             "coverage_reading": {
               "input_coverage": {
-                "passes": false,
+                "passes_if_read_per_unit": false,
                 "conditions": {
                   "geoid_held_out_test_iou_min": "fail",
                   "mae_sai_abstention_fraction_max": "pass",
@@ -2949,7 +3332,7 @@
                 ]
               },
               "answer_coverage": {
-                "passes": false,
+                "passes_if_read_per_unit": false,
                 "conditions": {
                   "geoid_held_out_test_iou_min": "fail",
                   "mae_sai_abstention_fraction_max": "pass",
@@ -2970,7 +3353,7 @@
             "answer_coverage": 1.0,
             "coverage_reading": {
               "input_coverage": {
-                "passes": false,
+                "passes_if_read_per_unit": false,
                 "conditions": {
                   "geoid_held_out_test_iou_min": "fail",
                   "mae_sai_abstention_fraction_max": "pass",
@@ -2982,7 +3365,7 @@
                 ]
               },
               "answer_coverage": {
-                "passes": false,
+                "passes_if_read_per_unit": false,
                 "conditions": {
                   "geoid_held_out_test_iou_min": "fail",
                   "mae_sai_abstention_fraction_max": "pass",
@@ -3003,7 +3386,7 @@
             "answer_coverage": 1.0,
             "coverage_reading": {
               "input_coverage": {
-                "passes": false,
+                "passes_if_read_per_unit": false,
                 "conditions": {
                   "geoid_held_out_test_iou_min": "fail",
                   "mae_sai_abstention_fraction_max": "pass",
@@ -3015,7 +3398,7 @@
                 ]
               },
               "answer_coverage": {
-                "passes": false,
+                "passes_if_read_per_unit": false,
                 "conditions": {
                   "geoid_held_out_test_iou_min": "fail",
                   "mae_sai_abstention_fraction_max": "pass",
@@ -3036,7 +3419,7 @@
             "answer_coverage": 1.0,
             "coverage_reading": {
               "input_coverage": {
-                "passes": false,
+                "passes_if_read_per_unit": false,
                 "conditions": {
                   "geoid_held_out_test_iou_min": "fail",
                   "mae_sai_abstention_fraction_max": "pass",
@@ -3048,7 +3431,7 @@
                 ]
               },
               "answer_coverage": {
-                "passes": false,
+                "passes_if_read_per_unit": false,
                 "conditions": {
                   "geoid_held_out_test_iou_min": "fail",
                   "mae_sai_abstention_fraction_max": "pass",
@@ -3069,7 +3452,7 @@
             "answer_coverage": 1.0,
             "coverage_reading": {
               "input_coverage": {
-                "passes": false,
+                "passes_if_read_per_unit": false,
                 "conditions": {
                   "geoid_held_out_test_iou_min": "fail",
                   "mae_sai_abstention_fraction_max": "pass",
@@ -3081,7 +3464,7 @@
                 ]
               },
               "answer_coverage": {
-                "passes": false,
+                "passes_if_read_per_unit": false,
                 "conditions": {
                   "geoid_held_out_test_iou_min": "fail",
                   "mae_sai_abstention_fraction_max": "pass",
@@ -3102,7 +3485,7 @@
             "answer_coverage": 1.0,
             "coverage_reading": {
               "input_coverage": {
-                "passes": false,
+                "passes_if_read_per_unit": false,
                 "conditions": {
                   "geoid_held_out_test_iou_min": "fail",
                   "mae_sai_abstention_fraction_max": "pass",
@@ -3114,7 +3497,7 @@
                 ]
               },
               "answer_coverage": {
-                "passes": false,
+                "passes_if_read_per_unit": false,
                 "conditions": {
                   "geoid_held_out_test_iou_min": "fail",
                   "mae_sai_abstention_fraction_max": "pass",
@@ -3135,7 +3518,7 @@
             "answer_coverage": 1.0,
             "coverage_reading": {
               "input_coverage": {
-                "passes": false,
+                "passes_if_read_per_unit": false,
                 "conditions": {
                   "geoid_held_out_test_iou_min": "fail",
                   "mae_sai_abstention_fraction_max": "pass",
@@ -3147,7 +3530,7 @@
                 ]
               },
               "answer_coverage": {
-                "passes": false,
+                "passes_if_read_per_unit": false,
                 "conditions": {
                   "geoid_held_out_test_iou_min": "fail",
                   "mae_sai_abstention_fraction_max": "pass",
@@ -3166,6 +3549,16 @@
       "m1_literal": {
         "flood_input": "M1-literal",
         "status_in_protocol_v1a": "declared_unable_to_meet",
+        "outcome_of_record": null,
+        "outcome_of_this_evaluation": "not_met",
+        "outcome_note": "Not the evaluation of record: the outcome of record is in the table of the run of record. Protocol v1a declares this input unable to meet the T2 skill bar, whatever its figures are.",
+        "per_unit_reading": "not_applicable (protocol v1a declares this input unable to meet the bar)",
+        "units_whose_outcome_is_undecided": [],
+        "passes_for_the_input_as_a_whole": {
+          "what": "The four conditions applied once to the input: the frame-wide share of cells without an answer and the smallest coverage of any tambon, under each coverage reading.",
+          "input_coverage": false,
+          "answer_coverage": false
+        },
         "geoid_held_out_test_iou_used": 0.159122,
         "mae_sai_conditions": {
           "abstention": {
@@ -3184,7 +3577,7 @@
           },
           "recency_passes": true
         },
-        "units_passing_all_four_conditions": {
+        "units_passing_only_if_the_conditions_are_read_per_unit": {
           "input_coverage": [],
           "answer_coverage": []
         },
@@ -3197,7 +3590,7 @@
             "answer_coverage": 1.0,
             "coverage_reading": {
               "input_coverage": {
-                "passes": false,
+                "passes_if_read_per_unit": false,
                 "conditions": {
                   "geoid_held_out_test_iou_min": "fail",
                   "mae_sai_abstention_fraction_max": "pass",
@@ -3209,7 +3602,7 @@
                 ]
               },
               "answer_coverage": {
-                "passes": false,
+                "passes_if_read_per_unit": false,
                 "conditions": {
                   "geoid_held_out_test_iou_min": "fail",
                   "mae_sai_abstention_fraction_max": "pass",
@@ -3230,7 +3623,7 @@
             "answer_coverage": 1.0,
             "coverage_reading": {
               "input_coverage": {
-                "passes": false,
+                "passes_if_read_per_unit": false,
                 "conditions": {
                   "geoid_held_out_test_iou_min": "fail",
                   "mae_sai_abstention_fraction_max": "pass",
@@ -3242,7 +3635,7 @@
                 ]
               },
               "answer_coverage": {
-                "passes": false,
+                "passes_if_read_per_unit": false,
                 "conditions": {
                   "geoid_held_out_test_iou_min": "fail",
                   "mae_sai_abstention_fraction_max": "pass",
@@ -3263,7 +3656,7 @@
             "answer_coverage": 1.0,
             "coverage_reading": {
               "input_coverage": {
-                "passes": false,
+                "passes_if_read_per_unit": false,
                 "conditions": {
                   "geoid_held_out_test_iou_min": "fail",
                   "mae_sai_abstention_fraction_max": "pass",
@@ -3275,7 +3668,7 @@
                 ]
               },
               "answer_coverage": {
-                "passes": false,
+                "passes_if_read_per_unit": false,
                 "conditions": {
                   "geoid_held_out_test_iou_min": "fail",
                   "mae_sai_abstention_fraction_max": "pass",
@@ -3296,7 +3689,7 @@
             "answer_coverage": 1.0,
             "coverage_reading": {
               "input_coverage": {
-                "passes": false,
+                "passes_if_read_per_unit": false,
                 "conditions": {
                   "geoid_held_out_test_iou_min": "fail",
                   "mae_sai_abstention_fraction_max": "pass",
@@ -3308,7 +3701,7 @@
                 ]
               },
               "answer_coverage": {
-                "passes": false,
+                "passes_if_read_per_unit": false,
                 "conditions": {
                   "geoid_held_out_test_iou_min": "fail",
                   "mae_sai_abstention_fraction_max": "pass",
@@ -3329,7 +3722,7 @@
             "answer_coverage": 1.0,
             "coverage_reading": {
               "input_coverage": {
-                "passes": false,
+                "passes_if_read_per_unit": false,
                 "conditions": {
                   "geoid_held_out_test_iou_min": "fail",
                   "mae_sai_abstention_fraction_max": "pass",
@@ -3341,7 +3734,7 @@
                 ]
               },
               "answer_coverage": {
-                "passes": false,
+                "passes_if_read_per_unit": false,
                 "conditions": {
                   "geoid_held_out_test_iou_min": "fail",
                   "mae_sai_abstention_fraction_max": "pass",
@@ -3362,7 +3755,7 @@
             "answer_coverage": 1.0,
             "coverage_reading": {
               "input_coverage": {
-                "passes": false,
+                "passes_if_read_per_unit": false,
                 "conditions": {
                   "geoid_held_out_test_iou_min": "fail",
                   "mae_sai_abstention_fraction_max": "pass",
@@ -3374,7 +3767,7 @@
                 ]
               },
               "answer_coverage": {
-                "passes": false,
+                "passes_if_read_per_unit": false,
                 "conditions": {
                   "geoid_held_out_test_iou_min": "fail",
                   "mae_sai_abstention_fraction_max": "pass",
@@ -3395,7 +3788,7 @@
             "answer_coverage": 1.0,
             "coverage_reading": {
               "input_coverage": {
-                "passes": false,
+                "passes_if_read_per_unit": false,
                 "conditions": {
                   "geoid_held_out_test_iou_min": "fail",
                   "mae_sai_abstention_fraction_max": "pass",
@@ -3407,7 +3800,7 @@
                 ]
               },
               "answer_coverage": {
-                "passes": false,
+                "passes_if_read_per_unit": false,
                 "conditions": {
                   "geoid_held_out_test_iou_min": "fail",
                   "mae_sai_abstention_fraction_max": "pass",
@@ -3428,7 +3821,7 @@
             "answer_coverage": 1.0,
             "coverage_reading": {
               "input_coverage": {
-                "passes": false,
+                "passes_if_read_per_unit": false,
                 "conditions": {
                   "geoid_held_out_test_iou_min": "fail",
                   "mae_sai_abstention_fraction_max": "pass",
@@ -3440,7 +3833,7 @@
                 ]
               },
               "answer_coverage": {
-                "passes": false,
+                "passes_if_read_per_unit": false,
                 "conditions": {
                   "geoid_held_out_test_iou_min": "fail",
                   "mae_sai_abstention_fraction_max": "pass",
@@ -3459,6 +3852,18 @@
       "m1_v2": {
         "flood_input": "M1-v2",
         "status_in_protocol_v1a": "evaluated",
+        "outcome_of_record": null,
+        "outcome_of_this_evaluation": "not_met",
+        "outcome_note": "Not the evaluation of record: the outcome of record is in the table of the run of record. The input as a whole does not pass under any reading. Read per tambon, the conditions pass in TH570908 only. Protocol v1a does not say whether one tambon can pass on its own (open point A4-OP3), so no pass is of record for any tambon and a later lane must not read one from this table.",
+        "per_unit_reading": "undecided (open point A4-OP3)",
+        "units_whose_outcome_is_undecided": [
+          "TH570908"
+        ],
+        "passes_for_the_input_as_a_whole": {
+          "what": "The four conditions applied once to the input: the frame-wide share of cells without an answer and the smallest coverage of any tambon, under each coverage reading.",
+          "input_coverage": false,
+          "answer_coverage": false
+        },
         "geoid_held_out_test_iou_used": 0.411164,
         "mae_sai_conditions": {
           "abstention": {
@@ -3477,7 +3882,7 @@
           },
           "recency_passes": true
         },
-        "units_passing_all_four_conditions": {
+        "units_passing_only_if_the_conditions_are_read_per_unit": {
           "input_coverage": [
             "TH570908"
           ],
@@ -3494,7 +3899,7 @@
             "answer_coverage": 0.0,
             "coverage_reading": {
               "input_coverage": {
-                "passes": false,
+                "passes_if_read_per_unit": false,
                 "conditions": {
                   "geoid_held_out_test_iou_min": "pass",
                   "mae_sai_abstention_fraction_max": "fail",
@@ -3506,7 +3911,7 @@
                 ]
               },
               "answer_coverage": {
-                "passes": false,
+                "passes_if_read_per_unit": false,
                 "conditions": {
                   "geoid_held_out_test_iou_min": "pass",
                   "mae_sai_abstention_fraction_max": "fail",
@@ -3528,7 +3933,7 @@
             "answer_coverage": 0.081167,
             "coverage_reading": {
               "input_coverage": {
-                "passes": false,
+                "passes_if_read_per_unit": false,
                 "conditions": {
                   "geoid_held_out_test_iou_min": "pass",
                   "mae_sai_abstention_fraction_max": "fail",
@@ -3540,7 +3945,7 @@
                 ]
               },
               "answer_coverage": {
-                "passes": false,
+                "passes_if_read_per_unit": false,
                 "conditions": {
                   "geoid_held_out_test_iou_min": "pass",
                   "mae_sai_abstention_fraction_max": "fail",
@@ -3562,7 +3967,7 @@
             "answer_coverage": 0.002592,
             "coverage_reading": {
               "input_coverage": {
-                "passes": false,
+                "passes_if_read_per_unit": false,
                 "conditions": {
                   "geoid_held_out_test_iou_min": "pass",
                   "mae_sai_abstention_fraction_max": "fail",
@@ -3574,7 +3979,7 @@
                 ]
               },
               "answer_coverage": {
-                "passes": false,
+                "passes_if_read_per_unit": false,
                 "conditions": {
                   "geoid_held_out_test_iou_min": "pass",
                   "mae_sai_abstention_fraction_max": "fail",
@@ -3596,7 +4001,7 @@
             "answer_coverage": 0.263894,
             "coverage_reading": {
               "input_coverage": {
-                "passes": false,
+                "passes_if_read_per_unit": false,
                 "conditions": {
                   "geoid_held_out_test_iou_min": "pass",
                   "mae_sai_abstention_fraction_max": "fail",
@@ -3608,7 +4013,7 @@
                 ]
               },
               "answer_coverage": {
-                "passes": false,
+                "passes_if_read_per_unit": false,
                 "conditions": {
                   "geoid_held_out_test_iou_min": "pass",
                   "mae_sai_abstention_fraction_max": "fail",
@@ -3630,7 +4035,7 @@
             "answer_coverage": 0.342706,
             "coverage_reading": {
               "input_coverage": {
-                "passes": false,
+                "passes_if_read_per_unit": false,
                 "conditions": {
                   "geoid_held_out_test_iou_min": "pass",
                   "mae_sai_abstention_fraction_max": "fail",
@@ -3642,7 +4047,7 @@
                 ]
               },
               "answer_coverage": {
-                "passes": false,
+                "passes_if_read_per_unit": false,
                 "conditions": {
                   "geoid_held_out_test_iou_min": "pass",
                   "mae_sai_abstention_fraction_max": "fail",
@@ -3664,7 +4069,7 @@
             "answer_coverage": 0.0,
             "coverage_reading": {
               "input_coverage": {
-                "passes": false,
+                "passes_if_read_per_unit": false,
                 "conditions": {
                   "geoid_held_out_test_iou_min": "pass",
                   "mae_sai_abstention_fraction_max": "fail",
@@ -3676,7 +4081,7 @@
                 ]
               },
               "answer_coverage": {
-                "passes": false,
+                "passes_if_read_per_unit": false,
                 "conditions": {
                   "geoid_held_out_test_iou_min": "pass",
                   "mae_sai_abstention_fraction_max": "fail",
@@ -3698,7 +4103,7 @@
             "answer_coverage": 0.987031,
             "coverage_reading": {
               "input_coverage": {
-                "passes": true,
+                "passes_if_read_per_unit": true,
                 "conditions": {
                   "geoid_held_out_test_iou_min": "pass",
                   "mae_sai_abstention_fraction_max": "pass",
@@ -3708,7 +4113,7 @@
                 "failed_conditions": []
               },
               "answer_coverage": {
-                "passes": true,
+                "passes_if_read_per_unit": true,
                 "conditions": {
                   "geoid_held_out_test_iou_min": "pass",
                   "mae_sai_abstention_fraction_max": "pass",
@@ -3727,7 +4132,7 @@
             "answer_coverage": 0.153802,
             "coverage_reading": {
               "input_coverage": {
-                "passes": false,
+                "passes_if_read_per_unit": false,
                 "conditions": {
                   "geoid_held_out_test_iou_min": "pass",
                   "mae_sai_abstention_fraction_max": "fail",
@@ -3739,7 +4144,7 @@
                 ]
               },
               "answer_coverage": {
-                "passes": false,
+                "passes_if_read_per_unit": false,
                 "conditions": {
                   "geoid_held_out_test_iou_min": "pass",
                   "mae_sai_abstention_fraction_max": "fail",
@@ -3776,10 +4181,10 @@
   "open_points": [
     {
       "id": "A4-OP1",
-      "point": "Geocoding of the fallback path.",
+      "point": "Geocoding of the fallback path: the displacement, its two parts, and the offset between the two dates.",
       "protocol_says": "Plan row A4: without SNAP, a GCP warp with the sigmaNought table, labelled 'approximate geocoding: GCP affine, no DEM terrain correction'.",
-      "what_this_run_does": "The run of record does exactly that. The product's control points sit at the heights of a coarse terrain model that is several hundred metres above the Mae Sai plain, so the radar layers are displaced along the range direction. geolocation_check gives the measured displacement and what a mapping with a height per cell leaves. The three methods were run a second time with that mapping, as a sensitivity run with its own table and receipt; it replaces nothing.",
-      "for_the_owners": "Which layers case O1 uses: the run of record (the plan's fallback, displaced), the sensitivity run (a mapping the plan does not name), or a SNAP terrain correction once SNAP is installed."
+      "what_this_run_does": "The run of record warps each date with GDAL's control-point polynomial. The radar layers are displaced along the range direction, for two reasons that add up (geolocation_check.expected_from_geometry, parts). First, the control points sit at the heights of a coarse terrain model, above the Mae Sai plain. Second, the polynomial does not pass through the control points (geolocation_check.gcp_polynomial). Each date has its own polynomial, so the two images of the run of record are also offset from each other (geolocation_check.pre_against_post gives the measured offset). All three methods compare the dates cell by cell; what the offset does to the candidates was not measured. The three methods were run a second time with a mapping that uses a height per cell, as a sensitivity run with its own table and receipt; it replaces nothing.",
+      "for_the_owners": "Which layers case O1 uses: the run of record (the plan's fallback: displaced, and its two dates offset from each other), the sensitivity run (a mapping the plan does not name), a warp that passes through the control points (it would take away the polynomial part and should take away the offset between the dates, but not the height part; the plan does not name it and it was not run), or a SNAP terrain correction once SNAP is installed."
     },
     {
       "id": "A4-OP2",
@@ -3822,6 +4227,34 @@
       "protocol_says": "The manifest marks both SAFE files 'processing_allowed False: reference mask status remains unresolved; do not run baseline yet'. Decision R14 says that note gates the finals baseline, not rights, and allows the replay to read the file. Plan rows A2 and A4 name this pair.",
       "what_this_run_does": "Reads both files, as the plan rows say.",
       "for_the_owners": "To confirm that R14 covers plan tasks A2 and A4 as well as the replay."
+    },
+    {
+      "id": "A4-OP7",
+      "point": "The label says 'GCP affine'; the warp that ran is not affine.",
+      "protocol_says": "Plan row A4 gives the label 'approximate geocoding: GCP affine, no DEM terrain correction' for the GCP warp. It says nothing else about the transform: no polynomial order, and no word on whether each date is fitted on its own.",
+      "what_this_run_does": "Warps each date with GDAL's control-point polynomial and asks for no order, as the replay's bake does. GDAL then chooses the order itself and does not report it. geolocation_check.gcp_polynomial gives the order found for each date and how far an affine fit lies from it. The label is kept word for word, because the plan prescribes it; it names a transform that was not run.",
+      "for_the_owners": "Whether the label is reworded to name the transform that ran, or the warp is rerun as an affine fit so that the label is true (a new run; none was made), and whether the order is fixed in the code and no longer left to GDAL."
+    },
+    {
+      "id": "A4-OP8",
+      "point": "The Sentinel-1 layers of the replay are made with the same warp.",
+      "protocol_says": "Nothing. Neither protocol and no plan row speaks of the geocoding of the replay's Sentinel-1 layers.",
+      "what_this_run_does": "Nothing to the replay. scripts/build_mae_sai_flood_timeline.py (sentinel1_vv) reads the 3 September archive this run reads and copies of the 6 and 15 September passes, and warps each with the same call: the product's control points, moved into the image window, fitted by GDAL's polynomial. The displacement measured here was not measured on the replay's layers, and the replay's bake was not changed or rerun in this lane. That its layers are displaced by a similar distance is an inference from the identical warp, not a measurement.",
+      "for_the_owners": "For the owners of the replay: to measure the displacement of its Sentinel-1 layers against mapped permanent water, and to decide what the page changes or says if the displacement is there."
+    },
+    {
+      "id": "A4-OP9",
+      "point": "The +1 dB level of M1-literal is cut at 0 dB.",
+      "protocol_says": "Protocol v1b (ensemble_grid, t2_levels_by_input): 'M1-literal: Otsu threshold -1 / 0 / +1 dB', accepted by the owners 'as a default and nothing more'. It does not say what happens to the second clause of the rule (delta-VH below 0 dB) when the threshold is moved.",
+      "what_this_run_does": "Moves the Otsu threshold and keeps the second clause, so a moved threshold above 0 dB is cut at 0 dB. Each tile says what took effect (threshold_levels in its whole_tile block), and methods.m1_literal.threshold_levels.upper_level lists the tiles. Where the Otsu threshold is 0 dB or more, the +1 dB level is the central level again. The band is therefore narrower above the central level than below it by construction, not because of the data.",
+      "for_the_owners": "Whether the +1 dB level keeps the below-zero clause (as here), drops it, or is defined another way. The ensemble lane reads these levels as the flood-state axis of M1-literal."
+    },
+    {
+      "id": "A2-OP2",
+      "point": "The minus and plus levels of the UN-SPIDER reproduction are not written.",
+      "protocol_says": "Protocol v1b (ensemble_grid, t2_levels_by_input): 'UN-SPIDER reproduction: minus / as-provided / plus one pixel on the output extent; the ratio 1.25 is not tuned', with 20 m for the minus and the plus level (owner choice 2). It does not say how 20 m is taken on a 10 m raster (two cells, and in which neighbourhood), nor whether the candidate builder or the flood-input reader makes the two levels. Plan row A2 asks for the area and the statement.",
+      "what_this_run_does": "Writes the as-provided extent only (un_spider_candidate.tif) and lists the two levels under not_computed.",
+      "for_the_owners": "Who makes the two levels, and with which neighbourhood."
     }
   ],
   "not_computed": [
@@ -3836,7 +4269,10 @@
     "any comparison with UNOSAT/GISTDA product 4009",
     "A6-prime classifier",
     "M1-v2 Otsu comparator",
-    "HAND or slope mask for M1-literal and M1-v2"
+    "HAND or slope mask for M1-literal and M1-v2",
+    "minus and plus one-pixel levels of the UN-SPIDER reproduction (protocol v1b, ensemble_grid)",
+    "the effect of the offset between the two dates on the candidates",
+    "the displacement of the replay's Sentinel-1 layers"
   ],
   "assumptions": [
     "One image pair: 3 September 2024 23:16 UTC and 15 September 2024 23:16 UTC (16 September 06:16 in Thailand), both descending on relative orbit 135. The post-event image is 12 days after the pre-event image and several days after the flood peak, so a candidate is residual water at that pass at most.",
@@ -3851,6 +4287,7 @@
   "limits": [
     "One pair of images, twelve days apart. The second was taken on 16 September 2024 at 06:16 in Thailand, several days after the flood peak: residual water only. Nothing here describes the peak.",
     "Approximate geocoding in the run of record: no cell-level or road-level use until the displacement is removed. The sensitivity run removes most of it with a mapping the plan does not name.",
+    "The two images of this run agree with each other to within 2 m (geolocation_check.pre_against_post, a sub-cell estimate). The run of record states its own offset in its table.",
     "No qualified reference exists for Mae Sai. The layers are not validated, and no figure here says how correct a layer is.",
     "Tier 2 own candidates: verify before action.",
     "Radar shadow and layover are not flagged; that needs the terrain-corrected geometry of the SNAP path.",

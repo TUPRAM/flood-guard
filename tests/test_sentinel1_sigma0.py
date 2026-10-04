@@ -369,3 +369,135 @@ def test_displacement_refuses_layers_it_cannot_compare() -> None:
         s1.estimate_displacement(layer, layer, valid, max_shift_cells=20)
     with pytest.raises(s1.Sentinel1Error, match="too few"):
         s1.estimate_displacement(layer, layer, np.zeros(layer.shape, dtype=bool), max_shift_cells=4)
+
+
+def test_displacement_is_refined_to_a_fraction_of_a_cell() -> None:
+    from scipy import ndimage
+
+    rng = np.random.default_rng(23)
+    reference = ndimage.gaussian_filter(rng.normal(size=(160, 200)), 2.0)
+    valid = np.ones(reference.shape, dtype=bool)
+    # The image content lies 0.6 cells east and 0.3 cells south of the reference content.
+    image = ndimage.shift(reference, shift=(0.3, 0.6), order=3, mode="wrap")
+    result = s1.estimate_displacement(reference, image, valid, max_shift_cells=6)
+    assert (result["east_cells"], result["north_cells"]) == (1, 0)
+    assert result["east_cells_subcell"] == pytest.approx(0.6, abs=0.1)
+    assert result["north_cells_subcell"] == pytest.approx(-0.3, abs=0.1)
+    assert result["correlation_at_zero_shift"] < result["correlation"] <= 1.0
+    aligned = s1.estimate_displacement(reference, reference, valid, max_shift_cells=6)
+    assert (aligned["east_cells_subcell"], aligned["north_cells_subcell"]) == (0.0, 0.0)
+    assert aligned["correlation_at_zero_shift"] == pytest.approx(1.0)
+    # On the edge of the search window nothing is refined.
+    far = s1.estimate_displacement(reference, np.roll(reference, 6, axis=1), valid, max_shift_cells=6)
+    assert far["at_search_edge"] is True and far["east_cells_subcell"] == float(far["east_cells"])
+
+
+# --- the control-point polynomial -----------------------------------------
+
+
+def _control_points(rows: int, cols: int, *, bend: float = 0.0, twist: float = 0.0) -> list[object]:
+    """Control points on a ``rows`` by ``cols`` grid of a 1000 by 1200 image.
+
+    ``bend`` adds a second-order term and ``twist`` a third-order term to the
+    longitude of each point, in image cells at the far corner.
+    """
+
+    from rasterio.control import GroundControlPoint
+
+    points = []
+    for row in np.linspace(0.0, 1000.0, rows):
+        for col in np.linspace(0.0, 1200.0, cols):
+            across, down = col / 1200.0, row / 1000.0
+            shift = bend * across * down + twist * across**3
+            points.append(GroundControlPoint(
+                row=float(row), col=float(col), x=LON0 + (col + shift) * STEP, y=LAT0 - row * STEP, z=400.0))
+    return points
+
+
+def test_polynomial_terms_count_three_six_and_ten() -> None:
+    x, y = np.array([0.0, 1.0, 2.0]), np.array([1.0, 3.0, 5.0])
+    assert [s1.polynomial_terms(x, y, order).shape[1] for order in (1, 2, 3)] == [3, 6, 10]
+    assert s1.polynomial_terms(x, y, 2)[1].tolist() == [1.0, 1.0, 3.0, 1.0, 3.0, 9.0]
+    with pytest.raises(s1.Sentinel1Error, match="order"):
+        s1.polynomial_terms(x, y, 0)
+
+
+def test_the_order_gdal_chooses_is_found_and_is_not_affine_for_a_full_set_of_points() -> None:
+    # Thirty points that no plane fits: GDAL chooses the second order, whatever the points would support.
+    found = s1.gcp_polynomial_order(_control_points(5, 6, bend=40.0, twist=25.0))
+    assert found["control_points"] == 30 and found["order"] == 2 and found["orders_that_reproduce_gdal"] == [2]
+    differences = found["max_difference_from_gdal_px_by_order"]
+    assert differences["2"] <= 0.01 and differences["1"] > 5.0 and differences["3"] > 1.0
+    # Points on a plane are reproduced by an affine fit and by the second order alike: no single order is found.
+    flat = s1.gcp_polynomial_order(_control_points(3, 3))
+    assert flat["orders_that_reproduce_gdal"] == [1, 2] and flat["order"] is None
+    assert flat["max_difference_from_gdal_px_by_order"]["3"] is None  # Nine points cannot support ten terms.
+    # Fewer than six points: GDAL fits an affine transform.
+    few = s1.gcp_polynomial_order(_control_points(2, 2, bend=40.0))
+    assert few["order"] == 1 and few["max_difference_from_gdal_px_by_order"]["2"] is None
+    with pytest.raises(s1.Sentinel1Error, match="three points"):
+        s1.gcp_polynomial_order(_control_points(1, 2))
+
+
+def test_the_polynomial_does_not_pass_through_a_control_point_that_no_smooth_surface_follows() -> None:
+    from rasterio.control import GroundControlPoint
+
+    points = _control_points(5, 6)
+    rows, cols = s1.gcp_polynomial_residuals(points)
+    assert np.abs(rows).max() < 1e-6 and np.abs(cols).max() < 1e-6
+    # One control point says the image is read 100 cells further out than the surface around it.
+    odd = points[14]
+    points[14] = GroundControlPoint(row=odd.row, col=odd.col + 100.0, x=odd.x, y=odd.y, z=odd.z)
+    rows, cols = s1.gcp_polynomial_residuals(points)
+    assert 70.0 < cols[14] < 100.0  # The control point minus the polynomial: the fit hardly follows it.
+    assert np.abs(np.delete(cols, 14)).max() < 30.0 and np.abs(rows).max() < 1e-6
+
+
+def test_the_warp_reads_the_image_where_the_polynomial_that_is_found_says() -> None:
+    from pyproj import Transformer
+    from rasterio.crs import CRS
+
+    points = _control_points(5, 6, bend=40.0, twist=25.0)
+    ramp = np.broadcast_to(np.arange(1200, dtype="float32")[None, :], (1000, 1200)).copy()  # The value is the sample.
+    window = s1.Sigma0Window(
+        values=ramp, row_offset=0, col_offset=0, gcps=tuple(points), gcp_crs=CRS.from_epsg(4326),
+        image_shape=ramp.shape, gain_range=(1.0, 1.0),
+    )
+    x, y = Transformer.from_crs("EPSG:4326", "EPSG:32647", always_xy=True).transform(
+        LON0 + 300 * STEP, LAT0 - 200 * STEP)
+    grid = s1.RasterGrid(crs="EPSG:32647", west=round(x, -1), north=round(y, -1), cell_m=10.0, width=400, height=400)
+    warped = s1.warp_gcp_polynomial(window, grid)
+    centres_x, centres_y = np.meshgrid(*grid.cell_centres())
+    lon, lat = Transformer.from_crs("EPSG:32647", "EPSG:4326", always_xy=True).transform(centres_x, centres_y)
+    _, gdal_cols = s1._gdal_image_coordinates(points, lon, lat)
+    inside = np.isfinite(warped)
+    assert inside.mean() > 0.9
+    # GDAL counts from the corner of a sample, so the centre of sample k is at k + 0.5 in its count.
+    assert np.abs(warped - (gdal_cols.reshape(warped.shape) - 0.5))[inside].max() < 0.3
+    # An affine fit to the same points would read the image several cells away.
+    gx, gy, _, gcol = s1._control_point_arrays(points)
+    affine = np.linalg.lstsq(s1.polynomial_terms(gx, gy, 1), gcol, rcond=None)[0]
+    affine_cols = (s1.polynomial_terms(lon, lat, 1) @ affine).reshape(warped.shape)
+    assert np.abs(warped - (affine_cols - 0.5))[inside].max() > 3.0
+
+
+def test_the_spline_passes_through_every_control_point() -> None:
+    from pyproj import Transformer
+
+    lines = np.array([0.0, 500.0, 1000.0])
+    pixels = np.array([0.0, 400.0, 800.0, 1200.0])
+    mesh_pixel, mesh_line = np.meshgrid(pixels, lines)
+    rng = np.random.default_rng(5)
+    height = rng.uniform(300.0, 1500.0, size=mesh_line.shape)
+    geolocation = s1.GeolocationGrid(
+        lines=lines, pixels=pixels, latitude=LAT0 - mesh_line * STEP,
+        longitude=LON0 + (mesh_pixel + 30.0 * rng.normal(size=mesh_line.shape)) * STEP,
+        height=height, incidence_deg=np.full(mesh_line.shape, 37.0),
+    )
+    x, y = Transformer.from_crs("EPSG:4326", "EPSG:32647", always_xy=True).transform(
+        geolocation.longitude, geolocation.latitude)
+    rows, cols, heights = s1.interpolate_control_points(geolocation, "EPSG:32647", x, y)
+    assert np.abs(rows - mesh_line).max() < 1e-3 and np.abs(cols - mesh_pixel).max() < 1e-3
+    assert np.abs(heights - height).max() < 1e-3
+    with pytest.raises(s1.Sentinel1Error, match="share a shape"):
+        s1.interpolate_control_points(geolocation, "EPSG:32647", x, y[:1])

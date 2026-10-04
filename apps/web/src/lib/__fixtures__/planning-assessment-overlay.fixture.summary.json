@@ -1,7 +1,7 @@
 {
   "fixture": "planning-assessment-overlay.fixture.json",
   "written_by": "apps/web/scripts/planning-overlay-fixture.py",
-  "file_sha256": "7fd732509607f54d30dbe847de18857c7e16523ff9e83180980391198640a8a3",
+  "file_sha256": "6a15f6d63d7a37e2fbccd2ad09b79c1e4ad6b8c2f7784fe080b7f6491e181959",
   "summary": {
     "case_id": "FX-CASE-01",
     "dataset_mode": "fixture_demo",
@@ -33,73 +33,243 @@
       "season_window": 2,
       "none": 7
     },
-    "rows_by_confidence_class": {
-      "low": 12,
-      "medium": 13,
-      "none": 1
-    },
     "rows_by_confidence_kind": {
       "observed": 15,
       "scenario": 4,
       "declared": 6,
       "none": 1
     },
-    "rows_by_binding_class": {
-      "A": 3,
-      "B": 2,
-      "C": 3,
-      "D": 3,
-      "E": 13,
-      "none": 2
+    "confidence_class_by_lane_column": {
+      "OBS": {
+        "low": 9,
+        "medium": 6,
+        "none": 0
+      },
+      "SCN": {
+        "low": 2,
+        "medium": 2,
+        "none": 0
+      },
+      "ENG": {
+        "low": 1,
+        "medium": 5,
+        "none": 0
+      },
+      "no_lane": {
+        "low": 0,
+        "medium": 0,
+        "none": 1
+      }
     },
-    "rows_by_reason_code": {
-      "low_confidence": 11,
-      "low_priority_score": 2,
-      "life_safety_exposure": 3,
-      "critical_route_access": 2,
-      "essential_service_access": 3,
-      "resilience": 3,
-      "insufficient_denominator": 1,
-      "none": 1
+    "binding_class_by_lane_column": {
+      "OBS": {
+        "A": 1,
+        "B": 1,
+        "C": 1,
+        "D": 2,
+        "E": 9,
+        "none": 1
+      },
+      "SCN": {
+        "A": 1,
+        "B": 0,
+        "C": 1,
+        "D": 0,
+        "E": 2,
+        "none": 0
+      },
+      "ENG": {
+        "A": 1,
+        "B": 1,
+        "C": 1,
+        "D": 1,
+        "E": 2,
+        "none": 0
+      },
+      "no_lane": {
+        "A": 0,
+        "B": 0,
+        "C": 0,
+        "D": 0,
+        "E": 0,
+        "none": 1
+      }
     },
-    "rows_by_would_be_class": {
-      "A": 3,
-      "B": 1,
-      "C": 2,
-      "D": 3,
-      "E": 1,
-      "none": 16
+    "reason_code_by_lane_column": {
+      "OBS": {
+        "low_confidence": 8,
+        "low_priority_score": 1,
+        "life_safety_exposure": 1,
+        "critical_route_access": 1,
+        "essential_service_access": 1,
+        "resilience": 2,
+        "insufficient_denominator": 1,
+        "none": 0
+      },
+      "SCN": {
+        "low_confidence": 2,
+        "low_priority_score": 0,
+        "life_safety_exposure": 1,
+        "critical_route_access": 0,
+        "essential_service_access": 1,
+        "resilience": 0,
+        "insufficient_denominator": 0,
+        "none": 0
+      },
+      "ENG": {
+        "low_confidence": 1,
+        "low_priority_score": 1,
+        "life_safety_exposure": 1,
+        "critical_route_access": 1,
+        "essential_service_access": 1,
+        "resilience": 1,
+        "insufficient_denominator": 0,
+        "none": 0
+      },
+      "no_lane": {
+        "low_confidence": 0,
+        "low_priority_score": 0,
+        "life_safety_exposure": 0,
+        "critical_route_access": 0,
+        "essential_service_access": 0,
+        "resilience": 0,
+        "insufficient_denominator": 0,
+        "none": 1
+      }
     },
-    "rows_by_v2_result": {
-      "A": 1,
-      "B": 2,
-      "C": 1,
-      "D": 1,
-      "E": 11,
-      "no_v2_trigger": 2,
-      "none": 8
+    "would_be_class_by_lane_column": {
+      "OBS": {
+        "A": 1,
+        "B": 1,
+        "C": 2,
+        "D": 2,
+        "E": 1,
+        "none": 8
+      },
+      "SCN": {
+        "A": 1,
+        "B": 0,
+        "C": 0,
+        "D": 1,
+        "E": 0,
+        "none": 2
+      },
+      "ENG": {
+        "A": 1,
+        "B": 0,
+        "C": 0,
+        "D": 0,
+        "E": 0,
+        "none": 5
+      },
+      "no_lane": {
+        "A": 0,
+        "B": 0,
+        "C": 0,
+        "D": 0,
+        "E": 0,
+        "none": 1
+      }
     },
-    "rows_by_headline_status": {
-      "not_evaluated": 22,
-      "headline_eligible": 3,
-      "unstable_verify": 1,
-      "none": 0
+    "v2_result_by_lane_column": {
+      "OBS": {
+        "A": 1,
+        "B": 1,
+        "C": 1,
+        "D": 1,
+        "E": 9,
+        "no_v2_trigger": 1,
+        "none": 1
+      },
+      "SCN": {
+        "A": 0,
+        "B": 1,
+        "C": 0,
+        "D": 0,
+        "E": 2,
+        "no_v2_trigger": 1,
+        "none": 0
+      },
+      "ENG": {
+        "A": 0,
+        "B": 0,
+        "C": 0,
+        "D": 0,
+        "E": 0,
+        "no_v2_trigger": 0,
+        "none": 6
+      },
+      "no_lane": {
+        "A": 0,
+        "B": 0,
+        "C": 0,
+        "D": 0,
+        "E": 0,
+        "no_v2_trigger": 0,
+        "none": 1
+      }
     },
-    "failed_condition_counts": {
-      "C1_tier": 3,
-      "C2_recency": 1,
-      "C3_coverage": 1,
-      "C4_input_uncertainty": 2,
-      "C5_components": 1,
-      "C6_residents": 1,
-      "C7_baseline_no_route": 2,
-      "C8_hospital": 3
+    "headline_status_by_lane_column": {
+      "OBS": {
+        "not_evaluated": 12,
+        "headline_eligible": 2,
+        "unstable_verify": 1,
+        "none": 0
+      },
+      "SCN": {
+        "not_evaluated": 3,
+        "headline_eligible": 1,
+        "unstable_verify": 0,
+        "none": 0
+      },
+      "ENG": {
+        "not_evaluated": 6,
+        "headline_eligible": 0,
+        "unstable_verify": 0,
+        "none": 0
+      },
+      "no_lane": {
+        "not_evaluated": 1,
+        "headline_eligible": 0,
+        "unstable_verify": 0,
+        "none": 0
+      }
     },
-    "basis_value_counts": {
-      "pass": 131,
-      "fail": 14,
-      "by_construction": 0,
-      "by_scenario_declaration": 7
+    "failed_conditions_by_lane_column": {
+      "OBS": {
+        "C1_tier": 2,
+        "C2_recency": 1,
+        "C3_coverage": 1,
+        "C4_input_uncertainty": 2,
+        "C5_components": 1,
+        "C6_residents": 1,
+        "C7_baseline_no_route": 2,
+        "C8_hospital": 2
+      },
+      "SCN": {
+        "C1_tier": 1,
+        "C2_recency": 0,
+        "C3_coverage": 0,
+        "C4_input_uncertainty": 0,
+        "C5_components": 0,
+        "C6_residents": 0,
+        "C7_baseline_no_route": 0,
+        "C8_hospital": 1
+      }
+    },
+    "basis_values_by_lane_column": {
+      "OBS": {
+        "pass": 108,
+        "fail": 12,
+        "by_construction": 0,
+        "by_scenario_declaration": 0
+      },
+      "SCN": {
+        "pass": 23,
+        "fail": 2,
+        "by_construction": 0,
+        "by_scenario_declaration": 7
+      }
     },
     "rows_under_gr1": 1,
     "rows_without_fpps": 2,
@@ -110,6 +280,6 @@
       "public": 8,
       "none": 0
     },
-    "content_sha256": "91bb9d7d4bebd4c74297b02ec6bd45751dc0b303b23cbc72d689508c8eaee166"
+    "content_sha256": "bde75fa3902540acab2c876ff9911aad70a6c40fedc975749d87e1803dc18051"
   }
 }

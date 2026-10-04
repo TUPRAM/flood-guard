@@ -1,7 +1,7 @@
 """Planning assessment overlay: strict validator, loader and writer (plan 7.1, task E11).
 
 The overlay is the file the planning engine writes for one case and every
-screen reads: one row per unit, lane and flood input. Its shape is
+screen reads: one row per unit, lane, flood input and scenario. Its shape is
 ``packages/contracts/schemas/planning-assessment-overlay.schema.json``. This
 module adds what a JSON schema cannot say, and names every refusal with a code
 that the web parser (``apps/web/src/lib/planning-assessment-overlay.ts``) uses
@@ -11,19 +11,27 @@ too:
   non-operational, ``accepted_fpps`` and ``accepted_action_class`` null, no
   class above E without medium confidence, high confidence never assigned;
 * guardrail GR1 (fewer than 100 residents: no binding class, no would-be class,
-  no v2 class, reason ``insufficient_denominator``), GR7 (temporal honesty), GR8
-  (the headline-stability slot), GR6 (the rights level of an overlay is the
-  minimum across its lineage) and GR3 (one flood input, one routing context and
-  one closure rule per row);
+  no v2 class, reason ``insufficient_denominator``), judged on one resident
+  count per row; GR7 (temporal honesty), with the temporal relation of a row
+  derived from the two dates the row echoes; GR8 (the headline-stability slot);
+  GR6 (the rights level of an overlay is the minimum across its lineage) and
+  GR3 (one flood input, one routing context and one closure rule per row, the
+  closure modelled from that flood input);
+* the confidence record against itself: every basis value C1 to C8 is
+  recomputed from the measurements and thresholds the record echoes;
 * the arithmetic the row states about itself, recomputed with
   ``scoring.score_subdistricts``: FPPS, the binding v1 class and its reason
   code, the would-be class (the scorer rerun with confidence medium, never
-  binding) and leave-one-component-out;
-* with a :class:`ProtocolBinding` (the frame and the confidence rule read from
-  the two protocol files in force): every component record is the frame v1
-  record of the inputs it echoes (guardrail GR2), every confidence record is
-  what rule v1 derives from the measurements it echoes, and the hashes are those
-  of the files in force.
+  binding) and leave-one-component-out; and the v2 axis against the row;
+* with a :class:`ProtocolBinding` (the frame, the confidence rule and the case
+  portfolio read from the two protocol files in force): every component record
+  is the frame v1 record of the inputs it echoes (guardrail GR2), every
+  confidence record is what rule v1 derives from the measurements it echoes,
+  the hashes are those of the files in force, and a portfolio case carries the
+  reference date, lane, tier and flood inputs protocol v1a gives it.
+
+A candidate overlay is refused without a :class:`ProtocolBinding`; only a
+fixture (``dataset_mode: fixture_demo``, not a place) is checked without one.
 
 The field shapes of the component and confidence records are those
 ``normalisation.py`` and ``confidence.py`` return. Nothing here reads a flood
@@ -38,6 +46,8 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import os
+import re
 from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass
 from datetime import date
@@ -49,13 +59,22 @@ from typing import Any
 import pandas as pd
 
 from floodguard.confidence import (
+    BY_CONSTRUCTION,
+    BY_SCENARIO_DECLARATION,
+    C4_FLOAT_GUARD_POINTS,
+    COMPONENT_COMPUTED,
     CONDITION_IDS,
     ENGINE_LANE,
     FAIL,
     OBSERVED_LANE,
+    PASS,
     REASON_INSUFFICIENT_DENOMINATOR,
     REASON_LOW_CONFIDENCE,
+    SCENARIO_BASE_AGENCY,
+    SCENARIO_BASE_OWN_CANDIDATE,
     SCENARIO_LANES,
+    SEASON_ENVELOPE_LANE,
+    SKILL_EVALUATED,
     ConfidenceError,
     ConfidenceInputs,
     ConfidenceRule,
@@ -68,6 +87,7 @@ from floodguard.normalisation import (
     frame_record,
     load_planning_frame,
     protocol_hashes,
+    read_protocol_in_force,
     reject_batch_scaled_components,
 )
 from floodguard.rights_basis import PRODUCT_4009_CITATION, RightsBasisError, require_owner_confirmation
@@ -82,6 +102,8 @@ TIERS: tuple[str, ...] = ("T0", "T1", "T2", "T3", "T4")
 LOCKED_TIER = "T4"
 ENGINE_TIER = "T0"
 SCENARIO_TIER = "T1"
+OWN_CANDIDATE_TIER = "T2"
+AGENCY_TIER = "T3"
 LANES: tuple[str, ...] = (OBSERVED_LANE, *SCENARIO_LANES, ENGINE_LANE)
 # Protocol v1a evidence_tier_model.tiers: the lanes a row of each tier may carry. T4 has no lane.
 TIER_LANES: dict[str, tuple[str | None, ...]] = {
@@ -91,8 +113,18 @@ TIER_LANES: dict[str, tuple[str | None, ...]] = {
     "T3": (OBSERVED_LANE,),
     "T4": (None,),
 }
+SCENARIO_COLUMN = "SCN"
+NO_LANE_COLUMN = "no_lane"
+LANE_COLUMNS: tuple[str, ...] = (OBSERVED_LANE, SCENARIO_COLUMN, ENGINE_LANE, NO_LANE_COLUMN)
+"""The columns a count is reported in (protocol v1a class_coverage_deliverable: OBS / SCN / ENG).
+
+Lane SCN-ENV is part of the SCN column. ``no_lane`` holds the rows of the locked tier T4.
+"""
+DERIVED_COLUMNS: tuple[str, ...] = (OBSERVED_LANE, SCENARIO_COLUMN)
 EVENT_ALIGNED = "event_aligned"
-TEMPORAL_RELATIONS: tuple[str, ...] = (EVENT_ALIGNED, "dated_other", "season_window")
+DATED_OTHER = "dated_other"
+SEASON_WINDOW = "season_window"
+TEMPORAL_RELATIONS: tuple[str, ...] = (EVENT_ALIGNED, DATED_OTHER, SEASON_WINDOW)
 ACTION_CLASSES: tuple[str, ...] = ("A", "B", "C", "D", "E")
 CLASSES_ABOVE_E: tuple[str, ...] = ("A", "B", "C", "D")
 REASON_CODES: tuple[str, ...] = (*ACTION_REASON_CODES, REASON_INSUFFICIENT_DENOMINATOR)
@@ -111,17 +143,52 @@ REASON_BY_CLASS: dict[str, str] = {
 NO_V2_TRIGGER = "no_v2_trigger"
 V2_TRIGGER_ORDER: tuple[str, ...] = ("E", "A", "B", "C", "D")
 """Protocol v1a class_rules.v2.evaluation.order (drafter reading DR-A08)."""
+V2_FPPS_MIN = 35.0
+V2_EXPOSURE_FLOOR_FOR_NON_E = 10.0
+"""Protocol v1a class_rules.v2.parameters fpps_min and exposure_floor_for_non_e."""
 HEADLINE_NOT_EVALUATED = "not_evaluated"
 HEADLINE_ELIGIBLE = "headline_eligible"
 HEADLINE_UNSTABLE = "unstable_verify"
+GUARDRAIL_GR8 = "GR8_headline_stability"
 FIXTURE_MODE = "fixture_demo"
+FIXTURE_KIND = "fixture"
+PORTFOLIO_KIND = "portfolio_case"
 FIXTURE_LABEL = "not a place"
+FLOOD_INPUT_ROLE = "flood_input"
+ROUTING_CONTEXT_ROLE = "routing_context"
+CLOSURE_BASIS_PREFIX = "modelled_from_"
+"""Protocol v1b closure_rule_v1: every output carries ``closure_basis: modelled_from_<input>``."""
+PRODUCT_4009_SOURCE = "unosat_product_4009"
+"""The value of ``inputs[].source_product`` that declares UNOSAT/GISTDA product 4009."""
 PRODUCT_4009_LICENCE = "CC BY-SA 4.0"
 PRODUCT_4009_CREDIT = "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009"
 """Protocol v1a wording.product_4009_credit; the rights record carries the same text."""
+PRODUCT_4009_EVENT_CODE = "FL20240912THA"
+PRODUCT_4009_LAYER_NAMES: tuple[str, ...] = (
+    "CHIANGRAI_20240801_20241012_AccumulatedFlood",
+    "CHIANGRAI_20241022_FloodExtent",
+)
+"""Protocol v1a date_rule.product_4009: the accumulated layer and the 22 Oct layer."""
+# Text that names product 4009 whatever the spelling: the citation the rights module knows, the bare product
+# number ("the 4009 22 Oct layer"), the event code and the two layer names of protocol v1a.
+_PRODUCT_4009_TEXT = re.compile(
+    "|".join((
+        PRODUCT_4009_CITATION.pattern,
+        r"(?:^|[^0-9A-Za-z])4009(?![0-9])",
+        re.escape(PRODUCT_4009_EVENT_CODE),
+        *(re.escape(name) for name in PRODUCT_4009_LAYER_NAMES),
+    )),
+    re.IGNORECASE,
+)
+CASES_WITHOUT_CLASS: tuple[str, ...] = ("SE2-dist",)
+"""Protocol v1a case SE2-dist: flood likelihood and exposure only, no FPPS and no class.
+
+Schema 1.0 gives every scored row a class, so it does not carry this case.
+"""
 PUBLIC_WEB_ROOT: tuple[str, ...] = ("apps", "web", "public")
 FPPS_TOLERANCE = 1e-9
 WEIGHT_SUM_TOLERANCE = 1e-9
+MEASUREMENT_TOLERANCE = 1e-9
 
 # Refusal codes. The web parser uses the same strings.
 STRUCTURE = "structure"
@@ -150,14 +217,18 @@ HEADLINE_STABILITY_INCONSISTENT = "headline_stability_inconsistent"
 LINEAGE_UNRESOLVED = "lineage_unresolved"
 PUBLICATION_NOT_LINEAGE_MINIMUM = "publication_eligibility_not_lineage_minimum"
 PRODUCT_4009_LICENCE_MISSING = "product_4009_licence_missing"
+SOURCE_PRODUCT_NOT_DECLARED = "source_product_not_declared"
 PROTOCOL_HASH_MISMATCH = "protocol_hash_mismatch"
 SCORING_FRAME_INCONSISTENT = "scoring_frame_inconsistent"
 DUPLICATE_ID = "duplicate_id"
 FIXTURE_LABEL_MISSING = "fixture_label_missing"
+PROTOCOL_BINDING_REQUIRED = "protocol_binding_required"
 PROTOCOL_NOT_IN_FORCE = "protocol_not_in_force"
 FRAME_NOT_PROTOCOL_FRAME = "frame_not_protocol_frame"
 COMPONENT_NOT_FRAME_RECORD = "component_not_frame_record"
 CONFIDENCE_NOT_RULE_RECORD = "confidence_not_rule_record"
+CASE_NOT_PROTOCOL_CASE = "case_not_protocol_case"
+PRODUCT_4009_LAYER_NOT_PROTOCOL_LAYER = "product_4009_layer_not_protocol_layer"
 PUBLIC_WRITE_NOT_ELIGIBLE = "public_write_not_eligible"
 PRODUCT_4009_RIGHTS_NOT_CONFIRMED = "product_4009_rights_not_confirmed"
 
@@ -188,18 +259,29 @@ REFUSAL_CODES: tuple[str, ...] = (
     LINEAGE_UNRESOLVED,
     PUBLICATION_NOT_LINEAGE_MINIMUM,
     PRODUCT_4009_LICENCE_MISSING,
+    SOURCE_PRODUCT_NOT_DECLARED,
     PROTOCOL_HASH_MISMATCH,
     SCORING_FRAME_INCONSISTENT,
     DUPLICATE_ID,
     FIXTURE_LABEL_MISSING,
+    PROTOCOL_BINDING_REQUIRED,
     PROTOCOL_NOT_IN_FORCE,
     FRAME_NOT_PROTOCOL_FRAME,
     COMPONENT_NOT_FRAME_RECORD,
     CONFIDENCE_NOT_RULE_RECORD,
+    CASE_NOT_PROTOCOL_CASE,
+    PRODUCT_4009_LAYER_NOT_PROTOCOL_LAYER,
     PUBLIC_WRITE_NOT_ELIGIBLE,
     PRODUCT_4009_RIGHTS_NOT_CONFIRMED,
 )
 """Every refusal code this module gives."""
+
+PYTHON_ONLY_CODES: tuple[str, ...] = (
+    PROTOCOL_BINDING_REQUIRED,
+    PUBLIC_WRITE_NOT_ELIGIBLE,
+    PRODUCT_4009_RIGHTS_NOT_CONFIRMED,
+)
+"""Codes the web parser never gives: it always holds the protocol binding, and it writes nothing."""
 
 _SHAPE_ERRORS = (KeyError, TypeError, AttributeError, ValueError, IndexError)
 
@@ -229,26 +311,233 @@ class PlanningOverlayError(ValueError):
         return tuple(dict.fromkeys(item.code for item in self.problems))
 
 
+# ---------------------------------------------------------------------------
+# The protocol binding
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class ProtocolCase:
+    """One case of protocol v1a ``case_portfolio``: its reference date, lane, tier and flood inputs."""
+
+    case_id: str
+    case_reference_date: str | None
+    lane: str
+    tier: str
+    flood_inputs: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class Product4009Layers:
+    """The names protocol v1a gives the two product 4009 layers, and the date of the dated one.
+
+    ``accumulated_names`` and ``dated_names`` hold the layer name of
+    ``date_rule.product_4009`` and the flood-input names of the cases built on
+    the layer. The accumulated layer has no single acquisition date.
+    """
+
+    accumulated_names: tuple[str, ...]
+    dated_names: tuple[str, ...]
+    dated_acquisition_date: str
+
+
 @dataclass(frozen=True)
 class ProtocolBinding:
-    """The frame and the confidence rule read from the two protocol files in force."""
+    """What the validator reads from the two protocol files in force.
+
+    ``frame`` and ``rule`` recompute the component and confidence records.
+    ``cases`` and ``cut_cases`` bind the case header, and ``product_4009`` the
+    two layers of that product. ``class_rule_v1``, ``class_rule_v2`` and
+    ``headline_class_retention_min`` are handed to the web parser
+    (:func:`protocol_binding_record`); this module takes the v1 class from
+    ``scoring.py``, which protocol v1a names as the source of the rule.
+    """
 
     frame: PlanningFrame
     rule: ConfidenceRule
+    cases: Mapping[str, ProtocolCase]
+    cut_cases: tuple[str, ...]
+    class_rule_v1: tuple[Mapping[str, Any], ...]
+    class_rule_v2: Mapping[str, Any]
+    product_4009: Product4009Layers
+    headline_class_retention_min: float
 
 
 def load_protocol_binding(v1a_path: Path | str, v1b_path: Path | str, receipts_path: Path | str) -> ProtocolBinding:
-    """Read frame v1 and confidence rule v1 from the protocol files, which must both be in force.
+    """Read frame v1, confidence rule v1 and the case portfolio from the protocol files in force.
 
     Raises:
-        floodguard.normalisation.NormalisationError: when a file is not in force.
+        floodguard.normalisation.NormalisationError: when a file is not in
+            force, or protocol v1a does not hold what this module binds to.
         floodguard.confidence.ConfidenceError: when v1a does not hold rule v1.
     """
 
+    frame = load_planning_frame(v1a_path, v1b_path, receipts_path)
+    rule = load_confidence_rule(v1a_path, receipts_path)
+    v1a, _sha256 = read_protocol_in_force("v1a", v1a_path, receipts_path)
+    try:
+        return _binding(frame, rule, v1a)
+    except NormalisationError:
+        raise
+    except _SHAPE_ERRORS as error:
+        raise NormalisationError(f"protocol v1a does not hold what the overlay binds to: {error!r}") from error
+
+
+def _binding(frame: PlanningFrame, rule: ConfidenceRule, v1a: Mapping[str, Any]) -> ProtocolBinding:
+    """Read the case portfolio, the class rules and the product 4009 layers; refuse a protocol this module is not."""
+
+    portfolio = v1a["case_portfolio"]
+    cases = {
+        str(case["id"]): ProtocolCase(
+            case_id=str(case["id"]),
+            case_reference_date=case["case_reference_date"],
+            lane=str(case["lane"]),
+            tier=str(case["tier"]),
+            flood_inputs=tuple(str(name) for name in case["flood_inputs"]),
+        )
+        for case in portfolio["cases"]
+    }
+    product = v1a["date_rule"]["product_4009"]
+    accumulated, dated = product["accumulated_layer"], product["layer_22_oct"]
+    if (str(accumulated["layer"]), str(dated["layer"])) != PRODUCT_4009_LAYER_NAMES:
+        raise NormalisationError("protocol v1a does not name the two product 4009 layers this module recognises")
+    if accumulated["lane"] != SEASON_ENVELOPE_LANE or accumulated["temporal_relation"] != SEASON_WINDOW:
+        raise NormalisationError("protocol v1a does not place the 4009 accumulated layer in lane SCN-ENV")
+    accumulated_names = [str(accumulated["layer"])]
+    dated_names = [str(dated["layer"])]
+    for case in cases.values():
+        if case.lane == SEASON_ENVELOPE_LANE:
+            accumulated_names.extend(case.flood_inputs)
+        if case.case_id == dated["case"]:
+            dated_names.extend(case.flood_inputs)
+    if cases[str(dated["case"])].case_reference_date != dated["case_reference_date"]:
+        raise NormalisationError("protocol v1a gives the 22 Oct layer and its own case two reference dates")
+    date.fromisoformat(dated["case_reference_date"])
+    v2 = v1a["class_rules"]["v2"]
+    parameters = v2["parameters"]
+    if (
+        tuple(v2["evaluation"]["order"]) != V2_TRIGGER_ORDER
+        or v2["evaluation"]["otherwise"] != NO_V2_TRIGGER
+        or float(parameters["fpps_min"]) != V2_FPPS_MIN
+        or float(parameters["exposure_floor_for_non_e"]) != V2_EXPOSURE_FLOOR_FOR_NON_E
+    ):
+        raise NormalisationError("protocol v1a does not hold class rule v2 as this module checks it")
+    notes = {case["id"]: str(case.get("note", "")) for case in portfolio["cases"]}
+    if any("no FPPS and no class" not in notes.get(case_id, "") for case_id in CASES_WITHOUT_CLASS):
+        raise NormalisationError("protocol v1a does not describe the cases this module treats as having no class")
+    guardrails = {row["id"]: row for row in v1a["guardrails"]}
     return ProtocolBinding(
-        frame=load_planning_frame(v1a_path, v1b_path, receipts_path),
-        rule=load_confidence_rule(v1a_path, receipts_path),
+        frame=frame,
+        rule=rule,
+        cases=cases,
+        cut_cases=tuple(str(name) for name in portfolio["cut_now"]),
+        class_rule_v1=tuple(v1a["class_rules"]["v1"]["rules"]),
+        class_rule_v2={
+            "version": str(v2["version"]),
+            "order": list(V2_TRIGGER_ORDER),
+            "otherwise": NO_V2_TRIGGER,
+            "fpps_min": V2_FPPS_MIN,
+            "exposure_floor_for_non_e": V2_EXPOSURE_FLOOR_FOR_NON_E,
+        },
+        product_4009=Product4009Layers(
+            accumulated_names=tuple(dict.fromkeys(accumulated_names)),
+            dated_names=tuple(dict.fromkeys(dated_names)),
+            dated_acquisition_date=str(dated["case_reference_date"]),
+        ),
+        headline_class_retention_min=float(guardrails[GUARDRAIL_GR8]["parameters"]["class_retention_min"]),
     )
+
+
+def protocol_binding_record(binding: ProtocolBinding) -> dict[str, Any]:
+    """Return the protocol constants the web parser checks an overlay against, as plain JSON.
+
+    The web parser cannot read the protocol files, so it reads this record,
+    which ``apps/web/scripts/planning-overlay-fixture.py`` writes and a test
+    compares with the files in force. Every value comes from protocol v1a or
+    v1b, or is a constant of this module that :func:`load_protocol_binding`
+    checks against v1a. It holds no value for any unit.
+    """
+
+    rule = binding.rule
+    layers = binding.product_4009
+    return {
+        "about": (
+            "Constants of the signed planning protocols v1a and v1b, written by "
+            "apps/web/scripts/planning-overlay-fixture.py from the two files in force. The web parser of the "
+            "planning assessment overlay checks every overlay against them. Not edited by hand; it holds no "
+            "value for any unit."
+        ),
+        "protocol_sha256": protocol_hashes(binding.frame),
+        "scoring_frame": frame_record(binding.frame),
+        "component_definitions": {name: binding.frame.definitions[name] for name in SCORE_COMPONENTS},
+        "vulnerability_caveat": binding.frame.vulnerability_caveat,
+        "confidence_rule": {
+            "version": rule.version,
+            "thresholds": _rule_thresholds(rule),
+            "gr1_unit_residents_min_for_class": rule.gr1_unit_residents_min_for_class,
+            "t2_skill": {
+                "thresholds": _skill_thresholds(rule),
+                "declared_unable_to_meet": list(rule.skill_declared_unable_to_meet),
+                "evaluated_by_the_rule": list(rule.skill_evaluated_by_the_rule),
+            },
+            "own_t2_candidates_named": list(rule.own_t2_candidates_named),
+            "coverage_by_construction": {
+                "units": list(rule.coverage_by_construction_units),
+                "flood_inputs": list(rule.coverage_by_construction_flood_inputs),
+            },
+        },
+        "class_rule_v1": {"version": "class_rule_v1", "rules": [dict(row) for row in binding.class_rule_v1]},
+        "class_rule_v2": dict(binding.class_rule_v2),
+        "headline": {"guardrail": GUARDRAIL_GR8, "class_retention_min": binding.headline_class_retention_min},
+        "cases": [
+            {
+                "id": case.case_id,
+                "case_reference_date": case.case_reference_date,
+                "lane": case.lane,
+                "tier": case.tier,
+                "flood_inputs": list(case.flood_inputs),
+            }
+            for case in binding.cases.values()
+        ],
+        "cases_without_class": list(CASES_WITHOUT_CLASS),
+        "cut_cases": list(binding.cut_cases),
+        "product_4009": {
+            "source_product": PRODUCT_4009_SOURCE,
+            "licence": PRODUCT_4009_LICENCE,
+            "credit": PRODUCT_4009_CREDIT,
+            "event_code": PRODUCT_4009_EVENT_CODE,
+            "layer_names": list(PRODUCT_4009_LAYER_NAMES),
+            "accumulated_names": list(layers.accumulated_names),
+            "dated_names": list(layers.dated_names),
+            "dated_acquisition_date": layers.dated_acquisition_date,
+        },
+    }
+
+
+def _rule_thresholds(rule: ConfidenceRule) -> dict[str, float]:
+    """The thresholds a confidence record echoes, as ``confidence.derive_confidence`` writes them."""
+
+    return {
+        "recency_window_days": rule.recency_window_days,
+        "unit_valid_coverage_min": rule.unit_valid_coverage_min,
+        "exposure_plus_minus_one_pixel_max_points": rule.exposure_plus_minus_one_pixel_max_points,
+        "exposure_plus_minus_one_pixel_float_guard_points": C4_FLOAT_GUARD_POINTS,
+        "t2_abstention_fraction_max": rule.t2_abstention_fraction_max,
+        "unit_residents_min": rule.unit_residents_min,
+        "baseline_vehicle_no_route_share_max": rule.baseline_vehicle_no_route_share_max,
+        "hospitals_reachable_at_baseline_min": rule.hospitals_reachable_at_baseline_min,
+    }
+
+
+def _skill_thresholds(rule: ConfidenceRule) -> dict[str, float]:
+    """The thresholds a T2 skill record echoes, as ``confidence.t2_skill_condition`` writes them."""
+
+    return {
+        "geoid_held_out_test_iou_min": rule.skill_geoid_held_out_test_iou_min,
+        "mae_sai_abstention_fraction_max": rule.skill_abstention_fraction_max,
+        "mae_sai_unit_coverage_min": rule.skill_unit_coverage_min,
+        "recency_window_days": rule.skill_recency_window_days,
+    }
 
 
 def load_overlay_schema(path: Path | str) -> dict[str, Any]:
@@ -265,17 +554,60 @@ def load_overlay_schema(path: Path | str) -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 
+def _ecmascript_pattern(pattern: str) -> str:
+    """Give a pattern that ends in ``$`` the meaning it has in ECMAScript.
+
+    Python's ``$`` also matches before a final line feed, so ``abc\\n`` would
+    pass ``^[a-z]+$`` here and fail it in the web parser. ``\\Z`` matches at the
+    very end only.
+    """
+
+    if pattern.endswith("$") and not pattern.endswith("\\$"):
+        return pattern[:-1] + r"\Z"
+    return pattern
+
+
+@lru_cache(maxsize=1)
+def _validator_class() -> Any:
+    """The draft 2020-12 validator with ``pattern`` anchored as the web parser anchors it."""
+
+    from jsonschema import Draft202012Validator, ValidationError, validators
+
+    def pattern(validator: Any, value: str, instance: Any, schema: Any) -> Any:
+        if validator.is_type(instance, "string") and not re.search(_ecmascript_pattern(value), instance):
+            yield ValidationError(f"{instance!r} does not match {value!r}")
+
+    return validators.extend(Draft202012Validator, {"pattern": pattern})
+
+
 def schema_problems(overlay: Any, schema: Mapping[str, Any]) -> list[OverlayProblem]:
-    """Return the JSON-schema violations of ``overlay`` as ``structure`` problems, sorted by path."""
+    """Return the JSON-schema violations of ``overlay`` as ``structure`` problems, sorted by path.
 
-    from jsonschema import Draft202012Validator, FormatChecker
+    Calendar dates are checked (``format: date``), and a pattern that ends in
+    ``$`` does not accept a trailing line feed, so the result is the one the
+    web parser gives for the same text.
+    """
 
-    validator = Draft202012Validator(schema, format_checker=FormatChecker())
+    from jsonschema import FormatChecker
+
+    validator = _validator_class()(schema, format_checker=FormatChecker(("date",)))
     found = [
         OverlayProblem(STRUCTURE, _json_path(error.absolute_path), error.message[:300])
         for error in validator.iter_errors(overlay)
     ]
     return sorted(found, key=lambda item: (item.path, item.message))
+
+
+def _non_finite_problems(value: Any, path: str = "$") -> list[OverlayProblem]:
+    """Find every number that is not finite. JSON has none, and the web parser cannot read one."""
+
+    if isinstance(value, float) and not math.isfinite(value):
+        return [OverlayProblem(STRUCTURE, path, "a number is not finite")]
+    if isinstance(value, Mapping):
+        return [item for key, child in value.items() for item in _non_finite_problems(child, f"{path}.{key}")]
+    if isinstance(value, list):
+        return [item for index, child in enumerate(value) for item in _non_finite_problems(child, f"{path}[{index}]")]
+    return []
 
 
 def overlay_problems(
@@ -291,13 +623,15 @@ def overlay_problems(
         schema: The overlay JSON schema (:func:`load_overlay_schema`).
         binding: The protocols in force (:func:`load_protocol_binding`). When
             given, the component and confidence records are recomputed from the
-            inputs they echo and the hashes are compared with the files in force.
+            inputs they echo, the hashes are compared with the files in force
+            and the case header is compared with protocol v1a. An overlay that
+            is not a fixture is refused without it.
     """
 
     if not isinstance(overlay, Mapping):
         return [OverlayProblem(STRUCTURE, "$", "the overlay must be a JSON object")]
-    structure = schema_problems(overlay, schema)
-    problems = [*_guard_problems(overlay), *structure]
+    structure = [*_non_finite_problems(overlay), *schema_problems(overlay, schema)]
+    problems = [*_guard_problems(overlay, binding), *structure]
     checks: list[Callable[[], list[OverlayProblem]]] = [lambda: _overlay_level_problems(overlay)]
     rows = overlay.get("rows")
     if isinstance(rows, list):
@@ -305,6 +639,8 @@ def overlay_problems(
             checks.append(lambda row=row, index=index: _row_problems(overlay, row, f"$.rows[{index}]"))
     if binding is not None:
         checks.append(lambda: _binding_problems(overlay, binding))
+        checks.append(lambda: _case_problems(overlay, binding))
+        checks.append(lambda: _product_4009_layer_problems(overlay, binding))
     for check in checks:
         try:
             problems.extend(check())
@@ -328,6 +664,10 @@ def validate_overlay(
         raise PlanningOverlayError(problems)
 
 
+def _refuse_json_constant(name: str) -> Any:
+    raise ValueError(f"{name} is not a JSON number")
+
+
 def load_overlay(
     path: Path | str,
     schema: Mapping[str, Any],
@@ -336,14 +676,18 @@ def load_overlay(
 ) -> dict[str, Any]:
     """Read an overlay file and return it only when it is accepted.
 
+    ``NaN`` and ``Infinity`` are not JSON: a file that holds one is refused, as
+    the web parser refuses it.
+
     Raises:
-        PlanningOverlayError: when the file is not a JSON object or is refused.
+        PlanningOverlayError: when the file is not JSON, is not a JSON object or is refused.
     """
 
     try:
-        overlay = json.loads(Path(path).read_text(encoding="utf-8"))
-    except json.JSONDecodeError as error:
-        raise PlanningOverlayError([OverlayProblem(STRUCTURE, "$", f"not valid JSON: {error.msg}")]) from error
+        overlay = json.loads(Path(path).read_text(encoding="utf-8"), parse_constant=_refuse_json_constant)
+    except ValueError as error:
+        detail = error.msg if isinstance(error, json.JSONDecodeError) else str(error)
+        raise PlanningOverlayError([OverlayProblem(STRUCTURE, "$", f"not valid JSON: {detail}")]) from error
     validate_overlay(overlay, schema, binding=binding)
     return overlay
 
@@ -357,7 +701,7 @@ def _json_path(parts: Iterable[Any]) -> str:
     return out
 
 
-def _guard_problems(overlay: Mapping[str, Any]) -> list[OverlayProblem]:
+def _guard_problems(overlay: Mapping[str, Any], binding: ProtocolBinding | None) -> list[OverlayProblem]:
     """The refusals that must be named whatever else is wrong; they assume nothing about the shape."""
 
     problems: list[OverlayProblem] = []
@@ -365,6 +709,15 @@ def _guard_problems(overlay: Mapping[str, Any]) -> list[OverlayProblem]:
         problems.append(OverlayProblem(OFFICIAL_WARNING_NOT_FALSE, "$.official_warning", "must be false"))
     if overlay.get("operational_status") != "non_operational":
         problems.append(OverlayProblem(NOT_NON_OPERATIONAL, "$.operational_status", "must be non_operational"))
+    if binding is None and overlay.get("dataset_mode") != FIXTURE_MODE:
+        problems.append(
+            OverlayProblem(
+                PROTOCOL_BINDING_REQUIRED,
+                "$.dataset_mode",
+                "only a fixture (fixture_demo) is checked without the two protocol files in force: a candidate "
+                "overlay needs load_protocol_binding",
+            )
+        )
     for name in ACCEPTED_FIELDS:
         if overlay.get(name) is not None:
             problems.append(OverlayProblem(ACCEPTED_VALUE_NOT_NULL, f"$.{name}", "is null while tier T4 is locked"))
@@ -442,13 +795,25 @@ def _overlay_level_problems(overlay: Mapping[str, Any]) -> list[OverlayProblem]:
                 )
             )
     inputs = overlay["inputs"]
+    rows = overlay["rows"]
     for name, values in (
         ("input_id", [item["input_id"] for item in inputs]),
-        ("row_id", [row["row_id"] for row in overlay["rows"]]),
+        ("row_id", [row["row_id"] for row in rows]),
     ):
         repeated = sorted({value for value in values if values.count(value) > 1})
         if repeated:
             problems.append(OverlayProblem(DUPLICATE_ID, "$", f"{name} repeated: {repeated}"))
+    keys = [_row_key(row) for row in rows]
+    twice = sorted({row["row_id"] for row, key in zip(rows, keys) if keys.count(key) > 1})
+    if twice:
+        problems.append(
+            OverlayProblem(
+                DUPLICATE_ID,
+                "$.rows",
+                "one row is one unit in one lane with one flood input and one scenario; "
+                f"these rows share theirs: {twice}",
+            )
+        )
     lowest = min(PUBLICATION_LEVELS.index(item["rights_level"]) for item in inputs)
     eligibility = overlay["publication_eligibility"]
     if eligibility != PUBLICATION_LEVELS[lowest]:
@@ -459,7 +824,7 @@ def _overlay_level_problems(overlay: Mapping[str, Any]) -> list[OverlayProblem]:
                 f"{eligibility!r} is not the minimum across the lineage ({PUBLICATION_LEVELS[lowest]!r})",
             )
         )
-    for index, row in enumerate(overlay["rows"]):
+    for index, row in enumerate(rows):
         record = row["components"]["access_gap_0_100"]
         if isinstance(record, Mapping) and record.get("publication_level") == "pitch" and eligibility == "public":
             problems.append(
@@ -470,7 +835,15 @@ def _overlay_level_problems(overlay: Mapping[str, Any]) -> list[OverlayProblem]:
                 )
             )
     for index, item in enumerate(inputs):
-        if not _cites_product_4009(item):
+        if not _declares_product_4009(item):
+            if _names_product_4009(item):
+                problems.append(
+                    OverlayProblem(
+                        SOURCE_PRODUCT_NOT_DECLARED,
+                        f"$.inputs[{index}].source_product",
+                        f"the input names product 4009, so its source_product is {PRODUCT_4009_SOURCE!r}",
+                    )
+                )
             continue
         complete = (
             item["licence"] == PRODUCT_4009_LICENCE
@@ -488,7 +861,7 @@ def _overlay_level_problems(overlay: Mapping[str, Any]) -> list[OverlayProblem]:
                 )
             )
     if overlay["dataset_mode"] == FIXTURE_MODE:
-        unlabelled = [row["row_id"] for row in overlay["rows"] if FIXTURE_LABEL not in row["unit_name_en"]]
+        unlabelled = [row["row_id"] for row in rows if FIXTURE_LABEL not in row["unit_name_en"]]
         if unlabelled:
             problems.append(
                 OverlayProblem(
@@ -498,19 +871,44 @@ def _overlay_level_problems(overlay: Mapping[str, Any]) -> list[OverlayProblem]:
     return problems
 
 
-def _cites_product_4009(item: Mapping[str, Any]) -> bool:
-    """Say whether an input record names product 4009 in its name, attribution or identifier."""
+def _row_key(row: Mapping[str, Any]) -> tuple[Any, ...]:
+    """What one row is: its unit, lane, flood input and scenario."""
+
+    scenario = row["scenario"]
+    return (row["unit_id"], row["lane"], row["lineage"]["flood_input_id"], None if scenario is None else scenario["id"])
+
+
+def _declares_product_4009(item: Mapping[str, Any]) -> bool:
+    """Say whether an input record declares product 4009 as its source product."""
+
+    return item.get("source_product") == PRODUCT_4009_SOURCE
+
+
+def _names_product_4009(item: Mapping[str, Any]) -> bool:
+    """Say whether an input record names product 4009 in its identifier, name or attribution.
+
+    The text is matched against the citation the rights module knows, the bare
+    product number, the event code and the two layer names of protocol v1a.
+    """
 
     return any(
-        isinstance(item.get(key), str) and PRODUCT_4009_CITATION.search(item[key])
+        isinstance(item.get(key), str) and _PRODUCT_4009_TEXT.search(item[key])
         for key in ("input_id", "name", "attribution")
     )
 
 
 def cites_product_4009(overlay: Mapping[str, Any]) -> bool:
-    """Say whether any input in the lineage of ``overlay`` is UNOSAT/GISTDA product 4009."""
+    """Say whether any input in the lineage of ``overlay`` is UNOSAT/GISTDA product 4009.
 
-    return any(_cites_product_4009(item) for item in overlay.get("inputs", ()) if isinstance(item, Mapping))
+    An input is product 4009 when it declares it (``source_product``) or names
+    it. A validated overlay never names it without declaring it.
+    """
+
+    return any(
+        _declares_product_4009(item) or _names_product_4009(item)
+        for item in overlay.get("inputs", ())
+        if isinstance(item, Mapping)
+    )
 
 
 def _row_problems(overlay: Mapping[str, Any], row: Mapping[str, Any], where: str) -> list[OverlayProblem]:
@@ -566,11 +964,38 @@ def _row_problems(overlay: Mapping[str, Any], row: Mapping[str, Any], where: str
         problems.extend(_derived_confidence_problems(overlay, row, where))
         inputs = {item["input_id"]: item for item in overlay["inputs"]}
         flood = inputs.get(lineage["flood_input_id"])
-        if flood is None or flood["role"] != "flood_input" or flood["name"] != row["flood_input"]:
+        if flood is None or flood["role"] != FLOOD_INPUT_ROLE or flood["name"] != row["flood_input"]:
             add(LINEAGE_UNRESOLVED, "lineage.flood_input_id", "does not name the flood input of the row")
+        elif flood["acquisition_date"] != confidence["measurements"]["acquisition_date"]:
+            add(
+                CONFIDENCE_RECORD_MISMATCH,
+                "confidence.measurements.acquisition_date",
+                f"is {confidence['measurements']['acquisition_date']!r}; the flood input record says "
+                f"{flood['acquisition_date']!r}",
+            )
         routing = inputs.get(lineage["routing_context_id"])
-        if routing is None or routing["role"] != "routing_context":
+        if routing is None or routing["role"] != ROUTING_CONTEXT_ROLE:
             add(LINEAGE_UNRESOLVED, "lineage.routing_context_id", "does not name a routing context")
+        expected_basis = f"{CLOSURE_BASIS_PREFIX}{lineage['flood_input_id']}"
+        if lineage["closure_rule"]["closure_basis"] != expected_basis:
+            add(
+                LINEAGE_UNRESOLVED,
+                "lineage.closure_rule.closure_basis",
+                f"the closure of a row is modelled from its own flood input (guardrail GR3): {expected_basis}",
+            )
+        exposure = components["exposure_0_100"]
+        residents = confidence["measurements"]["unit_residents"]
+        if (
+            isinstance(exposure, Mapping)
+            and exposure.get("synthetic") is not True
+            and exposure["inputs"]["unit_residents"] != residents
+        ):
+            add(
+                CONFIDENCE_RECORD_MISMATCH,
+                "confidence.measurements.unit_residents",
+                f"is {residents!r}; the exposure record of the row counts {exposure['inputs']['unit_residents']!r} "
+                "unit residents. Guardrail GR1 and condition C6 are judged on the residents the row is scored on",
+            )
 
     values: dict[str, float | None] = {}
     for name in SCORE_COMPONENTS:
@@ -614,7 +1039,11 @@ def _row_problems(overlay: Mapping[str, Any], row: Mapping[str, Any], where: str
             )
     else:
         if action_class is None or reason_code == REASON_INSUFFICIENT_DENOMINATOR:
-            add(GR1_NO_CLASS, "action_class", "only a unit under guardrail GR1 has no class")
+            add(
+                GR1_NO_CLASS,
+                "action_class",
+                "in schema 1.0 every row below tier T4 carries a class, and only a unit under guardrail GR1 has none",
+            )
         if confidence_class == "low":
             if action_class != "E" or reason_code != REASON_LOW_CONFIDENCE:
                 message = "low confidence gives binding class E, reason low_confidence"
@@ -654,7 +1083,7 @@ def _row_problems(overlay: Mapping[str, Any], row: Mapping[str, Any], where: str
         add(LOCO_MISMATCH, "leave_one_component_out", "is required on every row that has an FPPS")
 
     if tier != ENGINE_TIER:
-        problems.extend(_v2_problems(row, confidence_class, gr1_applies, where))
+        problems.extend(_v2_problems(row, confidence_class, gr1_applies, values["exposure_0_100"], where))
     headline = row["headline_stability"]
     retention = headline["class_retention"]
     status = headline["status"]
@@ -666,6 +1095,183 @@ def _row_problems(overlay: Mapping[str, Any], row: Mapping[str, Any], where: str
             HEADLINE_STABILITY_INCONSISTENT,
             "headline_stability",
             f"status {status!r} with retention {retention!r} and class {action_class!r} (guardrail GR8)",
+        )
+    return problems
+
+
+def _date(value: str | None) -> date | None:
+    """A calendar date from its ISO text; None stays None. An impossible date raises ValueError."""
+
+    return None if value is None else date.fromisoformat(value)
+
+
+def _recency_days(acquisition_date: str | None, case_reference_date: str | None) -> int | None:
+    """The whole days between two echoed dates, or None when either is missing."""
+
+    acquired, reference = _date(acquisition_date), _date(case_reference_date)
+    if acquired is None or reference is None:
+        return None
+    return abs((acquired - reference).days)
+
+
+def _met(passes: bool) -> str:
+    return PASS if passes else FAIL
+
+
+def _at_least(value: float | None, minimum: float) -> bool:
+    return value is not None and value >= minimum
+
+
+def _at_most(value: float | None, maximum: float) -> bool:
+    return value is not None and value <= maximum
+
+
+def _differs(stated: float | None, expected: float | None) -> bool:
+    """Say whether a stated measurement differs from the one recomputed from the other measurements."""
+
+    if stated is None or expected is None:
+        return stated is not expected
+    return abs(stated - expected) > MEASUREMENT_TOLERANCE
+
+
+def _own_candidate(record: Mapping[str, Any]) -> bool:
+    """Say whether the (base) flood input of a confidence record is an own T2 candidate."""
+
+    return record["tier"] == OWN_CANDIDATE_TIER or record["scenario_base"] == SCENARIO_BASE_OWN_CANDIDATE
+
+
+def expected_temporal_relation(measurements: Mapping[str, Any], recency_window_days: float) -> str:
+    """Return the temporal relation the two echoed dates give (protocol v1a ``date_rule``).
+
+    An input is ``event_aligned`` only when its acquisition is within the
+    recency window of the case reference date; the rule is strict. A dated
+    input outside the window, or with no reference date to compare with, is
+    ``dated_other``. An input with no single acquisition date is a
+    ``season_window``.
+    """
+
+    if measurements["acquisition_date"] is None:
+        return SEASON_WINDOW
+    days = _recency_days(measurements["acquisition_date"], measurements["case_reference_date"])
+    return EVENT_ALIGNED if _at_most(days, recency_window_days) else DATED_OTHER
+
+
+def expected_basis(record: Mapping[str, Any]) -> dict[str, str]:
+    """Recompute the basis of C1 to C8 from the measurements and thresholds a confidence record echoes.
+
+    This is rule v1 (protocol v1a ``confidence_rule_v1``) applied to the
+    record's own numbers: C1 from the tier and the T2 skill record, C2 from the
+    two dates (or the scenario declaration for a tier T1 row), C3 to C8 from
+    their measurements. A missing measurement fails its condition.
+    """
+
+    measurements, thresholds = record["measurements"], record["thresholds"]
+    skill = record["t2_skill_condition"]
+    tier = record["tier"]
+    basis: dict[str, str] = {}
+    if tier == AGENCY_TIER:
+        basis["C1_tier"] = PASS
+    elif skill is not None:
+        basis["C1_tier"] = _met(skill["passes"] is True)
+    else:
+        basis["C1_tier"] = BY_SCENARIO_DECLARATION if tier == SCENARIO_TIER else FAIL
+    if tier == SCENARIO_TIER:
+        basis["C2_recency"] = BY_SCENARIO_DECLARATION
+    else:
+        days = _recency_days(measurements["acquisition_date"], measurements["case_reference_date"])
+        basis["C2_recency"] = _met(_at_most(days, thresholds["recency_window_days"]))
+    if measurements["coverage_by_construction"] is True:
+        basis["C3_coverage"] = BY_CONSTRUCTION
+    else:
+        coverage_min = thresholds["unit_valid_coverage_min"]
+        basis["C3_coverage"] = _met(_at_least(measurements["unit_valid_coverage"], coverage_min))
+    plus, minus = measurements["exposure_plus_one_pixel_0_100"], measurements["exposure_minus_one_pixel_0_100"]
+    points = None if plus is None or minus is None else abs(plus - minus)
+    points_max = (
+        thresholds["exposure_plus_minus_one_pixel_max_points"]
+        + thresholds["exposure_plus_minus_one_pixel_float_guard_points"]
+    )
+    input_uncertainty = _at_most(points, points_max)
+    if _own_candidate(record):
+        abstention_max = thresholds["t2_abstention_fraction_max"]
+        input_uncertainty = input_uncertainty and _at_most(measurements["t2_abstention_fraction"], abstention_max)
+    basis["C4_input_uncertainty"] = _met(input_uncertainty)
+    statuses = measurements["component_status"]
+    basis["C5_components"] = _met(all(statuses[name] == COMPONENT_COMPUTED for name in SCORE_COMPONENTS))
+    basis["C6_residents"] = _met(measurements["unit_residents"] >= thresholds["unit_residents_min"])
+    no_route_max = thresholds["baseline_vehicle_no_route_share_max"]
+    basis["C7_baseline_no_route"] = _met(_at_most(measurements["baseline_vehicle_no_route_share"], no_route_max))
+    hospitals_min = thresholds["hospitals_reachable_at_baseline_min"]
+    basis["C8_hospital"] = _met(_at_least(measurements["hospitals_reachable_at_baseline"], hospitals_min))
+    return basis
+
+
+def _skill_record_problems(record: Mapping[str, Any], where: str) -> list[OverlayProblem]:
+    """Check the T2 skill record of an own candidate against the measurements it echoes (v1a ``t2_skill_bar``)."""
+
+    problems: list[OverlayProblem] = []
+    skill = record["t2_skill_condition"]
+    measurements = record["measurements"]
+    own_candidate = _own_candidate(record)
+
+    def add(code: str, field: str, message: str) -> None:
+        problems.append(OverlayProblem(code, f"{where}.confidence.{field}", message))
+
+    if (skill is not None) != own_candidate:
+        add(
+            CONFIDENCE_RECORD_MISMATCH,
+            "t2_skill_condition",
+            "an own candidate (tier T2, or the own-candidate base of a scenario) carries the T2 skill record, "
+            "and no other row does",
+        )
+    if not own_candidate and measurements["t2_abstention_fraction"] is not None:
+        add(
+            CONFIDENCE_RECORD_MISMATCH,
+            "measurements.t2_abstention_fraction",
+            "the T2 abstention fraction belongs to an own candidate only",
+        )
+    if skill is None:
+        return problems
+    measured, limits = skill["measurements"], skill["thresholds"]
+    days = _recency_days(measurements["acquisition_date"], measurements["case_reference_date"])
+    echoed = {
+        "abstention_fraction": measurements["t2_abstention_fraction"],
+        "unit_valid_coverage": measurements["unit_valid_coverage"],
+        "recency_days": days,
+    }
+    for name, value in echoed.items():
+        if _differs(measured[name], value):
+            add(
+                CONFIDENCE_RECORD_MISMATCH,
+                f"t2_skill_condition.measurements.{name}",
+                f"is {measured[name]!r}; the confidence record measures {value!r}",
+            )
+    if skill["flood_input"] != record["flood_input"]:
+        add(CONFIDENCE_RECORD_MISMATCH, "t2_skill_condition.flood_input", "is not the flood input of the record")
+    conditions = {
+        "geoid_held_out_test_iou_min": _met(
+            _at_least(measured["geoid_held_out_test_iou"], limits["geoid_held_out_test_iou_min"])
+        ),
+        "mae_sai_abstention_fraction_max": _met(
+            _at_most(measured["abstention_fraction"], limits["mae_sai_abstention_fraction_max"])
+        ),
+        "mae_sai_unit_coverage_min": _met(
+            _at_least(measured["unit_valid_coverage"], limits["mae_sai_unit_coverage_min"])
+        ),
+        "recency_window_days": _met(_at_most(measured["recency_days"], limits["recency_window_days"])),
+    }
+    failed = [name for name, value in conditions.items() if value == FAIL]
+    if dict(skill["conditions"]) != conditions or list(skill["failed_conditions"]) != failed:
+        add(
+            CONFIDENCE_RECORD_MISMATCH,
+            "t2_skill_condition.conditions",
+            f"the measurements of the skill record give {conditions}",
+        )
+    if skill["passes"] is not (skill["status"] == SKILL_EVALUATED and not failed):
+        add(
+            CONFIDENCE_RECORD_MISMATCH,
+            "t2_skill_condition.passes",
+            "a T2 input passes only when the rule evaluates it and all four conditions pass",
         )
     return problems
 
@@ -686,9 +1292,40 @@ def _derived_confidence_problems(
             add(CONFIDENCE_RECORD_MISMATCH, name, f"is {record[name]!r}; the row says {row[name]!r}")
     if (record["scenario_base"] is not None) != (row["tier"] == SCENARIO_TIER):
         add(CONFIDENCE_RECORD_MISMATCH, "scenario_base", "a scenario base is named for tier T1 rows only")
+    if record["lane"] == SEASON_ENVELOPE_LANE and record["scenario_base"] != SCENARIO_BASE_AGENCY:
+        add(CONFIDENCE_RECORD_MISMATCH, "scenario_base", "lane SCN-ENV is the agency season layer, used as provided")
     if record["protocol_v1a_sha256"] != overlay["protocol_sha256"]["v1a"]:
         add(PROTOCOL_HASH_MISMATCH, "protocol_v1a_sha256", "differs from $.protocol_sha256.v1a")
+    measurements = record["measurements"]
+    thresholds = record["thresholds"]
     basis = record["basis"]
+    days = _recency_days(measurements["acquisition_date"], measurements["case_reference_date"])
+    if _differs(measurements["recency_days"], days):
+        message = f"the two dates of the record are {days!r} days apart"
+        add(CONFIDENCE_RECORD_MISMATCH, "measurements.recency_days", message)
+    plus, minus = measurements["exposure_plus_one_pixel_0_100"], measurements["exposure_minus_one_pixel_0_100"]
+    points = None if plus is None or minus is None else abs(plus - minus)
+    if _differs(measurements["exposure_plus_minus_one_pixel_points"], points):
+        add(
+            CONFIDENCE_RECORD_MISMATCH,
+            "measurements.exposure_plus_minus_one_pixel_points",
+            f"the two exposures of the record are {points!r} points apart",
+        )
+    if measurements["coverage_by_construction"] is True and _own_candidate(record):
+        add(
+            CONFIDENCE_RECORD_MISMATCH,
+            "measurements.coverage_by_construction",
+            "coverage by construction is stated for an agency product, not for an own candidate",
+        )
+    problems.extend(_skill_record_problems(record, where))
+    recomputed = expected_basis(record)
+    for name in CONDITION_IDS:
+        if basis[name] != recomputed[name]:
+            add(
+                CONFIDENCE_RECORD_MISMATCH,
+                f"basis.{name}",
+                f"is {basis[name]!r}; the measurements the record echoes give {recomputed[name]!r}",
+            )
     failed = [name for name in CONDITION_IDS if basis[name] == FAIL]
     if record["failed_conditions"] != failed:
         add(CONFIDENCE_RECORD_MISMATCH, "failed_conditions", f"the basis record fails {failed}")
@@ -697,7 +1334,6 @@ def _derived_confidence_problems(
         add(CONFIDENCE_RECORD_MISMATCH, "confidence_class", f"the basis record gives {expected_class}")
     gr1 = record["guardrail_gr1"]
     applies = gr1["applies"]
-    measurements = record["measurements"]
     if applies != (measurements["unit_residents"] < gr1["unit_residents_min_for_class"]):
         add(GR1_NO_CLASS, "guardrail_gr1.applies", "does not follow from the unit residents")
     if any(gr1[name] != applies for name in ("no_binding_class", "no_would_be_class", "no_v2_class")):
@@ -735,19 +1371,45 @@ def _derived_confidence_problems(
             "measurements.case_reference_date",
             "an OBS row is judged against the reference date of its case",
         )
-    if row["lane"] == OBSERVED_LANE and (row["temporal_relation"] == EVENT_ALIGNED) != (basis["C2_recency"] == "pass"):
+    relation = expected_temporal_relation(measurements, thresholds["recency_window_days"])
+    if row["lane"] == SEASON_ENVELOPE_LANE and relation != SEASON_WINDOW:
+        problems.append(
+            OverlayProblem(
+                TEMPORAL_RELATION_MISMATCH,
+                f"{where}.confidence.measurements.acquisition_date",
+                "lane SCN-ENV is the season layer, which has no single acquisition date and is not a dated extent",
+            )
+        )
+    if row["temporal_relation"] != relation:
         problems.append(
             OverlayProblem(
                 TEMPORAL_RELATION_MISMATCH,
                 f"{where}.temporal_relation",
-                "an input is event_aligned only when its acquisition is inside the recency window (condition C2)",
+                f"is {row['temporal_relation']!r}; the dates the row echoes give {relation!r}. An input is "
+                "event_aligned only when its acquisition is inside the recency window, and one with no single "
+                "acquisition date is a season_window",
             )
         )
     return problems
 
 
-def _v2_problems(row: Mapping[str, Any], confidence_class: str, gr1_applies: bool, where: str) -> list[OverlayProblem]:
-    """Check the secondary v2 axis: evaluation order E, A, B, C, D; first trigger met gives the class."""
+def _v2_problems(
+    row: Mapping[str, Any],
+    confidence_class: str,
+    gr1_applies: bool,
+    exposure: float | None,
+    where: str,
+) -> list[OverlayProblem]:
+    """Check the secondary v2 axis: its order, its result and what the triggers say against the row.
+
+    Protocol v1a ``class_rules.v2``: the triggers are evaluated in the order E,
+    A, B, C, D and the first one met gives the class. Trigger E is met by low
+    confidence, an exposure below 10 or an FPPS below 35; A needs the v1 class
+    A; C needs an FPPS of at least 35 and medium (or scenario) confidence; D
+    needs an FPPS of at least 35. The other inputs of A to D (the national P75,
+    critical links, facilities, recurrence) are not in the overlay, so those
+    triggers are checked one way only.
+    """
 
     v2 = row["class_v2"]
     if gr1_applies:
@@ -757,12 +1419,28 @@ def _v2_problems(row: Mapping[str, Any], confidence_class: str, gr1_applies: boo
     order = [item["trigger"] for item in evidence]
     met = [item["trigger"] for item in evidence if item["met"]]
     expected = met[0] if met else NO_V2_TRIGGER
+    low = confidence_class == "low"
+    fpps = row["fpps_0_100"]
+    scored_enough = fpps is not None and fpps >= V2_FPPS_MIN
     wrong = []
     if order != list(V2_TRIGGER_ORDER):
         wrong.append(f"trigger_evidence lists {order}, not {list(V2_TRIGGER_ORDER)}")
-    elif result != expected:
-        wrong.append(f"result is {result!r}; the first trigger met gives {expected!r}")
-    if confidence_class == "low" and result != "E":
+    else:
+        if result != expected:
+            wrong.append(f"result is {result!r}; the first trigger met gives {expected!r}")
+        trigger_e = low or not scored_enough or (exposure is not None and exposure < V2_EXPOSURE_FLOOR_FOR_NON_E)
+        if ("E" in met) != trigger_e:
+            wrong.append(
+                f"trigger E is {'met' if trigger_e else 'not met'} for this row: low confidence, exposure below "
+                f"{V2_EXPOSURE_FLOOR_FOR_NON_E:g} or FPPS below {V2_FPPS_MIN:g}"
+            )
+        if "A" in met and row["action_class"] != "A":
+            wrong.append("trigger A needs the v1 class A")
+        if "C" in met and (not scored_enough or low):
+            wrong.append(f"trigger C needs an FPPS of at least {V2_FPPS_MIN:g} and medium confidence")
+        if "D" in met and not scored_enough:
+            wrong.append(f"trigger D needs an FPPS of at least {V2_FPPS_MIN:g}")
+    if low and result != "E":
         wrong.append("low confidence gives v2 class E")
     return [OverlayProblem(V2_RESULT_INCONSISTENT, f"{where}.class_v2", "; ".join(wrong))] if wrong else []
 
@@ -787,6 +1465,11 @@ def _scored(values: tuple[float, ...], confidence_class: str, weights: tuple[flo
     table = pd.DataFrame([{**row, **dict(zip(SCORE_COMPONENTS, values))}])
     scored = score_subdistricts(table, dict(zip(SCORE_COMPONENTS, weights))).iloc[0]
     return float(scored["fpps_0_100"]), str(scored["action_class"]), str(scored["action_reason_code"])
+
+
+# ---------------------------------------------------------------------------
+# Checks that need the protocol files in force
+# ---------------------------------------------------------------------------
 
 
 def _binding_problems(overlay: Mapping[str, Any], binding: ProtocolBinding) -> list[OverlayProblem]:
@@ -827,7 +1510,13 @@ def _binding_problems(overlay: Mapping[str, Any], binding: ProtocolBinding) -> l
         if not isinstance(record, Mapping) or record.get("confidence_kind") == KIND_DECLARED:
             continue
         try:
-            derived = derive_confidence(_confidence_inputs(record), binding.rule)
+            inputs = _confidence_inputs(record)
+        except ValueError as error:
+            message = f"not a calendar date: {error}"
+            problems.append(OverlayProblem(STRUCTURE, f"{where}.confidence.measurements", message))
+            continue
+        try:
+            derived = derive_confidence(inputs, binding.rule)
         except ConfidenceError as error:
             problems.append(OverlayProblem(CONFIDENCE_NOT_RULE_RECORD, f"{where}.confidence", str(error)[:300]))
             continue
@@ -870,8 +1559,132 @@ def _confidence_inputs(record: Mapping[str, Any]) -> ConfidenceInputs:
     )
 
 
-def _date(value: str | None) -> date | None:
-    return None if value is None else date.fromisoformat(value)
+def case_flood_input_names(case: ProtocolCase, layers: Product4009Layers) -> tuple[str, ...]:
+    """Return every name protocol v1a gives the flood inputs of a case.
+
+    They are the ``flood_inputs`` of the case and, for a case built on a
+    product 4009 layer, the names of that layer.
+    """
+
+    names = list(case.flood_inputs)
+    for layer_names in (layers.accumulated_names, layers.dated_names):
+        if set(names) & set(layer_names):
+            names.extend(layer_names)
+    return tuple(dict.fromkeys(names))
+
+
+def _case_problems(overlay: Mapping[str, Any], binding: ProtocolBinding) -> list[OverlayProblem]:
+    """Compare the case header and the rows of its own lane with protocol v1a ``case_portfolio``.
+
+    A portfolio case names a case of v1a and carries the reference date v1a
+    gives it. A row in lane OBS or SCN-ENV belongs to a case of that lane,
+    carries the tier of the case and one of its flood inputs. Rows in lane SCN
+    (scenario cells built on a base case), engine rows and the T4 placeholder
+    are not compared: the protocols do not say which overlay carries them.
+    """
+
+    problems: list[OverlayProblem] = []
+    case = overlay["case"]
+    case_id = case["case_id"]
+    known = binding.cases.get(case_id)
+
+    def add(code: str, path: str, message: str) -> None:
+        problems.append(OverlayProblem(code, path, message))
+
+    if case["kind"] != PORTFOLIO_KIND:
+        if known is not None or case_id in binding.cut_cases:
+            message = f"a fixture does not carry the id of protocol case {case_id!r}"
+            add(CASE_NOT_PROTOCOL_CASE, "$.case.case_id", message)
+        return problems
+    if known is None:
+        cut = ", which v1a cut (case_portfolio.cut_now)" if case_id in binding.cut_cases else ""
+        add(CASE_NOT_PROTOCOL_CASE, "$.case.case_id", f"{case_id!r}{cut} is not a case of protocol v1a case_portfolio")
+        return problems
+    if case_id in CASES_WITHOUT_CLASS:
+        add(
+            CASE_NOT_PROTOCOL_CASE,
+            "$.case.case_id",
+            f"v1a gives case {case_id} flood likelihood and exposure only, no FPPS and no class; schema "
+            f"{SCHEMA_VERSION} does not carry it",
+        )
+        return problems
+    if case["case_reference_date"] != known.case_reference_date:
+        add(
+            CASE_NOT_PROTOCOL_CASE,
+            "$.case.case_reference_date",
+            f"is {case['case_reference_date']!r}; v1a gives case {case_id} {known.case_reference_date!r}",
+        )
+    names = case_flood_input_names(known, binding.product_4009)
+    for index, row in enumerate(overlay["rows"]):
+        lane = row["lane"]
+        if lane not in (OBSERVED_LANE, SEASON_ENVELOPE_LANE):
+            continue
+        where = f"$.rows[{index}]"
+        if lane != known.lane:
+            message = f"v1a gives case {case_id} lane {known.lane}, not a {lane} row"
+            add(CASE_NOT_PROTOCOL_CASE, f"{where}.lane", message)
+            continue
+        if row["tier"] != known.tier:
+            add(CASE_NOT_PROTOCOL_CASE, f"{where}.tier", f"v1a places case {case_id} at tier {known.tier}")
+        if row["flood_input"] not in names:
+            add(
+                CASE_NOT_PROTOCOL_CASE,
+                f"{where}.flood_input",
+                f"{row['flood_input']!r} is not a flood input v1a gives case {case_id}: {list(names)}",
+            )
+    return problems
+
+
+def _product_4009_layer_problems(overlay: Mapping[str, Any], binding: ProtocolBinding) -> list[OverlayProblem]:
+    """Bind a product 4009 flood input to the layer protocol v1a names (``date_rule.product_4009``).
+
+    The accumulated layer has no single acquisition date and is used in lane
+    SCN-ENV only; the 22 Oct layer carries its own date. A flood input that
+    declares the product therefore carries one of the names v1a gives the two
+    layers, so its date cannot be restated.
+    """
+
+    problems: list[OverlayProblem] = []
+    layers = binding.product_4009
+    accumulated_ids: set[str] = set()
+
+    def add(code: str, path: str, message: str) -> None:
+        problems.append(OverlayProblem(code, path, message))
+
+    for index, item in enumerate(overlay["inputs"]):
+        if item["role"] != FLOOD_INPUT_ROLE or not _declares_product_4009(item):
+            continue
+        where = f"$.inputs[{index}]"
+        if item["name"] in layers.accumulated_names:
+            accumulated_ids.add(item["input_id"])
+            if item["acquisition_date"] is not None:
+                add(
+                    PRODUCT_4009_LAYER_NOT_PROTOCOL_LAYER,
+                    f"{where}.acquisition_date",
+                    "the accumulated layer has no per-patch dates: it has no single acquisition date",
+                )
+        elif item["name"] in layers.dated_names:
+            if item["acquisition_date"] != layers.dated_acquisition_date:
+                add(
+                    PRODUCT_4009_LAYER_NOT_PROTOCOL_LAYER,
+                    f"{where}.acquisition_date",
+                    f"v1a dates the 22 Oct layer {layers.dated_acquisition_date}",
+                )
+        else:
+            known = [*layers.accumulated_names, *layers.dated_names]
+            add(
+                PRODUCT_4009_LAYER_NOT_PROTOCOL_LAYER,
+                f"{where}.name",
+                f"a product 4009 flood input carries one of the names v1a gives its two layers: {known}",
+            )
+    for index, row in enumerate(overlay["rows"]):
+        if row["lineage"]["flood_input_id"] in accumulated_ids and row["lane"] != SEASON_ENVELOPE_LANE:
+            add(
+                PRODUCT_4009_LAYER_NOT_PROTOCOL_LAYER,
+                f"$.rows[{index}].lane",
+                "v1a uses the accumulated layer in lane SCN-ENV only (scenario only)",
+            )
+    return problems
 
 
 # ---------------------------------------------------------------------------
@@ -896,11 +1709,21 @@ def overlay_text(
 
 
 def is_public_web_path(path: Path | str) -> bool:
-    """Say whether ``path`` lies under a web public folder (``apps/web/public``)."""
+    """Say whether ``path`` lies under a web public folder (``apps/web/public``).
 
-    parts = [part.lower() for part in Path(path).absolute().parts]
+    The path is judged as written (with every ``..`` collapsed) and as the
+    file system resolves it (links and junctions followed). Either one under
+    ``apps/web/public`` makes it a public path.
+    """
+
+    target = Path(path)
     width = len(PUBLIC_WEB_ROOT)
-    return any(tuple(parts[start : start + width]) == PUBLIC_WEB_ROOT for start in range(len(parts) - width + 1))
+    forms = (Path(os.path.normpath(target.absolute())), target.resolve())
+    for form in forms:
+        parts = [part.lower() for part in form.parts]
+        if any(tuple(parts[start : start + width]) == PUBLIC_WEB_ROOT for start in range(len(parts) - width + 1)):
+            return True
+    return False
 
 
 def write_overlay(
@@ -914,10 +1737,12 @@ def write_overlay(
     """Validate an overlay and write it; return the path, byte count and SHA-256 written.
 
     Guardrail GR6: only an overlay whose ``publication_eligibility`` is
-    ``public`` may be written under ``apps/web/public``. An overlay with
+    ``public`` may be written under ``apps/web/public``, and every flood input
+    of such an overlay declares its source product. An overlay with
     UNOSAT/GISTDA product 4009 in its lineage is written there only when
     ``rights_basis_4009`` is the rights record and the owners have confirmed it
-    (``floodguard.rights_basis``).
+    (``floodguard.rights_basis``). A candidate overlay is written nowhere
+    without ``binding``.
 
     Raises:
         PlanningOverlayError: when the overlay is refused or may not be written to ``path``.
@@ -937,6 +1762,17 @@ def write_overlay(
                     )
                 ]
             )
+        undeclared = [
+            OverlayProblem(
+                PUBLIC_WRITE_NOT_ELIGIBLE,
+                f"$.inputs[{index}].source_product",
+                "a flood input of an overlay written under apps/web/public declares its source product",
+            )
+            for index, item in enumerate(overlay["inputs"])
+            if item["role"] == FLOOD_INPUT_ROLE and item["source_product"] is None
+        ]
+        if undeclared:
+            raise PlanningOverlayError(undeclared)
         if cites_product_4009(overlay):
             try:
                 if rights_basis_4009 is None:
@@ -1018,6 +1854,14 @@ def content_sha256(overlay: Mapping[str, Any]) -> str:
     return hashlib.sha256(canonical_json(overlay).encode("utf-8")).hexdigest()
 
 
+def lane_column(lane: str | None) -> str:
+    """Return the column a row is counted in: OBS, SCN (with SCN-ENV), ENG, or ``no_lane`` for tier T4."""
+
+    if lane is None:
+        return NO_LANE_COLUMN
+    return SCENARIO_COLUMN if lane in SCENARIO_LANES else lane
+
+
 def _counts(keys: Iterable[str], values: Iterable[Any]) -> dict[str, int]:
     """Count ``values`` under ``keys``; None is counted as ``none``."""
 
@@ -1027,23 +1871,52 @@ def _counts(keys: Iterable[str], values: Iterable[Any]) -> dict[str, int]:
     return out
 
 
+def _counts_by_column(
+    rows: Iterable[Mapping[str, Any]],
+    keys: Iterable[str],
+    value: Callable[[Mapping[str, Any]], Any],
+    columns: tuple[str, ...] = LANE_COLUMNS,
+) -> dict[str, dict[str, int]]:
+    """Count one value of each row, separately for each lane column."""
+
+    keys = tuple(keys)
+    rows = list(rows)
+    return {
+        column: _counts(keys, (value(row) for row in rows if lane_column(row["lane"]) == column))
+        for column in columns
+    }
+
+
 def summarise_overlay(overlay: Mapping[str, Any]) -> dict[str, Any]:
-    """Count what an accepted overlay holds: rows by tier, lane, class, reason code and guardrail outcome.
+    """Count what an accepted overlay holds: rows by tier and lane, and classes and confidence per lane column.
+
+    Classes, reason codes and confidence are counted per lane column (OBS, SCN
+    with SCN-ENV, ENG, and ``no_lane`` for tier T4) and never across them:
+    protocol v1a counts scenario classes only in the SCN column, never counts
+    engine classes as an observed or scenario distribution, and never counts
+    scenario confidence as observed confidence.
 
     The web parser computes the same summary from the same file, so a test on
     each side can show that both read the same content.
     """
 
     rows = overlay["rows"]
-    confidences = [row["confidence"] for row in rows]
-    derived = [record for record in confidences if record is not None and record["confidence_kind"] != KIND_DECLARED]
-    failed = {name: 0 for name in CONDITION_IDS}
-    basis = {name: 0 for name in ("pass", "fail", "by_construction", "by_scenario_declaration")}
-    for record in derived:
-        for name in record["failed_conditions"]:
-            failed[name] += 1
-        for value in record["basis"].values():
-            basis[value] += 1
+    derived_rows = [
+        row for row in rows if row["confidence"] is not None and row["confidence"]["confidence_kind"] != KIND_DECLARED
+    ]
+    failed = {column: {name: 0 for name in CONDITION_IDS} for column in DERIVED_COLUMNS}
+    basis_values = (PASS, FAIL, BY_CONSTRUCTION, BY_SCENARIO_DECLARATION)
+    basis = {column: {name: 0 for name in basis_values} for column in DERIVED_COLUMNS}
+    for row in derived_rows:
+        column = lane_column(row["lane"])
+        for name in row["confidence"]["failed_conditions"]:
+            failed[column][name] += 1
+        for value in row["confidence"]["basis"].values():
+            basis[column][value] += 1
+
+    def confidence_of(name: str) -> Callable[[Mapping[str, Any]], Any]:
+        return lambda row: None if row["confidence"] is None else row["confidence"][name]
+
     return {
         "case_id": overlay["case"]["case_id"],
         "dataset_mode": overlay["dataset_mode"],
@@ -1054,27 +1927,28 @@ def summarise_overlay(overlay: Mapping[str, Any]) -> dict[str, Any]:
         "rows_by_tier": _counts(TIERS, (row["tier"] for row in rows)),
         "rows_by_lane": _counts(LANES, (row["lane"] for row in rows)),
         "rows_by_temporal_relation": _counts(TEMPORAL_RELATIONS, (row["temporal_relation"] for row in rows)),
-        "rows_by_confidence_class": _counts(
-            ("low", "medium"), (None if record is None else record["confidence_class"] for record in confidences)
-        ),
         "rows_by_confidence_kind": _counts(
-            ("observed", "scenario", KIND_DECLARED),
-            (None if record is None else record["confidence_kind"] for record in confidences),
+            ("observed", "scenario", KIND_DECLARED), map(confidence_of("confidence_kind"), rows)
         ),
-        "rows_by_binding_class": _counts(ACTION_CLASSES, (row["action_class"] for row in rows)),
-        "rows_by_reason_code": _counts(REASON_CODES, (row["action_reason_code"] for row in rows)),
-        "rows_by_would_be_class": _counts(ACTION_CLASSES, (row["would_be_class"] for row in rows)),
-        "rows_by_v2_result": _counts(
+        "confidence_class_by_lane_column": _counts_by_column(
+            rows, ("low", "medium"), confidence_of("confidence_class")
+        ),
+        "binding_class_by_lane_column": _counts_by_column(rows, ACTION_CLASSES, lambda row: row["action_class"]),
+        "reason_code_by_lane_column": _counts_by_column(rows, REASON_CODES, lambda row: row["action_reason_code"]),
+        "would_be_class_by_lane_column": _counts_by_column(rows, ACTION_CLASSES, lambda row: row["would_be_class"]),
+        "v2_result_by_lane_column": _counts_by_column(
+            rows,
             (*ACTION_CLASSES, NO_V2_TRIGGER),
-            (None if row["class_v2"] is None else row["class_v2"]["result"] for row in rows),
+            lambda row: None if row["class_v2"] is None else row["class_v2"]["result"],
         ),
-        "rows_by_headline_status": _counts(
+        "headline_status_by_lane_column": _counts_by_column(
+            rows,
             (HEADLINE_NOT_EVALUATED, HEADLINE_ELIGIBLE, HEADLINE_UNSTABLE),
-            (row["headline_stability"]["status"] for row in rows),
+            lambda row: row["headline_stability"]["status"],
         ),
-        "failed_condition_counts": failed,
-        "basis_value_counts": basis,
-        "rows_under_gr1": sum(1 for record in derived if record["guardrail_gr1"]["applies"]),
+        "failed_conditions_by_lane_column": failed,
+        "basis_values_by_lane_column": basis,
+        "rows_under_gr1": sum(1 for row in derived_rows if row["confidence"]["guardrail_gr1"]["applies"]),
         "rows_without_fpps": sum(1 for row in rows if row["fpps_0_100"] is None),
         "obs_rows_not_event_aligned": sum(
             1 for row in rows if row["lane"] == OBSERVED_LANE and row["temporal_relation"] != EVENT_ALIGNED

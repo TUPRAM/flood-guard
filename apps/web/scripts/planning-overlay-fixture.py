@@ -1,9 +1,12 @@
 """Write the planning assessment overlay fixture the web screens and their tests are built against.
 
-The fixture is an invented case with invented units: a fixture, not a place. No unit ID, name, date or number in it
-comes from a real tambon, a real flood product or a real detector. It exists so that the screens of plan section 7.2
-can be built before task E8 writes the first real overlay, and so that both parsers are tested on every state the
-signed protocols name:
+The fixture is an invented case with invented units: a fixture, not a place. No unit, input, date or unit number in
+it comes from a real tambon, a real flood product or a real detector. What is real in it is what the signed protocols
+fix for every overlay, and the validator requires: the frame header (its weights, its anchors and its disclosure text,
+which names the tambons of the real analysis the anchor was chosen on), the national vulnerability anchors with their
+receipt hash, and the SHA-256 of the two protocol files. It exists so that the screens of plan section 7.2 can be built
+before task E8 writes the first real overlay, and so that both parsers are tested on every state the signed protocols
+name:
 
 * every tier: T0 engine rows, T1 scenario rows in the lanes SCN and SCN-ENV, T2 own-candidate rows, T3 dated agency
   rows, and one T4 row, which is locked and carries no value;
@@ -21,7 +24,10 @@ not the v2 wrapper of task E8. Two states cannot be shown with invented units an
 ``by_construction`` (protocol v1a grants it to product 4009 in the eight Mae Sai tambons only) and a tier T2 row that
 passes the skill condition (protocol v1a evaluates two named detectors only).
 
-Run from the repository root (it writes only the two fixture files):
+The script also writes ``apps/web/src/lib/planning-protocol-binding.json``: the constants of the two protocol files
+in force that the web parser checks every overlay against (``floodguard.planning_overlay.protocol_binding_record``).
+
+Run from the repository root (it writes only the two fixture files and the binding file):
 
     python apps/web/scripts/planning-overlay-fixture.py
 """
@@ -44,14 +50,17 @@ from floodguard import normalisation  # noqa: E402
 from floodguard.confidence import ConfidenceInputs, derive_confidence  # noqa: E402
 from floodguard.normalisation import NormalisationError, frame_record, protocol_hashes, read_protocol_in_force  # noqa: E402
 from floodguard.planning_overlay import (  # noqa: E402
+    CLOSURE_BASIS_PREFIX,
     SCHEMA_ID,
     SCHEMA_RELATIVE_PATH,
     SCHEMA_VERSION,
     V2_TRIGGER_ORDER,
     ProtocolBinding,
+    expected_temporal_relation,
     load_overlay_schema,
     load_protocol_binding,
     overlay_text,
+    protocol_binding_record,
     summarise_overlay,
 )
 from floodguard.scoring import SCORE_COMPONENTS, score_subdistricts  # noqa: E402
@@ -63,6 +72,7 @@ RECEIPTS = DOCS / "RECEIPTS.jsonl"
 FIXTURES = ROOT / "apps" / "web" / "src" / "lib" / "__fixtures__"
 FIXTURE = FIXTURES / "planning-assessment-overlay.fixture.json"
 SUMMARY = FIXTURES / "planning-assessment-overlay.fixture.summary.json"
+BINDING = ROOT / "apps" / "web" / "src" / "lib" / "planning-protocol-binding.json"
 
 GENERATED_AT = "2026-10-04T00:00:00Z"
 # The commit whose confidence.py and normalisation.py produced the records (the base of task E11).
@@ -72,6 +82,8 @@ REFERENCE = date(2030, 1, 10)  # Invented: no real event has this date.
 NOT_A_PLACE_EN = "(fixture, not a place)"
 NOT_A_PLACE_TH = "(ข้อมูลทดสอบ ไม่ใช่สถานที่จริง)"
 FIXTURE_ROW_NOTE = "Fixture row: every input of this row is invented and the unit is not a place."
+# Every invented input declares one invented source product, so that the fixture shows the field filled.
+FIXTURE_SOURCE_PRODUCT = "fixture_invented_input"
 
 AGENCY_DATED = "fx_agency_extent_dated"
 AGENCY_LATE = "fx_agency_extent_late"
@@ -196,6 +208,8 @@ def _inputs() -> list[dict[str, Any]]:
             "input_id": input_id,
             "role": role,
             "name": name,
+            "source_product": FIXTURE_SOURCE_PRODUCT,
+            "acquisition_date": None if acquired is None else acquired.isoformat(),
             "sha256": _input_sha256(input_id),
             "rights_level": rights_level,
             "licence": "none: invented fixture input",
@@ -203,7 +217,7 @@ def _inputs() -> list[dict[str, Any]]:
             "change_notice": None,
             "source_timestamp": "invented for the fixture on 2026-10-04",
         }
-        for input_id, (role, name, rights_level, _acquired) in INPUTS.items()
+        for input_id, (role, name, rights_level, acquired) in INPUTS.items()
     ]
 
 
@@ -213,14 +227,6 @@ def _scored(values: dict[str, float], confidence_class: str, weights: dict[str, 
     table = pd.DataFrame([{"subdistrict_id": "row", "subdistrict_name": "row", "confidence_class": confidence_class, **values}])
     row = score_subdistricts(table, weights).iloc[0]
     return float(row["fpps_0_100"]), str(row["action_class"]), str(row["action_reason_code"])
-
-
-def _temporal_relation(acquired: date | None, window_days: float) -> str:
-    """Protocol v1a date_rule: event_aligned only within the window; a layer with no single date is a season window."""
-
-    if acquired is None:
-        return "season_window"
-    return "event_aligned" if abs((acquired - REFERENCE).days) <= window_days else "dated_other"
 
 
 def _headline(retention: float | None, retention_min: float) -> dict[str, Any]:
@@ -388,13 +394,13 @@ def _derived_row(spec: dict[str, Any], binding: ProtocolBinding, v1a: dict[str, 
         **_unit(spec["unit"]),
         "tier": spec["tier"],
         "lane": spec["lane"],
-        "temporal_relation": _temporal_relation(acquired, rule.recency_window_days),
+        "temporal_relation": expected_temporal_relation(confidence["measurements"], rule.recency_window_days),
         "flood_input": flood_name,
         "scenario": None if scenario is None else {"id": scenario[0], "declaration": scenario[1]},
         "lineage": {
             "flood_input_id": spec["flood"],
             "routing_context_id": ROUTING,
-            "closure_rule": {"version": "closure_rule_v1", "level": level, "closure_basis": f"modelled_from_{spec['flood']}"},
+            "closure_rule": {"version": "closure_rule_v1", "level": level, "closure_basis": f"{CLOSURE_BASIS_PREFIX}{spec['flood']}"},
         },
         "normalisation_version": frame.version,
         "components": components,
@@ -516,8 +522,10 @@ def build_overlay() -> dict[str, Any]:
             "title_th": "กรณีทดสอบ 01 (ข้อมูลทดสอบ ไม่ใช่สถานที่จริง)",
             "frame": "Fifteen invented units and six engine rows (fixture, not a place)",
             "case_reference_date": REFERENCE.isoformat(),
-            "fixture_notice": "Fixture, not a place: every unit, input, date and number in this file is invented to exercise "
-                              "the parsers and the screens. Nothing here describes a real tambon, flood or detector.",
+            "fixture_notice": "Fixture, not a place: the units, inputs, dates and unit numbers in this file are invented "
+                              "to exercise the parsers and the screens, and no row describes a real tambon, flood or "
+                              "detector. The frame header with its disclosure text, the national anchors and the "
+                              "protocol hashes are those of the signed protocols.",
         },
         "protocol_sha256": protocol_hashes(binding.frame),
         "evidence_tier_model_version": "evidence_tiers_v1",
@@ -529,7 +537,10 @@ def build_overlay() -> dict[str, Any]:
         "publication_eligibility": min((item["rights_level"] for item in inputs), key=levels.index),
         "inputs": inputs,
         "assumptions": [
-            "Fixture, not a place: every unit, flood input, date and number is invented. The dates are in 2030.",
+            "Fixture, not a place: every unit, flood input, date and unit number is invented. The dates are in 2030.",
+            "The frame header (weights, anchors and the anchor disclosure text, which names real tambons), the "
+            "national vulnerability anchors with their receipt hash and the protocol hashes are those of the signed "
+            "protocols v1a and v1b, as in every overlay. They describe the protocol, not a unit of this file.",
             "The component and confidence records were produced by floodguard.normalisation and floodguard.confidence "
             "under the two signed protocol files, from the invented inputs each record echoes.",
             "An invented input has no file: its sha256 is the SHA-256 of a fixture label.",
@@ -564,15 +575,23 @@ def summary_text(text: str | None = None) -> str:
     return json.dumps(document, indent=2, ensure_ascii=True) + "\n"
 
 
+def binding_text() -> str:
+    """The binding file: the protocol constants the web parser checks an overlay against, as ASCII JSON."""
+
+    record = protocol_binding_record(load_protocol_binding(V1A, V1B, RECEIPTS))
+    return json.dumps(record, indent=2, ensure_ascii=True, allow_nan=False) + "\n"
+
+
 def main() -> None:
     text = fixture_text()
     FIXTURES.mkdir(parents=True, exist_ok=True)
     # LF on every platform, matching the repository's eol=lf policy.
     FIXTURE.write_text(text, encoding="ascii", newline="\n")
     SUMMARY.write_text(summary_text(text), encoding="ascii", newline="\n")
+    BINDING.write_text(binding_text(), encoding="ascii", newline="\n")
     summary = json.loads(SUMMARY.read_text(encoding="ascii"))["summary"]
-    print(f"wrote {FIXTURE.relative_to(ROOT).as_posix()} ({summary['row_count']} rows, {len(text)} bytes) and "
-          f"{SUMMARY.relative_to(ROOT).as_posix()}")
+    print(f"wrote {FIXTURE.relative_to(ROOT).as_posix()} ({summary['row_count']} rows, {len(text)} bytes), "
+          f"{SUMMARY.relative_to(ROOT).as_posix()} and {BINDING.relative_to(ROOT).as_posix()}")
 
 
 if __name__ == "__main__":

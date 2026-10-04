@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://floodguard.th/contracts/planning-assessment-overlay.schema.json",
   "title": "FloodGuard planning assessment overlay",
-  "description": "The planning assessment of one case under the signed planning protocols v1a and v1b: one row per unit, lane and flood input, with its evidence tier, the five component records and their echoed inputs, the FPPS, the binding v1 class with its reason code, the would-be class, the v2 class as a secondary axis, the confidence record and its basis, leave-one-component-out, the headline-stability slot, and the rights, input and protocol hashes. Planning guidance for preparedness and post-event prioritisation: not an official warning, non-operational, and accepted_fpps and accepted_action_class stay null because the qualified tier T4 is locked. Class E never means safe. Cross-field arithmetic (FPPS, class rule, would-be class, leave-one-component-out, lineage, rights minimum) is checked by floodguard.planning_overlay and by the web parser.",
+  "description": "The planning assessment of one case under the signed planning protocols v1a and v1b: one row per unit, lane, flood input and scenario, with its evidence tier, the five component records and their echoed inputs, the FPPS, the binding v1 class with its reason code, the would-be class, the v2 class as a secondary axis, the confidence record and its basis, leave-one-component-out, the headline-stability slot, and the rights, input and protocol hashes. Planning guidance for preparedness and post-event prioritisation: not an official warning, non-operational, and accepted_fpps and accepted_action_class stay null because the qualified tier T4 is locked. Class E never means safe. Cross-field arithmetic (FPPS, class rule, would-be class, leave-one-component-out, lineage, rights minimum) is checked by floodguard.planning_overlay and by the web parser.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -184,8 +184,10 @@
       "pattern": "^[0-9a-f]{64}$"
     },
     "isoDate": {
+      "description": "A calendar date (ISO 8601, YYYY-MM-DD).",
       "type": "string",
-      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+      "format": "date"
     },
     "instant": {
       "description": "A date and time with a time zone (RFC 3339).",
@@ -193,6 +195,11 @@
       "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?(Z|[+-][0-9]{2}:[0-9]{2})$"
     },
     "inputId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_.-]{1,63}$"
+    },
+    "productId": {
+      "description": "The identifier of a source product. unosat_product_4009 declares UNOSAT/GISTDA product 4009.",
       "type": "string",
       "pattern": "^[a-z0-9][a-z0-9_.-]{1,63}$"
     },
@@ -323,6 +330,7 @@
       }
     },
     "weights": {
+      "description": "The published default weights of frame v1 (protocol v1a scoring_frame.weights, decision D4).",
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -334,19 +342,19 @@
       ],
       "properties": {
         "flood_likelihood_0_100": {
-          "$ref": "#/$defs/share"
+          "const": 0.3
         },
         "exposure_0_100": {
-          "$ref": "#/$defs/share"
+          "const": 0.25
         },
         "access_gap_0_100": {
-          "$ref": "#/$defs/share"
+          "const": 0.2
         },
         "road_criticality_0_100": {
-          "$ref": "#/$defs/share"
+          "const": 0.15
         },
         "vulnerability_context_0_100": {
-          "$ref": "#/$defs/share"
+          "const": 0.1
         }
       }
     },
@@ -434,13 +442,15 @@
       ]
     },
     "input": {
-      "description": "One input in the lineage of the overlay, with its hash and its rights level.",
+      "description": "One input in the lineage of the overlay, with its hash, its rights level, the source product it declares and, for a flood input, its acquisition date.",
       "type": "object",
       "additionalProperties": false,
       "required": [
         "input_id",
         "role",
         "name",
+        "source_product",
+        "acquisition_date",
         "sha256",
         "rights_level",
         "licence",
@@ -467,6 +477,26 @@
         "name": {
           "$ref": "#/$defs/text"
         },
+        "source_product": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/productId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "acquisition_date": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/isoDate"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "sha256": {
           "$ref": "#/$defs/sha256"
         },
@@ -492,7 +522,29 @@
         "source_timestamp": {
           "$ref": "#/$defs/text"
         }
-      }
+      },
+      "allOf": [
+        {
+          "$comment": "Only a flood input carries an acquisition date; null says it has no single date.",
+          "if": {
+            "properties": {
+              "role": {
+                "const": "flood_input"
+              }
+            },
+            "required": [
+              "role"
+            ]
+          },
+          "else": {
+            "properties": {
+              "acquisition_date": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ]
     },
     "accessService": {
       "type": "object",
@@ -571,7 +623,7 @@
           "$ref": "#/$defs/weights"
         },
         "flood_anchor": {
-          "$ref": "#/$defs/share"
+          "const": 0.2
         },
         "flood_anchor_sensitivity_one_at_a_time": {
           "type": "array",
@@ -645,6 +697,7 @@
           "$ref": "#/$defs/sha256"
         },
         "leave_one_component_out_weights": {
+          "description": "For each component, the weights with it at 0 and the other four renormalised (drafter reading DR-A02).",
           "type": "object",
           "additionalProperties": false,
           "required": [
@@ -656,24 +709,149 @@
           ],
           "properties": {
             "flood_likelihood_0_100": {
-              "$ref": "#/$defs/weights"
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "flood_likelihood_0_100",
+                "exposure_0_100",
+                "access_gap_0_100",
+                "road_criticality_0_100",
+                "vulnerability_context_0_100"
+              ],
+              "properties": {
+                "flood_likelihood_0_100": {
+                  "const": 0.0
+                },
+                "exposure_0_100": {
+                  "const": 0.35714285714285715
+                },
+                "access_gap_0_100": {
+                  "const": 0.28571428571428575
+                },
+                "road_criticality_0_100": {
+                  "const": 0.2142857142857143
+                },
+                "vulnerability_context_0_100": {
+                  "const": 0.14285714285714288
+                }
+              }
             },
             "exposure_0_100": {
-              "$ref": "#/$defs/weights"
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "flood_likelihood_0_100",
+                "exposure_0_100",
+                "access_gap_0_100",
+                "road_criticality_0_100",
+                "vulnerability_context_0_100"
+              ],
+              "properties": {
+                "flood_likelihood_0_100": {
+                  "const": 0.39999999999999997
+                },
+                "exposure_0_100": {
+                  "const": 0.0
+                },
+                "access_gap_0_100": {
+                  "const": 0.26666666666666666
+                },
+                "road_criticality_0_100": {
+                  "const": 0.19999999999999998
+                },
+                "vulnerability_context_0_100": {
+                  "const": 0.13333333333333333
+                }
+              }
             },
             "access_gap_0_100": {
-              "$ref": "#/$defs/weights"
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "flood_likelihood_0_100",
+                "exposure_0_100",
+                "access_gap_0_100",
+                "road_criticality_0_100",
+                "vulnerability_context_0_100"
+              ],
+              "properties": {
+                "flood_likelihood_0_100": {
+                  "const": 0.37499999999999994
+                },
+                "exposure_0_100": {
+                  "const": 0.3125
+                },
+                "access_gap_0_100": {
+                  "const": 0.0
+                },
+                "road_criticality_0_100": {
+                  "const": 0.18749999999999997
+                },
+                "vulnerability_context_0_100": {
+                  "const": 0.125
+                }
+              }
             },
             "road_criticality_0_100": {
-              "$ref": "#/$defs/weights"
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "flood_likelihood_0_100",
+                "exposure_0_100",
+                "access_gap_0_100",
+                "road_criticality_0_100",
+                "vulnerability_context_0_100"
+              ],
+              "properties": {
+                "flood_likelihood_0_100": {
+                  "const": 0.35294117647058826
+                },
+                "exposure_0_100": {
+                  "const": 0.29411764705882354
+                },
+                "access_gap_0_100": {
+                  "const": 0.23529411764705885
+                },
+                "road_criticality_0_100": {
+                  "const": 0.0
+                },
+                "vulnerability_context_0_100": {
+                  "const": 0.11764705882352942
+                }
+              }
             },
             "vulnerability_context_0_100": {
-              "$ref": "#/$defs/weights"
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "flood_likelihood_0_100",
+                "exposure_0_100",
+                "access_gap_0_100",
+                "road_criticality_0_100",
+                "vulnerability_context_0_100"
+              ],
+              "properties": {
+                "flood_likelihood_0_100": {
+                  "const": 0.3333333333333333
+                },
+                "exposure_0_100": {
+                  "const": 0.2777777777777778
+                },
+                "access_gap_0_100": {
+                  "const": 0.22222222222222224
+                },
+                "road_criticality_0_100": {
+                  "const": 0.16666666666666666
+                },
+                "vulnerability_context_0_100": {
+                  "const": 0.0
+                }
+              }
             }
           }
         },
         "lane_disclosure": {
-          "$ref": "#/$defs/text"
+          "const": "One flood input drives 4 of 5 components (90% of weight). This sentence appears on the overlay and in the brief appendix."
         },
         "protocol_sha256": {
           "$ref": "#/$defs/protocolSha256"
@@ -1339,16 +1517,16 @@
           ],
           "properties": {
             "geoid_held_out_test_iou_min": {
-              "$ref": "#/$defs/count"
+              "const": 0.4
             },
             "mae_sai_abstention_fraction_max": {
-              "$ref": "#/$defs/count"
+              "const": 0.2
             },
             "mae_sai_unit_coverage_min": {
-              "$ref": "#/$defs/count"
+              "const": 0.8
             },
             "recency_window_days": {
-              "$ref": "#/$defs/count"
+              "const": 3.0
             }
           }
         },
@@ -1379,7 +1557,7 @@
           "type": "boolean"
         },
         "unit_residents_min_for_class": {
-          "$ref": "#/$defs/count"
+          "const": 100.0
         },
         "no_binding_class": {
           "type": "boolean"
@@ -1472,28 +1650,40 @@
           ],
           "properties": {
             "C1_tier": {
-              "$ref": "#/$defs/basisValue"
+              "enum": [
+                "pass",
+                "fail",
+                "by_scenario_declaration"
+              ]
             },
             "C2_recency": {
-              "$ref": "#/$defs/basisValue"
+              "enum": [
+                "pass",
+                "fail",
+                "by_scenario_declaration"
+              ]
             },
             "C3_coverage": {
-              "$ref": "#/$defs/basisValue"
+              "enum": [
+                "pass",
+                "fail",
+                "by_construction"
+              ]
             },
             "C4_input_uncertainty": {
-              "$ref": "#/$defs/basisValue"
+              "$ref": "#/$defs/passFail"
             },
             "C5_components": {
-              "$ref": "#/$defs/basisValue"
+              "$ref": "#/$defs/passFail"
             },
             "C6_residents": {
-              "$ref": "#/$defs/basisValue"
+              "$ref": "#/$defs/passFail"
             },
             "C7_baseline_no_route": {
-              "$ref": "#/$defs/basisValue"
+              "$ref": "#/$defs/passFail"
             },
             "C8_hospital": {
-              "$ref": "#/$defs/basisValue"
+              "$ref": "#/$defs/passFail"
             }
           }
         },
@@ -1715,28 +1905,28 @@
           ],
           "properties": {
             "recency_window_days": {
-              "$ref": "#/$defs/count"
+              "const": 3.0
             },
             "unit_valid_coverage_min": {
-              "$ref": "#/$defs/count"
+              "const": 0.8
             },
             "exposure_plus_minus_one_pixel_max_points": {
-              "$ref": "#/$defs/count"
+              "const": 15.0
             },
             "exposure_plus_minus_one_pixel_float_guard_points": {
-              "$ref": "#/$defs/count"
+              "const": 1e-09
             },
             "t2_abstention_fraction_max": {
-              "$ref": "#/$defs/count"
+              "const": 0.2
             },
             "unit_residents_min": {
-              "$ref": "#/$defs/count"
+              "const": 100.0
             },
             "baseline_vehicle_no_route_share_max": {
-              "$ref": "#/$defs/count"
+              "const": 0.1
             },
             "hospitals_reachable_at_baseline_min": {
-              "$ref": "#/$defs/count"
+              "const": 1.0
             }
           }
         },
@@ -1785,6 +1975,158 @@
                   "low_confidence",
                   "insufficient_denominator"
                 ]
+              }
+            }
+          }
+        },
+        {
+          "$comment": "Rule v1, scenario rows (DR-A07): a tier T1 record is a scenario record; C2 is the scenario declaration. An observed record never states by_scenario_declaration.",
+          "if": {
+            "properties": {
+              "tier": {
+                "const": "T1"
+              }
+            },
+            "required": [
+              "tier"
+            ]
+          },
+          "then": {
+            "properties": {
+              "lane": {
+                "enum": [
+                  "SCN",
+                  "SCN-ENV"
+                ]
+              },
+              "confidence_kind": {
+                "const": "scenario"
+              },
+              "scenario_base": {
+                "type": "string"
+              },
+              "basis": {
+                "properties": {
+                  "C2_recency": {
+                    "const": "by_scenario_declaration"
+                  }
+                }
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "lane": {
+                "const": "OBS"
+              },
+              "confidence_kind": {
+                "const": "observed"
+              },
+              "scenario_base": {
+                "type": "null"
+              },
+              "basis": {
+                "properties": {
+                  "C1_tier": {
+                    "$ref": "#/$defs/passFail"
+                  },
+                  "C2_recency": {
+                    "$ref": "#/$defs/passFail"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "$comment": "Rule v1 C1: tier T3 passes it.",
+          "if": {
+            "properties": {
+              "tier": {
+                "const": "T3"
+              }
+            },
+            "required": [
+              "tier"
+            ]
+          },
+          "then": {
+            "properties": {
+              "basis": {
+                "properties": {
+                  "C1_tier": {
+                    "const": "pass"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "$comment": "Rule v1 C3: by_construction is recorded exactly when the coverage is declared by construction.",
+          "if": {
+            "properties": {
+              "measurements": {
+                "properties": {
+                  "coverage_by_construction": {
+                    "const": true
+                  }
+                },
+                "required": [
+                  "coverage_by_construction"
+                ]
+              }
+            },
+            "required": [
+              "measurements"
+            ]
+          },
+          "then": {
+            "properties": {
+              "basis": {
+                "properties": {
+                  "C3_coverage": {
+                    "const": "by_construction"
+                  }
+                }
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "basis": {
+                "properties": {
+                  "C3_coverage": {
+                    "$ref": "#/$defs/passFail"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "$comment": "Lane SCN-ENV is the agency season layer, used as provided: it has no single acquisition date.",
+          "if": {
+            "properties": {
+              "lane": {
+                "const": "SCN-ENV"
+              }
+            },
+            "required": [
+              "lane"
+            ]
+          },
+          "then": {
+            "properties": {
+              "scenario_base": {
+                "const": "agency_product_as_provided"
+              },
+              "measurements": {
+                "properties": {
+                  "acquisition_date": {
+                    "type": "null"
+                  }
+                }
               }
             }
           }
@@ -2187,7 +2529,7 @@
       ]
     },
     "row": {
-      "description": "One unit in one lane with one flood input. The binding class is the v1 class (action_class); would_be_class is never binding; class_v2 is a labelled secondary axis.",
+      "description": "One unit in one lane with one flood input and one scenario. The binding class is the v1 class (action_class); would_be_class is never binding; class_v2 is a labelled secondary axis.",
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -3024,6 +3366,26 @@
                     "const": "not_evaluated"
                   }
                 }
+              }
+            }
+          }
+        },
+        {
+          "$comment": "Protocol v1a date_rule: lane SCN-ENV is a season window, never a dated extent.",
+          "if": {
+            "properties": {
+              "lane": {
+                "const": "SCN-ENV"
+              }
+            },
+            "required": [
+              "lane"
+            ]
+          },
+          "then": {
+            "properties": {
+              "temporal_relation": {
+                "const": "season_window"
               }
             }
           }

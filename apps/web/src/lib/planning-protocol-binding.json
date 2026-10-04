@@ -1,0 +1,372 @@
+{
+  "about": "Constants of the signed planning protocols v1a and v1b, written by apps/web/scripts/planning-overlay-fixture.py from the two files in force. The web parser of the planning assessment overlay checks every overlay against them. Not edited by hand; it holds no value for any unit.",
+  "protocol_sha256": {
+    "v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+    "v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+  },
+  "scoring_frame": {
+    "normalisation_version": "planning_frame_v1",
+    "normalisation_rule": "Absolute, declared anchors. No batch scaling and no max-normalisation (guardrail 2).",
+    "weights": {
+      "flood_likelihood_0_100": 0.3,
+      "exposure_0_100": 0.25,
+      "access_gap_0_100": 0.2,
+      "road_criticality_0_100": 0.15,
+      "vulnerability_context_0_100": 0.1
+    },
+    "flood_anchor": 0.2,
+    "flood_anchor_sensitivity_one_at_a_time": [
+      0.1,
+      0.3
+    ],
+    "flood_anchor_disclosure": "The 0.20 anchor was declared after the 0.05 anchor was seen to saturate in 6 of the 8 Mae Sai tambons. It was chosen after seeing the data. Plan 3.4 says 5 of 8; the per-tambon envelope shares kept from that analysis show 6 above 0.05, and the owners corrected the count at signing on 2026-10-02.",
+    "permanent_water": {
+      "source": "ESA WorldCover 2021 v200",
+      "class": 80
+    },
+    "exposure_kind": "share_only",
+    "access_services": [
+      {
+        "service": "hospital",
+        "mode": "vehicle",
+        "threshold_minutes": 30,
+        "level": "public"
+      },
+      {
+        "service": "main_road_entry",
+        "mode": "vehicle",
+        "threshold_minutes": 15,
+        "level": "public"
+      },
+      {
+        "service": "ddpm_located_shelter",
+        "mode": "walking",
+        "threshold_minutes": 30,
+        "level": "pitch"
+      }
+    ],
+    "vulnerability_anchor_version": "national_vulnerability_anchors_v1",
+    "vulnerability_anchors": {
+      "lower": "P10",
+      "upper": "P90",
+      "values": {
+        "P5": 0.313095,
+        "P10": 0.351416,
+        "P75": 0.454083,
+        "P90": 0.477677,
+        "P95": 0.494407
+      }
+    },
+    "vulnerability_anchor_sensitivity": {
+      "lower": "P5",
+      "upper": "P95"
+    },
+    "vulnerability_anchor_receipt_sha256": "2ad161d4c67cbe1567fbb853fe951da3ffb257f06088fbc80e8e297938c73a59",
+    "leave_one_component_out_weights": {
+      "flood_likelihood_0_100": {
+        "flood_likelihood_0_100": 0.0,
+        "exposure_0_100": 0.35714285714285715,
+        "access_gap_0_100": 0.28571428571428575,
+        "road_criticality_0_100": 0.2142857142857143,
+        "vulnerability_context_0_100": 0.14285714285714288
+      },
+      "exposure_0_100": {
+        "flood_likelihood_0_100": 0.39999999999999997,
+        "exposure_0_100": 0.0,
+        "access_gap_0_100": 0.26666666666666666,
+        "road_criticality_0_100": 0.19999999999999998,
+        "vulnerability_context_0_100": 0.13333333333333333
+      },
+      "access_gap_0_100": {
+        "flood_likelihood_0_100": 0.37499999999999994,
+        "exposure_0_100": 0.3125,
+        "access_gap_0_100": 0.0,
+        "road_criticality_0_100": 0.18749999999999997,
+        "vulnerability_context_0_100": 0.125
+      },
+      "road_criticality_0_100": {
+        "flood_likelihood_0_100": 0.35294117647058826,
+        "exposure_0_100": 0.29411764705882354,
+        "access_gap_0_100": 0.23529411764705885,
+        "road_criticality_0_100": 0.0,
+        "vulnerability_context_0_100": 0.11764705882352942
+      },
+      "vulnerability_context_0_100": {
+        "flood_likelihood_0_100": 0.3333333333333333,
+        "exposure_0_100": 0.2777777777777778,
+        "access_gap_0_100": 0.22222222222222224,
+        "road_criticality_0_100": 0.16666666666666666,
+        "vulnerability_context_0_100": 0.0
+      }
+    },
+    "lane_disclosure": "One flood input drives 4 of 5 components (90% of weight). This sentence appears on the overlay and in the brief appendix.",
+    "protocol_sha256": {
+      "v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+      "v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+    }
+  },
+  "component_definitions": {
+    "flood_likelihood_0_100": "100 x min(1, flooded share of the unit's non-permanent-water land / anchor)",
+    "exposure_0_100": "100 x residents whose population cell centre is inside the flood extent / unit residents",
+    "access_gap_0_100": "Baseline-access-weighted mean of newly-lost access shares, counted only for people who had access at baseline",
+    "road_criticality_0_100": "100 x residents with a baseline route to any hospital or main road who lose all routes / those residents",
+    "vulnerability_context_0_100": "100 x clip((dependent share - lower anchor) / (upper anchor - lower anchor), 0, 1), where dependent share is residents aged 0-14 plus residents aged 60 and over, divided by all residents"
+  },
+  "vulnerability_caveat": "Modelled 1 km age composition applied to 2020 100 m counts; not observed; within-cell composition assumed uniform.",
+  "confidence_rule": {
+    "version": "confidence_rule_v1",
+    "thresholds": {
+      "recency_window_days": 3.0,
+      "unit_valid_coverage_min": 0.8,
+      "exposure_plus_minus_one_pixel_max_points": 15.0,
+      "exposure_plus_minus_one_pixel_float_guard_points": 1e-09,
+      "t2_abstention_fraction_max": 0.2,
+      "unit_residents_min": 100.0,
+      "baseline_vehicle_no_route_share_max": 0.1,
+      "hospitals_reachable_at_baseline_min": 1.0
+    },
+    "gr1_unit_residents_min_for_class": 100.0,
+    "t2_skill": {
+      "thresholds": {
+        "geoid_held_out_test_iou_min": 0.4,
+        "mae_sai_abstention_fraction_max": 0.2,
+        "mae_sai_unit_coverage_min": 0.8,
+        "recency_window_days": 3.0
+      },
+      "declared_unable_to_meet": [
+        "legacy 2.25 dB mask",
+        "UN-SPIDER reproduction",
+        "M1-literal"
+      ],
+      "evaluated_by_the_rule": [
+        "M1-v2",
+        "A6-prime classifier"
+      ]
+    },
+    "own_t2_candidates_named": [
+      "legacy 2.25 dB mask",
+      "UN-SPIDER reproduction",
+      "M1-literal",
+      "M1-v2",
+      "A6-prime classifier",
+      "own raw 20 m candidate"
+    ],
+    "coverage_by_construction": {
+      "units": [
+        "TH570901",
+        "TH570902",
+        "TH570903",
+        "TH570904",
+        "TH570905",
+        "TH570906",
+        "TH570908",
+        "TH570909"
+      ],
+      "flood_inputs": [
+        "CHIANGRAI_20240801_20241012_AccumulatedFlood",
+        "CHIANGRAI_20241022_FloodExtent",
+        "UNOSAT/GISTDA product 4009, 22 Oct 2024 layer",
+        "UNOSAT/GISTDA product 4009, accumulated layer"
+      ]
+    }
+  },
+  "class_rule_v1": {
+    "version": "class_rule_v1",
+    "rules": [
+      {
+        "class": "E",
+        "combine": "any",
+        "conditions": [
+          {
+            "field": "confidence_class",
+            "operator": "==",
+            "value": "low"
+          },
+          {
+            "field": "fpps_0_100",
+            "operator": "<",
+            "value": 35
+          }
+        ]
+      },
+      {
+        "class": "A",
+        "combine": "all",
+        "conditions": [
+          {
+            "field": "exposure_0_100",
+            "operator": ">=",
+            "value": 70
+          },
+          {
+            "field": "access_gap_0_100",
+            "operator": ">=",
+            "value": 70
+          }
+        ]
+      },
+      {
+        "class": "B",
+        "combine": "all",
+        "conditions": [
+          {
+            "field": "road_criticality_0_100",
+            "operator": ">=",
+            "value": 75
+          },
+          {
+            "field": "access_gap_0_100",
+            "operator": ">=",
+            "value": 55
+          }
+        ]
+      },
+      {
+        "class": "C",
+        "combine": "all",
+        "conditions": [
+          {
+            "field": "exposure_0_100",
+            "operator": ">=",
+            "value": 65
+          },
+          {
+            "field": "access_gap_0_100",
+            "operator": ">=",
+            "value": 50
+          }
+        ]
+      },
+      {
+        "class": "D",
+        "combine": "otherwise",
+        "conditions": []
+      }
+    ]
+  },
+  "class_rule_v2": {
+    "version": "class_rule_v2",
+    "order": [
+      "E",
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "otherwise": "no_v2_trigger",
+    "fpps_min": 35.0,
+    "exposure_floor_for_non_e": 10.0
+  },
+  "headline": {
+    "guardrail": "GR8_headline_stability",
+    "class_retention_min": 0.6
+  },
+  "cases": [
+    {
+      "id": "O1",
+      "case_reference_date": "2024-09-15",
+      "lane": "OBS",
+      "tier": "T2",
+      "flood_inputs": [
+        "M1-v2",
+        "M1-literal",
+        "UN-SPIDER reproduction",
+        "A6-prime classifier"
+      ]
+    },
+    {
+      "id": "O2",
+      "case_reference_date": "2024-10-22",
+      "lane": "OBS",
+      "tier": "T3",
+      "flood_inputs": [
+        "UNOSAT/GISTDA product 4009, 22 Oct 2024 layer"
+      ]
+    },
+    {
+      "id": "SE1",
+      "case_reference_date": null,
+      "lane": "SCN-ENV",
+      "tier": "T1",
+      "flood_inputs": [
+        "UNOSAT/GISTDA product 4009, accumulated layer"
+      ]
+    },
+    {
+      "id": "SE2",
+      "case_reference_date": null,
+      "lane": "SCN-ENV",
+      "tier": "T1",
+      "flood_inputs": [
+        "UNOSAT/GISTDA product 4009, accumulated layer"
+      ]
+    },
+    {
+      "id": "SE2-dist",
+      "case_reference_date": null,
+      "lane": "SCN-ENV",
+      "tier": "T1",
+      "flood_inputs": [
+        "UNOSAT/GISTDA product 4009, accumulated layer"
+      ]
+    },
+    {
+      "id": "SE2-blind",
+      "case_reference_date": null,
+      "lane": "SCN-ENV",
+      "tier": "T1",
+      "flood_inputs": [
+        "UNOSAT/GISTDA product 4009, accumulated layer"
+      ]
+    },
+    {
+      "id": "O4",
+      "case_reference_date": "2024-09-15",
+      "lane": "OBS",
+      "tier": "T3",
+      "flood_inputs": [
+        "GISTDA ALOS-2 15 Sep 2024",
+        "AIT-VAP001 ALOS-2 14 Sep 2024"
+      ]
+    },
+    {
+      "id": "H1",
+      "case_reference_date": "2025-11-24",
+      "lane": "OBS",
+      "tier": "T2",
+      "flood_inputs": [
+        "own raw 20 m candidate"
+      ]
+    }
+  ],
+  "cases_without_class": [
+    "SE2-dist"
+  ],
+  "cut_cases": [
+    "Phayao",
+    "AOI-05",
+    "AOI-06",
+    "Chaiyaphum",
+    "Ayutthaya",
+    "lower basin"
+  ],
+  "product_4009": {
+    "source_product": "unosat_product_4009",
+    "licence": "CC BY-SA 4.0",
+    "credit": "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009",
+    "event_code": "FL20240912THA",
+    "layer_names": [
+      "CHIANGRAI_20240801_20241012_AccumulatedFlood",
+      "CHIANGRAI_20241022_FloodExtent"
+    ],
+    "accumulated_names": [
+      "CHIANGRAI_20240801_20241012_AccumulatedFlood",
+      "UNOSAT/GISTDA product 4009, accumulated layer"
+    ],
+    "dated_names": [
+      "CHIANGRAI_20241022_FloodExtent",
+      "UNOSAT/GISTDA product 4009, 22 Oct 2024 layer"
+    ],
+    "dated_acquisition_date": "2024-10-22"
+  }
+}

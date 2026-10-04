@@ -100,12 +100,13 @@
 
 /* --- B1. Clock and figures ---------------------------------------------------------------------------- */
 .situation { flex: none; padding: 10px 16px 12px; }
-.clockHead { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.clockHead { display: flex; align-items: center; gap: 10px; }
+.clockHead .eyebrow { flex: 1 1 auto; }
 .eyebrow { color: var(--c-muted); font-size: 10px; font-weight: 700; line-height: 1.6; letter-spacing: .08em; text-transform: uppercase; }
 .eyebrow:lang(th) { font-size: 11px; letter-spacing: 0; }
 .replayTag { padding: 0 9px; border-radius: 999px; background: var(--c-accent); color: #ffffff; font-size: 10px; font-weight: 700; line-height: 1.8; letter-spacing: .08em; text-transform: uppercase; }
 .replayTag:lang(th) { font-size: 11px; letter-spacing: 0; }
-.clock { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.clock { display: flex; align-items: baseline; }
 .clockTime { font-family: var(--c-font-head); font-size: 22px; font-weight: 600; line-height: 1.3; letter-spacing: -.01em; white-space: nowrap; }
 .clockTime:lang(th) { line-height: 1.5; letter-spacing: 0; }
 .clockShort { display: none; }
@@ -209,6 +210,9 @@
 .credits { position: absolute; z-index: 2; left: calc(var(--c-margin) + var(--c-left) + 16px); bottom: calc(var(--c-margin) + var(--c-dock) + 6px); display: flex; align-items: flex-end; gap: 10px; max-width: calc(100% - var(--c-left) - 260px); color: #4d5f66; font-size: 10px; line-height: 1.5; pointer-events: none;
   text-shadow: 0 0 2px #f6f8f5, 1px 0 0 #f6f8f5, -1px 0 0 #f6f8f5, 0 1px 0 #f6f8f5, 0 -1px 0 #f6f8f5; }
 .page[data-focus="on"] .credits { left: var(--c-margin); max-width: calc(100% - 260px); }
+/* The open legend is 280 px wide: the credits end before it. */
+.stage:has(.legend) .credits { max-width: calc(100% - var(--c-left) - 400px); }
+.page[data-focus="on"] .stage:has(.legend) .credits { max-width: calc(100% - 400px); }
 .scale { flex: none; display: grid; gap: 1px; justify-items: start; }
 .scaleBar { display: block; height: 5px; border: 1.5px solid #33474e; border-top: 0; box-shadow: 0 0 0 1px rgb(246 248 245 / 80%); }
 .creditText { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
@@ -256,8 +260,8 @@
 .rain svg { display: block; width: 100%; height: 100%; }
 .rainLabel { position: absolute; left: 4px; top: 0; color: var(--c-muted); font-size: 9.5px; line-height: 1.5; text-shadow: 0 0 2px #ffffff, 1px 0 0 #ffffff, -1px 0 0 #ffffff, 0 1px 0 #ffffff; pointer-events: none; }
 /* Everything right of the playhead is not yet known at this replay hour. */
-.future { position: absolute; top: 0; right: 0; bottom: 0; display: grid; place-items: center; overflow: hidden; border-radius: 0 4px 4px 0; background: repeating-linear-gradient(-45deg, rgb(255 255 255 / 66%) 0 6px, rgb(110 126 140 / 46%) 6px 7.5px); container-type: inline-size; pointer-events: none; }
-.future span { padding: 0 6px; color: var(--c-ink); font-size: 11px; line-height: 1.5; white-space: nowrap;
+.future { position: absolute; top: 0; right: 0; bottom: 0; display: grid; place-items: end center; overflow: hidden; border-radius: 0 4px 4px 0; background: repeating-linear-gradient(-45deg, rgb(255 255 255 / 66%) 0 6px, rgb(110 126 140 / 46%) 6px 7.5px); container-type: inline-size; pointer-events: none; }
+.future span { padding: 0 6px 1px; color: var(--c-ink); font-size: 11px; line-height: 1.5; white-space: nowrap;
   text-shadow: 0 0 3px #ffffff, 2px 0 0 #ffffff, -2px 0 0 #ffffff, 0 2px 0 #ffffff, 0 -2px 0 #ffffff, 1.5px 1.5px 0 #ffffff, -1.5px 1.5px 0 #ffffff, 1.5px -1.5px 0 #ffffff, -1.5px -1.5px 0 #ffffff; }
 @container (max-width: 190px) { .future span { display: none; } }
 .playhead { position: absolute; top: -4px; bottom: -2px; width: 2px; margin-left: -1px; background: var(--c-ink); pointer-events: none; }
@@ -330,11 +334,15 @@
   .nav { display: none; }
   .tool.menuButton { display: grid; }
   .tool.toolBasemap { display: none; }
-  .situation { padding: 8px 12px 10px; }
+  /* The replay time shares its line with the replay hour and the tag: the card's own label is dropped. */
+  .situation { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; padding: 8px 12px 10px; }
+  .situation > * { grid-column: 1 / -1; }
+  .situation > .clock { grid-column: 1; grid-row: 1; }
+  .situation > .clockHead { grid-column: 2; grid-row: 1; }
+  .clockHead .eyebrow { display: none; }
   .clockLong, .phaseLong { display: none; }
   .clockShort, .phaseShort { display: inline; }
   .clockTime { font-size: 19px; }
-  .hourOf { display: none; }
   .figures { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .figureSlot { display: none; }
   .figure strong { font-size: 18px; }
@@ -355,6 +363,7 @@
   .legend { max-height: calc(100% - var(--c-dock) - 40px); }
   .notice { max-width: calc(100% - 2 * var(--c-left) - 40px); }
   .credits { max-width: calc(100% - var(--c-left) - 250px); }
+  .stage:has(.legend) .credits { max-width: calc(100% - var(--c-left) - 400px); }
 }
 .menuTool { display: none; }
 @media (max-width: 1180px) { .menuTool { display: flex; } }

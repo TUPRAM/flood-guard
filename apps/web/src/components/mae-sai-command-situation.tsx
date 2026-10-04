@@ -69,14 +69,15 @@ export function MaeSaiCommandSituation({ language, hour, manifest, model, collap
     <section className={`${styles.panel} ${styles.situation}`} data-region="B1" data-clear-panel aria-label={t(COMMAND_SITUATION.label)} lang={language}>
       <div className={styles.clockHead}>
         <span className={styles.eyebrow}>{t(COMMAND_CLOCK.label)}</span>
+        <span className={styles.hourOf}>{commandHourOf(at, language)}</span>
         <span className={styles.replayTag} title={t(COMMAND_CLOCK.tagMeaning)}>{t(COMMAND_CLOCK.tag)}</span>
       </div>
+      {/* The replay time stands alone on its line: the largest text of the page, in either language. */}
       <p className={styles.clock}>
         <span className={styles.clockTime} data-command-clock>
           <span className={styles.clockLong}>{commandMoment(at, language)}</span>
           <span className={styles.clockShort}>{commandMomentShort(at, language)}</span>
         </span>
-        <span className={styles.hourOf}>{commandHourOf(at, language)}</span>
       </p>
       {phase && model ? (
         <>

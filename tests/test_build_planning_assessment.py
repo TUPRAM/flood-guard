@@ -26,7 +26,7 @@ from shapely.ops import transform
 from floodguard import access_diff, flood_inputs, planning_assessment, rights
 from floodguard.evidence_context import _context_content_hash
 from floodguard.normalisation import NormalisationError
-from floodguard.planning_overlay import SCHEMA_RELATIVE_PATH, load_overlay, load_overlay_schema
+from floodguard.planning_overlay import SCHEMA_RELATIVE_PATH, PlanningOverlayError, load_overlay, load_overlay_schema
 
 ROOT = Path(__file__).resolve().parents[1]
 DOCS = ROOT / "docs" / "proposal_execution"
@@ -392,6 +392,13 @@ def test_a_run_on_an_invented_frame_writes_an_overlay_the_validator_accepts(tmp_
         "closure_rule_version", "case_lane"}
     assert all(entry["result"] == "PASS" for entry in receipt["guardrails"].values())
     assert receipt["result"]["summary"]["row_count"] == 2 and receipt["result"]["summary"]["rows_under_gr1"] == 1
+    assert receipt["result"]["rows_as_computed"] is None, "the overlay holds every row, so nothing is reported beside it"
+    # Checks over the whole case: bounds, the weighted sum, leave-one-out, and the residents of the access table.
+    whole = receipt["whole_case_checks"]
+    assert whole["result"] == "PASS" and whole["rows"] == 2 and whole["component_values"] == 10
+    assert whole["leave_one_component_out_consistent_with_the_fpps"] is True and whole["rows_with_leave_one_component_out"] == 2
+    assert whole["residents_of_the_rows"] == whole["residents_counted_by_the_access_table"] == 5550.0
+    assert whole["residents_same_as_the_access_table"] is True
     assert receipt["result"]["summary"]["binding_class_by_lane_column"]["OBS"]["B"] == 1
     assert receipt["parameters"]["closure_rule"]["level"] == "central" and receipt["parameters"]["services"] == ["hospital", "main_road_entry"]
     assert {point["id"] for point in receipt["open_points"]} >= {"E8-OP1", "E8-OP5"}
@@ -419,8 +426,11 @@ def test_a_run_on_an_invented_frame_writes_an_overlay_the_validator_accepts(tmp_
     assert changed["verified"] is False and changed["overlay_on_disk_same"] is False
 
 
-def test_a_second_run_needs_a_reason_and_names_the_run_it_replaces(tmp_path: Path) -> None:
+def test_a_second_run_needs_a_reason_and_names_the_run_it_replaces(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     world = build_world(tmp_path)
+    # The two runs are minutes apart, so their overlays differ in their generation time and in nothing else.
+    clock = iter(f"2030-02-01T00:{minute:02d}:00Z" for minute in range(60))
+    monkeypatch.setattr(e5, "utc_now", lambda: next(clock))
     first = run(world)
     with pytest.raises(FileExistsError, match="--replace --reason"):
         run(world)
@@ -429,7 +439,16 @@ def test_a_second_run_needs_a_reason_and_names_the_run_it_replaces(tmp_path: Pat
     assert receipt["run_kind"] == "superseding_run" and receipt["supersedes"]["receipt_sha256"] == first["receipt_sha256"]
     assert receipt["supersedes"]["reason"] == "an invented reason to run again" and receipt["supersedes"]["result_same"] is True
     assert [entry["receipt_sha256"] for entry in receipt["run_history"]] == [first["receipt_sha256"]]
-    assert second["receipt_sha256"] != first["receipt_sha256"]
+    assert second["receipt_sha256"] != first["receipt_sha256"] and second["generated_at_utc"] != first["generated_at_utc"]
+    assert receipt["run_history"][0]["result_same_as_the_run_that_replaced_it"] is True
+    # The comparison leaves out the content hash of the overlay and nothing else: another row count is a difference.
+    block = receipt["result"]
+    other = json.loads(json.dumps(block))
+    other["summary"]["content_sha256"] = "0" * 64
+    assert runner.result_without_the_run_time(other) == runner.result_without_the_run_time(block)
+    other["summary"]["row_count"] += 1
+    assert runner.result_without_the_run_time(other) != runner.result_without_the_run_time(block)
+    assert runner.result_without_the_run_time(None) == {}
     with pytest.raises(FileNotFoundError, match="existing receipt"):
         run(build_world(tmp_path / "other"), replace_reason="nothing to replace")
 
@@ -455,10 +474,59 @@ def test_a_run_whose_v2_result_nobody_can_state_writes_no_overlay_and_still_repo
     assert runner.bound_outputs(receipt["outputs"]) == {
         f"{LABEL}/{PROCESSED}/fx_case/{runner.STAGE_FOLDER}/{report.name}": hashlib.sha256(report.read_bytes()).hexdigest()}
     assert (world["register_dir"] / receipt_path.name).is_file(), "every run is reported, also one that writes no overlay"
+
+    # The run computed an FPPS and a class for each unit. They are reported: the report outside Git holds every row
+    # as computed, and the receipt in Git holds the counts for the whole case and names no unit.
+    assert summary["rows_reported_as_computed"] is True and summary["files"] == list(runner.bound_outputs(receipt["outputs"]))
+    assert stated["schema_version"] == runner.REPORT_SCHEMA and stated["publication_eligibility"] == "local"
+    assert stated["source_timestamp"] == "2030-01-11" and stated["confidence_class"] == "low" and stated["assumptions"]
+    assert stated["generated_at_utc"] == summary["generated_at_utc"] and stated["can_feed_decision_layer"] is False
+    as_computed = stated["rows_as_computed"]
+    assert as_computed["schema_version"] == planning_assessment.ROWS_AS_COMPUTED_SCHEMA and as_computed["schema_id"] is None
+    assert as_computed["not_an_overlay"] == planning_assessment.NOT_AN_OVERLAY
+    first, second = as_computed["rows"]
+    # Unit 1: 1,000 of 6,100 residents inside the extent, every connected resident cut off; class rule v1 gives B.
+    assert first["components"]["exposure_0_100"]["value_0_100"] == pytest.approx(100 * 1000 / 6100)
+    assert (first["action_class"], first["action_reason_code"], first["would_be_class"]) == ("B", "critical_route_access", None)
+    assert first["fpps_0_100"] is not None and set(first["leave_one_component_out"]) == set(first["components"])
+    v2 = first["class_v2"]
+    assert "result" not in v2 and v2["status"] == "not_evaluated" and v2["triggers_not_evaluated"] == ["B", "C", "D"]
+    assert (v2["label"], v2["binding"]) == ("secondary", False)
+    assert {item["trigger"]: item["met"] for item in v2["trigger_evidence"]} == {"E": False, "A": False, "B": None, "C": None, "D": None}
+    assert any("The v2 result of this row is not stated" in line for line in first["assumptions"])
+    # Unit 2 is under 100 residents: guardrail GR1 gives it no class, and its v2 axis is the one of an overlay row.
+    assert second["action_class"] is None and second["class_v2"] == {
+        "class_rule_version": "class_rule_v2", "label": "secondary", "binding": False, "result": None, "trigger_evidence": []}
+    # The overlay parser refuses the document: it is not an overlay and cannot pass for one.
+    document = tmp_path / "as_computed.json"
+    document.write_text(json.dumps(as_computed), encoding="ascii")
+    rules = planning_assessment.load_assessment_rules(DOCS / "planning_protocol_v1a.json", DOCS / "planning_protocol_v1b.json",
+                                                      DOCS / "RECEIPTS.jsonl")
+    with pytest.raises(PlanningOverlayError):
+        load_overlay(document, load_overlay_schema(ROOT / SCHEMA_RELATIVE_PATH), binding=rules.binding)
+    reported = receipt["result"]["rows_as_computed"]
+    assert reported["schema_version"] == planning_assessment.ROWS_AS_COMPUTED_SCHEMA
+    assert reported["checked_by_the_overlay_parser"] == {**reported["checked_by_the_overlay_parser"], "result": "PASS", "rows": 2,
+                                                         "rows_without_a_v2_result": 1}
+    counts = reported["summary"]
+    assert counts["row_count"] == 2 and counts["rows_without_a_v2_result"] == 1 and "content_sha256" not in counts
+    assert counts["binding_class_by_lane_column"]["OBS"]["B"] == 1 and counts["binding_class_by_lane_column"]["OBS"]["none"] == 1
+    assert counts["v2_result_by_lane_column"]["OBS"] == {"A": 0, "B": 0, "C": 0, "D": 0, "E": 0, "no_v2_trigger": 0,
+                                                         "none": 1, "not_evaluated": 1}
+    assert all(entry["result"] == "PASS" for entry in receipt["guardrails"].values())
+    assert receipt["whole_case_checks"]["result"] == "PASS" and receipt["whole_case_checks"]["rows"] == 2
+    assert {point["id"] for point in receipt["open_points"]} >= {"E8-OP1", "E8-OP6", "E8-OP7"}
+
     checked = runner.verify(CASE, world["frame_set"], world["external"], world["boundaries"], root=world["root"],
                             output_dir=world["output_dir"], register_dir=world["register_dir"], registry=world["registry"])
     assert checked == {"verified": True, "overlay_written": False, "receipt_result_same": True,
+                       "report_bytes_same_as_recomputed": True, "rows_reported_as_computed": True,
                        "not_written_because": "v2_result_not_evaluable"}
+    # A report that was changed after the run is found.
+    report.write_bytes(report.read_bytes().replace(b'"action_class": "B"', b'"action_class": "A"', 1))
+    changed = runner.verify(CASE, world["frame_set"], world["external"], world["boundaries"], root=world["root"],
+                            output_dir=world["output_dir"], register_dir=world["register_dir"], registry=world["registry"])
+    assert changed["verified"] is False and changed["report_bytes_same_as_recomputed"] is False
 
 
 # ---------------------------------------------------------------------------

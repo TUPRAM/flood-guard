@@ -41,11 +41,14 @@ and is registered in ``outputs/planning_v1/run_register/``. Nothing is written u
         [--development-read "<what was read before this run>"] [--replace --reason "<why>"] [--verify]
 
 Every run is reported. A run that computed the rows and could not write the overlay (the v2 result of a row
-depends on a trigger nobody evaluated, open point E8-OP1) still writes its receipt, which says so and names the
-units; it returns 3. A second run needs ``--replace --reason`` and its receipt names every earlier run.
-``--verify`` computes the overlay again with the generation time of the receipt, compares it byte for byte with
-the file the receipt binds, runs the verifier on that file and writes nothing. ``--check-inputs`` checks every
-input against the file that names it and compares the stages; it computes no value of a unit and writes nothing.
+depends on a trigger nobody evaluated, open point E8-OP1) still writes its receipt, which says so, and a report
+outside Git that names the units and holds every row as the run computed it, with no v2 result for the rows
+concerned (open point E8-OP6). That report is not an overlay. The run returns 3. A second run needs
+``--replace --reason`` and its receipt names every earlier run. ``--verify`` computes the overlay again with the
+generation time of the receipt, compares it byte for byte with the file the receipt binds, runs the verifier on
+that file and writes nothing; for a run that wrote no overlay it compares the report in the same way.
+``--check-inputs`` checks every input against the file that names it and compares the stages; it computes no
+value of a unit and writes nothing.
 """
 
 from __future__ import annotations
@@ -105,7 +108,7 @@ from floodguard.planning_overlay import (  # noqa: E402
 )
 
 RECEIPT_SCHEMA = "floodguard.planning_assessment_run_receipt.v1"
-REPORT_SCHEMA = "floodguard.planning_assessment_not_written.v1"
+REPORT_SCHEMA = "floodguard.planning_assessment_not_written.v2"
 DOCS = ROOT / "docs" / "proposal_execution"
 OUTPUT_DIR = ROOT / "outputs" / "planning_v1"
 REGISTER_DIR = OUTPUT_DIR / "run_register"
@@ -163,7 +166,8 @@ LIMITATIONS = [
     "One row per unit. The minus and plus flood levels, the strict and permissive closure levels, the facility sets, "
     "the population vintage, the P5 / P95 anchors and the weight presets are axes of the ensemble (plan task E10).",
     "Triggers B, C and D of class rule v2 are not evaluated by any stage yet. A row whose v2 result depends on one "
-    "of them cannot be written, and then the overlay is not written (open point E8-OP1).",
+    "of them cannot be written, and then the overlay is not written (open point E8-OP1). The rows are then reported "
+    "as computed, with no v2 result for such a row, in a report outside Git that is not an overlay (open point E8-OP6).",
     "A resident whose cell does not snap to the vehicle graph within 250 m is in no access count.",
     "The equity figures, the shelter supply and the travel-time summaries of plan 7.1 are plan task E9 and are not "
     "in schema 1.0 of the overlay.",
@@ -823,6 +827,8 @@ class Built:
     reporting_units: list[str]
     lane: str
     input_sha256: dict[str, str]
+    generated_at_utc: str = ""
+    as_computed: dict[str, Any] | None = None
 
 
 def case_spec(rules: planning_assessment.AssessmentRules, case_id: str, frame_set: FrameSet) -> planning_assessment.CaseSpec:
@@ -1029,38 +1035,65 @@ def build(case_id: str, frame_set: FrameSet, external: Path, boundaries: Path, *
     refusal_for_the_receipt: dict[str, Any] | None = None
     guardrails: dict[str, Any] | None = None
     summary: dict[str, Any] | None = None
+    as_computed: dict[str, Any] | None = None
+    as_computed_record: dict[str, Any] | None = None
+    whole_case: dict[str, Any] | None = None
     schema = load_overlay_schema(root / SCHEMA_RELATIVE_PATH if (root / SCHEMA_RELATIVE_PATH).is_file() else ROOT / SCHEMA_RELATIVE_PATH)
+    counted_by_the_table = math.fsum(float(row["residents"]) for row in found.run["units"] if str(row["unit_id"]) in set(unit_ids))
     try:
-        overlay = planning_assessment.assemble_overlay(
-            rules, case, flood_spec, closure, measured, inputs, routing_context_id=context_id, generated_at=generated_at_utc,
-            git_commit=commit, source_name=f"FloodGuard planning assessment overlay: case {case_id}, {frame_set.title}",
-            assumptions=overlay_assumptions)
-        guardrails = planning_assessment.guardrail_report(overlay, rules, reporting_units=unit_ids, lane=case.lane)
-        overlay_string = overlay_text(overlay, schema, binding=rules.binding)
-        summary = summarise_overlay(overlay)
-    except planning_assessment.V2NotEvaluableError as error:
-        refusal = {"code": "v2_result_not_evaluable", "message": str(error), "open_point": "E8-OP1",
-                   "rows": [dict(row) for row in error.rows]}
-        refusal_for_the_receipt = {
-            "code": refusal["code"], "open_point": "E8-OP1", "rows": len(error.rows),
-            "triggers_not_evaluated": sorted({name for row in error.rows for name in row["triggers_not_evaluated"]}),
-            "message": "The v2 result of one or more rows depends on a trigger that was not evaluated, and the protocols "
-                       "state no result for that case. The units are named in the report outside Git.",
-        }
+        try:
+            overlay = planning_assessment.assemble_overlay(
+                rules, case, flood_spec, closure, measured, inputs, routing_context_id=context_id, generated_at=generated_at_utc,
+                git_commit=commit, source_name=f"FloodGuard planning assessment overlay: case {case_id}, {frame_set.title}",
+                assumptions=overlay_assumptions)
+        except planning_assessment.V2NotEvaluableError as error:
+            if error.as_computed is None:
+                raise
+            # The overlay cannot hold these rows. They are checked as far as they go and reported as computed.
+            checked = planning_assessment.check_rows_as_computed(error.as_computed, schema, rules, reporting_units=unit_ids,
+                                                                 lane=case.lane)
+            whole_case = planning_assessment.whole_case_checks(
+                error.as_computed["rows"], error.as_computed["scoring_frame"], residents_counted_by_the_access_table=counted_by_the_table,
+                resident_tolerance=RESIDENT_TOLERANCE)
+            as_computed, guardrails = error.as_computed, checked["guardrails"]
+            as_computed_record = {
+                "schema_version": planning_assessment.ROWS_AS_COMPUTED_SCHEMA,
+                "where": "In the report outside Git that this receipt binds (outputs), under rows_as_computed. The report "
+                         "is not an overlay.",
+                "checked_by_the_overlay_parser": checked["checked_by_the_overlay_parser"],
+                "summary": checked["summary"],
+            }
+            refusal = {"code": "v2_result_not_evaluable", "message": str(error), "open_point": "E8-OP1",
+                       "rows": [dict(row) for row in error.rows]}
+            refusal_for_the_receipt = {
+                "code": refusal["code"], "open_point": "E8-OP1", "rows": len(error.rows),
+                "triggers_not_evaluated": sorted({name for row in error.rows for name in row["triggers_not_evaluated"]}),
+                "message": "The v2 result of one or more rows depends on a trigger that was not evaluated, and the protocols "
+                           "state no result for that case. The units are named in the report outside Git, which also holds "
+                           "every row as the run computed it (open point E8-OP6).",
+            }
+        else:
+            guardrails = planning_assessment.guardrail_report(overlay, rules, reporting_units=unit_ids, lane=case.lane)
+            overlay_string = overlay_text(overlay, schema, binding=rules.binding)
+            summary = summarise_overlay(overlay)
+            whole_case = planning_assessment.whole_case_checks(
+                overlay["rows"], overlay["scoring_frame"], residents_counted_by_the_access_table=counted_by_the_table,
+                resident_tolerance=RESIDENT_TOLERANCE)
     except PlanningOverlayError as error:
+        overlay_string, summary, as_computed, as_computed_record, guardrails, whole_case = None, None, None, None, None, None
         refusal = {"code": "overlay_refused_by_the_validator", "message": str(error),
                    "problems": [{"code": item.code, "path": item.path, "message": item.message} for item in error.problems]}
         refusal_for_the_receipt = {
             "code": refusal["code"], "problems": len(error.problems), "problem_codes": list(error.codes),
-            "message": "floodguard.planning_overlay refused the assembled overlay. The problems are listed in the report "
-                       "outside Git.",
+            "message": "floodguard.planning_overlay refused the rows the run assembled. The problems are listed in the report "
+                       "outside Git. No row is reported.",
         }
     timings["units_measured_and_assessed"] = round(time.perf_counter() - clock, 1)
 
     target_label = path_label(target, root, external)
     below_public = eligibility != rights.PUBLIC_LEVEL
     notice = None
-    if flood.grant.source == rights.SOURCE_PRODUCT_4009 and not in_git:
+    if flood.grant.source == rights.SOURCE_PRODUCT_4009 and (not in_git or as_computed is not None):
         record_4009, _sha256 = registry.read_record(frame_set.rights_input[case_id])
         notice = (root / record_4009["licence_notice_file"]).read_bytes()
     receipt = {
@@ -1139,7 +1172,8 @@ def build(case_id: str, frame_set: FrameSet, external: Path, boundaries: Path, *
                         "of a single unit and no unit of a row that could not be written. When the overlay is below the "
                         "public level those counts come from a lineage below the public level; the overlay itself is "
                         "outside Git.",
-                "figures": ([{"where": "result.summary", "publication_eligibility": eligibility,
+                "figures": ([{"where": "result.summary" if as_computed_record is None else "result.rows_as_computed.summary",
+                              "publication_eligibility": eligibility,
                               "figures": "The number of rows by class, reason code, confidence class and failed "
                                          "condition, per lane column."}] if below_public else []),
                 "for_the_owners": "Open point E1-OP1: whether a level below public allows these counts in Git.",
@@ -1154,7 +1188,9 @@ def build(case_id: str, frame_set: FrameSet, external: Path, boundaries: Path, *
             "overlay_written": overlay_string is not None,
             "summary": summary,
             "not_written_because": refusal_for_the_receipt,
+            "rows_as_computed": as_computed_record,
         },
+        "whole_case_checks": whole_case,
         "development_reads": {
             "what": "Reads of the same inputs made while the code was written, before this run. They are listed because "
                     "every run is reported.",
@@ -1179,7 +1215,8 @@ def build(case_id: str, frame_set: FrameSet, external: Path, boundaries: Path, *
     }
     return Built(overlay_text=overlay_string, refusal=refusal, receipt=receipt, target=target, target_label=target_label,
                  in_git=in_git, notice=notice, reporting_units=unit_ids, lane=case.lane,
-                 input_sha256={item["input_id"]: item["sha256"] for item in inputs})
+                 input_sha256={item["input_id"]: item["sha256"] for item in inputs},
+                 generated_at_utc=generated_at_utc, as_computed=as_computed)
 
 
 # ---------------------------------------------------------------------------
@@ -1199,24 +1236,39 @@ def _outputs(built: Built, root: Path, external: Path) -> tuple[dict[str, Any], 
                        "what": "planning_assessment_overlay", "in_git": built.in_git,
                        "publication_eligibility": built.receipt["rights"]["publication_eligibility"],
                        "rows": built.receipt["result"]["summary"]["row_count"]})
+        outside_git = None if built.in_git else built.target.parent
     else:
         report = {
             "schema_version": REPORT_SCHEMA,
-            "what": "The overlay of this run was not written. This file says why, and for which units.",
+            "what": "The overlay of this run was not written. This file says why, and for which units."
+                    + ("" if built.as_computed is None else
+                       " It also holds every row as the run computed it (rows_as_computed). It is not an overlay."),
             "case_id": built.receipt["parameters"]["case_id"],
+            "generated_at_utc": built.generated_at_utc,
+            "source_timestamp": built.receipt["source_timestamp"],
+            "confidence_class": built.receipt["confidence_class"],
+            "confidence_basis": built.receipt["confidence_basis"],
+            "assumptions": list(built.receipt["assumptions"]),
             "protocol_sha256": built.receipt["protocol_sha256"],
             "official_warning": False,
             "operational_status": "non_operational",
+            "can_feed_decision_layer": False,
+            "publication_eligibility": built.receipt["rights"]["publication_eligibility"],
             "not_written_because": built.refusal,
+            "rows_as_computed": built.as_computed,
         }
         data = encode(report)
         target = built.target.parent / NOT_WRITTEN_REPORT_NAME if not built.in_git else (
             external / PROCESSED_RELATIVE_PATH / STAGE_FOLDER / f"{built.target.stem}__{NOT_WRITTEN_REPORT_NAME}")
         files[target] = data
         listed.append({"path": path_label(target, root, external), "sha256": sha256_bytes(data), "bytes": len(data),
-                       "what": "overlay_not_written_report", "in_git": False})
-    if built.notice is not None and built.overlay_text is not None:
-        target = built.target.parent / LICENCE_NOTICE_NAME
+                       "what": "overlay_not_written_report", "in_git": False,
+                       "holds_rows_as_computed": built.as_computed is not None,
+                       "publication_eligibility": built.receipt["rights"]["publication_eligibility"]})
+        outside_git = None if built.as_computed is None else target.parent
+    # The licence notice of the rights record sits beside every file outside Git that holds values of the units.
+    if built.notice is not None and outside_git is not None:
+        target = outside_git / LICENCE_NOTICE_NAME
         files[target] = built.notice
         listed.append({"path": path_label(target, root, external), "sha256": sha256_bytes(built.notice),
                        "bytes": len(built.notice), "what": "licence_notice", "in_git": False})
@@ -1225,6 +1277,20 @@ def _outputs(built: Built, root: Path, external: Path) -> tuple[dict[str, Any], 
 
 def _canonical(value: Any) -> str:
     return json.dumps(value, sort_keys=True, separators=(",", ":"), allow_nan=False)
+
+
+def result_without_the_run_time(result: Mapping[str, Any] | None) -> dict[str, Any]:
+    """Return the result block of a receipt without what changes from one run to the next by the clock alone.
+
+    The summary of a written overlay carries ``content_sha256``, a digest of the whole overlay, which holds its
+    generation time and the commit of the code. Two runs that computed the same rows differ there and nowhere
+    else in the block.
+    """
+
+    block = json.loads(json.dumps(result or {}))
+    if isinstance(block.get("summary"), dict):
+        block["summary"].pop("content_sha256", None)
+    return block
 
 
 def run(case_id: str, frame_set: FrameSet, external: Path, boundaries: Path, *, level: str = PUBLIC_LEVEL, docs: Path = DOCS,
@@ -1260,11 +1326,13 @@ def run(case_id: str, frame_set: FrameSet, external: Path, boundaries: Path, *, 
             "receipt_sha256": sha256_file(receipt_path),
             "generated_at_utc": previous.get("generated_at_utc"),
             "reason": replace_reason,
-            "result_same": _canonical(previous.get("result")) == _canonical(built.receipt["result"]),
+            "result_same": _canonical(result_without_the_run_time(previous.get("result")))
+                           == _canonical(result_without_the_run_time(built.receipt["result"])),
             "outputs_of_the_superseded_run": bound_outputs(previous["outputs"]),
             "note": "The superseded receipt is named here by its SHA-256, and run_history lists every earlier run. "
-                    "result_same compares the result blocks of the two receipts (whether the overlay was written, and "
-                    "its summary); an overlay carries its generation time, so its bytes differ between runs.",
+                    "result_same compares the result blocks of the two receipts (whether the overlay was written, its "
+                    "summary, and the summary of rows reported as computed) without the content hash of the overlay: "
+                    "an overlay carries its generation time, so its bytes and that hash differ between runs.",
         }
         history = [dict(entry) for entry in previous.get("run_history") or []]
         history.append({"generated_at_utc": supersedes["generated_at_utc"], "receipt_sha256": supersedes["receipt_sha256"],
@@ -1302,6 +1370,8 @@ def run(case_id: str, frame_set: FrameSet, external: Path, boundaries: Path, *, 
             "overlay_in_git": built.in_git if built.overlay_text is not None else None,
             "publication_eligibility": receipt["rights"]["publication_eligibility"],
             "not_written_because": None if built.refusal is None else built.refusal["code"],
+            "rows_reported_as_computed": built.as_computed is not None,
+            "files": [entry["path"] for entry in outputs["overlay"]["files"]],
             "generated_at_utc": started}
 
 
@@ -1318,8 +1388,14 @@ def verify(case_id: str, frame_set: FrameSet, external: Path, boundaries: Path, 
     written = receipt["result"]["overlay_written"]
     same_result = _canonical(receipt["result"]) == _canonical(built.receipt["result"])
     if not written:
-        return {"verified": same_result and built.overlay_text is None, "overlay_written": False,
-                "receipt_result_same": same_result, "not_written_because": receipt["result"]["not_written_because"]["code"]}
+        _block, files = _outputs(built, root, external)
+        recomputed = {path_label(path, root, external): sha256_bytes(data) for path, data in files.items()}
+        report_same = recomputed == bound and all(path.is_file() and sha256_file(path) == sha256_bytes(data)
+                                                  for path, data in files.items())
+        return {"verified": same_result and built.overlay_text is None and report_same, "overlay_written": False,
+                "receipt_result_same": same_result, "report_bytes_same_as_recomputed": report_same,
+                "rows_reported_as_computed": built.as_computed is not None,
+                "not_written_because": receipt["result"]["not_written_because"]["code"]}
     data = (built.overlay_text or "").encode("ascii")
     digest = sha256_bytes(data)
     on_disk = built.target.is_file() and sha256_file(built.target) == digest

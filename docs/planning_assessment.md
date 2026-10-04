@@ -42,7 +42,7 @@ python scripts/build_planning_assessment.py --case SE1 --frame mae_sai --externa
 
 The external data root can also come from `FLOODGUARD_EXTERNAL_DATA`. The script returns 0 when the overlay was
 written, 2 when it refused to run (nothing is computed and nothing is written), and 3 when it computed the rows
-and could not write the overlay (the receipt is still written, see below).
+and could not write the overlay (the receipt is still written, and the rows are reported as computed, see below).
 
 `--check-inputs` checks every input against the file that names it, asks the rights registry and compares the
 stages (guardrail GR3). It measures no unit, computes no component and writes nothing. It prints the lineage with
@@ -96,7 +96,8 @@ above the national P75) are computed from the row. The outcomes of B, C and D ar
 Where trigger E or A is met, the result is stated and a trigger that was not evaluated is written with `met: false`
 and evidence that starts with "Not evaluated". Where the result would depend on a trigger nobody evaluated, the
 protocols state no result, and schema 1.0 has no way to say "not evaluated". The overlay is then **not written**
-(open point E8-OP1). A unit under GR1 has no v2 class.
+(open point E8-OP1). The rows are reported as the run computed them, in a report that is not an overlay (see "What
+a run writes"; open point E8-OP6). A unit under GR1 has no v2 class.
 
 ## Guardrails
 
@@ -114,7 +115,14 @@ The verifier (`verify_assessment`, and `--verify`) reads the written file back t
 bound to the two protocol files, runs the guardrail report, checks that every reporting unit of the case has exactly one
 row ("Every cell of every case is reported whatever it shows", v1a `case_portfolio`), and checks that the overlay
 names the SHA-256 of the inputs it was computed from. `--verify` also computes the overlay again and compares it
-byte for byte with the file the receipt binds.
+byte for byte with the file the receipt binds. For a run that wrote no overlay, `--verify` computes the report again
+and compares it byte for byte in the same way.
+
+Every run also checks the rows of the whole case (`whole_case_checks` in the receipt): every component value and
+every FPPS lies between 0 and 100; each FPPS is the weighted sum of its five component values; leave-one-component-out
+follows from the FPPS (without a component of weight w and value v, the FPPS f becomes (f - w v) / (1 - w), up to the
+rounding of the two scores); and the residents of the rows add up to the residents the access table counted for the
+same units. A check that does not hold stops the run before anything is written.
 
 ## What the script refuses
 
@@ -139,15 +147,35 @@ A refusal happens before any value of a unit is computed, and nothing is written
   stays outside Git, under `<external data root>/proposal_execution/planning_v1/<case>/e8_planning_assessment/`,
   with the licence notice of the rights record beside it when the flood input is product 4009.
 - **The receipt**, `outputs/planning_v1/e8_planning_assessment_<case>_<frame>.json`: the inputs with their
-  SHA-256, the parameters, both protocol hashes, the lane-purity comparison, the guardrail report, the counts of
-  the overlay for the whole case (no value of a single unit), the SHA-256 of the overlay, the times, and every
-  earlier run under `run_history`.
+  SHA-256, the parameters, both protocol hashes, the lane-purity comparison, the guardrail report, the checks of the
+  whole case, the counts of the overlay for the whole case (no value of a single unit), the SHA-256 of the overlay,
+  the times, and every earlier run under `run_history`. A receipt that supersedes another says whether the result
+  is the same (`supersedes.result_same`); the comparison leaves out the content hash of the overlay, which changes
+  with the generation time alone.
 - **One register entry**, `outputs/planning_v1/run_register/<receipt name>`, with the path and SHA-256 of the receipt.
 
 When the rows were computed and the overlay cannot be written, the receipt is still written and registered. It
 says `overlay_written: false`, gives the reason, the number of rows concerned and the triggers that were not
-evaluated, and binds a short report outside Git. The report names the units; the receipt in Git does not. The
-script returns 3.
+evaluated, and binds a report outside Git (`overlay_not_written.json`). The report names the units; the receipt in
+Git does not. The script returns 3.
+
+**Rows as computed** (open point E8-OP6). A run that computed an FPPS and a class for real units reports them. When
+the reason is a v2 result that nobody can state, the report also holds every row as the run computed it
+(`rows_as_computed`, schema name `floodguard.planning_assessment_rows_as_computed.v1`): the components, the
+confidence record, the FPPS, the binding class of class rule v1 with its reason code, the would-be class and
+leave-one-component-out, exactly as an overlay row would carry them. Class rule v1 is binding and does not depend on
+the v2 axis. The v2 axis of a row concerned carries no `result`: it says `status: not_evaluated`, lists the triggers
+that were not evaluated, and gives `met: null` for each of them. Before the report is written:
+
+- every row is checked by `floodguard.planning_overlay` against the two protocol files, on a copy held in memory in
+  which the v2 axis of a row concerned is filled in so that the parser can read the row. That copy is never written;
+- the guardrail report and the checks of the whole case run on the rows as computed;
+- the receipt in Git takes the counts for the whole case (`result.rows_as_computed.summary`), with the rows concerned
+  counted under `not_evaluated` in the v2 counts.
+
+The report is **not an overlay**: it names another schema, `floodguard.planning_overlay` refuses it, and no page and
+no later task reads it as one. When the flood input is product 4009, the licence notice of the rights record is
+written beside it.
 
 ## Rights levels today
 
@@ -190,6 +218,8 @@ They are in `planning_assessment.OPEN_POINTS` and in every receipt. None is deci
 | E8-OP3 | The measurements of C7 and C8 for one unit: the hospital service for C7, OSM hospital objects for C8. | Confirm or amend. |
 | E8-OP4 | The source timestamp of an overlay whose flood input has no time of day. | Whether the schema should take a date or a period. |
 | E8-OP5 | The rights level of an input that has no rights record, and the review of the 2024 age rasters. | Record the review, and say whether open-licence inputs need a registry record. |
+| E8-OP6 | What a run reports when its overlay cannot be written. The rows go into the report outside Git as computed, with no v2 result for the rows concerned. | Whether such rows may be shown or used before the overlay exists, and under which label. |
+| E8-OP7 | A figure whose own lineage is public, inside an output whose level is below public. The output goes outside Git as a whole; the receipt holds counts for the whole case. | Whether a per-unit figure computed from public inputs only may be committed while the file it was read from stays outside Git. |
 
 ## Not built here
 

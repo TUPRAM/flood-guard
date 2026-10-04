@@ -464,6 +464,107 @@ def test_v2_states_no_result_that_depends_on_a_trigger_nobody_evaluated(rules: p
     assert [row["unit_id"] for row in refused.value.rows] == ["FX-U02", "FX-U03"]
 
 
+def test_rows_whose_v2_result_nobody_can_state_are_handed_back_as_computed_and_are_not_an_overlay(
+        rules: pa.AssessmentRules, schema: dict[str, Any]) -> None:
+    """Every run is reported: the rows keep what class rule v1 gives them, and the v2 axis states no result."""
+
+    unknown = pa.V2TriggerInputs()
+    block = v2_of(rules, triggers=unknown, not_evaluated_ok=True)
+    assert "result" not in block and block["status"] == pa.V2_NOT_EVALUATED == "not_evaluated"
+    assert block["triggers_not_evaluated"] == ["B", "C", "D"] and (block["label"], block["binding"]) == ("secondary", False)
+    assert [(item["trigger"], item["met"]) for item in block["trigger_evidence"]] == [
+        ("E", False), ("A", False), ("B", None), ("C", None), ("D", None)]
+    assert all(item["evidence"].startswith("Not evaluated") and "is not stated" in item["evidence"]
+               for item in block["trigger_evidence"] if item["met"] is None)
+    # A trigger that was evaluated keeps its outcome; the flag changes nothing where the result can be stated.
+    partly = v2_of(rules, triggers=pa.V2TriggerInputs(link_isolation=False, serving_facility=False), not_evaluated_ok=True)
+    assert partly["triggers_not_evaluated"] == ["D"] and [item["met"] for item in partly["trigger_evidence"]] == [False] * 4 + [None]
+    assert v2_of(rules, exposure=5.0, triggers=unknown, not_evaluated_ok=True) == v2_of(rules, exposure=5.0, triggers=unknown)
+
+    small_unit = {"minus": 40.0, "as_provided": 44.0, "plus": 48.0}
+    units = [unit(1), unit(2, v2=unknown), unit(3, unit_residents=99.0, v2=unknown, residents_inside_flood_extent=small_unit)]
+    with pytest.raises(pa.V2NotEvaluableError) as refused:
+        overlay_of(rules, units)
+    document = refused.value.as_computed
+    assert document is not None and [row["unit_id"] for row in refused.value.rows] == ["FX-U02"]
+    assert document["schema_version"] == pa.ROWS_AS_COMPUTED_SCHEMA and document["schema_id"] is None
+    assert document["not_an_overlay"] == pa.NOT_AN_OVERLAY and pa.rows_without_a_v2_result(document) == ["FX-U02"]
+    assert [row["unit_id"] for row in document["rows"]] == ["FX-U01", "FX-U02", "FX-U03"]
+    whole, marked, small = document["rows"]
+    # The row with no v2 result is, in everything else, the row the same unit gets when its triggers are evaluated.
+    same_unit = row_of(rules, unit(2))
+    for key in ("components", "fpps_0_100", "confidence", "action_class", "action_reason_code", "would_be_class",
+                "leave_one_component_out", "headline_stability", "lineage"):
+        assert marked[key] == same_unit[key], key
+    assert (marked["action_class"], marked["fpps_0_100"]) == ("D", 36.78) and "result" not in marked["class_v2"]
+    assert whole["class_v2"]["result"] == "no_v2_trigger" and small["class_v2"]["result"] is None
+    assert overlay_problems(document, schema, binding=rules.binding), "the overlay parser refuses the document"
+
+    units_of_the_case = ["FX-U01", "FX-U02", "FX-U03"]
+    before = json.dumps(document, sort_keys=True)
+    checked = pa.check_rows_as_computed(document, schema, rules, reporting_units=units_of_the_case, lane="OBS")
+    assert json.dumps(document, sort_keys=True) == before, "the checks changed nothing in the document"
+    assert all(entry["result"] == "PASS" for entry in checked["guardrails"].values())
+    assert checked["checked_by_the_overlay_parser"]["result"] == "PASS"
+    assert checked["checked_by_the_overlay_parser"]["rows_without_a_v2_result"] == 1
+    summary = checked["summary"]
+    assert summary["schema_version"] == pa.ROWS_AS_COMPUTED_SCHEMA and "content_sha256" not in summary
+    assert summary["row_count"] == 3 and summary["rows_without_a_v2_result"] == 1 and summary["rows_under_gr1"] == 1
+    assert summary["binding_class_by_lane_column"]["OBS"] == {"A": 0, "B": 0, "C": 0, "D": 2, "E": 0, "none": 1}
+    assert summary["v2_result_by_lane_column"]["OBS"] == {"A": 0, "B": 0, "C": 0, "D": 0, "E": 0, "no_v2_trigger": 1,
+                                                          "none": 1, "not_evaluated": 1}
+    assert "FX-U0" not in json.dumps(summary), "counts for the whole case, no unit"
+
+    # What the checks refuse: a changed value, a missing unit, an overlay, and rows that all have a v2 result.
+    from floodguard.planning_overlay import PlanningOverlayError
+
+    changed = json.loads(json.dumps(document))
+    changed["rows"][1]["action_class"] = "A"
+    with pytest.raises(PlanningOverlayError):
+        pa.check_rows_as_computed(changed, schema, rules, reporting_units=units_of_the_case, lane="OBS")
+    with pytest.raises(pa.PlanningAssessmentError, match="exactly one row"):
+        pa.check_rows_as_computed(document, schema, rules, reporting_units=["FX-U01", "FX-U02"], lane="OBS")
+    with pytest.raises(pa.PlanningAssessmentError, match="not a document of rows as computed"):
+        pa.check_rows_as_computed(overlay_of(rules, [unit(1)]), schema, rules, reporting_units=["FX-U01"], lane="OBS")
+    stated = json.loads(json.dumps(document))
+    stated["rows"][1]["class_v2"] = whole["class_v2"]
+    with pytest.raises(pa.PlanningAssessmentError, match="these all have one"):
+        pa.check_rows_as_computed(stated, schema, rules, reporting_units=units_of_the_case, lane="OBS")
+
+
+def test_the_checks_over_a_whole_case_hold_for_assessed_rows_and_find_a_changed_one(rules: pa.AssessmentRules) -> None:
+    small_unit = {"minus": 40.0, "as_provided": 44.0, "plus": 48.0}
+    overlay = overlay_of(rules, [unit(1), unit(2, unit_residents=99.0, residents_inside_flood_extent=small_unit),
+                                 unit(3, flooded_non_permanent_water_land_area=0.0, non_permanent_water_land_area=0.0)])
+    header = overlay["scoring_frame"]
+    checked = pa.whole_case_checks(overlay["rows"], header, residents_counted_by_the_access_table=1200.0 + 99.0 + 1200.0)
+    assert checked["result"] == "PASS" and checked["rows"] == 3
+    # Unit 3 has no land outside permanent water: four components, no FPPS and no leave-one-out.
+    assert checked["component_values"] == 14 and checked["rows_with_an_fpps"] == 2 and checked["rows_with_leave_one_component_out"] == 2
+    assert checked["residents_of_the_rows"] == 2499.0 and checked["residents_same_as_the_access_table"] is True
+    assert pa.whole_case_checks(overlay["rows"], header)["residents_same_as_the_access_table"] is None
+    # Leave-one-out by hand for unit 1: without the flood likelihood (weight 0.30, value 37.5) the FPPS of 36.78
+    # becomes (36.78 - 0.30 x 37.5) / 0.70 = 36.47, up to the rounding of the two scores.
+    without_flood = overlay["rows"][0]["leave_one_component_out"]["flood_likelihood_0_100"]["fpps_0_100"]
+    assert without_flood == pytest.approx((36.78 - 0.30 * 37.5) / 0.70, abs=0.02)
+
+    def changed(edit: Any) -> list[dict[str, Any]]:
+        rows = json.loads(json.dumps(overlay["rows"]))
+        edit(rows)
+        return rows
+
+    with pytest.raises(pa.PlanningAssessmentError, match="residents of the rows do not add up"):
+        pa.whole_case_checks(overlay["rows"], header, residents_counted_by_the_access_table=2500.0)
+    with pytest.raises(pa.PlanningAssessmentError, match="outside 0 to 100"):
+        pa.whole_case_checks(changed(lambda rows: rows[0]["components"]["exposure_0_100"].update(value_0_100=100.5)), header)
+    with pytest.raises(pa.PlanningAssessmentError, match="not the weighted sum"):
+        pa.whole_case_checks(changed(lambda rows: rows[0].update(fpps_0_100=40.0)), header)
+    with pytest.raises(pa.PlanningAssessmentError, match="does not follow from its FPPS"):
+        pa.whole_case_checks(changed(lambda rows: rows[0]["leave_one_component_out"]["exposure_0_100"].update(fpps_0_100=50.0)), header)
+    with pytest.raises(pa.PlanningAssessmentError, match="no leave-one-component-out"):
+        pa.whole_case_checks(changed(lambda rows: rows[0].update(leave_one_component_out=None)), header)
+
+
 # ---------------------------------------------------------------------------
 # Measurements from geometry, cells and a graph (all invented)
 # ---------------------------------------------------------------------------
@@ -606,7 +707,7 @@ def test_a_written_overlay_is_verified_and_a_changed_one_is_not(rules: pa.Assess
 
 
 def test_the_open_points_are_listed_and_the_module_wording_passes_the_shared_lint() -> None:
-    assert [point["id"] for point in pa.OPEN_POINTS] == ["E8-OP1", "E8-OP2", "E8-OP3", "E8-OP4", "E8-OP5"]
+    assert [point["id"] for point in pa.OPEN_POINTS] == ["E8-OP1", "E8-OP2", "E8-OP3", "E8-OP4", "E8-OP5", "E8-OP6", "E8-OP7"]
     assert all(point["for_the_owners"].strip() and point["signed_files_say"].strip() for point in pa.OPEN_POINTS)
     lint = load_rules(ROOT / "apps" / "web" / "src" / "lib" / "replay-wording-rules.json")
     sources = ["src/floodguard/planning_assessment.py", "scripts/build_planning_assessment.py"]

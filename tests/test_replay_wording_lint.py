@@ -3,9 +3,10 @@
 Scans the text the bake and the documents put in front of a reader with the rules shared with the web tests
 (``apps/web/src/lib/replay-wording-rules.json``): the served manifest, the strings of the bake scripts (the
 next manifest) and of the export and shelter-check modules, the reported-shelter source file, the replay documents,
-the product 4009 rights record and its notice, the header of every committed export file, and the demo documents (the
-replay beat of the walkthrough and the story, the figures to quote, the video notes and the offline checklist). It must
-pass on the current text and fail on one seeded bad string per rule.
+the product 4009 rights record and its notice, the header of every committed export file, the demo documents (the
+replay beat of the walkthrough and the story, the figures to quote, the video notes and the offline checklist) and the
+plan of the Command exercise replay (``docs/command_exercise_plan.md``). It must pass on the current text and fail on
+one seeded bad string per rule.
 The web twin is ``apps/web/src/lib/replay-wording-lint.test.tsx``.
 """
 
@@ -42,7 +43,9 @@ BAKE_SCRIPTS = ("scripts/build_mae_sai_flood_timeline.py", "scripts/mae_sai_time
                 "src/floodguard/reported_depths.py")
 JSON_DOCUMENTS = ("outputs/mae_sai_reported_shelters_2024.json", "outputs/mae_sai_reported_depths_2024.json", "docs/proposal_execution/rights_basis_4009_v1.json",
                   "docs/mae_sai_timeline_r4_input_receipt.json", "apps/web/src/lib/__fixtures__/mae-sai-equity-access-parity.json")
-TEXT_DOCUMENTS = ("docs/decision-log-d1-d16.md", "docs/proposal_execution/rights_basis_4009_v1_NOTICE.txt")
+TEXT_DOCUMENTS = ("docs/decision-log-d1-d16.md", "docs/proposal_execution/rights_basis_4009_v1_NOTICE.txt",
+                  # The plan of the Command exercise replay: its banner, its labels and its Thai drafts are replay text.
+                  "docs/command_exercise_plan.md")
 STUDY_LIBRARY = "docs/studio-study-library.md"
 # The demo documents of the replay (roadmap P4-1). The walkthrough and the story are read by section: their other sections
 # describe the fixture dashboard, and the walkthrough's "words to avoid" table lists banned phrases on purpose
@@ -292,6 +295,9 @@ def test_corpus_covers_manifest_bake_scripts_documents_and_export_header() -> No
     assert sum(source.startswith("unosat4009/envelope.json") for source in sources) > 30 and "unosat4009/LICENSE" in sources
     assert "Plausibility against a season envelope, not a validation." in text
     assert "Season envelope comparison (scenario; plausibility, not validation)" in text
+    # The Command exercise plan is in the corpus with its banner, in English and in Thai.
+    assert "Exercise replay · Mae Sai, September 2024 · reconstructed, not real-time · not an official warning" in text
+    assert "ไม่ใช่ข้อมูลเรียลไทม์ · ไม่ใช่คำเตือนทางการ" in text
 
 
 def test_no_banned_wording_in_todays_replay_text() -> None:
@@ -308,7 +314,9 @@ def test_lint_fails_on_one_seeded_bad_string_per_rule(rule_id: str) -> None:
                # Product 4009 text: the stage's strings, the statistics file and the licence notice.
                "scripts/mae_sai_timeline_unosat4009.py", "unosat4009/envelope.json $.comparison.use", "unosat4009/LICENSE",
                # The demo documents: the figures to quote and the walkthrough's replay beat.
-               "docs/demo/replay_numbers.md", "docs/demo_walkthrough.md (Mae Sai Replay Beat (60-90 s))")
+               "docs/demo/replay_numbers.md", "docs/demo_walkthrough.md (Mae Sai Replay Beat (60-90 s))",
+               # The plan of the Command exercise replay.
+               "docs/command_exercise_plan.md")
     for target in targets:
         index = next(i for i, (source, _) in enumerate(items) if source == target)
         seeded = list(items)

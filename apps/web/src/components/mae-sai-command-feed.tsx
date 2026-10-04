@@ -81,7 +81,7 @@ function FeedRow({ item, hour, depths, language, onPlace }: {
         {commandFeedHeadline(item, depths, language)}
         {note && <span className={styles.rowNote}> {note}</span>}
         {envelope && sentence && (
-          <span className={styles.rowNote}> <span lang={sentence.lang}>{sentence.text}</span> {t(COMMAND_FEED.credit)}: <span lang="en">{envelope.credit}</span>.</span>
+          <span className={styles.rowNote}> <span lang={sentence.lang}>{sentence.text}</span> {t(COMMAND_FEED.credit)}: <span lang="en">{envelope.credit}</span>{language === "th" ? "" : "."}</span>
         )}
       </p>
       <p className={styles.meta}>

@@ -121,10 +121,10 @@
 .figuresHead { display: flex; align-items: center; gap: 8px; margin: 7px 0 5px; }
 .figuresRule { flex: 1 1 auto; min-width: 8px; height: 1px; background: var(--c-line); }
 /* Solid means reported. The chip says how the model reads at the points of the place records known by now. */
-.recordChip { position: relative; flex: none; max-width: 62%; overflow: hidden; padding: 0 6px; border: 1px solid #8fa1b4; border-radius: 4px; background: #ffffff; color: var(--c-muted); font-size: 10px; font-weight: 600; line-height: 1.6; letter-spacing: .02em; white-space: nowrap; text-overflow: ellipsis; }
+.figuresHead .recordChip { position: relative; flex: none; max-width: 62%; overflow: hidden; padding: 0 6px; border: 1px solid #8fa1b4; border-radius: 4px; background: #ffffff; color: var(--c-muted); font-size: 10px; font-weight: 600; line-height: 1.6; letter-spacing: .02em; white-space: nowrap; text-overflow: ellipsis; }
 .recordChip::after { content: ""; position: absolute; inset: -14px 0; }
 .recordChip:hover { background: var(--c-tint); color: var(--c-ink); }
-.recordChip:lang(th) { font-size: 11px; letter-spacing: 0; }
+.figuresHead .recordChip:lang(th) { font-size: 11px; letter-spacing: 0; }
 /* Dashed means modelled. Every modelled figure of the card sits under this tag. */
 .laneTag { padding: 0 6px; border: 1px dashed #8fa1b4; border-radius: 4px; color: var(--c-muted); font-size: 10px; font-weight: 600; line-height: 1.6; letter-spacing: .03em; white-space: nowrap; }
 .laneTag:lang(th) { font-size: 11px; letter-spacing: 0; }
@@ -139,7 +139,8 @@
 /* The count of open exercise items: plain digits under the amber exercise tag, and the life-at-risk count with its glyph. */
 .figureExercise strong { display: flex; align-items: center; gap: 5px; }
 .exTag { padding: 0 4px; border-radius: 3px; background: var(--c-exercise); color: #1c2733; font-family: var(--c-font-mono); font-size: 9px; font-weight: 700; line-height: 14px; letter-spacing: .04em; }
-.figureExercise small { display: flex; align-items: center; gap: 3px; min-height: 15px; opacity: 1; white-space: nowrap; }
+.figureExercise small { display: flex; align-items: center; gap: 3px; opacity: 1; white-space: nowrap; }
+.figureExercise small svg { width: 13px; height: 13px; }
 .figureExercise small[data-life="true"] { color: var(--c-ink); font-weight: 600; }
 .figureExercise small svg, .exerciseLife svg { flex: none; margin: 0; }
 .exerciseLine { display: none; }

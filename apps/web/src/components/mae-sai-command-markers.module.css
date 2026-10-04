@@ -37,7 +37,7 @@
 .itemPopup [data-line="state"] { color: #12262d; font-weight: 600; }
 .itemPopup [data-line="model"], .itemPopup [data-line="when"], .itemPopup [data-line="meta"] { color: #526a82; font-size: 11.5px; }
 .popupActions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px; }
-.popupActions button { min-height: 44px; padding: 0 12px; border: 1px solid #0c2740; border-radius: 8px; background: #ffffff; color: #0c2740; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.popupActions.popupActions button { min-height: 44px; padding: 0 12px; border: 1px solid #0c2740; border-radius: 8px; background: #ffffff; color: #0c2740; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
 .popupActions button:first-child { background: #0c2740; color: #ffffff; }
 .popupActions button:hover { filter: brightness(1.12); }
 .popupActions button:focus-visible { outline: 3px solid var(--c-focus); outline-offset: 2px; }

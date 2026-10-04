@@ -145,6 +145,8 @@ describe("device-local public reports", () => {
 
     expect(html).toContain("Reports saved on this device");
     expect(html).toContain("This note is not sent to an agency or shared with others.");
+    // The competition build has the Command exercise page, which reads the same device storage: the page says so.
+    expect(html).toMatch(/It also appears on this device(?:&#x27;|')s Command exercise map\./u);
     expect(html).toContain("the image file is not stored");
     expect(html).not.toContain('data-example="true"');
     expect(html).not.toMatch(/Community feed|Verified|Resolved|authority received|responders notified/iu);

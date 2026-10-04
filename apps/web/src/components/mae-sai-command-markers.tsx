@@ -511,7 +511,8 @@ export function mountCommandMarkers(options: CommandMarkerLayerOptions): Command
     }
     const sign = (thing: Thing) => (thing.type === "records"
       ? `${thing.key}:${thing.reports.map((report) => report.id).join(",")}`
-      : `${thing.key}:${exerciseHandling(now.handling, thing.item.id).status}:${exerciseHandling(now.handling, thing.item.id).callsign ?? ""}`);
+      // The urgency is part of the drawing too: the operator can move it one step, and the marker then changes.
+      : `${thing.key}:${thing.item.urgency}:${exerciseHandling(now.handling, thing.item.id).status}:${exerciseHandling(now.handling, thing.item.id).callsign ?? ""}`);
     const next = `${language()}|${map.getZoom() < CLUSTER_BELOW_ZOOM ? "far" : "near"}|${groups.map((members) => members.map((index) => sign(things[index])).join("+")).join("|")}`;
     if (force || next !== signature) {
       signature = next;

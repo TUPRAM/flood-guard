@@ -18,7 +18,8 @@ import { useEffect, useImperativeHandle, useRef, useState, type Ref } from "reac
 import { FACTOR_LUT_SIZE, facilityWet, formatDateWithYear, lutEquals, paintDepth, paintLowConfidence, projectToFrame, type FacilityProps, type Language, type ReportedShelter, type RoadProps } from "@/lib/flood-timeline";
 import { COMMAND_CREDITS, COMMAND_FIGURES, COMMAND_MAP, commandFacilityType, commandSiteGroupTitle, commandText } from "@/lib/flood-timeline-command-copy";
 import type { CommandHandRaster, CommandReplayData } from "@/lib/flood-timeline-command-data";
-import { reportedSiteHour } from "@/lib/flood-timeline-command-feed";
+import { COMMAND_GO } from "@/lib/flood-timeline-command-act-copy";
+import { reportedSiteDate, reportedSiteHour } from "@/lib/flood-timeline-command-feed";
 import { CLUSTER_BELOW_ZOOM, modelDepthAt } from "@/lib/flood-timeline-command-incidents";
 import {
   areaBounds,
@@ -92,6 +93,9 @@ export interface CommandMapHandle {
  */
 export interface CommandMapLine { from: [number, number]; to: [number, number]; label: string }
 
+/** The staging point of the exercise as the map marks it. `atSite` is true when it is at a reported site, which has a sign of its own. */
+export interface CommandMapStaging { lat: number; lon: number; atSite: boolean }
+
 /** The 2024 season envelope as the map draws it in hindsight mode: its cells on the water grid, and its short credit. */
 export interface CommandEnvelopeLayer { cells: Uint32Array; credit: string }
 
@@ -106,7 +110,7 @@ interface MapController {
   setFacilities: (visible: boolean) => void;
   setReports: (frame: CommandMarkerFrame) => void;
   setEnvelope: (envelope: CommandEnvelopeLayer | null) => void;
-  setStaging: (point: { lat: number; lon: number } | null) => void;
+  setStaging: (point: CommandMapStaging | null) => void;
   setLine: (line: CommandMapLine | null) => void;
   setPicking: (picking: boolean) => void;
   refreshText: () => void;
@@ -215,7 +219,7 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
   /** The 2024 season envelope (a scenario layer): drawn in hindsight mode only, so null in trainee mode. */
   envelope?: CommandEnvelopeLayer | null;
   /** The staging point of the exercise (where the team starts): a small dark badge; null draws none. */
-  staging?: { lat: number; lon: number } | null;
+  staging?: CommandMapStaging | null;
   /** The dashed straight line from the staging point to the selected item; null draws none. */
   line?: CommandMapLine | null;
   /** The facilitator is choosing the staging point: the next tap on the map names it. */
@@ -551,15 +555,23 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
         const wet = reportedSiteWetAt(site, appliedStage());
         // The replay data's occupancy text without its own leading label: the page supplies a translated one.
         const occupancy = site.reported_capacity_or_occupancy?.replace(/^\s*occupancy\s*:\s*/i, "") || null;
+        // Trainee mode shows no later date: the day of the first 2024 source stands for the data's first use (a bound
+        // that can lie after the replay hour), the occupancy counts (dated later) wait for hindsight mode, and a site
+        // that is not yet reported shows neither.
+        const trainee = reportFrame?.mode === "trainee";
+        const pending = sitePending(site);
+        const reportedOn = trainee ? reportedSiteDate(site) : null;
         const lines: PopupLine[] = [
           { text: site.name_th, tone: "title", lang: "th" },
           { text: site.name_en, tone: "muted", lang: "en" },
-          ...(sitePending(site) ? [{ text: text(COMMAND_MARKERS.siteNotYet), tone: "alert" as const }] : []),
+          ...(pending ? [{ text: text(COMMAND_MARKERS.siteNotYet), tone: "alert" as const }] : []),
           { text: `${text(command ? COMMAND_MAP.commandCentre : COMMAND_MAP.shelter)} · ${text(COMMAND_MAP.reported)}` },
-          { text: `${text(COMMAND_MAP.firstUse)}: ${firstUseText(site.first_use, lang)}`, tone: "muted" },
-          ...(command ? [] : [occupancy
-            ? { text: `${text(COMMAND_MAP.occupancy)}: `, value: { text: occupancy, lang: "en" } }
-            : { text: `${text(COMMAND_MAP.occupancy)}: ${text(COMMAND_MAP.notReported)}`, tone: "muted" as const }]),
+          ...(pending ? [] : [{ text: `${text(COMMAND_MAP.firstUse)}: ${reportedOn ? formatDateWithYear(reportedOn, lang) : firstUseText(site.first_use, lang)}`, tone: "muted" as const }]),
+          ...(command || pending ? [] : [occupancy && trainee
+            ? { text: text(COMMAND_GO.occupancyHeld), tone: "muted" as const }
+            : occupancy
+              ? { text: `${text(COMMAND_MAP.occupancy)}: `, value: { text: occupancy, lang: "en" } }
+              : { text: `${text(COMMAND_MAP.occupancy)}: ${text(COMMAND_MAP.notReported)}`, tone: "muted" as const }]),
           site.model_check?.m === false
             ? { text: text(COMMAND_MAP.notModelled), tone: "muted" }
             : { text: `${text(wet ? COMMAND_MAP.wetNow : COMMAND_MAP.dryNow)} (${text(COMMAND_FIGURES.modelTag)})`, tone: wet ? "alert" : undefined },
@@ -701,6 +713,7 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
         if (!raster) return undefined;
         return modelDepthAt({ codes: raster.codes, factorKeys: raster.factorKeys, width: m.hand.width, height: m.hand.height, bounds: m.bounds, step: m.hand.step_m, channelCode: m.hand.channel_code, neverCode: m.hand.never_code }, lat, lon, applied?.stage ?? 0);
       };
+      let reportFrame: CommandMarkerFrame | null = null;
       const markerLayer = mountCommandMarkers({
         L, map, manifest: m, tambons: labelPoints,
         language: () => languageRef.current,
@@ -716,7 +729,6 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
         selectionRenderer,
       });
       removeMarkers = markerLayer.remove;
-      let reportFrame: CommandMarkerFrame | null = null;
       const syncSites = () => {
         if (!reportFrame) return;
         let changed = false;
@@ -729,6 +741,13 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
         if (!changed) return;
         // A count of the district zoom is dashed while every site it holds is still unreported, so the counts are drawn again.
         layoutSites();
+        for (const entry of siteMarkers) if (entry.marker.isPopupOpen()) entry.marker.getPopup()?.update();
+      };
+      // The popup of a site follows the mode too: an open one is written again when the mode changes.
+      let siteMode: CommandMarkerFrame["mode"] | null = null;
+      const syncSiteMode = () => {
+        if (!reportFrame || reportFrame.mode === siteMode) return;
+        siteMode = reportFrame.mode;
         for (const entry of siteMarkers) if (entry.marker.isPopupOpen()) entry.marker.getPopup()?.update();
       };
 
@@ -832,13 +851,19 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
       // --- The exercise: the staging point (a small dark badge beside its point, never pressed), the dashed straight
       // line from it to the selected item, and the tap that names a staging point.
       let stagingMarker: Marker | null = null;
-      const setStaging = (point: { lat: number; lon: number } | null) => {
+      let stagingPoint: CommandMapStaging | null = null;
+      // At the district zoom the reported sites share count marks: the badge of a staging point at such a site would
+      // only sit on a count, so it is drawn from the town zoom on. A point the facilitator tapped is always drawn.
+      const stagingShown = () => stagingPoint !== null && (!stagingPoint.atSite || map.getZoom() >= SITE_FAR_BELOW_ZOOM);
+      const setStaging = (next: CommandMapStaging | null) => {
+        stagingPoint = next;
         stagingMarker?.remove();
         stagingMarker = null;
+        const point = stagingShown() ? stagingPoint : null;
         if (!point) return;
         const badge = document.createElement("span");
         badge.className = act.stagingBadge;
-        badge.dataset.commandStaging = "true";
+        badge.dataset.commandStagingBadge = "true";
         const flag = document.createElementNS("http://www.w3.org/2000/svg", "svg");
         flag.setAttribute("viewBox", "0 0 24 24");
         flag.setAttribute("width", "12");
@@ -898,6 +923,7 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
         }
         paintEnvelopeLayer();
         layoutSites();
+        if (stagingShown() !== (stagingMarker !== null)) setStaging(stagingPoint);
         reportView();
       });
       map.on("moveend", reportView);
@@ -953,6 +979,7 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
           reportFrame = frame;
           markerLayer.update(frame);
           syncSites();
+          syncSiteMode();
         },
         setEnvelope,
         setStaging,
@@ -1040,9 +1067,10 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
   }, [ready, envelope]);
   const stagingLat = staging?.lat ?? null;
   const stagingLon = staging?.lon ?? null;
+  const stagingAtSite = staging?.atSite ?? false;
   useEffect(() => {
-    if (ready) controller.current?.setStaging(stagingLat !== null && stagingLon !== null ? { lat: stagingLat, lon: stagingLon } : null);
-  }, [ready, stagingLat, stagingLon]);
+    if (ready) controller.current?.setStaging(stagingLat !== null && stagingLon !== null ? { lat: stagingLat, lon: stagingLon, atSite: stagingAtSite } : null);
+  }, [ready, stagingLat, stagingLon, stagingAtSite]);
   useEffect(() => {
     if (ready) controller.current?.setLine(line);
   }, [ready, line]);

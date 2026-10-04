@@ -741,6 +741,7 @@ export function MaeSaiCommandExercise({ initial }: {
   // --- The staging point: where the team starts. The facilitator picks a reported site or taps the map. ------
   const sites = manifest?.shelters?.reported ?? NO_SITES;
   const staging = useMemo(() => resolveStaging(setup.staging, sites) ?? resolveStaging(DEFAULT_STAGING, sites), [setup.staging, sites]);
+  const mapStaging = useMemo(() => (staging ? { lat: staging.lat, lon: staging.lon, atSite: staging.siteId !== null } : null), [staging]);
   const stagingSites = useMemo<CommandStagingSite[]>(() => STAGING_SITE_IDS.flatMap((id) => {
     const site = sites.find((entry) => entry.id === id && entry.lat !== null && entry.lon !== null);
     return site ? [{ id, name: { th: shortSiteName(site.name_th), en: shortSiteName(site.name_en) } }] : [];
@@ -879,7 +880,7 @@ export function MaeSaiCommandExercise({ initial }: {
         <a className={styles.skipLink} href="#command-time">{commandText(COMMAND_NAV.skip, language)}</a>
         {data && (
           <MaeSaiCommandMap data={data} hand={hand} hour={hour} stage={stageNow} playing={playing} language={language} basemap={basemap} facilities={facilities} selected={selected}
-            reports={reportFrame} envelope={envelopeLayer} onReportAction={selectReport} staging={staging} line={mapLine} picking={picking} onPick={onPick}
+            reports={reportFrame} envelope={envelopeLayer} onReportAction={selectReport} staging={mapStaging} line={mapLine} picking={picking} onPick={onPick}
             getClear={getClear} reducedMotion={reducedMotion} onReady={onMapReady} onBasemapIssue={setTileIssue} onView={setView} onWatermarkPane={setWatermarkPane} handle={map} />
         )}
         {/* The watermark is drawn inside the map, over the markers and under the popups; until the map is there it lies over the stage. */}

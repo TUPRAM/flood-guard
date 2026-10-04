@@ -2,7 +2,7 @@
    A white panel left of the tool rail, under the navigation; it scrolls inside and never reaches the legend chip.
    Dashed tags mean modelled, the solid tag means reported. The tokens (--c-*) are set on the page root. */
 .card { position: absolute; z-index: 12; top: calc(var(--c-margin) + 44px + var(--c-gap)); right: calc(var(--c-margin) + var(--c-rail) + var(--c-gap)); display: flex; flex-direction: column; width: 340px;
-  max-height: min(520px, calc(100% - 2 * var(--c-margin) - 44px - 36px - 3 * var(--c-gap) - var(--c-dock))); overflow: hidden; box-shadow: var(--c-shadow-over); }
+  max-height: min(600px, calc(100% - 2 * var(--c-margin) - 44px - 36px - 3 * var(--c-gap) - var(--c-dock))); overflow: hidden; box-shadow: var(--c-shadow-over); }
 .cardHead { flex: none; display: flex; align-items: stretch; justify-content: space-between; gap: 8px; height: 44px; padding: 0 2px 0 6px; border-bottom: 1px solid var(--c-line); }
 .cardTabs { display: flex; gap: 2px; min-width: 0; }
 .cardTabs button { height: 44px; padding: 0 10px; border: 0; border-bottom: 2.5px solid transparent; background: none; color: var(--c-muted); font-size: 13px; font-weight: 600; white-space: nowrap; }

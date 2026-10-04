@@ -163,6 +163,54 @@ Open points for the owners after fix pass f1:
 2. At the district zoom a shelter star is a 28 px target, under the 44 px of every other control.
 3. The Thai wording was changed again by an AI assistant and no native speaker has read it.
 
+**Stage 4 (5 Oct 2026): from seeing to acting.** Built: section 7. Files, under `apps/web/src/`:
+
+- `lib/flood-timeline-command-brief.ts`: the facts about an item (nearest counted shelters, the access model at the nearest resident node, the nearest road under 0.3 m, the staging point) and the brief built from them, with its text-message version and the situation brief;
+- `lib/flood-timeline-command-log.ts`: the callsign rule and the roster, the stored setup, the five states of an item and the actions between them, the undo, the exercise log, its CSV export and the storage keys;
+- `lib/flood-timeline-command-act-copy.ts` (the wording) and `lib/flood-timeline-command-device.ts` (what this device stores, read and written in the browser);
+- `components/mae-sai-command-incident.tsx` (the inspector in incident mode and its action bar), `mae-sai-command-brief.tsx` (the brief sheet), `mae-sai-command-setup.tsx` (the setup sheet and the exercise log) and `mae-sai-command-act.module.css` (their styles).
+
+What stage 4 does:
+
+- **Incident mode of the inspector.** The fields of the item, then two fact sections, then the urgency rule. The action bar stays fixed under them: Assign, Brief, Done, and a fourth button for what is used less often (acknowledge, drop as a duplicate, drop as one that could not be reached). A closed item offers Reopen in the place of Done. Nothing asks "are you sure": every action shows a line with Undo for 10 seconds.
+- **How to get near, facts only.** The modelled depth at the point with "current not modelled"; whether that is at or over the 0.3 m at which a road counts as impassable; the nearest road piece under 0.3 m in the model with its distance and name, and "Not checked for a connected way out; bridge decks not modelled"; the named roads impassable in that subdistrict at this hour; the straight-line distance and bearing from the staging point. The map draws a dashed line from the staging point to the selected item, labelled "straight line, not a route". The page gives no advice on the kind of team to send, and says so.
+- **Where people go.** The three nearest of the 12 located sites counted in the 2024 set, by straight line: distance, bearing, dry or wet in the model at this stage, "reported in use by 15 Sep 2024; opening time not known", and the occupancy text with its dates. One line from the access model for the nearest resident node within 300 m: access kept, lost at this stage, none within 2 km even before the flood, or no node near.
+- **States.** New, acknowledged, assigned, done, dropped. An assigned marker shows its callsign. The urgency moves one step up or down with one tap on the item, and the change is logged; the marker and the count of open items follow it.
+- **Setup sheet** (Exercise menu of the navigation; on a tablet, in the menu): the roster of callsigns with the kind of each team (boat, wading, vehicle, medical); the staging point (the district office R05, the municipality office R01, or a tap on the map); the start hour; trainee or hindsight; exercise items on or off; the playback speed; the pause for a life-at-risk item. The roster takes callsigns only: at most 12 characters, and an entry with seven or more digits is refused before it is stored.
+- **Brief sheet.** Nine lines, as in section 7, with the exercise tag as the first and the last line. It opens in Thai whatever the language of the page; English is one tap away. Share is offered where the browser has a share sheet; Copy always. The text-message version is two lines of at most 134 characters with its part count, and its link (`sms:?&body=`) names no recipient. A brief holds no rain value, no free text of an item, no note of a report and no statement of a place record.
+- **Situation brief.** One tap on the clock card, or the Exercise menu: the three model figures, the three subdistricts with the most residents who lost shelter access at this hour, and the named roads newly impassable, between two exercise tags. It is a count of one hour; it carries no score and no class (decision D7).
+- **Exercise log.** Every action with its replay time, the time of the device, a role, a callsign and the action. The sheet lists the newest 50 rows; the CSV export holds every row and ends with a column `simulated` that is true on each. "Reset exercise" clears every Command key of the device and no other key. A chip says "Saved on this device only".
+- **Help sheet.** Five steps from seeing to acting, above the keys.
+
+Where stage 4 differs from the plan:
+
+- **An example roster.** A device starts with five example callsigns (BOAT-1, BOAT-2, WADE-1, TRUCK-1, MED-1), so an item can be assigned before a facilitator has typed a roster. The setup sheet says that they name no real unit.
+- **Acknowledge and Drop** are behind the fourth button of the action bar, and the urgency steps are on the item itself.
+- **A closed item can be reopened.** It returns to "assigned" when it has a callsign, otherwise to "acknowledged". The plan lists no such step; without it a slip noticed after 10 seconds could not be put right.
+- **Trainee mode shows no later date in "Where people go".** A site reads "first reported in use on 11 Sep 2024" (the day of its first 2024 source) in place of the data's bound, and its occupancy counts, which carry later dates, are held back until hindsight mode. A site not yet reported at the replay hour is marked as such, as on the map. The brief names the nearest site that is reported by the replay hour, or says that none is. The popup of a shelter on the map now follows the same rule (after stage 3 it showed the data's bound and the occupancy counts at every hour).
+- **A report saved on this device has no Assign and no brief.** It is dated today, outside the 2024 replay, and names a subdistrict and no point. Its popup offers Details only.
+- **No brief is built from a place record.** The page has no inspector for a single place record, so the rule of section 6 ("the place, the depth class and the publisher, not the statement text") has nothing to apply to yet.
+- **The role of a log row follows from the action**: handling an item is the coordinator's, the setup and the export are the facilitator's. The page has no role picker.
+- **The brief** adds the urgency in brackets on its "what" line and the callsign on its first line, and gives the point to four decimals. The English text-message version uses plain hyphens, so it is one part; the Thai version is two parts at most. The arithmetic of parts is the standard's; no carrier was tested.
+- **The situation brief follows the shelter set of the table**, and names the plan's sites as candidates to verify when that set is chosen.
+- **The replay pauses when a brief opens**, so the text does not change under the reader.
+- **Reset closes its sheet**, so that its Undo is in reach, and it can be undone for 10 seconds like every other action.
+- **What the exercise shows, the items, the pause and the speed are stored with the setup.** A change on the time dock or in the view popover is the same change as on the setup sheet. Without an hour in the address the page opens at the stored start hour.
+- **The staging badge** is drawn beside its point from the town zoom on; a point tapped on the map is drawn at every zoom.
+- **The right card** may be up to 600 px tall (548 px at 1440 x 800), because the action bar takes 62 px of it.
+
+Checked in a browser at 1440 x 800, 1440 x 900 and 1024 x 700 in both languages: the path select, assign, brief, done; the undo and its end after 10 seconds; the reload; the tap for the staging point; the export; the reset and its undo. An automated accessibility check (axe-core, WCAG 2 A and AA) reports nothing in seven states of the act flow.
+
+Not in this stage: the Evidence view, the offline list, the route swap of section 11, a roster shared between devices and a path on the road network.
+
+Open points for the owners after stage 4:
+
+1. The example roster, and whether a new device should start with an empty one.
+2. Reopening a closed item.
+3. Holding the occupancy counts of a shelter back in trainee mode, in the inspector and in the popup of the map.
+4. No Assign and no brief for a report saved on this device.
+5. The Thai of the brief, of the setup sheet and of the log was written by an AI assistant and no native speaker has read it.
+
 Prepared 4 Oct 2026 for Putu and Rachmania; corrected by the critic the same day. The repo was read only on the branch `claude/unify-lineages`, in a local checkout; nothing was edited, built or run. All paths below are relative to the repo root.
 
 Terms used in this plan:

@@ -17,9 +17,17 @@ The merge computed nothing: no FPPS, no action class, no ensemble.
 | Fix | `7080f67` | The merged smoke scripts check the pages that are served |
 | Fix | `f544a14` | Equity metric version 1 kept as the replay's reference |
 | Fix | `59152d1` | One CI action version aligned |
+| Review fix | `b5af1cf` | The Public status pill stays in its slot on phones |
+| Review fix | `f81af93` | The research table has its styles again, and every report it loads passes the scoring line's parser |
+| Review fix | `a456ecf` | The shared header on the two archive pages marks the section and keeps the case query |
+| Review fix | `9da8883` | The study library has its strict wording check again |
+| Review fix | `95648a9` | The walkthrough's replay beat is no longer filed as archived; the replay's equity text names `equity_v1` |
 
 Both merges are real merge commits (`git merge --no-ff`). Nothing was squashed, rebased or cherry-picked.
 The fixes are ordinary commits on top; no merge commit was amended.
+
+The "review fix" rows answer a review of this branch. Section 4, items 6 to 12, says what each one changed.
+What the review found and this branch did not change is in section 8, items 11 to 15.
 
 Checked after the merges:
 
@@ -67,17 +75,22 @@ Merge 1 had 28 conflicted files. Merge 2 had one.
 | `apps/web/scripts/browser-public-profile-smoke.mjs` | Both | Replay's offline tile handling; every staff route of both lines must be absent |
 | `apps/web/scripts/browser-profile-transition-smoke.mjs` | Replay's landing flow; both forbidden lists | The status pill hides on the landing, so it is read on `/public/` |
 | `apps/web/scripts/csp-smoke.mjs` | Replay's map and location checks; both route lists | The map checks run on `/command/archive/`, where the map now is |
-| `apps/web/src/components/command-workspace.tsx` | Replay's shared header, scoring's archive framing, and (fix) replay's research layer | See section 4 |
+| `apps/web/src/components/command-workspace.tsx` | Replay's shared header, scoring's archive framing, and (later commit) replay's research layer | See section 4, item 2, and owner decision 11 |
 | `apps/web/src/components/command-workspace.test.tsx` | Replay's header checks; scoring's shorter banned-word list | "Candidate" and "non-operational" are now page text |
 | `apps/web/src/components/studio-workspace.tsx` | Replay's shared header plus scoring's archive banner | One component serves both lines' pages |
 | `apps/web/src/components/geo-map.tsx` | Replay | Its map background health is the fuller one. Scoring's block-image detection is not carried |
-| `apps/web/src/components/geoai-real-panel.tsx` | Replay | The research panel policy |
-| `apps/web/src/components/geoai-real-panel.test.tsx` | Replay | It tests that panel |
+| `apps/web/src/components/geoai-real-panel.tsx` | Replay, and (review fix) the scoring line's parser | The research panel policy. The scoring line's own panel is not carried: its Command variant was a notice with links and no table, and its archive view was closed by default (owner decision 11) |
+| `apps/web/src/components/geoai-real-panel.test.tsx` | Replay | It tests that panel. The scoring line's three tests of its own panel are not carried |
 | `apps/web/src/components/public-home-page.tsx` | Both | Replay's priority labels and dated confidence line; scoring's navigation props and "candidate" status line |
 | `apps/web/src/components/public-experience.test.tsx` | Both expectations | It tests the joined home page |
 | `apps/web/src/components/pwa-register.tsx` | Both | Replay's self-hiding status pill; scoring's inline slot, wording and offline path list |
 | `apps/web/src/components/root-public.tsx` | Scoring | The public page carries the `main-content` anchor itself |
 | `.env.example` (merge 2) | One entry | Three lines described the same variable, `FLOODGUARD_EXTERNAL_DATA` |
+
+Four files are not in this table because Git merged them without a conflict, and they were wrong afterwards:
+`apps/web/src/app/public-theme.css`, `apps/web/src/components/geoai-real-panel.module.css`,
+`docs/demo_walkthrough.md` and one branch of the wording check in `browser-offline-smoke.mjs`. See section 4,
+items 6, 7, 10 and 11.
 
 ## 4. Fixes after the merges
 
@@ -87,8 +100,11 @@ These are places where the two lines met without a textual conflict.
    candidate-package report there. The library keeps `/studio/`. The report is now at `/studio/candidate-report/`,
    unchanged, and the scoring line's links to the report and its "Studio" tab point to it.
 2. **Two pages at `/command/`.** The scoring line's candidate overview is at `/command/`. The map workspace both
-   lines share is at `/command/archive/`, with the scoring line's archive framing. The replay line's research layer
-   had been dropped from it by the first merge; it is back, above the archive footer.
+   lines share is at `/command/archive/`, with the scoring line's archive framing. The scoring line had taken the
+   GeoAI research panel out of this workspace on purpose: on that line the panel's Command variant was a notice
+   with two links and no table, and its tests said so. Commit `04ffe6d` put the replay line's panel back above the
+   archive footer, because the replay line's offline smoke and unit test read it. That reverses a decision of
+   PR #31. It is not a repair; it is owner decision 11 in section 8.
 3. **Equity.** The scoring line moved `floodguard.equity` to metric version 2.0. The replay's own rule was written
    against the earlier version and its tests compared it with the module as it is now; 23 tests failed. `equity.py` stays at
    2.0. The earlier code is kept unchanged as `equity_v1.py`, used only as the replay's reference. No replay data,
@@ -98,6 +114,39 @@ These are places where the two lines met without a textual conflict.
    language). Each check keeps its purpose and now reads the page that is served.
 5. **Two small ones.** A test passes the props the joined home page needs; the planning-evidence page no longer
    has two `main-content` anchors.
+
+Found by the review of this branch and fixed:
+
+6. **Status pill on phones (Public page).** The scoring line moved the pill into a slot under the header. The
+   replay line had three phone rules that place the floating pill. Git kept both, and the replay rules were the
+   more specific, so the pill sat 128 px below its slot, on top of "Make my plan". Measured at 390 by 844 before
+   the fix: slot at y 57, pill at y 185. The three rules now apply only to a pill outside the slot. The offline
+   browser smoke checks, at 320 and 390 px in both languages, that the pill is inside the slot and clear of the
+   action buttons. It fails on the build from before the fix.
+7. **Research table styles.** The merge kept the replay line's research panel and took the scoring line's
+   stylesheet for it, which no longer had the seven classes the panel uses (`fpps`, `action`, `aA` to `aE`). On
+   `/command/archive/` and `/studio/archive/mae-sai-geoai/` each class badge had `class="undefined undefined"`
+   and no colour. The stylesheet is the replay line's again. A unit test now fails when the panel uses a class
+   its stylesheet does not have.
+8. **Research report check.** The scoring line showed the report only after `parseGeoaiResearchBundle` had found
+   its four statements: not an official warning, candidate tier, report only, cannot feed the decision layer. The
+   merge dropped that check. The panel now passes every report it loads through that parser, on both pages, and
+   does not show a report that fails it. The parser also accepts preview images under the frozen study folder,
+   because the historical study page reads the frozen copy of the report (still pinned by SHA-256).
+9. **Header on the two archive pages.** The shared header named "Planning" as the current page on
+   `/command/archive/` and "Studio" on `/studio/archive/`, although those links lead to other pages. It now marks
+   them as the current section (`aria-current="true"`), and the three surface links carry the selected case query
+   again, as the scoring line's own header did. The replay line's pages are unchanged.
+10. **Wording check for the study library.** The joined smoke checked `/studio/` with the short list of banned
+    words meant for the report pages below it. `/studio/` has the replay line's strict list again.
+11. **Walkthrough.** Git joined both lines' edits at the top of `docs/demo_walkthrough.md`. The replay beat ended up
+    under the heading "Archived synthetic-dashboard walkthrough" and a sentence that called everything below it
+    archived. The pointer to the replay beat is now above that heading, the sentence names the archived sections,
+    and the archive addresses are the ones served (`/studio/archive/`, `/studio/archive/mae-sai-geoai/`,
+    `/command/archive/`).
+12. **Equity wording.** The replay's rule, its tests and the parity fixture script named `floodguard.equity` as
+    their reference in comments and error messages. They now name `floodguard.equity_v1`. Text only: the logic
+    and the committed fixture are unchanged.
 
 ## 5. Duplicates left for a later clean-up
 
@@ -116,10 +165,28 @@ Nothing was redesigned. These pairs do the same job in two places:
 | Evidence report page | `/studio/planning-evidence/` | `/studio/archive/` (same component, archive framing) |
 | Historical archive | `/studio/archive/mae-sai-geoai/` | `/studio/archive/`, `/command/archive/` |
 | Page header | `workspace-header.tsx` | the headers inside `candidate-case-context.tsx` and `evidence-library.tsx` |
+| GeoAI report loading | the loader and panel in `geoai-real-panel.tsx` | `lib/geoai-research-bundle.ts` (the parser; the replay panel uses it since the review fix). The scoring line's own panel body is not carried |
+| Sentinel-1 change and water comparison | `sentinel1_vv`, `s1_anchor`, `s1_size_comparison` in `scripts/build_mae_sai_flood_timeline.py` | `sar_change_v2.py`, `scripts/build_mae_sai_flood_candidate.py`, `scripts/build_sentinel1_threshold_baseline.py` |
+| Sentinel-2 water check | `optical_water_check.py` | `automated_optical_v2.py`, `automated_reference.py` |
+| Export packs | `replay_exports.py` | `evidence_finals_export.py` |
 
 Scripts that still point at pages the unified branch does not serve, and are not part of `verify:frontend`:
 `qa:landing`, `qa:desktop`, `test:automated-gate-preview`, `art:desktop`, `art:landing` (the scoring line's landing),
 and `qa:visual` and `workspace-browser-smoke.mjs` (they expect the map workspace at `/command/`). They were not run.
+`test:live-api`, which `README.md` documents, is stale in the same way: `live-api-smoke.mjs` opens `/command/`
+expecting the map workspace and `/studio/` expecting the evidence report. It needs both development servers and
+was not run.
+
+Documents that name addresses the unified branch moved. They are the scoring line's documents and were not edited:
+
+- `docs/proposal_execution/pitch_outline.md`, line 21: the demo path goes from `/command/` to `/studio/` keeping
+  the case query. `/studio/` is now the study library, which ignores the query; the report is at
+  `/studio/candidate-report/`. This folder stays byte-identical to the scoring line.
+- `docs/evidence_library.md`, line 209: "the linked `/studio/` validation report" is now at
+  `/studio/candidate-report/`.
+- `docs/geoai_methodology.md`, lines 5 and 6, and `docs/positioning-and-claims.md`, lines 40 to 42 and 114 to 115,
+  describe `/command/` as the map workspace and `/studio/` as the evidence workspace. They were already out of
+  date on the scoring line, which had moved those to `/command/archive/` and `/studio/archive/` itself.
 
 ## 6. Where things are now
 
@@ -135,19 +202,26 @@ and `qa:visual` and `workspace-browser-smoke.mjs` (they expect the map workspace
 
 ## 7. Test results
 
-Run on this branch on 4 October 2026.
+Run on this branch on 4 October 2026. The first four rows were run again at `95648a9`, after the review fixes.
+The other rows are from the run before the review and were not repeated. The review fixes changed no dependency,
+lockfile, planning file or evidence-library file. The Python files they changed (comments and messages only) are
+covered by the local run in the second row.
 
 | Check | Result |
 |---|---|
-| `pnpm install --frozen-lockfile` | Passed; lockfile unchanged |
-| `pnpm verify:frontend` (lint, type check, contracts, web tests, evidence assets, both profiles, offline, CSP, studies, policy, evidence browser) | Passed end to end: 12 contract tests, 788 web tests in 88 files, 17 evidence asset tests, both profiles and the profile transition, 12 routes offline, all routes under the production headers, 57 study checks, 11 policy check groups, the evidence browser smoke |
-| `python -m pytest -q`, local environment | 3193 passed, 5 skipped, 2 failed |
-| `python -m pytest -q`, the CI job's locked dependency set | 3185 passed, 15 skipped, 0 failed (no external data set, as in CI) |
+| `pnpm verify:frontend` (lint, type check, contracts, web tests, evidence assets, both profiles, offline, CSP, studies, policy, evidence browser) | Passed end to end: 12 contract tests, 795 web tests in 89 files, 17 evidence asset tests, both profiles and the profile transition, 12 routes offline (with the new status-pill check and the strict wording list on `/studio/`), all routes under the production headers, 57 study checks, 11 policy check groups, the evidence browser smoke |
+| `python -m pytest -q`, local environment, external data set | 3193 passed, 5 skipped, 2 failed (the two below) |
 | Mae Sai bake `--verify` | Passed: 34 of 34 files identical (r4) |
+| Planning protocol, E4, GEOID and bake tests on their own (15 test files) | 334 passed, 4 skipped |
+| `pnpm install --frozen-lockfile` | Passed; lockfile unchanged |
+| `python -m pytest -q`, the CI job's locked dependency set | 3185 passed, 15 skipped, 0 failed (no external data set, as in CI) |
 | E4 builder `--verify` (case se1, vehicle) | Passed: join log, facility table, receipt and context all identical. No compute window was declared; a verify run writes nothing into Git |
-| Planning protocol, E4, GEOID and bake tests on their own | 378 passed, 5 skipped |
 | `scripts/verify_evidence_library.py` (the CI step) | Passed: 8 packages, 8 databases |
 | `uv lock --check` for the root, the API and the runner | Passed |
+
+Checked again at `95648a9`: both signing commits are ancestors of the head, both protocol files have their
+hashes, `RECEIPTS.jsonl` has its 51 lines, the 70 scoring-line files and the 26 GEOID files are byte-identical to
+their lines, and the freeze receipt's hashes match.
 
 The two local failures need the `requests` package, which the local environment lacks. It is a declared
 dependency (the `evidence` extra); nothing was installed:
@@ -156,7 +230,7 @@ dependency (the `evidence` extra); nothing was installed:
 - `tests/test_evidence_acquisition.py::test_ngis_error_body_does_not_become_geojson`
 
 The five skips are by design: four protocol tests that apply only to a draft or read the receipt instead, and one
-that needs `FLOODGUARD_MAE_SAI_PILOT_ROOT`.
+that needs `FLOODGUARD_MAE_SAI_PILOT_ROOT`. The run of the 15 files on their own has the four protocol skips.
 
 CI: `.github/workflows/ci.yml` carries the jobs of both lines. The core job clones full history, installs
 `uv sync --locked --all-extras`, runs the tests and verifies the public evidence packages. The frontend job runs
@@ -174,6 +248,9 @@ that used to skip there for lack of Pillow now run.
    landing and the policy page link to `/command/`.
 3. **The candidate report's address** (`/studio/candidate-report/`), and whether the study library should list the
    scoring line's pages. Today the library does not link to them, and they do not link back to the library.
+   The scoring line's header on `/studio/archive/` also had "Decision brief", "Evidence library" and "Archive"
+   entries; the shared header has the three surfaces only, so that page has no header link to `/studio/brief/` or
+   `/studio/library/`.
 4. **Should the replay follow equity 2.0?** That changes the replay's rule, its TypeScript mirror, the parity
    fixture and page wording. Until then `equity_v1.py` stays.
 5. **The scoring line's landing.** It is not served. Keep it, or remove it with its assets, its scripts and the
@@ -187,3 +264,31 @@ that used to skip there for lack of Pillow now run.
    deployment.
 9. **The duplicates in section 5.**
 10. **Install `requests` locally** (`uv sync --all-extras`) so the two tests above run outside CI too.
+
+Found by the review and left for the owners:
+
+11. **The research table on `/command/archive/`.** On the scoring line this page had no research table: a notice
+    said the earlier scores "are not accepted event-response priorities" and linked to the current brief. On this
+    branch the page shows the replay line's panel: eight subdistricts sorted by research FPPS, with their A to E
+    research classes, under "Report only". Choose one. The page text makes no false claim either way.
+12. **What a browser must download before the site works offline.** The install list is 84 files, 297.6 MB, plus
+    75 script chunks, 3.3 MB: 301 MB together. The evidence library is 290.6 MB of it (largest file 66.4 MB), the
+    briefs 2.7 MB, everything else 4.3 MB. Installation is all or nothing, the "available offline" status and the
+    replay's on-request data wait for it, and each new deployment downloads it again. The list comes from the
+    scoring line unchanged. The replay line's rule is that this list stays small: its own 6.3 MB of replay data is
+    saved only when the reader asks. A fix is to keep the catalog and the pages in the list and save each study
+    area's package on request. That is a design change and was not made here.
+13. **The "Studio" link in the eight case briefs.** Each brief in `apps/web/public/briefs/` links "Studio" to
+    `/studio/?aoi=...`, which is now the study library and ignores the case. The link comes from
+    `build-case-briefs.mjs`, line 294. Rebuilding the briefs changes the `html_sha256` and `pdf_sha256` that
+    `briefs/catalog.json` pins for each of the eight, so it was not done. The target would be
+    `/studio/candidate-report/`.
+14. **The map notice on phones (Public page).** When the map background cannot load, the notice covers part of
+    "View map results as a list": 73 by 39 px at 390 by 844, 88 by 46 px at 375 by 812, 122 by 46 px at 320 by
+    844. The list button is on top, so it hides the first words of the notice; the button itself still works,
+    which is why the smoke passes. Cause: the notice is the replay line's (a sentence and three buttons, 159 px
+    tall) and is anchored 272 px above the map's lower edge, while the scoring line's intro block and status slot
+    take about 200 px above the map that the replay line's page did not have. At these sizes the notice does not
+    fit between the list button and the map tools wherever it is put, so it needs a shorter form on phones. Not
+    changed here.
+15. **The stale addresses in the scoring line's documents**, listed at the end of section 5.

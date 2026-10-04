@@ -14,14 +14,17 @@ Computes
     * in theory, for the same population clipped at its 1st and 99th percentiles, as the kernel clips it;
     * through the kernel itself, for simulated windows of pure normal noise of three sizes;
     * through the kernel, for windows that hold a second population: the smallest distance between the two
-      populations, in standard deviations, at which the kernel accepts the window.
+      populations, in standard deviations, at which the kernel accepts the window;
+    * in theory and through the kernel, for one flat-topped (uniform) population: 3/4.
 
     Plan row A1 states the first figure as "a unimodal Gaussian gives 0.637 < 0.72".
 
 Does not show
     * Anything about Mae Sai, or about any image: it is arithmetic and simulation.
-    * That a window which failed the gate held no flood. It shows that the gate cannot be passed by one
-      population, whatever it is, and how far apart two populations must lie to pass it.
+    * That a window which failed the gate held no flood. It shows that the gate is not passed by one normal
+      (bell-shaped) population, and how far apart two normal populations must lie to pass it.
+    * That a window which passes the gate holds two populations. One population that is not bell-shaped can
+      pass: a flat-topped (uniform) one gives 3/4, above the gate.
     * That real change values are normal. Speckle is not, and a real window is a mixture of land covers.
 
 Writes
@@ -54,17 +57,21 @@ MIXTURE_SHARES = (0.5, 0.3, 0.2, 0.1)
 MIXTURE_SEPARATIONS = tuple(round(step * 0.1, 1) for step in range(0, 61))
 MIXTURE_REPEATS = 10
 MIXTURE_SIZE = 65536
+UNIFORM_SEED = SEED + 2
+"""A seed of its own, so that the flat-topped windows do not move the draws of the other figures."""
 
 SPEC = diagnosis_run.FigureSpec(
     figure_id="bvf_unimodal_gaussian",
-    title="Between-class variance fraction of one bell-shaped population against the 0.72 gate",
+    title="Between-class variance fraction of one normal (bell-shaped) population against the 0.72 gate",
     script="scripts/diagnostics/bvf_unimodal_gaussian.py",
     plan_statement="BVF theory/simulation (a unimodal Gaussian gives 0.637 < 0.72)",
     computes="The between-class variance fraction of a normal population in theory and through the frozen M2 Otsu kernel, "
-             "and the separation two populations need before the kernel accepts a window. No image is read.",
+             "the separation two normal populations need before the kernel accepts a window, and the fraction of one "
+             "flat-topped population. No image is read.",
     does_not_show=(
         "Anything about Mae Sai or about any image: it is arithmetic and simulation.",
         "That a window which failed the gate held no flood.",
+        "That a window which passes the gate holds two populations: one flat-topped population passes it.",
         "That real change values are normal: speckle is not, and a real window is a mixture of land covers.",
     ),
 )
@@ -80,6 +87,7 @@ def make_compute(root: Path, external: Path | None) -> Callable[[], diagnosis_ru
         simulated = diagnosis.simulate_unimodal(SAMPLE_SIZES, repeats=REPEATS, seed=SEED)
         needed = diagnosis.separation_needed(MIXTURE_SHARES, MIXTURE_SEPARATIONS, size=MIXTURE_SIZE, repeats=MIXTURE_REPEATS, seed=SEED + 1)
         largest = max(row["between_variance_fraction_max"] for row in simulated)
+        flat_topped = diagnosis.simulate_uniform(SAMPLE_SIZES, repeats=REPEATS, seed=UNIFORM_SEED)
         figures = {
             "gate": gate,
             "theory_normal_population_split_at_its_mean": round(theory, 6),
@@ -93,6 +101,17 @@ def make_compute(root: Path, external: Path | None) -> Callable[[], diagnosis_ru
             "two_populations_note": "Both populations are normal with one standard deviation. The separation is the distance "
                                     "between their means in standard deviations. The first column of each row is the share of "
                                     "the window in the second population.",
+            "one_flat_topped_population": {
+                "what": "One uniform population, with no second class: a single population that is not bell-shaped.",
+                "theory_uniform_population_split_at_its_mean": diagnosis.UNIFORM_BVF_THEORY,
+                "theory_formula": "(R/4)^2 / (R^2/12) = 3/4, for a width R",
+                "above_the_gate_in_theory": diagnosis.UNIFORM_BVF_THEORY >= gate,
+                "simulated_windows_through_the_m2_kernel": flat_topped,
+                "simulated_windows": sum(row["windows"] for row in flat_topped),
+                "simulated_windows_the_kernel_accepted": sum(row["windows_the_kernel_accepts"] for row in flat_topped),
+                "reading": "The gate declines one normal population. It does not decline every single population, so a "
+                           "window that passes it is not shown to hold two.",
+            },
         }
         return diagnosis_run.FigureResult(
             figures=figures,
@@ -105,6 +124,8 @@ def make_compute(root: Path, external: Path | None) -> Callable[[], diagnosis_ru
                                     "separations_tried": [MIXTURE_SEPARATIONS[0], MIXTURE_SEPARATIONS[-1]],
                                     "separation_step": 0.1, "windows_per_case": MIXTURE_REPEATS, "samples_per_window": MIXTURE_SIZE,
                                     "seed": SEED + 1},
+                "one_flat_topped_population": {"seed": UNIFORM_SEED, "sample_sizes": list(SAMPLE_SIZES), "windows_per_size": REPEATS,
+                                               "standard_deviation_db": 2.0},
             },
             source_timestamp="not applicable: theory and simulation, no observation",
             confidence_basis="Arithmetic and a seeded simulation through the unchanged M2 kernel. It reads no image and no flood "
@@ -117,7 +138,9 @@ def make_compute(root: Path, external: Path | None) -> Callable[[], diagnosis_ru
                 "The simulation is seeded, so a second run gives the same figures.",
             ],
             limits=[
-                "The figure says what one population gives the gate. It does not say what the windows at Mae Sai held.",
+                "The figure says what one normal population gives the gate. It does not say what the windows at Mae Sai held.",
+                "The result holds for a normal population. A single population of another shape can score higher: a "
+                "flat-topped one passes the gate.",
                 "The two-population table uses equal standard deviations. A flood class that is narrower or wider than the "
                 "land around it needs a different separation.",
                 "The kernel has two more tests (class share and mean separation); a window can pass the gate and still be declined.",

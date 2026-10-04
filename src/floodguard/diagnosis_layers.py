@@ -426,7 +426,8 @@ def warp_to_grid(path: Path, grid: Grid, *, resampling: str) -> np.ndarray:
 CELL_M = 20.0
 """Cell size of the comparison grid: a 2 by 2 block of the 10 m cells of the stored radar rasters."""
 MARGIN_M = 1000.0
-"""Margin around AOI-01, so that a 5 by 5 mean and a slope have their neighbours at the edge of the AOI."""
+"""Margin around AOI-01, so that a mean over a window of up to 25 cells and a slope have their neighbours at the
+edge of the AOI."""
 JRC_OCCURRENCE_RELATIVE_PATH = Path("open_context") / "jrc_global_surface_water" / "occurrence_90E_30Nv1_4_2021.tif"
 JRC_PERENNIAL_MONTHS = 10
 JRC_OCCURRENCE_PERCENT = 80
@@ -436,6 +437,17 @@ WATER_WORLDCOVER = "worldcover_class_80"
 WATER_NONE = "nothing_left_out"
 WATER_READINGS: tuple[str, ...] = (WATER_JRC, WATER_WORLDCOVER, WATER_NONE)
 """The three ways permanent water is left out of a comparison (open point A1-OP4)."""
+FLAT_SLOPE_DEGREES = 5.0
+"""Slope limit of the second set of cells: the limit plan row A2 gives the UN-SPIDER practice (open point A1-OP10)."""
+CELLS_ALL = "all_cells"
+CELLS_FLAT = "slope_under_5_degrees"
+CELL_SETS: tuple[str, ...] = (CELLS_ALL, CELLS_FLAT)
+"""The two sets of cells a rank statistic is given on (open point A1-OP10)."""
+DEM_INPUT = "dem_west"
+"""The key of the GLO-30 tile among the inputs of the radar receipt of plan tasks A2 and A4."""
+ATTRIBUTION_DEM = ("Copernicus DEM GLO-30: (c) DLR e.V. 2010-2014 and (c) Airbus Defence and Space GmbH 2014-2018 provided under "
+                   "COPERNICUS by the European Union and ESA; all rights reserved")
+"""The credit of the surface model, carried by every figure that uses its height or its slope."""
 
 
 def receipt_grid(receipt: Mapping[str, Any]) -> Grid:
@@ -462,11 +474,35 @@ class ComparisonDomain:
     water: Mapping[str, np.ndarray]
     record: Mapping[str, Any]
     inputs: Mapping[str, Any]
+    elevation: np.ndarray | None = None
+    slope: np.ndarray | None = None
 
-    def cells(self, reading: str) -> np.ndarray:
-        """Return the cells of one reading: AOI-01 on the Thai side, without the permanent water of the reading."""
+    def cells(self, reading: str, cell_set: str = CELLS_ALL) -> np.ndarray:
+        """Return the cells of one reading: AOI-01 on the Thai side, without the permanent water of the reading.
 
-        return self.base & ~self.water[reading]
+        With ``cell_set`` ``slope_under_5_degrees`` only the cells whose slope is under the limit are kept; a
+        cell with no slope value is not among them.
+
+        Raises:
+            DiagnosisLayerError: for an unknown set of cells, or the flat set on a domain built without a slope.
+        """
+
+        cells = self.base & ~self.water[reading]
+        if cell_set == CELLS_ALL:
+            return cells
+        if cell_set != CELLS_FLAT:
+            raise DiagnosisLayerError(f"unknown set of cells: {cell_set}")
+        if self.slope is None:
+            raise DiagnosisLayerError("the domain holds no slope, so it has no set of flat cells")
+        return cells & flat_cells(self.slope)
+
+
+def flat_cells(slope_degrees: Any, limit_degrees: float = FLAT_SLOPE_DEGREES) -> np.ndarray:
+    """Return the cells whose slope is under ``limit_degrees``; a cell with no slope value is not flat."""
+
+    slope = np.asarray(slope_degrees, dtype="float64")
+    with np.errstate(invalid="ignore"):
+        return np.isfinite(slope) & (slope < limit_degrees)
 
 
 def comparison_domain(root: Path, external: Path, envelope: Envelope) -> ComparisonDomain:
@@ -477,6 +513,10 @@ def comparison_domain(root: Path, external: Path, envelope: Envelope) -> Compari
     to the grid by the nearest cell: JRC Global Surface Water (seasonality of 10 months or more, or
     occurrence of 80 percent or more; a cell with no JRC value is not water), ESA WorldCover 2021 class 80,
     and nothing.
+
+    The height of the Copernicus GLO-30 tile that the radar receipt names is warped bilinearly onto the grid
+    and its slope is taken there by central differences. The slope gives the second set of cells: those with
+    a slope under 5 degrees (:data:`CELLS_FLAT`).
 
     Raises:
         DiagnosisLayerError: when a Thai unit that meets AOI-01 is outside the reporting frame of protocol
@@ -501,6 +541,17 @@ def comparison_domain(root: Path, external: Path, envelope: Envelope) -> Compari
     aoi = cell_centre_mask(envelope.frame.geometry, grid)
     base = aoi & cell_centre_mask(thai, grid)
     cell_km2 = grid.cell_m * grid.cell_m / 1e6
+    from floodguard.abstention_diagnosis import slope_degrees
+
+    dem_path, dem_record = bound_input(radar_receipt, DEM_INPUT, external)
+    elevation = warp_to_grid(dem_path, grid, resampling="bilinear")
+    slope = slope_degrees(elevation, grid.cell_m)
+    flat = flat_cells(slope)
+
+    def flat_counts(cells: np.ndarray) -> dict[str, Any]:
+        kept = cells & flat
+        return {"cells": int(kept.sum()), "envelope_cells": int((kept & inside).sum()),
+                "envelope_share_of_the_cells": round(float((kept & inside).sum()) / float(kept.sum()), 6)}
     jrc_valued = np.isfinite(seasonality) & (seasonality <= 12) & np.isfinite(occurrence) & (occurrence <= 100)
     record = {
         "grid": grid.record(),
@@ -523,7 +574,19 @@ def comparison_domain(root: Path, external: Path, envelope: Envelope) -> Compari
                 "cells": int((base & ~water[reading]).sum()),
                 "envelope_cells": int((base & ~water[reading] & inside).sum()),
                 "envelope_share_of_the_cells": round(float((base & ~water[reading] & inside).sum()) / float((base & ~water[reading]).sum()), 6),
+                CELLS_FLAT: flat_counts(base & ~water[reading]),
             } for reading in WATER_READINGS
+        },
+        "sets_of_cells": {
+            CELLS_ALL: "every cell of AOI-01 on the Thai side that the permanent-water reading keeps",
+            CELLS_FLAT: f"the cells of that set whose slope is under {FLAT_SLOPE_DEGREES:g} degrees; the slope is taken by central "
+                        "differences from the GLO-30 height warped bilinearly onto the grid",
+        },
+        "slope_in_the_domain": {
+            "cells_with_no_slope_value": int((base & ~np.isfinite(slope)).sum()),
+            "share_of_envelope_cells_under_the_limit": round(float((base & inside & flat).sum()) / float((base & inside).sum()), 6),
+            "share_of_other_cells_under_the_limit": round(float((base & ~inside & flat).sum()) / float((base & ~inside).sum()), 6),
+            "limit_degrees": FLAT_SLOPE_DEGREES,
         },
     }
     inputs = {
@@ -533,8 +596,9 @@ def comparison_domain(root: Path, external: Path, envelope: Envelope) -> Compari
         "jrc_seasonality": seasonality_record,
         "jrc_occurrence": diagnosis_run.file_record(occurrence_path, root, external),
         "worldcover": worldcover_record,
+        "dem_glo30_n20_e099": dem_record,
     }
-    return ComparisonDomain(grid, inside, base, water, record, inputs)
+    return ComparisonDomain(grid, inside, base, water, record, inputs, elevation, slope)
 
 
 def comparison_parameters() -> dict[str, Any]:
@@ -553,4 +617,8 @@ def comparison_parameters() -> dict[str, Any]:
             WATER_NONE: "no cell is left out as permanent water",
         },
         "footprint_layer_read": False,
+        "sets_of_cells": list(CELL_SETS),
+        "flat_slope_limit_degrees": FLAT_SLOPE_DEGREES,
+        "dem_resampling": "bilinear onto the 20 m grid",
+        "slope_rule": "central differences over 20 m cells, in degrees",
     }

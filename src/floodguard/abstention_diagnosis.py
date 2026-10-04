@@ -10,8 +10,10 @@ What the figures are, and are not:
 
 * The **between-class variance fraction** is the share of a histogram's variance that an Otsu split
   explains. The retired M2 method asked for at least 0.72 of it in every window
-  (``AdaptiveOtsuConfig.min_between_variance_fraction``). A single bell-shaped population split at its mean
-  explains 2/pi of its variance (0.637), so it can never pass.
+  (``AdaptiveOtsuConfig.min_between_variance_fraction``). A single normal (bell-shaped) population split at
+  its mean explains 2/pi of its variance (0.637), so it does not pass. That holds for a normal population
+  only: a single flat-topped (uniform) population explains 3/4 of its variance and does pass, so a window
+  that passed the gate is not shown to hold two populations.
 * The **rank statistic** (:func:`rank_auc`, the area under the ROC curve) says how often a cell inside a
   mapped layer has a larger feature value than a cell outside it. 0.5 is no separation. It is a measure of
   separation against that layer, **not** a measure of how correct a method is, and the layer it is computed
@@ -26,6 +28,7 @@ from collections import Counter
 from collections.abc import Iterable, Mapping, Sequence
 from datetime import datetime, timedelta, timezone
 import math
+import re
 from statistics import NormalDist
 from typing import Any
 
@@ -35,6 +38,10 @@ from floodguard.label_factory.sentinel1_processing import AdaptiveOtsuConfig, _o
 
 GAUSSIAN_BVF_THEORY = 2.0 / math.pi
 """Between-class variance fraction of a normal population split at its mean: (E|x|)^2 / var = 2/pi."""
+
+UNIFORM_BVF_THEORY = 0.75
+"""Between-class variance fraction of a flat-topped (uniform) population of width R split at its mean:
+(R/4)^2 / (R^2/12) = 3/4."""
 
 UNIMODAL_REASON = "unimodal_or_unstable_histogram"
 """The reason code the M2 kernel gives a window that fails the between-class variance gate only."""
@@ -122,6 +129,45 @@ def simulate_unimodal(sample_sizes: Sequence[int], *, repeats: int, seed: int, s
             "between_variance_fraction_mean": round(float(np.mean(fractions)), 6),
             "between_variance_fraction_max": round(max(fractions), 6),
             "windows_passing_the_gate": int(sum(value >= config.min_between_variance_fraction for value in fractions)),
+            "reason_counts": dict(sorted(reasons.items())),
+        })
+    return rows
+
+
+def simulate_uniform(sample_sizes: Sequence[int], *, repeats: int, seed: int, sigma_db: float = 2.0) -> list[dict[str, Any]]:
+    """Draw windows of one flat-topped (uniform) population and return what the frozen M2 kernel says of them.
+
+    Each window is ``size`` independent draws from one uniform population with standard deviation
+    ``sigma_db`` (width ``sigma_db * sqrt(12)``), the spread of the windows of :func:`simulate_unimodal`. It is
+    one population with no flood class, and it is not bell-shaped.
+
+    Raises:
+        DiagnosisError: for no repeat or a window below the kernel's minimum number of samples.
+    """
+
+    config = AdaptiveOtsuConfig()
+    if repeats < 1 or any(size < config.min_valid_samples for size in sample_sizes):
+        raise DiagnosisError("each simulated window needs at least the kernel's minimum of valid samples, and one repeat")
+    rng = np.random.default_rng(seed)
+    half_width = sigma_db * math.sqrt(3.0)
+    rows: list[dict[str, Any]] = []
+    for size in sample_sizes:
+        fractions: list[float] = []
+        reasons: Counter[str] = Counter()
+        accepted = 0
+        for _ in range(repeats):
+            decision = kernel_decision(rng.uniform(-half_width, half_width, int(size)), config)
+            fractions.append(float(decision["between_variance_fraction"]))
+            reasons["accepted" if decision["reason"] is None else str(decision["reason"])] += 1
+            accepted += decision["threshold_db"] is not None
+        rows.append({
+            "samples_per_window": int(size),
+            "windows": int(repeats),
+            "between_variance_fraction_min": round(min(fractions), 6),
+            "between_variance_fraction_mean": round(float(np.mean(fractions)), 6),
+            "between_variance_fraction_max": round(max(fractions), 6),
+            "windows_passing_the_gate": int(sum(value >= config.min_between_variance_fraction for value in fractions)),
+            "windows_the_kernel_accepts": int(accepted),
             "reason_counts": dict(sorted(reasons.items())),
         })
     return rows
@@ -415,6 +461,53 @@ def pass_gap(acquisition_times: Iterable[str], *, after: str, before: str) -> di
         "interval_starts_at_a_pass": start in truncated,
         "interval_ends_at_a_pass": end in truncated,
     }
+
+
+_MONTHS = {name: number for number, name in enumerate(
+    ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"), start=1)}
+_KEYFRAME_TIME = re.compile(r"(?<![0-9])(\d{1,2}) (" + "|".join(_MONTHS) + r") (\d{2}):(\d{2}) ICT")
+_KEYFRAME_T = re.compile(r"`t = ([0-9]+(?:\.[0-9]+)?) d,")
+_SOURCE_YEARS = re.compile(r"^\| Source timestamp \| `(\d{4})-\d{2}-\d{2}T[0-9:]+Z/(\d{4})-\d{2}-\d{2}T[0-9:]+Z` \|\s*$", re.MULTILINE)
+
+
+def replay_keyframe(replay_numbers: str, key: str) -> dict[str, Any]:
+    """Read one keyframe of the Mae Sai replay from the text of ``docs/demo/replay_numbers.md``.
+
+    The row of ``key`` states the keyframe in Thailand time (for example ``10 Sep 18:15 ICT``) and its
+    position on the replay's own clock (``t = 1.760417 d``). The year is the one of the file's source
+    timestamp. The keyframe is an illustrative scenario value of the replay, not an observation.
+
+    Returns:
+        ``key``, ``in_thailand`` (as the file states it), ``utc`` and ``replay_days``.
+
+    Raises:
+        DiagnosisError: when the file has no single row for the key, the row states no time or no replay
+            day, or the source timestamp does not give one year.
+    """
+
+    rows = [line for line in replay_numbers.splitlines() if line.startswith(f"| `{key}` |")]
+    if len(rows) != 1:
+        raise DiagnosisError(f"the replay figures hold {len(rows)} rows for the key {key}; one is needed")
+    years = _SOURCE_YEARS.search(replay_numbers)
+    if years is None or years.group(1) != years.group(2):
+        raise DiagnosisError("the replay figures do not state a source timestamp inside one year")
+    stated, position = _KEYFRAME_TIME.search(rows[0]), _KEYFRAME_T.search(rows[0])
+    if stated is None or position is None:
+        raise DiagnosisError(f"the row of {key} states no time in Thailand or no replay day")
+    day, month, hour, minute = int(stated.group(1)), _MONTHS[stated.group(2)], int(stated.group(3)), int(stated.group(4))
+    try:
+        local = datetime(int(years.group(1)), month, day, hour, minute, tzinfo=timezone(THAILAND_UTC_OFFSET))
+    except ValueError as error:
+        raise DiagnosisError(f"the row of {key} states no valid time") from error
+    return {"key": key, "in_thailand": stated.group(0), "utc": _stamp(local), "replay_days": float(position.group(1))}
+
+
+def keyframes_agree(first: Mapping[str, Any], second: Mapping[str, Any], *, tolerance_seconds: float = 60.0) -> bool:
+    """Say whether two keyframes lie as far apart in stated time as on the replay's own clock."""
+
+    stated = (parse_utc(second["utc"]) - parse_utc(first["utc"])).total_seconds()
+    clock = (float(second["replay_days"]) - float(first["replay_days"])) * 86400.0
+    return abs(stated - clock) <= tolerance_seconds
 
 
 # ---------------------------------------------------------------------------

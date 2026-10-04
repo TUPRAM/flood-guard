@@ -10,9 +10,12 @@ what that run leaves behind:
   SHA-256 of both protocol files, the run times, the figures file with its SHA-256 and every earlier run;
 * one **register entry** under ``outputs/planning_v1/run_register/``: the path and SHA-256 of the receipt.
 
-A second run of a figure needs ``replace`` and a reason. Its receipt names the receipt and the figures file
-it supersedes by SHA-256 and says whether the figures are the same. A run is refused unless both protocol
-files are in force. Nothing here computes an FPPS, an A-E class or a flood candidate.
+A second run of a figure needs ``replace``, a reason and the external data root: the superseded receipt and
+figures file are copied under that root before they are overwritten. The new receipt names the receipt and
+the figures file it supersedes by SHA-256 and says whether the figures are the same. A run is refused unless
+both protocol files are in force. A receipt names the script and the shared modules the run loaded by
+SHA-256, and the versions of the libraries it had loaded; :func:`verify` compares both with the checkout.
+Nothing here computes an FPPS, an A-E class or a flood candidate.
 """
 
 from __future__ import annotations
@@ -23,7 +26,9 @@ from datetime import datetime, timezone
 import hashlib
 import json
 from pathlib import Path
+import platform
 import subprocess
+import sys
 from typing import Any
 
 from floodguard import normalisation
@@ -59,7 +64,11 @@ OPEN_POINTS: Mapping[str, Mapping[str, str]] = {
                             "Protocol v1a announces a HAND and slope mask for M1-v2 on Mae Sai without a HAND source or a "
                             "limit (open point A4-OP2).",
         "what_was_done": "Two features of the Copernicus GLO-30 surface model were measured on the 20 m grid: low elevation "
-                         "and low slope. HAND was not computed: no HAND raster and no drainage rule is in the signed files "
+                         "and low slope. They were taken from the exploratory script of the plan session, which was never "
+                         "committed: it ranked the negated height and the negated slope against the same layer and printed "
+                         "both values on the line that gave 0.421. Those two values are in no committed file, so this is the "
+                         "first computation from cleared files and the first recorded value; it is not the first time the "
+                         "figure was seen. HAND was not computed: no HAND raster and no drainage rule is in the signed files "
                          "or on disk. Neither figure is named the terrain figure of the plan.",
     },
     "A1-OP2": {
@@ -70,7 +79,14 @@ OPEN_POINTS: Mapping[str, Mapping[str, str]] = {
                          "VH before minus VH after in dB, the cells of AOI-01 on the Thai side outside JRC surface water. Two "
                          "things differ and are stated: the radar values are calibrated sigma0 (the exploratory run used "
                          "uncalibrated amplitudes), and the Thai side is taken from the COD-AB boundaries (the exploratory run "
-                         "used the product's analysis extent, which is held at the local level and is not read here).",
+                         "used the product's analysis extent, which is held at the local level and is not read here). The "
+                         "5 by 5 mean is the window of that script; neither the plan nor a protocol names a window, so the "
+                         "figure is also given for windows of 1, 3, 9, 15 and 25 cells, and no window is named the window of "
+                         "record. The script ranked seven features against the same layer on one printed line: the darkening "
+                         "of VH, the same change read as brightening, the absolute change of VH and of VV, the negated VH "
+                         "after the event, the negated height and the negated slope. Only 0.421 was carried into the plan. "
+                         "The reading 'auc_of_brightening' here is the second of those features; the absolute changes and "
+                         "the VH after the event are not computed here, because the plan does not list them.",
     },
     "A1-OP3": {
         "point": "Which geocoding of the radar layers a figure against a mapped layer uses.",
@@ -129,6 +145,25 @@ OPEN_POINTS: Mapping[str, Mapping[str, str]] = {
         "what_was_done": "New scripts were written under scripts/diagnostics/ that read cleared files only. No committed "
                          "script was moved.",
     },
+    "A1-OP10": {
+        "point": "On which cells a rank statistic against the season envelope is taken.",
+        "signed_files_say": "Plan row A1 names no domain. Plan row A2 removes slopes of 5 degrees or more from the UN-SPIDER "
+                            "practice, the A2/A4 result reports its areas by that slope class, and the exploratory script looked "
+                            "at the cells under 5 degrees as well. Protocol v1a announces a HAND and slope mask for M1-v2 and "
+                            "gives no limit (open point A4-OP2).",
+        "what_was_done": "Each rank statistic is given on two sets of cells: every cell of AOI-01 on the Thai side, and the "
+                         "cells of that set whose GLO-30 slope is under 5 degrees. On the first set a terrain feature mostly "
+                         "tells hill from plain. Neither set is named the domain of record.",
+    },
+    "A1-OP11": {
+        "point": "How far the reading of a product path can be checked, and when the check runs.",
+        "signed_files_say": "Guardrail GR9 asks for a pre-commit test that fails when a committed script reads the paths of "
+                            "either ungranted product without a recorded grant receipt. Its enforcement note asks for a "
+                            "pre-commit or CI test and names no mechanism.",
+        "what_was_done": "The guard reads the text of code files and runs in the test suite and as a command; the repository "
+                         "installs no Git hook. It does not see a path that is read from a JSON or CSV manifest, a name that "
+                         "is split across strings, or new code inside an existing function of a legacy file.",
+    },
 }
 """The points the signed files leave open for plan task A1. None is decided by the code."""
 
@@ -140,6 +175,11 @@ DEVELOPMENT_READS: tuple[str, ...] = (
     "and the two radar receipts were read. No cell value was read and no figure was computed.",
     "The same evening, before any run: the statistics module was tried on invented numbers only (random draws; no file "
     "of the external data workspace was opened).",
+    "5 October 2026, after the review of the first runs and before the superseding runs: the committed figures files and "
+    "receipts were read; the eight superseded copies kept outside Git were read for their run times and their SHA-256; the "
+    "text of five exploratory scripts of the plan session was read, to check what they had computed and that the guard "
+    "refuses such text. None of them was run. No raster and no flood layer was opened, no cell value was read and no "
+    "figure was computed.",
 )
 """The reads made on real files before the first runs. A receipt of a figure that rests on those files lists them."""
 
@@ -280,15 +320,51 @@ def base_commit(root: Path) -> str | None:
     return done.stdout.strip() or None
 
 
-def implementation(spec: FigureSpec, root: Path) -> dict[str, Any]:
-    """Name the code a run loaded: the script and the shared modules, each by SHA-256, and the commit beneath them."""
+LIBRARIES: tuple[str, ...] = ("numpy", "scipy", "rasterio", "pyproj", "shapely", "pyogrio", "geopandas", "pandas")
+"""The libraries whose version can move a figure in its last decimals: the number generator, the warps and the geometry."""
 
-    files = {name: sha256_file(root / name) for name in (spec.script, *MODULES) if (root / name).is_file()}
+
+def software_versions() -> dict[str, str]:
+    """Return the Python version and the version of each library of :data:`LIBRARIES` the process has loaded.
+
+    A library that the run did not load is not imported here and is not listed. GDAL, PROJ and GEOS are listed
+    with the package that carries them.
+    """
+
+    versions = {"python": platform.python_version()}
+    for name in LIBRARIES:
+        module = sys.modules.get(name)
+        if module is None:
+            continue
+        versions[name] = str(getattr(module, "__version__", "unknown"))
+        if name == "rasterio":
+            versions["gdal"] = str(getattr(module, "__gdal_version__", "unknown"))
+        elif name == "pyproj":
+            versions["proj"] = str(getattr(module, "proj_version_str", "unknown"))
+        elif name == "shapely":
+            versions["geos"] = str(getattr(module, "geos_version_string", "unknown"))
+    return versions
+
+
+def code_files(spec: FigureSpec, root: Path) -> dict[str, str]:
+    """Return the SHA-256 of the script of a figure and of the shared modules, as they are on disk."""
+
+    return {name: sha256_file(root / name) for name in (spec.script, *MODULES) if (root / name).is_file()}
+
+
+def implementation(spec: FigureSpec, root: Path) -> dict[str, Any]:
+    """Name the code a run loaded: the script and the shared modules by SHA-256, the commit beneath them and the
+    versions of the libraries the run had loaded."""
+
     return {
         "base_commit": base_commit(root),
         "base_commit_note": "The commit the working tree was on. The files below are the ones this run loaded, "
                             "identified by their own SHA-256, committed or not.",
-        "files_sha256": files,
+        "files_sha256": code_files(spec, root),
+        "software": software_versions(),
+        "software_note": "The libraries the run had loaded when it finished. A figure can move in its last decimals "
+                         "under another version of GDAL, PROJ, GEOS or numpy; --verify reports the versions beside "
+                         "the comparison.",
     }
 
 
@@ -300,8 +376,11 @@ def _earlier_runs(previous: Mapping[str, Any], previous_sha256: str, reason: str
     """Carry the history of a superseded receipt forward and add that receipt to it."""
 
     history = list(previous.get("run_history", {}).get("earlier_runs", []))
+    times = previous.get("timestamps", {})
     history.append({
         "generated_at_utc": previous["generated_at_utc"],
+        "run_started_at_utc": times.get("run_started_at_utc"),
+        "run_finished_at_utc": times.get("run_finished_at_utc"),
         "receipt_sha256": previous_sha256,
         "figures_sha256": previous["outputs"]["figures"]["sha256"],
         "run_kind": previous.get("run_kind"),
@@ -360,6 +439,10 @@ def assemble(spec: FigureSpec, result: FigureResult, *, root: Path, generated_at
                        "a second run of this figure writes a new receipt that names this one.",
         "run_kind": "first_run" if supersedes is None else "superseding_run",
         "computes": spec.computes,
+        # A receipt can be read or shared alone, so it carries the label and the licence block of its figures.
+        "measured_against": spec.label,
+        "licence": None if result.licence is None else dict(result.licence),
+        "attributions": list(result.attributions),
         "protocol_state": {"v1a": "in_force", "v1b": "in_force"},
         "script": {"path": spec.script, "sha256": sha256_file(root / spec.script)},
         "implementation": implementation(spec, root),
@@ -399,7 +482,8 @@ def run(spec: FigureSpec, compute: Callable[[], FigureResult], *, root: Path, ex
         A summary: the receipt path, its SHA-256, the figures and whether an earlier run was superseded.
 
     Raises:
-        DiagnosisRunError: for a second run without ``replace`` and a reason, or ``replace`` with nothing to replace.
+        DiagnosisRunError: for a second run without ``replace`` and a reason, ``replace`` with nothing to replace,
+            or ``replace`` without the external data root (the superseded files could not be kept).
         floodguard.normalisation.NormalisationError: when a protocol file is not in force.
     """
 
@@ -413,6 +497,12 @@ def run(spec: FigureSpec, compute: Callable[[], FigureResult], *, root: Path, ex
             raise DiagnosisRunError(
                 f"{spec.receipt_path.as_posix()} exists: a second run of this figure needs --replace and --reason, "
                 "and its receipt will name the run it supersedes"
+            )
+        if external is None:
+            raise DiagnosisRunError(
+                f"a second run of {spec.figure_id} needs the external data root (--external-data or {EXTERNAL_DATA_VARIABLE}): "
+                "the superseded receipt and figures file are copied there before they are overwritten, and without it "
+                "they would be lost"
             )
         previous = _read_json(receipt_path)
         previous_sha256 = sha256_file(receipt_path)
@@ -433,6 +523,8 @@ def run(spec: FigureSpec, compute: Callable[[], FigureResult], *, root: Path, ex
         old_figures = _read_json(figures_path)["figures"] if figures_path.exists() else None
         supersedes["figures_same"] = old_figures == json.loads(json.dumps(dict(result.figures)))
         supersedes["copies_kept"] = _keep_superseded(spec, root, external, previous["generated_at_utc"])
+        if not any(label.endswith("/" + spec.receipt_path.name) for label in supersedes["copies_kept"]):
+            raise DiagnosisRunError(f"the superseded receipt of {spec.figure_id} could not be copied; nothing was overwritten")
     figures_bytes, receipt = assemble(spec, result, root=root, generated_at_utc=finished, started_at_utc=started,
                                       finished_at_utc=finished, protocol_sha256=protocol_sha256, supersedes=supersedes,
                                       earlier_runs=earlier)
@@ -473,8 +565,11 @@ def verify(spec: FigureSpec, compute: Callable[[], FigureResult], *, root: Path)
     """Compute a figure again and compare it with the committed run. Nothing is written.
 
     Returns:
-        Whether the figures, the inputs and the parameters are those of the receipt, and whether the committed
-        figures file and register entry have the bytes the receipt binds.
+        Whether the figures, the inputs and the parameters are those of the receipt, whether the script and the
+        shared modules on disk are the ones the receipt names, and whether the committed figures file and
+        register entry have the bytes the receipt binds. ``software`` says whether the libraries loaded now have
+        the versions the receipt records; it is reported and is not part of ``verified``, so that a difference in
+        the environment can be told from a changed input or rule.
 
     Raises:
         DiagnosisRunError: when the figure has no run to compare with.
@@ -493,10 +588,33 @@ def verify(spec: FigureSpec, compute: Callable[[], FigureResult], *, root: Path)
         "figures_same": plain["figures"] == committed["figures"],
         "inputs_same": plain["inputs"] == receipt["inputs"],
         "parameters_same": plain["parameters"] == receipt["parameters"],
+        **code_checks(spec, receipt, root),
         "figures_file_is_the_one_the_receipt_binds": sha256_file(figures_path) == receipt["outputs"]["figures"]["sha256"],
         "register_entry_names_the_receipt": register == {"path": spec.receipt_path.as_posix(), "sha256": sha256_file(receipt_path)},
     }
-    return {"verified": all(checks.values()), **checks, "generated_at_utc": receipt["generated_at_utc"]}
+    recorded = receipt.get("implementation", {}).get("software")
+    loaded = software_versions()
+    software = {
+        "recorded_in_the_receipt": recorded,
+        "loaded_now": loaded,
+        "same": None if recorded is None else all(loaded.get(name) == version for name, version in recorded.items()),
+    }
+    return {"verified": all(checks.values()), **checks, "software": software, "generated_at_utc": receipt["generated_at_utc"]}
+
+
+def code_checks(spec: FigureSpec, receipt: Mapping[str, Any], root: Path) -> dict[str, bool]:
+    """Say whether the script and the shared modules on disk are the ones a receipt names by SHA-256.
+
+    A receipt that names code which is no longer in the checkout does not trace its figure any more: the
+    figure needs a superseding run, or the code its receipt names.
+    """
+
+    on_disk = code_files(spec, root)
+    named = dict(receipt.get("implementation", {}).get("files_sha256", {}))
+    return {
+        "script_is_the_one_the_receipt_names": receipt.get("script") == {"path": spec.script, "sha256": on_disk.get(spec.script)},
+        "code_files_are_the_ones_the_receipt_names": bool(named) and named == on_disk,
+    }
 
 
 def external_root(argument: Path | None, environment: Mapping[str, str]) -> Path | None:

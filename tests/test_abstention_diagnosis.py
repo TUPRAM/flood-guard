@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import math
+import os
 from pathlib import Path
 import shutil
 
@@ -62,6 +63,25 @@ def test_the_frozen_kernel_declines_every_window_of_pure_noise() -> None:
     assert wide[0]["between_variance_fraction_mean"] == pytest.approx(rows[0]["between_variance_fraction_mean"], abs=1e-6)
     with pytest.raises(diagnosis.DiagnosisError):
         diagnosis.simulate_unimodal((100,), repeats=5, seed=1)
+
+
+def test_one_flat_topped_population_passes_the_gate() -> None:
+    """The gate declines one normal population; it does not decline every single population."""
+
+    assert diagnosis.UNIFORM_BVF_THEORY == 0.75 > diagnosis.m2_gate() > diagnosis.GAUSSIAN_BVF_THEORY
+    values = np.random.default_rng(11).uniform(-3.0, 5.0, 2_000_000)
+    low, high = values[values < values.mean()], values[values >= values.mean()]
+    between = low.size / values.size * high.size / values.size * (high.mean() - low.mean()) ** 2
+    assert between / values.var() == pytest.approx(diagnosis.UNIFORM_BVF_THEORY, abs=2e-3)
+    rows = diagnosis.simulate_uniform((4096, 16384), repeats=20, seed=5)
+    for row in rows:
+        assert row["windows_passing_the_gate"] == row["windows_the_kernel_accepts"] == row["windows"] == 20
+        assert row["reason_counts"] == {"accepted": 20}
+        assert row["between_variance_fraction_min"] >= diagnosis.m2_gate()
+        assert row["between_variance_fraction_mean"] == pytest.approx(0.75, abs=0.01)
+    assert diagnosis.simulate_uniform((4096, 16384), repeats=20, seed=5) == rows
+    with pytest.raises(diagnosis.DiagnosisError):
+        diagnosis.simulate_uniform((100,), repeats=1, seed=1)
 
 
 def test_two_populations_pass_the_gate_only_when_they_lie_far_apart() -> None:
@@ -205,6 +225,45 @@ def test_pass_gap_counts_distinct_passes_and_reads_the_interval_as_open() -> Non
         diagnosis.pass_gap(["2024-09-03 23:16"], after="2024-09-01T00:00:00Z", before="2024-09-02T00:00:00Z")
 
 
+REPLAY_TEXT = """# Invented replay figures
+
+| Item | Value |
+|---|---|
+| Source timestamp | `2024-09-03T23:16:00Z/2024-09-19T17:00:00Z` |
+
+| Key | What | Value | Raw | Lane | Source |
+|---|---|---|---|---|---|
+| `stage.onset_knot` | Onset keyframe: assumed stage 0.10 m at 10 Sep 18:15 ICT<br>second language | 0.10 m | `t = 1.760417 d, stage_m = 0.1` | SCN | timeline |
+| `stage.peak` | Modelled peak: assumed stage at 12 Sep 12:00 ICT (replay hour 84) | 3.50 m | `t = 3.5 d, stage_m = 3.5` | SCN | timeline |
+| `stage.other` | A row with no time | 1 m | `t = 1 d, stage_m = 1` | SCN | timeline |
+"""
+
+
+def test_a_replay_keyframe_is_read_from_the_replay_figures() -> None:
+    onset = diagnosis.replay_keyframe(REPLAY_TEXT, "stage.onset_knot")
+    peak = diagnosis.replay_keyframe(REPLAY_TEXT, "stage.peak")
+    assert onset == {"key": "stage.onset_knot", "in_thailand": "10 Sep 18:15 ICT", "utc": "2024-09-10T11:15:00Z", "replay_days": 1.760417}
+    assert peak == {"key": "stage.peak", "in_thailand": "12 Sep 12:00 ICT", "utc": "2024-09-12T05:00:00Z", "replay_days": 3.5}
+    # The two keyframes lie as far apart in stated time as on the replay's own clock; a moved time is noticed.
+    assert diagnosis.keyframes_agree(onset, peak)
+    assert not diagnosis.keyframes_agree(onset, {**peak, "utc": "2024-09-12T06:00:00Z"})
+    for key in ("stage.absent", "stage.other"):
+        with pytest.raises(diagnosis.DiagnosisError):
+            diagnosis.replay_keyframe(REPLAY_TEXT, key)
+    with pytest.raises(diagnosis.DiagnosisError, match="2 rows"):
+        diagnosis.replay_keyframe(REPLAY_TEXT + REPLAY_TEXT.splitlines()[-2] + "\n", "stage.peak")
+    with pytest.raises(diagnosis.DiagnosisError, match="source timestamp"):
+        diagnosis.replay_keyframe(REPLAY_TEXT.replace("| Source timestamp |", "| Source |"), "stage.peak")
+    with pytest.raises(diagnosis.DiagnosisError, match="source timestamp"):
+        diagnosis.replay_keyframe(REPLAY_TEXT.replace("/2024-09-19", "/2025-09-19"), "stage.peak")
+
+
+def test_the_replay_figures_of_the_repository_state_both_keyframes() -> None:
+    text = (ROOT / "docs" / "demo" / "replay_numbers.md").read_text(encoding="utf-8")
+    onset, peak = diagnosis.replay_keyframe(text, "stage.onset_knot"), diagnosis.replay_keyframe(text, "stage.peak")
+    assert onset["utc"] < peak["utc"] and diagnosis.keyframes_agree(onset, peak)
+
+
 def test_share_outside() -> None:
     assert diagnosis.share_outside(15.0, 3.0) == {"share_inside": 0.2, "share_outside": 0.8}
     for total, part in ((0.0, 0.0), (10.0, -1.0), (10.0, 11.0)):
@@ -251,6 +310,8 @@ def _result(value: float) -> diagnosis_run.FigureResult:
         plan_figure={"plan_value": 1.0, "measured": value, "reproduced": value == 1.0},
         open_points=diagnosis_run.open_points("A1-OP1"),
         not_computed=["FPPS"],
+        licence={"name": "an invented licence", "change_notice": "Changed by nobody: invented."},
+        attributions=["an invented credit"],
     )
 
 
@@ -283,6 +344,15 @@ def test_a_run_writes_figures_a_receipt_and_one_register_entry(checkout: Path) -
     assert figures["status"] == "diagnosis_figures" and figures["figures"] == {"value": 1.0}
     assert figures["measured_against"] == "vs a season envelope, not an event map"
     assert figures["does_not_show"] == ["Anything real."] and figures["open_points"][0]["id"] == "A1-OP1"
+    # A receipt can be shared alone: it carries the label, the licence block with its change notice and the credits.
+    assert receipt["measured_against"] == figures["measured_against"]
+    assert receipt["licence"] == figures["licence"] == {"name": "an invented licence", "change_notice": "Changed by nobody: invented."}
+    assert receipt["attributions"] == figures["attributions"] == ["an invented credit"]
+    # The code the run loaded is named by SHA-256, with the versions of the libraries it had loaded.
+    implementation = receipt["implementation"]
+    assert implementation["files_sha256"] == {"scripts/invented.py": receipt["script"]["sha256"]}
+    assert implementation["software"]["numpy"] == np.__version__ and implementation["software"]["python"].count(".") == 2
+    assert implementation["software"] == diagnosis_run.software_versions()
 
 
 def test_a_second_run_needs_replace_and_a_reason_and_names_the_first(checkout: Path, tmp_path_factory: pytest.TempPathFactory) -> None:
@@ -298,7 +368,11 @@ def test_a_second_run_needs_replace_and_a_reason_and_names_the_first(checkout: P
     for arguments in ({}, {"replace": True}, {"replace": True, "reason": "  "}, {"reason": "why"}):
         with pytest.raises(diagnosis_run.DiagnosisRunError, match="--replace and --reason"):
             diagnosis_run.run(SPEC, never, root=checkout, **arguments)
+    # Without the external data root the superseded files could not be kept, so the run is refused before it computes.
+    with pytest.raises(diagnosis_run.DiagnosisRunError, match="needs the external data root"):
+        diagnosis_run.run(SPEC, never, root=checkout, replace=True, reason="a corrected input")
     assert calls == [] and diagnosis_run.sha256_file(checkout / SPEC.receipt_path) == first_receipt  # Nothing was computed or written.
+    assert diagnosis_run.sha256_file(checkout / SPEC.figures_path) == first_figures
 
     external = tmp_path_factory.mktemp("external_data")
     diagnosis_run.run(SPEC, lambda: _result(2.0), root=checkout, external=external, replace=True, reason="a corrected input",
@@ -308,7 +382,8 @@ def test_a_second_run_needs_replace_and_a_reason_and_names_the_first(checkout: P
     assert receipt["supersedes"]["receipt_sha256"] == first_receipt and receipt["supersedes"]["figures_sha256"] == first_figures
     assert receipt["supersedes"]["reason"] == "a corrected input" and receipt["supersedes"]["figures_same"] is False
     assert receipt["run_history"]["earlier_runs"] == [{
-        "generated_at_utc": "2026-10-05T10:00:00Z", "receipt_sha256": first_receipt, "figures_sha256": first_figures,
+        "generated_at_utc": "2026-10-05T10:00:00Z", "run_started_at_utc": "2026-10-05T10:00:00Z",
+        "run_finished_at_utc": "2026-10-05T10:00:00Z", "receipt_sha256": first_receipt, "figures_sha256": first_figures,
         "run_kind": "first_run", "superseded_because": "a corrected input"}]
     # The superseded pair is kept outside Git, and the register entry follows the new receipt.
     kept = sorted(path.name for path in (external / diagnosis_run.SUPERSEDED_RELATIVE_PATH).rglob("*.json"))
@@ -317,10 +392,16 @@ def test_a_second_run_needs_replace_and_a_reason_and_names_the_first(checkout: P
     assert json.loads((checkout / SPEC.register_path).read_text(encoding="ascii"))["sha256"] == diagnosis_run.sha256_file(checkout / SPEC.receipt_path)
 
     # A third run carries both earlier runs, and says so when the figures did not move.
-    diagnosis_run.run(SPEC, lambda: _result(2.0), root=checkout, replace=True, reason="wording", now=lambda: "2026-10-05T12:00:00Z")
+    diagnosis_run.run(SPEC, lambda: _result(2.0), root=checkout, external=external, replace=True, reason="wording",
+                      now=lambda: "2026-10-05T12:00:00Z")
     third = json.loads((checkout / SPEC.receipt_path).read_text(encoding="ascii"))
     assert [run["generated_at_utc"] for run in third["run_history"]["earlier_runs"]] == ["2026-10-05T10:00:00Z", "2026-10-05T11:00:00Z"]
-    assert third["supersedes"]["figures_same"] is True and third["supersedes"]["copies_kept"] == []
+    assert third["supersedes"]["figures_same"] is True and len(third["supersedes"]["copies_kept"]) == 2
+    # Both superseded pairs are kept, each in its own folder.
+    kept = sorted(path.relative_to(external / diagnosis_run.SUPERSEDED_RELATIVE_PATH).as_posix()
+                  for path in (external / diagnosis_run.SUPERSEDED_RELATIVE_PATH).rglob("*.json"))
+    assert kept == ["20261005T100000Z_invented_figure/a1_diagnosis_invented_figure.json", "20261005T100000Z_invented_figure/invented_figure.json",
+                    "20261005T110000Z_invented_figure/a1_diagnosis_invented_figure.json", "20261005T110000Z_invented_figure/invented_figure.json"]
 
 
 def test_replace_with_nothing_to_replace_is_refused(checkout: Path) -> None:
@@ -354,6 +435,26 @@ def test_verify_computes_again_and_writes_nothing(checkout: Path) -> None:
     assert diagnosis_run.verify(SPEC, lambda: _result(1.0), root=checkout)["figures_file_is_the_one_the_receipt_binds"] is False
 
 
+def test_verify_notices_code_that_is_not_the_code_the_receipt_names(checkout: Path) -> None:
+    diagnosis_run.run(SPEC, lambda: _result(1.0), root=checkout, now=lambda: "2026-10-05T10:00:00Z")
+    same = diagnosis_run.verify(SPEC, lambda: _result(1.0), root=checkout)
+    assert same["verified"] and same["script_is_the_one_the_receipt_names"] and same["code_files_are_the_ones_the_receipt_names"]
+    assert same["software"]["same"] is True and same["software"]["recorded_in_the_receipt"] == same["software"]["loaded_now"]
+    # The script changes after the run: the figures are the same, and the receipt no longer traces them.
+    (checkout / "scripts" / "invented.py").write_text("# invented, and edited after the run\n", encoding="ascii")
+    changed = diagnosis_run.verify(SPEC, lambda: _result(1.0), root=checkout)
+    assert changed["figures_same"] is True and changed["verified"] is False
+    assert changed["script_is_the_one_the_receipt_names"] is False and changed["code_files_are_the_ones_the_receipt_names"] is False
+    # Another library version is reported and does not by itself fail the verification.
+    receipt_path = checkout / SPEC.receipt_path
+    receipt = json.loads(receipt_path.read_text(encoding="ascii"))
+    assert diagnosis_run.code_checks(SPEC, {**receipt, "implementation": {}}, checkout) == {
+        "script_is_the_one_the_receipt_names": False, "code_files_are_the_ones_the_receipt_names": False}
+    receipt["implementation"]["software"]["numpy"] = "0.0.0"
+    receipt_path.write_bytes(diagnosis_run.encode(receipt))
+    assert diagnosis_run.verify(SPEC, lambda: _result(1.0), root=checkout)["software"]["same"] is False
+
+
 def test_the_command_line_runs_refuses_and_verifies(checkout: Path, capsys: pytest.CaptureFixture[str]) -> None:
     def make(root: Path, external: Path | None):
         return lambda: _result(1.0)
@@ -364,7 +465,18 @@ def test_the_command_line_runs_refuses_and_verifies(checkout: Path, capsys: pyte
     assert "--replace and --reason" in capsys.readouterr().err
     assert diagnosis_run.command_line(SPEC, make, argv=["--verify"], **arguments) == 0
     assert diagnosis_run.command_line(SPEC, lambda root, external: (lambda: _result(3.0)), argv=["--verify"], **arguments) == 1
-    assert diagnosis_run.command_line(SPEC, make, argv=["--replace", "--reason", "again"], **arguments) == 0
+    # A second run needs the external data root as well, even for a figure that reads no external data.
+    environment = os.environ.pop(diagnosis_run.EXTERNAL_DATA_VARIABLE, None)
+    try:
+        assert diagnosis_run.command_line(SPEC, make, argv=["--replace", "--reason", "again"], **arguments) == 2
+        assert "needs the external data root" in capsys.readouterr().err
+    finally:
+        if environment is not None:
+            os.environ[diagnosis_run.EXTERNAL_DATA_VARIABLE] = environment
+    external = checkout / "external_data"
+    external.mkdir()
+    assert diagnosis_run.command_line(SPEC, make, argv=["--replace", "--reason", "again", "--external-data", str(external)], **arguments) == 0
+    assert len(list((external / diagnosis_run.SUPERSEDED_RELATIVE_PATH).rglob("*.json"))) == 2
     with pytest.raises(SystemExit):
         diagnosis_run.command_line(SPEC, make, argv=[], root=checkout, description="invented", needs_external_data=True)
 
@@ -386,8 +498,14 @@ def test_paths_are_named_without_a_machine_path(tmp_path: Path) -> None:
 
 
 def test_open_points_are_stated_as_open() -> None:
-    assert sorted(diagnosis_run.OPEN_POINTS) == [f"A1-OP{number}" for number in range(1, 10)]
+    assert sorted(diagnosis_run.OPEN_POINTS, key=lambda identifier: int(identifier.split("OP")[1])) == [f"A1-OP{number}" for number in range(1, 12)]
     for identifier, point in diagnosis_run.OPEN_POINTS.items():
         assert set(point) == {"point", "signed_files_say", "what_was_done"} and all(value.strip() for value in point.values()), identifier
     assert diagnosis_run.open_points("A1-OP2")[0]["id"] == "A1-OP2"
+    # What the exploratory run had already computed is disclosed where the figure is described.
+    assert "first recorded value" in diagnosis_run.OPEN_POINTS["A1-OP1"]["what_was_done"]
+    assert "not the first time the figure was seen" in diagnosis_run.OPEN_POINTS["A1-OP1"]["what_was_done"]
+    assert "seven features" in diagnosis_run.OPEN_POINTS["A1-OP2"]["what_was_done"] and "no window is named" in diagnosis_run.OPEN_POINTS["A1-OP2"]["what_was_done"]
+    assert "Neither set is named the domain of record" in diagnosis_run.OPEN_POINTS["A1-OP10"]["what_was_done"]
+    assert "installs no Git hook" in diagnosis_run.OPEN_POINTS["A1-OP11"]["what_was_done"]
     assert diagnosis_run.ENVELOPE_LABEL == "vs a season envelope, not an event map"  # The label of plan row A1, word for word.

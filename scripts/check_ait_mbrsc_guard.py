@@ -1,19 +1,22 @@
 """Run the AIT/MBRSC guard of planning protocol v1a (guardrail GR9) on this checkout.
 
 The guard fails when a committed script names the AIT or MBRSC flood product, or its folder in the external
-data workspace, without a recorded grant, and when a file of the diagnosis (plan task A1) puts a figure
-beside either name. It reads code and text only: no product file is opened.
+data workspace, without a recorded grant; when a legacy file of the baseline gains a line that names one, or
+(under ``scripts/`` and ``src/``) a function or class; and when a file of the diagnosis (plan task A1) puts a
+figure beside either name. It reads code and text only: no product file is opened.
 
 Use it before a commit::
 
     python scripts/check_ait_mbrsc_guard.py
 
 It returns 0 when nothing is refused and 1 otherwise. The same checks run in the test suite
-(``tests/test_ait_mbrsc_guard.py``). To make it a Git hook, call it from ``.git/hooks/pre-commit``; the
-repository installs no hook by itself.
+(``tests/test_ait_mbrsc_guard.py``), which is how they run in CI. To make it a Git hook, call it from
+``.git/hooks/pre-commit``; the repository installs no hook by itself, so on a clone without that hook the
+check runs only when the suite or this command is run (open point A1-OP11).
 
-``--write-baseline`` writes the list of legacy files and refuses to replace an existing one: the baseline was
-written once, when the guard was introduced, and a change to it is a decision for the owners.
+``--write-baseline`` writes the list of legacy files and refuses to replace an existing one: a change to the
+baseline is a decision for the owners. The baseline in force is version 2, written on 5 October 2026 after
+the review of plan task A1 widened what the guard reads; version 1 of 4 October 2026 is in the Git history.
 """
 
 from __future__ import annotations

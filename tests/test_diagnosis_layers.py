@@ -20,6 +20,7 @@ from shapely.geometry import box  # noqa: E402
 from floodguard import diagnosis_layers as layers  # noqa: E402
 from floodguard import diagnosis_run, flood_inputs  # noqa: E402
 
+ROOT = Path(__file__).resolve().parents[1]
 SOURCE = layers.Grid(left=583680.0, top=2273280.0, cell_m=10.0, width=3072, height=4096)
 
 
@@ -198,3 +199,140 @@ def test_the_reporting_units_and_the_boundary_file_come_from_the_signed_protocol
     parameters = layers.comparison_parameters()
     assert parameters["cell_m"] == 20.0 and parameters["footprint_layer_read"] is False
     assert json.dumps(parameters)  # Plain JSON values.
+
+
+def test_the_second_set_of_cells_keeps_the_cells_with_a_slope_under_the_limit() -> None:
+    slope = np.array([[0.0, 4.99, 5.0], [12.0, np.nan, 1.0]])
+    assert layers.flat_cells(slope).tolist() == [[True, True, False], [False, False, True]], "a cell with no slope value is not flat"
+    assert layers.flat_cells(slope, 13.0).tolist() == [[True, True, True], [True, False, True]]
+    assert layers.FLAT_SLOPE_DEGREES == 5.0 and layers.CELL_SETS == ("all_cells", "slope_under_5_degrees")
+    grid = layers.Grid(0.0, 40.0, 20.0, 3, 2)
+    base = np.array([[True, True, True], [True, True, False]])
+    water = {layers.WATER_JRC: np.array([[True, False, False], [False, False, False]]), layers.WATER_NONE: np.zeros((2, 3), dtype=bool)}
+    domain = layers.ComparisonDomain(grid, np.zeros((2, 3), dtype=bool), base, water, {}, {}, np.zeros((2, 3)), slope)
+    assert domain.cells(layers.WATER_NONE).tolist() == base.tolist()
+    assert domain.cells(layers.WATER_JRC).tolist() == [[False, True, True], [True, True, False]]
+    assert domain.cells(layers.WATER_JRC, layers.CELLS_FLAT).tolist() == [[False, True, False], [False, False, False]]
+    assert domain.cells(layers.WATER_NONE, layers.CELLS_FLAT).tolist() == [[True, True, False], [False, False, False]]
+    with pytest.raises(layers.DiagnosisLayerError, match="unknown set of cells"):
+        domain.cells(layers.WATER_NONE, "hills")
+    with pytest.raises(layers.DiagnosisLayerError, match="no slope"):
+        layers.ComparisonDomain(grid, base, base, water, {}, {}).cells(layers.WATER_NONE, layers.CELLS_FLAT)
+    parameters = layers.comparison_parameters()
+    assert parameters["sets_of_cells"] == ["all_cells", "slope_under_5_degrees"] and parameters["flat_slope_limit_degrees"] == 5.0
+    assert parameters["footprint_layer_read"] is False
+
+
+# --- The two rank-statistic scripts, on invented layers ---------------------------------------------------------
+
+
+def _script(name: str):
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(f"diagnostics_{name}_invented", ROOT / "scripts" / "diagnostics" / f"{name}.py")
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(module)
+    return module
+
+
+@pytest.fixture()
+def invented_layers(monkeypatch: pytest.MonkeyPatch):
+    """Replace the readers of the layers with invented arrays: a wet, flat south and a dry, hilly north."""
+
+    rng = np.random.default_rng(4)
+    shape = (80, 60)
+    grid = layers.Grid(0.0, 1600.0, 20.0, shape[1], shape[0])
+    rows = np.arange(shape[0])[:, None] * np.ones(shape[1])[None, :]
+    inside = rows >= 60                                     # The envelope: the southern quarter.
+    base = np.ones(shape, dtype=bool)
+    base[:, :5] = False                                     # Outside the frame.
+    elevation = 400.0 + np.where(rows < 30, (30 - rows) * 8.0, 0.0) + rng.normal(0.0, 0.2, shape)
+    from floodguard import abstention_diagnosis
+
+    slope = abstention_diagnosis.slope_degrees(elevation, 20.0)
+    water = {layers.WATER_JRC: (rows >= 78) & base, layers.WATER_WORLDCOVER: (rows >= 79) & base, layers.WATER_NONE: np.zeros(shape, dtype=bool)}
+    record = {"grid": grid.record(), "by_permanent_water_reading": {}}
+    inputs = {"dem_glo30_n20_e099": {"path": "<external_data_workspace>/dem.tif", "sha256": "1" * 64, "bytes": 1}}
+    domain = layers.ComparisonDomain(grid, inside, base, water, record, inputs, elevation, slope)
+    grant = {"licence": {"name": "CC BY-SA 4.0", "url": "https://creativecommons.org/licenses/by-sa/4.0/"}, "share_alike": "invented",
+             "record_path": "docs/invented.json", "record_sha256": "2" * 64}
+    envelope = layers.Envelope(frame=None, geometry=None, repair_count=2, inputs={}, rights={"grant": grant}, credit="an invented credit",
+                               licence_name="CC BY-SA 4.0", standard_sentence="invented", layer="invented", source_timestamp="invented")
+    # Before: noise around one level. After: the envelope is darker in VH, by 3 dB.
+    before = 10 ** (rng.normal(-15.0, 1.0, shape) / 10)
+    after = 10 ** ((rng.normal(-15.0, 1.0, shape) - np.where(inside, 3.0, 0.0)) / 10)
+
+    def registered_receipt(root: Path, relative: Path):
+        geocoding = next(name for name, path in layers.RADAR_RECEIPTS.items() if path == relative)
+        return {"parameters": {"geocoding": geocoding}, "run_role": f"invented {geocoding}"}, {"path": relative.as_posix(), "sha256": "3" * 64}
+
+    monkeypatch.setattr(layers, "load_envelope", lambda root, external: envelope)
+    monkeypatch.setattr(layers, "comparison_domain", lambda root, external, loaded: domain)
+    monkeypatch.setattr(layers, "registered_receipt", registered_receipt)
+    monkeypatch.setattr(layers, "receipt_grid", lambda receipt: grid)
+    monkeypatch.setattr(layers, "source_grid", lambda path: grid)
+    monkeypatch.setattr(layers, "bound_file", lambda receipt, name, external: (Path(name), {"path": name, "sha256": "4" * 64, "bytes": 1}))
+    monkeypatch.setattr(layers, "read_block_mean", lambda path, target, band: before if "pre" in path.name else after)
+    return domain
+
+
+def test_the_darkening_script_gives_every_reading_on_invented_layers(invented_layers: layers.ComparisonDomain, tmp_path: Path) -> None:
+    module = _script("darkening_auc_vs_envelope")
+    result = module.make_compute(ROOT, tmp_path)()
+    figures = result.figures
+    readings, by_window = figures["readings"], figures["readings_by_smoothing_window"]
+    # Two geocodings, three ways of leaving out water and two sets of cells at the 5 by 5 window; six windows on two sets.
+    assert len(readings) == 12 and {row["window_cells"] for row in readings} == {5}
+    assert {(row["geocoding"], row["permanent_water"], row["cells"]) for row in readings} == {
+        (geocoding, water, cells) for geocoding in layers.RADAR_RECEIPTS for water in layers.WATER_READINGS for cells in layers.CELL_SETS}
+    assert len(by_window) == 24 and figures["windows_cells"] == [1, 3, 5, 9, 15, 25] == sorted({row["window_cells"] for row in by_window})
+    assert {row["permanent_water"] for row in by_window} == {layers.WATER_JRC}
+    for row in readings + by_window:
+        assert row["auc"] > 0.9, "the invented envelope is 3 dB darker after: darkening separates it"
+        assert row["auc_of_brightening"] == pytest.approx(1 - row["auc"], abs=1e-6)
+        assert row["cells_inside_the_layer"] > 0 and row["cells_outside_the_layer"] > 0
+    # The 5 by 5 rows of the window table repeat the readings above.
+    for row in by_window:
+        if row["window_cells"] == 5:
+            assert row in readings
+    # The flat set leaves the hilly north out, so it holds fewer cells outside the envelope.
+    everything = next(row for row in readings if row["cells"] == layers.CELLS_ALL and row["permanent_water"] == layers.WATER_NONE)
+    flat = next(row for row in readings if row["cells"] == layers.CELLS_FLAT and row["permanent_water"] == layers.WATER_NONE)
+    assert flat["cells_outside_the_layer"] < everything["cells_outside_the_layer"] and flat["geocoding"] == everything["geocoding"]
+    assert figures["reading_that_follows_the_exploratory_definition"] == {
+        "geocoding": "gcp_polynomial", "permanent_water": layers.WATER_JRC, "cells": layers.CELLS_ALL, "window_cells": 5,
+        "auc": next(row["auc"] for row in readings if row["geocoding"] == "gcp_polynomial" and row["permanent_water"] == layers.WATER_JRC
+                    and row["cells"] == layers.CELLS_ALL)}
+    assert figures["every_reading_is_below_one_half"] is False and result.plan_figure["reproduced"] is False
+    assert set(figures["the_value_falls_at_every_step_as_the_window_grows"]) == set(layers.RADAR_RECEIPTS)
+    assert [point["id"] for point in result.open_points] == ["A1-OP2", "A1-OP3", "A1-OP4", "A1-OP5", "A1-OP6", "A1-OP10"]
+    assert result.parameters["boxcar_windows_cells"] == [1, 3, 5, 9, 15, 25] and result.parameters["boxcar_cells"] == 5
+    assert "dem_glo30_n20_e099" in result.inputs and layers.ATTRIBUTION_DEM in result.attributions
+    assert result.licence["change_notice"].startswith("Changed by FloodGuard: clipped to AOI-01")
+    # The peak is not stated as a fact: the replay's keyframe is named as what it is.
+    text = " ".join(list(result.assumptions) + list(result.limits))
+    assert "after the flood peak" not in text and "keyframe" in text and "illustrative" in text
+    diagnosis_run.encode({"figures": dict(figures), "inputs": dict(result.inputs), "parameters": dict(result.parameters)})
+
+
+def test_the_terrain_script_gives_every_reading_on_invented_layers(invented_layers: layers.ComparisonDomain, tmp_path: Path) -> None:
+    module = _script("terrain_auc_vs_envelope")
+    result = module.make_compute(ROOT, tmp_path)()
+    readings = result.figures["readings"]
+    assert len(readings) == 12
+    assert {(row["feature"], row["permanent_water"], row["cells"]) for row in readings} == {
+        (feature, water, cells) for feature in ("low_elevation", "low_slope") for water in layers.WATER_READINGS for cells in layers.CELL_SETS}
+    by_key = {(row["feature"], row["permanent_water"], row["cells"]): row for row in readings}
+    # On all cells both features tell the hilly north from the flat south, where the envelope lies. On the flat cells
+    # alone that is gone: the plain is level, so neither feature separates the envelope there.
+    for feature in ("low_elevation", "low_slope"):
+        assert by_key[(feature, layers.WATER_NONE, layers.CELLS_ALL)]["auc"] > 0.65
+        assert abs(by_key[(feature, layers.WATER_NONE, layers.CELLS_FLAT)]["auc"] - 0.5) < 0.05
+    assert set(result.figures["smallest_and_largest_auc_by_feature"]) == set(layers.CELL_SETS)
+    assert [point["id"] for point in result.open_points] == ["A1-OP1", "A1-OP4", "A1-OP6", "A1-OP10"]
+    note = result.plan_figure["note"]
+    assert "first computation from cleared files and the first recorded value" in note and "not the first time the figure was seen" in note
+    assert result.plan_figure["plan_value"] is None and result.plan_figure["reproduced"] is None
+    assert "radar" not in result.inputs and "HAND (height above the nearest drainage)" in result.not_computed
+    diagnosis_run.encode({"figures": dict(result.figures), "inputs": dict(result.inputs), "parameters": dict(result.parameters)})

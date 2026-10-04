@@ -1129,14 +1129,22 @@ def test_owner_choices_sheet_ticks_no_box_the_owners_did_not_answer() -> None:
 # This list is that register until the owners agree one rule for every later run: a file in outputs/planning_v1
 # that is neither listed in v1b nor registered here fails the test below, and so does a registered file whose
 # bytes change. A run that supersedes a registered receipt changes its SHA-256 here in the same commit.
-RUNS_AFTER_V1B_CAME_INTO_FORCE = {
-    "outputs/planning_v1/e6_critical_links_se1_vehicle.json":
-        "a7a9131ea79ce55144122f516948d03a2ce93218f8e3b2a353843024662db3e5",
-    "outputs/planning_v1/age_exposure_mae_sai_v1.json":
-        "68d4935ddf9f905dd4512c516924049be5303bae5a501a27bcff060106da16cb",
-    "outputs/planning_v1/age_exposure_mae_sai_v1_receipt.json":
-        "00e0a67123b5294bc6e01f7645176bcb828ff90de7e0ac69991db42b2d80b147",
-}
+# The register itself is one small JSON file per run under outputs/planning_v1/run_register/, so that work on separate
+# branches does not collide in this file: {"path": "<repo path of the receipt or output>", "sha256": "<its SHA-256>"}.
+RUN_REGISTER_DIR = ROOT / "outputs" / "planning_v1" / "run_register"
+
+
+def _load_run_register() -> dict[str, str]:
+    register: dict[str, str] = {}
+    for entry_path in sorted(RUN_REGISTER_DIR.glob("*.json")):
+        entry = json.loads(entry_path.read_text(encoding="ascii"))
+        assert set(entry) >= {"path", "sha256"}, f"{entry_path.name} needs a path and a sha256"
+        assert entry["path"] not in register, f"{entry['path']} is registered twice"
+        register[entry["path"]] = entry["sha256"]
+    return register
+
+
+RUNS_AFTER_V1B_CAME_INTO_FORCE = _load_run_register()
 
 
 def _protocol_hashes_named(receipt: dict[str, Any]) -> dict[str, Any]:

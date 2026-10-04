@@ -1,0 +1,1004 @@
+{
+  "accepted_observation": false,
+  "action_class_computed": false,
+  "assumptions": [
+    "GEOID S1GRD tiles are linear sigma0 at 10 m with about 4.4 equivalent looks.",
+    "The CEMS-derived label was drawn from the same Sentinel-1 pass as the post-event input.",
+    "Mapped background is not confirmed dry land.",
+    "Permanent water in the label is modelled; it is a non-flood class in the primary comparison and left out of the secondary one.",
+    "No DEM, slope, HAND or land-cover layer for these tiles is on disk, so neither method uses one.",
+    "Pre-event and post-event passes are almost four months apart and come from different orbit directions."
+  ],
+  "can_feed_decision_layer": false,
+  "confidence": "low: a research benchmark on one foreign event with a spatial split by tile; every score is agreement with a same-pass CEMS map, not independent accuracy",
+  "declined_tiles": {
+    "development": {
+      "declined_tiles": {
+        "evaluable_cells": 4471026,
+        "false_alarms_counted_against_the_frozen_m1_v2": 0,
+        "false_alarms_of_the_methods_that_answered_there": {
+          "m1_literal": 1314882,
+          "m1_v2_otsu_comparator": 998293
+        },
+        "reference_flood_cells": 6737,
+        "share_of_evaluable_cells": 0.48611,
+        "share_of_reference_flood": 0.016266
+      },
+      "meaning": "On a declined tile the strict reading counts mapped flood as missed and counts no false alarm, exactly as for an answer of 'no flood' everywhere. The scores on the answered tiles compare the threshold rules where both gave an answer.",
+      "pooled_scores_on_the_tiles_where_the_frozen_m1_v2_answered": {
+        "m1_literal": {
+          "iou_covered": 0.246649,
+          "iou_strict": 0.246562,
+          "precision": 0.260441,
+          "recall_strict": 0.82228
+        },
+        "m1_v2_kittler_illingworth": {
+          "iou_covered": 0.446255,
+          "iou_strict": 0.445889,
+          "precision": 0.592011,
+          "recall_strict": 0.643687
+        },
+        "m1_v2_otsu_comparator": {
+          "iou_covered": 0.3759,
+          "iou_strict": 0.375676,
+          "precision": 0.430567,
+          "recall_strict": 0.746633
+        }
+      },
+      "split": "development",
+      "tiles": 15,
+      "tiles_answered": [
+        "EMSR712-3-20",
+        "EMSR712-3-21",
+        "EMSR712-3-22",
+        "EMSR712-3-31",
+        "EMSR712-3-32",
+        "EMSR712-3-33"
+      ],
+      "tiles_declined": [
+        "EMSR712-3-9",
+        "EMSR712-3-10",
+        "EMSR712-3-12",
+        "EMSR712-3-13",
+        "EMSR712-3-23",
+        "EMSR712-3-24",
+        "EMSR712-3-25",
+        "EMSR712-3-26",
+        "EMSR712-3-30"
+      ]
+    },
+    "test": {
+      "declined_tiles": {
+        "evaluable_cells": 5832234,
+        "false_alarms_counted_against_the_frozen_m1_v2": 0,
+        "false_alarms_of_the_methods_that_answered_there": {
+          "m1_literal": 1755423,
+          "m1_v2_otsu_comparator": 1095692
+        },
+        "reference_flood_cells": 120771,
+        "share_of_evaluable_cells": 0.678275,
+        "share_of_reference_flood": 0.220148
+      },
+      "meaning": "On a declined tile the strict reading counts mapped flood as missed and counts no false alarm, exactly as for an answer of 'no flood' everywhere. The scores on the answered tiles compare the threshold rules where both gave an answer.",
+      "pooled_scores_on_the_tiles_where_the_frozen_m1_v2_answered": {
+        "m1_literal": {
+          "iou_covered": 0.349962,
+          "iou_strict": 0.349793,
+          "precision": 0.376529,
+          "recall_strict": 0.831256
+        },
+        "m1_v2_kittler_illingworth": {
+          "iou_covered": 0.506131,
+          "iou_strict": 0.505656,
+          "precision": 0.731186,
+          "recall_strict": 0.621123
+        },
+        "m1_v2_otsu_comparator": {
+          "iou_covered": 0.459696,
+          "iou_strict": 0.459367,
+          "precision": 0.547103,
+          "recall_strict": 0.741237
+        }
+      },
+      "split": "test",
+      "tiles": 14,
+      "tiles_answered": [
+        "EMSR712-3-42",
+        "EMSR712-3-46",
+        "EMSR712-3-47",
+        "EMSR712-3-49"
+      ],
+      "tiles_declined": [
+        "EMSR712-3-35",
+        "EMSR712-3-36",
+        "EMSR712-3-37",
+        "EMSR712-3-38",
+        "EMSR712-3-39",
+        "EMSR712-3-40",
+        "EMSR712-3-41",
+        "EMSR712-3-45",
+        "EMSR712-3-48",
+        "EMSR712-3-50"
+      ]
+    }
+  },
+  "derived_from": {
+    "code_sha256": {
+      "src/floodguard/geoid_m1_benchmark.py": "26d98f5cbdbcdcb1eeafe0b83a6e44b0ff4c9c7fb245078469952d95829e409f",
+      "src/floodguard/sar_change_v2.py": "3127b370303b08902dc545442f7aa5a2aa54d283b471c0d65f5899c9c19e1134"
+    },
+    "frozen_config_sha256": "2bfcb0c6ebf4b79402afa63c56209f2c5cda26491f08883d67908195b6c64a68",
+    "planning_protocol_v1a_sha256": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+    "summary": "outputs/geoid_m1_benchmark_v2_summary.json",
+    "summary_generated_at_utc": "2026-10-02T16:35:47Z",
+    "summary_sha256": "f3ad859128bff30610a77af21f720b57dba6514f3759789b32f2287f27ffefae",
+    "tuning_log": "docs/proposal_execution/automated_track/geoid_m1_v2_tuning_log.jsonl",
+    "tuning_log_sha256": "8a682abd142c29707f3c78f7e25cb92810e931a3585383fe0cf26ceeb0a73813"
+  },
+  "dice": {
+    "m1_literal": {
+      "development": {
+        "primary": {
+          "dice_covered": 0.225515,
+          "dice_strict": 0.225478
+        },
+        "secondary": {
+          "dice_covered": 0.230351,
+          "dice_strict": 0.230312
+        }
+      },
+      "test": {
+        "primary": {
+          "dice_covered": 0.274604,
+          "dice_strict": 0.274556
+        },
+        "secondary": {
+          "dice_covered": 0.279768,
+          "dice_strict": 0.279718
+        }
+      }
+    },
+    "m1_v2_kittler_illingworth": {
+      "development": {
+        "primary": {
+          "dice_covered": 0.617118,
+          "dice_strict": 0.611921
+        },
+        "secondary": {
+          "dice_covered": 0.619321,
+          "dice_strict": 0.614087
+        }
+      },
+      "test": {
+        "primary": {
+          "dice_covered": 0.672094,
+          "dice_strict": 0.582731
+        },
+        "secondary": {
+          "dice_covered": 0.673991,
+          "dice_strict": 0.584156
+        }
+      }
+    },
+    "m1_v2_otsu_comparator": {
+      "development": {
+        "primary": {
+          "dice_covered": 0.291582,
+          "dice_strict": 0.291513
+        },
+        "secondary": {
+          "dice_covered": 0.296988,
+          "dice_strict": 0.296916
+        }
+      },
+      "test": {
+        "primary": {
+          "dice_covered": 0.355207,
+          "dice_strict": 0.355118
+        },
+        "secondary": {
+          "dice_covered": 0.360502,
+          "dice_strict": 0.36041
+        }
+      }
+    }
+  },
+  "evidence_tier": "research_benchmark_diagnostic",
+  "fpps_computed": false,
+  "human_reviewed_by_floodguard": false,
+  "m1_literal": {
+    "flagged_share_on_tiles_without_reference_flood": {
+      "per_tile_highest": 0.435779,
+      "per_tile_lowest": 0.253879,
+      "pooled_by_split": {
+        "development": 0.30914,
+        "test": 0.26812
+      }
+    },
+    "proposal_text": "Estimate the Otsu threshold on valid delta-VH pixels; strong negative change becomes candidate temporary water.",
+    "reading": "The 'below zero' clause is the agent's addition. Where the threshold is above zero the Otsu threshold plays no part and the rule is 'delta-VH below zero'.",
+    "rule_as_implemented": "delta-VH below the Otsu threshold and below zero",
+    "tiles": 29,
+    "tiles_with_threshold_above_zero": 23,
+    "tiles_with_threshold_at_or_below_zero": [
+      "EMSR712-3-22",
+      "EMSR712-3-31",
+      "EMSR712-3-32",
+      "EMSR712-3-33",
+      "EMSR712-3-42",
+      "EMSR712-3-49"
+    ],
+    "tiles_without_reference_flood": [
+      {
+        "flagged_share_of_evaluable_cells": 0.263518,
+        "split": "development",
+        "tile": "EMSR712-3-10"
+      },
+      {
+        "flagged_share_of_evaluable_cells": 0.322602,
+        "split": "development",
+        "tile": "EMSR712-3-12"
+      },
+      {
+        "flagged_share_of_evaluable_cells": 0.296574,
+        "split": "development",
+        "tile": "EMSR712-3-13"
+      },
+      {
+        "flagged_share_of_evaluable_cells": 0.311565,
+        "split": "development",
+        "tile": "EMSR712-3-23"
+      },
+      {
+        "flagged_share_of_evaluable_cells": 0.322848,
+        "split": "development",
+        "tile": "EMSR712-3-26"
+      },
+      {
+        "flagged_share_of_evaluable_cells": 0.435779,
+        "split": "development",
+        "tile": "EMSR712-3-30"
+      },
+      {
+        "flagged_share_of_evaluable_cells": 0.253879,
+        "split": "test",
+        "tile": "EMSR712-3-35"
+      },
+      {
+        "flagged_share_of_evaluable_cells": 0.298603,
+        "split": "test",
+        "tile": "EMSR712-3-45"
+      }
+    ]
+  },
+  "mae_sai_run": false,
+  "official_warning": false,
+  "otsu_comparator_on_development_tiles": {
+    "best_otsu_run": {
+      "kittler_illingworth_iou_strict": 0.429075,
+      "kittler_illingworth_tiles_declined": 11,
+      "otsu_coverage": 0.343544,
+      "otsu_iou_strict": 0.47523,
+      "otsu_tiles_declined": 10,
+      "parameters": {
+        "block_pixels": 256,
+        "channel": "mean_vv_vh",
+        "direction": "darkening",
+        "threshold_scope": "per_tile"
+      },
+      "run_index": 29
+    },
+    "frozen_kittler_illingworth_iou_strict": 0.44084,
+    "frozen_run_index": 1,
+    "meaning": "The comparator in the result tables is Otsu at the configuration selected for Kittler-Illingworth. It is not the best Otsu configuration of the declared grid. No Otsu variant other than that one was scored on the test tiles.",
+    "otsu_at_the_frozen_run": {
+      "kittler_illingworth_iou_strict": 0.44084,
+      "kittler_illingworth_tiles_declined": 9,
+      "otsu_coverage": 0.998209,
+      "otsu_iou_strict": 0.170626,
+      "otsu_tiles_declined": 0,
+      "parameters": {
+        "block_pixels": 64,
+        "channel": "vh",
+        "direction": "darkening",
+        "threshold_scope": "per_tile"
+      },
+      "run_index": 1
+    },
+    "otsu_runs_above_the_frozen_kittler_illingworth_score": [
+      29
+    ],
+    "rows": [
+      {
+        "kittler_illingworth_iou_strict": 0.44084,
+        "kittler_illingworth_tiles_declined": 9,
+        "otsu_coverage": 0.998209,
+        "otsu_iou_strict": 0.170626,
+        "otsu_tiles_declined": 0,
+        "parameters": {
+          "block_pixels": 64,
+          "channel": "vh",
+          "direction": "darkening",
+          "threshold_scope": "per_tile"
+        },
+        "run_index": 1
+      },
+      {
+        "kittler_illingworth_iou_strict": 0.0,
+        "kittler_illingworth_tiles_declined": 15,
+        "otsu_coverage": 0.998209,
+        "otsu_iou_strict": 0.239387,
+        "otsu_tiles_declined": 0,
+        "parameters": {
+          "block_pixels": 64,
+          "channel": "vh",
+          "direction": "darkening",
+          "threshold_scope": "pooled_run"
+        },
+        "run_index": 2
+      },
+      {
+        "kittler_illingworth_iou_strict": 0.40902,
+        "kittler_illingworth_tiles_declined": 11,
+        "otsu_coverage": 0.811474,
+        "otsu_iou_strict": 0.195019,
+        "otsu_tiles_declined": 5,
+        "parameters": {
+          "block_pixels": 128,
+          "channel": "vh",
+          "direction": "darkening",
+          "threshold_scope": "per_tile"
+        },
+        "run_index": 3
+      },
+      {
+        "kittler_illingworth_iou_strict": 0.368684,
+        "kittler_illingworth_tiles_declined": 0,
+        "otsu_coverage": 0.998209,
+        "otsu_iou_strict": 0.268429,
+        "otsu_tiles_declined": 0,
+        "parameters": {
+          "block_pixels": 128,
+          "channel": "vh",
+          "direction": "darkening",
+          "threshold_scope": "pooled_run"
+        },
+        "run_index": 4
+      },
+      {
+        "kittler_illingworth_iou_strict": 0.417011,
+        "kittler_illingworth_tiles_declined": 12,
+        "otsu_coverage": 0.414283,
+        "otsu_iou_strict": 0.373876,
+        "otsu_tiles_declined": 9,
+        "parameters": {
+          "block_pixels": 256,
+          "channel": "vh",
+          "direction": "darkening",
+          "threshold_scope": "per_tile"
+        },
+        "run_index": 5
+      },
+      {
+        "kittler_illingworth_iou_strict": 0.361238,
+        "kittler_illingworth_tiles_declined": 0,
+        "otsu_coverage": 0.998209,
+        "otsu_iou_strict": 0.285126,
+        "otsu_tiles_declined": 0,
+        "parameters": {
+          "block_pixels": 256,
+          "channel": "vh",
+          "direction": "darkening",
+          "threshold_scope": "pooled_run"
+        },
+        "run_index": 6
+      },
+      {
+        "kittler_illingworth_iou_strict": 0.433871,
+        "kittler_illingworth_tiles_declined": 9,
+        "otsu_coverage": 0.998209,
+        "otsu_iou_strict": 0.092175,
+        "otsu_tiles_declined": 0,
+        "parameters": {
+          "block_pixels": 64,
+          "channel": "vh",
+          "direction": "bidirectional",
+          "threshold_scope": "per_tile"
+        },
+        "run_index": 7
+      },
+      {
+        "kittler_illingworth_iou_strict": 0.0,
+        "kittler_illingworth_tiles_declined": 15,
+        "otsu_coverage": 0.998209,
+        "otsu_iou_strict": 0.110665,
+        "otsu_tiles_declined": 0,
+        "parameters": {
+          "block_pixels": 64,
+          "channel": "vh",
+          "direction": "bidirectional",
+          "threshold_scope": "pooled_run"
+        },
+        "run_index": 8
+      },
+      {
+        "kittler_illingworth_iou_strict": 0.406516,
+        "kittler_illingworth_tiles_declined": 11,
+        "otsu_coverage": 0.956144,
+        "otsu_iou_strict": 0.100971,
+        "otsu_tiles_declined": 1,
+        "parameters": {
+          "block_pixels": 128,
+          "channel": "vh",
+          "direction": "bidirectional",
+          "threshold_scope": "per_tile"
+        },
+        "run_index": 9
+      },
+      {
+        "kittler_illingworth_iou_strict": 0.368684,
+        "kittler_illingworth_tiles_declined": 0,
+        "otsu_coverage": 0.998209,
+        "otsu_iou_strict": 0.10274,
+        "otsu_tiles_declined": 0,
+        "parameters": {
+          "block_pixels": 128,
+          "channel": "vh",
+          "direction": "bidirectional",
+          "threshold_scope": "pooled_run"
+        },
+        "run_index": 10
+      },
+      {
+        "kittler_illingworth_iou_strict": 0.417011,
+        "kittler_illingworth_tiles_declined": 12,
+        "otsu_coverage": 0.446459,
+        "otsu_iou_strict": 0.338189,
+        "otsu_tiles_declined": 7,
+        "parameters": {
+          "block_pixels": 256,
+          "channel": "vh",
+          "direction": "bidirectional",
+          "threshold_scope": "per_tile"
+        },
+        "run_index": 11
+      },
+      {
+        "kittler_illingworth_iou_strict": 0.361238,
+        "kittler_illingworth_tiles_declined": 0,
+        "otsu_coverage": 0.998209,
+        "otsu_iou_strict": 0.112782,
+        "otsu_tiles_declined": 0,
+        "parameters": {
+          "block_pixels": 256,
+          "channel": "vh",
+          "direction": "bidirectional",
+          "threshold_scope": "pooled_run"
+        },
+        "run_index": 12
+      },
+      {
+        "kittler_illingworth_iou_strict": 0.330112,
+        "kittler_illingworth_tiles_declined": 13,
+        "otsu_coverage": 0.989801,
+        "otsu_iou_strict": 0.151966,
+        "otsu_tiles_declined": 1,
+        "parameters": {
+          "block_pixels": 64,
+          "channel": "vv",
+          "direction": "darkening",
+          "threshold_scope": "per_tile"
+        },
+        "run_index": 13
+      },
+      {
+        "kittler_illingworth_iou_strict": 0.0,
+        "kittler_illingworth_tiles_declined": 15,
+        "otsu_coverage": 0.998209,
+        "otsu_iou_strict": 0.183146,
+        "otsu_tiles_declined": 0,
+        "parameters": {
+          "block_pixels": 64,
+          "channel": "vv",
+          "direction": "darkening",
+          "threshold_scope": "pooled_run"
+        },
+        "run_index": 14
+      },
+      {
+        "kittler_illingworth_iou_strict": 0.052628,
+        "kittler_illingworth_tiles_declined": 14,
+        "otsu_coverage": 0.449057,
+        "otsu_iou_strict": 0.317734,
+        "otsu_tiles_declined": 9,
+        "parameters": {
+          "block_pixels": 128,
+          "channel": "vv",
+          "direction": "darkening",
+          "threshold_scope": "per_tile"
+        },
+        "run_index": 15
+      },
+      {
+        "kittler_illingworth_iou_strict": 0.0,
+        "kittler_illingworth_tiles_declined": 15,
+        "otsu_coverage": 0.998209,
+        "otsu_iou_strict": 0.173737,
+        "otsu_tiles_declined": 0,
+        "parameters": {
+          "block_pixels": 128,
+          "channel": "vv",
+          "direction": "darkening",
+          "threshold_scope": "pooled_run"
+        },
+        "run_index": 16
+      },
+      {
+        "kittler_illingworth_iou_strict": 0.0,
+        "kittler_illingworth_tiles_declined": 15,
+        "otsu_coverage": 0.184026,
+        "otsu_iou_strict": 0.301654,
+        "otsu_tiles_declined": 12,
+        "parameters": {
+          "block_pixels": 256,
+          "channel": "vv",
+          "direction": "darkening",
+          "threshold_scope": "per_tile"
+        },
+        "run_index": 17
+      },
+      {
+        "kittler_illingworth_iou_strict": 0.0,
+        "kittler_illingworth_tiles_declined": 15,
+        "otsu_coverage": 0.998209,
+        "otsu_iou_strict": 0.168948,
+        "otsu_tiles_declined": 0,
+        "parameters": {
+          "block_pixels": 256,
+          "channel": "vv",
+          "direction": "darkening",
+          "threshold_scope": "pooled_run"
+        },
+        "run_index": 18
+      },
+      {
+        "kittler_illingworth_iou_strict": 0.330112,
+        "kittler_illingworth_tiles_declined": 13,
+        "otsu_coverage": 0.998209,
+        "otsu_iou_strict": 0.066021,
+        "otsu_tiles_declined": 0,
+        "parameters": {
+          "block_pixels": 64,
+          "channel": "vv",
+          "direction": "bidirectional",
+          "threshold_scope": "per_tile"
+        },
+        "run_index": 19
+      },
+      {
+        "kittler_illingworth_iou_strict": 0.0,
+        "kittler_illingworth_tiles_declined": 15,
+        "otsu_coverage": 0.998209,
+        "otsu_iou_strict": 0.06874,
+        "otsu_tiles_declined": 0,
+        "parameters": {
+          "block_pixels": 64,
+          "channel": "vv",
+          "direction": "bidirectional",
+          "threshold_scope": "pooled_run"
+        },
+        "run_index": 20
+      },
+      {
+        "kittler_illingworth_iou_strict": 0.052628,
+        "kittler_illingworth_tiles_declined": 14,
+        "otsu_coverage": 0.723291,
+        "otsu_iou_strict": 0.14262,
+        "otsu_tiles_declined": 5,
+        "parameters": {
+          "block_pixels": 128,
+          "channel": "vv",
+          "direction": "bidirectional",
+          "threshold_scope": "per_tile"
+        },
+        "run_index": 21
+      },
+      {
+        "kittler_illingworth_iou_strict": 0.0,
+        "kittler_illingworth_tiles_declined": 15,
+        "otsu_coverage": 0.998209,
+        "otsu_iou_strict": 0.071821,
+        "otsu_tiles_declined": 0,
+        "parameters": {
+          "block_pixels": 128,
+          "channel": "vv",
+          "direction": "bidirectional",
+          "threshold_scope": "pooled_run"
+        },
+        "run_index": 22
+      },
+      {
+        "kittler_illingworth_iou_strict": 0.0,
+        "kittler_illingworth_tiles_declined": 15,
+        "otsu_coverage": 0.184026,
+        "otsu_iou_strict": 0.301654,
+        "otsu_tiles_declined": 12,
+        "parameters": {
+          "block_pixels": 256,
+          "channel": "vv",
+          "direction": "bidirectional",
+          "threshold_scope": "per_tile"
+        },
+        "run_index": 23
+      },
+      {
+        "kittler_illingworth_iou_strict": 0.0,
+        "kittler_illingworth_tiles_declined": 15,
+        "otsu_coverage": 0.998209,
+        "otsu_iou_strict": 0.168948,
+        "otsu_tiles_declined": 0,
+        "parameters": {
+          "block_pixels": 256,
+          "channel": "vv",
+          "direction": "bidirectional",
+          "threshold_scope": "pooled_run"
+        },
+        "run_index": 24
+      },
+      {
+        "kittler_illingworth_iou_strict": 0.368019,
+        "kittler_illingworth_tiles_declined": 8,
+        "otsu_coverage": 0.904599,
+        "otsu_iou_strict": 0.2216,
+        "otsu_tiles_declined": 2,
+        "parameters": {
+          "block_pixels": 64,
+          "channel": "mean_vv_vh",
+          "direction": "darkening",
+          "threshold_scope": "per_tile"
+        },
+        "run_index": 25
+      },
+      {
+        "kittler_illingworth_iou_strict": 0.357639,
+        "kittler_illingworth_tiles_declined": 0,
+        "otsu_coverage": 0.998209,
+        "otsu_iou_strict": 0.257706,
+        "otsu_tiles_declined": 0,
+        "parameters": {
+          "block_pixels": 64,
+          "channel": "mean_vv_vh",
+          "direction": "darkening",
+          "threshold_scope": "pooled_run"
+        },
+        "run_index": 26
+      },
+      {
+        "kittler_illingworth_iou_strict": 0.393926,
+        "kittler_illingworth_tiles_declined": 10,
+        "otsu_coverage": 0.793742,
+        "otsu_iou_strict": 0.237301,
+        "otsu_tiles_declined": 4,
+        "parameters": {
+          "block_pixels": 128,
+          "channel": "mean_vv_vh",
+          "direction": "darkening",
+          "threshold_scope": "per_tile"
+        },
+        "run_index": 27
+      },
+      {
+        "kittler_illingworth_iou_strict": 0.36478,
+        "kittler_illingworth_tiles_declined": 0,
+        "otsu_coverage": 0.998209,
+        "otsu_iou_strict": 0.272305,
+        "otsu_tiles_declined": 0,
+        "parameters": {
+          "block_pixels": 128,
+          "channel": "mean_vv_vh",
+          "direction": "darkening",
+          "threshold_scope": "pooled_run"
+        },
+        "run_index": 28
+      },
+      {
+        "kittler_illingworth_iou_strict": 0.429075,
+        "kittler_illingworth_tiles_declined": 11,
+        "otsu_coverage": 0.343544,
+        "otsu_iou_strict": 0.47523,
+        "otsu_tiles_declined": 10,
+        "parameters": {
+          "block_pixels": 256,
+          "channel": "mean_vv_vh",
+          "direction": "darkening",
+          "threshold_scope": "per_tile"
+        },
+        "run_index": 29
+      },
+      {
+        "kittler_illingworth_iou_strict": 0.364004,
+        "kittler_illingworth_tiles_declined": 0,
+        "otsu_coverage": 0.998209,
+        "otsu_iou_strict": 0.279284,
+        "otsu_tiles_declined": 0,
+        "parameters": {
+          "block_pixels": 256,
+          "channel": "mean_vv_vh",
+          "direction": "darkening",
+          "threshold_scope": "pooled_run"
+        },
+        "run_index": 30
+      },
+      {
+        "kittler_illingworth_iou_strict": 0.361767,
+        "kittler_illingworth_tiles_declined": 7,
+        "otsu_coverage": 0.998209,
+        "otsu_iou_strict": 0.097159,
+        "otsu_tiles_declined": 0,
+        "parameters": {
+          "block_pixels": 64,
+          "channel": "mean_vv_vh",
+          "direction": "bidirectional",
+          "threshold_scope": "per_tile"
+        },
+        "run_index": 31
+      },
+      {
+        "kittler_illingworth_iou_strict": 0.357639,
+        "kittler_illingworth_tiles_declined": 0,
+        "otsu_coverage": 0.998209,
+        "otsu_iou_strict": 0.100191,
+        "otsu_tiles_declined": 0,
+        "parameters": {
+          "block_pixels": 64,
+          "channel": "mean_vv_vh",
+          "direction": "bidirectional",
+          "threshold_scope": "pooled_run"
+        },
+        "run_index": 32
+      },
+      {
+        "kittler_illingworth_iou_strict": 0.390515,
+        "kittler_illingworth_tiles_declined": 10,
+        "otsu_coverage": 0.998209,
+        "otsu_iou_strict": 0.114521,
+        "otsu_tiles_declined": 0,
+        "parameters": {
+          "block_pixels": 128,
+          "channel": "mean_vv_vh",
+          "direction": "bidirectional",
+          "threshold_scope": "per_tile"
+        },
+        "run_index": 33
+      },
+      {
+        "kittler_illingworth_iou_strict": 0.36478,
+        "kittler_illingworth_tiles_declined": 0,
+        "otsu_coverage": 0.998209,
+        "otsu_iou_strict": 0.104827,
+        "otsu_tiles_declined": 0,
+        "parameters": {
+          "block_pixels": 128,
+          "channel": "mean_vv_vh",
+          "direction": "bidirectional",
+          "threshold_scope": "pooled_run"
+        },
+        "run_index": 34
+      },
+      {
+        "kittler_illingworth_iou_strict": 0.429075,
+        "kittler_illingworth_tiles_declined": 11,
+        "otsu_coverage": 0.37572,
+        "otsu_iou_strict": 0.418533,
+        "otsu_tiles_declined": 8,
+        "parameters": {
+          "block_pixels": 256,
+          "channel": "mean_vv_vh",
+          "direction": "bidirectional",
+          "threshold_scope": "per_tile"
+        },
+        "run_index": 35
+      },
+      {
+        "kittler_illingworth_iou_strict": 0.364004,
+        "kittler_illingworth_tiles_declined": 0,
+        "otsu_coverage": 0.998209,
+        "otsu_iou_strict": 0.108933,
+        "otsu_tiles_declined": 0,
+        "parameters": {
+          "block_pixels": 256,
+          "channel": "mean_vv_vh",
+          "direction": "bidirectional",
+          "threshold_scope": "pooled_run"
+        },
+        "run_index": 36
+      }
+    ],
+    "session": "2026-10-02T16:14:07Z",
+    "tiles": 15
+  },
+  "review_date": "2026-10-03",
+  "robustness_assumptions": [
+    "The tile is the resampling unit. Tiles of one activation share an event, a pass and a mapping team, and neighbouring tiles are not independent, so the bootstrap range is more likely too narrow than too wide.",
+    "Fourteen tiles are few for a percentile bootstrap; the range is a description of how much the score depends on single tiles, not a confidence interval with a guaranteed coverage.",
+    "The checks were added after the held-out score had been seen. They change no score and are not part of the declared protocol."
+  ],
+  "schema": "floodguard.geoid_m1_benchmark_derived_checks.v1",
+  "source_timestamp": "2024-01-03T05:34:06Z",
+  "t2_skill_bar": {
+    "declared_reading": "Both readings (covered and strict) must reach the minimum.",
+    "for_later_lanes": "Read 'reading', 'robust' and 'abstained_cell_share' here. Do not take the boolean m1_v2_reaches_the_geoid_condition of the summary alone.",
+    "geoid_held_out_test_iou_min": 0.4,
+    "m1_v2_test": {
+      "abstained_cell_share": 0.678737,
+      "iou_covered": 0.506131,
+      "iou_strict": 0.411164,
+      "leave_one_tile_out": {
+        "highest_iou_strict": 0.433393,
+        "holds_for_every_tile_left_out": false,
+        "lowest_iou_strict": 0.297028,
+        "lowest_iou_strict_tile_left_out": "EMSR712-3-42",
+        "rows": [
+          {
+            "abstained_cell_share": 0.668271,
+            "both_readings_reach_minimum": true,
+            "iou_covered": 0.506131,
+            "iou_strict": 0.411164,
+            "tile_left_out": "EMSR712-3-35",
+            "tile_was_declined": true
+          },
+          {
+            "abstained_cell_share": 0.650693,
+            "both_readings_reach_minimum": true,
+            "iou_covered": 0.506131,
+            "iou_strict": 0.411812,
+            "tile_left_out": "EMSR712-3-36",
+            "tile_was_declined": true
+          },
+          {
+            "abstained_cell_share": 0.634928,
+            "both_readings_reach_minimum": true,
+            "iou_covered": 0.506131,
+            "iou_strict": 0.415617,
+            "tile_left_out": "EMSR712-3-37",
+            "tile_was_declined": true
+          },
+          {
+            "abstained_cell_share": 0.644297,
+            "both_readings_reach_minimum": true,
+            "iou_covered": 0.506131,
+            "iou_strict": 0.427363,
+            "tile_left_out": "EMSR712-3-38",
+            "tile_was_declined": true
+          },
+          {
+            "abstained_cell_share": 0.657306,
+            "both_readings_reach_minimum": true,
+            "iou_covered": 0.506131,
+            "iou_strict": 0.414498,
+            "tile_left_out": "EMSR712-3-39",
+            "tile_was_declined": true
+          },
+          {
+            "abstained_cell_share": 0.649154,
+            "both_readings_reach_minimum": true,
+            "iou_covered": 0.506131,
+            "iou_strict": 0.414492,
+            "tile_left_out": "EMSR712-3-40",
+            "tile_was_declined": true
+          },
+          {
+            "abstained_cell_share": 0.64371,
+            "both_readings_reach_minimum": true,
+            "iou_covered": 0.506131,
+            "iou_strict": 0.433393,
+            "tile_left_out": "EMSR712-3-41",
+            "tile_was_declined": true
+          },
+          {
+            "abstained_cell_share": 0.759286,
+            "both_readings_reach_minimum": false,
+            "iou_covered": 0.433723,
+            "iou_strict": 0.297028,
+            "tile_left_out": "EMSR712-3-42",
+            "tile_was_declined": false
+          },
+          {
+            "abstained_cell_share": 0.673931,
+            "both_readings_reach_minimum": true,
+            "iou_covered": 0.506131,
+            "iou_strict": 0.411164,
+            "tile_left_out": "EMSR712-3-45",
+            "tile_was_declined": true
+          },
+          {
+            "abstained_cell_share": 0.729998,
+            "both_readings_reach_minimum": true,
+            "iou_covered": 0.51769,
+            "iou_strict": 0.412639,
+            "tile_left_out": "EMSR712-3-46",
+            "tile_was_declined": false
+          },
+          {
+            "abstained_cell_share": 0.741274,
+            "both_readings_reach_minimum": true,
+            "iou_covered": 0.540988,
+            "iou_strict": 0.426934,
+            "tile_left_out": "EMSR712-3-47",
+            "tile_was_declined": false
+          },
+          {
+            "abstained_cell_share": 0.654919,
+            "both_readings_reach_minimum": true,
+            "iou_covered": 0.506131,
+            "iou_strict": 0.425097,
+            "tile_left_out": "EMSR712-3-48",
+            "tile_was_declined": true
+          },
+          {
+            "abstained_cell_share": 0.722394,
+            "both_readings_reach_minimum": false,
+            "iou_covered": 0.500133,
+            "iou_strict": 0.379767,
+            "tile_left_out": "EMSR712-3-49",
+            "tile_was_declined": false
+          },
+          {
+            "abstained_cell_share": 0.671952,
+            "both_readings_reach_minimum": true,
+            "iou_covered": 0.506131,
+            "iou_strict": 0.42676,
+            "tile_left_out": "EMSR712-3-50",
+            "tile_was_declined": true
+          }
+        ],
+        "tiles_whose_removal_takes_a_reading_below_minimum": [
+          "EMSR712-3-42",
+          "EMSR712-3-49"
+        ]
+      },
+      "margin_of_the_strict_reading": 0.011164,
+      "minimum": 0.4,
+      "point_estimate_reaches_minimum": true,
+      "reading": "point estimate 0.411; not distinguishable from 0.40 on 14 tiles",
+      "robust": false,
+      "tile_bootstrap": {
+        "generator": "random.Random(seed).random(), index = floor(value * tiles)",
+        "iou_covered": {
+          "lower": 0.284106,
+          "median": 0.506131,
+          "share_of_resamples_at_or_above_minimum": 0.87065,
+          "undefined_resamples": 178,
+          "upper": 0.578703
+        },
+        "iou_strict": {
+          "lower": 0.098059,
+          "median": 0.402392,
+          "share_of_resamples_at_or_above_minimum": 0.51115,
+          "undefined_resamples": 0,
+          "upper": 0.512878
+        },
+        "level": 0.95,
+        "resamples": 20000,
+        "seed": 20261003,
+        "share_of_resamples_with_both_readings_at_or_above_minimum": 0.51115,
+        "strict_range_lies_at_or_above_minimum": false,
+        "tiles": 14,
+        "unit": "tile, resampled with replacement"
+      },
+      "tiles": 14,
+      "tiles_declined": 10
+    },
+    "mae_sai_abstention_fraction_max_in_v1a": 0.2,
+    "not_assessed_here": [
+      "Mae Sai abstention at most 0.20",
+      "Mae Sai unit coverage at least 0.80",
+      "3-day recency window"
+    ],
+    "robustness_rule": "robust is true only when both readings reach the minimum on the pooled counts, with any one tile left out, and the lower end of the tile-bootstrap range of the strict IoU is at least the minimum. Written after the score was seen; it is a description, not a declared pass rule.",
+    "source": "planning protocol v1a, t2_skill_bar",
+    "what_the_strict_reading_does": "It counts a declined tile like an answer of 'no flood' everywhere: mapped flood in it is missed, and nothing in it can be a false alarm. Declining a tile with little flood raises the strict IoU. Requiring both readings does not prevent that."
+  },
+  "what_this_is": "Checks added after the held-out scoring, in answer to a review. Computed from the committed summary and tuning log only. No tile was opened, no score changed, and nothing was selected or tuned.",
+  "wording": "agreement with a same-pass CEMS map, not independent accuracy"
+}

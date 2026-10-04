@@ -27,7 +27,8 @@ Both merges are real merge commits (`git merge --no-ff`). Nothing was squashed, 
 The fixes are ordinary commits on top; no merge commit was amended.
 
 The "review fix" rows answer a review of this branch. Section 4, items 6 to 12, says what each one changed.
-What the review found and this branch did not change is in section 8, items 11 to 15.
+What the review found and left for the owners is in section 8, items 11 to 15. Items 2, 11, 12 and 14 were decided
+on 4 October 2026 (decision log, R17); 11, 12 and 14 are done on this branch, and each item says what was done.
 
 Checked after the merges:
 
@@ -246,6 +247,9 @@ that used to skip there for lack of Pillow now run.
 2. **What `/command/` is.** On `master` today it is the map workspace. On this branch it is the scoring line's
    candidate overview, and the map workspace is at `/command/archive/` under a "historical archive" banner. The
    landing and the policy page link to `/command/`.
+   **Decided on 4 October 2026 (decision log, R17):** Command is to be replaced entirely by a rescue-coordination
+   exercise replay of Mae Sai 2024. A detailed plan is written first and the page is built in a later change.
+   Nothing of it is built on this branch; until then `/command/` and `/command/archive/` stay as described here.
 3. **The candidate report's address** (`/studio/candidate-report/`), and whether the study library should list the
    scoring line's pages. Today the library does not link to them, and they do not link back to the library.
    The scoring line's header on `/studio/archive/` also had "Decision brief", "Evidence library" and "Archive"
@@ -268,27 +272,51 @@ that used to skip there for lack of Pillow now run.
 Found by the review and left for the owners:
 
 11. **The research table on `/command/archive/`.** On the scoring line this page had no research table: a notice
-    said the earlier scores "are not accepted event-response priorities" and linked to the current brief. On this
-    branch the page shows the replay line's panel: eight subdistricts sorted by research FPPS, with their A to E
-    research classes, under "Report only". Choose one. The page text makes no false claim either way.
-12. **What a browser must download before the site works offline.** The install list is 84 files, 297.6 MB, plus
-    75 script chunks, 3.3 MB: 301 MB together. The evidence library is 290.6 MB of it (largest file 66.4 MB), the
-    briefs 2.7 MB, everything else 4.3 MB. Installation is all or nothing, the "available offline" status and the
-    replay's on-request data wait for it, and each new deployment downloads it again. The list comes from the
-    scoring line unchanged. The replay line's rule is that this list stays small: its own 6.3 MB of replay data is
-    saved only when the reader asks. A fix is to keep the catalog and the pages in the list and save each study
-    area's package on request. That is a design change and was not made here.
+    said the earlier scores "are not accepted event-response priorities" and linked to the current brief. After
+    the merge the page showed the replay line's panel: eight subdistricts sorted by research FPPS, with their A to
+    E research classes, under "Report only".
+    **Decided on 4 October 2026 (R17) and done:** the table is off Command. `/command/archive/`, where the panel
+    was, and `/command/` show a short notice: the earlier scores are not accepted event-response priorities, with a
+    link to the report. The report, with its table, is shown only in Studio's archive
+    (`/studio/archive/mae-sai-geoai/`), labelled "Historical research · report only". The unit tests and the
+    offline smoke now check the notice on Command and the table in Studio. The map workspace's own retained FPPS
+    ranking on `/command/archive/` is not part of this decision and is unchanged; it goes with the page (item 2).
+12. **What a browser must download before the site works offline.** After the merge the install list was 84
+    files, 297.6 MB, plus 75 script chunks, 3.3 MB: 301 MB together. The evidence library was 290.6 MB of it
+    (largest file 66.4 MB), the briefs 2.7 MB, everything else 4.3 MB. Installation is all or nothing, the
+    "available offline" status and the replay's on-request data wait for it, and each new deployment downloads it
+    again.
+    **Decided on 4 October 2026 (R17) and done:** the evidence library is saved on request. Measured on the
+    competition build: the install list is now 61 files, 7.1 MB, plus 77 script and style chunks, 3.3 MB: 138
+    files, 10.5 MB (10,480,958 bytes). It holds the application, the pages, the library's catalogue (44 kB), the
+    public case indexes (35 kB), the eight briefs (2.7 MB) and the files it held before for the Public and Mae Sai
+    views (4.0 MB). A hard budget of 12 MB fails the build, the artifact check and the offline check above it. The
+    replay's own budgets are unchanged (6.5 MB of data, 1.0 MB of exports, both on request).
+    Each of the six study areas is saved only when the reader asks, with "Save this area for offline use" on the
+    area's page or in the library list: its package file or files, its terrain preview and the report, 101.8 MB
+    for all six (5.5 MB to 51.3 MB each). The worker stores a file only when its SHA-256 matches (the catalogue's
+    hash for a package), keeps saved areas in a cache apart from the per-build cache so that a new deployment keeps
+    every unchanged file, and removes an area on request. Offline, a page of an area that is not saved says so and
+    requests nothing. The eight database archives a package offers for download (188.8 MB, up to 66.4 MB each) are
+    not part of a saved copy: the worker never keeps them and their links say that they need a connection. That
+    last point is a choice made while building; say if a saved area should also hold its archives.
 13. **The "Studio" link in the eight case briefs.** Each brief in `apps/web/public/briefs/` links "Studio" to
     `/studio/?aoi=...`, which is now the study library and ignores the case. The link comes from
     `build-case-briefs.mjs`, line 294. Rebuilding the briefs changes the `html_sha256` and `pdf_sha256` that
     `briefs/catalog.json` pins for each of the eight, so it was not done. The target would be
     `/studio/candidate-report/`.
-14. **The map notice on phones (Public page).** When the map background cannot load, the notice covers part of
+14. **The map notice on phones (Public page).** When the map background cannot load, the notice covered part of
     "View map results as a list": 73 by 39 px at 390 by 844, 88 by 46 px at 375 by 812, 122 by 46 px at 320 by
-    844. The list button is on top, so it hides the first words of the notice; the button itself still works,
-    which is why the smoke passes. Cause: the notice is the replay line's (a sentence and three buttons, 159 px
+    844. The list button is on top, so it hid the first words of the notice; the button itself still worked,
+    which is why the smoke passed. Cause: the notice is the replay line's (a sentence and three buttons, 159 px
     tall) and is anchored 272 px above the map's lower edge, while the scoring line's intro block and status slot
-    take about 200 px above the map that the replay line's page did not have. At these sizes the notice does not
-    fit between the list button and the map tools wherever it is put, so it needs a shorter form on phones. Not
-    changed here.
+    take about 200 px above the map that the replay line's page did not have.
+    **Decided on 4 October 2026 and done:** up to 680 px wide the notice is one line and one button ("Map
+    background unavailable", "Options"), 62 px tall. The sentence and the actions open behind the button, above
+    the other map controls, and fold back after an action. Measured at 320 by 844, 375 by 812 and 390 by 844, in
+    Thai and English: no overlap with the list button, the search field or any map tool. The offline smoke checks
+    this at the three sizes. Left as it is: on a screen 667 px tall or shorter the map has no free band at all
+    (search field, list button, attribution, priority card and tools fill it), and at 375 by 667 the one-line
+    notice still meets the search field (27 px) and the list button (22 px). That needs a change to the Public
+    page's layout, not to the notice.
 15. **The stale addresses in the scoring line's documents**, listed at the end of section 5.

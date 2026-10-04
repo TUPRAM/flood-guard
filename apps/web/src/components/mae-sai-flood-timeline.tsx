@@ -5,8 +5,6 @@ import type {
   CircleMarkerOptions,
   GeoJSONOptions,
   ImageOverlay,
-  ImageOverlayOptions,
-  LatLngBounds,
   Layer,
   Map as LeafletMap,
   Marker,
@@ -216,6 +214,7 @@ import {
   Term,
   ThemeEyebrow,
 } from "./mae-sai-evacuation-panels";
+import { createCanvasOverlay, keyboardPopups, MAP_POPUP_CLASS, MAP_POPUP_FRAME_CLASS, popupElement, tooltipElement, type PopupLine } from "./mae-sai-map-kit";
 import { followingViirsDay, RainChart, rainStationName, s2SensitivityText, Sentinel2Evidence, ViirsComparisonCard, ViirsLegend, viirsMomentText } from "./mae-sai-observed-panels";
 import { DIAMOND_PATH, ReplayExportPanel, STAR_PATH, STAR_SLASH_PATH, type ExportEnvelope, type ReplayExportSource } from "./mae-sai-replay-export";
 import {
@@ -509,76 +508,6 @@ function loadSeasonEnvelope(manifest: TimelineManifest, block: SeasonEnvelopeBlo
 async function loadAccessNodes(manifest: TimelineManifest, signal: AbortSignal): Promise<AccessNodes> {
   const access = manifest.access!;
   return parseAccessNodes(await fetchBytes(access.nodes.href, signal), access);
-}
-
-interface CanvasOverlayInternals { _url: HTMLCanvasElement; _image: HTMLCanvasElement; _zoomAnimated: boolean; options: ImageOverlayOptions }
-
-/** ImageOverlay backed by a caller-owned canvas, following Leaflet's SVGOverlay pattern. */
-function createCanvasOverlay(L: typeof import("leaflet"), canvas: HTMLCanvasElement, bounds: LatLngBounds, options: ImageOverlayOptions): ImageOverlay {
-  const CanvasOverlay = L.ImageOverlay.extend({
-    _initImage(this: CanvasOverlayInternals) {
-      const element = (this._image = this._url);
-      L.DomUtil.addClass(element, "leaflet-image-layer");
-      if (this._zoomAnimated) L.DomUtil.addClass(element, "leaflet-zoom-animated");
-      if (this.options.className) L.DomUtil.addClass(element, this.options.className);
-      element.onselectstart = () => false;
-      element.onmousemove = () => false;
-    },
-  });
-  const Overlay = CanvasOverlay as unknown as new (element: HTMLCanvasElement, area: LatLngBounds, settings: ImageOverlayOptions) => ImageOverlay;
-  return new Overlay(canvas, bounds, options);
-}
-
-function tooltipElement(lines: [string, string?][]): HTMLElement {
-  const root = document.createElement("div");
-  root.className = styles.tooltip;
-  for (const [text, tone] of lines) {
-    const line = document.createElement(tone === "title" ? "strong" : "span");
-    line.textContent = text;
-    if (tone && tone !== "title") line.dataset.tone = tone;
-    root.append(line);
-  }
-  return root;
-}
-
-/**
- * One popup line. `value` is untranslated source text (e.g. an English manifest note) appended after the translated
- * label `text` in its own element, so screen readers use the right language for each part.
- */
-interface PopupLine { text: string; tone?: "title" | "muted" | "alert"; lang?: string; value?: { text: string; lang: string } }
-
-/** Popup content built from text nodes only (manifest strings are never parsed as HTML); links open in a new tab. */
-function popupElement(lines: PopupLine[], links: { href: string; text: string }[] = []): HTMLElement {
-  const root = document.createElement("div");
-  root.className = styles.popup;
-  for (const line of lines) {
-    const element = document.createElement(line.tone === "title" ? "strong" : "p");
-    element.textContent = line.text;
-    if (line.value) {
-      const value = document.createElement("span");
-      value.lang = line.value.lang;
-      value.textContent = line.value.text;
-      element.append(value);
-    }
-    if (line.tone && line.tone !== "title") element.dataset.tone = line.tone;
-    if (line.lang) element.lang = line.lang;
-    root.append(element);
-  }
-  if (links.length > 0) {
-    const list = document.createElement("ul");
-    for (const link of links) {
-      const item = document.createElement("li");
-      const anchor = document.createElement("a");
-      anchor.href = link.href;
-      anchor.target = "_blank";
-      anchor.rel = "noopener noreferrer";
-      anchor.textContent = link.text;
-      item.append(anchor);
-      list.append(item);
-    }
-    root.append(list);
-  }
-  return root;
 }
 
 const STAR_ICON = `<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path d="${STAR_PATH}"/></svg>`;
@@ -1169,39 +1098,10 @@ export function MaeSaiFloodTimeline() {
         }, 0);
         timers.add(timer);
       });
-      // Keyboard: Enter on a focused marker opens its popup (Leaflet turns it into a click). Focus then moves into the
-      // popup so its links can be reached and a screen reader reads it; Escape closes it from the marker or from inside
-      // it (Leaflet listens for keys only while the map container itself has focus), and closing hands focus back to
-      // the marker. A popup opened with the pointer leaves focus where it is.
-      let keyedMarker: HTMLElement | null = null;
-      const mapContainer = map.getContainer();
-      const onMapKey = (event: KeyboardEvent) => {
-        const target = event.target instanceof HTMLElement ? event.target : null;
-        if (event.key === "Enter" && target?.classList.contains("leaflet-marker-icon")) keyedMarker = target;
-        if (event.key === "Escape" && openPopups > 0) map.closePopup();
-      };
-      mapContainer.addEventListener("keydown", onMapKey);
-      removeMapKeys = () => mapContainer.removeEventListener("keydown", onMapKey);
-      const keyboardPopup = (marker: Marker) => {
-        let keyed = false;
-        marker.on("popupopen", () => {
-          const element = marker.getElement();
-          keyed = Boolean(element) && keyedMarker === element;
-          keyedMarker = null;
-          if (!keyed) return;
-          const content = marker.getPopup()?.getElement()?.querySelector<HTMLElement>(".leaflet-popup-content");
-          if (!content) return;
-          content.tabIndex = -1;
-          content.focus({ preventScroll: true });
-        });
-        marker.on("popupclose", () => {
-          const popup = marker.getPopup()?.getElement();
-          const focused = document.activeElement;
-          const inside = Boolean(popup && focused && popup.contains(focused));
-          if (keyed || inside) marker.getElement()?.focus({ preventScroll: true });
-          keyed = false;
-        });
-      };
+      // Keyboard: Enter on a focused marker opens its popup with focus inside it, and Escape closes it and hands focus
+      // back to the marker (the shared map kit holds the handling; this page tells it whether a popup is open).
+      const { keyboardPopup, remove: removeKeyboardPopups } = keyboardPopups(map, () => openPopups > 0);
+      removeMapKeys = removeKeyboardPopups;
       /** Size a layer's popup for the map as it is right now, then build its content. */
       const fitted = (layer: Layer, preferredWidth: number, content: () => HTMLElement) => () => {
         const popup = layer.getPopup();
@@ -1580,7 +1480,7 @@ export function MaeSaiFloodTimeline() {
           riseOnHover: true,
           zIndexOffset: 2000,
         });
-        marker.bindPopup(fitted(marker, POPUP_WIDTH.reported, () => reportedPopup(shelter)), { className: styles.popupFrame, autoPan: true });
+        marker.bindPopup(fitted(marker, POPUP_WIDTH.reported, () => reportedPopup(shelter)), { className: MAP_POPUP_FRAME_CLASS, autoPan: true });
         keyboardPopup(marker);
         popupLayers.push(marker);
         const markerTitle = () => `${command
@@ -1669,7 +1569,7 @@ export function MaeSaiFloodTimeline() {
             (eligible ? eligibleGroup : ineligibleGroup).addLayer(layer);
             hoverTip(layer, () => `${eligible ? tr("Eligible shelter candidate", "สถานที่ที่เข้าเกณฑ์") : tr("Candidate, not eligible", "สถานที่ที่ไม่เข้าเกณฑ์")}: ${candidateTitle(candidate, popupLanguage())}`, -6);
           }
-          layer.bindPopup(fitted(layer, POPUP_WIDTH.candidate, () => candidatePopup(candidate)), { className: styles.popupFrame, autoPan: true });
+          layer.bindPopup(fitted(layer, POPUP_WIDTH.candidate, () => candidatePopup(candidate)), { className: MAP_POPUP_FRAME_CLASS, autoPan: true });
           candidatePopups.push(layer);
           candidateMarkers.set(candidate.id, layer);
         }
@@ -1764,7 +1664,7 @@ export function MaeSaiFloodTimeline() {
             { text: `${tr("Source", "แหล่งข้อมูล")}: `, value: { text: `${rain!.source} (${rain!.licence})`, lang: "en" }, tone: "muted" },
           ];
           return popupElement(lines, [{ href: rain!.source_url, text: rain!.source_url }]);
-        }), { className: styles.popupFrame, autoPan: true });
+        }), { className: MAP_POPUP_FRAME_CLASS, autoPan: true });
         keyboardPopup(marker);
         popupLayers.push(marker);
         const gaugeTitle = () => `${tr("Rain gauge (observed)", "สถานีวัดฝน (ตรวจวัดจริง)")}: ${station.code} ${rainStationName(station, popupLanguage())}`;
@@ -1783,7 +1683,7 @@ export function MaeSaiFloodTimeline() {
       const depthPopup = (reports: readonly ReportedDepthReport[]) => {
         const lang = popupLanguage();
         const root = document.createElement("div");
-        root.className = styles.popup;
+        root.className = MAP_POPUP_CLASS;
         root.setAttribute("data-testid", "reported-depth-popup");
         for (const report of reports) {
           const { lines, link } = reportedDepthPopup(report, depthBlock!, lang);
@@ -1839,7 +1739,7 @@ export function MaeSaiFloodTimeline() {
             keyboard: true,
             riseOnHover: true,
           });
-          marker.bindPopup(fitted(marker, POPUP_WIDTH.reportedDepth, () => depthPopup(reports)), { className: styles.popupFrame, autoPan: true });
+          marker.bindPopup(fitted(marker, POPUP_WIDTH.reportedDepth, () => depthPopup(reports)), { className: MAP_POPUP_FRAME_CLASS, autoPan: true });
           keyboardPopup(marker);
           const title = () => reportedDepthMarkerTitle({ reports }, popupLanguage());
           hoverTip(marker, title);

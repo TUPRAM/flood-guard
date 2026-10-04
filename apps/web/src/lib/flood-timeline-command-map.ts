@@ -12,6 +12,7 @@ import {
   type AreaGeometry,
   type ReportedShelter,
   type Rgba,
+  ROAD_IMPORTANCE,
   type RoadProps,
   type RoadState,
   roadState,
@@ -81,6 +82,16 @@ export type CommandRoadStyle = RoadState | "unmodelled";
 
 export function commandRoadStyle(road: Pick<RoadProps, "h" | "k" | "m">, stage: number, impassableDepthM: number): CommandRoadStyle {
   return road.m ? roadState(road.h, stage, impassableDepthM, road.k ?? 1) : "unmodelled";
+}
+
+/**
+ * How heavy the line of a road piece is. A major piece is a through road (tertiary class or above) or a piece that
+ * carries a name; the rest (residential and unclassified streets) are minor and drawn thinner, so a town of flooded
+ * streets does not read as one red patch. The rank is drawing weight only: it changes no state and no figure.
+ */
+export type CommandRoadRank = "major" | "minor";
+export function commandRoadRank(road: Pick<RoadProps, "c" | "n">): CommandRoadRank {
+  return (ROAD_IMPORTANCE[road.c] ?? 1) > 1 || Boolean(road.n?.trim()) ? "major" : "minor";
 }
 
 // --- Reported shelters -----------------------------------------------------------------------------------

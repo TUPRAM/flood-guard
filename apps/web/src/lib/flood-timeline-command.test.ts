@@ -374,6 +374,11 @@ describe("Ordering rules of the table", () => {
     expect(stepTambonOrder(before, [row("A", 100), row("B", 90), row("C", 130)])).toEqual(["C", "A", "B"]);
     // It passes nobody when the row just above keeps it back, even if it leads a row further up by 25.
     expect(stepTambonOrder(before, [row("A", 100), row("B", 110), row("C", 126)])).toEqual(["A", "B", "C"]);
+    // A row above zero always overtakes a row at zero, whatever its lead: a row that reads "0" never stands over a
+    // row that reads "<10". Between two rows above zero the lead of 25 still holds.
+    expect(stepTambonOrder(["A", "B"], [row("A", 0, 900), row("B", 2, 10)])).toEqual(["B", "A"]);
+    expect(stepTambonOrder(["A", "B", "C"], [row("A", 0, 900), row("B", 0.4, 10), row("C", 1.9, 10)])).toEqual(["C", "A", "B"]);
+    expect(stepTambonOrder(["A", "B"], [row("A", 1, 900), row("B", 24, 10)])).toEqual(["A", "B"]);
     // Rows with the same count are re-ordered by residents in water, then by code, whatever the order before.
     expect(stepTambonOrder(["B", "A", "C"], [row("A", 0, 40), row("B", 0, 10), row("C", 0, 80)])).toEqual(["C", "A", "B"]);
     expect(stepTambonOrder(["B", "A"], [row("A", 7, 3), row("B", 7, 3)])).toEqual(["A", "B"]);
@@ -429,18 +434,39 @@ describe("Ordering rules of the table", () => {
       expect(ruled[0]).toEqual([...manifest.access!.tambons].sort());
     });
 
-    it("changes order 14 times without the 25-resident rule and 13 times with it (9 and 7 times among the rows above zero)", () => {
+    it("changes order 14 times without the 25-resident rule and 12 times with it (9 and 7 times among the rows above zero)", () => {
       // Without the rule: the plain order of every hour (a lead of 0 gives the same list).
       expect(tambonOrderByHour(model, "reported", 0)).toEqual(plain);
       expect(orderChangeHours(plain)).toEqual([31, 43, 44, 45, 50, 99, 117, 118, 131, 142, 153, 155, 164, 198]);
       // The plan counted 9: the changes in the order of the rows above zero.
       expect(orderChangeHours(aboveZero(plain))).toEqual([44, 45, 50, 99, 117, 118, 131, 147, 153]);
       // With the rule the swap of hours 117 and 118 is gone.
-      expect(orderChangeHours(ruled)).toEqual([31, 43, 44, 45, 50, 99, 131, 142, 147, 153, 155, 164, 198]);
+      // A row above zero passes a row at zero at once, so Ban Dai ("<10") is over Pong Pha ("0") from hour 131 and
+      // nothing is left to move at hour 147.
+      expect(orderChangeHours(ruled)).toEqual([31, 43, 44, 45, 50, 99, 131, 142, 153, 155, 164, 198]);
       expect(orderChangeHours(aboveZero(ruled))).toEqual([44, 45, 50, 99, 131, 147, 153]);
-      // The same count for the ranked plan's sites: 18 without the rule, 16 with it.
+      // The same count for the ranked plan's sites: 18 without the rule, 17 with it.
       expect(orderChangeHours(hours.map((hour) => plainTambonOrder(tambonRowsAt(model, hour, "plan"))))).toHaveLength(18);
-      expect(orderChangeHours(tambonOrderByHour(model, "plan"))).toHaveLength(16);
+      expect(orderChangeHours(tambonOrderByHour(model, "plan"))).toHaveLength(17);
+    });
+
+    it("never keeps a row that reads 0 above a row with somebody counted, with either shelter set", () => {
+      for (const set of COMMAND_SHELTER_SETS) {
+        const orders = tambonOrderByHour(model, set);
+        for (const hour of hours) {
+          const rows = tambonRowsAt(model, hour, set);
+          const lost = orders[hour].map((id) => Math.round(rows.find((item) => item.id === id)!.lostAccess));
+          const firstZero = lost.indexOf(0);
+          if (firstZero >= 0) expect(lost.slice(firstZero).every((value) => value === 0), `${set} hour ${hour}: ${lost.join(" ")}`).toBe(true);
+        }
+      }
+      // The hours the review named: Ban Dai ("<10") now stands above Pong Pha ("0") at hours 131 to 146.
+      const names = (hour: number) => ruled[hour].map(nameOf);
+      for (const hour of [131, 140, 146]) expect(names(hour).indexOf("Ban Dai"), `hour ${hour}`).toBeLessThan(names(hour).indexOf("Pong Pha"));
+      const plan = tambonOrderByHour(model, "plan");
+      const planRows = tambonRowsAt(model, 44, "plan");
+      const planLost = plan[44].map((id) => Math.round(planRows.find((item) => item.id === id)!.lostAccess));
+      expect(planLost).toEqual([...planLost].sort((a, b) => Number(b > 0) - Number(a > 0)));
     });
 
     it("keeps Ko Chang above Pong Pha through hours 117 and 118, where a few residents separate them", () => {

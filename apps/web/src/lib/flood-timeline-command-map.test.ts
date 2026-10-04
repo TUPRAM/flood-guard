@@ -19,7 +19,7 @@ import {
   type TambonProps,
   type TimelineManifest,
 } from "./flood-timeline";
-import { pointInArea } from "./flood-timeline-command";
+import { buildCommandModel, commandStage, districtFiguresAt, pointInArea } from "./flood-timeline-command";
 import {
   areaBounds,
   areaLabelPoint,
@@ -28,6 +28,7 @@ import {
   buildTwoToneLut,
   cellsInMask,
   COMMAND_WATER_RGBA,
+  commandRoadRank,
   commandRoadStyle,
   commandScaleBar,
   metresPerPixel,
@@ -36,6 +37,7 @@ import {
   reportedSiteWetAt,
   veilRings,
 } from "./flood-timeline-command-map";
+import { parseAccessNodes } from "./flood-timeline-evacuation";
 
 const publicRoot = resolve(import.meta.dirname, "../../public");
 const readJson = <T,>(href: string): T => JSON.parse(readFileSync(resolve(publicRoot, href.replace(/^\//, "")), "utf8")) as T;
@@ -126,6 +128,38 @@ describe("Command map: roads and reported shelters", () => {
     expect(peak.filter((style) => style === "impassable").length).toBeGreaterThan(500);
     expect(peak.filter((style) => style === "wet").length).toBeGreaterThan(20);
     expect(new Set(styles(0))).toEqual(new Set(["dry"]));
+  });
+
+  it("draws as impassable exactly the road length the figures count as impassable, at three replay hours", () => {
+    const nodes = parseAccessNodes(readFileSync(resolve(publicRoot, manifest.access!.nodes.href.replace(/^\//, ""))), manifest.access!);
+    const model = buildCommandModel({ manifest, roads: roads.features, tambons: tambons.features, nodes });
+    const drawnKm = (stage: number, style: (road: RoadProps) => string) =>
+      roads.features.reduce((metres, road) => metres + (style(road.properties) === "impassable" ? road.properties.len : 0), 0) / 1000;
+    for (const hour of [44, 84, 152]) {
+      const stage = commandStage(model, hour);
+      const drawn = drawnKm(stage, (road) => commandRoadStyle(road, stage, manifest.impassable_depth_m));
+      expect(drawn, `hour ${hour}`).toBeGreaterThan(0);
+      expect(drawn, `hour ${hour}`).toBeCloseTo(districtFiguresAt(model, hour).roadKmImpassable, 2);
+    }
+    // The depth factor of a piece matters: without it the map would draw more red than the figures count at the peak.
+    const peak = commandStage(model, 84);
+    const withoutFactor = drawnKm(peak, (road) => commandRoadStyle({ ...road, k: 1 }, peak, manifest.impassable_depth_m));
+    expect(withoutFactor - districtFiguresAt(model, 84).roadKmImpassable).toBeGreaterThan(5);
+  });
+
+  it("ranks a through road or a named road as major and the other streets as minor (drawing weight only)", () => {
+    expect(commandRoadRank({ c: "trunk" })).toBe("major");
+    expect(commandRoadRank({ c: "tertiary" })).toBe("major");
+    expect(commandRoadRank({ c: "residential" })).toBe("minor");
+    expect(commandRoadRank({ c: "unclassified", n: "  " })).toBe("minor");
+    expect(commandRoadRank({ c: "residential", n: "ซอย 4" })).toBe("major");
+    expect(commandRoadRank({ c: "some_new_class" })).toBe("minor");
+    const ranks = roads.features.map((road) => commandRoadRank(road.properties));
+    const through = roads.features.filter((road) => ["trunk", "primary", "secondary", "tertiary"].includes(road.properties.c)).length;
+    expect(through).toBe(1149);
+    expect(ranks.filter((rank) => rank === "major").length).toBeGreaterThanOrEqual(through);
+    // Most of the served pieces are minor streets: they are the ones that would otherwise fill a town with red.
+    expect(ranks.filter((rank) => rank === "minor").length).toBeGreaterThan(1500);
   });
 
   it("marks a reported site wet only when its mapped point is in modelled water", () => {

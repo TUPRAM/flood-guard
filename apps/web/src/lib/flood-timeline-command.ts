@@ -465,7 +465,8 @@ export function plainTambonOrder(rows: readonly OrderRow[]): string[] {
  * One step of the ordering rules from the order of the hour before:
  *   1. rows are ordered by residents who lost shelter access, highest first;
  *   2. a row overtakes the row above it only when it leads by at least `lead` residents, so two rows a few residents
- *      apart do not swap back and forth;
+ *      apart do not swap back and forth; a row above zero always overtakes a row at zero, so a row that reads "0" never
+ *      stands over a row that reads "<10";
  *   3. rows with the same count (all the zero rows among them) are ordered by residents in water, then by code.
  * Without an order to start from (the first hour, or other rows than before) the plain order is returned; a `lead` of 0
  * gives the plain order at every step.
@@ -479,7 +480,8 @@ export function stepTambonOrder(previous: readonly string[] | null, rows: readon
   const overtakes = (below: OrderRow, above: OrderRow): boolean => {
     const gap = wholeLost(below) - wholeLost(above);
     if (gap === 0) return byWaterThenCode(below, above) < 0;
-    return gap > 0 && gap >= lead;
+    // The lead applies between two rows above zero. A row with nobody counted gives way to any row with somebody.
+    return gap > 0 && (gap >= lead || wholeLost(above) === 0);
   };
   // Adjacent swaps until nothing moves. A swap needs the lower row to lead (or to win a tie), and both relations are
   // strict orders, so the passes end; the bound is a safeguard only.

@@ -261,8 +261,9 @@ export interface CommandTableInput {
 
 /**
  * The rows as the table prints them. Ordered by this hour, they follow `order`. Ordered by planning, they follow the
- * planning position of the chosen case; units without one come last, in this hour's order. The two orders are shown
- * side by side and nothing is derived from both.
+ * planning position of the chosen case; units that share a position, and units without one (they come last), stand in
+ * the order of their subdistrict codes. So the planning order is fixed in time: it never reads this hour's count, and
+ * nothing is derived from both orders (decision D7).
  */
 export function commandTableRows(input: CommandTableInput): CommandTableRow[] {
   const byId = new Map(input.rows.map((row) => [row.id, row]));
@@ -286,7 +287,8 @@ export function commandTableRows(input: CommandTableInput): CommandTableRow[] {
     };
   });
   if (input.orderBy === "hour") return built;
-  return [...built].sort((a, b) => (a.planningPosition ?? Infinity) - (b.planningPosition ?? Infinity) || a.position - b.position);
+  const place = (row: CommandTableRow): number => row.planningPosition ?? Number.MAX_SAFE_INTEGER;
+  return [...built].sort((a, b) => place(a) - place(b) || a.row.id.localeCompare(b.row.id));
 }
 
 /** True when the chosen case gives at least one unit a planning position: only then can the rows be ordered by it. */

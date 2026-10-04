@@ -256,12 +256,29 @@ describe("Plan cells from a planning assessment overlay (fixture units, in tests
 
   it("orders the rows by the planning position when asked, and keeps this hour's place of each row beside it", () => {
     const byPlanning = inventedTable({ orderBy: "planning", positionFrom: "SE1" });
-    expect(byPlanning.map((item) => item.row.id)).toEqual(["FX-U13", "FX-U03", "FX-U14", "FX-U15", "FX-U01"]);
+    // Units without a position in the chosen case come last, in the order of their codes.
+    expect(byPlanning.map((item) => item.row.id)).toEqual(["FX-U13", "FX-U03", "FX-U01", "FX-U14", "FX-U15"]);
     // The left position is still the place in this hour's count: the two orders stand side by side.
-    expect(byPlanning.map((item) => item.position)).toEqual([2, 1, 3, 4, 5]);
+    expect(byPlanning.map((item) => item.position)).toEqual([2, 1, 5, 3, 4]);
     expect(inventedTable({ orderBy: "hour" }).map((item) => item.row.id)).toEqual(["FX-U03", "FX-U13", "FX-U14", "FX-U15", "FX-U01"]);
     // Nothing in a row compares the two orders or blends them.
     for (const item of byPlanning) expect(Object.keys(item)).not.toContain("differs");
+  });
+
+  it("keeps the planning order fixed in time: this hour's count never breaks a tie or places a unit without a position (decision D7)", () => {
+    // Two units share a planning position and two have none. The hour's order is turned around between two hours.
+    const tied = new Map(fixtureCells.SE1);
+    tied.set("FX-U14", { ...fixtureCells.SE1.get("FX-U03")!, unitId: "FX-U14" });
+    const cells = { ...fixtureCells, SE1: tied };
+    expect(Object.fromEntries(planningPositions(tied.values()))).toEqual({ "FX-U13": 1, "FX-U03": 2, "FX-U14": 2 });
+    const ids = inventedRows.map((row) => row.id);
+    const at = (order: string[]) => commandTableRows({ rows: inventedRows, before: null, order, scale: 1000, orderBy: "planning", positionFrom: "SE1", cells }).map((item) => item.row.id);
+    const fixed = ["FX-U13", "FX-U03", "FX-U14", "FX-U01", "FX-U15"];
+    expect(at(ids)).toEqual(fixed);
+    expect(at([...ids].reverse())).toEqual(fixed);
+    expect(at(["FX-U14", "FX-U15", "FX-U01", "FX-U13", "FX-U03"])).toEqual(fixed);
+    // Ordered by this hour, the same rows do follow the hour's order.
+    expect(commandTableRows({ rows: inventedRows, before: null, order: [...ids].reverse(), scale: 1000, orderBy: "hour", positionFrom: "SE1", cells }).map((item) => item.row.id)).toEqual([...ids].reverse());
   });
 
   it("carries the tier, the protocol versions and the anchors a class is shown with", () => {
@@ -363,6 +380,20 @@ describe("Find a place: only the names the replay data holds", () => {
     const office = searchCommandPlaces(index, "district office")[0];
     expect(office).toMatchObject({ kind: "command_centre", target: { type: "point", siteId: "R05" } });
     expect(searchCommandPlaces(index, "โรงเรียน").every((entry) => entry.kind === "facility" || entry.kind === "place_record")).toBe(true);
+  });
+
+  it("lists the names the map can show before the names without a point in the data", () => {
+    const entry = (id: string, en: string, target: boolean): (typeof index)[number] => ({
+      id, kind: "shelter", th: null, en, facilityType: null, records: 0, target: target ? { type: "point", lat: 20.4, lon: 99.9, toleranceM: null, siteId: null } : null,
+    });
+    // The name without a point starts with the query and is shorter; the located names still come first.
+    const small = [entry("a", "Wat Pha", false), entry("b", "School beside Wat Pha Sukkaram", true), entry("c", "Wat Pha Daeng hall", true)];
+    expect(searchCommandPlaces(small, "wat pha").map((item) => item.id)).toEqual(["c", "b", "a"]);
+    // In the served data the reported shelters without coordinates are found, and listed after every located name.
+    const found = searchCommandPlaces(index, "a", 200);
+    const firstUnlocated = found.findIndex((item) => item.target === null);
+    expect(firstUnlocated).toBeGreaterThan(0);
+    expect(found.slice(firstUnlocated).every((item) => item.target === null)).toBe(true);
   });
 
   it("finds nothing for an empty query or a name the data does not hold, and keeps to its limit", () => {

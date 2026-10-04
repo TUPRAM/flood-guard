@@ -8,11 +8,21 @@ described in `docs/planning_assessment_overlay.md` (task E11).
 An assessment is planning guidance for preparedness and post-event prioritisation. It is not an official warning
 and not an observation of a flood. A road closure in it is a modelled assumption. Class E never means safe.
 
-**Status on 5 October 2026.** The code exists and is tested on invented units only. No run on a real unit has been
-made with it, so `outputs/planning_v1/` holds no assessment yet.
+**Status on 5 October 2026.** The first runs on real units were made on 4 October 2026 (UTC), for the three Mae Sai
+cases. They are reported in `outputs/planning_v1/README.md`, section "Plan task E8", with their receipts:
+
+- **Case SE1** (the 2024 season envelope scenario): the overlay was not written. Four of the eight rows have a v2
+  result that depends on triggers nobody evaluated (open point E8-OP1). The eight rows are reported as computed in a
+  file outside Git that is not an overlay (open point E8-OP6).
+- **Case O2** (the layer of 22 October 2024): the overlay was written and verified. It is outside Git, because its
+  lineage is `local`.
+- **Case O1** (own radar candidates): refused. Nothing was computed.
+
+No overlay is in Git and `outputs/planning_v1/overlays/` does not exist: every lineage is below the public level
+today (see "Rights levels today").
 
 Reads of the real inputs made while the code was written, on 4 October 2026 (UTC). None measured a unit, computed
-a component or wrote a file. The first run on real units lists them in its receipt (`--development-read`).
+a component or wrote a file. The receipts of the runs list them (`development_reads`).
 
 - The shape of the E5 public table of case SE1, the E7 table and receipt, the E1 receipt, the two E1 input
   records, the properties of the permanent-water layer and the E4 receipt was read with every number masked, and

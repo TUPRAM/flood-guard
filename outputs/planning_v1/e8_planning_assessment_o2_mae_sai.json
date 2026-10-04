@@ -1,0 +1,881 @@
+{
+  "schema_version": "floodguard.planning_assessment_run_receipt.v1",
+  "generated_at_utc": "2026-10-04T17:59:18Z",
+  "run_kind": "superseding_run",
+  "plan_task": "E8: planning_assessment.py + writer + verifier; O1/O2/SE1 overlays; verifier passes",
+  "status": "run_receipt",
+  "status_note": "Written with protocol v1a and v1b in force (protocol_sha256). The run computed an FPPS and a class for real units, which protocol v1b allows since it is in force; every run is reported.",
+  "official_warning": false,
+  "operational_status": "non_operational",
+  "can_feed_decision_layer": false,
+  "computes": "For one case and each of its reporting units: the five components of planning frame v1, the confidence record of rule v1, FPPS, the binding class of class rule v1 with its reason code, the would-be class of a low-confidence row, class rule v2 as a secondary axis, and leave-one-component-out. One row per unit: the default cell of protocol v1b (flood input as provided, the closure level its reference cell names, the frame's own anchors and weights). No ensemble cell, no headline, no equity figure and no accepted value.",
+  "source_timestamp": "2024-10-22",
+  "source_timestamps": {
+    "flood_input": "2024-10-22",
+    "overlay_source_instant": "2024-10-22T00:00:00Z",
+    "osm_retrieved_at_utc": "2026-07-10T02:46:49Z",
+    "population_year_represented": 2020,
+    "age_counts": "2025-09-01",
+    "permanent_water": "2021-01-01/2021-12-31"
+  },
+  "confidence_class": "low",
+  "confidence_basis": "Planning classes from modelled access on OpenStreetMap roads, modelled resident and age counts, and closures assumed from a flood input that FloodGuard did not check against the ground or against an independent source. The confidence class of each row under confidence rule v1 is in the overlay; this line is the confidence of the run as evidence.",
+  "protocol_sha256": {
+    "planning_protocol_v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+    "planning_protocol_v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+  },
+  "parameters": {
+    "case_id": "O2",
+    "frame_set": "mae_sai",
+    "lane": "OBS",
+    "tier": "T3",
+    "case_reference_date": "2024-10-22",
+    "unit_ids": [
+      "TH570901",
+      "TH570902",
+      "TH570903",
+      "TH570904",
+      "TH570905",
+      "TH570906",
+      "TH570908",
+      "TH570909"
+    ],
+    "level": "public",
+    "services": [
+      "hospital",
+      "main_road_entry"
+    ],
+    "flood_level": "as_provided",
+    "closure_rule": {
+      "version": "closure_rule_v1",
+      "level": "central",
+      "source": "planning_protocol_v1b.json /ensemble_grid/headline_rule/reference_cell (open point E8-OP2)"
+    },
+    "normalisation_version": "planning_frame_v1",
+    "weights": {
+      "flood_likelihood_0_100": 0.3,
+      "exposure_0_100": 0.25,
+      "access_gap_0_100": 0.2,
+      "road_criticality_0_100": 0.15,
+      "vulnerability_context_0_100": 0.1
+    },
+    "flood_anchor": 0.2,
+    "vulnerability_anchors": {
+      "P10": 0.351416,
+      "P90": 0.477677
+    },
+    "confidence_rule_version": "confidence_rule_v1",
+    "class_rule_binding": "class_rule_v1 (floodguard.scoring.assign_action_class, unchanged)",
+    "class_rule_secondary": "class_rule_v2",
+    "v2_trigger_inputs": {
+      "B": "not evaluated",
+      "C": "not evaluated",
+      "D": "not evaluated",
+      "note": "No stage computes them yet (open point E8-OP1)."
+    },
+    "headline": "not evaluated: the ensemble is plan task E10",
+    "overlay_input_id_of_the_flood_input": "unosat_4009.chiangrai_20241022_floodextent"
+  },
+  "inputs": {
+    "planning_protocol_v1a": {
+      "path": "docs/proposal_execution/planning_protocol_v1a.json",
+      "sha256": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954"
+    },
+    "planning_protocol_v1b": {
+      "path": "docs/proposal_execution/planning_protocol_v1b.json",
+      "sha256": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+    },
+    "protocol_receipts": {
+      "path": "docs/proposal_execution/RECEIPTS.jsonl",
+      "sha256": "06b0721ecba63467cc0e4f614cb5463ce480bf9bfb596653f5189f869795c59a"
+    },
+    "flood_input": {
+      "e1_receipt": {
+        "path": "outputs/planning_v1/e1_flood_inputs_mae_sai.json",
+        "sha256": "341280ff2ef1275842a3a4498eeb11f3e7d549394f724d469492cfae42517fbd",
+        "registered_in": "outputs/planning_v1/run_register/e1_flood_inputs_mae_sai.json"
+      },
+      "input_id": "unosat_4009:CHIANGRAI_20241022_FloodExtent",
+      "input_record": {
+        "path": "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e1_flood_input/input_record.json",
+        "sha256": "b35c9f4a0734b6d57b77c570c9aead118422c00cf2dcb89e62d9878bc04350bb"
+      },
+      "extents_reporting_frame": {
+        "minus": {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e1_flood_input/flood_extent__minus__reporting_frame.geojson",
+          "sha256": "59fd4edf36859e2a80dd124f6891309aa22bcc0008878e444f5e2c09aa5ad08e",
+          "rights_level": "local"
+        },
+        "as_provided": {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e1_flood_input/flood_extent__as_provided__reporting_frame.geojson",
+          "sha256": "676c50ebfa8cf5be8429527735a09997b0b575efd87ef268cf660c2aae0e7596",
+          "rights_level": "local"
+        },
+        "plus": {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e1_flood_input/flood_extent__plus__reporting_frame.geojson",
+          "sha256": "3732b5ab4b114187255b6b01f9624657cb5d3dc7e0f6349c3efb301c33477e76",
+          "rights_level": "local"
+        }
+      },
+      "closure_extent_routing_context": {
+        "path": "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e1_flood_input/flood_extent__as_provided__routing_context.geojson",
+        "sha256": "acd06381a562af128c14657bb2f205d4a7e508aa0dda311d697e229f5f6ded73"
+      },
+      "permanent_water": {
+        "path": "<external_data_workspace>/proposal_execution/planning_v1/mae_sai_frame/e1_flood_input/permanent_water__reporting_frame.geojson",
+        "sha256": "a92e168c56b1fddbabf772171ba140a303e2b48f1007d7da1223b5d7c4d150ee"
+      },
+      "product_footprint": null,
+      "rights_level": "local",
+      "boundaries_sha256": "09e62345481bb80030ff6779e074bfb2c16629b70ae1e373ebd31945f1c6e0d8"
+    },
+    "access_table": {
+      "e5_receipt": {
+        "path": "outputs/planning_v1/e5_access_diff_mae_sai.json",
+        "sha256": "f9966ba8e2deb105bc2bf4a841eb28b56b73d13ad55d84f43bfd6385433d681c",
+        "registered_in": "outputs/planning_v1/run_register/e5_access_diff_mae_sai.json"
+      },
+      "table": {
+        "path": "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e5_access_diff/access_diff_units__public_services.json",
+        "sha256": "6f7226da371703c5013c0488e28009a17c93e1bad0ee3d893effdd61c8cf6e8c",
+        "service_set": "public_services",
+        "publication_level": "local",
+        "generated_at_utc": "2026-10-04T15:38:45Z"
+      }
+    },
+    "age_table": {
+      "e7_receipt": {
+        "path": "outputs/planning_v1/age_exposure_mae_sai_v1_receipt.json",
+        "sha256": "00e0a67123b5294bc6e01f7645176bcb828ff90de7e0ac69991db42b2d80b147",
+        "registered_in": "outputs/planning_v1/run_register/e7_age_exposure_mae_sai_v1_receipt.json"
+      },
+      "table": {
+        "path": "outputs/planning_v1/age_exposure_mae_sai_v1.json",
+        "sha256": "68d4935ddf9f905dd4512c516924049be5303bae5a501a27bcff060106da16cb",
+        "registered_in": "outputs/planning_v1/run_register/e7_age_exposure_mae_sai_v1.json"
+      },
+      "source_timestamp": "2025-09-01",
+      "generated_at_utc": "2026-10-04T09:12:35Z"
+    },
+    "national_anchors": {
+      "path": "outputs/planning_v1/national_vulnerability_anchors_v1.json",
+      "sha256": "2ad161d4c67cbe1567fbb853fe951da3ffb257f06088fbc80e8e297938c73a59",
+      "source_timestamp": "2025-09-01",
+      "named_in": "planning_protocol_v1b.json /national_vulnerability_anchors/output_receipt"
+    },
+    "planning_context_vehicle": {
+      "status": "of_record",
+      "run_kind": "build_of_record",
+      "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e4_vehicle/context_inputs.json",
+      "file_sha256": "37e47f2e4cede433aa709e0154e9d39e921d1359d69b10642e3385267ca01385",
+      "canonical_sha256": "0b2672b6d4d1d94da3a4c39d819d980a9e5bf7845bb22fea1284a2893a6351a6",
+      "canonical_sha256_recomputed": true,
+      "context_generated_at": "2026-10-03T05:28:59.223644+00:00",
+      "receipt": {
+        "path": "outputs/planning_v1/e4_planning_context_se1_vehicle.json",
+        "sha256": "690add44186d02cb501dccb152678fbf03cf109acc041a5c782af705993f2ad2"
+      },
+      "named_in": "planning_protocol_v1b.json /corridor_polygon/e4_build_of_record",
+      "input_hashes": {
+        "aoi_02_sha256": "d49de53e86264c06218fd9a03cc2b5da1549085a49fae2f3cd288bf6334f5a56",
+        "boundaries_sha256": "09e62345481bb80030ff6779e074bfb2c16629b70ae1e373ebd31945f1c6e0d8",
+        "ddpm_file_sha256": "91a8f26a5dd2446b68b562dcda13024d1bd4981720f985722a6467d4edeef9d7",
+        "dga_file_sha256": "15d208b7c269562c9444f5f034f5e16c3a33a2e069a19637264b2ddc2f1ee58d",
+        "osm_pbf_sha256": "b7f46018249638413b1d318bc86519f140c27af20cac7c00d42fe03775b7add1",
+        "reviewed_junctions_sha256": "43de4cc50efc790af1aa502e820e178856389041b568ff61bf2c463cfe240f07",
+        "routing_file_sha256": "4e49d5eca2f7522e2de10cf81cc68b4ebcbea036225d1b862f4a80cb1affbac2",
+        "worldpop_2020_sha256": "fb39d85dd150c45c7b25771f29bcd548e611afa0967224ac6d8ca05727230e20"
+      },
+      "osm_retrieved_at_utc": "2026-07-10T02:46:49Z",
+      "ddpm_list_file_dated": "2026-09-21 (open-data folder date)",
+      "hospital_facility_ids": [
+        "OSM-node-7856667792",
+        "OSM-way-1010348419",
+        "OSM-way-371233866",
+        "OSM-way-447735125",
+        "OSM-way-527539157",
+        "OSM-way-549948901"
+      ],
+      "main_road_entry_node_ids_sha256": "10d17aa72a96150ffbbfc2d2fddd53bc921ede042fdebe66540b8a43092da15d",
+      "baseline_no_route": {
+        "residents": 81836.889439,
+        "graph_connected_residents": 75226.97719,
+        "connected_residents_without_a_route": 56.446837,
+        "share": 0.00075,
+        "residents_not_connected_to_the_graph": 6609.912249
+      }
+    },
+    "tambon_boundaries": {
+      "path": "<external_data_workspace>/open_context/hdx_cod_ab/tha_admin_boundaries.gdb.zip",
+      "sha256": "09e62345481bb80030ff6779e074bfb2c16629b70ae1e373ebd31945f1c6e0d8",
+      "layer": "tha_admin3",
+      "unit_id_field": "adm3_pcode",
+      "units": 8
+    },
+    "rights_record": {
+      "input_id": "unosat_4009",
+      "layer": "CHIANGRAI_20241022_FloodExtent",
+      "path": "docs/proposal_execution/rights_basis_4009_v1.json",
+      "sha256": "531ab40beb2b3e80a02d6de0d4d7d791b299176af0b192bfe105ca23c7e50cb3",
+      "record_status": "confirmed"
+    }
+  },
+  "rights": {
+    "registry": "floodguard.rights.REGISTERED_RECORDS",
+    "rule": "Protocol v1a guardrail GR6: the rights level of an overlay is the minimum across its lineage. The registry is asked for the flood layer before any file of it is read. An overlay goes into Git only when that minimum is public; any other overlay stays outside Git and is bound here by SHA-256. Nothing is written under apps/web/public/.",
+    "publication_eligibility": "local",
+    "lineage_levels": {
+      "unosat_4009.chiangrai_20241022_floodextent": "local",
+      "e4_planning_context_vehicle": "public",
+      "worldpop_2020_100m": "public",
+      "unit_boundaries": "public",
+      "e1_permanent_water": "public",
+      "e7_age_exposure_table": "local",
+      "e5_access_table": "local",
+      "national_vulnerability_anchors": "public"
+    },
+    "levels_of_inputs_without_a_rights_record": {
+      "routing_context": {
+        "rights_level": "public",
+        "basis": "No rights record exists for this input. Task E5 keeps its public-services table at the public level with this input in its lineage, and this task reads it the same way (open point E8-OP5). The context file also holds DDPM shelter rows (pitch level); the public services read none of them."
+      },
+      "population": {
+        "rights_level": "public",
+        "basis": "No rights record exists for this input. Task E5 keeps its public-services table at the public level with this input in its lineage, and this task reads it the same way (open point E8-OP5)."
+      },
+      "boundaries": {
+        "rights_level": "public",
+        "basis": "No rights record exists for this input. Task E5 keeps its public-services table at the public level with this input in its lineage, and this task reads it the same way (open point E8-OP5)."
+      },
+      "permanent_water": {
+        "rights_level": "public",
+        "basis": "No rights record exists for this input. The layer is an open-licence land-cover class; task E1 wrote it with its licence, credit and change notice (open point E8-OP5)."
+      },
+      "age_structure": {
+        "rights_level": "local",
+        "basis": "Protocol v1b, national_vulnerability_anchors.inputs.age_rasters.rights: 'Public catalog says CC BY 4.0. Public derivatives require purpose-specific review.' No such review is recorded in the repository, so the input is held at the local level and every overlay that carries a vulnerability record is local until the owners record the review (open point E8-OP5)."
+      },
+      "national_anchors": {
+        "rights_level": "public",
+        "basis": "The five anchors are constants of the signed protocol v1b, which is in the repository, and are in the frame header of every overlay."
+      }
+    },
+    "flood_layer": {
+      "rights_level": "local",
+      "basis": "The confirmed record rights_basis_4009_v1 covers the product and its archive under CC BY-SA 4.0 (decision D2), but it names only CHIANGRAI_20240801_20241012_AccumulatedFlood as its layer in scope, and decision R6 allows publication as a season envelope only. This layer is read and processed outside Git; nothing derived from it is written into public web files until the owners extend the record."
+    },
+    "levels_and_git": "Protocol v1a guardrail GR6 says that only a public output may be written under apps/web/public/. Plan 3.1 keeps pitch variants outside Git and puts committed outputs (small tables and GeoJSON) in outputs/planning_v1/. Neither says whether a figure derived from a local-level input may be committed. Until the owners decide (open point E1-OP1), tasks E1 and E5 keep every layer and every per-unit table whose lineage is below public outside Git, and their run receipts in Git hold whole-frame figures of local-level inputs and say so.",
+    "figures_of_local_level_layers_in_this_receipt": {
+      "what": "This receipt is committed. It holds counts of rows for the whole case (result.summary, or result.rows_as_computed.summary when the overlay was not written), no value of a single unit and no unit of a row that could not be written. When the lineage is below the public level those counts come from a lineage below the public level; the overlay, or the report that holds the rows as computed, is outside Git.",
+      "figures": [
+        {
+          "where": "result.summary",
+          "publication_eligibility": "local",
+          "figures": "The number of rows by class, reason code, confidence class and failed condition, per lane column."
+        }
+      ],
+      "for_the_owners": "Open point E1-OP1: whether a level below public allows these counts in Git."
+    },
+    "written_under_apps_web_public": false
+  },
+  "lane_purity": {
+    "guardrail": "GR3_lane_purity",
+    "result": "PASS",
+    "compared": {
+      "case_lane": {
+        "value": "OBS",
+        "same": true
+      },
+      "closure_basis": {
+        "value": "modelled_from_unosat_4009:CHIANGRAI_20241022_FloodExtent",
+        "same": true
+      },
+      "closure_extent_sha256": {
+        "value": "acd06381a562af128c14657bb2f205d4a7e508aa0dda311d697e229f5f6ded73",
+        "same": true
+      },
+      "closure_rule_version": {
+        "value": "closure_rule_v1",
+        "same": true
+      },
+      "flood_input_id": {
+        "value": "unosat_4009:CHIANGRAI_20241022_FloodExtent",
+        "same": true
+      },
+      "flood_input_name": {
+        "value": "UNOSAT/GISTDA product 4009, 22 Oct 2024 layer",
+        "same": true
+      },
+      "routing_context_canonical_sha256": {
+        "value": "0b2672b6d4d1d94da3a4c39d819d980a9e5bf7845bb22fea1284a2893a6351a6",
+        "same": true
+      }
+    }
+  },
+  "measurement_checks": {
+    "demand_cells": 36765,
+    "cells_in_one_unit": 36765,
+    "residents_in_the_units": 81836.8894393444,
+    "unit_residents_same_in_the_context_and_the_access_table": true,
+    "hospital_routes_same_in_the_graph_and_the_access_table": true,
+    "coverage": "by_construction"
+  },
+  "graph": {
+    "travel_mode": "legacy_vehicle",
+    "context_edges": 65328,
+    "grade_join_connectors": 345,
+    "joins_sha256": "d289f728feafef649687b39f7da71228c79427bf377f7e63bc1c0eed4f2ee357",
+    "road_nodes": 62378,
+    "demand_cells": 36765,
+    "destinations": {
+      "hospital": 6,
+      "main_road_entry": 1939,
+      "ddpm_located_shelter": 82
+    },
+    "destinations_snapped_to_the_graph": {
+      "hospital": 6,
+      "main_road_entry": 1939,
+      "ddpm_located_shelter": 81
+    }
+  },
+  "guardrails": {
+    "every_reporting_unit_has_one_row": {
+      "result": "PASS",
+      "units": 8,
+      "lane": "OBS"
+    },
+    "GR1_minimum_denominators": {
+      "result": "PASS",
+      "units_without_a_class": 0,
+      "unit_residents_min_for_class": 100.0
+    },
+    "GR2_no_max_normalisation": {
+      "guardrail": "GR2_no_max_normalisation",
+      "result": "PASS",
+      "normalisation_version": "planning_frame_v1",
+      "protocol_sha256": {
+        "v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+        "v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+      },
+      "components": [
+        "flood_likelihood_0_100",
+        "exposure_0_100",
+        "access_gap_0_100",
+        "road_criticality_0_100",
+        "vulnerability_context_0_100"
+      ],
+      "rows_checked": 8,
+      "components_checked": 40,
+      "tolerance": 1e-09,
+      "fields_compared": "every field of every record; value_0_100 within the tolerance, the others exactly",
+      "rows_with_a_component_not_computed": 0,
+      "note": "Every record of a row with all five components is recomputed from the inputs it echoes. The overlay parser (floodguard.planning_overlay) recomputes the records of every other row one by one."
+    },
+    "GR3_lane_purity": {
+      "result": "PASS",
+      "flood_input_id": "unosat_4009.chiangrai_20241022_floodextent",
+      "routing_context_id": "e4_planning_context_vehicle",
+      "closure_rule": {
+        "version": "closure_rule_v1",
+        "level": "central",
+        "closure_basis": "modelled_from_unosat_4009.chiangrai_20241022_floodextent"
+      },
+      "lane_disclosure": "One flood input drives 4 of 5 components (90% of weight). This sentence appears on the overlay and in the brief appendix."
+    },
+    "GR5_blinding": {
+      "result": "PASS",
+      "protocol_sha256": {
+        "v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+        "v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+      },
+      "note": "Both protocol files were in force when the rules were read."
+    },
+    "GR6_publication_eligibility": {
+      "result": "PASS",
+      "publication_eligibility": "local",
+      "lineage_levels": {
+        "unosat_4009.chiangrai_20241022_floodextent": "local",
+        "e4_planning_context_vehicle": "public",
+        "worldpop_2020_100m": "public",
+        "unit_boundaries": "public",
+        "e1_permanent_water": "public",
+        "e7_age_exposure_table": "local",
+        "e5_access_table": "local",
+        "national_vulnerability_anchors": "public"
+      }
+    },
+    "GR7_temporal_honesty": {
+      "result": "PASS",
+      "obs_rows_not_event_aligned": 0
+    },
+    "GR8_headline_stability": {
+      "result": "PASS",
+      "status_of_every_row": "not_evaluated",
+      "class_retention_min": 0.6,
+      "note": "The ensemble is plan task E10. No class is headlined before it has run."
+    }
+  },
+  "result": {
+    "overlay_written": true,
+    "summary": {
+      "case_id": "O2",
+      "dataset_mode": "candidate",
+      "publication_eligibility": "local",
+      "protocol_sha256": {
+        "v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+        "v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+      },
+      "row_count": 8,
+      "unit_count": 8,
+      "rows_by_tier": {
+        "T0": 0,
+        "T1": 0,
+        "T2": 0,
+        "T3": 8,
+        "T4": 0,
+        "none": 0
+      },
+      "rows_by_lane": {
+        "OBS": 8,
+        "SCN": 0,
+        "SCN-ENV": 0,
+        "ENG": 0,
+        "none": 0
+      },
+      "rows_by_temporal_relation": {
+        "event_aligned": 8,
+        "dated_other": 0,
+        "season_window": 0,
+        "none": 0
+      },
+      "rows_by_confidence_kind": {
+        "observed": 8,
+        "scenario": 0,
+        "declared": 0,
+        "none": 0
+      },
+      "confidence_class_by_lane_column": {
+        "OBS": {
+          "low": 0,
+          "medium": 8,
+          "none": 0
+        },
+        "SCN": {
+          "low": 0,
+          "medium": 0,
+          "none": 0
+        },
+        "ENG": {
+          "low": 0,
+          "medium": 0,
+          "none": 0
+        },
+        "no_lane": {
+          "low": 0,
+          "medium": 0,
+          "none": 0
+        }
+      },
+      "binding_class_by_lane_column": {
+        "OBS": {
+          "A": 0,
+          "B": 0,
+          "C": 0,
+          "D": 0,
+          "E": 8,
+          "none": 0
+        },
+        "SCN": {
+          "A": 0,
+          "B": 0,
+          "C": 0,
+          "D": 0,
+          "E": 0,
+          "none": 0
+        },
+        "ENG": {
+          "A": 0,
+          "B": 0,
+          "C": 0,
+          "D": 0,
+          "E": 0,
+          "none": 0
+        },
+        "no_lane": {
+          "A": 0,
+          "B": 0,
+          "C": 0,
+          "D": 0,
+          "E": 0,
+          "none": 0
+        }
+      },
+      "reason_code_by_lane_column": {
+        "OBS": {
+          "low_confidence": 0,
+          "low_priority_score": 8,
+          "life_safety_exposure": 0,
+          "critical_route_access": 0,
+          "essential_service_access": 0,
+          "resilience": 0,
+          "insufficient_denominator": 0,
+          "none": 0
+        },
+        "SCN": {
+          "low_confidence": 0,
+          "low_priority_score": 0,
+          "life_safety_exposure": 0,
+          "critical_route_access": 0,
+          "essential_service_access": 0,
+          "resilience": 0,
+          "insufficient_denominator": 0,
+          "none": 0
+        },
+        "ENG": {
+          "low_confidence": 0,
+          "low_priority_score": 0,
+          "life_safety_exposure": 0,
+          "critical_route_access": 0,
+          "essential_service_access": 0,
+          "resilience": 0,
+          "insufficient_denominator": 0,
+          "none": 0
+        },
+        "no_lane": {
+          "low_confidence": 0,
+          "low_priority_score": 0,
+          "life_safety_exposure": 0,
+          "critical_route_access": 0,
+          "essential_service_access": 0,
+          "resilience": 0,
+          "insufficient_denominator": 0,
+          "none": 0
+        }
+      },
+      "would_be_class_by_lane_column": {
+        "OBS": {
+          "A": 0,
+          "B": 0,
+          "C": 0,
+          "D": 0,
+          "E": 0,
+          "none": 8
+        },
+        "SCN": {
+          "A": 0,
+          "B": 0,
+          "C": 0,
+          "D": 0,
+          "E": 0,
+          "none": 0
+        },
+        "ENG": {
+          "A": 0,
+          "B": 0,
+          "C": 0,
+          "D": 0,
+          "E": 0,
+          "none": 0
+        },
+        "no_lane": {
+          "A": 0,
+          "B": 0,
+          "C": 0,
+          "D": 0,
+          "E": 0,
+          "none": 0
+        }
+      },
+      "v2_result_by_lane_column": {
+        "OBS": {
+          "A": 0,
+          "B": 0,
+          "C": 0,
+          "D": 0,
+          "E": 8,
+          "no_v2_trigger": 0,
+          "none": 0
+        },
+        "SCN": {
+          "A": 0,
+          "B": 0,
+          "C": 0,
+          "D": 0,
+          "E": 0,
+          "no_v2_trigger": 0,
+          "none": 0
+        },
+        "ENG": {
+          "A": 0,
+          "B": 0,
+          "C": 0,
+          "D": 0,
+          "E": 0,
+          "no_v2_trigger": 0,
+          "none": 0
+        },
+        "no_lane": {
+          "A": 0,
+          "B": 0,
+          "C": 0,
+          "D": 0,
+          "E": 0,
+          "no_v2_trigger": 0,
+          "none": 0
+        }
+      },
+      "headline_status_by_lane_column": {
+        "OBS": {
+          "not_evaluated": 8,
+          "headline_eligible": 0,
+          "unstable_verify": 0,
+          "none": 0
+        },
+        "SCN": {
+          "not_evaluated": 0,
+          "headline_eligible": 0,
+          "unstable_verify": 0,
+          "none": 0
+        },
+        "ENG": {
+          "not_evaluated": 0,
+          "headline_eligible": 0,
+          "unstable_verify": 0,
+          "none": 0
+        },
+        "no_lane": {
+          "not_evaluated": 0,
+          "headline_eligible": 0,
+          "unstable_verify": 0,
+          "none": 0
+        }
+      },
+      "failed_conditions_by_lane_column": {
+        "OBS": {
+          "C1_tier": 0,
+          "C2_recency": 0,
+          "C3_coverage": 0,
+          "C4_input_uncertainty": 0,
+          "C5_components": 0,
+          "C6_residents": 0,
+          "C7_baseline_no_route": 0,
+          "C8_hospital": 0
+        },
+        "SCN": {
+          "C1_tier": 0,
+          "C2_recency": 0,
+          "C3_coverage": 0,
+          "C4_input_uncertainty": 0,
+          "C5_components": 0,
+          "C6_residents": 0,
+          "C7_baseline_no_route": 0,
+          "C8_hospital": 0
+        }
+      },
+      "basis_values_by_lane_column": {
+        "OBS": {
+          "pass": 56,
+          "fail": 0,
+          "by_construction": 8,
+          "by_scenario_declaration": 0
+        },
+        "SCN": {
+          "pass": 0,
+          "fail": 0,
+          "by_construction": 0,
+          "by_scenario_declaration": 0
+        }
+      },
+      "rows_under_gr1": 0,
+      "rows_without_fpps": 0,
+      "obs_rows_not_event_aligned": 0,
+      "inputs_by_rights_level": {
+        "local": 3,
+        "pitch": 0,
+        "public": 5,
+        "none": 0
+      },
+      "content_sha256": "a60468f89a79f29988a6ad21f99ea6894da1cc908ef52df197c366db43da7ddf"
+    },
+    "not_written_because": null,
+    "rows_as_computed": null
+  },
+  "whole_case_checks": {
+    "result": "PASS",
+    "rows": 8,
+    "component_values": 40,
+    "every_component_value_within_0_100": true,
+    "rows_with_an_fpps": 8,
+    "every_fpps_within_0_100": true,
+    "every_fpps_is_the_weighted_sum_of_its_components": true,
+    "rows_with_leave_one_component_out": 8,
+    "leave_one_component_out_consistent_with_the_fpps": true,
+    "residents_of_the_rows": 81836.8894393444,
+    "residents_counted_by_the_access_table": 81836.8894393444,
+    "residents_same_as_the_access_table": true,
+    "note": "Results and counts for the whole case. The resident total is the modelled WorldPop 2020 count of the units; no value of a single unit is stated here."
+  },
+  "development_reads": {
+    "what": "Reads of the same inputs made while the code was written, before this run. They are listed because every run is reported.",
+    "reads": [
+      "4 October 2026 (UTC), while the code was written: the shape of the E7 table and receipt, of the E1 receipt, of the two E1 input records, of the properties of the permanent-water layer and of the E4 receipt was read with every number masked, and the field names of the boundary layer were listed. No unit was measured, and no table of case O2 was read.",
+      "4 October 2026, 17:06:55Z to 17:07:01Z: --check-inputs for case O2. Every input was the file its receipt binds and the lane-purity comparison passed. No unit was measured.",
+      "4 October 2026, after the first run of 17:53:46Z and its --verify: the overlay that run wrote outside Git was read once, to check its rows and to write the README of the output folder. Nothing was computed from it."
+    ]
+  },
+  "open_points": [
+    {
+      "id": "E8-OP1",
+      "point": "A v2 result that depends on a trigger nobody evaluated.",
+      "signed_files_say": "Protocol v1a class_rules.v2: five triggers, evaluated in the order E, A, B, C, D; the first one met gives the class, and a unit that meets none gets 'no_v2_trigger'. Protocol v1b class_rule_v2_inputs defines the inputs of B, C and D, and says that the recurrence flag cannot be computed where the JRC tile is not on disk. Neither says what the v2 result is when a trigger cannot be evaluated.",
+      "what_this_task_does": "Triggers E and A are computed from the row. The outcomes of B, C and D are inputs, and no stage computes them yet. Where an earlier trigger in the order is met, the result is stated and a trigger that was not evaluated is written with met false and the words 'Not evaluated'. Where the result depends on such a trigger, the overlay is not written.",
+      "for_the_owners": "Whether an overlay may say 'not evaluated' for the v2 axis of a row (a schema change), or whether the inputs of B, C and D are built first: the single-link closures of the top-20 links, the serving-facility test and the recurrence flag."
+    },
+    {
+      "id": "E8-OP2",
+      "point": "Which closure level the row of the overlay uses.",
+      "signed_files_say": "Protocol v1b ensemble_grid.headline_rule names the default cell (as-provided flood state, central passability, public facilities, WorldPop 2020, P10 / P90 anchors, default weights), and protocol v1a demo_tambon_rule takes the FPPS of that cell. Neither says in so many words that the row of the overlay is the default cell.",
+      "what_this_task_does": "The row is the default cell: the flood input as provided, the closure level the reference-cell sentence names, the public services, the frame's own anchors and weights.",
+      "for_the_owners": "Whether the overlay row is the default cell."
+    },
+    {
+      "id": "E8-OP3",
+      "point": "The two measurements of confidence conditions C7 and C8 for one unit.",
+      "signed_files_say": "Protocol v1a confidence_rule_v1: C7 'Baseline vehicle connected-no-route share is at most 10 percent' and C8 'At least one hospital is reachable at baseline', per unit and lane. The share was measured for the whole frame by tasks E0 and E4, for the hospital service.",
+      "what_this_task_does": "C7 is the E0 definition applied to one unit, from the counts of the task E5 table: the unit's residents connected to the vehicle graph with no modelled route to a hospital, over its connected residents (1 when nobody is connected). C8 counts the hospital destinations that at least one connected resident of the unit can reach on the baseline vehicle graph.",
+      "for_the_owners": "Whether C7 is judged on the hospital service, and whether C8 counts OSM hospital objects (as here) or distinct named hospitals. The condition needs one or more either way."
+    },
+    {
+      "id": "E8-OP4",
+      "point": "The source timestamp of an overlay whose flood input has no instant.",
+      "signed_files_say": "AGENTS.md asks every output for a source timestamp. Overlay schema 1.0 takes an instant (a date and a time). The product 4009 layers have a date or a season window, no time.",
+      "what_this_task_does": "The overlay and its rows state the last date of the flood input's source period at 00:00:00 UTC, and say so in the assumptions. Each input states its own source time as its record gives it.",
+      "for_the_owners": "Whether the schema should take a date or a period."
+    },
+    {
+      "id": "E8-OP5",
+      "point": "The rights level of an input that has no rights record.",
+      "signed_files_say": "Protocol v1a guardrail GR6: the rights level of an overlay is the minimum across its lineage. The rights registry holds a record for product 4009 only. Protocol v1b says of the WorldPop 2024 age rasters: 'Public catalog says CC BY 4.0. Public derivatives require purpose-specific review.'",
+      "what_this_task_does": "The level of each input is stated by the script that reads it, with its basis. This module only takes the minimum.",
+      "for_the_owners": "The purpose-specific review of the age rasters, and whether open-licence inputs need a record in the registry."
+    },
+    {
+      "id": "E8-OP6",
+      "point": "What a run reports when its overlay cannot be written.",
+      "signed_files_say": "Protocol v1a case_portfolio: 'Every cell of every case is reported whatever it shows.' Protocol v1b change_control: 'Every run is reported.' Class rule v1 is binding and class rule v2 is a secondary axis that is never binding. Overlay schema 1.0 has no row without a v2 result, except under guardrail GR1. None of them says where the rows of a run go when the overlay cannot hold them.",
+      "what_this_task_does": "The run writes the rows it computed into its report outside Git, beside the reason: every row with its components, its confidence record, its FPPS, its binding class of class rule v1, its would-be class and leave-one-component-out. A row whose v2 result depends on a trigger nobody evaluated carries no v2 result there and says 'not_evaluated'. The report is not an overlay: it names another schema and the overlay parser refuses it. The receipt in Git holds the counts for the whole case.",
+      "for_the_owners": "Whether the rows of such a run may be shown or used before the overlay exists, and under which label."
+    },
+    {
+      "id": "E8-OP7",
+      "point": "A figure whose own lineage is public, inside an output whose level is below public.",
+      "signed_files_say": "Protocol v1a guardrail GR6: 'An overlay's rights level is the minimum across its lineage.' The rule speaks of an overlay as a whole. It does not say whether one figure of it, computed from public inputs only, may be quoted where the overlay may not be kept.",
+      "what_this_task_does": "The overlay or the report of a run goes outside Git as a whole when one of its inputs is below the public level. The receipt in Git holds counts for the whole case and no value of a single unit. Which figures the README of the output folder quotes for a unit is stated there, with the lineage of each.",
+      "for_the_owners": "Whether a per-unit figure computed from public inputs only may be committed while the file it was read from stays outside Git."
+    }
+  ],
+  "not_computed": [
+    "ensemble cell",
+    "class retention and headline eligibility",
+    "the outcomes of class rule v2 triggers B, C and D",
+    "equity difference and ratio by age group",
+    "2SFCA shelter supply",
+    "accepted FPPS and accepted class (tier T4 is locked)",
+    "the strict and permissive closure levels",
+    "the minus and plus flood levels as rows"
+  ],
+  "assumptions": [
+    "A closure is a modelled assumption of closure rule v1 (closure_basis), not an observed closure. A flood intersection does not prove that a road was closed.",
+    "A flood input is used as provided. A product 4009 layer is a preliminary agency extent that was not checked in the field (Field_Validation=0), and FloodGuard did not validate it.",
+    "Residents are modelled WorldPop 2020 counts. A cell counts for the unit whose polygon holds its centre, and a resident is inside the flood extent when the cell centre is (the extent covers the point).",
+    "Flood likelihood is measured on the unit's land outside permanent water (the permanent-water layer of task E1), by polygon overlay in EPSG:32647, with the flood extent as provided, clipped to the reporting frame.",
+    "The access gap and the road criticality are computed from the resident counts of the task E5 table at the closure level of the row. No stored ratio is read.",
+    "Vulnerability is computed from the modelled 2024 age counts of the task E7 table, allocated to the unit by area. The age counts and the resident counts of the exposure are of two vintages.",
+    "Confidence condition C4 compares the exposure at the plus and the minus level of the flood input (one pixel, 20 m). C7 is the unit's residents connected to the vehicle graph with no modelled route to a hospital, over its connected residents. C8 counts the hospital destinations a connected resident of the unit can reach on the baseline vehicle graph (open point E8-OP3).",
+    "Every row is the default cell of protocol v1b. The ensemble has not run, so no class is headlined.",
+    "Planning guidance only. Not an official warning. Class E never means safe."
+  ],
+  "limitations": [
+    "One row per unit. The minus and plus flood levels, the strict and permissive closure levels, the facility sets, the population vintage, the P5 / P95 anchors and the weight presets are axes of the ensemble (plan task E10).",
+    "Triggers B, C and D of class rule v2 are not evaluated by any stage yet. A row whose v2 result depends on one of them cannot be written, and then the overlay is not written (open point E8-OP1). The rows are then reported as computed, with no v2 result for such a row, in a report outside Git that is not an overlay (open point E8-OP6).",
+    "A resident whose cell does not snap to the vehicle graph within 250 m is in no access count.",
+    "The equity figures, the shelter supply and the travel-time summaries of plan 7.1 are plan task E9 and are not in schema 1.0 of the overlay."
+  ],
+  "implementation": {
+    "base_commit": "a62e5dcd6deaf6b213401533fb3b5fd5927f4e42",
+    "base_commit_note": "The commit the working tree was on. The files below are the ones this run loaded, identified by their own SHA-256, committed or not.",
+    "builder_sha256": "be54f7577a4e219a7ca90674fbed1687d302a2e7fc8a830662c5c3ea90148b55",
+    "planning_assessment_module_sha256": "0f0d653f3a468f9f082f56c13f93039b88d6b07035e8664f46a5af3ad6f5422e",
+    "planning_overlay_module_sha256": "a507441b6d8991297a6460a5d5578c78942f9ea6b204362f8ac7ad5814f9e742",
+    "normalisation_module_sha256": "731e50596822cd5798fa2298d957c17bf44b3771536f3ed8c50930c43f545cfb",
+    "confidence_module_sha256": "acb762cf56e41c86b4af40a5ce8108072b87e2dd7d35e86f56487bfa59eb54f0",
+    "scoring_module_sha256": "b42439ca3b4b84202f422456a1d7b075dccbdc71e8dfc20aa4ecff494389a307",
+    "flood_inputs_module_sha256": "1d3b3d6328ad50eb7f26455ea576748a546f82f391a83aeb01da46da8d643e5d",
+    "access_diff_module_sha256": "c6178a93fb8f92c17cf1038366cc76f8184112f9b4a6115f26c567ee73209f1c",
+    "rights_module_sha256": "9c2d29f610764e647b9bd0426e2d808c0ca3c125cd26aa30fce2ca588f10819c",
+    "rights_basis_module_sha256": "32419611a9d71b429c25a714ebecb7152f6d8bc9f654d0ca5af00e41d38c0c23",
+    "assessment_version": "planning_assessment_v1",
+    "software": {
+      "python": "3.11.8",
+      "numpy": "2.2.6",
+      "pandas": "3.0.6",
+      "shapely": "2.1.2"
+    }
+  },
+  "timing_seconds": {
+    "inputs_checked": 3.1,
+    "units_read_and_lineage": 1.1,
+    "units_measured_and_assessed": 2.3
+  },
+  "outputs": {
+    "overlay": {
+      "files": [
+        {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e8_planning_assessment/planning_assessment_overlay_o2_mae_sai.json",
+          "sha256": "fe9055eb0667367532003331302e96b3e6b02ad58c6f87178f4068dc19e853a3",
+          "bytes": 120262,
+          "what": "planning_assessment_overlay",
+          "in_git": false,
+          "publication_eligibility": "local",
+          "rows": 8
+        },
+        {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e8_planning_assessment/LICENSE_NOTICE.txt",
+          "sha256": "acaafc1b83a5fe5d72a9f50e0e0efe476517328f581c5c487fb2e0a1290de1df",
+          "bytes": 8230,
+          "what": "licence_notice",
+          "in_git": false
+        }
+      ]
+    }
+  },
+  "timestamps": {
+    "run_started_at_utc": "2026-10-04T17:59:18Z",
+    "run_finished_at_utc": "2026-10-04T17:59:24Z",
+    "wall_time_minutes": 0.11,
+    "note": "generated_at_utc is the start of the run; the overlay carries the same time."
+  },
+  "supersedes": {
+    "receipt_sha256": "7412cb1efc5cd89ca332ecb5cb036aa244bd6b35b5abb2ccc8890793f174d679",
+    "generated_at_utc": "2026-10-04T17:53:46Z",
+    "reason": "The Thai title of the case in the overlay header said dew for residual water; it is corrected. No rule, no input and no value of a unit was changed.",
+    "result_same": true,
+    "outputs_of_the_superseded_run": {
+      "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e8_planning_assessment/planning_assessment_overlay_o2_mae_sai.json": "5442ae7bf0bdd49e6521eab573db78383bf1439e9c3cc12d185d86157d2bcf9a",
+      "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e8_planning_assessment/LICENSE_NOTICE.txt": "acaafc1b83a5fe5d72a9f50e0e0efe476517328f581c5c487fb2e0a1290de1df"
+    },
+    "note": "The superseded receipt is named here by its SHA-256, and run_history lists every earlier run. result_same compares the result blocks of the two receipts (whether the overlay was written, its summary, and the summary of rows reported as computed) without the content hash of the overlay: an overlay carries its generation time, so its bytes and that hash differ between runs."
+  },
+  "run_history": [
+    {
+      "generated_at_utc": "2026-10-04T17:53:46Z",
+      "receipt_sha256": "7412cb1efc5cd89ca332ecb5cb036aa244bd6b35b5abb2ccc8890793f174d679",
+      "superseded_because": "The Thai title of the case in the overlay header said dew for residual water; it is corrected. No rule, no input and no value of a unit was changed.",
+      "result_same_as_the_run_that_replaced_it": true,
+      "outputs_sha256": {
+        "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e8_planning_assessment/planning_assessment_overlay_o2_mae_sai.json": "5442ae7bf0bdd49e6521eab573db78383bf1439e9c3cc12d185d86157d2bcf9a",
+        "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e8_planning_assessment/LICENSE_NOTICE.txt": "acaafc1b83a5fe5d72a9f50e0e0efe476517328f581c5c487fb2e0a1290de1df"
+      }
+    }
+  ]
+}

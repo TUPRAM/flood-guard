@@ -1180,6 +1180,10 @@ function assertFinalVisibleCopy(body, routePath) {
   }
   const forbidden = routePath === "/"
     ? /coming soon|under construction|work in progress|developer note|processing_scope|can_feed_decision_layer|official dispatch confirmed/iu
+    // The study library at /studio/ keeps the strict list it had before the report pages moved below it. Those
+    // pages say "candidate" and "non-operational" by design, so they have the shorter list.
+    : routePath === "/studio/"
+    ? /(?:^|[^\p{L}\p{N}])(?:rehearsals?|demos?|fixtures?|candidates?|synthetic|non[-_ ]?operational|fail[-_ ]?closed|server[-_ ]?produced)(?=$|[^\p{L}\p{N}])|developer note|no browser formula|processing_scope|can_feed_decision_layer/iu
     : routePath.startsWith("/studio/")
     ? /(?:^|[^\p{L}\p{N}])(?:rehearsals?|server[-_ ]?produced)(?=$|[^\p{L}\p{N}])|developer note|no browser formula/iu
     : routePath === "/public/"

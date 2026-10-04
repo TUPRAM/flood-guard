@@ -621,24 +621,26 @@ export function buildCommandFindIndex(input: {
 }
 
 /**
- * The names that hold `query`, in either language: names that start with it first, then subdistricts before shelters,
- * places, facilities and roads, then the shorter name. An empty query finds nothing.
+ * The names that hold `query`, in either language: names the map can show before names without a point in the data,
+ * then names that start with the query, then subdistricts before shelters, places, facilities and roads, then the
+ * shorter name. An empty query finds nothing.
  */
 export function searchCommandPlaces(index: readonly CommandFindEntry[], query: string, limit = 8): CommandFindEntry[] {
   const needle = normaliseFindText(query);
   if (!needle) return [];
-  const scored: { entry: CommandFindEntry; starts: number; kind: number; length: number; order: number }[] = [];
+  const scored: { entry: CommandFindEntry; located: number; starts: number; kind: number; length: number; order: number }[] = [];
   index.forEach((entry, order) => {
     const names = [entry.th, entry.en].filter((name): name is string => name !== null).map(normaliseFindText);
     if (!names.some((name) => name.includes(needle))) return;
     scored.push({
       entry,
+      located: entry.target ? 0 : 1,
       starts: names.some((name) => name.startsWith(needle)) ? 0 : 1,
       kind: COMMAND_FIND_KINDS.indexOf(entry.kind),
       length: Math.min(...names.filter((name) => name.includes(needle)).map((name) => name.length)),
       order,
     });
   });
-  scored.sort((a, b) => a.starts - b.starts || a.kind - b.kind || a.length - b.length || a.order - b.order);
+  scored.sort((a, b) => a.located - b.located || a.starts - b.starts || a.kind - b.kind || a.length - b.length || a.order - b.order);
   return scored.slice(0, Math.max(0, limit)).map((item) => item.entry);
 }

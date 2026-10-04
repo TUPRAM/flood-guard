@@ -3,7 +3,7 @@
    Colour: neutral ink and greys; the bar is the one blue of the water. The amber and the hatch are the protocol's own
    chips for an own-candidate class and a scenario class; they appear only once a class has been issued.
    The tokens (--c-*) are set on the page root in mae-sai-command-exercise.module.css. */
-.queue { --row-min: 34px; --plan-w: 112px; flex: 0 1 auto; display: flex; flex-direction: column; min-height: 44px; overflow: hidden; }
+.queue { --row-min: 33px; --plan-w: 112px; flex: 0 1 auto; display: flex; flex-direction: column; min-height: 44px; overflow: hidden; }
 /* On a touch screen a row is never under 44 px: the table then scrolls inside the card. */
 @media (pointer: coarse) { .queue { --row-min: 44px; } }
 .queue[data-state="waiting"] { flex: 1 1 auto; }

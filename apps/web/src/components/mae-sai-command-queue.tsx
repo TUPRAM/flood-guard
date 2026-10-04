@@ -15,7 +15,7 @@
  */
 
 import { ArrowDown, ArrowUp, Lock, MessageSquare, SlidersHorizontal, Table2 } from "lucide-react";
-import { useId, type FocusEvent, type ReactNode } from "react";
+import { useEffect, useId, type FocusEvent, type ReactNode } from "react";
 
 import type { Language, Localized } from "@/lib/flood-timeline";
 import { COMMAND_SHELTER_SETS, type CommandShelterSet } from "@/lib/flood-timeline-command";
@@ -150,6 +150,12 @@ export function CommandQueueTable({ language, rows, selected, onSelect, set, pos
   // Only keyboard focus holds the order: a row keeps the focus after a click, and that must not freeze the table.
   const focusIn = (event: FocusEvent<HTMLDivElement>) => { if (event.target.matches(":focus-visible")) onHold?.("focus", true); };
   const focusOut = (event: FocusEvent<HTMLDivElement>) => { if (!event.currentTarget.contains(event.relatedTarget)) onHold?.("focus", false); };
+  // When the table goes away under the pointer (a tablet opens the detail tab, focus mode folds the card), no pointer
+  // or focus event says so: the holds are released here.
+  useEffect(() => () => {
+    onHold?.("pointer", false);
+    onHold?.("focus", false);
+  }, [onHold]);
   return (
     <div className={styles.tableWrap} role="table" aria-label={t(COMMAND_TABLE.title)} aria-describedby={foot} data-command-table data-order-held={pending ? "true" : "false"} lang={language}>
       <div className={styles.head} role="rowgroup">

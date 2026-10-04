@@ -10,15 +10,15 @@
 .field input::-webkit-search-cancel-button { -webkit-appearance: none; }
 .hint { margin-top: 8px; color: var(--c-muted); font-size: 11px; line-height: 1.45; }
 .hint:lang(th) { line-height: 1.55; }
-.results { flex: 1 1 auto; display: grid; gap: 2px; min-height: 0; margin: 8px -6px 0; padding: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; list-style: none; }
-.results li { display: grid; grid-template-columns: 16px minmax(0, 1fr); align-items: center; gap: 10px; min-height: 44px; padding: 5px 8px; border-radius: 8px; color: var(--c-muted); cursor: pointer; }
+.results { flex: 1 1 auto; min-height: 0; margin: 8px -6px 0; padding: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; list-style: none; }
+.results li { display: grid; grid-template-columns: 16px minmax(0, 1fr); align-items: center; gap: 10px; min-height: 44px; margin-bottom: 2px; padding: 5px 8px; border-radius: 8px; color: var(--c-muted); cursor: pointer; }
 .results li[aria-selected="true"] { background: var(--c-tint); }
 .results li[aria-disabled="true"] { cursor: default; opacity: .62; }
 .names { display: grid; min-width: 0; }
 /* A long Thai name wraps; it is never cut. */
 .names strong { color: var(--c-ink); font-size: 13px; font-weight: 600; line-height: 1.5; overflow-wrap: anywhere; }
 .names span { color: #33495f; font-size: 11px; line-height: 1.35; overflow-wrap: anywhere; }
-.names small { overflow: hidden; color: var(--c-muted); font-size: 10.5px; line-height: 1.4; white-space: nowrap; text-overflow: ellipsis; }
+.names small { color: var(--c-muted); font-size: 10.5px; line-height: 1.4; }
 .names small:lang(th) { font-size: 11px; line-height: 1.5; }
 @media (max-width: 899px) {
   .find { display: none; }

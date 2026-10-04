@@ -511,8 +511,8 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
         const site = target.siteId ? siteMarkers.find((entry) => entry.site.id === target.siteId) : undefined;
         if (fit) {
           map.closePopup();
-          // About 400 m around the point, or the stated tolerance of a place record when that is wider.
-          const span = Math.max(0.0036, ((target.toleranceM ?? 0) * 1.7) / 111_320);
+          // About 800 m around the point, or the stated tolerance of a place record when that is wider.
+          const span = Math.max(0.0075, ((target.toleranceM ?? 0) * 1.7) / 111_320);
           fitTo([[target.lat - span, target.lon - span], [target.lat + span, target.lon + span]], !site && !motionRef.current);
         }
         // A reported site has its own marker: its popup says what the data holds.

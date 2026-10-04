@@ -121,6 +121,7 @@
 .laneTag { padding: 0 6px; border: 1px dashed #8fa1b4; border-radius: 4px; color: var(--c-muted); font-size: 10px; font-weight: 600; line-height: 1.6; letter-spacing: .03em; white-space: nowrap; }
 .laneTag:lang(th) { font-size: 11px; letter-spacing: 0; }
 .figures { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.1fr) minmax(0, 1.05fr) 64px; gap: 0 8px; padding: 0; list-style: none; }
+.figures:lang(th) { grid-template-columns: minmax(0, 1.66fr) minmax(0, 1.12fr) minmax(0, 1.12fr) 46px; gap: 0 7px; }
 .figure { display: flex; flex-direction: column; min-width: 0; }
 .figure strong { font-family: var(--c-font-head); font-size: 21px; font-weight: 600; line-height: 1.25; letter-spacing: -.01em; white-space: nowrap; }
 .figure span, .figure small { color: var(--c-muted); font-size: 10.5px; line-height: 1.35; text-wrap: balance; }
@@ -343,7 +344,7 @@
   .clockLong, .phaseLong, .hourLong { display: none; }
   .clockShort, .phaseShort, .hourShort { display: inline; }
   .clockTime { font-size: 19px; }
-  .figures { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .figures, .figures:lang(th) { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 8px; }
   .figureSlot { display: none; }
   .figure strong { font-size: 18px; }
   .figure small { display: none; }

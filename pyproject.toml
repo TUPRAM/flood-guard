@@ -37,6 +37,14 @@ evidence = [
   "Pillow>=10",
   "requests>=2.31"
 ]
+# Diagnosis scripts of plan task A1 (scripts/diagnostics/). A separate extra, left out of the default CI sync
+# (.github/workflows/ci.yml: --no-extra diagnostics). It names no package the other extras do not already lock.
+diagnostics = [
+  "rasterio>=1.4",
+  "geopandas>=0.14",
+  "pyproj>=3.6",
+  "shapely>=2.0"
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]

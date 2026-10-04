@@ -10,10 +10,11 @@
  * replay data.
  */
 
-import { ArrowRight, ChevronDown, ChevronUp, CircleHelp, Info, Layers, LocateFixed, Map as MapIcon, Maximize2, Menu, Minimize2, Minus, Plus, Scan, Search, X } from "lucide-react";
+import { ArrowRight, ChevronDown, ChevronUp, CircleHelp, ClipboardList, FileText, Info, Layers, ListChecks, LocateFixed, Map as MapIcon, Maximize2, Menu, Minimize2, Minus, Plus, Scan, Search, Settings2, X } from "lucide-react";
 import { Fragment, useEffect, useId, useRef, type ReactNode, type Ref } from "react";
 
 import { formatDateWithYear, lowConfidenceRgba, rgbaCss, type Language, type Localized, type TimelineManifest } from "@/lib/flood-timeline";
+import { COMMAND_EXERCISE_MENU, COMMAND_HELP_ACT, COMMAND_HELP_ACT_STEPS, COMMAND_NEAR } from "@/lib/flood-timeline-command-act-copy";
 import {
   COMMAND_BANNER,
   COMMAND_CREDITS,
@@ -45,6 +46,7 @@ import { COMMAND_WATER_RGBA, commandScaleBar } from "@/lib/flood-timeline-comman
 import { studioReplayHref } from "@/lib/flood-timeline-command-replay";
 import { localizedText } from "@/lib/flood-timeline-copy";
 
+import act from "./mae-sai-command-act.module.css";
 import type { CommandBasemap, CommandFitTarget, CommandMapView } from "./mae-sai-command-map";
 import { clusterMarkerNodes, EXERCISE_MARKER_VIEWBOX, exerciseMarkerNodes, MarkerGlyph, placeRecordMarkerNodes } from "./mae-sai-command-markers";
 import { ENVELOPE_SWATCH_BACKGROUND } from "./mae-sai-season-envelope";
@@ -79,7 +81,7 @@ export function CommandBanner({ language, onInfo, infoOpen, infoRef }: { languag
 }
 
 /** A native modal dialog: the browser keeps the focus inside it and closes it on Escape. */
-function ModalDialog({ open, onClose, className, labelledBy, language, name, children }: {
+export function ModalDialog({ open, onClose, className, labelledBy, language, name, children }: {
   open: boolean; onClose: () => void; className: string; labelledBy: string; language: Language; name: string; children: ReactNode;
 }) {
   const element = useRef<HTMLDialogElement | null>(null);
@@ -204,6 +206,10 @@ export function CommandHelpSheet({ open, onClose, onAbout, language }: { open: b
       </div>
       <div className={styles.sheetBody}>
         <p>{t(COMMAND_HELP.intro)}</p>
+        <h3>{t(COMMAND_HELP_ACT.title)}</h3>
+        <ol className={act.helpSteps} data-command-help-steps>
+          {COMMAND_HELP_ACT_STEPS.map((step) => <li key={step}>{t(COMMAND_HELP_ACT[step])}</li>)}
+        </ol>
         <h3>{t(COMMAND_HELP.keys)}</h3>
         <dl className={styles.keys}>
           {COMMAND_HELP_KEYS.map((row) => (
@@ -222,7 +228,35 @@ export function CommandHelpSheet({ open, onClose, onAbout, language }: { open: b
 
 // --- C. Navigation -----------------------------------------------------------------------------------------
 
-function NavItems({ language, hour, onLanguage, onHelp }: { language: Language; hour: number; onLanguage: (language: Language) => void; onHelp: () => void }) {
+/** What the exercise menu of the navigation opens: the facilitator's setup, the exercise log and the situation brief. */
+export interface CommandExerciseMenu {
+  open: boolean;
+  onToggle: (open: boolean) => void;
+  onSetup: () => void;
+  onLog: () => void;
+  onSituation: () => void;
+}
+
+/** The three entries of the exercise menu, in the order a facilitator uses them. */
+function ExerciseEntries({ language, exercise, layout }: { language: Language; exercise: CommandExerciseMenu; layout: "panel" | "menu" }) {
+  const t = (entry: Localized) => pick(entry, language);
+  const entries = [
+    { id: "setup", label: COMMAND_EXERCISE_MENU.setup, icon: <Settings2 size={18} aria-hidden="true" />, open: exercise.onSetup },
+    { id: "log", label: COMMAND_EXERCISE_MENU.log, icon: <ListChecks size={18} aria-hidden="true" />, open: exercise.onLog },
+    { id: "situation", label: COMMAND_EXERCISE_MENU.situation, icon: <FileText size={18} aria-hidden="true" />, open: exercise.onSituation },
+  ];
+  return (
+    <>
+      {entries.map((entry) => (
+        <button key={entry.id} type="button" className={layout === "menu" ? styles.navItem : act.menuItem} onClick={entry.open} aria-haspopup="dialog" data-command-exercise-item={entry.id}>
+          {layout === "menu" ? <span>{entry.icon}{t(entry.label)}</span> : <>{entry.icon}<span>{t(entry.label)}</span></>}
+        </button>
+      ))}
+    </>
+  );
+}
+
+function NavItems({ language, hour, onLanguage, onHelp, exercise }: { language: Language; hour: number; onLanguage: (language: Language) => void; onHelp: () => void; exercise?: CommandExerciseMenu }) {
   const t = (entry: Localized) => pick(entry, language);
   const other: Language = language === "th" ? "en" : "th";
   return (
@@ -231,6 +265,11 @@ function NavItems({ language, hour, onLanguage, onHelp }: { language: Language; 
       <a className={styles.navItem} href={COMMAND_EXERCISE_ROUTE} aria-current="page"><span>{t(COMMAND_NAV.command)}</span></a>
       <a className={styles.navItem} href={studioReplayHref(hour, language)} title={t(COMMAND_NAV.studioHint)}><span>{t(COMMAND_NAV.studio)}</span></a>
       <span className={styles.navDivider} aria-hidden="true" />
+      {exercise && (
+        <button type="button" className={styles.navItem} onClick={() => exercise.onToggle(!exercise.open)} aria-expanded={exercise.open} title={t(COMMAND_EXERCISE_MENU.menu)} data-command-exercise-menu>
+          <span className={act.navExercise}><ClipboardList size={16} aria-hidden="true" />{t(COMMAND_EXERCISE_MENU.label)}<ChevronDown size={14} aria-hidden="true" /></span>
+        </button>
+      )}
       <button type="button" className={styles.navItem} onClick={() => onLanguage(other)} aria-label={t(COMMAND_NAV.switchLanguage)} data-command-language={other}>
         <span lang={other}>{other === "th" ? "ไทย" : "EN"}</span>
       </button>
@@ -242,7 +281,7 @@ function NavItems({ language, hour, onLanguage, onHelp }: { language: Language; 
 }
 
 /** The navigation pill of a desktop, and on a tablet one menu button that opens the same entries. */
-export function CommandNav({ language, hour, menuOpen, onMenu, onLanguage, onHelp, basemap, onBasemap, navRef }: {
+export function CommandNav({ language, hour, menuOpen, onMenu, onLanguage, onHelp, basemap, onBasemap, exercise, navRef }: {
   language: Language;
   hour: number;
   menuOpen: boolean;
@@ -251,20 +290,40 @@ export function CommandNav({ language, hour, menuOpen, onMenu, onLanguage, onHel
   onHelp: () => void;
   basemap: CommandBasemap;
   onBasemap: () => void;
+  /** The exercise menu: on a desktop a button of the pill with its own small panel, on a tablet three entries of the menu. */
+  exercise?: CommandExerciseMenu;
   navRef?: Ref<HTMLElement>;
 }) {
   const t = (entry: Localized) => pick(entry, language);
+  const exercisePanel = useRef<HTMLDivElement | null>(null);
+  const exerciseOpen = exercise?.open ?? false;
+  // The panel takes the keyboard focus when it opens, so its entries are the next thing a key reaches.
+  useEffect(() => {
+    if (exerciseOpen) exercisePanel.current?.querySelector<HTMLElement>("button")?.focus({ preventScroll: true });
+  }, [exerciseOpen]);
   return (
     <>
       <nav ref={navRef} className={styles.nav} data-region="C" data-clear-panel aria-label={t(COMMAND_NAV.label)} lang={language}>
-        <NavItems language={language} hour={hour} onLanguage={onLanguage} onHelp={onHelp} />
+        <NavItems language={language} hour={hour} onLanguage={onLanguage} onHelp={onHelp} exercise={exercise} />
       </nav>
+      {exercise?.open && (
+        <div ref={exercisePanel} className={`${styles.panel} ${act.exerciseMenu}`} role="group" aria-label={t(COMMAND_EXERCISE_MENU.menu)} lang={language} data-command-exercise-panel>
+          <ExerciseEntries language={language} exercise={exercise} layout="panel" />
+        </div>
+      )}
       <button type="button" className={`${styles.tool} ${styles.menuButton}`} onClick={() => onMenu(!menuOpen)} aria-expanded={menuOpen} aria-label={t(COMMAND_NAV.menu)} title={t(COMMAND_NAV.menu)} data-command-menu data-clear-panel>
         {menuOpen ? <X size={20} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}
       </button>
       {menuOpen && (
         <nav className={`${styles.panel} ${styles.menu}`} aria-label={t(COMMAND_NAV.label)} lang={language} data-command-menu-panel data-clear-panel>
           <NavItems language={language} hour={hour} onLanguage={onLanguage} onHelp={() => { onMenu(false); onHelp(); }} />
+          {exercise && (
+            <>
+              <hr />
+              <ExerciseEntries language={language} layout="menu"
+                exercise={{ ...exercise, onSetup: () => { onMenu(false); exercise.onSetup(); }, onLog: () => { onMenu(false); exercise.onLog(); }, onSituation: () => { onMenu(false); exercise.onSituation(); } }} />
+            </>
+          )}
           <hr />
           <button type="button" className={styles.navItem} onClick={onBasemap}>
             <span>{t(COMMAND_TOOLS.basemap)}: {t(basemap === "street" ? COMMAND_TOOLS.basemapStreet : COMMAND_TOOLS.basemapTerrain)}</span>
@@ -401,6 +460,8 @@ export function CommandViewPopover({ language, facilities, facilityCount, onFaci
 // --- G. Legend ---------------------------------------------------------------------------------------------
 
 const STAR_PATH = "M12 1.8l3.1 6.6 7.2.9-5.3 5 1.4 7.1L12 17.9l-6.4 3.5L7 14.3l-5.3-5 7.2-.9z";
+/** The small flag of the staging point: the same drawing as on the map. */
+export const STAGING_FLAG_PATH = "M6 21V4h11l-2.4 4L17 12H6";
 const LOW_STRIPE = rgbaCss(lowConfidenceRgba(COMMAND_WATER_RGBA.shallow, true));
 const LOW_WASH = rgbaCss(lowConfidenceRgba(COMMAND_WATER_RGBA.shallow, false));
 
@@ -493,6 +554,14 @@ export function CommandLegend({ language, open, onToggle, facilities, unmodelled
         <li title={t(COMMAND_MARKERS.noReportsMeaning)}><span className={styles.legendNoReports} lang={language}>{t(COMMAND_MARKERS.noReports)}</span>{t(COMMAND_LEGEND_REPORTS.noReports)}</li>
         <li><MarkerGlyph nodes={clusterMarkerNodes(7, 2)} viewBox={EXERCISE_MARKER_VIEWBOX} size={30} />{t(COMMAND_LEGEND_REPORTS.cluster)}</li>
         <li><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="rgb(18 38 45 / 4%)" stroke="#12262d" strokeWidth="1.2" strokeDasharray="3 3" /></svg>{t(COMMAND_MARKERS.tolerance)}</li>
+        {/* The exercise: where the team starts, and the straight line from there. A straight line is never a route. */}
+        <li>
+          <span className={act.stagingBadge} aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="12" height="12"><path d={STAGING_FLAG_PATH} fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          </span>
+          {t(COMMAND_NEAR.legendStaging)}
+        </li>
+        <li><span className={styles.sample}><i style={{ borderTopWidth: 1.6, borderTopStyle: "dashed", borderTopColor: "#12262d" }} /></span>{t(COMMAND_NEAR.legendLine)}</li>
       </ul>
       <p className={styles.legendNote} lang={language}>{t(COMMAND_LEGEND.note)} {t(COMMAND_LEGEND_REPORTS.urgencyRule)}</p>
     </div>
@@ -538,12 +607,28 @@ export function CommandCredits({ language, view, revision, layerCredit = null }:
  * One line at the top centre of the map. It says what the page did or could not do, or that an invented item of the
  * exercise has arrived; it is never a warning. With `onSelect` the line is a button that shows what it names.
  */
-export function CommandNotice({ message, language, onSelect }: { message: string | null; language: Language; onSelect?: () => void }) {
+export function CommandNotice({ message, language, onSelect, action }: {
+  message: string | null;
+  language: Language;
+  onSelect?: () => void;
+  /**
+   * A button beside the line: "Undo" after an action of the exercise (with a line under it that runs out with the ten
+   * seconds), or "Cancel" while the page waits for a tap on the map. `id` restarts that line for a new action.
+   */
+  action?: { id: string; label: string; onPress: () => void; timed?: boolean };
+}) {
   return (
     <div role="status" data-region="I" lang={language}>
-      {message && (onSelect
-        ? <button type="button" className={styles.notice} onClick={onSelect} data-command-notice="action">{message}<ArrowRight size={14} aria-hidden="true" style={{ marginLeft: 8, marginRight: 0 }} /></button>
-        : <p className={styles.notice} data-command-notice>{message}</p>)}
+      {message && (action
+        ? (
+          <p key={action.id} className={styles.notice} data-command-notice="with-action">
+            {message}
+            <button type="button" className={act.noticeAction} onClick={action.onPress} data-command-notice-action>{action.label}{action.timed && <i aria-hidden="true" />}</button>
+          </p>
+        )
+        : onSelect
+          ? <button type="button" className={styles.notice} onClick={onSelect} data-command-notice="action">{message}<ArrowRight size={14} aria-hidden="true" style={{ marginLeft: 8, marginRight: 0 }} /></button>
+          : <p className={styles.notice} data-command-notice>{message}</p>)}
     </div>
   );
 }

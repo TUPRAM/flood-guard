@@ -12,7 +12,7 @@
  */
 
 import { formatDateWithYear, type Language, type Localized } from "./flood-timeline";
-import { commandDistanceBearing, commandDistanceText, commandRoadName, type DepthFact, type ItemFacts, type NearRoad, type NearSite } from "./flood-timeline-command-brief";
+import { commandDistanceBearing, commandDistanceText, commandRoadName, type DepthFact, type ItemFacts, type NearRoad, type NearSite, type SiteUse } from "./flood-timeline-command-brief";
 import { COMMAND_LEGEND, COMMAND_MAP, commandMomentShort } from "./flood-timeline-command-copy";
 import type { ExerciseUrgency } from "./flood-timeline-command-incidents";
 import {
@@ -125,6 +125,10 @@ export const COMMAND_GO = {
   dry: { en: "dry in the model at this stage", th: "แห้งตามแบบจำลอง ณ ระดับน้ำนี้" },
   wet: { en: "in modelled water at this stage", th: "อยู่ในน้ำตามแบบจำลอง ณ ระดับน้ำนี้" },
   openingUnknown: { en: "opening time not known", th: "ไม่ทราบเวลาที่เริ่มเปิดใช้" },
+  occupancyHeld: {
+    en: "Occupancy counts carry later dates, so they are shown in hindsight mode.",
+    th: "จำนวนผู้พักพิงตามรายงานมีวันที่หลังชั่วโมงนี้ จึงแสดงในโหมดมองย้อนหลัง",
+  },
   none: { en: "The replay data holds no counted site with a point.", th: "ข้อมูลการย้อนดูไม่มีที่พักพิงที่นับและมีจุดบนแผนที่" },
   limit: {
     en: "Straight-line distances. Nothing here says that a site could be reached, was in use at this hour or had room.",
@@ -143,16 +147,19 @@ export function commandGoMeta(shown: number, counted: number, language: Language
 }
 
 /**
- * "reported in use by 15 Sep 2024; opening time not known": a bound of the data reads "by", an exact day "from".
- * The text itself is used when the data gives no date.
+ * "reported in use by 15 Sep 2024; opening time not known": a bound of the data reads "by", an exact day "from". In
+ * trainee mode the day of the first 2024 source stands in their place ("first reported in use on 11 Sep 2024"), so
+ * no later date is shown. The text of the data is used when it gives no date.
  */
-export function commandReportedInUse(firstUse: string, language: Language): string {
-  const match = /^(\d{4}-\d{2}-\d{2})( or earlier)?$/.exec(firstUse);
+export function commandReportedInUse(use: SiteUse, language: Language): string {
   const tail = pick(COMMAND_GO.openingUnknown, language);
-  if (!match) return language === "th" ? `มีรายงานว่าใช้งาน: ${firstUse} · ${tail}` : `reported in use: ${firstUse}; ${tail}`;
-  const date = formatDateWithYear(match[1], language);
-  if (language === "th") return `${match[2] ? `มีรายงานว่าใช้งานแล้วภายในวันที่ ${date}` : `มีรายงานว่าใช้งานตั้งแต่วันที่ ${date}`} · ${tail}`;
-  return `reported in use ${match[2] ? "by" : "from"} ${date}; ${tail}`;
+  if (use.kind === "text") return language === "th" ? `มีรายงานว่าใช้งาน: ${use.text} · ${tail}` : `reported in use: ${use.text}; ${tail}`;
+  const date = formatDateWithYear(use.date, language);
+  if (language === "th") {
+    const lead = use.kind === "by" ? `มีรายงานว่าใช้งานแล้วภายในวันที่ ${date}` : use.kind === "from" ? `มีรายงานว่าใช้งานตั้งแต่วันที่ ${date}` : `มีรายงานการใช้ครั้งแรกเมื่อวันที่ ${date}`;
+    return `${lead} · ${tail}`;
+  }
+  return `${use.kind === "first_report" ? "first reported in use on" : `reported in use ${use.kind}`} ${date}; ${tail}`;
 }
 
 /** The state of a site in the model at this stage, in words. */
@@ -183,7 +190,8 @@ export const COMMAND_NEAR = {
   stagingLead: { en: "From the staging point", th: "จากจุดระดมทรัพยากร" },
   stagingOnMap: { en: "point set on the map", th: "จุดที่กำหนดบนแผนที่" },
   straightLine: { en: "straight line, not a route", th: "เส้นตรง ไม่ใช่เส้นทาง" },
-  stagingMarker: { en: "Staging point of this exercise", th: "จุดระดมทรัพยากรของการฝึกซ้อมนี้" },
+  legendStaging: { en: "staging point of the exercise (set by the facilitator)", th: "จุดระดมทรัพยากรของการฝึกซ้อม (ผู้อำนวยการฝึกกำหนด)" },
+  legendLine: { en: "straight line from the staging point to the selected item: not a route", th: "เส้นตรงจากจุดระดมทรัพยากรถึงรายการที่เลือก ไม่ใช่เส้นทาง" },
   noAdvice: {
     en: "The page gives no advice on the kind of team to send: the model has depth and no current.",
     th: "หน้านี้ไม่แนะนำว่าควรส่งชุดปฏิบัติการประเภทใด เพราะแบบจำลองมีเพียงความลึกของน้ำ ไม่มีกระแสน้ำ",

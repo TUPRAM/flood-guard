@@ -45,6 +45,8 @@ import { countedInReportedSet, reportedSiteRole } from "@/lib/flood-timeline-eva
 import { groupNearbyPlaces } from "@/lib/flood-timeline-reported-depths";
 import { clearRectPadding, panIntoRect, popupFitInRect, type ScreenRect } from "@/lib/flood-timeline-layout";
 
+import act from "./mae-sai-command-act.module.css";
+import { STAGING_FLAG_PATH } from "./mae-sai-command-chrome";
 import { mountCommandMarkers, type CommandMarkerFrame, type CommandReportAction, type CommandReportSelection } from "./mae-sai-command-markers";
 import { createCanvasOverlay, keyboardPopups, MAP_POPUP_FRAME_CLASS, popupElement, tooltipElement, type PopupLine } from "./mae-sai-map-kit";
 import styles from "./mae-sai-command-exercise.module.css";
@@ -84,6 +86,12 @@ export interface CommandMapHandle {
   closePopup: () => boolean;
 }
 
+/**
+ * The dashed straight line from the staging point of the exercise to the selected item, with its label. It is a straight
+ * line and never a route: the replay data holds no road network a browser could route on.
+ */
+export interface CommandMapLine { from: [number, number]; to: [number, number]; label: string }
+
 /** The 2024 season envelope as the map draws it in hindsight mode: its cells on the water grid, and its short credit. */
 export interface CommandEnvelopeLayer { cells: Uint32Array; credit: string }
 
@@ -98,6 +106,9 @@ interface MapController {
   setFacilities: (visible: boolean) => void;
   setReports: (frame: CommandMarkerFrame) => void;
   setEnvelope: (envelope: CommandEnvelopeLayer | null) => void;
+  setStaging: (point: { lat: number; lon: number } | null) => void;
+  setLine: (line: CommandMapLine | null) => void;
+  setPicking: (picking: boolean) => void;
   refreshText: () => void;
 }
 interface RoadEntry { layer: Path; props: RoadProps; style: CommandRoadStyle; rank: CommandRoadRank; casing: Path | null }
@@ -185,7 +196,7 @@ function placeLabel(thai: string, roman: string): HTMLElement {
   return root;
 }
 
-export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, basemap, facilities, selected = null, reports = null, envelope = null, getClear, reducedMotion, onReady, onBasemapIssue, onView, onReportAction, onWatermarkPane, handle }: {
+export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, basemap, facilities, selected = null, reports = null, envelope = null, staging = null, line = null, picking = false, onPick, getClear, reducedMotion, onReady, onBasemapIssue, onView, onReportAction, onWatermarkPane, handle }: {
   data: CommandReplayData;
   /** The terrain raster of the water layer; null until it has loaded (the roads and the figures do not wait for it). */
   hand: CommandHandRaster | null;
@@ -203,6 +214,13 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
   reports?: CommandMarkerFrame | null;
   /** The 2024 season envelope (a scenario layer): drawn in hindsight mode only, so null in trainee mode. */
   envelope?: CommandEnvelopeLayer | null;
+  /** The staging point of the exercise (where the team starts): a small dark badge; null draws none. */
+  staging?: { lat: number; lon: number } | null;
+  /** The dashed straight line from the staging point to the selected item; null draws none. */
+  line?: CommandMapLine | null;
+  /** The facilitator is choosing the staging point: the next tap on the map names it. */
+  picking?: boolean;
+  onPick?: (lat: number, lon: number) => void;
   /** The clear rectangle between the page's panels, in the map's own pixels, measured when it is asked for. */
   getClear: () => ScreenRect;
   reducedMotion: boolean;
@@ -228,12 +246,12 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
   const languageRef = useRef(language);
   const clearRef = useRef(getClear);
   const motionRef = useRef(reducedMotion);
-  const callbacks = useRef({ onReady, onBasemapIssue, onView, onReportAction, onWatermarkPane });
+  const callbacks = useRef({ onReady, onBasemapIssue, onView, onReportAction, onWatermarkPane, onPick });
   useEffect(() => {
     languageRef.current = language;
     clearRef.current = getClear;
     motionRef.current = reducedMotion;
-    callbacks.current = { onReady, onBasemapIssue, onView, onReportAction, onWatermarkPane };
+    callbacks.current = { onReady, onBasemapIssue, onView, onReportAction, onWatermarkPane, onPick };
   });
   useImperativeHandle(handle, () => ({
     zoomBy: (delta) => mapHandle.current?.zoomBy(delta),
@@ -811,6 +829,66 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
         placeLayers.push(ring);
       };
 
+      // --- The exercise: the staging point (a small dark badge beside its point, never pressed), the dashed straight
+      // line from it to the selected item, and the tap that names a staging point.
+      let stagingMarker: Marker | null = null;
+      const setStaging = (point: { lat: number; lon: number } | null) => {
+        stagingMarker?.remove();
+        stagingMarker = null;
+        if (!point) return;
+        const badge = document.createElement("span");
+        badge.className = act.stagingBadge;
+        badge.dataset.commandStaging = "true";
+        const flag = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        flag.setAttribute("viewBox", "0 0 24 24");
+        flag.setAttribute("width", "12");
+        flag.setAttribute("height", "12");
+        flag.setAttribute("aria-hidden", "true");
+        const pole = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        pole.setAttribute("d", STAGING_FLAG_PATH);
+        pole.setAttribute("fill", "none");
+        pole.setAttribute("stroke", "currentColor");
+        pole.setAttribute("stroke-width", "2.6");
+        pole.setAttribute("stroke-linecap", "round");
+        pole.setAttribute("stroke-linejoin", "round");
+        flag.append(pole);
+        badge.append(flag);
+        // The badge stands above and to the right of its point, so it never covers the sign of the site it is at.
+        stagingMarker = L.marker([point.lat, point.lon], {
+          pane: "fg-labels", icon: L.divIcon({ className: act.stagingIcon, html: badge, iconSize: [22, 22], iconAnchor: [-4, 26] }), interactive: false, keyboard: false,
+        }).addTo(map);
+      };
+      let lineLayers: Layer[] = [];
+      const setLine = (next: CommandMapLine | null) => {
+        for (const layer of lineLayers) layer.remove();
+        lineLayers = [];
+        if (!next) return;
+        const shared = { pane: "fg-selection", renderer: selectionRenderer, interactive: false, lineCap: "butt" as const };
+        const path: [number, number][] = [next.from, next.to];
+        const dashed = L.polyline(path, { ...shared, color: "#12262d", weight: 1.6, opacity: 1, dashArray: "6 5" });
+        lineLayers = [
+          L.polyline(path, { ...shared, color: "#ffffff", weight: 4.5, opacity: 0.85 }).addTo(map),
+          dashed.addTo(map),
+          L.circleMarker(next.from, { ...shared, radius: 4, color: "#ffffff", weight: 2, fillColor: "#12262d", fillOpacity: 1 }).addTo(map),
+        ];
+        // The label is one short line of text on the middle of the line: it says what the line is, and what it is not.
+        dashed.bindTooltip(() => {
+          const label = document.createElement("span");
+          label.lang = languageRef.current;
+          label.textContent = next.label;
+          return label;
+        }, { permanent: true, direction: "center", className: act.lineLabel, interactive: false });
+      };
+      let pickingNow = false;
+      const setPicking = (on: boolean) => {
+        pickingNow = on;
+        map.getContainer().classList.toggle(act.mapPicking, on);
+        if (on) map.closePopup();
+      };
+      map.on("click", (event) => {
+        if (pickingNow) callbacks.current.onPick?.(event.latlng.lat, event.latlng.lng);
+      });
+
       const reportView = () => callbacks.current.onView?.({ metresPerPixel: metresPerPixel(map.getCenter().lat, map.getZoom()), zoom: map.getZoom() });
       map.on("zoomend", () => {
         const next = map.getZoom() >= NEAR_ZOOM ? "near" : "far";
@@ -877,6 +955,9 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
           syncSites();
         },
         setEnvelope,
+        setStaging,
+        setLine,
+        setPicking,
         refreshText() {
           refreshText();
           markerLayer.refreshText();
@@ -957,6 +1038,17 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
   useEffect(() => {
     if (ready) controller.current?.setEnvelope(envelope);
   }, [ready, envelope]);
+  const stagingLat = staging?.lat ?? null;
+  const stagingLon = staging?.lon ?? null;
+  useEffect(() => {
+    if (ready) controller.current?.setStaging(stagingLat !== null && stagingLon !== null ? { lat: stagingLat, lon: stagingLon } : null);
+  }, [ready, stagingLat, stagingLon]);
+  useEffect(() => {
+    if (ready) controller.current?.setLine(line);
+  }, [ready, line]);
+  useEffect(() => {
+    if (ready) controller.current?.setPicking(picking);
+  }, [ready, picking]);
   useEffect(() => {
     if (ready) controller.current?.refreshText();
   }, [ready, language]);

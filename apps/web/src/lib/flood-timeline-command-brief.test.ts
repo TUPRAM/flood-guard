@@ -107,9 +107,10 @@ describe("Where people go: the nearest counted shelters", () => {
     for (const site of near) {
       expect(site.distanceM).toBeGreaterThan(0);
       expect(["dry", "wet", "not_modelled"]).toContain(site.state);
-      expect(site.firstUse).toBe("2024-09-15 or earlier");
+      expect(site.use).toEqual({ kind: "by", date: "2024-09-15" });
       expect(site.occupancy).not.toMatch(/^Occupancy:/);
-      expect(site.pending).toBe(false);
+      expect(site.occupancy).toMatch(/\d/);
+      expect([site.pending, site.occupancyHeld]).toEqual([false, false]);
     }
   });
 
@@ -123,6 +124,21 @@ describe("Where people go: the nearest counted shelters", () => {
     // 16 Sep 00:00 (hour 168): the list published that day names the rest.
     expect(nearestCountedSites(sites, point, model.stages[168], { hour: 168, mode: "trainee" }, 99).every((site) => !site.pending)).toBe(true);
     expect(nearestCountedSites(sites, point, model.stages[40], { hour: 40, mode: "hindsight" }, 99).every((site) => !site.pending)).toBe(true);
+  });
+
+  it("shows no later date in trainee mode: the day of the first source, and the occupancy counts held back", () => {
+    const point = item("EX-02").point;
+    const trainee = nearestCountedSites(sites, point, model.stages[60], { hour: 60, mode: "trainee" }, 99);
+    for (const site of trainee) {
+      expect(site.occupancy, site.id).toBeNull();
+      expect(site.use.kind, site.id).toBe("first_report");
+      // A site that is reported by this hour (11 Sep 12:00) was first reported on or before 11 Sep.
+      if (!site.pending && site.use.kind === "first_report") expect(site.use.date <= "2024-09-11", site.id).toBe(true);
+    }
+    expect(trainee.find((site) => site.id === "R01")).toMatchObject({ use: { kind: "first_report", date: "2024-09-11" }, occupancyHeld: true, pending: false });
+    const hindsight = nearestCountedSites(sites, point, model.stages[60], { hour: 60, mode: "hindsight" }, 99);
+    expect(hindsight.find((site) => site.id === "R01")).toMatchObject({ use: { kind: "by", date: "2024-09-15" }, occupancyHeld: false });
+    expect(hindsight.find((site) => site.id === "R01")!.occupancy).toContain("34 (2024-09-11 01:00)");
   });
 
   it("shortens a site's name by the note in brackets at its end", () => {

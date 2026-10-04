@@ -10,9 +10,11 @@
  * model is dry. In focus mode the card is two short lines, and the model tag stays in sight.
  */
 
+import { FileText } from "lucide-react";
 import { useMemo } from "react";
 
 import { phaseAt, type Language, type TimelineManifest } from "@/lib/flood-timeline";
+import { COMMAND_BRIEF } from "@/lib/flood-timeline-command-act-copy";
 import { changeSinceHourBefore, clampCommandHour, commandStage, districtFiguresAt, type CommandModel, type CommandShelterSet } from "@/lib/flood-timeline-command";
 import type { PlaceRecordTally } from "@/lib/flood-timeline-command-feed";
 import type { ExerciseCounts } from "@/lib/flood-timeline-command-incidents";
@@ -34,6 +36,7 @@ import {
   commandText,
 } from "@/lib/flood-timeline-command-copy";
 
+import act from "./mae-sai-command-act.module.css";
 import styles from "./mae-sai-command-exercise.module.css";
 import { EXERCISE_MARKER_VIEWBOX, exerciseMarkerNodes, MarkerGlyph } from "./mae-sai-command-markers";
 
@@ -58,7 +61,7 @@ export function ModelValue({ text, unit = null }: { text: string; unit?: string 
   );
 }
 
-export function MaeSaiCommandSituation({ language, hour, manifest, model, set = "reported", exercise = null, tally = null, onRecords, collapsed = false, failed = false, onRetry }: {
+export function MaeSaiCommandSituation({ language, hour, manifest, model, set = "reported", exercise = null, tally = null, onRecords, onBrief, collapsed = false, failed = false, onRetry }: {
   language: Language;
   /** Whole replay hour, 0 … 264. */
   hour: number;
@@ -73,6 +76,8 @@ export function MaeSaiCommandSituation({ language, hour, manifest, model, set = 
   tally?: PlaceRecordTally | null;
   /** The place-record chip was pressed: the page opens "Known by now". */
   onRecords?: () => void;
+  /** One tap opens the situation brief of this replay hour; without it the card has no such button. */
+  onBrief?: () => void;
   /** Focus mode: the replay time with the model tag, and the two figures under it. */
   collapsed?: boolean;
   /** The replay data could not be loaded. */
@@ -112,6 +117,11 @@ export function MaeSaiCommandSituation({ language, hour, manifest, model, set = 
           <span className={styles.hourShort}>{commandHourShort(at, language)}</span>
         </span>
         <span className={styles.replayTag} title={t(COMMAND_CLOCK.tagMeaning)}>{t(COMMAND_CLOCK.tag)}</span>
+        {onBrief && figures && (
+          <button type="button" className={act.briefButton} onClick={onBrief} aria-haspopup="dialog" aria-label={t(COMMAND_BRIEF.open)} title={t(COMMAND_BRIEF.open)} data-command-situation-brief>
+            <FileText size={16} aria-hidden="true" />
+          </button>
+        )}
       </div>
       {/* The replay time stands alone on its line: the largest text of the page, in either language. */}
       <p className={styles.clock}>

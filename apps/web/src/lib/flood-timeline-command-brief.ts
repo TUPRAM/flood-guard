@@ -21,7 +21,7 @@
 import { roadState, type Language, type LineGeometry, type Localized, type ReportedShelter, type RoadProps } from "./flood-timeline";
 import { roundModelFigure, roundModelKm, type CommandChange, type CommandFigures, type CommandTambonRow } from "./flood-timeline-command";
 import { COMMAND_FIGURES, commandBaseText, commandHourClock, commandHourOf, commandMoment, commandRoadList } from "./flood-timeline-command-copy";
-import { reportedSiteHour, type CommandMode } from "./flood-timeline-command-feed";
+import { reportedSiteDate, reportedSiteHour, type CommandMode } from "./flood-timeline-command-feed";
 import type { ExerciseItem } from "./flood-timeline-command-incidents";
 import type { StagingChoice } from "./flood-timeline-command-log";
 import { reportedSiteWetAt } from "./flood-timeline-command-map";
@@ -105,12 +105,28 @@ export interface NearSite {
   compass: CompassPoint;
   /** Whether the mapped point of the site is in modelled water at this stage; "not_modelled" outside the terrain model. */
   state: "dry" | "wet" | "not_modelled";
-  /** First reported use as the data gives it: a local date, or a bound ("2024-09-15 or earlier"). */
-  firstUse: string;
-  /** The occupancy text of the data, as written, with its dates; null when no source gave a count. */
+  /** What the data says of the site's use, as the mode may show it. */
+  use: SiteUse;
+  /** The occupancy text of the data, as written, with its dates; null when no source gave a count, or while it is held back. */
   occupancy: string | null;
+  /** True in trainee mode: the occupancy text carries counts of later days, so it is shown in hindsight mode only. */
+  occupancyHeld: boolean;
   /** True in trainee mode before the day of the site's first dated 2024 source: not yet reported at this replay hour. */
   pending: boolean;
+}
+
+/**
+ * When a site was reported in use. In hindsight mode it is the data's own first use: a bound ("by 15 Sep 2024") or an
+ * exact day ("from 21 Sep 2024"). In trainee mode a bound can lie after the replay hour, so the day of the first
+ * 2024 source is given in its place ("first reported on 11 Sep 2024"). The opening time is never known.
+ */
+export type SiteUse = { kind: "by" | "from" | "first_report"; date: string } | { kind: "text"; text: string };
+
+function siteUse(site: Pick<ReportedShelter, "first_use" | "sources">, mode: CommandMode): SiteUse {
+  const reported = mode === "trainee" ? reportedSiteDate(site) : null;
+  if (reported) return { kind: "first_report", date: reported };
+  const match = /^(\d{4}-\d{2}-\d{2})( or earlier)?$/.exec(site.first_use);
+  return match ? { kind: match[2] ? "by" : "from", date: match[1] } : { kind: "text", text: site.first_use };
 }
 
 /**
@@ -124,14 +140,16 @@ export function nearestCountedSites(sites: readonly ReportedShelter[], point: La
     .map((site) => {
       const at = { lat: site.lat as number, lon: site.lon as number };
       const fromHour = reportedSiteHour(site);
+      const occupancy = site.reported_capacity_or_occupancy?.replace(/^\s*occupancy\s*:\s*/i, "") || null;
       return {
         id: site.id,
         name: { th: site.name_th, en: site.name_en },
         distanceM: distanceM(point, at),
         compass: compassPoint(bearingDeg(point, at)),
         state: site.model_check?.m === false ? "not_modelled" as const : reportedSiteWetAt(site, stage) ? "wet" as const : "dry" as const,
-        firstUse: site.first_use,
-        occupancy: site.reported_capacity_or_occupancy?.replace(/^\s*occupancy\s*:\s*/i, "") || null,
+        use: siteUse(site, time.mode),
+        occupancy: time.mode === "trainee" ? null : occupancy,
+        occupancyHeld: time.mode === "trainee" && occupancy !== null,
         pending: time.mode === "trainee" && fromHour !== null && time.hour < fromHour,
       };
     })
@@ -452,6 +470,8 @@ export interface SituationBriefInput {
   /** The rows of the table in this hour's order: the first three with residents who lost shelter access are named. */
   rows: readonly Pick<CommandTambonRow, "th" | "en" | "lostAccess">[];
   change: Pick<CommandChange, "sinceHour" | "newlyImpassable">;
+  /** What the shelter set is, when the figures count another set than the sites reported in 2024; null for that set. */
+  setNote?: string | null;
 }
 
 /**
@@ -468,12 +488,13 @@ export function situationBriefLines(input: SituationBriefInput, language: Langua
     .map((row) => `${th ? row.th : row.en} ${roundModelFigure(row.lostAccess).text}`);
   const roads = change.newlyImpassable.named;
   const since = change.sinceHour === null ? null : commandHourClock(change.sinceHour, language);
+  const set = input.setNote ? ` · ${input.setNote}` : "";
   return [
     `${tag} ${th ? "สรุปสถานการณ์" : "Situation brief"}`,
     `${th ? "เวลาในการย้อนดู" : "Replay time"}: ${commandMoment(input.hour, language)} (${commandHourOf(input.hour, language)})`,
     th
-      ? `${pick(COMMAND_FIGURES.lostAccess, language)}: ${roundModelFigure(figures.lostAccess).text} คน (${commandBaseText(figures.withinReachBefore, language, true)})`
-      : `Lost shelter access: ${roundModelFigure(figures.lostAccess).text} residents (${commandBaseText(figures.withinReachBefore, language, true)})`,
+      ? `${pick(COMMAND_FIGURES.lostAccess, language)}: ${roundModelFigure(figures.lostAccess).text} คน (${commandBaseText(figures.withinReachBefore, language, true)})${set}`
+      : `Lost shelter access: ${roundModelFigure(figures.lostAccess).text} residents (${commandBaseText(figures.withinReachBefore, language, true)})${set}`,
     th
       ? `${pick(COMMAND_FIGURES.inWater, language)}: ${roundModelFigure(figures.inWater).text} คน`
       : `Residents in modelled water: ${roundModelFigure(figures.inWater).text}`,

@@ -312,6 +312,8 @@ export interface CommandQueueProps {
   tab?: CommandLeftTab;
   onTab?: (tab: CommandLeftTab) => void;
   detail?: ReactNode;
+  /** What stays fixed under the detail tab while it scrolls: the action bar of an invented item. */
+  detailFooter?: ReactNode;
   known?: ReactNode;
   /** How many rows "Known by now" holds at this replay hour: printed on its tab. */
   knownCount?: number;
@@ -371,6 +373,7 @@ export function MaeSaiCommandQueue(props: CommandQueueProps) {
       <div id={panelId} className={styles.tabPanel} role="tabpanel" data-tab={tab}>
         {tab === "queue" ? queuePanel : tab === "detail" ? props.detail : props.known}
       </div>
+      {tab === "detail" && props.detailFooter}
     </>,
     rows ? "ready" : "waiting",
   );

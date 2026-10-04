@@ -277,7 +277,10 @@ export function mountCommandMarkers(options: CommandMarkerLayerOptions): Command
   const actionRow = (selection: CommandReportSelection): HTMLElement => {
     const row = document.createElement("div");
     row.className = styles.popupActions;
-    for (const action of ["assign", "details"] as const) {
+    // An invented item can be assigned; a report saved on this device is outside the replay, so it only has details.
+    const actions: readonly CommandReportAction[] = selection.type === "exercise" ? ["assign", "details"] : ["details"];
+    row.dataset.actions = String(actions.length);
+    for (const action of actions) {
       const button = document.createElement("button");
       button.type = "button";
       button.textContent = text(action === "assign" ? COMMAND_EXERCISE.assign : COMMAND_EXERCISE.details);

@@ -50,11 +50,6 @@ export const COMMAND_EXERCISE = {
   noNeeds: { en: "no need stated", th: "ไม่ระบุความต้องการ" },
   currentNotModelled: { en: "current not modelled", th: "ไม่ได้จำลองกระแสน้ำ" },
   ruleTitle: { en: "How urgency is set", th: "การกำหนดระดับความเร่งด่วน" },
-  /** Until the act flow is built, the inspector says what is missing. */
-  actionsSoon: {
-    en: "Assigning a callsign, the brief and closing an item are not built yet. Every item is shown as new.",
-    th: "ยังไม่ได้จัดทำส่วนมอบหมายนามเรียกขาน ข้อความสรุป และการปิดรายการ ทุกรายการจึงแสดงสถานะใหม่",
-  },
   notReal: {
     en: "Invented for practice. No real person, call or address. Never counted with real reports.",
     th: "สมมุติขึ้นเพื่อการฝึกซ้อม ไม่ใช่บุคคล การขอความช่วยเหลือ หรือที่อยู่จริง และไม่นับรวมกับรายงานจริง",

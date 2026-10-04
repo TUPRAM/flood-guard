@@ -42,6 +42,7 @@
 .itemPopup [data-line="state"] { color: var(--c-ink); font-weight: 600; }
 .itemPopup [data-line="model"], .itemPopup [data-line="when"], .itemPopup [data-line="meta"] { color: var(--c-muted); font-size: 12px; }
 .popupActions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px; }
+.popupActions[data-actions="1"] { grid-template-columns: 1fr; }
 .popupActions.popupActions button { min-height: 44px; padding: 0 12px; border: 1px solid #0c2740; border-radius: var(--c-radius-control); background: #ffffff; color: #0c2740; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
 .popupActions button:first-child { background: #0c2740; color: #ffffff; }
 .popupActions button:hover { filter: brightness(1.12); }

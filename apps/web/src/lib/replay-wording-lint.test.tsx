@@ -10,7 +10,9 @@
  *      Command exercise copy builds from the replay data, and the panels of the Command exercise page as rendered,
  *      in both languages: the subdistrict table, the inspector and the find-place box among them, with the plan group
  *      of the table rendered once on the invented units of the planning overlay fixture; then the reports on the map
- *      and "Known by now": the list in both modes, the inspector of every invented item and of a device sign;
+ *      and "Known by now": the list in both modes, the inspector of every invented item and of a device sign; then
+ *      the act flow: the action bar and its trays, the inspector of every invented item with its facts, the brief of
+ *      every item and the situation brief in both languages, the setup sheet, the exercise log and the notices;
  *   4. every string of the exercise file (`public/exercises/mae-sai-2024/injects.v1.json`), whose items are invented.
  * It must pass on the current text and fail on one seeded bad string per rule. The Python twin is
  * `tests/test_replay_wording_lint.py`.
@@ -29,15 +31,18 @@ import {
   CommandInfoBody,
   CommandLegend,
   CommandNav,
+  CommandNotice,
   CommandToolRail,
   CommandViewPopover,
 } from "@/components/mae-sai-command-chrome";
+import { CommandBriefSheet } from "@/components/mae-sai-command-brief";
 import { MaeSaiCommandExercise } from "@/components/mae-sai-command-exercise";
 import { MaeSaiCommandFeed } from "@/components/mae-sai-command-feed";
 import { MaeSaiCommandFind } from "@/components/mae-sai-command-find";
-import { CommandDeviceDetailBody, CommandItemDetailBody } from "@/components/mae-sai-command-incident";
+import { CommandDeviceDetailBody, CommandItemActionBar, CommandItemDetailBody } from "@/components/mae-sai-command-incident";
 import { CommandCardChip, CommandCaseCard, CommandKnownPlaceholder, CommandTambonDetailBody, MaeSaiCommandInspector } from "@/components/mae-sai-command-inspector";
 import { CommandQueueTable, MaeSaiCommandQueue } from "@/components/mae-sai-command-queue";
+import { CommandLogSheet, CommandSetupSheet } from "@/components/mae-sai-command-setup";
 import { MaeSaiCommandSituation } from "@/components/mae-sai-command-situation";
 import { MaeSaiCommandTimebar } from "@/components/mae-sai-command-timebar";
 import { AccessCard, ExternalChecks, PeopleInWaterCard, ReportedSheltersCard, ShelterPlanCard } from "@/components/mae-sai-evacuation-panels";
@@ -119,8 +124,67 @@ import {
   commandToleranceText,
   commandUnlocatedRecords,
 } from "./flood-timeline-command-copy";
-import { buildCommandFeed, feedAt, placeRecordsAt, placeRecordTally } from "./flood-timeline-command-feed";
-import { EXERCISE_FILE_URL, exerciseCounts, parseExerciseFile, type ExerciseHandling } from "./flood-timeline-command-incidents";
+import {
+  COMMAND_ACT,
+  COMMAND_BRIEF,
+  COMMAND_CALLSIGN_PROBLEM,
+  COMMAND_DROP_REASON,
+  COMMAND_EXERCISE_MENU,
+  COMMAND_GO,
+  COMMAND_HELP_ACT,
+  COMMAND_LOG,
+  COMMAND_LOG_ACTION,
+  COMMAND_NEAR,
+  COMMAND_ROLE,
+  COMMAND_SETUP,
+  COMMAND_SETUP_PART,
+  COMMAND_TEAM_TYPE,
+  commandActionNotice,
+  commandAssignTo,
+  commandBriefLineCount,
+  commandBriefTitle,
+  commandDepthFactLine,
+  commandDropLabel,
+  commandGoMeta,
+  commandImpassableLead,
+  commandLineLabel,
+  commandLogActionText,
+  commandLogShown,
+  commandNodeLine,
+  commandRemoveTeam,
+  commandReportedInUse,
+  commandRoadFact,
+  commandSiteState,
+  commandSmsCount,
+  commandStagingLine,
+  commandUrgencyChanged,
+} from "./flood-timeline-command-act-copy";
+import {
+  BRIEF_TAG,
+  BRIEF_TAG_SHORT,
+  commandDistanceBearing,
+  commandRoadName,
+  COMPASS_NAMES,
+  itemBriefLines,
+  itemBriefSms,
+  itemFacts,
+  resolveStaging,
+  situationBriefLines,
+  type ItemFacts,
+  type RoadFeature,
+} from "./flood-timeline-command-brief";
+import { buildCommandFeed, feedAt, placeRecordsAt, placeRecordTally, type CommandMode } from "./flood-timeline-command-feed";
+import { EXERCISE_FILE_URL, exerciseCounts, parseExerciseFile, type ExerciseHandling, type ExerciseItem } from "./flood-timeline-command-incidents";
+import {
+  applyItemAction,
+  COMMAND_LOG_ACTIONS,
+  DEFAULT_COMMAND_SETUP,
+  EMPTY_EXERCISE_STATE,
+  TEAM_TYPES,
+  type CommandItemAction,
+  type CommandLogAction,
+  type CommandLogEntry,
+} from "./flood-timeline-command-log";
 import { commandDayChips, commandEventStops, commandPhaseSpans } from "./flood-timeline-command-replay";
 import {
   COMMAND_DEPTH_BAND,
@@ -376,7 +440,10 @@ function commandCopyLines(language: Language): string[] {
   const model = commandModel();
   const blocks: Record<string, Localized>[] = [COMMAND_BANNER, COMMAND_CLOCK, COMMAND_FIGURES, COMMAND_DRAWER, COMMAND_TABLE, COMMAND_INSPECTOR, COMMAND_FIND, COMMAND_FIND_KIND, COMMAND_CLASS_NAMES,
     // The reports on the map and "Known by now".
-    COMMAND_EXERCISE, COMMAND_URGENCY, COMMAND_STATUS, COMMAND_DEPTH_BAND, COMMAND_PEOPLE_BAND, COMMAND_NEED, COMMAND_MARKERS, COMMAND_LEGEND_REPORTS, COMMAND_DEVICE, COMMAND_MODE, COMMAND_FEED];
+    COMMAND_EXERCISE, COMMAND_URGENCY, COMMAND_STATUS, COMMAND_DEPTH_BAND, COMMAND_PEOPLE_BAND, COMMAND_NEED, COMMAND_MARKERS, COMMAND_LEGEND_REPORTS, COMMAND_DEVICE, COMMAND_MODE, COMMAND_FEED,
+    // The act flow: the action bar, the facts, the setup, the brief sheet, the log and the help steps.
+    COMMAND_ACT, COMMAND_GO, COMMAND_NEAR, COMMAND_SETUP, COMMAND_BRIEF, COMMAND_EXERCISE_MENU, COMMAND_LOG, COMMAND_HELP_ACT, COMMAND_DROP_REASON, COMMAND_TEAM_TYPE, COMMAND_CALLSIGN_PROBLEM,
+    COMMAND_ROLE, COMMAND_LOG_ACTION, COMMAND_SETUP_PART, COMPASS_NAMES, { tag: BRIEF_TAG, shortTag: BRIEF_TAG_SHORT }];
   const exercise = exerciseFile();
   const feed = buildCommandFeed(manifest, model);
   const handlings: ExerciseHandling[] = [{ status: "new", callsign: null }, { status: "assigned", callsign: "BOAT-2" }, { status: "done", callsign: "BOAT-2" }];
@@ -443,7 +510,94 @@ function commandCopyLines(language: Language): string[] {
     ...["2024-09-12", "start", "event", "after"].map((key) => commandFeedGroupTitle(key, language)),
     commandFeedJump(3, language), commandKnownCount(COMMAND_FEED.title, 35, language),
     commandRecordTallyLine(placeRecordTally(manifest.reported_depths!.reports), language), commandRecordTallyLine(placeRecordTally([]), language), commandRecordTallyChip(placeRecordTally(manifest.reported_depths!.reports), language),
+    // The act flow: the brief of every invented item (with a callsign at the peak, and without one in trainee mode at
+    // the hour it arrives), its text-message version, the facts the inspector states, and the situation brief of
+    // several replay hours for both shelter sets. Each brief is linted as one text, as it leaves the device.
+    ...exercise.items.flatMap((item) => {
+      const late = Math.max(item.hour, 84);
+      const facts = actFacts(item, late, "hindsight", 0.6);
+      const early = actFacts(item, item.hour, "trainee", 0);
+      const input = { item, tambon: tambonName, callsign: "BOAT-2", hour: late, facts };
+      return [
+        itemBriefLines(input, language).join("\n"), itemBriefSms(input, language),
+        itemBriefLines({ item, tambon: tambonName, callsign: null, hour: item.hour, facts: early }, language).join("\n"),
+        commandRoadFact(facts.road, language), commandNodeLine(facts.node, language), commandNodeLine(early.node, language),
+        commandStagingLine(facts.staging!, language), commandLineLabel(facts.staging!.distanceM, language), commandDepthFactLine(facts.depthFact, language) ?? "",
+        ...[...facts.sites, ...early.sites].flatMap((site) => [commandReportedInUse(site.use, language), commandSiteState(site.state, language), commandDistanceBearing(site.distanceM, site.compass, language)]),
+      ];
+    }),
+    ...hours.flatMap((hour) => COMMAND_SHELTER_SETS.map((set) => situationBriefLines({
+      hour, figures: districtFiguresAt(model, hour, set), rows: tambonOrderByHour(model, set)[hour].flatMap((id) => tambonRowsAt(model, hour, set).filter((row) => row.id === id)),
+      change: changeSinceHourBefore(model, hour, set), setNote: set === "plan" ? commandSetMeaning(set, 8, language) : null,
+    }, language).join("\n"))),
+    commandRoadFact(null, language), commandNodeLine(null, language), commandRoadName(null, language), commandImpassableLead(tambonName, language), commandImpassableLead(null, language),
+    commandGoMeta(3, 12, language), commandReportedInUse({ kind: "from", date: "2024-09-21" }, language), commandReportedInUse({ kind: "text", text: "2024" }, language),
+    commandSiteState("wet", language), commandSiteState("not_modelled", language), commandDepthFactLine("under", language) ?? "",
+    ...(["duplicate", "unreachable"] as const).map((reason) => commandDropLabel(reason, language)),
+    ...TEAM_TYPES.map((type) => commandAssignTo("BOAT-2", type, language)),
+    commandUrgencyChanged("urgent", "life_at_risk", language), commandUrgencyChanged("life_at_risk", "information", language),
+    ...actUndos().map((undo) => commandActionNotice(undo, "urgent", language)),
+    commandBriefTitle("EX-05", language), commandBriefTitle(null, language), commandBriefLineCount(9, language), commandBriefLineCount(1, language),
+    commandSmsCount(116, 134, 2, language), commandSmsCount(60, 134, 1, language), commandRemoveTeam("BOAT-1", language),
+    commandLogShown(50, 132, language), commandLogShown(5, 5, language), commandLogShown(1, 1, language),
+    ...actLog().map((entry) => commandLogActionText(entry, language)),
   ];
+}
+
+let actDataCache: { roads: RoadFeature[]; nodes: ReturnType<typeof parseAccessNodes>; facilities: FacilityProps[] } | null = null;
+/** What the act flow reads beside the model: the road pieces with their lines, the resident nodes and the key facilities. */
+function actData() {
+  const access = manifest.access!;
+  actDataCache ??= {
+    roads: readJson<GeoCollection<LineGeometry, RoadProps>>(manifest.vectors.roads.href).features,
+    nodes: parseAccessNodes(new Uint8Array(readFileSync(resolve(publicRoot, access.nodes.href.replace(/^\//, "")))), access),
+    facilities: readJson<GeoCollection<unknown, FacilityProps>>(manifest.vectors.facilities.href).features.map((feature) => feature.properties),
+  };
+  return actDataCache;
+}
+
+/** The facts the inspector states about one invented item at a replay hour, as the page gathers them. */
+function actFacts(item: ExerciseItem, hour: number, mode: CommandMode, depth: number | null | undefined): ItemFacts {
+  const model = commandModel();
+  const { roads, nodes } = actData();
+  const sites = manifest.shelters!.reported;
+  return itemFacts({
+    point: item.point, hour, mode, stage: model.stages[hour], depth, impassableDepthM: manifest.impassable_depth_m, roads, sites, nodes,
+    setIndex: manifest.access!.sets.indexOf(REPORTED_SET_ID), levels: model.levels, staging: resolveStaging(DEFAULT_COMMAND_SETUP.staging, sites),
+  });
+}
+
+/** One of every action on an invented item, as the page takes it: what its notice words, and what the log then holds. */
+function actUndos() {
+  const item = { id: "EX-07", urgency: "urgent" as const };
+  const context = { replayHour: 60, nowMs: Date.parse("2026-10-05T03:00:00.000Z"), roster: DEFAULT_COMMAND_SETUP.roster };
+  const take = (state: typeof EMPTY_EXERCISE_STATE, action: CommandItemAction) => {
+    const result = applyItemAction(state, item, action, context);
+    if ("refused" in result) throw new Error(`The lint could not take the action ${action.type}`);
+    return result;
+  };
+  const acknowledged = take(EMPTY_EXERCISE_STATE, { type: "acknowledge" });
+  const assigned = take(acknowledged.state, { type: "assign", callsign: "BOAT-2" });
+  const raised = take(assigned.state, { type: "urgency", direction: 1 });
+  const lowered = take(raised.state, { type: "urgency", direction: -1 });
+  const done = take(lowered.state, { type: "done" });
+  const reopened = take(done.state, { type: "reopen" });
+  const dropped = take(reopened.state, { type: "drop", reason: "unreachable" });
+  const duplicate = take(reopened.state, { type: "drop", reason: "duplicate" });
+  return [acknowledged, assigned, raised, lowered, done, reopened, dropped, duplicate].map((result) => result.undo);
+}
+
+/** A log with one row of every action the page writes, each with the detail code that action carries. */
+function actLog(): CommandLogEntry[] {
+  const detail: Partial<Record<CommandLogAction, string>> = {
+    dropped: "unreachable", urgency_raised: "urgent>life_at_risk", urgency_lowered: "life_at_risk>urgent", undone: "assigned", brief_shared: "th", brief_copied: "en", brief_sms: "th",
+    setup_changed: "roster", exercise_started: "start",
+  };
+  const whole = new Set<CommandLogAction>(["situation_brief", "setup_changed", "exercise_started", "log_exported"]);
+  return COMMAND_LOG_ACTIONS.map((action, index) => ({
+    seq: index + 1, replayHour: 46 + index, deviceTime: `2026-10-05T03:${String(index).padStart(2, "0")}:00.000Z`, role: action === "setup_changed" || action === "exercise_started" || action === "log_exported" ? "facilitator" : "coordinator",
+    callsign: whole.has(action) || action === "acknowledged" ? null : "BOAT-2", action, itemId: whole.has(action) ? null : "EX-05", detail: detail[action] ?? null,
+  }));
 }
 
 let exerciseCache: ReturnType<typeof parseExerciseFile> | null = null;
@@ -497,6 +651,71 @@ function commandReportPanels(language: Language): { name: string; node: React.Re
   return panels;
 }
 
+/** How many panels `commandActPanels` renders in one language. */
+const COMMAND_ACT_PANEL_COUNT = 29;
+
+/**
+ * The act flow in one language: the action bar with each of its trays (the roster, the further actions, a closed item,
+ * an empty roster), the inspector of every invented item with its facts in hindsight mode, three of them in trainee
+ * mode (a site not yet reported, the water layer not loaded, an urgency the operator moved), the brief sheet of an
+ * item and of the situation, the setup sheet as a device starts and as a facilitator changed it, the log with every
+ * kind of row and without any, the notice with its undo, and the navigation with the exercise menu open.
+ */
+function commandActPanels(language: Language): { name: string; node: React.ReactElement }[] {
+  const model = commandModel();
+  const noop = () => undefined;
+  const exercise = exerciseFile();
+  const { facilities } = actData();
+  const { roster } = DEFAULT_COMMAND_SETUP;
+  const tambonOf = (item: ExerciseItem) => model.tambons.find((tambon) => tambon.id === item.tambonId) ?? null;
+  const item = (id: string) => exercise.items.find((entry) => entry.id === id)!;
+  const bar = (handling: ExerciseHandling, tray: "assign" | "more", teams = roster) => (
+    <CommandItemActionBar language={language} item={item("EX-05")} handling={handling} roster={teams} tray={tray} onTray={noop} onAction={noop} onBrief={noop} onSetup={noop} />
+  );
+  const detail = (entry: ExerciseItem, hour: number, mode: CommandMode, depth: number | null | undefined, handling: ExerciseHandling = { status: "new", callsign: null }, authorUrgency = entry.urgency) => (
+    <CommandItemDetailBody language={language} hour={hour} item={entry} handling={handling} tambon={tambonOf(entry)} depth={depth} rule={exercise.rule} authorUrgency={authorUrgency}
+      facts={actFacts(entry, hour, mode, depth)} roadsImpassable={tambonDetailAt(model, facilities, hour, "reported", entry.tambonId)?.roadsImpassable ?? []} countedSites={12} onUrgency={noop} />
+  );
+  const briefOf = (entry: ExerciseItem) => {
+    const input = { item: entry, tambon: tambonOf(entry), callsign: "BOAT-2", hour: 84, facts: actFacts(entry, 84, "trainee", 1.4) };
+    return { itemId: entry.id, lines: { th: itemBriefLines(input, "th"), en: itemBriefLines(input, "en") }, sms: { th: itemBriefSms(input, "th"), en: itemBriefSms(input, "en") } };
+  };
+  const situation = (briefLanguage: Language) => situationBriefLines({
+    hour: 84, figures: districtFiguresAt(model, 84), rows: tambonOrderByHour(model)[84].flatMap((id) => tambonRowsAt(model, 84).filter((row) => row.id === id)), change: changeSinceHourBefore(model, 84),
+  }, briefLanguage);
+  const stagingSites = [{ id: "R05", name: { th: "ที่ว่าการอำเภอแม่สาย", en: "Mae Sai District Office" } }, { id: "R01", name: { th: "ศูนย์พักพิงเทศบาลตำบลแม่สาย", en: "Mae Sai Subdistrict Municipality Office shelter and relief centre" } }];
+  const setup = (more: Partial<typeof DEFAULT_COMMAND_SETUP> = {}) => (
+    <CommandSetupSheet open={false} onClose={noop} language={language} setup={{ ...DEFAULT_COMMAND_SETUP, ...more }} hour={84} stagingSites={stagingSites} itemCount={exercise.items.length}
+      onRoster={noop} onStaging={noop} onPickStaging={noop} onStartHour={noop} onStart={noop} onMode={noop} onItems={noop} onPause={noop} onSpeed={noop} onReset={noop} />
+  );
+  const logSheet = (log: CommandLogEntry[]) => <CommandLogSheet open={false} onClose={noop} language={language} log={log} onExport={noop} onReset={noop} timeZone="Asia/Bangkok" />;
+  const raised = { ...item("EX-07"), urgency: "life_at_risk" as const };
+  const panels = [
+    { name: "action bar, the roster", node: bar({ status: "new", callsign: null }, "assign") },
+    { name: "action bar, further actions", node: bar({ status: "assigned", callsign: "BOAT-2" }, "more") },
+    { name: "action bar, a closed item", node: bar({ status: "done", callsign: "BOAT-2" }, "more") },
+    { name: "action bar, an empty roster", node: bar({ status: "acknowledged", callsign: null }, "assign", []) },
+    ...exercise.items.map((entry, index) => ({
+      name: `incident ${entry.id}`,
+      node: detail(entry, Math.max(entry.hour, 84), "hindsight", index % 4 === 0 ? 0 : 0.2 + index * 0.3, { status: index % 3 === 0 ? "assigned" : index % 3 === 1 ? "new" : "dropped", callsign: index % 3 === 0 ? "BOAT-2" : null }),
+    })),
+    { name: "incident in trainee mode, before a shelter is reported", node: detail(item("EX-02"), 40, "trainee", 0) },
+    { name: "incident in trainee mode, water layer not loaded", node: detail(item("EX-05"), 60, "trainee", undefined) },
+    { name: "incident with an urgency the operator moved", node: detail(raised, 60, "trainee", null, { status: "acknowledged", callsign: null }, "urgent") },
+    { name: "brief sheet EX-05", node: <CommandBriefSheet open={false} onClose={noop} language={language} content={briefOf(item("EX-05"))} /> },
+    { name: "brief sheet, the situation", node: <CommandBriefSheet open={false} onClose={noop} language={language} content={{ itemId: null, lines: { th: situation("th"), en: situation("en") }, sms: null }} /> },
+    { name: "setup sheet", node: setup() },
+    { name: "setup sheet, changed", node: setup({ roster: [], staging: { type: "point", lat: 20.4401, lon: 99.8912 }, mode: "hindsight", speed: "drill", itemsOn: false, startHour: 46 }) },
+    { name: "log sheet", node: logSheet(actLog()) },
+    { name: "log sheet, nothing done", node: logSheet([]) },
+    { name: "notice with its undo", node: <CommandNotice language={language} message={commandActionNotice(actUndos()[1], "urgent", language)} action={{ id: "a", label: COMMAND_ACT.undo[language], onPress: noop, timed: true }} /> },
+    { name: "navigation with the exercise menu", node: <CommandNav language={language} hour={84} menuOpen onMenu={noop} onLanguage={noop} onHelp={noop} basemap="street" onBasemap={noop}
+      exercise={{ open: true, onToggle: noop, onSetup: noop, onLog: noop, onSituation: noop }} /> },
+  ];
+  if (panels.length !== COMMAND_ACT_PANEL_COUNT) throw new Error(`Expected ${COMMAND_ACT_PANEL_COUNT} act panels, got ${panels.length}`);
+  return panels;
+}
+
 // --- 5. The panels of the Command exercise page as rendered -------------------------------------------------
 
 /**
@@ -531,6 +750,7 @@ function commandPanels(language: Language): { name: string; html: string }[] {
     panel("credits", <CommandCredits language={language} view={{ metresPerPixel: 35.8, zoom: 12 }} revision={manifest.revision} />),
     ...commandTablePanels(language).map(({ name, node }) => panel(name, node)),
     ...commandReportPanels(language).map(({ name, node }) => panel(name, node)),
+    ...commandActPanels(language).map(({ name, node }) => panel(name, node)),
   ];
 }
 
@@ -775,16 +995,19 @@ describe("Replay wording lint: current text", () => {
       // functions and the copy behind them.
       "src/components/mae-sai-command-markers.tsx", "src/components/mae-sai-command-feed.tsx", "src/components/mae-sai-command-incident.tsx",
       "src/lib/flood-timeline-command-incidents.ts", "src/lib/flood-timeline-command-feed.ts", "src/lib/flood-timeline-command-reports-copy.ts",
+      // The act flow: the brief sheet, the setup sheet and the log, and the pure functions, the copy and the device store behind them.
+      "src/components/mae-sai-command-brief.tsx", "src/components/mae-sai-command-setup.tsx", "src/lib/flood-timeline-command-brief.ts",
+      "src/lib/flood-timeline-command-log.ts", "src/lib/flood-timeline-command-act-copy.ts", "src/lib/flood-timeline-command-device.ts",
     ]) expect(files).toContain(file);
     const sources = new Set(items.map((item) => item.source));
     for (const file of files) expect(sources.has(file), file).toBe(true);
     expect(items.filter((item) => item.source.startsWith("timeline.json")).length).toBeGreaterThan(100);
     // 75 rendered panels of the Studio replay, the Command exercise copy in its two languages, and the Command exercise
     // page: its shell, and in each language 13 panels around the map, the panels of the table, the inspector and
-    // the find-place box, and the panels of the reports and of "Known by now".
-    expect(items.filter((item) => / \((en|th)\)$/.test(item.source)).length).toBe(77 + 1 + 2 * (13 + COMMAND_TABLE_PANEL_COUNT + COMMAND_REPORT_PANEL_COUNT));
+    // the find-place box, the panels of the reports and of "Known by now", and the panels of the act flow.
+    expect(items.filter((item) => / \((en|th)\)$/.test(item.source)).length).toBe(77 + 1 + 2 * (13 + COMMAND_TABLE_PANEL_COUNT + COMMAND_REPORT_PANEL_COUNT + COMMAND_ACT_PANEL_COUNT));
     const commandRendered = items.filter((item) => /^Command (?!exercise copy)/.test(item.source));
-    expect(commandRendered).toHaveLength(1 + 2 * (13 + COMMAND_TABLE_PANEL_COUNT + COMMAND_REPORT_PANEL_COUNT));
+    expect(commandRendered).toHaveLength(1 + 2 * (13 + COMMAND_TABLE_PANEL_COUNT + COMMAND_REPORT_PANEL_COUNT + COMMAND_ACT_PANEL_COUNT));
     const commandText = commandRendered.map((item) => item.text).join(" ");
     expect(commandText).toContain("reconstructed, not real-time");
     expect(commandText).toContain("จำลองย้อนหลัง ไม่ใช่ข้อมูลเรียลไทม์");
@@ -816,6 +1039,17 @@ describe("Replay wording lint: current text", () => {
     expect(commandText).toContain("Calibration: used to set the model. Acquired at this time and published later.");
     expect(commandText).toContain("This device · 5 Oct 2026 · not part of the 2024 replay · tambon (subdistrict) only");
     expect(commandText).toContain("Preliminary, not field-validated.");
+    // The act flow is in the corpus: the facts with their limits, the brief with its tag, the setup with its rule, the log.
+    expect(commandText).toContain("Not checked for a connected way out; bridge decks not modelled.");
+    expect(commandText).toContain("straight line, not a route");
+    expect(commandText).toContain("The page gives no advice on the kind of team to send: the model has depth and no current.");
+    expect(commandText).toContain("opening time not known");
+    expect(commandText).toMatch(/\[ฝึกซ้อม – ไม่ใช่เหตุจริง\]\s+EX-05 · ชุด BOAT-2/);
+    expect(commandText).toContain("No recipient is filled in: you type the number.");
+    expect(commandText).toContain("Callsigns only: no names and no phone numbers. At most 12 characters; an entry with seven or more digits is refused.");
+    expect(commandText).toContain("Saved on this device only");
+    expect(commandText).toContain("EX-05 dropped: could not reach");
+    expect(commandText).toContain("Every action can be undone for 10 seconds and has a row in the exercise log.");
     // The exercise file is in the corpus, item by item, in both languages.
     const exerciseItems = items.filter((item) => item.source.startsWith("injects.v1.json "));
     expect(exerciseItems.length).toBeGreaterThan(14 * 6);
@@ -826,6 +1060,11 @@ describe("Replay wording lint: current text", () => {
     expect(commandCopy[0].text).toContain("Exercise replay · Mae Sai, September 2024 · reconstructed, not real-time · not an official warning");
     expect(commandCopy[0].text).toContain("~7,100 · lost shelter access · of ~34,500 in reach");
     expect(commandCopy[0].text).toContain("It has not been reviewed by a native speaker.");
+    // The briefs are in the built copy in both languages, as whole texts: an English brief is never rendered by default.
+    expect(commandCopy[0].text).toContain("[EXERCISE – not a real incident] EX-05 · team BOAT-2");
+    expect(commandCopy[0].text).toContain("[EXERCISE – not a real incident] Situation brief");
+    expect(commandCopy[0].text).toContain("Refused: seven or more digits. A callsign is not a phone number.");
+    expect(commandCopy[1].text).toContain("[ฝึกซ้อม] EX-05 ชุด BOAT-2: ขอความช่วยเหลือ");
     expect(commandCopy[1].text).toContain("ฝึกซ้อมย้อนดูเหตุการณ์ · แม่สาย กันยายน 2567 (2024) · จำลองย้อนหลัง ไม่ใช่ข้อมูลเรียลไทม์ · ไม่ใช่คำเตือนอย่างเป็นทางการ");
     expect(commandCopy[1].text).toContain("ถนนที่เริ่มสัญจรไม่ได้: ");
     // Reported depths: the Sources entry and the legend in both languages, and the popup of every located report.
@@ -903,8 +1142,15 @@ describe("Replay wording lint: current text", () => {
     const commandFeedPanel = items.find((item) => item.source === "Command known by now, hour 84 (th)")!;
     const commandItemPanel = items.find((item) => item.source === "Command exercise item EX-05 (en)")!;
     const exerciseItem = items.find((item) => item.source === "injects.v1.json $.items[4].text.en")!;
+    // The act flow: its copy file, the pure functions of the brief, a component file and two rendered panels.
+    const commandActCopy = items.find((item) => item.source === "src/lib/flood-timeline-command-act-copy.ts")!;
+    const commandBriefSource = items.find((item) => item.source === "src/lib/flood-timeline-command-brief.ts")!;
+    const commandSetupSource = items.find((item) => item.source === "src/components/mae-sai-command-setup.tsx")!;
+    const commandBriefPanel = items.find((item) => item.source === "Command brief sheet EX-05 (th)")!;
+    const commandIncidentPanel = items.find((item) => item.source === "Command incident EX-09 (en)")!;
     const targets = [source, manifestItem, rendered, envelopeSource, envelopeFile, envelopeRendered, commandSource, commandBuilt, commandComponent, commandRoute, commandDock, commandDrawer,
-      commandQueue, commandTable, commandTableCard, commandInspector, commandFixture, commandReports, commandFeedSource, commandFeedPanel, commandItemPanel, exerciseItem];
+      commandQueue, commandTable, commandTableCard, commandInspector, commandFixture, commandReports, commandFeedSource, commandFeedPanel, commandItemPanel, exerciseItem,
+      commandActCopy, commandBriefSource, commandSetupSource, commandBriefPanel, commandIncidentPanel];
     // The rest of the corpus is clean (the test above), so only the planted items need linting again.
     const others = items.filter((item) => !targets.includes(item));
     expect(lint(others)).toEqual([]);

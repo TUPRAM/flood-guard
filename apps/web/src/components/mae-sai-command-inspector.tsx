@@ -276,7 +276,7 @@ export function CommandDetailEmpty({ language }: { language: Language }) {
 }
 
 /** Region D: the right card of a desktop, left of the tool rail. The legend and this card are never open together. */
-export function MaeSaiCommandInspector({ language, tab, onTab, onClose, detail, known, knownCount }: {
+export function MaeSaiCommandInspector({ language, tab, onTab, onClose, detail, footer = null, known, knownCount }: {
   language: Language;
   tab: CommandCardTab;
   onTab: (tab: CommandCardTab) => void;
@@ -284,8 +284,10 @@ export function MaeSaiCommandInspector({ language, tab, onTab, onClose, detail, 
   knownCount?: number;
   /** Closes the card and clears the selection. */
   onClose: () => void;
-  /** The inspector of the selected subdistrict; null while nothing is selected. */
+  /** The inspector of what is selected (a subdistrict, an invented item, a device sign); null while nothing is selected. */
   detail: ReactNode | null;
+  /** What stays fixed under the detail while it scrolls: the action bar of an invented item. */
+  footer?: ReactNode | null;
   known: ReactNode;
 }) {
   const t = (entry: Localized) => commandText(entry, language);
@@ -309,6 +311,7 @@ export function MaeSaiCommandInspector({ language, tab, onTab, onClose, detail, 
       <div id={panel} className={styles.cardBody} role="tabpanel" tabIndex={tab === "detail" ? 0 : undefined} data-tab={tab}>
         {tab === "detail" ? detail ?? <CommandDetailEmpty language={language} /> : known}
       </div>
+      {tab === "detail" && detail && footer}
     </aside>
   );
 }

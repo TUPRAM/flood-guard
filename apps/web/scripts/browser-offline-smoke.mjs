@@ -902,6 +902,11 @@ async function assertPublicHomeLayout(page, mapScope) {
     const attribution = document.querySelector(".leaflet-control-attribution")?.getBoundingClientRect();
     const availability = document.querySelector('[data-pwa-availability="true"] > summary')?.getBoundingClientRect();
     const closedAvailability = document.querySelector('[data-pwa-availability="true"]:not([open])')?.getBoundingClientRect();
+    // The status pill belongs in the slot under the header. A rule written for the floating pill once moved it
+    // 128 px down, onto the first action button, while it was still inside the slot in the document.
+    const availabilitySlot = document.querySelector("[data-app-availability-slot]");
+    const slot = availabilitySlot?.getBoundingClientRect();
+    const actions = document.querySelector(".public-home-actions")?.getBoundingClientRect();
     const listSummary = document.querySelector(".map-text-alternative > summary");
     const listBounds = listSummary?.getBoundingClientRect();
     const listPointerTarget = listBounds && document.elementFromPoint(
@@ -937,6 +942,12 @@ async function assertPublicHomeLayout(page, mapScope) {
         availabilityHazardOverlap: overlaps(availability, hazard),
         availabilityAttributionOverlap: overlaps(availability, attribution),
         availabilityMapControlOverlap: mapControls.some((control) => overlaps(availability, control)),
+        availabilitySlot: slot?.toJSON(),
+        availabilityInSlot: Boolean(availabilitySlot?.querySelector('[data-pwa-availability="true"]')),
+        availabilityInsideSlotBox: Boolean(availability && slot
+          && availability.left >= slot.left - 1 && availability.right <= slot.right + 1
+          && availability.top >= slot.top - 1 && availability.bottom <= slot.bottom + 1),
+        availabilityActionsOverlap: overlaps(availability, actions),
         closedAvailabilityListOverlap: overlaps(closedAvailability, listBounds),
         listReceivesPointer: Boolean(listSummary && listPointerTarget && listSummary.contains(listPointerTarget)),
       },
@@ -975,10 +986,13 @@ async function assertPublicHomeLayout(page, mapScope) {
     || audit.lowerControls.availabilityHazardOverlap
     || audit.lowerControls.availabilityAttributionOverlap
     || audit.lowerControls.availabilityMapControlOverlap
+    || !audit.lowerControls.availabilityInSlot
+    || !audit.lowerControls.availabilityInsideSlotBox
+    || audit.lowerControls.availabilityActionsOverlap
     || audit.lowerControls.closedAvailabilityListOverlap
     || !audit.lowerControls.listReceivesPointer
   ) {
-    throw new Error(`Public Home lower controls overlap or crowd the navigation: ${JSON.stringify(audit.lowerControls)}.`);
+    throw new Error(`Public Home controls overlap, crowd the navigation, or the status pill left its slot: ${JSON.stringify(audit.lowerControls)}.`);
   }
 }
 

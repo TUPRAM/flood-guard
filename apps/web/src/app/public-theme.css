@@ -277,14 +277,19 @@
     width: calc(100% - 24px);
     max-width: none;
   }
-  body:has(.public-home-page) [data-pwa-availability="true"] {
+  /*
+     These three rules place the floating status pill. Once the pill sits in the
+     slot under the header ([data-app-availability-slot]) the slot places it, so
+     they must not apply there: `top` would shift the pill down onto the page.
+  */
+  body:has(.public-home-page) [data-pwa-availability="true"]:not([data-app-availability-slot] *) {
     top: 128px;
     bottom: auto;
   }
-  body:has(.public-home-page) [data-pwa-availability="true"] > summary {
+  body:has(.public-home-page) [data-pwa-availability="true"]:not([data-app-availability-slot] *) > summary {
     max-width: 150px;
   }
-  body:has(.public-home-page) [data-pwa-availability="true"]:not([open]) {
+  body:has(.public-home-page) [data-pwa-availability="true"]:not([data-app-availability-slot] *):not([open]) {
     width: max-content;
     max-width: 150px;
   }

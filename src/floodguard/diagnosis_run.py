@@ -175,11 +175,13 @@ DEVELOPMENT_READS: tuple[str, ...] = (
     "and the two radar receipts were read. No cell value was read and no figure was computed.",
     "The same evening, before any run: the statistics module was tried on invented numbers only (random draws; no file "
     "of the external data workspace was opened).",
-    "5 October 2026, after the review of the first runs and before the superseding runs: the committed figures files and "
-    "receipts were read; the eight superseded copies kept outside Git were read for their run times and their SHA-256; the "
-    "text of five exploratory scripts of the plan session was read, to check what they had computed and that the guard "
-    "refuses such text. None of them was run. No raster and no flood layer was opened, no cell value was read and no "
-    "figure was computed.",
+    "4 October 2026, about 21:40 to 22:10 UTC (5 October in local time), after the review of the first runs and before the "
+    "superseding runs: the committed figures files and receipts were read; the eight superseded copies kept outside Git "
+    "were read for their run times and their SHA-256; the text of five exploratory scripts of the plan session was read, "
+    "to check what they had computed and that the guard refuses such text. None of them was run. No raster and no flood "
+    "layer was opened and no cell value was read. The two figures that read nothing outside Git (the pass list and the "
+    "one-population simulation) were computed once without writing, to try the changed scripts; no other figure was "
+    "computed.",
 )
 """The reads made on real files before the first runs. A receipt of a figure that rests on those files lists them."""
 

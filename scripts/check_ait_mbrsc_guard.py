@@ -15,8 +15,9 @@ It returns 0 when nothing is refused and 1 otherwise. The same checks run in the
 check runs only when the suite or this command is run (open point A1-OP11).
 
 ``--write-baseline`` writes the list of legacy files and refuses to replace an existing one: a change to the
-baseline is a decision for the owners. The baseline in force is version 2, written on 5 October 2026 after
-the review of plan task A1 widened what the guard reads; version 1 of 4 October 2026 is in the Git history.
+baseline is a decision for the owners. The baseline in force is version 2, written late on 4 October 2026
+(UTC; 5 October in local time) after the review of plan task A1 widened what the guard reads; version 1, of
+earlier that day, is in the Git history.
 """
 
 from __future__ import annotations

@@ -21,7 +21,7 @@ Computes
 Does not show
     * When the flood rose or fell. The pass times say when the radar looked, not what the water did.
     * That no other satellite looked in the gap. The snapshot holds Sentinel-1 only, and committed files
-      name other radar acquisitions inside the gap (RADARSAT-2 on 10 September, ALOS-2 on 14 and 15
+      name other radar acquisitions dated inside the gap (RADARSAT-2 on 10 September, ALOS-2 on 14 and 15
       September). None of their data is cleared for this lane.
     * Today's catalogue. The snapshot was not taken again: this lane makes no network request. A product
       of another mode or type would not be in it.
@@ -59,10 +59,10 @@ REPLAY_KEYFRAME_KEYS = {"onset_keyframe": "stage.onset_knot", "modelled_peak_key
 from that file at run time. They are illustrative scenario keyframes shaped to the event chronology; no gauge
 record exists for September 2024."""
 OTHER_RADAR_NOTE = (
-    "Sentinel-1 was not the only radar. Committed files name other radar acquisitions inside the gap: a RADARSAT-2 "
+    "Sentinel-1 was not the only radar. Committed files name other radar acquisitions dated inside the gap: a RADARSAT-2 "
     "analysis by GISTDA of 10 September 2024 (docs/demo/replay_numbers.md, key cal.gistda) and ALOS-2 acquisitions of "
-    "14 and 15 September 2024 (planning protocol v1a, case O4, which needs permission). None of their data is cleared "
-    "for this lane and none was read."
+    "14 and 15 September 2024 (planning protocol v1a, case O4, which needs permission; the protocol gives the dates and "
+    "no time of day). None of their data is cleared for this lane and none was read."
 )
 _ORBIT = re.compile(r"^S1A_IW_GRDH_1SDV_\d{8}T\d{6}_\d{8}T\d{6}_(\d{6})_")
 
@@ -76,7 +76,7 @@ SPEC = diagnosis_run.FigureSpec(
     does_not_show=(
         "When the flood rose or fell: the pass times say when the radar looked, not what the water did.",
         "That no other satellite looked in the gap: the snapshot holds Sentinel-1 only, and committed files name "
-        "RADARSAT-2 and ALOS-2 acquisitions inside it.",
+        "RADARSAT-2 and ALOS-2 acquisitions dated inside it.",
         "Today's catalogue: the snapshot was not taken again, and a product of another mode or type would not be in it.",
     ),
 )
@@ -148,7 +148,7 @@ def make_compute(root: Path, external: Path | None) -> Callable[[], diagnosis_ru
                 "read_at_run_time": True,
                 **keyframes,
             },
-            "other_radar_acquisitions_inside_the_gap": OTHER_RADAR_NOTE,
+            "other_radar_acquisitions_dated_inside_the_gap": OTHER_RADAR_NOTE,
         }
         queries = sorted({row["source_url"] for row in rows})
         return diagnosis_run.FigureResult(

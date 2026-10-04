@@ -27,7 +27,8 @@ PROTOCOL = ROOT / "docs" / "proposal_execution" / "planning_protocol_v1b.json"
 RECEIPTS = ROOT / "docs" / "proposal_execution" / "RECEIPTS.jsonl"
 UTC = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
 DOCUMENTATION = {"README.md"}
-FILES = sorted(path for path in OUTPUTS.iterdir() if path.name not in DOCUMENTATION) if OUTPUTS.is_dir() else []
+# The run register (outputs/planning_v1/run_register/) is a folder of pointers, checked by tests/test_planning_protocol.py.
+FILES = sorted(path for path in OUTPUTS.iterdir() if path.is_file() and path.name not in DOCUMENTATION) if OUTPUTS.is_dir() else []
 
 
 def _sha256(path: Path) -> str:

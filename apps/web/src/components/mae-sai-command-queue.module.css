@@ -107,6 +107,12 @@
 .planNote svg { margin-top: 2px; }
 .planNote b, .never { color: var(--c-ink); font-weight: 600; }
 
+/* On a short desktop screen the footer gives the rows a few pixels, so the eight rows are 44 px in Thai too. */
+@media (min-width: 1181px) and (max-height: 840px) {
+  .foot { padding: 3px var(--c-inset) 4px; }
+  .captions .gHour, .captions .gPlan { padding-bottom: 1px; }
+}
+
 /* --- Focus mode: the top row with the model tag, and its two figures under it ------------------------------- */
 .queue[data-state="collapsed"] { flex: none; justify-content: center; min-height: 44px; padding: 5px var(--c-inset) 6px; }
 .topRow { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 0 8px; min-width: 0; font-size: 12px; }
@@ -161,4 +167,9 @@
   .row .chip { min-width: 12px; height: 16px; padding: 0 2px; border-radius: 3px; font-size: 11px; }
   .row .cPos { font-size: 11px; }
   .foot { padding-bottom: 24px; }
+}
+/* The bar follows its figure with a short slide; nothing loops and nothing pulses. */
+@media (prefers-reduced-motion: no-preference) {
+  .bar i { transition: width .2s ease; }
+  .row { transition: background-color .12s ease; }
 }

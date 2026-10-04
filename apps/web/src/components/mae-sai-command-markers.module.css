@@ -27,6 +27,8 @@
 .signIcon[data-selected="true"] .deviceSign { border-style: solid; border-width: 1.5px; }
 .noReports { position: absolute; left: 0; top: 21px; padding: 0 5px; border: 1px dotted #7b888d; border-radius: 3px; background: rgb(255 255 255 / 84%); color: #4b5c64; font-family: var(--c-font); font-size: 11px; line-height: 15px; white-space: nowrap; transform: translateX(-50%); pointer-events: none; }
 .noReports:lang(th) { line-height: 17px; }
+/* A small map (below 900 px, out of this week's scope) has no room for the mark under every name. */
+@media (max-width: 899px) { .noReports { display: none; } }
 
 /* --- Popups: text nodes only, at most six lines for an invented item or a device sign, then two actions ---- */
 .itemPopup { display: grid; gap: 3px; min-width: 232px; font-family: var(--c-font); font-size: 12px; line-height: 1.45; color: var(--c-ink); }

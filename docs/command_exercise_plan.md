@@ -115,6 +115,54 @@ Open points for the owners after stage 3:
 3. Whether a shelter should count from the start or from the end of its day in trainee mode.
 4. The Thai text was written by an AI assistant and no native speaker has read it.
 
+**Fix pass f1 (5 Oct 2026): the look, the labels that must stay in sight, the keyboard and the Thai wording.** Two reviews of stages 1 to 3 (a designer's, and one of the code, the honesty rules and the Thai text) were worked through. No new file was added. Where this section gives a size or a wording, it replaces the one in the notes of stages 1 to 3 above.
+
+What changed on the page:
+
+- **The map is pale.** The street map, the ground and the veil outside the district are lighter, so the white panels sit on a light ground. Subdistrict names stand on pale plates. The label outside the district is two short lines that run away from the district.
+- **One panel style.** Panels at rest carry a hairline and a soft shadow; what opens over the map (legend, popovers, the right card, popups) carries a deeper one. Every panel has the same inset of 16 px (12 px on a tablet). The type has six sizes (26, 19, 14, 13, 12 and 11 px) and nothing a reader has to read is under 11 px. The buttons of the time dock, the day chips and the switches of the table share one face and one corner radius.
+- **Popups and tooltips of the map** are the page's own panel: 12 px corners, the same shadow and ink, a 44 px close control with the cross used elsewhere, and a fade at the lower edge of a popup that scrolls.
+- **Roads.** A through road or a named road keeps a heavy line; the other streets are thin, so a flooded town reads as a net of lines over the water. A major road that is impassable lies on a thin white casing. Red is still used for impassable roads only.
+- **Reported shelters at the district zoom.** Below zoom 12.5 a star is 14 px in a 28 px target. Shelters closer than 24 px on screen share one count mark, which shows the diamond of the command centre too when that lies under it; a tap on the mark shows the sites apart. From zoom 12.5 on a star is 22 px in a 44 px target, as before.
+- **The clock card.** The replay time is 26 px. The phase line is one line at every hour ("Phase: Peak · assumed stage 3.5 m (illustrative)"; the full sentence is its title and is in the drawer). The line that says what changed is "Since 11:00: +100 lost access · 0 in water · +1 km impassable": a difference is rounded like its figure and printed with its sign and no tilde, and the drawer states that rule. It is never cut. The second line names the roads newly impassable as a whole, or carries the model limit of the phase. Measured over all 265 hourly positions in both languages, the card keeps one height: 193 px in English and 198 px in Thai at 1440 x 800, 214 and 221 px at 1440 x 900, 148 and 154 px at 1024 x 700.
+- **The model limit is on the card at every hour.** Before the river falls it reads "Model limit: the current is not modelled" (the replay data's own assumption: flash-flood velocity, debris and mud deposition are not modelled). In the Receding and Mostly receded phases it reads "Model limit: standing water and mud not modelled", as the plan asks.
+- **The table.** Its eight rows are 45.6 px tall in English and 44.4 px in Thai at 1440 x 800 (46.2 and 44.3 px at 1440 x 900). The footer is two lines: the note of the "+" mark, and "Not issued yet. Fixed in time; not computed from this hour." The full sentence of the plan ("Planning class from the signed protocol. Fixed in time. Not computed from this replay hour.") is the title of that line, is read out with the table, and stands in the inspector. A chip without a class is one quiet dash. The plan group is 104 px wide. A zero is printed in the muted ink of the page (5.6 to 1 on white).
+- **The table on a tablet.** The line of group titles is gone: the left group is named by a dashed tag in the captions row, and the plan cells of every row wear the lock of the plan group. Seven of the eight rows are in view at 1024 x 700 and the eighth lies under a fade; the card scrolls.
+- **Focus mode.** Each of the two cards is two short lines, and both print the tag "Model · low confidence" as text (it was a tooltip).
+- **The watermark** is drawn inside the map: over the water and the roads, under the names, the markers and the popups. It does not move with the map. Its letters are dark with a light edge, so they read on pale ground and on modelled water.
+- **The time bar.** The hatch right of the playhead is opaque, so no later phase name and no later rain shows through it. A faint tick stands at every midnight, and the name of the phase the replay is in is bold. A merged mark now reaches 13 px, and its count is 11 px.
+- **The legend** draws every sample in one box on the ground colour of the map; a wet or impassable road is drawn over modelled water. Its head wears the model tag.
+- **Below 900 px wide** (out of this week's scope) the page keeps the banner, a short situation card (replay time, the three figures, the model tag), the menu, the legend, the notice and the time dock with the replay time. The card says that the table and the map tools need a wider window. The bottom sheet of section 3 is not built.
+
+What changed in the rules:
+
+- **Order of the rows.** A row above zero always passes a row at zero; the lead of 25 residents applies between two rows above zero. So a row that reads "0" never stands over a row that reads "<10" (it did at hours 131 to 146 with the 2024 set). The order now changes 12 times in the replay with the rule (it was 13), and still 7 times among the rows above zero.
+- **Ordering by planning** places units that share a position, and units without one, in the order of their subdistrict codes. It never reads this hour's count (decision D7).
+- **Trainee mode** holds the summary at the modelled peak back in the inspector until the replay reaches the peak hour. Neither its figures nor its time are shown before.
+- **Shares.** A share just under the whole is printed ">99%" and one just over nothing "<1%"; a share of a base under ten residents is left out.
+- **Keyboard.** A panel that opens takes the focus and hands it back to what opened it when it closes. Escape closes a popup of the map and does nothing else on that key press. A marker that takes the keyboard focus is brought inside the clear rectangle. The line a screen reader hears when the order is held stands beside the table, not inside it. An automated accessibility check (axe-core, WCAG 2 A and AA) reports nothing in eight states of the page.
+
+Thai wording (written by an AI assistant; no native speaker has read it):
+
+- The banner ends "ไม่ใช่คำเตือนอย่างเป็นทางการ". The Thai draft of the banner in section 1 below is the plan's first wording and is kept as written.
+- The class of the protocol is "ระดับการดำเนินการ" and the position of a row is "อันดับตามแผน", so the two are not read as one word, and neither as a water level. "Not issued yet" is "ยังไม่มีผลการจัดระดับ".
+- The O1 title names the candidates ("พื้นที่ที่อาจมีน้ำท่วมจากการวิเคราะห์ภาพเรดาร์ดาวเทียมของโครงการเอง") and its lane reads "ผลเบื้องต้นจากแบบจำลองของโครงการเอง: ต้องตรวจสอบก่อนดำเนินการ".
+- Eleven smaller strings were reworded (the drill speed, "possible shelter site", the observed lane, the wet shelter, stability, and others). Thai sentences take no full stop.
+
+Where fix pass f1 differs from the plan, or from a review:
+
+- **Roads that are passable again are not named on the card while the river falls.** The model dries at once, so such a road is the very thing the model limit is about; the card shows the limit in that line. The difference in kilometres is still printed, and the whole line is the title of the first line.
+- **The model limit before the river falls** is an addition to the plan.
+- **The footer of the table is short.** The plan asks for the full sentence under the table; it is one hover or one tap away.
+- **The watermark lies under the names and the markers**, not over them: over a name it made the name hard to read.
+- **Not done:** rounding the shoreline of the water layer (it would change the drawn extent of a model layer), a night band and a time bubble on the time bar, a cross-fade of the figures and a flash on a row that changes place.
+
+Open points for the owners after fix pass f1:
+
+1. The three choices above: the model limit at every hour, the roads that are passable again, and the short footer.
+2. At the district zoom a shelter star is a 28 px target, under the 44 px of every other control.
+3. The Thai wording was changed again by an AI assistant and no native speaker has read it.
+
 Prepared 4 Oct 2026 for Putu and Rachmania; corrected by the critic the same day. The repo was read only on the branch `claude/unify-lineages`, in a local checkout; nothing was edited, built or run. All paths below are relative to the repo root.
 
 Terms used in this plan:

@@ -376,7 +376,7 @@ export function feedMarkItems(feed: readonly CommandFeedItem[]): CommandFeedItem
 }
 
 /** A merged mark is a wider pill with its count: a mark closer than this to its first hour joins it, so the pill covers no neighbour. */
-export const MERGED_MARK_REACH_PX = 11;
+export const MERGED_MARK_REACH_PX = 13;
 
 /**
  * The marks of the track. Marks that would stand closer than `minGapPx` to the first mark of a group merge into one

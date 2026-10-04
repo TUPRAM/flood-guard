@@ -10,7 +10,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import type { ReactElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { TIMELINE_MANIFEST_URL, type AreaGeometry, type GeoCollection, type Language, type RoadProps, type TambonProps, type TimelineManifest } from "@/lib/flood-timeline";
 import { buildCommandModel } from "@/lib/flood-timeline-command";
@@ -49,6 +49,7 @@ import { CommandLegend, CommandNotice, CommandViewPopover } from "./mae-sai-comm
 import { CommandModeSegments, CommandModeSwitch, MaeSaiCommandFeed } from "./mae-sai-command-feed";
 import { CommandDeviceDetailBody, CommandItemDetailBody } from "./mae-sai-command-incident";
 import { clusterMarkerNodes, exerciseMarkerNodes, EXERCISE_MARKER_VIEWBOX, MarkerGlyph, placeRecordMarkerNodes, type SvgNode } from "./mae-sai-command-markers";
+import { keyboardPopups } from "./mae-sai-map-kit";
 import { MaeSaiCommandSituation } from "./mae-sai-command-situation";
 import { MaeSaiCommandTimebar, type CommandPhaseBandItem } from "./mae-sai-command-timebar";
 
@@ -372,6 +373,13 @@ describe("Exercise options, legend and notice", () => {
       "no reports received", "several items", "stated tolerance of the selected place", "shelter not yet reported at this hour",
       "never by the model. The colours are not those of medical triage.",
     ]) expect(shown, entry).toContain(entry);
+    // What the map draws of water and roads is modelled: the legend wears the model tag in its head, as text.
+    const legend = html(<CommandLegend language="en" open onToggle={noop} facilities={false} unmodelledRoads={false} wetSites={false} />);
+    expect(legend).toMatch(/data-command-lane="model">Model · low confidence<\/span>/);
+    // Wet and impassable roads are drawn over modelled water, a dry road on the ground.
+    expect(legend.match(/data-over="water"/g)).toHaveLength(2);
+    // Its title can take the keyboard focus when the legend opens.
+    expect(legend).toMatch(/<h2 id="[^"]*" tabindex="-1" data-command-panel-title="true">Legend<\/h2>/);
     // The season envelope is in the legend in hindsight mode only.
     expect(shown).not.toContain("2024 season envelope (scenario)");
     expect(text(html(<CommandLegend language="en" open onToggle={noop} facilities={false} unmodelledRoads={false} wetSites={false} mode="hindsight" />))).toContain("2024 season envelope (scenario)");
@@ -386,6 +394,51 @@ describe("Exercise options, legend and notice", () => {
     const button = html(<CommandNotice language="en" message="New exercise call (1)" onSelect={noop} />);
     expect(button).toMatch(/<button type="button" class="[^"]*" data-command-notice="action">New exercise call \(1\)/);
     expect(html(<CommandNotice language="en" message="A line" />)).toMatch(/<p class="[^"]*" data-command-notice="true">A line<\/p>/);
+  });
+});
+
+describe("Keys of the map popups (the shared map kit)", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  /** A map as the key handling sees it: a container that takes one key listener, and a popup that can be closed. */
+  const fakeMap = () => {
+    let listener: ((event: unknown) => void) | null = null;
+    const state = { closed: 0, open: true };
+    const map = {
+      getContainer: () => ({ addEventListener: (_type: string, handler: (event: unknown) => void) => { listener = handler; }, removeEventListener: () => { listener = null; } }),
+      closePopup: () => { state.closed += 1; state.open = false; },
+    };
+    const press = (key: string) => {
+      const event = { key, target: null, defaultPrevented: false, preventDefault() { this.defaultPrevented = true; } };
+      listener?.(event);
+      return event;
+    };
+    return { map: map as unknown as Parameters<typeof keyboardPopups>[0], state, press, wired: () => listener !== null };
+  };
+
+  it("uses Escape up when it closes a popup, so the page clears nothing else on that key press", () => {
+    vi.stubGlobal("HTMLElement", class {});
+    const { map, state, press, wired } = fakeMap();
+    const keys = keyboardPopups(map, () => state.open, { consumeEscape: true });
+    // A popup is open: Escape closes it and is marked as handled. The page's own key handler leaves a handled key alone.
+    const first = press("Escape");
+    expect([state.closed, first.defaultPrevented]).toEqual([1, true]);
+    // No popup is open: the key is left for the page (it clears the selection, then leaves focus mode).
+    const second = press("Escape");
+    expect([state.closed, second.defaultPrevented]).toEqual([1, false]);
+    // Other keys are never used up.
+    state.open = true;
+    expect(press("Enter").defaultPrevented).toBe(false);
+    keys.remove();
+    expect(wired()).toBe(false);
+  });
+
+  it("leaves the key unmarked without the option, as on the Studio replay", () => {
+    vi.stubGlobal("HTMLElement", class {});
+    const { map, state, press } = fakeMap();
+    keyboardPopups(map, () => state.open);
+    const event = press("Escape");
+    expect([state.closed, event.defaultPrevented]).toEqual([1, false]);
   });
 });
 

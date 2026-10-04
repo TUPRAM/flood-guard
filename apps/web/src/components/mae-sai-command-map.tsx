@@ -420,6 +420,8 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
       const outside = outsideLabelPoint(geometries, m.bounds);
       const outsideLabel = document.createElement("div");
       outsideLabel.className = styles.outsideLabel;
+      // The label runs away from the district: east of its middle it starts at its point, west of it it ends there.
+      if (outside) outsideLabel.dataset.side = outside[0] >= (districtBox[0][1] + districtBox[1][1]) / 2 ? "east" : "west";
       if (outside) L.marker([outside[1], outside[0]], { pane: "fg-labels", icon: labelIcon(outsideLabel), interactive: false, keyboard: false }).addTo(map);
 
       // --- Subdistrict outlines and their names (Thai first, at a point well inside each one).
@@ -656,7 +658,13 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
       }
       layoutSites();
       const refreshText = () => {
-        outsideLabel.textContent = text(COMMAND_MAP.outside);
+        // Two short lines ("outside the district" over "not modelled"), built from text nodes.
+        outsideLabel.lang = languageRef.current;
+        outsideLabel.replaceChildren(...text(COMMAND_MAP.outside).split(" · ").map((part) => {
+          const line = document.createElement("span");
+          line.textContent = part;
+          return line;
+        }));
         for (const badge of siteBadges) labelBadge(badge);
         for (const entry of siteMarkers) {
           labelSite(entry);

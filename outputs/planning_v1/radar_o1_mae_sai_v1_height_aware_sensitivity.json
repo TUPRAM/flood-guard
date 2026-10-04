@@ -1,0 +1,3860 @@
+{
+  "schema_version": "floodguard.radar_candidates.v1",
+  "generated_at_utc": "2026-10-04T12:52:26Z",
+  "receipt_file": "outputs/planning_v1/radar_o1_mae_sai_v1_height_aware_sensitivity_receipt.json",
+  "plan_task": "A2 (UN-SPIDER reproduction) and A4 (M1-literal and M1-v2 on the eight-tambon union)",
+  "case": {
+    "id": "O1",
+    "lane": "OBS",
+    "tier": "T2",
+    "frame": "Mae Sai, 8 tambons",
+    "case_reference_date": "2024-09-15",
+    "input_acquisition_in_protocol_v1a": "Sentinel-1, 16 Sep 2024 06:16 ICT"
+  },
+  "result_document": "docs/proposal_execution/automated_track/MAE_SAI_RADAR_CANDIDATES_RESULT.md",
+  "status": "t2_own_candidates_unqualified",
+  "status_note": "Written with protocol v1a and v1b in force (protocol_sha256). Three own candidates of tier T2: verify before action. They are not validated: none was compared with a reference, and none is an observation of a flood. No FPPS, A-E class or ensemble is here.",
+  "run_role": "sensitivity_run_not_in_the_plan",
+  "run_role_note": "A sensitivity run. Its geocoding is not in the plan. It replaces nothing and is not a flood input of case O1 unless the owners decide so.",
+  "official_warning": false,
+  "operational_status": "non_operational",
+  "computes": "Radar flood candidates of tier T2 for the eight Mae Sai tambons, with coverage, cells without an answer, candidate area, validity layers and threshold levels. No FPPS, no A-E class and no ensemble.",
+  "source_timestamp": "2024-09-15T23:16:01Z",
+  "source_timestamps": {
+    "pre_event_image_utc": "2024-09-03T23:16:00Z",
+    "post_event_image_utc": "2024-09-15T23:16:01Z",
+    "post_event_image_in_thailand": "2024-09-16 06:16 ICT",
+    "worldcover": "2021",
+    "boundaries": "COD-AB tha_admin3 (2022)"
+  },
+  "confidence_class": "low",
+  "confidence_basis": "Own unqualified candidates of tier T2 from one Sentinel-1 pair, with no terrain correction by a qualified processor and no reference of any kind. Nothing here was checked against a flood map.",
+  "protocol_sha256": {
+    "planning_protocol_v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+    "planning_protocol_v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+  },
+  "geocoding": {
+    "label": "sensitivity geocoding, not in the plan: annotation grid with a DEM height for every cell",
+    "method": "annotation_grid_with_cell_height",
+    "radiometry": "sigma0 from the sigmaNought look-up table of the SAFE annotation",
+    "resampling": "bilinear on linear sigma0",
+    "height_datum_reading": "annotation_heights_are_ellipsoidal_and_dem_is_above_the_geoid"
+  },
+  "grid": {
+    "crs": "EPSG:32647",
+    "cell_m": 10.0,
+    "width": 3072,
+    "height": 4096,
+    "bounds": [
+      583680.0,
+      2232320.0,
+      614400.0,
+      2273280.0
+    ],
+    "tile_lattice": "The lattice of the GEOID-Flood sample: tiles of 1024 by 1024 cells of 10 m whose corners are whole multiples of 10,240 m in the UTM zone. Here: UTM zone 47N.",
+    "tiles_in_the_bounding_box": [
+      "E057N221",
+      "E058N221",
+      "E059N221",
+      "E057N220",
+      "E058N220",
+      "E059N220",
+      "E057N219",
+      "E058N219",
+      "E059N219",
+      "E057N218",
+      "E058N218",
+      "E059N218"
+    ],
+    "tiles_holding_part_of_the_frame": [
+      "E058N221",
+      "E057N220",
+      "E058N220",
+      "E059N220",
+      "E057N219",
+      "E058N219",
+      "E059N219",
+      "E057N218",
+      "E058N218"
+    ]
+  },
+  "units": [
+    {
+      "unit_id": "TH570901",
+      "unit_name": "Mae Sai",
+      "polygon_area_km2": 21.5614,
+      "cells": 215610
+    },
+    {
+      "unit_id": "TH570902",
+      "unit_name": "Huai Khrai",
+      "polygon_area_km2": 44.3373,
+      "cells": 443393
+    },
+    {
+      "unit_id": "TH570903",
+      "unit_name": "Ko Chang",
+      "polygon_area_km2": 47.4144,
+      "cells": 474154
+    },
+    {
+      "unit_id": "TH570904",
+      "unit_name": "Pong Pha",
+      "polygon_area_km2": 43.6189,
+      "cells": 436157
+    },
+    {
+      "unit_id": "TH570905",
+      "unit_name": "Si Mueang Chum",
+      "polygon_area_km2": 41.8894,
+      "cells": 418925
+    },
+    {
+      "unit_id": "TH570906",
+      "unit_name": "Wiang Phang Kham",
+      "polygon_area_km2": 30.341,
+      "cells": 303420
+    },
+    {
+      "unit_id": "TH570908",
+      "unit_name": "Ban Dai",
+      "polygon_area_km2": 33.781,
+      "cells": 337814
+    },
+    {
+      "unit_id": "TH570909",
+      "unit_name": "Pong Ngam",
+      "polygon_area_km2": 42.6106,
+      "cells": 426094
+    }
+  ],
+  "image_pair": {
+    "pre": {
+      "product": "S1A_IW_GRDH_1SDV_20240903T231600_20240903T231625_055507_06C5C9_72F7.SAFE",
+      "pass": "descending",
+      "relative_orbit": 135,
+      "acquisition_start_utc": "2024-09-03T23:16:00.776136",
+      "acquisition_stop_utc": "2024-09-03T23:16:25.773465",
+      "processor": "Sentinel-1 IPF 003.80",
+      "projection": "Ground Range",
+      "range_pixel_spacing_m": 10.0,
+      "azimuth_pixel_spacing_m": 10.0,
+      "calibration_table_range": {
+        "vv": [
+          604.5008,
+          625.2301
+        ],
+        "vh": [
+          604.5008,
+          625.2301
+        ]
+      },
+      "image_window": {
+        "row_offset": 8003,
+        "col_offset": 5990,
+        "rows": 5312,
+        "cols": 4530
+      }
+    },
+    "post": {
+      "product": "S1A_IW_GRDH_1SDV_20240915T231601_20240915T231626_055682_06CCBA_08DA.SAFE",
+      "pass": "descending",
+      "relative_orbit": 135,
+      "acquisition_start_utc": "2024-09-15T23:16:01.675690",
+      "acquisition_stop_utc": "2024-09-15T23:16:26.674888",
+      "processor": "Sentinel-1 IPF 003.80",
+      "projection": "Ground Range",
+      "range_pixel_spacing_m": 10.0,
+      "azimuth_pixel_spacing_m": 10.0,
+      "calibration_table_range": {
+        "vv": [
+          604.6029,
+          625.3579
+        ],
+        "vh": [
+          604.6029,
+          625.3579
+        ]
+      },
+      "image_window": {
+        "row_offset": 8003,
+        "col_offset": 5978,
+        "rows": 5311,
+        "cols": 4531
+      }
+    }
+  },
+  "radar_input": {
+    "median_sigma0_db_in_frame": {
+      "pre_vv": -8.508,
+      "pre_vh": -14.969,
+      "post_vv": -8.631,
+      "post_vh": -14.89
+    },
+    "frame_cells_with_valid_input_on_both_dates": 3055567,
+    "frame_cells": 3055567
+  },
+  "terrain": {
+    "dem_cell_degrees": 0.0002777777777777778,
+    "slope_cell_degrees": 0.0008333333333333333,
+    "slope_cell_m_east_west_at_mid_latitude": 86.93,
+    "slope_cell_m_north_south": 92.26
+  },
+  "geolocation_check": {
+    "what": "Displacement of the radar layers, measured on the pre-event VH image against ESA WorldCover 2021 class 80 (permanent water). Positive east_m and north_m: the image content lies east and north of the mapped water. No flood candidate is involved.",
+    "search_cells": 120,
+    "min_water_cells_for_a_tile": 2000,
+    "control_point_warp": {
+      "geocoding": "gcp_polynomial",
+      "status": "The fallback of plan row A4 and the geocoding of the run of record.",
+      "whole_grid": {
+        "east_m": -670.0,
+        "north_m": 130.0,
+        "correlation": 0.194819,
+        "at_search_edge": false
+      },
+      "tiles": {
+        "E058N221": {
+          "measured": false,
+          "water_cells": 982,
+          "reason": "too little mapped water in the tile"
+        },
+        "E057N220": {
+          "measured": false,
+          "water_cells": 1256,
+          "reason": "too little mapped water in the tile"
+        },
+        "E058N220": {
+          "measured": true,
+          "water_cells": 3610,
+          "east_m": -730.0,
+          "north_m": 140.0,
+          "correlation": 0.082708,
+          "at_search_edge": false
+        },
+        "E059N220": {
+          "measured": true,
+          "water_cells": 9130,
+          "east_m": -700.0,
+          "north_m": 130.0,
+          "correlation": 0.17068,
+          "at_search_edge": false
+        },
+        "E057N219": {
+          "measured": false,
+          "water_cells": 1535,
+          "reason": "too little mapped water in the tile"
+        },
+        "E058N219": {
+          "measured": true,
+          "water_cells": 3276,
+          "east_m": -710.0,
+          "north_m": 140.0,
+          "correlation": 0.062309,
+          "at_search_edge": false
+        },
+        "E059N219": {
+          "measured": true,
+          "water_cells": 48448,
+          "east_m": -670.0,
+          "north_m": 130.0,
+          "correlation": 0.444442,
+          "at_search_edge": false
+        },
+        "E057N218": {
+          "measured": true,
+          "water_cells": 2192,
+          "east_m": -650.0,
+          "north_m": 130.0,
+          "correlation": 0.071764,
+          "at_search_edge": false
+        },
+        "E058N218": {
+          "measured": true,
+          "water_cells": 8304,
+          "east_m": -660.0,
+          "north_m": 130.0,
+          "correlation": 0.168536,
+          "at_search_edge": false
+        }
+      }
+    },
+    "pre_against_post": {
+      "what": "Where the pre-event image content lies relative to the post-event image content, in the images of this run.",
+      "east_m": 0.0,
+      "north_m": 0.0,
+      "correlation": 0.691596,
+      "at_search_edge": false
+    },
+    "height_aware_mapping": {
+      "geocoding": "annotation_grid_with_cell_height",
+      "status": "Not the plan's fallback path. The sensitivity run uses the reading annotation_heights_are_ellipsoidal_and_dem_is_above_the_geoid; the run of record uses neither.",
+      "readings": {
+        "annotation_heights_and_dem_share_one_datum": {
+          "height_added_to_the_dem_m": 0.0,
+          "whole_grid": {
+            "east_m": -60.0,
+            "north_m": 20.0,
+            "correlation": 0.208925,
+            "at_search_edge": false
+          },
+          "tiles": {
+            "E058N221": {
+              "measured": false,
+              "water_cells": 982,
+              "reason": "too little mapped water in the tile"
+            },
+            "E057N220": {
+              "measured": false,
+              "water_cells": 1256,
+              "reason": "too little mapped water in the tile"
+            },
+            "E058N220": {
+              "measured": true,
+              "water_cells": 3610,
+              "east_m": -60.0,
+              "north_m": 20.0,
+              "correlation": 0.099082,
+              "at_search_edge": false
+            },
+            "E059N220": {
+              "measured": true,
+              "water_cells": 9130,
+              "east_m": -60.0,
+              "north_m": 10.0,
+              "correlation": 0.179451,
+              "at_search_edge": false
+            },
+            "E057N219": {
+              "measured": false,
+              "water_cells": 1535,
+              "reason": "too little mapped water in the tile"
+            },
+            "E058N219": {
+              "measured": true,
+              "water_cells": 3276,
+              "east_m": -60.0,
+              "north_m": 20.0,
+              "correlation": 0.073477,
+              "at_search_edge": false
+            },
+            "E059N219": {
+              "measured": true,
+              "water_cells": 48448,
+              "east_m": -60.0,
+              "north_m": 10.0,
+              "correlation": 0.479728,
+              "at_search_edge": false
+            },
+            "E057N218": {
+              "measured": true,
+              "water_cells": 2192,
+              "east_m": -60.0,
+              "north_m": 20.0,
+              "correlation": 0.091443,
+              "at_search_edge": false
+            },
+            "E058N218": {
+              "measured": true,
+              "water_cells": 8304,
+              "east_m": -60.0,
+              "north_m": 20.0,
+              "correlation": 0.181689,
+              "at_search_edge": false
+            }
+          }
+        },
+        "annotation_heights_are_ellipsoidal_and_dem_is_above_the_geoid": {
+          "height_added_to_the_dem_m": -35.0,
+          "whole_grid": {
+            "east_m": -10.0,
+            "north_m": 10.0,
+            "correlation": 0.204831,
+            "at_search_edge": false
+          },
+          "tiles": {
+            "E058N221": {
+              "measured": false,
+              "water_cells": 982,
+              "reason": "too little mapped water in the tile"
+            },
+            "E057N220": {
+              "measured": false,
+              "water_cells": 1256,
+              "reason": "too little mapped water in the tile"
+            },
+            "E058N220": {
+              "measured": true,
+              "water_cells": 3610,
+              "east_m": -10.0,
+              "north_m": 10.0,
+              "correlation": 0.099671,
+              "at_search_edge": false
+            },
+            "E059N220": {
+              "measured": true,
+              "water_cells": 9130,
+              "east_m": -10.0,
+              "north_m": 10.0,
+              "correlation": 0.178111,
+              "at_search_edge": false
+            },
+            "E057N219": {
+              "measured": false,
+              "water_cells": 1535,
+              "reason": "too little mapped water in the tile"
+            },
+            "E058N219": {
+              "measured": true,
+              "water_cells": 3276,
+              "east_m": -10.0,
+              "north_m": 10.0,
+              "correlation": 0.073652,
+              "at_search_edge": false
+            },
+            "E059N219": {
+              "measured": true,
+              "water_cells": 48448,
+              "east_m": 0.0,
+              "north_m": 10.0,
+              "correlation": 0.482598,
+              "at_search_edge": false
+            },
+            "E057N218": {
+              "measured": true,
+              "water_cells": 2192,
+              "east_m": -10.0,
+              "north_m": 10.0,
+              "correlation": 0.088949,
+              "at_search_edge": false
+            },
+            "E058N218": {
+              "measured": true,
+              "water_cells": 8304,
+              "east_m": -10.0,
+              "north_m": 10.0,
+              "correlation": 0.181964,
+              "at_search_edge": false
+            }
+          }
+        }
+      }
+    },
+    "expected_from_geometry": {
+      "what": "Image position of each cell under the height-aware mapping minus its position under the control-point warp, in metres, on every 8th cell. A positive along-range value means the control-point warp reads the image nearer to the sensor than it should, so the content it shows lies that far towards far range of its true place.",
+      "range_direction_bearing_degrees": 280.5,
+      "incidence_angle_degrees_near_the_frame": 36.92,
+      "annotation_height_near_the_frame_m": 785.0,
+      "median_dem_height_of_the_frame_m": 381.8,
+      "readings": {
+        "annotation_heights_and_dem_share_one_datum": {
+          "frame": {
+            "along_range_m": {
+              "p05": -59.9,
+              "median": 665.4,
+              "p95": 679.9
+            },
+            "along_azimuth_m": {
+              "p05": 3.2,
+              "median": 3.7,
+              "p95": 4.1
+            }
+          },
+          "units": {
+            "TH570901": {
+              "along_range_m": {
+                "p05": 671.7,
+                "median": 677.5,
+                "p95": 680.5
+              },
+              "along_azimuth_m": {
+                "p05": 3.9,
+                "median": 4.0,
+                "p95": 4.1
+              }
+            },
+            "TH570902": {
+              "along_range_m": {
+                "p05": -380.1,
+                "median": 620.1,
+                "p95": 656.9
+              },
+              "along_azimuth_m": {
+                "p05": 3.1,
+                "median": 3.2,
+                "p95": 3.4
+              }
+            },
+            "TH570903": {
+              "along_range_m": {
+                "p05": 664.5,
+                "median": 674.3,
+                "p95": 682.2
+              },
+              "along_azimuth_m": {
+                "p05": 4.0,
+                "median": 4.1,
+                "p95": 4.2
+              }
+            },
+            "TH570904": {
+              "along_range_m": {
+                "p05": 149.4,
+                "median": 672.7,
+                "p95": 680.8
+              },
+              "along_azimuth_m": {
+                "p05": 3.5,
+                "median": 3.7,
+                "p95": 3.8
+              }
+            },
+            "TH570905": {
+              "along_range_m": {
+                "p05": 661.2,
+                "median": 671.0,
+                "p95": 677.0
+              },
+              "along_azimuth_m": {
+                "p05": 3.8,
+                "median": 3.9,
+                "p95": 4.0
+              }
+            },
+            "TH570906": {
+              "along_range_m": {
+                "p05": -10.5,
+                "median": 618.0,
+                "p95": 679.7
+              },
+              "along_azimuth_m": {
+                "p05": 3.6,
+                "median": 3.8,
+                "p95": 4.0
+              }
+            },
+            "TH570908": {
+              "along_range_m": {
+                "p05": 643.1,
+                "median": 658.1,
+                "p95": 668.2
+              },
+              "along_azimuth_m": {
+                "p05": 3.4,
+                "median": 3.5,
+                "p95": 3.7
+              }
+            },
+            "TH570909": {
+              "along_range_m": {
+                "p05": -406.1,
+                "median": 632.6,
+                "p95": 673.3
+              },
+              "along_azimuth_m": {
+                "p05": 3.3,
+                "median": 3.4,
+                "p95": 3.6
+              }
+            }
+          }
+        },
+        "annotation_heights_are_ellipsoidal_and_dem_is_above_the_geoid": {
+          "frame": {
+            "along_range_m": {
+              "p05": -13.9,
+              "median": 712.7,
+              "p95": 726.6
+            },
+            "along_azimuth_m": {
+              "p05": 3.2,
+              "median": 3.7,
+              "p95": 4.1
+            }
+          },
+          "units": {
+            "TH570901": {
+              "along_range_m": {
+                "p05": 718.0,
+                "median": 724.2,
+                "p95": 727.3
+              },
+              "along_azimuth_m": {
+                "p05": 3.9,
+                "median": 4.0,
+                "p95": 4.1
+              }
+            },
+            "TH570902": {
+              "along_range_m": {
+                "p05": -334.2,
+                "median": 666.5,
+                "p95": 703.6
+              },
+              "along_azimuth_m": {
+                "p05": 3.1,
+                "median": 3.2,
+                "p95": 3.4
+              }
+            },
+            "TH570903": {
+              "along_range_m": {
+                "p05": 712.4,
+                "median": 721.6,
+                "p95": 729.3
+              },
+              "along_azimuth_m": {
+                "p05": 4.0,
+                "median": 4.1,
+                "p95": 4.2
+              }
+            },
+            "TH570904": {
+              "along_range_m": {
+                "p05": 195.5,
+                "median": 719.5,
+                "p95": 727.3
+              },
+              "along_azimuth_m": {
+                "p05": 3.5,
+                "median": 3.7,
+                "p95": 3.8
+              }
+            },
+            "TH570905": {
+              "along_range_m": {
+                "p05": 708.8,
+                "median": 718.2,
+                "p95": 723.9
+              },
+              "along_azimuth_m": {
+                "p05": 3.8,
+                "median": 3.9,
+                "p95": 4.0
+              }
+            },
+            "TH570906": {
+              "along_range_m": {
+                "p05": 35.5,
+                "median": 664.1,
+                "p95": 726.2
+              },
+              "along_azimuth_m": {
+                "p05": 3.6,
+                "median": 3.8,
+                "p95": 4.0
+              }
+            },
+            "TH570908": {
+              "along_range_m": {
+                "p05": 690.3,
+                "median": 705.2,
+                "p95": 715.2
+              },
+              "along_azimuth_m": {
+                "p05": 3.4,
+                "median": 3.5,
+                "p95": 3.7
+              }
+            },
+            "TH570909": {
+              "along_range_m": {
+                "p05": -360.2,
+                "median": 678.9,
+                "p95": 720.0
+              },
+              "along_azimuth_m": {
+                "p05": 3.3,
+                "median": 3.4,
+                "p95": 3.6
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "methods": {
+    "un_spider": {
+      "plan_task": "A2",
+      "flood_input": "UN-SPIDER reproduction",
+      "lane": "OBS",
+      "tier": "T2",
+      "label": "UN-SPIDER reproduction (sensitivity geocoding, not in the plan: annotation grid with a DEM height for every cell)",
+      "display": "Own model candidate: verify before action",
+      "area_note": "A candidate cell is a cell the method's rule flagged from the change in backscatter. It is not a cell that was seen under water.",
+      "frame": {
+        "cells": 3055567,
+        "permanent_water_cells": 9938,
+        "valid_input_cells": 3055567,
+        "answered_cells": 3055567,
+        "cells_without_an_answer": 0,
+        "candidate_cells": 83041,
+        "candidate_cells_outside_permanent_water": 83041,
+        "area_km2": 305.5567,
+        "input_coverage": 1.0,
+        "answer_coverage": 1.0,
+        "abstention_fraction": 0.0,
+        "candidate_area_km2": 8.3041,
+        "candidate_area_outside_permanent_water_km2": 8.3041,
+        "units": 8,
+        "units_with_input_coverage_at_least_min": 8,
+        "units_with_answer_coverage_at_least_min": 8,
+        "units_with_abstention_at_most_max": 8
+      },
+      "units": [
+        {
+          "unit_id": "TH570901",
+          "unit_name": "Mae Sai",
+          "cells": 215610,
+          "area_km2": 21.561,
+          "permanent_water_cells": 1146,
+          "valid_input_cells": 215610,
+          "answered_cells": 215610,
+          "cells_without_an_answer": 0,
+          "cells_without_an_answer_by_reason": {
+            "method_declined_for_the_tile": 0,
+            "no_valid_radar_input": 0
+          },
+          "input_coverage": 1.0,
+          "answer_coverage": 1.0,
+          "abstention_fraction": 0.0,
+          "input_coverage_at_least_min": true,
+          "answer_coverage_at_least_min": true,
+          "abstention_at_most_max": true,
+          "low_confidence_reason_codes": [],
+          "candidate_cells": 1580,
+          "candidate_area_km2": 0.158,
+          "candidate_cells_outside_permanent_water": 1580,
+          "candidate_area_outside_permanent_water_km2": 0.158,
+          "candidate_share_of_answered_cells": 0.007328
+        },
+        {
+          "unit_id": "TH570902",
+          "unit_name": "Huai Khrai",
+          "cells": 443393,
+          "area_km2": 44.3393,
+          "permanent_water_cells": 786,
+          "valid_input_cells": 443393,
+          "answered_cells": 443393,
+          "cells_without_an_answer": 0,
+          "cells_without_an_answer_by_reason": {
+            "method_declined_for_the_tile": 0,
+            "no_valid_radar_input": 0
+          },
+          "input_coverage": 1.0,
+          "answer_coverage": 1.0,
+          "abstention_fraction": 0.0,
+          "input_coverage_at_least_min": true,
+          "answer_coverage_at_least_min": true,
+          "abstention_at_most_max": true,
+          "low_confidence_reason_codes": [],
+          "candidate_cells": 12,
+          "candidate_area_km2": 0.0012,
+          "candidate_cells_outside_permanent_water": 12,
+          "candidate_area_outside_permanent_water_km2": 0.0012,
+          "candidate_share_of_answered_cells": 2.7e-05
+        },
+        {
+          "unit_id": "TH570903",
+          "unit_name": "Ko Chang",
+          "cells": 474154,
+          "area_km2": 47.4154,
+          "permanent_water_cells": 2108,
+          "valid_input_cells": 474154,
+          "answered_cells": 474154,
+          "cells_without_an_answer": 0,
+          "cells_without_an_answer_by_reason": {
+            "method_declined_for_the_tile": 0,
+            "no_valid_radar_input": 0
+          },
+          "input_coverage": 1.0,
+          "answer_coverage": 1.0,
+          "abstention_fraction": 0.0,
+          "input_coverage_at_least_min": true,
+          "answer_coverage_at_least_min": true,
+          "abstention_at_most_max": true,
+          "low_confidence_reason_codes": [],
+          "candidate_cells": 30643,
+          "candidate_area_km2": 3.0643,
+          "candidate_cells_outside_permanent_water": 30643,
+          "candidate_area_outside_permanent_water_km2": 3.0643,
+          "candidate_share_of_answered_cells": 0.064627
+        },
+        {
+          "unit_id": "TH570904",
+          "unit_name": "Pong Pha",
+          "cells": 436157,
+          "area_km2": 43.6157,
+          "permanent_water_cells": 1743,
+          "valid_input_cells": 436157,
+          "answered_cells": 436157,
+          "cells_without_an_answer": 0,
+          "cells_without_an_answer_by_reason": {
+            "method_declined_for_the_tile": 0,
+            "no_valid_radar_input": 0
+          },
+          "input_coverage": 1.0,
+          "answer_coverage": 1.0,
+          "abstention_fraction": 0.0,
+          "input_coverage_at_least_min": true,
+          "answer_coverage_at_least_min": true,
+          "abstention_at_most_max": true,
+          "low_confidence_reason_codes": [],
+          "candidate_cells": 3170,
+          "candidate_area_km2": 0.317,
+          "candidate_cells_outside_permanent_water": 3170,
+          "candidate_area_outside_permanent_water_km2": 0.317,
+          "candidate_share_of_answered_cells": 0.007268
+        },
+        {
+          "unit_id": "TH570905",
+          "unit_name": "Si Mueang Chum",
+          "cells": 418925,
+          "area_km2": 41.8925,
+          "permanent_water_cells": 1696,
+          "valid_input_cells": 418925,
+          "answered_cells": 418925,
+          "cells_without_an_answer": 0,
+          "cells_without_an_answer_by_reason": {
+            "method_declined_for_the_tile": 0,
+            "no_valid_radar_input": 0
+          },
+          "input_coverage": 1.0,
+          "answer_coverage": 1.0,
+          "abstention_fraction": 0.0,
+          "input_coverage_at_least_min": true,
+          "answer_coverage_at_least_min": true,
+          "abstention_at_most_max": true,
+          "low_confidence_reason_codes": [],
+          "candidate_cells": 28300,
+          "candidate_area_km2": 2.83,
+          "candidate_cells_outside_permanent_water": 28300,
+          "candidate_area_outside_permanent_water_km2": 2.83,
+          "candidate_share_of_answered_cells": 0.067554
+        },
+        {
+          "unit_id": "TH570906",
+          "unit_name": "Wiang Phang Kham",
+          "cells": 303420,
+          "area_km2": 30.342,
+          "permanent_water_cells": 380,
+          "valid_input_cells": 303420,
+          "answered_cells": 303420,
+          "cells_without_an_answer": 0,
+          "cells_without_an_answer_by_reason": {
+            "method_declined_for_the_tile": 0,
+            "no_valid_radar_input": 0
+          },
+          "input_coverage": 1.0,
+          "answer_coverage": 1.0,
+          "abstention_fraction": 0.0,
+          "input_coverage_at_least_min": true,
+          "answer_coverage_at_least_min": true,
+          "abstention_at_most_max": true,
+          "low_confidence_reason_codes": [],
+          "candidate_cells": 141,
+          "candidate_area_km2": 0.0141,
+          "candidate_cells_outside_permanent_water": 141,
+          "candidate_area_outside_permanent_water_km2": 0.0141,
+          "candidate_share_of_answered_cells": 0.000465
+        },
+        {
+          "unit_id": "TH570908",
+          "unit_name": "Ban Dai",
+          "cells": 337814,
+          "area_km2": 33.7814,
+          "permanent_water_cells": 1051,
+          "valid_input_cells": 337814,
+          "answered_cells": 337814,
+          "cells_without_an_answer": 0,
+          "cells_without_an_answer_by_reason": {
+            "method_declined_for_the_tile": 0,
+            "no_valid_radar_input": 0
+          },
+          "input_coverage": 1.0,
+          "answer_coverage": 1.0,
+          "abstention_fraction": 0.0,
+          "input_coverage_at_least_min": true,
+          "answer_coverage_at_least_min": true,
+          "abstention_at_most_max": true,
+          "low_confidence_reason_codes": [],
+          "candidate_cells": 17168,
+          "candidate_area_km2": 1.7168,
+          "candidate_cells_outside_permanent_water": 17168,
+          "candidate_area_outside_permanent_water_km2": 1.7168,
+          "candidate_share_of_answered_cells": 0.050821
+        },
+        {
+          "unit_id": "TH570909",
+          "unit_name": "Pong Ngam",
+          "cells": 426094,
+          "area_km2": 42.6094,
+          "permanent_water_cells": 1028,
+          "valid_input_cells": 426094,
+          "answered_cells": 426094,
+          "cells_without_an_answer": 0,
+          "cells_without_an_answer_by_reason": {
+            "method_declined_for_the_tile": 0,
+            "no_valid_radar_input": 0
+          },
+          "input_coverage": 1.0,
+          "answer_coverage": 1.0,
+          "abstention_fraction": 0.0,
+          "input_coverage_at_least_min": true,
+          "answer_coverage_at_least_min": true,
+          "abstention_at_most_max": true,
+          "low_confidence_reason_codes": [],
+          "candidate_cells": 2027,
+          "candidate_area_km2": 0.2027,
+          "candidate_cells_outside_permanent_water": 2027,
+          "candidate_area_outside_permanent_water_km2": 0.2027,
+          "candidate_share_of_answered_cells": 0.004757
+        }
+      ],
+      "strata": {
+        "by_land_cover_worldcover_2021": [
+          {
+            "class": "tree_cover",
+            "frame_cells": 987081,
+            "answered_cells": 987081,
+            "candidate_cells": 3852,
+            "candidate_area_km2": 0.3852,
+            "candidate_share_of_answered_cells": 0.003902
+          },
+          {
+            "class": "shrubland",
+            "frame_cells": 551,
+            "answered_cells": 551,
+            "candidate_cells": 60,
+            "candidate_area_km2": 0.006,
+            "candidate_share_of_answered_cells": 0.108893
+          },
+          {
+            "class": "grassland",
+            "frame_cells": 98521,
+            "answered_cells": 98521,
+            "candidate_cells": 910,
+            "candidate_area_km2": 0.091,
+            "candidate_share_of_answered_cells": 0.009237
+          },
+          {
+            "class": "cropland",
+            "frame_cells": 1713380,
+            "answered_cells": 1713380,
+            "candidate_cells": 78068,
+            "candidate_area_km2": 7.8068,
+            "candidate_share_of_answered_cells": 0.045564
+          },
+          {
+            "class": "built_up",
+            "frame_cells": 237020,
+            "answered_cells": 237020,
+            "candidate_cells": 105,
+            "candidate_area_km2": 0.0105,
+            "candidate_share_of_answered_cells": 0.000443
+          },
+          {
+            "class": "bare_or_sparse_vegetation",
+            "frame_cells": 9076,
+            "answered_cells": 9076,
+            "candidate_cells": 46,
+            "candidate_area_km2": 0.0046,
+            "candidate_share_of_answered_cells": 0.005068
+          },
+          {
+            "class": "permanent_water",
+            "frame_cells": 9938,
+            "answered_cells": 9938,
+            "candidate_cells": 0,
+            "candidate_area_km2": 0.0,
+            "candidate_share_of_answered_cells": 0.0
+          },
+          {
+            "class": "herbaceous_wetland",
+            "frame_cells": 0,
+            "answered_cells": 0,
+            "candidate_cells": 0,
+            "candidate_area_km2": 0.0,
+            "candidate_share_of_answered_cells": null
+          }
+        ],
+        "by_slope_class": [
+          {
+            "class": "below_5_degrees",
+            "frame_cells": 2423616,
+            "answered_cells": 2423616,
+            "candidate_cells": 83041,
+            "candidate_area_km2": 8.3041,
+            "candidate_share_of_answered_cells": 0.034263
+          },
+          {
+            "class": "5_to_below_10_degrees",
+            "frame_cells": 81987,
+            "answered_cells": 81987,
+            "candidate_cells": 0,
+            "candidate_area_km2": 0.0,
+            "candidate_share_of_answered_cells": 0.0
+          },
+          {
+            "class": "10_to_below_20_degrees",
+            "frame_cells": 248362,
+            "answered_cells": 248362,
+            "candidate_cells": 0,
+            "candidate_area_km2": 0.0,
+            "candidate_share_of_answered_cells": 0.0
+          },
+          {
+            "class": "20_degrees_or_more",
+            "frame_cells": 301602,
+            "answered_cells": 301602,
+            "candidate_cells": 0,
+            "candidate_area_km2": 0.0,
+            "candidate_share_of_answered_cells": 0.0
+          }
+        ]
+      },
+      "configuration": {
+        "polarisation": "vh",
+        "smoothing": "focal_mean_circle_on_db",
+        "smoothing_radius_m": 50.0,
+        "difference": "after_db_divided_by_before_db",
+        "difference_threshold": 1.25,
+        "perennial_water": "removed_before_the_connected_pixel_rule",
+        "min_connected_cells": 8,
+        "connectivity": "eight_connected",
+        "max_slope": 5.0,
+        "slope_unit": "degrees",
+        "slope_rule": "cells_with_slope_at_or_above_max_slope_are_removed_last"
+      },
+      "steps": {
+        "smoothing_radius_cells": 5.0,
+        "smoothing_kernel_cells": 81,
+        "frame_cells": 3055567,
+        "valid_cells": 3055567,
+        "cells_with_zero_before_mean": 0,
+        "cells_with_positive_before_mean_db": 562,
+        "cells_above_threshold": 105157,
+        "cells_above_threshold_with_positive_before_mean_db": 77,
+        "cells_removed_as_perennial_water": 28,
+        "cells_removed_by_connected_pixel_rule": 650,
+        "cells_removed_by_slope_rule": 21438,
+        "cells_without_a_slope_value_among_the_removed": 0,
+        "candidate_cells": 83041,
+        "median_before_db": -15.129,
+        "median_after_db": -14.9768
+      },
+      "differences_from_the_published_practice": [
+        "Sigma0 from the SAFE look-up table, geocoded as this run states, not Earth Engine's terrain-corrected backscatter with thermal noise removed.",
+        "Perennial water: ESA WorldCover 2021 class 80, not JRC seasonality of 10 months or more (the JRC tile on disk does not cover the whole frame).",
+        "Slope: Copernicus GLO-30 averaged to 3 arc-seconds, not the HydroSHEDS 3 arc-second DEM.",
+        "One image per date, not a mosaic over a date range."
+      ],
+      "statement": "Reproduces UN-SPIDER practice; 8.30 km2 of residual water at 16 Sep 06:16 ICT; the published 93.38% OA does not transfer",
+      "jrc_sensitivity_note": {
+        "what": "The practice's own perennial-water layer (JRC seasonality of 10 months or more) on the part of the frame the JRC tile on disk covers, beside WorldCover class 80 on the same part.",
+        "share_of_frame_covered_by_the_jrc_tile": 0.96488,
+        "perennial_water_cells_jrc": 987,
+        "perennial_water_cells_worldcover": 9179,
+        "candidate_km2_with_jrc": 5.3146,
+        "candidate_km2_with_worldcover": 5.3123
+      }
+    },
+    "m1_literal": {
+      "plan_task": "A4",
+      "flood_input": "M1-literal",
+      "lane": "OBS",
+      "tier": "T2",
+      "label": "M1-literal (sensitivity geocoding, not in the plan: annotation grid with a DEM height for every cell)",
+      "display": "Own model candidate: verify before action",
+      "area_note": "A candidate cell is a cell the method's rule flagged from the change in backscatter. It is not a cell that was seen under water.",
+      "frame": {
+        "cells": 3055567,
+        "permanent_water_cells": 9938,
+        "valid_input_cells": 3055567,
+        "answered_cells": 3055567,
+        "cells_without_an_answer": 0,
+        "candidate_cells": 1163639,
+        "candidate_cells_outside_permanent_water": 1159707,
+        "area_km2": 305.5567,
+        "input_coverage": 1.0,
+        "answer_coverage": 1.0,
+        "abstention_fraction": 0.0,
+        "candidate_area_km2": 116.3639,
+        "candidate_area_outside_permanent_water_km2": 115.9707,
+        "units": 8,
+        "units_with_input_coverage_at_least_min": 8,
+        "units_with_answer_coverage_at_least_min": 8,
+        "units_with_abstention_at_most_max": 8
+      },
+      "units": [
+        {
+          "unit_id": "TH570901",
+          "unit_name": "Mae Sai",
+          "cells": 215610,
+          "area_km2": 21.561,
+          "permanent_water_cells": 1146,
+          "valid_input_cells": 215610,
+          "answered_cells": 215610,
+          "cells_without_an_answer": 0,
+          "cells_without_an_answer_by_reason": {
+            "method_declined_for_the_tile": 0,
+            "no_valid_radar_input": 0
+          },
+          "input_coverage": 1.0,
+          "answer_coverage": 1.0,
+          "abstention_fraction": 0.0,
+          "input_coverage_at_least_min": true,
+          "answer_coverage_at_least_min": true,
+          "abstention_at_most_max": true,
+          "low_confidence_reason_codes": [],
+          "candidate_cells": 77597,
+          "candidate_area_km2": 7.7597,
+          "candidate_cells_outside_permanent_water": 76920,
+          "candidate_area_outside_permanent_water_km2": 7.692,
+          "candidate_share_of_answered_cells": 0.359895
+        },
+        {
+          "unit_id": "TH570902",
+          "unit_name": "Huai Khrai",
+          "cells": 443393,
+          "area_km2": 44.3393,
+          "permanent_water_cells": 786,
+          "valid_input_cells": 443393,
+          "answered_cells": 443393,
+          "cells_without_an_answer": 0,
+          "cells_without_an_answer_by_reason": {
+            "method_declined_for_the_tile": 0,
+            "no_valid_radar_input": 0
+          },
+          "input_coverage": 1.0,
+          "answer_coverage": 1.0,
+          "abstention_fraction": 0.0,
+          "input_coverage_at_least_min": true,
+          "answer_coverage_at_least_min": true,
+          "abstention_at_most_max": true,
+          "low_confidence_reason_codes": [],
+          "candidate_cells": 183574,
+          "candidate_area_km2": 18.3574,
+          "candidate_cells_outside_permanent_water": 183198,
+          "candidate_area_outside_permanent_water_km2": 18.3198,
+          "candidate_share_of_answered_cells": 0.414021
+        },
+        {
+          "unit_id": "TH570903",
+          "unit_name": "Ko Chang",
+          "cells": 474154,
+          "area_km2": 47.4154,
+          "permanent_water_cells": 2108,
+          "valid_input_cells": 474154,
+          "answered_cells": 474154,
+          "cells_without_an_answer": 0,
+          "cells_without_an_answer_by_reason": {
+            "method_declined_for_the_tile": 0,
+            "no_valid_radar_input": 0
+          },
+          "input_coverage": 1.0,
+          "answer_coverage": 1.0,
+          "abstention_fraction": 0.0,
+          "input_coverage_at_least_min": true,
+          "answer_coverage_at_least_min": true,
+          "abstention_at_most_max": true,
+          "low_confidence_reason_codes": [],
+          "candidate_cells": 209077,
+          "candidate_area_km2": 20.9077,
+          "candidate_cells_outside_permanent_water": 207899,
+          "candidate_area_outside_permanent_water_km2": 20.7899,
+          "candidate_share_of_answered_cells": 0.440947
+        },
+        {
+          "unit_id": "TH570904",
+          "unit_name": "Pong Pha",
+          "cells": 436157,
+          "area_km2": 43.6157,
+          "permanent_water_cells": 1743,
+          "valid_input_cells": 436157,
+          "answered_cells": 436157,
+          "cells_without_an_answer": 0,
+          "cells_without_an_answer_by_reason": {
+            "method_declined_for_the_tile": 0,
+            "no_valid_radar_input": 0
+          },
+          "input_coverage": 1.0,
+          "answer_coverage": 1.0,
+          "abstention_fraction": 0.0,
+          "input_coverage_at_least_min": true,
+          "answer_coverage_at_least_min": true,
+          "abstention_at_most_max": true,
+          "low_confidence_reason_codes": [],
+          "candidate_cells": 166798,
+          "candidate_area_km2": 16.6798,
+          "candidate_cells_outside_permanent_water": 166270,
+          "candidate_area_outside_permanent_water_km2": 16.627,
+          "candidate_share_of_answered_cells": 0.382427
+        },
+        {
+          "unit_id": "TH570905",
+          "unit_name": "Si Mueang Chum",
+          "cells": 418925,
+          "area_km2": 41.8925,
+          "permanent_water_cells": 1696,
+          "valid_input_cells": 418925,
+          "answered_cells": 418925,
+          "cells_without_an_answer": 0,
+          "cells_without_an_answer_by_reason": {
+            "method_declined_for_the_tile": 0,
+            "no_valid_radar_input": 0
+          },
+          "input_coverage": 1.0,
+          "answer_coverage": 1.0,
+          "abstention_fraction": 0.0,
+          "input_coverage_at_least_min": true,
+          "answer_coverage_at_least_min": true,
+          "abstention_at_most_max": true,
+          "low_confidence_reason_codes": [],
+          "candidate_cells": 162357,
+          "candidate_area_km2": 16.2357,
+          "candidate_cells_outside_permanent_water": 161859,
+          "candidate_area_outside_permanent_water_km2": 16.1859,
+          "candidate_share_of_answered_cells": 0.387556
+        },
+        {
+          "unit_id": "TH570906",
+          "unit_name": "Wiang Phang Kham",
+          "cells": 303420,
+          "area_km2": 30.342,
+          "permanent_water_cells": 380,
+          "valid_input_cells": 303420,
+          "answered_cells": 303420,
+          "cells_without_an_answer": 0,
+          "cells_without_an_answer_by_reason": {
+            "method_declined_for_the_tile": 0,
+            "no_valid_radar_input": 0
+          },
+          "input_coverage": 1.0,
+          "answer_coverage": 1.0,
+          "abstention_fraction": 0.0,
+          "input_coverage_at_least_min": true,
+          "answer_coverage_at_least_min": true,
+          "abstention_at_most_max": true,
+          "low_confidence_reason_codes": [],
+          "candidate_cells": 139592,
+          "candidate_area_km2": 13.9592,
+          "candidate_cells_outside_permanent_water": 139347,
+          "candidate_area_outside_permanent_water_km2": 13.9347,
+          "candidate_share_of_answered_cells": 0.460062
+        },
+        {
+          "unit_id": "TH570908",
+          "unit_name": "Ban Dai",
+          "cells": 337814,
+          "area_km2": 33.7814,
+          "permanent_water_cells": 1051,
+          "valid_input_cells": 337814,
+          "answered_cells": 337814,
+          "cells_without_an_answer": 0,
+          "cells_without_an_answer_by_reason": {
+            "method_declined_for_the_tile": 0,
+            "no_valid_radar_input": 0
+          },
+          "input_coverage": 1.0,
+          "answer_coverage": 1.0,
+          "abstention_fraction": 0.0,
+          "input_coverage_at_least_min": true,
+          "answer_coverage_at_least_min": true,
+          "abstention_at_most_max": true,
+          "low_confidence_reason_codes": [],
+          "candidate_cells": 50054,
+          "candidate_area_km2": 5.0054,
+          "candidate_cells_outside_permanent_water": 49929,
+          "candidate_area_outside_permanent_water_km2": 4.9929,
+          "candidate_share_of_answered_cells": 0.14817
+        },
+        {
+          "unit_id": "TH570909",
+          "unit_name": "Pong Ngam",
+          "cells": 426094,
+          "area_km2": 42.6094,
+          "permanent_water_cells": 1028,
+          "valid_input_cells": 426094,
+          "answered_cells": 426094,
+          "cells_without_an_answer": 0,
+          "cells_without_an_answer_by_reason": {
+            "method_declined_for_the_tile": 0,
+            "no_valid_radar_input": 0
+          },
+          "input_coverage": 1.0,
+          "answer_coverage": 1.0,
+          "abstention_fraction": 0.0,
+          "input_coverage_at_least_min": true,
+          "answer_coverage_at_least_min": true,
+          "abstention_at_most_max": true,
+          "low_confidence_reason_codes": [],
+          "candidate_cells": 174590,
+          "candidate_area_km2": 17.459,
+          "candidate_cells_outside_permanent_water": 174285,
+          "candidate_area_outside_permanent_water_km2": 17.4285,
+          "candidate_share_of_answered_cells": 0.409745
+        }
+      ],
+      "strata": {
+        "by_land_cover_worldcover_2021": [
+          {
+            "class": "tree_cover",
+            "frame_cells": 987081,
+            "answered_cells": 987081,
+            "candidate_cells": 440997,
+            "candidate_area_km2": 44.0997,
+            "candidate_share_of_answered_cells": 0.446769
+          },
+          {
+            "class": "shrubland",
+            "frame_cells": 551,
+            "answered_cells": 551,
+            "candidate_cells": 202,
+            "candidate_area_km2": 0.0202,
+            "candidate_share_of_answered_cells": 0.366606
+          },
+          {
+            "class": "grassland",
+            "frame_cells": 98521,
+            "answered_cells": 98521,
+            "candidate_cells": 43126,
+            "candidate_area_km2": 4.3126,
+            "candidate_share_of_answered_cells": 0.437734
+          },
+          {
+            "class": "cropland",
+            "frame_cells": 1713380,
+            "answered_cells": 1713380,
+            "candidate_cells": 575904,
+            "candidate_area_km2": 57.5904,
+            "candidate_share_of_answered_cells": 0.336122
+          },
+          {
+            "class": "built_up",
+            "frame_cells": 237020,
+            "answered_cells": 237020,
+            "candidate_cells": 95907,
+            "candidate_area_km2": 9.5907,
+            "candidate_share_of_answered_cells": 0.404637
+          },
+          {
+            "class": "bare_or_sparse_vegetation",
+            "frame_cells": 9076,
+            "answered_cells": 9076,
+            "candidate_cells": 3571,
+            "candidate_area_km2": 0.3571,
+            "candidate_share_of_answered_cells": 0.393455
+          },
+          {
+            "class": "permanent_water",
+            "frame_cells": 9938,
+            "answered_cells": 9938,
+            "candidate_cells": 3932,
+            "candidate_area_km2": 0.3932,
+            "candidate_share_of_answered_cells": 0.395653
+          },
+          {
+            "class": "herbaceous_wetland",
+            "frame_cells": 0,
+            "answered_cells": 0,
+            "candidate_cells": 0,
+            "candidate_area_km2": 0.0,
+            "candidate_share_of_answered_cells": null
+          }
+        ],
+        "by_slope_class": [
+          {
+            "class": "below_5_degrees",
+            "frame_cells": 2423616,
+            "answered_cells": 2423616,
+            "candidate_cells": 867621,
+            "candidate_area_km2": 86.7621,
+            "candidate_share_of_answered_cells": 0.357986
+          },
+          {
+            "class": "5_to_below_10_degrees",
+            "frame_cells": 81987,
+            "answered_cells": 81987,
+            "candidate_cells": 38618,
+            "candidate_area_km2": 3.8618,
+            "candidate_share_of_answered_cells": 0.471026
+          },
+          {
+            "class": "10_to_below_20_degrees",
+            "frame_cells": 248362,
+            "answered_cells": 248362,
+            "candidate_cells": 115826,
+            "candidate_area_km2": 11.5826,
+            "candidate_share_of_answered_cells": 0.46636
+          },
+          {
+            "class": "20_degrees_or_more",
+            "frame_cells": 301602,
+            "answered_cells": 301602,
+            "candidate_cells": 141574,
+            "candidate_area_km2": 14.1574,
+            "candidate_share_of_answered_cells": 0.469407
+          }
+        ]
+      },
+      "configuration": {
+        "speckle_filter": "lee_local_statistics",
+        "speckle_window_pixels": 5,
+        "equivalent_looks": 4.4,
+        "threshold_feature": "delta_vh_db_post_minus_pre",
+        "threshold_method": "otsu_on_all_valid_pixels_of_the_image",
+        "candidate_rule": "delta_vh_below_threshold_and_below_zero",
+        "isolated_speckle_cleaning": "majority_3x3_at_least_5_of_9",
+        "histogram": {
+          "lower_db": -25.0,
+          "upper_db": 25.0,
+          "bin_width_db": 0.1
+        }
+      },
+      "tiles": [
+        {
+          "tile": "E058N221",
+          "bounds_epsg_32647": [
+            593920.0,
+            2263040.0,
+            604160.0,
+            2273280.0
+          ],
+          "frame_cells_in_tile": 1229,
+          "frame_cells_by_unit": {
+            "TH570903": 1229
+          },
+          "candidate_cells_in_frame": 910,
+          "declined": false,
+          "declined_because": null,
+          "whole_tile": {
+            "method": "m1_literal",
+            "total_cells": 1048576,
+            "valid_cells": 1048576,
+            "invalid_cells": 0,
+            "otsu_threshold_delta_vh_db": 0.2,
+            "abstained": false,
+            "abstention_reason": null,
+            "candidate_cells": 429255,
+            "cells_removed_by_cleaning": 21588,
+            "median_delta_vv_db": 0.232,
+            "median_delta_vh_db": 0.2472,
+            "median_vv_vh_ratio_db_pre": 6.5799,
+            "median_vv_vh_ratio_db_post": 6.4936,
+            "threshold_levels": {
+              "shifts_db": [
+                -1.0,
+                0.0,
+                1.0
+              ],
+              "applied_to": "the Otsu threshold on delta-VH; a lower threshold is stricter",
+              "candidate_cells": {
+                "-1_db": 217855,
+                "0_db": 429255,
+                "+1_db": 429255
+              }
+            }
+          }
+        },
+        {
+          "tile": "E057N220",
+          "bounds_epsg_32647": [
+            583680.0,
+            2252800.0,
+            593920.0,
+            2263040.0
+          ],
+          "frame_cells_in_tile": 434946,
+          "frame_cells_by_unit": {
+            "TH570901": 44744,
+            "TH570904": 132383,
+            "TH570906": 251950,
+            "TH570909": 5869
+          },
+          "candidate_cells_in_frame": 204095,
+          "declined": false,
+          "declined_because": null,
+          "whole_tile": {
+            "method": "m1_literal",
+            "total_cells": 1048576,
+            "valid_cells": 1048576,
+            "invalid_cells": 0,
+            "otsu_threshold_delta_vh_db": 0.0,
+            "abstained": false,
+            "abstention_reason": null,
+            "candidate_cells": 504626,
+            "cells_removed_by_cleaning": 21811,
+            "median_delta_vv_db": 0.1879,
+            "median_delta_vh_db": -0.0067,
+            "median_vv_vh_ratio_db_pre": 6.6269,
+            "median_vv_vh_ratio_db_post": 6.8262,
+            "threshold_levels": {
+              "shifts_db": [
+                -1.0,
+                0.0,
+                1.0
+              ],
+              "applied_to": "the Otsu threshold on delta-VH; a lower threshold is stricter",
+              "candidate_cells": {
+                "-1_db": 211508,
+                "0_db": 504626,
+                "+1_db": 504626
+              }
+            }
+          }
+        },
+        {
+          "tile": "E058N220",
+          "bounds_epsg_32647": [
+            593920.0,
+            2252800.0,
+            604160.0,
+            2263040.0
+          ],
+          "frame_cells_in_tile": 890130,
+          "frame_cells_by_unit": {
+            "TH570901": 170866,
+            "TH570903": 371337,
+            "TH570904": 32627,
+            "TH570905": 264034,
+            "TH570906": 51266
+          },
+          "candidate_cells_in_frame": 354226,
+          "declined": false,
+          "declined_because": null,
+          "whole_tile": {
+            "method": "m1_literal",
+            "total_cells": 1048576,
+            "valid_cells": 1048576,
+            "invalid_cells": 0,
+            "otsu_threshold_delta_vh_db": 0.0,
+            "abstained": false,
+            "abstention_reason": null,
+            "candidate_cells": 442223,
+            "cells_removed_by_cleaning": 18718,
+            "median_delta_vv_db": -0.0483,
+            "median_delta_vh_db": 0.2366,
+            "median_vv_vh_ratio_db_pre": 6.444,
+            "median_vv_vh_ratio_db_post": 6.0242,
+            "threshold_levels": {
+              "shifts_db": [
+                -1.0,
+                0.0,
+                1.0
+              ],
+              "applied_to": "the Otsu threshold on delta-VH; a lower threshold is stricter",
+              "candidate_cells": {
+                "-1_db": 208938,
+                "0_db": 442223,
+                "+1_db": 442223
+              }
+            }
+          }
+        },
+        {
+          "tile": "E059N220",
+          "bounds_epsg_32647": [
+            604160.0,
+            2252800.0,
+            614400.0,
+            2263040.0
+          ],
+          "frame_cells_in_tile": 112911,
+          "frame_cells_by_unit": {
+            "TH570903": 101588,
+            "TH570905": 11323
+          },
+          "candidate_cells_in_frame": 64434,
+          "declined": false,
+          "declined_because": null,
+          "whole_tile": {
+            "method": "m1_literal",
+            "total_cells": 1048576,
+            "valid_cells": 1048576,
+            "invalid_cells": 0,
+            "otsu_threshold_delta_vh_db": -1.5,
+            "abstained": false,
+            "abstention_reason": null,
+            "candidate_cells": 198969,
+            "cells_removed_by_cleaning": 19736,
+            "median_delta_vv_db": -0.0733,
+            "median_delta_vh_db": -0.1569,
+            "median_vv_vh_ratio_db_pre": 6.3118,
+            "median_vv_vh_ratio_db_post": 6.2801,
+            "threshold_levels": {
+              "shifts_db": [
+                -1.0,
+                0.0,
+                1.0
+              ],
+              "applied_to": "the Otsu threshold on delta-VH; a lower threshold is stricter",
+              "candidate_cells": {
+                "-1_db": 106111,
+                "0_db": 198969,
+                "+1_db": 404899
+              }
+            }
+          }
+        },
+        {
+          "tile": "E057N219",
+          "bounds_epsg_32647": [
+            583680.0,
+            2242560.0,
+            593920.0,
+            2252800.0
+          ],
+          "frame_cells_in_tile": 810018,
+          "frame_cells_by_unit": {
+            "TH570902": 294694,
+            "TH570904": 156048,
+            "TH570906": 204,
+            "TH570908": 4381,
+            "TH570909": 354691
+          },
+          "candidate_cells_in_frame": 370783,
+          "declined": false,
+          "declined_because": null,
+          "whole_tile": {
+            "method": "m1_literal",
+            "total_cells": 1048576,
+            "valid_cells": 1048576,
+            "invalid_cells": 0,
+            "otsu_threshold_delta_vh_db": 0.1,
+            "abstained": false,
+            "abstention_reason": null,
+            "candidate_cells": 481254,
+            "cells_removed_by_cleaning": 21347,
+            "median_delta_vv_db": 0.1078,
+            "median_delta_vh_db": 0.0702,
+            "median_vv_vh_ratio_db_pre": 6.6232,
+            "median_vv_vh_ratio_db_post": 6.6548,
+            "threshold_levels": {
+              "shifts_db": [
+                -1.0,
+                0.0,
+                1.0
+              ],
+              "applied_to": "the Otsu threshold on delta-VH; a lower threshold is stricter",
+              "candidate_cells": {
+                "-1_db": 224166,
+                "0_db": 481254,
+                "+1_db": 481254
+              }
+            }
+          }
+        },
+        {
+          "tile": "E058N219",
+          "bounds_epsg_32647": [
+            593920.0,
+            2242560.0,
+            604160.0,
+            2252800.0
+          ],
+          "frame_cells_in_tile": 687376,
+          "frame_cells_by_unit": {
+            "TH570902": 35989,
+            "TH570904": 115099,
+            "TH570905": 137321,
+            "TH570908": 333433,
+            "TH570909": 65534
+          },
+          "candidate_cells_in_frame": 117897,
+          "declined": false,
+          "declined_because": null,
+          "whole_tile": {
+            "method": "m1_literal",
+            "total_cells": 1048576,
+            "valid_cells": 1048576,
+            "invalid_cells": 0,
+            "otsu_threshold_delta_vh_db": -1.9,
+            "abstained": false,
+            "abstention_reason": null,
+            "candidate_cells": 200145,
+            "cells_removed_by_cleaning": 15288,
+            "median_delta_vv_db": -0.4693,
+            "median_delta_vh_db": -0.2755,
+            "median_vv_vh_ratio_db_pre": 5.9726,
+            "median_vv_vh_ratio_db_post": 5.5614,
+            "threshold_levels": {
+              "shifts_db": [
+                -1.0,
+                0.0,
+                1.0
+              ],
+              "applied_to": "the Otsu threshold on delta-VH; a lower threshold is stricter",
+              "candidate_cells": {
+                "-1_db": 124002,
+                "0_db": 200145,
+                "+1_db": 360040
+              }
+            }
+          }
+        },
+        {
+          "tile": "E059N219",
+          "bounds_epsg_32647": [
+            604160.0,
+            2242560.0,
+            614400.0,
+            2252800.0
+          ],
+          "frame_cells_in_tile": 6247,
+          "frame_cells_by_unit": {
+            "TH570905": 6247
+          },
+          "candidate_cells_in_frame": 3615,
+          "declined": false,
+          "declined_because": null,
+          "whole_tile": {
+            "method": "m1_literal",
+            "total_cells": 1048576,
+            "valid_cells": 1048576,
+            "invalid_cells": 0,
+            "otsu_threshold_delta_vh_db": -0.7,
+            "abstained": false,
+            "abstention_reason": null,
+            "candidate_cells": 350920,
+            "cells_removed_by_cleaning": 25395,
+            "median_delta_vv_db": -0.1412,
+            "median_delta_vh_db": -0.211,
+            "median_vv_vh_ratio_db_pre": 6.1469,
+            "median_vv_vh_ratio_db_post": 6.1945,
+            "threshold_levels": {
+              "shifts_db": [
+                -1.0,
+                0.0,
+                1.0
+              ],
+              "applied_to": "the Otsu threshold on delta-VH; a lower threshold is stricter",
+              "candidate_cells": {
+                "-1_db": 137031,
+                "0_db": 350920,
+                "+1_db": 572771
+              }
+            }
+          }
+        },
+        {
+          "tile": "E057N218",
+          "bounds_epsg_32647": [
+            583680.0,
+            2232320.0,
+            593920.0,
+            2242560.0
+          ],
+          "frame_cells_in_tile": 100840,
+          "frame_cells_by_unit": {
+            "TH570902": 100840
+          },
+          "candidate_cells_in_frame": 44343,
+          "declined": false,
+          "declined_because": null,
+          "whole_tile": {
+            "method": "m1_literal",
+            "total_cells": 1048576,
+            "valid_cells": 1048576,
+            "invalid_cells": 0,
+            "otsu_threshold_delta_vh_db": 0.0,
+            "abstained": false,
+            "abstention_reason": null,
+            "candidate_cells": 491351,
+            "cells_removed_by_cleaning": 19080,
+            "median_delta_vv_db": -0.1093,
+            "median_delta_vh_db": 0.0455,
+            "median_vv_vh_ratio_db_pre": 6.5233,
+            "median_vv_vh_ratio_db_post": 6.3536,
+            "threshold_levels": {
+              "shifts_db": [
+                -1.0,
+                0.0,
+                1.0
+              ],
+              "applied_to": "the Otsu threshold on delta-VH; a lower threshold is stricter",
+              "candidate_cells": {
+                "-1_db": 212569,
+                "0_db": 491351,
+                "+1_db": 491351
+              }
+            }
+          }
+        },
+        {
+          "tile": "E058N218",
+          "bounds_epsg_32647": [
+            593920.0,
+            2232320.0,
+            604160.0,
+            2242560.0
+          ],
+          "frame_cells_in_tile": 11870,
+          "frame_cells_by_unit": {
+            "TH570902": 11870
+          },
+          "candidate_cells_in_frame": 3336,
+          "declined": false,
+          "declined_because": null,
+          "whole_tile": {
+            "method": "m1_literal",
+            "total_cells": 1048576,
+            "valid_cells": 1048576,
+            "invalid_cells": 0,
+            "otsu_threshold_delta_vh_db": 0.1,
+            "abstained": false,
+            "abstention_reason": null,
+            "candidate_cells": 475327,
+            "cells_removed_by_cleaning": 19637,
+            "median_delta_vv_db": -0.1936,
+            "median_delta_vh_db": 0.0944,
+            "median_vv_vh_ratio_db_pre": 6.1534,
+            "median_vv_vh_ratio_db_post": 5.8034,
+            "threshold_levels": {
+              "shifts_db": [
+                -1.0,
+                0.0,
+                1.0
+              ],
+              "applied_to": "the Otsu threshold on delta-VH; a lower threshold is stricter",
+              "candidate_cells": {
+                "-1_db": 216784,
+                "0_db": 475327,
+                "+1_db": 475327
+              }
+            }
+          }
+        }
+      ],
+      "tiles_declined": [],
+      "threshold_levels": {
+        "levels": "strictest, central and loosest threshold (protocol v1b: the threshold moved by 1 dB each way)",
+        "frame_km2": {
+          "strictest": 55.6534,
+          "central": 116.3639,
+          "loosest": 128.9862
+        },
+        "units_km2": {
+          "TH570901": {
+            "strictest": 3.2976,
+            "central": 7.7597,
+            "loosest": 7.7597
+          },
+          "TH570902": {
+            "strictest": 8.1817,
+            "central": 18.3574,
+            "loosest": 18.8047
+          },
+          "TH570903": {
+            "strictest": 10.9378,
+            "central": 20.9077,
+            "loosest": 22.4983
+          },
+          "TH570904": {
+            "strictest": 7.5188,
+            "central": 16.6798,
+            "loosest": 18.5468
+          },
+          "TH570905": {
+            "strictest": 8.9576,
+            "central": 16.2357,
+            "loosest": 18.9029
+          },
+          "TH570906": {
+            "strictest": 5.7413,
+            "central": 13.9592,
+            "loosest": 13.9592
+          },
+          "TH570908": {
+            "strictest": 2.8677,
+            "central": 5.0054,
+            "loosest": 9.9042
+          },
+          "TH570909": {
+            "strictest": 8.1509,
+            "central": 17.459,
+            "loosest": 18.6104
+          }
+        }
+      }
+    },
+    "m1_v2": {
+      "plan_task": "A4",
+      "flood_input": "M1-v2",
+      "lane": "OBS",
+      "tier": "T2",
+      "label": "M1-v2 (sensitivity geocoding, not in the plan: annotation grid with a DEM height for every cell)",
+      "display": "Own model candidate: verify before action",
+      "area_note": "A candidate cell is a cell the method's rule flagged from the change in backscatter. It is not a cell that was seen under water.",
+      "frame": {
+        "cells": 3055567,
+        "permanent_water_cells": 9938,
+        "valid_input_cells": 3055567,
+        "answered_cells": 694852,
+        "cells_without_an_answer": 2360715,
+        "candidate_cells": 30394,
+        "candidate_cells_outside_permanent_water": 30374,
+        "area_km2": 305.5567,
+        "input_coverage": 1.0,
+        "answer_coverage": 0.227405,
+        "abstention_fraction": 0.772595,
+        "candidate_area_km2": 3.0394,
+        "candidate_area_outside_permanent_water_km2": 3.0374,
+        "units": 8,
+        "units_with_input_coverage_at_least_min": 8,
+        "units_with_answer_coverage_at_least_min": 1,
+        "units_with_abstention_at_most_max": 1
+      },
+      "units": [
+        {
+          "unit_id": "TH570901",
+          "unit_name": "Mae Sai",
+          "cells": 215610,
+          "area_km2": 21.561,
+          "permanent_water_cells": 1146,
+          "valid_input_cells": 215610,
+          "answered_cells": 0,
+          "cells_without_an_answer": 215610,
+          "cells_without_an_answer_by_reason": {
+            "method_declined_for_the_tile": 215610,
+            "no_valid_radar_input": 0
+          },
+          "input_coverage": 1.0,
+          "answer_coverage": 0.0,
+          "abstention_fraction": 1.0,
+          "input_coverage_at_least_min": true,
+          "answer_coverage_at_least_min": false,
+          "abstention_at_most_max": false,
+          "low_confidence_reason_codes": [
+            "method_declined_for_the_tile"
+          ],
+          "candidate_cells": 0,
+          "candidate_area_km2": 0.0,
+          "candidate_cells_outside_permanent_water": 0,
+          "candidate_area_outside_permanent_water_km2": 0.0,
+          "candidate_share_of_answered_cells": null
+        },
+        {
+          "unit_id": "TH570902",
+          "unit_name": "Huai Khrai",
+          "cells": 443393,
+          "area_km2": 44.3393,
+          "permanent_water_cells": 786,
+          "valid_input_cells": 443393,
+          "answered_cells": 35989,
+          "cells_without_an_answer": 407404,
+          "cells_without_an_answer_by_reason": {
+            "method_declined_for_the_tile": 407404,
+            "no_valid_radar_input": 0
+          },
+          "input_coverage": 1.0,
+          "answer_coverage": 0.081167,
+          "abstention_fraction": 0.918833,
+          "input_coverage_at_least_min": true,
+          "answer_coverage_at_least_min": false,
+          "abstention_at_most_max": false,
+          "low_confidence_reason_codes": [
+            "method_declined_for_the_tile"
+          ],
+          "candidate_cells": 5,
+          "candidate_area_km2": 0.0005,
+          "candidate_cells_outside_permanent_water": 5,
+          "candidate_area_outside_permanent_water_km2": 0.0005,
+          "candidate_share_of_answered_cells": 0.000139
+        },
+        {
+          "unit_id": "TH570903",
+          "unit_name": "Ko Chang",
+          "cells": 474154,
+          "area_km2": 47.4154,
+          "permanent_water_cells": 2108,
+          "valid_input_cells": 474154,
+          "answered_cells": 1229,
+          "cells_without_an_answer": 472925,
+          "cells_without_an_answer_by_reason": {
+            "method_declined_for_the_tile": 472925,
+            "no_valid_radar_input": 0
+          },
+          "input_coverage": 1.0,
+          "answer_coverage": 0.002592,
+          "abstention_fraction": 0.997408,
+          "input_coverage_at_least_min": true,
+          "answer_coverage_at_least_min": false,
+          "abstention_at_most_max": false,
+          "low_confidence_reason_codes": [
+            "method_declined_for_the_tile"
+          ],
+          "candidate_cells": 67,
+          "candidate_area_km2": 0.0067,
+          "candidate_cells_outside_permanent_water": 67,
+          "candidate_area_outside_permanent_water_km2": 0.0067,
+          "candidate_share_of_answered_cells": 0.054516
+        },
+        {
+          "unit_id": "TH570904",
+          "unit_name": "Pong Pha",
+          "cells": 436157,
+          "area_km2": 43.6157,
+          "permanent_water_cells": 1743,
+          "valid_input_cells": 436157,
+          "answered_cells": 115099,
+          "cells_without_an_answer": 321058,
+          "cells_without_an_answer_by_reason": {
+            "method_declined_for_the_tile": 321058,
+            "no_valid_radar_input": 0
+          },
+          "input_coverage": 1.0,
+          "answer_coverage": 0.263894,
+          "abstention_fraction": 0.736106,
+          "input_coverage_at_least_min": true,
+          "answer_coverage_at_least_min": false,
+          "abstention_at_most_max": false,
+          "low_confidence_reason_codes": [
+            "method_declined_for_the_tile"
+          ],
+          "candidate_cells": 2484,
+          "candidate_area_km2": 0.2484,
+          "candidate_cells_outside_permanent_water": 2484,
+          "candidate_area_outside_permanent_water_km2": 0.2484,
+          "candidate_share_of_answered_cells": 0.021581
+        },
+        {
+          "unit_id": "TH570905",
+          "unit_name": "Si Mueang Chum",
+          "cells": 418925,
+          "area_km2": 41.8925,
+          "permanent_water_cells": 1696,
+          "valid_input_cells": 418925,
+          "answered_cells": 143568,
+          "cells_without_an_answer": 275357,
+          "cells_without_an_answer_by_reason": {
+            "method_declined_for_the_tile": 275357,
+            "no_valid_radar_input": 0
+          },
+          "input_coverage": 1.0,
+          "answer_coverage": 0.342706,
+          "abstention_fraction": 0.657294,
+          "input_coverage_at_least_min": true,
+          "answer_coverage_at_least_min": false,
+          "abstention_at_most_max": false,
+          "low_confidence_reason_codes": [
+            "method_declined_for_the_tile"
+          ],
+          "candidate_cells": 12741,
+          "candidate_area_km2": 1.2741,
+          "candidate_cells_outside_permanent_water": 12736,
+          "candidate_area_outside_permanent_water_km2": 1.2736,
+          "candidate_share_of_answered_cells": 0.088745
+        },
+        {
+          "unit_id": "TH570906",
+          "unit_name": "Wiang Phang Kham",
+          "cells": 303420,
+          "area_km2": 30.342,
+          "permanent_water_cells": 380,
+          "valid_input_cells": 303420,
+          "answered_cells": 0,
+          "cells_without_an_answer": 303420,
+          "cells_without_an_answer_by_reason": {
+            "method_declined_for_the_tile": 303420,
+            "no_valid_radar_input": 0
+          },
+          "input_coverage": 1.0,
+          "answer_coverage": 0.0,
+          "abstention_fraction": 1.0,
+          "input_coverage_at_least_min": true,
+          "answer_coverage_at_least_min": false,
+          "abstention_at_most_max": false,
+          "low_confidence_reason_codes": [
+            "method_declined_for_the_tile"
+          ],
+          "candidate_cells": 0,
+          "candidate_area_km2": 0.0,
+          "candidate_cells_outside_permanent_water": 0,
+          "candidate_area_outside_permanent_water_km2": 0.0,
+          "candidate_share_of_answered_cells": null
+        },
+        {
+          "unit_id": "TH570908",
+          "unit_name": "Ban Dai",
+          "cells": 337814,
+          "area_km2": 33.7814,
+          "permanent_water_cells": 1051,
+          "valid_input_cells": 337814,
+          "answered_cells": 333433,
+          "cells_without_an_answer": 4381,
+          "cells_without_an_answer_by_reason": {
+            "method_declined_for_the_tile": 4381,
+            "no_valid_radar_input": 0
+          },
+          "input_coverage": 1.0,
+          "answer_coverage": 0.987031,
+          "abstention_fraction": 0.012969,
+          "input_coverage_at_least_min": true,
+          "answer_coverage_at_least_min": true,
+          "abstention_at_most_max": true,
+          "low_confidence_reason_codes": [],
+          "candidate_cells": 13590,
+          "candidate_area_km2": 1.359,
+          "candidate_cells_outside_permanent_water": 13583,
+          "candidate_area_outside_permanent_water_km2": 1.3583,
+          "candidate_share_of_answered_cells": 0.040758
+        },
+        {
+          "unit_id": "TH570909",
+          "unit_name": "Pong Ngam",
+          "cells": 426094,
+          "area_km2": 42.6094,
+          "permanent_water_cells": 1028,
+          "valid_input_cells": 426094,
+          "answered_cells": 65534,
+          "cells_without_an_answer": 360560,
+          "cells_without_an_answer_by_reason": {
+            "method_declined_for_the_tile": 360560,
+            "no_valid_radar_input": 0
+          },
+          "input_coverage": 1.0,
+          "answer_coverage": 0.153802,
+          "abstention_fraction": 0.846198,
+          "input_coverage_at_least_min": true,
+          "answer_coverage_at_least_min": false,
+          "abstention_at_most_max": false,
+          "low_confidence_reason_codes": [
+            "method_declined_for_the_tile"
+          ],
+          "candidate_cells": 1507,
+          "candidate_area_km2": 0.1507,
+          "candidate_cells_outside_permanent_water": 1499,
+          "candidate_area_outside_permanent_water_km2": 0.1499,
+          "candidate_share_of_answered_cells": 0.022996
+        }
+      ],
+      "strata": {
+        "by_land_cover_worldcover_2021": [
+          {
+            "class": "tree_cover",
+            "frame_cells": 987081,
+            "answered_cells": 76730,
+            "candidate_cells": 790,
+            "candidate_area_km2": 0.079,
+            "candidate_share_of_answered_cells": 0.010296
+          },
+          {
+            "class": "shrubland",
+            "frame_cells": 551,
+            "answered_cells": 322,
+            "candidate_cells": 52,
+            "candidate_area_km2": 0.0052,
+            "candidate_share_of_answered_cells": 0.161491
+          },
+          {
+            "class": "grassland",
+            "frame_cells": 98521,
+            "answered_cells": 12614,
+            "candidate_cells": 213,
+            "candidate_area_km2": 0.0213,
+            "candidate_share_of_answered_cells": 0.016886
+          },
+          {
+            "class": "cropland",
+            "frame_cells": 1713380,
+            "answered_cells": 578874,
+            "candidate_cells": 29268,
+            "candidate_area_km2": 2.9268,
+            "candidate_share_of_answered_cells": 0.05056
+          },
+          {
+            "class": "built_up",
+            "frame_cells": 237020,
+            "answered_cells": 21637,
+            "candidate_cells": 32,
+            "candidate_area_km2": 0.0032,
+            "candidate_share_of_answered_cells": 0.001479
+          },
+          {
+            "class": "bare_or_sparse_vegetation",
+            "frame_cells": 9076,
+            "answered_cells": 1781,
+            "candidate_cells": 19,
+            "candidate_area_km2": 0.0019,
+            "candidate_share_of_answered_cells": 0.010668
+          },
+          {
+            "class": "permanent_water",
+            "frame_cells": 9938,
+            "answered_cells": 2894,
+            "candidate_cells": 20,
+            "candidate_area_km2": 0.002,
+            "candidate_share_of_answered_cells": 0.006911
+          },
+          {
+            "class": "herbaceous_wetland",
+            "frame_cells": 0,
+            "answered_cells": 0,
+            "candidate_cells": 0,
+            "candidate_area_km2": 0.0,
+            "candidate_share_of_answered_cells": null
+          }
+        ],
+        "by_slope_class": [
+          {
+            "class": "below_5_degrees",
+            "frame_cells": 2423616,
+            "answered_cells": 694852,
+            "candidate_cells": 30394,
+            "candidate_area_km2": 3.0394,
+            "candidate_share_of_answered_cells": 0.043742
+          },
+          {
+            "class": "5_to_below_10_degrees",
+            "frame_cells": 81987,
+            "answered_cells": 0,
+            "candidate_cells": 0,
+            "candidate_area_km2": 0.0,
+            "candidate_share_of_answered_cells": null
+          },
+          {
+            "class": "10_to_below_20_degrees",
+            "frame_cells": 248362,
+            "answered_cells": 0,
+            "candidate_cells": 0,
+            "candidate_area_km2": 0.0,
+            "candidate_share_of_answered_cells": null
+          },
+          {
+            "class": "20_degrees_or_more",
+            "frame_cells": 301602,
+            "answered_cells": 0,
+            "candidate_cells": 0,
+            "candidate_area_km2": 0.0,
+            "candidate_share_of_answered_cells": null
+          }
+        ]
+      },
+      "configuration": {
+        "channel": "vh",
+        "direction": "darkening",
+        "block_pixels": 64,
+        "threshold_scope": "per_tile",
+        "threshold_method": "kittler_illingworth",
+        "speckle_filter": "refined_lee_7x7",
+        "equivalent_looks": 4.4,
+        "ashman_d_min": 2.0,
+        "min_component_weight": 0.1,
+        "min_block_valid_fraction": 0.5,
+        "min_threshold_class_fraction": 0.01,
+        "kittler_illingworth_rule": "interior_minimum_between_fitted_modes",
+        "isolated_speckle_cleaning": "majority_3x3_at_least_5_of_9",
+        "histogram": {
+          "lower_db": -25.0,
+          "upper_db": 25.0,
+          "bin_width_db": 0.1
+        }
+      },
+      "tiles": [
+        {
+          "tile": "E058N221",
+          "bounds_epsg_32647": [
+            593920.0,
+            2263040.0,
+            604160.0,
+            2273280.0
+          ],
+          "frame_cells_in_tile": 1229,
+          "frame_cells_by_unit": {
+            "TH570903": 1229
+          },
+          "candidate_cells_in_frame": 67,
+          "declined": false,
+          "declined_because": null,
+          "whole_tile": {
+            "method": "m1_v2",
+            "total_cells": 1048576,
+            "valid_cells": 1048576,
+            "invalid_cells": 0,
+            "abstained": false,
+            "abstention_reason": null,
+            "active_sides": [
+              "darkening"
+            ],
+            "sides": {
+              "darkening": {
+                "blocks": 256,
+                "selected_blocks": 11,
+                "rejection_reasons": {
+                  "ashman_d_not_above_minimum": 238,
+                  "component_weight_below_minimum": 3,
+                  "upper_component_is_not_a_change_in_this_direction": 4
+                },
+                "threshold_db": 4.9
+              }
+            },
+            "candidate_cells": 9872,
+            "cells_removed_by_cleaning": 3779,
+            "threshold_levels": {
+              "shifts_db": [
+                -1.0,
+                0.0,
+                1.0
+              ],
+              "applied_to": "the Kittler-Illingworth threshold on the darkening; a higher threshold is stricter",
+              "candidate_cells": {
+                "+1_db": 5392,
+                "0_db": 9872,
+                "-1_db": 17569
+              },
+              "lowest_level_threshold_is_positive": true
+            }
+          }
+        },
+        {
+          "tile": "E057N220",
+          "bounds_epsg_32647": [
+            583680.0,
+            2252800.0,
+            593920.0,
+            2263040.0
+          ],
+          "frame_cells_in_tile": 434946,
+          "frame_cells_by_unit": {
+            "TH570901": 44744,
+            "TH570904": 132383,
+            "TH570906": 251950,
+            "TH570909": 5869
+          },
+          "candidate_cells_in_frame": 0,
+          "declined": true,
+          "declined_because": "no bimodal block in the tile",
+          "whole_tile": {
+            "method": "m1_v2",
+            "total_cells": 1048576,
+            "valid_cells": 1048576,
+            "invalid_cells": 0,
+            "abstained": true,
+            "abstention_reason": "no_bimodal_block_or_no_threshold",
+            "active_sides": [],
+            "sides": {
+              "darkening": {
+                "blocks": 256,
+                "selected_blocks": 0,
+                "rejection_reasons": {
+                  "ashman_d_not_above_minimum": 253,
+                  "component_weight_below_minimum": 2,
+                  "upper_component_is_not_a_change_in_this_direction": 1
+                },
+                "threshold_db": null
+              }
+            },
+            "candidate_cells": 0,
+            "cells_removed_by_cleaning": 0,
+            "threshold_levels": {
+              "shifts_db": [
+                -1.0,
+                0.0,
+                1.0
+              ],
+              "applied_to": "the Kittler-Illingworth threshold on the darkening; a higher threshold is stricter",
+              "candidate_cells": {
+                "+1_db": null,
+                "0_db": null,
+                "-1_db": null
+              },
+              "lowest_level_threshold_is_positive": null
+            }
+          }
+        },
+        {
+          "tile": "E058N220",
+          "bounds_epsg_32647": [
+            593920.0,
+            2252800.0,
+            604160.0,
+            2263040.0
+          ],
+          "frame_cells_in_tile": 890130,
+          "frame_cells_by_unit": {
+            "TH570901": 170866,
+            "TH570903": 371337,
+            "TH570904": 32627,
+            "TH570905": 264034,
+            "TH570906": 51266
+          },
+          "candidate_cells_in_frame": 0,
+          "declined": true,
+          "declined_because": "bimodal blocks were found, but their pooled histogram gave no threshold that the frozen rule accepts (an interior Kittler-Illingworth minimum between the two fitted modes, above 0 dB)",
+          "whole_tile": {
+            "method": "m1_v2",
+            "total_cells": 1048576,
+            "valid_cells": 1048576,
+            "invalid_cells": 0,
+            "abstained": true,
+            "abstention_reason": "no_bimodal_block_or_no_threshold",
+            "active_sides": [],
+            "sides": {
+              "darkening": {
+                "blocks": 256,
+                "selected_blocks": 21,
+                "rejection_reasons": {
+                  "ashman_d_not_above_minimum": 209,
+                  "component_weight_below_minimum": 20,
+                  "lower_component_is_not_the_unchanged_one": 2,
+                  "upper_component_is_not_a_change_in_this_direction": 4
+                },
+                "threshold_db": null
+              }
+            },
+            "candidate_cells": 0,
+            "cells_removed_by_cleaning": 0,
+            "threshold_levels": {
+              "shifts_db": [
+                -1.0,
+                0.0,
+                1.0
+              ],
+              "applied_to": "the Kittler-Illingworth threshold on the darkening; a higher threshold is stricter",
+              "candidate_cells": {
+                "+1_db": null,
+                "0_db": null,
+                "-1_db": null
+              },
+              "lowest_level_threshold_is_positive": null
+            }
+          }
+        },
+        {
+          "tile": "E059N220",
+          "bounds_epsg_32647": [
+            604160.0,
+            2252800.0,
+            614400.0,
+            2263040.0
+          ],
+          "frame_cells_in_tile": 112911,
+          "frame_cells_by_unit": {
+            "TH570903": 101588,
+            "TH570905": 11323
+          },
+          "candidate_cells_in_frame": 0,
+          "declined": true,
+          "declined_because": "bimodal blocks were found, but their pooled histogram gave no threshold that the frozen rule accepts (an interior Kittler-Illingworth minimum between the two fitted modes, above 0 dB)",
+          "whole_tile": {
+            "method": "m1_v2",
+            "total_cells": 1048576,
+            "valid_cells": 1048576,
+            "invalid_cells": 0,
+            "abstained": true,
+            "abstention_reason": "no_bimodal_block_or_no_threshold",
+            "active_sides": [],
+            "sides": {
+              "darkening": {
+                "blocks": 256,
+                "selected_blocks": 39,
+                "rejection_reasons": {
+                  "ashman_d_not_above_minimum": 207,
+                  "component_weight_below_minimum": 10
+                },
+                "threshold_db": null
+              }
+            },
+            "candidate_cells": 0,
+            "cells_removed_by_cleaning": 0,
+            "threshold_levels": {
+              "shifts_db": [
+                -1.0,
+                0.0,
+                1.0
+              ],
+              "applied_to": "the Kittler-Illingworth threshold on the darkening; a higher threshold is stricter",
+              "candidate_cells": {
+                "+1_db": null,
+                "0_db": null,
+                "-1_db": null
+              },
+              "lowest_level_threshold_is_positive": null
+            }
+          }
+        },
+        {
+          "tile": "E057N219",
+          "bounds_epsg_32647": [
+            583680.0,
+            2242560.0,
+            593920.0,
+            2252800.0
+          ],
+          "frame_cells_in_tile": 810018,
+          "frame_cells_by_unit": {
+            "TH570902": 294694,
+            "TH570904": 156048,
+            "TH570906": 204,
+            "TH570908": 4381,
+            "TH570909": 354691
+          },
+          "candidate_cells_in_frame": 0,
+          "declined": true,
+          "declined_because": "bimodal blocks were found, but their pooled histogram gave no threshold that the frozen rule accepts (an interior Kittler-Illingworth minimum between the two fitted modes, above 0 dB)",
+          "whole_tile": {
+            "method": "m1_v2",
+            "total_cells": 1048576,
+            "valid_cells": 1048576,
+            "invalid_cells": 0,
+            "abstained": true,
+            "abstention_reason": "no_bimodal_block_or_no_threshold",
+            "active_sides": [],
+            "sides": {
+              "darkening": {
+                "blocks": 256,
+                "selected_blocks": 1,
+                "rejection_reasons": {
+                  "ashman_d_not_above_minimum": 249,
+                  "component_weight_below_minimum": 5,
+                  "lower_component_is_not_the_unchanged_one": 1
+                },
+                "threshold_db": null
+              }
+            },
+            "candidate_cells": 0,
+            "cells_removed_by_cleaning": 0,
+            "threshold_levels": {
+              "shifts_db": [
+                -1.0,
+                0.0,
+                1.0
+              ],
+              "applied_to": "the Kittler-Illingworth threshold on the darkening; a higher threshold is stricter",
+              "candidate_cells": {
+                "+1_db": null,
+                "0_db": null,
+                "-1_db": null
+              },
+              "lowest_level_threshold_is_positive": null
+            }
+          }
+        },
+        {
+          "tile": "E058N219",
+          "bounds_epsg_32647": [
+            593920.0,
+            2242560.0,
+            604160.0,
+            2252800.0
+          ],
+          "frame_cells_in_tile": 687376,
+          "frame_cells_by_unit": {
+            "TH570902": 35989,
+            "TH570904": 115099,
+            "TH570905": 137321,
+            "TH570908": 333433,
+            "TH570909": 65534
+          },
+          "candidate_cells_in_frame": 29976,
+          "declined": false,
+          "declined_because": null,
+          "whole_tile": {
+            "method": "m1_v2",
+            "total_cells": 1048576,
+            "valid_cells": 1048576,
+            "invalid_cells": 0,
+            "abstained": false,
+            "abstention_reason": null,
+            "active_sides": [
+              "darkening"
+            ],
+            "sides": {
+              "darkening": {
+                "blocks": 256,
+                "selected_blocks": 48,
+                "rejection_reasons": {
+                  "ashman_d_not_above_minimum": 188,
+                  "component_weight_below_minimum": 14,
+                  "lower_component_is_not_the_unchanged_one": 2,
+                  "upper_component_is_not_a_change_in_this_direction": 4
+                },
+                "threshold_db": 4.9
+              }
+            },
+            "candidate_cells": 62662,
+            "cells_removed_by_cleaning": 9655,
+            "threshold_levels": {
+              "shifts_db": [
+                -1.0,
+                0.0,
+                1.0
+              ],
+              "applied_to": "the Kittler-Illingworth threshold on the darkening; a higher threshold is stricter",
+              "candidate_cells": {
+                "+1_db": 42003,
+                "0_db": 62662,
+                "-1_db": 87076
+              },
+              "lowest_level_threshold_is_positive": true
+            }
+          }
+        },
+        {
+          "tile": "E059N219",
+          "bounds_epsg_32647": [
+            604160.0,
+            2242560.0,
+            614400.0,
+            2252800.0
+          ],
+          "frame_cells_in_tile": 6247,
+          "frame_cells_by_unit": {
+            "TH570905": 6247
+          },
+          "candidate_cells_in_frame": 351,
+          "declined": false,
+          "declined_because": null,
+          "whole_tile": {
+            "method": "m1_v2",
+            "total_cells": 1048576,
+            "valid_cells": 1048576,
+            "invalid_cells": 0,
+            "abstained": false,
+            "abstention_reason": null,
+            "active_sides": [
+              "darkening"
+            ],
+            "sides": {
+              "darkening": {
+                "blocks": 256,
+                "selected_blocks": 23,
+                "rejection_reasons": {
+                  "ashman_d_not_above_minimum": 225,
+                  "component_weight_below_minimum": 8
+                },
+                "threshold_db": 4.9
+              }
+            },
+            "candidate_cells": 19473,
+            "cells_removed_by_cleaning": 5377,
+            "threshold_levels": {
+              "shifts_db": [
+                -1.0,
+                0.0,
+                1.0
+              ],
+              "applied_to": "the Kittler-Illingworth threshold on the darkening; a higher threshold is stricter",
+              "candidate_cells": {
+                "+1_db": 12583,
+                "0_db": 19473,
+                "-1_db": 30229
+              },
+              "lowest_level_threshold_is_positive": true
+            }
+          }
+        },
+        {
+          "tile": "E057N218",
+          "bounds_epsg_32647": [
+            583680.0,
+            2232320.0,
+            593920.0,
+            2242560.0
+          ],
+          "frame_cells_in_tile": 100840,
+          "frame_cells_by_unit": {
+            "TH570902": 100840
+          },
+          "candidate_cells_in_frame": 0,
+          "declined": true,
+          "declined_because": "bimodal blocks were found, but their pooled histogram gave no threshold that the frozen rule accepts (an interior Kittler-Illingworth minimum between the two fitted modes, above 0 dB)",
+          "whole_tile": {
+            "method": "m1_v2",
+            "total_cells": 1048576,
+            "valid_cells": 1048576,
+            "invalid_cells": 0,
+            "abstained": true,
+            "abstention_reason": "no_bimodal_block_or_no_threshold",
+            "active_sides": [],
+            "sides": {
+              "darkening": {
+                "blocks": 256,
+                "selected_blocks": 6,
+                "rejection_reasons": {
+                  "ashman_d_not_above_minimum": 246,
+                  "component_weight_below_minimum": 3,
+                  "lower_component_is_not_the_unchanged_one": 1
+                },
+                "threshold_db": null
+              }
+            },
+            "candidate_cells": 0,
+            "cells_removed_by_cleaning": 0,
+            "threshold_levels": {
+              "shifts_db": [
+                -1.0,
+                0.0,
+                1.0
+              ],
+              "applied_to": "the Kittler-Illingworth threshold on the darkening; a higher threshold is stricter",
+              "candidate_cells": {
+                "+1_db": null,
+                "0_db": null,
+                "-1_db": null
+              },
+              "lowest_level_threshold_is_positive": null
+            }
+          }
+        },
+        {
+          "tile": "E058N218",
+          "bounds_epsg_32647": [
+            593920.0,
+            2232320.0,
+            604160.0,
+            2242560.0
+          ],
+          "frame_cells_in_tile": 11870,
+          "frame_cells_by_unit": {
+            "TH570902": 11870
+          },
+          "candidate_cells_in_frame": 0,
+          "declined": true,
+          "declined_because": "bimodal blocks were found, but their pooled histogram gave no threshold that the frozen rule accepts (an interior Kittler-Illingworth minimum between the two fitted modes, above 0 dB)",
+          "whole_tile": {
+            "method": "m1_v2",
+            "total_cells": 1048576,
+            "valid_cells": 1048576,
+            "invalid_cells": 0,
+            "abstained": true,
+            "abstention_reason": "no_bimodal_block_or_no_threshold",
+            "active_sides": [],
+            "sides": {
+              "darkening": {
+                "blocks": 256,
+                "selected_blocks": 8,
+                "rejection_reasons": {
+                  "ashman_d_not_above_minimum": 231,
+                  "component_weight_below_minimum": 15,
+                  "upper_component_is_not_a_change_in_this_direction": 2
+                },
+                "threshold_db": null
+              }
+            },
+            "candidate_cells": 0,
+            "cells_removed_by_cleaning": 0,
+            "threshold_levels": {
+              "shifts_db": [
+                -1.0,
+                0.0,
+                1.0
+              ],
+              "applied_to": "the Kittler-Illingworth threshold on the darkening; a higher threshold is stricter",
+              "candidate_cells": {
+                "+1_db": null,
+                "0_db": null,
+                "-1_db": null
+              },
+              "lowest_level_threshold_is_positive": null
+            }
+          }
+        }
+      ],
+      "tiles_declined": [
+        "E057N218",
+        "E057N219",
+        "E057N220",
+        "E058N218",
+        "E058N220",
+        "E059N220"
+      ],
+      "threshold_levels": {
+        "levels": "strictest, central and loosest threshold (protocol v1b: the threshold moved by 1 dB each way)",
+        "frame_km2": {
+          "strictest": 1.9375,
+          "central": 3.0394,
+          "loosest": 4.4762
+        },
+        "units_km2": {
+          "TH570901": {
+            "strictest": 0.0,
+            "central": 0.0,
+            "loosest": 0.0
+          },
+          "TH570902": {
+            "strictest": 0.0,
+            "central": 0.0005,
+            "loosest": 0.0033
+          },
+          "TH570903": {
+            "strictest": 0.0043,
+            "central": 0.0067,
+            "loosest": 0.0134
+          },
+          "TH570904": {
+            "strictest": 0.1239,
+            "central": 0.2484,
+            "loosest": 0.437
+          },
+          "TH570905": {
+            "strictest": 0.848,
+            "central": 1.2741,
+            "loosest": 1.8452
+          },
+          "TH570906": {
+            "strictest": 0.0,
+            "central": 0.0,
+            "loosest": 0.0
+          },
+          "TH570908": {
+            "strictest": 0.8827,
+            "central": 1.359,
+            "loosest": 1.9126
+          },
+          "TH570909": {
+            "strictest": 0.0786,
+            "central": 0.1507,
+            "loosest": 0.2647
+          }
+        }
+      },
+      "frozen_binding": {
+        "frozen_config_sha256": "2bfcb0c6ebf4b79402afa63c56209f2c5cda26491f08883d67908195b6c64a68",
+        "code_sha256": {
+          "src/floodguard/geoid_m1_benchmark.py": "26d98f5cbdbcdcb1eeafe0b83a6e44b0ff4c9c7fb245078469952d95829e409f",
+          "src/floodguard/sar_change_v2.py": "3127b370303b08902dc545442f7aa5a2aa54d283b471c0d65f5899c9c19e1134"
+        },
+        "planning_protocol_v1a_sha256": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+        "freeze_receipt_sha256": "736d92887e0f536077a704af7f70270b81b7779a1f1b6dcbe36865cbf6edf3ee"
+      },
+      "disclosed_differences_from_geoid": [
+        "GEOID tiles were terrain-corrected by their publisher; these are geocoded as this run states.",
+        "No HAND or slope mask is applied (see open point A4-OP2).",
+        "The pre-event and post-event images are 12 days apart on one track; on GEOID they were almost four months apart and on different orbit directions."
+      ]
+    }
+  },
+  "t2_skill_bar": {
+    "source": "planning_protocol_v1a.json t2_skill_bar, applied by floodguard.confidence.t2_skill_condition",
+    "thresholds": {
+      "geoid_held_out_test_iou_min": 0.4,
+      "mae_sai_abstention_fraction_max": 0.2,
+      "mae_sai_unit_coverage_min": 0.8,
+      "recency_window_days": 3.0
+    },
+    "recency": {
+      "post_event_acquisition_utc": "2024-09-15T23:16:01Z",
+      "acquisition_date_in_thailand": "2024-09-16",
+      "acquisition_date_utc": "2024-09-15",
+      "case_reference_date": "2024-09-15",
+      "days_by_the_thai_date": 1,
+      "days_by_the_utc_date": 0,
+      "passes": true,
+      "note": "The date is that of the post-event image. The pre-event image of the pair is 12 days earlier; protocol v1a names the 16 September pass as the acquisition of case O1."
+    },
+    "geoid_condition": {
+      "source": [
+        "outputs/geoid_m1_benchmark_v2_derived_checks.json",
+        "outputs/geoid_m1_benchmark_v2_summary.json"
+      ],
+      "source_sha256": [
+        "b29b0839ccdf9974f7b54f3a5b4c9d9f0605c6073bbc39dbd70d6c15a1dc938a",
+        "f3ad859128bff30610a77af21f720b57dba6514f3759789b32f2287f27ffefae"
+      ],
+      "minimum": 0.4,
+      "m1_v2_test_iou_strict": 0.411164,
+      "m1_v2_test_iou_covered_cells": 0.506131,
+      "m1_v2_test_cells_without_an_answer": 0.678737,
+      "declared_reading": "Both readings (covered and strict) must reach the minimum.",
+      "point_estimate_reaches_the_minimum": true,
+      "holds_for_every_tile_left_out": false,
+      "said_beside_the_result_every_time": [
+        "The GEOID result (0.411) is not distinguishable from 0.40 on 14 tiles.",
+        "67.9% of the GEOID test cells had no answer.",
+        "The GEOID figure measures agreement with a same-pass CEMS map, not an independent check."
+      ],
+      "decision": "Decision log R15: v1a is applied as signed; the GEOID condition is met on the point estimate, and every report says the three sentences above.",
+      "m1_literal_test_iou_strict": 0.159122
+    },
+    "methods": {
+      "un_spider": {
+        "flood_input": "UN-SPIDER reproduction",
+        "status_in_protocol_v1a": "declared_unable_to_meet",
+        "geoid_held_out_test_iou_used": null,
+        "mae_sai_conditions": {
+          "abstention": {
+            "units_at_most_max": 8,
+            "units": 8,
+            "frame_abstention_fraction": 0.0,
+            "frame_at_most_max": true,
+            "passes_for_every_unit": true
+          },
+          "coverage": {
+            "units_with_input_coverage_at_least_min": 8,
+            "units_with_answer_coverage_at_least_min": 8,
+            "units": 8,
+            "passes_for_every_unit_by_input_coverage": true,
+            "passes_for_every_unit_by_answer_coverage": true
+          },
+          "recency_passes": true
+        },
+        "units_passing_all_four_conditions": {
+          "input_coverage": [],
+          "answer_coverage": []
+        },
+        "units": [
+          {
+            "unit_id": "TH570901",
+            "unit_name": "Mae Sai",
+            "abstention_fraction": 0.0,
+            "input_coverage": 1.0,
+            "answer_coverage": 1.0,
+            "coverage_reading": {
+              "input_coverage": {
+                "passes": false,
+                "conditions": {
+                  "geoid_held_out_test_iou_min": "fail",
+                  "mae_sai_abstention_fraction_max": "pass",
+                  "mae_sai_unit_coverage_min": "pass",
+                  "recency_window_days": "pass"
+                },
+                "failed_conditions": [
+                  "geoid_held_out_test_iou_min"
+                ]
+              },
+              "answer_coverage": {
+                "passes": false,
+                "conditions": {
+                  "geoid_held_out_test_iou_min": "fail",
+                  "mae_sai_abstention_fraction_max": "pass",
+                  "mae_sai_unit_coverage_min": "pass",
+                  "recency_window_days": "pass"
+                },
+                "failed_conditions": [
+                  "geoid_held_out_test_iou_min"
+                ]
+              }
+            }
+          },
+          {
+            "unit_id": "TH570902",
+            "unit_name": "Huai Khrai",
+            "abstention_fraction": 0.0,
+            "input_coverage": 1.0,
+            "answer_coverage": 1.0,
+            "coverage_reading": {
+              "input_coverage": {
+                "passes": false,
+                "conditions": {
+                  "geoid_held_out_test_iou_min": "fail",
+                  "mae_sai_abstention_fraction_max": "pass",
+                  "mae_sai_unit_coverage_min": "pass",
+                  "recency_window_days": "pass"
+                },
+                "failed_conditions": [
+                  "geoid_held_out_test_iou_min"
+                ]
+              },
+              "answer_coverage": {
+                "passes": false,
+                "conditions": {
+                  "geoid_held_out_test_iou_min": "fail",
+                  "mae_sai_abstention_fraction_max": "pass",
+                  "mae_sai_unit_coverage_min": "pass",
+                  "recency_window_days": "pass"
+                },
+                "failed_conditions": [
+                  "geoid_held_out_test_iou_min"
+                ]
+              }
+            }
+          },
+          {
+            "unit_id": "TH570903",
+            "unit_name": "Ko Chang",
+            "abstention_fraction": 0.0,
+            "input_coverage": 1.0,
+            "answer_coverage": 1.0,
+            "coverage_reading": {
+              "input_coverage": {
+                "passes": false,
+                "conditions": {
+                  "geoid_held_out_test_iou_min": "fail",
+                  "mae_sai_abstention_fraction_max": "pass",
+                  "mae_sai_unit_coverage_min": "pass",
+                  "recency_window_days": "pass"
+                },
+                "failed_conditions": [
+                  "geoid_held_out_test_iou_min"
+                ]
+              },
+              "answer_coverage": {
+                "passes": false,
+                "conditions": {
+                  "geoid_held_out_test_iou_min": "fail",
+                  "mae_sai_abstention_fraction_max": "pass",
+                  "mae_sai_unit_coverage_min": "pass",
+                  "recency_window_days": "pass"
+                },
+                "failed_conditions": [
+                  "geoid_held_out_test_iou_min"
+                ]
+              }
+            }
+          },
+          {
+            "unit_id": "TH570904",
+            "unit_name": "Pong Pha",
+            "abstention_fraction": 0.0,
+            "input_coverage": 1.0,
+            "answer_coverage": 1.0,
+            "coverage_reading": {
+              "input_coverage": {
+                "passes": false,
+                "conditions": {
+                  "geoid_held_out_test_iou_min": "fail",
+                  "mae_sai_abstention_fraction_max": "pass",
+                  "mae_sai_unit_coverage_min": "pass",
+                  "recency_window_days": "pass"
+                },
+                "failed_conditions": [
+                  "geoid_held_out_test_iou_min"
+                ]
+              },
+              "answer_coverage": {
+                "passes": false,
+                "conditions": {
+                  "geoid_held_out_test_iou_min": "fail",
+                  "mae_sai_abstention_fraction_max": "pass",
+                  "mae_sai_unit_coverage_min": "pass",
+                  "recency_window_days": "pass"
+                },
+                "failed_conditions": [
+                  "geoid_held_out_test_iou_min"
+                ]
+              }
+            }
+          },
+          {
+            "unit_id": "TH570905",
+            "unit_name": "Si Mueang Chum",
+            "abstention_fraction": 0.0,
+            "input_coverage": 1.0,
+            "answer_coverage": 1.0,
+            "coverage_reading": {
+              "input_coverage": {
+                "passes": false,
+                "conditions": {
+                  "geoid_held_out_test_iou_min": "fail",
+                  "mae_sai_abstention_fraction_max": "pass",
+                  "mae_sai_unit_coverage_min": "pass",
+                  "recency_window_days": "pass"
+                },
+                "failed_conditions": [
+                  "geoid_held_out_test_iou_min"
+                ]
+              },
+              "answer_coverage": {
+                "passes": false,
+                "conditions": {
+                  "geoid_held_out_test_iou_min": "fail",
+                  "mae_sai_abstention_fraction_max": "pass",
+                  "mae_sai_unit_coverage_min": "pass",
+                  "recency_window_days": "pass"
+                },
+                "failed_conditions": [
+                  "geoid_held_out_test_iou_min"
+                ]
+              }
+            }
+          },
+          {
+            "unit_id": "TH570906",
+            "unit_name": "Wiang Phang Kham",
+            "abstention_fraction": 0.0,
+            "input_coverage": 1.0,
+            "answer_coverage": 1.0,
+            "coverage_reading": {
+              "input_coverage": {
+                "passes": false,
+                "conditions": {
+                  "geoid_held_out_test_iou_min": "fail",
+                  "mae_sai_abstention_fraction_max": "pass",
+                  "mae_sai_unit_coverage_min": "pass",
+                  "recency_window_days": "pass"
+                },
+                "failed_conditions": [
+                  "geoid_held_out_test_iou_min"
+                ]
+              },
+              "answer_coverage": {
+                "passes": false,
+                "conditions": {
+                  "geoid_held_out_test_iou_min": "fail",
+                  "mae_sai_abstention_fraction_max": "pass",
+                  "mae_sai_unit_coverage_min": "pass",
+                  "recency_window_days": "pass"
+                },
+                "failed_conditions": [
+                  "geoid_held_out_test_iou_min"
+                ]
+              }
+            }
+          },
+          {
+            "unit_id": "TH570908",
+            "unit_name": "Ban Dai",
+            "abstention_fraction": 0.0,
+            "input_coverage": 1.0,
+            "answer_coverage": 1.0,
+            "coverage_reading": {
+              "input_coverage": {
+                "passes": false,
+                "conditions": {
+                  "geoid_held_out_test_iou_min": "fail",
+                  "mae_sai_abstention_fraction_max": "pass",
+                  "mae_sai_unit_coverage_min": "pass",
+                  "recency_window_days": "pass"
+                },
+                "failed_conditions": [
+                  "geoid_held_out_test_iou_min"
+                ]
+              },
+              "answer_coverage": {
+                "passes": false,
+                "conditions": {
+                  "geoid_held_out_test_iou_min": "fail",
+                  "mae_sai_abstention_fraction_max": "pass",
+                  "mae_sai_unit_coverage_min": "pass",
+                  "recency_window_days": "pass"
+                },
+                "failed_conditions": [
+                  "geoid_held_out_test_iou_min"
+                ]
+              }
+            }
+          },
+          {
+            "unit_id": "TH570909",
+            "unit_name": "Pong Ngam",
+            "abstention_fraction": 0.0,
+            "input_coverage": 1.0,
+            "answer_coverage": 1.0,
+            "coverage_reading": {
+              "input_coverage": {
+                "passes": false,
+                "conditions": {
+                  "geoid_held_out_test_iou_min": "fail",
+                  "mae_sai_abstention_fraction_max": "pass",
+                  "mae_sai_unit_coverage_min": "pass",
+                  "recency_window_days": "pass"
+                },
+                "failed_conditions": [
+                  "geoid_held_out_test_iou_min"
+                ]
+              },
+              "answer_coverage": {
+                "passes": false,
+                "conditions": {
+                  "geoid_held_out_test_iou_min": "fail",
+                  "mae_sai_abstention_fraction_max": "pass",
+                  "mae_sai_unit_coverage_min": "pass",
+                  "recency_window_days": "pass"
+                },
+                "failed_conditions": [
+                  "geoid_held_out_test_iou_min"
+                ]
+              }
+            }
+          }
+        ],
+        "result": "UN-SPIDER reproduction is declared unable to meet the T2 skill bar by protocol v1a, whatever these figures are: low confidence. Counts: abstention at most 0.2: 8 of 8 tambons (frame share without an answer 0.000); coverage at least 0.8: 8 of 8 tambons by valid radar input and 8 of 8 by cells with an answer; recency: pass."
+      },
+      "m1_literal": {
+        "flood_input": "M1-literal",
+        "status_in_protocol_v1a": "declared_unable_to_meet",
+        "geoid_held_out_test_iou_used": 0.159122,
+        "mae_sai_conditions": {
+          "abstention": {
+            "units_at_most_max": 8,
+            "units": 8,
+            "frame_abstention_fraction": 0.0,
+            "frame_at_most_max": true,
+            "passes_for_every_unit": true
+          },
+          "coverage": {
+            "units_with_input_coverage_at_least_min": 8,
+            "units_with_answer_coverage_at_least_min": 8,
+            "units": 8,
+            "passes_for_every_unit_by_input_coverage": true,
+            "passes_for_every_unit_by_answer_coverage": true
+          },
+          "recency_passes": true
+        },
+        "units_passing_all_four_conditions": {
+          "input_coverage": [],
+          "answer_coverage": []
+        },
+        "units": [
+          {
+            "unit_id": "TH570901",
+            "unit_name": "Mae Sai",
+            "abstention_fraction": 0.0,
+            "input_coverage": 1.0,
+            "answer_coverage": 1.0,
+            "coverage_reading": {
+              "input_coverage": {
+                "passes": false,
+                "conditions": {
+                  "geoid_held_out_test_iou_min": "fail",
+                  "mae_sai_abstention_fraction_max": "pass",
+                  "mae_sai_unit_coverage_min": "pass",
+                  "recency_window_days": "pass"
+                },
+                "failed_conditions": [
+                  "geoid_held_out_test_iou_min"
+                ]
+              },
+              "answer_coverage": {
+                "passes": false,
+                "conditions": {
+                  "geoid_held_out_test_iou_min": "fail",
+                  "mae_sai_abstention_fraction_max": "pass",
+                  "mae_sai_unit_coverage_min": "pass",
+                  "recency_window_days": "pass"
+                },
+                "failed_conditions": [
+                  "geoid_held_out_test_iou_min"
+                ]
+              }
+            }
+          },
+          {
+            "unit_id": "TH570902",
+            "unit_name": "Huai Khrai",
+            "abstention_fraction": 0.0,
+            "input_coverage": 1.0,
+            "answer_coverage": 1.0,
+            "coverage_reading": {
+              "input_coverage": {
+                "passes": false,
+                "conditions": {
+                  "geoid_held_out_test_iou_min": "fail",
+                  "mae_sai_abstention_fraction_max": "pass",
+                  "mae_sai_unit_coverage_min": "pass",
+                  "recency_window_days": "pass"
+                },
+                "failed_conditions": [
+                  "geoid_held_out_test_iou_min"
+                ]
+              },
+              "answer_coverage": {
+                "passes": false,
+                "conditions": {
+                  "geoid_held_out_test_iou_min": "fail",
+                  "mae_sai_abstention_fraction_max": "pass",
+                  "mae_sai_unit_coverage_min": "pass",
+                  "recency_window_days": "pass"
+                },
+                "failed_conditions": [
+                  "geoid_held_out_test_iou_min"
+                ]
+              }
+            }
+          },
+          {
+            "unit_id": "TH570903",
+            "unit_name": "Ko Chang",
+            "abstention_fraction": 0.0,
+            "input_coverage": 1.0,
+            "answer_coverage": 1.0,
+            "coverage_reading": {
+              "input_coverage": {
+                "passes": false,
+                "conditions": {
+                  "geoid_held_out_test_iou_min": "fail",
+                  "mae_sai_abstention_fraction_max": "pass",
+                  "mae_sai_unit_coverage_min": "pass",
+                  "recency_window_days": "pass"
+                },
+                "failed_conditions": [
+                  "geoid_held_out_test_iou_min"
+                ]
+              },
+              "answer_coverage": {
+                "passes": false,
+                "conditions": {
+                  "geoid_held_out_test_iou_min": "fail",
+                  "mae_sai_abstention_fraction_max": "pass",
+                  "mae_sai_unit_coverage_min": "pass",
+                  "recency_window_days": "pass"
+                },
+                "failed_conditions": [
+                  "geoid_held_out_test_iou_min"
+                ]
+              }
+            }
+          },
+          {
+            "unit_id": "TH570904",
+            "unit_name": "Pong Pha",
+            "abstention_fraction": 0.0,
+            "input_coverage": 1.0,
+            "answer_coverage": 1.0,
+            "coverage_reading": {
+              "input_coverage": {
+                "passes": false,
+                "conditions": {
+                  "geoid_held_out_test_iou_min": "fail",
+                  "mae_sai_abstention_fraction_max": "pass",
+                  "mae_sai_unit_coverage_min": "pass",
+                  "recency_window_days": "pass"
+                },
+                "failed_conditions": [
+                  "geoid_held_out_test_iou_min"
+                ]
+              },
+              "answer_coverage": {
+                "passes": false,
+                "conditions": {
+                  "geoid_held_out_test_iou_min": "fail",
+                  "mae_sai_abstention_fraction_max": "pass",
+                  "mae_sai_unit_coverage_min": "pass",
+                  "recency_window_days": "pass"
+                },
+                "failed_conditions": [
+                  "geoid_held_out_test_iou_min"
+                ]
+              }
+            }
+          },
+          {
+            "unit_id": "TH570905",
+            "unit_name": "Si Mueang Chum",
+            "abstention_fraction": 0.0,
+            "input_coverage": 1.0,
+            "answer_coverage": 1.0,
+            "coverage_reading": {
+              "input_coverage": {
+                "passes": false,
+                "conditions": {
+                  "geoid_held_out_test_iou_min": "fail",
+                  "mae_sai_abstention_fraction_max": "pass",
+                  "mae_sai_unit_coverage_min": "pass",
+                  "recency_window_days": "pass"
+                },
+                "failed_conditions": [
+                  "geoid_held_out_test_iou_min"
+                ]
+              },
+              "answer_coverage": {
+                "passes": false,
+                "conditions": {
+                  "geoid_held_out_test_iou_min": "fail",
+                  "mae_sai_abstention_fraction_max": "pass",
+                  "mae_sai_unit_coverage_min": "pass",
+                  "recency_window_days": "pass"
+                },
+                "failed_conditions": [
+                  "geoid_held_out_test_iou_min"
+                ]
+              }
+            }
+          },
+          {
+            "unit_id": "TH570906",
+            "unit_name": "Wiang Phang Kham",
+            "abstention_fraction": 0.0,
+            "input_coverage": 1.0,
+            "answer_coverage": 1.0,
+            "coverage_reading": {
+              "input_coverage": {
+                "passes": false,
+                "conditions": {
+                  "geoid_held_out_test_iou_min": "fail",
+                  "mae_sai_abstention_fraction_max": "pass",
+                  "mae_sai_unit_coverage_min": "pass",
+                  "recency_window_days": "pass"
+                },
+                "failed_conditions": [
+                  "geoid_held_out_test_iou_min"
+                ]
+              },
+              "answer_coverage": {
+                "passes": false,
+                "conditions": {
+                  "geoid_held_out_test_iou_min": "fail",
+                  "mae_sai_abstention_fraction_max": "pass",
+                  "mae_sai_unit_coverage_min": "pass",
+                  "recency_window_days": "pass"
+                },
+                "failed_conditions": [
+                  "geoid_held_out_test_iou_min"
+                ]
+              }
+            }
+          },
+          {
+            "unit_id": "TH570908",
+            "unit_name": "Ban Dai",
+            "abstention_fraction": 0.0,
+            "input_coverage": 1.0,
+            "answer_coverage": 1.0,
+            "coverage_reading": {
+              "input_coverage": {
+                "passes": false,
+                "conditions": {
+                  "geoid_held_out_test_iou_min": "fail",
+                  "mae_sai_abstention_fraction_max": "pass",
+                  "mae_sai_unit_coverage_min": "pass",
+                  "recency_window_days": "pass"
+                },
+                "failed_conditions": [
+                  "geoid_held_out_test_iou_min"
+                ]
+              },
+              "answer_coverage": {
+                "passes": false,
+                "conditions": {
+                  "geoid_held_out_test_iou_min": "fail",
+                  "mae_sai_abstention_fraction_max": "pass",
+                  "mae_sai_unit_coverage_min": "pass",
+                  "recency_window_days": "pass"
+                },
+                "failed_conditions": [
+                  "geoid_held_out_test_iou_min"
+                ]
+              }
+            }
+          },
+          {
+            "unit_id": "TH570909",
+            "unit_name": "Pong Ngam",
+            "abstention_fraction": 0.0,
+            "input_coverage": 1.0,
+            "answer_coverage": 1.0,
+            "coverage_reading": {
+              "input_coverage": {
+                "passes": false,
+                "conditions": {
+                  "geoid_held_out_test_iou_min": "fail",
+                  "mae_sai_abstention_fraction_max": "pass",
+                  "mae_sai_unit_coverage_min": "pass",
+                  "recency_window_days": "pass"
+                },
+                "failed_conditions": [
+                  "geoid_held_out_test_iou_min"
+                ]
+              },
+              "answer_coverage": {
+                "passes": false,
+                "conditions": {
+                  "geoid_held_out_test_iou_min": "fail",
+                  "mae_sai_abstention_fraction_max": "pass",
+                  "mae_sai_unit_coverage_min": "pass",
+                  "recency_window_days": "pass"
+                },
+                "failed_conditions": [
+                  "geoid_held_out_test_iou_min"
+                ]
+              }
+            }
+          }
+        ],
+        "result": "M1-literal is declared unable to meet the T2 skill bar by protocol v1a, whatever these figures are: low confidence. Counts: abstention at most 0.2: 8 of 8 tambons (frame share without an answer 0.000); coverage at least 0.8: 8 of 8 tambons by valid radar input and 8 of 8 by cells with an answer; recency: pass."
+      },
+      "m1_v2": {
+        "flood_input": "M1-v2",
+        "status_in_protocol_v1a": "evaluated",
+        "geoid_held_out_test_iou_used": 0.411164,
+        "mae_sai_conditions": {
+          "abstention": {
+            "units_at_most_max": 1,
+            "units": 8,
+            "frame_abstention_fraction": 0.772595,
+            "frame_at_most_max": false,
+            "passes_for_every_unit": false
+          },
+          "coverage": {
+            "units_with_input_coverage_at_least_min": 8,
+            "units_with_answer_coverage_at_least_min": 1,
+            "units": 8,
+            "passes_for_every_unit_by_input_coverage": true,
+            "passes_for_every_unit_by_answer_coverage": false
+          },
+          "recency_passes": true
+        },
+        "units_passing_all_four_conditions": {
+          "input_coverage": [
+            "TH570908"
+          ],
+          "answer_coverage": [
+            "TH570908"
+          ]
+        },
+        "units": [
+          {
+            "unit_id": "TH570901",
+            "unit_name": "Mae Sai",
+            "abstention_fraction": 1.0,
+            "input_coverage": 1.0,
+            "answer_coverage": 0.0,
+            "coverage_reading": {
+              "input_coverage": {
+                "passes": false,
+                "conditions": {
+                  "geoid_held_out_test_iou_min": "pass",
+                  "mae_sai_abstention_fraction_max": "fail",
+                  "mae_sai_unit_coverage_min": "pass",
+                  "recency_window_days": "pass"
+                },
+                "failed_conditions": [
+                  "mae_sai_abstention_fraction_max"
+                ]
+              },
+              "answer_coverage": {
+                "passes": false,
+                "conditions": {
+                  "geoid_held_out_test_iou_min": "pass",
+                  "mae_sai_abstention_fraction_max": "fail",
+                  "mae_sai_unit_coverage_min": "fail",
+                  "recency_window_days": "pass"
+                },
+                "failed_conditions": [
+                  "mae_sai_abstention_fraction_max",
+                  "mae_sai_unit_coverage_min"
+                ]
+              }
+            }
+          },
+          {
+            "unit_id": "TH570902",
+            "unit_name": "Huai Khrai",
+            "abstention_fraction": 0.918833,
+            "input_coverage": 1.0,
+            "answer_coverage": 0.081167,
+            "coverage_reading": {
+              "input_coverage": {
+                "passes": false,
+                "conditions": {
+                  "geoid_held_out_test_iou_min": "pass",
+                  "mae_sai_abstention_fraction_max": "fail",
+                  "mae_sai_unit_coverage_min": "pass",
+                  "recency_window_days": "pass"
+                },
+                "failed_conditions": [
+                  "mae_sai_abstention_fraction_max"
+                ]
+              },
+              "answer_coverage": {
+                "passes": false,
+                "conditions": {
+                  "geoid_held_out_test_iou_min": "pass",
+                  "mae_sai_abstention_fraction_max": "fail",
+                  "mae_sai_unit_coverage_min": "fail",
+                  "recency_window_days": "pass"
+                },
+                "failed_conditions": [
+                  "mae_sai_abstention_fraction_max",
+                  "mae_sai_unit_coverage_min"
+                ]
+              }
+            }
+          },
+          {
+            "unit_id": "TH570903",
+            "unit_name": "Ko Chang",
+            "abstention_fraction": 0.997408,
+            "input_coverage": 1.0,
+            "answer_coverage": 0.002592,
+            "coverage_reading": {
+              "input_coverage": {
+                "passes": false,
+                "conditions": {
+                  "geoid_held_out_test_iou_min": "pass",
+                  "mae_sai_abstention_fraction_max": "fail",
+                  "mae_sai_unit_coverage_min": "pass",
+                  "recency_window_days": "pass"
+                },
+                "failed_conditions": [
+                  "mae_sai_abstention_fraction_max"
+                ]
+              },
+              "answer_coverage": {
+                "passes": false,
+                "conditions": {
+                  "geoid_held_out_test_iou_min": "pass",
+                  "mae_sai_abstention_fraction_max": "fail",
+                  "mae_sai_unit_coverage_min": "fail",
+                  "recency_window_days": "pass"
+                },
+                "failed_conditions": [
+                  "mae_sai_abstention_fraction_max",
+                  "mae_sai_unit_coverage_min"
+                ]
+              }
+            }
+          },
+          {
+            "unit_id": "TH570904",
+            "unit_name": "Pong Pha",
+            "abstention_fraction": 0.736106,
+            "input_coverage": 1.0,
+            "answer_coverage": 0.263894,
+            "coverage_reading": {
+              "input_coverage": {
+                "passes": false,
+                "conditions": {
+                  "geoid_held_out_test_iou_min": "pass",
+                  "mae_sai_abstention_fraction_max": "fail",
+                  "mae_sai_unit_coverage_min": "pass",
+                  "recency_window_days": "pass"
+                },
+                "failed_conditions": [
+                  "mae_sai_abstention_fraction_max"
+                ]
+              },
+              "answer_coverage": {
+                "passes": false,
+                "conditions": {
+                  "geoid_held_out_test_iou_min": "pass",
+                  "mae_sai_abstention_fraction_max": "fail",
+                  "mae_sai_unit_coverage_min": "fail",
+                  "recency_window_days": "pass"
+                },
+                "failed_conditions": [
+                  "mae_sai_abstention_fraction_max",
+                  "mae_sai_unit_coverage_min"
+                ]
+              }
+            }
+          },
+          {
+            "unit_id": "TH570905",
+            "unit_name": "Si Mueang Chum",
+            "abstention_fraction": 0.657294,
+            "input_coverage": 1.0,
+            "answer_coverage": 0.342706,
+            "coverage_reading": {
+              "input_coverage": {
+                "passes": false,
+                "conditions": {
+                  "geoid_held_out_test_iou_min": "pass",
+                  "mae_sai_abstention_fraction_max": "fail",
+                  "mae_sai_unit_coverage_min": "pass",
+                  "recency_window_days": "pass"
+                },
+                "failed_conditions": [
+                  "mae_sai_abstention_fraction_max"
+                ]
+              },
+              "answer_coverage": {
+                "passes": false,
+                "conditions": {
+                  "geoid_held_out_test_iou_min": "pass",
+                  "mae_sai_abstention_fraction_max": "fail",
+                  "mae_sai_unit_coverage_min": "fail",
+                  "recency_window_days": "pass"
+                },
+                "failed_conditions": [
+                  "mae_sai_abstention_fraction_max",
+                  "mae_sai_unit_coverage_min"
+                ]
+              }
+            }
+          },
+          {
+            "unit_id": "TH570906",
+            "unit_name": "Wiang Phang Kham",
+            "abstention_fraction": 1.0,
+            "input_coverage": 1.0,
+            "answer_coverage": 0.0,
+            "coverage_reading": {
+              "input_coverage": {
+                "passes": false,
+                "conditions": {
+                  "geoid_held_out_test_iou_min": "pass",
+                  "mae_sai_abstention_fraction_max": "fail",
+                  "mae_sai_unit_coverage_min": "pass",
+                  "recency_window_days": "pass"
+                },
+                "failed_conditions": [
+                  "mae_sai_abstention_fraction_max"
+                ]
+              },
+              "answer_coverage": {
+                "passes": false,
+                "conditions": {
+                  "geoid_held_out_test_iou_min": "pass",
+                  "mae_sai_abstention_fraction_max": "fail",
+                  "mae_sai_unit_coverage_min": "fail",
+                  "recency_window_days": "pass"
+                },
+                "failed_conditions": [
+                  "mae_sai_abstention_fraction_max",
+                  "mae_sai_unit_coverage_min"
+                ]
+              }
+            }
+          },
+          {
+            "unit_id": "TH570908",
+            "unit_name": "Ban Dai",
+            "abstention_fraction": 0.012969,
+            "input_coverage": 1.0,
+            "answer_coverage": 0.987031,
+            "coverage_reading": {
+              "input_coverage": {
+                "passes": true,
+                "conditions": {
+                  "geoid_held_out_test_iou_min": "pass",
+                  "mae_sai_abstention_fraction_max": "pass",
+                  "mae_sai_unit_coverage_min": "pass",
+                  "recency_window_days": "pass"
+                },
+                "failed_conditions": []
+              },
+              "answer_coverage": {
+                "passes": true,
+                "conditions": {
+                  "geoid_held_out_test_iou_min": "pass",
+                  "mae_sai_abstention_fraction_max": "pass",
+                  "mae_sai_unit_coverage_min": "pass",
+                  "recency_window_days": "pass"
+                },
+                "failed_conditions": []
+              }
+            }
+          },
+          {
+            "unit_id": "TH570909",
+            "unit_name": "Pong Ngam",
+            "abstention_fraction": 0.846198,
+            "input_coverage": 1.0,
+            "answer_coverage": 0.153802,
+            "coverage_reading": {
+              "input_coverage": {
+                "passes": false,
+                "conditions": {
+                  "geoid_held_out_test_iou_min": "pass",
+                  "mae_sai_abstention_fraction_max": "fail",
+                  "mae_sai_unit_coverage_min": "pass",
+                  "recency_window_days": "pass"
+                },
+                "failed_conditions": [
+                  "mae_sai_abstention_fraction_max"
+                ]
+              },
+              "answer_coverage": {
+                "passes": false,
+                "conditions": {
+                  "geoid_held_out_test_iou_min": "pass",
+                  "mae_sai_abstention_fraction_max": "fail",
+                  "mae_sai_unit_coverage_min": "fail",
+                  "recency_window_days": "pass"
+                },
+                "failed_conditions": [
+                  "mae_sai_abstention_fraction_max",
+                  "mae_sai_unit_coverage_min"
+                ]
+              }
+            }
+          }
+        ],
+        "result": "M1-v2 does not meet the Mae Sai conditions for the frame, nor in 7 of 8 tambons, where it stays at low confidence (tier T2, no demonstrated skill). For the frame as a whole, 0.773 of the cells have no answer, above the maximum of 0.2. Read tambon by tambon, the conditions pass in 1 of 8 (TH570908); whether one tambon can pass on its own is open point A4-OP3. Counts: abstention at most 0.2: 1 of 8 tambons (frame share without an answer 0.773); coverage at least 0.8: 8 of 8 tambons by valid radar input and 1 of 8 by cells with an answer; recency: pass."
+      }
+    },
+    "evaluation_of_record": false,
+    "evaluation_note": "Not the evaluation of record. It repeats the evaluation on the sensitivity run, whose geocoding the plan does not name."
+  },
+  "o1_flood_input_interface": {
+    "status": "No flood-inputs module (plan task E1, flood_inputs.py) is on this branch. Each candidate is therefore a GeoTIFF mask outside Git with this table and its receipt.",
+    "mask": "<method>_candidate.tif: 1 flood candidate, 0 not a candidate, 255 no answer.",
+    "flood_input_fields": {
+      "tier": "T2",
+      "temporal_relation": "event_aligned",
+      "acquisition_time": "2024-09-15T23:16:01Z",
+      "case_reference_date": "2024-09-15",
+      "rights_level": "not assigned here: the rights registry of the flood-inputs lane assigns it. Copernicus Sentinel data are free and open, with attribution.",
+      "attribution": "Contains modified Copernicus Sentinel data 2024"
+    },
+    "use_restriction": "Not a flood input of case O1 unless the owners decide so (open point A4-OP1)."
+  },
+  "open_points": [
+    {
+      "id": "A4-OP1",
+      "point": "Geocoding of the fallback path.",
+      "protocol_says": "Plan row A4: without SNAP, a GCP warp with the sigmaNought table, labelled 'approximate geocoding: GCP affine, no DEM terrain correction'.",
+      "what_this_run_does": "The run of record does exactly that. The product's control points sit at the heights of a coarse terrain model that is several hundred metres above the Mae Sai plain, so the radar layers are displaced along the range direction. geolocation_check gives the measured displacement and what a mapping with a height per cell leaves. The three methods were run a second time with that mapping, as a sensitivity run with its own table and receipt; it replaces nothing.",
+      "for_the_owners": "Which layers case O1 uses: the run of record (the plan's fallback, displaced), the sensitivity run (a mapping the plan does not name), or a SNAP terrain correction once SNAP is installed."
+    },
+    {
+      "id": "A4-OP2",
+      "point": "HAND and slope mask for M1-v2 on Mae Sai.",
+      "protocol_says": "Protocol v1a (geoid_split.limits): 'M1-v2 is fixed slope-free on GEOID and the HAND/slope mask is applied on Mae Sai as a disclosed difference.' No HAND source, no HAND limit and no slope limit is given, and the proposal's 'steep terrain' has no number either.",
+      "what_this_run_does": "Applies no HAND or slope mask to M1-literal or M1-v2: both are run as they were on GEOID. The candidate area of each method is reported by slope class so that a limit can be chosen with the figures in view of everyone.",
+      "for_the_owners": "The HAND source and limit and the slope limit, or a decision to leave the mask out."
+    },
+    {
+      "id": "A4-OP3",
+      "point": "Which coverage the 0.80 condition means, and over what the 0.20 condition is taken.",
+      "protocol_says": "v1a C3: 'unit valid coverage inside the product footprint or analysis extent'. v1a t2_skill_bar: 'mae_sai_abstention_fraction_max 0.2' and 'mae_sai_unit_coverage_min 0.8'. Neither says whether coverage is valid radar input or cells with an answer, nor whether abstention is per unit or for the frame.",
+      "what_this_run_does": "Reports both coverage readings per unit and the abstention share per unit and for the frame, and evaluates the conditions under each reading.",
+      "for_the_owners": "The reading of record."
+    },
+    {
+      "id": "A4-OP4",
+      "point": "Permanent water in M1-literal and M1-v2.",
+      "protocol_says": "Proposal Method 1, step 5: 'Remove permanent water and steep terrain'. v1a fixes permanent water as WorldCover class 80 for the scoring frame. Neither says that the candidate raster itself is cut.",
+      "what_this_run_does": "Leaves the candidate rasters as the frozen functions return them and gives every area twice: all candidate cells, and candidate cells outside class 80.",
+      "for_the_owners": "Whether the flood-input reader removes class 80 or the candidate raster does."
+    },
+    {
+      "id": "A4-OP6",
+      "point": "How M1-literal and M1-v2 are tiled on Mae Sai.",
+      "protocol_says": "Nothing. M1-v2 was frozen on GEOID tiles of 1024 by 1024 cells of 10 m and declines a whole tile at a time; the protocol does not say how a frame that is not made of such tiles is cut.",
+      "what_this_run_does": "Uses the lattice of the GEOID sample in UTM zone 47N (tile corners at multiples of 10,240 m). Nine tiles hold part of the frame. Each tile is run whole, with the land outside the eight tambons that it holds, and the result is cut to the frame afterwards. Another lattice origin would give other tiles and could give other declined tiles; none was tried.",
+      "for_the_owners": "To confirm the lattice, or to state another tiling rule."
+    },
+    {
+      "id": "A2-OP1",
+      "point": "Layers of the UN-SPIDER practice that are not on disk.",
+      "protocol_says": "Plan row A2: 'UN-SPIDER recommended practice, ratio 1.25, untuned', on the local 3/15 September pair. The practice masks JRC seasonality of 10 months or more and slopes from the HydroSHEDS 3 arc-second DEM, on terrain-corrected Earth Engine backscatter with thermal noise removed.",
+      "what_this_run_does": "Uses WorldCover class 80 for perennial water (the JRC tile on disk ends at 100 E and the frame reaches 100.04 E) and Copernicus GLO-30 averaged to 3 arc-seconds for the slope. The JRC result on the part of the frame the tile covers is given as a sensitivity note. No copy of the practice's script is in the repository: its steps were written from the published script as the agent knows it and need a check by the GeoAI owner.",
+      "for_the_owners": "A check of UnSpiderConfig against the published script; whether to download the JRC tile 100E_30N (decision D11 stops downloads)."
+    },
+    {
+      "id": "A4-OP5",
+      "point": "The 3 September SAFE in the July acquisition manifest.",
+      "protocol_says": "The manifest marks both SAFE files 'processing_allowed False: reference mask status remains unresolved; do not run baseline yet'. Decision R14 says that note gates the finals baseline, not rights, and allows the replay to read the file. Plan rows A2 and A4 name this pair.",
+      "what_this_run_does": "Reads both files, as the plan rows say.",
+      "for_the_owners": "To confirm that R14 covers plan tasks A2 and A4 as well as the replay."
+    }
+  ],
+  "not_computed": [
+    "FPPS",
+    "A-E class",
+    "would-be class",
+    "ensemble cell",
+    "exposure",
+    "road closure",
+    "access loss",
+    "confidence class of a unit",
+    "any comparison with UNOSAT/GISTDA product 4009",
+    "A6-prime classifier",
+    "M1-v2 Otsu comparator",
+    "HAND or slope mask for M1-literal and M1-v2"
+  ],
+  "assumptions": [
+    "One image pair: 3 September 2024 23:16 UTC and 15 September 2024 23:16 UTC (16 September 06:16 in Thailand), both descending on relative orbit 135. The post-event image is 12 days after the pre-event image and several days after the flood peak, so a candidate is residual water at that pass at most.",
+    "Sigma0 comes from the digital numbers and the sigmaNought look-up table of the SAFE annotation. Thermal noise is not removed and no orbit file is applied.",
+    "Geocoding uses the geolocation grid of the product annotation with the Copernicus GLO-30 height of every cell, taken as 35 m lower above the ellipsoid than above the geoid. This mapping is not in the plan and is not SNAP terrain correction: it has no orbit file, and layover and shadow are not handled. geolocation_check gives the displacement it leaves.",
+    "Linear sigma0 is resampled bilinearly to a 10 m grid in EPSG:32647. Resampling changes the speckle statistics; the speckle filters still assume 4.4 looks, as frozen.",
+    "A cell belongs to the tambon that holds its centre (2022 COD-AB tha_admin3 polygons). Areas are cell counts times 100 m2 on the EPSG:32647 grid.",
+    "M1-literal and M1-v2 are run one tile at a time on the lattice of the GEOID sample (1024 by 1024 cells of 10 m, corners at multiples of 10,240 m), because M1-v2 was frozen on such tiles and declines a whole tile at a time. A tile holds everything inside it, including land outside the eight tambons.",
+    "Permanent water is ESA WorldCover 2021 class 80 (protocol v1a). The slope layer is Copernicus GLO-30 averaged to 3 arc-seconds, in place of the HydroSHEDS DEM of the UN-SPIDER practice.",
+    "The context layers (tambons, land cover, slope) are in map geometry, and the radar layers meet them to within about a cell where the terrain is gentle."
+  ],
+  "limits": [
+    "One pair of images, twelve days apart. The second was taken on 16 September 2024 at 06:16 in Thailand, several days after the flood peak: residual water only. Nothing here describes the peak.",
+    "Approximate geocoding in the run of record: no cell-level or road-level use until the displacement is removed. The sensitivity run removes most of it with a mapping the plan does not name.",
+    "No qualified reference exists for Mae Sai. The layers are not validated, and no figure here says how correct a layer is.",
+    "Tier 2 own candidates: verify before action.",
+    "Radar shadow and layover are not flagged; that needs the terrain-corrected geometry of the SNAP path.",
+    "Urban areas, wet soil, crops that changed between the two dates and wind on water all change the backscatter. A candidate cell is a cell that became darker, not a cell that was seen under water.",
+    "The UN-SPIDER practice divides one dB value by another. Where the smoothed pre-event VH is above 0 dB (a few very bright cells) its quotient means the opposite of what it means elsewhere."
+  ]
+}

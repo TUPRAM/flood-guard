@@ -1,0 +1,78 @@
+{
+  "schema_version": "floodguard.closure_rule_regression.v1",
+  "generated_at_utc": "2026-10-02T16:09:19Z",
+  "protocol_item": "planning_protocol_v1b open item OI-05, closure_rule_v1.regression (plan 5 item 2, task E3)",
+  "official_warning": false,
+  "operational_status": "non_operational",
+  "computes": "Closed-edge sets only. No access result, no FPPS, no A-E class and no ensemble.",
+  "source_timestamp": "2024-09-15T23:16:01.675690Z",
+  "source_timestamps": {
+    "flood_candidate_post_event_acquisition": "2024-09-15T23:16:01.675690Z",
+    "finals_build_generated_at": "2026-09-22T06:00:00Z"
+  },
+  "confidence_class": "low",
+  "confidence_basis": "The flood input is the legacy uncalibrated 2.25 dB candidate with no demonstrated skill. The regression tests the code, not the flood map.",
+  "closure_rule_version": "closure_rule_v1",
+  "level": "permissive",
+  "threshold_m": 1e-06,
+  "rule": "The permissive level on the AOI-01 finals context reproduces the finals closed-edge IDs exactly.",
+  "walking_closed_edges": 1824,
+  "vehicle_closed_edges": 1738,
+  "closed_edge_ids_match_exactly": true,
+  "modes": {
+    "walking": {
+      "edges_in_context": 43735,
+      "finals_closed_edges": 1824,
+      "computed_closed_edges": 1824,
+      "closed_edge_ids_match_exactly": true,
+      "only_in_finals": 0,
+      "only_in_computed": 0,
+      "finals_closed_edge_ids_sha256": "cb50a257d4cd02bf9dd324e21b86829a16c8c82dc9f4907b58220893aaf3a561",
+      "computed_closed_edge_ids_sha256": "cb50a257d4cd02bf9dd324e21b86829a16c8c82dc9f4907b58220893aaf3a561",
+      "largest_intersection_length_difference_m": 0.0,
+      "closure_basis": "modelled_from_legacy_2.25db_amplitude_change_candidate_aoi01",
+      "expected_closed_edges_in_protocol": 1824,
+      "finals_count_equals_protocol": true,
+      "context_canonical_sha256": "0e603645bbdc8e7e4998c7a5323c21a73ee30a76a8551610a33df1ff6b28f68e"
+    },
+    "modelled_vehicle": {
+      "edges_in_context": 40391,
+      "finals_closed_edges": 1738,
+      "computed_closed_edges": 1738,
+      "closed_edge_ids_match_exactly": true,
+      "only_in_finals": 0,
+      "only_in_computed": 0,
+      "finals_closed_edge_ids_sha256": "8d17a5750868b6ee5e2fac5ed0c1480a2377b01a2c6806230c45bb0709c29bfd",
+      "computed_closed_edge_ids_sha256": "8d17a5750868b6ee5e2fac5ed0c1480a2377b01a2c6806230c45bb0709c29bfd",
+      "largest_intersection_length_difference_m": 0.0,
+      "closure_basis": "modelled_from_legacy_2.25db_amplitude_change_candidate_aoi01",
+      "expected_closed_edges_in_protocol": 1738,
+      "finals_count_equals_protocol": true,
+      "context_canonical_sha256": "ae07c1aa8495abbdccc7e826b91e350262cc705de0ac4dd3c26cafbf47a67ffb"
+    }
+  },
+  "input_hashes": {
+    "finals_build_receipt_sha256": "374447a11c21fa71847507e1fa2f2d264ab3ba6950fd01b7f6ead7ba619bb866",
+    "finals_analysis_sha256": "2afc9590bad23724fd41c4d68bdc171e295d248eba68bc1fb4be0b9d6da9f7e3",
+    "flood_candidate_manifest_sha256": "7100794606d14a0bb48083a0e9c9b4677521555e72d49ea7a059f38276cd3dd1",
+    "candidate_extent_sha256": "2704272e1a971fda748f6f5b74c62ece3cac954de2fa38cf721a41a1bba47e7f",
+    "committed_finals_database_sha256": "46a34eb40e06e195f8ffed2162887c137a236ed4534912fec723167ea6676b0b",
+    "walking_context_file_sha256": "933cf0325495a4fb1524d149afa9b14add451fd8823188bd7fb0793df88a966f",
+    "modelled_vehicle_context_file_sha256": "b60c1a79079dc92767b57b512915b1dcf2f60955e91841236db231490acd62b9"
+  },
+  "implementation": {
+    "base_commit": "dde9416f5395289ed1ef9f2157795f6ed0b025f6",
+    "builder_sha256": "25271151d17e78b457d10a141599024022fcda890caa11dedc3e851657eeda8d",
+    "closure_rules_module_sha256": "204b591c69cccf39d69131e1fe950dac9d01bd129c0b628b87531f4479aef921",
+    "finals_closure_module_sha256": "353aedf5f15ba0cd575ba5cb970ef07dcab7387c1321702b7a714cc09d5e8ac8"
+  },
+  "assumptions": [
+    "Each edge is the straight segment between its two nodes in EPSG:32647; an edge is intersected when more than 1e-6 m of it lies inside the extent (drafter reading DR-B02).",
+    "A flood intersection is a closure assumption. It does not show that a road was closed.",
+    "The external finals build is accepted only because its closed-edge IDs equal those in the committed finals database."
+  ],
+  "limitations": [
+    "Only the permissive level is tested here. The strict and central levels have no reference to reproduce.",
+    "The AOI-01 context and the 2.25 dB candidate are the legacy lane; they are not a case input of the protocol."
+  ]
+}

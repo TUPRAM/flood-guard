@@ -1,0 +1,98 @@
+{
+  "schema": "floodguard.nasa_mcdwd_native_aoi_inventory.v1",
+  "created_utc": "2026-09-25T05:23:33.276276+00:00",
+  "source": {
+    "product_id": "MCDWD_L3.A2024286.h28v07.061.2025279190339.hdf",
+    "url": "https://ladsweb.modaps.eosdis.nasa.gov/archive/allData/61/MCDWD_L3/2024/286/MCDWD_L3.A2024286.h28v07.061.2025279190339.hdf",
+    "edition": "NASA_LAADS_MCDWD_L3_061_standard",
+    "bytes": 15923177,
+    "provider_md5": "5dcc2feb4111d1ec98fd40419e2c5629",
+    "sha256": "3e3cc38360f6980a6bf24d5af4e4ea1026ebd5a2af035e2e508fcda4026b777a",
+    "day_begin_metadata": "2024-10-12T00:00:00",
+    "day_end_metadata": "2024-10-13T00:00:00",
+    "pge_version_metadata": "6.1.9",
+    "timezone_metadata": "not_explicit_in_hdf",
+    "input_pointers": [
+      "MCDWD_IHMA.A2023001.h28v07.001.img",
+      "MCDWD_IRWMA.A2023001.h28v07.001.img",
+      "MCDWD_L3.A2024285.h28v07.061.2025016154005.hdf",
+      "MODWDLGA.A2024286.h28v07.061.2025016151029.hdf",
+      "MODWD_ITSM.A2010053.h28v07.001.img",
+      "MYDWDLGA.A2024286.h28v07.061.2025011224254.hdf",
+      "MYDWD_ITSM.A2010053.h28v07.001.img"
+    ]
+  },
+  "aoi": {
+    "file": "aoi-05_chao_phraya_bang_ban_sena.geojson",
+    "sha256": "804972939130008c239aa659268f845ca26a8cafc0a7384124e61b1f451bfe1d",
+    "native_pixel_centres": 3364
+  },
+  "native_grid": {
+    "projection": "GCTP_GEO",
+    "sphere_code": 12,
+    "crs": "WGS84_from_HDF_structural_metadata",
+    "width": 4800,
+    "height": 4800,
+    "upper_left_lon_lat": [
+      100.0,
+      20.0
+    ],
+    "pixel_size_lon_lat": [
+      0.0020833333333333333,
+      -0.0020833333333333333
+    ],
+    "window_row_col_exclusive": [
+      2702,
+      2760,
+      192,
+      250
+    ]
+  },
+  "class_meanings": {
+    "0": "no_water",
+    "1": "expected_surface_water",
+    "2": "recurring_flood",
+    "3": "unusual_flood",
+    "255": "insufficient_data"
+  },
+  "class_counts": {
+    "FloodCS_1Day_250m": {
+      "0": 221,
+      "1": 1,
+      "2": 599,
+      "3": 97,
+      "255": 2446
+    },
+    "Flood_1Day_250m": {
+      "0": 440,
+      "1": 1,
+      "2": 846,
+      "3": 99,
+      "255": 1978
+    }
+  },
+  "rights_basis": {
+    "holder": "NASA",
+    "policy_url": "https://modaps.modaps.eosdis.nasa.gov/services/faq/LAADS_Data-Use_Citation_Policies.pdf",
+    "product_url": "https://www.earthdata.nasa.gov/global-flood-product",
+    "product_doi": "10.5067/MODIS/MCDWD_L3.061",
+    "subsequent_use_and_redistribution": "unrestricted_under_LAADS_policy",
+    "research_comparison_allowed": true,
+    "derived_aggregate_publication_allowed": true,
+    "publication_attribution": "MODIS Aqua+Terra Global Flood Product MCDWD_L3 (Reprocessed Archive), NASA LAADS DAAC, doi:10.5067/MODIS/MCDWD_L3.061.",
+    "interpretation": "Allowed uses follow from unrestricted subsequent use; NASA requests citation and acknowledgment for published derived results."
+  },
+  "limitations": [
+    "Automated MODIS optical map, not field truth or radar accuracy.",
+    "Native cells are coarse relative to a 10 m radar candidate.",
+    "The HDF does not provide exact per-pixel acquisition time or an explicit timezone suffix.",
+    "No radar prediction, reference agreement, or study eligibility is evaluated by this inventory."
+  ],
+  "event_selected": false,
+  "human_reviewed": false,
+  "accepted_observation": false,
+  "official_warning": false,
+  "operational_status": "non_operational",
+  "can_feed_decision_layer": false,
+  "receipt_sha256": "c86cb5103d1852ada03527f22ba24ac78f33abbbb1e954dd10a9726217c36ede"
+}

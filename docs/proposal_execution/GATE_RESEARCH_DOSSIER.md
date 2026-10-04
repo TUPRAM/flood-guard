@@ -12,6 +12,46 @@ Scores against that reference mean **agreement with an automated optical map,
 not accuracy**. The measured reference, development and final-holdout results,
 including failed limits, are recorded below.
 
+### 25 September 2026 prospective Thai event screen — none selected
+
+The [prospective selection protocol](automated_track/thai_event_selection_protocol_v1.json)
+was frozen at `a4b4e46f403dae2fcf318a15b039f072499018a2` before any new Thai
+event detector/reference score. The [source feasibility screen](automated_track/THAI_EVENT_FEASIBILITY_V1.md)
+then checked catalog radar footprints, optical coverage, acquisition timing,
+reference class meaning and rights. The strongest source-only candidate is
+**Ayutthaya, 12 October 2024**: a full AOI-05 catalog radar footprint and an
+optical scene about 7 h 35 min earlier. After the frozen SCL buffer, all seven
+band-validity checks and spectral-denominator checks, **941,218 / 1,718,599 =
+54.7666%** of AOI-05 cells remain observable, narrowly above the frozen 50%
+optical feasibility floor. This is source quality, **not** a flood score. The
+16–17 October 2024 pair falls to **44.5476%** under the same complete check;
+Ayutthaya 23 October 2022 had only **46.671%** buffered SCL observability over
+AOI-05, despite the earlier **82.3%** in a different small box. Doi Tao's 5
+October scene has only about **18–19%** over the full UNOSAT analysis polygon.
+The latter three fail the frozen 50% optical cross-review condition on those
+AOIs.
+
+Doi Tao has a Gaofen-derived georeferenced flood and analysis polygon, but no
+documented dry/unknown semantics or product-specific derived-use terms. The
+user supplied the actual NASA **12 October 2024 MCDWD HDF**, whose size and
+provider MD5 match. A [native AOI-05 inventory](../../outputs/nasa_mcdwd_ayutthaya_20241012_native_inventory.json)
+on its 250 m cloud-shadow-masked one-day layer found **221 no-water, 1 expected
+water, 599 recurring-flood, 97 unusual-flood and 2,446 insufficient-data**
+cells among 3,364 native pixel centres. Thus **72.71% is unknown**; only 318
+cells are either unusual-flood or no-water. It is a dated, georeferenced,
+rights-usable, Sentinel-1-independent *automated* reference candidate, not
+field truth or an accuracy reference. Its HDF bounds a day, not exact
+per-pixel acquisition times. Hosted Sentinel-1 RTC COGs for 12 October and
+13 August have finite positive VV/VH pixels throughout AOI-05, but a
+[provincial flood report](https://ayutthaya.prd.go.th/th/content/category/detail/id/9/iid/315459)
+rules out presuming 13 August dry. A 1 August same-orbit scene and 19 June
+optical dry-context scene are source candidates, not established dry inputs.
+The required public DEM tile is acquired and finite over the AOI margin, but
+the original Ayutthaya SAFEs are absent locally, so FloodGuard's exact SNAP
+Gamma0 grids remain unverified. **No event was selected, no
+numerical methods or limits were frozen for a selected event, and no Thai
+detector score was run.** The next pre-registration must precede that score.
+
 ### 24 September 2026 optical v2 follow-up — overall FAIL
 
 The new [optical v2 result](automated_track/OPTICAL_V2_RESULT.md) tests the

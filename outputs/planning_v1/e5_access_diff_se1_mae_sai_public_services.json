@@ -1,6 +1,6 @@
 {
-  "schema_version": "floodguard.access_diff_units.v1",
-  "generated_at_utc": "2026-10-04T13:24:17Z",
+  "schema_version": "floodguard.access_diff_units.v2",
+  "generated_at_utc": "2026-10-04T15:38:45Z",
   "receipt_file": "outputs/planning_v1/e5_access_diff_mae_sai.json",
   "access_diff_version": "access_diff_v1",
   "plan_task": "E5: access diff (two runs) x services x thresholds; per-tambon table",
@@ -12,11 +12,13 @@
   "case_reference_date": null,
   "service_set": "public_services",
   "status": "unit_inputs",
-  "status_note": "Written with protocol v1a and v1b in force (protocol_sha256). These are inputs of the access-gap and road-criticality components for plan task E8. They are not the components and not an FPPS; the components, the FPPS and the A-E class belong to task E8 and are not here.",
+  "status_note": "Written with protocol v1a and v1b in force (protocol_sha256). These are inputs of the access-gap and road-criticality components for plan task E8. They are not the components and not an FPPS; the components, the FPPS and the A-E class belong to task E8 and are not here. The definitions say how close each input is to its component.",
+  "usable_by_task_e8": true,
+  "usable_by_task_e8_basis": "Every context this table rests on is a build of record.",
   "official_warning": false,
   "operational_status": "non_operational",
   "can_feed_decision_layer": false,
-  "computes": "For cases SE1 and O2 over the Mae Sai frame, at the flood level as provided and under the strict, central and permissive levels of closure rule v1: a baseline run and a flooded run of modelled access, and per tambon the residents with baseline access, the residents newly losing it, the newly-lost share counted only for residents with baseline access, and the residents with a baseline route to any hospital or main-road entry who lose all routes. These are inputs of the access-gap and road-criticality components. No component value, no FPPS, no A-E class and no ensemble.",
+  "computes": "For cases SE1 and O2 over the Mae Sai frame, at the flood level as provided and under the strict, central and permissive levels of closure rule v1: a baseline run and a flooded run of modelled access, and per tambon the residents with baseline access, the residents among them newly losing it, the residents with a baseline route to any hospital or main-road entry and those among them who lose all routes. Counts of residents only: no ratio of them is written. These are inputs of the access-gap and road-criticality components. No component value, no FPPS, no A-E class and no ensemble.",
   "source_timestamp": "2024-08-01/2024-10-12",
   "source_timestamps": {
     "flood_input": "2024-08-01/2024-10-12",
@@ -97,8 +99,9 @@
     "files": {
       "as_provided": {
         "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e1_flood_input/flood_extent__as_provided__routing_context.geojson",
-        "sha256": "8a6b9df069cc1cd4b84b7c5fdb30bcf344a0111f0e19fd2ee388799b62112b58",
-        "bytes": 18110287
+        "sha256": "5d7c1c0ca7909284317a66d2a3611452de3f91d729dfb4cc31b96840e147b794",
+        "bytes": 18110603,
+        "rights_level": "public"
       }
     }
   },
@@ -163,9 +166,11 @@
   "definitions": {
     "baseline_access_residents": "Residents whose modelled time to the nearest destination of the service is at most the threshold in the baseline run.",
     "newly_lost_residents": "Residents with baseline access who do not have access within the threshold in the flooded run. A resident with no baseline access is never counted (EQ-04).",
-    "newly_lost_share": "newly_lost_residents / baseline_access_residents; null with a reason when nobody had baseline access.",
+    "baseline_access_unavailable_reason": "Set where nobody had baseline access to the service within the threshold: the protocols state no newly-lost share for that case.",
+    "counts_only": "Beside the thresholds of the services, every figure of a row is a count of residents or of demand cells. No ratio of two counts is written, because a ratio is a component or one step from it. newly_lost_residents / baseline_access_residents is the newly-lost share of one service; the access-gap component of protocol v1a is 100 x the mean of those shares over the services at their access-gap thresholds, weighted by baseline access, and one service's share equals it wherever the services have the same share (open point E5-OP8).",
     "access_gap_inputs": "For each service at its access-gap threshold: what floodguard.normalisation.access_gap takes. An input of the component, not the component.",
-    "road_criticality_inputs": "Residents with a baseline route to any hospital or main-road entry, and those among them with no route to any of them in the flooded run: what floodguard.normalisation.road_criticality takes. An input, not the component.",
+    "road_criticality_inputs": "Residents with a baseline route to any hospital or main-road entry, and those among them with no route to any of them in the flooded run: what floodguard.normalisation.road_criticality takes. They are the numerator and the denominator of the road-criticality component of protocol v1a, which is 100 x their ratio. The ratio is not written here: task E8 computes the component.",
+    "routes": "The same two counts, the services whose routes are read, and the connected residents with no baseline route to any of them. Counts only.",
     "residents_not_connected_to_the_graph": "Residents of cells that do not snap to the graph of the mode within 250 m. They are in no numerator and no denominator.",
     "unit_rule": "A WorldPop 2020 cell counts for the tambon whose polygon holds its centre (open point E5-OP1)."
   },
@@ -242,24 +247,21 @@
                   "flooded_access_residents": 5417.398753941059,
                   "newly_lost_residents": 11786.308876633644,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.6851028353729302,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "30": {
                   "baseline_access_residents": 17453.231825232506,
                   "flooded_access_residents": 5420.488571166992,
                   "newly_lost_residents": 12032.743254065514,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.6894278019426479,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "60": {
                   "baseline_access_residents": 17453.231825232506,
                   "flooded_access_residents": 5420.488571166992,
                   "newly_lost_residents": 12032.743254065514,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.6894278019426479,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 }
               }
             },
@@ -277,24 +279,21 @@
                   "flooded_access_residents": 5879.644119262695,
                   "newly_lost_residents": 11573.58770596981,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.6631200354101543,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "30": {
                   "baseline_access_residents": 17453.231825232506,
                   "flooded_access_residents": 5879.644119262695,
                   "newly_lost_residents": 11573.58770596981,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.6631200354101543,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "60": {
                   "baseline_access_residents": 17453.231825232506,
                   "flooded_access_residents": 5879.644119262695,
                   "newly_lost_residents": 11573.58770596981,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.6631200354101543,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 }
               }
             }
@@ -318,6 +317,7 @@
             "residents_losing_all_routes": 11573.58770596981,
             "residents_with_baseline_route": 17453.231825232506
           },
+          "road_criticality_inputs_unavailable_reason": null,
           "routes": {
             "services": [
               "hospital",
@@ -326,8 +326,7 @@
             "residents_with_baseline_route": 17453.231825232506,
             "residents_losing_all_routes": 11573.58770596981,
             "connected_residents_without_a_baseline_route": 0.0,
-            "share_losing_all_routes": 0.6631200354101543,
-            "share_unavailable_reason": null
+            "baseline_route_unavailable_reason": null
           }
         },
         {
@@ -349,24 +348,21 @@
                   "flooded_access_residents": 670.0241041183472,
                   "newly_lost_residents": 0.0,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.0,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "30": {
                   "baseline_access_residents": 7148.752592325211,
                   "flooded_access_residents": 7140.4926553964615,
                   "newly_lost_residents": 8.259936928749084,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.0011554375147374415,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "60": {
                   "baseline_access_residents": 7213.945144534111,
                   "flooded_access_residents": 7213.945144534111,
                   "newly_lost_residents": 0.0,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.0,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 }
               }
             },
@@ -384,24 +380,21 @@
                   "flooded_access_residents": 7010.764011472464,
                   "newly_lost_residents": 0.0,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.0,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "30": {
                   "baseline_access_residents": 7213.945144534111,
                   "flooded_access_residents": 7213.945144534111,
                   "newly_lost_residents": 0.0,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.0,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "60": {
                   "baseline_access_residents": 7213.945144534111,
                   "flooded_access_residents": 7213.945144534111,
                   "newly_lost_residents": 0.0,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.0,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 }
               }
             }
@@ -425,6 +418,7 @@
             "residents_losing_all_routes": 0.0,
             "residents_with_baseline_route": 7213.945144534111
           },
+          "road_criticality_inputs_unavailable_reason": null,
           "routes": {
             "services": [
               "hospital",
@@ -433,8 +427,7 @@
             "residents_with_baseline_route": 7213.945144534111,
             "residents_losing_all_routes": 0.0,
             "connected_residents_without_a_baseline_route": 3.303007125854492,
-            "share_losing_all_routes": 0.0,
-            "share_unavailable_reason": null
+            "baseline_route_unavailable_reason": null
           }
         },
         {
@@ -456,24 +449,21 @@
                   "flooded_access_residents": 0.0,
                   "newly_lost_residents": 306.54498898983,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 1.0,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "30": {
                   "baseline_access_residents": 5709.620454907417,
                   "flooded_access_residents": 0.0,
                   "newly_lost_residents": 5709.620454907417,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 1.0,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "60": {
                   "baseline_access_residents": 5972.365630179644,
                   "flooded_access_residents": 0.0,
                   "newly_lost_residents": 5972.365630179644,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 1.0,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 }
               }
             },
@@ -491,24 +481,21 @@
                   "flooded_access_residents": 0.0,
                   "newly_lost_residents": 2963.1568821668625,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 1.0,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "30": {
                   "baseline_access_residents": 5959.719019174576,
                   "flooded_access_residents": 0.0,
                   "newly_lost_residents": 5959.719019174576,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 1.0,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "60": {
                   "baseline_access_residents": 5972.365630179644,
                   "flooded_access_residents": 0.0,
                   "newly_lost_residents": 5972.365630179644,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 1.0,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 }
               }
             }
@@ -532,6 +519,7 @@
             "residents_losing_all_routes": 5972.365630179644,
             "residents_with_baseline_route": 5972.365630179644
           },
+          "road_criticality_inputs_unavailable_reason": null,
           "routes": {
             "services": [
               "hospital",
@@ -540,8 +528,7 @@
             "residents_with_baseline_route": 5972.365630179644,
             "residents_losing_all_routes": 5972.365630179644,
             "connected_residents_without_a_baseline_route": 0.0,
-            "share_losing_all_routes": 1.0,
-            "share_unavailable_reason": null
+            "baseline_route_unavailable_reason": null
           }
         },
         {
@@ -563,24 +550,21 @@
                   "flooded_access_residents": 7004.075131356716,
                   "newly_lost_residents": 211.43214392662048,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.02930246424265687,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "30": {
                   "baseline_access_residents": 8609.448951303959,
                   "flooded_access_residents": 7897.2006548941135,
                   "newly_lost_residents": 712.2482964098454,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.0827286740926631,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "60": {
                   "baseline_access_residents": 8609.448951303959,
                   "flooded_access_residents": 7897.2006548941135,
                   "newly_lost_residents": 712.2482964098454,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.0827286740926631,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 }
               }
             },
@@ -598,24 +582,21 @@
                   "flooded_access_residents": 7892.316162019968,
                   "newly_lost_residents": 664.8093687295914,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.07769073462118038,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "30": {
                   "baseline_access_residents": 8609.448951303959,
                   "flooded_access_residents": 7897.2006548941135,
                   "newly_lost_residents": 712.2482964098454,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.0827286740926631,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "60": {
                   "baseline_access_residents": 8609.448951303959,
                   "flooded_access_residents": 7897.2006548941135,
                   "newly_lost_residents": 712.2482964098454,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.0827286740926631,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 }
               }
             }
@@ -639,6 +620,7 @@
             "residents_losing_all_routes": 712.2482964098454,
             "residents_with_baseline_route": 8609.448951303959
           },
+          "road_criticality_inputs_unavailable_reason": null,
           "routes": {
             "services": [
               "hospital",
@@ -647,8 +629,7 @@
             "residents_with_baseline_route": 8609.448951303959,
             "residents_losing_all_routes": 712.2482964098454,
             "connected_residents_without_a_baseline_route": 46.161540031433105,
-            "share_losing_all_routes": 0.0827286740926631,
-            "share_unavailable_reason": null
+            "baseline_route_unavailable_reason": null
           }
         },
         {
@@ -670,24 +651,21 @@
                   "flooded_access_residents": 1183.2235684990883,
                   "newly_lost_residents": 26.16897749900818,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.021638117074230228,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "30": {
                   "baseline_access_residents": 6529.838788986206,
                   "flooded_access_residents": 4063.638004541397,
                   "newly_lost_residents": 2466.200784444809,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.37768172601818556,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "60": {
                   "baseline_access_residents": 6558.295188009739,
                   "flooded_access_residents": 4063.638004541397,
                   "newly_lost_residents": 2494.657183468342,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.3803819608530615,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 }
               }
             },
@@ -705,24 +683,21 @@
                   "flooded_access_residents": 3441.485631644726,
                   "newly_lost_residents": 1478.3761083483696,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.3004913931484677,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "30": {
                   "baseline_access_residents": 6558.295188009739,
                   "flooded_access_residents": 4063.638004541397,
                   "newly_lost_residents": 2494.657183468342,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.3803819608530615,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "60": {
                   "baseline_access_residents": 6558.295188009739,
                   "flooded_access_residents": 4063.638004541397,
                   "newly_lost_residents": 2494.657183468342,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.3803819608530615,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 }
               }
             }
@@ -746,6 +721,7 @@
             "residents_losing_all_routes": 2494.657183468342,
             "residents_with_baseline_route": 6558.295188009739
           },
+          "road_criticality_inputs_unavailable_reason": null,
           "routes": {
             "services": [
               "hospital",
@@ -754,8 +730,7 @@
             "residents_with_baseline_route": 6558.295188009739,
             "residents_losing_all_routes": 2494.657183468342,
             "connected_residents_without_a_baseline_route": 6.982289552688599,
-            "share_losing_all_routes": 0.3803819608530615,
-            "share_unavailable_reason": null
+            "baseline_route_unavailable_reason": null
           }
         },
         {
@@ -777,24 +752,21 @@
                   "flooded_access_residents": 19009.73941358924,
                   "newly_lost_residents": 75.47516632080078,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.003954640698682495,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "30": {
                   "baseline_access_residents": 19164.54236626625,
                   "flooded_access_residents": 19089.06719994545,
                   "newly_lost_residents": 75.47516632080078,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.0039382712552350554,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "60": {
                   "baseline_access_residents": 19164.54236626625,
                   "flooded_access_residents": 19089.06719994545,
                   "newly_lost_residents": 75.47516632080078,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.0039382712552350554,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 }
               }
             },
@@ -812,24 +784,21 @@
                   "flooded_access_residents": 19063.473857671022,
                   "newly_lost_residents": 75.47516632080078,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.003943537663755106,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "30": {
                   "baseline_access_residents": 19164.54236626625,
                   "flooded_access_residents": 19089.06719994545,
                   "newly_lost_residents": 75.47516632080078,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.0039382712552350554,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "60": {
                   "baseline_access_residents": 19164.54236626625,
                   "flooded_access_residents": 19089.06719994545,
                   "newly_lost_residents": 75.47516632080078,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.0039382712552350554,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 }
               }
             }
@@ -853,6 +822,7 @@
             "residents_losing_all_routes": 75.47516632080078,
             "residents_with_baseline_route": 19164.54236626625
           },
+          "road_criticality_inputs_unavailable_reason": null,
           "routes": {
             "services": [
               "hospital",
@@ -861,8 +831,7 @@
             "residents_with_baseline_route": 19164.54236626625,
             "residents_losing_all_routes": 75.47516632080078,
             "connected_residents_without_a_baseline_route": 0.0,
-            "share_losing_all_routes": 0.0039382712552350554,
-            "share_unavailable_reason": null
+            "baseline_route_unavailable_reason": null
           }
         },
         {
@@ -884,24 +853,21 @@
                   "flooded_access_residents": 0.0,
                   "newly_lost_residents": 0.0,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": null,
-                  "newly_lost_share_unavailable_reason": "no_resident_with_baseline_access"
+                  "baseline_access_unavailable_reason": "no_resident_with_baseline_access"
                 },
                 "30": {
                   "baseline_access_residents": 3787.849869519472,
                   "flooded_access_residents": 2308.457790017128,
                   "newly_lost_residents": 1479.3920795023441,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.3905624907171995,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "60": {
                   "baseline_access_residents": 4005.1396268308163,
                   "flooded_access_residents": 3650.015324562788,
                   "newly_lost_residents": 355.12430226802826,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.08866714655564474,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 }
               }
             },
@@ -919,24 +885,21 @@
                   "flooded_access_residents": 2160.45265096426,
                   "newly_lost_residents": 542.0238163471222,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.2005656008121937,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "30": {
                   "baseline_access_residents": 4005.1396268308163,
                   "flooded_access_residents": 3650.015324562788,
                   "newly_lost_residents": 355.12430226802826,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.08866714655564474,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "60": {
                   "baseline_access_residents": 4005.1396268308163,
                   "flooded_access_residents": 3650.015324562788,
                   "newly_lost_residents": 355.12430226802826,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.08866714655564474,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 }
               }
             }
@@ -960,6 +923,7 @@
             "residents_losing_all_routes": 355.12430226802826,
             "residents_with_baseline_route": 4005.1396268308163
           },
+          "road_criticality_inputs_unavailable_reason": null,
           "routes": {
             "services": [
               "hospital",
@@ -968,8 +932,7 @@
             "residents_with_baseline_route": 4005.1396268308163,
             "residents_losing_all_routes": 355.12430226802826,
             "connected_residents_without_a_baseline_route": 0.0,
-            "share_losing_all_routes": 0.08866714655564474,
-            "share_unavailable_reason": null
+            "baseline_route_unavailable_reason": null
           }
         },
         {
@@ -991,24 +954,21 @@
                   "flooded_access_residents": 1223.3656651973724,
                   "newly_lost_residents": 252.80178332328796,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.1712554924420214,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "30": {
                   "baseline_access_residents": 6193.561620861292,
                   "flooded_access_residents": 6034.246510356665,
                   "newly_lost_residents": 159.31511050462723,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.025722697255165513,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "60": {
                   "baseline_access_residents": 6193.561620861292,
                   "flooded_access_residents": 6044.247051537037,
                   "newly_lost_residents": 149.314569324255,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.02410802999381331,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 }
               }
             },
@@ -1026,24 +986,21 @@
                   "flooded_access_residents": 5979.460070431232,
                   "newly_lost_residents": 162.9192159473896,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.026523796130382287,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "30": {
                   "baseline_access_residents": 6193.561620861292,
                   "flooded_access_residents": 6044.247051537037,
                   "newly_lost_residents": 149.314569324255,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.02410802999381331,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "60": {
                   "baseline_access_residents": 6193.561620861292,
                   "flooded_access_residents": 6044.247051537037,
                   "newly_lost_residents": 149.314569324255,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.02410802999381331,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 }
               }
             }
@@ -1067,6 +1024,7 @@
             "residents_losing_all_routes": 149.314569324255,
             "residents_with_baseline_route": 6193.561620861292
           },
+          "road_criticality_inputs_unavailable_reason": null,
           "routes": {
             "services": [
               "hospital",
@@ -1075,8 +1033,7 @@
             "residents_with_baseline_route": 6193.561620861292,
             "residents_losing_all_routes": 149.314569324255,
             "connected_residents_without_a_baseline_route": 0.0,
-            "share_losing_all_routes": 0.02410802999381331,
-            "share_unavailable_reason": null
+            "baseline_route_unavailable_reason": null
           }
         }
       ],
@@ -1098,24 +1055,21 @@
                 "flooded_access_residents": 34507.82663670182,
                 "newly_lost_residents": 12658.731936693192,
                 "newly_gained_residents": 0.0,
-                "newly_lost_share": 0.2683836243213541,
-                "newly_lost_share_unavailable_reason": null
+                "baseline_access_unavailable_reason": null
               },
               "30": {
                 "baseline_access_residents": 74596.84646940231,
                 "flooded_access_residents": 51953.59138631821,
                 "newly_lost_residents": 22643.255083084106,
                 "newly_gained_residents": 0.0,
-                "newly_lost_share": 0.30354171998908536,
-                "newly_lost_share_unavailable_reason": null
+                "baseline_access_unavailable_reason": null
               },
               "60": {
                 "baseline_access_residents": 75170.53035321832,
                 "flooded_access_residents": 53378.60195118189,
                 "newly_lost_residents": 21791.92840203643,
                 "newly_gained_residents": 0.0,
-                "newly_lost_share": 0.2898998889543346,
-                "newly_lost_share_unavailable_reason": null
+                "baseline_access_unavailable_reason": null
               }
             }
           },
@@ -1133,24 +1087,21 @@
                 "flooded_access_residents": 51427.59650346637,
                 "newly_lost_residents": 17460.348263829947,
                 "newly_gained_residents": 0.0,
-                "newly_lost_share": 0.25346014201484823,
-                "newly_lost_share_unavailable_reason": null
+                "baseline_access_unavailable_reason": null
               },
               "30": {
                 "baseline_access_residents": 75157.88374221325,
                 "flooded_access_residents": 53837.75749927759,
                 "newly_lost_residents": 21320.126242935658,
                 "newly_gained_residents": 0.0,
-                "newly_lost_share": 0.2836711889874698,
-                "newly_lost_share_unavailable_reason": null
+                "baseline_access_unavailable_reason": null
               },
               "60": {
                 "baseline_access_residents": 75170.53035321832,
                 "flooded_access_residents": 53837.75749927759,
                 "newly_lost_residents": 21332.772853940725,
                 "newly_gained_residents": 0.0,
-                "newly_lost_share": 0.2837917033936078,
-                "newly_lost_share_unavailable_reason": null
+                "baseline_access_unavailable_reason": null
               }
             }
           }
@@ -1174,6 +1125,7 @@
           "residents_losing_all_routes": 21332.772853940725,
           "residents_with_baseline_route": 75170.53035321832
         },
+        "road_criticality_inputs_unavailable_reason": null,
         "routes": {
           "services": [
             "hospital",
@@ -1182,8 +1134,7 @@
           "residents_with_baseline_route": 75170.53035321832,
           "residents_losing_all_routes": 21332.772853940725,
           "connected_residents_without_a_baseline_route": 56.446836709976196,
-          "share_losing_all_routes": 0.2837917033936078,
-          "share_unavailable_reason": null
+          "baseline_route_unavailable_reason": null
         }
       },
       "cells_in_no_unit": {
@@ -1252,24 +1203,21 @@
                   "flooded_access_residents": 5379.932127594948,
                   "newly_lost_residents": 11823.775502979755,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.6872806581510577,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "30": {
                   "baseline_access_residents": 17453.231825232506,
                   "flooded_access_residents": 5379.932127594948,
                   "newly_lost_residents": 12073.299697637558,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.6917515230722446,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "60": {
                   "baseline_access_residents": 17453.231825232506,
                   "flooded_access_residents": 5379.932127594948,
                   "newly_lost_residents": 12073.299697637558,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.6917515230722446,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 }
               }
             },
@@ -1287,24 +1235,21 @@
                   "flooded_access_residents": 5839.087675690651,
                   "newly_lost_residents": 11614.144149541855,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.6654437565397511,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "30": {
                   "baseline_access_residents": 17453.231825232506,
                   "flooded_access_residents": 5839.087675690651,
                   "newly_lost_residents": 11614.144149541855,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.6654437565397511,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "60": {
                   "baseline_access_residents": 17453.231825232506,
                   "flooded_access_residents": 5839.087675690651,
                   "newly_lost_residents": 11614.144149541855,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.6654437565397511,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 }
               }
             }
@@ -1328,6 +1273,7 @@
             "residents_losing_all_routes": 11614.144149541855,
             "residents_with_baseline_route": 17453.231825232506
           },
+          "road_criticality_inputs_unavailable_reason": null,
           "routes": {
             "services": [
               "hospital",
@@ -1336,8 +1282,7 @@
             "residents_with_baseline_route": 17453.231825232506,
             "residents_losing_all_routes": 11614.144149541855,
             "connected_residents_without_a_baseline_route": 0.0,
-            "share_losing_all_routes": 0.6654437565397511,
-            "share_unavailable_reason": null
+            "baseline_route_unavailable_reason": null
           }
         },
         {
@@ -1359,24 +1304,21 @@
                   "flooded_access_residents": 670.0241041183472,
                   "newly_lost_residents": 0.0,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.0,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "30": {
                   "baseline_access_residents": 7148.752592325211,
                   "flooded_access_residents": 6956.105574786663,
                   "newly_lost_residents": 192.64701753854752,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.026948340294413092,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "60": {
                   "baseline_access_residents": 7213.945144534111,
                   "flooded_access_residents": 7213.945144534111,
                   "newly_lost_residents": 0.0,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.0,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 }
               }
             },
@@ -1394,24 +1336,21 @@
                   "flooded_access_residents": 7010.764011472464,
                   "newly_lost_residents": 0.0,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.0,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "30": {
                   "baseline_access_residents": 7213.945144534111,
                   "flooded_access_residents": 7213.945144534111,
                   "newly_lost_residents": 0.0,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.0,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "60": {
                   "baseline_access_residents": 7213.945144534111,
                   "flooded_access_residents": 7213.945144534111,
                   "newly_lost_residents": 0.0,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.0,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 }
               }
             }
@@ -1435,6 +1374,7 @@
             "residents_losing_all_routes": 0.0,
             "residents_with_baseline_route": 7213.945144534111
           },
+          "road_criticality_inputs_unavailable_reason": null,
           "routes": {
             "services": [
               "hospital",
@@ -1443,8 +1383,7 @@
             "residents_with_baseline_route": 7213.945144534111,
             "residents_losing_all_routes": 0.0,
             "connected_residents_without_a_baseline_route": 3.303007125854492,
-            "share_losing_all_routes": 0.0,
-            "share_unavailable_reason": null
+            "baseline_route_unavailable_reason": null
           }
         },
         {
@@ -1466,24 +1405,21 @@
                   "flooded_access_residents": 0.0,
                   "newly_lost_residents": 306.54498898983,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 1.0,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "30": {
                   "baseline_access_residents": 5709.620454907417,
                   "flooded_access_residents": 0.0,
                   "newly_lost_residents": 5709.620454907417,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 1.0,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "60": {
                   "baseline_access_residents": 5972.365630179644,
                   "flooded_access_residents": 0.0,
                   "newly_lost_residents": 5972.365630179644,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 1.0,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 }
               }
             },
@@ -1501,24 +1437,21 @@
                   "flooded_access_residents": 0.0,
                   "newly_lost_residents": 2963.1568821668625,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 1.0,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "30": {
                   "baseline_access_residents": 5959.719019174576,
                   "flooded_access_residents": 0.0,
                   "newly_lost_residents": 5959.719019174576,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 1.0,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "60": {
                   "baseline_access_residents": 5972.365630179644,
                   "flooded_access_residents": 0.0,
                   "newly_lost_residents": 5972.365630179644,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 1.0,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 }
               }
             }
@@ -1542,6 +1475,7 @@
             "residents_losing_all_routes": 5972.365630179644,
             "residents_with_baseline_route": 5972.365630179644
           },
+          "road_criticality_inputs_unavailable_reason": null,
           "routes": {
             "services": [
               "hospital",
@@ -1550,8 +1484,7 @@
             "residents_with_baseline_route": 5972.365630179644,
             "residents_losing_all_routes": 5972.365630179644,
             "connected_residents_without_a_baseline_route": 0.0,
-            "share_losing_all_routes": 1.0,
-            "share_unavailable_reason": null
+            "baseline_route_unavailable_reason": null
           }
         },
         {
@@ -1573,24 +1506,21 @@
                   "flooded_access_residents": 6320.404772222042,
                   "newly_lost_residents": 895.1025030612946,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.12405260904211976,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "30": {
                   "baseline_access_residents": 8609.448951303959,
                   "flooded_access_residents": 7859.651148706675,
                   "newly_lost_residents": 749.7978025972843,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.08709010377298566,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "60": {
                   "baseline_access_residents": 8609.448951303959,
                   "flooded_access_residents": 7859.651148706675,
                   "newly_lost_residents": 749.7978025972843,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.08709010377298566,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 }
               }
             },
@@ -1608,24 +1538,21 @@
                   "flooded_access_residents": 7879.223211616278,
                   "newly_lost_residents": 677.9023191332817,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.07922079870130186,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "30": {
                   "baseline_access_residents": 8609.448951303959,
                   "flooded_access_residents": 7879.751785427332,
                   "newly_lost_residents": 729.697165876627,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.08475538562385104,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "60": {
                   "baseline_access_residents": 8609.448951303959,
                   "flooded_access_residents": 7879.751785427332,
                   "newly_lost_residents": 729.697165876627,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.08475538562385104,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 }
               }
             }
@@ -1649,6 +1576,7 @@
             "residents_losing_all_routes": 729.697165876627,
             "residents_with_baseline_route": 8609.448951303959
           },
+          "road_criticality_inputs_unavailable_reason": null,
           "routes": {
             "services": [
               "hospital",
@@ -1657,8 +1585,7 @@
             "residents_with_baseline_route": 8609.448951303959,
             "residents_losing_all_routes": 729.697165876627,
             "connected_residents_without_a_baseline_route": 46.161540031433105,
-            "share_losing_all_routes": 0.08475538562385104,
-            "share_unavailable_reason": null
+            "baseline_route_unavailable_reason": null
           }
         },
         {
@@ -1680,24 +1607,21 @@
                   "flooded_access_residents": 1140.9459188580513,
                   "newly_lost_residents": 68.44662714004517,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.056595873165033464,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "30": {
                   "baseline_access_residents": 6529.838788986206,
                   "flooded_access_residents": 3660.8045927882195,
                   "newly_lost_residents": 2869.0341961979866,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.43937289861384465,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "60": {
                   "baseline_access_residents": 6558.295188009739,
                   "flooded_access_residents": 3660.8045927882195,
                   "newly_lost_residents": 2897.4905952215195,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.44180545586281056,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 }
               }
             },
@@ -1715,24 +1639,21 @@
                   "flooded_access_residents": 3360.2052711844444,
                   "newly_lost_residents": 1559.656468808651,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.3170122558791337,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "30": {
                   "baseline_access_residents": 6558.295188009739,
                   "flooded_access_residents": 3660.8045927882195,
                   "newly_lost_residents": 2897.4905952215195,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.44180545586281056,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "60": {
                   "baseline_access_residents": 6558.295188009739,
                   "flooded_access_residents": 3660.8045927882195,
                   "newly_lost_residents": 2897.4905952215195,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.44180545586281056,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 }
               }
             }
@@ -1756,6 +1677,7 @@
             "residents_losing_all_routes": 2897.4905952215195,
             "residents_with_baseline_route": 6558.295188009739
           },
+          "road_criticality_inputs_unavailable_reason": null,
           "routes": {
             "services": [
               "hospital",
@@ -1764,8 +1686,7 @@
             "residents_with_baseline_route": 6558.295188009739,
             "residents_losing_all_routes": 2897.4905952215195,
             "connected_residents_without_a_baseline_route": 6.982289552688599,
-            "share_losing_all_routes": 0.44180545586281056,
-            "share_unavailable_reason": null
+            "baseline_route_unavailable_reason": null
           }
         },
         {
@@ -1787,24 +1708,21 @@
                   "flooded_access_residents": 19009.73941358924,
                   "newly_lost_residents": 75.47516632080078,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.003954640698682495,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "30": {
                   "baseline_access_residents": 19164.54236626625,
                   "flooded_access_residents": 19089.06719994545,
                   "newly_lost_residents": 75.47516632080078,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.0039382712552350554,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "60": {
                   "baseline_access_residents": 19164.54236626625,
                   "flooded_access_residents": 19089.06719994545,
                   "newly_lost_residents": 75.47516632080078,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.0039382712552350554,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 }
               }
             },
@@ -1822,24 +1740,21 @@
                   "flooded_access_residents": 19063.473857671022,
                   "newly_lost_residents": 75.47516632080078,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.003943537663755106,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "30": {
                   "baseline_access_residents": 19164.54236626625,
                   "flooded_access_residents": 19089.06719994545,
                   "newly_lost_residents": 75.47516632080078,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.0039382712552350554,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "60": {
                   "baseline_access_residents": 19164.54236626625,
                   "flooded_access_residents": 19089.06719994545,
                   "newly_lost_residents": 75.47516632080078,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.0039382712552350554,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 }
               }
             }
@@ -1863,6 +1778,7 @@
             "residents_losing_all_routes": 75.47516632080078,
             "residents_with_baseline_route": 19164.54236626625
           },
+          "road_criticality_inputs_unavailable_reason": null,
           "routes": {
             "services": [
               "hospital",
@@ -1871,8 +1787,7 @@
             "residents_with_baseline_route": 19164.54236626625,
             "residents_losing_all_routes": 75.47516632080078,
             "connected_residents_without_a_baseline_route": 0.0,
-            "share_losing_all_routes": 0.0039382712552350554,
-            "share_unavailable_reason": null
+            "baseline_route_unavailable_reason": null
           }
         },
         {
@@ -1894,24 +1809,21 @@
                   "flooded_access_residents": 0.0,
                   "newly_lost_residents": 0.0,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": null,
-                  "newly_lost_share_unavailable_reason": "no_resident_with_baseline_access"
+                  "baseline_access_unavailable_reason": "no_resident_with_baseline_access"
                 },
                 "30": {
                   "baseline_access_residents": 3787.849869519472,
                   "flooded_access_residents": 1138.2899397015572,
                   "newly_lost_residents": 2649.559929817915,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.6994891616847632,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "60": {
                   "baseline_access_residents": 4005.1396268308163,
                   "flooded_access_residents": 3645.932029634714,
                   "newly_lost_residents": 359.20759719610214,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.08968666030760472,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 }
               }
             },
@@ -1929,24 +1841,21 @@
                   "flooded_access_residents": 2160.45265096426,
                   "newly_lost_residents": 542.0238163471222,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.2005656008121937,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "30": {
                   "baseline_access_residents": 4005.1396268308163,
                   "flooded_access_residents": 3645.932029634714,
                   "newly_lost_residents": 359.20759719610214,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.08968666030760472,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "60": {
                   "baseline_access_residents": 4005.1396268308163,
                   "flooded_access_residents": 3645.932029634714,
                   "newly_lost_residents": 359.20759719610214,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.08968666030760472,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 }
               }
             }
@@ -1970,6 +1879,7 @@
             "residents_losing_all_routes": 359.20759719610214,
             "residents_with_baseline_route": 4005.1396268308163
           },
+          "road_criticality_inputs_unavailable_reason": null,
           "routes": {
             "services": [
               "hospital",
@@ -1978,8 +1888,7 @@
             "residents_with_baseline_route": 4005.1396268308163,
             "residents_losing_all_routes": 359.20759719610214,
             "connected_residents_without_a_baseline_route": 0.0,
-            "share_losing_all_routes": 0.08968666030760472,
-            "share_unavailable_reason": null
+            "baseline_route_unavailable_reason": null
           }
         },
         {
@@ -2001,24 +1910,21 @@
                   "flooded_access_residents": 0.0,
                   "newly_lost_residents": 1476.1674485206604,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 1.0,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "30": {
                   "baseline_access_residents": 6193.561620861292,
                   "flooded_access_residents": 6007.809010207653,
                   "newly_lost_residents": 185.75261065363884,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.029991242846116647,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "60": {
                   "baseline_access_residents": 6193.561620861292,
                   "flooded_access_residents": 6044.247051537037,
                   "newly_lost_residents": 149.314569324255,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.02410802999381331,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 }
               }
             },
@@ -2036,24 +1942,21 @@
                   "flooded_access_residents": 5979.460070431232,
                   "newly_lost_residents": 162.9192159473896,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.026523796130382287,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "30": {
                   "baseline_access_residents": 6193.561620861292,
                   "flooded_access_residents": 6044.247051537037,
                   "newly_lost_residents": 149.314569324255,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.02410802999381331,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "60": {
                   "baseline_access_residents": 6193.561620861292,
                   "flooded_access_residents": 6044.247051537037,
                   "newly_lost_residents": 149.314569324255,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.02410802999381331,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 }
               }
             }
@@ -2077,6 +1980,7 @@
             "residents_losing_all_routes": 149.314569324255,
             "residents_with_baseline_route": 6193.561620861292
           },
+          "road_criticality_inputs_unavailable_reason": null,
           "routes": {
             "services": [
               "hospital",
@@ -2085,8 +1989,7 @@
             "residents_with_baseline_route": 6193.561620861292,
             "residents_losing_all_routes": 149.314569324255,
             "connected_residents_without_a_baseline_route": 0.0,
-            "share_losing_all_routes": 0.02410802999381331,
-            "share_unavailable_reason": null
+            "baseline_route_unavailable_reason": null
           }
         }
       ],
@@ -2108,24 +2011,21 @@
                 "flooded_access_residents": 32521.046336382627,
                 "newly_lost_residents": 14645.512237012386,
                 "newly_gained_residents": 0.0,
-                "newly_lost_share": 0.31050627139189674,
-                "newly_lost_share_unavailable_reason": null
+                "baseline_access_unavailable_reason": null
               },
               "30": {
                 "baseline_access_residents": 74596.84646940231,
                 "flooded_access_residents": 50091.659593731165,
                 "newly_lost_residents": 24505.18687567115,
                 "newly_gained_residents": 0.0,
-                "newly_lost_share": 0.3285016463225766,
-                "newly_lost_share_unavailable_reason": null
+                "baseline_access_unavailable_reason": null
               },
               "60": {
                 "baseline_access_residents": 75170.53035321832,
                 "flooded_access_residents": 52893.579294741154,
                 "newly_lost_residents": 22276.951058477163,
                 "newly_gained_residents": 0.0,
-                "newly_lost_share": 0.29635218687163895,
-                "newly_lost_share_unavailable_reason": null
+                "baseline_access_unavailable_reason": null
               }
             }
           },
@@ -2143,24 +2043,21 @@
                 "flooded_access_residents": 51292.66674903035,
                 "newly_lost_residents": 17595.278018265963,
                 "newly_gained_residents": 0.0,
-                "newly_lost_share": 0.2554188265842865,
-                "newly_lost_share_unavailable_reason": null
+                "baseline_access_unavailable_reason": null
               },
               "30": {
                 "baseline_access_residents": 75157.88374221325,
                 "flooded_access_residents": 53372.835479557514,
                 "newly_lost_residents": 21785.048262655735,
                 "newly_gained_residents": 0.0,
-                "newly_lost_share": 0.2898571271295645,
-                "newly_lost_share_unavailable_reason": null
+                "baseline_access_unavailable_reason": null
               },
               "60": {
                 "baseline_access_residents": 75170.53035321832,
                 "flooded_access_residents": 53372.835479557514,
                 "newly_lost_residents": 21797.694873660803,
                 "newly_gained_residents": 0.0,
-                "newly_lost_share": 0.28997660081997234,
-                "newly_lost_share_unavailable_reason": null
+                "baseline_access_unavailable_reason": null
               }
             }
           }
@@ -2184,6 +2081,7 @@
           "residents_losing_all_routes": 21797.694873660803,
           "residents_with_baseline_route": 75170.53035321832
         },
+        "road_criticality_inputs_unavailable_reason": null,
         "routes": {
           "services": [
             "hospital",
@@ -2192,8 +2090,7 @@
           "residents_with_baseline_route": 75170.53035321832,
           "residents_losing_all_routes": 21797.694873660803,
           "connected_residents_without_a_baseline_route": 56.446836709976196,
-          "share_losing_all_routes": 0.28997660081997234,
-          "share_unavailable_reason": null
+          "baseline_route_unavailable_reason": null
         }
       },
       "cells_in_no_unit": {
@@ -2256,24 +2153,21 @@
                   "flooded_access_residents": 5166.7091826200485,
                   "newly_lost_residents": 12036.998447954655,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.6996746693464093,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "30": {
                   "baseline_access_residents": 17453.231825232506,
                   "flooded_access_residents": 5166.7091826200485,
                   "newly_lost_residents": 12286.522642612457,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.703968340399259,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "60": {
                   "baseline_access_residents": 17453.231825232506,
                   "flooded_access_residents": 5166.7091826200485,
                   "newly_lost_residents": 12286.522642612457,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.703968340399259,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 }
               }
             },
@@ -2291,24 +2185,21 @@
                   "flooded_access_residents": 5637.099523901939,
                   "newly_lost_residents": 11816.132301330566,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.6770168653949656,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "30": {
                   "baseline_access_residents": 17453.231825232506,
                   "flooded_access_residents": 5637.099523901939,
                   "newly_lost_residents": 11816.132301330566,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.6770168653949656,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "60": {
                   "baseline_access_residents": 17453.231825232506,
                   "flooded_access_residents": 5637.099523901939,
                   "newly_lost_residents": 11816.132301330566,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.6770168653949656,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 }
               }
             }
@@ -2332,6 +2223,7 @@
             "residents_losing_all_routes": 11816.132301330566,
             "residents_with_baseline_route": 17453.231825232506
           },
+          "road_criticality_inputs_unavailable_reason": null,
           "routes": {
             "services": [
               "hospital",
@@ -2340,8 +2232,7 @@
             "residents_with_baseline_route": 17453.231825232506,
             "residents_losing_all_routes": 11816.132301330566,
             "connected_residents_without_a_baseline_route": 0.0,
-            "share_losing_all_routes": 0.6770168653949656,
-            "share_unavailable_reason": null
+            "baseline_route_unavailable_reason": null
           }
         },
         {
@@ -2363,24 +2254,21 @@
                   "flooded_access_residents": 670.0241041183472,
                   "newly_lost_residents": 0.0,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.0,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "30": {
                   "baseline_access_residents": 7148.752592325211,
                   "flooded_access_residents": 6956.105574786663,
                   "newly_lost_residents": 192.64701753854752,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.026948340294413092,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "60": {
                   "baseline_access_residents": 7213.945144534111,
                   "flooded_access_residents": 7213.945144534111,
                   "newly_lost_residents": 0.0,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.0,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 }
               }
             },
@@ -2398,24 +2286,21 @@
                   "flooded_access_residents": 7010.764011472464,
                   "newly_lost_residents": 0.0,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.0,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "30": {
                   "baseline_access_residents": 7213.945144534111,
                   "flooded_access_residents": 7213.945144534111,
                   "newly_lost_residents": 0.0,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.0,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "60": {
                   "baseline_access_residents": 7213.945144534111,
                   "flooded_access_residents": 7213.945144534111,
                   "newly_lost_residents": 0.0,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.0,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 }
               }
             }
@@ -2439,6 +2324,7 @@
             "residents_losing_all_routes": 0.0,
             "residents_with_baseline_route": 7213.945144534111
           },
+          "road_criticality_inputs_unavailable_reason": null,
           "routes": {
             "services": [
               "hospital",
@@ -2447,8 +2333,7 @@
             "residents_with_baseline_route": 7213.945144534111,
             "residents_losing_all_routes": 0.0,
             "connected_residents_without_a_baseline_route": 3.303007125854492,
-            "share_losing_all_routes": 0.0,
-            "share_unavailable_reason": null
+            "baseline_route_unavailable_reason": null
           }
         },
         {
@@ -2470,24 +2355,21 @@
                   "flooded_access_residents": 0.0,
                   "newly_lost_residents": 306.54498898983,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 1.0,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "30": {
                   "baseline_access_residents": 5709.620454907417,
                   "flooded_access_residents": 0.0,
                   "newly_lost_residents": 5709.620454907417,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 1.0,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "60": {
                   "baseline_access_residents": 5972.365630179644,
                   "flooded_access_residents": 0.0,
                   "newly_lost_residents": 5972.365630179644,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 1.0,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 }
               }
             },
@@ -2505,24 +2387,21 @@
                   "flooded_access_residents": 0.0,
                   "newly_lost_residents": 2963.1568821668625,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 1.0,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "30": {
                   "baseline_access_residents": 5959.719019174576,
                   "flooded_access_residents": 0.0,
                   "newly_lost_residents": 5959.719019174576,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 1.0,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "60": {
                   "baseline_access_residents": 5972.365630179644,
                   "flooded_access_residents": 0.0,
                   "newly_lost_residents": 5972.365630179644,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 1.0,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 }
               }
             }
@@ -2546,6 +2425,7 @@
             "residents_losing_all_routes": 5972.365630179644,
             "residents_with_baseline_route": 5972.365630179644
           },
+          "road_criticality_inputs_unavailable_reason": null,
           "routes": {
             "services": [
               "hospital",
@@ -2554,8 +2434,7 @@
             "residents_with_baseline_route": 5972.365630179644,
             "residents_losing_all_routes": 5972.365630179644,
             "connected_residents_without_a_baseline_route": 0.0,
-            "share_losing_all_routes": 1.0,
-            "share_unavailable_reason": null
+            "baseline_route_unavailable_reason": null
           }
         },
         {
@@ -2577,24 +2456,21 @@
                   "flooded_access_residents": 6314.142657637596,
                   "newly_lost_residents": 901.3646176457405,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.12492047797295665,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "30": {
                   "baseline_access_residents": 8609.448951303959,
                   "flooded_access_residents": 7845.145851224661,
                   "newly_lost_residents": 764.303100079298,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.08877491514291855,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "60": {
                   "baseline_access_residents": 8609.448951303959,
                   "flooded_access_residents": 7845.145851224661,
                   "newly_lost_residents": 764.303100079298,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.08877491514291855,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 }
               }
             },
@@ -2612,24 +2488,21 @@
                   "flooded_access_residents": 7864.717914134264,
                   "newly_lost_residents": 692.4076166152954,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.08091591202292951,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "30": {
                   "baseline_access_residents": 8609.448951303959,
                   "flooded_access_residents": 7865.246487945318,
                   "newly_lost_residents": 744.2024633586407,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.08644019699378393,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "60": {
                   "baseline_access_residents": 8609.448951303959,
                   "flooded_access_residents": 7865.246487945318,
                   "newly_lost_residents": 744.2024633586407,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.08644019699378393,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 }
               }
             }
@@ -2653,6 +2526,7 @@
             "residents_losing_all_routes": 744.2024633586407,
             "residents_with_baseline_route": 8609.448951303959
           },
+          "road_criticality_inputs_unavailable_reason": null,
           "routes": {
             "services": [
               "hospital",
@@ -2661,8 +2535,7 @@
             "residents_with_baseline_route": 8609.448951303959,
             "residents_losing_all_routes": 744.2024633586407,
             "connected_residents_without_a_baseline_route": 46.161540031433105,
-            "share_losing_all_routes": 0.08644019699378393,
-            "share_unavailable_reason": null
+            "baseline_route_unavailable_reason": null
           }
         },
         {
@@ -2684,24 +2557,21 @@
                   "flooded_access_residents": 1139.8612720370293,
                   "newly_lost_residents": 69.5312739610672,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.057492725741652324,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "30": {
                   "baseline_access_residents": 6529.838788986206,
                   "flooded_access_residents": 3572.496940791607,
                   "newly_lost_residents": 2957.341848194599,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.45289660951242916,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "60": {
                   "baseline_access_residents": 6558.295188009739,
                   "flooded_access_residents": 3572.496940791607,
                   "newly_lost_residents": 2985.798247218132,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.4552704874701194,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 }
               }
             },
@@ -2719,24 +2589,21 @@
                   "flooded_access_residents": 3324.36612790823,
                   "newly_lost_residents": 1595.4956120848656,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.3242968393024607,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "30": {
                   "baseline_access_residents": 6558.295188009739,
                   "flooded_access_residents": 3572.496940791607,
                   "newly_lost_residents": 2985.798247218132,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.4552704874701194,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "60": {
                   "baseline_access_residents": 6558.295188009739,
                   "flooded_access_residents": 3572.496940791607,
                   "newly_lost_residents": 2985.798247218132,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.4552704874701194,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 }
               }
             }
@@ -2760,6 +2627,7 @@
             "residents_losing_all_routes": 2985.798247218132,
             "residents_with_baseline_route": 6558.295188009739
           },
+          "road_criticality_inputs_unavailable_reason": null,
           "routes": {
             "services": [
               "hospital",
@@ -2768,8 +2636,7 @@
             "residents_with_baseline_route": 6558.295188009739,
             "residents_losing_all_routes": 2985.798247218132,
             "connected_residents_without_a_baseline_route": 6.982289552688599,
-            "share_losing_all_routes": 0.4552704874701194,
-            "share_unavailable_reason": null
+            "baseline_route_unavailable_reason": null
           }
         },
         {
@@ -2791,24 +2658,21 @@
                   "flooded_access_residents": 19009.73941358924,
                   "newly_lost_residents": 75.47516632080078,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.003954640698682495,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "30": {
                   "baseline_access_residents": 19164.54236626625,
                   "flooded_access_residents": 19089.06719994545,
                   "newly_lost_residents": 75.47516632080078,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.0039382712552350554,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "60": {
                   "baseline_access_residents": 19164.54236626625,
                   "flooded_access_residents": 19089.06719994545,
                   "newly_lost_residents": 75.47516632080078,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.0039382712552350554,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 }
               }
             },
@@ -2826,24 +2690,21 @@
                   "flooded_access_residents": 19063.473857671022,
                   "newly_lost_residents": 75.47516632080078,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.003943537663755106,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "30": {
                   "baseline_access_residents": 19164.54236626625,
                   "flooded_access_residents": 19089.06719994545,
                   "newly_lost_residents": 75.47516632080078,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.0039382712552350554,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "60": {
                   "baseline_access_residents": 19164.54236626625,
                   "flooded_access_residents": 19089.06719994545,
                   "newly_lost_residents": 75.47516632080078,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.0039382712552350554,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 }
               }
             }
@@ -2867,6 +2728,7 @@
             "residents_losing_all_routes": 75.47516632080078,
             "residents_with_baseline_route": 19164.54236626625
           },
+          "road_criticality_inputs_unavailable_reason": null,
           "routes": {
             "services": [
               "hospital",
@@ -2875,8 +2737,7 @@
             "residents_with_baseline_route": 19164.54236626625,
             "residents_losing_all_routes": 75.47516632080078,
             "connected_residents_without_a_baseline_route": 0.0,
-            "share_losing_all_routes": 0.0039382712552350554,
-            "share_unavailable_reason": null
+            "baseline_route_unavailable_reason": null
           }
         },
         {
@@ -2898,24 +2759,21 @@
                   "flooded_access_residents": 0.0,
                   "newly_lost_residents": 0.0,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": null,
-                  "newly_lost_share_unavailable_reason": "no_resident_with_baseline_access"
+                  "baseline_access_unavailable_reason": "no_resident_with_baseline_access"
                 },
                 "30": {
                   "baseline_access_residents": 3787.849869519472,
                   "flooded_access_residents": 1138.2899397015572,
                   "newly_lost_residents": 2649.559929817915,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.6994891616847632,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "60": {
                   "baseline_access_residents": 4005.1396268308163,
                   "flooded_access_residents": 3642.093462854624,
                   "newly_lost_residents": 363.0461639761925,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.09064507053489752,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 }
               }
             },
@@ -2933,24 +2791,21 @@
                   "flooded_access_residents": 2156.6140841841698,
                   "newly_lost_residents": 545.8623831272125,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.20198598941743076,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "30": {
                   "baseline_access_residents": 4005.1396268308163,
                   "flooded_access_residents": 3642.093462854624,
                   "newly_lost_residents": 363.0461639761925,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.09064507053489752,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "60": {
                   "baseline_access_residents": 4005.1396268308163,
                   "flooded_access_residents": 3642.093462854624,
                   "newly_lost_residents": 363.0461639761925,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.09064507053489752,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 }
               }
             }
@@ -2974,6 +2829,7 @@
             "residents_losing_all_routes": 363.0461639761925,
             "residents_with_baseline_route": 4005.1396268308163
           },
+          "road_criticality_inputs_unavailable_reason": null,
           "routes": {
             "services": [
               "hospital",
@@ -2982,8 +2838,7 @@
             "residents_with_baseline_route": 4005.1396268308163,
             "residents_losing_all_routes": 363.0461639761925,
             "connected_residents_without_a_baseline_route": 0.0,
-            "share_losing_all_routes": 0.09064507053489752,
-            "share_unavailable_reason": null
+            "baseline_route_unavailable_reason": null
           }
         },
         {
@@ -3005,24 +2860,21 @@
                   "flooded_access_residents": 0.0,
                   "newly_lost_residents": 1476.1674485206604,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 1.0,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "30": {
                   "baseline_access_residents": 6193.561620861292,
                   "flooded_access_residents": 6004.585493326187,
                   "newly_lost_residents": 188.97612753510475,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.030511705397196852,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "60": {
                   "baseline_access_residents": 6193.561620861292,
                   "flooded_access_residents": 6041.023534655571,
                   "newly_lost_residents": 152.5380862057209,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.02462849254489351,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 }
               }
             },
@@ -3040,24 +2892,21 @@
                   "flooded_access_residents": 5976.2365535497665,
                   "newly_lost_residents": 166.14273282885551,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.027048595516935052,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "30": {
                   "baseline_access_residents": 6193.561620861292,
                   "flooded_access_residents": 6041.023534655571,
                   "newly_lost_residents": 152.5380862057209,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.02462849254489351,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 },
                 "60": {
                   "baseline_access_residents": 6193.561620861292,
                   "flooded_access_residents": 6041.023534655571,
                   "newly_lost_residents": 152.5380862057209,
                   "newly_gained_residents": 0.0,
-                  "newly_lost_share": 0.02462849254489351,
-                  "newly_lost_share_unavailable_reason": null
+                  "baseline_access_unavailable_reason": null
                 }
               }
             }
@@ -3081,6 +2930,7 @@
             "residents_losing_all_routes": 152.5380862057209,
             "residents_with_baseline_route": 6193.561620861292
           },
+          "road_criticality_inputs_unavailable_reason": null,
           "routes": {
             "services": [
               "hospital",
@@ -3089,8 +2939,7 @@
             "residents_with_baseline_route": 6193.561620861292,
             "residents_losing_all_routes": 152.5380862057209,
             "connected_residents_without_a_baseline_route": 0.0,
-            "share_losing_all_routes": 0.02462849254489351,
-            "share_unavailable_reason": null
+            "baseline_route_unavailable_reason": null
           }
         }
       ],
@@ -3112,24 +2961,21 @@
                 "flooded_access_residents": 32300.47663000226,
                 "newly_lost_residents": 14866.081943392754,
                 "newly_gained_residents": 0.0,
-                "newly_lost_share": 0.31518267164351027,
-                "newly_lost_share_unavailable_reason": null
+                "baseline_access_unavailable_reason": null
               },
               "30": {
                 "baseline_access_residents": 74596.84646940231,
                 "flooded_access_residents": 49772.40018239617,
                 "newly_lost_residents": 24824.44628700614,
                 "newly_gained_residents": 0.0,
-                "newly_lost_share": 0.33278144401437243,
-                "newly_lost_share_unavailable_reason": null
+                "baseline_access_unavailable_reason": null
               },
               "60": {
                 "baseline_access_residents": 75170.53035321832,
                 "flooded_access_residents": 52570.48131662607,
                 "newly_lost_residents": 22600.049036592245,
                 "newly_gained_residents": 0.0,
-                "newly_lost_share": 0.3006503869321797,
-                "newly_lost_share_unavailable_reason": null
+                "baseline_access_unavailable_reason": null
               }
             }
           },
@@ -3147,24 +2993,21 @@
                 "flooded_access_residents": 51033.272072821856,
                 "newly_lost_residents": 17854.67269447446,
                 "newly_gained_residents": 0.0,
-                "newly_lost_share": 0.25918428477997996,
-                "newly_lost_share_unavailable_reason": null
+                "baseline_access_unavailable_reason": null
               },
               "30": {
                 "baseline_access_residents": 75157.88374221325,
                 "flooded_access_residents": 53060.97229462862,
                 "newly_lost_residents": 22096.91144758463,
                 "newly_gained_residents": 0.0,
-                "newly_lost_share": 0.2940065678721826,
-                "newly_lost_share_unavailable_reason": null
+                "baseline_access_unavailable_reason": null
               },
               "60": {
                 "baseline_access_residents": 75170.53035321832,
                 "flooded_access_residents": 53060.97229462862,
                 "newly_lost_residents": 22109.558058589697,
                 "newly_gained_residents": 0.0,
-                "newly_lost_share": 0.29412534346504193,
-                "newly_lost_share_unavailable_reason": null
+                "baseline_access_unavailable_reason": null
               }
             }
           }
@@ -3188,6 +3031,7 @@
           "residents_losing_all_routes": 22109.558058589697,
           "residents_with_baseline_route": 75170.53035321832
         },
+        "road_criticality_inputs_unavailable_reason": null,
         "routes": {
           "services": [
             "hospital",
@@ -3196,8 +3040,7 @@
           "residents_with_baseline_route": 75170.53035321832,
           "residents_losing_all_routes": 22109.558058589697,
           "connected_residents_without_a_baseline_route": 56.446836709976196,
-          "share_losing_all_routes": 0.29412534346504193,
-          "share_unavailable_reason": null
+          "baseline_route_unavailable_reason": null
         }
       },
       "cells_in_no_unit": {
@@ -3219,7 +3062,7 @@
       "id": "E5-OP2",
       "point": "A unit where nobody had baseline access to a service, or nobody had a baseline route.",
       "signed_files_say": "The access gap is counted 'only for people who had access at baseline' and road criticality divides by the residents with a baseline route. Nothing on a zero denominator.",
-      "what_this_task_does": "Writes the counts, a share of null and a reason code. No value is put in its place. floodguard.normalisation refuses such a unit in the same way.",
+      "what_this_task_does": "Writes the counts and a reason code. No value is put in the place of the missing ratio. floodguard.normalisation refuses such a unit in the same way.",
       "for_the_owners": "What such a unit gets in task E8: no component, or a stated value."
     },
     {
@@ -3240,8 +3083,8 @@
       "id": "E5-OP5",
       "point": "Which planning context the walking service uses.",
       "signed_files_say": "The DDPM located shelter service is walking, 30 minutes (v1a pitch_level_adds, v1b facility_sets, owner choice 7). The E4 build of record is a vehicle context, and decision R13 accepted a compute window for that build only.",
-      "what_this_task_does": "Uses a walking context built by the unchanged E4 builder (travel mode walking: 5 km/h on OSM roads and paths where walking is not prohibited) when one is supplied, and says whether it is a build of record or a candidate. The vehicle context is never walked.",
-      "for_the_owners": "A walking build of record, or their acceptance of the candidate that was used."
+      "what_this_task_does": "Uses a walking context built by the unchanged E4 builder (travel mode walking: 5 km/h on OSM roads and paths where walking is not prohibited) when one is supplied, and says whether it is a build of record or a candidate. The vehicle context is never walked. A candidate was built by this task's lane without a declared compute window, which is outside what plan row E5 names; the builder keeps a candidate's receipt outside Git, so the run that uses it writes a report of that build into outputs/planning_v1 and registers it. Tables that rest on a candidate are marked as not usable by task E8.",
+      "for_the_owners": "A walking build of record in a declared compute window they accept (plan 5 item 1; decision R13 covers the vehicle build only), with its receipt in outputs/planning_v1; then a new run of this task. Until then the shelter tables are not inputs of task E8."
     },
     {
       "id": "E5-OP6",
@@ -3256,11 +3099,20 @@
       "signed_files_say": "Plan 3.1 P4: calculate_total_access unchanged, run twice, on the original and the modified edges. The protocols name no function.",
       "what_this_task_does": "Both runs use one multi-source tree per service (floodguard.critical_links), which gives the travel times of calculate_total_access; tests and a check on the hospital service of the real context compare the two.",
       "for_the_owners": "Nothing, unless the per-destination runs of calculate_total_access are wanted as the record."
+    },
+    {
+      "id": "E5-OP8",
+      "point": "Ratios of the counts.",
+      "signed_files_say": "Protocol v1a: road criticality is '100 x residents with a baseline route to any hospital or main road who lose all routes / those residents'; the access gap is the 'baseline-access-weighted mean of newly-lost access shares'. Plan row E5 names the access difference and a per-tambon table; the components belong to task E8.",
+      "what_this_task_does": "Writes counts of residents and no ratio of them. The ratio of the two route counts is the road-criticality component divided by 100. A service's newly-lost share is one step from the access gap: it equals that component divided by 100 wherever the services have the same share, and at a long threshold it can equal the route ratio. The first run of this task wrote both ratios for each tambon; the run that replaced it writes neither, and its receipt says so.",
+      "for_the_owners": "Whether the per-service newly-lost share is wanted from this task as a descriptive figure, or comes from task E8 with the components; and whether the first table, which is in the Git history, needs more than the note in the receipt that replaced it."
     }
   ],
   "not_computed": [
     "access-gap component (0-100)",
+    "the newly-lost share of a service (newly lost / baseline access) and the weighted mean of those shares",
     "road-criticality component (0-100)",
+    "the share of residents with a baseline route who lose all routes (it is the road-criticality component divided by 100)",
     "any other component",
     "FPPS",
     "A-E class",
@@ -3290,7 +3142,7 @@
   "limitations": [
     "One flood level is run: the layer as provided. The minus and plus levels, the corroborated shelter set and the population vintage are axes of the ensemble (plan task E10) and are not run here.",
     "A resident whose cell does not snap to the graph within 250 m has no modelled access in either run and is in no numerator and no denominator; the tables give their number per tambon.",
-    "A unit where nobody had baseline access, or nobody had a baseline route, has a share of null with a reason code. The protocols state no value for it (open point E5-OP2).",
+    "A unit where nobody had baseline access, or nobody had a baseline route, has its counts and a reason code. The protocols state no value for it (open point E5-OP2).",
     "The permissive level closes every intersected edge, however short the stretch inside the extent; the strict level closes an edge only when half of it is inside. The three levels are reported side by side and none is a central estimate of what was passable.",
     "Routes stay inside the routing context of the case. Roads and destinations outside it are not seen.",
     "The third-party satellite imagery UNOSAT and GISTDA used to make the product is not relicensed by these files, and UNOSAT and GISTDA do not endorse FloodGuard or its use of the product."

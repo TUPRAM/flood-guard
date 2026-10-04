@@ -59,6 +59,9 @@ def test_the_registry_is_a_list_of_the_records_that_exist() -> None:
         assert (ROOT / entry.record_path).is_file(), entry.record_path
     assert REGISTERED_RECORDS[0].record_path == rights_basis.RIGHTS_BASIS_4009_PATH.as_posix()
     assert RightsRegistry(ROOT).input_ids() == tuple(sorted([PRODUCT_4009, SENTINEL2_AUTOMATED_TRACK]))
+    # Each entry says what kind of source data its record is a record of. None is a record of Sentinel-1 data.
+    assert [entry.source for entry in REGISTERED_RECORDS] == [rights.SOURCE_PRODUCT_4009, rights.SOURCE_SENTINEL2]
+    assert rights.SOURCE_SENTINEL1 not in {entry.source for entry in REGISTERED_RECORDS}
 
 
 def test_the_confirmed_4009_record_allows_use_and_says_under_what_terms() -> None:
@@ -74,7 +77,8 @@ def test_the_confirmed_4009_record_allows_use_and_says_under_what_terms() -> Non
     assert grant.rights_level == PUBLIC_LEVEL and "season envelope only" in grant.rights_level_basis
     as_json = grant.as_record()
     assert json.loads(json.dumps(as_json)) == as_json
-    assert as_json["record_status"] == "confirmed" and as_json["not_legal_advice"] is True
+    assert as_json["record_status"] == committed_record()["record_status"] == "confirmed" and as_json["not_legal_advice"] is True
+    assert as_json["source"] == rights.SOURCE_PRODUCT_4009
 
 
 @pytest.mark.parametrize("layer", [LAYER_22_OCT, ANALYSIS_EXTENT, None])
@@ -148,10 +152,32 @@ def test_the_unsigned_sentinel2_legal_notice_record_is_refused() -> None:
         RightsRegistry(ROOT).require_use(SENTINEL2_AUTOMATED_TRACK)
 
 
+def test_a_record_covers_only_the_kind_of_source_data_it_is_registered_for(tmp_path: Path) -> None:
+    """A caller that reads Sentinel-1 data is not covered by the record of another source, confirmed or not."""
+
+    registry = RightsRegistry(ROOT)
+    assert registry.require_use(PRODUCT_4009, layer=ACCUMULATED, source=rights.SOURCE_PRODUCT_4009).rights_level == PUBLIC_LEVEL
+    for input_id in (PRODUCT_4009, SENTINEL2_AUTOMATED_TRACK):
+        with pytest.raises(RightsRefusedError, match="does not cover a use of copernicus_sentinel1 data"):
+            registry.require_use(input_id, source=rights.SOURCE_SENTINEL1)
+    with pytest.raises(RightsRefusedError, match="no rights record is registered"):
+        registry.require_use("copernicus_sentinel1_own_radar_candidates", source=rights.SOURCE_SENTINEL1)
+    # An entry that does not say what it is a record of covers no use that names a source.
+    unnamed = invented_registry(tmp_path, signed_generic_record())
+    with pytest.raises(RightsRefusedError, match="a record of an unnamed source"):
+        unnamed.require_use("invented_input", source=rights.SOURCE_SENTINEL1)
+    named = invented_registry(tmp_path, signed_generic_record(), source=rights.SOURCE_SENTINEL1)
+    grant = named.require_use("invented_input", source=rights.SOURCE_SENTINEL1)
+    assert grant.source == rights.SOURCE_SENTINEL1 and grant.as_record()["source"] == rights.SOURCE_SENTINEL1
+
+
 def signed_generic_record() -> dict:
     return {
         "schema": "floodguard.test_rights_basis.v1",
         "record_id": "invented_record_v1",
+        "record_status": "confirmed",
+        "owner_confirmation": {"status": "confirmed", "required_from": ["An owner"], "confirmed_by": ["An owner"],
+                               "confirmed_on": "2026-10-04"},
         "source": "An invented source",
         "legal_notice_title": "An invented legal notice",
         "legal_notice_url": "https://example.org/notice",
@@ -164,9 +190,9 @@ def signed_generic_record() -> dict:
     }
 
 
-def invented_registry(root: Path, record: dict) -> RightsRegistry:
+def invented_registry(root: Path, record: dict, source: str = "") -> RightsRegistry:
     write_record(root, record, "docs/invented_rights.json")
-    return RightsRegistry(root, (RegisteredRecord("invented_input", "docs/invented_rights.json", "an invented input"),))
+    return RightsRegistry(root, (RegisteredRecord("invented_input", "docs/invented_rights.json", "an invented input", source),))
 
 
 def test_a_signed_record_of_another_schema_allows_local_use_only(tmp_path: Path) -> None:
@@ -175,6 +201,8 @@ def test_a_signed_record_of_another_schema_allows_local_use_only(tmp_path: Path)
     assert grant.rights_level == LOCAL_LEVEL and grant.attribution == "Contains invented data"
     assert grant.licence == {"name": "An invented legal notice", "url": "https://example.org/notice"}
     assert grant.record_id == "invented_record_v1" and grant.share_alike is None
+    assert grant.confirmed_by == ("An owner",) and grant.confirmed_on == "2026-10-04"
+    assert grant.as_record()["record_status"] == "confirmed" and "confirmed by the owners" in grant.rights_level_basis
     with pytest.raises(RightsRefusedError, match="rights level 'local'"):
         registry.require_public_write("invented_input")
     with pytest.raises(RightsRefusedError, match="names no source archive"):
@@ -190,6 +218,15 @@ def test_a_signed_record_of_another_schema_allows_local_use_only(tmp_path: Path)
         ({"official_warning": True}, "not an official warning"),
         ({"can_feed_decision_layer": True}, "not an official warning"),
         ({"legal_notice_title": ""}, "no licence and no legal notice"),
+        # The flags alone do not confirm a record: it must say so wherever the product 4009 record does.
+        ({"record_status": "draft_pending_owner_confirmation"}, "not confirmed by the owners"),
+        ({"record_status": None}, "not confirmed by the owners"),
+        ({"owner_confirmation": {"status": "pending", "confirmed_by": [], "confirmed_on": None}}, "not confirmed by the owners"),
+        ({"owner_confirmation": None}, "not confirmed by the owners"),
+        ({"owner_confirmation": {"status": "confirmed", "confirmed_by": []}}, "names nobody who confirmed it"),
+        ({"owner_confirmation": {"status": "confirmed", "confirmed_by": [" "]}}, "names nobody who confirmed it"),
+        ({"owner_confirmation": {"status": "confirmed", "required_from": ["Putu", "Rachmania"], "confirmed_by": ["Putu"]}},
+         "is missing: Rachmania"),
     ],
 )
 def test_a_record_of_another_schema_is_refused_when_it_lacks_what_a_use_needs(tmp_path: Path, change: dict, message: str) -> None:
@@ -198,9 +235,26 @@ def test_a_record_of_another_schema_is_refused_when_it_lacks_what_a_use_needs(tm
         registry.require_use("invented_input")
 
 
+def test_a_record_with_both_flags_true_and_its_confirmation_pending_is_refused(tmp_path: Path) -> None:
+    """The record of another schema as it would be before the owners confirm it, with the two flags set too early."""
+
+    record = {**signed_generic_record(), "record_status": "draft_pending_owner_confirmation",
+              "owner_confirmation": {"status": "pending", "required_from": ["Putu", "Rachmania"], "confirmed_by": [], "confirmed_on": None}}
+    assert record["signed_by_human"] is True and record["human_rights_clearance"] is True
+    registry = invented_registry(tmp_path, record)
+    for call in (registry.require_use, registry.require_public_write):
+        with pytest.raises(RightsRefusedError, match="not confirmed by the owners"):
+            call("invented_input")
+    # The product 4009 record under another schema name takes the same path, and is refused while it is pending.
+    renamed = {**pending(committed_record()), "schema": "floodguard.another_schema.v1", "signed_by_human": True,
+               "human_rights_clearance": True}
+    with pytest.raises(RightsRefusedError, match="not confirmed by the owners"):
+        invented_registry(tmp_path, renamed).require_use("invented_input", layer=ACCUMULATED)
+
+
 def test_a_record_of_another_schema_may_name_its_licence(tmp_path: Path) -> None:
     record = {**signed_generic_record(), "licence": {"name": "CC BY 4.0", "url": "https://creativecommons.org/licenses/by/4.0/"},
-              "share_alike": "none", "owner_confirmation": {"confirmed_by": ["Putu"], "confirmed_on": "2026-10-04"}}
+              "share_alike": "none", "owner_confirmation": {"status": "confirmed", "confirmed_by": ["Putu"], "confirmed_on": "2026-10-04"}}
     grant = invented_registry(tmp_path, record).require_use("invented_input", layer="one")
     assert grant.licence["name"] == "CC BY 4.0" and grant.layer == "one"
     assert grant.confirmed_by == ("Putu",) and grant.confirmed_on == "2026-10-04" and grant.share_alike == "none"

@@ -13,7 +13,11 @@ Every loader does the same six things, each as the signed files state it:
 
 1. **Rights.** :class:`floodguard.rights.RightsRegistry` must allow the use before a file is opened, and the
    source file must be the one the rights record names. The grant, with its rights level, is in the input record.
-2. **Repair.** Invalid polygon parts are repaired with ``make_valid`` and counted.
+   Each layer that is read has its own grant: the flood layer and the product footprint can be at different
+   levels, each written layer carries the level of the layer it comes from, and a file that holds figures of
+   both is at the minimum of the two (protocol v1a, guardrail GR6).
+2. **Repair.** Invalid polygon parts are repaired with ``make_valid`` and counted, for each frame as the parts
+   that reach the frame.
 3. **Clip.** The extent is clipped to every frame of the case: the reporting frame (the units of the case) and
    the routing context (the corridor polygon of protocol v1b).
 4. **One-pixel levels.** Protocol v1b, ``ensemble_grid`` (owner choice 2): 20 m for the minus and the plus
@@ -62,7 +66,7 @@ from shapely.geometry.base import BaseGeometry
 from floodguard import normalisation, rights, season_envelope
 
 FLOOD_INPUTS_VERSION = "flood_inputs_v1"
-INPUT_RECORD_SCHEMA = "floodguard.flood_input.v1"
+INPUT_RECORD_SCHEMA = "floodguard.flood_input.v2"
 LAYER_SCHEMA = "floodguard.flood_input_layer.v1"
 RADAR_RECEIPT_SCHEMA = "floodguard.radar_candidate_receipt.v1"
 INPUT_RECORD_NAME = "input_record.json"
@@ -101,9 +105,23 @@ RADAR_RECEIPT_KEYS: tuple[str, ...] = (
 ``minus`` and ``plus`` as well when ``level_kind`` is ``threshold`` (the lane that made the candidate ran its
 three thresholds). ``encoding`` is ``{"flood": 1, "not_flood": 0, "no_answer": <the raster's nodata value>}``.
 Each raster is one band of square cells in EPSG:32647. ``acquisition_date`` is the calendar date of the
-acquisition as protocol v1a writes it; ``rights_input_id`` is the key of the candidate's source data in
-``floodguard.rights.REGISTERED_RECORDS``.
+acquisition as protocol v1a writes it.
+
+``rights_input_id`` is the key of the candidate's source data in ``floodguard.rights.REGISTERED_RECORDS``. The
+receipt chooses among the records of Sentinel-1 data and nothing else: protocol v1a gives case O1 the input
+acquisition "Sentinel-1, 16 Sep 2024 06:16 ICT", so :func:`load_o1` refuses a key whose registry entry is a
+record of any other source, whatever the receipt says.
+
+``level_kind`` must be the kind protocol v1b states for the candidate (``ensemble_grid``,
+``t2_levels_by_input``): ``threshold`` for M1-v2, M1-literal and the A6-prime classifier, ``one_pixel`` for the
+UN-SPIDER reproduction. ``level_parameter`` is the candidate lane's own statement of its levels; it is recorded
+beside the words of protocol v1b and is not parsed (open point E1-OP11).
 """
+
+O1_SOURCE_WORD = "Sentinel-1"
+"""The word of protocol v1a ``case_portfolio`` (case O1, ``input_acquisition``) that names the source of the candidates."""
+ONE_PIXEL_WORDING, THRESHOLD_WORDING = "one pixel", "threshold"
+"""The words of protocol v1b ``t2_levels_by_input`` that say which kind of levels a T2 input has."""
 
 LEVEL_RULE = (
     "Protocol v1b, ensemble_grid.core_axes (flood_input_single_state), owner choice 2: 20 m for the minus and the "
@@ -125,22 +143,38 @@ STANDARD_CONFIDENCE_BASIS_4009 = (
 OPEN_POINTS: tuple[Mapping[str, str], ...] = (
     {
         "id": "E1-OP1",
-        "point": "Rights level of the product 4009 layer of 22 October 2024 (case O2) and of the analysis extent.",
+        "point": "Rights level of the product 4009 layer of 22 October 2024 (case O2) and of the analysis extent, and "
+                 "what a local level allows in Git.",
         "signed_files_say": "The rights record names CHIANGRAI_20240801_20241012_AccumulatedFlood as its layer in scope, "
                             "and decision R6 allows publication 'as a season envelope only (D3)'. Plan 4.1 rows 3 and 4 "
-                            "expect one record for both layers.",
+                            "expect one record for both layers. Guardrail GR6 speaks of apps/web/public/ only, and plan "
+                            "3.1 keeps pitch variants outside Git; neither says whether a figure derived from a "
+                            "local-level layer may be committed.",
         "what_this_module_does": "Reads both layers under the confirmed record (decision D2 covers the product). The "
                                  "accumulated layer is at level public; every other layer of the archive is at level "
-                                 "local, and a public write of it is refused.",
-        "for_the_owners": "Whether the record covers the 22 October layer and the analysis extent for publication.",
+                                 "local, and a public write of it is refused. Each written layer carries the level of "
+                                 "the layer it comes from, so the footprint layers of case SE1 are local although its "
+                                 "flood extents are public. Layers stay outside Git; the run receipt in Git holds "
+                                 "whole-frame areas and part counts of the local-level layers and says so.",
+        "for_the_owners": "Whether the record covers the 22 October layer and the analysis extent for publication; and "
+                          "whether local means not in Git. If it does, the whole-frame figures of the 22 October layer "
+                          "and of the analysis extent leave the committed receipts and the README (they are in the Git "
+                          "history since the first commit of this task). If it does not, the per-tambon tables of case "
+                          "O2 can be committed with their licence block.",
     },
     {
         "id": "E1-OP2",
         "point": "No rights record exists for the source data of the own radar candidates (case O1).",
-        "signed_files_say": "Nothing. The only other record in the repository covers Sentinel-2 scenes and is not "
-                            "signed by a human.",
-        "what_this_module_does": "load_o1 refuses a candidate whose rights_input_id has no confirmed record.",
-        "for_the_owners": "A signed record for the Copernicus Sentinel-1 data the candidates are made from.",
+        "signed_files_say": "Protocol v1a gives case O1 the input acquisition 'Sentinel-1, 16 Sep 2024 06:16 ICT'. No "
+                            "rights record for Sentinel-1 data exists. The only other record in the repository covers "
+                            "Sentinel-2 scenes and is not signed by a human.",
+        "what_this_module_does": "load_o1 takes the rights record from the registry entry the receipt names only when "
+                                 "that entry is registered as a record of Sentinel-1 data, and the record is confirmed. "
+                                 "A receipt that names any other registered record, the product 4009 record included, "
+                                 "is refused. No entry is such a record today, so every candidate is refused.",
+        "for_the_owners": "A signed record for the Copernicus Sentinel-1 data the candidates are made from, registered "
+                          "as such; and whether a candidate of the A6-prime classifier needs a record for its training "
+                          "data as well, which this module does not ask for.",
     },
     {
         "id": "E1-OP3",
@@ -203,6 +237,31 @@ OPEN_POINTS: tuple[Mapping[str, str], ...] = (
                                  "confirmed, so nothing is refused today.",
         "for_the_owners": "Which of the two applies, should a later record be pending.",
     },
+    {
+        "id": "E1-OP10",
+        "point": "Which layer of the product archive is the product footprint.",
+        "signed_files_say": "Plan 3.1 (stage P1) gives a flood input a footprint, and protocol v1a speaks of 'the "
+                            "product footprint or analysis extent' (confidence condition) and of 'the 4009 analysis "
+                            "extent' (case SE2-dist). Neither names a layer, and the rights record names the accumulated "
+                            "layer only.",
+        "what_this_module_does": "Reads CHIANGRAI_20240801_20241022_AnalysisExtent as the footprint of both flood "
+                                 "layers. The name is a constant of this module (ANALYSIS_EXTENT_LAYER_4009), chosen "
+                                 "because it is the only analysis-extent layer of the Chiang Rai layers in the archive. "
+                                 "The layer has its own grant, at level local.",
+        "for_the_owners": "Whether this is the layer the protocols mean, and whether the rights record should name it.",
+    },
+    {
+        "id": "E1-OP11",
+        "point": "The levels of a threshold candidate are checked by kind, not by value.",
+        "signed_files_say": "Protocol v1b t2_levels_by_input states the levels of each T2 input in words: thresholds "
+                            "for M1-v2 (-1 / 0 / +1 dB), M1-literal (-1 / 0 / +1 dB) and the A6-prime classifier (0.4 / "
+                            "0.5 / 0.6), one pixel for the UN-SPIDER reproduction.",
+        "what_this_module_does": "Refuses a candidate whose level_kind is not the kind the protocol states for it. The "
+                                 "receipt's level_parameter is free text: it is recorded beside the protocol's words and "
+                                 "its values are not compared with them.",
+        "for_the_owners": "Whether the candidate receipt should carry its three thresholds as numbers, so that the "
+                          "loader can refuse a candidate made at other levels.",
+    },
 )
 """Points the signed files leave open for this task. Each is reported; none is decided here."""
 
@@ -234,6 +293,25 @@ class FloodInputRules:
     routing_geometry_file: Mapping[str, str]
     boundary_file_sha256: str
     protocol_sha256: Mapping[str, str | None]
+    o1_levels: Mapping[str, Mapping[str, str]] = field(default_factory=dict)
+    """For each flood input of case O1: the ``kind`` of its levels and the words protocol v1b ``stated`` for it."""
+
+
+def level_kind_stated(candidate: str, stated: Any) -> str:
+    """Return the kind of levels protocol v1b states for a T2 input: ``threshold`` or ``one_pixel``.
+
+    Protocol v1b (``ensemble_grid``, ``t2_levels_by_input``) states the levels in words. An input whose words
+    say "threshold" has three threshold levels; an input whose words say "one pixel" has the spatial levels.
+
+    Raises:
+        FloodInputError: when the words say neither, or both.
+    """
+
+    text = str(stated)
+    kinds = [kind for kind, wording in ((THRESHOLD_LEVELS, THRESHOLD_WORDING), (ONE_PIXEL_LEVELS, ONE_PIXEL_WORDING)) if wording in text]
+    if len(kinds) != 1:
+        raise FloodInputError(f"protocol v1b states the levels of {candidate!r} in other words than this code reads: {text!r}")
+    return kinds[0]
 
 
 def rules_from_protocols(v1a: Mapping[str, Any], v1b: Mapping[str, Any],
@@ -259,6 +337,14 @@ def rules_from_protocols(v1a: Mapping[str, Any], v1b: Mapping[str, Any],
         relations = tuple(v1a["date_rule"]["temporal_relation_values"])
         if set(relations) != {EVENT_ALIGNED, DATED_OTHER, SEASON_WINDOW}:
             raise FloodInputError("protocol v1a declares other temporal relations than this module implements")
+        cases = {str(case["id"]): MappingProxyType(dict(case)) for case in v1a["case_portfolio"]["cases"]}
+        stated_levels = axis["t2_levels_by_input"]
+        o1_levels: dict[str, Mapping[str, str]] = {}
+        for candidate in (cases["O1"]["flood_inputs"] if "O1" in cases else ()):
+            if candidate not in stated_levels:
+                raise FloodInputError(f"protocol v1b states no levels for the O1 flood input {candidate!r}")
+            o1_levels[str(candidate)] = MappingProxyType({
+                "kind": level_kind_stated(str(candidate), stated_levels[candidate]), "stated": str(stated_levels[candidate])})
         return FloodInputRules(
             one_pixel_m=next(iter(distances)),
             recency_window_days=int(v1a["date_rule"]["recency_window_days"]),
@@ -268,7 +354,8 @@ def rules_from_protocols(v1a: Mapping[str, Any], v1b: Mapping[str, Any],
             reporting_units=tuple(str(unit) for unit in v1a["case_portfolio"]["mae_sai_reporting_frame"]["units"]),
             accumulated_layer=MappingProxyType(dict(product["accumulated_layer"])),
             layer_22_oct=MappingProxyType(dict(product["layer_22_oct"])),
-            cases=MappingProxyType({str(case["id"]): MappingProxyType(dict(case)) for case in v1a["case_portfolio"]["cases"]}),
+            cases=MappingProxyType(cases),
+            o1_levels=MappingProxyType(o1_levels),
             standard_4009_sentence=str(wording["standard_4009_sentence"]),
             product_4009_credit=str(wording["product_4009_credit"]),
             routing_geometry_file=MappingProxyType({key: str(v1b["corridor_polygon"]["geometry_file"][key]) for key in ("path", "sha256")}),
@@ -446,6 +533,12 @@ def repair_product(product: Any, frames: Sequence[Frame], *, source_crs: str, re
     at the plus level. Those parts are repaired with ``make_valid`` in the source coordinates, projected, and
     repaired once more if the projection left one invalid.
 
+    Reading by bounding box takes in parts that never touch a frame, so the record counts twice. The counts
+    of the parts read say what was repaired. The counts for each frame are measured on the geometry itself:
+    the parts that intersect the frame, the parts that lie within ``reach_m`` of it (those are the parts whose
+    plus level reaches the frame), and the repaired ones among each. A change notice states the second kind
+    (:func:`repair_count_of_layer`), because a notice speaks of the parts in its file.
+
     Returns:
         The extent (the union of the repaired parts) and the repair record: the method, the counts for the
         whole product, the counts for the parts read, and the counts for each frame.
@@ -461,31 +554,73 @@ def repair_product(product: Any, frames: Sequence[Frame], *, source_crs: str, re
         "parts_repaired": 0,
         "parts_repaired_after_projection": 0,
         "reach_m": reach_m,
-        "by_frame": {frame.name: {"parts_within_reach": 0, "parts_repaired": 0} for frame in frames},
-        "note": "A part is read when its bounding box comes within reach_m of the bounding box of a frame. "
-                "parts_repaired counts the invalid ones among the parts read; source_parts_invalid counts every "
-                "invalid part of the layer.",
+        "by_frame": {frame.name: {"parts_read": 0, "parts_read_repaired": 0, "parts_intersecting": 0,
+                                  "parts_intersecting_repaired": 0, "parts_within_reach": 0,
+                                  "parts_within_reach_repaired": 0} for frame in frames},
+        "note": "A part is read when its bounding box comes within reach_m of the bounding box of a frame, so "
+                "parts_read holds parts that never touch the frame; parts_repaired counts the invalid ones among the "
+                "parts read, and source_parts_invalid counts every invalid part of the layer. For each frame, "
+                "parts_intersecting and parts_within_reach are measured on the repaired geometry itself: the parts "
+                "that intersect the frame, and the parts within reach_m of it. A change notice states the repaired "
+                "ones among these.",
     }
     if not len(parts):
         return MultiPolygon(), record
     invalid = ~shapely.is_valid(parts)
     bounds = shapely.bounds(project(parts, source_crs, ANALYSIS_CRS))
     read = np.zeros(len(parts), dtype=bool)
+    near_by_frame: dict[str, np.ndarray] = {}
     for frame in frames:
         west, south, east, north = frame.geometry.bounds
         near = ((bounds[:, 0] <= east + reach_m) & (bounds[:, 2] >= west - reach_m)
                 & (bounds[:, 1] <= north + reach_m) & (bounds[:, 3] >= south - reach_m))
-        record["by_frame"][frame.name] = {"parts_within_reach": int(near.sum()), "parts_repaired": int((near & invalid).sum())}
+        near_by_frame[frame.name] = near
         read |= near
     record.update(source_parts_invalid=int(invalid.sum()), parts_read=int(read.sum()), parts_repaired=int((read & invalid).sum()))
     if not read.any():
         return MultiPolygon(), record
-    projected = project(polygon_parts(shapely.make_valid(parts[read])), source_crs, ANALYSIS_CRS)
+    # One repaired geometry per part read, in the order of the parts, so that a part can be counted for a frame.
+    repaired = project(shapely.make_valid(parts[read]), source_crs, ANALYSIS_CRS)
+    was_invalid = invalid[read]
+    for frame in frames:
+        near = near_by_frame[frame.name][read]
+        shapely.prepare(frame.geometry)
+        intersecting = near & shapely.intersects(frame.geometry, repaired)
+        within = (intersecting | (near & shapely.dwithin(frame.geometry, repaired, reach_m))) if reach_m > 0 else intersecting
+        record["by_frame"][frame.name] = {
+            "parts_read": int(near.sum()),
+            "parts_read_repaired": int((near & was_invalid).sum()),
+            "parts_intersecting": int(intersecting.sum()),
+            "parts_intersecting_repaired": int((intersecting & was_invalid).sum()),
+            "parts_within_reach": int(within.sum()),
+            "parts_within_reach_repaired": int((within & was_invalid).sum()),
+        }
+    projected = polygon_parts(repaired)
     still_invalid = ~shapely.is_valid(projected)
     if still_invalid.any():
         record["parts_repaired_after_projection"] = int(still_invalid.sum())
         projected = polygon_parts(shapely.make_valid(projected))
     return as_multipolygon(shapely.union_all(projected)), record
+
+
+def repair_count_of_layer(repair: Mapping[str, Any], *, frame: str, level: str | None) -> int:
+    """Return the repair count a change notice states for one written layer: the repaired parts that are in it.
+
+    For the minus level, the level as provided and a footprint these are the repaired parts that intersect
+    the frame. For the plus level they are the repaired parts within the one-pixel distance of the frame: a
+    part that lies just outside the frame reaches it once it is grown. A candidate with threshold levels has
+    one repair record per level.
+
+    Raises:
+        FloodInputError: when the repair record holds no counts for the frame.
+    """
+
+    counts = repair.get("by_level", {}).get(level, repair) if level is not None else repair
+    by_frame = counts.get("by_frame", {})
+    if frame not in by_frame:
+        raise FloodInputError(f"the repair record holds no counts for frame {frame}")
+    return int(by_frame[frame]["parts_within_reach_repaired" if level == PLUS and "by_level" not in repair
+                               else "parts_intersecting_repaired"])
 
 
 def one_pixel_levels(extent: BaseGeometry, one_pixel_m: float) -> dict[str, MultiPolygon]:
@@ -739,6 +874,29 @@ def change_notice(*, clip_geometry: str, repair_count: int, source_crs: str, cha
     )
 
 
+FLOOD_EXTENT, PRODUCT_FOOTPRINT = "flood_extent", "product_footprint"
+"""What a written layer is: an extent of the flood layer, or the footprint of the product."""
+
+
+def lineage_rights(grant: rights.RightsGrant, footprint_grant: rights.RightsGrant | None) -> dict[str, Any]:
+    """Return the rights level of each kind of file an input writes (protocol v1a, guardrail GR6).
+
+    The level of an output is the minimum across its lineage. A flood extent comes from the flood layer only
+    and a footprint layer from the footprint layer only, so each has the level of its layer. The input
+    record holds figures of both, so it has the minimum of the two.
+    """
+
+    levels = [grant.rights_level] + ([footprint_grant.rights_level] if footprint_grant is not None else [])
+    return {
+        "rule": "Protocol v1a, guardrail GR6: the rights level of an output is the minimum across its lineage.",
+        FLOOD_EXTENT: grant.rights_level,
+        PRODUCT_FOOTPRINT: footprint_grant.rights_level if footprint_grant is not None else None,
+        "input_record": rights.minimum_level(levels),
+        "note": "A flood extent comes from the flood layer only and a footprint layer from the footprint layer only. "
+                "The input record holds figures of both, so it is at the minimum of the two.",
+    }
+
+
 def build_flood_input(
     product: Any,
     frames: Sequence[Frame],
@@ -748,6 +906,7 @@ def build_flood_input(
     grant: rights.RightsGrant,
     source_crs: str = WGS84_CRS,
     footprint: Any | None = None,
+    footprint_grant: rights.RightsGrant | None = None,
     water: PermanentWater | None = None,
     levels: Mapping[str, MultiPolygon] | None = None,
     repair: Mapping[str, Any] | None = None,
@@ -761,16 +920,19 @@ def build_flood_input(
         frames: The frames of the case, in EPSG:32647.
         spec: What the input is.
         rules: The parameters of the signed protocols.
-        grant: The rights grant of the input, from the registry.
+        grant: The rights grant of the flood layer, from the registry.
         source_crs: The coordinate system of ``product`` and ``footprint``.
         footprint: The product footprint or analysis extent, in ``source_crs``, when the product has one.
+        footprint_grant: The rights grant of the footprint layer, from the registry. A footprint is a layer of
+            its own, so it needs its own grant; its level can be lower than that of the flood layer.
         water: The permanent water of the reporting frame, when it was read.
         levels: The three levels in EPSG:32647, when the lane that made the input ran them itself
             (a radar candidate with threshold levels). ``product`` is then not read.
         repair: The repair record that goes with ``levels``.
 
     Raises:
-        FloodInputError: for no frame, a repeated frame name or a water layer of another frame.
+        FloodInputError: for no frame, a repeated frame name, a water layer of another frame, or a footprint
+            without its grant.
     """
 
     names = [frame.name for frame in frames]
@@ -778,6 +940,8 @@ def build_flood_input(
         raise FloodInputError("a flood input needs its frames, each once")
     if water is not None and water.frame not in names:
         raise FloodInputError("the permanent water was read for a frame that is not among the frames of the case")
+    if (footprint is None) != (footprint_grant is None):
+        raise FloodInputError("a footprint is a layer of its own: it is given with the rights grant of its layer, or not at all")
     if levels is None:
         extent, repair_record = repair_product(product, frames, source_crs=source_crs, reach_m=rules.one_pixel_m)
         states = one_pixel_levels(extent, rules.one_pixel_m)
@@ -804,9 +968,10 @@ def build_flood_input(
 
     footprints: dict[str, MultiPolygon] = {}
     footprint_record: dict[str, Any] | None = None
-    if footprint is not None:
+    if footprint is not None and footprint_grant is not None:
         whole, footprint_repair = repair_product(footprint, frames, source_crs=source_crs, reach_m=0.0)
-        footprint_record = {"repair": footprint_repair, "by_frame": {}}
+        footprint_record = {"layer": footprint_grant.layer, "rights": footprint_grant.as_record(),
+                            "repair": footprint_repair, "by_frame": {}}
         for frame in frames:
             footprints[frame.name] = clip_to_frame(whole, frame)
             footprint_record["by_frame"][frame.name] = {
@@ -830,6 +995,7 @@ def build_flood_input(
         "source": dict(spec.source),
         "geometry_kind": spec.geometry_kind,
         "rights": grant.as_record(),
+        "lineage_rights": lineage_rights(grant, footprint_grant),
         "confidence_class": "low",
         "confidence_basis": spec.confidence_basis,
         "assumptions": list(spec.assumptions),
@@ -990,7 +1156,9 @@ def load_product_4009(case_id: str, frames: Sequence[Frame], *, rules: FloodInpu
     """Load the product 4009 layer of case ``SE1`` or ``O2`` for the frames of the case.
 
     The rights registry is asked before any file is opened, and the archive must have the size and SHA-256 the
-    rights record names. The credit of the record must be the credit protocol v1a states.
+    rights record names. The credit of the record must be the credit protocol v1a states. The footprint layer
+    is asked for separately and keeps its own grant: the registry holds it at ``local`` whatever the level of
+    the flood layer (open points E1-OP1 and E1-OP10).
 
     Raises:
         floodguard.rights.RightsRefusedError: when the registry refuses the use or the archive differs.
@@ -1007,12 +1175,13 @@ def load_product_4009(case_id: str, frames: Sequence[Frame], *, rules: FloodInpu
     record, _sha256 = registry.read_record(rights.PRODUCT_4009)
     geometry, attributes = read_product_layer(archive_path, layer, geodatabase)
     spec = product_4009_spec(case_id, rules, attributes, record["archive"], str(record["product"]["event_code"]))
-    footprint = None
+    footprint, footprint_grant = None, None
     if footprint_layer is not None:
-        registry.require_use(rights.PRODUCT_4009, layer=footprint_layer)
+        footprint_grant = registry.require_use(rights.PRODUCT_4009, layer=footprint_layer)
         footprint, _attributes = read_product_layer(archive_path, footprint_layer, geodatabase)
         spec = replace(spec, source=MappingProxyType({**spec.source, "footprint_layer": footprint_layer}))
-    return build_flood_input(geometry, frames, spec=spec, rules=rules, grant=grant, footprint=footprint, water=water)
+    return build_flood_input(geometry, frames, spec=spec, rules=rules, grant=grant, footprint=footprint,
+                             footprint_grant=footprint_grant, water=water)
 
 
 def load_se1(frames: Sequence[Frame], **arguments: Any) -> FloodInput:
@@ -1097,19 +1266,28 @@ def load_o1(receipt_path: Path | str, frames: Sequence[Frame], *, rules: FloodIn
     with ``one_pixel`` it names one raster of 20 m cells and the levels are the 20 m buffers of its polygonised
     flood cells (open point E1-OP5). The candidate is a T2 input: an own unqualified candidate, low confidence.
 
+    Two things are not taken from the receipt alone. The kind of levels must be the kind protocol v1b states
+    for the candidate (``t2_levels_by_input``). And the rights record must be a record of Sentinel-1 data,
+    because protocol v1a says that is what the candidates of case O1 are made from: the receipt's
+    ``rights_input_id`` chooses among such records, and a receipt that names the record of another source
+    (the product 4009 record, for one) is refused before any raster is opened.
+
     Args:
         receipt_path: The candidate's receipt; raster paths are relative to it.
         frames: The frames of the case.
         rules: The parameters of the signed protocols.
-        registry: The rights registry; the receipt's ``rights_input_id`` must have a confirmed record.
+        registry: The rights registry; the receipt's ``rights_input_id`` must be registered as a record of
+            Sentinel-1 data (``floodguard.rights.SOURCE_SENTINEL1``) and the record must be confirmed.
         water: The permanent water of the reporting frame, when it was read.
         closure_polygon_connectivity: 4 or 8, to also build the closure extents with polygons under 5 pixels
             dropped; ``None`` builds none, because protocol v1b does not fix the neighbourhood.
 
     Raises:
-        floodguard.rights.RightsRefusedError: when the registry refuses the use.
-        FloodInputError: for a receipt that lacks a key, names a candidate protocol v1a does not, was made
-            under other protocol files, or a raster that differs from the receipt or from the interface.
+        floodguard.rights.RightsRefusedError: when the registry refuses the use: no record is registered under
+            the name, the record is not a record of Sentinel-1 data, or it is not confirmed.
+        FloodInputError: for a receipt that lacks a key, names a candidate protocol v1a does not, declares
+            another kind of levels than protocol v1b states for the candidate, was made under other protocol
+            files, or a raster that differs from the receipt or from the interface.
     """
 
     receipt_file = Path(receipt_path)
@@ -1133,8 +1311,18 @@ def load_o1(receipt_path: Path | str, frames: Sequence[Frame], *, rules: FloodIn
     wanted = set(LEVELS) if kind == THRESHOLD_LEVELS else {AS_PROVIDED} if kind == ONE_PIXEL_LEVELS else None
     if wanted is None or set(receipt["rasters"]) != wanted:
         raise FloodInputError("level_kind is threshold (three rasters) or one_pixel (the as_provided raster only)")
+    stated = rules.o1_levels.get(str(receipt["candidate_id"]))
+    if stated is None:
+        raise FloodInputError(f"the rules hold no levels of protocol v1b for {receipt['candidate_id']!r}")
+    if kind != stated["kind"]:
+        raise FloodInputError(
+            f"protocol v1b states the levels of {receipt['candidate_id']!r} as {stated['stated']!r} ({stated['kind']} "
+            f"levels); the receipt declares level_kind {kind!r}")
+    if O1_SOURCE_WORD not in str(case.get("input_acquisition", "")):
+        raise FloodInputError("protocol v1a does not say that the candidates of case O1 are made from Sentinel-1 data, "
+                              "so this code cannot say which rights record covers one")
 
-    grant = registry.require_use(str(receipt["rights_input_id"]))
+    grant = registry.require_use(str(receipt["rights_input_id"]), source=rights.SOURCE_SENTINEL1)
 
     grids: dict[str, dict[str, Any]] = {}
     files: dict[str, Any] = {}
@@ -1211,6 +1399,7 @@ def load_o1(receipt_path: Path | str, frames: Sequence[Frame], *, rules: FloodIn
             "own_candidate": True,
             "level_kind": kind,
             "level_parameter": receipt["level_parameter"],
+            "levels_stated_by_protocol_v1b": stated["stated"],
             "level_rule": level_rule,
             "levels_nested": nested,
             "coverage": coverage,
@@ -1293,18 +1482,31 @@ def decode_layer(data: bytes) -> tuple[MultiPolygon, dict[str, Any]]:
 def layer_properties(flood_input: FloodInput, *, level: str | None, frame: Frame, what: str, change: str) -> dict[str, Any]:
     """Return the properties one written layer carries: what it is, its rights, its change notice and its record fields.
 
+    A layer carries the rights of the layer it comes from: an extent those of the flood layer, a footprint
+    those of the footprint layer, which the registry can hold at a lower level. Its change notice counts the
+    repaired parts that are in the layer (:func:`repair_count_of_layer`).
+
     Args:
         flood_input: The input the layer belongs to.
         level: ``minus``, ``as_provided`` or ``plus`` for an extent; ``None`` for a footprint.
         frame: The frame the layer is clipped to.
         what: ``flood_extent`` or ``product_footprint``.
         change: What the layer changed besides the clip, the repair and the projection.
+
+    Raises:
+        FloodInputError: when ``what`` is neither, a footprint is asked for of an input that has none, or the
+            level does not go with ``what``.
     """
 
     record = flood_input.record
-    rights_record = record["rights"]
-    repair = record["repair"] if what == "flood_extent" else record["footprint"]["repair"]
-    repaired = repair.get("by_frame", {}).get(frame.name, {}).get("parts_repaired", repair.get("parts_repaired", 0))
+    if what not in (FLOOD_EXTENT, PRODUCT_FOOTPRINT) or (what == FLOOD_EXTENT) != (level in LEVELS) or (
+            what == PRODUCT_FOOTPRINT and level is not None):
+        raise FloodInputError("a layer is a flood extent at one of the three levels, or a product footprint with no level")
+    if what == PRODUCT_FOOTPRINT and not record.get("footprint"):
+        raise FloodInputError("the input has no product footprint")
+    rights_record = record["rights"] if what == FLOOD_EXTENT else record["footprint"]["rights"]
+    repair = record["repair"] if what == FLOOD_EXTENT else record["footprint"]["repair"]
+    repaired = repair_count_of_layer(repair, frame=frame.name, level=level)
     properties = {
         "layer_schema": LAYER_SCHEMA,
         "what": what,
@@ -1330,9 +1532,11 @@ def layer_properties(flood_input: FloodInput, *, level: str | None, frame: Frame
         "licence": rights_record["licence"],
         "credit": rights_record["attribution"],
         "rights_level": rights_record["rights_level"],
+        "rights_level_basis": rights_record["rights_level_basis"],
+        "rights_layer": rights_record["layer"],
         "rights_record": {"path": rights_record["record_path"], "sha256": rights_record["record_sha256"]},
         "change_notice": change_notice(
-            clip_geometry=frame.label, repair_count=int(repaired), change=change, credit=rights_record["attribution"],
+            clip_geometry=frame.label, repair_count=repaired, change=change, credit=rights_record["attribution"],
             licence_name=rights_record["licence"]["name"], geometry_kind=record["geometry_kind"],
             source_crs=WGS84_CRS if record["geometry_kind"] == "vector" else ANALYSIS_CRS),
         "protocol_sha256": record["protocol_sha256"],

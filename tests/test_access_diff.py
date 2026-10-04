@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import copy
 import json
+import math
 from pathlib import Path
 import random
 from typing import Any
@@ -131,8 +132,9 @@ def test_newly_lost_is_counted_only_for_residents_with_baseline_access() -> None
     diff = access_diff.service_diff(cells_of(population), baseline, flooded, [15, 30, 60])
 
     at_15 = diff["thresholds_minutes"]["15"]
-    assert at_15["baseline_access_residents"] == 100.0 and at_15["newly_lost_residents"] == 100.0
-    assert at_15["newly_lost_share"] == 1.0, "the 40 residents without baseline access are not in the denominator"
+    assert at_15["newly_lost_residents"] == 100.0, "the 40 residents who had no access within 15 minutes are not counted as losing it"
+    assert at_15["baseline_access_residents"] == 100.0, "and they are not in the denominator the component divides by"
+    assert set(at_15) == THRESHOLD_KEYS and at_15["baseline_access_unavailable_reason"] is None
     at_30 = diff["thresholds_minutes"]["30"]
     assert at_30["baseline_access_residents"] == 140.0 and at_30["newly_lost_residents"] == 140.0
     assert diff["residents"] == 147.0 and diff["residents_not_connected_to_the_graph"] == 7.0
@@ -148,7 +150,7 @@ def test_a_resident_without_baseline_access_who_gets_worse_is_in_neither_count()
 
     at_15 = access_diff.service_diff(cells_of(population), baseline, flooded, [15])["thresholds_minutes"]["15"]
 
-    assert (at_15["baseline_access_residents"], at_15["newly_lost_residents"], at_15["newly_lost_share"]) == (50.0, 0.0, 0.0)
+    assert (at_15["baseline_access_residents"], at_15["newly_lost_residents"], at_15["flooded_access_residents"]) == (50.0, 0.0, 50.0)
 
 
 def test_diff_logic_separates_delay_loss_route_loss_and_no_change() -> None:
@@ -182,7 +184,7 @@ def test_diff_logic_separates_delay_loss_route_loss_and_no_change() -> None:
     assert at_30["baseline_access_residents"] == 46.0
     assert at_30["flooded_access_residents"] == 13.0
     assert at_30["newly_lost_residents"] == 33.0 and at_30["newly_gained_residents"] == 0.0
-    assert at_30["newly_lost_share"] == pytest.approx(33.0 / 46.0)
+    assert set(at_30) == THRESHOLD_KEYS, "counts and a reason code: no ratio of the counts"
     at_60 = diff["thresholds_minutes"]["60"]
     assert at_60["newly_lost_residents"] == 8.0, "a longer route within the threshold is not a lost access"
     assert diff["thresholds_minutes"]["15"]["baseline_access_residents"] == 10.0
@@ -190,7 +192,7 @@ def test_diff_logic_separates_delay_loss_route_loss_and_no_change() -> None:
 
     routes = access_diff.route_diff(cells_of(population), {"hospital": baseline}, {"hospital": flooded})
     assert routes["residents_with_baseline_route"] == 46.0 and routes["residents_losing_all_routes"] == 8.0
-    assert routes["share_losing_all_routes"] == pytest.approx(8.0 / 46.0)
+    assert set(routes) == ROUTE_KEYS and routes["baseline_route_unavailable_reason"] is None
 
 
 def test_a_zero_denominator_is_reported_with_a_reason_and_no_value() -> None:
@@ -203,21 +205,18 @@ def test_a_zero_denominator_is_reported_with_a_reason_and_no_value() -> None:
     diff = access_diff.service_diff(cells_of(population), baseline, flooded, [30])
     at_30 = diff["thresholds_minutes"]["30"]
     assert at_30["baseline_access_residents"] == 0.0 and at_30["newly_lost_residents"] == 0.0
-    assert at_30["newly_lost_share"] is None
-    assert at_30["newly_lost_share_unavailable_reason"] == access_diff.NO_BASELINE_ACCESS
+    assert at_30["baseline_access_unavailable_reason"] == access_diff.NO_BASELINE_ACCESS
 
     routes = access_diff.route_diff(cells_of(population), {"hospital": baseline}, {"hospital": flooded})
-    assert routes["residents_with_baseline_route"] == 0.0 and routes["share_losing_all_routes"] is None
-    assert routes["share_unavailable_reason"] == access_diff.NO_BASELINE_ROUTE
+    assert routes["residents_with_baseline_route"] == 0.0 and routes["residents_losing_all_routes"] == 0.0
+    assert routes["baseline_route_unavailable_reason"] == access_diff.NO_BASELINE_ROUTE
     assert routes["connected_residents_without_a_baseline_route"] == 60.0
 
-    assert access_diff.newly_lost_share(0.0, 0.0) == (None, access_diff.NO_BASELINE_ACCESS)
-    assert access_diff.all_routes_lost_share(0.0, 0.0) == (None, access_diff.NO_BASELINE_ROUTE)
-    assert access_diff.newly_lost_share(1.0, 4.0) == (0.25, None)
-    with pytest.raises(access_diff.AccessDiffError, match="only for residents who had access"):
-        access_diff.newly_lost_share(5.0, 4.0)
-    with pytest.raises(access_diff.AccessDiffError, match="finite number"):
-        access_diff.newly_lost_share(float("nan"), 4.0)
+    for name in ("newly_lost_share", "all_routes_lost_share"):
+        assert not hasattr(access_diff, name), "the module has no function that returns a ratio of the counts"
+    for residents in (float("nan"), -1.0, True):
+        with pytest.raises(access_diff.AccessDiffError, match="finite number"):
+            access_diff.service_diff([{"population_id": "island", "residents": residents}], baseline, flooded, [30])
 
 
 def test_an_empty_unit_gets_a_row_with_reasons_and_no_share() -> None:
@@ -231,8 +230,9 @@ def test_an_empty_unit_gets_a_row_with_reasons_and_no_share() -> None:
     empty = next(row for row in table["units"] if row["unit_id"] == "U2")
     assert empty["residents"] == 0.0 and empty["demand_cells"] == 0
     assert empty["access_gap_inputs_unavailable_reason"] == access_diff.NO_BASELINE_ACCESS
-    assert empty["routes"]["share_unavailable_reason"] == access_diff.NO_BASELINE_ROUTE
-    assert empty["access"]["hospital"]["thresholds_minutes"]["30"]["newly_lost_share"] is None
+    assert empty["routes"]["baseline_route_unavailable_reason"] == access_diff.NO_BASELINE_ROUTE
+    assert empty["road_criticality_inputs_unavailable_reason"] == access_diff.NO_BASELINE_ROUTE
+    assert empty["access"]["hospital"]["thresholds_minutes"]["30"]["baseline_access_unavailable_reason"] == access_diff.NO_BASELINE_ACCESS
 
 
 def test_a_cell_whose_node_loses_every_edge_has_lost_its_routes_and_is_still_connected() -> None:
@@ -280,7 +280,6 @@ def test_a_gain_is_reported_and_never_set_against_a_loss() -> None:
 
     assert at_30["newly_lost_residents"] == 10.0 and at_30["newly_gained_residents"] == 6.0
     assert at_30["baseline_access_residents"] == 10.0 and at_30["flooded_access_residents"] == 6.0
-    assert at_30["newly_lost_share"] == 1.0
 
 
 def test_losing_all_routes_needs_every_service_to_be_out_of_reach() -> None:
@@ -301,7 +300,7 @@ def test_losing_all_routes_needs_every_service_to_be_out_of_reach() -> None:
     assert routes["residents_with_baseline_route"] == 55.0
     assert routes["residents_losing_all_routes"] == 20.0, "a route to a main road, or a much longer one, is still a route"
     assert routes["connected_residents_without_a_baseline_route"] == 9.0
-    assert routes["share_losing_all_routes"] == pytest.approx(20.0 / 55.0)
+    assert set(routes) == ROUTE_KEYS and routes["baseline_route_unavailable_reason"] is None
 
 
 def _random_case(seed: int) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
@@ -409,6 +408,17 @@ def test_a_cell_counts_for_the_unit_that_holds_its_centre() -> None:
         access_diff.demand_cells([{**population[0], "total_population": -1.0}], assignment)
 
 
+ROUTE_KEYS = {"services", "residents_with_baseline_route", "residents_losing_all_routes",
+              "connected_residents_without_a_baseline_route", "baseline_route_unavailable_reason"}
+"""What a route difference holds: counts and a reason. Their ratio is the road-criticality component / 100 and is not here."""
+THRESHOLD_KEYS = {"baseline_access_residents", "flooded_access_residents", "newly_lost_residents", "newly_gained_residents",
+                  "baseline_access_unavailable_reason"}
+"""What a service holds at one threshold: four counts and a reason code."""
+ROW_KEYS = {"unit_id", "residents", "demand_cells", "access", "access_gap_inputs", "access_gap_inputs_unavailable_reason",
+            "road_criticality_inputs", "road_criticality_inputs_unavailable_reason", "routes"}
+"""What a unit row holds. A new key is a new figure: it is added here only with the value test below in view."""
+
+
 def _two_service_table() -> tuple[dict[str, Any], tuple[access_diff.ServiceRule, ...]]:
     rules = tuple(rule for rule in access_diff.service_rules(V1A, V1B) if rule.publication_level == "public")
     cells = [
@@ -452,36 +462,114 @@ def test_unit_rows_hold_every_threshold_and_the_inputs_of_the_two_components() -
     assert second["access_gap_inputs"]["main_road_entry"]["baseline_access_residents"] == 0.0
     assert second["access_gap_inputs_unavailable_reason"] == access_diff.NO_BASELINE_ACCESS
     assert second["road_criticality_inputs"] == {"residents_losing_all_routes": 30.0, "residents_with_baseline_route": 30.0}
-    assert second["routes"]["share_losing_all_routes"] == 1.0
+    assert set(second["routes"]) == ROUTE_KEYS and second["road_criticality_inputs_unavailable_reason"] is None
+    assert set(first) == ROW_KEYS and set(second) == ROW_KEYS and set(table["whole_frame"]) == ROW_KEYS - {"unit_id"}
 
     assert table["cells_in_no_unit"]["demand_cells"] == 1 and table["cells_in_no_unit"]["residents"] == 2.0
     assert table["whole_frame"]["residents"] == 190.0
     assert table["whole_frame"]["road_criticality_inputs"]["residents_with_baseline_route"] == 182.0
 
 
-def test_no_component_value_is_in_a_row_and_the_rows_fit_frame_v1_as_they_are() -> None:
-    """The rows are inputs. The component functions of plan task E2 take them unchanged, here on invented units."""
+def _numbers(value: Any) -> list[float]:
+    """Every number a row holds, at any depth (a threshold, a count, a share)."""
 
-    table, _rules = _two_service_table()
+    if isinstance(value, bool) or value is None or isinstance(value, str):
+        return []
+    if isinstance(value, (int, float)):
+        return [float(value)]
+    if isinstance(value, dict):
+        return [number for child in value.values() for number in _numbers(child)]
+    return [number for child in value for number in _numbers(child)]
 
-    def keys(value: Any) -> set[str]:
-        if isinstance(value, dict):
-            return set(value) | {key for child in value.values() for key in keys(child)}
-        if isinstance(value, list):
-            return {key for child in value for key in keys(child)}
-        return set()
 
-    assert not {key for key in keys(table) if key.endswith("_0_100") or "fpps" in key or "action_class" in key}
+def _holds(row: dict[str, Any], value: float) -> bool:
+    return any(math.isclose(number, value, rel_tol=1e-9, abs_tol=1e-12) for number in _numbers(row))
 
+
+def _row_of_distinct_figures() -> dict[str, Any]:
+    """One invented unit whose two services lose different shares and whose counts are all different.
+
+    Hospital at 30 minutes: 187 residents with baseline access, 87 newly lost. Main-road entry at 15 minutes:
+    187 with baseline access, 37 newly lost. Routes: 207 residents with a baseline route, 37 of whom lose every
+    route. At 60 minutes the 37 are the only residents who lose the hospital, out of 207 with access: there a
+    service's newly-lost share would be the route ratio.
+    """
+
+    rules = tuple(rule for rule in access_diff.service_rules(V1A, V1B) if rule.publication_level == "public")
+    cells = [{"population_id": name, "unit_id": "U1", "residents": residents}
+             for name, residents in (("a", 100.0), ("b", 50.0), ("c", 37.0), ("d", 20.0))]
+    baseline = {"hospital": {"a": 20.0, "b": 28.0, "c": 29.0, "d": 45.0}, "main_road_entry": {"a": 5.0, "b": 14.0, "c": 10.0, "d": 16.0}}
+    flooded = {"hospital": {"a": 22.0, "b": 33.0, "c": None, "d": 50.0}, "main_road_entry": {"a": 5.0, "b": 14.5, "c": None, "d": 17.0}}
+    return access_diff.unit_rows(cells, ["U1"], rules, baseline, flooded)["units"][0]
+
+
+def test_no_value_in_a_row_equals_a_component_of_the_same_inputs() -> None:
+    """The rows are inputs. No number in a row is a component of frame v1, or a component divided by 100.
+
+    The components are computed here, on an invented unit, by the functions of plan task E2 from the two
+    mappings the row carries for them; then every number of the row is compared with them, and with every
+    ratio the component functions make on the way. The check is on values, not on key names: a row that held
+    a ratio of its counts under any name fails it.
+    """
+
+    row = _row_of_distinct_figures()
     frame = normalisation.load_planning_frame(DOCS / "planning_protocol_v1a.json", DOCS / "planning_protocol_v1b.json",
                                               DOCS / "RECEIPTS.jsonl")
+    criticality = normalisation.road_criticality(frame, **row["road_criticality_inputs"])
+    gap = normalisation.access_gap(frame, services=row["access_gap_inputs"])
+    assert criticality["value_0_100"] == pytest.approx(100.0 * 37.0 / 207.0) and gap["value_0_100"] == pytest.approx(100.0 * 124.0 / 374.0)
+
+    ratios = {"the route ratio": criticality["share_losing_all_routes"],
+              **{f"the newly-lost share of {service['service']}": service["newly_lost_share"] for service in gap["services"]}}
+    assert ratios == {"the route ratio": pytest.approx(37.0 / 207.0), "the newly-lost share of hospital": pytest.approx(87.0 / 187.0),
+                      "the newly-lost share of main_road_entry": pytest.approx(37.0 / 187.0)}
+    for name, component in (("road criticality", criticality["value_0_100"]), ("access gap", gap["value_0_100"])):
+        assert not _holds(row, component), f"the row holds the {name} component"
+        assert not _holds(row, component / 100.0), f"the row holds the {name} component divided by 100"
+    for name, ratio in ratios.items():
+        assert not _holds(row, ratio) and not _holds(row, 100.0 * ratio), f"the row holds {name}"
+
+    # The check can fail. A row as the first table of this task wrote it is caught twice: by the route ratio, and
+    # by the newly-lost share of the hospital at 60 minutes, which is the same number here.
+    inputs = row["road_criticality_inputs"]
+    as_first_written = {**row, "routes": {**row["routes"], "any_name": inputs["residents_losing_all_routes"] / inputs["residents_with_baseline_route"]}}
+    assert _holds(as_first_written, criticality["value_0_100"] / 100.0)
+    at_60 = row["access"]["hospital"]["thresholds_minutes"]["60"]
+    assert at_60["newly_lost_residents"] / at_60["baseline_access_residents"] == pytest.approx(criticality["value_0_100"] / 100.0)
+
+    # What a row does hold: counts of residents and of cells, and the thresholds of the services.
+    assert _holds(row, 37.0) and _holds(row, 207.0) and _holds(row, 87.0) and _holds(row, 187.0)
+    assert set(row["routes"]) == ROUTE_KEYS and set(row) == ROW_KEYS
+    for service in row["access"].values():
+        assert all(set(at_threshold) == THRESHOLD_KEYS for at_threshold in service["thresholds_minutes"].values())
+    assert not {key for key in _keys(row) if "share" in key or "ratio" in key or key.endswith("_0_100") or "fpps" in key or "action_class" in key}
+
+
+def test_the_rows_fit_frame_v1_as_they_are() -> None:
+    """The component functions of plan task E2 take the two mappings of a row unchanged, here on invented units."""
+
+    table, _rules = _two_service_table()
     first, second = table["units"]
+    frame = normalisation.load_planning_frame(DOCS / "planning_protocol_v1a.json", DOCS / "planning_protocol_v1b.json",
+                                              DOCS / "RECEIPTS.jsonl")
     gap = normalisation.access_gap(frame, services=first["access_gap_inputs"])
     assert gap["publication_level"] == "public" and gap["value_0_100"] == pytest.approx(100.0 * 100.0 / 300.0)
+    # Both services lose a third here, so each service's share would be the component divided by 100: one more
+    # reason a row holds no share.
+    assert all(service["newly_lost_share"] == pytest.approx(gap["value_0_100"] / 100.0) for service in gap["services"])
+    assert not _holds(first, gap["value_0_100"]) and not _holds(first, gap["value_0_100"] / 100.0)
     criticality = normalisation.road_criticality(frame, **second["road_criticality_inputs"])
     assert criticality["value_0_100"] == 100.0
     with pytest.raises(normalisation.NormalisationError, match="no resident had baseline access"):
         normalisation.access_gap(frame, services=second["access_gap_inputs"])
+
+
+def _keys(value: Any) -> set[str]:
+    if isinstance(value, dict):
+        return set(value) | {key for child in value.values() for key in _keys(child)}
+    if isinstance(value, list):
+        return {key for child in value for key in _keys(child)}
+    return set()
 
 
 def test_unit_rows_refuse_a_cell_of_an_unlisted_unit_and_a_missing_service() -> None:
@@ -563,7 +651,8 @@ def test_a_road_class_without_a_signed_threshold_is_refused_not_guessed() -> Non
 def test_open_points_are_reported_with_what_the_signed_files_say() -> None:
     identifiers = [point["id"] for point in access_diff.OPEN_POINTS]
 
-    assert identifiers == [f"E5-OP{index}" for index in range(1, len(identifiers) + 1)]
+    assert identifiers == [f"E5-OP{index}" for index in range(1, 9)]
+    assert "no ratio of them" in access_diff.OPEN_POINTS[-1]["what_this_task_does"]
     for point in access_diff.OPEN_POINTS:
         assert set(point) == {"id", "point", "signed_files_say", "what_this_task_does", "for_the_owners"}
         assert all(isinstance(value, str) and value.strip() for value in point.values())

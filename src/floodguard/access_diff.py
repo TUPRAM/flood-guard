@@ -14,14 +14,21 @@ unit, the counts those two definitions name:
 
 * residents with baseline access to a service within a threshold, and those among them who no longer have it
   in the flooded run (newly lost). A resident with no baseline access is never counted as losing it;
-* the newly-lost share, which is ``newly lost / baseline access``. When nobody had baseline access the share
-  is ``None`` with a reason: the protocol states no value for that case and none is made up here;
 * residents with a baseline route to any hospital or main-road entry, and those among them with no route to
   any of them in the flooded run.
 
 **These are inputs of the two components. This module computes no component value, no FPPS, no A-E class and
 no ensemble**, and it averages nothing over services: ``floodguard.normalisation.access_gap`` and
 ``road_criticality`` do that in plan task E8, from the mappings :func:`unit_rows` writes for them.
+
+**The rows hold counts of residents and no ratio of them.** How close the counts are to the components is said
+plainly, here and in every table. The road-criticality component is 100 x ``residents_losing_all_routes /
+residents_with_baseline_route``, so that ratio is not written. The access-gap component is 100 x the mean of
+the newly-lost shares of the services (``newly lost / baseline access``, at each service's access-gap
+threshold), weighted by baseline access; one service's share equals it wherever the services have the same
+share, and at a long threshold it can equal the road-criticality ratio, so no share is written either. Where
+a denominator is zero the row carries a reason code: the protocol states no value for that case and none is
+made up here (open points E5-OP2 and E5-OP8).
 
 How the two runs are made, each as the signed files and the existing code state it:
 
@@ -57,7 +64,7 @@ from floodguard import closure_rules, critical_links
 from floodguard.evidence_scenarios import CONNECTOR_SPEED_KMH, FACILITY_SNAP_LIMIT_M, POPULATION_SNAP_LIMIT_M
 
 ACCESS_DIFF_VERSION = "access_diff_v1"
-UNIT_TABLE_SCHEMA = "floodguard.access_diff_units.v1"
+UNIT_TABLE_SCHEMA = "floodguard.access_diff_units.v2"
 
 VEHICLE, WALKING = "vehicle", "walking"
 CONTEXT_TRAVEL_MODES: Mapping[str, str] = {VEHICLE: "legacy_vehicle", WALKING: "walking"}
@@ -93,8 +100,8 @@ OPEN_POINTS: tuple[Mapping[str, str], ...] = (
         "point": "A unit where nobody had baseline access to a service, or nobody had a baseline route.",
         "signed_files_say": "The access gap is counted 'only for people who had access at baseline' and road "
                             "criticality divides by the residents with a baseline route. Nothing on a zero denominator.",
-        "what_this_task_does": "Writes the counts, a share of null and a reason code. No value is put in its place. "
-                               "floodguard.normalisation refuses such a unit in the same way.",
+        "what_this_task_does": "Writes the counts and a reason code. No value is put in the place of the missing "
+                               "ratio. floodguard.normalisation refuses such a unit in the same way.",
         "for_the_owners": "What such a unit gets in task E8: no component, or a stated value.",
     },
     {
@@ -126,8 +133,14 @@ OPEN_POINTS: tuple[Mapping[str, str], ...] = (
                             "R13 accepted a compute window for that build only.",
         "what_this_task_does": "Uses a walking context built by the unchanged E4 builder (travel mode walking: 5 km/h "
                                "on OSM roads and paths where walking is not prohibited) when one is supplied, and says "
-                               "whether it is a build of record or a candidate. The vehicle context is never walked.",
-        "for_the_owners": "A walking build of record, or their acceptance of the candidate that was used.",
+                               "whether it is a build of record or a candidate. The vehicle context is never walked. A "
+                               "candidate was built by this task's lane without a declared compute window, which is "
+                               "outside what plan row E5 names; the builder keeps a candidate's receipt outside Git, so "
+                               "the run that uses it writes a report of that build into outputs/planning_v1 and "
+                               "registers it. Tables that rest on a candidate are marked as not usable by task E8.",
+        "for_the_owners": "A walking build of record in a declared compute window they accept (plan 5 item 1; decision "
+                          "R13 covers the vehicle build only), with its receipt in outputs/planning_v1; then a new run "
+                          "of this task. Until then the shelter tables are not inputs of task E8.",
     },
     {
         "id": "E5-OP6",
@@ -147,6 +160,23 @@ OPEN_POINTS: tuple[Mapping[str, str], ...] = (
                                "gives the travel times of calculate_total_access; tests and a check on the hospital "
                                "service of the real context compare the two.",
         "for_the_owners": "Nothing, unless the per-destination runs of calculate_total_access are wanted as the record.",
+    },
+    {
+        "id": "E5-OP8",
+        "point": "Ratios of the counts.",
+        "signed_files_say": "Protocol v1a: road criticality is '100 x residents with a baseline route to any hospital "
+                            "or main road who lose all routes / those residents'; the access gap is the "
+                            "'baseline-access-weighted mean of newly-lost access shares'. Plan row E5 names the access "
+                            "difference and a per-tambon table; the components belong to task E8.",
+        "what_this_task_does": "Writes counts of residents and no ratio of them. The ratio of the two route counts is "
+                               "the road-criticality component divided by 100. A service's newly-lost share is one "
+                               "step from the access gap: it equals that component divided by 100 wherever the services "
+                               "have the same share, and at a long threshold it can equal the route ratio. The first "
+                               "run of this task wrote both ratios for each tambon; the run that replaced it writes "
+                               "neither, and its receipt says so.",
+        "for_the_owners": "Whether the per-service newly-lost share is wanted from this task as a descriptive figure, "
+                          "or comes from task E8 with the components; and whether the first table, which is in the "
+                          "Git history, needs more than the note in the receipt that replaced it.",
     },
 )
 """Points the signed files leave open for this task. Each is reported; none is decided here."""
@@ -466,52 +496,20 @@ def demand_cells(population: Sequence[Mapping[str, Any]], assignment: Mapping[st
 # ---------------------------------------------------------------------------
 
 
-def newly_lost_share(newly_lost_residents: float, baseline_access_residents: float) -> tuple[float | None, str | None]:
-    """Return the newly-lost share of one service in one unit, counted only for residents with baseline access.
-
-    Returns:
-        ``(share, None)``, or ``(None, "no_resident_with_baseline_access")`` when nobody had baseline access:
-        the protocol states no share for that case.
-
-    Raises:
-        AccessDiffError: when more residents lose access than had it.
-    """
-
-    return _share(newly_lost_residents, baseline_access_residents, NO_BASELINE_ACCESS,
-                  "newly lost access is counted only for residents who had access at baseline")
-
-
-def all_routes_lost_share(residents_losing_all_routes: float, residents_with_baseline_route: float) -> tuple[float | None, str | None]:
-    """Return the share of residents with a baseline route who lose every route, or ``None`` with a reason.
-
-    Raises:
-        AccessDiffError: when more residents lose their routes than had one.
-    """
-
-    return _share(residents_losing_all_routes, residents_with_baseline_route, NO_BASELINE_ROUTE,
-                  "losing all routes is counted only for residents who had a baseline route")
-
-
-def _share(part: float, whole: float, reason: str, message: str) -> tuple[float | None, str | None]:
-    for value in (part, whole):
-        if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or value < 0:
-            raise AccessDiffError("a resident count must be a finite number, 0 or more")
-    if part > whole:
-        raise AccessDiffError(message)
-    if whole <= 0:
-        return None, reason
-    return part / whole, None
-
-
 def _checked_runs(cells: Sequence[Mapping[str, Any]], baseline: Mapping[str, float | None],
                   flooded: Mapping[str, float | None]) -> None:
-    """Refuse two runs that do not cover the same connected cells, a repeated cell and a travel time that is no time."""
+    """Refuse two runs that do not cover the same connected cells, a repeated cell, a resident count that is no
+    count and a travel time that is no time."""
 
     if set(baseline) != set(flooded):
         raise AccessDiffError("the baseline run and the flooded run must cover the same connected cells")
     identifiers = [cell["population_id"] for cell in cells]
     if len(set(identifiers)) != len(identifiers):
         raise AccessDiffError("population IDs must be unique")
+    for cell in cells:
+        residents = cell["residents"]
+        if isinstance(residents, bool) or not isinstance(residents, (int, float)) or not math.isfinite(residents) or residents < 0:
+            raise AccessDiffError("a resident count must be a finite number, 0 or more")
     for run in (baseline, flooded):
         for minutes in run.values():
             if minutes is not None and (isinstance(minutes, bool) or not isinstance(minutes, (int, float))
@@ -529,7 +527,13 @@ def service_diff(
 
     A resident has access within a threshold when the modelled time is at most the threshold. A resident is
     newly lost when they had access in the baseline run and do not have it in the flooded run. A resident
-    without baseline access is in no numerator and no denominator (requirement EQ-04).
+    without baseline access is in no numerator and no denominator (requirement EQ-04): the residents newly
+    lost are always among the residents with baseline access.
+
+    Only counts are returned. The newly-lost share (``newly_lost_residents / baseline_access_residents``) is
+    not: it is one step from the access-gap component, which task E8 computes. Where nobody had baseline
+    access the threshold carries ``baseline_access_unavailable_reason``; the protocol states no share for
+    that case.
 
     Args:
         cells: The cells of the group, each with ``population_id`` and ``residents``.
@@ -540,11 +544,11 @@ def service_diff(
     Returns:
         The residents of the group, those connected to the graph and those not, those with a route in each
         run, and per threshold: ``baseline_access_residents``, ``flooded_access_residents``,
-        ``newly_lost_residents``, ``newly_gained_residents``, ``newly_lost_share`` and
-        ``newly_lost_share_unavailable_reason``.
+        ``newly_lost_residents``, ``newly_gained_residents`` and ``baseline_access_unavailable_reason``.
 
     Raises:
-        AccessDiffError: when the runs do not cover the same cells, or a threshold is not a positive whole number.
+        AccessDiffError: when the runs do not cover the same cells, a resident count is not a finite number,
+            0 or more, or a threshold is not a positive whole number.
     """
 
     limits = tuple(thresholds_minutes)
@@ -581,15 +585,13 @@ def service_diff(
                 lost.append(cell["residents"])
             if access_after and not access_before:
                 gained.append(cell["residents"])
-        baseline_access, newly_lost = math.fsum(had), math.fsum(lost)
-        share, reason = newly_lost_share(newly_lost, baseline_access)
+        baseline_access = math.fsum(had)
         result["thresholds_minutes"][str(limit)] = {
             "baseline_access_residents": baseline_access,
             "flooded_access_residents": math.fsum(has),
-            "newly_lost_residents": newly_lost,
+            "newly_lost_residents": math.fsum(lost),
             "newly_gained_residents": math.fsum(gained),
-            "newly_lost_share": share,
-            "newly_lost_share_unavailable_reason": reason,
+            "baseline_access_unavailable_reason": NO_BASELINE_ACCESS if baseline_access <= 0 else None,
         }
     return result
 
@@ -606,10 +608,19 @@ def route_diff(
     the baseline run, whatever the time; they lose all routes when none of them can be reached in the flooded
     run. A longer route is not a lost route.
 
+    The two counts are returned and their ratio is not: 100 x the ratio is the road-criticality component,
+    which ``floodguard.normalisation.road_criticality`` computes in plan task E8. Where nobody had a baseline
+    route the result says so (``baseline_route_unavailable_reason``); the protocol states no value for that
+    case.
+
     Args:
         cells: The cells of the group, each with ``population_id`` and ``residents``.
         baseline_by_service: ``service -> cell_minutes`` of the baseline run.
         flooded_by_service: ``service -> cell_minutes`` of the flooded run, for the same services and cells.
+
+    Returns:
+        ``services``, ``residents_with_baseline_route``, ``residents_losing_all_routes``,
+        ``connected_residents_without_a_baseline_route`` and ``baseline_route_unavailable_reason``.
 
     Raises:
         AccessDiffError: when the services differ, or the runs do not cover the same connected cells.
@@ -639,14 +650,12 @@ def route_diff(
         else:
             never.append(cell["residents"])
     with_route, losing = math.fsum(had), math.fsum(lost)
-    share, reason = all_routes_lost_share(losing, with_route)
     return {
         "services": services,
         "residents_with_baseline_route": with_route,
         "residents_losing_all_routes": losing,
         "connected_residents_without_a_baseline_route": math.fsum(never),
-        "share_losing_all_routes": share,
-        "share_unavailable_reason": reason,
+        "baseline_route_unavailable_reason": NO_BASELINE_ROUTE if with_route <= 0 else None,
     }
 
 
@@ -670,8 +679,9 @@ def unit_rows(
     * ``road_criticality_inputs``: ``residents_losing_all_routes`` and ``residents_with_baseline_route``, as
       ``floodguard.normalisation.road_criticality`` takes them.
 
-    No component value is computed. Where a denominator is zero the row says so
-    (``access_gap_inputs_unavailable_reason``, ``share_unavailable_reason``).
+    No component value is computed, and the ratio of the two road-criticality counts is not written: it is the
+    component divided by 100. Where a denominator is zero the row says so
+    (``access_gap_inputs_unavailable_reason``, ``road_criticality_inputs_unavailable_reason``).
 
     Args:
         cells: The output of :func:`demand_cells`.
@@ -748,6 +758,7 @@ def unit_rows(
                 "residents_losing_all_routes": routes["residents_losing_all_routes"],
                 "residents_with_baseline_route": routes["residents_with_baseline_route"],
             },
+            "road_criticality_inputs_unavailable_reason": routes["baseline_route_unavailable_reason"],
             "routes": routes,
         }
 

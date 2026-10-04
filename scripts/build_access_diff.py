@@ -6,14 +6,18 @@ closure rule v1 (strict, central, permissive) this script makes a baseline run a
 access and writes, per tambon, the counts the signed scoring frame names:
 
 * residents with baseline access to a hospital within 30 minutes and to a main-road entry within 15 minutes,
-  by vehicle, and those among them who newly lose it (15, 30 and 60 minutes are all reported);
-* the newly-lost share, counted only for residents with baseline access (requirement EQ-04);
+  by vehicle, and those among them who newly lose it (15, 30 and 60 minutes are all reported). A resident
+  with no baseline access is never counted as losing it (requirement EQ-04);
 * residents with a baseline route to any hospital or main-road entry who lose all routes;
 * at pitch level only: the same for walking 30 minutes to a DDPM located shelter.
 
 **These tables are the inputs of the access-gap and road-criticality components for plan task E8. They are
-not the components. The script computes no component value, no FPPS, no A-E class and no ensemble.** A
-closure is a modelled assumption (``closure_basis``), not an observed closure, and nothing written here is an
+not the components. The script computes no component value, no FPPS, no A-E class and no ensemble.** The rows
+hold counts of residents and no ratio of them, and every table says how close the counts are to the
+components: the road-criticality component is 100 x the ratio of the two route counts, and the access-gap
+component is 100 x the baseline-access-weighted mean of the newly-lost shares of the services. A single
+service's share equals a component divided by 100 in some units, so no share is written either (open point
+E5-OP8). A closure is a modelled assumption (``closure_basis``), not an observed closure, and nothing written here is an
 observation of a flood, a warning of any kind or an operational product. The product 4009 layers are used as
 provided; FloodGuard did not validate them.
 
@@ -26,7 +30,9 @@ provided; FloodGuard did not validate them.
 * A walking context for the shelter service, when one is on disk: a build of the unchanged E4 builder in
   travel mode walking. The E4 build of record is a vehicle context, so the walking context is a candidate
   until the owners accept one (open point E5-OP5); the receipt says which it was. Without one, the shelter
-  service is not computed and the receipt says so.
+  service is not computed and the receipt says so. The E4 builder keeps the receipt of a candidate outside
+  Git, so a run that uses a candidate writes a report of that build into ``outputs/planning_v1/`` and
+  registers it, and marks every table that rests on it as not usable by task E8.
 * The flood inputs task E1 wrote, read back through ``floodguard.flood_inputs.read_written_input``; the
   input record and the extent must be the files the registered E1 receipt binds by SHA-256.
 * The rights registry (``floodguard.rights``): each product 4009 layer must still have a confirmed record.
@@ -36,7 +42,9 @@ provided; FloodGuard did not validate them.
 ``<external data root>/proposal_execution/planning_v1/<case>/e5_access_diff/``, beside the licence notice of
 the rights record. Every table derived from product 4009 carries CC BY-SA 4.0, the credit and a change
 notice. The run receipt is ``outputs/planning_v1/e5_access_diff_<frame>.json``; it and every table in Git are
-registered in ``outputs/planning_v1/run_register/``::
+registered in ``outputs/planning_v1/run_register/``. The receipt is committed and holds whole-frame figures of
+every case, also of a case whose flood layer the rights registry holds at ``local``; it lists those figures,
+because the signed files do not say whether they may be committed (open point E1-OP1)::
 
     python scripts/build_access_diff.py --frame mae_sai --external-data <external data root> \
         [--walking-context <context_inputs.json of a walking E4 build>] \
@@ -80,6 +88,7 @@ from floodguard.evidence_scenarios import (  # noqa: E402
 from floodguard.grade_join import JOIN_EDGE_KIND, apply_grade_joins, joins_sha256  # noqa: E402
 
 RECEIPT_SCHEMA = "floodguard.access_diff_run_receipt.v1"
+WALKING_REPORT_SCHEMA = "floodguard.walking_context_run_report.v1"
 DOCS = ROOT / "docs" / "proposal_execution"
 OUTPUT_DIR = ROOT / "outputs" / "planning_v1"
 REGISTER_DIR = OUTPUT_DIR / "run_register"
@@ -93,6 +102,8 @@ E1_STAGE_FOLDER = "e1_flood_input"
 STAGE_FOLDER = "e5_access_diff"
 LICENCE_NOTICE_NAME = "LICENSE_NOTICE.txt"
 PUBLIC_SERVICES, PITCH_SERVICES = "public_services", "pitch_services"
+WALKING_CONTEXT_OUTPUTS = "walking_context"
+"""The group of the receipt's outputs that holds the report of a candidate walking context build."""
 FLOOD_LEVELS_RUN: tuple[str, ...] = (flood_inputs.AS_PROVIDED,)
 """The flood level this task runs. The minus and plus levels are an axis of the ensemble (plan task E10)."""
 CLOSURE_FRAME = flood_inputs.ROUTING_CONTEXT
@@ -114,10 +125,10 @@ FRAME_SETS: dict[str, dict[str, Any]] = {
 COMPUTES = (
     "For cases SE1 and O2 over the Mae Sai frame, at the flood level as provided and under the strict, central and "
     "permissive levels of closure rule v1: a baseline run and a flooded run of modelled access, and per tambon the "
-    "residents with baseline access, the residents newly losing it, the newly-lost share counted only for residents "
-    "with baseline access, and the residents with a baseline route to any hospital or main-road entry who lose all "
-    "routes. These are inputs of the access-gap and road-criticality components. No component value, no FPPS, no A-E "
-    "class and no ensemble."
+    "residents with baseline access, the residents among them newly losing it, the residents with a baseline route to "
+    "any hospital or main-road entry and those among them who lose all routes. Counts of residents only: no ratio of "
+    "them is written. These are inputs of the access-gap and road-criticality components. No component value, no "
+    "FPPS, no A-E class and no ensemble."
 )
 CONFIDENCE_BASIS = (
     "Modelled access on OpenStreetMap roads at fixed class speeds, with WorldPop 2020 modelled residents, under "
@@ -159,7 +170,7 @@ LIMITATIONS = [
     "population vintage are axes of the ensemble (plan task E10) and are not run here.",
     "A resident whose cell does not snap to the graph within 250 m has no modelled access in either run and is in no "
     "numerator and no denominator; the tables give their number per tambon.",
-    "A unit where nobody had baseline access, or nobody had a baseline route, has a share of null with a reason code. "
+    "A unit where nobody had baseline access, or nobody had a baseline route, has its counts and a reason code. "
     "The protocols state no value for it (open point E5-OP2).",
     "The permissive level closes every intersected edge, however short the stretch inside the extent; the strict "
     "level closes an edge only when half of it is inside. The three levels are reported side by side and none is a "
@@ -169,7 +180,11 @@ LIMITATIONS = [
     "and UNOSAT and GISTDA do not endorse FloodGuard or its use of the product.",
 ]
 NOT_COMPUTED = [
-    "access-gap component (0-100)", "road-criticality component (0-100)", "any other component", "FPPS", "A-E class",
+    "access-gap component (0-100)",
+    "the newly-lost share of a service (newly lost / baseline access) and the weighted mean of those shares",
+    "road-criticality component (0-100)",
+    "the share of residents with a baseline route who lose all routes (it is the road-criticality component divided by 100)",
+    "any other component", "FPPS", "A-E class",
     "would-be class", "ensemble cell", "class rule v2 triggers (top-20 link closed on its own; serving facility)",
     "equity difference and ratio by age group", "2SFCA shelter supply", "travel-time summaries per tambon",
     "the minus and plus flood levels", "the corroborated shelter set", "2024-rescaled demand",
@@ -368,8 +383,12 @@ def find_walking_context(external: Path, folder: str, given: Path | None) -> Pat
 
 
 def load_walking_context(path: Path, vehicle: Mapping[str, Any], vehicle_record: Mapping[str, Any], external: Path,
-                         output_dir: Path, root: Path) -> tuple[dict[str, Any], dict[str, Any]]:
+                         output_dir: Path, root: Path) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
     """Read a walking context built by the unchanged E4 builder and check it against its receipt and the vehicle context.
+
+    Returns:
+        The context, what was read of it (with ``receipt_in_git``: whether the build's receipt is in the
+        planning output folder, as that of a build of record is) and the build's receipt.
 
     Raises:
         BuildError: when the context has no receipt, its canonical SHA-256 is not the one its receipt names, or
@@ -400,7 +419,8 @@ def load_walking_context(path: Path, vehicle: Mapping[str, Any], vehicle_record:
     if cells(context) != cells(vehicle):
         raise BuildError("the walking context holds other demand cells than the context of record")
     of_record = receipt["run_kind"] == RECORD
-    return context, {
+    receipt_in_git = receipt_path.resolve().parent == output_dir.resolve()
+    record = {
         "status": "of_record" if of_record else "candidate",
         "run_kind": receipt["run_kind"],
         "status_note": (
@@ -408,19 +428,113 @@ def load_walking_context(path: Path, vehicle: Mapping[str, Any], vehicle_record:
             if of_record else
             "Candidate: a walking build of the unchanged E4 builder without a declared compute window. The E4 build of "
             "record is a vehicle context, and decision R13 accepted a compute window for that build only. The shelter "
-            "tables that rest on this context are candidate inputs until the owners accept a walking build (open "
-            "point E5-OP5)."),
+            "tables that rest on this context are candidate inputs and are not usable by task E8 until the owners "
+            "accept a walking build of record (open point E5-OP5)."),
+        "usable_by_task_e8": of_record,
         "path": path_label(path, root, external),
         "file_sha256": sha256_file(path),
         "canonical_sha256": canonical,
         "canonical_sha256_recomputed": True,
         "context_generated_at": str(context["generated_at"]),
         "receipt": file_record(receipt_path, root, external),
+        "receipt_in_git": receipt_in_git,
         "receipt_generated_at_utc": receipt["generated_at_utc"],
         "builder_sha256": receipt["run"]["implementation"]["builder_sha256"],
         "same_input_files_as_the_context_of_record": True,
         "same_demand_cells_and_supplied_shelters_as_the_context_of_record": True,
         "compute_window_declared": bool(receipt["run"]["compute_window"]["declared"]),
+    }
+    return context, record, receipt
+
+
+def walking_context_report(walking_record: Mapping[str, Any], build_receipt: Mapping[str, Any], *, generated_at_utc: str,
+                           hashes: Mapping[str, str], receipt_label: str, external: Path) -> dict[str, Any]:
+    """Report, in Git, a walking context build whose own receipt the E4 builder kept outside Git.
+
+    Every run on real units is reported in ``outputs/planning_v1/`` and registered. The E4 builder writes the
+    receipt of a candidate build beside the context, outside Git, and names protocol v1b only. This report
+    names that receipt and every file the build wrote by SHA-256, its inputs, its times and both protocol
+    files, and says what the build was: a candidate, without a declared compute window, made outside what
+    plan row E5 names. It is written by the run that uses the context, after the build, and says so.
+
+    Raises:
+        BuildError: when a file the build receipt names is missing or is not the file it names, or the build
+            was made under another protocol v1b than the one in force.
+    """
+
+    run = build_receipt["run"]
+    if run.get("protocol_v1b_sha256_at_build") != hashes["planning_protocol_v1b"]:
+        raise BuildError("the walking context was built under another protocol v1b than the one in force")
+    files = [{"what": "context", "path": walking_record["path"], "sha256": walking_record["file_sha256"],
+              "canonical_sha256": walking_record["canonical_sha256"], "publication_level": DDPM_RIGHTS_LEVEL},
+             {"what": "build_receipt", **{key: walking_record["receipt"][key] for key in ("path", "sha256", "bytes")}}]
+    for what, entry, key in (("facility_table", build_receipt["facilities"]["facility_table"], "sha256"),
+                             ("grade_join_log", {"path": build_receipt["grade_joins"]["log_path"],
+                                                 "log_sha256": build_receipt["grade_joins"]["log_sha256"]}, "log_sha256")):
+        target = external_path(str(entry["path"]), external)
+        if not target.is_file() or sha256_file(target) != entry[key]:
+            raise BuildError(f"the {what.replace('_', ' ')} of the walking build is missing or is not the file its receipt names")
+        files.append({"what": what, "path": str(entry["path"]), "sha256": entry[key], "publication_level": DDPM_RIGHTS_LEVEL})
+    return {
+        "schema_version": WALKING_REPORT_SCHEMA,
+        "generated_at_utc": generated_at_utc,
+        "receipt_file": receipt_label,
+        "report_of": "One build of the planning context of case se1 in travel mode walking, made by the lane of plan "
+                     "task E5 with the unchanged E4 builder (scripts/build_planning_context.py). The shelter service of "
+                     "task E5 (walking, 30 minutes, pitch level) rests on it.",
+        "status": "candidate_context_build_reported_after_the_fact",
+        "status_note": "The E4 builder keeps the receipt of a candidate build outside Git and names protocol v1b only. "
+                       "This file reports that build in Git: it was written after the build, by the E5 run that uses "
+                       "the context, and binds the build's own receipt and files by SHA-256. The build is a candidate: "
+                       "plan 5 item 1 asks for builds in a declared compute window, none was declared, and decision R13 "
+                       "accepted a window for the vehicle build only. The build was outside what plan row E5 names. "
+                       "The tables that rest on it are not usable by task E8 until the owners accept a walking build "
+                       "of record (open point E5-OP5).",
+        "usable_by_task_e8": False,
+        "official_warning": False,
+        "operational_status": "non_operational",
+        "can_feed_decision_layer": False,
+        "computes": build_receipt["computes"],
+        "source_timestamp": build_receipt["source_timestamp"],
+        "source_timestamps": dict(build_receipt["source_timestamps"]),
+        "confidence_class": build_receipt["confidence_class"],
+        "confidence_basis": build_receipt["confidence_basis"],
+        "protocol_sha256": dict(hashes),
+        "protocol_note": "The two protocol files in force when this report was written. The build receipt names "
+                         "protocol v1b only (run.protocol_v1b_sha256_at_build), and it is the same file; v1b names v1a "
+                         "by SHA-256 (depends_on).",
+        "parameters": {
+            "case": build_receipt["case"],
+            "travel_mode": build_receipt["travel_mode"],
+            "run_kind": build_receipt["run_kind"],
+            "builder": "scripts/build_planning_context.py",
+            "context_call": dict(build_receipt["context_call"]),
+        },
+        "inputs": {"files_sha256": dict(build_receipt["input_hashes"]), "routing_source": dict(build_receipt["routing_source"]),
+                   "same_input_files_as_the_vehicle_context_of_record": True},
+        "timestamps": {
+            "build_started_at_utc": run["run_started_at_utc"],
+            "build_finished_at_utc": run["run_finished_at_utc"],
+            "build_receipt_generated_at_utc": build_receipt["generated_at_utc"],
+            "wall_time_minutes": run["wall_time_minutes"],
+            "report_written_at_utc": generated_at_utc,
+        },
+        "compute_window": dict(run["compute_window"]),
+        "outputs": files,
+        "outputs_note": "All four files are outside Git: the context and the facility table hold DDPM rows (pitch level).",
+        "counts": {
+            "edges": build_receipt["context"]["edges"],
+            "road_nodes": build_receipt["context"]["road_nodes"],
+            "demand_cells": build_receipt["context"]["population_cells"],
+            "grade_join_connectors": build_receipt["grade_joins"]["join_count"],
+            "joins_sha256": build_receipt["grade_joins"]["joins_sha256"],
+            "located_ddpm_shelters_supplied": build_receipt["context_call"]["facilities_supplied"],
+            "supplied_shelters_snapped_within_100_m": build_receipt["facilities"]["supplied_shelters_snapped_within_100_m"],
+        },
+        "implementation": dict(run["implementation"]),
+        "assumptions": list(build_receipt["assumptions"]),
+        "limitations": [*build_receipt["limitations"],
+                        "No compute window was declared for the build, so nothing records what else ran on the machine."],
     }
 
 
@@ -489,13 +603,18 @@ def load_flood_input(case_id: str, settings: Mapping[str, Any], e1_receipt: Mapp
                      and row["frame"] == CLOSURE_FRAME)
         if bound.get(prefix + entry["file"]) != entry["sha256"]:
             raise BuildError(f"the {level} extent of case {case_id} is not the one the E1 receipt binds")
-        files[level] = {"path": prefix + entry["file"], "sha256": entry["sha256"], "bytes": entry["bytes"]}
+        files[level] = {"path": prefix + entry["file"], "sha256": entry["sha256"], "bytes": entry["bytes"],
+                        "rights_level": entry.get("rights_level")}
     if record["case_id"] != case_id or dict(record["protocol_sha256"]) != dict(hashes):
         raise BuildError(f"the flood input of case {case_id} was written for another case or under other protocol files")
     grant = registry.require_use(rights.PRODUCT_4009, layer=record["source"]["layer"])
     stated = record["rights"]
     if (grant.record_sha256, grant.rights_level) != (stated["record_sha256"], stated["rights_level"]):
         raise BuildError(f"the rights record of case {case_id} is not the confirmed record its flood input names")
+    # The lineage of a table is the extent it reads. The footprint layer of the same input can be at a lower
+    # level; no figure of it enters a table, so it is not in the lineage.
+    if any(entry["rights_level"] != grant.rights_level for entry in files.values()):
+        raise BuildError(f"an extent of case {case_id} does not state the rights level the registry gives its layer")
     return record, {level: extents[level][CLOSURE_FRAME] for level in FLOOD_LEVELS_RUN}, {
         "input_id": record["input_id"],
         "input_record": {"path": prefix + flood_inputs.INPUT_RECORD_NAME, "sha256": record_sha256},
@@ -742,13 +861,16 @@ def table_document(
     with_shelters = service_set == PITCH_SERVICES
     listed = [rule for rule in services if with_shelters or rule.publication_level == access_diff.PUBLIC_LEVEL]
     walking = contexts.get(access_diff.WALKING)
+    on_candidate = with_shelters and walking is not None and walking["status"] != "of_record"
     status_note = (
         "Written with protocol v1a and v1b in force (protocol_sha256). These are inputs of the access-gap and "
         "road-criticality components for plan task E8. They are not the components and not an FPPS; the components, "
-        "the FPPS and the A-E class belong to task E8 and are not here.")
-    if with_shelters and walking is not None and walking["status"] != "of_record":
-        status_note += (" The shelter service rests on a candidate walking context, so its figures are candidate "
-                        "inputs until the owners accept a walking build (open point E5-OP5).")
+        "the FPPS and the A-E class belong to task E8 and are not here. The definitions say how close each input is "
+        "to its component.")
+    if on_candidate:
+        status_note += (" The shelter service rests on a candidate walking context, built without a declared compute "
+                        "window, so this table is not usable by task E8 until the owners accept a walking build of "
+                        "record (open point E5-OP5).")
     return {
         "schema_version": access_diff.UNIT_TABLE_SCHEMA,
         "generated_at_utc": generated_at_utc,
@@ -762,9 +884,12 @@ def table_document(
         "temporal_relation": record["temporal_relation"],
         "case_reference_date": record["case_reference_date"],
         "service_set": service_set,
-        "status": "unit_inputs" if not (with_shelters and walking is not None and walking["status"] != "of_record")
-                  else "unit_inputs_candidate_walking_context",
+        "status": "unit_inputs" if not on_candidate else "unit_inputs_candidate_walking_context",
         "status_note": status_note,
+        "usable_by_task_e8": not on_candidate,
+        "usable_by_task_e8_basis": (
+            "Not usable: the walking context is a candidate (open point E5-OP5)." if on_candidate else
+            "Every context this table rests on is a build of record."),
         "official_warning": False,
         "operational_status": "non_operational",
         "can_feed_decision_layer": False,
@@ -810,13 +935,24 @@ def table_document(
                                          "most the threshold in the baseline run.",
             "newly_lost_residents": "Residents with baseline access who do not have access within the threshold in the "
                                     "flooded run. A resident with no baseline access is never counted (EQ-04).",
-            "newly_lost_share": "newly_lost_residents / baseline_access_residents; null with a reason when nobody had "
-                                "baseline access.",
+            "baseline_access_unavailable_reason": "Set where nobody had baseline access to the service within the "
+                                                  "threshold: the protocols state no newly-lost share for that case.",
+            "counts_only": "Beside the thresholds of the services, every figure of a row is a count of residents or of "
+                           "demand cells. No ratio of two counts is written, because a ratio is a component or one step "
+                           "from it. newly_lost_residents / "
+                           "baseline_access_residents is the newly-lost share of one service; the access-gap component "
+                           "of protocol v1a is 100 x the mean of those shares over the services at their access-gap "
+                           "thresholds, weighted by baseline access, and one service's share equals it wherever the "
+                           "services have the same share (open point E5-OP8).",
             "access_gap_inputs": "For each service at its access-gap threshold: what "
                                  "floodguard.normalisation.access_gap takes. An input of the component, not the component.",
             "road_criticality_inputs": "Residents with a baseline route to any hospital or main-road entry, and those "
                                        "among them with no route to any of them in the flooded run: what "
-                                       "floodguard.normalisation.road_criticality takes. An input, not the component.",
+                                       "floodguard.normalisation.road_criticality takes. They are the numerator and the "
+                                       "denominator of the road-criticality component of protocol v1a, which is 100 x "
+                                       "their ratio. The ratio is not written here: task E8 computes the component.",
+            "routes": "The same two counts, the services whose routes are read, and the connected residents with no "
+                      "baseline route to any of them. Counts only.",
             "residents_not_connected_to_the_graph": "Residents of cells that do not snap to the graph of the mode "
                                                     "within 250 m. They are in no numerator and no denominator.",
             "unit_rule": "A WorldPop 2020 cell counts for the tambon whose polygon holds its centre (open point E5-OP1).",
@@ -902,8 +1038,10 @@ def build(frame_set: str, external: Path, boundaries: Path, *, generated_at_utc:
     graphs = {access_diff.VEHICLE: mode_graph(access_diff.VEHICLE, vehicle_context)}
     contexts: dict[str, dict[str, Any]] = {access_diff.VEHICLE: vehicle_record}
     walking_path = find_walking_context(external, settings["context_folder"], walking_context)
+    walking_build_receipt: dict[str, Any] | None = None
     if walking_path is not None:
-        walking, walking_record = load_walking_context(walking_path, vehicle_context, vehicle_record, external, output_dir, root)
+        walking, walking_record, walking_build_receipt = load_walking_context(
+            walking_path, vehicle_context, vehicle_record, external, output_dir, root)
         graphs[access_diff.WALKING] = mode_graph(access_diff.WALKING, walking)
         contexts[access_diff.WALKING] = walking_record
         del walking
@@ -952,6 +1090,19 @@ def build(frame_set: str, external: Path, boundaries: Path, *, generated_at_utc:
     git_files: dict[str, bytes] = {}
     external_files: dict[str, bytes] = {}
     outputs: dict[str, Any] = {}
+    walking_record = contexts.get(access_diff.WALKING)
+    walking_report_label: str | None = None
+    if walking_record is not None and walking_build_receipt is not None and not walking_record["receipt_in_git"]:
+        # The E4 builder kept this build's receipt outside Git: the run that uses the context reports it in Git.
+        walking_report_label = (f"{output_dir.relative_to(root).as_posix()}/"
+                                f"e5_walking_context_build_report_{settings['context_folder']}.json")
+        data = encode(walking_context_report(walking_record, walking_build_receipt, generated_at_utc=generated_at_utc,
+                                             hashes=hashes, receipt_label=receipt_label, external=external))
+        git_files[walking_report_label] = data
+        outputs[WALKING_CONTEXT_OUTPUTS] = {"files": [{
+            "path": walking_report_label, "sha256": hashlib.sha256(data).hexdigest(), "bytes": len(data),
+            "what": "context_run_report", "in_git": True}]}
+        walking_record["run_report"] = walking_report_label
     results: dict[str, Any] = {}
     checks: dict[str, Any] = {"e4_baseline": e4_check, "against_calculate_total_access": [],
                               "shorter_routes_in_a_flooded_run": 0, "residents_gaining_access": 0.0}
@@ -965,7 +1116,7 @@ def build(frame_set: str, external: Path, boundaries: Path, *, generated_at_utc:
         checks["against_calculate_total_access"].extend({"case_id": case_id, **row} for row in computed["checks"]["reference"])
         checks["shorter_routes_in_a_flooded_run"] += computed["checks"]["shorter_routes_in_a_flooded_run"]
         checks["residents_gaining_access"] += computed["checks"]["residents_gaining_access"]
-        flood_records[case_id] = {**flood_record, "lane": record["lane"], "tier": record["tier"],
+        flood_records[case_id] = {**flood_record, "layer": record["source"]["layer"], "lane": record["lane"], "tier": record["tier"],
                                   "temporal_relation": record["temporal_relation"], "source_timestamp": record["source_timestamp"]}
         folder = f"{settings['case_folders'][case_id]}/{STAGE_FOLDER}"
         written: list[dict[str, Any]] = []
@@ -1014,7 +1165,6 @@ def build(frame_set: str, external: Path, boundaries: Path, *, generated_at_utc:
     if not checks["against_calculate_total_access_all_same"]:
         raise BuildError("the runs differ from calculate_total_access on the hospital service")
 
-    walking_record = contexts.get(access_diff.WALKING)
     commit = subprocess.run(["git", "rev-parse", "HEAD"], cwd=root, capture_output=True, text=True, check=False)
     receipt = {
         "schema_version": RECEIPT_SCHEMA,
@@ -1109,11 +1259,27 @@ def build(frame_set: str, external: Path, boundaries: Path, *, generated_at_utc:
         "rights": {
             "registry": "floodguard.rights.REGISTERED_RECORDS",
             "rule": "The rights registry is asked for each product 4009 layer before its extent is read, and the record "
-                    "must be the confirmed record the flood input names. A table goes into Git only when the minimum "
-                    "rights level across its lineage is public; any other table stays outside Git. Nothing is written "
-                    "under apps/web/public/.",
+                    "must be the confirmed record the flood input names. The lineage of a table is the extent it reads "
+                    "and, for the shelter service, the DDPM rows; the footprint layer of a flood input enters no table. "
+                    "A table goes into Git only when the minimum rights level across its lineage is public; any other "
+                    "table stays outside Git. Nothing is written under apps/web/public/.",
             "ddpm_shelters": DDPM_RIGHTS_LEVEL,
             "publication_level": rights_levels,
+            "levels_and_git": rights.LEVELS_AND_GIT,
+            "figures_of_local_level_layers_in_this_receipt": {
+                "what": "This receipt is committed. It holds whole-frame figures, and no table, of every case that was "
+                        "run. The figures listed here come from a flood layer the rights registry holds below the "
+                        "public level; the per-tambon tables of those cases are outside Git.",
+                "figures": [
+                    {"case_id": case_id, "layer": flood_records[case_id]["layer"],
+                     "rights_level": rights_levels[case_id]["flood_input"],
+                     "figures": "The closure counts of each level, and the whole-frame residents with baseline access, "
+                                "newly losing access and losing all routes.",
+                     "where": f"results.{case_id}"}
+                    for case_id in settings["cases"] if rights_levels[case_id]["flood_input"] != rights.PUBLIC_LEVEL],
+                "for_the_owners": "Open point E1-OP1: whether a local level allows these figures in Git. They have been "
+                                  "in the receipt since the first commit of this task.",
+            },
             "written_under_apps_web_public": False,
         },
         "graphs": {mode: graph.record for mode, graph in graphs.items()},
@@ -1128,8 +1294,14 @@ def build(frame_set: str, external: Path, boundaries: Path, *, generated_at_utc:
         "results": results,
         "shelter_service": (
             {"computed": True, "mode": access_diff.WALKING, "context_status": walking_record["status"],
+             "usable_by_task_e8": walking_record["usable_by_task_e8"],
+             "context_run_report": walking_report_label,
              "note": "The figures of the shelter service are pitch level and are in the pitch-services tables outside "
-                     "Git only. None is in this receipt."}
+                     "Git only. None is in this receipt."
+                     + ("" if walking_record["usable_by_task_e8"] else
+                        " They rest on a candidate walking context, built by this task's lane without a declared compute "
+                        "window, so the pitch-services tables are not usable by task E8 until the owners accept a "
+                        "walking build of record (open point E5-OP5). The build is reported in context_run_report.")}
             if walking_record is not None else
             {"computed": False, "note": "No walking context was on disk, so the shelter service was not computed "
                                         "(open point E5-OP5)."}),
@@ -1182,6 +1354,28 @@ def figures_of(receipt: Mapping[str, Any]) -> str:
     return _canonical(receipt["results"])
 
 
+def earlier_runs(previous: Mapping[str, Any], supersedes: Mapping[str, Any]) -> list[dict[str, Any]]:
+    """Return every earlier run of a receipt, oldest first, each with the files it bound by SHA-256.
+
+    A receipt that is replaced before it is committed leaves only what the next receipt says of it. The run
+    it had itself superseded is therefore carried forward with the files that run bound: they are taken from
+    the ``supersedes`` block of the receipt being replaced, which is the only place that names them.
+    """
+
+    history = [dict(entry) for entry in previous.get("run_history") or []]
+    older = previous.get("supersedes")
+    if history and "outputs_sha256" not in history[-1] and isinstance(older, Mapping) and older.get("outputs_of_the_superseded_run"):
+        history[-1]["outputs_sha256"] = dict(older["outputs_of_the_superseded_run"])
+    history.append({
+        "generated_at_utc": supersedes["generated_at_utc"],
+        "receipt_sha256": supersedes["receipt_sha256"],
+        "superseded_because": supersedes["reason"],
+        "figures_same_as_the_run_that_replaced_it": supersedes["figures_same"],
+        "outputs_sha256": dict(supersedes["outputs_of_the_superseded_run"]),
+    })
+    return history
+
+
 def run(frame_set: str, external: Path, boundaries: Path, *, walking_context: Path | None = None, docs: Path = DOCS,
         root: Path = ROOT, output_dir: Path = OUTPUT_DIR, register_dir: Path = REGISTER_DIR,
         replace_reason: str | None = None, development_reads: Sequence[str] = ()) -> dict[str, Any]:
@@ -1211,14 +1405,15 @@ def run(frame_set: str, external: Path, boundaries: Path, *, walking_context: Pa
             "generated_at_utc": previous.get("generated_at_utc"),
             "reason": replace_reason,
             "figures_same": figures_of(previous) == figures_of(receipt),
+            "outputs_of_the_superseded_run": output_hashes(previous["outputs"]),
             "note": "The superseded receipt is named here by its SHA-256, and run_history lists every earlier run. A "
                     "receipt that was replaced before it was committed is not in the Git history: only its SHA-256 "
                     "remains. figures_same compares the whole-frame results and the closure counts of the two receipts; "
-                    "a table carries its generation time, so its bytes differ between runs.",
+                    "a table carries its generation time, so its bytes differ between runs. "
+                    "outputs_of_the_superseded_run names every file the superseded receipt bound, by SHA-256, and "
+                    "run_history carries the same for every earlier run that recorded it.",
         }
-        history = [*previous.get("run_history", []), {
-            "generated_at_utc": supersedes["generated_at_utc"], "receipt_sha256": supersedes["receipt_sha256"],
-            "superseded_because": replace_reason, "figures_same_as_the_run_that_replaced_it": supersedes["figures_same"]}]
+        history = earlier_runs(previous, supersedes)
         for stale in output_hashes(previous["outputs"]):
             if not stale.startswith(EXTERNAL_LABEL) and stale not in git_files and (root / stale).is_file():
                 (root / stale).unlink()

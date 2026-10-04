@@ -19,7 +19,10 @@ used as provided; FloodGuard did not validate them.
 **Rights.** The rights registry (``floodguard.rights``) must allow each layer before the archive is opened,
 and the archive must have the size and SHA-256 the confirmed rights record names. Every layer derived from
 product 4009 carries CC BY-SA 4.0, the credit and its own change notice, and sits in a folder with the
-record's licence notice.
+record's licence notice. Each written file carries the rights level of the layer it comes from: the footprint
+layers come from the analysis extent, which the registry holds at ``local``, whatever the level of the flood
+layer of the case; an input record holds figures of both layers and is at the minimum of the two (protocol
+v1a, guardrail GR6). The receipt lists which of its own figures come from a local-level layer.
 
 **Where things go.** Inputs are read-only files outside Git; their locations are arguments, and the external
 data root defaults to the environment variable ``FLOODGUARD_EXTERNAL_DATA``. The layers are written outside
@@ -271,8 +274,9 @@ def acceptance_check(rules: flood_inputs.FloodInputRules, registry: rights.Right
             "layer": loaded.record["source"]["layer"],
             "clip_km2_epsg32647": summary["area_km2"],
             "clip_km2_geodesic_wgs84": round(geodesic / 1e6, 6),
-            "repair": {key: loaded.record["repair"][key] for key in
-                       ("method", "source_parts", "source_parts_invalid", "parts_read", "parts_repaired", "parts_repaired_after_projection")},
+            "repair": {**{key: loaded.record["repair"][key] for key in
+                          ("method", "source_parts", "source_parts_invalid", "parts_read", "parts_repaired", "parts_repaired_after_projection")},
+                       "in_aoi_01": loaded.record["repair"]["by_frame"][frame.name]},
         }
     measured = layers["SE1"]["clip_km2_epsg32647"]
     return {
@@ -389,26 +393,31 @@ def build(frame_set: str, external: Path, boundaries: Path, worldcover: Path, *,
     notice = notice_path.read_bytes()
     input_records: dict[str, Any] = {}
     grants: dict[str, Any] = {}
+    footprint_grants: dict[str, Any] = {}
+    output_levels: dict[str, Any] = {}
     footprint_checks: dict[str, Any] = {}
     for case_id in settings["cases"]:
         clock = time.perf_counter()
         loaded = LOADERS[case_id](frames, rules=rules, registry=registry, external_root=external, water=water)
         folder = f"{settings['case_folders'][case_id]}/{STAGE_FOLDER}"
+        lineage = loaded.record["lineage_rights"]
         written: list[dict[str, Any]] = []
         for level in flood_inputs.LEVELS:
             for frame in frames:
                 name = f"{folder}/flood_extent__{level}__{frame.name}.geojson"
                 properties = flood_inputs.layer_properties(
-                    loaded, level=level, frame=frame, what="flood_extent",
+                    loaded, level=level, frame=frame, what=flood_inputs.FLOOD_EXTENT,
                     change=flood_inputs.level_sentence(level, rules.one_pixel_m))
                 files[name] = flood_inputs.encode_layer(loaded.extent(level, frame.name), properties, f"flood_extent__{level}__{frame.name}")
-                written.append(_output(name, files[name], what="flood_extent", level=level, frame=frame.name))
+                written.append(_output(name, files[name], what=flood_inputs.FLOOD_EXTENT, level=level, frame=frame.name,
+                                       rights_level=properties["rights_level"]))
         for frame in frames:
             name = f"{folder}/product_footprint__{frame.name}.geojson"
-            properties = flood_inputs.layer_properties(loaded, level=None, frame=frame, what="product_footprint",
+            properties = flood_inputs.layer_properties(loaded, level=None, frame=frame, what=flood_inputs.PRODUCT_FOOTPRINT,
                                                        change="analysis extent otherwise as provided")
             files[name] = flood_inputs.encode_layer(loaded.footprints[frame.name], properties, f"product_footprint__{frame.name}")
-            written.append(_output(name, files[name], what="product_footprint", frame=frame.name))
+            written.append(_output(name, files[name], what=flood_inputs.PRODUCT_FOOTPRINT, frame=frame.name,
+                                   rights_level=properties["rights_level"]))
         files[f"{folder}/{LICENCE_NOTICE_NAME}"] = notice
         written.append(_output(f"{folder}/{LICENCE_NOTICE_NAME}", notice, what="licence_notice"))
         record = {
@@ -419,12 +428,16 @@ def build(frame_set: str, external: Path, boundaries: Path, worldcover: Path, *,
                       for entry in written],
         }
         files[f"{folder}/{INPUT_RECORD_NAME}"] = encode(record)
-        written.append(_output(f"{folder}/{INPUT_RECORD_NAME}", files[f"{folder}/{INPUT_RECORD_NAME}"], what="input_record"))
+        written.append(_output(f"{folder}/{INPUT_RECORD_NAME}", files[f"{folder}/{INPUT_RECORD_NAME}"], what="input_record",
+                               rights_level=lineage["input_record"]))
         input_records[case_id] = dict(loaded.record)
         grants[case_id] = loaded.record["rights"]
+        footprint_grants[case_id] = loaded.record["footprint"]["rights"]
+        output_levels[case_id] = {key: lineage[key] for key in (flood_inputs.FLOOD_EXTENT, flood_inputs.PRODUCT_FOOTPRINT, "input_record")}
         uncovered = shapely.difference(road_area, loaded.footprints[routing.name])
         footprint_checks[case_id] = {
             "footprint_layer": flood_inputs.ANALYSIS_EXTENT_LAYER_4009,
+            "footprint_layer_rights_level": footprint_grants[case_id]["rights_level"],
             "share_of_reporting_frame": loaded.record["footprint"]["by_frame"][reporting.name]["share_of_frame"],
             "share_of_routing_context": loaded.record["footprint"]["by_frame"][routing.name]["share_of_frame"],
             "routing_context_that_can_hold_roads_outside_the_footprint_km2": round(float(uncovered.area) / 1e6, 6),
@@ -445,7 +458,8 @@ def build(frame_set: str, external: Path, boundaries: Path, worldcover: Path, *,
         "status": "run_receipt",
         "status_note": "Receipt of one run on real frames, made with protocol v1a and v1b in force. Every run is reported: "
                        "a second run writes a new receipt that names this one. The layers are outside Git and are bound "
-                       "here by SHA-256.",
+                       "here by SHA-256. The receipt holds whole-frame figures of layers the rights registry holds at "
+                       "the local level; rights.figures_of_local_level_layers_in_this_receipt lists them.",
         "official_warning": False,
         "operational_status": "non_operational",
         "can_feed_decision_layer": False,
@@ -494,6 +508,8 @@ def build(frame_set: str, external: Path, boundaries: Path, worldcover: Path, *,
             "layers_read": {
                 "SE1": rules.accumulated_layer["layer"], "O2": rules.layer_22_oct["layer"],
                 "footprint": flood_inputs.ANALYSIS_EXTENT_LAYER_4009,
+                "footprint_named_by": "floodguard.flood_inputs.ANALYSIS_EXTENT_LAYER_4009, a constant of the code. The "
+                                      "protocols and the rights record name no footprint layer (open point E1-OP10).",
             },
         },
         "inputs": {
@@ -515,11 +531,18 @@ def build(frame_set: str, external: Path, boundaries: Path, worldcover: Path, *,
             "registry": "floodguard.rights.REGISTERED_RECORDS",
             "registered_inputs": list(registry.input_ids()),
             "rule": "A layer is read only when the registry finds a confirmed rights record for its input, and the "
-                    "archive has the size and SHA-256 that record names. A write under apps/web/public/ needs rights "
-                    "level public; this run writes nothing there.",
+                    "archive has the size and SHA-256 that record names. Each layer that is read has its own grant, and "
+                    "each written file carries the level of the layer it comes from; a file that holds figures of two "
+                    "layers is at the minimum of the two (protocol v1a, guardrail GR6). A write under apps/web/public/ "
+                    "needs rights level public; this run writes nothing there.",
             "grants": grants,
-            "footprint_layer_grant": registry.require_use(rights.PRODUCT_4009, layer=flood_inputs.ANALYSIS_EXTENT_LAYER_4009).as_record(),
-            "output_rights_level": {case_id: rights.minimum_level([grants[case_id]["rights_level"]]) for case_id in settings["cases"]},
+            "footprint_layer_grants": footprint_grants,
+            "output_rights_level": output_levels,
+            "output_rights_level_note": "By case and kind of file. A flood extent comes from the flood layer only, a "
+                                        "footprint layer from the analysis extent only, and the input record holds "
+                                        "figures of both. Every written file states its own level (outputs).",
+            "levels_and_git": rights.LEVELS_AND_GIT,
+            "figures_of_local_level_layers_in_this_receipt": local_level_figures(settings["cases"], grants, footprint_grants),
             "written_under_apps_web_public": False,
         },
         "frames": {frame.name: {"label": frame.label, "area_km2": round(frame.area_m2 / 1e6, 6), "units": sorted(frame.units)}
@@ -563,6 +586,41 @@ def build(frame_set: str, external: Path, boundaries: Path, worldcover: Path, *,
         "timing_seconds": timings,
     }
     return files, receipt
+
+
+def local_level_figures(cases: Sequence[str], grants: Mapping[str, Mapping[str, Any]],
+                        footprint_grants: Mapping[str, Mapping[str, Any]]) -> dict[str, Any]:
+    """Say which figures of the receipt come from a layer the registry holds below the public level.
+
+    The layers themselves stay outside Git. The receipt is committed and holds whole-frame figures of every
+    layer the run read, so it lists the ones whose layer is not public: the signed files do not say whether
+    such a figure may be committed (``floodguard.rights.LEVELS_AND_GIT``; open point E1-OP1).
+    """
+
+    listed: list[dict[str, str]] = []
+    for case_id in cases:
+        flood, footprint = grants[case_id], footprint_grants[case_id]
+        if flood["rights_level"] != rights.PUBLIC_LEVEL:
+            listed.append({
+                "case_id": case_id, "layer": str(flood["layer"]), "rights_level": str(flood["rights_level"]),
+                "figures": "The areas by level and frame, the areas on and off permanent water, the part and repair "
+                           "counts and the AOI-01 clip of the layer.",
+                "where": f"flood_inputs.{case_id} (levels, repair) and acceptance.layers.{case_id}",
+            })
+        if footprint["rights_level"] != rights.PUBLIC_LEVEL:
+            listed.append({
+                "case_id": case_id, "layer": str(footprint["layer"]), "rights_level": str(footprint["rights_level"]),
+                "figures": "The area of the footprint inside each frame, its share of each frame, and the part of the "
+                           "routing context that can hold roads and lies outside it.",
+                "where": f"flood_inputs.{case_id}.footprint and footprint_check.by_case.{case_id}",
+            })
+    return {
+        "what": "This receipt is committed. It holds whole-frame figures, and no layer, of every layer the run read. "
+                "The figures listed here come from a layer the rights registry holds below the public level.",
+        "figures": listed,
+        "for_the_owners": "Open point E1-OP1: whether a local level allows these figures in Git. They have been in the "
+                          "receipt since the first commit of this task.",
+    }
 
 
 def other_inputs(water: flood_inputs.PermanentWater) -> list[dict[str, str]]:
@@ -620,8 +678,18 @@ def earlier_runs(previous: Mapping[str, Any], supersedes: Mapping[str, Any]) -> 
         "receipt_sha256": supersedes["receipt_sha256"],
         "superseded_because": supersedes["reason"],
         "layers_same_as_the_run_that_replaced_it": supersedes["layers_same"],
+        "geometry_same_as_the_run_that_replaced_it": supersedes.get("geometry_same"),
     })
     return history
+
+
+def geometry_differs(old: bytes, new: bytes) -> bool:
+    """Say whether two written layers hold another geometry; their properties are not compared."""
+
+    try:
+        return json.loads(old)["features"][0]["geometry"] != json.loads(new)["features"][0]["geometry"]
+    except (ValueError, KeyError, IndexError, TypeError):
+        return True
 
 
 def receipt_path_for(frame_set: str, output_dir: Path = OUTPUT_DIR) -> Path:
@@ -654,16 +722,32 @@ def run(frame_set: str, external: Path, boundaries: Path, worldcover: Path, *, p
         before, after = output_hashes(previous["outputs"]), output_hashes(receipt["outputs"])
         differing = sorted(path for path in set(before) | set(after)
                            if before.get(path) != after.get(path) and not path.endswith(INPUT_RECORD_NAME))
+        # A layer whose bytes differ is read back from the disk, as the bytes the old receipt binds, and its
+        # geometry is compared with the new one. A layer that cannot be read back that way counts as differing.
+        prefix = f"{EXTERNAL_LABEL}/{PROCESSED_RELATIVE_PATH.as_posix()}/"
+        geometry_differing = []
+        for path in differing:
+            name = path[len(prefix):]
+            target = processed_root / name
+            if name not in files or not target.is_file() or flood_inputs.sha256_file(target) != before.get(path):
+                geometry_differing.append(path)
+            elif geometry_differs(target.read_bytes(), files[name]):
+                geometry_differing.append(path)
         supersedes = {
             "receipt_sha256": flood_inputs.sha256_file(receipt_path),
             "generated_at_utc": previous.get("generated_at_utc"),
             "reason": replace_reason,
             "layers_same": not differing,
             "layers_that_differ": differing,
+            "geometry_same": not geometry_differing,
+            "layers_that_differ_in_geometry": geometry_differing,
             "note": "The superseded receipt is named here by its SHA-256, and run_history lists every earlier run. A "
                     "receipt that was replaced before it was committed is not in the Git history: only its SHA-256 "
                     "remains. The layers are compared by SHA-256; an input record carries its generation time and is "
-                    "left out of the comparison.",
+                    "left out of the comparison. A layer whose bytes differ was read back from the disk as the bytes "
+                    "the superseded receipt binds, and its geometry was compared with the new one: geometry_same says "
+                    "whether only properties changed. A layer that could not be read back as those bytes is listed as "
+                    "differing in geometry.",
         }
         history = earlier_runs(previous, supersedes)
     for name, data in files.items():

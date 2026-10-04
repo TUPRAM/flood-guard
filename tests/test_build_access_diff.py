@@ -10,7 +10,9 @@ from __future__ import annotations
 import hashlib
 import importlib.util
 import json
+import math
 from pathlib import Path
+import re
 import sys
 from typing import Any
 
@@ -19,7 +21,7 @@ from pyproj import Transformer
 from shapely.geometry import box
 from shapely.ops import transform
 
-from floodguard import access_diff, flood_inputs
+from floodguard import access_diff, flood_inputs, normalisation, rights
 
 ROOT = Path(__file__).resolve().parents[1]
 DOCS = ROOT / "docs" / "proposal_execution"
@@ -155,9 +157,13 @@ def test_each_closure_level_gives_a_baseline_run_a_flooded_run_and_a_table(world
     assert unit("strict", "U1")["access"]["hospital"]["residents_not_connected_to_the_graph"] == 5.0
     # Central: r-q closes at 50 m, so the 40 residents of the side street are lost too.
     assert unit("central", "U1")["access_gap_inputs"]["hospital"]["newly_lost_residents"] == 40.0
-    assert unit("central", "U1")["access"]["hospital"]["thresholds_minutes"]["30"]["newly_lost_share"] == pytest.approx(0.8)
+    assert unit("central", "U1")["access"]["hospital"]["thresholds_minutes"]["30"] == {
+        "baseline_access_residents": 50.0, "flooded_access_residents": 10.0, "newly_lost_residents": 40.0,
+        "newly_gained_residents": 0.0, "baseline_access_unavailable_reason": None}
     assert unit("central", "U1")["routes"]["residents_losing_all_routes"] == 40.0
-    assert unit("permissive", "U2")["routes"]["share_losing_all_routes"] == 1.0
+    assert unit("permissive", "U2")["routes"] == {
+        "services": ["hospital", "main_road_entry"], "residents_with_baseline_route": 50.0, "residents_losing_all_routes": 50.0,
+        "connected_residents_without_a_baseline_route": 0.0, "baseline_route_unavailable_reason": None}
 
     for run in runs.values():
         assert set(run["public_services"]["units"][0]["access"]) == {"hospital", "main_road_entry"}
@@ -219,12 +225,95 @@ def _keys(value: Any) -> set[str]:
     return set()
 
 
+COUNT_KEYS = {"residents", "demand_cells", "residents_connected_to_the_graph", "residents_not_connected_to_the_graph",
+              "residents_with_a_baseline_route", "residents_with_a_route_in_the_flooded_run", "baseline_access_residents",
+              "flooded_access_residents", "newly_lost_residents", "newly_gained_residents", "residents_with_baseline_route",
+              "residents_losing_all_routes", "connected_residents_without_a_baseline_route"}
+PARAMETER_KEYS = {"access_gap_threshold_minutes", "threshold_minutes"}
+"""The only keys of a unit row that hold a number: counts of residents or cells, and the thresholds of the services."""
+
+
+def _numbers(value: Any, key: str = "") -> list[tuple[str, float]]:
+    """Every number of a row with the key it sits under."""
+
+    if isinstance(value, bool) or value is None or isinstance(value, str):
+        return []
+    if isinstance(value, (int, float)):
+        return [(key, float(value))]
+    if isinstance(value, dict):
+        return [pair for name, child in value.items() for pair in _numbers(child, name)]
+    return [pair for child in value for pair in _numbers(child, key)]
+
+
+def _holds(row: Any, value: float) -> bool:
+    return any(math.isclose(number, value, rel_tol=1e-9, abs_tol=1e-12) for _key, number in _numbers(row))
+
+
+def _rows(runs: Any) -> list[dict[str, Any]]:
+    return [row for run in runs for row in (*run["units"], run["whole_frame"])]
+
+
+def assert_counts_only(runs: Any) -> None:
+    """Every number of every row is a count or a threshold: no ratio of two counts is written, under any name."""
+
+    for row in _rows(runs):
+        for key, number in _numbers(row):
+            assert key in COUNT_KEYS | PARAMETER_KEYS, f"{key} holds a number and is neither a count nor a threshold"
+            assert number >= 0 and (key not in PARAMETER_KEYS or number in (15.0, 30.0, 60.0))
+        routes = row["road_criticality_inputs"]
+        assert routes["residents_losing_all_routes"] <= routes["residents_with_baseline_route"] <= row["residents"] + 1e-6
+        for service in row["access"].values():
+            for at_threshold in service["thresholds_minutes"].values():
+                assert at_threshold["newly_lost_residents"] <= at_threshold["baseline_access_residents"], "EQ-04"
+                assert (at_threshold["baseline_access_unavailable_reason"] == access_diff.NO_BASELINE_ACCESS) is (
+                    at_threshold["baseline_access_residents"] == 0)
+
+
+def test_no_value_in_a_table_of_the_runner_equals_a_component_of_the_same_inputs(world: dict[str, Any]) -> None:
+    """On the invented network: no row of a table holds a ratio of its counts, so none holds a component / 100.
+
+    In this network every resident who loses access loses every route, so the newly-lost share of a service, the
+    route ratio and both components divided by 100 are one number in several rows (0.8 in U1 at the central
+    level). A table that held any ratio of its counts would hold the component. The resident counts of this
+    network are small whole numbers (50 residents, a component of 50), so the component itself is compared in
+    tests/test_access_diff.py, on a unit whose figures are all different.
+    """
+
+    frame = normalisation.load_planning_frame(DOCS / "planning_protocol_v1a.json", DOCS / "planning_protocol_v1b.json",
+                                              DOCS / "RECEIPTS.jsonl")
+    compared = 0
+    for service_set, level in (("public_services", "public"), ("pitch_services", "pitch")):
+        table = _table(world, service_set, level)
+        assert_counts_only(table["runs"])
+        for row in _rows(table["runs"]):
+            if row["road_criticality_inputs_unavailable_reason"] is None:
+                component = normalisation.road_criticality(frame, **row["road_criticality_inputs"])["value_0_100"]
+                if 0 < component < 100:
+                    assert not _holds(row, component / 100), "the road-criticality component divided by 100"
+                    compared += 1
+            if row["access_gap_inputs_unavailable_reason"] is None:
+                gap = normalisation.access_gap(frame, services=row["access_gap_inputs"])
+                assert gap["publication_level"] == level
+                for value in (gap["value_0_100"], *(100 * service["newly_lost_share"] for service in gap["services"]
+                                                    if service["newly_lost_share"] is not None)):
+                    if 0 < value < 100:
+                        assert not _holds(row, value / 100), "the access gap divided by 100, or a service's share"
+                        compared += 1
+    assert compared >= 12, "the invented network has rows whose components are neither 0 nor 100"
+    central_u1 = next(row for row in world["computed"]["runs"][1]["public_services"]["units"] if row["unit_id"] == "U1")
+    assert normalisation.road_criticality(frame, **central_u1["road_criticality_inputs"])["value_0_100"] == pytest.approx(80.0)
+    assert not _holds(central_u1, 0.8) and not _holds(central_u1, 80.0)
+    # The check can fail: the same row with the route ratio in it, under any name, is caught.
+    assert _holds({**central_u1, "routes": {**central_u1["routes"], "any_name": 40.0 / 50.0}}, 0.8)
+
+
 def test_a_table_says_what_it_is_and_carries_its_licence_credit_and_change_notice(world: dict[str, Any]) -> None:
     table = _table(world, "public_services", "public")
     text = runner.encode(table).decode("ascii")
 
     assert text.endswith("\n") and "\r" not in text
-    assert table["schema_version"] == access_diff.UNIT_TABLE_SCHEMA and table["status"] == "unit_inputs"
+    assert table["schema_version"] == access_diff.UNIT_TABLE_SCHEMA == "floodguard.access_diff_units.v2"
+    assert table["status"] == "unit_inputs" and table["usable_by_task_e8"] is True
     assert table["official_warning"] is False and table["operational_status"] == "non_operational"
     assert table["can_feed_decision_layer"] is False and table["confidence_class"] == "low"
     assert table["source_timestamp"] and table["confidence_basis"] and table["assumptions"] and table["limitations"]
@@ -241,9 +330,17 @@ def test_a_table_says_what_it_is_and_carries_its_licence_credit_and_change_notic
     assert all(run["closure_basis"] == "modelled_from_invented_input" for run in table["runs"])
     assert [row["unit_id"] for row in table["runs"][0]["units"]] == UNIT_IDS
     assert [point["id"] for point in table["open_points"]][:2] == ["E5-OP1", "E5-OP2"]
-    # Inputs only: no component value, no score and no class anywhere in the table.
+    # Inputs only: counts of residents, and no component value, no ratio, no score and no class anywhere in the table.
+    assert_counts_only(table["runs"])
+    assert not {key for key in _keys(table["runs"]) if "share" in key or "ratio" in key}
     assert not {key for key in _keys(table) if key.endswith("_0_100") or "fpps" in key.lower() or "action_class" in key}
     assert "access-gap component (0-100)" in table["not_computed"] and "FPPS" in table["not_computed"]
+    assert any("road-criticality component divided by 100" in line for line in table["not_computed"])
+    # The table says how close its counts are to the two components.
+    definitions = table["definitions"]
+    assert "100 x their ratio" in definitions["road_criticality_inputs"] and "not written here" in definitions["road_criticality_inputs"]
+    assert "No ratio of two counts is written" in definitions["counts_only"] and "E5-OP8" in definitions["counts_only"]
+    assert [point["id"] for point in table["open_points"]][-1] == "E5-OP8"
 
 
 def test_the_public_table_holds_nothing_of_the_pitch_level_shelter_service(world: dict[str, Any]) -> None:
@@ -259,10 +356,14 @@ def test_the_public_table_holds_nothing_of_the_pitch_level_shelter_service(world
 
     assert [rule["service"] for rule in pitch["services"]] == ["hospital", "main_road_entry", "ddpm_located_shelter"]
     assert pitch["status"] == "unit_inputs_candidate_walking_context" and "E5-OP5" in pitch["status_note"]
+    # A table that rests on a candidate walking context says that task E8 may not use it.
+    assert pitch["usable_by_task_e8"] is False and "not usable by task E8" in pitch["status_note"]
+    assert "candidate" in pitch["usable_by_task_e8_basis"]
     assert pitch["contexts"]["walking"]["status"] == "candidate" and "walking" in pitch["runs"][0]["closure"]
     assert "ddpm-shelters" in {row["id"] for row in pitch["licence"]["other_inputs"]}
     assert "invented shelter name" not in runner.encode(pitch).decode("ascii"), "no shelter is named"
-    assert _table(world, "pitch_services", "pitch", walking_status="of_record")["status"] == "unit_inputs"
+    of_record = _table(world, "pitch_services", "pitch", walking_status="of_record")
+    assert of_record["status"] == "unit_inputs" and of_record["usable_by_task_e8"] is True
 
 
 def test_the_receipt_summary_is_for_the_whole_frame_only(world: dict[str, Any]) -> None:
@@ -294,6 +395,80 @@ def test_the_walking_context_of_record_is_preferred_and_a_missing_one_is_none(tm
     assert runner.find_walking_context(tmp_path, "se1_mae_sai", given) == given
 
 
+def _walking_build(tmp_path: Path, **run_changes: Any) -> tuple[dict[str, Any], dict[str, Any], Path]:
+    """An invented candidate walking build on disk: its files, the record the runner makes of it and its receipt."""
+
+    external = tmp_path / "external"
+    folder = external / "proposal_execution" / "planning_v1" / "se1_mae_sai" / "e4_walking_candidate"
+    folder.mkdir(parents=True)
+    label = "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e4_walking_candidate"
+    (folder / "planning_facilities.json").write_bytes(b"an invented facility table\n")
+    (folder / "grade_join_log.json").write_bytes(b"an invented join log\n")
+    receipt = {
+        "generated_at_utc": "2026-10-04T13:09:29Z", "case": "se1_mae_sai", "travel_mode": "walking", "run_kind": "candidate",
+        "computes": "One baseline context. No flood layer, no closure, no access loss.",
+        "source_timestamp": "2026-07-10T02:46:49Z", "source_timestamps": {"osm_retrieved_at_utc": "2026-07-10T02:46:49Z"},
+        "confidence_class": "low", "confidence_basis": "Unverified map and list records.",
+        "context_call": {"travel_mode": "walking", "facilities_supplied": 2},
+        "routing_source": {"path": "outputs/planning_v1/corridor_of_record.geojson", "sha256": "1" * 64},
+        "context": {"edges": 6, "road_nodes": 8, "population_cells": 5},
+        "grade_joins": {"join_count": 1, "joins_sha256": "2" * 64, "log_path": f"{label}/grade_join_log.json",
+                        "log_sha256": hashlib.sha256(b"an invented join log\n").hexdigest()},
+        "facilities": {"supplied_shelters_snapped_within_100_m": 2,
+                       "facility_table": {"path": f"{label}/planning_facilities.json",
+                                          "sha256": hashlib.sha256(b"an invented facility table\n").hexdigest()}},
+        "input_hashes": {"osm_pbf_sha256": "3" * 64, "worldpop_2020_sha256": "4" * 64},
+        "assumptions": ["An invented build."], "limitations": ["One build on one machine."],
+        "run": {"run_started_at_utc": "2026-10-04T13:07:10Z", "run_finished_at_utc": "2026-10-04T13:09:33Z", "wall_time_minutes": 2.38,
+                "compute_window": {"plan_rule": "Builds run serially in a declared compute window.", "declared": False,
+                                   "declared_by_the_operator": None, "authority": None},
+                "implementation": {"builder_sha256": "5" * 64}, "protocol_v1b_sha256_at_build": HASHES["planning_protocol_v1b"],
+                **run_changes},
+    }
+    record = {"status": "candidate", "usable_by_task_e8": False, "receipt_in_git": False, "path": f"{label}/context_inputs.json",
+              "file_sha256": "6" * 64, "canonical_sha256": "7" * 64,
+              "receipt": {"path": f"{label}/receipt.json", "sha256": "8" * 64, "bytes": 100}}
+    return record, receipt, external
+
+
+def test_a_candidate_walking_build_is_reported_in_git_by_the_run_that_uses_it(tmp_path: Path) -> None:
+    """Every run on real units is reported in outputs/planning_v1: the E4 builder keeps a candidate's receipt outside Git."""
+
+    record, receipt, external = _walking_build(tmp_path)
+    report = runner.walking_context_report(record, receipt, generated_at_utc="2026-10-04T16:00:00Z", hashes=HASHES,
+                                           receipt_label="outputs/planning_v1/e5_access_diff_mae_sai.json", external=external)
+
+    assert report["schema_version"] == "floodguard.walking_context_run_report.v1"
+    # What the run register asks of a registered file: a generation time and the SHA-256 of both protocol files.
+    assert report["generated_at_utc"] == "2026-10-04T16:00:00Z" and report["protocol_sha256"] == HASHES
+    assert report["status"] == "candidate_context_build_reported_after_the_fact" and report["usable_by_task_e8"] is False
+    for words in ("written after the build", "none was declared", "outside what plan row E5 names", "E5-OP5"):
+        assert words in report["status_note"], words
+    assert report["compute_window"]["declared"] is False and report["parameters"]["run_kind"] == "candidate"
+    assert report["timestamps"]["build_started_at_utc"] == "2026-10-04T13:07:10Z"
+    assert report["timestamps"]["build_finished_at_utc"] == "2026-10-04T13:09:33Z"
+    assert report["inputs"]["files_sha256"] == receipt["input_hashes"]
+    assert [(entry["what"], len(entry["sha256"])) for entry in report["outputs"]] == [
+        ("context", 64), ("build_receipt", 64), ("facility_table", 64), ("grade_join_log", 64)]
+    assert report["outputs"][1]["sha256"] == "8" * 64 and report["outputs"][0]["canonical_sha256"] == "7" * 64
+    assert all(entry["path"].startswith("<external_data_workspace>/") for entry in report["outputs"])
+    assert report["official_warning"] is False and report["confidence_class"] == "low" and report["assumptions"]
+    assert report["source_timestamp"] == "2026-07-10T02:46:49Z" and str(tmp_path) not in json.dumps(report)
+    assert runner.encode(report) == runner.encode(runner.walking_context_report(
+        record, receipt, generated_at_utc="2026-10-04T16:00:00Z", hashes=HASHES,
+        receipt_label="outputs/planning_v1/e5_access_diff_mae_sai.json", external=external)), "the report follows from its inputs"
+
+    # A file the build receipt names must be on disk as the bytes it names.
+    log = external / "proposal_execution" / "planning_v1" / "se1_mae_sai" / "e4_walking_candidate" / "grade_join_log.json"
+    log.write_bytes(b"another join log\n")
+    with pytest.raises(runner.BuildError, match="grade join log of the walking build is missing or is not the file"):
+        runner.walking_context_report(record, receipt, generated_at_utc="t", hashes=HASHES, receipt_label="r", external=external)
+    other_record, other_receipt, other_external = _walking_build(tmp_path / "other", protocol_v1b_sha256_at_build="9" * 64)
+    with pytest.raises(runner.BuildError, match="built under another protocol v1b"):
+        runner.walking_context_report(other_record, other_receipt, generated_at_utc="t", hashes=HASHES, receipt_label="r",
+                                      external=other_external)
+
+
 def test_a_second_run_needs_a_reason_and_a_replacement_needs_a_receipt(tmp_path: Path) -> None:
     output_dir = tmp_path / "outputs"
     output_dir.mkdir()
@@ -307,6 +482,26 @@ def test_a_second_run_needs_a_reason_and_a_replacement_needs_a_receipt(tmp_path:
         runner.main(["--frame", "mae_sai", "--external-data", str(tmp_path), "--replace"])
     with pytest.raises(runner.BuildError, match="not a path under the external data root"):
         runner.external_path("outputs/planning_v1/x.json", tmp_path)
+
+
+def test_the_run_history_keeps_the_files_of_a_run_whose_receipt_was_never_committed() -> None:
+    """A receipt replaced before it is committed leaves only what the next one says of it: that is carried forward."""
+
+    first = {"generated_at_utc": "t1", "receipt_sha256": "a" * 64, "reason": "the first reason", "figures_same": True,
+             "outputs_of_the_superseded_run": {"outputs/planning_v1/table.json": "1" * 64}}
+    assert runner.earlier_runs({}, first) == [{
+        "generated_at_utc": "t1", "receipt_sha256": "a" * 64, "superseded_because": "the first reason",
+        "figures_same_as_the_run_that_replaced_it": True, "outputs_sha256": {"outputs/planning_v1/table.json": "1" * 64}}]
+    # The second receipt named the files of the first in its supersedes block only, and its history entry had none.
+    second_receipt = {"run_history": [{"generated_at_utc": "t1", "receipt_sha256": "a" * 64, "superseded_because": "the first reason",
+                                       "figures_same_as_the_run_that_replaced_it": True}],
+                      "supersedes": first}
+    second = {"generated_at_utc": "t2", "receipt_sha256": "b" * 64, "reason": "the second reason", "figures_same": True,
+              "outputs_of_the_superseded_run": {"outputs/planning_v1/table.json": "2" * 64}}
+    history = runner.earlier_runs(second_receipt, second)
+    assert [entry["receipt_sha256"] for entry in history] == ["a" * 64, "b" * 64]
+    assert [entry["outputs_sha256"]["outputs/planning_v1/table.json"] for entry in history] == ["1" * 64, "2" * 64]
+    assert "outputs_sha256" not in second_receipt["run_history"][0], "the receipt that is read is not changed"
 
 
 RECEIPT = OUTPUTS / "e5_access_diff_mae_sai.json"
@@ -336,6 +531,8 @@ def test_the_committed_receipt_reports_the_run_and_binds_its_tables() -> None:
     entry = json.loads((register / RECEIPT.name).read_text(encoding="ascii"))
     assert entry == {"path": RECEIPT.relative_to(ROOT).as_posix(), "sha256": hashlib.sha256(RECEIPT.read_bytes()).hexdigest()}
     for case_id, group in receipt["outputs"].items():
+        if case_id == runner.WALKING_CONTEXT_OUTPUTS:
+            continue
         levels = receipt["rights"]["publication_level"][case_id]
         for row in group["files"]:
             if row["what"] != "unit_table":
@@ -357,11 +554,80 @@ def test_the_committed_receipt_reports_the_run_and_binds_its_tables() -> None:
         closed = [run["closure"]["vehicle"]["closed_edges"] for run in case["runs"]]
         assert closed == sorted(closed), "strict closes the fewest edges and permissive the most"
     assert not {key for key in _keys(receipt) if key.endswith("_0_100") or "fpps" in key.lower() or "action_class" in key}
+    # Whole-frame counts only: no ratio of two counts is in the results either.
+    assert not {key for key in _keys(receipt["results"]) if "share" in key or "ratio" in key}
+    for case in receipt["results"].values():
+        for run in case["runs"]:
+            assert {key for key, _number in _numbers({name: run[name] for name in ("residents", "access_gap_inputs", "road_criticality_inputs",
+                                                                                 "residents_not_connected_to_the_graph", "cells_in_no_unit")})
+                    } <= COUNT_KEYS | PARAMETER_KEYS | {"hospital", "main_road_entry"}
+
+
+def test_the_committed_receipt_names_the_first_table_which_held_the_route_ratio() -> None:
+    """The first table of this task held the road-criticality component / 100. The receipt that replaced it says so."""
+
+    receipt = _committed_receipt()
+    assert receipt["run_kind"] == "superseding_run" and receipt["supersedes"]["figures_same"] is True
+    first = receipt["run_history"][0]
+    assert first["generated_at_utc"] == "2026-10-04T13:24:17Z" and first["figures_same_as_the_run_that_replaced_it"] is True
+    for words in ("share_losing_all_routes", "road-criticality component of protocol v1a divided by 100", "counts of residents only"):
+        assert words in first["superseded_because"], words
+    table = "outputs/planning_v1/e5_access_diff_se1_mae_sai_public_services.json"
+    # The first table is named by the SHA-256 it had in commit 233385e; the table here is another file.
+    assert first["outputs_sha256"][table] == "e8d0166dc6f5a33be98661c42483ae80f6e8e347d7e5e88bbfa7c25786f46b3d"
+    assert hashlib.sha256((ROOT / table).read_bytes()).hexdigest() != first["outputs_sha256"][table]
+    assert all(len(entry["receipt_sha256"]) == 64 and entry["outputs_sha256"] for entry in receipt["run_history"])
+    assert receipt["supersedes"]["receipt_sha256"] == receipt["run_history"][-1]["receipt_sha256"]
+
+
+def test_the_committed_receipt_says_which_of_its_figures_come_from_a_local_level_layer() -> None:
+    """GR6 speaks of apps/web/public only; whether a local level allows a figure in Git is for the owners (E1-OP1)."""
+
+    receipt = _committed_receipt()
+    assert receipt["rights"]["levels_and_git"] == rights.LEVELS_AND_GIT
+    listed = receipt["rights"]["figures_of_local_level_layers_in_this_receipt"]
+    local = [case_id for case_id, levels in receipt["rights"]["publication_level"].items() if levels["flood_input"] != "public"]
+    assert [row["case_id"] for row in listed["figures"]] == sorted(local, key=receipt["parameters"]["cases"].index) == ["O2"]
+    assert listed["figures"][0]["where"] == "results.O2" and "E1-OP1" in listed["for_the_owners"]
+    # The lineage of a table is the extent it reads: the extent states the level the registry gives its layer.
+    for case_id, flood in receipt["inputs"]["flood_inputs"].items():
+        assert {entry["rights_level"] for entry in flood["extents"].values()} == {flood["rights_level"]}, case_id
+
+
+def test_the_committed_run_reports_the_candidate_walking_build_and_marks_its_tables() -> None:
+    """The walking build this lane made is reported in Git and registered; its tables are not inputs of task E8."""
+
+    receipt = _committed_receipt()
+    walking = receipt["inputs"]["planning_context_walking"]
+    if walking is None:
+        pytest.skip("the committed run computed no shelter service")
+    shelter = receipt["shelter_service"]
+    assert walking["status"] == "candidate" and walking["compute_window_declared"] is False and walking["receipt_in_git"] is False
+    assert shelter["usable_by_task_e8"] is walking["usable_by_task_e8"] is False and "not usable by task E8" in shelter["note"]
+    group = receipt["outputs"][runner.WALKING_CONTEXT_OUTPUTS]["files"]
+    assert [row["what"] for row in group] == ["context_run_report"] and group[0]["path"] == shelter["context_run_report"]
+    path = ROOT / group[0]["path"]
+    assert hashlib.sha256(path.read_bytes()).hexdigest() == group[0]["sha256"]
+    registered = json.loads((OUTPUTS / "run_register" / path.name).read_text(encoding="ascii"))
+    assert registered == {"path": group[0]["path"], "sha256": group[0]["sha256"]}
+    report = json.loads(path.read_text(encoding="ascii"))
+    assert report["generated_at_utc"] == receipt["generated_at_utc"] and report["protocol_sha256"] == receipt["protocol_sha256"]
+    assert report["receipt_file"] == RECEIPT.relative_to(ROOT).as_posix() and report["usable_by_task_e8"] is False
+    assert report["compute_window"]["declared"] is False and report["parameters"]["travel_mode"] == "walking"
+    bound = {entry["what"]: entry for entry in report["outputs"]}
+    assert bound["context"]["canonical_sha256"] == walking["canonical_sha256"] and bound["context"]["sha256"] == walking["file_sha256"]
+    assert bound["build_receipt"]["sha256"] == walking["receipt"]["sha256"]
+    assert report["timestamps"]["build_started_at_utc"] < report["timestamps"]["build_finished_at_utc"] < report["generated_at_utc"]
+    assert not re.search(r"(?<![A-Za-z])[A-Za-z]:[\\/]", path.read_text(encoding="ascii")), "no machine path in the report"
+    for case_id, group in receipt["outputs"].items():
+        for row in group["files"]:
+            if row.get("service_set") == "pitch_services":
+                assert row["in_git"] is False, "a table of the shelter service stays outside Git"
 
 
 def test_the_committed_tables_are_inputs_with_a_licence_and_no_component_value() -> None:
     receipt = _committed_receipt()
-    rows = [row for group in receipt["outputs"].values() for row in group["files"] if row.get("in_git")]
+    rows = [row for group in receipt["outputs"].values() for row in group["files"] if row.get("in_git") and row["what"] == "unit_table"]
     assert rows, "the season-envelope table of the public services has a public lineage"
     for row in rows:
         table = json.loads((ROOT / row["path"]).read_text(encoding="ascii"))
@@ -376,18 +642,13 @@ def test_the_committed_tables_are_inputs_with_a_licence_and_no_component_value()
         assert "ddpm" not in figures and "shelter" not in figures and "walking" not in figures, (
             "pitch-level data stays outside Git")
         assert not {key for key in _keys(table) if key.endswith("_0_100") or "fpps" in key.lower() or "action_class" in key}
+        assert table["schema_version"] == access_diff.UNIT_TABLE_SCHEMA and table["usable_by_task_e8"] is True
         assert len(table["runs"]) == 3
         for run in table["runs"]:
             assert [unit["unit_id"] for unit in run["units"]] == sorted(V1A["case_portfolio"]["mae_sai_reporting_frame"]["units"])
-            for unit in run["units"]:
-                for service in unit["access"].values():
-                    for at_threshold in service["thresholds_minutes"].values():
-                        assert at_threshold["newly_lost_residents"] <= at_threshold["baseline_access_residents"], "EQ-04"
-                        if at_threshold["baseline_access_residents"] == 0:
-                            assert at_threshold["newly_lost_share"] is None
-                            assert at_threshold["newly_lost_share_unavailable_reason"] == access_diff.NO_BASELINE_ACCESS
-                        else:
-                            assert at_threshold["newly_lost_share"] == pytest.approx(
-                                at_threshold["newly_lost_residents"] / at_threshold["baseline_access_residents"])
-                inputs = unit["road_criticality_inputs"]
-                assert inputs["residents_losing_all_routes"] <= inputs["residents_with_baseline_route"] <= unit["residents"] + 1e-6
+        # Counts of residents only. The test reads the table and divides nothing: a row of real units holds no
+        # number under a key that is not a count or a threshold, so it holds no ratio and no component.
+        assert_counts_only(table["runs"])
+        assert not {key for key in _keys(table["runs"]) if "share" in key or "ratio" in key}
+        assert "No ratio of two counts is written" in table["definitions"]["counts_only"]
+        assert "100 x their ratio" in table["definitions"]["road_criticality_inputs"]

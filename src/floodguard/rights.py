@@ -8,9 +8,10 @@ rights level of ``local``, ``pitch`` or ``public``, an output's level is the min
 This module is a thin registry over the rights records that already exist in the repository. It adds no
 rights of its own and it is not legal advice:
 
-* :data:`REGISTERED_RECORDS` names each record and the input it covers;
+* :data:`REGISTERED_RECORDS` names each record, the input it covers and the kind of source data it is a record of;
 * :meth:`RightsRegistry.require_use` refuses any use of an input that has no registered record, or whose
-  record is missing, malformed or not confirmed by the owners (signed by a human);
+  record is missing, malformed or not confirmed by the owners (signed by a human), or, when the caller says
+  which kind of source data it reads, whose record is a record of another kind;
 * :meth:`RightsRegistry.require_public_write` refuses a public write unless the record itself names what is
   written as in scope for publication;
 * :func:`minimum_level` gives the level of an output from the levels of its lineage.
@@ -21,6 +22,12 @@ envelope only". Every other layer of the same archive (the layer of 22 October 2
 therefore held at ``local``: it may be read and processed outside Git, and nothing derived from it may be
 written under ``apps/web/public/`` until the owners extend the record. The registry never assigns ``pitch``:
 no record says what a pitch-level use is.
+
+**What a level allows outside the public web folder is not stated by the signed files** (:data:`LEVELS_AND_GIT`).
+Guardrail GR6 says where a public output may be written and nothing else; plan 3.1 keeps pitch variants outside
+Git. Neither says whether a figure derived from a ``local`` input may be committed. This module therefore
+refuses a public write and nothing more: where a ``local`` or ``pitch`` output is kept is decided by the stage
+that writes it, and is reported there for the owners.
 """
 
 from __future__ import annotations
@@ -45,8 +52,25 @@ PRODUCT_4009 = "unosat_4009"
 SENTINEL2_AUTOMATED_TRACK = "copernicus_sentinel2_l2a_automated_track"
 """Registry key of the Sentinel-2 record of the automated optical track (a legal-notice record, not signed)."""
 
+SOURCE_PRODUCT_4009 = "unosat_gistda_product_4009"
+SOURCE_SENTINEL1 = "copernicus_sentinel1"
+SOURCE_SENTINEL2 = "copernicus_sentinel2"
+"""The kinds of source data a registered record can be a record of (:attr:`RegisteredRecord.source`)."""
+
+RECORD_CONFIRMED = "confirmed"
+"""The ``record_status`` and the ``owner_confirmation.status`` of a record the owners confirmed."""
+
 PUBLIC_WEB_ROOT = Path("apps/web/public")
 """The only place a public output is written (protocol v1a, guardrail GR6)."""
+
+LEVELS_AND_GIT = (
+    "Protocol v1a guardrail GR6 says that only a public output may be written under apps/web/public/. Plan 3.1 keeps "
+    "pitch variants outside Git and puts committed outputs (small tables and GeoJSON) in outputs/planning_v1/. "
+    "Neither says whether a figure derived from a local-level input may be committed. Until the owners decide "
+    "(open point E1-OP1), tasks E1 and E5 keep every layer and every per-unit table whose lineage is below public "
+    "outside Git, and their run receipts in Git hold whole-frame figures of local-level inputs and say so."
+)
+"""What the signed files say, and do not say, about where an output of each level is kept."""
 
 
 class RightsRefusedError(rights_basis.RightsBasisError):
@@ -60,6 +84,8 @@ class RegisteredRecord:
     input_id: str
     record_path: str
     covers: str
+    source: str = ""
+    """The kind of source data the record is a record of; empty when the entry does not say."""
 
 
 REGISTERED_RECORDS: tuple[RegisteredRecord, ...] = (
@@ -67,14 +93,20 @@ REGISTERED_RECORDS: tuple[RegisteredRecord, ...] = (
         PRODUCT_4009,
         rights_basis.RIGHTS_BASIS_4009_PATH.as_posix(),
         "UNOSAT/GISTDA product 4009 (event code FL20240912THA), every layer of the archive FL20240912THA_GDB.zip",
+        SOURCE_PRODUCT_4009,
     ),
     RegisteredRecord(
         SENTINEL2_AUTOMATED_TRACK,
         "docs/proposal_execution/automated_track/rights_basis_v1.json",
         "Copernicus Sentinel-2 Level-2A scenes of the automated optical reference track",
+        SOURCE_SENTINEL2,
     ),
 )
-"""The rights records that exist in the repository. An input that is not listed here has no record."""
+"""The rights records that exist in the repository. An input that is not listed here has no record.
+
+No entry is a record of Sentinel-1 data (:data:`SOURCE_SENTINEL1`), so no own radar candidate of case O1 can be
+used until the owners sign such a record and it is added here.
+"""
 
 
 @dataclass(frozen=True)
@@ -87,6 +119,8 @@ class RightsGrant:
     record_path: str
     record_sha256: str
     record_schema: str
+    record_status: str
+    source: str
     confirmed_by: tuple[str, ...]
     confirmed_on: str | None
     licence: Mapping[str, str]
@@ -105,7 +139,8 @@ class RightsGrant:
             "record_path": self.record_path,
             "record_sha256": self.record_sha256,
             "record_schema": self.record_schema,
-            "record_status": "confirmed",
+            "record_status": self.record_status,
+            "source": self.source,
             "confirmed_by": list(self.confirmed_by),
             "confirmed_on": self.confirmed_on,
             "licence": dict(self.licence),
@@ -186,23 +221,31 @@ class RightsRegistry:
             raise RightsRefusedError(f"the rights record of {input_id!r} must be a JSON object")
         return record, rights_basis.file_sha256(path)
 
-    def require_use(self, input_id: str, *, layer: str | None = None) -> RightsGrant:
+    def require_use(self, input_id: str, *, layer: str | None = None, source: str | None = None) -> RightsGrant:
         """Return what the confirmed rights record of an input allows, or refuse the use.
 
         Args:
             input_id: The registry key of the input.
             layer: The layer of the input that is read, where the input has layers.
+            source: The kind of source data the caller reads (for example :data:`SOURCE_SENTINEL1`). When it
+                is given, the registry entry must be a record of that kind: a record of another source does
+                not cover the use, whatever the caller was told the record is.
 
         Raises:
-            RightsRefusedError: when the input has no registered record, or the record is missing,
-                malformed or not confirmed by the owners.
+            RightsRefusedError: when the input has no registered record, the record is a record of another
+                kind of source data, or the record is missing, malformed or not confirmed by the owners.
         """
 
-        record, sha256 = self.read_record(input_id)
         entry = self.entry(input_id)
+        if source is not None and entry.source != source:
+            raise RightsRefusedError(
+                f"the rights record registered as {input_id!r} is a record of {entry.source or 'an unnamed source'} "
+                f"({entry.covers}); it does not cover a use of {source} data"
+            )
+        record, sha256 = self.read_record(input_id)
         if record.get("schema") == rights_basis.RIGHTS_BASIS_4009_SCHEMA:
-            return _grant_4009(input_id, layer, record, entry.record_path, sha256)
-        return _grant_generic(input_id, layer, record, entry.record_path, sha256)
+            return _grant_4009(input_id, layer, record, entry, sha256)
+        return _grant_generic(input_id, layer, record, entry, sha256)
 
     def require_public_write(self, input_id: str, *, layer: str | None = None) -> RightsGrant:
         """Return the grant for a write under ``apps/web/public/``, or refuse the write.
@@ -243,9 +286,10 @@ class RightsRegistry:
             raise RightsRefusedError(str(error)) from error
 
 
-def _grant_4009(input_id: str, layer: str | None, record: Mapping[str, Any], path: str, sha256: str) -> RightsGrant:
+def _grant_4009(input_id: str, layer: str | None, record: Mapping[str, Any], entry: RegisteredRecord, sha256: str) -> RightsGrant:
     """Build the grant of the product 4009 record, checked by :mod:`floodguard.rights_basis`."""
 
+    path = entry.record_path
     try:
         rights_basis.require_owner_confirmation(record)
     except rights_basis.RightsBasisError as error:
@@ -275,6 +319,8 @@ def _grant_4009(input_id: str, layer: str | None, record: Mapping[str, Any], pat
         record_path=path,
         record_sha256=sha256,
         record_schema=str(record["schema"]),
+        record_status=str(record["record_status"]),
+        source=entry.source,
         confirmed_by=tuple(confirmation["confirmed_by"]),
         confirmed_on=confirmation["confirmed_on"],
         licence={key: str(licence[key]) for key in ("name", "full_name", "spdx_id", "url", "legal_code_url") if key in licence},
@@ -285,19 +331,38 @@ def _grant_4009(input_id: str, layer: str | None, record: Mapping[str, Any], pat
     )
 
 
-def _grant_generic(input_id: str, layer: str | None, record: Mapping[str, Any], path: str, sha256: str) -> RightsGrant:
-    """Build the grant of a record of another schema: it must say that a human signed and cleared it.
+def _grant_generic(input_id: str, layer: str | None, record: Mapping[str, Any], entry: RegisteredRecord, sha256: str) -> RightsGrant:
+    """Build the grant of a record of another schema: it must say that the owners confirmed it and a human cleared it.
 
-    Both records of the repository carry ``signed_by_human`` and ``human_rights_clearance``. A record of a
-    schema this module does not know counts as confirmed only when both are true, and it gives the ``local``
-    level: no such record states what may be published.
+    A record of a schema this module does not know counts as confirmed only when it says so in every place the
+    product 4009 record does: ``signed_by_human`` and ``human_rights_clearance`` are true, ``record_status`` and
+    ``owner_confirmation.status`` are ``confirmed``, and ``owner_confirmation.confirmed_by`` names who confirmed
+    it (every name of ``required_from``, when the record lists them). A record that lacks one of these is not
+    confirmed. Such a record gives the ``local`` level: no such record states what may be published.
     """
 
+    path = entry.record_path
     if record.get("signed_by_human") is not True or record.get("human_rights_clearance") is not True:
         kind = record.get("rights_basis_kind", "(no kind)")
         raise RightsRefusedError(
             f"input {input_id!r} may not be used: its rights record ({kind}) is not signed by a human "
             "(signed_by_human and human_rights_clearance must both be true)"
+        )
+    confirmation = record.get("owner_confirmation")
+    status = confirmation.get("status") if isinstance(confirmation, Mapping) else None
+    if record.get("record_status") != RECORD_CONFIRMED or not isinstance(confirmation, Mapping) or status != RECORD_CONFIRMED:
+        raise RightsRefusedError(
+            f"input {input_id!r} may not be used: its rights record is not confirmed by the owners "
+            f"(record_status is {record.get('record_status')!r}, owner_confirmation.status is {status!r})"
+        )
+    names = confirmation.get("confirmed_by")
+    if not isinstance(names, list) or not names or any(not isinstance(name, str) or not name.strip() for name in names):
+        raise RightsRefusedError(f"input {input_id!r} may not be used: its rights record names nobody who confirmed it")
+    required = confirmation.get("required_from")
+    missing = [str(name) for name in required if name not in names] if isinstance(required, list) else []
+    if missing:
+        raise RightsRefusedError(
+            f"input {input_id!r} may not be used: the owner confirmation of its rights record is missing: {', '.join(missing)}"
         )
     attribution = record.get("required_attribution_text")
     if not isinstance(attribution, str) or not attribution.strip():
@@ -311,7 +376,6 @@ def _grant_generic(input_id: str, layer: str | None, record: Mapping[str, Any], 
         licence_record = {"name": record["legal_notice_title"], "url": str(record.get("legal_notice_url", ""))}
     else:
         raise RightsRefusedError(f"the rights record of {input_id!r} names no licence and no legal notice")
-    confirmation = record.get("owner_confirmation") if isinstance(record.get("owner_confirmation"), Mapping) else {}
     return RightsGrant(
         input_id=input_id,
         layer=layer,
@@ -319,14 +383,16 @@ def _grant_generic(input_id: str, layer: str | None, record: Mapping[str, Any], 
         record_path=path,
         record_sha256=sha256,
         record_schema=str(record.get("schema", "")),
-        confirmed_by=tuple(str(name) for name in confirmation.get("confirmed_by", ())),
+        record_status=str(record["record_status"]),
+        source=entry.source,
+        confirmed_by=tuple(names),
         confirmed_on=confirmation.get("confirmed_on"),
         licence=licence_record,
         attribution=attribution,
         share_alike=record.get("share_alike") if isinstance(record.get("share_alike"), str) else None,
         rights_level=LOCAL_LEVEL,
         rights_level_basis=(
-            "The record is signed by a human and states no publication scope, so the input is read and "
+            "The record is confirmed by the owners and states no publication scope, so the input is read and "
             "processed outside Git and nothing derived from it is written into public web files."
         ),
     )

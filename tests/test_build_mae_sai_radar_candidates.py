@@ -311,7 +311,11 @@ def test_the_t2_skill_bar_is_evaluated_with_the_signed_rule(run: dict[str, objec
     geoid = skill["geoid_condition"]
     assert geoid["m1_v2_test_iou_strict"] == 0.411164 and geoid["m1_v2_test_cells_without_an_answer"] == 0.678737
     assert geoid["holds_for_every_tile_left_out"] is False
-    assert geoid["said_beside_the_result_every_time"] == builder.R15_CAVEATS
+    assert geoid["said_beside_the_result_every_time"] == builder.R15_CAVEATS == [
+        "The GEOID result (0.411) is not distinguishable from 0.40 on 14 tiles.",
+        "67.9% of the GEOID test cells had no answer.",
+        "The GEOID figure measures agreement with a same-pass CEMS map, not an independent check.",
+    ]
     assert skill["methods"]["m1_literal"]["status_in_protocol_v1a"] == "declared_unable_to_meet"
     assert skill["methods"]["un_spider"]["status_in_protocol_v1a"] == "declared_unable_to_meet"
     assert "declared unable" in skill["methods"]["m1_literal"]["result"]
@@ -387,6 +391,7 @@ def test_a_second_run_needs_a_reason_and_names_what_it_replaces(
     assert receipt["supersedes"]["receipt_sha256"] == first_receipt
     assert receipt["supersedes"]["reason"] == "repeat for the test"
     assert receipt["supersedes"]["same_frame_and_unit_figures"] is True
+    assert receipt["supersedes"]["runs_before_the_superseded_one"] is None
     # The superseded files are copied outside Git under the time of the run they belong to.
     archive = inputs.raster_dir.parent / builder.SUPERSEDED_FOLDER.name
     assert builder.sha256_file(archive / f"{stamp}_{builder.TABLE_NAME}") == first_table
@@ -401,6 +406,13 @@ def test_a_second_run_needs_a_reason_and_names_what_it_replaces(
         raw = (output / "register" / f"a2_a4_{name}").read_bytes()
         assert raw.endswith(b"\n") and b"\r" not in raw
         assert json.loads(raw.decode("ascii")) == {"path": name, "sha256": builder.sha256_file(output / name)}
+    # A third run keeps the chain: it names the second run, which names the first.
+    second_table = builder.sha256_file(output / builder.TABLE_NAME)
+    builder.run(inputs, output, replace_reason="a third time")
+    third = json.loads((output / builder.RECEIPT_NAME).read_text(encoding="ascii"))
+    assert third["supersedes"]["table_sha256"] == second_table
+    assert third["supersedes"]["runs_before_the_superseded_one"]["table_sha256"] == first_table
+    assert third["supersedes"]["runs_before_the_superseded_one"]["reason"] == "repeat for the test"
 
 
 def test_the_sensitivity_run_has_its_own_files_and_replaces_nothing(
@@ -506,6 +518,18 @@ def test_the_skill_sentence_says_frame_and_tambons_apart() -> None:
     assert "in every tambon and for the frame" in every
     unable = builder.skill_sentence("m1_literal", entry(list("ABCDEFGH"), 0.0, "declared_unable_to_meet"), rule)
     assert unable.startswith("M1-literal is declared unable to meet the T2 skill bar")
+
+
+def test_the_text_the_builder_writes_passes_the_shared_wording_lint(run: dict[str, object]) -> None:
+    """A denial has to be worded as the shared rules list it ("not validated", "not an independent check")."""
+
+    from floodguard.wording_lint import find_violations, json_strings, load_rules
+
+    rules = load_rules(ROOT / "apps" / "web" / "src" / "lib" / "replay-wording-rules.json")
+    for document in (run["table"], run["receipt"]):
+        findings = [finding for path, text in json_strings(document) for finding in find_violations(text, rules, path)]
+        assert findings == []
+    assert find_violations("The layers are validated against product 4009.", rules)  # The lint does see a claim.
 
 
 def test_the_builder_reads_its_locations_from_arguments_only() -> None:

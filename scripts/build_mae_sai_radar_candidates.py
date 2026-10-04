@@ -110,6 +110,7 @@ REGISTER_PREFIX = "a2_a4_"
 TABLE_NAME = GEOCODINGS[s1.GEOCODING_GCP_POLYNOMIAL]["table"]
 RECEIPT_NAME = GEOCODINGS[s1.GEOCODING_GCP_POLYNOMIAL]["receipt"]
 GEOID_SUMMARY = ROOT / "outputs" / "geoid_m1_benchmark_v2_summary.json"
+RESULT_DOCUMENT = "docs/proposal_execution/automated_track/MAE_SAI_RADAR_CANDIDATES_RESULT.md"
 GEOID_DERIVED_CHECKS = ROOT / "outputs" / "geoid_m1_benchmark_v2_derived_checks.json"
 
 PLAN_TASK = "A2 (UN-SPIDER reproduction) and A4 (M1-literal and M1-v2 on the eight-tambon union)"
@@ -170,7 +171,7 @@ REQUIRED_STATEMENT_A2 = (
 R15_CAVEATS = [
     "The GEOID result (0.411) is not distinguishable from 0.40 on 14 tiles.",
     "67.9% of the GEOID test cells had no answer.",
-    "The GEOID figure is agreement with a same-pass CEMS map, not independent accuracy.",
+    "The GEOID figure measures agreement with a same-pass CEMS map, not an independent check.",
 ]
 ASSUMPTIONS = [
     "One image pair: 3 September 2024 23:16 UTC and 15 September 2024 23:16 UTC (16 September 06:16 in "
@@ -221,7 +222,8 @@ LIMITS = [
     "several days after the flood peak: residual water only. Nothing here describes the peak.",
     "Approximate geocoding in the run of record: no cell-level or road-level use until the displacement is "
     "removed. The sensitivity run removes most of it with a mapping the plan does not name.",
-    "No qualified reference exists for Mae Sai. No figure here is an accuracy, and nothing is validated.",
+    "No qualified reference exists for Mae Sai. The layers are not validated, and no figure here says how "
+    "correct a layer is.",
     "Tier 2 own candidates: verify before action.",
     "Radar shadow and layover are not flagged; that needs the terrain-corrected geometry of the SNAP path.",
     "Urban areas, wet soil, crops that changed between the two dates and wind on water all change the "
@@ -240,7 +242,7 @@ OPEN_POINTS = [
         "point": "Geocoding of the fallback path.",
         "protocol_says": "Plan row A4: without SNAP, a GCP warp with the sigmaNought table, labelled "
                          "'approximate geocoding: GCP affine, no DEM terrain correction'.",
-        "what_this_run_does": "Exactly that. The product's control points sit at the heights of a coarse "
+        "what_this_run_does": "The run of record does exactly that. The product's control points sit at the heights of a coarse "
                               "terrain model that is several hundred metres above the Mae Sai plain, so the "
                               "radar layers are displaced along the range direction. geolocation_check gives "
                               "the measured displacement and what a mapping with a height per cell "
@@ -1256,10 +1258,11 @@ def build(
         "case": {"id": CASE_ID, "lane": LANE, "tier": TIER, "frame": frame["frame"],
                  "case_reference_date": frame["case_reference_date"].isoformat(),
                  "input_acquisition_in_protocol_v1a": frame["input_acquisition"]},
+        "result_document": RESULT_DOCUMENT,
         "status": "t2_own_candidates_unqualified",
         "status_note": "Written with protocol v1a and v1b in force (protocol_sha256). Three own candidates of "
-                       "tier T2: verify before action. None is validated, none was compared with a reference, "
-                       "and none is an observation of a flood. No FPPS, A-E class or ensemble is here.",
+                       "tier T2: verify before action. They are not validated: none was compared with a "
+                       "reference, and none is an observation of a flood. No FPPS, A-E class or ensemble is here.",
         "run_role": run_role,
         "run_role_note": (
             "The run of record: the fallback of plan row A4, as the plan states it."
@@ -1462,6 +1465,7 @@ def supersedes(table_path: Path, receipt_path: Path, table: Mapping[str, Any], r
     import shutil
 
     previous = json.loads(table_path.read_text(encoding="utf-8"))
+    previous_receipt = json.loads(receipt_path.read_text(encoding="utf-8")) if receipt_path.exists() else {}
 
     def figures(document: Mapping[str, Any]) -> dict[str, Any]:
         return {name: {"frame": method.get("frame"), "units": method.get("units")}
@@ -1483,6 +1487,7 @@ def supersedes(table_path: Path, receipt_path: Path, table: Mapping[str, Any], r
         "copies_kept_outside_git": kept,
         "note": "The superseded table and receipt are named by SHA-256 and copied outside Git. They are in "
                 "the Git history only if they were committed.",
+        "runs_before_the_superseded_one": previous_receipt.get("supersedes"),
     }
 
 

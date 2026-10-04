@@ -114,7 +114,7 @@
 /* Thai words in a monospaced face are set far apart: the Thai line keeps the body face. */
 .hourOf:lang(th) { font-family: var(--c-font); font-size: 12px; }
 .phaseLine { color: var(--c-muted); font-size: 12px; }
-.phaseShort { display: none; }
+.phaseShort, .hourShort { display: none; }
 .figuresHead { display: flex; align-items: center; gap: 8px; margin: 7px 0 5px; }
 .figuresHead::after { content: ""; flex: 1 1 auto; height: 1px; background: var(--c-line); }
 /* Dashed means modelled. Every modelled figure of the card sits under this tag. */
@@ -340,8 +340,8 @@
   .situation > .clock { grid-column: 1; grid-row: 1; }
   .situation > .clockHead { grid-column: 2; grid-row: 1; }
   .clockHead .eyebrow { display: none; }
-  .clockLong, .phaseLong { display: none; }
-  .clockShort, .phaseShort { display: inline; }
+  .clockLong, .phaseLong, .hourLong { display: none; }
+  .clockShort, .phaseShort, .hourShort { display: inline; }
   .clockTime { font-size: 19px; }
   .figures { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .figureSlot { display: none; }

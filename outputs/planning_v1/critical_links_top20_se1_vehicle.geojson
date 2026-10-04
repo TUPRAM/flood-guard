@@ -1,0 +1,996 @@
+{
+  "type": "FeatureCollection",
+  "name": "critical_links_top20_se1_vehicle",
+  "schema_version": "floodguard.critical_links_top20.v1",
+  "case": "se1_mae_sai",
+  "travel_mode": "legacy_vehicle",
+  "generated_at_utc": "2026-10-04T08:24:35Z",
+  "ranking_rule_version": "critical_link_ranking_v1",
+  "context_canonical_sha256": "0b2672b6d4d1d94da3a4c39d819d980a9e5bf7845bb22fea1284a2893a6351a6",
+  "ranking_table_sha256": "dad48c4993c1545ce0142f2dfe98d7b6af8858fda1dc2364914207e14115307c",
+  "protocol_v1a_sha256": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+  "protocol_v1b_sha256": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7",
+  "receipt": "outputs/planning_v1/e6_critical_links_se1_vehicle.json",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "status": "first_run_unreviewed_candidates",
+        "status_note": "First run of plan task E6 on the E4 planning context of record. The links are unreviewed candidates: the desk check of the top 20 (plan task V1) has not been done, and no link is an observed closure. Owner choice 10 binds the ranking by the SHA-256 of the whole ranking table in the receipt of the first scoring run.",
+        "generated_at_utc": "2026-10-04T08:24:35Z",
+        "source_timestamp": "2026-07-10T02:46:49Z",
+        "confidence_class": "low",
+        "confidence_basis": "OSM roads and hospitals are unverified map records, and WorldPop 2020 is a modelled resident count. Routes are modelled class speeds on an undirected graph, and the grade joins are coordinate coincidences whose passability is unknown. No link was checked against imagery, on the ground or by a reviewer.",
+        "assumptions": [
+          "A resident's baseline route is the fastest modelled vehicle route from the road node their WorldPop 2020 cell snaps to (within 250 m) to the nearest destination: an OSM hospital in the routing context or a main-road entry (a node of a trunk or primary edge, links included). One shortest-path tree serves both kinds of destination, so a route ends at the first destination it meets (owner choice 9).",
+          "The flow of a link is the number of residents whose baseline route uses it (WorldPop 2020 residents at each origin node; drafter reading DR-B03). It measures use. Another route may exist, and the flow does not say what closing the link would cost.",
+          "Links are ranked by flow, and equal flows by edge ID. Equal routes go to the smaller destination ID, then to the smaller parent node ID and edge ID, as in floodguard.evidence_interventions.select_interventions.",
+          "An edge is the straight segment between two road nodes, so one street is many edges. Edges of a street with no resident between them carry the same flow and take neighbouring ranks.",
+          "graph_bridge is true when removing the edge disconnects the modelled graph (Tarjan). osm_bridge repeats the OSM tag bridge=yes. Neither shows that a structure exists or what state it is in.",
+          "in_flood_extent is null because no flood layer is read. The flag is added for each flood input when a case is assessed.",
+          "Road times are fixed class speeds on an undirected graph. One-way rules, turn restrictions and road condition are not represented. A grade join shows that two ways end at the same OSM coordinate; it does not show that the transition can be driven.",
+          "Routes stay inside the routing context of the case. Roads and destinations outside it are not seen."
+        ],
+        "official_warning": false,
+        "operational_status": "non_operational",
+        "rank": 1,
+        "edge_id": "osm-way-1114870832-segment-0",
+        "spt_flow_residents": 9261.088303923607,
+        "graph_bridge": false,
+        "osm_bridge": false,
+        "edge_kind": "road",
+        "road_class": "tertiary",
+        "osm_way_id": "1114870832",
+        "from_node": "osm-node-7ba936828a5bc013d8c3",
+        "to_node": "osm-node-c924f8cb0179a628a995",
+        "length_m": 25.826648962580276,
+        "normal_minutes": 0.03873997344387042,
+        "in_flood_extent": null
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            99.9048649,
+            20.4399737
+          ],
+          [
+            99.9051088,
+            20.4400137
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "status": "first_run_unreviewed_candidates",
+        "status_note": "First run of plan task E6 on the E4 planning context of record. The links are unreviewed candidates: the desk check of the top 20 (plan task V1) has not been done, and no link is an observed closure. Owner choice 10 binds the ranking by the SHA-256 of the whole ranking table in the receipt of the first scoring run.",
+        "generated_at_utc": "2026-10-04T08:24:35Z",
+        "source_timestamp": "2026-07-10T02:46:49Z",
+        "confidence_class": "low",
+        "confidence_basis": "OSM roads and hospitals are unverified map records, and WorldPop 2020 is a modelled resident count. Routes are modelled class speeds on an undirected graph, and the grade joins are coordinate coincidences whose passability is unknown. No link was checked against imagery, on the ground or by a reviewer.",
+        "assumptions": [
+          "A resident's baseline route is the fastest modelled vehicle route from the road node their WorldPop 2020 cell snaps to (within 250 m) to the nearest destination: an OSM hospital in the routing context or a main-road entry (a node of a trunk or primary edge, links included). One shortest-path tree serves both kinds of destination, so a route ends at the first destination it meets (owner choice 9).",
+          "The flow of a link is the number of residents whose baseline route uses it (WorldPop 2020 residents at each origin node; drafter reading DR-B03). It measures use. Another route may exist, and the flow does not say what closing the link would cost.",
+          "Links are ranked by flow, and equal flows by edge ID. Equal routes go to the smaller destination ID, then to the smaller parent node ID and edge ID, as in floodguard.evidence_interventions.select_interventions.",
+          "An edge is the straight segment between two road nodes, so one street is many edges. Edges of a street with no resident between them carry the same flow and take neighbouring ranks.",
+          "graph_bridge is true when removing the edge disconnects the modelled graph (Tarjan). osm_bridge repeats the OSM tag bridge=yes. Neither shows that a structure exists or what state it is in.",
+          "in_flood_extent is null because no flood layer is read. The flag is added for each flood input when a case is assessed.",
+          "Road times are fixed class speeds on an undirected graph. One-way rules, turn restrictions and road condition are not represented. A grade join shows that two ways end at the same OSM coordinate; it does not show that the transition can be driven.",
+          "Routes stay inside the routing context of the case. Roads and destinations outside it are not seen."
+        ],
+        "official_warning": false,
+        "operational_status": "non_operational",
+        "rank": 2,
+        "edge_id": "osm-way-1114870832-segment-1",
+        "spt_flow_residents": 9240.79707467556,
+        "graph_bridge": false,
+        "osm_bridge": false,
+        "edge_kind": "road",
+        "road_class": "tertiary",
+        "osm_way_id": "1114870832",
+        "from_node": "osm-node-c924f8cb0179a628a995",
+        "to_node": "osm-node-731747984383f088b178",
+        "length_m": 15.685320688914004,
+        "normal_minutes": 0.023527981033371007,
+        "in_flood_extent": null
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            99.9051088,
+            20.4400137
+          ],
+          [
+            99.905257,
+            20.4400376
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "status": "first_run_unreviewed_candidates",
+        "status_note": "First run of plan task E6 on the E4 planning context of record. The links are unreviewed candidates: the desk check of the top 20 (plan task V1) has not been done, and no link is an observed closure. Owner choice 10 binds the ranking by the SHA-256 of the whole ranking table in the receipt of the first scoring run.",
+        "generated_at_utc": "2026-10-04T08:24:35Z",
+        "source_timestamp": "2026-07-10T02:46:49Z",
+        "confidence_class": "low",
+        "confidence_basis": "OSM roads and hospitals are unverified map records, and WorldPop 2020 is a modelled resident count. Routes are modelled class speeds on an undirected graph, and the grade joins are coordinate coincidences whose passability is unknown. No link was checked against imagery, on the ground or by a reviewer.",
+        "assumptions": [
+          "A resident's baseline route is the fastest modelled vehicle route from the road node their WorldPop 2020 cell snaps to (within 250 m) to the nearest destination: an OSM hospital in the routing context or a main-road entry (a node of a trunk or primary edge, links included). One shortest-path tree serves both kinds of destination, so a route ends at the first destination it meets (owner choice 9).",
+          "The flow of a link is the number of residents whose baseline route uses it (WorldPop 2020 residents at each origin node; drafter reading DR-B03). It measures use. Another route may exist, and the flow does not say what closing the link would cost.",
+          "Links are ranked by flow, and equal flows by edge ID. Equal routes go to the smaller destination ID, then to the smaller parent node ID and edge ID, as in floodguard.evidence_interventions.select_interventions.",
+          "An edge is the straight segment between two road nodes, so one street is many edges. Edges of a street with no resident between them carry the same flow and take neighbouring ranks.",
+          "graph_bridge is true when removing the edge disconnects the modelled graph (Tarjan). osm_bridge repeats the OSM tag bridge=yes. Neither shows that a structure exists or what state it is in.",
+          "in_flood_extent is null because no flood layer is read. The flag is added for each flood input when a case is assessed.",
+          "Road times are fixed class speeds on an undirected graph. One-way rules, turn restrictions and road condition are not represented. A grade join shows that two ways end at the same OSM coordinate; it does not show that the transition can be driven.",
+          "Routes stay inside the routing context of the case. Roads and destinations outside it are not seen."
+        ],
+        "official_warning": false,
+        "operational_status": "non_operational",
+        "rank": 3,
+        "edge_id": "osm-way-1114870832-segment-2",
+        "spt_flow_residents": 9240.79707467556,
+        "graph_bridge": false,
+        "osm_bridge": false,
+        "edge_kind": "road",
+        "road_class": "tertiary",
+        "osm_way_id": "1114870832",
+        "from_node": "osm-node-731747984383f088b178",
+        "to_node": "osm-node-0eeb429c35131db97ace",
+        "length_m": 16.090341473846653,
+        "normal_minutes": 0.02413551221076998,
+        "in_flood_extent": null
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            99.905257,
+            20.4400376
+          ],
+          [
+            99.9054111,
+            20.4400437
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "status": "first_run_unreviewed_candidates",
+        "status_note": "First run of plan task E6 on the E4 planning context of record. The links are unreviewed candidates: the desk check of the top 20 (plan task V1) has not been done, and no link is an observed closure. Owner choice 10 binds the ranking by the SHA-256 of the whole ranking table in the receipt of the first scoring run.",
+        "generated_at_utc": "2026-10-04T08:24:35Z",
+        "source_timestamp": "2026-07-10T02:46:49Z",
+        "confidence_class": "low",
+        "confidence_basis": "OSM roads and hospitals are unverified map records, and WorldPop 2020 is a modelled resident count. Routes are modelled class speeds on an undirected graph, and the grade joins are coordinate coincidences whose passability is unknown. No link was checked against imagery, on the ground or by a reviewer.",
+        "assumptions": [
+          "A resident's baseline route is the fastest modelled vehicle route from the road node their WorldPop 2020 cell snaps to (within 250 m) to the nearest destination: an OSM hospital in the routing context or a main-road entry (a node of a trunk or primary edge, links included). One shortest-path tree serves both kinds of destination, so a route ends at the first destination it meets (owner choice 9).",
+          "The flow of a link is the number of residents whose baseline route uses it (WorldPop 2020 residents at each origin node; drafter reading DR-B03). It measures use. Another route may exist, and the flow does not say what closing the link would cost.",
+          "Links are ranked by flow, and equal flows by edge ID. Equal routes go to the smaller destination ID, then to the smaller parent node ID and edge ID, as in floodguard.evidence_interventions.select_interventions.",
+          "An edge is the straight segment between two road nodes, so one street is many edges. Edges of a street with no resident between them carry the same flow and take neighbouring ranks.",
+          "graph_bridge is true when removing the edge disconnects the modelled graph (Tarjan). osm_bridge repeats the OSM tag bridge=yes. Neither shows that a structure exists or what state it is in.",
+          "in_flood_extent is null because no flood layer is read. The flag is added for each flood input when a case is assessed.",
+          "Road times are fixed class speeds on an undirected graph. One-way rules, turn restrictions and road condition are not represented. A grade join shows that two ways end at the same OSM coordinate; it does not show that the transition can be driven.",
+          "Routes stay inside the routing context of the case. Roads and destinations outside it are not seen."
+        ],
+        "official_warning": false,
+        "operational_status": "non_operational",
+        "rank": 4,
+        "edge_id": "osm-way-1114870832-segment-3",
+        "spt_flow_residents": 9240.79707467556,
+        "graph_bridge": false,
+        "osm_bridge": false,
+        "edge_kind": "road",
+        "road_class": "tertiary",
+        "osm_way_id": "1114870832",
+        "from_node": "osm-node-0eeb429c35131db97ace",
+        "to_node": "osm-node-fec45f225dc0e8b69fd8",
+        "length_m": 15.572599281325708,
+        "normal_minutes": 0.023358898921988565,
+        "in_flood_extent": null
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            99.9054111,
+            20.4400437
+          ],
+          [
+            99.9055596,
+            20.4400294
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "status": "first_run_unreviewed_candidates",
+        "status_note": "First run of plan task E6 on the E4 planning context of record. The links are unreviewed candidates: the desk check of the top 20 (plan task V1) has not been done, and no link is an observed closure. Owner choice 10 binds the ranking by the SHA-256 of the whole ranking table in the receipt of the first scoring run.",
+        "generated_at_utc": "2026-10-04T08:24:35Z",
+        "source_timestamp": "2026-07-10T02:46:49Z",
+        "confidence_class": "low",
+        "confidence_basis": "OSM roads and hospitals are unverified map records, and WorldPop 2020 is a modelled resident count. Routes are modelled class speeds on an undirected graph, and the grade joins are coordinate coincidences whose passability is unknown. No link was checked against imagery, on the ground or by a reviewer.",
+        "assumptions": [
+          "A resident's baseline route is the fastest modelled vehicle route from the road node their WorldPop 2020 cell snaps to (within 250 m) to the nearest destination: an OSM hospital in the routing context or a main-road entry (a node of a trunk or primary edge, links included). One shortest-path tree serves both kinds of destination, so a route ends at the first destination it meets (owner choice 9).",
+          "The flow of a link is the number of residents whose baseline route uses it (WorldPop 2020 residents at each origin node; drafter reading DR-B03). It measures use. Another route may exist, and the flow does not say what closing the link would cost.",
+          "Links are ranked by flow, and equal flows by edge ID. Equal routes go to the smaller destination ID, then to the smaller parent node ID and edge ID, as in floodguard.evidence_interventions.select_interventions.",
+          "An edge is the straight segment between two road nodes, so one street is many edges. Edges of a street with no resident between them carry the same flow and take neighbouring ranks.",
+          "graph_bridge is true when removing the edge disconnects the modelled graph (Tarjan). osm_bridge repeats the OSM tag bridge=yes. Neither shows that a structure exists or what state it is in.",
+          "in_flood_extent is null because no flood layer is read. The flag is added for each flood input when a case is assessed.",
+          "Road times are fixed class speeds on an undirected graph. One-way rules, turn restrictions and road condition are not represented. A grade join shows that two ways end at the same OSM coordinate; it does not show that the transition can be driven.",
+          "Routes stay inside the routing context of the case. Roads and destinations outside it are not seen."
+        ],
+        "official_warning": false,
+        "operational_status": "non_operational",
+        "rank": 5,
+        "edge_id": "osm-way-1114870832-segment-4",
+        "spt_flow_residents": 9220.23958337307,
+        "graph_bridge": false,
+        "osm_bridge": false,
+        "edge_kind": "road",
+        "road_class": "tertiary",
+        "osm_way_id": "1114870832",
+        "from_node": "osm-node-fec45f225dc0e8b69fd8",
+        "to_node": "osm-node-0da78b7efc15630b2084",
+        "length_m": 96.46060934658797,
+        "normal_minutes": 0.14469091401988193,
+        "in_flood_extent": null
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            99.9055596,
+            20.4400294
+          ],
+          [
+            99.9064681,
+            20.4398673
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "status": "first_run_unreviewed_candidates",
+        "status_note": "First run of plan task E6 on the E4 planning context of record. The links are unreviewed candidates: the desk check of the top 20 (plan task V1) has not been done, and no link is an observed closure. Owner choice 10 binds the ranking by the SHA-256 of the whole ranking table in the receipt of the first scoring run.",
+        "generated_at_utc": "2026-10-04T08:24:35Z",
+        "source_timestamp": "2026-07-10T02:46:49Z",
+        "confidence_class": "low",
+        "confidence_basis": "OSM roads and hospitals are unverified map records, and WorldPop 2020 is a modelled resident count. Routes are modelled class speeds on an undirected graph, and the grade joins are coordinate coincidences whose passability is unknown. No link was checked against imagery, on the ground or by a reviewer.",
+        "assumptions": [
+          "A resident's baseline route is the fastest modelled vehicle route from the road node their WorldPop 2020 cell snaps to (within 250 m) to the nearest destination: an OSM hospital in the routing context or a main-road entry (a node of a trunk or primary edge, links included). One shortest-path tree serves both kinds of destination, so a route ends at the first destination it meets (owner choice 9).",
+          "The flow of a link is the number of residents whose baseline route uses it (WorldPop 2020 residents at each origin node; drafter reading DR-B03). It measures use. Another route may exist, and the flow does not say what closing the link would cost.",
+          "Links are ranked by flow, and equal flows by edge ID. Equal routes go to the smaller destination ID, then to the smaller parent node ID and edge ID, as in floodguard.evidence_interventions.select_interventions.",
+          "An edge is the straight segment between two road nodes, so one street is many edges. Edges of a street with no resident between them carry the same flow and take neighbouring ranks.",
+          "graph_bridge is true when removing the edge disconnects the modelled graph (Tarjan). osm_bridge repeats the OSM tag bridge=yes. Neither shows that a structure exists or what state it is in.",
+          "in_flood_extent is null because no flood layer is read. The flag is added for each flood input when a case is assessed.",
+          "Road times are fixed class speeds on an undirected graph. One-way rules, turn restrictions and road condition are not represented. A grade join shows that two ways end at the same OSM coordinate; it does not show that the transition can be driven.",
+          "Routes stay inside the routing context of the case. Roads and destinations outside it are not seen."
+        ],
+        "official_warning": false,
+        "operational_status": "non_operational",
+        "rank": 6,
+        "edge_id": "osm-way-1114870832-segment-5",
+        "spt_flow_residents": 9220.23958337307,
+        "graph_bridge": false,
+        "osm_bridge": false,
+        "edge_kind": "road",
+        "road_class": "tertiary",
+        "osm_way_id": "1114870832",
+        "from_node": "osm-node-0da78b7efc15630b2084",
+        "to_node": "osm-node-41aee079c1b5d9b457b2",
+        "length_m": 15.73381356392416,
+        "normal_minutes": 0.023600720345886242,
+        "in_flood_extent": null
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            99.9064681,
+            20.4398673
+          ],
+          [
+            99.906617,
+            20.4398447
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "status": "first_run_unreviewed_candidates",
+        "status_note": "First run of plan task E6 on the E4 planning context of record. The links are unreviewed candidates: the desk check of the top 20 (plan task V1) has not been done, and no link is an observed closure. Owner choice 10 binds the ranking by the SHA-256 of the whole ranking table in the receipt of the first scoring run.",
+        "generated_at_utc": "2026-10-04T08:24:35Z",
+        "source_timestamp": "2026-07-10T02:46:49Z",
+        "confidence_class": "low",
+        "confidence_basis": "OSM roads and hospitals are unverified map records, and WorldPop 2020 is a modelled resident count. Routes are modelled class speeds on an undirected graph, and the grade joins are coordinate coincidences whose passability is unknown. No link was checked against imagery, on the ground or by a reviewer.",
+        "assumptions": [
+          "A resident's baseline route is the fastest modelled vehicle route from the road node their WorldPop 2020 cell snaps to (within 250 m) to the nearest destination: an OSM hospital in the routing context or a main-road entry (a node of a trunk or primary edge, links included). One shortest-path tree serves both kinds of destination, so a route ends at the first destination it meets (owner choice 9).",
+          "The flow of a link is the number of residents whose baseline route uses it (WorldPop 2020 residents at each origin node; drafter reading DR-B03). It measures use. Another route may exist, and the flow does not say what closing the link would cost.",
+          "Links are ranked by flow, and equal flows by edge ID. Equal routes go to the smaller destination ID, then to the smaller parent node ID and edge ID, as in floodguard.evidence_interventions.select_interventions.",
+          "An edge is the straight segment between two road nodes, so one street is many edges. Edges of a street with no resident between them carry the same flow and take neighbouring ranks.",
+          "graph_bridge is true when removing the edge disconnects the modelled graph (Tarjan). osm_bridge repeats the OSM tag bridge=yes. Neither shows that a structure exists or what state it is in.",
+          "in_flood_extent is null because no flood layer is read. The flag is added for each flood input when a case is assessed.",
+          "Road times are fixed class speeds on an undirected graph. One-way rules, turn restrictions and road condition are not represented. A grade join shows that two ways end at the same OSM coordinate; it does not show that the transition can be driven.",
+          "Routes stay inside the routing context of the case. Roads and destinations outside it are not seen."
+        ],
+        "official_warning": false,
+        "operational_status": "non_operational",
+        "rank": 7,
+        "edge_id": "osm-way-1114870832-segment-10",
+        "spt_flow_residents": 9197.20677125454,
+        "graph_bridge": false,
+        "osm_bridge": false,
+        "edge_kind": "road",
+        "road_class": "tertiary",
+        "osm_way_id": "1114870832",
+        "from_node": "osm-node-6fd533d6216fdd2e3bd6",
+        "to_node": "osm-node-f66e86550d7ad785c283",
+        "length_m": 24.914862874126495,
+        "normal_minutes": 0.03737229431118974,
+        "in_flood_extent": null
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            99.9074013,
+            20.4397404
+          ],
+          [
+            99.9076396,
+            20.4397553
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "status": "first_run_unreviewed_candidates",
+        "status_note": "First run of plan task E6 on the E4 planning context of record. The links are unreviewed candidates: the desk check of the top 20 (plan task V1) has not been done, and no link is an observed closure. Owner choice 10 binds the ranking by the SHA-256 of the whole ranking table in the receipt of the first scoring run.",
+        "generated_at_utc": "2026-10-04T08:24:35Z",
+        "source_timestamp": "2026-07-10T02:46:49Z",
+        "confidence_class": "low",
+        "confidence_basis": "OSM roads and hospitals are unverified map records, and WorldPop 2020 is a modelled resident count. Routes are modelled class speeds on an undirected graph, and the grade joins are coordinate coincidences whose passability is unknown. No link was checked against imagery, on the ground or by a reviewer.",
+        "assumptions": [
+          "A resident's baseline route is the fastest modelled vehicle route from the road node their WorldPop 2020 cell snaps to (within 250 m) to the nearest destination: an OSM hospital in the routing context or a main-road entry (a node of a trunk or primary edge, links included). One shortest-path tree serves both kinds of destination, so a route ends at the first destination it meets (owner choice 9).",
+          "The flow of a link is the number of residents whose baseline route uses it (WorldPop 2020 residents at each origin node; drafter reading DR-B03). It measures use. Another route may exist, and the flow does not say what closing the link would cost.",
+          "Links are ranked by flow, and equal flows by edge ID. Equal routes go to the smaller destination ID, then to the smaller parent node ID and edge ID, as in floodguard.evidence_interventions.select_interventions.",
+          "An edge is the straight segment between two road nodes, so one street is many edges. Edges of a street with no resident between them carry the same flow and take neighbouring ranks.",
+          "graph_bridge is true when removing the edge disconnects the modelled graph (Tarjan). osm_bridge repeats the OSM tag bridge=yes. Neither shows that a structure exists or what state it is in.",
+          "in_flood_extent is null because no flood layer is read. The flag is added for each flood input when a case is assessed.",
+          "Road times are fixed class speeds on an undirected graph. One-way rules, turn restrictions and road condition are not represented. A grade join shows that two ways end at the same OSM coordinate; it does not show that the transition can be driven.",
+          "Routes stay inside the routing context of the case. Roads and destinations outside it are not seen."
+        ],
+        "official_warning": false,
+        "operational_status": "non_operational",
+        "rank": 8,
+        "edge_id": "osm-way-1114870832-segment-6",
+        "spt_flow_residents": 9197.20677125454,
+        "graph_bridge": false,
+        "osm_bridge": false,
+        "edge_kind": "road",
+        "road_class": "tertiary",
+        "osm_way_id": "1114870832",
+        "from_node": "osm-node-41aee079c1b5d9b457b2",
+        "to_node": "osm-node-f193889626e5e40dd7db",
+        "length_m": 32.00726509865893,
+        "normal_minutes": 0.04801089764798839,
+        "in_flood_extent": null
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            99.906617,
+            20.4398447
+          ],
+          [
+            99.9069174,
+            20.4397859
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "status": "first_run_unreviewed_candidates",
+        "status_note": "First run of plan task E6 on the E4 planning context of record. The links are unreviewed candidates: the desk check of the top 20 (plan task V1) has not been done, and no link is an observed closure. Owner choice 10 binds the ranking by the SHA-256 of the whole ranking table in the receipt of the first scoring run.",
+        "generated_at_utc": "2026-10-04T08:24:35Z",
+        "source_timestamp": "2026-07-10T02:46:49Z",
+        "confidence_class": "low",
+        "confidence_basis": "OSM roads and hospitals are unverified map records, and WorldPop 2020 is a modelled resident count. Routes are modelled class speeds on an undirected graph, and the grade joins are coordinate coincidences whose passability is unknown. No link was checked against imagery, on the ground or by a reviewer.",
+        "assumptions": [
+          "A resident's baseline route is the fastest modelled vehicle route from the road node their WorldPop 2020 cell snaps to (within 250 m) to the nearest destination: an OSM hospital in the routing context or a main-road entry (a node of a trunk or primary edge, links included). One shortest-path tree serves both kinds of destination, so a route ends at the first destination it meets (owner choice 9).",
+          "The flow of a link is the number of residents whose baseline route uses it (WorldPop 2020 residents at each origin node; drafter reading DR-B03). It measures use. Another route may exist, and the flow does not say what closing the link would cost.",
+          "Links are ranked by flow, and equal flows by edge ID. Equal routes go to the smaller destination ID, then to the smaller parent node ID and edge ID, as in floodguard.evidence_interventions.select_interventions.",
+          "An edge is the straight segment between two road nodes, so one street is many edges. Edges of a street with no resident between them carry the same flow and take neighbouring ranks.",
+          "graph_bridge is true when removing the edge disconnects the modelled graph (Tarjan). osm_bridge repeats the OSM tag bridge=yes. Neither shows that a structure exists or what state it is in.",
+          "in_flood_extent is null because no flood layer is read. The flag is added for each flood input when a case is assessed.",
+          "Road times are fixed class speeds on an undirected graph. One-way rules, turn restrictions and road condition are not represented. A grade join shows that two ways end at the same OSM coordinate; it does not show that the transition can be driven.",
+          "Routes stay inside the routing context of the case. Roads and destinations outside it are not seen."
+        ],
+        "official_warning": false,
+        "operational_status": "non_operational",
+        "rank": 9,
+        "edge_id": "osm-way-1114870832-segment-7",
+        "spt_flow_residents": 9197.20677125454,
+        "graph_bridge": false,
+        "osm_bridge": false,
+        "edge_kind": "road",
+        "road_class": "tertiary",
+        "osm_way_id": "1114870832",
+        "from_node": "osm-node-f193889626e5e40dd7db",
+        "to_node": "osm-node-14d7430cf4685603370f",
+        "length_m": 16.351972569138418,
+        "normal_minutes": 0.024527958853707628,
+        "in_flood_extent": null
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            99.9069174,
+            20.4397859
+          ],
+          [
+            99.9070709,
+            20.439756
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "status": "first_run_unreviewed_candidates",
+        "status_note": "First run of plan task E6 on the E4 planning context of record. The links are unreviewed candidates: the desk check of the top 20 (plan task V1) has not been done, and no link is an observed closure. Owner choice 10 binds the ranking by the SHA-256 of the whole ranking table in the receipt of the first scoring run.",
+        "generated_at_utc": "2026-10-04T08:24:35Z",
+        "source_timestamp": "2026-07-10T02:46:49Z",
+        "confidence_class": "low",
+        "confidence_basis": "OSM roads and hospitals are unverified map records, and WorldPop 2020 is a modelled resident count. Routes are modelled class speeds on an undirected graph, and the grade joins are coordinate coincidences whose passability is unknown. No link was checked against imagery, on the ground or by a reviewer.",
+        "assumptions": [
+          "A resident's baseline route is the fastest modelled vehicle route from the road node their WorldPop 2020 cell snaps to (within 250 m) to the nearest destination: an OSM hospital in the routing context or a main-road entry (a node of a trunk or primary edge, links included). One shortest-path tree serves both kinds of destination, so a route ends at the first destination it meets (owner choice 9).",
+          "The flow of a link is the number of residents whose baseline route uses it (WorldPop 2020 residents at each origin node; drafter reading DR-B03). It measures use. Another route may exist, and the flow does not say what closing the link would cost.",
+          "Links are ranked by flow, and equal flows by edge ID. Equal routes go to the smaller destination ID, then to the smaller parent node ID and edge ID, as in floodguard.evidence_interventions.select_interventions.",
+          "An edge is the straight segment between two road nodes, so one street is many edges. Edges of a street with no resident between them carry the same flow and take neighbouring ranks.",
+          "graph_bridge is true when removing the edge disconnects the modelled graph (Tarjan). osm_bridge repeats the OSM tag bridge=yes. Neither shows that a structure exists or what state it is in.",
+          "in_flood_extent is null because no flood layer is read. The flag is added for each flood input when a case is assessed.",
+          "Road times are fixed class speeds on an undirected graph. One-way rules, turn restrictions and road condition are not represented. A grade join shows that two ways end at the same OSM coordinate; it does not show that the transition can be driven.",
+          "Routes stay inside the routing context of the case. Roads and destinations outside it are not seen."
+        ],
+        "official_warning": false,
+        "operational_status": "non_operational",
+        "rank": 10,
+        "edge_id": "osm-way-1114870832-segment-8",
+        "spt_flow_residents": 9197.20677125454,
+        "graph_bridge": false,
+        "osm_bridge": false,
+        "edge_kind": "road",
+        "road_class": "tertiary",
+        "osm_way_id": "1114870832",
+        "from_node": "osm-node-14d7430cf4685603370f",
+        "to_node": "osm-node-989888523d282d8db214",
+        "length_m": 18.473340368065287,
+        "normal_minutes": 0.02771001055209793,
+        "in_flood_extent": null
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            99.9070709,
+            20.439756
+          ],
+          [
+            99.9072471,
+            20.4397394
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "status": "first_run_unreviewed_candidates",
+        "status_note": "First run of plan task E6 on the E4 planning context of record. The links are unreviewed candidates: the desk check of the top 20 (plan task V1) has not been done, and no link is an observed closure. Owner choice 10 binds the ranking by the SHA-256 of the whole ranking table in the receipt of the first scoring run.",
+        "generated_at_utc": "2026-10-04T08:24:35Z",
+        "source_timestamp": "2026-07-10T02:46:49Z",
+        "confidence_class": "low",
+        "confidence_basis": "OSM roads and hospitals are unverified map records, and WorldPop 2020 is a modelled resident count. Routes are modelled class speeds on an undirected graph, and the grade joins are coordinate coincidences whose passability is unknown. No link was checked against imagery, on the ground or by a reviewer.",
+        "assumptions": [
+          "A resident's baseline route is the fastest modelled vehicle route from the road node their WorldPop 2020 cell snaps to (within 250 m) to the nearest destination: an OSM hospital in the routing context or a main-road entry (a node of a trunk or primary edge, links included). One shortest-path tree serves both kinds of destination, so a route ends at the first destination it meets (owner choice 9).",
+          "The flow of a link is the number of residents whose baseline route uses it (WorldPop 2020 residents at each origin node; drafter reading DR-B03). It measures use. Another route may exist, and the flow does not say what closing the link would cost.",
+          "Links are ranked by flow, and equal flows by edge ID. Equal routes go to the smaller destination ID, then to the smaller parent node ID and edge ID, as in floodguard.evidence_interventions.select_interventions.",
+          "An edge is the straight segment between two road nodes, so one street is many edges. Edges of a street with no resident between them carry the same flow and take neighbouring ranks.",
+          "graph_bridge is true when removing the edge disconnects the modelled graph (Tarjan). osm_bridge repeats the OSM tag bridge=yes. Neither shows that a structure exists or what state it is in.",
+          "in_flood_extent is null because no flood layer is read. The flag is added for each flood input when a case is assessed.",
+          "Road times are fixed class speeds on an undirected graph. One-way rules, turn restrictions and road condition are not represented. A grade join shows that two ways end at the same OSM coordinate; it does not show that the transition can be driven.",
+          "Routes stay inside the routing context of the case. Roads and destinations outside it are not seen."
+        ],
+        "official_warning": false,
+        "operational_status": "non_operational",
+        "rank": 11,
+        "edge_id": "osm-way-1114870832-segment-9",
+        "spt_flow_residents": 9197.20677125454,
+        "graph_bridge": false,
+        "osm_bridge": false,
+        "edge_kind": "road",
+        "road_class": "tertiary",
+        "osm_way_id": "1114870832",
+        "from_node": "osm-node-989888523d282d8db214",
+        "to_node": "osm-node-6fd533d6216fdd2e3bd6",
+        "length_m": 16.087023392126948,
+        "normal_minutes": 0.024130535088190422,
+        "in_flood_extent": null
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            99.9072471,
+            20.4397394
+          ],
+          [
+            99.9074013,
+            20.4397404
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "status": "first_run_unreviewed_candidates",
+        "status_note": "First run of plan task E6 on the E4 planning context of record. The links are unreviewed candidates: the desk check of the top 20 (plan task V1) has not been done, and no link is an observed closure. Owner choice 10 binds the ranking by the SHA-256 of the whole ranking table in the receipt of the first scoring run.",
+        "generated_at_utc": "2026-10-04T08:24:35Z",
+        "source_timestamp": "2026-07-10T02:46:49Z",
+        "confidence_class": "low",
+        "confidence_basis": "OSM roads and hospitals are unverified map records, and WorldPop 2020 is a modelled resident count. Routes are modelled class speeds on an undirected graph, and the grade joins are coordinate coincidences whose passability is unknown. No link was checked against imagery, on the ground or by a reviewer.",
+        "assumptions": [
+          "A resident's baseline route is the fastest modelled vehicle route from the road node their WorldPop 2020 cell snaps to (within 250 m) to the nearest destination: an OSM hospital in the routing context or a main-road entry (a node of a trunk or primary edge, links included). One shortest-path tree serves both kinds of destination, so a route ends at the first destination it meets (owner choice 9).",
+          "The flow of a link is the number of residents whose baseline route uses it (WorldPop 2020 residents at each origin node; drafter reading DR-B03). It measures use. Another route may exist, and the flow does not say what closing the link would cost.",
+          "Links are ranked by flow, and equal flows by edge ID. Equal routes go to the smaller destination ID, then to the smaller parent node ID and edge ID, as in floodguard.evidence_interventions.select_interventions.",
+          "An edge is the straight segment between two road nodes, so one street is many edges. Edges of a street with no resident between them carry the same flow and take neighbouring ranks.",
+          "graph_bridge is true when removing the edge disconnects the modelled graph (Tarjan). osm_bridge repeats the OSM tag bridge=yes. Neither shows that a structure exists or what state it is in.",
+          "in_flood_extent is null because no flood layer is read. The flag is added for each flood input when a case is assessed.",
+          "Road times are fixed class speeds on an undirected graph. One-way rules, turn restrictions and road condition are not represented. A grade join shows that two ways end at the same OSM coordinate; it does not show that the transition can be driven.",
+          "Routes stay inside the routing context of the case. Roads and destinations outside it are not seen."
+        ],
+        "official_warning": false,
+        "operational_status": "non_operational",
+        "rank": 12,
+        "edge_id": "osm-way-1114870832-segment-11",
+        "spt_flow_residents": 9044.028938651085,
+        "graph_bridge": false,
+        "osm_bridge": false,
+        "edge_kind": "road",
+        "road_class": "tertiary",
+        "osm_way_id": "1114870832",
+        "from_node": "osm-node-f66e86550d7ad785c283",
+        "to_node": "osm-node-5c21d54a355da4a3be7a",
+        "length_m": 63.35307918731167,
+        "normal_minutes": 0.09502961878096751,
+        "in_flood_extent": null
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            99.9076396,
+            20.4397553
+          ],
+          [
+            99.90824,
+            20.4398412
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "status": "first_run_unreviewed_candidates",
+        "status_note": "First run of plan task E6 on the E4 planning context of record. The links are unreviewed candidates: the desk check of the top 20 (plan task V1) has not been done, and no link is an observed closure. Owner choice 10 binds the ranking by the SHA-256 of the whole ranking table in the receipt of the first scoring run.",
+        "generated_at_utc": "2026-10-04T08:24:35Z",
+        "source_timestamp": "2026-07-10T02:46:49Z",
+        "confidence_class": "low",
+        "confidence_basis": "OSM roads and hospitals are unverified map records, and WorldPop 2020 is a modelled resident count. Routes are modelled class speeds on an undirected graph, and the grade joins are coordinate coincidences whose passability is unknown. No link was checked against imagery, on the ground or by a reviewer.",
+        "assumptions": [
+          "A resident's baseline route is the fastest modelled vehicle route from the road node their WorldPop 2020 cell snaps to (within 250 m) to the nearest destination: an OSM hospital in the routing context or a main-road entry (a node of a trunk or primary edge, links included). One shortest-path tree serves both kinds of destination, so a route ends at the first destination it meets (owner choice 9).",
+          "The flow of a link is the number of residents whose baseline route uses it (WorldPop 2020 residents at each origin node; drafter reading DR-B03). It measures use. Another route may exist, and the flow does not say what closing the link would cost.",
+          "Links are ranked by flow, and equal flows by edge ID. Equal routes go to the smaller destination ID, then to the smaller parent node ID and edge ID, as in floodguard.evidence_interventions.select_interventions.",
+          "An edge is the straight segment between two road nodes, so one street is many edges. Edges of a street with no resident between them carry the same flow and take neighbouring ranks.",
+          "graph_bridge is true when removing the edge disconnects the modelled graph (Tarjan). osm_bridge repeats the OSM tag bridge=yes. Neither shows that a structure exists or what state it is in.",
+          "in_flood_extent is null because no flood layer is read. The flag is added for each flood input when a case is assessed.",
+          "Road times are fixed class speeds on an undirected graph. One-way rules, turn restrictions and road condition are not represented. A grade join shows that two ways end at the same OSM coordinate; it does not show that the transition can be driven.",
+          "Routes stay inside the routing context of the case. Roads and destinations outside it are not seen."
+        ],
+        "official_warning": false,
+        "operational_status": "non_operational",
+        "rank": 13,
+        "edge_id": "osm-way-1114870832-segment-12",
+        "spt_flow_residents": 8802.136305212975,
+        "graph_bridge": false,
+        "osm_bridge": false,
+        "edge_kind": "road",
+        "road_class": "tertiary",
+        "osm_way_id": "1114870832",
+        "from_node": "osm-node-5c21d54a355da4a3be7a",
+        "to_node": "osm-node-9ac87134b61d13579f63",
+        "length_m": 22.817675463295206,
+        "normal_minutes": 0.03422651319494281,
+        "in_flood_extent": null
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            99.90824,
+            20.4398412
+          ],
+          [
+            99.9084578,
+            20.4398601
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "status": "first_run_unreviewed_candidates",
+        "status_note": "First run of plan task E6 on the E4 planning context of record. The links are unreviewed candidates: the desk check of the top 20 (plan task V1) has not been done, and no link is an observed closure. Owner choice 10 binds the ranking by the SHA-256 of the whole ranking table in the receipt of the first scoring run.",
+        "generated_at_utc": "2026-10-04T08:24:35Z",
+        "source_timestamp": "2026-07-10T02:46:49Z",
+        "confidence_class": "low",
+        "confidence_basis": "OSM roads and hospitals are unverified map records, and WorldPop 2020 is a modelled resident count. Routes are modelled class speeds on an undirected graph, and the grade joins are coordinate coincidences whose passability is unknown. No link was checked against imagery, on the ground or by a reviewer.",
+        "assumptions": [
+          "A resident's baseline route is the fastest modelled vehicle route from the road node their WorldPop 2020 cell snaps to (within 250 m) to the nearest destination: an OSM hospital in the routing context or a main-road entry (a node of a trunk or primary edge, links included). One shortest-path tree serves both kinds of destination, so a route ends at the first destination it meets (owner choice 9).",
+          "The flow of a link is the number of residents whose baseline route uses it (WorldPop 2020 residents at each origin node; drafter reading DR-B03). It measures use. Another route may exist, and the flow does not say what closing the link would cost.",
+          "Links are ranked by flow, and equal flows by edge ID. Equal routes go to the smaller destination ID, then to the smaller parent node ID and edge ID, as in floodguard.evidence_interventions.select_interventions.",
+          "An edge is the straight segment between two road nodes, so one street is many edges. Edges of a street with no resident between them carry the same flow and take neighbouring ranks.",
+          "graph_bridge is true when removing the edge disconnects the modelled graph (Tarjan). osm_bridge repeats the OSM tag bridge=yes. Neither shows that a structure exists or what state it is in.",
+          "in_flood_extent is null because no flood layer is read. The flag is added for each flood input when a case is assessed.",
+          "Road times are fixed class speeds on an undirected graph. One-way rules, turn restrictions and road condition are not represented. A grade join shows that two ways end at the same OSM coordinate; it does not show that the transition can be driven.",
+          "Routes stay inside the routing context of the case. Roads and destinations outside it are not seen."
+        ],
+        "official_warning": false,
+        "operational_status": "non_operational",
+        "rank": 14,
+        "edge_id": "osm-way-1114870832-segment-13",
+        "spt_flow_residents": 8802.136305212975,
+        "graph_bridge": false,
+        "osm_bridge": false,
+        "edge_kind": "road",
+        "road_class": "tertiary",
+        "osm_way_id": "1114870832",
+        "from_node": "osm-node-9ac87134b61d13579f63",
+        "to_node": "osm-node-bdd1fd3019c08db9f997",
+        "length_m": 29.324547042326195,
+        "normal_minutes": 0.04398682056348929,
+        "in_flood_extent": null
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            99.9084578,
+            20.4398601
+          ],
+          [
+            99.9087386,
+            20.439848
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "status": "first_run_unreviewed_candidates",
+        "status_note": "First run of plan task E6 on the E4 planning context of record. The links are unreviewed candidates: the desk check of the top 20 (plan task V1) has not been done, and no link is an observed closure. Owner choice 10 binds the ranking by the SHA-256 of the whole ranking table in the receipt of the first scoring run.",
+        "generated_at_utc": "2026-10-04T08:24:35Z",
+        "source_timestamp": "2026-07-10T02:46:49Z",
+        "confidence_class": "low",
+        "confidence_basis": "OSM roads and hospitals are unverified map records, and WorldPop 2020 is a modelled resident count. Routes are modelled class speeds on an undirected graph, and the grade joins are coordinate coincidences whose passability is unknown. No link was checked against imagery, on the ground or by a reviewer.",
+        "assumptions": [
+          "A resident's baseline route is the fastest modelled vehicle route from the road node their WorldPop 2020 cell snaps to (within 250 m) to the nearest destination: an OSM hospital in the routing context or a main-road entry (a node of a trunk or primary edge, links included). One shortest-path tree serves both kinds of destination, so a route ends at the first destination it meets (owner choice 9).",
+          "The flow of a link is the number of residents whose baseline route uses it (WorldPop 2020 residents at each origin node; drafter reading DR-B03). It measures use. Another route may exist, and the flow does not say what closing the link would cost.",
+          "Links are ranked by flow, and equal flows by edge ID. Equal routes go to the smaller destination ID, then to the smaller parent node ID and edge ID, as in floodguard.evidence_interventions.select_interventions.",
+          "An edge is the straight segment between two road nodes, so one street is many edges. Edges of a street with no resident between them carry the same flow and take neighbouring ranks.",
+          "graph_bridge is true when removing the edge disconnects the modelled graph (Tarjan). osm_bridge repeats the OSM tag bridge=yes. Neither shows that a structure exists or what state it is in.",
+          "in_flood_extent is null because no flood layer is read. The flag is added for each flood input when a case is assessed.",
+          "Road times are fixed class speeds on an undirected graph. One-way rules, turn restrictions and road condition are not represented. A grade join shows that two ways end at the same OSM coordinate; it does not show that the transition can be driven.",
+          "Routes stay inside the routing context of the case. Roads and destinations outside it are not seen."
+        ],
+        "official_warning": false,
+        "operational_status": "non_operational",
+        "rank": 15,
+        "edge_id": "osm-way-1114870832-segment-14",
+        "spt_flow_residents": 8802.136305212975,
+        "graph_bridge": false,
+        "osm_bridge": false,
+        "edge_kind": "road",
+        "road_class": "tertiary",
+        "osm_way_id": "1114870832",
+        "from_node": "osm-node-bdd1fd3019c08db9f997",
+        "to_node": "osm-node-cbf6dd4cf2bcfd3c9f97",
+        "length_m": 27.774496135135834,
+        "normal_minutes": 0.04166174420270376,
+        "in_flood_extent": null
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            99.9087386,
+            20.439848
+          ],
+          [
+            99.9090035,
+            20.4398229
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "status": "first_run_unreviewed_candidates",
+        "status_note": "First run of plan task E6 on the E4 planning context of record. The links are unreviewed candidates: the desk check of the top 20 (plan task V1) has not been done, and no link is an observed closure. Owner choice 10 binds the ranking by the SHA-256 of the whole ranking table in the receipt of the first scoring run.",
+        "generated_at_utc": "2026-10-04T08:24:35Z",
+        "source_timestamp": "2026-07-10T02:46:49Z",
+        "confidence_class": "low",
+        "confidence_basis": "OSM roads and hospitals are unverified map records, and WorldPop 2020 is a modelled resident count. Routes are modelled class speeds on an undirected graph, and the grade joins are coordinate coincidences whose passability is unknown. No link was checked against imagery, on the ground or by a reviewer.",
+        "assumptions": [
+          "A resident's baseline route is the fastest modelled vehicle route from the road node their WorldPop 2020 cell snaps to (within 250 m) to the nearest destination: an OSM hospital in the routing context or a main-road entry (a node of a trunk or primary edge, links included). One shortest-path tree serves both kinds of destination, so a route ends at the first destination it meets (owner choice 9).",
+          "The flow of a link is the number of residents whose baseline route uses it (WorldPop 2020 residents at each origin node; drafter reading DR-B03). It measures use. Another route may exist, and the flow does not say what closing the link would cost.",
+          "Links are ranked by flow, and equal flows by edge ID. Equal routes go to the smaller destination ID, then to the smaller parent node ID and edge ID, as in floodguard.evidence_interventions.select_interventions.",
+          "An edge is the straight segment between two road nodes, so one street is many edges. Edges of a street with no resident between them carry the same flow and take neighbouring ranks.",
+          "graph_bridge is true when removing the edge disconnects the modelled graph (Tarjan). osm_bridge repeats the OSM tag bridge=yes. Neither shows that a structure exists or what state it is in.",
+          "in_flood_extent is null because no flood layer is read. The flag is added for each flood input when a case is assessed.",
+          "Road times are fixed class speeds on an undirected graph. One-way rules, turn restrictions and road condition are not represented. A grade join shows that two ways end at the same OSM coordinate; it does not show that the transition can be driven.",
+          "Routes stay inside the routing context of the case. Roads and destinations outside it are not seen."
+        ],
+        "official_warning": false,
+        "operational_status": "non_operational",
+        "rank": 16,
+        "edge_id": "osm-way-1114870832-segment-15",
+        "spt_flow_residents": 8779.82787168026,
+        "graph_bridge": false,
+        "osm_bridge": false,
+        "edge_kind": "road",
+        "road_class": "tertiary",
+        "osm_way_id": "1114870832",
+        "from_node": "osm-node-cbf6dd4cf2bcfd3c9f97",
+        "to_node": "osm-node-180fceba2b2fa5739730",
+        "length_m": 47.56683043389753,
+        "normal_minutes": 0.0713502456508463,
+        "in_flood_extent": null
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            99.9090035,
+            20.4398229
+          ],
+          [
+            99.9094284,
+            20.439667
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "status": "first_run_unreviewed_candidates",
+        "status_note": "First run of plan task E6 on the E4 planning context of record. The links are unreviewed candidates: the desk check of the top 20 (plan task V1) has not been done, and no link is an observed closure. Owner choice 10 binds the ranking by the SHA-256 of the whole ranking table in the receipt of the first scoring run.",
+        "generated_at_utc": "2026-10-04T08:24:35Z",
+        "source_timestamp": "2026-07-10T02:46:49Z",
+        "confidence_class": "low",
+        "confidence_basis": "OSM roads and hospitals are unverified map records, and WorldPop 2020 is a modelled resident count. Routes are modelled class speeds on an undirected graph, and the grade joins are coordinate coincidences whose passability is unknown. No link was checked against imagery, on the ground or by a reviewer.",
+        "assumptions": [
+          "A resident's baseline route is the fastest modelled vehicle route from the road node their WorldPop 2020 cell snaps to (within 250 m) to the nearest destination: an OSM hospital in the routing context or a main-road entry (a node of a trunk or primary edge, links included). One shortest-path tree serves both kinds of destination, so a route ends at the first destination it meets (owner choice 9).",
+          "The flow of a link is the number of residents whose baseline route uses it (WorldPop 2020 residents at each origin node; drafter reading DR-B03). It measures use. Another route may exist, and the flow does not say what closing the link would cost.",
+          "Links are ranked by flow, and equal flows by edge ID. Equal routes go to the smaller destination ID, then to the smaller parent node ID and edge ID, as in floodguard.evidence_interventions.select_interventions.",
+          "An edge is the straight segment between two road nodes, so one street is many edges. Edges of a street with no resident between them carry the same flow and take neighbouring ranks.",
+          "graph_bridge is true when removing the edge disconnects the modelled graph (Tarjan). osm_bridge repeats the OSM tag bridge=yes. Neither shows that a structure exists or what state it is in.",
+          "in_flood_extent is null because no flood layer is read. The flag is added for each flood input when a case is assessed.",
+          "Road times are fixed class speeds on an undirected graph. One-way rules, turn restrictions and road condition are not represented. A grade join shows that two ways end at the same OSM coordinate; it does not show that the transition can be driven.",
+          "Routes stay inside the routing context of the case. Roads and destinations outside it are not seen."
+        ],
+        "official_warning": false,
+        "operational_status": "non_operational",
+        "rank": 17,
+        "edge_id": "osm-way-1114870832-segment-16",
+        "spt_flow_residents": 8758.9742988348,
+        "graph_bridge": false,
+        "osm_bridge": false,
+        "edge_kind": "road",
+        "road_class": "tertiary",
+        "osm_way_id": "1114870832",
+        "from_node": "osm-node-180fceba2b2fa5739730",
+        "to_node": "osm-node-2fe635d9474bf4fa6c3b",
+        "length_m": 70.71342270397714,
+        "normal_minutes": 0.10607013405596571,
+        "in_flood_extent": null
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            99.9094284,
+            20.439667
+          ],
+          [
+            99.9100486,
+            20.4394092
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "status": "first_run_unreviewed_candidates",
+        "status_note": "First run of plan task E6 on the E4 planning context of record. The links are unreviewed candidates: the desk check of the top 20 (plan task V1) has not been done, and no link is an observed closure. Owner choice 10 binds the ranking by the SHA-256 of the whole ranking table in the receipt of the first scoring run.",
+        "generated_at_utc": "2026-10-04T08:24:35Z",
+        "source_timestamp": "2026-07-10T02:46:49Z",
+        "confidence_class": "low",
+        "confidence_basis": "OSM roads and hospitals are unverified map records, and WorldPop 2020 is a modelled resident count. Routes are modelled class speeds on an undirected graph, and the grade joins are coordinate coincidences whose passability is unknown. No link was checked against imagery, on the ground or by a reviewer.",
+        "assumptions": [
+          "A resident's baseline route is the fastest modelled vehicle route from the road node their WorldPop 2020 cell snaps to (within 250 m) to the nearest destination: an OSM hospital in the routing context or a main-road entry (a node of a trunk or primary edge, links included). One shortest-path tree serves both kinds of destination, so a route ends at the first destination it meets (owner choice 9).",
+          "The flow of a link is the number of residents whose baseline route uses it (WorldPop 2020 residents at each origin node; drafter reading DR-B03). It measures use. Another route may exist, and the flow does not say what closing the link would cost.",
+          "Links are ranked by flow, and equal flows by edge ID. Equal routes go to the smaller destination ID, then to the smaller parent node ID and edge ID, as in floodguard.evidence_interventions.select_interventions.",
+          "An edge is the straight segment between two road nodes, so one street is many edges. Edges of a street with no resident between them carry the same flow and take neighbouring ranks.",
+          "graph_bridge is true when removing the edge disconnects the modelled graph (Tarjan). osm_bridge repeats the OSM tag bridge=yes. Neither shows that a structure exists or what state it is in.",
+          "in_flood_extent is null because no flood layer is read. The flag is added for each flood input when a case is assessed.",
+          "Road times are fixed class speeds on an undirected graph. One-way rules, turn restrictions and road condition are not represented. A grade join shows that two ways end at the same OSM coordinate; it does not show that the transition can be driven.",
+          "Routes stay inside the routing context of the case. Roads and destinations outside it are not seen."
+        ],
+        "official_warning": false,
+        "operational_status": "non_operational",
+        "rank": 18,
+        "edge_id": "osm-way-1114870832-segment-17",
+        "spt_flow_residents": 8721.655769705772,
+        "graph_bridge": false,
+        "osm_bridge": false,
+        "edge_kind": "road",
+        "road_class": "tertiary",
+        "osm_way_id": "1114870832",
+        "from_node": "osm-node-2fe635d9474bf4fa6c3b",
+        "to_node": "osm-node-31392a6171edc04acbf0",
+        "length_m": 27.392022977611497,
+        "normal_minutes": 0.04108803446641724,
+        "in_flood_extent": null
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            99.9100486,
+            20.4394092
+          ],
+          [
+            99.9103051,
+            20.4393563
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "status": "first_run_unreviewed_candidates",
+        "status_note": "First run of plan task E6 on the E4 planning context of record. The links are unreviewed candidates: the desk check of the top 20 (plan task V1) has not been done, and no link is an observed closure. Owner choice 10 binds the ranking by the SHA-256 of the whole ranking table in the receipt of the first scoring run.",
+        "generated_at_utc": "2026-10-04T08:24:35Z",
+        "source_timestamp": "2026-07-10T02:46:49Z",
+        "confidence_class": "low",
+        "confidence_basis": "OSM roads and hospitals are unverified map records, and WorldPop 2020 is a modelled resident count. Routes are modelled class speeds on an undirected graph, and the grade joins are coordinate coincidences whose passability is unknown. No link was checked against imagery, on the ground or by a reviewer.",
+        "assumptions": [
+          "A resident's baseline route is the fastest modelled vehicle route from the road node their WorldPop 2020 cell snaps to (within 250 m) to the nearest destination: an OSM hospital in the routing context or a main-road entry (a node of a trunk or primary edge, links included). One shortest-path tree serves both kinds of destination, so a route ends at the first destination it meets (owner choice 9).",
+          "The flow of a link is the number of residents whose baseline route uses it (WorldPop 2020 residents at each origin node; drafter reading DR-B03). It measures use. Another route may exist, and the flow does not say what closing the link would cost.",
+          "Links are ranked by flow, and equal flows by edge ID. Equal routes go to the smaller destination ID, then to the smaller parent node ID and edge ID, as in floodguard.evidence_interventions.select_interventions.",
+          "An edge is the straight segment between two road nodes, so one street is many edges. Edges of a street with no resident between them carry the same flow and take neighbouring ranks.",
+          "graph_bridge is true when removing the edge disconnects the modelled graph (Tarjan). osm_bridge repeats the OSM tag bridge=yes. Neither shows that a structure exists or what state it is in.",
+          "in_flood_extent is null because no flood layer is read. The flag is added for each flood input when a case is assessed.",
+          "Road times are fixed class speeds on an undirected graph. One-way rules, turn restrictions and road condition are not represented. A grade join shows that two ways end at the same OSM coordinate; it does not show that the transition can be driven.",
+          "Routes stay inside the routing context of the case. Roads and destinations outside it are not seen."
+        ],
+        "official_warning": false,
+        "operational_status": "non_operational",
+        "rank": 19,
+        "edge_id": "osm-way-1114870832-segment-18",
+        "spt_flow_residents": 8721.655769705772,
+        "graph_bridge": false,
+        "osm_bridge": false,
+        "edge_kind": "road",
+        "road_class": "tertiary",
+        "osm_way_id": "1114870832",
+        "from_node": "osm-node-31392a6171edc04acbf0",
+        "to_node": "osm-node-a706df4f0ffd4dc9de47",
+        "length_m": 30.31552440397414,
+        "normal_minutes": 0.04547328660596121,
+        "in_flood_extent": null
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            99.9103051,
+            20.4393563
+          ],
+          [
+            99.9105927,
+            20.4393171
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "status": "first_run_unreviewed_candidates",
+        "status_note": "First run of plan task E6 on the E4 planning context of record. The links are unreviewed candidates: the desk check of the top 20 (plan task V1) has not been done, and no link is an observed closure. Owner choice 10 binds the ranking by the SHA-256 of the whole ranking table in the receipt of the first scoring run.",
+        "generated_at_utc": "2026-10-04T08:24:35Z",
+        "source_timestamp": "2026-07-10T02:46:49Z",
+        "confidence_class": "low",
+        "confidence_basis": "OSM roads and hospitals are unverified map records, and WorldPop 2020 is a modelled resident count. Routes are modelled class speeds on an undirected graph, and the grade joins are coordinate coincidences whose passability is unknown. No link was checked against imagery, on the ground or by a reviewer.",
+        "assumptions": [
+          "A resident's baseline route is the fastest modelled vehicle route from the road node their WorldPop 2020 cell snaps to (within 250 m) to the nearest destination: an OSM hospital in the routing context or a main-road entry (a node of a trunk or primary edge, links included). One shortest-path tree serves both kinds of destination, so a route ends at the first destination it meets (owner choice 9).",
+          "The flow of a link is the number of residents whose baseline route uses it (WorldPop 2020 residents at each origin node; drafter reading DR-B03). It measures use. Another route may exist, and the flow does not say what closing the link would cost.",
+          "Links are ranked by flow, and equal flows by edge ID. Equal routes go to the smaller destination ID, then to the smaller parent node ID and edge ID, as in floodguard.evidence_interventions.select_interventions.",
+          "An edge is the straight segment between two road nodes, so one street is many edges. Edges of a street with no resident between them carry the same flow and take neighbouring ranks.",
+          "graph_bridge is true when removing the edge disconnects the modelled graph (Tarjan). osm_bridge repeats the OSM tag bridge=yes. Neither shows that a structure exists or what state it is in.",
+          "in_flood_extent is null because no flood layer is read. The flag is added for each flood input when a case is assessed.",
+          "Road times are fixed class speeds on an undirected graph. One-way rules, turn restrictions and road condition are not represented. A grade join shows that two ways end at the same OSM coordinate; it does not show that the transition can be driven.",
+          "Routes stay inside the routing context of the case. Roads and destinations outside it are not seen."
+        ],
+        "official_warning": false,
+        "operational_status": "non_operational",
+        "rank": 20,
+        "edge_id": "osm-way-1114870832-segment-19",
+        "spt_flow_residents": 8721.655769705772,
+        "graph_bridge": false,
+        "osm_bridge": false,
+        "edge_kind": "road",
+        "road_class": "tertiary",
+        "osm_way_id": "1114870832",
+        "from_node": "osm-node-a706df4f0ffd4dc9de47",
+        "to_node": "osm-node-84564a55b5a327f2639c",
+        "length_m": 25.17425939894518,
+        "normal_minutes": 0.037761389098417766,
+        "in_flood_extent": null
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            99.9105927,
+            20.4393171
+          ],
+          [
+            99.910834,
+            20.4393151
+          ]
+        ]
+      }
+    }
+  ]
+}

@@ -25,8 +25,11 @@ Every anchor, weight and service threshold is read from the two protocol files
 (:func:`load_planning_frame`); none is written in this module. The scale is
 absolute: a component is a function of its own unit's inputs and of declared
 constants, never of the other units in a batch. :func:`reject_batch_scaled_components`
-is the check of guardrail GR2: it recomputes every component from the inputs the
-row echoes and refuses a row whose value differs.
+is the check of guardrail GR2: it recomputes every component record from the
+inputs the row echoes and refuses a row whose value, or any other field of the
+record, differs. Every component record carries the SHA-256 of the two protocol
+files that produced it, and a frame that was not read from the files in force
+(:func:`load_planning_frame`) computes nothing.
 :func:`leave_one_component_out_weights` gives the weights of the
 leave-one-component-out rule (drafter reading DR-A02).
 
@@ -256,8 +259,12 @@ PITCH_LEVEL = "pitch"
 PROTOCOL_SIGNED = "signed"
 LOCO_READING = "DR-A02"
 GUARDRAIL_GR2 = "GR2_no_max_normalisation"
+PROTOCOL_NAMES: tuple[str, ...] = ("v1a", "v1b")
 SHARE_TOLERANCE = 1e-9
+# The float guard of the GR2 value comparison. It is fixed: the check takes no tolerance from its caller.
 VERIFY_TOLERANCE = 1e-9
+VALUE_FIELD = "value_0_100"
+_ABSENT = object()
 # Row fields of docs/model_contract.md section 2b. Guardrail GR2: they apply to the GeoAI runner only.
 GEOAI_RUNNER_ANCHOR_FIELDS: tuple[str, ...] = ("flood_anchor_version", "exposure_anchor_version")
 
@@ -348,30 +355,33 @@ def load_planning_frame(v1a_path: Path | str, v1b_path: Path | str, receipts_pat
     v1b, v1b_sha256 = read_protocol_in_force("v1b", v1b_path, receipts_path)
     if v1b.get("depends_on", {}).get("v1a_sha256") != v1a_sha256:
         raise NormalisationError("protocol v1b does not name the v1a file that was read")
-    return planning_frame_from_protocols(v1a, v1b, protocol_sha256={"v1a": v1a_sha256, "v1b": v1b_sha256})
+    return _checked_frame(v1a, v1b, {"v1a": v1a_sha256, "v1b": v1b_sha256})
 
 
-def planning_frame_from_protocols(
-    v1a: Mapping[str, Any],
-    v1b: Mapping[str, Any],
-    *,
-    protocol_sha256: Mapping[str, str | None] | None = None,
-) -> PlanningFrame:
-    """Build frame v1 from the parsed protocols v1a (the rules) and v1b (the national anchors).
+def planning_frame_from_protocols(v1a: Mapping[str, Any], v1b: Mapping[str, Any]) -> PlanningFrame:
+    """Check that the parsed protocols v1a (the rules) and v1b (the national anchors) hold frame v1.
+
+    The frame this returns carries no protocol hash, because parsed mappings
+    cannot be tied to the bytes that ``RECEIPTS.jsonl`` records. It shows what
+    a parsed file declares; the component functions, :func:`frame_record` and
+    the GR2 check refuse it. A frame that computes comes from
+    :func:`load_planning_frame` only.
 
     Args:
         v1a: The parsed decision-rules protocol; its ``scoring_frame`` is read.
         v1b: The parsed engineering protocol; its ``national_vulnerability_anchors`` are read.
-        protocol_sha256: The SHA-256 of each file, when the caller read them from disk.
 
     Raises:
         NormalisationError: when a file is not signed, declares another frame
             version or an exposure anchor, leaves an anchor empty, or lacks a parameter.
     """
 
-    hashes: Mapping[str, str | None] = {"v1a": None, "v1b": None}
-    if protocol_sha256 is not None:
-        hashes = protocol_sha256
+    return _checked_frame(v1a, v1b, {name: None for name in PROTOCOL_NAMES})
+
+
+def _checked_frame(v1a: Mapping[str, Any], v1b: Mapping[str, Any], hashes: Mapping[str, str | None]) -> PlanningFrame:
+    """Build frame v1; a parameter the files lack becomes NormalisationError."""
+
     try:
         return _frame(v1a, v1b, hashes)
     except NormalisationError:
@@ -462,9 +472,34 @@ def _anchor_key(name: Any) -> str:
     return str(name).removeprefix("national_")
 
 
-def frame_record(frame: PlanningFrame) -> dict[str, Any]:
-    """Return the frame header a planning row cites: version, anchors, weights and protocol hashes."""
+def protocol_hashes(frame: PlanningFrame) -> dict[str, str]:
+    """Return the SHA-256 of the two protocol files a frame was read from.
 
+    Protocol v1a, ``change_control``: outputs carry ``protocol_sha256`` so each
+    value can be tied to the protocol bytes that produced it.
+
+    Raises:
+        NormalisationError: when the frame carries no hash for either file, so
+            it was not read from the files in force.
+    """
+
+    hashes = {name: frame.protocol_sha256.get(name) for name in PROTOCOL_NAMES}
+    if not all(isinstance(value, str) and value for value in hashes.values()):
+        raise NormalisationError(
+            "frame v1 carries no protocol hashes: read it with load_planning_frame, "
+            "which checks both files against RECEIPTS.jsonl"
+        )
+    return hashes
+
+
+def frame_record(frame: PlanningFrame) -> dict[str, Any]:
+    """Return the frame header a planning row cites: version, anchors, weights and protocol hashes.
+
+    Raises:
+        NormalisationError: for a frame that was not read from the protocol files in force.
+    """
+
+    hashes = protocol_hashes(frame)
     lower, upper = frame.vulnerability_bounds
     sensitivity_lower, sensitivity_upper = frame.vulnerability_sensitivity_bounds
     return {
@@ -491,7 +526,7 @@ def frame_record(frame: PlanningFrame) -> dict[str, Any]:
         "vulnerability_anchor_receipt_sha256": frame.vulnerability_anchor_receipt_sha256,
         "leave_one_component_out_weights": leave_one_component_out_weights(frame.weights),
         "lane_disclosure": frame.lane_disclosure,
-        "protocol_sha256": dict(frame.protocol_sha256),
+        "protocol_sha256": hashes,
     }
 
 
@@ -501,7 +536,12 @@ def frame_record(frame: PlanningFrame) -> dict[str, Any]:
 
 
 def _count(value: Any, name: str) -> float:
-    """Return a measured quantity (residents or area), which must be finite and not negative."""
+    """Return a measured quantity (residents or area) as a float; it must be finite and not negative.
+
+    Any real number type is taken (a numpy scalar from a raster sum, for
+    example). The component records echo the float this returns, so a record is
+    plain JSON whatever type the caller passed.
+    """
 
     if isinstance(value, bool) or not isinstance(value, Real):
         raise NormalisationError(f"{name} must be one number for one unit")
@@ -510,11 +550,9 @@ def _count(value: Any, name: str) -> float:
     return float(value)
 
 
-def _share(part: Any, whole: Any, part_name: str, whole_name: str) -> float:
+def _share(numerator: float, denominator: float, part_name: str, whole_name: str) -> float:
     """Return part / whole for one unit, refusing a zero denominator and a part above the whole."""
 
-    numerator = _count(part, part_name)
-    denominator = _count(whole, whole_name)
     if denominator <= 0:
         raise NormalisationError(f"{whole_name} is zero: the protocol states no component value for such a unit")
     if numerator > denominator * (1 + SHARE_TOLERANCE) + SHARE_TOLERANCE:
@@ -554,25 +592,21 @@ def flood_likelihood(
         values, the anchor disclosure and the inputs.
 
     Raises:
-        NormalisationError: for a unit with no non-permanent-water land, or a
-            flooded area above the land area.
+        NormalisationError: for a unit with no non-permanent-water land, a
+            flooded area above the land area, or a frame not read from the files in force.
     """
 
-    share = _share(
-        flooded_non_permanent_water_land_area,
-        non_permanent_water_land_area,
-        "flooded_non_permanent_water_land_area",
-        "non_permanent_water_land_area",
-    )
+    hashes = protocol_hashes(frame)
+    flooded = _count(flooded_non_permanent_water_land_area, "flooded_non_permanent_water_land_area")
+    land = _count(non_permanent_water_land_area, "non_permanent_water_land_area")
+    share = _share(flooded, land, "flooded_non_permanent_water_land_area", "non_permanent_water_land_area")
     return {
         "component": "flood_likelihood_0_100",
         "value_0_100": _anchored(share, frame.flood_anchor),
         "normalisation_version": frame.version,
+        "protocol_sha256": hashes,
         "definition": frame.definitions["flood_likelihood_0_100"],
-        "inputs": {
-            "flooded_non_permanent_water_land_area": flooded_non_permanent_water_land_area,
-            "non_permanent_water_land_area": non_permanent_water_land_area,
-        },
+        "inputs": {"flooded_non_permanent_water_land_area": flooded, "non_permanent_water_land_area": land},
         "flooded_share": share,
         "anchor": frame.flood_anchor,
         "anchor_sensitivity_one_at_a_time": [
@@ -590,19 +624,21 @@ def exposure(frame: PlanningFrame, *, residents_inside_flood_extent: float, unit
     does not change when both counts are multiplied by one factor.
 
     Raises:
-        NormalisationError: for a unit with no resident, or more exposed residents than residents.
+        NormalisationError: for a unit with no resident, more exposed residents
+            than residents, or a frame not read from the files in force.
     """
 
-    share = _share(residents_inside_flood_extent, unit_residents, "residents_inside_flood_extent", "unit_residents")
+    hashes = protocol_hashes(frame)
+    inside = _count(residents_inside_flood_extent, "residents_inside_flood_extent")
+    residents = _count(unit_residents, "unit_residents")
+    share = _share(inside, residents, "residents_inside_flood_extent", "unit_residents")
     return {
         "component": "exposure_0_100",
         "value_0_100": 100.0 * share,
         "normalisation_version": frame.version,
+        "protocol_sha256": hashes,
         "definition": frame.definitions["exposure_0_100"],
-        "inputs": {
-            "residents_inside_flood_extent": residents_inside_flood_extent,
-            "unit_residents": unit_residents,
-        },
+        "inputs": {"residents_inside_flood_extent": inside, "unit_residents": residents},
         "exposed_share": share,
         "kind": "share_only",
     }
@@ -626,10 +662,12 @@ def access_gap(frame: PlanningFrame, *, services: Mapping[str, Mapping[str, Any]
 
     Raises:
         NormalisationError: for another set of services, another mode or
-            threshold, more residents losing access than had it, or a unit where
-            nobody had baseline access to any service.
+            threshold, more residents losing access than had it, a unit where
+            nobody had baseline access to any service, or a frame not read from
+            the files in force.
     """
 
+    hashes = protocol_hashes(frame)
     if not isinstance(services, Mapping):
         raise NormalisationError("services must map each service name to its counts")
     public = {service.service for service in frame.access_services if service.level == PUBLIC_LEVEL}
@@ -681,14 +719,15 @@ def access_gap(frame: PlanningFrame, *, services: Mapping[str, Mapping[str, Any]
         "component": "access_gap_0_100",
         "value_0_100": 100.0 * min(1.0, math.fsum(weighted_shares) / total),
         "normalisation_version": frame.version,
+        "protocol_sha256": hashes,
         "definition": frame.definitions["access_gap_0_100"],
         "inputs": {
             "services": {
                 row["service"]: {
                     "mode": row["mode"],
                     "threshold_minutes": row["threshold_minutes"],
-                    "baseline_access_residents": services[row["service"]]["baseline_access_residents"],
-                    "newly_lost_residents": services[row["service"]]["newly_lost_residents"],
+                    "baseline_access_residents": row["baseline_access_residents"],
+                    "newly_lost_residents": row["newly_lost_residents"],
                 }
                 for row in rows
             },
@@ -711,25 +750,22 @@ def road_criticality(
     main road; the numerator is those among them who lose every such route.
 
     Raises:
-        NormalisationError: for a unit where nobody had a baseline route, or
-            more residents losing their routes than had one.
+        NormalisationError: for a unit where nobody had a baseline route, more
+            residents losing their routes than had one, or a frame not read from
+            the files in force.
     """
 
-    share = _share(
-        residents_losing_all_routes,
-        residents_with_baseline_route,
-        "residents_losing_all_routes",
-        "residents_with_baseline_route",
-    )
+    hashes = protocol_hashes(frame)
+    losing = _count(residents_losing_all_routes, "residents_losing_all_routes")
+    connected = _count(residents_with_baseline_route, "residents_with_baseline_route")
+    share = _share(losing, connected, "residents_losing_all_routes", "residents_with_baseline_route")
     return {
         "component": "road_criticality_0_100",
         "value_0_100": 100.0 * share,
         "normalisation_version": frame.version,
+        "protocol_sha256": hashes,
         "definition": frame.definitions["road_criticality_0_100"],
-        "inputs": {
-            "residents_losing_all_routes": residents_losing_all_routes,
-            "residents_with_baseline_route": residents_with_baseline_route,
-        },
+        "inputs": {"residents_losing_all_routes": losing, "residents_with_baseline_route": connected},
         "share_losing_all_routes": share,
     }
 
@@ -747,10 +783,16 @@ def vulnerability_context(
     P5 and P95 anchors is returned beside it as the anchor sensitivity.
 
     Raises:
-        NormalisationError: for the count errors :func:`dependent_share` refuses.
+        NormalisationError: for a count that is not one finite number, the count
+            errors :func:`dependent_share` refuses, or a frame not read from the
+            files in force.
     """
 
-    share = dependent_share(children_0_14, older_60_plus, residents)
+    hashes = protocol_hashes(frame)
+    children = _count(children_0_14, "children_0_14")
+    older = _count(older_60_plus, "older_60_plus")
+    total = _count(residents, "residents")
+    share = dependent_share(children, older, total)
     anchors = frame.vulnerability_anchors
     lower, upper = frame.vulnerability_bounds
     sensitivity_lower, sensitivity_upper = frame.vulnerability_sensitivity_bounds
@@ -758,8 +800,9 @@ def vulnerability_context(
         "component": "vulnerability_context_0_100",
         "value_0_100": _between(share, anchors[lower], anchors[upper]),
         "normalisation_version": frame.version,
+        "protocol_sha256": hashes,
         "definition": frame.definitions["vulnerability_context_0_100"],
-        "inputs": {"children_0_14": children_0_14, "older_60_plus": older_60_plus, "residents": residents},
+        "inputs": {"children_0_14": children, "older_60_plus": older, "residents": total},
         "dependent_share": share,
         "anchors": {"lower": lower, "lower_value": anchors[lower], "upper": upper, "upper_value": anchors[upper]},
         "anchor_sensitivity": {
@@ -789,30 +832,61 @@ COMPONENT_FUNCTIONS = MappingProxyType({
 # ---------------------------------------------------------------------------
 
 
+def _components_to_check(components: Any) -> tuple[str, ...]:
+    """Return the components a GR2 check covers, in frame order; they must be named once each."""
+
+    if isinstance(components, (str, bytes, Mapping)):
+        raise NormalisationError("components must be a sequence of FPPS component names")
+    try:
+        names = [str(name) for name in components]
+    except TypeError as error:
+        raise NormalisationError("components must be a sequence of FPPS component names") from error
+    if not names or len(set(names)) != len(names) or not set(names) <= set(SCORE_COMPONENTS):
+        raise NormalisationError(f"components must name, once each, one or more of {list(SCORE_COMPONENTS)}")
+    return tuple(name for name in SCORE_COMPONENTS if name in names)
+
+
 def reject_batch_scaled_components(
     frame: PlanningFrame,
     rows: Iterable[Mapping[str, Any]],
     *,
-    tolerance: float = VERIFY_TOLERANCE,
+    components: Sequence[str] = SCORE_COMPONENTS,
 ) -> dict[str, Any]:
-    """Refuse rows whose components are not the absolute frame v1 values (guardrail GR2).
+    """Refuse rows whose components are not the absolute frame v1 records (guardrail GR2).
 
     Each row carries ``unit_id``, ``normalisation_version`` and ``components``:
-    the five records the component functions return. Every value is recomputed
-    from the inputs its own record echoes. A value that depends on the other
-    rows of a batch (scaled by the batch maximum, for example) cannot be
-    reproduced that way and is refused, as is a row that declares another frame
-    or the anchor versions of the GeoAI runner.
+    the records the component functions return, for exactly the components
+    named in ``components``. Every record is recomputed from the inputs it
+    echoes. A value that depends on the other rows of a batch (scaled by the
+    batch maximum, for example) cannot be reproduced that way and is refused.
+    So is a record that differs from the recomputed one in any other field
+    (another anchor, another version, other protocol hashes), a row that
+    declares another frame, and the anchor versions of the GeoAI runner on a
+    row or inside a record.
+
+    The value comparison uses the fixed float guard ``VERIFY_TOLERANCE``; the
+    caller cannot widen it. Every other field must be equal.
+
+    Args:
+        frame: Frame v1, from :func:`load_planning_frame`.
+        rows: The rows to check.
+        components: The components every row carries. The default is all five;
+            a case that computes fewer (protocol v1a case SE2-dist: flood
+            likelihood and exposure only) names those.
 
     Returns:
         A short record of what was checked.
 
     Raises:
-        BatchScalingError: for a row that is not on frame v1 or whose value differs.
-        NormalisationError: for an empty batch or echoed inputs the frame refuses.
+        BatchScalingError: for a row that is not on frame v1 or whose record differs.
+        NormalisationError: for an empty batch, an unknown component name,
+            echoed inputs the frame refuses, or a frame not read from the files in force.
     """
 
+    hashes = protocol_hashes(frame)
+    names = _components_to_check(components)
     checked: list[dict[str, Any]] = []
+    other_findings: list[str] = []
     for row in rows:
         if not isinstance(row, Mapping):
             raise BatchScalingError("guardrail GR2: a row maps unit_id, normalisation_version and components")
@@ -824,47 +898,65 @@ def reject_batch_scaled_components(
             raise BatchScalingError(
                 f"guardrail GR2: unit {unit_id!r} carries {foreign}, the anchor versions of the GeoAI runner"
             )
-        components = row.get("components")
-        if not isinstance(components, Mapping) or set(components) != set(SCORE_COMPONENTS):
-            raise BatchScalingError(f"guardrail GR2: unit {unit_id!r} does not carry the five component records")
+        records = row.get("components")
+        if not isinstance(records, Mapping) or set(records) != set(names):
+            raise BatchScalingError(f"guardrail GR2: unit {unit_id!r} does not carry exactly the records {list(names)}")
         values: dict[str, tuple[float, float]] = {}
-        for name in SCORE_COMPONENTS:
-            record = components[name]
-            try:
-                absolute = COMPONENT_FUNCTIONS[name](frame, **record["inputs"])["value_0_100"]
-                supplied = record["value_0_100"]
-            except (KeyError, TypeError) as error:
+        for name in names:
+            record = records[name]
+            where = f"{name} of unit {unit_id!r}"
+            if not isinstance(record, Mapping):
+                raise BatchScalingError(f"guardrail GR2: {where} does not echo the inputs of frame v1")
+            foreign = [field for field in GEOAI_RUNNER_ANCHOR_FIELDS if field in record]
+            if foreign:
                 raise BatchScalingError(
-                    f"guardrail GR2: {name} of unit {unit_id!r} does not echo the inputs of frame v1"
-                ) from error
-            values[name] = (_count(supplied, f"{name} of unit {unit_id!r}"), absolute)
+                    f"guardrail GR2: {where} carries {foreign}, the anchor versions of the GeoAI runner"
+                )
+            try:
+                absolute = COMPONENT_FUNCTIONS[name](frame, **record["inputs"])
+                supplied = record[VALUE_FIELD]
+            except (KeyError, TypeError) as error:
+                raise BatchScalingError(f"guardrail GR2: {where} does not echo the inputs of frame v1") from error
+            values[name] = (_count(supplied, where), absolute[VALUE_FIELD])
+            fields = sorted({*record, *absolute} - {VALUE_FIELD})
+            differing = [field for field in fields if record.get(field, _ABSENT) != absolute.get(field, _ABSENT)]
+            if differing:
+                other_findings.append(f"{where}: {differing}")
         checked.append({"unit_id": unit_id, "values": values})
     if not checked:
         raise NormalisationError("there is no row to check")
-    for name in SCORE_COMPONENTS:
+    for name in names:
         supplied_values = [row["values"][name][0] for row in checked]
         absolute_values = [row["values"][name][1] for row in checked]
-        differing = [
+        differing_units = [
             row["unit_id"]
             for row, supplied, absolute in zip(checked, supplied_values, absolute_values)
-            if abs(supplied - absolute) > tolerance
+            if abs(supplied - absolute) > VERIFY_TOLERANCE
         ]
-        if not differing:
+        if not differing_units:
             continue
         finding = "is not the frame v1 value of the inputs it echoes"
         top = max(absolute_values)
         if top > 0:
             rescaled = [100.0 * absolute / top for absolute in absolute_values]
-            if all(abs(supplied - scaled) <= tolerance for supplied, scaled in zip(supplied_values, rescaled)):
+            if all(abs(supplied - scaled) <= VERIFY_TOLERANCE for supplied, scaled in zip(supplied_values, rescaled)):
                 finding = "is the frame v1 value divided by the batch maximum (max-normalisation)"
-        raise BatchScalingError(f"guardrail GR2: {name} {finding} for unit(s) {differing}")
+        raise BatchScalingError(f"guardrail GR2: {name} {finding} for unit(s) {differing_units}")
+    if other_findings:
+        raise BatchScalingError(
+            "guardrail GR2: a record is not the frame v1 record of the inputs it echoes; "
+            f"fields that differ: {'; '.join(other_findings)}"
+        )
     return {
         "guardrail": GUARDRAIL_GR2,
         "result": "PASS",
         "normalisation_version": frame.version,
+        "protocol_sha256": hashes,
+        "components": list(names),
         "rows_checked": len(checked),
-        "components_checked": len(checked) * len(SCORE_COMPONENTS),
-        "tolerance": tolerance,
+        "components_checked": len(checked) * len(names),
+        "tolerance": VERIFY_TOLERANCE,
+        "fields_compared": "every field of every record; value_0_100 within the tolerance, the others exactly",
     }
 
 
@@ -880,11 +972,14 @@ def leave_one_component_out_weights(weights: Mapping[str, float]) -> dict[str, d
         weights: The weights of the row: the frame's default or a weight preset.
 
     Raises:
-        NormalisationError: when the weights are not valid FPPS weights, or
-            dropping a component leaves no weight at all.
+        NormalisationError: when the weights are not valid FPPS weights (a
+            weight that is not a finite number included), or dropping a
+            component leaves no weight at all.
     """
 
     try:
+        if not all(math.isfinite(float(value)) for value in weights.values()):
+            raise ValueError("every weight must be a finite number")
         base = validate_weights(weights)
         return {dropped: validate_weights({**base, dropped: 0.0}) for dropped in SCORE_COMPONENTS}
     except (ValueError, TypeError, AttributeError) as error:

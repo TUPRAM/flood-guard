@@ -10,12 +10,15 @@ shape and that protocol v1b repeats it exactly.
 
 from __future__ import annotations
 
+import dataclasses
 import hashlib
 import importlib.util
+import inspect
 import json
 import math
 import random
 from copy import deepcopy
+from fractions import Fraction
 from pathlib import Path
 from typing import Any
 
@@ -28,6 +31,7 @@ from floodguard.normalisation import (
     COMPONENT_FUNCTIONS,
     MIN_UNIT_RESIDENTS,
     NORMALISATION_FRAME_VERSION,
+    VERIFY_TOLERANCE,
     BatchScalingError,
     NormalisationError,
     PlanningFrame,
@@ -42,6 +46,7 @@ from floodguard.normalisation import (
     percentile_linear,
     percentile_weighted,
     planning_frame_from_protocols,
+    protocol_hashes,
     read_protocol_in_force,
     reject_batch_scaled_components,
     road_criticality,
@@ -80,6 +85,9 @@ def test_dependent_share_is_children_plus_older_over_all_residents() -> None:
     assert dependent_share(20, 30, 100) == pytest.approx(0.5)
     assert dependent_share(0, 0, 10) == 0.0
     assert dependent_share(4, 6, 10) == 1.0
+    # A float sum of cells may exceed the total by a rounding error; the share is capped at 1, not refused.
+    assert (4 + 6.000000001) / 10 > 1.0
+    assert dependent_share(4, 6.000000001, 10) == 1.0
 
 
 @pytest.mark.parametrize("arguments", [
@@ -446,6 +454,55 @@ def test_frame_is_refused_when_v1b_names_another_v1a(tmp_path: Path, protocols: 
         load_planning_frame(PROTOCOL_V1A, other, receipts)
 
 
+def test_a_frame_that_was_not_read_from_the_files_in_force_computes_nothing(
+    frame: PlanningFrame, protocols: dict[str, dict[str, Any]]
+) -> None:
+    # Protocol v1a change_control: "Outputs carry protocol_sha256 so each value can be tied to the
+    # protocol bytes that produced it." A frame built from parsed mappings has no bytes to name.
+    unhashed = planning_frame_from_protocols(protocols["v1a"], protocols["v1b"])
+    assert dict(unhashed.protocol_sha256) == {"v1a": None, "v1b": None}
+    with pytest.raises(TypeError):
+        planning_frame_from_protocols(  # type: ignore[call-arg]
+            protocols["v1a"], protocols["v1b"], protocol_sha256={"v1a": "0" * 64, "v1b": "1" * 64}
+        )
+    # A mapping edited after signing still parses (another P10), and still computes nothing.
+    edited = planning_frame_from_protocols(
+        protocols["v1a"], _change(protocols["v1b"], f"{_ANCHORS}/values/P10", 0.2)
+    )
+    assert edited.vulnerability_anchors["P10"] != frame.vulnerability_anchors["P10"]
+    half = dataclasses.replace(frame, protocol_sha256={"v1a": frame.protocol_sha256["v1a"], "v1b": None})
+    empty = dataclasses.replace(frame, protocol_sha256={"v1a": frame.protocol_sha256["v1a"], "v1b": ""})
+    missing = dataclasses.replace(frame, protocol_sha256={"v1a": frame.protocol_sha256["v1a"]})
+    rows = _batch(frame)
+    calls = {
+        "flood_likelihood_0_100": {"flooded_non_permanent_water_land_area": 1.0, "non_permanent_water_land_area": 4.0},
+        "exposure_0_100": {"residents_inside_flood_extent": 1.0, "unit_residents": 4.0},
+        "access_gap_0_100": {"services": _services(frame, {"hospital": (10, 1), "main_road_entry": (10, 1)})},
+        "road_criticality_0_100": {"residents_losing_all_routes": 1.0, "residents_with_baseline_route": 4.0},
+        "vulnerability_context_0_100": {"children_0_14": 1.0, "older_60_plus": 1.0, "residents": 4.0},
+    }
+    assert set(calls) == set(COMPONENT_FUNCTIONS)
+    for refused in (unhashed, edited, half, empty, missing):
+        for name, arguments in calls.items():
+            with pytest.raises(NormalisationError, match="carries no protocol hashes: read it with load_"):
+                COMPONENT_FUNCTIONS[name](refused, **arguments)
+        with pytest.raises(NormalisationError, match="carries no protocol hashes"):
+            frame_record(refused)
+        with pytest.raises(NormalisationError, match="carries no protocol hashes"):
+            protocol_hashes(refused)
+        with pytest.raises(NormalisationError, match="carries no protocol hashes"):
+            reject_batch_scaled_components(refused, rows)
+        # The frame is checked before anything else, so an empty batch does not hide it.
+        with pytest.raises(NormalisationError, match="carries no protocol hashes"):
+            reject_batch_scaled_components(refused, [])
+    # The frame in force puts both hashes in every record it returns.
+    hashes = protocol_hashes(frame)
+    assert hashes == dict(frame.protocol_sha256) and all(len(value) == 64 for value in hashes.values())
+    for name, arguments in calls.items():
+        assert COMPONENT_FUNCTIONS[name](frame, **arguments)["protocol_sha256"] == hashes
+    assert frame_record(frame)["protocol_sha256"] == hashes
+
+
 _FLOOD = "scoring_frame/components/flood_likelihood_0_100"
 _EXPOSURE = "scoring_frame/components/exposure_0_100"
 _ACCESS = "scoring_frame/components/access_gap_0_100"
@@ -679,6 +736,62 @@ def test_vulnerability_runs_from_the_national_p10_to_the_national_p90(frame: Pla
         vulnerability_context(frame, children_0_14=0, older_60_plus=0, residents=0)
 
 
+def test_components_take_any_real_number_type_and_return_plain_json(frame: PlanningFrame) -> None:
+    # Raster sums arrive as numpy scalars, usually float32. Every component takes them, echoes the
+    # floats it used, and its record survives a JSON round trip unchanged.
+    def records(number: Any, whole: Any) -> dict[str, dict[str, Any]]:
+        services = _services(frame, {"hospital": (whole(40), number(10)), "main_road_entry": (whole(40), number(10))})
+        return {
+            "flood_likelihood_0_100": flood_likelihood(
+                frame, flooded_non_permanent_water_land_area=number(1), non_permanent_water_land_area=whole(40)
+            ),
+            "exposure_0_100": exposure(frame, residents_inside_flood_extent=number(10), unit_residents=whole(40)),
+            "access_gap_0_100": access_gap(frame, services=services),
+            "road_criticality_0_100": road_criticality(
+                frame, residents_losing_all_routes=number(10), residents_with_baseline_route=whole(40)
+            ),
+            "vulnerability_context_0_100": vulnerability_context(
+                frame, children_0_14=number(6), older_60_plus=number(8), residents=whole(40)
+            ),
+        }
+
+    reference = records(float, float)
+    kinds = [(np.float32, np.float32), (np.float32, np.int64), (np.float64, np.int32), (int, int), (Fraction, Fraction)]
+    for number, whole in kinds:
+        built = records(number, whole)
+        assert built == reference, (number, whole)
+        encoded = json.dumps(built)  # raises for a numpy scalar left in a record
+        assert json.loads(encoded) == built
+        for name in set(SCORE_COMPONENTS) - {"access_gap_0_100"}:
+            assert all(type(value) is float for value in built[name]["inputs"].values()), (name, number)
+        for service in built["access_gap_0_100"]["inputs"]["services"].values():
+            assert type(service["baseline_access_residents"]) is float
+            assert type(service["newly_lost_residents"]) is float
+        row = {"unit_id": "SYN-TYPES", "normalisation_version": NORMALISATION_FRAME_VERSION, "components": built}
+        assert reject_batch_scaled_components(frame, [json.loads(json.dumps(row))])["result"] == "PASS"
+    # A float32 that is not a short binary fraction is echoed as the float that was used.
+    third = np.float32(1) / np.float32(3)
+    echoed = exposure(frame, residents_inside_flood_extent=third, unit_residents=np.float32(1))["inputs"]
+    assert echoed["residents_inside_flood_extent"] == float(third) != 1 / 3
+    # The age counts are checked like every other count, and say which one is wrong.
+    for bad, message in (
+        (True, "children_0_14 must be one number for one unit"),
+        ("6", "children_0_14 must be one number for one unit"),
+        (None, "children_0_14 must be one number for one unit"),
+        (np.array([6.0, 7.0]), "children_0_14 must be one number for one unit"),
+        (np.float32("nan"), "children_0_14 must be finite and not negative"),
+        (-1, "children_0_14 must be finite and not negative"),
+    ):
+        with pytest.raises(NormalisationError, match=message):
+            vulnerability_context(frame, children_0_14=bad, older_60_plus=8, residents=40)
+    with pytest.raises(NormalisationError, match="older_60_plus must be one number"):
+        vulnerability_context(frame, children_0_14=6, older_60_plus="8", residents=40)
+    with pytest.raises(NormalisationError, match="residents must be finite"):
+        vulnerability_context(frame, children_0_14=6, older_60_plus=8, residents=np.float32("inf"))
+    with pytest.raises(NormalisationError, match="exceed the resident count"):
+        vulnerability_context(frame, children_0_14=np.float32(30), older_60_plus=np.float32(30), residents=np.int64(40))
+
+
 # ---------------------------------------------------------------------------
 # Guardrail GR2: no batch scaling, no max-normalisation
 # ---------------------------------------------------------------------------
@@ -738,10 +851,14 @@ def test_gr2_accepts_rows_on_the_absolute_frame(frame: PlanningFrame) -> None:
         "guardrail": "GR2_no_max_normalisation",
         "result": "PASS",
         "normalisation_version": NORMALISATION_FRAME_VERSION,
+        "protocol_sha256": dict(frame.protocol_sha256),
+        "components": list(SCORE_COMPONENTS),
         "rows_checked": 3,
         "components_checked": 15,
         "tolerance": 1e-9,
+        "fields_compared": "every field of every record; value_0_100 within the tolerance, the others exactly",
     }
+    assert json.loads(json.dumps(result)) == result
     assert reject_batch_scaled_components(frame, iter(rows[:1]))["rows_checked"] == 1
     assert set(COMPONENT_FUNCTIONS) == set(SCORE_COMPONENTS)
     for row in rows:
@@ -762,6 +879,142 @@ def test_gr2_refuses_a_component_scaled_by_the_batch_maximum(frame: PlanningFram
     shifted = [absolute[0], absolute[1] + 0.5, absolute[2]]
     with pytest.raises(BatchScalingError, match=rf"{name} is not the frame v1 value of the inputs it echoes .*SYN-B"):
         reject_batch_scaled_components(frame, _with_values(rows, name, shifted))
+
+
+def test_gr2_takes_no_tolerance_from_its_caller(frame: PlanningFrame) -> None:
+    # "The planning verifier must reject batch-scaled components." A tolerance argument of NaN, inf or
+    # 1000 once turned the check off and still wrote PASS; the check now has one fixed float guard.
+    assert "tolerance" not in inspect.signature(reject_batch_scaled_components).parameters
+    assert VERIFY_TOLERANCE == 1e-9
+    rows = _batch(frame)
+    absolute = [row["components"]["exposure_0_100"]["value_0_100"] for row in rows]
+    scaled = _with_values(rows, "exposure_0_100", [100 * value / max(absolute) for value in absolute])
+    for tolerance in (float("nan"), float("inf"), 1000, 1e-9, 0.0, -1.0):
+        with pytest.raises(TypeError, match="tolerance"):
+            reject_batch_scaled_components(frame, scaled, tolerance=tolerance)  # type: ignore[call-arg]
+    with pytest.raises(BatchScalingError, match="max-normalisation"):
+        reject_batch_scaled_components(frame, scaled)
+    # The guard is a float guard and nothing more: a change of one millionth of a point is refused.
+    nudged = [absolute[0], absolute[1] + 1e-6, absolute[2]]
+    with pytest.raises(BatchScalingError, match="is not the frame v1 value of the inputs it echoes .*SYN-B"):
+        reject_batch_scaled_components(frame, _with_values(rows, "exposure_0_100", nudged))
+    within = [absolute[0], absolute[1] + 1e-12, absolute[2]]
+    assert reject_batch_scaled_components(frame, _with_values(rows, "exposure_0_100", within))["tolerance"] == 1e-9
+
+
+_TWO = ("flood_likelihood_0_100", "exposure_0_100")
+
+
+def _only(rows: list[dict[str, Any]], names: tuple[str, ...]) -> list[dict[str, Any]]:
+    """The same rows carrying only the named component records."""
+
+    return [{**row, "components": {name: deepcopy(row["components"][name]) for name in names}} for row in rows]
+
+
+def test_gr2_checks_a_case_that_computes_two_components_only(
+    frame: PlanningFrame, protocols: dict[str, dict[str, Any]]
+) -> None:
+    # Case SE2-dist (MUST): "Flood likelihood and exposure only, no routing. ... no FPPS and no class."
+    case = next(row for row in protocols["v1a"]["case_portfolio"]["cases"] if row["id"] == "SE2-dist")
+    assert "Flood likelihood and exposure only, no routing" in case["note"]
+    rows = _only(_batch(frame), _TWO)
+    result = reject_batch_scaled_components(frame, rows, components=_TWO)
+    assert result["result"] == "PASS" and result["components"] == list(_TWO)
+    assert result["rows_checked"] == 3 and result["components_checked"] == 6
+    # The order of the names does not matter; the check runs in frame order.
+    assert reject_batch_scaled_components(frame, rows, components=list(reversed(_TWO)))["components"] == list(_TWO)
+    assert reject_batch_scaled_components(frame, iter(rows), components=iter(_TWO))["components_checked"] == 6
+    for name in _TWO:
+        absolute = [row["components"][name]["value_0_100"] for row in rows]
+        scaled = _with_values(rows, name, [100 * value / max(absolute) for value in absolute])
+        with pytest.raises(BatchScalingError, match=rf"{name} is the frame v1 value divided by the batch maximum"):
+            reject_batch_scaled_components(frame, scaled, components=_TWO)
+    # A row carries exactly the components that are checked: no fewer and no more.
+    with pytest.raises(BatchScalingError, match="does not carry exactly the records"):
+        reject_batch_scaled_components(frame, rows)
+    with pytest.raises(BatchScalingError, match="does not carry exactly the records"):
+        reject_batch_scaled_components(frame, _batch(frame), components=_TWO)
+    with pytest.raises(BatchScalingError, match="does not carry exactly the records"):
+        reject_batch_scaled_components(frame, rows, components=_TWO[:1])
+    single = reject_batch_scaled_components(frame, _only(rows, _TWO[1:]), components=_TWO[1:])
+    assert single["components"] == ["exposure_0_100"] and single["components_checked"] == 3
+
+
+_NOT_A_SEQUENCE = "components must be a sequence of FPPS component names"
+_NOT_ONCE_EACH = "components must name, once each, one or more of"
+
+
+@pytest.mark.parametrize("components, message", [
+    ((), _NOT_ONCE_EACH),
+    ([], _NOT_ONCE_EACH),
+    ("exposure_0_100", _NOT_A_SEQUENCE),
+    (b"exposure_0_100", _NOT_A_SEQUENCE),
+    ({"exposure_0_100": 1}, _NOT_A_SEQUENCE),
+    (["exposure_0_100", "exposure_0_100"], _NOT_ONCE_EACH),
+    (["exposure_0_100", "terrain_0_100"], _NOT_ONCE_EACH),
+    ([*SCORE_COMPONENTS, "terrain_0_100"], _NOT_ONCE_EACH),
+    (None, _NOT_A_SEQUENCE),
+    (7, _NOT_A_SEQUENCE),
+])
+def test_gr2_refuses_a_component_list_it_cannot_check(frame: PlanningFrame, components: Any, message: str) -> None:
+    with pytest.raises(NormalisationError, match=message):
+        reject_batch_scaled_components(frame, _batch(frame), components=components)
+
+
+def test_gr2_compares_the_whole_record_and_not_only_its_value(frame: PlanningFrame) -> None:
+    # GR2: "section 2b's density exposure and fpps_flood_anchor_v1 apply to the GeoAI runner only."
+    # A record whose value is right but which names another anchor or version is not a frame v1 record.
+    rows = _batch(frame)
+    other_anchor = frame.flood_anchor / 4
+
+    def changed(component: str, field: str, value: Any) -> list[dict[str, Any]]:
+        copy = deepcopy(rows)
+        if value == "DELETE":
+            del copy[1]["components"][component][field]
+        else:
+            copy[1]["components"][component][field] = value
+        return copy
+
+    flood, exposed, vulnerable = "flood_likelihood_0_100", "exposure_0_100", "vulnerability_context_0_100"
+    lower = rows[1]["components"][vulnerable]["anchors"]
+    cases = [
+        (flood, "anchor", other_anchor, "anchor"),
+        (flood, "normalisation_version", "fpps_flood_anchor_v1", "normalisation_version"),
+        (exposed, "normalisation_version", "fpps_exposure_anchor_v1", "normalisation_version"),
+        (exposed, "kind", "density", "kind"),
+        (exposed, "exposed_share", 0.99, "exposed_share"),
+        (exposed, "definition", "DELETE", "definition"),
+        (exposed, "density_anchor", None, "density_anchor"),
+        (exposed, "protocol_sha256", {"v1a": "0" * 64, "v1b": "1" * 64}, "protocol_sha256"),
+        (exposed, "protocol_sha256", "DELETE", "protocol_sha256"),
+        (vulnerable, "anchors", {**lower, "lower": "P5"}, "anchors"),
+        (vulnerable, "anchor_version", "another_anchor_version", "anchor_version"),
+        (flood, "anchor_sensitivity_one_at_a_time", [], "anchor_sensitivity_one_at_a_time"),
+        ("access_gap_0_100", "publication_level", "pitch", "publication_level"),
+        ("road_criticality_0_100", "component", "exposure_0_100", "component"),
+    ]
+    for component, field, value, named in cases:
+        message = rf"not the frame v1 record .* fields that differ: {component} of unit 'SYN-B': \['{named}'\]$"
+        with pytest.raises(BatchScalingError, match=message):
+            reject_batch_scaled_components(frame, changed(component, field, value))
+    # The GeoAI runner's two anchor fields are named as such inside a record, as they are on a row.
+    for field in ("flood_anchor_version", "exposure_anchor_version"):
+        message = rf"{flood} of unit 'SYN-B' carries \['{field}'\], the anchor versions of the GeoAI runner"
+        with pytest.raises(BatchScalingError, match=message):
+            reject_batch_scaled_components(frame, changed(flood, field, "fpps_flood_anchor_v1"))
+    # Several differing records are all listed, and a wrong value is reported before a wrong label.
+    two = changed(flood, "anchor", other_anchor)
+    two[2]["components"][exposed]["kind"] = "density"
+    with pytest.raises(BatchScalingError, match=r"SYN-B': \['anchor'\]; exposure_0_100 of unit 'SYN-C': \['kind'\]"):
+        reject_batch_scaled_components(frame, two)
+    both = changed(flood, "anchor", other_anchor)
+    both[1]["components"][flood]["value_0_100"] += 1.0
+    with pytest.raises(BatchScalingError, match="is not the frame v1 value of the inputs it echoes"):
+        reject_batch_scaled_components(frame, both)
+    # The same holds for a batch that carries two components only.
+    subset = _only(changed(flood, "anchor", other_anchor), _TWO)
+    with pytest.raises(BatchScalingError, match="fields that differ"):
+        reject_batch_scaled_components(frame, subset, components=_TWO)
 
 
 def test_gr2_does_not_mistake_a_saturated_unit_for_batch_scaling(frame: PlanningFrame) -> None:
@@ -796,8 +1049,9 @@ def test_gr2_refuses_rows_that_are_not_on_frame_v1(frame: PlanningFrame) -> None
         ({key: value for key, value in first.items() if key != "normalisation_version"}, "does not declare"),
         ({**first, "flood_anchor_version": "fpps_flood_anchor_v1"}, "anchor versions of the GeoAI runner"),
         ({**first, "exposure_anchor_version": "fpps_exposure_anchor_v1"}, "anchor versions of the GeoAI runner"),
-        ({**first, "components": {"exposure_0_100": components["exposure_0_100"]}}, "five component records"),
-        ({**first, "components": [*components.values()]}, "five component records"),
+        ({**first, "components": {"exposure_0_100": components["exposure_0_100"]}}, "exactly the records"),
+        ({**first, "components": [*components.values()]}, "exactly the records"),
+        ({key: value for key, value in first.items() if key != "components"}, "exactly the records"),
         ({**first, "components": bare}, "does not echo the inputs"),
         ({**first, "components": no_echo}, "does not echo the inputs"),
         ({**first, "components": other_inputs}, "does not echo the inputs"),
@@ -860,12 +1114,27 @@ def test_leave_one_out_of_the_frame_weights_is_the_signed_rule(
     {**{name: 0.0 for name in SCORE_COMPONENTS}, "exposure_0_100": 1.0},
     {name: 0.0 for name in SCORE_COMPONENTS},
     {**DEFAULT_WEIGHTS, "exposure_0_100": "heavy"},
+    {**DEFAULT_WEIGHTS, "exposure_0_100": None},
     None,
     7,
 ])
 def test_leave_one_out_refuses_weights_the_scorer_would_refuse(weights: Any) -> None:
     with pytest.raises(NormalisationError, match="leave-one-component-out needs valid FPPS weights"):
         leave_one_component_out_weights(weights)
+
+
+@pytest.mark.parametrize("value", [float("nan"), float("inf"), float("-inf"), np.float32("nan"), "nan"])
+@pytest.mark.parametrize("name", SCORE_COMPONENTS)
+def test_leave_one_out_refuses_a_weight_that_is_not_finite(name: str, value: Any) -> None:
+    # "The other four weights renormalised to sum to 1": a NaN or infinite weight has no such set, and
+    # the scorer's own check lets NaN through (it is neither negative nor a zero total).
+    assert all(math.isnan(weight) for weight in validate_weights({**DEFAULT_WEIGHTS, name: float("nan")}).values())
+    message = "leave-one-component-out needs valid FPPS weights: every weight must be a finite number"
+    with pytest.raises(NormalisationError, match=message):
+        leave_one_component_out_weights({**DEFAULT_WEIGHTS, name: value})
+    for weights in leave_one_component_out_weights(DEFAULT_WEIGHTS).values():
+        assert all(math.isfinite(weight) for weight in weights.values())
+        assert math.isclose(sum(weights.values()), 1.0, abs_tol=1e-12)
 
 
 # ---------------------------------------------------------------------------

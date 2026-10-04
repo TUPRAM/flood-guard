@@ -23,12 +23,20 @@ residents has no binding class, no would-be class and no v2 class. Its
 confidence is still recorded as low with C6 among the failed conditions, and its
 reason code is ``insufficient_denominator``, ahead of ``low_confidence``.
 
+The tier and the scenario base of a row are checked against the names the
+signed file gives: a flood input that the file names as an own T2 candidate
+(``t2_skill_bar`` and the flood inputs of the tier T2 cases) is refused when a
+row labels it tier T3 or an agency product used as provided. C3 is reported as
+``by_construction`` only where the file grants it: product 4009 in the eight
+units of the Mae Sai reporting frame. Everywhere else the coverage is measured.
+
 Rights are not an input (they drive ``publication_eligibility``), and no
 ensemble output is used. Every threshold is read from the protocol file
-(:func:`load_confidence_rule`). The functions are pure: they read no flood
-layer, compute no FPPS and assign no A-E class. A missing measurement is
-recorded as ``fail``: medium needs every condition shown. A confidence class is
-planning guidance; it is not a validation of a flood map and not an official warning.
+(:func:`load_confidence_rule`), and a rule that was not read from the file in
+force derives nothing. The functions are pure: they read no flood layer, compute
+no FPPS and assign no A-E class. A missing measurement is recorded as ``fail``:
+medium needs every condition shown. A confidence class is planning guidance; it
+is not a validation of a flood map and not an official warning.
 """
 
 from __future__ import annotations
@@ -85,6 +93,11 @@ GUARDRAIL_GR1 = "GR1_minimum_denominators"
 # Drafter readings this module implements; each must be confirmed in the signed file.
 REQUIRED_READINGS: tuple[str, ...] = ("DR-A07", "DR-A09")
 
+OWN_CANDIDATE_TIER = "T2"
+# C4 subtracts two exposures on the 0-100 scale. Binary rounding can put two values that are exactly
+# the limit apart a few 1e-15 above it (30.1 - 15.1), so the comparison carries this float guard.
+C4_FLOAT_GUARD_POINTS = 1e-9
+
 SKILL_DECLARED_UNABLE = "declared_unable_to_meet"
 SKILL_NOT_EVALUATED = "not_evaluated_by_the_rule"
 SKILL_EVALUATED = "evaluated"
@@ -96,7 +109,15 @@ class ConfidenceError(ValueError):
 
 @dataclass(frozen=True)
 class ConfidenceRule:
-    """The thresholds of confidence rule v1. Every value comes from protocol v1a."""
+    """The thresholds of confidence rule v1. Every value comes from protocol v1a.
+
+    ``own_t2_candidates_named`` holds every flood input the file names as an
+    own T2 candidate: the two lists of ``t2_skill_bar`` and the flood inputs of
+    the tier T2 cases. ``coverage_by_construction_units`` and
+    ``coverage_by_construction_flood_inputs`` hold the one case in which the
+    file grants C3 by construction: the units of the Mae Sai reporting frame and
+    the names the file gives the two product 4009 layers.
+    """
 
     version: str
     recency_window_days: float
@@ -112,6 +133,9 @@ class ConfidenceRule:
     skill_recency_window_days: float
     skill_declared_unable_to_meet: tuple[str, ...]
     skill_evaluated_by_the_rule: tuple[str, ...]
+    own_t2_candidates_named: tuple[str, ...]
+    coverage_by_construction_units: tuple[str, ...]
+    coverage_by_construction_flood_inputs: tuple[str, ...]
     gr1_unit_residents_min_for_class: float
     protocol_sha256: str | None
 
@@ -129,7 +153,9 @@ class ConfidenceInputs:
         lane: ``OBS``, ``SCN`` or ``SCN-ENV``.
         tier: ``T2`` or ``T3`` in lane OBS; ``T1`` in the scenario lanes.
         flood_input: The flood input, or for a scenario row its base flood
-            input, named as protocol v1a names it.
+            input, named as protocol v1a names it. A name the file gives an own
+            T2 candidate is accepted only at tier T2 or as an own-candidate
+            scenario base.
         scenario_base: For a T1 row, ``agency_product_as_provided`` or
             ``own_t2_candidate``; ``None`` for an observed row.
         acquisition_date: The calendar date of the acquisition, or ``None`` for
@@ -138,9 +164,12 @@ class ConfidenceInputs:
             case of a scenario row.
         unit_valid_coverage: The unit's valid coverage inside the product
             footprint or analysis extent, 0-1.
-        coverage_by_construction: True when the analysis extent of an agency
-            product covers the unit by construction (protocol: product 4009 in
-            Mae Sai). The condition is then reported as ``by_construction``.
+        coverage_by_construction: True only for the case protocol v1a grants:
+            a product 4009 layer on one of the eight units of the Mae Sai
+            reporting frame, whose analysis extent covers the unit by
+            construction. The condition is then reported as ``by_construction``.
+            For any other unit or flood input the flag is refused and the
+            coverage has to be measured.
         exposure_plus_one_pixel_0_100: Exposure with the flood input grown by one pixel.
         exposure_minus_one_pixel_0_100: Exposure with the flood input shrunk by one pixel.
         t2_abstention_fraction: The abstention fraction of an own T2 candidate.
@@ -186,11 +215,17 @@ def load_confidence_rule(v1a_path: Path | str, receipts_path: Path | str) -> Con
     """
 
     v1a, v1a_sha256 = read_protocol_in_force("v1a", v1a_path, receipts_path)
-    return confidence_rule_from_protocol(v1a, protocol_sha256=v1a_sha256)
+    return _checked_rule(v1a, v1a_sha256)
 
 
-def confidence_rule_from_protocol(v1a: Mapping[str, Any], *, protocol_sha256: str | None = None) -> ConfidenceRule:
-    """Build rule v1 from the parsed protocol v1a.
+def confidence_rule_from_protocol(v1a: Mapping[str, Any]) -> ConfidenceRule:
+    """Check that the parsed protocol v1a holds rule v1.
+
+    The rule this returns carries no protocol hash, because a parsed mapping
+    cannot be tied to the bytes that ``RECEIPTS.jsonl`` records. It shows what
+    a parsed file declares; :func:`derive_confidence` and
+    :func:`t2_skill_condition` refuse it. A rule that derives comes from
+    :func:`load_confidence_rule` only.
 
     Raises:
         ConfidenceError: when the file is not signed, declares another rule
@@ -198,6 +233,12 @@ def confidence_rule_from_protocol(v1a: Mapping[str, Any], *, protocol_sha256: st
             ensemble output, leaves a required drafter reading unconfirmed, or
             lacks a threshold.
     """
+
+    return _checked_rule(v1a, None)
+
+
+def _checked_rule(v1a: Mapping[str, Any], protocol_sha256: str | None) -> ConfidenceRule:
+    """Build rule v1; a parameter the file lacks becomes ConfidenceError."""
 
     try:
         return _rule(v1a, protocol_sha256)
@@ -236,6 +277,10 @@ def _rule(v1a: Mapping[str, Any], protocol_sha256: str | None) -> ConfidenceRule
         raise ConfidenceError("the protocol does not declare the reason codes this module records")
 
     skill = v1a["t2_skill_bar"]
+    declared_unable = tuple(str(name) for name in skill["declared_unable_to_meet"])
+    evaluated = tuple(str(name) for name in skill["evaluated_by_the_rule"])
+    own_candidates = _own_candidates_named(v1a, (*declared_unable, *evaluated))
+    by_construction_units, by_construction_inputs = _by_construction_scope(v1a, own_candidates)
     guardrails = {row["id"]: row for row in v1a["guardrails"]}
     input_uncertainty = conditions["C4_input_uncertainty"]["threshold"]
     rule = ConfidenceRule(
@@ -257,8 +302,11 @@ def _rule(v1a: Mapping[str, Any], protocol_sha256: str | None) -> ConfidenceRule
         skill_abstention_fraction_max=_threshold(skill["conditions"]["mae_sai_abstention_fraction_max"]),
         skill_unit_coverage_min=_threshold(skill["conditions"]["mae_sai_unit_coverage_min"]),
         skill_recency_window_days=_threshold(skill["conditions"]["recency_window_days"]),
-        skill_declared_unable_to_meet=tuple(str(name) for name in skill["declared_unable_to_meet"]),
-        skill_evaluated_by_the_rule=tuple(str(name) for name in skill["evaluated_by_the_rule"]),
+        skill_declared_unable_to_meet=declared_unable,
+        skill_evaluated_by_the_rule=evaluated,
+        own_t2_candidates_named=own_candidates,
+        coverage_by_construction_units=by_construction_units,
+        coverage_by_construction_flood_inputs=by_construction_inputs,
         gr1_unit_residents_min_for_class=_threshold(
             guardrails[GUARDRAIL_GR1]["parameters"]["unit_residents_min_for_class"]
         ),
@@ -270,6 +318,53 @@ def _rule(v1a: Mapping[str, Any], protocol_sha256: str | None) -> ConfidenceRule
             "the protocol records C6 as failed for every unit that GR1 covers"
         )
     return rule
+
+
+def _own_candidates_named(v1a: Mapping[str, Any], skill_bar_names: tuple[str, ...]) -> tuple[str, ...]:
+    """Return every flood input protocol v1a names as an own T2 candidate.
+
+    They are the inputs of ``t2_skill_bar`` (declared unable to meet the skill
+    condition, or evaluated by it) and the flood inputs of the cases the file
+    places at tier T2.
+    """
+
+    names = list(skill_bar_names)
+    for case in v1a["case_portfolio"]["cases"]:
+        if case["tier"] == OWN_CANDIDATE_TIER:
+            names.extend(str(name) for name in case["flood_inputs"])
+    return tuple(dict.fromkeys(names))
+
+
+def _by_construction_scope(
+    v1a: Mapping[str, Any], own_candidates: tuple[str, ...]
+) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    """Return the units and the flood inputs of the one case with C3 by construction.
+
+    Protocol v1a, condition C3: "For 4009 in Mae Sai this is satisfied by
+    construction (the analysis extent covers all eight tambons)". The units are
+    those of the Mae Sai reporting frame. The flood inputs are the two product
+    4009 layers under every name the file gives them: the layer names of
+    ``date_rule.product_4009``, and the flood inputs of the cases built on them
+    (the season-envelope cases in lane SCN-ENV for the accumulated layer, and
+    the case the file names for the 22 Oct layer).
+    """
+
+    portfolio = v1a["case_portfolio"]
+    units = tuple(str(unit) for unit in portfolio["mae_sai_reporting_frame"]["units"])
+    product = v1a["date_rule"]["product_4009"]
+    accumulated = product["accumulated_layer"]
+    dated = product["layer_22_oct"]
+    if accumulated["lane"] != SEASON_ENVELOPE_LANE:
+        raise ConfidenceError("the protocol does not place the 4009 accumulated layer in lane SCN-ENV")
+    names = [str(accumulated["layer"]), str(dated["layer"])]
+    for case in portfolio["cases"]:
+        if case["lane"] == SEASON_ENVELOPE_LANE or case["id"] == dated["case"]:
+            names.extend(str(name) for name in case["flood_inputs"])
+    if not units:
+        raise ConfidenceError("the protocol names no unit in the Mae Sai reporting frame")
+    if set(names) & set(own_candidates):
+        raise ConfidenceError("the protocol names an own T2 candidate among the product 4009 layers")
+    return units, tuple(dict.fromkeys(names))
 
 
 def _threshold(value: Any) -> float:
@@ -367,6 +462,33 @@ def _own_candidate(inputs: ConfidenceInputs) -> bool:
     return inputs.scenario_base == SCENARIO_BASE_OWN_CANDIDATE
 
 
+def _protocol_hash(rule: ConfidenceRule) -> str:
+    """Return the SHA-256 of the protocol file the rule was read from; a rule without one is refused.
+
+    Protocol v1a, ``change_control``: outputs carry ``protocol_sha256`` so each
+    value can be tied to the protocol bytes that produced it.
+    """
+
+    if not isinstance(rule.protocol_sha256, str) or not rule.protocol_sha256:
+        raise ConfidenceError(
+            "rule v1 carries no protocol hash: read it with load_confidence_rule, "
+            "which checks the file against RECEIPTS.jsonl"
+        )
+    return rule.protocol_sha256
+
+
+def coverage_by_construction_applies(rule: ConfidenceRule, *, unit_id: str, flood_input: str) -> bool:
+    """Say whether protocol v1a grants C3 by construction for this unit and flood input.
+
+    It does for a product 4009 layer on one of the eight units of the Mae Sai
+    reporting frame, and for nothing else: on any other unit, and for any other
+    agency product, the coverage is measured.
+    """
+
+    in_frame = unit_id in rule.coverage_by_construction_units
+    return in_frame and flood_input in rule.coverage_by_construction_flood_inputs
+
+
 def _component_statuses(component_status: Any) -> dict[str, str]:
     """Check that each of the five components is computed, assumed or not computed."""
 
@@ -405,8 +527,13 @@ def t2_skill_condition(
     Returns:
         ``passes``, the ``status`` of the input, and pass or fail for each of
         the four conditions with the measurements and thresholds used.
+
+    Raises:
+        ConfidenceError: for a measurement outside its range, or a rule that
+            was not read from the protocol file in force.
     """
 
+    protocol_sha256 = _protocol_hash(rule)
     iou = _measure(geoid_held_out_test_iou, "t2_geoid_held_out_test_iou", 1.0)
     abstention = _measure(abstention_fraction, "t2_abstention_fraction", 1.0)
     coverage = _measure(unit_valid_coverage, "unit_valid_coverage", 1.0)
@@ -446,6 +573,7 @@ def t2_skill_condition(
             "recency_window_days": rule.skill_recency_window_days,
         },
         "metric_wording": "agreement with a same-pass CEMS map, not independent accuracy",
+        "protocol_v1a_sha256": protocol_sha256,
     }
 
 
@@ -465,12 +593,21 @@ def derive_confidence(inputs: ConfidenceInputs, rule: ConfidenceRule) -> dict[st
 
     Raises:
         ConfidenceError: for an engine row or tier T4, a lane and tier that do
-            not belong together, or a measurement outside its range.
+            not belong together, a flood input the protocol names as an own T2
+            candidate on a row labelled as an agency product, coverage declared
+            by construction outside the case the protocol grants, a measurement
+            outside its range, or a rule not read from the protocol file in force.
     """
 
+    protocol_sha256 = _protocol_hash(rule)
     if not isinstance(inputs.unit_id, str) or not inputs.unit_id or not isinstance(inputs.flood_input, str):
         raise ConfidenceError("unit_id and flood_input must be text, and unit_id must not be empty")
     own_candidate = _own_candidate(inputs)
+    if not own_candidate and inputs.flood_input in rule.own_t2_candidates_named:
+        raise ConfidenceError(
+            f"protocol v1a names {inputs.flood_input!r} as an own T2 candidate: it is judged at tier T2, or as the "
+            "own-candidate base of a scenario, and never as an agency product"
+        )
     scenario = inputs.tier == "T1"
     coverage = _measure(inputs.unit_valid_coverage, "unit_valid_coverage", 1.0)
     plus = _measure(inputs.exposure_plus_one_pixel_0_100, "exposure_plus_one_pixel_0_100", 100.0)
@@ -493,6 +630,12 @@ def derive_confidence(inputs: ConfidenceInputs, rule: ConfidenceRule) -> dict[st
         raise ConfidenceError("the T2 abstention fraction and GEOID IoU belong to an own T2 candidate only")
     if inputs.coverage_by_construction and own_candidate:
         raise ConfidenceError("coverage by construction is stated for an agency product, not for an own candidate")
+    in_scope = coverage_by_construction_applies(rule, unit_id=inputs.unit_id, flood_input=inputs.flood_input)
+    if inputs.coverage_by_construction and not in_scope:
+        raise ConfidenceError(
+            "coverage by construction is stated for product 4009 in the eight Mae Sai tambons only: "
+            "for any other unit or flood input the unit's valid coverage is measured"
+        )
     if inputs.coverage_by_construction and coverage is not None and coverage < rule.unit_valid_coverage_min:
         raise ConfidenceError("coverage is declared by construction, but the measured coverage is below the minimum")
 
@@ -530,7 +673,8 @@ def derive_confidence(inputs: ConfidenceInputs, rule: ConfidenceRule) -> dict[st
     difference = None
     if plus is not None and minus is not None:
         difference = abs(plus - minus)
-    input_uncertainty = [_at_most(difference, rule.exposure_plus_minus_one_pixel_max_points)]
+    points_max = rule.exposure_plus_minus_one_pixel_max_points
+    input_uncertainty = [_at_most(difference, points_max + C4_FLOAT_GUARD_POINTS)]
     if own_candidate:
         input_uncertainty.append(_at_most(abstention, rule.t2_abstention_fraction_max))
     basis["C4_input_uncertainty"] = _basis(all(input_uncertainty))
@@ -555,6 +699,8 @@ def derive_confidence(inputs: ConfidenceInputs, rule: ConfidenceRule) -> dict[st
         "Derived from the listed measurements only. No ensemble output and no rights level is read.",
         "A condition whose measurement is missing is recorded as fail: medium needs every condition shown.",
         "High requires tier T4, which is locked in this release, so high is never assigned.",
+        f"C4 compares the difference of two exposures with a float guard of {C4_FLOAT_GUARD_POINTS:g} points, so "
+        "two exposures exactly the limit apart are not failed by binary rounding.",
     ]
     if scenario:
         confidence_kind = KIND_SCENARIO
@@ -607,6 +753,7 @@ def derive_confidence(inputs: ConfidenceInputs, rule: ConfidenceRule) -> dict[st
             "recency_window_days": rule.recency_window_days,
             "unit_valid_coverage_min": rule.unit_valid_coverage_min,
             "exposure_plus_minus_one_pixel_max_points": rule.exposure_plus_minus_one_pixel_max_points,
+            "exposure_plus_minus_one_pixel_float_guard_points": C4_FLOAT_GUARD_POINTS,
             "t2_abstention_fraction_max": rule.t2_abstention_fraction_max,
             "unit_residents_min": rule.unit_residents_min,
             "baseline_vehicle_no_route_share_max": rule.baseline_vehicle_no_route_share_max,
@@ -614,7 +761,7 @@ def derive_confidence(inputs: ConfidenceInputs, rule: ConfidenceRule) -> dict[st
         },
         "uses_ensemble_output": False,
         "rights_are_an_input": False,
-        "protocol_v1a_sha256": rule.protocol_sha256,
+        "protocol_v1a_sha256": protocol_sha256,
         "assumptions": assumptions,
     }
 

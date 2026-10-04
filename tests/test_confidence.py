@@ -4,6 +4,12 @@ Every row here is invented: the unit IDs start with SYN and the dates are in
 2030. No test reads a flood layer or a population raster, and none computes an
 FPPS or an A-E class. The thresholds are read from the signed protocol file, so
 the boundary cases follow the file, not numbers typed here.
+
+The by-construction case of condition C3 is defined by the unit IDs of the Mae
+Sai reporting frame. Those IDs are read from the protocol and used in two ways
+only: as arguments of the scope test, which derives nothing, and on rows the
+rule must refuse. A confidence class under ``by_construction`` is derived on an
+invented unit, with the scope of the signed rule moved to it.
 """
 
 from __future__ import annotations
@@ -23,6 +29,7 @@ from floodguard.confidence import (
     BASIS_VALUES,
     BY_CONSTRUCTION,
     BY_SCENARIO_DECLARATION,
+    C4_FLOAT_GUARD_POINTS,
     CONDITION_IDS,
     FAIL,
     PASS,
@@ -32,6 +39,7 @@ from floodguard.confidence import (
     ConfidenceInputs,
     ConfidenceRule,
     confidence_rule_from_protocol,
+    coverage_by_construction_applies,
     derive_confidence,
     load_confidence_rule,
     recency_days,
@@ -62,6 +70,15 @@ def protocol() -> dict[str, Any]:
 @pytest.fixture(scope="module")
 def rule() -> ConfidenceRule:
     return load_confidence_rule(V1A, RECEIPTS)
+
+
+@pytest.fixture(scope="module")
+def invented_scope_rule(rule: ConfidenceRule) -> ConfidenceRule:
+    """The signed rule with its by-construction case moved to an invented unit and an invented agency input."""
+
+    return dataclasses.replace(
+        rule, coverage_by_construction_units=("SYN-001",), coverage_by_construction_flood_inputs=(AGENCY_INPUT,)
+    )
 
 
 def row(**changes: Any) -> ConfidenceInputs:
@@ -143,6 +160,13 @@ def test_rule_thresholds_come_from_the_signed_protocol(rule: ConfidenceRule, pro
     guardrail = next(entry for entry in protocol["guardrails"] if entry["id"] == "GR1_minimum_denominators")
     assert rule.gr1_unit_residents_min_for_class == guardrail["parameters"]["unit_residents_min_for_class"]
     assert tuple(conditions) == CONDITION_IDS
+    # Every flood input the file names as an own T2 candidate: the skill bar and the tier T2 cases.
+    cases = protocol["case_portfolio"]["cases"]
+    t2_case_inputs = [name for case in cases if case["tier"] == "T2" for name in case["flood_inputs"]]
+    skill_bar_inputs = {*skill["declared_unable_to_meet"], *skill["evaluated_by_the_rule"]}
+    assert t2_case_inputs and not set(t2_case_inputs) <= skill_bar_inputs
+    assert set(rule.own_t2_candidates_named) == {*skill_bar_inputs, *t2_case_inputs}
+    assert len(set(rule.own_t2_candidates_named)) == len(rule.own_t2_candidates_named)
 
 
 def test_reason_codes_are_the_ones_the_protocol_declares(rule: ConfidenceRule, protocol: dict[str, Any]) -> None:
@@ -207,6 +231,14 @@ def _reading_index(protocol: dict[str, Any], reading: str) -> int:
     ("class_rules/v1/reason_codes/low_confidence", "DELETE", "reason codes"),
     ("class_rules/v1/added_reason_code/insufficient_denominator", "DELETE", "reason codes"),
     ("confidence_rule_v1/medium_requires_all", None, "does not hold"),
+    ("case_portfolio/cases", "DELETE", "does not hold"),
+    ("case_portfolio/mae_sai_reporting_frame", "DELETE", "does not hold"),
+    ("case_portfolio/mae_sai_reporting_frame/units", [], "no unit in the Mae Sai reporting frame"),
+    ("date_rule/product_4009", "DELETE", "does not hold"),
+    ("date_rule/product_4009/layer_22_oct/layer", "DELETE", "does not hold"),
+    ("date_rule/product_4009/accumulated_layer/lane", "OBS", "accumulated layer in lane SCN-ENV"),
+    # The 22 Oct layer tied to the own-candidate case: its inputs would become by-construction inputs.
+    ("date_rule/product_4009/layer_22_oct/case", "O1", "an own T2 candidate among the product 4009 layers"),
 ])
 def test_rule_is_refused_when_the_protocol_states_another_rule(
     protocol: dict[str, Any], pointer: str, value: Any, message: str
@@ -221,6 +253,34 @@ def test_rule_is_refused_when_a_reading_it_implements_is_not_confirmed(protocol:
     with pytest.raises(ConfidenceError, match=reading):
         confidence_rule_from_protocol(_change(protocol, pointer, "amended"))
     assert confidence_rule_from_protocol(protocol).protocol_sha256 is None
+
+
+def test_a_rule_that_was_not_read_from_the_file_in_force_derives_nothing(
+    rule: ConfidenceRule, protocol: dict[str, Any]
+) -> None:
+    # Protocol v1a change_control: outputs carry protocol_sha256, so a rule without one gives no output.
+    unhashed = confidence_rule_from_protocol(protocol)
+    assert unhashed.protocol_sha256 is None
+    assert dataclasses.replace(unhashed, protocol_sha256=rule.protocol_sha256) == rule
+    with pytest.raises(TypeError):
+        confidence_rule_from_protocol(protocol, protocol_sha256="0" * 64)  # type: ignore[call-arg]
+    # A mapping edited after signing still parses (resident minimum 10), and still derives nothing.
+    edited = _change(protocol, "confidence_rule_v1/medium_requires_all/5/threshold/unit_residents_min", 10)
+    edited = _change(edited, "guardrails/0/parameters/unit_residents_min_for_class", 10)
+    lowered = confidence_rule_from_protocol(edited)
+    assert lowered.unit_residents_min == 10 and lowered.protocol_sha256 is None
+    skill_arguments = {
+        "flood_input": EVALUATED_T2_INPUT, "geoid_held_out_test_iou": 0.5, "abstention_fraction": 0.1,
+        "unit_valid_coverage": 0.9, "acquisition_date": REFERENCE, "case_reference_date": REFERENCE,
+    }
+    for refused in (unhashed, lowered, dataclasses.replace(rule, protocol_sha256="")):
+        with pytest.raises(ConfidenceError, match="carries no protocol hash: read it with load_confidence_rule"):
+            derive_confidence(row(unit_residents=20), refused)
+        with pytest.raises(ConfidenceError, match="carries no protocol hash"):
+            t2_skill_condition(refused, **skill_arguments)
+    assert t2_skill_condition(rule, **skill_arguments)["protocol_v1a_sha256"] == rule.protocol_sha256
+    skill = derive_confidence(own_candidate_row(), rule)["t2_skill_condition"]
+    assert skill["protocol_v1a_sha256"] == rule.protocol_sha256
 
 
 # ---------------------------------------------------------------------------
@@ -300,6 +360,37 @@ def test_boundaries_are_inclusive_on_the_side_the_protocol_names(rule: Confidenc
         assert outside["failed_conditions"] == [condition]
 
 
+def test_c4_is_not_failed_by_binary_rounding_at_the_limit(rule: ConfidenceRule) -> None:
+    # "At most 15 points": 30.1 and 15.1 are exactly 15 apart, yet their float difference is just above 15.
+    points = rule.exposure_plus_minus_one_pixel_max_points
+    assert abs(30.1 - 15.1) > points and abs(30.1 - 15.1) - points < 1e-12
+    for plus, minus in ((30.1, 15.1), (15.1, 30.1)):
+        result = derive_confidence(row(exposure_plus_one_pixel_0_100=plus, exposure_minus_one_pixel_0_100=minus), rule)
+        assert result["confidence_class"] == "medium" and result["basis"]["C4_input_uncertainty"] == PASS
+        assert result["measurements"]["exposure_plus_minus_one_pixel_points"] == abs(plus - minus)
+    guard = result["thresholds"]["exposure_plus_minus_one_pixel_float_guard_points"]
+    assert guard == C4_FLOAT_GUARD_POINTS and 0 < guard <= 1e-9
+    assert result["thresholds"]["exposure_plus_minus_one_pixel_max_points"] == points
+    assert any("float guard" in text for text in result["assumptions"])
+    # Every pair of two-decimal exposures exactly the limit apart passes; one hundredth more fails.
+    limit_cents = round(points * 100)
+    above_float_limit = 0
+    for cents in range(0, 10_000 - limit_cents):
+        minus = cents / 100
+        at_limit = (cents + limit_cents) / 100
+        above_float_limit += abs(at_limit - minus) > points
+        inside = derive_confidence(
+            row(exposure_plus_one_pixel_0_100=at_limit, exposure_minus_one_pixel_0_100=minus), rule
+        )
+        assert inside["basis"]["C4_input_uncertainty"] == PASS, (at_limit, minus)
+        beyond = (cents + limit_cents + 1) / 100
+        outside = derive_confidence(
+            row(exposure_plus_one_pixel_0_100=beyond, exposure_minus_one_pixel_0_100=minus), rule
+        )
+        assert outside["failed_conditions"] == ["C4_input_uncertainty"], (beyond, minus)
+    assert above_float_limit > 500  # the guard is needed for many ordinary pairs, not for one odd one
+
+
 def test_high_is_never_assigned_and_tier_t4_is_locked(rule: ConfidenceRule) -> None:
     assert VALID_CONFIDENCE_CLASSES[0] == "high"
     with pytest.raises(ConfidenceError, match="T4 is locked"):
@@ -351,6 +442,84 @@ def test_an_input_the_protocol_does_not_list_as_evaluated_stays_low(rule: Confid
     assert result["t2_skill_condition"]["status"] == "not_evaluated_by_the_rule"
     for name in rule.skill_evaluated_by_the_rule:
         assert derive_confidence(own_candidate_row(flood_input=name), rule)["confidence_class"] == "medium"
+
+
+def test_an_input_the_protocol_names_as_an_own_candidate_is_refused_under_an_agency_label(
+    rule: ConfidenceRule, protocol: dict[str, Any]
+) -> None:
+    # t2_skill_bar.consequence: "T2 never yields a binding class above E unless the condition passes."
+    # A row cannot step around the skill condition by calling the same detector tier T3 or an agency base.
+    skill = protocol["t2_skill_bar"]
+    assert "never yields a binding class above E" in skill["consequence"]
+    named = rule.own_t2_candidates_named
+    assert {*skill["declared_unable_to_meet"], *skill["evaluated_by_the_rule"]} <= set(named)
+    for name in named:
+        relabelled = [
+            row(flood_input=name),
+            scenario_row(flood_input=name),
+            scenario_row(lane="SCN", flood_input=name),
+            scenario_row(lane="SCN", flood_input=name, acquisition_date=REFERENCE, case_reference_date=REFERENCE),
+        ]
+        for inputs in relabelled:
+            with pytest.raises(ConfidenceError, match="as an own T2 candidate: it is judged at tier T2"):
+                derive_confidence(inputs, rule)
+        # Labelled as what the file says it is, the same input is judged by the skill condition.
+        observed = derive_confidence(own_candidate_row(flood_input=name), rule)
+        base = derive_confidence(
+            scenario_row(lane="SCN", scenario_base=SCENARIO_BASE_OWN_CANDIDATE, flood_input=name,
+                         t2_abstention_fraction=0.05, t2_geoid_held_out_test_iou=0.55,
+                         acquisition_date=REFERENCE, case_reference_date=REFERENCE),
+            rule,
+        )
+        passes = name in rule.skill_evaluated_by_the_rule
+        for result in (observed, base):
+            assert (result["confidence_class"] == "medium") == passes, name
+            assert (result["basis"]["C1_tier"] == PASS) == passes
+    # An agency input, which the file does not name as an own candidate, keeps both agency labels.
+    assert derive_confidence(row(), rule)["basis"]["C1_tier"] == PASS
+    assert derive_confidence(scenario_row(), rule)["basis"]["C1_tier"] == BY_SCENARIO_DECLARATION
+
+
+def test_each_condition_uses_its_own_threshold_and_not_its_twin(rule: ConfidenceRule) -> None:
+    # In the signed file four pairs of thresholds are equal (3 and 3 days, 0.8 and 0.8, 0.2 and 0.2,
+    # 100 and 100), so a condition reading its twin's threshold would give the same results. Each
+    # pair is pulled apart here and a row is placed between the two values.
+    assert rule.recency_window_days == rule.skill_recency_window_days
+    assert rule.unit_valid_coverage_min == rule.skill_unit_coverage_min
+    assert rule.t2_abstention_fraction_max == rule.skill_abstention_fraction_max
+    assert rule.unit_residents_min == rule.gr1_unit_residents_min_for_class
+
+    def split(changes: dict[str, Any], **row_changes: Any) -> dict[str, Any]:
+        return derive_confidence(own_candidate_row(**row_changes), dataclasses.replace(rule, **changes))
+
+    late = REFERENCE + timedelta(days=int(rule.recency_window_days) + 1)
+    result = split({"skill_recency_window_days": rule.recency_window_days + 2}, acquisition_date=late)
+    assert result["failed_conditions"] == ["C2_recency"] and result["t2_skill_condition"]["passes"] is True
+    result = split({"recency_window_days": rule.recency_window_days + 2}, acquisition_date=late)
+    assert result["failed_conditions"] == ["C1_tier"]
+    assert result["t2_skill_condition"]["failed_conditions"] == ["recency_window_days"]
+
+    between = (rule.unit_valid_coverage_min + 1.0) / 2
+    result = split({"skill_unit_coverage_min": 1.0}, unit_valid_coverage=between)
+    assert result["failed_conditions"] == ["C1_tier"]
+    assert result["t2_skill_condition"]["failed_conditions"] == ["mae_sai_unit_coverage_min"]
+    result = split({"unit_valid_coverage_min": 1.0}, unit_valid_coverage=between)
+    assert result["failed_conditions"] == ["C3_coverage"] and result["t2_skill_condition"]["passes"] is True
+
+    half = rule.t2_abstention_fraction_max / 2
+    result = split({"skill_abstention_fraction_max": 0.0}, t2_abstention_fraction=half)
+    assert result["failed_conditions"] == ["C1_tier"]
+    assert result["t2_skill_condition"]["failed_conditions"] == ["mae_sai_abstention_fraction_max"]
+    result = split({"t2_abstention_fraction_max": 0.0}, t2_abstention_fraction=half)
+    assert result["failed_conditions"] == ["C4_input_uncertainty"] and result["t2_skill_condition"]["passes"] is True
+
+    fewer = rule.unit_residents_min / 2
+    result = split({"gr1_unit_residents_min_for_class": fewer / 2}, unit_residents=fewer)
+    assert result["failed_conditions"] == ["C6_residents"] and result["reason_code"] == "low_confidence"
+    assert result["guardrail_gr1"]["applies"] is False
+    result = split({"unit_residents_min": fewer / 2}, unit_residents=fewer)
+    assert result["failed_conditions"] == [] and result["reason_code"] == "insufficient_denominator"
+    assert result["guardrail_gr1"]["applies"] is True
 
 
 def test_each_skill_condition_is_needed_and_inclusive_at_its_threshold(rule: ConfidenceRule) -> None:
@@ -488,18 +657,88 @@ def test_observed_rows_never_carry_a_scenario_declaration(rule: ConfidenceRule) 
 # ---------------------------------------------------------------------------
 
 
-def test_coverage_by_construction_is_reported_as_such(rule: ConfidenceRule) -> None:
+def test_by_construction_is_granted_for_product_4009_in_the_mae_sai_frame_and_nowhere_else(
+    rule: ConfidenceRule, protocol: dict[str, Any]
+) -> None:
+    # C3 note: "For 4009 in Mae Sai this is satisfied by construction (the analysis extent covers all
+    # eight tambons)". No other unit and no other product has that statement in the signed file.
+    note = protocol["confidence_rule_v1"]["medium_requires_all"][2]["note"]
+    assert "For 4009 in Mae Sai" in note and "all eight tambons" in note
+    units = protocol["case_portfolio"]["mae_sai_reporting_frame"]["units"]
+    product = protocol["date_rule"]["product_4009"]
+    cases = {case["id"]: case for case in protocol["case_portfolio"]["cases"]}
+    layers = [product["accumulated_layer"]["layer"], product["layer_22_oct"]["layer"]]
+    case_names = [*cases["SE1"]["flood_inputs"], *cases["O2"]["flood_inputs"]]
+    assert len(units) == len(set(units)) == 8 and len({*layers, *case_names}) == 4
+    assert rule.coverage_by_construction_units == tuple(units)
+    assert set(rule.coverage_by_construction_flood_inputs) == {*layers, *case_names}
+    for lane_case in ("SE2", "SE2-dist", "SE2-blind"):
+        assert set(cases[lane_case]["flood_inputs"]) <= set(case_names)
+
+    # The scope itself: a yes or no for a unit and an input; nothing is derived for any unit.
+    for unit in units:
+        for name in (*layers, *case_names):
+            assert coverage_by_construction_applies(rule, unit_id=unit, flood_input=name) is True
+        for other in (*cases["O4"]["flood_inputs"], *cases["O1"]["flood_inputs"], AGENCY_INPUT, ""):
+            assert coverage_by_construction_applies(rule, unit_id=unit, flood_input=other) is False
+    for name in (*layers, *case_names):
+        for other_unit in ("SYN-001", "SYN-not-mae-sai", ""):
+            assert other_unit not in units
+            assert coverage_by_construction_applies(rule, unit_id=other_unit, flood_input=name) is False
+
+    # Outside the scope the flag is refused, with or without a measured coverage, in every lane.
+    refused = [
+        row(coverage_by_construction=True, unit_valid_coverage=None),
+        row(coverage_by_construction=True, unit_valid_coverage=1.0),
+        row(coverage_by_construction=True, unit_valid_coverage=None, flood_input=layers[1]),
+        scenario_row(coverage_by_construction=True, unit_valid_coverage=None, flood_input=layers[0]),
+        scenario_row(coverage_by_construction=True, unit_valid_coverage=None, flood_input=case_names[0]),
+        scenario_row(lane="SCN", coverage_by_construction=True, unit_valid_coverage=0.9, flood_input=case_names[1]),
+        row(unit_id=units[0], coverage_by_construction=True, unit_valid_coverage=None,
+            flood_input=cases["O4"]["flood_inputs"][0]),
+        row(unit_id=units[0], coverage_by_construction=True, unit_valid_coverage=None),
+    ]
+    for inputs in refused:
+        with pytest.raises(ConfidenceError, match="product 4009 in the eight Mae Sai tambons only"):
+            derive_confidence(inputs, rule)
+    # Without the flag the same season-envelope row on another unit has to show a measured coverage.
+    unmeasured = derive_confidence(scenario_row(unit_valid_coverage=None, flood_input=case_names[0]), rule)
+    assert unmeasured["failed_conditions"] == ["C3_coverage"] and unmeasured["confidence_class"] == "low"
+    measured = derive_confidence(scenario_row(unit_valid_coverage=0.93, flood_input=case_names[0]), rule)
+    assert measured["basis"]["C3_coverage"] == PASS and measured["confidence_class"] == "medium"
+
+
+def test_coverage_by_construction_is_reported_as_such(
+    rule: ConfidenceRule, invented_scope_rule: ConfidenceRule
+) -> None:
     for inputs in (
         scenario_row(coverage_by_construction=True, unit_valid_coverage=None),
+        scenario_row(lane="SCN", coverage_by_construction=True, unit_valid_coverage=None),
         row(coverage_by_construction=True, unit_valid_coverage=1.0),
+        row(coverage_by_construction=True, unit_valid_coverage=rule.unit_valid_coverage_min),
     ):
-        result = derive_confidence(inputs, rule)
+        result = derive_confidence(inputs, invented_scope_rule)
         assert result["basis"]["C3_coverage"] == BY_CONSTRUCTION
         assert result["confidence_class"] == "medium" and result["failed_conditions"] == []
+        assert result["measurements"]["coverage_by_construction"] is True
+    # The moved scope is as narrow as the signed one: another unit or another input is refused.
+    for changes in ({"unit_id": "SYN-002"}, {"flood_input": "another invented agency extent"}):
+        inputs = row(coverage_by_construction=True, unit_valid_coverage=None, **changes)
+        with pytest.raises(ConfidenceError, match="product 4009 in the eight Mae Sai tambons only"):
+            derive_confidence(inputs, invented_scope_rule)
     with pytest.raises(ConfidenceError, match="below the minimum"):
-        derive_confidence(row(coverage_by_construction=True, unit_valid_coverage=0.3), rule)
+        derive_confidence(row(coverage_by_construction=True, unit_valid_coverage=0.3), invented_scope_rule)
+    # A measured coverage beside the declaration is checked against the C3 minimum, not the skill bar's.
+    stricter_skill = dataclasses.replace(invented_scope_rule, skill_unit_coverage_min=1.0)
+    between = (rule.unit_valid_coverage_min + 1.0) / 2
+    accepted = derive_confidence(row(coverage_by_construction=True, unit_valid_coverage=between), stricter_skill)
+    assert accepted["basis"]["C3_coverage"] == BY_CONSTRUCTION
+    for scoped in (rule, invented_scope_rule):
+        with pytest.raises(ConfidenceError, match="not for an own candidate"):
+            derive_confidence(own_candidate_row(coverage_by_construction=True), scoped)
+    own_on_scoped_input = own_candidate_row(coverage_by_construction=True, flood_input=AGENCY_INPUT)
     with pytest.raises(ConfidenceError, match="not for an own candidate"):
-        derive_confidence(own_candidate_row(coverage_by_construction=True), rule)
+        derive_confidence(own_on_scoped_input, invented_scope_rule)
 
 
 # ---------------------------------------------------------------------------

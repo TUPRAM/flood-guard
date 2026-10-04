@@ -206,7 +206,7 @@ export function StudioWorkspace({ evidenceContextId, archive = false }: StudioWo
 
   return (
     <main className="studio-page studio-final-surface" lang={language}>
-      <WorkspaceHeader activeSurface="studio" language={language} onLanguageChange={setLanguage} />
+      <WorkspaceHeader activeSurface="studio" language={language} onLanguageChange={setLanguage} surfaceRoot={!archive} hrefFor={archive ? archiveHref : undefined} />
       <div data-app-availability-slot />
       <StatusBar data={data} language={language} compact />
 

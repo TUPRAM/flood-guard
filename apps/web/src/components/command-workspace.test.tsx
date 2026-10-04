@@ -17,7 +17,9 @@ describe("CommandWorkspace", () => {
     expect(html).toContain('aria-label="Planning data context"');
     expect(html).toContain("Planning intelligence");
     expect(html).toContain("Planning workspace");
-    expect(html).toContain('<a href="/command/" aria-current="page">Planning</a>');
+    // Served at /command/archive/: the Planning link leads to the candidate overview, so it marks the section only.
+    expect(html).toContain('<a href="/command/" aria-current="true">Planning</a>');
+    expect(html).not.toContain('aria-current="page"');
     expect(html).toContain('aria-label="Use English" aria-pressed="true"');
     expect(html).toContain("Source time");
     expect(html).toContain("Confidence");

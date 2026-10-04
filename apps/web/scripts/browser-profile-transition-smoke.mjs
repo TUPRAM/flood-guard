@@ -125,6 +125,11 @@ try {
     return { key, paths: (await cache.keys()).map((request) => new URL(request.url).pathname) };
   });
   if (!competitionCache?.paths.includes("/command/")) throw new Error("Competition profile did not cache Command before transition.");
+  // A study area saved on request lives outside the build cache. The public profile must not keep it either.
+  phase = "save a study area before the downgrade";
+  await saveDefaultStudyArea(page);
+  await page.goto(`${baseUrl}/`, { waitUntil: "domcontentloaded" });
+  await page.locator("main[data-fg-landing]").waitFor({ state: "visible" });
 
   phase = "competition to public downgrade";
   activeOut = publicOut;
@@ -186,8 +191,9 @@ try {
       waiting: await readWorker(registration?.waiting),
       installing: await readWorker(registration?.installing),
     };
-    return { keys, paths: (await cache.keys()).map((request) => new URL(request.url).pathname), profiles, workers };
+    return { keys, paths: (await cache.keys()).map((request) => new URL(request.url).pathname), profiles, workers, savedAreas: (await caches.keys()).includes("floodguard-saved-areas-v1") };
   });
+  if (publicCacheAudit.savedAreas) throw new Error("A study area saved under the competition profile survived the public-profile transition.");
   if (publicCacheAudit.keys.includes(competitionCache.key)) {
     throw new Error(`Competition cache survived the public-profile transition: ${JSON.stringify(publicCacheAudit)}`);
   }
@@ -266,6 +272,10 @@ try {
 
   // The activated competition worker must now serve both staff routes offline,
   // and the availability panel must report the cached snapshot and map limits.
+  // The staff pages below open the default study case. Its study area is not part of the installation, so the
+  // reader's request comes first.
+  phase = "save a study area on request";
+  await saveDefaultStudyArea(page);
   phase = "competition offline staff-route recovery";
   offlineMode = true;
   await context.setOffline(true);
@@ -360,9 +370,19 @@ function expectedResourceFailure(resource) {
     || (offlineMode && url.origin === baseUrl && (
       (expectedDeniedNavigation && url.pathname === "/command/")
       || url.searchParams.has("_rsc")
-      // The optional research report is outside the planning-view cache.
-      || url.pathname === "/geoai/mae-sai-real.json"
     ));
+}
+
+/** On the library page, ask for the study area of the default case and wait until the worker has saved it. */
+async function saveDefaultStudyArea(page) {
+  await page.goto(`${baseUrl}/studio/library/`, { waitUntil: "domcontentloaded" });
+  const row = page.locator('[data-evidence-offline-control="true"] [data-evidence-offline-area]').first();
+  await row.waitFor({ state: "visible" });
+  if (await row.getAttribute("data-state") === "saved") throw new Error("A study area reads as saved before it was asked for.");
+  await row.locator('button[data-action="save"]').click();
+  await waitForEvaluated(page, () => (
+    document.querySelector('[data-evidence-offline-control="true"] [data-evidence-offline-area]')?.getAttribute("data-state") === "saved"
+  ), undefined, "the default study area to be saved on request", 120_000);
 }
 
 async function readAvailabilityRows(page) {

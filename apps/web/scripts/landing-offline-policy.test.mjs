@@ -8,8 +8,19 @@ const workerSource = readFileSync(new URL("../public/sw.js", import.meta.url), "
 const illustrationUrl = "/landing/floodguard-v1/plates/w0-768.webp";
 const hash = (body) => createHash("sha256").update(body).digest("hex");
 
-function workerHarness({ version = "000000000001", profile = "competition", illustration = "approved image", illustrationUrls = [illustrationUrl], shared, caseReplay = {}, caseReplayExports = {} } = {}) {
-  const state = shared ?? { stores: new Map(), deployed: profile, requests: [], illustration, responseGate: null, replayBodies: { ...caseReplay, ...caseReplayExports }, fetchModes: {}, offline: false };
+/** The study-area list a build would write: `areas` maps an area id to its files (`{ url: body }`). */
+function evidenceAreaList(areas) {
+  const listedBy = new Map();
+  for (const files of Object.values(areas)) for (const url of Object.keys(files)) listedBy.set(url, (listedBy.get(url) ?? 0) + 1);
+  return Object.entries(areas).map(([aoiId, files]) => {
+    const assets = Object.entries(files).map(([url, body]) => ({ url, sha256: hash(body), bytes: Buffer.byteLength(body), ...(listedBy.get(url) > 1 ? { shared: true } : {}) }));
+    return { aoi_id: aoiId, bytes: assets.reduce((sum, asset) => sum + asset.bytes, 0), assets };
+  });
+}
+
+function workerHarness({ version = "000000000001", profile = "competition", illustration = "approved image", illustrationUrls = [illustrationUrl], shared, caseReplay = {}, caseReplayExports = {}, evidenceAreas = {} } = {}) {
+  const evidenceBodies = Object.assign({}, ...Object.values(evidenceAreas));
+  const state = shared ?? { stores: new Map(), deployed: profile, requests: [], illustration, responseGate: null, replayBodies: { ...caseReplay, ...caseReplayExports, ...evidenceBodies }, fetchModes: {}, offline: false };
   const listeners = new Map();
   const messages = [];
   const pathname = (request) => new URL(typeof request === "string" ? request : request.url, "https://floodguard.test").pathname;
@@ -40,6 +51,7 @@ function workerHarness({ version = "000000000001", profile = "competition", illu
       return {
         match: async (request) => store.get(pathname(request))?.clone(),
         put: async (request, response) => { store.set(pathname(request), response.clone()); },
+        delete: async (request) => store.delete(pathname(request)),
         keys: async () => [...store.keys()].map((path) => new Request(`https://floodguard.test${path}`)),
         addAll: async (requests) => {
           for (const request of requests) {
@@ -59,6 +71,7 @@ function workerHarness({ version = "000000000001", profile = "competition", illu
     .replace("const CORE_ASSETS = []; /* __PROFILE_CORE_ASSETS__ */", 'const CORE_ASSETS = ["/", "/deployment-profile.json"];')
     .replace("const OPTIONAL_CASE_REPLAY = []; /* __OPTIONAL_CASE_REPLAY__ */", `const OPTIONAL_CASE_REPLAY = ${JSON.stringify(profile === "competition" ? Object.entries(caseReplay).map(([url, body]) => ({ url, sha256: hash(body) })) : [])};`)
     .replace("const OPTIONAL_CASE_REPLAY_EXPORTS = []; /* __OPTIONAL_CASE_REPLAY_EXPORTS__ */", `const OPTIONAL_CASE_REPLAY_EXPORTS = ${JSON.stringify(profile === "competition" ? Object.entries(caseReplayExports).map(([url, body]) => ({ url, sha256: hash(body) })) : [])};`)
+    .replace("const OPTIONAL_EVIDENCE_AREAS = []; /* __OPTIONAL_EVIDENCE_AREAS__ */", `const OPTIONAL_EVIDENCE_AREAS = ${JSON.stringify(profile === "competition" ? evidenceAreaList(evidenceAreas) : [])};`)
     .replace("const OPTIONAL_LANDING_ARTWORK = []; /* __OPTIONAL_LANDING_ARTWORK__ */", `const OPTIONAL_LANDING_ARTWORK = ${JSON.stringify(profile === "competition" ? illustrationUrls.map((url) => ({ url, sha256: hash(illustration) })) : [])};`);
   runInNewContext(source, {
     self: {
@@ -67,7 +80,7 @@ function workerHarness({ version = "000000000001", profile = "competition", illu
       skipWaiting: async () => undefined,
       clients: { claim: async () => undefined, matchAll: async () => [] },
     },
-    caches, fetch: fetcher, crypto: webcrypto, URL, Uint8Array,
+    caches, fetch: fetcher, crypto: webcrypto, URL, Uint8Array, Response,
   });
   return {
     state,
@@ -77,6 +90,12 @@ function workerHarness({ version = "000000000001", profile = "competition", illu
       const pending = [];
       listeners.get(type)({ data, waitUntil: (promise) => pending.push(promise), source: { postMessage: (message) => messages.push(message) } });
       await Promise.all(pending);
+    },
+    /** What the worker answers a page that requests `path`; null when the worker leaves the request alone. */
+    async request(path) {
+      let answer = null;
+      listeners.get("fetch")({ request: { url: `https://floodguard.test${path}`, method: "GET", mode: "cors" }, respondWith: (response) => { answer = response; } });
+      return answer;
     },
   };
 }
@@ -246,4 +265,175 @@ test("a saved replay opened without a connection reports what is saved, not zero
   artwork.state.offline = true;
   await artwork.dispatch("message", { type: "FLOODGUARD_CACHE_LANDING_ARTWORK" });
   assert.deepEqual({ ...artwork.messages.at(-1) }, { type: "FLOODGUARD_LANDING_ARTWORK_STATUS", cached: 1, failed: 0, total: 1 });
+});
+
+const AREA_CACHE = "floodguard-saved-areas-v1";
+const report = "/library/report.html";
+const coreArea = { "/library/packages/core.json": "core package", "/library/terrain/core.png": "core terrain", [report]: "shared report" };
+const basinArea = { "/library/packages/basin-2024.json": "basin 2024", "/library/packages/basin-2025.json": "basin 2025", "/library/terrain/basin.png": "basin terrain", [report]: "shared report" };
+const studyAreas = { core: coreArea, basin: basinArea };
+const areaStatus = (aoiId, state, cached, total, bytes, failed = 0) => ({ aoi_id: aoiId, state, cached, failed, total, bytes });
+const areaBytes = (files) => Object.values(files).reduce((sum, body) => sum + Buffer.byteLength(body), 0);
+const plain = (value) => JSON.parse(JSON.stringify(value));
+
+test("a study area is saved only when the reader asks, hash-checked, in a cache of its own", async () => {
+  const worker = workerHarness({ evidenceAreas: studyAreas });
+  await worker.dispatch("install");
+  await worker.dispatch("activate");
+  // Nothing of the library's study areas is part of the blocking installation.
+  assert.ok(Object.keys({ ...coreArea, ...basinArea }).every((url) => !worker.state.requests.includes(url)));
+  await worker.dispatch("message", { type: "FLOODGUARD_EVIDENCE_AREAS_STATUS_REQUEST" });
+  assert.deepEqual(plain(worker.messages.at(-1)), { type: "FLOODGUARD_EVIDENCE_AREAS_STATUS", areas: [areaStatus("core", "none", 0, 3, areaBytes(coreArea)), areaStatus("basin", "none", 0, 4, areaBytes(basinArea))] });
+  // Asking for the state fetches nothing and creates no cache.
+  assert.ok(!worker.state.stores.has(AREA_CACHE));
+  assert.ok(Object.keys(coreArea).every((url) => !worker.state.requests.includes(url)));
+
+  // One file arrives changed: it is refused, counted, and the area is not called saved.
+  worker.state.replayBodies["/library/terrain/core.png"] = "terrain from another build";
+  await worker.dispatch("message", { type: "FLOODGUARD_SAVE_EVIDENCE_AREA", aoi_id: "core" });
+  assert.deepEqual(plain(worker.messages.at(-1)), { type: "FLOODGUARD_EVIDENCE_AREA_STATUS", ...areaStatus("core", "partial", 2, 3, areaBytes(coreArea), 1) });
+  const saved = worker.state.stores.get(AREA_CACHE);
+  assert.ok(saved.has("/library/packages/core.json") && saved.has(report) && !saved.has("/library/terrain/core.png"));
+  // Each saved file carries the hash it was checked against.
+  assert.equal(saved.get("/library/packages/core.json").headers.get("X-FloodGuard-SHA256"), hash("core package"));
+  assert.equal(worker.state.fetchModes["/library/packages/core.json"], "no-cache");
+  // The build cache holds none of it, and the other area was not touched.
+  assert.ok(Object.keys(coreArea).every((url) => !worker.state.stores.get(worker.cacheName).has(url)));
+  assert.ok(!worker.state.requests.includes("/library/packages/basin-2024.json"));
+
+  // Asked again with the right bytes, only the missing file is fetched.
+  worker.state.replayBodies["/library/terrain/core.png"] = "core terrain";
+  await worker.dispatch("message", { type: "FLOODGUARD_SAVE_EVIDENCE_AREA", aoi_id: "core" });
+  assert.deepEqual(plain(worker.messages.at(-1)), { type: "FLOODGUARD_EVIDENCE_AREA_STATUS", ...areaStatus("core", "saved", 3, 3, areaBytes(coreArea)) });
+  assert.equal(worker.state.requests.filter((url) => url === "/library/packages/core.json").length, 1);
+  // The report alone does not make the other area saved.
+  await worker.dispatch("message", { type: "FLOODGUARD_EVIDENCE_AREAS_STATUS_REQUEST" });
+  assert.deepEqual(plain(worker.messages.at(-1).areas[1]), areaStatus("basin", "none", 1, 4, areaBytes(basinArea)));
+  // An area this build does not list is never saved.
+  await worker.dispatch("message", { type: "FLOODGUARD_SAVE_EVIDENCE_AREA", aoi_id: "elsewhere" });
+  assert.deepEqual(plain(worker.messages.at(-1)), { type: "FLOODGUARD_EVIDENCE_AREA_STATUS", ...areaStatus("elsewhere", "none", 0, 0, 0) });
+});
+
+test("a saved study area survives a new deployment when its files did not change", async () => {
+  const first = workerHarness({ evidenceAreas: studyAreas });
+  await first.dispatch("install");
+  await first.dispatch("activate");
+  await first.dispatch("message", { type: "FLOODGUARD_SAVE_EVIDENCE_AREA", aoi_id: "core" });
+  await first.dispatch("message", { type: "FLOODGUARD_SAVE_EVIDENCE_AREA", aoi_id: "basin" });
+  assert.equal(first.messages.at(-1).state, "saved");
+
+  // The next deployment changes one package of the basin and nothing of the core area.
+  const changedBasin = { ...basinArea, "/library/packages/basin-2025.json": "basin 2025, corrected" };
+  first.state.replayBodies["/library/packages/basin-2025.json"] = "basin 2025, corrected";
+  const second = workerHarness({ shared: first.state, version: "000000000002", evidenceAreas: { core: coreArea, basin: changedBasin } });
+  const before = second.state.requests.length;
+  await second.dispatch("install");
+  await second.dispatch("activate");
+  // The build cache was replaced; the saved areas were not downloaded again.
+  assert.ok(!second.state.stores.has(first.cacheName));
+  assert.ok(second.state.requests.slice(before).every((url) => !url.startsWith("/library/")));
+  await second.dispatch("message", { type: "FLOODGUARD_EVIDENCE_AREAS_STATUS_REQUEST" });
+  assert.deepEqual(plain(second.messages.at(-1).areas), [
+    areaStatus("core", "saved", 3, 3, areaBytes(coreArea)),
+    // Only the changed file was dropped: the area no longer reads as saved.
+    areaStatus("basin", "partial", 3, 4, areaBytes(changedBasin)),
+  ]);
+  assert.ok(!second.state.stores.get(AREA_CACHE).has("/library/packages/basin-2025.json"));
+  // Saving it again fetches the changed file only.
+  await second.dispatch("message", { type: "FLOODGUARD_SAVE_EVIDENCE_AREA", aoi_id: "basin" });
+  assert.deepEqual(plain(second.messages.at(-1)), { type: "FLOODGUARD_EVIDENCE_AREA_STATUS", ...areaStatus("basin", "saved", 4, 4, areaBytes(changedBasin)) });
+  assert.deepEqual(second.state.requests.slice(before).filter((url) => url.startsWith("/library/")), ["/library/packages/basin-2025.json"]);
+
+  // A deployment that no longer lists an area removes its saved files; the shared report stays for the other area.
+  const third = workerHarness({ shared: first.state, version: "000000000003", evidenceAreas: { core: coreArea } });
+  await third.dispatch("install");
+  await third.dispatch("activate");
+  assert.deepEqual([...third.state.stores.get(AREA_CACHE).keys()].sort(), Object.keys(coreArea).sort());
+});
+
+test("a saved study area can be removed; the report stays while another saved area needs it", async () => {
+  const worker = workerHarness({ evidenceAreas: studyAreas });
+  await worker.dispatch("install");
+  await worker.dispatch("activate");
+  await worker.dispatch("message", { type: "FLOODGUARD_SAVE_EVIDENCE_AREA", aoi_id: "core" });
+  await worker.dispatch("message", { type: "FLOODGUARD_SAVE_EVIDENCE_AREA", aoi_id: "basin" });
+  await worker.dispatch("message", { type: "FLOODGUARD_REMOVE_EVIDENCE_AREA", aoi_id: "core" });
+  // The shared report does not make the removed area partly saved.
+  assert.deepEqual(plain(worker.messages.at(-1)), { type: "FLOODGUARD_EVIDENCE_AREA_STATUS", ...areaStatus("core", "none", 1, 3, areaBytes(coreArea)) });
+  assert.deepEqual([...worker.state.stores.get(AREA_CACHE).keys()].sort(), Object.keys(basinArea).sort());
+  await worker.dispatch("message", { type: "FLOODGUARD_EVIDENCE_AREAS_STATUS_REQUEST" });
+  assert.equal(worker.messages.at(-1).areas[1].state, "saved");
+  // Removing the last saved area removes the cache.
+  await worker.dispatch("message", { type: "FLOODGUARD_REMOVE_EVIDENCE_AREA", aoi_id: "basin" });
+  assert.deepEqual(plain(worker.messages.at(-1)), { type: "FLOODGUARD_EVIDENCE_AREA_STATUS", ...areaStatus("basin", "none", 0, 4, areaBytes(basinArea)) });
+  assert.ok(!worker.state.stores.has(AREA_CACHE));
+  // The build cache is untouched.
+  assert.ok(worker.state.stores.get(worker.cacheName).has("/"));
+});
+
+test("without a connection a saved area answers from its copy and an unsaved one is not invented", async () => {
+  const worker = workerHarness({ evidenceAreas: studyAreas });
+  await worker.dispatch("install");
+  await worker.dispatch("activate");
+  await worker.dispatch("message", { type: "FLOODGUARD_SAVE_EVIDENCE_AREA", aoi_id: "core" });
+  // Online the network answers first.
+  assert.equal(await (await worker.request("/library/packages/core.json")).text(), "core package");
+
+  worker.state.offline = true;
+  const offlineCopy = await worker.request("/library/packages/core.json");
+  assert.equal(await offlineCopy.text(), "core package");
+  // The copy is the one this build lists: the page's own SHA-256 check passes on it.
+  assert.equal(hash("core package"), offlineCopy.headers.get("X-FloodGuard-SHA256"));
+  assert.equal(await (await worker.request(report)).text(), "shared report");
+  // An area that was not saved gets a network error, never another area's file.
+  const missing = await worker.request("/library/packages/basin-2024.json");
+  assert.equal(missing.type, "error");
+  assert.equal(missing.ok, false);
+
+  // The state is still reported, and a save request offline changes nothing and fetches nothing but the profile.
+  const before = worker.state.requests.length;
+  await worker.dispatch("message", { type: "FLOODGUARD_EVIDENCE_AREAS_STATUS_REQUEST" });
+  assert.deepEqual(plain(worker.messages.at(-1).areas.map((area) => area.state)), ["saved", "none"]);
+  await worker.dispatch("message", { type: "FLOODGUARD_SAVE_EVIDENCE_AREA", aoi_id: "basin" });
+  assert.deepEqual(plain(worker.messages.at(-1)), { type: "FLOODGUARD_EVIDENCE_AREA_STATUS", ...areaStatus("basin", "none", 1, 4, areaBytes(basinArea)) });
+  assert.deepEqual([...new Set(worker.state.requests.slice(before))], ["/deployment-profile.json"]);
+
+  // A saved copy whose hash this build does not list is not served.
+  const stale = workerHarness({ shared: worker.state, version: "000000000002", evidenceAreas: { core: { ...coreArea, "/library/packages/core.json": "core package, corrected" } } });
+  assert.equal((await stale.request("/library/packages/core.json")).type, "error");
+});
+
+test("a public downgrade removes saved study areas, and the public worker saves none", async () => {
+  const competition = workerHarness({ evidenceAreas: studyAreas });
+  await competition.dispatch("install");
+  await competition.dispatch("activate");
+  await competition.dispatch("message", { type: "FLOODGUARD_SAVE_EVIDENCE_AREA", aoi_id: "core" });
+  assert.ok(competition.state.stores.has(AREA_CACHE));
+
+  // The profile changes under a competition worker that is still active: a save request then keeps nothing, and
+  // the areas saved before go too.
+  competition.state.deployed = "public-production";
+  await competition.dispatch("message", { type: "FLOODGUARD_SAVE_EVIDENCE_AREA", aoi_id: "basin" });
+  assert.deepEqual(plain(competition.messages.at(-1)), { type: "FLOODGUARD_EVIDENCE_AREA_STATUS", ...areaStatus("basin", "none", 0, 0, 0) });
+  assert.ok(!competition.state.stores.has(AREA_CACHE));
+  assert.ok(!competition.state.requests.includes("/library/packages/basin-2024.json"));
+
+  // The public worker itself removes saved areas when it takes over, and answers no study-area request.
+  const again = workerHarness({ evidenceAreas: studyAreas });
+  await again.dispatch("install");
+  await again.dispatch("activate");
+  await again.dispatch("message", { type: "FLOODGUARD_SAVE_EVIDENCE_AREA", aoi_id: "core" });
+  again.state.deployed = "public-production";
+  const publicWorker = workerHarness({ shared: again.state, version: "000000000003", profile: "public-production", evidenceAreas: studyAreas });
+  await publicWorker.dispatch("install");
+  await publicWorker.dispatch("activate");
+  assert.deepEqual([...again.state.stores.keys()], [publicWorker.cacheName]);
+  const before = publicWorker.messages.length;
+  for (const type of ["FLOODGUARD_EVIDENCE_AREAS_STATUS_REQUEST", "FLOODGUARD_SAVE_EVIDENCE_AREA", "FLOODGUARD_REMOVE_EVIDENCE_AREA"]) {
+    await publicWorker.dispatch("message", { type, aoi_id: "core" });
+  }
+  assert.equal(publicWorker.messages.length, before);
+  assert.ok(!again.state.stores.has(AREA_CACHE));
+  // The public worker lists no study-area file, so it leaves such a request to its ordinary rules.
+  assert.ok(Object.keys(coreArea).every((url) => !publicWorker.state.requests.slice(-3).includes(url)));
 });

@@ -24,6 +24,7 @@
 .provenance summary { cursor: pointer; font-weight: 700; }
 .provenance p { margin: 6px 0; overflow-wrap: anywhere; }
 .case :is(a,select,button,summary):focus-visible { outline: 3px solid #e3a52a; outline-offset: 2px; }
+.offline { margin-top: 10px; }
 .error { padding: 9px; border: 1px solid #ecc2b8; background: #fff0ed; color: #813c31; }
 .reset { display: inline-block; margin-left: 10px; padding: 4px 8px; border: 1px solid currentColor; border-radius: 4px; background: transparent; color: inherit; cursor: pointer; }
 .scopeNote { max-width: 1440px; margin: 10px auto; padding: 12px 20px; border-left: 4px solid #a47827; background: #fff8e9; color: #614e27; font: 12px/1.5 var(--font-sans), Arial, sans-serif; }

@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
@@ -8,6 +11,8 @@ import type { PublicPreparednessArea } from "@floodguard/contracts";
 import type { AreaRecord, FeatureCollection, GeoFeature } from "@/lib/types";
 
 import {
+  basemapStatusLabel,
+  basemapStatusShortLabel,
   createGeoMapRenderer,
   displayAttribution,
   facilityClusters,
@@ -320,6 +325,48 @@ describe("facility presentation", () => {
     expect(html).not.toContain("FPPS");
     expect(html).not.toContain("Protect lives now");
     expect(html).not.toContain(">Class ");
+  });
+
+  it("gives the map-background notice a one-line form for phones, with the sentence and the actions behind one button", () => {
+    const areas = (bundleJson as unknown as { areas: AreaRecord[] }).areas;
+    const html = renderToStaticMarkup(createElement(GeoMap, {
+      areas,
+      selectedId: areas[0].area_id,
+      onSelect: () => undefined,
+      language: "en",
+      areaFeatures: collection("areas", []),
+      roadFeatures: collection("roads", []),
+      datasetMode: "candidate",
+      enableBasemaps: true,
+    }));
+    const notice = html.slice(html.indexOf('<div class="map-basemap-notice'), html.indexOf('<div class="map-legend"'));
+
+    // Folded by default: the short line and the button that opens the rest.
+    expect(notice).toContain('data-expanded="false"');
+    expect(notice).toContain("Loading map background… Planning boundaries remain visible.");
+    expect(notice).toContain(">Loading map background…</span>");
+    expect(notice).toMatch(/<button type="button" class="[^"]*noticeToggle[^"]*" aria-expanded="false" aria-controls="([^"]+)">Options<\/button><div id="\1"/);
+    expect(notice).toContain(">Hide background</button>");
+
+    // Every state has a short line in both languages, shorter than its sentence and free of a second sentence.
+    for (const state of ["loading", "partial", "unavailable", "offline", "hidden"] as const) {
+      for (const language of ["en", "th"] as const) {
+        const short = basemapStatusShortLabel(state, language);
+        expect(short.length).toBeGreaterThan(0);
+        expect(short.length).toBeLessThan(basemapStatusLabel(state, language).length);
+        expect(short).not.toMatch(/[.]\s/);
+        expect(short.length).toBeLessThanOrEqual(28);
+      }
+    }
+    expect(basemapStatusShortLabel("unavailable", "en")).toBe("Map background unavailable");
+
+    // The one-line form is a phone rule: wider screens keep the sentence and its actions in view.
+    const stylesheet = readFileSync(resolve(import.meta.dirname, "geo-map.module.css"), "utf8");
+    const [wide, phone] = stylesheet.split("@media (max-width: 680px)");
+    expect(wide).toContain(".notice .noticeShort, .notice .noticeToggle { display: none; }");
+    expect(phone).toContain('.notice[data-expanded="false"] .noticeFull,');
+    expect(phone).toContain('.notice[data-expanded="false"] .actions,');
+    expect(phone).toContain(".notice .noticeToggle { display: inline-flex;");
   });
 
   it("presents internal attribution labels as publication-ready copy", () => {

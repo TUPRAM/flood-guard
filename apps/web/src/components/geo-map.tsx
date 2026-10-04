@@ -203,6 +203,9 @@ export function GeoMap({
   const previousSelectedId = useRef(selectedId);
   const selectionSheetId = useId();
   const basemapHealthId = useId();
+  const basemapNoticeId = useId();
+  // Phones show the map-background notice as one line and one button; this opens the sentence and the actions.
+  const [basemapNoticeOpen, setBasemapNoticeOpen] = useState(false);
   const [mapReady, setMapReady] = useState(false);
   const [basemapId, setBasemapId] = useState<BasemapId>("street");
   const [basemapState, setBasemapState] = useState<BasemapState>("loading");
@@ -251,6 +254,11 @@ export function GeoMap({
     setBasemapState("loading");
     setBasemapHidden(false);
     setBasemapAttempt((attempt) => attempt + 1);
+  };
+  /** An action of the map-background notice: on phones the notice folds back to its one line afterwards. */
+  const noticeAction = (action: () => void) => () => {
+    setBasemapNoticeOpen(false);
+    action();
   };
 
   useEffect(() => {
@@ -929,22 +937,29 @@ export function GeoMap({
         </details>
       )}
       {enableBasemaps && effectiveBasemapState !== "ready" && (
-        <div className={`map-basemap-notice ${styles.notice}`}>
-          <p role="status" aria-live="polite">{basemapStatusLabel(effectiveBasemapState, language)}</p>
-          <div className={styles.actions}>
+        <div className={`map-basemap-notice ${styles.notice}`} data-expanded={basemapNoticeOpen ? "true" : "false"}>
+          <p role="status" aria-live="polite">
+            <span className={styles.noticeFull}>{basemapStatusLabel(effectiveBasemapState, language)}</span>
+            <span className={styles.noticeShort}>{basemapStatusShortLabel(effectiveBasemapState, language)}</span>
+          </p>
+          {/* Shown on phones only (geo-map.module.css): the sentence and the actions stay behind this button. */}
+          <button type="button" className={styles.noticeToggle} aria-expanded={basemapNoticeOpen} aria-controls={basemapNoticeId} onClick={() => setBasemapNoticeOpen((open) => !open)}>
+            {basemapNoticeOpen ? (language === "th" ? "ปิด" : "Close") : (language === "th" ? "ตัวเลือก" : "Options")}
+          </button>
+          <div id={basemapNoticeId} className={styles.actions}>
             {effectiveBasemapState === "hidden" ? (
-              <button type="button" onClick={retryBasemap}>{language === "th" ? "แสดงพื้นหลัง" : "Show background"}</button>
+              <button type="button" onClick={noticeAction(retryBasemap)}>{language === "th" ? "แสดงพื้นหลัง" : "Show background"}</button>
             ) : (
               <>
                 {(effectiveBasemapState === "partial" || effectiveBasemapState === "unavailable") && (
-                  <button type="button" onClick={retryBasemap}>{language === "th" ? "ลองอีกครั้ง" : "Retry"}</button>
+                  <button type="button" onClick={noticeAction(retryBasemap)}>{language === "th" ? "ลองอีกครั้ง" : "Retry"}</button>
                 )}
                 {effectiveBasemapState !== "offline" && (
-                  <button type="button" onClick={() => selectBasemap(basemapId === "satellite" ? "street" : "satellite")}>
+                  <button type="button" onClick={noticeAction(() => selectBasemap(basemapId === "satellite" ? "street" : "satellite"))}>
                     {language === "th" ? "เปลี่ยนเป็น" : "Switch to"} {BASEMAPS[basemapId === "satellite" ? "street" : "satellite"].labels[language]}
                   </button>
                 )}
-                <button type="button" onClick={() => setBasemapHidden(true)}>{language === "th" ? "ซ่อนพื้นหลัง" : "Hide background"}</button>
+                <button type="button" onClick={noticeAction(() => setBasemapHidden(true))}>{language === "th" ? "ซ่อนพื้นหลัง" : "Hide background"}</button>
               </>
             )}
           </div>
@@ -1105,6 +1120,18 @@ export function GeoMap({
 }
 
 const EMPTY_FEATURE_COLLECTION: FeatureCollection = { type: "FeatureCollection", name: "empty", features: [] };
+
+/** The one-line form of the notice for phones; the full sentence of `basemapStatusLabel` opens behind its button. */
+export function basemapStatusShortLabel(state: Exclude<BasemapState, "ready">, language: Language): string {
+  const labels = {
+    loading: { en: "Loading map background…", th: "กำลังโหลดพื้นหลังแผนที่…" },
+    partial: { en: "Map background incomplete", th: "พื้นหลังแผนที่ไม่ครบ" },
+    unavailable: { en: "Map background unavailable", th: "พื้นหลังแผนที่ไม่พร้อมใช้" },
+    offline: { en: "Offline: no map background", th: "ออฟไลน์: ไม่มีพื้นหลังแผนที่" },
+    hidden: { en: "Map background hidden", th: "ซ่อนพื้นหลังแผนที่แล้ว" },
+  };
+  return labels[state][language];
+}
 
 export function basemapStatusLabel(state: Exclude<BasemapState, "ready">, language: Language): string {
   const labels = {

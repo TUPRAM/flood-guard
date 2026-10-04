@@ -243,6 +243,16 @@ async function verifyPublicBlockedTiles(browser, base, responseKind) {
 
     await page.getByRole("button", { name: "Use English", exact: true }).click();
     const notice = shell.locator(".map-basemap-notice");
+    // At this phone width the notice is one line and one button; the sentence and the actions open behind it.
+    const openNotice = async () => {
+      const options = notice.getByRole("button", { name: "Options", exact: true });
+      if (await options.count()) await options.click();
+    };
+    const foldedText = await notice.count() ? await notice.innerText() : "";
+    if (!foldedText.includes("Map background unavailable") || await notice.getByRole("button").count() !== 1) {
+      problems.push("Missing one-line map-background notice with its one button");
+    }
+    await openNotice();
     const noticeText = await notice.count() ? await notice.innerText() : "";
     if (!noticeText.includes("The map background is unavailable. Planning boundaries and evidence remain visible.")) {
       problems.push("Missing truthful map-background fallback notice");
@@ -262,6 +272,9 @@ async function verifyPublicBlockedTiles(browser, base, responseKind) {
     await page.waitForFunction(() => document.querySelector(".public-home-map .geo-map-shell")?.getAttribute("data-basemap-state") === "hidden");
     if (await shell.getAttribute("data-basemap-state") !== "hidden") problems.push("Hide background did not set the hidden state");
     if (await shell.locator(".leaflet-overlay-pane canvas, .leaflet-overlay-pane path").count() === 0) problems.push("Hide background removed local overlays");
+    // The open layer menu lies over the one-line notice: close it, as a reader does, before using the notice.
+    await menu.locator("summary").click();
+    await openNotice();
     const show = notice.getByRole("button", { name: "Show background", exact: true });
     if (await show.count()) {
       await show.click();

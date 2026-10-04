@@ -1,7 +1,8 @@
 import { existsSync, readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { resolve } from "node:path";
-import { collectEvidenceLibraryAssets } from "./evidence-library-assets.mjs";
+import { auditEvidenceLibrary, EVIDENCE_AREA_CACHE, EVIDENCE_CATALOG_ASSET, readWorkerEvidenceAreas } from "./evidence-library-assets.mjs";
+import { megabytes, verifyOfflineInstall } from "./offline-install-budget.mjs";
 
 import { readCaseReplay } from "./case-replay-inventory.mjs";
 
@@ -47,9 +48,19 @@ const routeExpectations = {
     /Planning case/i,
     /Candidate.*low confidence/i,
     /Loading case catalog/i,
+    // The research score table is not on Command: a notice says where the historical report is kept.
+    /data-research-report-notice="true"/,
+    /Earlier research scores and classes are not accepted event-response priorities/,
+    /href="\/studio\/archive\/mae-sai-geoai\/"/,
   ],
   "command/cases/index.html": [/Study-area decision brief/i, /Candidate research evidence/i, /Non-operational/i],
-  "command/archive/index.html": [/Historical Mae Sai research archive/i, /not accepted event-response priorities/i],
+  "command/archive/index.html": [
+    /Historical Mae Sai research archive/i,
+    /not accepted event-response priorities/i,
+    /data-research-report-notice="true"/,
+    /Earlier research scores and classes are not accepted event-response priorities/,
+    /href="\/studio\/archive\/mae-sai-geoai\/"/,
+  ],
   "studio/index.html": [
     /Every result has a context/i,
     /Research studies/i,
@@ -87,6 +98,17 @@ for (const relative of routeFiles) {
   if (external.length) throw new Error(`${relative} has external runtime resources: ${external.join(", ")}`);
 }
 
+// The GeoAI research report, with its research FPPS and A-E classes, is served by Studio's archive only.
+for (const relative of ["command/index.html", "command/archive/index.html"]) {
+  const html = readFileSync(resolve(out, relative), "utf8");
+  const retained = html.match(/GeoAI research report|geoai-real-title|Research FPPS|Research class|GEOAI RESEARCH/);
+  if (retained) throw new Error(`${relative} still carries the research report panel: ${retained[0]}`);
+}
+const historicalStudyHtml = readFileSync(resolve(out, "studio", "archive", "mae-sai-geoai", "index.html"), "utf8");
+for (const expected of [/HISTORICAL RESEARCH · REPORT ONLY/, /aria-labelledby="geoai-real-title"/, /GeoAI research report/, /Report only/]) {
+  if (!expected.test(historicalStudyHtml)) throw new Error(`Studio's archive lacks the historical research report: ${expected}`);
+}
+
 const publicHtml = readFileSync(resolve(out, "public", "index.html"), "utf8");
 for (const retiredTab of ["map", "shelters", "data"]) {
   if (publicHtml.includes(`id="public-tab-${retiredTab}"`)) {
@@ -106,11 +128,12 @@ if (
   serviceWorker.includes("__CACHE_CREATED_AT__") ||
   serviceWorker.includes("__PROFILE_CORE_ASSETS__") ||
   serviceWorker.includes("__OPTIONAL_LANDING_ARTWORK__") ||
+  serviceWorker.includes("__OPTIONAL_EVIDENCE_AREAS__") ||
   !/floodguard-offline-[0-9a-f]{12}/.test(serviceWorker)
 ) {
   throw new Error("Service worker does not use a content-derived cache version");
 }
-for (const route of ["/", "/public/", "/public-cases/", "/command/", "/command/cases/", "/command/archive/", "/studio/", "/studio/planning-evidence/", "/studio/candidate-report/", "/studio/library/", "/studio/brief/", "/studio/archive/", ...collectEvidenceLibraryAssets(out)]) {
+for (const route of ["/", "/public/", "/public-cases/", "/command/", "/command/cases/", "/command/archive/", "/studio/", "/studio/planning-evidence/", "/studio/candidate-report/", "/studio/library/", "/studio/brief/", "/studio/archive/", EVIDENCE_CATALOG_ASSET]) {
   if (!serviceWorker.includes(`"${route}"`)) throw new Error(`Service worker does not precache ${route}`);
 }
 if (!serviceWorker.includes("requestUrl.origin !== self.location.origin")) {
@@ -268,6 +291,41 @@ if (caseReplay.exports.assets.some((asset) => workerCore.includes(asset.url) || 
 }
 if (caseReplay.exports.bytes > caseReplay.exports.budget_bytes) throw new Error("The case-replay export pack is over its budget");
 
+// Evidence library: only its catalogue is in the blocking installation. Each study area (package files, terrain
+// preview, the shared report) is a deferred bucket the worker saves when the reader asks, pinned by SHA-256; the
+// database archives offered for download are never kept by the worker.
+const evidenceLibrary = auditEvidenceLibrary(out);
+const workerEvidenceAreas = readWorkerEvidenceAreas(serviceWorker);
+if (evidenceLibrary.areas.length === 0 || JSON.stringify(workerEvidenceAreas) !== JSON.stringify(evidenceLibrary.areas)) {
+  throw new Error("Service worker's study-area lists do not match the published evidence library");
+}
+if (!workerCore.includes(EVIDENCE_CATALOG_ASSET)) throw new Error("The evidence library's catalogue is not part of the blocking installation");
+const libraryInCore = workerCore.filter((url) => url.startsWith("/evidence-library/") && url !== EVIDENCE_CATALOG_ASSET);
+if (libraryInCore.length > 0) throw new Error(`Evidence-library files were added to blocking installation: ${libraryInCore.join(", ")}`);
+const evidenceAreaFiles = new Map(evidenceLibrary.areas.flatMap((area) => area.assets.map((asset) => [asset.url, asset])));
+for (const [url, asset] of evidenceAreaFiles) {
+  const body = readFileSync(resolve(out, url.slice(1)));
+  if (createHash("sha256").update(body).digest("hex") !== asset.sha256 || body.byteLength !== asset.bytes) {
+    throw new Error(`Study-area file differs from its pinned hash or size: ${url}`);
+  }
+}
+for (const reference of JSON.parse(readFileSync(resolve(out, EVIDENCE_CATALOG_ASSET.slice(1)), "utf8")).packages) {
+  // The hash the worker checks is the one the catalogue pins and the page checks again.
+  if (evidenceAreaFiles.get(reference.url)?.sha256 !== reference.sha256) throw new Error(`Study-area list does not pin the catalogue's hash: ${reference.id}`);
+}
+for (const archive of evidenceLibrary.onlineOnly) {
+  if (serviceWorker.includes(`"${archive.url}"`)) throw new Error(`A database archive is named in the service worker: ${archive.url}`);
+}
+for (const message of ["FLOODGUARD_SAVE_EVIDENCE_AREA", "FLOODGUARD_REMOVE_EVIDENCE_AREA", "FLOODGUARD_EVIDENCE_AREAS_STATUS_REQUEST", "FLOODGUARD_EVIDENCE_AREA_STATUS"]) {
+  if (!serviceWorker.includes(`"${message}"`)) throw new Error(`Service worker cannot handle ${message}`);
+}
+if (!serviceWorker.includes(`const EVIDENCE_AREA_CACHE = "${EVIDENCE_AREA_CACHE}";`) || /^floodguard-offline-/.test(EVIDENCE_AREA_CACHE)) {
+  throw new Error("Saved study areas must live in a cache of their own, outside the per-build cache");
+}
+// Hard budget of the blocking installation (12 MB): CORE_ASSETS plus the generated chunk list, as built.
+const install = verifyOfflineInstall(out);
+const evidenceAreaBytes = [...evidenceAreaFiles.values()].reduce((sum, asset) => sum + asset.bytes, 0);
+
 const proposalEvidencePath = resolve(out, "proposal-evidence.json");
 if (existsSync(proposalEvidencePath)) {
   const proposalEvidence = JSON.parse(readFileSync(proposalEvidencePath, "utf8"));
@@ -283,4 +341,4 @@ if (existsSync(proposalEvidencePath)) {
   }
 }
 
-console.log(`offline smoke: ${routeFiles.length} polished routes and ${requiredPublicAssets.length} core assets verified; case replay route precached with ${caseReplay.assets.length} deferred data files (${(caseReplay.bytes / 1e6).toFixed(1)} MB, opt-in) and ${caseReplay.exports.assets.length} export files (${(caseReplay.exports.bytes / 1e6).toFixed(2)} MB of a ${(caseReplay.exports.budget_bytes / 1e6).toFixed(1)} MB export budget); internal safety contracts retained and no external runtime resources`);
+console.log(`offline smoke: ${routeFiles.length} polished routes and ${requiredPublicAssets.length} core assets verified; case replay route precached with ${caseReplay.assets.length} deferred data files (${(caseReplay.bytes / 1e6).toFixed(1)} MB, opt-in) and ${caseReplay.exports.assets.length} export files (${(caseReplay.exports.bytes / 1e6).toFixed(2)} MB of a ${(caseReplay.exports.budget_bytes / 1e6).toFixed(1)} MB export budget); blocking installation ${install.files} files, ${megabytes(install.bytes)} of ${megabytes(install.budget_bytes)} MB budget (${install.bytes} bytes); evidence library: catalogue precached, ${evidenceLibrary.areas.length} study areas saved on request (${megabytes(evidenceAreaBytes)} MB in ${evidenceAreaFiles.size} files, largest area ${megabytes(Math.max(...evidenceLibrary.areas.map((area) => area.bytes)))} MB), ${evidenceLibrary.onlineOnly.length} database archives online only (${megabytes(evidenceLibrary.onlineOnly.reduce((sum, asset) => sum + asset.bytes, 0))} MB); internal safety contracts retained and no external runtime resources`);

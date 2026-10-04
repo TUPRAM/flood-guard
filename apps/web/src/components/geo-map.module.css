@@ -1,6 +1,8 @@
 .notice p { margin: 0; }
+/* The short line and its button are for phones only (below). */
+.notice .noticeShort, .notice .noticeToggle { display: none; }
 .actions { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
-.actions button {
+.actions button, .notice .noticeToggle {
   min-height: 44px;
   padding: 6px 9px;
   border: 1px solid #c4b487;
@@ -11,4 +13,21 @@
   cursor: pointer;
 }
 .actions button:disabled { opacity: .6; cursor: default; }
-.actions button:focus-visible { outline: 3px solid #08519c; outline-offset: 2px; }
+.actions button:focus-visible, .notice .noticeToggle:focus-visible { outline: 3px solid #08519c; outline-offset: 2px; }
+
+/*
+   Phones: the notice is one line and one button, so it fits between the list button and the map tools. The full
+   sentence and the actions open behind the button; while open, the notice lies above the other map controls, and
+   it folds back to one line after an action.
+*/
+@media (max-width: 680px) {
+  .notice { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 6px 8px; }
+  .notice .noticeShort { display: inline; }
+  .notice .noticeToggle { display: inline-flex; align-items: center; margin: 0; }
+  .notice .actions { grid-column: 1 / -1; margin-top: 0; }
+  .notice[data-expanded="false"] p { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .notice[data-expanded="false"] .noticeFull,
+  .notice[data-expanded="false"] .actions,
+  .notice[data-expanded="true"] .noticeShort { display: none; }
+  .notice[data-expanded="true"] { z-index: 1950; }
+}

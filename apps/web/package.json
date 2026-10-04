@@ -14,7 +14,7 @@
     "lint": "eslint . --max-warnings=0",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --configLoader runner",
-    "test:offline": "node --test scripts/landing-offline-policy.test.mjs && node scripts/offline-smoke.mjs && node scripts/browser-offline-smoke.mjs",
+    "test:offline": "node --test scripts/landing-offline-policy.test.mjs scripts/offline-install-budget.test.mjs && node scripts/offline-smoke.mjs && node scripts/browser-offline-smoke.mjs",
     "test:evidence-assets": "node --test scripts/evidence-library-assets.test.mjs scripts/evidence-gzip-json-audit.test.mjs",
     "test:evidence-browser": "node scripts/browser-evidence-library-smoke.mjs",
     "test:csp": "node scripts/csp-smoke.mjs",

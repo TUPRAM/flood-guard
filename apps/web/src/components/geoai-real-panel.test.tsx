@@ -3,12 +3,13 @@ import { resolve } from "node:path";
 
 import { useState } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import reportJson from "../../public/geoai/mae-sai-real.json";
 import { parseGeoaiResearchBundle } from "@/lib/geoai-research-bundle";
 
 import { GeoaiRealPanel } from "./geoai-real-panel";
+import { HISTORICAL_RESEARCH_REPORT_ROUTE, ResearchReportNotice } from "./research-report-notice";
 
 vi.mock("react", async (importOriginal) => {
   const react = await importOriginal<typeof import("react")>();
@@ -16,12 +17,39 @@ vi.mock("react", async (importOriginal) => {
 });
 
 describe("GeoaiRealPanel evidence separation", () => {
-  it("labels loaded research scores, confidence and provenance without promoting them to planning actions", () => {
+  beforeEach(() => { vi.mocked(useState).mockClear(); });
+
+  it("gives Command a short notice with the report's address, and never the score table", () => {
+    // Owner decision of 4 Oct 2026 (R17): the research table predates the signed protocol and is not shown on Command.
+    for (const html of [renderToStaticMarkup(<GeoaiRealPanel variant="command" />), renderToStaticMarkup(<ResearchReportNotice />)]) {
+      expect(html).toContain('data-research-report-notice="true"');
+      expect(html).toContain("Earlier research scores and classes are not accepted event-response priorities.");
+      expect(html).toContain("kept, as historical research, only in Studio&#x27;s archive");
+      expect(html).toContain(`href="${HISTORICAL_RESEARCH_REPORT_ROUTE}"`);
+      expect(HISTORICAL_RESEARCH_REPORT_ROUTE).toBe("/studio/archive/mae-sai-geoai/");
+      expect(html).toContain("/studio/brief/?aoi=aoi-01_mae_sai_core&amp;event=mae_sai_2024");
+      expect(html).not.toContain("<table");
+      expect(html).not.toMatch(/Research FPPS|Research class|GeoAI research report|geoai-real-title|Ko Chang/);
+      expect(html).not.toMatch(/Real GeoAI results|REAL OBSERVED|AI drives 55%/);
+    }
+    // The notice loads no report: it has no state to fill.
+    expect(vi.mocked(useState)).not.toHaveBeenCalled();
+    const thai = renderToStaticMarkup(<GeoaiRealPanel language="th" variant="command" />);
+    expect(thai).toContain("ไม่ใช่ลำดับความสำคัญในการรับมือเหตุการณ์ที่ได้รับการยอมรับ");
+    expect(thai).toContain("เก็บไว้เป็นงานวิจัยย้อนหลังในคลังของ Studio เท่านั้น");
+    expect(thai).toContain(`href="${HISTORICAL_RESEARCH_REPORT_ROUTE}"`);
+    expect(thai).not.toContain("<table");
+  });
+
+  it("shows the research table in Studio's archive, labelled historical and report only, without promoting it to planning actions", () => {
     vi.mocked(useState).mockReturnValueOnce([reportJson, vi.fn()]);
-    const html = renderToStaticMarkup(<GeoaiRealPanel variant="command" />);
+    const html = renderToStaticMarkup(<GeoaiRealPanel variant="archive" />);
 
     expect(reportJson.aggregation_status).toBe("report_only");
     expect(reportJson.can_feed_decision_layer).toBe(false);
+    expect(html).toContain("GEOAI RESEARCH · HISTORICAL EVIDENCE");
+    expect(html).toContain("This historical research report uses different inputs and assumptions from the planning view");
+    expect(html).not.toContain('data-research-report-notice="true"');
     expect(html).toContain("Report only");
     expect(html).toContain("Research scores and classes; not action recommendations");
     expect(html).toContain("Research FPPS");
@@ -43,10 +71,10 @@ describe("GeoaiRealPanel evidence separation", () => {
 
   it("keeps the report-only boundary and confidence distinction visible in Thai", () => {
     vi.mocked(useState).mockReturnValueOnce([reportJson, vi.fn()]);
-    const html = renderToStaticMarkup(<GeoaiRealPanel language="th" variant="command" />);
+    const html = renderToStaticMarkup(<GeoaiRealPanel language="th" variant="archive" />);
 
     expect(html).toContain("เพื่อรายงานเท่านั้น");
-    expect(html).toContain("แยกจากการจัดลำดับเพื่อวางแผน");
+    expect(html).toContain("รายงานวิจัย GeoAI · ข้อมูลย้อนหลัง");
     expect(html).toContain("ไม่ใช้กำหนดลำดับ สีแผนที่");
     expect(html).toContain("ความเชื่อมั่นแบบจำลอง");
     expect(html).toMatch(/>ปานกลาง<\/td>/);

@@ -3,7 +3,8 @@ import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync,
 import { dirname, relative, resolve, sep } from "node:path";
 import { CASE_REPLAY_EXPORT_BUDGET_BYTES, CASE_REPLAY_ROUTE, caseReplayExportBytes, collectCaseReplay, readCaseReplayExports } from "./case-replay-inventory.mjs";
 import { collectLandingArtwork } from "./landing-artwork-inventory.mjs";
-import { collectEvidenceLibraryAssets } from "./evidence-library-assets.mjs";
+import { auditEvidenceLibrary, EVIDENCE_CATALOG_ASSET } from "./evidence-library-assets.mjs";
+import { megabytes, offlineInstallBytes } from "./offline-install-budget.mjs";
 import { collectPublicCaseAssets } from "./public-case-assets.mjs";
 import { collectCaseBriefAssets } from "./case-brief-assets.mjs";
 
@@ -42,7 +43,12 @@ writeFileSync(resolve(out, "offline-assets.json"), `${JSON.stringify(assets, nul
 
 if (appProfile === "competition") copyCanonicalProposalEvidence();
 const proposalEvidenceAssets = appProfile === "competition" ? collectProposalEvidenceAssets() : [];
-const evidenceLibraryAssets = appProfile === "competition" ? collectEvidenceLibraryAssets(out) : [];
+// The evidence library: the whole published set is audited here, but only its catalogue joins the blocking
+// installation. Each study area is an opt-in bucket (package files, terrain preview and the shared report, pinned by
+// SHA-256), saved when the reader asks on the area's page; its database archives are never kept by the worker.
+const evidenceLibrary = appProfile === "competition" ? auditEvidenceLibrary(out) : { urls: [], areas: [], onlineOnly: [] };
+const optionalEvidenceAreas = evidenceLibrary.areas;
+const evidenceCoreAssets = appProfile === "competition" ? [EVIDENCE_CATALOG_ASSET] : [];
 const publicCaseAssets = appProfile === "competition" ? collectPublicCaseAssets(out) : [];
 const caseBriefAssets = appProfile === "competition" ? collectCaseBriefAssets(out) : [];
 const publicCoreAssets = [
@@ -82,10 +88,13 @@ const coreAssets = appProfile === "public-production"
       "/offline-demo/mae-sai/facilities.json",
       "/offline-demo/mae-sai/access-hotspots.json",
       ...proposalEvidenceAssets,
-      ...evidenceLibraryAssets,
+      ...evidenceCoreAssets,
       ...publicCaseAssets,
       ...caseBriefAssets,
     ];
+const blocked = coreAssets.filter((url) => optionalEvidenceAreas.some((area) => area.assets.some((asset) => asset.url === url))
+  || evidenceLibrary.onlineOnly.some((asset) => asset.url === url));
+if (blocked.length > 0) throw new Error(`Study-area files were added to the blocking installation: ${blocked.join(", ")}`);
 const deploymentProfile = {
   profile: appProfile,
   entry: "/",
@@ -94,6 +103,10 @@ const deploymentProfile = {
   cache_policy: appProfile === "competition" ? "competition_open_evidence" : "public_projection_only",
 };
 writeFileSync(resolve(out, "deployment-profile.json"), `${JSON.stringify(deploymentProfile, null, 2)}\n`, "utf8");
+
+// Hard budget of the blocking installation (offline-install-budget.mjs): the build fails above 12 MB, before the
+// service worker is finalized.
+const install = offlineInstallBytes(out, coreAssets, assets);
 
 const versionedFiles = [
   ...assets.map((path) => resolve(out, path.slice(1))),
@@ -133,7 +146,8 @@ const versionedFiles = [
   ...optionalArtwork.map((asset) => resolve(out, asset.url.slice(1))),
   ...optionalCaseReplay.map((asset) => resolve(out, asset.url.slice(1))),
   ...optionalCaseReplayExports.map((asset) => resolve(out, asset.url.slice(1))),
-  ...evidenceLibraryAssets.map((url) => resolve(out, url.slice(1))),
+  // Study-area files are versioned by the hashes in their list (below), not by reading 290 MB again.
+  ...evidenceCoreAssets.map((url) => resolve(out, url.slice(1))),
   ...publicCaseAssets.map((url) => resolve(out, url.slice(1))),
   ...caseBriefAssets.map((url) => resolve(out, url.slice(1))),
 ];
@@ -151,9 +165,11 @@ buildHash.update(JSON.stringify(coreAssets));
 buildHash.update(JSON.stringify(optionalArtwork));
 buildHash.update(JSON.stringify(optionalCaseReplay));
 buildHash.update(JSON.stringify(optionalCaseReplayExports));
+buildHash.update(JSON.stringify(optionalEvidenceAreas));
+buildHash.update(JSON.stringify(evidenceLibrary.onlineOnly));
 const cacheVersion = buildHash.digest("hex").slice(0, 12);
 const cacheCreatedAt = new Date().toISOString();
-if (!serviceWorker.includes("__BUILD__") || !serviceWorker.includes("__APP_PROFILE__") || !serviceWorker.includes("__CACHE_CREATED_AT__") || !serviceWorker.includes("__PROFILE_CORE_ASSETS__") || !serviceWorker.includes("__OPTIONAL_LANDING_ARTWORK__") || !serviceWorker.includes("__OPTIONAL_CASE_REPLAY__") || !serviceWorker.includes("__OPTIONAL_CASE_REPLAY_EXPORTS__")) {
+if (!serviceWorker.includes("__BUILD__") || !serviceWorker.includes("__APP_PROFILE__") || !serviceWorker.includes("__CACHE_CREATED_AT__") || !serviceWorker.includes("__PROFILE_CORE_ASSETS__") || !serviceWorker.includes("__OPTIONAL_LANDING_ARTWORK__") || !serviceWorker.includes("__OPTIONAL_CASE_REPLAY__") || !serviceWorker.includes("__OPTIONAL_CASE_REPLAY_EXPORTS__") || !serviceWorker.includes("__OPTIONAL_EVIDENCE_AREAS__")) {
   throw new Error("Service-worker build tokens are missing.");
 }
 writeFileSync(
@@ -172,17 +188,24 @@ writeFileSync(
       `const OPTIONAL_CASE_REPLAY_EXPORTS = ${JSON.stringify(optionalCaseReplayExports.map(({ url, sha256 }) => ({ url, sha256 })))};`,
     )
     .replace(
+      "const OPTIONAL_EVIDENCE_AREAS = []; /* __OPTIONAL_EVIDENCE_AREAS__ */",
+      `const OPTIONAL_EVIDENCE_AREAS = ${JSON.stringify(optionalEvidenceAreas)};`,
+    )
+    .replace(
       "const CORE_ASSETS = []; /* __PROFILE_CORE_ASSETS__ */",
       `const CORE_ASSETS = ${JSON.stringify(coreAssets)};`,
     ),
   "utf8",
 );
 
+const installLine = `blocking install ${install.files} files, ${megabytes(install.bytes)} of ${megabytes(install.budget_bytes)} MB budget (${install.bytes} bytes)`;
+const evidenceAreaBytes = new Map(optionalEvidenceAreas.flatMap((area) => area.assets.map((asset) => [asset.url, asset.bytes])));
+const evidenceAreaLine = `${optionalEvidenceAreas.length} study areas saved on request (${megabytes([...evidenceAreaBytes.values()].reduce((sum, bytes) => sum + bytes, 0))} MB in ${evidenceAreaBytes.size} files), ${evidenceLibrary.onlineOnly.length} database archives online only (${megabytes(evidenceLibrary.onlineOnly.reduce((sum, asset) => sum + asset.bytes, 0))} MB)`;
 // Decimal megabytes, the unit of the replay's 6.5 MB precache budget (case-replay-inventory.mjs).
 const caseReplayMegabytes = (optionalCaseReplay.reduce((sum, asset) => sum + asset.bytes, 0) / 1e6).toFixed(1);
 // The export pack has its own budget line (decimal megabytes), outside the precache budget.
 const caseReplayExportLine = `${optionalCaseReplayExports.length} case-replay export files (${caseReplayExportTotal} of ${CASE_REPLAY_EXPORT_BUDGET_BYTES} export-budget bytes, outside the precache budget)`;
-console.log(`offline asset manifest: ${assets.length} production chunks, ${optionalLandingAssets.size} optional landing chunks excluded, ${proposalEvidenceAssets.length} proposal evidence assets, ${optionalArtwork.length} deferred illustration assets, ${optionalCaseReplay.length} deferred case-replay files (${caseReplayMegabytes} MB, opt-in), ${caseReplayExportLine}; profile ${appProfile}; cache ${cacheVersion}`);
+console.log(`offline asset manifest: ${assets.length} production chunks, ${optionalLandingAssets.size} optional landing chunks excluded, ${proposalEvidenceAssets.length} proposal evidence assets, ${optionalArtwork.length} deferred illustration assets, ${optionalCaseReplay.length} deferred case-replay files (${caseReplayMegabytes} MB, opt-in), ${caseReplayExportLine}, ${evidenceAreaLine}; ${installLine}; profile ${appProfile}; cache ${cacheVersion}`);
 
 function collectOptionalLandingAssets() {
   const manifestPath = resolve(process.cwd(), ".next", "react-loadable-manifest.json");

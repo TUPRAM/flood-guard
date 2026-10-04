@@ -2,9 +2,13 @@ import { createReadStream, existsSync, mkdirSync, readFileSync, statSync } from 
 import { createServer } from "node:http";
 import { extname, resolve, sep } from "node:path";
 import { launchFloodGuardBrowser } from "./browser-launch.mjs";
+import { EVIDENCE_AREA_CACHE, readWorkerEvidenceAreas } from "./evidence-library-assets.mjs";
 
 const out = resolve(process.env.FLOODGUARD_PROFILE_OUT ?? resolve(process.cwd(), "out"));
 const catalog = JSON.parse(readFileSync(resolve(out, "evidence-library", "catalog.json"), "utf8"));
+// The study areas as the built worker lists them. None is part of the installation: each is saved on request.
+const evidenceAreas = readWorkerEvidenceAreas(readFileSync(resolve(out, "sw.js"), "utf8"));
+let studyAreasSaved = 0;
 const ROUTE_CASES = {
   maeSai: "aoi-01_mae_sai_core_mae_sai_2024",
   hatYai: "aoi-03_hat_yai_core_hat_yai_2025",
@@ -47,12 +51,14 @@ try {
     await verifySharedViews(page, false);
     await verifyMainSurfaces(page, false);
     await page.waitForFunction(() => Boolean(navigator.serviceWorker.controller));
+    await saveEveryStudyArea(page);
     await context.setOffline(true);
     await verifySharedViews(page, true);
     await verifyMainSurfaces(page, true);
   } else if (offlineOnly) {
     await page.goto(`${origin}/studio/library/`, { waitUntil: "networkidle" });
     await page.waitForFunction(() => Boolean(navigator.serviceWorker.controller));
+    await saveEveryStudyArea(page);
     await context.setOffline(true);
     await verifyDecisionBrief(page, true);
     await verifySharedViews(page, true);
@@ -111,6 +117,8 @@ try {
   await page.getByRole("alert").filter({ hasText: "No package exists" }).waitFor();
   if (await page.getByRole("heading", { name: "Explicit scenario comparisons" }).count()) throw new Error("Invalid selection silently fell back to a different package.");
   const reference = catalog.packages[0];
+  // The offline part below opens every study area, so each is saved first, on request, from the library list.
+  await saveEveryStudyArea(page);
   await page.goto(`${origin}/studio/library/?aoi=${encodeURIComponent(reference.aoi_id)}&event=${encodeURIComponent(reference.event_id)}`);
   await page.locator("main[data-evidence-library] footer").filter({ hasText: reference.id }).waitFor();
   await context.setOffline(true);
@@ -146,11 +154,44 @@ try {
       throw new Error(`Incomplete offline route coverage: ${JSON.stringify(routeCoverageCounts)}, total ${routeCasesChecked}`);
     }
   }
-  console.log(sharedOnly ? `Shared views browser: ${sharedViewsChecked} case/language/network selections; links for service-result cases passed.` : offlineOnly ? `Offline decision brief browser: ${briefCasesChecked} case/language/viewport/network selections, ${routeCasesChecked} exact route comparisons (${JSON.stringify(routeCoverageCounts)}), and ${workspaceViewportsChecked} workspace language/viewport combinations passed.` : workspaceOnly ? `Route workspace browser: ${workspaceViewportsChecked} language/viewport combinations; visible controls, map, results, accessible detail dialogs and no API requests passed.` : `Evidence browser: ${briefCasesChecked} brief case/language/viewport/network selections, ${sharedViewsChecked} shared-view selections (role links for service-result cases), and ${routeCasesChecked} bounded exact route checks (${JSON.stringify(routeCoverageCounts)}); ${workspaceViewportsChecked} workspace language/viewport combinations, keyboard/details, report download, invalid links, and no unexpected requests passed.`);
+  console.log(sharedOnly ? `Shared views browser: ${sharedViewsChecked} case/language/network selections; links for service-result cases passed.` : offlineOnly ? `Offline decision brief browser: ${briefCasesChecked} case/language/viewport/network selections, ${routeCasesChecked} exact route comparisons (${JSON.stringify(routeCoverageCounts)}), and ${workspaceViewportsChecked} workspace language/viewport combinations passed.` : workspaceOnly ? `Route workspace browser: ${workspaceViewportsChecked} language/viewport combinations; visible controls, map, results, accessible detail dialogs and no API requests passed.` : `Evidence browser: ${briefCasesChecked} brief case/language/viewport/network selections, ${sharedViewsChecked} shared-view selections (role links for service-result cases), and ${routeCasesChecked} bounded exact route checks (${JSON.stringify(routeCoverageCounts)}); ${workspaceViewportsChecked} workspace language/viewport combinations, keyboard/details, report download, invalid links, and no unexpected requests passed; ${studyAreasSaved} study areas saved on request before the offline part.`);
   await context.close();
 } finally {
   await browser.close();
   await new Promise((done) => server.close(done));
+}
+
+/**
+ * Ask for every study area in the library list ("Save for offline use"), as a reader would, and wait until each is
+ * saved. Nothing of them is installed with the app; the worker stores each file only when its SHA-256 matches.
+ */
+async function saveEveryStudyArea(page) {
+  await page.goto(`${origin}/studio/library/`, { waitUntil: "networkidle" });
+  const list = page.locator('[data-evidence-offline-list="true"]');
+  await list.waitFor({ state: "attached" });
+  if (await list.getAttribute("open") === null) await list.locator("summary").click();
+  for (const area of evidenceAreas) {
+    const row = list.locator(`[data-evidence-offline-area="${area.aoi_id}"]`);
+    await row.waitFor({ state: "visible" });
+    if (await row.getAttribute("data-state") !== "saved") await row.locator('button[data-action="save"]').click();
+    await page.waitForFunction((id) => (
+      document.querySelector(`[data-evidence-offline-list="true"] [data-evidence-offline-area="${id}"]`)?.getAttribute("data-state") === "saved"
+    ), area.aoi_id, { timeout: 300_000 });
+  }
+  if (!(await list.locator("summary").innerText()).includes(`${evidenceAreas.length} of ${evidenceAreas.length} saved on this device`)) {
+    throw new Error("The library list does not report every study area as saved.");
+  }
+  const files = [...new Map(evidenceAreas.flatMap((area) => area.assets.map((asset) => [asset.url, asset.sha256])))];
+  const stored = await page.evaluate(async ({ cacheName, files }) => {
+    const cache = await caches.open(cacheName);
+    const paths = (await cache.keys()).map((request) => new URL(request.url).pathname).sort();
+    const pinned = await Promise.all(files.map(async ([url, sha256]) => (await cache.match(url))?.headers.get("X-FloodGuard-SHA256") === sha256));
+    return { paths, pinned };
+  }, { cacheName: EVIDENCE_AREA_CACHE, files });
+  if (JSON.stringify(stored.paths) !== JSON.stringify(files.map(([url]) => url).sort()) || !stored.pinned.every(Boolean)) {
+    throw new Error(`The saved study areas are not exactly the files the worker lists, each with its pinned hash: ${JSON.stringify(stored.paths)}`);
+  }
+  studyAreasSaved = evidenceAreas.length;
 }
 
 async function verifySharedViews(page, offline) {

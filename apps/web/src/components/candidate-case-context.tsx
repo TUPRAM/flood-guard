@@ -5,7 +5,9 @@ import type { EvidenceLibraryCatalog, EvidenceLibraryPackage } from "@floodguard
 import { LanguageToggle } from "./language-toggle";
 import { STUDIO_CANDIDATE_REPORT_ROUTE, caseHref, pushCaseSelection, readCaseSelection, resolveAnalysisSelection, resolveEvidenceCase, type CaseSelection } from "@/lib/case-selection";
 import { EVIDENCE_CATALOG_URL, fetchEvidencePackage, parseEvidenceCatalog } from "@/lib/evidence-library";
+import { evidencePackageFailure, type EvidencePackageFailure } from "@/lib/evidence-offline";
 import { useLanguage } from "@/lib/use-language";
+import { EvidenceOfflineControl, EvidencePackageNotice, useRetryWhenOnline } from "./evidence-offline";
 import { SERVICE_NAMES } from "./finals-analysis";
 import { GenerationTimes } from "./generation-times";
 import styles from "./candidate-case-context.module.css";
@@ -16,7 +18,7 @@ export function CandidateCaseContext({ role }: { role: "planning" | "studio" }) 
   const [catalog, setCatalog] = useState<EvidenceLibraryCatalog | null>(null);
   const [catalogError, setCatalogError] = useState<string | null>(null);
   const [selection, setSelection] = useState<CaseSelection>({});
-  const [loaded, setLoaded] = useState<{ hash: string; value: EvidenceLibraryPackage | null; error: string | null }>({ hash: "", value: null, error: null });
+  const [loaded, setLoaded] = useState<{ hash: string; value: EvidenceLibraryPackage | null; failure: EvidencePackageFailure | null }>({ hash: "", value: null, failure: null });
 
   useEffect(() => {
     const controller = new AbortController();
@@ -33,17 +35,19 @@ export function CandidateCaseContext({ role }: { role: "planning" | "studio" }) 
 
   const resolved = catalog ? resolveEvidenceCase(catalog, selection) : null;
   const reference = resolved?.reference;
+  const failure = reference?.sha256 === loaded.hash ? loaded.failure : null;
+  // A package that could not be reached is requested again when the connection returns.
+  const retry = useRetryWhenOnline(Boolean(failure && failure.kind !== "invalid"));
   useEffect(() => {
     if (!catalog || !reference) return;
     const controller = new AbortController();
     fetchEvidencePackage(catalog, reference, controller.signal)
-      .then((value) => { if (!controller.signal.aborted) setLoaded({ hash: reference.sha256, value, error: null }); })
-      .catch((error: unknown) => { if (!controller.signal.aborted) setLoaded({ hash: reference.sha256, value: null, error: error instanceof Error ? error.message : "Package unavailable" }); });
+      .then((value) => { if (!controller.signal.aborted) setLoaded({ hash: reference.sha256, value, failure: null }); })
+      .catch((error: unknown) => { if (!controller.signal.aborted) setLoaded({ hash: reference.sha256, value: null, failure: evidencePackageFailure(error) }); });
     return () => controller.abort();
-  }, [catalog, reference]);
+  }, [catalog, reference, retry]);
 
   const evidence = reference?.sha256 === loaded.hash ? loaded.value : null;
-  const error = reference?.sha256 === loaded.hash ? loaded.error : null;
   const analysis = evidence?.decision_brief?.finals_analysis;
   const choice = analysis ? resolveAnalysisSelection(analysis, selection) : null;
   const aoi = catalog?.aois.find((item) => item.id === reference?.aoi_id);
@@ -100,8 +104,8 @@ export function CandidateCaseContext({ role }: { role: "planning" | "studio" }) 
         </> : null}
       </div>
       {!reference ? <p className={styles.error} role="alert">{resolved?.reason === "version_mismatch" ? (th ? "เวอร์ชันลิงก์ไม่ตรงกับแพ็กเกจที่เผยแพร่" : "The link's version does not match the published package.") : (th ? "ไม่พบพื้นที่และเหตุการณ์นี้ จะไม่ใช้ข้อมูลอื่นแทน" : "This area and event are unavailable. Another case is not substituted.")}</p> : null}
-      {error ? <p className={styles.error} role="alert">{th ? "ตรวจสอบแพ็กเกจไม่ผ่าน" : "Package verification failed"}: {error}</p> : null}
-      {reference && !evidence && !error ? <p role="status">{th ? "กำลังตรวจสอบแพ็กเกจ…" : "Verifying case package…"}</p> : null}
+      {failure ? <EvidencePackageNotice failure={failure} th={th} className={styles.error} invalidLabel={th ? "ตรวจสอบแพ็กเกจไม่ผ่าน" : "Package verification failed"} /> : null}
+      {reference && !evidence && !failure ? <p role="status">{th ? "กำลังตรวจสอบแพ็กเกจ…" : "Verifying case package…"}</p> : null}
       {evidence && aoi && event ? <>
         <div className={styles.identity}><strong>{th ? aoi.name_th ?? aoi.name : aoi.name} — {th ? event.name_th ?? event.name : event.name}</strong><span>{event.start}–{event.end}</span><span>{th ? "คะแนนและระดับที่รับรอง: ยังไม่มี" : "Accepted FPPS / action class: unavailable"}</span></div>
         {role === "planning" && choice?.reason ? <p className={styles.error} role="alert">{th ? "ไม่มีผลสำหรับตัวเลือกนี้ จะไม่ใช้ผลอื่นแทน" : "No result exists for this selection. Another result is not substituted."} <code>{choice.reason}</code> {choice.reason === "unknown_scenario" || choice.reason === "unknown_origin" ? <button type="button" className={styles.reset} onClick={() => choose({ ...query, scenario: undefined, origin: undefined })}>{th ? "ล้างตัวเลือกที่ไม่เข้ากัน" : "Clear incompatible selection"}</button> : null}</p> : null}
@@ -113,6 +117,7 @@ export function CandidateCaseContext({ role }: { role: "planning" | "studio" }) 
           <details className={styles.provenance}><summary>{th ? "แหล่งข้อมูลและที่มา" : "Sources and provenance"}</summary><p>{evidence.id} · {evidence.package_version}</p><p>{th ? "เวลาสังเกตการณ์ของแหล่งข้อมูล" : "Source observation time"}: {evidence.source_timestamp ?? (th ? "หลายช่วงเวลา ดูข้อมูลรายแหล่ง" : "mixed periods; see source records")}</p><GenerationTimes sourceAnalysisGeneratedAt={analysis?.generated_at ?? null} releaseGeneratedAt={evidence.generated_at} th={th} /><p>SHA-256: <code>{reference?.sha256}</code></p></details>
         </div>
       </> : null}
+      <EvidenceOfflineControl catalog={catalog} aoiId={reference?.aoi_id} th={th} className={styles.offline} />
     </> : null}
     </div>
   </section>;

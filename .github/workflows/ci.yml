@@ -202,7 +202,7 @@ jobs:
       - name: Audit JavaScript dependencies
         continue-on-error: true
         run: pnpm audit --json > javascript-audit.json
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: dependency-audit-receipts

@@ -3,6 +3,9 @@ import { createHash } from "node:crypto";
 import { relative, resolve, sep } from "node:path";
 import { readCaseReplay, timelineManifestUrl } from "./case-replay-inventory.mjs";
 import { fallbackArtworkUrls, readLandingArtwork, sceneArtworkUrls } from "./landing-artwork-inventory.mjs";
+import { collectEvidenceLibraryAssets } from "./evidence-library-assets.mjs";
+import { collectPublicCaseAssets } from "./public-case-assets.mjs";
+import { collectCaseBriefAssets } from "./case-brief-assets.mjs";
 
 const requested = process.argv[2]?.trim().toLowerCase();
 const profile = requested === "public" || requested === "public-production"
@@ -70,6 +73,10 @@ function validatePublicProduction() {
     "command",
     "studio",
     "studies",
+    "evidence-library",
+    "public-case-projections",
+    "briefs",
+    "public-cases",
     "offline-demo/bundle.json",
     "offline-demo/areas.geojson",
     "offline-demo/roads.geojson",
@@ -101,6 +108,12 @@ function validatePublicProduction() {
   if (/data-fg-landing|href="\/command\/?"|href="\/studio\/?"|href="\/policy\/?"/i.test(rootHtml)) {
     throw new Error("Public root retains competition or staff navigation.");
   }
+  for (const asset of offlineAssets.filter((url) => url.endsWith(".js"))) {
+    const source = readFileSync(resolve(out, asset.slice(1)), "utf8");
+    if (source.includes("floodguard:landing-motion:v1") || source.includes("data-narrative-canvas")) {
+      throw new Error(`Public mandatory offline cache includes optional landing code: ${asset}`);
+    }
+  }
   for (const forbidden of [
     "data-fg-landing",
     "/landing/floodguard-v1/",
@@ -111,6 +124,8 @@ function validatePublicProduction() {
     "/offline-demo/mae-sai/access-hotspots.json",
     "/offline-demo/bundle.json",
     "/api/v1/scenario-runs",
+    "/evidence-library/catalog.json",
+    "/public-case-projections/catalog.json",
     "OSM-11566575669",
     "synthetic-sar-baseline-v1",
     "mae-sai-2024-model-evaluation-blocked",
@@ -121,7 +136,7 @@ function validatePublicProduction() {
     if (hit) throw new Error(`Public profile contains staff-only sentinel ${JSON.stringify(forbidden)} in ${hit}`);
     if (serviceWorker.includes(forbidden)) throw new Error(`Public service-worker cache inventory contains ${forbidden}`);
   }
-  for (const route of ["/command/", "/studio/", "/policy/"]) {
+  for (const route of ["/command/", "/command/cases/", "/command/archive/", "/studio/", "/studio/library/", "/studio/brief/", "/studio/archive/", "/policy/"]) {
     if (serviceWorker.includes(`"${route}"`)) throw new Error(`Public cache list contains staff route ${route}`);
   }
   // Also no page below those routes (e.g. the /studio/ case replay) in the built precache list.
@@ -164,6 +179,9 @@ function validateCompetition() {
   for (const required of [
     "policy/index.html",
     "command/index.html",
+    "command/cases/index.html",
+    "command/archive/index.html",
+    "public-cases/index.html",
     "studio/index.html",
     "studio/planning-evidence/index.html",
     "studio/archive/mae-sai-geoai/index.html",
@@ -172,6 +190,12 @@ function validateCompetition() {
     "studio/studies/c2s-ms-20260915/mae-sai/index.html",
     "studies/c2s-ms-20260915/r1/manifest.json",
     timelineManifestUrl().slice(1),
+    "studio/library/index.html",
+    "studio/brief/index.html",
+    "studio/archive/index.html",
+    "evidence-library/catalog.json",
+    "public-case-projections/catalog.json",
+    "briefs/catalog.json",
     "offline-demo/bundle.json",
     "offline-demo/mae-sai/bundle.json",
     "offline-demo/mae-sai/roads.json",
@@ -216,7 +240,12 @@ function validateCompetition() {
     const actualHash = createHash("sha256").update(readFileSync(resolve(out, asset.url.slice(1)))).digest("hex");
     if (actualHash !== asset.sha256 || statSync(resolve(out, asset.url.slice(1))).size !== asset.bytes) throw new Error(`Landing art lacks versioned integrity: ${asset.url}`);
   }
-  for (const route of ["/", "/public/", "/command/", "/studio/", "/policy/"]) {
+  for (const name of ["hero-desktop.webp", "hero-mobile.webp"]) {
+    if (existsSync(resolve(out, "landing", name)) || rootHtml.includes(`/landing/${name}`)) {
+      throw new Error(`Competition profile published an unapproved aerial reference: ${name}`);
+    }
+  }
+  for (const route of ["/", "/public/", "/public-cases/", "/command/", "/command/cases/", "/command/archive/", "/studio/", "/studio/library/", "/studio/brief/", "/studio/archive/", "/policy/", ...collectEvidenceLibraryAssets(out), ...collectPublicCaseAssets(out), ...collectCaseBriefAssets(out)]) {
     if (!serviceWorker.includes(`"${route}"`)) throw new Error(`Competition cache list omits ${route}`);
   }
   const bundle = readJson("offline-demo/mae-sai/bundle.json");

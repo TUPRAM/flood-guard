@@ -13,7 +13,7 @@
     "test:studies": "pnpm --filter @floodguard/web test:studies",
     "test:policy": "pnpm --filter @floodguard/web test:policy",
     "qa:visual": "pnpm --filter @floodguard/web qa:visual",
-    "verify:frontend": "pnpm lint && pnpm typecheck && pnpm test:contracts && pnpm test:web && pnpm --filter @floodguard/web verify:profiles && pnpm test:offline && pnpm test:csp && pnpm test:studies && pnpm test:policy",
+    "verify:frontend": "pnpm lint && pnpm typecheck && pnpm test:contracts && pnpm test:web && pnpm --filter @floodguard/web test:evidence-assets && pnpm --filter @floodguard/web verify:profiles && pnpm test:offline && pnpm test:csp && pnpm test:studies && pnpm test:policy && pnpm --filter @floodguard/web test:evidence-browser",
     "test:csp": "pnpm --filter @floodguard/web test:csp"
   }
 }

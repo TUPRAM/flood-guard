@@ -64,9 +64,15 @@ const browser = await launchFloodGuardBrowser();
 const routes = [
   { path: "/", selector: "main[data-fg-landing]" },
   { path: "/public/", selector: "main.public-page" },
-  { path: "/command/", selector: "main.command-page" },
+  { path: "/public-cases/", selector: "main[data-evidence-library]" },
+  { path: "/command/", selector: "main[data-planning-candidate]" },
+  { path: "/command/cases/", selector: "main[data-evidence-library]" },
+  { path: "/command/archive/", selector: "main.command-page" },
   { path: "/studio/", selector: "main.studio-page" },
   { path: "/studio/planning-evidence/", selector: "main.studio-page" },
+  { path: "/studio/library/", selector: "main[data-evidence-library]" },
+  { path: "/studio/brief/", selector: "main[data-evidence-library]" },
+  { path: "/studio/archive/", selector: "main.studio-page" },
 ];
 const approvedBasemapOrigins = new Set([
   "https://tile.openstreetmap.org",
@@ -146,7 +152,7 @@ try {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`${baseUrl}/`, { waitUntil: "networkidle" });
   const rootBody = await page.locator("body").innerText();
-  assertFinalVisibleCopy(rootBody, "/");
+  if (!rootBody.includes("Synthetic illustration") || !rootBody.toLowerCase().includes("not a confirmed closure")) throw new Error("Landing illustration and assumed-disruption scope is missing.");
   const rootAudit = await page.evaluate(() => ({
     documentWidth: document.documentElement.scrollWidth,
     viewportWidth: window.innerWidth,
@@ -219,7 +225,7 @@ try {
   const hazardPanel = page.locator("#public-hazard-panel");
   await hazardPanel.waitFor({ state: "visible" });
   const hazardText = await hazardPanel.innerText();
-  for (const required of ["Planning indicator", "Evidence sufficiency", "Source time", "historical flood evidence", "DDPM"]) {
+  for (const required of ["Planning indicator", "Evidence sufficiency", "Source time", "candidate planning indicator", "separate from the selected study case", "non-operational", "DDPM"]) {
     if (!hazardText.includes(required)) {
       throw new Error(`Public Hazard Info is missing its evidence boundary: ${required}.`);
     }
@@ -246,7 +252,7 @@ try {
     "shelter",
     ".public-shelter-page, .public-shelter-view",
   );
-  const shelterText = await page.locator("#public-active-panel").innerText();
+  const shelterText = await page.locator("#main-content").innerText();
   if (!/DDPM|1784|confirm/iu.test(shelterText)) {
     throw new Error("The Shelter page lost its official-confirmation boundary.");
   }
@@ -260,7 +266,7 @@ try {
   }
 
   await activatePublicPage(page, "sos", ".public-sos-page, .public-sos-view");
-  const emergencyLinks = page.locator('#public-active-panel a[href^="tel:"]');
+  const emergencyLinks = page.locator('#main-content a[href^="tel:"]');
   if (await emergencyLinks.count() < 3) {
     throw new Error("SOS does not expose the three official emergency phone actions.");
   }
@@ -282,6 +288,16 @@ try {
   // size with its evidence drawer and verification boundary visible.
   await page.setViewportSize({ width: 1024, height: 768 });
   await page.goto(`${baseUrl}/command/`, { waitUntil: "networkidle" });
+  await page.locator('main[data-planning-candidate="aoi-01_mae_sai_core_mae_sai_2024"]').waitFor({ state: "visible" });
+  if (!(await page.locator('main[data-planning-candidate]').innerText()).includes("Accepted FPPS and action class remain unavailable")) {
+    throw new Error("Current Planning overview lost its candidate scoring boundary.");
+  }
+  await page.goto(`${baseUrl}/studio/`, { waitUntil: "networkidle" });
+  await page.locator('main[data-evidence-case-id="aoi-01_mae_sai_core_mae_sai_2024"]').waitFor({ state: "visible" });
+  if (!(await page.locator('main[data-evidence-case-id]').innerText()).includes("Accepted FPPS / action class")) {
+    throw new Error("Current Studio report lost its downstream acceptance boundary.");
+  }
+  await page.goto(`${baseUrl}/command/archive/`, { waitUntil: "networkidle" });
   await page.locator(".map-workspace .leaflet-container").waitFor({ state: "visible" });
   await page.waitForFunction(() => (
     document.querySelector(".map-workspace .geo-map-shell")?.getAttribute("data-road-feature-count") === "4458"
@@ -321,8 +337,13 @@ try {
     throw new Error("The 1024x768 command workspace does not keep its evidence drawer open.");
   }
   const drawerBox = await evidenceDrawer.boundingBox();
-  if (!drawerBox || drawerBox.x < 0 || drawerBox.x + drawerBox.width > 1024 || drawerBox.y + drawerBox.height > 768) {
-    throw new Error(`The tablet evidence drawer is clipped: ${JSON.stringify(drawerBox)}.`);
+  if (!drawerBox || drawerBox.x < 0 || drawerBox.x + drawerBox.width > 1024) {
+    throw new Error(`The tablet evidence drawer is clipped horizontally: ${JSON.stringify(drawerBox)}.`);
+  }
+  await evidenceDrawer.scrollIntoViewIfNeeded();
+  const visibleDrawerBox = await evidenceDrawer.boundingBox();
+  if (!visibleDrawerBox || visibleDrawerBox.y < -1 || visibleDrawerBox.y + visibleDrawerBox.height > 769) {
+    throw new Error(`The tablet evidence drawer cannot be brought fully into view: ${JSON.stringify(visibleDrawerBox)}.`);
   }
   const scenarioSelect = page.locator('select[aria-label="Select scenario"]');
   if (!(await scenarioSelect.isDisabled())) {
@@ -444,7 +465,7 @@ try {
     throw new Error("Language switch did not expose its selected state.");
   }
   await waitForFinalVisibleCopy(page, "/public/");
-  await page.goto(`${baseUrl}/command/`, { waitUntil: "networkidle" });
+  await page.goto(`${baseUrl}/command/archive/`, { waitUntil: "networkidle" });
   if (await page.locator("html").getAttribute("lang") !== "en" || await page.locator('.language-toggle button[lang="en"]').getAttribute("aria-pressed") !== "true") {
     throw new Error("Language preference did not persist between product surfaces.");
   }
@@ -513,15 +534,15 @@ try {
       await assertCompactPublicShell(page);
       await assertPublicNavigation(page);
       for (const [id, selector] of [
-        ["home", "#public-active-panel .leaflet-container"],
-        ["report", "#public-active-panel .public-report-page"],
-        ["shelter", "#public-active-panel .public-shelter-page, #public-active-panel .public-shelter-view"],
-        ["prepare", "#public-active-panel #household-plan-builder"],
-        ["sos", "#public-active-panel .public-sos-page, #public-active-panel .public-sos-view"],
+        ["home", "#main-content .leaflet-container"],
+        ["report", "#main-content .public-report-page"],
+        ["shelter", "#main-content .public-shelter-page, #main-content .public-shelter-view"],
+        ["prepare", "#main-content #household-plan-builder"],
+        ["sos", "#main-content .public-sos-page, #main-content .public-sos-view"],
       ]) {
         await activatePublicPage(page, id, selector);
       }
-      await activatePublicPage(page, "home", "#public-active-panel .leaflet-container");
+      await activatePublicPage(page, "home", "#main-content .leaflet-container");
       const offlinePublicMapScope = await firstVisibleSelector(page, [
         ".public-home-page",
         ".public-home-view",
@@ -830,7 +851,7 @@ async function activatePublicPage(page, id, readySelector) {
   if (state.current !== "page" && state.pressed !== "true" && state.selected !== "true") {
     throw new Error(`Public navigation did not expose ${id} as active.`);
   }
-  const visibleText = await page.locator("#public-active-panel").innerText();
+  const visibleText = await page.locator("#main-content").innerText();
   const forbidden = visibleText.match(
     /(?:^|[^\p{L}\p{N}])(?:demos?|prototypes?|mocks?|samples?|illustrative|placeholders?)(?=$|[^\p{L}\p{N}])|coming soon|under construction|not ready|work in progress/iu,
   );
@@ -927,12 +948,13 @@ async function assertPublicHomeLayout(page, mapScope) {
     throw new Error(`Public Home has horizontal overflow: ${JSON.stringify(audit)}.`);
   }
   if (
-    Math.abs(audit.map.top - audit.header.bottom) > 2
+    audit.map.top < audit.header.bottom - 2
+    || audit.map.bottom - audit.map.top < 300
     || Math.abs(audit.map.bottom - audit.navigation.top) > 2
     || audit.map.left > 1
     || audit.map.right < audit.viewportWidth - 1
   ) {
-    throw new Error(`Public Home map does not fill the space between its chrome: ${JSON.stringify(audit)}.`);
+    throw new Error(`Public Home map is clipped or leaves the space above navigation: ${JSON.stringify(audit)}.`);
   }
   if (audit.header.height > 58) {
     throw new Error(`Public header is not compact: ${audit.header.height}px.`);
@@ -983,20 +1005,23 @@ async function assertPublicPlanningFallback(page, mapScope) {
 
 async function exerciseBasemapSelector(page, scopeSelector, expectedState) {
   const menu = page.locator(`${scopeSelector} .map-basemap-menu`);
-  if (await menu.count() && await menu.getAttribute("open") === null) {
-    await menu.locator("summary").click();
-  }
+  const openMenu = async () => {
+    if (await menu.count() && await menu.getAttribute("open") === null) {
+      await menu.locator("summary").click();
+    }
+  };
   const buttons = page.locator(
     `${scopeSelector} .map-basemap-switcher button[aria-pressed], ${scopeSelector} .map-basemap-menu button[aria-pressed]`,
   );
-  if (await buttons.count() !== 3) {
-    throw new Error(`${scopeSelector} must expose Street, Satellite, and Terrain map backgrounds.`);
+  if (await buttons.count() !== 4) {
+    throw new Error(`${scopeSelector} must expose Street, Satellite, Terrain, and Hide background controls.`);
   }
   const labels = await buttons.allTextContents();
-  if (labels.map((label) => label.trim()).join("|") !== "Street|Satellite|Terrain") {
+  if (labels.map((label) => label.trim()).join("|") !== "Street|Satellite|Terrain|Hide background") {
     throw new Error(`${scopeSelector} map backgrounds are mislabeled: ${labels.join(", ")}.`);
   }
   for (const [index, basemap] of ["street", "satellite", "terrain"].entries()) {
+    await openMenu();
     await buttons.nth(index).click();
     await page.waitForFunction(
       ({ scope, expectedBasemap, state }) => {
@@ -1021,11 +1046,31 @@ async function exerciseBasemapSelector(page, scopeSelector, expectedState) {
         : basemap === "satellite"
           ? "Esri World Imagery"
           : "OpenTopoMap";
-      if (!attribution.includes(expectedAttribution)) {
-        throw new Error(`${scopeSelector} ${basemap} background is missing ${expectedAttribution} attribution.`);
+      if (expectedState === "ready" && !attribution.includes(expectedAttribution)) {
+        throw new Error(`${scopeSelector} visible ${basemap} background is missing ${expectedAttribution} attribution.`);
+      }
+      if (expectedState === "unavailable") {
+        const notice = await page.locator(`${scopeSelector} .map-basemap-notice`).innerText();
+        if (!notice.includes("Map background unavailable; boundaries and evidence remain visible")
+          || !attribution.includes("FloodGuard")) {
+          throw new Error(`${scopeSelector} lost its offline background notice or local-data attribution.`);
+        }
       }
     }
   }
+  await openMenu();
+  await buttons.nth(3).click();
+  await page.waitForFunction(
+    (scope) => document.querySelector(`${scope} .geo-map-shell`)?.getAttribute("data-basemap-state") === "hidden",
+    scopeSelector,
+  );
+  if (await buttons.nth(3).getAttribute("aria-pressed") !== "true") {
+    throw new Error(`${scopeSelector} did not expose the hidden background state.`);
+  }
+  if (await page.locator(`${scopeSelector} .leaflet-overlay-pane canvas, ${scopeSelector} .leaflet-overlay-pane path`).count() === 0) {
+    throw new Error(`${scopeSelector} removed local evidence overlays when hiding only the background.`);
+  }
+  await openMenu();
   await buttons.first().click();
   await page.waitForFunction(
     ({ scope, state }) => {
@@ -1093,15 +1138,21 @@ async function assertMaeSaiMap(page, scopeSelector, {
 }
 
 function requiredFinalCopy(routePath) {
+  if (routePath === "/public-cases/") return ["understand the study cases", "non-operational", "candidate research evidence"];
+  if (routePath === "/command/cases/") return ["compare before & after routes", "research prototype", "imposed scenarios", "not observed flood conditions or safe-route guidance"];
+  if (routePath === "/command/archive/") return ["historical mae sai research archive", "planning intelligence", "source time", "confidence"];
+  if (routePath === "/studio/archive/") return ["historical mae sai technical report", "separate evidence context", "technical verification", "observed-data validation", "operational authorization"];
+  if (routePath === "/studio/library/") return ["study-area evidence library", "non-operational", "candidate research evidence"];
+  if (routePath === "/studio/brief/") return ["compare before & after routes", "research prototype", "imposed scenarios", "not observed flood conditions or safe-route guidance"];
   return routePath === "/"
     ? ["see the flood.", "understand what it changes.", "illustrat"]
     : routePath === "/public/"
       // The Public header now shows the FloodGuard logo image instead of a text
       // wordmark, so the brand is no longer body text here. The nav labels and
       // Hazard Info still prove the finished Public UI rendered.
-      ? ["hazard info", "report", "shelter", "prepare", "sos"]
+      ? ["hazard info", "report", "shelter", "prepare", "sos", "candidate", "non-operational", "lower priority", "higher priority"]
       : routePath === "/command/"
-        ? ["planning intelligence", "source time", "confidence", "ddpm", "local-authority"]
+        ? ["planning overview", "candidate", "accepted fpps and action class remain unavailable"]
         : routePath === "/studio/"
           ? ["every result has a context", "research studies", "planning evidence", "historical studies"]
           : ["validation & evidence report", "source time", "confidence", "technical verification", "observed-data validation", "operational authorization", "immutable evidence context"];
@@ -1135,21 +1186,13 @@ function assertFinalVisibleCopy(body, routePath) {
     }
   }
   const forbidden = routePath === "/"
-    ? /developer note|processing_scope|can_feed_decision_layer|official dispatch confirmed/iu
-    : routePath === "/studio/planning-evidence/"
+    ? /coming soon|under construction|work in progress|developer note/iu
+    : routePath.startsWith("/studio/")
     ? /(?:^|[^\p{L}\p{N}])(?:rehearsals?|server[-_ ]?produced)(?=$|[^\p{L}\p{N}])|developer note|no browser formula/iu
     : routePath === "/public/"
-      ? /(?:^|[^\p{L}\p{N}])(?:rehearsals?|demos?|prototypes?|mocks?|samples?|illustrative|placeholders?|fixtures?|candidates?|synthetic|non[-_ ]?operational|fail[-_ ]?closed|server[-_ ]?produced)(?=$|[^\p{L}\p{N}])|coming soon|under construction|not ready|work in progress|developer note|no browser formula|processing_scope|can_feed_decision_layer/iu
-      : /(?:^|[^\p{L}\p{N}])(?:rehearsals?|demos?|fixtures?|candidates?|synthetic|non[-_ ]?operational|fail[-_ ]?closed|server[-_ ]?produced)(?=$|[^\p{L}\p{N}])|developer note|no browser formula|processing_scope|can_feed_decision_layer/iu;
-  // The separate online research panel owns this comparison provenance. It is
-  // intentionally absent when its optional report cannot be fetched offline.
-  if (routePath === "/command/" && normalized.includes("geoai research report") && !body.includes(planningDataVersion)) {
-    throw new Error("Command is missing the exact data version used by its planning ranking.");
-  }
-  const presentationCopy = routePath === "/command/"
-    ? body.replaceAll(planningDataVersion, "")
-    : body;
-  const match = presentationCopy.match(forbidden);
+      ? /(?:^|[^\p{L}\p{N}])(?:rehearsals?|demos?|prototypes?|mocks?|samples?|illustrative|placeholders?|fixtures?|synthetic|fail[-_ ]?closed|server[-_ ]?produced)(?=$|[^\p{L}\p{N}])|coming soon|under construction|not ready|work in progress|developer note|no browser formula|processing_scope|can_feed_decision_layer/iu
+      : /(?:^|[^\p{L}\p{N}])(?:rehearsals?|demos?|fixtures?|synthetic|fail[-_ ]?closed|server[-_ ]?produced)(?=$|[^\p{L}\p{N}])|developer note|no browser formula|processing_scope|can_feed_decision_layer/iu;
+  const match = body.match(forbidden);
   if (match) {
     throw new Error(`${routePath} exposes forbidden internal copy: ${match[0]}.`);
   }

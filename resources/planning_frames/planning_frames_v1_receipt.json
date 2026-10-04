@@ -1,0 +1,370 @@
+{
+  "schema_version": "floodguard.planning_frames.v1",
+  "generated_at_utc": "2026-10-03T02:01:57Z",
+  "protocol_item": "planning_protocol_v1b open item OI-09, corridor_polygon.se2_frame (plan 3.1, 6.1 and 8.1 row P1; owner choice 15)",
+  "status": "built_from_owner_decided_rules_awaiting_review",
+  "status_note": "Built by the AI coding agent from the rules the owners adopted in decision log R12 (owner choice 15, as recommended). The owner-choices sheet had asked Rachmania for the pf-07 frame file; with the rule decided the agent built it from the rule. Rachmania reviews the frame, the routing geometry, the hospital list and the district office lookup.",
+  "decision": {
+    "decision_log_entry": "R12",
+    "decided_on": "2026-10-03",
+    "decided_by": "Owners Putu and Rachmania (decision log R12, relayed by Putu)",
+    "owner_choice": 15,
+    "answers": {
+      "a_unit_list": "A: all 16 tambons of Mueang Chiang Rai district",
+      "b_routing_and_hospitals": "as recommended: the union of the pf-07 tambons with a 3 km buffer, clipped to Thailand; every OSM hospital inside it",
+      "c_se2_blind_units": "B: the tambon that holds the district office and every tambon that touches it"
+    },
+    "decision_log_line_sha256": "8c3f7e20cedabb8f4593311f1f3603880595cc40994006b6253e0b92cc579f50",
+    "decision_log_line_note": "SHA-256 of the UTF-8 bytes of the R12 row of docs/decision-log-d1-d16.md, without its line ending, at commit 522194e of branch claude/mae-sai-next."
+  },
+  "official_warning": false,
+  "operational_status": "non_operational",
+  "computes": "Unit lists, a buffered routing polygon, a list of OSM hospitals and a point-in-polygon lookup of one OSM object. No flood layer is read. No exposure, access result, FPPS, A-E class or ensemble.",
+  "source_timestamp": "2026-07-10T02:46:49Z",
+  "source_timestamps": {
+    "boundaries_valid_on": "2022-01-22",
+    "osm_extract_retrieved_at_utc": "2026-07-10T02:46:49Z"
+  },
+  "confidence_class": "low",
+  "confidence_basis": "Administrative boundaries valid on 2022-01-22 and OpenStreetMap records retrieved on 2026-07-10, neither checked on the ground. The rules are owner decisions; the build has not yet been reviewed by Rachmania.",
+  "rules": {
+    "pf07_unit_list": "Every COD-AB tha_admin3 unit whose adm2_pcode is TH5701 (Mueang Chiang Rai district).",
+    "se2_routing_geometry": "The union of the pf-07 units, buffered by 3,000 m in EPSG:32647 (16 segments per quarter circle), projected to WGS84 and intersected with the COD-AB tha_admin0 polygon of Thailand.",
+    "se2_hospitals": "Every OSM object tagged amenity=hospital or healthcare=hospital whose routing point the routing geometry covers. Object, identity and routing point as in floodguard.evidence_context.build_context_inputs: a node is its point; a way or relation is its representative point, or its one tagged entrance node when it has exactly one. The OSM extract is the bounding box of the routing geometry, read as that builder reads it.",
+    "district_office_lookup": "Inside the COD-AB polygon of the SE2-blind district, an OSM object whose name or name:th is 'thi wa kan amphoe' or 'samnak ngan amphoe' (district office) followed by the district's Thai name in COD-AB, and which carries amenity=townhall or an office=* tag. A node is its point; an area is its representative point. The seat tambon is the tha_admin3 unit that covers that point. Objects with the name and neither tag are listed as corroboration only. No object, or tagged objects in two units, leaves the seat empty.",
+    "se2_blind_units": "Owner choice 15(c), option B: the seat tambon and every tha_admin3 unit of the same district whose polygon touches it (shared boundary, point contact or overlap). A touching unit of another district is reported and left out, because the question was which tambons of the blind district make the case."
+  },
+  "pf07_frame": {
+    "path": "resources/planning_frames/pf-07_mueang_chiang_rai.geojson",
+    "sha256": "2bdf946b6ff759f0950d4d7e0fcf9319cc42391db15a9af30a7ae87f417cf0ba",
+    "district": {
+      "adm2_pcode": "TH5701",
+      "adm2_name": "Mueang Chiang Rai"
+    },
+    "unit_count": 16,
+    "unit_list": [
+      "TH570101",
+      "TH570102",
+      "TH570103",
+      "TH570104",
+      "TH570105",
+      "TH570106",
+      "TH570107",
+      "TH570111",
+      "TH570112",
+      "TH570113",
+      "TH570114",
+      "TH570115",
+      "TH570116",
+      "TH570118",
+      "TH570120",
+      "TH570121"
+    ]
+  },
+  "se2_routing_geometry": {
+    "path": "resources/planning_frames/pf-07_mueang_chiang_rai_routing.geojson",
+    "sha256": "2c39c1d70ee89d410b352c5837155bd22b32f530fe4848aee1e45694b6f1fb9f",
+    "geometry_sha256": "6e53dfd51eb66e9b3b737518250b626cff6e83c1f8d1b996e509a2b41d8fe84b",
+    "geometry_type": "Polygon",
+    "area_km2": 2422.32,
+    "bounds_wgs84": [
+      99.424007,
+      19.592036,
+      100.05386,
+      20.163457
+    ]
+  },
+  "se2_hospitals": {
+    "hospitals": [
+      {
+        "facility_id": "OSM-node-10660449638",
+        "name": "Unnamed OSM candidate",
+        "longitude": 99.9054798,
+        "latitude": 19.8623344,
+        "source_geometry_type": "Point",
+        "geometry_role": "osm_facility_node"
+      },
+      {
+        "facility_id": "OSM-node-1741228095",
+        "name": "\u0e42\u0e23\u0e07\u0e1e\u0e22\u0e32\u0e1a\u0e32\u0e25\u0e40\u0e01\u0e29\u0e21\u0e23\u0e32\u0e29\u0e0e\u0e23\u0e4c \u0e28\u0e23\u0e35\u0e1a\u0e38\u0e23\u0e34\u0e19\u0e17\u0e23\u0e4c",
+        "longitude": 99.835561,
+        "latitude": 19.8779262,
+        "source_geometry_type": "Point",
+        "geometry_role": "osm_facility_node",
+        "name_en": "Kasenrad Sriburin Hospital"
+      },
+      {
+        "facility_id": "OSM-node-2147430789",
+        "name": "\u0e2a\u0e16\u0e32\u0e19\u0e1e\u0e22\u0e32\u0e1a\u0e32\u0e25\u0e01\u0e32\u0e23\u0e41\u0e1e\u0e17\u0e22\u0e4c\u0e41\u0e1c\u0e19\u0e44\u0e17\u0e22",
+        "longitude": 99.7977342,
+        "latitude": 20.1186155,
+        "source_geometry_type": "Point",
+        "geometry_role": "osm_facility_node"
+      },
+      {
+        "facility_id": "OSM-node-6002648286",
+        "name": "\u0e42\u0e23\u0e07\u0e1e\u0e22\u0e32\u0e1a\u0e32\u0e25\u0e40\u0e0a\u0e35\u0e22\u0e07 \u0e23\u0e32\u0e22\u0e2d\u0e34\u0e19\u0e40\u0e14\u0e2d\u0e23\u0e4c",
+        "longitude": 99.8311234,
+        "latitude": 19.8950679,
+        "source_geometry_type": "Point",
+        "geometry_role": "osm_facility_node",
+        "name_en": "Chianglai Inter Hospital"
+      },
+      {
+        "facility_id": "OSM-node-9582550859",
+        "name": "\u0e2a\u0e33\u0e19\u0e31\u0e01\u0e27\u0e34\u0e0a\u0e32\u0e17\u0e31\u0e19\u0e15\u0e41\u0e1e\u0e17\u0e22\u0e4c\u0e28\u0e32\u0e2a\u0e15\u0e23\u0e4c",
+        "longitude": 99.8780749,
+        "latitude": 20.0313472,
+        "source_geometry_type": "Point",
+        "geometry_role": "osm_facility_node"
+      },
+      {
+        "facility_id": "OSM-node-9582553929",
+        "name": "\u0e42\u0e23\u0e07\u0e1e\u0e22\u0e32\u0e1a\u0e32\u0e25\u0e28\u0e39\u0e19\u0e22\u0e4c\u0e01\u0e32\u0e23\u0e41\u0e1e\u0e17\u0e22\u0e4c\n\u0e21\u0e2b\u0e32\u0e27\u0e34\u0e17\u0e22\u0e32\u0e25\u0e31\u0e22\u0e41\u0e21\u0e48\u0e1f\u0e49\u0e32\u0e2b\u0e25\u0e27\u0e07",
+        "longitude": 99.8801527,
+        "latitude": 20.0308661,
+        "source_geometry_type": "Point",
+        "geometry_role": "osm_facility_node"
+      },
+      {
+        "facility_id": "OSM-relation-7165835",
+        "name": "\u0e42\u0e23\u0e07\u0e1e\u0e22\u0e32\u0e1a\u0e32\u0e25\u0e42\u0e2d\u0e40\u0e27\u0e2d\u0e23\u0e4c\u0e1a\u0e23\u0e38\u0e4a\u0e04",
+        "longitude": 99.8287307,
+        "latitude": 19.9119204,
+        "source_geometry_type": "MultiPolygon",
+        "geometry_role": "derived_site_interior_representative_not_entrance",
+        "name_en": "Overbrook Hospital"
+      },
+      {
+        "facility_id": "OSM-way-1154319012",
+        "name": "Unnamed OSM candidate",
+        "longitude": 99.8792593,
+        "latitude": 20.0319461,
+        "source_geometry_type": "MultiPolygon",
+        "geometry_role": "derived_site_interior_representative_not_entrance"
+      },
+      {
+        "facility_id": "OSM-way-1330359921",
+        "name": "\u0e42\u0e23\u0e07\u0e1e\u0e22\u0e32\u0e1a\u0e32\u0e25\u0e27\u0e31\u0e14\u0e2b\u0e49\u0e27\u0e22\u0e1b\u0e25\u0e32\u0e01\u0e31\u0e49\u0e07\u0e40\u0e1e\u0e37\u0e48\u0e2d\u0e2a\u0e31\u0e07\u0e04\u0e21",
+        "longitude": 99.8079178,
+        "latitude": 19.9490342,
+        "source_geometry_type": "MultiPolygon",
+        "geometry_role": "derived_site_interior_representative_not_entrance",
+        "name_en": "Wat Huay Pla Kang Hospital"
+      },
+      {
+        "facility_id": "OSM-way-447735125",
+        "name": "\u0e42\u0e23\u0e07\u0e1e\u0e22\u0e32\u0e1a\u0e32\u0e25\u0e41\u0e21\u0e48\u0e08\u0e31\u0e19",
+        "longitude": 99.8589254,
+        "latitude": 20.1339758,
+        "source_geometry_type": "MultiPolygon",
+        "geometry_role": "derived_site_interior_representative_not_entrance",
+        "name_en": "Mae Chan Hospital"
+      },
+      {
+        "facility_id": "OSM-way-483841193",
+        "name": "\u0e42\u0e23\u0e07\u0e1e\u0e22\u0e32\u0e1a\u0e32\u0e25 \u0e40\u0e0a\u0e35\u0e22\u0e07\u0e23\u0e32\u0e22\u0e1b\u0e23\u0e30\u0e0a\u0e32\u0e19\u0e38\u0e40\u0e04\u0e23\u0e32\u0e30\u0e2b\u0e4c",
+        "longitude": 99.8291769,
+        "latitude": 19.9007797,
+        "source_geometry_type": "MultiPolygon",
+        "geometry_role": "derived_site_interior_representative_not_entrance",
+        "name_en": "Chiangrai Prachanukroh Hospital"
+      },
+      {
+        "facility_id": "OSM-way-483841199",
+        "name": "\u0e28\u0e39\u0e19\u0e22\u0e4c\u0e2a\u0e38\u0e02\u0e20\u0e32\u0e1e\u0e0a\u0e38\u0e21\u0e0a\u0e19\u0e40\u0e21\u0e37\u0e2d\u0e07\u0e40\u0e0a\u0e35\u0e22\u0e07\u0e23\u0e32\u0e22 \u0e42\u0e23\u0e07\u0e42\u0e23\u0e07\u0e1e\u0e22\u0e32\u0e1a\u0e32\u0e25\u0e40\u0e0a\u0e35\u0e22\u0e07\u0e23\u0e32\u0e22\u0e1b\u0e23\u0e30\u0e0a\u0e32\u0e19\u0e38\u0e40\u0e04\u0e23\u0e32\u0e30\u0e2b\u0e4c",
+        "longitude": 99.8319124,
+        "latitude": 19.9004446,
+        "source_geometry_type": "MultiPolygon",
+        "geometry_role": "derived_site_interior_representative_not_entrance",
+        "name_en": "Chiang Rai Community Health Center Prachanukroh Hospital"
+      },
+      {
+        "facility_id": "OSM-way-485845405",
+        "name": "Mae Fah Luang University Hospital",
+        "longitude": 99.8945311,
+        "latitude": 20.0409565,
+        "source_geometry_type": "MultiPolygon",
+        "geometry_role": "derived_site_interior_representative_not_entrance"
+      },
+      {
+        "facility_id": "OSM-way-501089462",
+        "name": "\u0e42\u0e23\u0e07\u0e1e\u0e22\u0e32\u0e1a\u0e32\u0e25\u0e2a\u0e48\u0e07\u0e40\u0e2a\u0e23\u0e34\u0e21\u0e2a\u0e38\u0e02\u0e20\u0e32\u0e1e\u0e15\u0e33\u0e1a\u0e25 \u0e1a\u0e49\u0e32\u0e19\u0e14\u0e49\u0e32\u0e22\u0e2b\u0e19\u0e2d\u0e07\u0e2b\u0e25\u0e48\u0e21",
+        "longitude": 99.8907958,
+        "latitude": 19.8672259,
+        "source_geometry_type": "MultiPolygon",
+        "geometry_role": "derived_site_interior_representative_not_entrance",
+        "name_en": "Ban Dai Nong Lom Health Promoting Hospital"
+      },
+      {
+        "facility_id": "OSM-way-539335298",
+        "name": "\u0e42\u0e23\u0e07\u0e1e\u0e22\u0e32\u0e1a\u0e32\u0e25\u0e2a\u0e48\u0e07\u0e40\u0e2a\u0e23\u0e34\u0e21\u0e2a\u0e38\u0e02\u0e20\u0e32\u0e1e\u0e15\u0e33\u0e1a\u0e25",
+        "longitude": 99.7866967,
+        "latitude": 19.8766339,
+        "source_geometry_type": "MultiPolygon",
+        "geometry_role": "derived_site_interior_representative_not_entrance",
+        "name_en": "District Health Center"
+      },
+      {
+        "facility_id": "OSM-way-641234887",
+        "name": "Bangkok Hospital",
+        "longitude": 99.8634925,
+        "latitude": 19.9927601,
+        "source_geometry_type": "MultiPolygon",
+        "geometry_role": "derived_site_interior_representative_not_entrance"
+      },
+      {
+        "facility_id": "OSM-way-991657339",
+        "name": "\u0e42\u0e23\u0e07\u0e1a\u0e32\u0e25\u0e04\u0e48\u0e32\u0e22\u0e40\u0e21\u0e47\u0e07\u0e23\u0e32\u0e22\u0e21\u0e2b\u0e32\u0e23\u0e32\u0e0a",
+        "longitude": 99.8135562,
+        "latitude": 19.9045221,
+        "source_geometry_type": "MultiPolygon",
+        "geometry_role": "derived_site_interior_representative_not_entrance",
+        "name_en": "Fort Mengraimaharaj Hospital"
+      }
+    ],
+    "counts": {
+      "osm_objects": 17,
+      "distinct_named_hospitals": 15,
+      "unnamed_objects": 2,
+      "objects_that_repeat_a_named_hospital": 0
+    },
+    "counts_note": "osm_objects counts OSM objects. Under owner choice 22 (R12) a hospital is a distinct named hospital; both counts are given."
+  },
+  "district_office_lookup": {
+    "district": {
+      "adm2_pcode": "TH5705",
+      "adm2_name": "Phan",
+      "adm2_name_th": "\u0e1e\u0e32\u0e19"
+    },
+    "office_names_searched": [
+      "\u0e17\u0e35\u0e48\u0e27\u0e48\u0e32\u0e01\u0e32\u0e23\u0e2d\u0e33\u0e40\u0e20\u0e2d\u0e1e\u0e32\u0e19",
+      "\u0e2a\u0e33\u0e19\u0e31\u0e01\u0e07\u0e32\u0e19\u0e2d\u0e33\u0e40\u0e20\u0e2d\u0e1e\u0e32\u0e19"
+    ],
+    "tagged_office": [
+      {
+        "osm_identifier": "OSM-node-3840722494",
+        "osm_type": "node",
+        "osm_id": 3840722494,
+        "name": "\u0e17\u0e35\u0e48\u0e27\u0e48\u0e32\u0e01\u0e32\u0e23\u0e2d\u0e33\u0e40\u0e20\u0e2d\u0e1e\u0e32\u0e19",
+        "name_en": "Amphoe Phan Adminstrative Offoce",
+        "tags": {
+          "office": "administrative"
+        },
+        "point_lon_lat": [
+          99.7405302,
+          19.5538862
+        ],
+        "point_source": "node"
+      }
+    ],
+    "named_only": [
+      {
+        "osm_identifier": "OSM-way-898484263",
+        "osm_type": "way",
+        "osm_id": 898484263,
+        "name": "\u0e2a\u0e33\u0e19\u0e31\u0e01\u0e07\u0e32\u0e19\u0e2d\u0e33\u0e40\u0e20\u0e2d\u0e1e\u0e32\u0e19",
+        "name_en": null,
+        "tags": {
+          "landuse": "commercial"
+        },
+        "point_lon_lat": [
+          99.740211,
+          19.5537376
+        ],
+        "point_source": "representative point of the area"
+      }
+    ],
+    "result": "found",
+    "seat_adm3_pcode": "TH570513",
+    "seat_adm3_name": "Mueang Phan",
+    "expected_by_the_drafting_agent": "TH570513",
+    "matches_the_drafting_agent_expectation": true,
+    "named_only_covered_by": [
+      {
+        "osm_identifier": "OSM-way-898484263",
+        "covered_by": [
+          "TH570513"
+        ]
+      }
+    ]
+  },
+  "se2_blind_units": {
+    "seat": "TH570513",
+    "unit_list": [
+      "TH570504",
+      "TH570506",
+      "TH570508",
+      "TH570509",
+      "TH570511",
+      "TH570513"
+    ],
+    "touching_units": [
+      {
+        "adm3_pcode": "TH570504",
+        "adm3_name": "Santi Suk",
+        "adm2_pcode": "TH5705",
+        "contact": "shared_boundary",
+        "shared_boundary_m": 3834.5
+      },
+      {
+        "adm3_pcode": "TH570506",
+        "adm3_name": "Hua Ngom",
+        "adm2_pcode": "TH5705",
+        "contact": "shared_boundary",
+        "shared_boundary_m": 3905.3
+      },
+      {
+        "adm3_pcode": "TH570508",
+        "adm3_name": "Pa Hung",
+        "adm2_pcode": "TH5705",
+        "contact": "shared_boundary",
+        "shared_boundary_m": 14725.6
+      },
+      {
+        "adm3_pcode": "TH570509",
+        "adm3_name": "Muang Kham",
+        "adm2_pcode": "TH5705",
+        "contact": "shared_boundary",
+        "shared_boundary_m": 8142.4
+      },
+      {
+        "adm3_pcode": "TH570511",
+        "adm3_name": "San Klang",
+        "adm2_pcode": "TH5705",
+        "contact": "shared_boundary",
+        "shared_boundary_m": 4097.7
+      }
+    ],
+    "touching_units_outside_the_district": []
+  },
+  "input_hashes": {
+    "boundaries_sha256": "09e62345481bb80030ff6779e074bfb2c16629b70ae1e373ebd31945f1c6e0d8",
+    "osm_pbf_sha256": "b7f46018249638413b1d318bc86519f140c27af20cac7c00d42fe03775b7add1"
+  },
+  "assumptions": [
+    "OSM hospitals are map records. Their operation, entrances and capacity are not verified.",
+    "The district office is located by an OSM object, not by an official register. The object's tags and the objects that corroborate it are recorded.",
+    "COD-AB polygons of 2022 are taken as the tambons; a tambon boundary change since then is not reflected."
+  ],
+  "limitations": [
+    "SE2-blind is blind by rule, not by ignorance: flooded shares for every Chiang Rai tambon were seen in exploration (v1a disclosure item EK-09). The rules here read no flood layer.",
+    "The choice of SE2 itself was made with the outcome in view (v1a case-selection disclosure); a whole district adds no further tambon-by-tambon choice.",
+    "The hospital list depends on the OSM extract of 2026-07-10. A later extract can add or drop objects."
+  ],
+  "implementation": {
+    "base_commit": "8a08560897a9d9cb447720bc459ebab1f945f957",
+    "builder_sha256": "d05ec6bfe7a4531ee47c082ce9954a408a2b7560b4be23acc248a6047f1c7db1",
+    "module_sha256": "ad5e2bc6cfac636fc47b11e436ddd6bb153e43e6d7d4c3711b816c3e239336d5",
+    "libraries": {
+      "shapely": "2.1.2",
+      "geos": "3.13.1",
+      "pyproj": "3.7.2",
+      "proj": "9.5.1",
+      "ogr_runtime": {
+        "gdal_version": "3.13.0",
+        "executable_sha256": "8c122ebfa5f4926fa1b80dee201515670fdcdda783d8aa337c37b09d0b05f080"
+      }
+    }
+  }
+}

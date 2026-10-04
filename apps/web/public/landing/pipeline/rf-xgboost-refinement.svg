@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 250" role="img" aria-label="Three response curves: HAND falls to half at 8 metres, distance to river decays to near zero by 1.5 kilometres, slope falls to half at 5 degrees"><style>text{font-family:"Manrope Variable",system-ui,sans-serif;fill:#3D4E57}.lbl{font-size:12px}.sml{font-size:10.5px;fill:#64767E}.mono-t{font-family:ui-monospace,"IBM Plex Mono",monospace;font-size:11px}.hi{fill:#0C6A74}.warnt{fill:#8A4A44}</style>
+            <text class="lbl" x="50" y="20">HAND (metres)</text>
+            <text class="lbl" x="240" y="20">Distance to river (m)</text>
+            <text class="lbl" x="430" y="20">Slope (degrees)</text>
+
+            <g stroke="currentColor" stroke-width="1" fill="none">
+              <line x1="50" y1="40" x2="50" y2="190"/><line x1="50" y1="190" x2="200" y2="190"/>
+              <line x1="240" y1="40" x2="240" y2="190"/><line x1="240" y1="190" x2="390" y2="190"/>
+              <line x1="430" y1="40" x2="430" y2="190"/><line x1="430" y1="190" x2="580" y2="190"/>
+            </g>
+            <g stroke="currentColor" stroke-width="0.6" opacity="0.3">
+              <line x1="50" y1="115" x2="200" y2="115"/>
+              <line x1="240" y1="115" x2="390" y2="115"/>
+              <line x1="430" y1="115" x2="580" y2="115"/>
+            </g>
+            <text class="sml" x="44" y="44" text-anchor="end">1</text>
+            <text class="sml" x="44" y="119" text-anchor="end">.5</text>
+            <text class="sml" x="44" y="194" text-anchor="end">0</text>
+
+            <polyline points="50,54 74,76 98,115 122,154 146,176 170,185 200,189"
+                      fill="none" stroke="#0C6A74" stroke-width="2.4"/>
+            <circle cx="98" cy="115" r="3.5" fill="#0C6A74"/>
+            <text class="sml hi" x="104" y="108">8 m</text>
+            <text class="sml" x="50" y="208">0</text><text class="sml" x="196" y="208">25</text>
+
+            <polyline points="240,40 270,99 300,135 330,157 360,170 390,178"
+                      fill="none" stroke="#0C6A74" stroke-width="2.4"/>
+            <circle cx="300" cy="135" r="3.5" fill="#0C6A74"/>
+            <text class="sml hi" x="306" y="128">600 m</text>
+            <text class="sml" x="240" y="208">0</text><text class="sml" x="386" y="208">1500</text>
+
+            <polyline points="430,51 450,67 480,115 510,163 550,186 580,189"
+                      fill="none" stroke="#0C6A74" stroke-width="2.4"/>
+            <circle cx="480" cy="115" r="3.5" fill="#0C6A74"/>
+            <text class="sml hi" x="486" y="108">5°</text>
+            <text class="sml" x="430" y="208">0</text><text class="sml" x="576" y="208">15</text>
+
+            <text class="lbl" x="50" y="236">Weighted sum → logistic sharpening → 0–100 surface.  No training, no labels, every coefficient readable.</text>
+          </svg>

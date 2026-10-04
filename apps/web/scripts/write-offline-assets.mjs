@@ -3,6 +3,9 @@ import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync,
 import { dirname, relative, resolve, sep } from "node:path";
 import { CASE_REPLAY_EXPORT_BUDGET_BYTES, CASE_REPLAY_ROUTE, caseReplayExportBytes, collectCaseReplay, readCaseReplayExports } from "./case-replay-inventory.mjs";
 import { collectLandingArtwork } from "./landing-artwork-inventory.mjs";
+import { collectEvidenceLibraryAssets } from "./evidence-library-assets.mjs";
+import { collectPublicCaseAssets } from "./public-case-assets.mjs";
+import { collectCaseBriefAssets } from "./case-brief-assets.mjs";
 
 const out = resolve(process.cwd(), "out");
 const nextStatic = resolve(out, "_next", "static");
@@ -17,6 +20,10 @@ const optionalCaseReplay = appProfile === "competition" ? collectCaseReplay(out)
 // manifest and held to its own budget: it is outside the replay's precache budget.
 const optionalCaseReplayExports = appProfile === "competition" ? readCaseReplayExports(out) : [];
 const caseReplayExportTotal = caseReplayExportBytes(optionalCaseReplayExports);
+// Historical user-supplied aerial references are not approved publication assets.
+for (const name of ["hero-desktop.webp", "hero-mobile.webp"]) {
+  rmSync(resolve(out, "landing", name), { force: true });
+}
 
 function walk(directory) {
   return readdirSync(directory).flatMap((name) => {
@@ -25,14 +32,19 @@ function walk(directory) {
   });
 }
 
+const optionalLandingAssets = collectOptionalLandingAssets();
 const assets = walk(nextStatic)
   .map((path) => `/${relative(out, path).split(sep).join("/")}`)
+  .filter((url) => !optionalLandingAssets.has(url))
   .sort();
 
 writeFileSync(resolve(out, "offline-assets.json"), `${JSON.stringify(assets, null, 2)}\n`, "utf8");
 
 if (appProfile === "competition") copyCanonicalProposalEvidence();
 const proposalEvidenceAssets = appProfile === "competition" ? collectProposalEvidenceAssets() : [];
+const evidenceLibraryAssets = appProfile === "competition" ? collectEvidenceLibraryAssets(out) : [];
+const publicCaseAssets = appProfile === "competition" ? collectPublicCaseAssets(out) : [];
+const caseBriefAssets = appProfile === "competition" ? collectCaseBriefAssets(out) : [];
 const publicCoreAssets = [
   "/",
   "/public/",
@@ -49,9 +61,15 @@ const coreAssets = appProfile === "public-production"
       ...publicCoreAssets,
       "/policy/",
       "/command/",
+      "/command/archive/",
       "/studio/",
       "/studio/planning-evidence/",
       CASE_REPLAY_ROUTE,
+      "/studio/library/",
+      "/studio/brief/",
+      "/studio/archive/",
+      "/public-cases/",
+      "/command/cases/",
       "/offline-demo/bundle.json",
       "/offline-demo/areas.geojson",
       "/offline-demo/roads.geojson",
@@ -63,6 +81,9 @@ const coreAssets = appProfile === "public-production"
       "/offline-demo/mae-sai/facilities.json",
       "/offline-demo/mae-sai/access-hotspots.json",
       ...proposalEvidenceAssets,
+      ...evidenceLibraryAssets,
+      ...publicCaseAssets,
+      ...caseBriefAssets,
     ];
 const deploymentProfile = {
   profile: appProfile,
@@ -86,9 +107,15 @@ const versionedFiles = [
   ...(appProfile === "competition" ? [
     resolve(out, "policy", "index.html"),
     resolve(out, "command", "index.html"),
+    resolve(out, "command", "archive", "index.html"),
+    resolve(out, "command", "cases", "index.html"),
+    resolve(out, "public-cases", "index.html"),
     resolve(out, "studio", "index.html"),
     resolve(out, "studio", "planning-evidence", "index.html"),
     resolve(out, CASE_REPLAY_ROUTE.slice(1), "index.html"),
+    resolve(out, "studio", "library", "index.html"),
+    resolve(out, "studio", "brief", "index.html"),
+    resolve(out, "studio", "archive", "index.html"),
     resolve(out, "offline-demo", "bundle.json"),
     resolve(out, "offline-demo", "areas.geojson"),
     resolve(out, "offline-demo", "roads.geojson"),
@@ -104,6 +131,9 @@ const versionedFiles = [
   ...optionalArtwork.map((asset) => resolve(out, asset.url.slice(1))),
   ...optionalCaseReplay.map((asset) => resolve(out, asset.url.slice(1))),
   ...optionalCaseReplayExports.map((asset) => resolve(out, asset.url.slice(1))),
+  ...evidenceLibraryAssets.map((url) => resolve(out, url.slice(1))),
+  ...publicCaseAssets.map((url) => resolve(out, url.slice(1))),
+  ...caseBriefAssets.map((url) => resolve(out, url.slice(1))),
 ];
 const serviceWorkerPath = resolve(out, "sw.js");
 const serviceWorker = readFileSync(serviceWorkerPath, "utf8");
@@ -150,7 +180,53 @@ writeFileSync(
 const caseReplayMegabytes = (optionalCaseReplay.reduce((sum, asset) => sum + asset.bytes, 0) / 1e6).toFixed(1);
 // The export pack has its own budget line (decimal megabytes), outside the precache budget.
 const caseReplayExportLine = `${optionalCaseReplayExports.length} case-replay export files (${caseReplayExportTotal} of ${CASE_REPLAY_EXPORT_BUDGET_BYTES} export-budget bytes, outside the precache budget)`;
-console.log(`offline asset manifest: ${assets.length} production chunks, ${proposalEvidenceAssets.length} proposal evidence assets, ${optionalArtwork.length} deferred illustration assets, ${optionalCaseReplay.length} deferred case-replay files (${caseReplayMegabytes} MB, opt-in), ${caseReplayExportLine}; profile ${appProfile}; cache ${cacheVersion}`);
+console.log(`offline asset manifest: ${assets.length} production chunks, ${optionalLandingAssets.size} optional landing chunks excluded, ${proposalEvidenceAssets.length} proposal evidence assets, ${optionalArtwork.length} deferred illustration assets, ${optionalCaseReplay.length} deferred case-replay files (${caseReplayMegabytes} MB, opt-in), ${caseReplayExportLine}; profile ${appProfile}; cache ${cacheVersion}`);
+
+function collectOptionalLandingAssets() {
+  const manifestPath = resolve(process.cwd(), ".next", "react-loadable-manifest.json");
+  const appManifests = resolve(process.cwd(), ".next", "server", "app");
+  const manifests = [
+    ...(existsSync(manifestPath) ? [manifestPath] : []),
+    ...(existsSync(appManifests) ? walk(appManifests).filter((path) => path.endsWith(`${sep}react-loadable-manifest.json`)) : []),
+  ];
+  const optional = new Set();
+  for (const path of manifests) {
+    const manifest = JSON.parse(readFileSync(path, "utf8"));
+    for (const [name, entry] of Object.entries(manifest)) {
+      const files = Array.isArray(entry?.files) ? entry.files : [];
+      const isNarrative = name.includes("narrative-canvas") || files.some((file) => {
+        if (typeof file !== "string" || !file.startsWith("static/") || !file.endsWith(".js")) return false;
+        const chunkPath = resolve(out, "_next", file);
+        return chunkPath.startsWith(`${nextStatic}${sep}`) && existsSync(chunkPath)
+          && readFileSync(chunkPath, "utf8").includes("data-narrative-canvas");
+      });
+      if (!isNarrative) continue;
+      for (const file of files) {
+        if (typeof file === "string" && file.startsWith("static/")) optional.add(`/_next/${file}`);
+      }
+    }
+  }
+  if (appProfile === "public-production") {
+    for (const path of walk(nextStatic)) {
+      if (!path.endsWith(".js")) continue;
+      const source = readFileSync(path, "utf8");
+      if (source.includes("floodguard:landing-motion:v1") || source.includes("data-narrative-canvas")) {
+        optional.add(`/${relative(out, path).split(sep).join("/")}`);
+      }
+    }
+  }
+  // A shared dependency referenced by a route remains mandatory even if the
+  // optional canvas also appears in its dynamic-import dependency manifest.
+  for (const route of ["index.html", "public/index.html", "command/index.html", "studio/index.html", "studio/library/index.html", "studio/brief/index.html"]) {
+    const path = resolve(out, route);
+    if (!existsSync(path)) continue;
+    const html = readFileSync(path, "utf8");
+    for (const match of html.matchAll(/<(?:script|link)\b[^>]*(?:src|href)="([^"?#]+)[^"]*"/gi)) {
+      optional.delete(match[1]);
+    }
+  }
+  return optional;
+}
 
 function resolveAppProfile(value) {
   const normalized = value?.trim().toLowerCase();
@@ -166,6 +242,10 @@ function prunePublicProductionOutput() {
     "command",
     "studio",
     "studies",
+    "evidence-library",
+    "public-case-projections",
+    "briefs",
+    "public-cases",
     "offline-demo/bundle.json",
     "offline-demo/areas.geojson",
     "offline-demo/roads.geojson",

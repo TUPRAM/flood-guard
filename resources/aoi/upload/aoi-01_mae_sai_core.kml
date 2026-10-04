@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>AOI-01 mae sai core</name>
+    <Placemark>
+      <name>AOI-01 mae sai core</name>
+      <Polygon>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>99.8384,20.3705,0 99.9441,20.3705,0 99.9441,20.4563,0 99.8384,20.4563,0 99.8384,20.3705,0</coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+      </Polygon>
+    </Placemark>
+  </Document>
+</kml>

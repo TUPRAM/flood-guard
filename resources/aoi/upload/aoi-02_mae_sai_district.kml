@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>AOI-02 mae sai district</name>
+    <Placemark>
+      <name>AOI-02 mae sai district</name>
+      <Polygon>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>99.8107,20.2577,0 100.0368,20.2577,0 100.0368,20.4651,0 99.8107,20.4651,0 99.8107,20.2577,0</coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+      </Polygon>
+    </Placemark>
+  </Document>
+</kml>

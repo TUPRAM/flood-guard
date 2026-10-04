@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 250" role="img" aria-label="The five FPPS weights drawn to scale, and the low-confidence override that sends Ko Chang's score of 44 to class E"><style>text{font-family:"Manrope Variable",system-ui,sans-serif;fill:#3D4E57}.lbl{font-size:12px}.sml{font-size:10.5px;fill:#64767E}.mono-t{font-family:ui-monospace,"IBM Plex Mono",monospace;font-size:11px}.hi{fill:#0C6A74}.warnt{fill:#8A4A44}</style>
+            <text class="lbl" x="24" y="22">FPPS — five components, drawn to their real weights</text>
+            <rect x="24" y="36" width="178" height="34" fill="#0C6A74" opacity="0.5" stroke="#0C6A74" stroke-width="1.2"/>
+            <rect x="202" y="36" width="148" height="34" fill="#0C6A74" opacity="0.38" stroke="#0C6A74" stroke-width="1.2"/>
+            <rect x="350" y="36" width="119" height="34" fill="#0C6A74" opacity="0.28" stroke="#0C6A74" stroke-width="1.2"/>
+            <rect x="469" y="36" width="89" height="34" fill="#0C6A74" opacity="0.2" stroke="#0C6A74" stroke-width="1.2"/>
+            <rect x="558" y="36" width="59" height="34" fill="#0C6A74" opacity="0.12" stroke="#0C6A74" stroke-width="1.2"/>
+            <text class="mono-t" x="113" y="58" text-anchor="middle">30%</text>
+            <text class="mono-t" x="276" y="58" text-anchor="middle">25%</text>
+            <text class="mono-t" x="409" y="58" text-anchor="middle">20%</text>
+            <text class="mono-t" x="513" y="58" text-anchor="middle">15%</text>
+            <text class="mono-t" x="587" y="58" text-anchor="middle">10%</text>
+            <text class="sml" x="113" y="86" text-anchor="middle">flood likelihood</text>
+            <text class="sml" x="276" y="86" text-anchor="middle">exposure</text>
+            <text class="sml" x="409" y="86" text-anchor="middle">access gap</text>
+            <text class="sml" x="513" y="86" text-anchor="middle">roads</text>
+            <text class="sml" x="587" y="86" text-anchor="middle">vuln.</text>
+            <text class="sml hi" x="113" y="102" text-anchor="middle">← the AI feeds here</text>
+
+            <line x1="24" y1="124" x2="616" y2="124" stroke="currentColor" stroke-width="0.6" opacity="0.4"/>
+
+            <text class="lbl" x="24" y="150">Then confidence overrides the number</text>
+            <rect x="24" y="162" width="150" height="40" fill="none" stroke="currentColor" stroke-width="1.4"/>
+            <text class="sml" x="99" y="180" text-anchor="middle">Ko Chang</text>
+            <text class="mono-t" x="99" y="196" text-anchor="middle">score 44.0 / 100</text>
+
+            <text class="sml" x="190" y="176">confidence = low</text>
+            <line x1="182" y1="182" x2="292" y2="182" stroke="#9C6414" stroke-width="1.8"/>
+            <polygon points="292,178 300,182 292,186" fill="#9C6414"/>
+
+            <rect x="306" y="162" width="150" height="40" fill="#F6EBDB" stroke="#9C6414" stroke-width="1.8"/>
+            <text class="lbl" x="381" y="180" text-anchor="middle" fill="#9C6414">Class E</text>
+            <text class="sml" x="381" y="196" text-anchor="middle" fill="#9C6414">monitor and verify</text>
+
+            <text class="sml" x="470" y="176">a score of 90 would</text>
+            <text class="sml" x="470" y="192">land in exactly the</text>
+            <text class="sml" x="470" y="208">same place</text>
+
+            <text class="lbl" x="24" y="236">Weak evidence cannot create urgency — the ranking survives as a verification queue instead.</text>
+          </svg>

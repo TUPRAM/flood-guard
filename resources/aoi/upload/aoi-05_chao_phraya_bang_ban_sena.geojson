@@ -1,0 +1,38 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "AOI-05 chao phraya bang ban sena"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              100.4,
+              14.25
+            ],
+            [
+              100.52,
+              14.25
+            ],
+            [
+              100.52,
+              14.37
+            ],
+            [
+              100.4,
+              14.37
+            ],
+            [
+              100.4,
+              14.25
+            ]
+          ]
+        ]
+      }
+    }
+  ]
+}

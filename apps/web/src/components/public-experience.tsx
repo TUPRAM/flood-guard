@@ -9,6 +9,7 @@ import { PublicHomePage } from "@/components/public-home-page";
 import { PublicReportPage } from "@/components/public-report-page";
 import { PublicShelterPage } from "@/components/public-shelter-page";
 import { PublicSosPage } from "@/components/public-sos-page";
+import { caseHref, readCaseSelection } from "@/lib/case-selection";
 import { HOUSEHOLD_NEEDS, countCompletedPlanItems } from "@/lib/household-plan";
 import type { PublicMapLocation } from "@/lib/public-location";
 import type { FeatureCollection } from "@/lib/types";
@@ -18,6 +19,13 @@ import { useLanguage } from "@/lib/use-language";
 import { usePublicFloodGuardData } from "@/lib/use-public-floodguard-data";
 
 type PublicPage = "home" | "report" | "shelter" | "prepare" | "sos";
+
+export function readPublicPage(search: string): PublicPage {
+  const value = new URLSearchParams(search).get("tab");
+  return value === "report" || value === "shelter" || value === "prepare" || value === "sos"
+    ? value
+    : "home";
+}
 
 const PAGE_LABELS: Record<PublicPage, {
   th: string;
@@ -78,6 +86,7 @@ export function PublicExperience() {
   const data = usePublicFloodGuardData();
   const [language, setLanguage] = useLanguage("th");
   const [page, setPage] = useState<PublicPage>("home");
+  const [researchHref, setResearchHref] = useState("/public-cases/");
   const [homeLocation, setHomeLocation] = useState<PublicMapLocation>();
   const contentRef = useRef<HTMLElement>(null);
   const { displayName, changeDisplayName } = useDisplayName();
@@ -135,8 +144,21 @@ export function PublicExperience() {
     contentRef.current?.scrollTo({ top: 0, behavior: "auto" });
   }, [page]);
 
+  useEffect(() => {
+    const syncFromUrl = () => {
+      setPage(readPublicPage(window.location.search));
+      setResearchHref(caseHref("/public-cases/", readCaseSelection(window.location.search)));
+    };
+    syncFromUrl();
+    window.addEventListener("popstate", syncFromUrl);
+    return () => window.removeEventListener("popstate", syncFromUrl);
+  }, []);
 
   const navigate = (nextPage: PublicPage) => {
+    const url = new URL(window.location.href);
+    if (nextPage === "home") url.searchParams.delete("tab");
+    else url.searchParams.set("tab", nextPage);
+    if (url.href !== window.location.href) window.history.pushState(null, "", url);
     setPage(nextPage);
   };
 
@@ -161,9 +183,12 @@ export function PublicExperience() {
         onNavigateSos={() => navigate("sos")}
       />
 
+      <div data-app-availability-slot className="public-availability-slot" />
+
       <section
         ref={contentRef}
-        id="public-active-panel"
+        id="main-content"
+        tabIndex={-1}
         className={contentClassName}
         aria-live="polite"
         aria-labelledby={`public-tab-${page}`}
@@ -177,6 +202,9 @@ export function PublicExperience() {
             onSelectArea={selectPlanningArea}
             location={homeLocation}
             onLocationChange={setHomeLocation}
+            onNavigatePrepare={() => navigate("prepare")}
+            onNavigateSos={() => navigate("sos")}
+            researchHref={process.env.NEXT_PUBLIC_FLOODGUARD_APP_PROFILE === "public-production" ? undefined : researchHref}
           />
         )}
 
@@ -208,6 +236,7 @@ export function PublicExperience() {
               <h1 id="public-prepare-title">
                 {th ? "สร้างและทบทวนแผนเตรียมพร้อม" : "Build and review my preparedness plan"}
               </h1>
+              <p>{th ? "เลือกพื้นที่กว้าง ทบทวนความต้องการและรายการเตรียมพร้อม แล้วเก็บสำเนาไว้ในอุปกรณ์นี้" : "Choose a broad area, review household needs and actions, then keep a copy on this device."}</p>
             </header>
 
             <section className="public-prepare-area-selector" aria-labelledby="public-prepare-area-title">
@@ -280,7 +309,7 @@ export function PublicExperience() {
                 active ? "active" : "",
                 key === "sos" ? "sos" : "",
               ].filter(Boolean).join(" ")}
-              aria-controls="public-active-panel"
+              aria-controls="main-content"
               aria-pressed={active}
               onClick={() => navigate(key)}
             >

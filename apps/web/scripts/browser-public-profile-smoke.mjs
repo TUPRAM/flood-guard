@@ -133,6 +133,7 @@ try {
   const requestFailures = [];
   const unexpectedRequests = [];
   let offlineMode = false;
+  const landingRequests = [];
   page.on("pageerror", (error) => pageErrors.push(error.stack ?? error.message));
   page.on("console", (message) => {
     if (message.type() === "error") consoleErrors.push({
@@ -149,6 +150,7 @@ try {
   }));
   page.on("request", (request) => {
     const url = new URL(request.url());
+    if (url.pathname.startsWith("/landing/")) landingRequests.push(url.pathname);
     if (url.origin === geocoderOrigin && url.pathname === geocoderPath) return;
     if (url.origin === routingOrigin) return;
     if (!approvedOrigins.has(url.origin)) unexpectedRequests.push(request.url());
@@ -166,12 +168,12 @@ try {
   if (await page.locator('a[href^="/command"], a[href^="/studio"], a[href^="/policy"]').count()) {
     throw new Error("Public profile root exposes a competition-only link.");
   }
-  const commandResponse = await context.request.get(`${baseUrl}/command/`);
-  const studioResponse = await context.request.get(`${baseUrl}/studio/`);
-  const policyResponse = await context.request.get(`${baseUrl}/policy/`);
-  if (commandResponse.status() !== 404 || studioResponse.status() !== 404 || policyResponse.status() !== 404) {
-    throw new Error(`Public profile competition-only routes did not return 404: ${commandResponse.status()}, ${studioResponse.status()}, ${policyResponse.status()}`);
+  for (const staffRoute of ["/public-cases/", "/command/", "/command/cases/", "/command/archive/", "/studio/", "/studio/library/", "/studio/brief/", "/studio/archive/"]) {
+    const response = await context.request.get(`${baseUrl}${staffRoute}`);
+    if (response.status() !== 404) throw new Error(`Public profile staff route did not return 404: ${staffRoute}: ${response.status()}`);
   }
+  const policyResponse = await context.request.get(`${baseUrl}/policy/`);
+  if (policyResponse.status() !== 404) throw new Error(`Public profile competition-only route did not return 404: /policy/: ${policyResponse.status()}`);
 
   await page.waitForFunction(() => Boolean(navigator.serviceWorker?.controller));
   await page.waitForFunction(() => (
@@ -193,6 +195,8 @@ try {
     "/policy/",
     "/command/",
     "/studio/",
+    "/studio/library/",
+    "/studio/brief/",
     "/offline-demo/bundle.json",
     "/offline-demo/mae-sai/bundle.json",
     "/offline-demo/mae-sai/roads.json",
@@ -220,13 +224,16 @@ try {
   let commandLoaded = true;
   try {
     await page.goto(`${baseUrl}/command/`, { waitUntil: "domcontentloaded", timeout: 5000 });
-    commandLoaded = await page.locator("main.command-page").count() > 0;
+    commandLoaded = await page.locator("main[data-planning-candidate], main.command-page").count() > 0;
   } catch {
     commandLoaded = false;
   }
   if (commandLoaded) throw new Error("Public profile recovered Command while offline.");
   if (unexpectedRequests.length) {
     throw new Error(`Public profile attempted unapproved requests: ${[...new Set(unexpectedRequests)].join(", ")}`);
+  }
+  if (landingRequests.length) {
+    throw new Error(`Public profile requested marketing assets: ${[...new Set(landingRequests)].join(", ")}`);
   }
   const expectedOfflineTileFailure = (failure) => failure.offline
     && failure.error === "net::ERR_INTERNET_DISCONNECTED"
@@ -280,11 +287,11 @@ async function assertCompactPublicShell(page) {
 
 async function exercisePublicPages(page) {
   const publicPages = [
-    ["home", "#public-active-panel .leaflet-container"],
-    ["report", "#public-active-panel .public-report-page"],
-    ["shelter", "#public-active-panel .public-shelter-page, #public-active-panel .public-shelter-view"],
-    ["prepare", "#public-active-panel #household-plan-builder"],
-    ["sos", "#public-active-panel .public-sos-page, #public-active-panel .public-sos-view"],
+    ["home", "#main-content .leaflet-container"],
+    ["report", "#main-content .public-report-page"],
+    ["shelter", "#main-content .public-shelter-page, #main-content .public-shelter-view"],
+    ["prepare", "#main-content #household-plan-builder"],
+    ["sos", "#main-content .public-sos-page, #main-content .public-sos-view"],
   ];
   for (const [id, readySelector] of publicPages) {
     const button = page.locator(`#public-tab-${id}`);
@@ -299,7 +306,7 @@ async function exercisePublicPages(page) {
     if (state.current !== "page" && state.pressed !== "true" && state.selected !== "true") {
       throw new Error(`Public navigation did not expose ${id} as active.`);
     }
-    const visibleText = await page.locator("#public-active-panel").innerText();
+    const visibleText = await page.locator("#main-content").innerText();
     const forbidden = visibleText.match(
       /(?:^|[^\p{L}\p{N}])(?:demos?|prototypes?|mocks?|samples?|illustrative|placeholders?)(?=$|[^\p{L}\p{N}])|coming soon|under construction|not ready|work in progress/iu,
     );

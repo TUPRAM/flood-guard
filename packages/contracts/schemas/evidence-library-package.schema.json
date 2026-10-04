@@ -1,0 +1,3982 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://floodguard.th/schemas/evidence-library-package.schema.json",
+  "title": "evidence-library-package",
+  "x-contract-version": "1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "aoi_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "event_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "input_hashes": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^[a-f0-9]{64}$"
+      }
+    },
+    "dataset_mode": {
+      "const": "candidate"
+    },
+    "official_warning": {
+      "const": false
+    },
+    "operational_status": {
+      "const": "non_operational"
+    },
+    "datasets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "dataset_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "availability": {
+            "enum": [
+              "available",
+              "partial",
+              "metadata_only",
+              "missing",
+              "blocked"
+            ]
+          },
+          "coverage": {
+            "type": "string"
+          },
+          "qc": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "summary": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "dataset_id",
+          "availability",
+          "coverage",
+          "qc",
+          "summary"
+        ]
+      }
+    },
+    "layers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "role": {
+            "type": "string",
+            "minLength": 1
+          },
+          "dataset_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "availability": {
+            "enum": [
+              "available",
+              "partial",
+              "metadata_only",
+              "missing",
+              "blocked"
+            ]
+          },
+          "reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "data": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "type": {
+                "const": "FeatureCollection"
+              },
+              "features": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "type": {
+                      "const": "Feature"
+                    },
+                    "geometry": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "required": [
+                            "type"
+                          ],
+                          "properties": {
+                            "type": {
+                              "enum": [
+                                "Point",
+                                "MultiPoint",
+                                "LineString",
+                                "MultiLineString",
+                                "Polygon",
+                                "MultiPolygon",
+                                "GeometryCollection"
+                              ]
+                            },
+                            "coordinates": {
+                              "type": "array"
+                            },
+                            "geometries": {
+                              "type": "array"
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "properties": {
+                      "type": [
+                        "object",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "geometry",
+                    "properties"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "type",
+              "features"
+            ]
+          },
+          "image_url": {
+            "type": "string",
+            "pattern": "^/evidence-library/[A-Za-z0-9_/-]+\\.(json|geojson|md|html|txt|csv|pdf|png|webp)$"
+          },
+          "bounds": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": {
+                "type": "number"
+              }
+            }
+          },
+          "attribution": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "role",
+          "dataset_id",
+          "availability",
+          "reason"
+        ],
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "availability": {
+                  "enum": [
+                    "metadata_only",
+                    "missing",
+                    "blocked"
+                  ]
+                }
+              }
+            },
+            "then": {
+              "not": {
+                "anyOf": [
+                  {
+                    "required": [
+                      "data"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "image_url"
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "if": {
+              "required": [
+                "image_url"
+              ]
+            },
+            "then": {
+              "required": [
+                "bounds",
+                "attribution"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "gauges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "units": {
+            "type": "string",
+            "minLength": 1
+          },
+          "timezone": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "points": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "time": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "value": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "time",
+                "value"
+              ]
+            }
+          },
+          "limitations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "units",
+          "timezone",
+          "points",
+          "limitations"
+        ]
+      }
+    },
+    "assessment": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "components": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1
+              },
+              "weight": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "value": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "minimum": 0,
+                "maximum": 100
+              },
+              "reason": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "label",
+              "weight",
+              "value",
+              "reason"
+            ]
+          }
+        },
+        "fpps": {
+          "type": "null"
+        },
+        "bounds": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "lower": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100
+                },
+                "upper": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100
+                }
+              },
+              "required": [
+                "lower",
+                "upper"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "action_class": {
+          "type": "null"
+        },
+        "limitations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "components",
+        "fpps",
+        "bounds",
+        "action_class",
+        "limitations"
+      ]
+    },
+    "scenarios": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "kind": {
+            "type": "string",
+            "minLength": 1
+          },
+          "summary": {
+            "type": "string"
+          },
+          "assumptions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "metrics": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "label": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "value": {
+                  "type": [
+                    "number",
+                    "string",
+                    "null"
+                  ]
+                },
+                "unit": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "label",
+                "value"
+              ]
+            }
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "kind",
+          "summary",
+          "assumptions",
+          "metrics"
+        ]
+      }
+    },
+    "report_url": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^/evidence-library/[A-Za-z0-9_/-]+\\.(json|geojson|md|html|txt|csv|pdf|png|webp)$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "package_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source_timestamp": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "confidence_class": {
+      "const": "low"
+    },
+    "assumptions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "downloads": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "title",
+          "url",
+          "sha256"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "url": {
+            "type": "string",
+            "pattern": "^/evidence-library/[A-Za-z0-9_/-]+\\.(json(\\.gz)?|geojson|md|html|txt|csv|pdf|png|webp)$"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        }
+      }
+    },
+    "decision_brief": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0"
+        },
+        "generated_at": {
+          "type": "string",
+          "minLength": 1,
+          "format": "date-time"
+        },
+        "aoi_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "event_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "enum": [
+            "scenario_only",
+            "coverage_only"
+          ]
+        },
+        "priority": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "status": {
+              "const": "unavailable"
+            },
+            "fpps": {
+              "type": "null"
+            },
+            "action_class": {
+              "type": "null"
+            },
+            "reason": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "status",
+            "fpps",
+            "action_class",
+            "reason"
+          ]
+        },
+        "affected_population": {
+          "type": "null"
+        },
+        "population_reference_year": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "population_role": {
+          "const": "modelled_residential_context"
+        },
+        "access": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "modelled_population": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "unknown_access_population": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "connected_without_route_population": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "over_30_minutes_population": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "within_30_minutes_population": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "modelled_population",
+                "unknown_access_population",
+                "connected_without_route_population",
+                "over_30_minutes_population",
+                "within_30_minutes_population"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reporting": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "status": {
+              "enum": [
+                "available",
+                "unavailable"
+              ]
+            },
+            "source_url": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "format": "uri"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "reference_date": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "coverage_fraction": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "unassigned_modelled_population": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "ambiguous_population_cells": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "scope": {
+              "type": "string",
+              "minLength": 1
+            },
+            "units": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "name_th": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "scope": {
+                    "enum": [
+                      "full_unit",
+                      "partial_unit"
+                    ]
+                  },
+                  "unit_coverage_fraction": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "intersection_area_km2": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "population_context": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "modelled_population": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "unknown_access_population": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "connected_without_route_population": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "over_30_minutes_population": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "within_30_minutes_population": {
+                            "type": "number",
+                            "minimum": 0
+                          }
+                        },
+                        "required": [
+                          "modelled_population",
+                          "unknown_access_population",
+                          "connected_without_route_population",
+                          "over_30_minutes_population",
+                          "within_30_minutes_population"
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "affected_population": {
+                    "type": "null"
+                  },
+                  "fpps": {
+                    "type": "null"
+                  },
+                  "action_class": {
+                    "type": "null"
+                  },
+                  "interventions": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "scenario_id": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "kind": {
+                          "enum": [
+                            "add_destination",
+                            "close_edge",
+                            "remove_destination"
+                          ]
+                        },
+                        "gaining_30_min_access": {
+                          "type": "number",
+                          "minimum": 0
+                        },
+                        "losing_30_min_access": {
+                          "type": "number",
+                          "minimum": 0
+                        },
+                        "slower_population": {
+                          "type": "number",
+                          "minimum": 0
+                        },
+                        "faster_population": {
+                          "type": "number",
+                          "minimum": 0
+                        },
+                        "comparable_population": {
+                          "type": "number",
+                          "minimum": 0
+                        },
+                        "mean_travel_time_delta_minutes": {
+                          "anyOf": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "result": {
+                          "enum": [
+                            "threshold_change",
+                            "travel_time_only",
+                            "no_measured_change"
+                          ]
+                        },
+                        "observed": {
+                          "const": false
+                        },
+                        "selection_method": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "scenario_id",
+                        "kind",
+                        "gaining_30_min_access",
+                        "losing_30_min_access",
+                        "slower_population",
+                        "faster_population",
+                        "comparable_population",
+                        "mean_travel_time_delta_minutes",
+                        "result",
+                        "observed"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "id",
+                  "name",
+                  "name_th",
+                  "scope",
+                  "unit_coverage_fraction",
+                  "intersection_area_km2",
+                  "population_context",
+                  "affected_population",
+                  "fpps",
+                  "action_class",
+                  "interventions"
+                ]
+              }
+            }
+          },
+          "required": [
+            "status",
+            "source_url",
+            "reference_date",
+            "coverage_fraction",
+            "unassigned_modelled_population",
+            "ambiguous_population_cells",
+            "scope",
+            "units"
+          ]
+        },
+        "interventions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "scenario_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "kind": {
+                "enum": [
+                  "add_destination",
+                  "close_edge",
+                  "remove_destination"
+                ]
+              },
+              "gaining_30_min_access": {
+                "type": "number",
+                "minimum": 0
+              },
+              "losing_30_min_access": {
+                "type": "number",
+                "minimum": 0
+              },
+              "slower_population": {
+                "type": "number",
+                "minimum": 0
+              },
+              "faster_population": {
+                "type": "number",
+                "minimum": 0
+              },
+              "comparable_population": {
+                "type": "number",
+                "minimum": 0
+              },
+              "mean_travel_time_delta_minutes": {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "result": {
+                "enum": [
+                  "threshold_change",
+                  "travel_time_only",
+                  "no_measured_change"
+                ]
+              },
+              "observed": {
+                "const": false
+              },
+              "selection_method": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "id",
+              "scenario_id",
+              "kind",
+              "gaining_30_min_access",
+              "losing_30_min_access",
+              "slower_population",
+              "faster_population",
+              "comparable_population",
+              "mean_travel_time_delta_minutes",
+              "result",
+              "observed"
+            ]
+          }
+        },
+        "capacity_status": {
+          "const": "assumed_demand_and_capacity_only"
+        },
+        "demographic_equity_status": {
+          "const": "unavailable"
+        },
+        "coverage": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "connected_components": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "connected_destinations": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "candidate_destinations": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "connected_components",
+            "connected_destinations",
+            "candidate_destinations"
+          ]
+        },
+        "drivers": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "next_actions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "order": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "action": {
+                "type": "string",
+                "minLength": 1
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "id",
+              "order",
+              "action",
+              "reason"
+            ]
+          }
+        },
+        "limitations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "evidence_notes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "topic": {
+                "type": "string",
+                "minLength": 1
+              },
+              "status": {
+                "type": "string",
+                "minLength": 1
+              },
+              "summary": {
+                "type": "string",
+                "minLength": 1
+              },
+              "source_urls": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "format": "uri"
+                }
+              }
+            },
+            "required": [
+              "topic",
+              "status",
+              "summary",
+              "source_urls"
+            ]
+          }
+        },
+        "capacity_experiments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1
+              },
+              "participation_fraction": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "minimum": 0,
+                "maximum": 1
+              },
+              "assumed_demand": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "assigned": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "capacity_limited": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "unreachable": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "coverage_excluded": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "residential_population": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "demand_basis": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "actual_evacuation_demand": {
+                "type": "null"
+              },
+              "actual_available_capacity": {
+                "type": "null"
+              },
+              "unknown_capacity": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "minimum": 0
+              }
+            },
+            "required": [
+              "id",
+              "title",
+              "participation_fraction",
+              "assumed_demand",
+              "assigned",
+              "capacity_limited",
+              "unreachable",
+              "coverage_excluded",
+              "residential_population",
+              "demand_basis",
+              "actual_evacuation_demand",
+              "actual_available_capacity",
+              "unknown_capacity"
+            ]
+          }
+        },
+        "finals_analysis": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "schema_version": {
+              "const": "1.0"
+            },
+            "generated_at": {
+              "type": "string",
+              "minLength": 1
+            },
+            "status": {
+              "const": "scenario_only"
+            },
+            "question": {
+              "type": "string",
+              "minLength": 1
+            },
+            "primary_service": {
+              "enum": [
+                "hospital",
+                "primary_care",
+                "pharmacy",
+                "shelter"
+              ]
+            },
+            "scope": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "jurisdiction": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "population_year": {
+                  "const": 2020
+                },
+                "boundary_reference_date": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "osm_retrieved_at": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "study_population": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "in_scope_population": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "excluded_population": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "jurisdiction",
+                "population_year",
+                "boundary_reference_date",
+                "osm_retrieved_at",
+                "study_population",
+                "in_scope_population",
+                "excluded_population"
+              ]
+            },
+            "timeline": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "title": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "start": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "end": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "role": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "source_url": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "limitations": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  }
+                },
+                "required": [
+                  "id",
+                  "title",
+                  "start",
+                  "end",
+                  "role",
+                  "source_url",
+                  "limitations"
+                ]
+              }
+            },
+            "services": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "enum": [
+                      "hospital",
+                      "primary_care",
+                      "pharmacy",
+                      "shelter"
+                    ]
+                  },
+                  "status": {
+                    "enum": [
+                      "available",
+                      "unavailable"
+                    ]
+                  },
+                  "facilities": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "variants": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "travel_mode": {
+                          "enum": [
+                            "walking",
+                            "modelled_vehicle"
+                          ]
+                        },
+                        "speed_factor": {
+                          "enum": [
+                            0.75,
+                            1,
+                            1.25
+                          ]
+                        },
+                        "context_sha256": {
+                          "type": "string",
+                          "pattern": "^[a-f0-9]{64}$"
+                        },
+                        "baseline": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "modelled_population": {
+                              "type": "number",
+                              "minimum": 0
+                            },
+                            "unknown_access_population": {
+                              "type": "number",
+                              "minimum": 0
+                            },
+                            "connected_without_route_population": {
+                              "type": "number",
+                              "minimum": 0
+                            },
+                            "within_15_minutes_population": {
+                              "type": "number",
+                              "minimum": 0
+                            },
+                            "within_30_minutes_population": {
+                              "type": "number",
+                              "minimum": 0
+                            },
+                            "within_60_minutes_population": {
+                              "type": "number",
+                              "minimum": 0
+                            },
+                            "median_minutes": {
+                              "type": [
+                                "number",
+                                "null"
+                              ]
+                            },
+                            "p90_minutes": {
+                              "type": [
+                                "number",
+                                "null"
+                              ]
+                            },
+                            "max_minutes": {
+                              "type": [
+                                "number",
+                                "null"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "modelled_population",
+                            "unknown_access_population",
+                            "connected_without_route_population",
+                            "within_15_minutes_population",
+                            "within_30_minutes_population",
+                            "within_60_minutes_population",
+                            "median_minutes",
+                            "p90_minutes",
+                            "max_minutes"
+                          ]
+                        },
+                        "interventions": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "target_id": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "target_label": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "selection_method": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "kind": {
+                                "enum": [
+                                  "add_destination",
+                                  "close_edge",
+                                  "remove_destination"
+                                ]
+                              },
+                              "gaining_15_min_access": {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              "gaining_30_min_access": {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              "gaining_60_min_access": {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              "losing_15_min_access": {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              "losing_30_min_access": {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              "losing_60_min_access": {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              "slower_population": {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              "faster_population": {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              "newly_reachable_population": {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              "newly_unreachable_population": {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              "comparable_population": {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              "mean_travel_time_delta_minutes": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ]
+                              },
+                              "p90_delta_minutes": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ]
+                              },
+                              "max_delta_minutes": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ]
+                              },
+                              "net_person_minutes": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "target_id",
+                              "target_label",
+                              "selection_method",
+                              "kind",
+                              "gaining_15_min_access",
+                              "gaining_30_min_access",
+                              "gaining_60_min_access",
+                              "losing_15_min_access",
+                              "losing_30_min_access",
+                              "losing_60_min_access",
+                              "slower_population",
+                              "faster_population",
+                              "newly_reachable_population",
+                              "newly_unreachable_population",
+                              "comparable_population",
+                              "mean_travel_time_delta_minutes",
+                              "p90_delta_minutes",
+                              "max_delta_minutes",
+                              "net_person_minutes"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "travel_mode",
+                        "speed_factor",
+                        "context_sha256",
+                        "baseline",
+                        "interventions"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "id",
+                  "status",
+                  "facilities",
+                  "reason",
+                  "variants"
+                ]
+              }
+            },
+            "facility_review": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "service_type": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "geometry_role": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "eligible": {
+                    "type": "boolean"
+                  },
+                  "event_availability": {
+                    "const": "unknown"
+                  },
+                  "actual_capacity": {
+                    "type": "null"
+                  },
+                  "source_url": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "id",
+                  "name",
+                  "service_type",
+                  "geometry_role",
+                  "eligible",
+                  "event_availability",
+                  "actual_capacity",
+                  "source_url"
+                ]
+              }
+            },
+            "capacity": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "status": {
+                  "enum": [
+                    "scenario_only",
+                    "unavailable"
+                  ]
+                },
+                "site_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "linked_access_intervention_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "linked_service": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "linked_variant_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "demand_basis": {
+                  "const": "residential_participation"
+                },
+                "actual_evacuation_demand": {
+                  "type": "null"
+                },
+                "actual_available_capacity": {
+                  "type": "null"
+                },
+                "experiments": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "participation_fraction": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "places": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "assumed_demand": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "assigned": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "capacity_limited": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "unreachable": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "coverage_excluded": {
+                        "type": "number",
+                        "minimum": 0
+                      }
+                    },
+                    "required": [
+                      "participation_fraction",
+                      "places",
+                      "assumed_demand",
+                      "assigned",
+                      "capacity_limited",
+                      "unreachable",
+                      "coverage_excluded"
+                    ]
+                  }
+                },
+                "assumptions": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              },
+              "required": [
+                "status",
+                "site_id",
+                "linked_access_intervention_id",
+                "linked_service",
+                "linked_variant_id",
+                "demand_basis",
+                "actual_evacuation_demand",
+                "actual_available_capacity",
+                "experiments",
+                "assumptions"
+              ]
+            },
+            "limitations": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "analysis_sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "topology_review": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "reviewed_candidates": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "accepted_connections": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "summary": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "reviewed_candidates",
+                "accepted_connections",
+                "summary"
+              ]
+            },
+            "focus_briefs": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "name_th": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "unit_coverage_fraction": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "modelled_population": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "priority": {
+                    "const": "verification"
+                  },
+                  "service_type": {
+                    "enum": [
+                      "hospital",
+                      "primary_care",
+                      "pharmacy",
+                      "shelter"
+                    ]
+                  },
+                  "travel_mode": {
+                    "const": "walking"
+                  },
+                  "main_drivers": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "useful_intervention": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "uncertainty": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  }
+                },
+                "required": [
+                  "id",
+                  "name",
+                  "name_th",
+                  "unit_coverage_fraction",
+                  "modelled_population",
+                  "priority",
+                  "service_type",
+                  "travel_mode",
+                  "main_drivers",
+                  "useful_intervention",
+                  "uncertainty"
+                ]
+              }
+            },
+            "routes": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "status": {
+                  "enum": [
+                    "available",
+                    "unavailable"
+                  ]
+                },
+                "origins": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "name": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "longitude": {
+                        "type": "number",
+                        "minimum": -180,
+                        "maximum": 180
+                      },
+                      "latitude": {
+                        "type": "number",
+                        "minimum": -90,
+                        "maximum": 90
+                      },
+                      "source_url": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "geometry_role": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "location_status": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "name",
+                      "longitude",
+                      "latitude",
+                      "source_url",
+                      "geometry_role",
+                      "location_status"
+                    ]
+                  }
+                },
+                "comparisons": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "origin_id": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "service_type": {
+                        "enum": [
+                          "hospital",
+                          "primary_care",
+                          "pharmacy",
+                          "shelter"
+                        ]
+                      },
+                      "travel_mode": {
+                        "enum": [
+                          "walking",
+                          "modelled_vehicle"
+                        ]
+                      },
+                      "scenario_kind": {
+                        "enum": [
+                          "close_edge",
+                          "remove_destination"
+                        ]
+                      },
+                      "changed_ids": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "selection_method": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "context_sha256": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "baseline": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "status": {
+                            "enum": [
+                              "available",
+                              "unavailable"
+                            ]
+                          },
+                          "reason": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "destination_id": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "destination_name": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "total_minutes": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "network_minutes": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "connector_minutes": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "distance_m": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "edge_ids": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          },
+                          "coordinates": {
+                            "type": "array",
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "type": "number"
+                              },
+                              "minItems": 2,
+                              "maxItems": 2
+                            }
+                          },
+                          "connectors": {
+                            "type": "array",
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "type": "array",
+                                "items": {
+                                  "type": "number"
+                                },
+                                "minItems": 2,
+                                "maxItems": 2
+                              },
+                              "minItems": 2,
+                              "maxItems": 2
+                            }
+                          }
+                        },
+                        "required": [
+                          "status",
+                          "reason",
+                          "destination_id",
+                          "destination_name",
+                          "total_minutes",
+                          "network_minutes",
+                          "connector_minutes",
+                          "distance_m",
+                          "edge_ids",
+                          "coordinates",
+                          "connectors"
+                        ]
+                      },
+                      "after": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "status": {
+                            "enum": [
+                              "available",
+                              "unavailable"
+                            ]
+                          },
+                          "reason": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "destination_id": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "destination_name": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "total_minutes": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "network_minutes": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "connector_minutes": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "distance_m": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "edge_ids": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          },
+                          "coordinates": {
+                            "type": "array",
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "type": "number"
+                              },
+                              "minItems": 2,
+                              "maxItems": 2
+                            }
+                          },
+                          "connectors": {
+                            "type": "array",
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "type": "array",
+                                "items": {
+                                  "type": "number"
+                                },
+                                "minItems": 2,
+                                "maxItems": 2
+                              },
+                              "minItems": 2,
+                              "maxItems": 2
+                            }
+                          }
+                        },
+                        "required": [
+                          "status",
+                          "reason",
+                          "destination_id",
+                          "destination_name",
+                          "total_minutes",
+                          "network_minutes",
+                          "connector_minutes",
+                          "distance_m",
+                          "edge_ids",
+                          "coordinates",
+                          "connectors"
+                        ]
+                      },
+                      "delta_minutes": {
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "origin_id",
+                      "service_type",
+                      "travel_mode",
+                      "scenario_kind",
+                      "changed_ids",
+                      "selection_method",
+                      "context_sha256",
+                      "baseline",
+                      "after",
+                      "delta_minutes"
+                    ]
+                  }
+                },
+                "limitations": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "closure_basis": {
+                  "const": "candidate_flood"
+                }
+              },
+              "required": [
+                "status",
+                "origins",
+                "comparisons",
+                "limitations"
+              ]
+            },
+            "connectivity_audits": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "modelled_vehicle": {
+                  "$ref": "#/properties/decision_brief/properties/finals_analysis/properties/connectivity_audits/properties/walking"
+                },
+                "walking": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "articulation_points": {
+                      "type": "number"
+                    },
+                    "assumptions": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "baseline_input_sha256": {
+                      "type": "string"
+                    },
+                    "baseline_residents_with_route": {
+                      "type": "number"
+                    },
+                    "baseline_residents_without_route": {
+                      "type": "number"
+                    },
+                    "bridges": {
+                      "type": "number"
+                    },
+                    "confidence_class": {
+                      "type": "string"
+                    },
+                    "connected_components": {
+                      "type": "number"
+                    },
+                    "edges": {
+                      "type": "number"
+                    },
+                    "eligible_destination_connectors": {
+                      "type": "number"
+                    },
+                    "evidence_role": {
+                      "type": "string"
+                    },
+                    "highest_edge_impacts": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "edge_id": {
+                            "type": "string"
+                          },
+                          "from_node": {
+                            "type": "string"
+                          },
+                          "is_bridge": {
+                            "type": "boolean"
+                          },
+                          "osm_way_id": {
+                            "type": "string"
+                          },
+                          "residents_losing_all_routes": {
+                            "type": "number"
+                          },
+                          "to_node": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "edge_id",
+                          "from_node",
+                          "is_bridge",
+                          "osm_way_id",
+                          "residents_losing_all_routes",
+                          "to_node"
+                        ]
+                      }
+                    },
+                    "method": {
+                      "type": "string"
+                    },
+                    "nodes": {
+                      "type": "number"
+                    },
+                    "official_warning": {
+                      "const": false
+                    },
+                    "operational_status": {
+                      "type": "string"
+                    },
+                    "residents_without_accepted_connector": {
+                      "type": "number"
+                    },
+                    "schema_version": {
+                      "type": "string"
+                    },
+                    "source_timestamp": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "articulation_points",
+                    "assumptions",
+                    "baseline_input_sha256",
+                    "baseline_residents_with_route",
+                    "baseline_residents_without_route",
+                    "bridges",
+                    "confidence_class",
+                    "connected_components",
+                    "edges",
+                    "eligible_destination_connectors",
+                    "evidence_role",
+                    "highest_edge_impacts",
+                    "method",
+                    "nodes",
+                    "official_warning",
+                    "operational_status",
+                    "residents_without_accepted_connector",
+                    "schema_version",
+                    "source_timestamp"
+                  ]
+                }
+              },
+              "required": [
+                "modelled_vehicle",
+                "walking"
+              ]
+            },
+            "facility_connection_comparison": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "modelled_vehicle": {
+                  "$ref": "#/properties/decision_brief/properties/finals_analysis/properties/facility_connection_comparison/properties/walking"
+                },
+                "walking": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "fixed_edge_comparisons": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "edge_id": {
+                            "type": "string"
+                          },
+                          "original": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                              "comparable_population": {
+                                "type": "number"
+                              },
+                              "faster_population": {
+                                "type": "number"
+                              },
+                              "gaining_15_min_access": {
+                                "type": "number"
+                              },
+                              "gaining_30_min_access": {
+                                "type": "number"
+                              },
+                              "gaining_60_min_access": {
+                                "type": "number"
+                              },
+                              "id": {
+                                "type": "string"
+                              },
+                              "kind": {
+                                "type": "string"
+                              },
+                              "losing_15_min_access": {
+                                "type": "number"
+                              },
+                              "losing_30_min_access": {
+                                "type": "number"
+                              },
+                              "losing_60_min_access": {
+                                "type": "number"
+                              },
+                              "max_delta_minutes": {
+                                "type": "number"
+                              },
+                              "mean_travel_time_delta_minutes": {
+                                "type": "number"
+                              },
+                              "net_person_minutes": {
+                                "type": "number"
+                              },
+                              "newly_reachable_population": {
+                                "type": "number"
+                              },
+                              "newly_unreachable_population": {
+                                "type": "number"
+                              },
+                              "p90_delta_minutes": {
+                                "type": "number"
+                              },
+                              "selection_method": {
+                                "type": "string"
+                              },
+                              "slower_population": {
+                                "type": "number"
+                              },
+                              "target_id": {
+                                "type": "string"
+                              },
+                              "target_label": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "comparable_population",
+                              "faster_population",
+                              "gaining_15_min_access",
+                              "gaining_30_min_access",
+                              "gaining_60_min_access",
+                              "id",
+                              "kind",
+                              "losing_15_min_access",
+                              "losing_30_min_access",
+                              "losing_60_min_access",
+                              "max_delta_minutes",
+                              "mean_travel_time_delta_minutes",
+                              "net_person_minutes",
+                              "newly_reachable_population",
+                              "newly_unreachable_population",
+                              "p90_delta_minutes",
+                              "selection_method",
+                              "slower_population",
+                              "target_id",
+                              "target_label"
+                            ]
+                          },
+                          "revised": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                              "comparable_population": {
+                                "type": "number"
+                              },
+                              "faster_population": {
+                                "type": "number"
+                              },
+                              "gaining_15_min_access": {
+                                "type": "number"
+                              },
+                              "gaining_30_min_access": {
+                                "type": "number"
+                              },
+                              "gaining_60_min_access": {
+                                "type": "number"
+                              },
+                              "id": {
+                                "type": "string"
+                              },
+                              "kind": {
+                                "type": "string"
+                              },
+                              "losing_15_min_access": {
+                                "type": "number"
+                              },
+                              "losing_30_min_access": {
+                                "type": "number"
+                              },
+                              "losing_60_min_access": {
+                                "type": "number"
+                              },
+                              "max_delta_minutes": {
+                                "type": "number"
+                              },
+                              "mean_travel_time_delta_minutes": {
+                                "type": "number"
+                              },
+                              "net_person_minutes": {
+                                "type": "number"
+                              },
+                              "newly_reachable_population": {
+                                "type": "number"
+                              },
+                              "newly_unreachable_population": {
+                                "type": "number"
+                              },
+                              "p90_delta_minutes": {
+                                "type": "number"
+                              },
+                              "selection_method": {
+                                "type": "string"
+                              },
+                              "slower_population": {
+                                "type": "number"
+                              },
+                              "target_id": {
+                                "type": "string"
+                              },
+                              "target_label": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "comparable_population",
+                              "faster_population",
+                              "gaining_15_min_access",
+                              "gaining_30_min_access",
+                              "gaining_60_min_access",
+                              "id",
+                              "kind",
+                              "losing_15_min_access",
+                              "losing_30_min_access",
+                              "losing_60_min_access",
+                              "max_delta_minutes",
+                              "mean_travel_time_delta_minutes",
+                              "net_person_minutes",
+                              "newly_reachable_population",
+                              "newly_unreachable_population",
+                              "p90_delta_minutes",
+                              "selection_method",
+                              "slower_population",
+                              "target_id",
+                              "target_label"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "edge_id",
+                          "original",
+                          "revised"
+                        ]
+                      }
+                    },
+                    "original_baseline": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "connected_without_route_population": {
+                          "type": "number"
+                        },
+                        "max_minutes": {
+                          "type": "number"
+                        },
+                        "median_minutes": {
+                          "type": "number"
+                        },
+                        "modelled_population": {
+                          "type": "number"
+                        },
+                        "p90_minutes": {
+                          "type": "number"
+                        },
+                        "unknown_access_population": {
+                          "type": "number"
+                        },
+                        "within_15_minutes_population": {
+                          "type": "number"
+                        },
+                        "within_30_minutes_population": {
+                          "type": "number"
+                        },
+                        "within_60_minutes_population": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "connected_without_route_population",
+                        "max_minutes",
+                        "median_minutes",
+                        "modelled_population",
+                        "p90_minutes",
+                        "unknown_access_population",
+                        "within_15_minutes_population",
+                        "within_30_minutes_population",
+                        "within_60_minutes_population"
+                      ]
+                    },
+                    "revised_baseline": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "connected_without_route_population": {
+                          "type": "number"
+                        },
+                        "max_minutes": {
+                          "type": "number"
+                        },
+                        "median_minutes": {
+                          "type": "number"
+                        },
+                        "modelled_population": {
+                          "type": "number"
+                        },
+                        "p90_minutes": {
+                          "type": "number"
+                        },
+                        "unknown_access_population": {
+                          "type": "number"
+                        },
+                        "within_15_minutes_population": {
+                          "type": "number"
+                        },
+                        "within_30_minutes_population": {
+                          "type": "number"
+                        },
+                        "within_60_minutes_population": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "connected_without_route_population",
+                        "max_minutes",
+                        "median_minutes",
+                        "modelled_population",
+                        "p90_minutes",
+                        "unknown_access_population",
+                        "within_15_minutes_population",
+                        "within_30_minutes_population",
+                        "within_60_minutes_population"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "fixed_edge_comparisons",
+                    "original_baseline",
+                    "revised_baseline"
+                  ]
+                }
+              },
+              "required": [
+                "modelled_vehicle",
+                "walking"
+              ]
+            },
+            "facility_connection_review": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "confidence_class": {
+                  "type": "string"
+                },
+                "facilities": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "connectors": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "coordinates": {
+                              "type": "array",
+                              "items": {
+                                "type": "number"
+                              }
+                            },
+                            "osm_node_id": {
+                              "type": "string"
+                            },
+                            "osm_way_id": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "coordinates",
+                            "osm_node_id",
+                            "osm_way_id"
+                          ]
+                        }
+                      },
+                      "facility_id": {
+                        "type": "string"
+                      },
+                      "finding": {
+                        "type": "string"
+                      },
+                      "limitations": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "review_id": {
+                        "type": "string"
+                      },
+                      "selection_rule": {
+                        "type": "string"
+                      },
+                      "site_geometry_sha256": {
+                        "type": "string"
+                      },
+                      "source_urls": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "source_xml_sha256": {
+                        "type": "string"
+                      },
+                      "status": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "connectors",
+                      "facility_id",
+                      "finding",
+                      "limitations",
+                      "review_id",
+                      "selection_rule",
+                      "site_geometry_sha256",
+                      "source_urls",
+                      "source_xml_sha256",
+                      "status"
+                    ]
+                  }
+                },
+                "official_warning": {
+                  "const": false
+                },
+                "osm_source_sha256": {
+                  "type": "string"
+                },
+                "reviewed_at": {
+                  "type": "string"
+                },
+                "schema_version": {
+                  "type": "string"
+                },
+                "source_timestamp": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "confidence_class",
+                "facilities",
+                "official_warning",
+                "osm_source_sha256",
+                "reviewed_at",
+                "schema_version",
+                "source_timestamp"
+              ]
+            },
+            "flood_scenarios": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "modelled_vehicle": {
+                  "$ref": "#/properties/decision_brief/properties/finals_analysis/properties/flood_scenarios/properties/walking"
+                },
+                "walking": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "accepted_action_class": {
+                      "type": "null"
+                    },
+                    "accepted_fpps": {
+                      "type": "null"
+                    },
+                    "baseline": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "connected_without_route_population": {
+                          "type": "number"
+                        },
+                        "max_minutes": {
+                          "type": "number"
+                        },
+                        "median_minutes": {
+                          "type": "number"
+                        },
+                        "modelled_population": {
+                          "type": "number"
+                        },
+                        "p90_minutes": {
+                          "type": "number"
+                        },
+                        "unknown_access_population": {
+                          "type": "number"
+                        },
+                        "within_15_minutes_population": {
+                          "type": "number"
+                        },
+                        "within_30_minutes_population": {
+                          "type": "number"
+                        },
+                        "within_60_minutes_population": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "connected_without_route_population",
+                        "max_minutes",
+                        "median_minutes",
+                        "modelled_population",
+                        "p90_minutes",
+                        "unknown_access_population",
+                        "within_15_minutes_population",
+                        "within_30_minutes_population",
+                        "within_60_minutes_population"
+                      ]
+                    },
+                    "candidate_affected_population": {
+                      "type": "number"
+                    },
+                    "candidate_provenance": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "aoi_pixels": {
+                          "type": "number"
+                        },
+                        "aoi_sha256": {
+                          "type": "string"
+                        },
+                        "candidate_pixels": {
+                          "type": "number"
+                        },
+                        "confidence_class": {
+                          "type": "string"
+                        },
+                        "eligible_for_accepted_fpps": {
+                          "const": false
+                        },
+                        "eligible_for_validation": {
+                          "const": false
+                        },
+                        "event_id": {
+                          "type": "string"
+                        },
+                        "evidence_role": {
+                          "type": "string"
+                        },
+                        "generated_at": {
+                          "type": "string"
+                        },
+                        "georeferencing": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "postVH": {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "properties": {
+                                "gcp_count": {
+                                  "type": "number"
+                                },
+                                "gcp_crs": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "gcp_count",
+                                "gcp_crs"
+                              ]
+                            },
+                            "postVV": {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "properties": {
+                                "gcp_count": {
+                                  "type": "number"
+                                },
+                                "gcp_crs": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "gcp_count",
+                                "gcp_crs"
+                              ]
+                            },
+                            "preVH": {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "properties": {
+                                "gcp_count": {
+                                  "type": "number"
+                                },
+                                "gcp_crs": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "gcp_count",
+                                "gcp_crs"
+                              ]
+                            },
+                            "preVV": {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "properties": {
+                                "gcp_count": {
+                                  "type": "number"
+                                },
+                                "gcp_crs": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "gcp_count",
+                                "gcp_crs"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "postVH",
+                            "postVV",
+                            "preVH",
+                            "preVV"
+                          ]
+                        },
+                        "grid": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "crs": {
+                              "type": "string"
+                            },
+                            "resolution_m": {
+                              "type": "number"
+                            },
+                            "shape": {
+                              "type": "array",
+                              "items": {
+                                "type": "number"
+                              }
+                            },
+                            "transform": {
+                              "type": "array",
+                              "items": {
+                                "type": "number"
+                              }
+                            }
+                          },
+                          "required": [
+                            "crs",
+                            "resolution_m",
+                            "shape",
+                            "transform"
+                          ]
+                        },
+                        "implementation_sha256": {
+                          "type": "string"
+                        },
+                        "limitations": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "mask_sha256": {
+                          "type": "string"
+                        },
+                        "method": {
+                          "type": "string"
+                        },
+                        "official_warning": {
+                          "const": false
+                        },
+                        "polarization_weights": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "VH": {
+                              "type": "number"
+                            },
+                            "VV": {
+                              "type": "number"
+                            }
+                          },
+                          "required": [
+                            "VH",
+                            "VV"
+                          ]
+                        },
+                        "processing_scope": {
+                          "type": "string"
+                        },
+                        "products": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "candidate_extent": {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "properties": {
+                                "area_m2": {
+                                  "type": "number"
+                                },
+                                "file": {
+                                  "type": "string"
+                                },
+                                "sha256": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "area_m2",
+                                "file",
+                                "sha256"
+                              ]
+                            },
+                            "observation_footprint": {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "properties": {
+                                "area_m2": {
+                                  "type": "number"
+                                },
+                                "file": {
+                                  "type": "string"
+                                },
+                                "sha256": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "area_m2",
+                                "file",
+                                "sha256"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "candidate_extent",
+                            "observation_footprint"
+                          ]
+                        },
+                        "rights": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "attribution": {
+                              "type": "string"
+                            },
+                            "downloadable_derivatives": {
+                              "type": "boolean"
+                            },
+                            "hosted_display": {
+                              "type": "boolean"
+                            },
+                            "local_processing": {
+                              "type": "boolean"
+                            },
+                            "terms_url": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "attribution",
+                            "downloadable_derivatives",
+                            "hosted_display",
+                            "local_processing",
+                            "terms_url"
+                          ]
+                        },
+                        "schema_version": {
+                          "type": "string"
+                        },
+                        "source_manifest_sha256": {
+                          "type": "string"
+                        },
+                        "source_timestamp": {
+                          "type": "string"
+                        },
+                        "sources": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                              "acquisition_date": {
+                                "type": "string"
+                              },
+                              "download_url": {
+                                "type": "string"
+                              },
+                              "product_id": {
+                                "type": "string"
+                              },
+                              "product_name": {
+                                "type": "string"
+                              },
+                              "sha256": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "acquisition_date",
+                              "download_url",
+                              "product_id",
+                              "product_name",
+                              "sha256"
+                            ]
+                          }
+                        },
+                        "threshold_db": {
+                          "type": "number"
+                        },
+                        "valid_fraction": {
+                          "type": "number"
+                        },
+                        "valid_pixels": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "aoi_pixels",
+                        "aoi_sha256",
+                        "candidate_pixels",
+                        "confidence_class",
+                        "eligible_for_accepted_fpps",
+                        "eligible_for_validation",
+                        "event_id",
+                        "evidence_role",
+                        "generated_at",
+                        "georeferencing",
+                        "grid",
+                        "implementation_sha256",
+                        "limitations",
+                        "mask_sha256",
+                        "method",
+                        "official_warning",
+                        "polarization_weights",
+                        "processing_scope",
+                        "products",
+                        "rights",
+                        "schema_version",
+                        "source_manifest_sha256",
+                        "source_timestamp",
+                        "sources",
+                        "threshold_db",
+                        "valid_fraction",
+                        "valid_pixels"
+                      ]
+                    },
+                    "closed_edges": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "edge_id": {
+                            "type": "string"
+                          },
+                          "intersection_fraction": {
+                            "type": "number"
+                          },
+                          "intersection_length_m": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "edge_id",
+                          "intersection_fraction",
+                          "intersection_length_m"
+                        ]
+                      }
+                    },
+                    "confidence_class": {
+                      "type": "string"
+                    },
+                    "context_sha256": {
+                      "type": "string"
+                    },
+                    "event_id": {
+                      "type": "string"
+                    },
+                    "impact": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "comparable_population": {
+                          "type": "number"
+                        },
+                        "faster_population": {
+                          "type": "number"
+                        },
+                        "gaining_15_min_access": {
+                          "type": "number"
+                        },
+                        "gaining_30_min_access": {
+                          "type": "number"
+                        },
+                        "gaining_60_min_access": {
+                          "type": "number"
+                        },
+                        "id": {
+                          "type": "string"
+                        },
+                        "kind": {
+                          "type": "string"
+                        },
+                        "losing_15_min_access": {
+                          "type": "number"
+                        },
+                        "losing_30_min_access": {
+                          "type": "number"
+                        },
+                        "losing_60_min_access": {
+                          "type": "number"
+                        },
+                        "max_delta_minutes": {
+                          "type": "number"
+                        },
+                        "mean_travel_time_delta_minutes": {
+                          "type": "number"
+                        },
+                        "net_person_minutes": {
+                          "type": "number"
+                        },
+                        "newly_reachable_population": {
+                          "type": "number"
+                        },
+                        "newly_unreachable_population": {
+                          "type": "number"
+                        },
+                        "p90_delta_minutes": {
+                          "type": "number"
+                        },
+                        "selection_method": {
+                          "type": "string"
+                        },
+                        "slower_population": {
+                          "type": "number"
+                        },
+                        "target_id": {
+                          "type": "string"
+                        },
+                        "target_label": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "comparable_population",
+                        "faster_population",
+                        "gaining_15_min_access",
+                        "gaining_30_min_access",
+                        "gaining_60_min_access",
+                        "id",
+                        "kind",
+                        "losing_15_min_access",
+                        "losing_30_min_access",
+                        "losing_60_min_access",
+                        "max_delta_minutes",
+                        "mean_travel_time_delta_minutes",
+                        "net_person_minutes",
+                        "newly_reachable_population",
+                        "newly_unreachable_population",
+                        "p90_delta_minutes",
+                        "selection_method",
+                        "slower_population",
+                        "target_id",
+                        "target_label"
+                      ]
+                    },
+                    "limitations": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "normalization": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "access_gap_0_100": {
+                          "type": "string"
+                        },
+                        "exposure_0_100": {
+                          "type": "string"
+                        },
+                        "road_criticality_0_100": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "access_gap_0_100",
+                        "exposure_0_100",
+                        "road_criticality_0_100"
+                      ]
+                    },
+                    "official_warning": {
+                      "const": false
+                    },
+                    "schema_version": {
+                      "type": "string"
+                    },
+                    "source_timestamp": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "subdistricts": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "assessment": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                              "action_class": {
+                                "type": "null"
+                              },
+                              "action_reason_code": {
+                                "type": "null"
+                              },
+                              "area_id": {
+                                "type": "string"
+                              },
+                              "assessment_status": {
+                                "type": "string"
+                              },
+                              "assumptions": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              },
+                              "components": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "properties": {
+                                  "access_gap_0_100": {
+                                    "type": [
+                                      "number",
+                                      "null"
+                                    ],
+                                    "minimum": 0,
+                                    "maximum": 100
+                                  },
+                                  "exposure_0_100": {
+                                    "type": [
+                                      "number",
+                                      "null"
+                                    ],
+                                    "minimum": 0,
+                                    "maximum": 100
+                                  },
+                                  "flood_likelihood_0_100": {
+                                    "type": [
+                                      "number",
+                                      "null"
+                                    ],
+                                    "minimum": 0,
+                                    "maximum": 100
+                                  },
+                                  "road_criticality_0_100": {
+                                    "type": [
+                                      "number",
+                                      "null"
+                                    ],
+                                    "minimum": 0,
+                                    "maximum": 100
+                                  },
+                                  "vulnerability_context_0_100": {
+                                    "type": [
+                                      "number",
+                                      "null"
+                                    ],
+                                    "minimum": 0,
+                                    "maximum": 100
+                                  }
+                                },
+                                "required": [
+                                  "access_gap_0_100",
+                                  "exposure_0_100",
+                                  "flood_likelihood_0_100",
+                                  "road_criticality_0_100",
+                                  "vulnerability_context_0_100"
+                                ]
+                              },
+                              "confidence_class": {
+                                "type": "string"
+                              },
+                              "dataset_mode": {
+                                "type": "string"
+                              },
+                              "evidence_role": {
+                                "type": "string"
+                              },
+                              "fixed_weight_bounds": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "properties": {
+                                  "lower": {
+                                    "type": "number"
+                                  },
+                                  "meaning": {
+                                    "type": "string"
+                                  },
+                                  "upper": {
+                                    "type": "number"
+                                  }
+                                },
+                                "required": [
+                                  "lower",
+                                  "meaning",
+                                  "upper"
+                                ]
+                              },
+                              "fpps_0_100": {
+                                "type": "null"
+                              },
+                              "missing_components": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              },
+                              "official_warning": {
+                                "const": false
+                              },
+                              "operational_status": {
+                                "type": "string"
+                              },
+                              "scenario_completions": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "action_class": {
+                                      "type": "string"
+                                    },
+                                    "action_reason_code": {
+                                      "type": "string"
+                                    },
+                                    "assumed_components": {
+                                      "type": "array",
+                                      "items": {
+                                        "type": "string"
+                                      }
+                                    },
+                                    "assumed_missing_value": {
+                                      "type": "number"
+                                    },
+                                    "components": {
+                                      "type": "object",
+                                      "additionalProperties": false,
+                                      "properties": {
+                                        "access_gap_0_100": {
+                                          "type": [
+                                            "number",
+                                            "null"
+                                          ],
+                                          "minimum": 0,
+                                          "maximum": 100
+                                        },
+                                        "exposure_0_100": {
+                                          "type": [
+                                            "number",
+                                            "null"
+                                          ],
+                                          "minimum": 0,
+                                          "maximum": 100
+                                        },
+                                        "flood_likelihood_0_100": {
+                                          "type": [
+                                            "number",
+                                            "null"
+                                          ],
+                                          "minimum": 0,
+                                          "maximum": 100
+                                        },
+                                        "road_criticality_0_100": {
+                                          "type": [
+                                            "number",
+                                            "null"
+                                          ],
+                                          "minimum": 0,
+                                          "maximum": 100
+                                        },
+                                        "vulnerability_context_0_100": {
+                                          "type": [
+                                            "number",
+                                            "null"
+                                          ],
+                                          "minimum": 0,
+                                          "maximum": 100
+                                        }
+                                      },
+                                      "required": [
+                                        "access_gap_0_100",
+                                        "exposure_0_100",
+                                        "flood_likelihood_0_100",
+                                        "road_criticality_0_100",
+                                        "vulnerability_context_0_100"
+                                      ]
+                                    },
+                                    "evidence_role": {
+                                      "type": "string"
+                                    },
+                                    "fpps_0_100": {
+                                      "type": "number"
+                                    },
+                                    "scenario_id": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "action_class",
+                                    "action_reason_code",
+                                    "assumed_components",
+                                    "assumed_missing_value",
+                                    "components",
+                                    "evidence_role",
+                                    "fpps_0_100",
+                                    "scenario_id"
+                                  ]
+                                }
+                              },
+                              "source_name": {
+                                "type": "string"
+                              },
+                              "source_timestamp": {
+                                "type": "string"
+                              },
+                              "weights": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "properties": {
+                                  "access_gap_0_100": {
+                                    "type": "number"
+                                  },
+                                  "exposure_0_100": {
+                                    "type": "number"
+                                  },
+                                  "flood_likelihood_0_100": {
+                                    "type": "number"
+                                  },
+                                  "road_criticality_0_100": {
+                                    "type": "number"
+                                  },
+                                  "vulnerability_context_0_100": {
+                                    "type": "number"
+                                  }
+                                },
+                                "required": [
+                                  "access_gap_0_100",
+                                  "exposure_0_100",
+                                  "flood_likelihood_0_100",
+                                  "road_criticality_0_100",
+                                  "vulnerability_context_0_100"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "action_class",
+                              "action_reason_code",
+                              "area_id",
+                              "assessment_status",
+                              "assumptions",
+                              "components",
+                              "confidence_class",
+                              "dataset_mode",
+                              "evidence_role",
+                              "fixed_weight_bounds",
+                              "fpps_0_100",
+                              "missing_components",
+                              "official_warning",
+                              "operational_status",
+                              "scenario_completions",
+                              "source_name",
+                              "source_timestamp",
+                              "weights"
+                            ]
+                          },
+                          "candidate_affected_population": {
+                            "type": "number"
+                          },
+                          "missing_input_reasons": {
+                            "type": "object",
+                            "additionalProperties": {
+                              "type": "string"
+                            }
+                          },
+                          "modelled_residents": {
+                            "type": "number"
+                          },
+                          "scope": {
+                            "type": "string"
+                          },
+                          "subdistrict_id": {
+                            "type": "string"
+                          },
+                          "unobserved_population": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "assessment",
+                          "candidate_affected_population",
+                          "missing_input_reasons",
+                          "modelled_residents",
+                          "scope",
+                          "subdistrict_id",
+                          "unobserved_population"
+                        ]
+                      }
+                    },
+                    "unobserved_population": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "accepted_action_class",
+                    "accepted_fpps",
+                    "baseline",
+                    "candidate_affected_population",
+                    "candidate_provenance",
+                    "closed_edges",
+                    "confidence_class",
+                    "context_sha256",
+                    "event_id",
+                    "impact",
+                    "limitations",
+                    "normalization",
+                    "official_warning",
+                    "schema_version",
+                    "source_timestamp",
+                    "status",
+                    "subdistricts",
+                    "unobserved_population"
+                  ]
+                }
+              },
+              "required": [
+                "modelled_vehicle",
+                "walking"
+              ]
+            },
+            "case_identity": {
+              "type": "object",
+              "additionalProperties": false,
+              "dependentRequired": {
+                "routing_policy": ["routing_selection_sha256"],
+                "routing_selection_sha256": ["routing_policy"]
+              },
+              "required": [
+                "aoi_id",
+                "aoi_sha256",
+                "routing_aoi_id",
+                "flood_basis"
+              ],
+              "properties": {
+                "aoi_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "aoi_sha256": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$"
+                },
+                "routing_aoi_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "routing_policy": {
+                  "const": "lower_basin_10km_epsg32647_v1"
+                },
+                "routing_selection_sha256": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$"
+                },
+                "flood_basis": {
+                  "enum": [
+                    "unavailable_explicit_disruptions_only",
+                    "unvalidated_satellite_candidate"
+                  ]
+                }
+              }
+            },
+            "destination_review": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "osm_sha256",
+                "service_definition",
+                "exclusions"
+              ],
+              "properties": {
+                "osm_sha256": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$"
+                },
+                "service_definition": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "method": {
+                  "const": "contained_point_matching_name_or_wikidata_v1"
+                },
+                "identity_scope": {
+                  "const": "OSM source-object duplication only; operation and entrance unverified"
+                },
+                "ambiguous": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["facility_id", "possible_parents"],
+                    "properties": {
+                      "facility_id": { "type": "string", "minLength": 1 },
+                      "possible_parents": {
+                        "type": "array",
+                        "minItems": 2,
+                        "uniqueItems": true,
+                        "items": { "type": "string", "minLength": 1 }
+                      }
+                    }
+                  }
+                },
+                "exclusions": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "facility_id",
+                      "reason",
+                      "source_url"
+                    ],
+                    "properties": {
+                      "facility_id": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "reason": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "source_url": {
+                        "type": "string",
+                        "format": "uri"
+                      },
+                      "parent_source_url": {
+                        "type": "string",
+                        "format": "uri"
+                      },
+                      "duplicate_of": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "dependency_review": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "walking",
+                "modelled_vehicle"
+              ],
+              "properties": {
+                "walking": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "service",
+                    "routing_boundary",
+                    "components_without_hospital",
+                    "connection_policy",
+                    "unreviewed_grade_candidates",
+                    "largest_populated_components"
+                  ],
+                  "properties": {
+                    "service": {
+                      "const": "hospital"
+                    },
+                    "routing_boundary": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "components_without_hospital": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "connection_policy": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "unreviewed_grade_candidates": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "largest_populated_components": {
+                      "type": "array",
+                      "maxItems": 10,
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "id",
+                          "nodes",
+                          "population",
+                          "destination_ids"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "nodes": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "population": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "destination_ids": {
+                            "type": "array",
+                            "uniqueItems": true,
+                            "items": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "modelled_vehicle": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "service",
+                    "routing_boundary",
+                    "components_without_hospital",
+                    "connection_policy",
+                    "unreviewed_grade_candidates",
+                    "largest_populated_components"
+                  ],
+                  "properties": {
+                    "service": {
+                      "const": "hospital"
+                    },
+                    "routing_boundary": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "components_without_hospital": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "connection_policy": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "unreviewed_grade_candidates": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "largest_populated_components": {
+                      "type": "array",
+                      "maxItems": 10,
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "id",
+                          "nodes",
+                          "population",
+                          "destination_ids"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "nodes": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "population": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "destination_ids": {
+                            "type": "array",
+                            "uniqueItems": true,
+                            "items": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "required": [
+            "schema_version",
+            "generated_at",
+            "status",
+            "question",
+            "primary_service",
+            "scope",
+            "timeline",
+            "services",
+            "facility_review",
+            "capacity",
+            "limitations",
+            "analysis_sha256",
+            "topology_review",
+            "focus_briefs",
+            "routes"
+          ]
+        }
+      },
+      "required": [
+        "schema_version",
+        "generated_at",
+        "aoi_id",
+        "event_id",
+        "status",
+        "priority",
+        "affected_population",
+        "population_reference_year",
+        "population_role",
+        "access",
+        "reporting",
+        "interventions",
+        "capacity_status",
+        "demographic_equity_status",
+        "coverage",
+        "drivers",
+        "next_actions",
+        "limitations",
+        "evidence_notes",
+        "capacity_experiments"
+      ]
+    }
+  },
+  "required": [
+    "schema_version",
+    "package_version",
+    "id",
+    "aoi_id",
+    "event_id",
+    "generated_at",
+    "input_hashes",
+    "dataset_mode",
+    "official_warning",
+    "operational_status",
+    "datasets",
+    "layers",
+    "gauges",
+    "assessment",
+    "scenarios",
+    "report_url",
+    "source_timestamp",
+    "confidence_class",
+    "assumptions"
+  ]
+}

@@ -1,6 +1,6 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import bundleJson from "../../public/offline-demo/mae-sai/bundle.json";
 
@@ -8,6 +8,7 @@ import type { PublicPreparednessArea } from "@floodguard/contracts";
 import type { AreaRecord, FeatureCollection, GeoFeature } from "@/lib/types";
 
 import {
+  createGeoMapRenderer,
   displayAttribution,
   facilityClusters,
   facilityDisplayCategory,
@@ -18,6 +19,76 @@ import {
   isStructuredRoadSegmentEvidence,
   roadRiskProbability,
 } from "./geo-map";
+
+function canvasLifecycleFixture() {
+  const frames = new Map<number, () => void>();
+  let nextFrame = 0;
+  const draw = vi.fn();
+  class Canvas {
+    context: { clearRect: () => void } | null = null;
+    redrawRequest: number | null = null;
+    static extend(methods: Record<string, unknown>) {
+      class ExtendedCanvas extends Canvas {}
+      Object.assign(ExtendedCanvas.prototype, methods);
+      return ExtendedCanvas;
+    }
+    onAdd() { this.context = { clearRect: draw }; }
+    onRemove() {
+      if (this.redrawRequest !== null) frames.delete(this.redrawRequest);
+      this.context = null;
+    }
+    _redraw() {
+      this.redrawRequest = null;
+      this.context!.clearRect();
+    }
+    requestRedraw() {
+      if (this.redrawRequest !== null) return;
+      this.redrawRequest = ++nextFrame;
+      frames.set(this.redrawRequest, this._redraw.bind(this));
+    }
+    updatePaths() { this._redraw(); }
+  }
+  const flush = () => {
+    const pending = [...frames.values()];
+    frames.clear();
+    pending.forEach((frame) => frame());
+  };
+  const create = () => createGeoMapRenderer({ Canvas } as unknown as Parameters<typeof createGeoMapRenderer>[0]) as unknown as Canvas;
+  return { Canvas, create, draw, frames, flush };
+}
+
+describe("GeoMap Canvas lifecycle", () => {
+  it("ignores the orphaned frame left by a synchronous redraw during teardown", () => {
+    const { create, draw, frames, flush } = canvasLifecycleFixture();
+    const renderer = create();
+    renderer.onAdd();
+    renderer.requestRedraw();
+    renderer.updatePaths();
+    renderer.requestRedraw();
+    expect(frames.size).toBe(2);
+    renderer.onRemove();
+    expect(frames.size).toBe(1);
+
+    expect(flush).not.toThrow();
+    expect(draw).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps redraws for another mounted map and a reattached renderer active", () => {
+    const { create, draw, flush } = canvasLifecycleFixture();
+    const first = create();
+    const second = create();
+    first.onAdd();
+    second.onAdd();
+    first.onRemove();
+    second.requestRedraw();
+    flush();
+    expect(draw).toHaveBeenCalledTimes(1);
+    first.onAdd();
+    first.requestRedraw();
+    flush();
+    expect(draw).toHaveBeenCalledTimes(2);
+  });
+});
 
 describe("facilityClusters", () => {
   it("positions a regional cluster at the centroid of actual facility points", () => {

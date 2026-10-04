@@ -69,6 +69,8 @@ services/api/data/study_area_bundles/*.json     -text
 apps/web/public/offline-demo/mae-sai/*.json     -text
 # Study manifests bind exact bytes, including independently exported indexes.
 apps/web/public/studies/**                     -text
+apps/web/public/evidence-library/**           -text
+apps/web/public/evidence-library/report.html  whitespace=cr-at-eol
 
 # Proposal evidence is checksummed byte-for-byte and must survive clean checkouts.
 docs/submission/2026-geohackathon/**/*.md                       -text

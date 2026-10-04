@@ -7,17 +7,20 @@ labels, probabilities, FPPS inputs, or warning products.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from datetime import UTC, datetime
 import hashlib
 import json
 import math
-from pathlib import Path
+import platform
 import re
 import subprocess
-from typing import Any, Mapping
+import time
+import uuid
+from collections.abc import Mapping
+from dataclasses import asdict, dataclass
+from datetime import UTC, datetime
+from pathlib import Path
+from typing import Any
 from xml.etree import ElementTree
-
 
 CANONICAL_FLOAT_NODATA = -9999.0
 CANONICAL_MASK_NODATA = 255
@@ -33,6 +36,8 @@ SNAP_REQUIRED_BANDS: tuple[str, ...] = (
     "projectedLocalIncidenceAngle",
     "layoverShadowMask",
 )
+THRESHOLD_BASELINE_SCHEMA = "floodguard.sentinel1_adaptive_otsu_candidate.v1"
+THRESHOLD_BASELINE_MAX_CELLS = 10_000_000
 _SHA256_PATTERN = re.compile(r"[0-9a-f]{64}")
 
 
@@ -116,6 +121,44 @@ class TargetRasterGrid:
         from rasterio.transform import from_origin
 
         return from_origin(self.left, self.top, self.resolution_m, self.resolution_m)
+
+
+@dataclass(frozen=True)
+class AdaptiveOtsuConfig:
+    """Frozen candidate baseline parameters; these are not accuracy criteria."""
+
+    window_pixels: int = 256
+    stride_pixels: int = 128
+    min_valid_samples: int = 4096
+    histogram_bins: int = 64
+    min_class_fraction: float = 0.08
+    min_mean_separation_db: float = 1.5
+    min_between_variance_fraction: float = 0.72
+    max_terrain_slope_degrees: float = 20.0
+
+    def __post_init__(self) -> None:
+        if (
+            self.window_pixels < 2
+            or self.stride_pixels < 1
+            or self.stride_pixels > self.window_pixels
+            or self.min_valid_samples < 2
+            or self.min_valid_samples > self.window_pixels**2
+            or self.histogram_bins < 8
+            or self.histogram_bins > 512
+        ):
+            raise Sentinel1ProcessingError("Invalid adaptive Otsu window or histogram support.")
+        if not (0 < self.min_class_fraction < 0.5):
+            raise Sentinel1ProcessingError("min_class_fraction must be in (0, 0.5).")
+        if not (0 < self.min_between_variance_fraction < 1):
+            raise Sentinel1ProcessingError("min_between_variance_fraction must be in (0, 1).")
+        if (
+            not math.isfinite(self.min_mean_separation_db)
+            or self.min_mean_separation_db <= 0
+            or not math.isfinite(self.max_terrain_slope_degrees)
+            or self.max_terrain_slope_degrees <= 0
+            or self.max_terrain_slope_degrees >= 90
+        ):
+            raise Sentinel1ProcessingError("Invalid Otsu separation or terrain slope limit.")
 
 
 def run_snap_rtc_graph(
@@ -447,6 +490,563 @@ def extract_canonical_rtc_layers(
     }
 
 
+def build_adaptive_otsu_candidate(
+    *,
+    pre_vv_db: str | Path,
+    pre_vh_db: str | Path,
+    post_vv_db: str | Path,
+    post_vh_db: str | Path,
+    pre_layover_shadow: str | Path,
+    post_layover_shadow: str | Path,
+    permanent_water: str | Path,
+    terrain_slope_degrees: str | Path,
+    pre_processing_manifest: str | Path,
+    post_processing_manifest: str | Path,
+    context_alignment_manifest: str | Path,
+    pre_observed_at_utc: str,
+    post_observed_at_utc: str,
+    event_id: str,
+    study_area_id: str,
+    output_directory: str | Path,
+    config: AdaptiveOtsuConfig | None = None,
+) -> Path:
+    """Write a byte-bound, non-operational threshold candidate from aligned RTC rasters.
+
+    Every input must be a single-band canonical 10 m EPSG:32647 GeoTIFF with the
+    same grid-contract tag. Permanent water is binary (0/1), and the terrain
+    raster is slope in degrees. Unknown context, layover/shadow, and invalid SAR
+    are unsupported; permanent water, steep terrain, and failed histogram QC
+    abstain. No output represents flood probability or accepted flood truth.
+    """
+
+    from contextlib import ExitStack
+
+    import numpy as np
+    import rasterio
+
+    started = time.perf_counter()
+    parameters = config or AdaptiveOtsuConfig()
+    event = _canonical_identifier(event_id, "event_id")
+    area = _canonical_identifier(study_area_id, "study_area_id")
+    pre_time = _parse_utc_timestamp(pre_observed_at_utc, "pre_observed_at_utc")
+    post_time = _parse_utc_timestamp(post_observed_at_utc, "post_observed_at_utc")
+    if pre_time >= post_time:
+        raise Sentinel1ProcessingError("Post observation must follow pre observation.")
+    source_paths = {
+        "pre_vv_db": _required_file(pre_vv_db, "pre VV Gamma0 dB raster"),
+        "pre_vh_db": _required_file(pre_vh_db, "pre VH Gamma0 dB raster"),
+        "post_vv_db": _required_file(post_vv_db, "post VV Gamma0 dB raster"),
+        "post_vh_db": _required_file(post_vh_db, "post VH Gamma0 dB raster"),
+        "pre_layover_shadow": _required_file(pre_layover_shadow, "pre layover/shadow mask"),
+        "post_layover_shadow": _required_file(post_layover_shadow, "post layover/shadow mask"),
+        "permanent_water": _required_file(permanent_water, "permanent-water mask"),
+        "terrain_slope_degrees": _required_file(
+            terrain_slope_degrees, "terrain slope raster"
+        ),
+    }
+    manifest_paths = {
+        "pre_processing_manifest": _required_file(
+            pre_processing_manifest, "pre processing manifest"
+        ),
+        "post_processing_manifest": _required_file(
+            post_processing_manifest, "post processing manifest"
+        ),
+        "context_alignment_manifest": _required_file(
+            context_alignment_manifest, "context alignment manifest"
+        ),
+    }
+    target = Path(output_directory)
+    if target.exists():
+        raise Sentinel1ProcessingError(f"Candidate output is immutable: {target}")
+    all_input_paths = {**source_paths, **manifest_paths}
+    if any(path.is_symlink() for path in all_input_paths.values()):
+        raise Sentinel1ProcessingError("Candidate inputs must be regular files, not symlinks.")
+    initial_input_hashes = {
+        role: file_sha256(path) for role, path in all_input_paths.items()
+    }
+
+    with ExitStack() as stack:
+        datasets = {
+            role: stack.enter_context(rasterio.open(path))
+            for role, path in source_paths.items()
+        }
+        reference = datasets["pre_vv_db"]
+        if (
+            reference.crs is None
+            or reference.crs.to_string() != APPROVED_TARGET_CRS
+            or not math.isclose(abs(reference.transform.a), APPROVED_RESOLUTION_M)
+            or not math.isclose(abs(reference.transform.e), APPROVED_RESOLUTION_M)
+            or reference.transform.b != 0
+            or reference.transform.d != 0
+            or reference.transform.e >= 0
+        ):
+            raise Sentinel1ProcessingError("Candidate rasters require the approved north-up 10 m grid.")
+        if reference.width * reference.height > THRESHOLD_BASELINE_MAX_CELLS:
+            raise Sentinel1ProcessingError("Candidate grid exceeds the declared 10 million-cell memory limit.")
+        grid_hash = reference.tags().get("grid_contract_sha256", "")
+        if _SHA256_PATTERN.fullmatch(grid_hash) is None:
+            raise Sentinel1ProcessingError("Missing canonical grid-contract SHA-256 tag.")
+        sar_roles = (
+            "pre_vv_db", "pre_vh_db", "post_vv_db", "post_vh_db",
+            "pre_layover_shadow", "post_layover_shadow",
+        )
+        for role, dataset in datasets.items():
+            if (
+                dataset.count != 1
+                or dataset.crs != reference.crs
+                or dataset.transform != reference.transform
+                or dataset.width != reference.width
+                or dataset.height != reference.height
+            ):
+                raise Sentinel1ProcessingError(f"{role} does not share the exact canonical grid.")
+            if role in sar_roles and dataset.tags().get("grid_contract_sha256") != grid_hash:
+                raise Sentinel1ProcessingError(f"{role} has a different SAR grid-contract tag.")
+        context_grid_hash = datasets["permanent_water"].tags().get("TARGET_GRID_SHA256", "")
+        if context_grid_hash:
+            if (
+                _SHA256_PATTERN.fullmatch(context_grid_hash) is None
+                or datasets["terrain_slope_degrees"].tags().get("TARGET_GRID_SHA256")
+                != context_grid_hash
+                or datasets["permanent_water"].tags().get("LAYER_ROLE")
+                != "permanent_water_context"
+                or datasets["terrain_slope_degrees"].tags().get("LAYER_ROLE")
+                != "slope"
+            ):
+                raise Sentinel1ProcessingError("Context rasters have inconsistent alignment tags.")
+        elif any(
+            datasets[role].tags().get("grid_contract_sha256") != grid_hash
+            for role in ("permanent_water", "terrain_slope_degrees")
+        ):
+            raise Sentinel1ProcessingError("Context rasters have no verified common grid tag.")
+        source_ids = {
+            role: datasets[role].tags().get("source_product_id", "")
+            for role in ("pre_vv_db", "pre_vh_db", "post_vv_db", "post_vh_db")
+        }
+        if (
+            not source_ids["pre_vv_db"]
+            or source_ids["pre_vv_db"] != source_ids["pre_vh_db"]
+            or not source_ids["post_vv_db"]
+            or source_ids["post_vv_db"] != source_ids["post_vh_db"]
+            or source_ids["pre_vv_db"] == source_ids["post_vv_db"]
+        ):
+            raise Sentinel1ProcessingError("Pre/post VV/VH source-product identities are inconsistent.")
+        _require_source_time(source_ids["pre_vv_db"], pre_time, "pre")
+        _require_source_time(source_ids["post_vv_db"], post_time, "post")
+        _verify_processing_manifest(
+            manifest_paths["pre_processing_manifest"],
+            grid_hash=grid_hash,
+            source_product_id=source_ids["pre_vv_db"],
+            raster_paths={
+                "vv": source_paths["pre_vv_db"],
+                "vh": source_paths["pre_vh_db"],
+                "layover_shadow_mask": source_paths["pre_layover_shadow"],
+            },
+        )
+        _verify_processing_manifest(
+            manifest_paths["post_processing_manifest"],
+            grid_hash=grid_hash,
+            source_product_id=source_ids["post_vv_db"],
+            raster_paths={
+                "vv": source_paths["post_vv_db"],
+                "vh": source_paths["post_vh_db"],
+                "layover_shadow_mask": source_paths["post_layover_shadow"],
+            },
+        )
+        _verify_context_manifest(
+            manifest_paths["context_alignment_manifest"],
+            context_grid_hash=context_grid_hash or grid_hash,
+            raster_paths={
+                "permanent_water_context": source_paths["permanent_water"],
+                "slope": source_paths["terrain_slope_degrees"],
+            },
+        )
+
+        arrays = {}
+        for role, dataset in datasets.items():
+            masked = dataset.read(1, masked=True)
+            values = np.asarray(masked.data, dtype="float32").copy()
+            values[np.ma.getmaskarray(masked)] = np.nan
+            arrays[role] = values
+        water = arrays["permanent_water"]
+        water_known = np.isfinite(water) & np.isin(water, (0, 1))
+        if np.any(np.isfinite(water) & ~water_known):
+            raise Sentinel1ProcessingError("Permanent-water raster must use 0/1 and nodata only.")
+        slope = arrays["terrain_slope_degrees"]
+        slope_known = np.isfinite(slope) & (slope >= 0) & (slope < 90)
+        if np.any(np.isfinite(slope) & ~slope_known):
+            raise Sentinel1ProcessingError("Terrain slope must be in [0, 90) degrees.")
+        radiometric_valid = np.ones(water.shape, dtype=bool)
+        for role in ("pre_vv_db", "pre_vh_db", "post_vv_db", "post_vh_db"):
+            radiometric_valid &= np.isfinite(arrays[role])
+        geometry_clear = (
+            arrays["pre_layover_shadow"] == 0
+        ) & (arrays["post_layover_shadow"] == 0)
+        supported = radiometric_valid & geometry_clear & water_known & slope_known
+        water_abstain = supported & (water == 1)
+        terrain_abstain = supported & ~water_abstain & (
+            slope > parameters.max_terrain_slope_degrees
+        )
+        eligible = supported & ~water_abstain & ~terrain_abstain
+        vv_change = arrays["pre_vv_db"] - arrays["post_vv_db"]
+        vh_change = arrays["pre_vh_db"] - arrays["post_vh_db"]
+        change = np.float32(0.4) * vv_change + np.float32(0.6) * vh_change
+        threshold_sum = np.zeros(water.shape, dtype="float64")
+        threshold_count = np.zeros(water.shape, dtype="uint16")
+        window_receipts: list[dict[str, Any]] = []
+        for row in _window_starts(reference.height, parameters.window_pixels, parameters.stride_pixels):
+            row_end = min(row + parameters.window_pixels, reference.height)
+            for column in _window_starts(
+                reference.width, parameters.window_pixels, parameters.stride_pixels
+            ):
+                column_end = min(column + parameters.window_pixels, reference.width)
+                window = np.s_[row:row_end, column:column_end]
+                samples = change[window][eligible[window]]
+                threshold, reason, qc = _otsu_threshold(samples, parameters)
+                window_receipts.append(
+                    {
+                        "row": row,
+                        "column": column,
+                        "height": row_end - row,
+                        "width": column_end - column,
+                        "valid_samples": int(samples.size),
+                        "threshold_db": threshold,
+                        "status": "qualified_candidate_window" if threshold is not None else "abstained",
+                        "reason": reason,
+                        "qc": qc,
+                    }
+                )
+                if threshold is not None:
+                    window_sum = threshold_sum[window]
+                    window_count = threshold_count[window]
+                    window_sum[eligible[window]] += threshold
+                    window_count[eligible[window]] += 1
+        classified = eligible & (threshold_count > 0)
+        threshold_surface = np.full(water.shape, CANONICAL_FLOAT_NODATA, dtype="float32")
+        threshold_surface[classified] = (
+            threshold_sum[classified] / threshold_count[classified]
+        ).astype("float32")
+        candidate = np.full(water.shape, CANONICAL_MASK_NODATA, dtype="uint8")
+        candidate[classified] = (
+            (change[classified] >= threshold_surface[classified])
+            & (change[classified] > 0)
+            & (vv_change[classified] > 0)
+            & (vh_change[classified] > 0)
+        ).astype("uint8")
+        supported_mask = supported.astype("uint8")
+        abstention = np.full(water.shape, CANONICAL_MASK_NODATA, dtype="uint8")
+        abstention[supported] = 0
+        abstention[water_abstain] = 1
+        abstention[terrain_abstain] = 2
+        abstention[eligible & ~classified] = 3
+        change_output = np.full(water.shape, CANONICAL_FLOAT_NODATA, dtype="float32")
+        change_output[supported] = change[supported]
+        grid = TargetRasterGrid(
+            crs=APPROVED_TARGET_CRS,
+            left=float(reference.bounds.left),
+            bottom=float(reference.bounds.bottom),
+            right=float(reference.bounds.right),
+            top=float(reference.bounds.top),
+            resolution_m=APPROVED_RESOLUTION_M,
+            grid_contract_sha256=grid_hash,
+        )
+
+    if any(
+        file_sha256(path) != initial_input_hashes[role]
+        for role, path in all_input_paths.items()
+    ):
+        raise Sentinel1ProcessingError("Candidate input bytes changed during processing.")
+    target.parent.mkdir(parents=True, exist_ok=True)
+    staged = target.parent / f".{target.name}.staging-{uuid.uuid4().hex}"
+    staged.mkdir()
+    try:
+        outputs = {}
+        for name, values, nodata in (
+            ("candidate_mask", candidate, CANONICAL_MASK_NODATA),
+            ("supported_input_mask", supported_mask, CANONICAL_MASK_NODATA),
+            ("abstention_code", abstention, CANONICAL_MASK_NODATA),
+            ("change_db", change_output, CANONICAL_FLOAT_NODATA),
+            ("threshold_db", threshold_surface, CANONICAL_FLOAT_NODATA),
+        ):
+            path = staged / f"{name}.tif"
+            _write_candidate_geotiff(path, values, grid=grid, nodata=nodata, role=name)
+            outputs[name] = {"file_name": path.name, "sha256": file_sha256(path)}
+        cell_area_m2 = grid.resolution_m**2
+        classified_cells = int(classified.sum())
+        candidate_cells = int((candidate == 1).sum())
+        receipt: dict[str, Any] = {
+            "artifact_schema": THRESHOLD_BASELINE_SCHEMA,
+            "event_id": event,
+            "study_area_id": area,
+            "pre_observed_at_utc": pre_time.isoformat().replace("+00:00", "Z"),
+            "post_observed_at_utc": post_time.isoformat().replace("+00:00", "Z"),
+            "source_product_ids": {
+                "pre": source_ids["pre_vv_db"],
+                "post": source_ids["post_vv_db"],
+            },
+            "grid_contract_sha256": grid.grid_contract_sha256,
+            "context_target_grid_sha256": context_grid_hash or grid.grid_contract_sha256,
+            "grid": {
+                "crs": grid.crs,
+                "transform": [float(value) for value in grid.transform[:6]],
+                "width": grid.width,
+                "height": grid.height,
+                "cell_area_m2": cell_area_m2,
+            },
+            "method": "overlapping_window_otsu_gamma0_db_darkening_v1",
+            "configuration": asdict(parameters),
+            "seam_treatment": "arithmetic_mean_of_all_qualified_overlapping_window_thresholds",
+            "input_files": {
+                role: {"file_name": path.name, "sha256": initial_input_hashes[role]}
+                for role, path in all_input_paths.items()
+            },
+            "outputs": outputs,
+            "window_receipts": window_receipts,
+            "counts": {
+                "total_cells": int(candidate.size),
+                "unsupported_cells": int((~supported).sum()),
+                "permanent_water_abstained_cells": int(water_abstain.sum()),
+                "terrain_abstained_cells": int(terrain_abstain.sum()),
+                "histogram_abstained_cells": int((eligible & ~classified).sum()),
+                "classified_non_candidate_cells": int((candidate == 0).sum()),
+                "candidate_cells": candidate_cells,
+            },
+            "result_status": (
+                "candidate_classification_available"
+                if classified_cells
+                else "abstained_no_classified_cells"
+            ),
+            "classified_grid_area_km2": round(
+                classified_cells * cell_area_m2 / 1_000_000, 9
+            ),
+            "candidate_grid_area_km2": (
+                round(candidate_cells * cell_area_m2 / 1_000_000, 9)
+                if classified_cells
+                else None
+            ),
+            "duration_seconds": round(time.perf_counter() - started, 6),
+            "runtime_versions": {
+                "python": platform.python_version(),
+                "numpy": np.__version__,
+                "rasterio": rasterio.__version__,
+            },
+            "estimated_peak_array_bytes": int(candidate.size * 64),
+            "measured_peak_process_memory_bytes": None,
+            "speckle_filter_applied": False,
+            "radiometry": "SNAP terrain-flattened Gamma0, not Sigma0",
+            "dataset_mode": "candidate",
+            "operational_status": "non_operational",
+            "official_warning": False,
+            "can_feed_decision_layer": False,
+            "eligible_for_fpps": False,
+            "eligible_for_warning": False,
+            "created_at_utc": _utc_now(),
+        }
+        write_processing_run_manifest(receipt, staged / "candidate_receipt.json")
+        staged.replace(target)
+    except Exception:
+        for path in staged.iterdir():
+            path.unlink()
+        staged.rmdir()
+        raise
+    return target / "candidate_receipt.json"
+
+
+def _window_starts(length: int, window: int, stride: int) -> list[int]:
+    last = max(0, length - window)
+    starts = list(range(0, last + 1, stride))
+    if not starts or starts[-1] != last:
+        starts.append(last)
+    return starts
+
+
+def _otsu_threshold(samples: object, config: AdaptiveOtsuConfig) -> tuple[float | None, str | None, dict[str, float]]:
+    import numpy as np
+
+    values = np.asarray(samples, dtype="float64")
+    if values.size < config.min_valid_samples:
+        return None, "insufficient_valid_support", {}
+    lower, upper = np.quantile(values, (0.01, 0.99))
+    if not np.isfinite(lower) or not np.isfinite(upper) or upper - lower < config.min_mean_separation_db:
+        return None, "narrow_or_invalid_distribution", {}
+    counts, edges = np.histogram(
+        np.clip(values, lower, upper), bins=config.histogram_bins, range=(lower, upper)
+    )
+    centres = (edges[:-1] + edges[1:]) / 2
+    cumulative_count = np.cumsum(counts)
+    cumulative_sum = np.cumsum(counts * centres)
+    total = cumulative_count[-1]
+    lower_count = cumulative_count[:-1]
+    upper_count = total - lower_count
+    valid_split = (lower_count > 0) & (upper_count > 0)
+    between = np.zeros(config.histogram_bins - 1, dtype="float64")
+    low_mean = np.divide(cumulative_sum[:-1], lower_count, out=np.zeros_like(between), where=valid_split)
+    high_mean = np.divide(
+        cumulative_sum[-1] - cumulative_sum[:-1],
+        upper_count,
+        out=np.zeros_like(between),
+        where=valid_split,
+    )
+    between[valid_split] = (
+        (lower_count[valid_split] / total)
+        * (upper_count[valid_split] / total)
+        * (high_mean[valid_split] - low_mean[valid_split]) ** 2
+    )
+    split = int(np.argmax(between))
+    threshold = float(edges[split + 1])
+    low = values < threshold
+    high = ~low
+    if not low.any() or not high.any():
+        return None, "empty_histogram_class", {}
+    class_fraction = min(float(low.mean()), float(high.mean()))
+    mean_separation = float(values[high].mean() - values[low].mean())
+    variance = float(np.var(np.clip(values, lower, upper)))
+    between_fraction = float(between[split] / variance) if variance > 0 else 0.0
+    qc = {
+        "class_fraction_min": round(class_fraction, 6),
+        "mean_separation_db": round(mean_separation, 6),
+        "between_variance_fraction": round(between_fraction, 6),
+    }
+    if class_fraction < config.min_class_fraction:
+        return None, "unbalanced_histogram_classes", qc
+    if mean_separation < config.min_mean_separation_db:
+        return None, "weak_histogram_separation", qc
+    if between_fraction < config.min_between_variance_fraction:
+        return None, "unimodal_or_unstable_histogram", qc
+    return round(threshold, 6), None, qc
+
+
+def _write_candidate_geotiff(
+    path: Path,
+    values: object,
+    *,
+    grid: TargetRasterGrid,
+    nodata: float,
+    role: str,
+) -> None:
+    import numpy as np
+    import rasterio
+
+    array = np.asarray(values)
+    with rasterio.open(
+        path,
+        "w",
+        driver="GTiff",
+        height=grid.height,
+        width=grid.width,
+        count=1,
+        dtype=str(array.dtype),
+        crs=grid.crs,
+        transform=grid.transform,
+        nodata=nodata,
+        compress="DEFLATE",
+        predictor=2 if array.dtype.kind in {"u", "i"} else 3,
+        tiled=True,
+        blockxsize=256,
+        blockysize=256,
+    ) as dataset:
+        dataset.write(array, 1)
+        dataset.set_band_description(1, role)
+        dataset.update_tags(
+            artifact_schema=THRESHOLD_BASELINE_SCHEMA,
+            grid_contract_sha256=grid.grid_contract_sha256,
+            floodguard_role=role,
+            dataset_mode="candidate",
+            operational_status="non_operational",
+            official_warning="false",
+            can_feed_decision_layer="false",
+        )
+
+
+def _parse_utc_timestamp(value: str, label: str) -> datetime:
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise Sentinel1ProcessingError(f"{label} must be an ISO UTC timestamp.") from exc
+    if parsed.tzinfo != UTC:
+        raise Sentinel1ProcessingError(f"{label} must use the UTC offset.")
+    return parsed
+
+
+def _require_source_time(source_product_id: str, observed_at_utc: datetime, role: str) -> None:
+    match = re.search(r"_(\d{8}T\d{6})_", source_product_id)
+    if match is None:
+        raise Sentinel1ProcessingError(f"{role} source product has no parseable acquisition time.")
+    source_time = datetime.strptime(match.group(1), "%Y%m%dT%H%M%S").replace(tzinfo=UTC)
+    if abs((observed_at_utc - source_time).total_seconds()) >= 2:
+        raise Sentinel1ProcessingError(f"{role} observation time differs from source product ID.")
+
+
+def _read_integrity_manifest(path: Path, schema: str) -> dict[str, Any]:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        raise Sentinel1ProcessingError(f"Invalid evidence manifest: {path.name}") from exc
+    if not isinstance(payload, dict) or payload.get("artifact_schema") != schema:
+        raise Sentinel1ProcessingError(f"Wrong evidence manifest schema: {path.name}")
+    recorded = payload.get("manifest_sha256")
+    body = {key: value for key, value in payload.items() if key != "manifest_sha256"}
+    if recorded != _canonical_json_sha256(body):
+        raise Sentinel1ProcessingError(f"Evidence manifest self-hash mismatch: {path.name}")
+    return payload
+
+
+def _verify_processing_manifest(
+    path: Path,
+    *,
+    grid_hash: str,
+    source_product_id: str,
+    raster_paths: Mapping[str, Path],
+) -> None:
+    payload = _read_integrity_manifest(path, "floodguard.sentinel1_processing_run.v1")
+    try:
+        layers = payload["canonical_layers"]
+        execution = payload["snap_execution"]
+        if (
+            layers["grid"]["grid_contract_sha256"] != grid_hash
+            or layers["source_product_id"] != source_product_id
+            or layers["query_model_only"] is not True
+            or layers["eligible_for_decision_layer"] is not False
+            or execution["snap_version"] != PINNED_SNAP_VERSION
+            or "POEORB" not in execution["orbit_auxiliary_name"]
+            or "_COG" in execution["source_product_name"].upper()
+        ):
+            raise Sentinel1ProcessingError(f"Processing lineage is not eligible: {path.name}")
+        for role, raster_path in raster_paths.items():
+            record = layers["outputs"][role]
+            if (
+                record["file_name"] != raster_path.name
+                or record["sha256"] != file_sha256(raster_path)
+            ):
+                raise Sentinel1ProcessingError(
+                    f"Processed {role} raster differs from its receipt: {path.name}"
+                )
+    except (KeyError, TypeError) as exc:
+        raise Sentinel1ProcessingError(f"Incomplete processing manifest: {path.name}") from exc
+
+
+def _verify_context_manifest(
+    path: Path,
+    *,
+    context_grid_hash: str,
+    raster_paths: Mapping[str, Path],
+) -> None:
+    payload = _read_integrity_manifest(path, "floodguard.context_alignment_manifest.v1")
+    try:
+        layers = {layer["layer_role"]: layer for layer in payload["layers"]}
+        for role, raster_path in raster_paths.items():
+            record = layers[role]
+            if (
+                record["path_hint"] != raster_path.name
+                or record["target_grid_sha256"] != context_grid_hash
+                or record["processed_layer_sha256"] != file_sha256(raster_path)
+            ):
+                raise Sentinel1ProcessingError(
+                    f"Context {role} raster differs from its receipt: {path.name}"
+                )
+    except (KeyError, TypeError) as exc:
+        raise Sentinel1ProcessingError(f"Incomplete context manifest: {path.name}") from exc
+
+
 def write_processing_run_manifest(payload: Mapping[str, Any], path: str | Path) -> Path:
     """Write one self-hashed, immutable processing-run JSON."""
 
@@ -483,7 +1083,7 @@ def _write_geotiff(
     values: object,
     *,
     grid: TargetRasterGrid,
-    nodata: float | int,
+    nodata: float,
     role: str,
     source_product_id: str,
 ) -> None:

@@ -1,11 +1,12 @@
 import { existsSync, readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { resolve } from "node:path";
+import { collectEvidenceLibraryAssets } from "./evidence-library-assets.mjs";
 
 import { readCaseReplay } from "./case-replay-inventory.mjs";
 
 const out = resolve(process.cwd(), "out");
-const routeFiles = ["index.html", "public/index.html", "command/index.html", "studio/index.html", "studio/planning-evidence/index.html"];
+const routeFiles = ["index.html", "public/index.html", "public-cases/index.html", "command/index.html", "command/cases/index.html", "command/archive/index.html", "studio/index.html", "studio/planning-evidence/index.html", "studio/library/index.html", "studio/brief/index.html", "studio/archive/index.html"];
 const requiredPublicAssets = [
   "manifest.webmanifest",
   "sw.js",
@@ -22,6 +23,7 @@ const requiredPublicAssets = [
   "offline-demo/mae-sai/access-hotspots.json",
   "proposal-evidence-status.json",
   "offline-assets.json",
+  "evidence-library/catalog.json",
 ];
 
 for (const relative of [...routeFiles, ...requiredPublicAssets]) {
@@ -40,12 +42,14 @@ const routeExpectations = {
     /public-tab-prepare/i,
     /public-tab-sos/i,
   ],
+  "public-cases/index.html": [/Understand the study cases/i, /Candidate research evidence/i, /Non-operational/i],
   "command/index.html": [
-    /Planning intelligence|ข้อมูลเพื่อการวางแผน/i,
-    /Source time|เวลาข้อมูล/i,
-    /Confidence|ความเชื่อมั่น/i,
-    /DDPM|ปภ\./i,
+    /Planning case/i,
+    /Candidate.*low confidence/i,
+    /Loading case catalog/i,
   ],
+  "command/cases/index.html": [/Study-area decision brief/i, /Candidate research evidence/i, /Non-operational/i],
+  "command/archive/index.html": [/Historical Mae Sai research archive/i, /not accepted event-response priorities/i],
   "studio/index.html": [
     /Every result has a context/i,
     /Research studies/i,
@@ -61,6 +65,9 @@ const routeExpectations = {
     /Observed-data validation/i,
     /Operational authorization/i,
   ],
+  "studio/library/index.html": [/Study-area evidence library/i, /Non-operational/i, /Candidate research evidence/i],
+  "studio/brief/index.html": [/Study-area decision brief/i, /Non-operational/i, /Candidate research evidence/i],
+  "studio/archive/index.html": [/Historical Mae Sai technical report/i, /separate evidence context/i],
 };
 
 for (const relative of routeFiles) {
@@ -98,7 +105,7 @@ if (
 ) {
   throw new Error("Service worker does not use a content-derived cache version");
 }
-for (const route of ["/", "/public/", "/command/", "/studio/", "/studio/planning-evidence/"]) {
+for (const route of ["/", "/public/", "/public-cases/", "/command/", "/command/cases/", "/command/archive/", "/studio/", "/studio/planning-evidence/", "/studio/library/", "/studio/brief/", "/studio/archive/", ...collectEvidenceLibraryAssets(out)]) {
   if (!serviceWorker.includes(`"${route}"`)) throw new Error(`Service worker does not precache ${route}`);
 }
 if (!serviceWorker.includes("requestUrl.origin !== self.location.origin")) {
@@ -118,6 +125,33 @@ if (!Array.isArray(generatedAssets) || generatedAssets.length === 0) throw new E
 for (const url of generatedAssets) {
   if (!url.startsWith("/_next/static/") || !existsSync(resolve(out, url.slice(1)))) {
     throw new Error(`Offline production chunk is invalid: ${url}`);
+  }
+}
+if (serviceWorker.includes('"/landing/')) {
+  throw new Error("Optional landing imagery is part of the mandatory offline cache.");
+}
+const dynamicManifestPaths = [
+  resolve(process.cwd(), ".next", "react-loadable-manifest.json"),
+  resolve(process.cwd(), ".next", "server", "app", "page", "react-loadable-manifest.json"),
+].filter((path) => existsSync(path));
+for (const dynamicManifestPath of dynamicManifestPaths) {
+  const dynamicManifest = JSON.parse(readFileSync(dynamicManifestPath, "utf8"));
+  const directResources = new Set(routeFiles.flatMap((route) => (
+    [...readFileSync(resolve(out, route), "utf8").matchAll(/<(?:script|link)\b[^>]*(?:src|href)="([^"?#]+)[^"]*"/gi)]
+      .map((match) => match[1])
+  )));
+  for (const [name, entry] of Object.entries(dynamicManifest)) {
+    const isNarrative = name.includes("narrative-canvas") || (entry.files ?? []).some((file) => (
+      file.startsWith("static/") && file.endsWith(".js")
+      && readFileSync(resolve(out, "_next", file), "utf8").includes("data-narrative-canvas")
+    ));
+    if (!isNarrative) continue;
+    for (const file of entry.files ?? []) {
+      const url = `/_next/${file}`;
+      if (!directResources.has(url) && generatedAssets.includes(url)) {
+        throw new Error(`Optional narrative renderer is mandatory offline: ${url}`);
+      }
+    }
   }
 }
 

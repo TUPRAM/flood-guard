@@ -11,8 +11,10 @@ Git, and writes:
 * ``outputs/planning_v1/e6_critical_links_<case>_vehicle.json``: the receipt,
   with the SHA-256 of every input, the parameters, the SHA-256 of both protocol
   files in force, the SHA-256 of the top-20 file and the SHA-256 of the whole
-  ranking table (owner choice 10 binds the ranking by that hash in the receipt
-  of the first scoring run).
+  ranking table. Protocol v1b ``critical_link_selection.ranking_output`` (owner
+  choice 10) says: "v1b is signed with the rule alone; the ranking's SHA-256 is
+  recorded in the receipt of the first run, before any scoring." The receipt of
+  the first run of this script is that receipt.
 
 The whole ranking table also says which tambon each link belongs to (drafter
 reading DR-B06). It names tambons, so it is not written into Git:
@@ -29,12 +31,24 @@ names under the external data root, and stops when
 * the grade joins, the hospitals, the main-road entries or the reporting units
   differ from what the E4 receipt records;
 * a grade-join connector is among the top 20: the protocol does not say whether
-  a connector can be a critical link.
+  a connector can be a critical link;
+* a run that supersedes an earlier one gives another ranking table than the
+  first run recorded: the protocol does not say whether a later run may change
+  a recorded ranking.
+
+The other points the protocol leaves open are written into the receipt
+(``open_points``) and decided nowhere in this script. The first of them: the
+protocol says "Add graph bridges (Tarjan) to cover the all-routes-lost case"
+and not what they are added to, so nothing is added and a bridge is only
+flagged.
 
 It reads no flood layer and computes no closure, no reroute, no access loss, no
-FPPS, no A-E class and no ensemble. A first run is never replaced silently:
-``--supersede`` takes the reason. ``--verify`` recomputes everything with the
-generation time of the receipt and compares the top-20 file and the receipt
+FPPS, no A-E class and no ensemble. A run is never replaced silently:
+``--supersede`` takes the reason, and the receipt it writes says that it is a
+superseding run and lists every earlier run under ``run_history`` (generation
+time, SHA-256 of the replaced receipt and top-20 file, SHA-256 of its ranking
+table, reason). ``--verify`` recomputes everything with the generation time and
+the earlier runs of the receipt and compares the top-20 file and the receipt
 (without its ``run`` section) byte for byte; it writes nothing.
 
 The external data root is an argument or the environment variable
@@ -58,7 +72,7 @@ import platform
 import subprocess
 import sys
 import time
-from typing import Any
+from typing import Any, NamedTuple
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
@@ -80,11 +94,21 @@ VEHICLE = "legacy_vehicle"
 CASE_IDS = {"se1": "se1_mae_sai"}
 # The COD-AB read window of the E4 build (scripts/build_planning_context.py), so the units come in the same order.
 BOUNDARY_WINDOW_MARGIN_DEG = 0.45
-STATUS = "first_run_unreviewed_candidates"
-STATUS_NOTE = (
-    "First run of plan task E6 on the E4 planning context of record. The links are unreviewed candidates: the desk "
-    "check of the top 20 (plan task V1) has not been done, and no link is an observed closure. Owner choice 10 binds "
-    "the ranking by the SHA-256 of the whole ranking table in the receipt of the first scoring run."
+FIRST_RUN = "first_run"
+SUPERSEDING_RUN = "superseding_run"
+STATUS_BY_RUN_KIND = {
+    FIRST_RUN: "first_run_unreviewed_candidates",
+    SUPERSEDING_RUN: "superseding_run_unreviewed_candidates",
+}
+EARLIER_RUN_KEYS = frozenset(
+    {"run_kind", "generated_at_utc", "evidence_sha256", "top_20_sha256", "ranking_table_sha256", "replaced_because"})
+UNREVIEWED_NOTE = (
+    "The links are unreviewed candidates: the desk check of the top 20 (plan task V1) has not been done, and no link "
+    "is an observed closure."
+)
+OPEN_POINTS_NOTE = (
+    "The owners' answers to open points E6-OP1 (grade-join connectors) and E6-OP5 (what the graph bridges are added "
+    "to) can change the ranking; they are needed before a later task uses that SHA-256."
 )
 CONFIDENCE_BASIS = (
     "OSM roads and hospitals are unverified map records, and WorldPop 2020 is a modelled resident count. Routes are "
@@ -94,8 +118,9 @@ CONFIDENCE_BASIS = (
 ASSUMPTIONS = (
     "A resident's baseline route is the fastest modelled vehicle route from the road node their WorldPop 2020 cell "
     "snaps to (within 250 m) to the nearest destination: an OSM hospital in the routing context or a main-road entry "
-    "(a node of a trunk or primary edge, links included). One shortest-path tree serves both kinds of destination, "
-    "so a route ends at the first destination it meets (owner choice 9).",
+    "(a node of a trunk or primary edge, links included). One shortest-path tree serves both kinds of destination "
+    "(owner choice 9), so a route ends at the first destination it meets. The one exception is a zero-minute edge "
+    "between two destination nodes, which is crossed towards the destination with the smaller ID (open point E6-OP7).",
     "The flow of a link is the number of residents whose baseline route uses it (WorldPop 2020 residents at each "
     "origin node; drafter reading DR-B03). It measures use. Another route may exist, and the flow does not say what "
     "closing the link would cost.",
@@ -104,7 +129,8 @@ ASSUMPTIONS = (
     "An edge is the straight segment between two road nodes, so one street is many edges. Edges of a street with no "
     "resident between them carry the same flow and take neighbouring ranks.",
     "graph_bridge is true when removing the edge disconnects the modelled graph (Tarjan). osm_bridge repeats the OSM "
-    "tag bridge=yes. Neither shows that a structure exists or what state it is in.",
+    "tag bridge=yes. Neither shows that a structure exists or what state it is in. A graph bridge is flagged and "
+    "ranked by its flow like any other edge: nothing is added to the ranking for it (open point E6-OP5).",
     "in_flood_extent is null because no flood layer is read. The flag is added for each flood input when a case is "
     "assessed.",
     "Road times are fixed class speeds on an undirected graph. One-way rules, turn restrictions and road condition "
@@ -113,12 +139,14 @@ ASSUMPTIONS = (
     "Routes stay inside the routing context of the case. Roads and destinations outside it are not seen.",
 )
 LIMITATIONS = (
-    "One run on one machine. The ranking depends on the OSM extract, on WorldPop 2020 and on the corridor of record.",
-    "Every node of a trunk or primary edge is a main-road entry, so an edge between two such nodes carries no flow: "
-    "trunk and primary roads themselves are not ranked, and the ranking finds the roads that lead to them and to "
-    "the hospitals. The share of residents whose nearest destination is a main-road entry is under demand.",
+    "Computed on one machine. The ranking depends on the OSM extract, on WorldPop 2020 and on the corridor of record.",
+    "Every node of a trunk or primary edge is a main-road entry, so an edge between two such nodes that takes time "
+    "carries no flow: trunk and primary roads themselves are not ranked, and the ranking finds the roads that lead "
+    "to them and to the hospitals. The share of residents whose nearest destination is a main-road entry is under "
+    "demand.",
     "No reroute was run: the flow is not the number of residents a closure would cut off.",
 )
+BRIDGE_RULE = "Add graph bridges (Tarjan) to cover the all-routes-lost case."
 OPEN_POINTS = (
     {
         "id": "E6-OP1",
@@ -126,8 +154,17 @@ OPEN_POINTS = (
         "protocol_says": "Rank baseline vehicle edges. A join is a zero-length connector edge between two nodes at "
                          "the same coordinate (grade_join_policy).",
         "what_this_run_does": "The connectors are edges of the baseline graph and are ranked like any other, marked "
-                              "edge_kind grade_join. The run stops if one is among the top 20; none was "
-                              "(ranking.grade_join_connectors).",
+                              "edge_kind grade_join. A connector between two nodes without residents carries the "
+                              "same flow as the road edges on either side of it, and its ID (grade-join-...) sorts "
+                              "before a road edge ID (osm-way-...), so the tie-break on the stable edge ID ranks it "
+                              "ahead of every road edge with that flow. The run stops if a connector is among the "
+                              "top 20. It does not stop for the highest-ranked links of a unit, which scenario S3 "
+                              "reads from the same table: ranking.grade_join_connectors counts the connectors that "
+                              "share their flow with a road edge and the units where a connector is among the "
+                              "highest-ranked links, and names no unit.",
+        "needed_from_the_owners": "Whether connectors are ranked at all, and what happens to the ranks if they are "
+                                  "not. The answer can change the ranking table (see E6-OP6). Until then a task "
+                                  "that selects the S3 links of a unit meets the same undecided case.",
     },
     {
         "id": "E6-OP2",
@@ -151,11 +188,68 @@ OPEN_POINTS = (
                          "its midpoint (drafter reading DR-B06).",
         "what_this_run_does": "Such a link gets no unit (ranking.unit_assignment counts them).",
     },
+    {
+        "id": "E6-OP5",
+        "point": "What 'Add graph bridges' adds the bridges to (the ranked set, the 200 edges of the full reroute "
+                 "or the 20 of the output), and where a graph bridge stands against a link ranked by flow.",
+        "protocol_says": "'" + BRIDGE_RULE + "' (critical_link_selection.rule, second line). The fourth line "
+                         "already asks for a bridge flag on each of the top 20.",
+        "what_this_run_does": "Nothing is added. The ranked set is the edges with a positive flow, in the order of "
+                              "their flow, and each carries graph_bridge as a flag; a graph bridge enters the 200 "
+                              "or the 20 only by its flow. This is not a decided reading: under it the second line "
+                              "of the rule adds nothing to the fourth, and the all-routes-lost case reaches an "
+                              "output only where a bridge is ranked high enough (ranking.graph_bridges gives the "
+                              "counts and the best rank of a graph bridge).",
+        "why_it_matters": "Closing an edge that is not a graph bridge takes every route from nobody. Class rule v2 "
+                          "trigger B (class_rule_v2_inputs.trigger_B_isolation) closes on its own each top-20 link "
+                          "that intersects the flood extent and counts the residents who lose every route, so it "
+                          "can only fire through a top-20 link that is a graph bridge.",
+        "needed_from_the_owners": "What the bridges are added to and how a bridge is ordered against a flow-ranked "
+                                  "link. The answer can change the ranking table (see E6-OP6), so it is needed "
+                                  "before a later task records or uses the SHA-256 of the table.",
+    },
+    {
+        "id": "E6-OP6",
+        "point": "Whether a run that supersedes the first run may change the ranking the first run recorded.",
+        "protocol_says": "The ranking's SHA-256 is recorded in the receipt of the first run, before any scoring "
+                         "(critical_link_selection.ranking_output). Every run is reported (change_control). Nothing "
+                         "is said about a later run of the ranking.",
+        "what_this_run_does": "A superseding run lists every earlier run under run_history and must recompute the "
+                              "ranking table the first run recorded. If its table differs it stops and writes "
+                              "nothing.",
+        "needed_from_the_owners": "If an answer to E6-OP1 or E6-OP5 changes the table: how the new ranking is bound.",
+    },
+    {
+        "id": "E6-OP7",
+        "point": "Where a route ends when a zero-minute edge joins two destination nodes.",
+        "protocol_says": "The ranking follows the pattern of select_interventions in "
+                         "src/floodguard/evidence_interventions.py (critical_link_selection.reuse), and a grade "
+                         "join is a zero-length connector edge (grade_join_policy). Neither says where a route "
+                         "ends when two destinations are reached in the same time.",
+        "what_this_run_does": "The comparison of select_interventions is kept: a node takes the smallest (minutes, "
+                              "destination ID). A destination node joined to another destination node by a "
+                              "zero-minute edge is therefore routed across that edge to the destination with the "
+                              "smaller ID, and every resident whose route reaches that node counts on the edge. "
+                              "demand.destination_nodes_routed_onward_at_an_equal_time counts such nodes and those "
+                              "residents.",
+    },
 )
 RUN_NOTE = (
-    "Everything outside this section is a function of the inputs and the generation time: --verify recomputes it "
-    "byte for byte. This section records the run itself and is not compared."
+    "Everything outside this section is a function of the inputs, the generation time and the earlier runs listed "
+    "under run_history: --verify takes the last two from this receipt and recomputes the rest byte for byte. This "
+    "section records the run itself and is not compared."
 )
+
+
+class Layout(NamedTuple):
+    """Where a run reads the protocol files and the E4 receipt, and where it writes. The default is the repository."""
+
+    protocol_paths: Mapping[str, Path]
+    receipts: Path
+    output_dir: Path
+
+
+REPOSITORY = Layout(PROTOCOL_PATHS, RECEIPTS, OUTPUT_DIR)
 
 
 class BuildError(ValueError):
@@ -224,7 +318,8 @@ def selection_rule(v1b: Mapping[str, Any]) -> dict[str, Any]:
     """Return protocol v1b's critical-link rule, after checking that the module applies its parameters.
 
     Raises:
-        BuildError: when a parameter of the protocol is not the one ``floodguard.critical_links`` applies.
+        BuildError: when a parameter of the protocol is not the one ``floodguard.critical_links`` applies, or
+            the protocol states the graph-bridge line in other words than open point E6-OP5 quotes.
     """
 
     block = v1b["critical_link_selection"]
@@ -238,17 +333,23 @@ def selection_rule(v1b: Mapping[str, Any]) -> dict[str, Any]:
         raise BuildError("protocol v1b critical_link_selection.parameters are not the ones this code applies")
     if block["status"] != "fixed" or block["uses_flood_input"] is not False:
         raise BuildError("protocol v1b critical_link_selection is not fixed, or says the ranking uses a flood input")
-    if block["ranking_output"]["binding"] != "bound_in_first_run_receipt":
+    binding = block["ranking_output"]["binding"]
+    if binding != "bound_in_first_run_receipt":
         raise BuildError("protocol v1b binds the ranking another way than in the first run receipt")
+    if BRIDGE_RULE not in block["rule"]:
+        raise BuildError("protocol v1b states the graph-bridge line of the rule in other words than open point E6-OP5 quotes")
+    s3 = next(cell for cell in v1b["scenario_engine_grid"]["cells"] if cell["id"] == "S3")
     return {
         "rule": list(block["rule"]),
         "parameters": dict(parameters),
         "demand_weight": block["demand_weight"],
         "destination_set_for_ranking": block["destination_set_for_ranking"],
         "main_road_entry_definition": v1b["facility_sets"]["services"]["main_road_entry"]["definition"],
-        "unit_rule": next(cell["selection_rule"] for cell in v1b["scenario_engine_grid"]["cells"] if cell["id"] == "S3"),
+        "unit_rule": s3["selection_rule"],
+        "links_per_unit": s3["parameters"]["links_per_tambon"],
         "uses_flood_input": False,
-        "ranking_output_binding": block["ranking_output"]["binding"],
+        "ranking_output_binding": binding,
+        "ranking_output_binding_wording": block["ranking_output"]["binding_options"][binding],
         "readings_and_choices": "Drafter readings DR-B03 (demand weight, tie-break), DR-B06 (unit of a link) and "
                                 "DR-B07 (the ranking may run without a flood input); owner choices 9 (destinations) "
                                 "and 10 (binding), decision log R12.",
@@ -311,7 +412,12 @@ def load_retained_context(receipt: Mapping[str, Any], context_root: Path) -> tup
 def baseline_graph(
     context: Mapping[str, Any], receipt: Mapping[str, Any], v1b: Mapping[str, Any]
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
-    """Return the baseline vehicle edges (context edges and grade-join connectors), checked against the join log."""
+    """Return the baseline vehicle edges (context edges and grade-join connectors), checked against the join log.
+
+    Raises:
+        BuildError: when the joins of the context differ from those the E4 receipt records, or the join log is
+            not the one protocol v1b records.
+    """
 
     edges, joins = apply_grade_joins(context)
     recorded = receipt["grade_joins"]
@@ -330,7 +436,12 @@ def baseline_graph(
 
 
 def destination_set(context: Mapping[str, Any], receipt: Mapping[str, Any]) -> tuple[list[dict[str, Any]], dict[str, Any]]:
-    """Return the public facility set of the context (owner choice 9), checked against the E4 receipt."""
+    """Return the public facility set of the context (owner choice 9), checked against the E4 receipt.
+
+    Raises:
+        BuildError: when the hospitals or the main-road entries of the context differ from those the E4 receipt
+            records.
+    """
 
     hospitals = planning_context.hospital_destinations(context)
     entries = planning_context.main_road_entries(context)
@@ -434,6 +545,149 @@ def _cut(links: Sequence[Mapping[str, Any]], size: int) -> dict[str, Any]:
     }
 
 
+def connector_ties(links: Sequence[Mapping[str, Any]]) -> dict[str, int]:
+    """Count the ranked grade-join connectors that the tie-break on the edge ID puts ahead of a road edge.
+
+    Args:
+        links: The ranked rows of ``rank_links``, in rank order.
+
+    Returns:
+        ``sharing_their_flow_with_a_road_edge``: connectors whose flow is exactly the flow of at least one
+        ranked road edge; the connector ID sorts first, so each is ranked ahead of those road edges.
+        ``ranked_directly_ahead_of_a_road_edge_with_the_same_flow``: those among them whose next rank is such a
+        road edge (the others are followed by another connector with the same flow).
+    """
+
+    road_flows = {row["spt_flow_residents"] for row in links if row["edge_kind"] != JOIN_EDGE_KIND}
+    return {
+        "sharing_their_flow_with_a_road_edge": sum(
+            row["edge_kind"] == JOIN_EDGE_KIND and row["spt_flow_residents"] in road_flows for row in links),
+        "ranked_directly_ahead_of_a_road_edge_with_the_same_flow": sum(
+            row["edge_kind"] == JOIN_EDGE_KIND and following["edge_kind"] != JOIN_EDGE_KIND
+            and following["spt_flow_residents"] == row["spt_flow_residents"]
+            for row, following in zip(links, links[1:])),
+    }
+
+
+def single_closure_note(top_20_bridges: int, top_200_bridges: int) -> str:
+    """Say what closing one top-20 link on its own can do, from the graph bridges among the ranked links.
+
+    Removing an edge that is not a graph bridge leaves every node connected to the nodes it was connected to, so
+    nobody loses every route. The sentence follows from the bridge flags alone; no reroute is run for it.
+    """
+
+    ending = "This follows from the graph alone; no reroute was run."
+    if top_20_bridges == 0:
+        among_200 = "and none among the top 200" if top_200_bridges == 0 else f"and {top_200_bridges} among the top 200 are"
+        return (
+            f"No link among the top 20 is a graph bridge, {among_200}. Removing an edge that is not a graph bridge "
+            "leaves every node connected to the nodes it was connected to, so closing any single top-20 link on its "
+            f"own isolates nobody: every resident with a baseline route keeps one. {ending}"
+        )
+    return (
+        f"{top_20_bridges} of the top 20 links are graph bridges ({top_200_bridges} of the top 200). Closing one of "
+        "them on its own may leave residents without a route; only a reroute says how many. Closing any other "
+        f"single top-20 link isolates nobody, because an edge that is not a graph bridge has a way round. {ending}"
+    )
+
+
+def run_statement(
+    earlier_runs: Sequence[Mapping[str, Any]], generated_at_utc: str, table_sha256: str, wording: str
+) -> dict[str, Any]:
+    """Say what kind of run this is, from the runs it supersedes, and what that means for the recorded ranking.
+
+    Args:
+        earlier_runs: The runs this one supersedes, oldest first; empty for a first run. Each has ``run_kind``,
+            ``generated_at_utc``, ``evidence_sha256`` (the replaced receipt), ``top_20_sha256``,
+            ``ranking_table_sha256`` and ``replaced_because``.
+        generated_at_utc: The generation time of this run.
+        table_sha256: The SHA-256 of the ranking table this run computed.
+        wording: Protocol v1b's sentence on where the ranking's SHA-256 is recorded, quoted as the file has it.
+
+    Returns:
+        ``run_kind``, ``status``, ``status_note``, ``binding_note`` and ``run_history``.
+
+    Raises:
+        BuildError: when the earlier runs are malformed, out of order or not earlier than this run.
+        OpenPointError: when the table differs from the one the first run recorded.
+    """
+
+    earlier = [dict(run) for run in earlier_runs]
+    for position, run in enumerate(earlier):
+        if set(run) != EARLIER_RUN_KEYS or run["run_kind"] != (FIRST_RUN if position == 0 else SUPERSEDING_RUN):
+            raise BuildError("the earlier runs of the receipt are not a first run followed by superseding runs")
+        if not str(run["replaced_because"]).strip() or any(
+                len(str(run[key])) != 64 for key in ("evidence_sha256", "top_20_sha256", "ranking_table_sha256")):
+            raise BuildError("an earlier run needs the reason it was replaced and three SHA-256 values")
+    times = [run["generated_at_utc"] for run in earlier] + [generated_at_utc]
+    if times != sorted(set(times)):
+        raise BuildError("a superseding run must be generated after every run it supersedes")
+    quoted = f'Protocol v1b critical_link_selection.ranking_output (owner choice 10) says: "{wording}"'
+    if not earlier:
+        return {
+            "run_kind": FIRST_RUN,
+            "status": STATUS_BY_RUN_KIND[FIRST_RUN],
+            "status_note": (
+                f"First run of plan task E6 on the E4 planning context of record. {UNREVIEWED_NOTE} {quoted} The "
+                "receipt of this run is the receipt of the first run of the ranking, so the SHA-256 of the whole "
+                f"ranking table that it records (outputs.ranking_table.sha256) is that record. {OPEN_POINTS_NOTE}"
+            ),
+            "binding_note": (
+                f"{quoted} This is the receipt of the first run of the ranking, and this SHA-256 is that record. "
+                "The top 20, the S3 links of each tambon and the S3b bridge edges are read from this table. The "
+                "script computes no score and cannot see what other tasks have run: the generation time of this "
+                "receipt is what places the record before any scoring."
+            ),
+            "run_history": {
+                "earlier_runs": [],
+                "first_run_generated_at_utc": generated_at_utc,
+                "ranking_table_sha256_recorded_by_the_first_run": table_sha256,
+                "this_run_computed_that_ranking_table": True,
+                "note": "This is the first run.",
+            },
+        }
+    first, previous = earlier[0], earlier[-1]
+    if table_sha256 != first["ranking_table_sha256"] or any(
+            run["ranking_table_sha256"] != first["ranking_table_sha256"] for run in earlier):
+        raise OpenPointError(
+            "the ranking table of this run is not the one the first run recorded (SHA-256 "
+            f"{first['ranking_table_sha256']}). Protocol v1b does not say whether a later run may change a recorded "
+            "ranking (open point E6-OP6), so nothing is written."
+        )
+    if len(earlier) == 1:
+        superseded = f"supersedes the first run, generated {first['generated_at_utc']}"
+    else:
+        superseded = (f"supersedes the run generated {previous['generated_at_utc']} ({len(earlier)} earlier runs; "
+                      f"the first run was generated {first['generated_at_utc']})")
+    return {
+        "run_kind": SUPERSEDING_RUN,
+        "status": STATUS_BY_RUN_KIND[SUPERSEDING_RUN],
+        "status_note": (
+            f"A run of plan task E6 on the E4 planning context of record that {superseded}. "
+            f"{UNREVIEWED_NOTE} {quoted} The receipt of the first run recorded the SHA-256 "
+            f"{first['ranking_table_sha256']} for the whole ranking table. This run computed the same table, so that "
+            f"record stands and the receipt of this run repeats it. {OPEN_POINTS_NOTE}"
+        ),
+        "binding_note": (
+            f"{quoted} The receipt of the first run (generated {first['generated_at_utc']}) is that record. This run "
+            "computed the same table, so this SHA-256 repeats the record and replaces nothing. A superseding run "
+            "whose table differs stops and writes nothing (open point E6-OP6). The top 20, the S3 links of each "
+            "tambon and the S3b bridge edges are read from this table. The script computes no score and cannot see "
+            "what other tasks have run: the generation time of the first run is what places the record before any "
+            "scoring."
+        ),
+        "run_history": {
+            "earlier_runs": earlier,
+            "first_run_generated_at_utc": first["generated_at_utc"],
+            "ranking_table_sha256_recorded_by_the_first_run": first["ranking_table_sha256"],
+            "this_run_computed_that_ranking_table": True,
+            "note": "The earlier runs, oldest first. Each was replaced by the run after it; evidence_sha256 is the "
+                    "SHA-256 of the receipt that was replaced. A replaced file is in the Git history if its run was "
+                    "committed.",
+        },
+    }
+
+
 def assemble(
     context: Mapping[str, Any],
     edges: Sequence[Mapping[str, Any]],
@@ -443,10 +697,12 @@ def assemble(
     generated_at_utc: str,
     header: Mapping[str, Any],
     paths: Mapping[str, str],
+    earlier_runs: Sequence[Mapping[str, Any]] = (),
 ) -> dict[str, Any]:
     """Rank the links of a context and assemble the top-20 file, the ranking table and the receipt body.
 
-    Everything here is a function of the arguments, so the same inputs and generation time give the same bytes.
+    Everything here is a function of the arguments, so the same inputs, generation time and earlier runs give
+    the same bytes.
 
     Args:
         context: The planning context (``population``, ``node_coordinates``, ``canonical_sha256``,
@@ -458,18 +714,21 @@ def assemble(
         header: The parts of the receipt the caller checked: ``case``, ``protocols_in_force``, ``rule``,
             ``inputs``, ``graph``, ``destinations``, ``units`` and ``boundaries_valid_on``.
         paths: Logical paths of the ``top20`` file and the ``receipt``.
+        earlier_runs: The runs this one supersedes, oldest first (see ``run_statement``); empty for a first run.
 
     Returns:
         ``top20`` (bytes), ``ranking_table`` (bytes) and ``receipt_body`` (a dict without ``run``).
 
     Raises:
-        OpenPointError: when a grade-join connector is among the top 20.
+        OpenPointError: when a grade-join connector is among the top 20, or the ranking table of a superseding
+            run differs from the one the first run recorded.
     """
 
     if not str(generated_at_utc).strip():
         raise BuildError("a run needs a generation time")
     top_n = critical_links.OUTPUT_TOP_N
     reroute_n = critical_links.FULL_REROUTE_TOP_N
+    per_unit = int(header["rule"]["links_per_unit"])
     ranking = critical_links.rank_links(edges, context["population"], destinations)
     links = ranking["links"]
     connectors = [row for row in links if row["edge_kind"] == JOIN_EDGE_KIND]
@@ -482,6 +741,8 @@ def assemble(
     assigned = critical_links.assign_units(links, context["node_coordinates"], units)
     table = critical_links.ranking_table(links, assigned, context_canonical_sha256=context["canonical_sha256"])
     table_sha256 = critical_links.sha256_bytes(table)
+    statement = run_statement(
+        earlier_runs, generated_at_utc, table_sha256, header["rule"]["ranking_output_binding_wording"])
     osm_retrieved_at = context["source_metadata"]["osm"]["retrieved_at_utc"]
     source_timestamps = {
         "osm_retrieved_at_utc": osm_retrieved_at,
@@ -490,8 +751,8 @@ def assemble(
         "context_generated_at": header["inputs"]["context"]["context_generated_at"],
     }
     provenance = {
-        "status": STATUS,
-        "status_note": STATUS_NOTE,
+        "status": statement["status"],
+        "status_note": statement["status_note"],
         "generated_at_utc": generated_at_utc,
         "source_timestamp": osm_retrieved_at,
         "confidence_class": "low",
@@ -508,6 +769,7 @@ def assemble(
         "case": header["case"],
         "travel_mode": VEHICLE,
         "generated_at_utc": generated_at_utc,
+        "run_kind": statement["run_kind"],
         "ranking_rule_version": ranking["ranking_rule_version"],
         "context_canonical_sha256": context["canonical_sha256"],
         "ranking_table_sha256": table_sha256,
@@ -529,6 +791,18 @@ def assemble(
     assignment = Counter(row["unit_assignment"] for row in assigned.values())
     top_assignment = Counter(assigned[row["edge_id"]]["unit_assignment"] for row in top)
     reroute_set = [row["edge_id"] for row in links[:reroute_n]]
+    # The highest-ranked links of each unit, as scenario S3 reads them from the table. Counts only; no unit is named.
+    unit_top: dict[str, list[Mapping[str, Any]]] = {}
+    for row in links:
+        unit_id = assigned[row["edge_id"]]["unit_id"]
+        if unit_id is not None and len(unit_top.setdefault(unit_id, [])) < per_unit:
+            unit_top[unit_id].append(row)
+    units_with_a_connector_on_top = sum(
+        any(row["edge_kind"] == JOIN_EDGE_KIND for row in rows) for rows in unit_top.values())
+    ranked_bridges = [row for row in links if row["graph_bridge"]]
+    top_20_bridges = sum(row["graph_bridge"] for row in links[:top_n])
+    top_200_bridges = sum(row["graph_bridge"] for row in links[:reroute_n])
+    closure_note = single_closure_note(top_20_bridges, top_200_bridges)
     receipt = {
         "schema_version": RECEIPT_SCHEMA,
         "generated_at_utc": generated_at_utc,
@@ -536,9 +810,10 @@ def assemble(
                          "owner choices 9 and 10; drafter readings DR-B03 and DR-B06)",
         "case": header["case"],
         "travel_mode": VEHICLE,
-        "run_kind": "first_run",
-        "status": STATUS,
-        "status_note": STATUS_NOTE,
+        "run_kind": statement["run_kind"],
+        "status": statement["status"],
+        "status_note": statement["status_note"],
+        "run_history": statement["run_history"],
         "official_warning": False,
         "operational_status": "non_operational",
         "computes": "One baseline ranking of road links by the residents whose baseline route uses them, the graph "
@@ -557,6 +832,9 @@ def assemble(
                     "floodguard.evidence_interventions.select_interventions: smallest (minutes, destination ID), "
                     "then smallest (parent node ID, edge ID).",
             "ranked": "Edges with a positive flow, by flow (largest first) and then by edge ID.",
+            "graph_bridges": "Flagged on every ranked link (Tarjan). Nothing is added to the ranked set, to the 200 "
+                             "edges of the full reroute or to the 20 of the output: the protocol does not say what "
+                             "the bridges are added to (open point E6-OP5).",
             "population_snap_limit_m": critical_links.POPULATION_SNAP_LIMIT_M,
             "facility_snap_limit_m": critical_links.FACILITY_SNAP_LIMIT_M,
             "connector_speed_kmh": critical_links.CONNECTOR_SPEED_KMH,
@@ -592,6 +870,16 @@ def assemble(
             "share_of_routed_residents_by_nearest_destination_service": {
                 key: _rounded(sum(sorted(values)) / with_route) if with_route else None
                 for key, values in sorted(by_service.items())},
+            "destination_nodes_routed_onward_at_an_equal_time": {
+                "nodes": summary["destination_nodes_routed_onward_at_an_equal_time"],
+                "nodes_carrying_residents_onward": summary["destination_nodes_carrying_residents_onward_at_an_equal_time"],
+                "residents_carried_onward": _rounded(
+                    summary["residents_carried_onward_from_a_destination_node_at_an_equal_time"]),
+                "note": "Destination nodes that another destination with a smaller ID reaches in exactly the node's "
+                        "own entry time, as across a zero-minute grade join between two main-road entries. Every "
+                        "resident whose route reaches such a node counts on the edge that leaves it (open point "
+                        "E6-OP7).",
+            },
             "scope": "Whole frame only. No figure is written for a single tambon.",
         },
         "ranking": {
@@ -602,11 +890,29 @@ def assemble(
                 JOIN_EDGE_KIND if row["edge_kind"] == JOIN_EDGE_KIND else str(row["road_class"]) for row in links).items())),
             "top_20": _cut(links, top_n),
             "top_200": _cut(links, reroute_n),
+            "graph_bridges": {
+                "in_the_baseline_graph": summary["graph_bridge_edges"],
+                "ranked": len(ranked_bridges),
+                "among_the_top_20": top_20_bridges,
+                "among_the_top_200": top_200_bridges,
+                "best_rank": ranked_bridges[0]["rank"] if ranked_bridges else None,
+                "flow_residents_at_the_best_rank": (
+                    _rounded(ranked_bridges[0]["spt_flow_residents"], 3) if ranked_bridges else None),
+                "added_to_the_ranking": 0,
+                "reading": "Flagged only. The protocol's line '" + BRIDGE_RULE + "' is not applied as an addition, "
+                           "because it does not say what the bridges are added to (open point E6-OP5).",
+                "closing_one_top_20_link_on_its_own": closure_note,
+            },
             "grade_join_connectors": {
                 "ranked": len(connectors),
                 "best_rank": connectors[0]["rank"] if connectors else None,
                 "among_the_top_20": 0,
                 "among_the_top_200": sum(row["rank"] <= reroute_n for row in connectors),
+                **connector_ties(links),
+                "links_per_unit_read_by_scenario_s3": per_unit,
+                "units_where_one_is_among_the_highest_ranked_links_of_the_unit": units_with_a_connector_on_top,
+                "note": "Counts only; no unit is named. The run stops for a connector among the top 20 and does "
+                        "not stop for one among the highest-ranked links of a unit (open point E6-OP1).",
             },
             "unit_assignment": {
                 "units_that_hold_a_ranked_link": len({row["unit_id"] for row in assigned.values() if row["unit_id"]}),
@@ -636,9 +942,7 @@ def assemble(
                 "links": len(links),
                 "bytes": len(table),
                 "binding": header["rule"]["ranking_output_binding"],
-                "binding_note": "Owner choice 10: the receipt of the first scoring run records this SHA-256, before "
-                                "any scoring. The top 20, the S3 links of each tambon and the S3b bridge edges are "
-                                "read from this table.",
+                "binding_note": statement["binding_note"],
                 "retained_in_git": False,
                 "retained_note": "The table names the tambon of every ranked link, so it is not written into Git. "
                                  "It is a function of the inputs: --write-ranking writes these bytes to a path "
@@ -647,7 +951,7 @@ def assemble(
         },
         "open_points": [dict(point) for point in OPEN_POINTS],
         "assumptions": list(ASSUMPTIONS),
-        "limitations": list(LIMITATIONS),
+        "limitations": [*LIMITATIONS, closure_note],
     }
     return {"top20": top_bytes, "ranking_table": table, "receipt_body": receipt}
 
@@ -667,22 +971,28 @@ def output_paths(case: str, output_dir: Path = OUTPUT_DIR) -> dict[str, Path]:
     }
 
 
-def compute(args: argparse.Namespace, generated_at_utc: str) -> dict[str, Any]:
+def compute(
+    args: argparse.Namespace,
+    generated_at_utc: str,
+    earlier_runs: Sequence[Mapping[str, Any]] = (),
+    layout: Layout = REPOSITORY,
+) -> dict[str, Any]:
     """Check every input, rank the links and return the outputs in memory."""
 
-    v1b = read_json(PROTOCOL_PATHS["v1b"])
-    protocols = protocols_in_force()
+    v1b = read_json(layout.protocol_paths["v1b"])
+    protocols = protocols_in_force(layout.protocol_paths, layout.receipts)
     rule = selection_rule(v1b)
-    e4_receipt, e4_record = load_e4_receipt(args.case, v1b)
+    e4_receipt, e4_record = load_e4_receipt(args.case, v1b, layout.output_dir)
     context, context_record = load_retained_context(e4_receipt, args.context_root)
     edges, graph = baseline_graph(context, e4_receipt, v1b)
     destinations, destination_record = destination_set(context, e4_receipt)
     units, unit_record = reporting_units(args.boundaries, context, e4_receipt, v1b)
-    paths = output_paths(args.case)
+    paths = output_paths(args.case, layout.output_dir)
     header = {
         "case": CASE_IDS[args.case],
         "boundaries_valid_on": e4_receipt["source_timestamps"]["boundaries_valid_on"],
-        "protocols_in_force": {**protocols, "receipts_file": RECEIPTS.relative_to(ROOT).as_posix(), "checked": True},
+        "protocols_in_force": {
+            **protocols, "receipts_file": _logical(layout.receipts, args.context_root), "checked": True},
         "rule": rule,
         "inputs": {
             "e4_receipt": {**e4_record, "is_the_receipt_protocol_v1b_records": True},
@@ -710,7 +1020,8 @@ def compute(args: argparse.Namespace, generated_at_utc: str) -> dict[str, Any]:
     }
     return assemble(
         context, edges, destinations, units, generated_at_utc=generated_at_utc, header=header,
-        paths={key: path.relative_to(ROOT).as_posix() for key, path in paths.items()},
+        paths={key: _logical(path, args.context_root) for key, path in paths.items()},
+        earlier_runs=earlier_runs,
     )
 
 
@@ -720,9 +1031,11 @@ def _implementation() -> dict[str, Any]:
     import shapely
 
     commit = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True, check=False)
+    changed = subprocess.run(["git", "status", "--porcelain"], cwd=ROOT, capture_output=True, text=True, check=False)
     modules = ("critical_links", "planning_context", "grade_join", "evidence_context", "evidence_scenarios")
     return {
         "base_commit": commit.stdout.strip() or None,
+        "working_tree_differs_from_the_base_commit": bool(changed.stdout.strip()) if changed.returncode == 0 else None,
         "script_sha256": planning_context.sha256_file(Path(__file__)),
         **{f"{name}_sha256": planning_context.sha256_file(ROOT / "src" / "floodguard" / f"{name}.py") for name in modules},
         "python": platform.python_version(),
@@ -733,24 +1046,49 @@ def _implementation() -> dict[str, Any]:
     }
 
 
-def run_build(args: argparse.Namespace) -> dict[str, Any]:
+def earlier_runs_of(paths: Mapping[str, Path], reason: str | None) -> list[dict[str, Any]]:
+    """Return the runs a new run supersedes, oldest first, read from the files that are there.
+
+    The last entry is the run whose files are about to be replaced: its generation time, the SHA-256 of its
+    receipt and of its top-20 file, the SHA-256 of its ranking table and the reason it is replaced.
+
+    Raises:
+        BuildError: when files of an earlier run exist and no reason is given, or the earlier run cannot be
+            recorded faithfully (the receipt is missing, or the top-20 file is not the one it records).
+    """
+
+    if not any(path.exists() for path in paths.values()):
+        return []
+    if not (reason and reason.strip()):
+        raise BuildError("an earlier run exists; pass --supersede with the reason to replace it")
+    if not (paths["receipt"].is_file() and paths["top20"].is_file()):
+        raise BuildError("an earlier run left only one of its two files, so it cannot be recorded; nothing is replaced")
+    replaced = json.loads(paths["receipt"].read_text(encoding="ascii"))
+    top_20_sha256 = planning_context.sha256_file(paths["top20"])
+    if top_20_sha256 != replaced["outputs"]["top_20"]["sha256"]:
+        raise BuildError("the top-20 file is not the one its receipt records, so the earlier run cannot be recorded; "
+                         "nothing is replaced")
+    return [
+        *(dict(run) for run in replaced.get("run_history", {}).get("earlier_runs", [])),
+        {
+            "run_kind": replaced["run_kind"],
+            "generated_at_utc": replaced["generated_at_utc"],
+            "evidence_sha256": planning_context.sha256_file(paths["receipt"]),
+            "top_20_sha256": top_20_sha256,
+            "ranking_table_sha256": replaced["outputs"]["ranking_table"]["sha256"],
+            "replaced_because": reason.strip(),
+        },
+    ]
+
+
+def run_build(args: argparse.Namespace, layout: Layout = REPOSITORY) -> dict[str, Any]:
     """Run the ranking once and write the top-20 file and the receipt; return a short summary."""
 
-    paths = output_paths(args.case)
-    existing = [path for path in paths.values() if path.exists()]
-    supersedes = None
-    if existing:
-        if not (args.supersede and args.supersede.strip()):
-            raise BuildError("a first run exists; pass --supersede with the reason to replace it")
-        supersedes = {
-            "reason": args.supersede.strip(),
-            **{f"{key}_sha256": planning_context.sha256_file(path) for key, path in paths.items() if path.exists()},
-        }
-        if paths["receipt"].exists():
-            supersedes["generated_at_utc"] = read_json(paths["receipt"])["generated_at_utc"]
+    paths = output_paths(args.case, layout.output_dir)
+    earlier = earlier_runs_of(paths, args.supersede)
     started = _utc_now()
     clock = time.perf_counter()
-    outputs = compute(args, _utc_now())
+    outputs = compute(args, _utc_now(), earlier, layout)
     body = outputs["receipt_body"]
     run = {
         "run_started_at_utc": started,
@@ -765,13 +1103,13 @@ def run_build(args: argparse.Namespace) -> dict[str, Any]:
         args.write_ranking.parent.mkdir(parents=True, exist_ok=True)
         args.write_ranking.write_bytes(outputs["ranking_table"])
         run["ranking_table_written_to"] = _logical(args.write_ranking, args.context_root)
-    if supersedes is not None:
-        run["supersedes"] = supersedes
     paths["top20"].write_bytes(outputs["top20"])
     paths["receipt"].write_bytes(planning_context.encode_json({**body, "run": run}))
     return {
         "case": body["case"],
-        "receipt": paths["receipt"].relative_to(ROOT).as_posix(),
+        "run_kind": body["run_kind"],
+        "earlier_runs": len(earlier),
+        "receipt": _logical(paths["receipt"], args.context_root),
         "receipt_sha256": planning_context.sha256_file(paths["receipt"]),
         "top_20": body["outputs"]["top_20"],
         "ranking_table_sha256": body["outputs"]["ranking_table"]["sha256"],
@@ -780,14 +1118,19 @@ def run_build(args: argparse.Namespace) -> dict[str, Any]:
     }
 
 
-def run_verify(args: argparse.Namespace) -> dict[str, Any]:
-    """Recompute the ranking with the receipt's generation time and compare byte for byte. Nothing is written."""
+def run_verify(args: argparse.Namespace, layout: Layout = REPOSITORY) -> dict[str, Any]:
+    """Recompute the ranking with the receipt's generation time and earlier runs and compare byte for byte.
 
-    paths = output_paths(args.case)
+    Nothing is written. The run kind, the status and every note are recomputed from the earlier runs the receipt
+    lists, so a receipt that lists an earlier run and calls itself a first run does not verify.
+    """
+
+    paths = output_paths(args.case, layout.output_dir)
     if not paths["receipt"].is_file():
         raise BuildError("there is no receipt of this case to verify")
     committed = json.loads(paths["receipt"].read_text(encoding="ascii"))
-    outputs = compute(args, committed["generated_at_utc"])
+    earlier = committed.get("run_history", {}).get("earlier_runs", [])
+    outputs = compute(args, committed["generated_at_utc"], earlier, layout)
     problems = []
     if not paths["top20"].is_file() or paths["top20"].read_bytes() != outputs["top20"]:
         problems.append("top_20: the committed file differs from the recomputation byte for byte")
@@ -798,7 +1141,8 @@ def run_verify(args: argparse.Namespace) -> dict[str, Any]:
     return {
         "verified": not problems,
         "case": committed["case"],
-        "receipt": paths["receipt"].relative_to(ROOT).as_posix(),
+        "run_kind": committed.get("run_kind"),
+        "receipt": _logical(paths["receipt"], args.context_root),
         "compared": ["top_20", "receipt_without_run", "ranking_table_sha256"],
         "problems": problems,
     }
@@ -832,16 +1176,16 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     return args
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(argv: list[str] | None = None, layout: Layout = REPOSITORY) -> int:
     """Run or verify the baseline critical-link ranking of a case and print a JSON summary."""
 
     args = parse_args(argv)
     try:
         if args.verify:
-            result = run_verify(args)
+            result = run_verify(args, layout)
             print(json.dumps(result))
             return 0 if result["verified"] else 1
-        print(json.dumps(run_build(args)))
+        print(json.dumps(run_build(args, layout)))
     except OpenPointError as error:
         print(json.dumps({"stopped": "the protocol does not decide this case", "reason": str(error)}))
         return 2

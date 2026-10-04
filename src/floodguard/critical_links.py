@@ -17,8 +17,8 @@ and the details the owners confirmed or decided:
   entries, in vehicle mode (owner choice 9);
 * a link belongs to the tambon where its edge lies, and an edge that crosses a
   boundary goes by its midpoint (drafter reading DR-B06);
-* the ranking is bound by its SHA-256 in the receipt of the first run (owner
-  choice 10).
+* "the ranking's SHA-256 is recorded in the receipt of the first run, before
+  any scoring" (``ranking_output``, owner choice 10).
 
 This module holds that rule as pure functions on an edge list, demand rows and
 destinations. It reads no file and no flood layer, and it computes no closure
@@ -36,6 +36,20 @@ How the rule is read here, and nothing more:
   by flow (largest first) and then by edge ID.
 * A graph bridge is an edge whose removal disconnects the graph (Tarjan).
   Every ranked link carries that flag, and the OSM ``bridge=yes`` tag beside it.
+  The protocol says "Add graph bridges (Tarjan) to cover the all-routes-lost
+  case" and does not say what the bridges are added to (the ranked set, the 200
+  edges of the full reroute or the 20 of the output) or where a bridge stands
+  against a link ranked by flow. No merge rule is made up here: a bridge is
+  flagged and nothing is added, so a bridge is ranked only by its flow. That is
+  an open point for the owners, not a decided reading. Closing an edge that is
+  not a graph bridge takes every route from nobody, so the all-routes-lost case
+  reaches an output only where a bridge is ranked high enough by flow.
+* A zero-minute edge between two destination nodes (a grade join between two
+  main-road entries) is crossed like any other: the comparison of
+  ``select_interventions`` gives the node to the destination with the smaller
+  ID, so every resident whose route reaches that node counts on the edge.
+  ``rank_links`` counts such nodes and those residents; the protocol does not
+  say where their route ends.
 * The in-extent flag needs a flood extent, which the baseline ranking does not
   read. ``flag_in_extent`` adds it later from the edges a flood input intersects
   (``floodguard.closure_rules.edge_intersections``).
@@ -154,9 +168,11 @@ def shortest_path_tree(
     Returns:
         ``minutes`` (node -> minutes to its nearest destination), ``destination``
         (node -> that destination's ID), ``predecessor`` (node -> ``(parent node,
-        edge ID)`` of the tree edge towards the destination; a root has none) and
-        ``settle_order`` (nodes in the order they were settled). A node that no
-        destination reaches is in none of them.
+        edge ID)`` of the tree edge towards the destination; a root has none),
+        ``settle_order`` (nodes in the order they were settled) and
+        ``entry_minutes`` (node -> the smallest connector time of a destination
+        that enters the graph there). A node that no destination reaches is in
+        none of the first four.
 
     Raises:
         CriticalLinkError: for a repeated destination ID or a malformed edge.
@@ -167,6 +183,7 @@ def shortest_path_tree(
     if len({site["facility_id"] for site in sites}) != len(sites):
         raise CriticalLinkError("destination IDs must be unique")
     best: dict[str, tuple[float, str]] = {}
+    entry: dict[str, float] = {}
     predecessor: dict[str, tuple[str, str]] = {}
     queue: list[tuple[float, str, str]] = []
     for site in sites:
@@ -175,6 +192,7 @@ def shortest_path_tree(
             if node not in graph or snap is None or snap > facility_snap_limit_m:
                 continue
             value = (snap / 1000 / CONNECTOR_SPEED_KMH * 60, site["facility_id"])
+            entry[node] = min(value[0], entry.get(node, value[0]))
             if node not in best or value < best[node]:
                 best[node] = value
                 heapq.heappush(queue, (*value, node))
@@ -205,6 +223,51 @@ def shortest_path_tree(
         "destination": {node: best[node][1] for node in order},
         "predecessor": {node: predecessor[node] for node in order if node in predecessor},
         "settle_order": order,
+        "entry_minutes": dict(sorted(entry.items())),
+    }
+
+
+def destinations_routed_onward(tree: Mapping[str, Any], flows: Mapping[str, float]) -> dict[str, Any]:
+    """Count the destination nodes whose route goes on to another destination at the same travel time.
+
+    A destination enters the tree at its node with the time of its connector.
+    When another destination reaches that node in exactly that time and has
+    the smaller ID, the comparison of ``select_interventions`` gives it the
+    node, and the node gets a tree edge. With edges that take time this needs
+    two equal sums; with a zero-minute edge between two destination nodes it
+    always happens. Every resident whose route reaches such a node is carried
+    across the tree edge that leaves it. A node that another destination
+    reaches in less time is not counted: its route is shorter, not tied.
+
+    Args:
+        tree: The output of ``shortest_path_tree``.
+        flows: ``edge ID -> residents`` from ``spt_flow`` for the same tree.
+
+    Returns:
+        ``nodes`` (sorted node IDs), ``nodes_carrying_residents_onward`` (those
+        whose leaving tree edge has a flow) and ``residents_carried_onward``
+        (the residents whose route passes at least one such node; a resident
+        who passes several is counted once).
+    """
+
+    predecessor = tree["predecessor"]
+    nodes = sorted(
+        node for node, minutes in tree["entry_minutes"].items()
+        if node in predecessor and tree["minutes"][node] == minutes
+    )
+    tied = set(nodes)
+    carrying = [node for node in nodes if flows.get(predecessor[node][1], 0) > 0]
+    outermost = []
+    for node in carrying:
+        ancestor = predecessor[node][0]
+        while ancestor not in tied and ancestor in predecessor:
+            ancestor = predecessor[ancestor][0]
+        if ancestor not in tied:
+            outermost.append(node)
+    return {
+        "nodes": nodes,
+        "nodes_carrying_residents_onward": len(carrying),
+        "residents_carried_onward": math.fsum(flows[predecessor[node][1]] for node in outermost),
     }
 
 
@@ -346,7 +409,9 @@ def rank_links(
         ``road_class``, ``osm_way_id``, ``from_node``, ``to_node``, ``length_m``
         and ``normal_minutes``.
         ``summary``: the demand totals, the residents with and without a baseline
-        route, and counts of nodes, edges, graph bridges and ranked links.
+        route, counts of nodes, edges, graph bridges and ranked links, and the
+        destination nodes routed onward at an equal time (see
+        ``destinations_routed_onward``).
         ``residents_by_destination``: destination ID -> residents whose baseline
         route ends there.
     """
@@ -381,6 +446,7 @@ def rank_links(
         by_destination[tree["destination"][node]] += demand[node]
     with_route = math.fsum(demand[node] for node in routed)
     connected = totals["residents_connected_to_the_graph"]
+    onward = destinations_routed_onward(tree, flows)
     return {
         "ranking_rule_version": RANKING_RULE_VERSION,
         "tie_break": TIE_BREAK,
@@ -399,6 +465,9 @@ def rank_links(
             "graph_bridge_edges": len(bridges),
             "ranked_links": len(links),
             "ranked_links_that_are_graph_bridges": sum(row["graph_bridge"] for row in links),
+            "destination_nodes_routed_onward_at_an_equal_time": len(onward["nodes"]),
+            "destination_nodes_carrying_residents_onward_at_an_equal_time": onward["nodes_carrying_residents_onward"],
+            "residents_carried_onward_from_a_destination_node_at_an_equal_time": onward["residents_carried_onward"],
         },
         "residents_by_destination": dict(sorted(by_destination.items())),
     }

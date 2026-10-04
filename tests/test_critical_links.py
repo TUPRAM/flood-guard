@@ -24,6 +24,7 @@ from floodguard.critical_links import (
     UNIT_NONE,
     CriticalLinkError,
     assign_units,
+    destinations_routed_onward,
     flag_in_extent,
     graph_bridges,
     link_features,
@@ -142,6 +143,61 @@ def test_an_edge_between_two_destinations_carries_nobody() -> None:
     assert result["residents_by_destination"] == {"main-road-entry-m1": 50, "main-road-entry-m2": 8}
     assert result["summary"]["destinations_supplied"] == 3
     assert result["summary"]["destinations_that_are_a_nearest_destination"] == 2
+    assert result["summary"]["destination_nodes_routed_onward_at_an_equal_time"] == 0
+
+
+def test_a_zero_minute_edge_between_two_destination_nodes_is_crossed_towards_the_smaller_id() -> None:
+    """Open point E6-OP7: this documents what the comparison of select_interventions does; it decides nothing.
+
+    Two main-road entries a and b share a coordinate and a grade-join connector that takes no time. Both enter the
+    tree at 0 minutes. (0, "main-road-entry-a") is smaller than (0, "main-road-entry-b"), so node b is given to
+    entry a and gets the connector as its tree edge: the 10 residents standing at entry b and the 4 whose route
+    reaches it count on the connector.
+    """
+
+    roads = [edge("grade-join-ab", "a", "b", 0.0, edge_kind=JOIN_EDGE_KIND, length_m=0.0),
+             edge("street", "b", "c", 1)]
+    people = [pop("p-b", "b", 10), pop("p-c", "c", 4)]
+    sites = [site("main-road-entry-a", "a"), site("main-road-entry-b", "b")]
+    result = rank_links(roads, people, sites)
+    assert flows(result) == {"grade-join-ab": 14, "street": 4}
+    assert result["residents_by_destination"] == {"main-road-entry-a": 14}
+    tree = shortest_path_tree(roads, sites)
+    assert tree["entry_minutes"] == {"a": 0.0, "b": 0.0} and tree["predecessor"]["b"] == ("a", "grade-join-ab")
+    assert destinations_routed_onward(tree, flows(result)) == {
+        "nodes": ["b"], "nodes_carrying_residents_onward": 1, "residents_carried_onward": 14}
+    summary = result["summary"]
+    assert summary["destination_nodes_routed_onward_at_an_equal_time"] == 1
+    assert summary["destination_nodes_carrying_residents_onward_at_an_equal_time"] == 1
+    assert summary["residents_carried_onward_from_a_destination_node_at_an_equal_time"] == 14
+    # Nobody at entry b or behind it: the node is still routed onward, and it carries nobody.
+    empty = rank_links(roads, [], sites)["summary"]
+    assert empty["destination_nodes_routed_onward_at_an_equal_time"] == 1
+    assert empty["destination_nodes_carrying_residents_onward_at_an_equal_time"] == 0
+    assert empty["residents_carried_onward_from_a_destination_node_at_an_equal_time"] == 0
+    # Three entries in a row: c is given to a through b. A resident who passes both is counted once.
+    chain = [edge("grade-join-ab", "a", "b", 0.0, edge_kind=JOIN_EDGE_KIND), edge("grade-join-bc", "b", "c", 0.0,
+             edge_kind=JOIN_EDGE_KIND)]
+    three = [*sites, site("main-road-entry-c", "c")]
+    chained = rank_links(chain, [pop("p-b", "b", 5), pop("p-c", "c", 10)], three)
+    assert flows(chained) == {"grade-join-ab": 15, "grade-join-bc": 10}
+    assert destinations_routed_onward(shortest_path_tree(chain, three), flows(chained)) == {
+        "nodes": ["b", "c"], "nodes_carrying_residents_onward": 2, "residents_carried_onward": 15}
+    # select_interventions, which the protocol names as the pattern, does the same on this graph.
+    pattern = select_interventions(people, roads, sites, calculate_total_access(people, roads, sites))
+    assert [(row["edge_id"], row["baseline_route_population"]) for row in pattern["candidates"]["close_edge"]] == [
+        ("grade-join-ab", 14), ("street", 4)]
+
+    # With an edge that takes time the residents at entry b stay there: only a tie moves them.
+    timed = [edge("link-ab", "a", "b", 1), edge("street", "b", "c", 1)]
+    result = rank_links(timed, people, sites)
+    assert flows(result) == {"street": 4} and result["summary"]["destination_nodes_routed_onward_at_an_equal_time"] == 0
+    # A destination that another one reaches in less time is routed onward too, but that is a shorter route, not a
+    # tie: the hospital stands 100 m from node h (1.2 minutes) and entry e is 1 minute away.
+    nearer = [edge("h-e", "h", "e", 1)]
+    tree = shortest_path_tree(nearer, [site("hospital", "h", 100.0), site("entry", "e")])
+    assert tree["predecessor"]["h"] == ("e", "h-e") and tree["minutes"]["h"] == pytest.approx(1.0)
+    assert destinations_routed_onward(tree, {"h-e": 5.0})["nodes"] == []
 
 
 def test_disconnected_nodes_have_no_route_and_carry_no_flow() -> None:
@@ -213,6 +269,27 @@ def test_a_bridge_is_flagged_and_closing_it_isolates_exactly_its_flow() -> None:
         reroute_after_closure(roads, people, sites, ["no-such-edge"])
 
 
+def test_only_a_graph_bridge_can_take_every_route_from_anybody() -> None:
+    """The fact behind open point E6-OP5: a link that is not a graph bridge, closed on its own, isolates nobody."""
+
+    generator = random.Random(605)
+    isolating = 0
+    for _ in range(40):
+        nodes = [f"n{index:02d}" for index in range(generator.randint(4, 14))]
+        pairs = sorted({tuple(sorted(generator.sample(nodes, 2))) for _ in range(generator.randint(3, 22))})
+        # Minutes 0 to 2: zero-minute edges are in, as grade-join connectors are in the real graph.
+        roads = [edge(f"e-{a}-{b}", a, b, generator.randint(0, 2)) for a, b in pairs]
+        used = sorted({node for pair in pairs for node in pair})
+        people = [pop(f"p-{node}", node, generator.randint(1, 9)) for node in used]
+        sites = [site("site-1", used[0]), site("site-2", used[-1])]
+        for row in rank_links(roads, people, sites)["links"]:
+            lost = reroute_after_closure(roads, people, sites, [row["edge_id"]])["residents_losing_every_route"]
+            if not row["graph_bridge"]:
+                assert lost == 0, row["edge_id"]
+            isolating += lost > 0
+    assert isolating > 20, "the fixture must hold bridges whose closure isolates somebody"
+
+
 def test_a_resident_at_a_destination_keeps_the_route_when_every_edge_there_closes() -> None:
     roads = [edge("only", "h", "a", 1)]
     people = [pop("at-hospital", "h", 4), pop("p-a", "a", 6)]
@@ -276,6 +353,24 @@ def test_the_ranking_is_the_close_edge_ranking_of_select_interventions() -> None
     for row in baseline["node_results"]:
         assert tree["minutes"][row["node_id"]] == pytest.approx(row["normal_access_minutes"])
     assert set(spt_flow(tree, origin_demand(people, tree["minutes"])[0])) == set(flows(result))
+
+
+def test_the_ranking_follows_select_interventions_across_zero_minute_edges_too() -> None:
+    """Grade-join connectors take no time, which select_interventions never met: the two still agree."""
+
+    generator = random.Random(1307)
+    for _ in range(25):
+        nodes = [f"n{index:02d}" for index in range(generator.randint(5, 25))]
+        pairs = sorted({tuple(sorted(generator.sample(nodes, 2))) for _ in range(generator.randint(4, 45))})
+        roads = [edge(f"e-{a}-{b}", a, b, generator.randint(0, 2)) for a, b in pairs]
+        used = sorted({node for pair in pairs for node in pair})
+        people = [pop(f"p-{node}", node, generator.randint(1, 9)) for node in used]
+        sites = [site(f"site-{index}", node) for index, node in enumerate(generator.sample(used, min(3, len(used))))]
+        pattern = select_interventions(people, roads, sites, calculate_total_access(people, roads, sites))
+        ranked = rank_links(roads, people, sites)["links"]
+        assert pattern["candidate_counts"]["close_edge"] == len(ranked)
+        assert [(row["edge_id"], row["spt_flow_residents"]) for row in ranked[:10]] == [
+            (row["edge_id"], row["baseline_route_population"]) for row in pattern["candidates"]["close_edge"]]
 
 
 def test_malformed_inputs_are_refused() -> None:

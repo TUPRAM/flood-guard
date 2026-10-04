@@ -1,0 +1,2687 @@
+{
+  "schema_version": "floodguard.uncertainty_ensemble_run_receipt.v1",
+  "generated_at_utc": "2026-10-04T20:29:38Z",
+  "run_kind": "first_run",
+  "plan_task": "E10: uncertainty_ensemble.py + LOCO + headline rule; 540 cells per lane reported",
+  "status": "run_receipt",
+  "status_note": "Written with protocol v1a and v1b in force (protocol_sha256). The run computed an FPPS and a class for real units in every cell of the ensemble that can be run today, which protocol v1b allows since it is in force; every run is reported, and so is every cell.",
+  "official_warning": false,
+  "operational_status": "non_operational",
+  "can_feed_decision_layer": false,
+  "computes": "For one case and each of its reporting units: the cells of the predeclared grid of protocol v1b that can be run today, each with the five components of planning frame v1, FPPS, the binding class of class rule v1 with its reason code and leave-one-component-out; and from them the range of the FPPS, the share of cells in each class, the cells keeping the class of the default cell, the best and worst rank, the residents losing 30-minute access over the access runs, the FPPS swing along each axis, and the headline-stability record of guardrail GR8. The access runs of the minus and plus flood levels are made for it. No equity figure, no overlay and no accepted value.",
+  "source_timestamp": "2024-08-01/2024-10-12",
+  "source_timestamps": {
+    "flood_input": "2024-08-01/2024-10-12",
+    "osm_retrieved_at_utc": "2026-07-10T02:46:49Z",
+    "population_year_represented": 2020,
+    "age_counts": "2025-09-01",
+    "permanent_water": "2021-01-01/2021-12-31"
+  },
+  "confidence_class": "low",
+  "confidence_basis": "An ensemble of planning classes from modelled access on OpenStreetMap roads, modelled resident and age counts, and closures assumed from a flood input that FloodGuard did not check against the ground or against an independent source. Every cell is the same modelled chain with another declared choice; the spread across the cells says how far the result depends on those choices and nothing about its distance from what happened. This line is the confidence of the run as evidence; the confidence class of each unit under rule v1 is in the results.",
+  "protocol_sha256": {
+    "planning_protocol_v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+    "planning_protocol_v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+  },
+  "licence": {
+    "applies_to": "Every figure of this run that is derived from UNOSAT/GISTDA product 4009: the closure counts, the whole-frame resident counts and the counts of units and cells by class in this file, and every component value, FPPS, class and access count in the file this run wrote outside Git.",
+    "name": "CC BY-SA 4.0",
+    "full_name": "Creative Commons Attribution-ShareAlike 4.0 International",
+    "spdx_id": "CC-BY-SA-4.0",
+    "url": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "legal_code_url": "https://creativecommons.org/licenses/by-sa/4.0/legalcode",
+    "credit": "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009",
+    "share_alike": "Every layer or table derived from product 4009 is shared under CC BY-SA 4.0, in its own file, with the attribution and a change notice. Keeping product 4009 derivatives in their own files is a caution, not legal advice.",
+    "standard_sentence": "unvalidated preliminary agency extent (UNOSAT product 4009 with GISTDA; Field_Validation=0), used as provided under CC BY-SA 4.0. FloodGuard did not validate it.",
+    "change_notice": "Changed by FloodGuard: the layer CHIANGRAI_20240801_20241012_AccumulatedFlood was repaired (make_valid), projected from EPSG:4326 to EPSG:32647 and clipped to the frames of plan task E1; road segments were measured against it, closure rule v1 was applied to them and modelled access was compared with and without those closures (plan task E5). In plan task E8 the flooded share of each unit's land outside permanent water, the share of its residents inside the extent and its access counts were then turned into the component values of planning frame v1, an FPPS and planning classes. In plan task E10 the same chain was then run with the layer shrunk and grown by 20 m and under the strict, central and permissive levels of closure rule v1, and each result was scored under two pairs of vulnerability anchors and five weight presets. This file holds values derived from the layer, not the layer. Source: UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009, CC BY-SA 4.0.",
+    "rights_record": {
+      "path": "docs/proposal_execution/rights_basis_4009_v1.json",
+      "sha256": "531ab40beb2b3e80a02d6de0d4d7d791b299176af0b192bfe105ca23c7e50cb3",
+      "record_status": "confirmed",
+      "confirmed_by": [
+        "Putu",
+        "Rachmania"
+      ],
+      "confirmed_on": "2026-10-02"
+    },
+    "flood_input_rights_level": "public",
+    "flood_input_rights_level_basis": "The confirmed record rights_basis_4009_v1 names this layer as its layer in scope. Layers derived from it may be published under CC BY-SA 4.0 with the credit and a change notice, as a season envelope only (decisions D2, D3 and R6).",
+    "publication_level": "local",
+    "publication_level_rule": "Protocol v1a guardrail GR6: the rights level of an output is the minimum across its lineage. Nothing here is written under apps/web/public/.",
+    "licence_notice_file": "docs/proposal_execution/rights_basis_4009_v1_NOTICE.txt",
+    "other_inputs": [
+      {
+        "id": "osm",
+        "name": "OpenStreetMap Thailand extract (Geofabrik), roads and hospitals of the planning context",
+        "licence": "ODbL 1.0",
+        "attribution": "(c) OpenStreetMap contributors",
+        "used_for": "The road graph, the hospitals and the main-road entries."
+      },
+      {
+        "id": "worldpop-2020",
+        "name": "WorldPop Thailand 100 m population 2020 (tha_ppp_2020.tif)",
+        "licence": "CC BY 4.0",
+        "attribution": "WorldPop (www.worldpop.org), University of Southampton",
+        "used_for": "The residents of each demand cell."
+      },
+      {
+        "id": "cod-ab",
+        "name": "HDX Thailand COD-AB subdistrict boundaries (tha_admin3)",
+        "licence": "CC BY-IGO",
+        "attribution": "OCHA / HDX Thailand COD-AB",
+        "used_for": "The tambon each demand cell counts for."
+      },
+      {
+        "id": "esa-worldcover-2021",
+        "name": "Permanent water of the reporting frame (plan task E1): ESA WorldCover 2021 v200, class 80",
+        "licence": "CC BY 4.0",
+        "attribution": "ESA WorldCover project 2021 / Contains modified Copernicus Sentinel data (2021) processed by ESA WorldCover consortium",
+        "used_for": "The land outside permanent water that the flood likelihood is measured on."
+      },
+      {
+        "id": "worldpop-2024-age-counts",
+        "name": "Age counts per unit (plan task E7): WorldPop Global2 R2025A v1, 2024, 1 km constrained age counts",
+        "licence": "CC BY 4.0 (public catalogue); public derivatives need a purpose-specific review that is not recorded",
+        "attribution": "WorldPop (www.worldpop.org), University of Southampton",
+        "used_for": "The dependent share of each unit, for the vulnerability component."
+      }
+    ],
+    "not_legal_advice": true,
+    "where_the_values_are": "The counts for the whole case are in this receipt (access_runs, result). The values of each unit are in the file this receipt binds (outputs), which carries the same licence, credit and change notice."
+  },
+  "parameters": {
+    "case_id": "SE1",
+    "frame_set": "mae_sai",
+    "lane": "SCN-ENV",
+    "tier": "T1",
+    "case_reference_date": null,
+    "unit_ids": [
+      "TH570901",
+      "TH570902",
+      "TH570903",
+      "TH570904",
+      "TH570905",
+      "TH570906",
+      "TH570908",
+      "TH570909"
+    ],
+    "level": "public",
+    "services": [
+      "hospital",
+      "main_road_entry"
+    ],
+    "grid": {
+      "source": "planning_protocol_v1b.json /ensemble_grid; the weight presets from planning_protocol_v1a.json /scoring_frame/weight_presets; the retention minimum also from v1a guardrail GR8",
+      "axes": [
+        {
+          "axis": "flood_input_single_state",
+          "levels": [
+            "minus",
+            "as_provided",
+            "plus"
+          ],
+          "levels_as_protocol_v1b_states_them": [
+            "minus (one pixel / 20 m erosion)",
+            "as-provided",
+            "plus (one pixel buffer)"
+          ],
+          "count": 3
+        },
+        {
+          "axis": "passability",
+          "levels": [
+            "strict",
+            "central",
+            "permissive"
+          ],
+          "levels_as_protocol_v1b_states_them": [
+            "strict (k = 2)",
+            "central (k = 4)",
+            "permissive (k = 6)"
+          ],
+          "count": 3
+        },
+        {
+          "axis": "facilities",
+          "levels": [
+            "public",
+            "corroborated",
+            "all_listed"
+          ],
+          "levels_as_protocol_v1b_states_them": [
+            "public",
+            "corroborated",
+            "all_listed"
+          ],
+          "count": 3
+        },
+        {
+          "axis": "population_vintage",
+          "levels": [
+            "worldpop_2020",
+            "rescaled_2024"
+          ],
+          "levels_as_protocol_v1b_states_them": [
+            "WorldPop 2020",
+            "2024-rescaled demand"
+          ],
+          "count": 2
+        },
+        {
+          "axis": "vulnerability_anchors",
+          "levels": [
+            "P10_P90",
+            "P5_P95"
+          ],
+          "levels_as_protocol_v1b_states_them": [
+            "national P10 / P90",
+            "national P5 / P95"
+          ],
+          "count": 2
+        },
+        {
+          "axis": "weights",
+          "levels": [
+            "default",
+            "access_heavy",
+            "exposure_heavy",
+            "road_heavy",
+            "vulnerability_heavy"
+          ],
+          "levels_as_protocol_v1b_states_them": [
+            "default",
+            "access_heavy",
+            "exposure_heavy",
+            "road_heavy",
+            "vulnerability_heavy"
+          ],
+          "count": 5
+        }
+      ],
+      "core_cells_per_lane": 540,
+      "routing_combinations_per_lane": 27,
+      "cells_of_the_public_facility_set": 180,
+      "runs": "Full-chain reruns, vehicle mode. Walking is excluded from the ensemble because the walking access gap is 46-100 with no flood.",
+      "reference_cell": {
+        "flood_input_single_state": "as_provided",
+        "passability": "central",
+        "facilities": "public",
+        "population_vintage": "worldpop_2020",
+        "vulnerability_anchors": "P10_P90",
+        "weights": "default"
+      },
+      "reference_cell_as_protocol_v1b_states_it": "Retention is the share of the 540 core cells whose v1 class equals the class of the default cell: as-provided flood state, central passability, public facilities, WorldPop 2020, P10 / P90 anchors, default weights.",
+      "weight_presets_raw_values_before_normalisation": {
+        "default": {
+          "flood_likelihood_0_100": 0.3,
+          "exposure_0_100": 0.25,
+          "access_gap_0_100": 0.2,
+          "road_criticality_0_100": 0.15,
+          "vulnerability_context_0_100": 0.1
+        },
+        "access_heavy": {
+          "flood_likelihood_0_100": 0.3,
+          "exposure_0_100": 0.25,
+          "access_gap_0_100": 0.35,
+          "road_criticality_0_100": 0.15,
+          "vulnerability_context_0_100": 0.1
+        },
+        "exposure_heavy": {
+          "flood_likelihood_0_100": 0.3,
+          "exposure_0_100": 0.4,
+          "access_gap_0_100": 0.2,
+          "road_criticality_0_100": 0.15,
+          "vulnerability_context_0_100": 0.1
+        },
+        "road_heavy": {
+          "flood_likelihood_0_100": 0.3,
+          "exposure_0_100": 0.25,
+          "access_gap_0_100": 0.2,
+          "road_criticality_0_100": 0.3,
+          "vulnerability_context_0_100": 0.1
+        },
+        "vulnerability_heavy": {
+          "flood_likelihood_0_100": 0.3,
+          "exposure_0_100": 0.25,
+          "access_gap_0_100": 0.2,
+          "road_criticality_0_100": 0.15,
+          "vulnerability_context_0_100": 0.25
+        }
+      },
+      "headline_rule": {
+        "class_retention_min": 0.6,
+        "over": "the single-state ensemble",
+        "fallback_text": "no class met the stability rule; shown as unstable: verify",
+        "retention_for_public_overlays": "For a public overlay, class retention is computed over the 180 cells of the public facility set only, and the overlay says so."
+      },
+      "one_at_a_time": [
+        "Flood-likelihood anchor 0.10 and 0.30.",
+        "Class rule v1 and v2.",
+        "Terrain / remoteness proxy in place of the age-based vulnerability, case O1 only."
+      ],
+      "per_tambon_outputs": [
+        "Median and range of people losing 30-minute access.",
+        "Median and range of EED and EER.",
+        "Best and worst rank.",
+        "Percent of runs keeping the class.",
+        "The axis with the largest swing."
+      ],
+      "declared_cuts": {
+        "already_cut": "Walking-mode ensemble cells.",
+        "cut_line_6": "Population-vintage and vulnerability-anchor axes (540 to 135 cells).",
+        "cut_line_8": "Corroborated facility level (public and all-listed stay).",
+        "never_cut": "Weight presets."
+      },
+      "reporting": "All cells of every lane are reported."
+    },
+    "levels_run": {
+      "flood_input_single_state": [
+        "minus",
+        "as_provided",
+        "plus"
+      ],
+      "passability": [
+        "strict",
+        "central",
+        "permissive"
+      ],
+      "facilities": [
+        "public"
+      ],
+      "population_vintage": [
+        "worldpop_2020"
+      ],
+      "vulnerability_anchors": [
+        "P10_P90",
+        "P5_P95"
+      ],
+      "weights": [
+        "default",
+        "access_heavy",
+        "exposure_heavy",
+        "road_heavy",
+        "vulnerability_heavy"
+      ]
+    },
+    "levels_not_run": [
+      {
+        "axis": "facilities",
+        "level": "corroborated",
+        "code": "facility_set_needs_a_walking_context_of_record_and_the_pitch_level",
+        "reason": "The corroborated facility set adds DDPM located shelters, reached by walking within 30 minutes, at the pitch level (protocol v1b facility_sets, owner choice 7). The registered E5 receipt says the shelter tables rest on a candidate walking context and are not usable until the owners accept a walking build of record (open point E5-OP5). No access table exists for the subset of the shelters this set keeps. The set is not approximated from the candidate tables.",
+        "open_points": [
+          "E10-OP3",
+          "E5-OP5"
+        ]
+      },
+      {
+        "axis": "facilities",
+        "level": "all_listed",
+        "code": "facility_set_needs_a_walking_context_of_record_and_the_pitch_level",
+        "reason": "The all_listed facility set adds DDPM located shelters, reached by walking within 30 minutes, at the pitch level (protocol v1b facility_sets, owner choice 7). The registered E5 receipt says the shelter tables rest on a candidate walking context and are not usable until the owners accept a walking build of record (open point E5-OP5). The set is not approximated from the candidate tables.",
+        "open_points": [
+          "E10-OP3",
+          "E5-OP5"
+        ]
+      },
+      {
+        "axis": "population_vintage",
+        "level": "rescaled_2024",
+        "code": "rescale_rule_leaves_two_points_open_and_no_stage_builds_the_demand",
+        "reason": "The 2024-rescaled demand is not built by any stage. Its formula (protocol v1b, owner choice 12) does not say which 1 km cell a 100 m count is inside, and the two grids do not nest; nor what a positive 2020 count becomes in a 1 km cell with no 2024 total (floodguard.age_exposure.rescale_2020_counts_to_2024 decides neither). The level is not approximated.",
+        "open_points": [
+          "E10-OP2"
+        ]
+      }
+    ],
+    "one_pixel_m": {
+      "minus": 20,
+      "plus": 20,
+      "source": "planning_protocol_v1b.json /ensemble_grid/core_axes/0/one_pixel_m (owner choice 2); the levels are those task E1 wrote"
+    },
+    "closure_rule": {
+      "version": "closure_rule_v1",
+      "levels": [
+        "strict",
+        "central",
+        "permissive"
+      ],
+      "length_thresholds_m": {
+        "trunk": 50.0,
+        "primary": 50.0,
+        "secondary": 50.0,
+        "tertiary": 30.0,
+        "local": 30.0,
+        "motorway": 50.0,
+        "residential": 30.0,
+        "unclassified": 30.0
+      },
+      "delay_factor_k": {
+        "strict": 2,
+        "central": 4,
+        "permissive": 6
+      },
+      "strict_delay_rule": "Under strict, an edge intersected for at least 20 m with f < 0.5 is delayed with k = 2: travel time x (1 + 2 x f). Under central the plan's wording applies with k = 4.",
+      "culvert_tag_handling": "culvert=* is not read: the central level applies the 0.25 fraction to edges tagged bridge=yes or tunnel=culvert only, and every closure output says so. parameters.bridge_culvert_tags keeps the plan's three tags beside this statement."
+    },
+    "access_services": [
+      {
+        "service": "hospital",
+        "mode": "vehicle",
+        "thresholds_minutes": [
+          15,
+          30,
+          60
+        ],
+        "access_gap_threshold_minutes": 30,
+        "publication_level": "public"
+      },
+      {
+        "service": "main_road_entry",
+        "mode": "vehicle",
+        "thresholds_minutes": [
+          15,
+          30,
+          60
+        ],
+        "access_gap_threshold_minutes": 15,
+        "publication_level": "public"
+      },
+      {
+        "service": "ddpm_located_shelter",
+        "mode": "walking",
+        "thresholds_minutes": [
+          15,
+          30,
+          60
+        ],
+        "access_gap_threshold_minutes": 30,
+        "publication_level": "pitch"
+      }
+    ],
+    "normalisation_version": "planning_frame_v1",
+    "confidence_rule_version": "confidence_rule_v1",
+    "class_rule_binding": "class_rule_v1 (floodguard.scoring.assign_action_class, unchanged)",
+    "headline_rule": {
+      "class_retention_min": 0.6,
+      "evaluated_only_when": "every cell of the set the protocol names has a class (open point E10-OP1)"
+    },
+    "tolerances": {
+      "residents_between_two_stages": 1e-06,
+      "note": "A choice of this task, not a rule of the protocols."
+    }
+  },
+  "inputs": {
+    "planning_protocol_v1a": {
+      "path": "docs/proposal_execution/planning_protocol_v1a.json",
+      "sha256": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954"
+    },
+    "planning_protocol_v1b": {
+      "path": "docs/proposal_execution/planning_protocol_v1b.json",
+      "sha256": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+    },
+    "protocol_receipts": {
+      "path": "docs/proposal_execution/RECEIPTS.jsonl",
+      "sha256": "06b0721ecba63467cc0e4f614cb5463ce480bf9bfb596653f5189f869795c59a"
+    },
+    "e8_run": {
+      "receipt": {
+        "path": "outputs/planning_v1/e8_planning_assessment_se1_mae_sai.json",
+        "sha256": "d8d8a569cf7a4a2fcbd747cb71e3d4e0cff89a6c91be75c3e30dcf288ce3eed5",
+        "registered_in": "outputs/planning_v1/run_register/e8_planning_assessment_se1_mae_sai.json"
+      },
+      "rows_sha256": "2c4437b93ee1fab17c52073bc818da667e99ddf6ddaa2106dcd647e3cc271c4a",
+      "rows_file": {
+        "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e8_planning_assessment/overlay_not_written.json",
+        "sha256": "8b46b09cf37e4c5fdaf725ac8d357048e54cddd7a016e0a6c3eef1f15003f5ad"
+      },
+      "overlay_written": false,
+      "generated_at_utc": "2026-10-04T19:35:49Z",
+      "note": "The rows are read for one comparison: the default cell of this run must be these rows. Every cell is computed by this run from the inputs."
+    },
+    "flood_input": {
+      "e1_receipt": {
+        "path": "outputs/planning_v1/e1_flood_inputs_mae_sai.json",
+        "sha256": "341280ff2ef1275842a3a4498eeb11f3e7d549394f724d469492cfae42517fbd",
+        "registered_in": "outputs/planning_v1/run_register/e1_flood_inputs_mae_sai.json"
+      },
+      "input_id": "unosat_4009:CHIANGRAI_20240801_20241012_AccumulatedFlood",
+      "input_record": {
+        "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e1_flood_input/input_record.json",
+        "sha256": "f88120a436bdaf86e5b1f7a98d6424a8f554ccf15f126b5e09222fab0ae1b4f2"
+      },
+      "extents_reporting_frame": {
+        "minus": {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e1_flood_input/flood_extent__minus__reporting_frame.geojson",
+          "sha256": "4e2d87832e33164882f1f683d806edf0469837f54a2bbda8d5c82bef5430038d",
+          "rights_level": "public"
+        },
+        "as_provided": {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e1_flood_input/flood_extent__as_provided__reporting_frame.geojson",
+          "sha256": "405918085b2cf9ce38b46143de0a27efb02ce919a5d8e146b4954f47d10f8368",
+          "rights_level": "public"
+        },
+        "plus": {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e1_flood_input/flood_extent__plus__reporting_frame.geojson",
+          "sha256": "953c6b1ccb205d0637a996e5cff26e2c998368f49f9f5cff4c86e2ed49d1ee0c",
+          "rights_level": "public"
+        }
+      },
+      "closure_extent_routing_context": {
+        "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e1_flood_input/flood_extent__as_provided__routing_context.geojson",
+        "sha256": "5d7c1c0ca7909284317a66d2a3611452de3f91d729dfb4cc31b96840e147b794"
+      },
+      "permanent_water": {
+        "path": "<external_data_workspace>/proposal_execution/planning_v1/mae_sai_frame/e1_flood_input/permanent_water__reporting_frame.geojson",
+        "sha256": "a92e168c56b1fddbabf772171ba140a303e2b48f1007d7da1223b5d7c4d150ee"
+      },
+      "product_footprint": null,
+      "rights_level": "public",
+      "boundaries_sha256": "09e62345481bb80030ff6779e074bfb2c16629b70ae1e373ebd31945f1c6e0d8"
+    },
+    "closure_extents_routing_context": {
+      "minus": {
+        "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e1_flood_input/flood_extent__minus__routing_context.geojson",
+        "sha256": "ce281076268fcbdeb6f14991fb2525783411ec6b194dfa28ff7912d29994c215",
+        "rights_level": "public"
+      },
+      "as_provided": {
+        "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e1_flood_input/flood_extent__as_provided__routing_context.geojson",
+        "sha256": "5d7c1c0ca7909284317a66d2a3611452de3f91d729dfb4cc31b96840e147b794",
+        "rights_level": "public"
+      },
+      "plus": {
+        "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e1_flood_input/flood_extent__plus__routing_context.geojson",
+        "sha256": "9ce761f7a89f4dec3c45d56f3a6179ae549f759da29a284d3b4305297add5c07",
+        "rights_level": "public"
+      }
+    },
+    "access_table_as_provided": {
+      "e5_receipt": {
+        "path": "outputs/planning_v1/e5_access_diff_mae_sai.json",
+        "sha256": "f9966ba8e2deb105bc2bf4a841eb28b56b73d13ad55d84f43bfd6385433d681c",
+        "registered_in": "outputs/planning_v1/run_register/e5_access_diff_mae_sai.json"
+      },
+      "table": {
+        "path": "outputs/planning_v1/e5_access_diff_se1_mae_sai_public_services.json",
+        "sha256": "d4a618fad7fb3df12666ab1eba353b84aa80c6ebe3c370fd9e11096f7dbe116b",
+        "service_set": "public_services",
+        "publication_level": "public",
+        "generated_at_utc": "2026-10-04T15:38:45Z"
+      }
+    },
+    "age_table": {
+      "e7_receipt": {
+        "path": "outputs/planning_v1/age_exposure_mae_sai_v1_receipt.json",
+        "sha256": "00e0a67123b5294bc6e01f7645176bcb828ff90de7e0ac69991db42b2d80b147",
+        "registered_in": "outputs/planning_v1/run_register/e7_age_exposure_mae_sai_v1_receipt.json"
+      },
+      "table": {
+        "path": "outputs/planning_v1/age_exposure_mae_sai_v1.json",
+        "sha256": "68d4935ddf9f905dd4512c516924049be5303bae5a501a27bcff060106da16cb",
+        "registered_in": "outputs/planning_v1/run_register/e7_age_exposure_mae_sai_v1.json"
+      },
+      "source_timestamp": "2025-09-01",
+      "generated_at_utc": "2026-10-04T09:12:35Z"
+    },
+    "national_anchors": {
+      "path": "outputs/planning_v1/national_vulnerability_anchors_v1.json",
+      "sha256": "2ad161d4c67cbe1567fbb853fe951da3ffb257f06088fbc80e8e297938c73a59",
+      "source_timestamp": "2025-09-01",
+      "named_in": "planning_protocol_v1b.json /national_vulnerability_anchors/output_receipt"
+    },
+    "planning_context_vehicle": {
+      "status": "of_record",
+      "run_kind": "build_of_record",
+      "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e4_vehicle/context_inputs.json",
+      "file_sha256": "37e47f2e4cede433aa709e0154e9d39e921d1359d69b10642e3385267ca01385",
+      "canonical_sha256": "0b2672b6d4d1d94da3a4c39d819d980a9e5bf7845bb22fea1284a2893a6351a6",
+      "canonical_sha256_recomputed": true,
+      "context_generated_at": "2026-10-03T05:28:59.223644+00:00",
+      "receipt": {
+        "path": "outputs/planning_v1/e4_planning_context_se1_vehicle.json",
+        "sha256": "690add44186d02cb501dccb152678fbf03cf109acc041a5c782af705993f2ad2"
+      },
+      "named_in": "planning_protocol_v1b.json /corridor_polygon/e4_build_of_record",
+      "input_hashes": {
+        "aoi_02_sha256": "d49de53e86264c06218fd9a03cc2b5da1549085a49fae2f3cd288bf6334f5a56",
+        "boundaries_sha256": "09e62345481bb80030ff6779e074bfb2c16629b70ae1e373ebd31945f1c6e0d8",
+        "ddpm_file_sha256": "91a8f26a5dd2446b68b562dcda13024d1bd4981720f985722a6467d4edeef9d7",
+        "dga_file_sha256": "15d208b7c269562c9444f5f034f5e16c3a33a2e069a19637264b2ddc2f1ee58d",
+        "osm_pbf_sha256": "b7f46018249638413b1d318bc86519f140c27af20cac7c00d42fe03775b7add1",
+        "reviewed_junctions_sha256": "43de4cc50efc790af1aa502e820e178856389041b568ff61bf2c463cfe240f07",
+        "routing_file_sha256": "4e49d5eca2f7522e2de10cf81cc68b4ebcbea036225d1b862f4a80cb1affbac2",
+        "worldpop_2020_sha256": "fb39d85dd150c45c7b25771f29bcd548e611afa0967224ac6d8ca05727230e20"
+      },
+      "osm_retrieved_at_utc": "2026-07-10T02:46:49Z",
+      "ddpm_list_file_dated": "2026-09-21 (open-data folder date)",
+      "hospital_facility_ids": [
+        "OSM-node-7856667792",
+        "OSM-way-1010348419",
+        "OSM-way-371233866",
+        "OSM-way-447735125",
+        "OSM-way-527539157",
+        "OSM-way-549948901"
+      ],
+      "main_road_entry_node_ids_sha256": "10d17aa72a96150ffbbfc2d2fddd53bc921ede042fdebe66540b8a43092da15d",
+      "baseline_no_route": {
+        "residents": 81836.889439,
+        "graph_connected_residents": 75226.97719,
+        "connected_residents_without_a_route": 56.446837,
+        "share": 0.00075,
+        "residents_not_connected_to_the_graph": 6609.912249
+      }
+    },
+    "tambon_boundaries": {
+      "path": "<external_data_workspace>/open_context/hdx_cod_ab/tha_admin_boundaries.gdb.zip",
+      "sha256": "09e62345481bb80030ff6779e074bfb2c16629b70ae1e373ebd31945f1c6e0d8",
+      "layer": "tha_admin3",
+      "unit_id_field": "adm3_pcode",
+      "units": 8
+    },
+    "rights_record": {
+      "input_id": "unosat_4009",
+      "layer": "CHIANGRAI_20240801_20241012_AccumulatedFlood",
+      "path": "docs/proposal_execution/rights_basis_4009_v1.json",
+      "sha256": "531ab40beb2b3e80a02d6de0d4d7d791b299176af0b192bfe105ca23c7e50cb3",
+      "record_status": "confirmed"
+    }
+  },
+  "rights": {
+    "registry": "floodguard.rights.REGISTERED_RECORDS",
+    "rule": "Protocol v1a guardrail GR6: the rights level of an output is the minimum across its lineage. The lineage is that of the task E8 run of the case, with the minus and plus extents of the same flood layer. This task writes the per-unit results outside Git at every level and binds them here by SHA-256; whether a copy goes into Git once the lineage is public is for the owners (open points E8-OP5 and E10-OP8). Nothing is written under apps/web/public/.",
+    "publication_eligibility": "local",
+    "lineage_levels": {
+      "unosat_4009.chiangrai_20240801_20241012_accumulatedflood": "public",
+      "e4_planning_context_vehicle": "public",
+      "worldpop_2020_100m": "public",
+      "unit_boundaries": "public",
+      "e1_permanent_water": "public",
+      "e7_age_exposure_table": "local",
+      "e5_access_table": "public",
+      "national_vulnerability_anchors": "public"
+    },
+    "closure_extents": {
+      "minus": "public",
+      "as_provided": "public",
+      "plus": "public"
+    },
+    "flood_layer": {
+      "rights_level": "public",
+      "basis": "The confirmed record rights_basis_4009_v1 names this layer as its layer in scope. Layers derived from it may be published under CC BY-SA 4.0 with the credit and a change notice, as a season envelope only (decisions D2, D3 and R6)."
+    },
+    "levels_and_git": "Protocol v1a guardrail GR6 says that only a public output may be written under apps/web/public/. Plan 3.1 keeps pitch variants outside Git and puts committed outputs (small tables and GeoJSON) in outputs/planning_v1/. Neither says whether a figure derived from a local-level input may be committed. Until the owners decide (open point E1-OP1), tasks E1 and E5 keep every layer and every per-unit table whose lineage is below public outside Git, and their run receipts in Git hold whole-frame figures of local-level inputs and say so.",
+    "figures_of_local_level_layers_in_this_receipt": {
+      "what": "This receipt is committed. It holds the closure counts and whole-frame resident counts of the access runs, and counts of units and cells for the whole case. It puts no unit beside a value. When the lineage is below the public level those counts come from a lineage below the public level; the file that holds the values of each unit is outside Git.",
+      "figures": [
+        {
+          "where": "access_runs and result.summary",
+          "publication_eligibility": "local",
+          "flood_layer_rights_level": "public",
+          "figures": "The closure counts and whole-frame resident counts of nine access runs; the number of units by class in each cell, by retention and by headline status."
+        }
+      ],
+      "cells_in_which_every_unit_has_one_class": 0,
+      "what_the_counts_give_away": "In a cell where every unit of the case has one class, the class count states the class of each unit listed in parameters.unit_ids, and so does a count of units that covers every unit. For those counts the receipt in Git says the same as the file outside Git (open point E8-OP7).",
+      "for_the_owners": "Open points E1-OP1, E8-OP5 and E8-OP7: whether a level below public allows these counts in Git."
+    },
+    "written_under_apps_web_public": false
+  },
+  "lane_purity": {
+    "guardrail": "GR3_lane_purity",
+    "result": "PASS",
+    "compared": {
+      "case_lane": {
+        "value": "SCN-ENV",
+        "same": true
+      },
+      "closure_basis": {
+        "value": "modelled_from_unosat_4009:CHIANGRAI_20240801_20241012_AccumulatedFlood",
+        "same": true
+      },
+      "closure_extent_sha256": {
+        "value": "5d7c1c0ca7909284317a66d2a3611452de3f91d729dfb4cc31b96840e147b794",
+        "same": true
+      },
+      "closure_rule_version": {
+        "value": "closure_rule_v1",
+        "same": true
+      },
+      "flood_input_id": {
+        "value": "unosat_4009:CHIANGRAI_20240801_20241012_AccumulatedFlood",
+        "same": true
+      },
+      "flood_input_name": {
+        "value": "UNOSAT/GISTDA product 4009, accumulated layer",
+        "same": true
+      },
+      "routing_context_canonical_sha256": {
+        "value": "0b2672b6d4d1d94da3a4c39d819d980a9e5bf7845bb22fea1284a2893a6351a6",
+        "same": true
+      }
+    }
+  },
+  "lineage_input_sha256": {
+    "unosat_4009.chiangrai_20240801_20241012_accumulatedflood": "405918085b2cf9ce38b46143de0a27efb02ce919a5d8e146b4954f47d10f8368",
+    "e4_planning_context_vehicle": "0b2672b6d4d1d94da3a4c39d819d980a9e5bf7845bb22fea1284a2893a6351a6",
+    "worldpop_2020_100m": "fb39d85dd150c45c7b25771f29bcd548e611afa0967224ac6d8ca05727230e20",
+    "unit_boundaries": "09e62345481bb80030ff6779e074bfb2c16629b70ae1e373ebd31945f1c6e0d8",
+    "e1_permanent_water": "a92e168c56b1fddbabf772171ba140a303e2b48f1007d7da1223b5d7c4d150ee",
+    "e7_age_exposure_table": "68d4935ddf9f905dd4512c516924049be5303bae5a501a27bcff060106da16cb",
+    "e5_access_table": "d4a618fad7fb3df12666ab1eba353b84aa80c6ebe3c370fd9e11096f7dbe116b",
+    "national_vulnerability_anchors": "2ad161d4c67cbe1567fbb853fe951da3ffb257f06088fbc80e8e297938c73a59"
+  },
+  "graph": {
+    "travel_mode": "legacy_vehicle",
+    "context_edges": 65328,
+    "grade_join_connectors": 345,
+    "joins_sha256": "d289f728feafef649687b39f7da71228c79427bf377f7e63bc1c0eed4f2ee357",
+    "road_nodes": 62378,
+    "demand_cells": 36765,
+    "destinations": {
+      "hospital": 6,
+      "main_road_entry": 1939,
+      "ddpm_located_shelter": 82
+    },
+    "destinations_snapped_to_the_graph": {
+      "hospital": 6,
+      "main_road_entry": 1939,
+      "ddpm_located_shelter": 81
+    }
+  },
+  "cells": {
+    "cell_id": "The six levels of a cell, in the order of the axes: flood_input_single_state|passability|facilities|population_vintage|vulnerability_anchors|weights",
+    "run": [
+      "minus|strict|public|worldpop_2020|P10_P90|default",
+      "minus|strict|public|worldpop_2020|P10_P90|access_heavy",
+      "minus|strict|public|worldpop_2020|P10_P90|exposure_heavy",
+      "minus|strict|public|worldpop_2020|P10_P90|road_heavy",
+      "minus|strict|public|worldpop_2020|P10_P90|vulnerability_heavy",
+      "minus|strict|public|worldpop_2020|P5_P95|default",
+      "minus|strict|public|worldpop_2020|P5_P95|access_heavy",
+      "minus|strict|public|worldpop_2020|P5_P95|exposure_heavy",
+      "minus|strict|public|worldpop_2020|P5_P95|road_heavy",
+      "minus|strict|public|worldpop_2020|P5_P95|vulnerability_heavy",
+      "minus|central|public|worldpop_2020|P10_P90|default",
+      "minus|central|public|worldpop_2020|P10_P90|access_heavy",
+      "minus|central|public|worldpop_2020|P10_P90|exposure_heavy",
+      "minus|central|public|worldpop_2020|P10_P90|road_heavy",
+      "minus|central|public|worldpop_2020|P10_P90|vulnerability_heavy",
+      "minus|central|public|worldpop_2020|P5_P95|default",
+      "minus|central|public|worldpop_2020|P5_P95|access_heavy",
+      "minus|central|public|worldpop_2020|P5_P95|exposure_heavy",
+      "minus|central|public|worldpop_2020|P5_P95|road_heavy",
+      "minus|central|public|worldpop_2020|P5_P95|vulnerability_heavy",
+      "minus|permissive|public|worldpop_2020|P10_P90|default",
+      "minus|permissive|public|worldpop_2020|P10_P90|access_heavy",
+      "minus|permissive|public|worldpop_2020|P10_P90|exposure_heavy",
+      "minus|permissive|public|worldpop_2020|P10_P90|road_heavy",
+      "minus|permissive|public|worldpop_2020|P10_P90|vulnerability_heavy",
+      "minus|permissive|public|worldpop_2020|P5_P95|default",
+      "minus|permissive|public|worldpop_2020|P5_P95|access_heavy",
+      "minus|permissive|public|worldpop_2020|P5_P95|exposure_heavy",
+      "minus|permissive|public|worldpop_2020|P5_P95|road_heavy",
+      "minus|permissive|public|worldpop_2020|P5_P95|vulnerability_heavy",
+      "as_provided|strict|public|worldpop_2020|P10_P90|default",
+      "as_provided|strict|public|worldpop_2020|P10_P90|access_heavy",
+      "as_provided|strict|public|worldpop_2020|P10_P90|exposure_heavy",
+      "as_provided|strict|public|worldpop_2020|P10_P90|road_heavy",
+      "as_provided|strict|public|worldpop_2020|P10_P90|vulnerability_heavy",
+      "as_provided|strict|public|worldpop_2020|P5_P95|default",
+      "as_provided|strict|public|worldpop_2020|P5_P95|access_heavy",
+      "as_provided|strict|public|worldpop_2020|P5_P95|exposure_heavy",
+      "as_provided|strict|public|worldpop_2020|P5_P95|road_heavy",
+      "as_provided|strict|public|worldpop_2020|P5_P95|vulnerability_heavy",
+      "as_provided|central|public|worldpop_2020|P10_P90|default",
+      "as_provided|central|public|worldpop_2020|P10_P90|access_heavy",
+      "as_provided|central|public|worldpop_2020|P10_P90|exposure_heavy",
+      "as_provided|central|public|worldpop_2020|P10_P90|road_heavy",
+      "as_provided|central|public|worldpop_2020|P10_P90|vulnerability_heavy",
+      "as_provided|central|public|worldpop_2020|P5_P95|default",
+      "as_provided|central|public|worldpop_2020|P5_P95|access_heavy",
+      "as_provided|central|public|worldpop_2020|P5_P95|exposure_heavy",
+      "as_provided|central|public|worldpop_2020|P5_P95|road_heavy",
+      "as_provided|central|public|worldpop_2020|P5_P95|vulnerability_heavy",
+      "as_provided|permissive|public|worldpop_2020|P10_P90|default",
+      "as_provided|permissive|public|worldpop_2020|P10_P90|access_heavy",
+      "as_provided|permissive|public|worldpop_2020|P10_P90|exposure_heavy",
+      "as_provided|permissive|public|worldpop_2020|P10_P90|road_heavy",
+      "as_provided|permissive|public|worldpop_2020|P10_P90|vulnerability_heavy",
+      "as_provided|permissive|public|worldpop_2020|P5_P95|default",
+      "as_provided|permissive|public|worldpop_2020|P5_P95|access_heavy",
+      "as_provided|permissive|public|worldpop_2020|P5_P95|exposure_heavy",
+      "as_provided|permissive|public|worldpop_2020|P5_P95|road_heavy",
+      "as_provided|permissive|public|worldpop_2020|P5_P95|vulnerability_heavy",
+      "plus|strict|public|worldpop_2020|P10_P90|default",
+      "plus|strict|public|worldpop_2020|P10_P90|access_heavy",
+      "plus|strict|public|worldpop_2020|P10_P90|exposure_heavy",
+      "plus|strict|public|worldpop_2020|P10_P90|road_heavy",
+      "plus|strict|public|worldpop_2020|P10_P90|vulnerability_heavy",
+      "plus|strict|public|worldpop_2020|P5_P95|default",
+      "plus|strict|public|worldpop_2020|P5_P95|access_heavy",
+      "plus|strict|public|worldpop_2020|P5_P95|exposure_heavy",
+      "plus|strict|public|worldpop_2020|P5_P95|road_heavy",
+      "plus|strict|public|worldpop_2020|P5_P95|vulnerability_heavy",
+      "plus|central|public|worldpop_2020|P10_P90|default",
+      "plus|central|public|worldpop_2020|P10_P90|access_heavy",
+      "plus|central|public|worldpop_2020|P10_P90|exposure_heavy",
+      "plus|central|public|worldpop_2020|P10_P90|road_heavy",
+      "plus|central|public|worldpop_2020|P10_P90|vulnerability_heavy",
+      "plus|central|public|worldpop_2020|P5_P95|default",
+      "plus|central|public|worldpop_2020|P5_P95|access_heavy",
+      "plus|central|public|worldpop_2020|P5_P95|exposure_heavy",
+      "plus|central|public|worldpop_2020|P5_P95|road_heavy",
+      "plus|central|public|worldpop_2020|P5_P95|vulnerability_heavy",
+      "plus|permissive|public|worldpop_2020|P10_P90|default",
+      "plus|permissive|public|worldpop_2020|P10_P90|access_heavy",
+      "plus|permissive|public|worldpop_2020|P10_P90|exposure_heavy",
+      "plus|permissive|public|worldpop_2020|P10_P90|road_heavy",
+      "plus|permissive|public|worldpop_2020|P10_P90|vulnerability_heavy",
+      "plus|permissive|public|worldpop_2020|P5_P95|default",
+      "plus|permissive|public|worldpop_2020|P5_P95|access_heavy",
+      "plus|permissive|public|worldpop_2020|P5_P95|exposure_heavy",
+      "plus|permissive|public|worldpop_2020|P5_P95|road_heavy",
+      "plus|permissive|public|worldpop_2020|P5_P95|vulnerability_heavy"
+    ],
+    "not_run": {
+      "facility_set_needs_a_walking_context_of_record_and_the_pitch_level": [
+        "minus|strict|corroborated|worldpop_2020|P10_P90|default",
+        "minus|strict|corroborated|worldpop_2020|P10_P90|access_heavy",
+        "minus|strict|corroborated|worldpop_2020|P10_P90|exposure_heavy",
+        "minus|strict|corroborated|worldpop_2020|P10_P90|road_heavy",
+        "minus|strict|corroborated|worldpop_2020|P10_P90|vulnerability_heavy",
+        "minus|strict|corroborated|worldpop_2020|P5_P95|default",
+        "minus|strict|corroborated|worldpop_2020|P5_P95|access_heavy",
+        "minus|strict|corroborated|worldpop_2020|P5_P95|exposure_heavy",
+        "minus|strict|corroborated|worldpop_2020|P5_P95|road_heavy",
+        "minus|strict|corroborated|worldpop_2020|P5_P95|vulnerability_heavy",
+        "minus|strict|all_listed|worldpop_2020|P10_P90|default",
+        "minus|strict|all_listed|worldpop_2020|P10_P90|access_heavy",
+        "minus|strict|all_listed|worldpop_2020|P10_P90|exposure_heavy",
+        "minus|strict|all_listed|worldpop_2020|P10_P90|road_heavy",
+        "minus|strict|all_listed|worldpop_2020|P10_P90|vulnerability_heavy",
+        "minus|strict|all_listed|worldpop_2020|P5_P95|default",
+        "minus|strict|all_listed|worldpop_2020|P5_P95|access_heavy",
+        "minus|strict|all_listed|worldpop_2020|P5_P95|exposure_heavy",
+        "minus|strict|all_listed|worldpop_2020|P5_P95|road_heavy",
+        "minus|strict|all_listed|worldpop_2020|P5_P95|vulnerability_heavy",
+        "minus|central|corroborated|worldpop_2020|P10_P90|default",
+        "minus|central|corroborated|worldpop_2020|P10_P90|access_heavy",
+        "minus|central|corroborated|worldpop_2020|P10_P90|exposure_heavy",
+        "minus|central|corroborated|worldpop_2020|P10_P90|road_heavy",
+        "minus|central|corroborated|worldpop_2020|P10_P90|vulnerability_heavy",
+        "minus|central|corroborated|worldpop_2020|P5_P95|default",
+        "minus|central|corroborated|worldpop_2020|P5_P95|access_heavy",
+        "minus|central|corroborated|worldpop_2020|P5_P95|exposure_heavy",
+        "minus|central|corroborated|worldpop_2020|P5_P95|road_heavy",
+        "minus|central|corroborated|worldpop_2020|P5_P95|vulnerability_heavy",
+        "minus|central|all_listed|worldpop_2020|P10_P90|default",
+        "minus|central|all_listed|worldpop_2020|P10_P90|access_heavy",
+        "minus|central|all_listed|worldpop_2020|P10_P90|exposure_heavy",
+        "minus|central|all_listed|worldpop_2020|P10_P90|road_heavy",
+        "minus|central|all_listed|worldpop_2020|P10_P90|vulnerability_heavy",
+        "minus|central|all_listed|worldpop_2020|P5_P95|default",
+        "minus|central|all_listed|worldpop_2020|P5_P95|access_heavy",
+        "minus|central|all_listed|worldpop_2020|P5_P95|exposure_heavy",
+        "minus|central|all_listed|worldpop_2020|P5_P95|road_heavy",
+        "minus|central|all_listed|worldpop_2020|P5_P95|vulnerability_heavy",
+        "minus|permissive|corroborated|worldpop_2020|P10_P90|default",
+        "minus|permissive|corroborated|worldpop_2020|P10_P90|access_heavy",
+        "minus|permissive|corroborated|worldpop_2020|P10_P90|exposure_heavy",
+        "minus|permissive|corroborated|worldpop_2020|P10_P90|road_heavy",
+        "minus|permissive|corroborated|worldpop_2020|P10_P90|vulnerability_heavy",
+        "minus|permissive|corroborated|worldpop_2020|P5_P95|default",
+        "minus|permissive|corroborated|worldpop_2020|P5_P95|access_heavy",
+        "minus|permissive|corroborated|worldpop_2020|P5_P95|exposure_heavy",
+        "minus|permissive|corroborated|worldpop_2020|P5_P95|road_heavy",
+        "minus|permissive|corroborated|worldpop_2020|P5_P95|vulnerability_heavy",
+        "minus|permissive|all_listed|worldpop_2020|P10_P90|default",
+        "minus|permissive|all_listed|worldpop_2020|P10_P90|access_heavy",
+        "minus|permissive|all_listed|worldpop_2020|P10_P90|exposure_heavy",
+        "minus|permissive|all_listed|worldpop_2020|P10_P90|road_heavy",
+        "minus|permissive|all_listed|worldpop_2020|P10_P90|vulnerability_heavy",
+        "minus|permissive|all_listed|worldpop_2020|P5_P95|default",
+        "minus|permissive|all_listed|worldpop_2020|P5_P95|access_heavy",
+        "minus|permissive|all_listed|worldpop_2020|P5_P95|exposure_heavy",
+        "minus|permissive|all_listed|worldpop_2020|P5_P95|road_heavy",
+        "minus|permissive|all_listed|worldpop_2020|P5_P95|vulnerability_heavy",
+        "as_provided|strict|corroborated|worldpop_2020|P10_P90|default",
+        "as_provided|strict|corroborated|worldpop_2020|P10_P90|access_heavy",
+        "as_provided|strict|corroborated|worldpop_2020|P10_P90|exposure_heavy",
+        "as_provided|strict|corroborated|worldpop_2020|P10_P90|road_heavy",
+        "as_provided|strict|corroborated|worldpop_2020|P10_P90|vulnerability_heavy",
+        "as_provided|strict|corroborated|worldpop_2020|P5_P95|default",
+        "as_provided|strict|corroborated|worldpop_2020|P5_P95|access_heavy",
+        "as_provided|strict|corroborated|worldpop_2020|P5_P95|exposure_heavy",
+        "as_provided|strict|corroborated|worldpop_2020|P5_P95|road_heavy",
+        "as_provided|strict|corroborated|worldpop_2020|P5_P95|vulnerability_heavy",
+        "as_provided|strict|all_listed|worldpop_2020|P10_P90|default",
+        "as_provided|strict|all_listed|worldpop_2020|P10_P90|access_heavy",
+        "as_provided|strict|all_listed|worldpop_2020|P10_P90|exposure_heavy",
+        "as_provided|strict|all_listed|worldpop_2020|P10_P90|road_heavy",
+        "as_provided|strict|all_listed|worldpop_2020|P10_P90|vulnerability_heavy",
+        "as_provided|strict|all_listed|worldpop_2020|P5_P95|default",
+        "as_provided|strict|all_listed|worldpop_2020|P5_P95|access_heavy",
+        "as_provided|strict|all_listed|worldpop_2020|P5_P95|exposure_heavy",
+        "as_provided|strict|all_listed|worldpop_2020|P5_P95|road_heavy",
+        "as_provided|strict|all_listed|worldpop_2020|P5_P95|vulnerability_heavy",
+        "as_provided|central|corroborated|worldpop_2020|P10_P90|default",
+        "as_provided|central|corroborated|worldpop_2020|P10_P90|access_heavy",
+        "as_provided|central|corroborated|worldpop_2020|P10_P90|exposure_heavy",
+        "as_provided|central|corroborated|worldpop_2020|P10_P90|road_heavy",
+        "as_provided|central|corroborated|worldpop_2020|P10_P90|vulnerability_heavy",
+        "as_provided|central|corroborated|worldpop_2020|P5_P95|default",
+        "as_provided|central|corroborated|worldpop_2020|P5_P95|access_heavy",
+        "as_provided|central|corroborated|worldpop_2020|P5_P95|exposure_heavy",
+        "as_provided|central|corroborated|worldpop_2020|P5_P95|road_heavy",
+        "as_provided|central|corroborated|worldpop_2020|P5_P95|vulnerability_heavy",
+        "as_provided|central|all_listed|worldpop_2020|P10_P90|default",
+        "as_provided|central|all_listed|worldpop_2020|P10_P90|access_heavy",
+        "as_provided|central|all_listed|worldpop_2020|P10_P90|exposure_heavy",
+        "as_provided|central|all_listed|worldpop_2020|P10_P90|road_heavy",
+        "as_provided|central|all_listed|worldpop_2020|P10_P90|vulnerability_heavy",
+        "as_provided|central|all_listed|worldpop_2020|P5_P95|default",
+        "as_provided|central|all_listed|worldpop_2020|P5_P95|access_heavy",
+        "as_provided|central|all_listed|worldpop_2020|P5_P95|exposure_heavy",
+        "as_provided|central|all_listed|worldpop_2020|P5_P95|road_heavy",
+        "as_provided|central|all_listed|worldpop_2020|P5_P95|vulnerability_heavy",
+        "as_provided|permissive|corroborated|worldpop_2020|P10_P90|default",
+        "as_provided|permissive|corroborated|worldpop_2020|P10_P90|access_heavy",
+        "as_provided|permissive|corroborated|worldpop_2020|P10_P90|exposure_heavy",
+        "as_provided|permissive|corroborated|worldpop_2020|P10_P90|road_heavy",
+        "as_provided|permissive|corroborated|worldpop_2020|P10_P90|vulnerability_heavy",
+        "as_provided|permissive|corroborated|worldpop_2020|P5_P95|default",
+        "as_provided|permissive|corroborated|worldpop_2020|P5_P95|access_heavy",
+        "as_provided|permissive|corroborated|worldpop_2020|P5_P95|exposure_heavy",
+        "as_provided|permissive|corroborated|worldpop_2020|P5_P95|road_heavy",
+        "as_provided|permissive|corroborated|worldpop_2020|P5_P95|vulnerability_heavy",
+        "as_provided|permissive|all_listed|worldpop_2020|P10_P90|default",
+        "as_provided|permissive|all_listed|worldpop_2020|P10_P90|access_heavy",
+        "as_provided|permissive|all_listed|worldpop_2020|P10_P90|exposure_heavy",
+        "as_provided|permissive|all_listed|worldpop_2020|P10_P90|road_heavy",
+        "as_provided|permissive|all_listed|worldpop_2020|P10_P90|vulnerability_heavy",
+        "as_provided|permissive|all_listed|worldpop_2020|P5_P95|default",
+        "as_provided|permissive|all_listed|worldpop_2020|P5_P95|access_heavy",
+        "as_provided|permissive|all_listed|worldpop_2020|P5_P95|exposure_heavy",
+        "as_provided|permissive|all_listed|worldpop_2020|P5_P95|road_heavy",
+        "as_provided|permissive|all_listed|worldpop_2020|P5_P95|vulnerability_heavy",
+        "plus|strict|corroborated|worldpop_2020|P10_P90|default",
+        "plus|strict|corroborated|worldpop_2020|P10_P90|access_heavy",
+        "plus|strict|corroborated|worldpop_2020|P10_P90|exposure_heavy",
+        "plus|strict|corroborated|worldpop_2020|P10_P90|road_heavy",
+        "plus|strict|corroborated|worldpop_2020|P10_P90|vulnerability_heavy",
+        "plus|strict|corroborated|worldpop_2020|P5_P95|default",
+        "plus|strict|corroborated|worldpop_2020|P5_P95|access_heavy",
+        "plus|strict|corroborated|worldpop_2020|P5_P95|exposure_heavy",
+        "plus|strict|corroborated|worldpop_2020|P5_P95|road_heavy",
+        "plus|strict|corroborated|worldpop_2020|P5_P95|vulnerability_heavy",
+        "plus|strict|all_listed|worldpop_2020|P10_P90|default",
+        "plus|strict|all_listed|worldpop_2020|P10_P90|access_heavy",
+        "plus|strict|all_listed|worldpop_2020|P10_P90|exposure_heavy",
+        "plus|strict|all_listed|worldpop_2020|P10_P90|road_heavy",
+        "plus|strict|all_listed|worldpop_2020|P10_P90|vulnerability_heavy",
+        "plus|strict|all_listed|worldpop_2020|P5_P95|default",
+        "plus|strict|all_listed|worldpop_2020|P5_P95|access_heavy",
+        "plus|strict|all_listed|worldpop_2020|P5_P95|exposure_heavy",
+        "plus|strict|all_listed|worldpop_2020|P5_P95|road_heavy",
+        "plus|strict|all_listed|worldpop_2020|P5_P95|vulnerability_heavy",
+        "plus|central|corroborated|worldpop_2020|P10_P90|default",
+        "plus|central|corroborated|worldpop_2020|P10_P90|access_heavy",
+        "plus|central|corroborated|worldpop_2020|P10_P90|exposure_heavy",
+        "plus|central|corroborated|worldpop_2020|P10_P90|road_heavy",
+        "plus|central|corroborated|worldpop_2020|P10_P90|vulnerability_heavy",
+        "plus|central|corroborated|worldpop_2020|P5_P95|default",
+        "plus|central|corroborated|worldpop_2020|P5_P95|access_heavy",
+        "plus|central|corroborated|worldpop_2020|P5_P95|exposure_heavy",
+        "plus|central|corroborated|worldpop_2020|P5_P95|road_heavy",
+        "plus|central|corroborated|worldpop_2020|P5_P95|vulnerability_heavy",
+        "plus|central|all_listed|worldpop_2020|P10_P90|default",
+        "plus|central|all_listed|worldpop_2020|P10_P90|access_heavy",
+        "plus|central|all_listed|worldpop_2020|P10_P90|exposure_heavy",
+        "plus|central|all_listed|worldpop_2020|P10_P90|road_heavy",
+        "plus|central|all_listed|worldpop_2020|P10_P90|vulnerability_heavy",
+        "plus|central|all_listed|worldpop_2020|P5_P95|default",
+        "plus|central|all_listed|worldpop_2020|P5_P95|access_heavy",
+        "plus|central|all_listed|worldpop_2020|P5_P95|exposure_heavy",
+        "plus|central|all_listed|worldpop_2020|P5_P95|road_heavy",
+        "plus|central|all_listed|worldpop_2020|P5_P95|vulnerability_heavy",
+        "plus|permissive|corroborated|worldpop_2020|P10_P90|default",
+        "plus|permissive|corroborated|worldpop_2020|P10_P90|access_heavy",
+        "plus|permissive|corroborated|worldpop_2020|P10_P90|exposure_heavy",
+        "plus|permissive|corroborated|worldpop_2020|P10_P90|road_heavy",
+        "plus|permissive|corroborated|worldpop_2020|P10_P90|vulnerability_heavy",
+        "plus|permissive|corroborated|worldpop_2020|P5_P95|default",
+        "plus|permissive|corroborated|worldpop_2020|P5_P95|access_heavy",
+        "plus|permissive|corroborated|worldpop_2020|P5_P95|exposure_heavy",
+        "plus|permissive|corroborated|worldpop_2020|P5_P95|road_heavy",
+        "plus|permissive|corroborated|worldpop_2020|P5_P95|vulnerability_heavy",
+        "plus|permissive|all_listed|worldpop_2020|P10_P90|default",
+        "plus|permissive|all_listed|worldpop_2020|P10_P90|access_heavy",
+        "plus|permissive|all_listed|worldpop_2020|P10_P90|exposure_heavy",
+        "plus|permissive|all_listed|worldpop_2020|P10_P90|road_heavy",
+        "plus|permissive|all_listed|worldpop_2020|P10_P90|vulnerability_heavy",
+        "plus|permissive|all_listed|worldpop_2020|P5_P95|default",
+        "plus|permissive|all_listed|worldpop_2020|P5_P95|access_heavy",
+        "plus|permissive|all_listed|worldpop_2020|P5_P95|exposure_heavy",
+        "plus|permissive|all_listed|worldpop_2020|P5_P95|road_heavy",
+        "plus|permissive|all_listed|worldpop_2020|P5_P95|vulnerability_heavy"
+      ],
+      "facility_set_needs_a_walking_context_of_record_and_the_pitch_level+rescale_rule_leaves_two_points_open_and_no_stage_builds_the_demand": [
+        "minus|strict|corroborated|rescaled_2024|P10_P90|default",
+        "minus|strict|corroborated|rescaled_2024|P10_P90|access_heavy",
+        "minus|strict|corroborated|rescaled_2024|P10_P90|exposure_heavy",
+        "minus|strict|corroborated|rescaled_2024|P10_P90|road_heavy",
+        "minus|strict|corroborated|rescaled_2024|P10_P90|vulnerability_heavy",
+        "minus|strict|corroborated|rescaled_2024|P5_P95|default",
+        "minus|strict|corroborated|rescaled_2024|P5_P95|access_heavy",
+        "minus|strict|corroborated|rescaled_2024|P5_P95|exposure_heavy",
+        "minus|strict|corroborated|rescaled_2024|P5_P95|road_heavy",
+        "minus|strict|corroborated|rescaled_2024|P5_P95|vulnerability_heavy",
+        "minus|strict|all_listed|rescaled_2024|P10_P90|default",
+        "minus|strict|all_listed|rescaled_2024|P10_P90|access_heavy",
+        "minus|strict|all_listed|rescaled_2024|P10_P90|exposure_heavy",
+        "minus|strict|all_listed|rescaled_2024|P10_P90|road_heavy",
+        "minus|strict|all_listed|rescaled_2024|P10_P90|vulnerability_heavy",
+        "minus|strict|all_listed|rescaled_2024|P5_P95|default",
+        "minus|strict|all_listed|rescaled_2024|P5_P95|access_heavy",
+        "minus|strict|all_listed|rescaled_2024|P5_P95|exposure_heavy",
+        "minus|strict|all_listed|rescaled_2024|P5_P95|road_heavy",
+        "minus|strict|all_listed|rescaled_2024|P5_P95|vulnerability_heavy",
+        "minus|central|corroborated|rescaled_2024|P10_P90|default",
+        "minus|central|corroborated|rescaled_2024|P10_P90|access_heavy",
+        "minus|central|corroborated|rescaled_2024|P10_P90|exposure_heavy",
+        "minus|central|corroborated|rescaled_2024|P10_P90|road_heavy",
+        "minus|central|corroborated|rescaled_2024|P10_P90|vulnerability_heavy",
+        "minus|central|corroborated|rescaled_2024|P5_P95|default",
+        "minus|central|corroborated|rescaled_2024|P5_P95|access_heavy",
+        "minus|central|corroborated|rescaled_2024|P5_P95|exposure_heavy",
+        "minus|central|corroborated|rescaled_2024|P5_P95|road_heavy",
+        "minus|central|corroborated|rescaled_2024|P5_P95|vulnerability_heavy",
+        "minus|central|all_listed|rescaled_2024|P10_P90|default",
+        "minus|central|all_listed|rescaled_2024|P10_P90|access_heavy",
+        "minus|central|all_listed|rescaled_2024|P10_P90|exposure_heavy",
+        "minus|central|all_listed|rescaled_2024|P10_P90|road_heavy",
+        "minus|central|all_listed|rescaled_2024|P10_P90|vulnerability_heavy",
+        "minus|central|all_listed|rescaled_2024|P5_P95|default",
+        "minus|central|all_listed|rescaled_2024|P5_P95|access_heavy",
+        "minus|central|all_listed|rescaled_2024|P5_P95|exposure_heavy",
+        "minus|central|all_listed|rescaled_2024|P5_P95|road_heavy",
+        "minus|central|all_listed|rescaled_2024|P5_P95|vulnerability_heavy",
+        "minus|permissive|corroborated|rescaled_2024|P10_P90|default",
+        "minus|permissive|corroborated|rescaled_2024|P10_P90|access_heavy",
+        "minus|permissive|corroborated|rescaled_2024|P10_P90|exposure_heavy",
+        "minus|permissive|corroborated|rescaled_2024|P10_P90|road_heavy",
+        "minus|permissive|corroborated|rescaled_2024|P10_P90|vulnerability_heavy",
+        "minus|permissive|corroborated|rescaled_2024|P5_P95|default",
+        "minus|permissive|corroborated|rescaled_2024|P5_P95|access_heavy",
+        "minus|permissive|corroborated|rescaled_2024|P5_P95|exposure_heavy",
+        "minus|permissive|corroborated|rescaled_2024|P5_P95|road_heavy",
+        "minus|permissive|corroborated|rescaled_2024|P5_P95|vulnerability_heavy",
+        "minus|permissive|all_listed|rescaled_2024|P10_P90|default",
+        "minus|permissive|all_listed|rescaled_2024|P10_P90|access_heavy",
+        "minus|permissive|all_listed|rescaled_2024|P10_P90|exposure_heavy",
+        "minus|permissive|all_listed|rescaled_2024|P10_P90|road_heavy",
+        "minus|permissive|all_listed|rescaled_2024|P10_P90|vulnerability_heavy",
+        "minus|permissive|all_listed|rescaled_2024|P5_P95|default",
+        "minus|permissive|all_listed|rescaled_2024|P5_P95|access_heavy",
+        "minus|permissive|all_listed|rescaled_2024|P5_P95|exposure_heavy",
+        "minus|permissive|all_listed|rescaled_2024|P5_P95|road_heavy",
+        "minus|permissive|all_listed|rescaled_2024|P5_P95|vulnerability_heavy",
+        "as_provided|strict|corroborated|rescaled_2024|P10_P90|default",
+        "as_provided|strict|corroborated|rescaled_2024|P10_P90|access_heavy",
+        "as_provided|strict|corroborated|rescaled_2024|P10_P90|exposure_heavy",
+        "as_provided|strict|corroborated|rescaled_2024|P10_P90|road_heavy",
+        "as_provided|strict|corroborated|rescaled_2024|P10_P90|vulnerability_heavy",
+        "as_provided|strict|corroborated|rescaled_2024|P5_P95|default",
+        "as_provided|strict|corroborated|rescaled_2024|P5_P95|access_heavy",
+        "as_provided|strict|corroborated|rescaled_2024|P5_P95|exposure_heavy",
+        "as_provided|strict|corroborated|rescaled_2024|P5_P95|road_heavy",
+        "as_provided|strict|corroborated|rescaled_2024|P5_P95|vulnerability_heavy",
+        "as_provided|strict|all_listed|rescaled_2024|P10_P90|default",
+        "as_provided|strict|all_listed|rescaled_2024|P10_P90|access_heavy",
+        "as_provided|strict|all_listed|rescaled_2024|P10_P90|exposure_heavy",
+        "as_provided|strict|all_listed|rescaled_2024|P10_P90|road_heavy",
+        "as_provided|strict|all_listed|rescaled_2024|P10_P90|vulnerability_heavy",
+        "as_provided|strict|all_listed|rescaled_2024|P5_P95|default",
+        "as_provided|strict|all_listed|rescaled_2024|P5_P95|access_heavy",
+        "as_provided|strict|all_listed|rescaled_2024|P5_P95|exposure_heavy",
+        "as_provided|strict|all_listed|rescaled_2024|P5_P95|road_heavy",
+        "as_provided|strict|all_listed|rescaled_2024|P5_P95|vulnerability_heavy",
+        "as_provided|central|corroborated|rescaled_2024|P10_P90|default",
+        "as_provided|central|corroborated|rescaled_2024|P10_P90|access_heavy",
+        "as_provided|central|corroborated|rescaled_2024|P10_P90|exposure_heavy",
+        "as_provided|central|corroborated|rescaled_2024|P10_P90|road_heavy",
+        "as_provided|central|corroborated|rescaled_2024|P10_P90|vulnerability_heavy",
+        "as_provided|central|corroborated|rescaled_2024|P5_P95|default",
+        "as_provided|central|corroborated|rescaled_2024|P5_P95|access_heavy",
+        "as_provided|central|corroborated|rescaled_2024|P5_P95|exposure_heavy",
+        "as_provided|central|corroborated|rescaled_2024|P5_P95|road_heavy",
+        "as_provided|central|corroborated|rescaled_2024|P5_P95|vulnerability_heavy",
+        "as_provided|central|all_listed|rescaled_2024|P10_P90|default",
+        "as_provided|central|all_listed|rescaled_2024|P10_P90|access_heavy",
+        "as_provided|central|all_listed|rescaled_2024|P10_P90|exposure_heavy",
+        "as_provided|central|all_listed|rescaled_2024|P10_P90|road_heavy",
+        "as_provided|central|all_listed|rescaled_2024|P10_P90|vulnerability_heavy",
+        "as_provided|central|all_listed|rescaled_2024|P5_P95|default",
+        "as_provided|central|all_listed|rescaled_2024|P5_P95|access_heavy",
+        "as_provided|central|all_listed|rescaled_2024|P5_P95|exposure_heavy",
+        "as_provided|central|all_listed|rescaled_2024|P5_P95|road_heavy",
+        "as_provided|central|all_listed|rescaled_2024|P5_P95|vulnerability_heavy",
+        "as_provided|permissive|corroborated|rescaled_2024|P10_P90|default",
+        "as_provided|permissive|corroborated|rescaled_2024|P10_P90|access_heavy",
+        "as_provided|permissive|corroborated|rescaled_2024|P10_P90|exposure_heavy",
+        "as_provided|permissive|corroborated|rescaled_2024|P10_P90|road_heavy",
+        "as_provided|permissive|corroborated|rescaled_2024|P10_P90|vulnerability_heavy",
+        "as_provided|permissive|corroborated|rescaled_2024|P5_P95|default",
+        "as_provided|permissive|corroborated|rescaled_2024|P5_P95|access_heavy",
+        "as_provided|permissive|corroborated|rescaled_2024|P5_P95|exposure_heavy",
+        "as_provided|permissive|corroborated|rescaled_2024|P5_P95|road_heavy",
+        "as_provided|permissive|corroborated|rescaled_2024|P5_P95|vulnerability_heavy",
+        "as_provided|permissive|all_listed|rescaled_2024|P10_P90|default",
+        "as_provided|permissive|all_listed|rescaled_2024|P10_P90|access_heavy",
+        "as_provided|permissive|all_listed|rescaled_2024|P10_P90|exposure_heavy",
+        "as_provided|permissive|all_listed|rescaled_2024|P10_P90|road_heavy",
+        "as_provided|permissive|all_listed|rescaled_2024|P10_P90|vulnerability_heavy",
+        "as_provided|permissive|all_listed|rescaled_2024|P5_P95|default",
+        "as_provided|permissive|all_listed|rescaled_2024|P5_P95|access_heavy",
+        "as_provided|permissive|all_listed|rescaled_2024|P5_P95|exposure_heavy",
+        "as_provided|permissive|all_listed|rescaled_2024|P5_P95|road_heavy",
+        "as_provided|permissive|all_listed|rescaled_2024|P5_P95|vulnerability_heavy",
+        "plus|strict|corroborated|rescaled_2024|P10_P90|default",
+        "plus|strict|corroborated|rescaled_2024|P10_P90|access_heavy",
+        "plus|strict|corroborated|rescaled_2024|P10_P90|exposure_heavy",
+        "plus|strict|corroborated|rescaled_2024|P10_P90|road_heavy",
+        "plus|strict|corroborated|rescaled_2024|P10_P90|vulnerability_heavy",
+        "plus|strict|corroborated|rescaled_2024|P5_P95|default",
+        "plus|strict|corroborated|rescaled_2024|P5_P95|access_heavy",
+        "plus|strict|corroborated|rescaled_2024|P5_P95|exposure_heavy",
+        "plus|strict|corroborated|rescaled_2024|P5_P95|road_heavy",
+        "plus|strict|corroborated|rescaled_2024|P5_P95|vulnerability_heavy",
+        "plus|strict|all_listed|rescaled_2024|P10_P90|default",
+        "plus|strict|all_listed|rescaled_2024|P10_P90|access_heavy",
+        "plus|strict|all_listed|rescaled_2024|P10_P90|exposure_heavy",
+        "plus|strict|all_listed|rescaled_2024|P10_P90|road_heavy",
+        "plus|strict|all_listed|rescaled_2024|P10_P90|vulnerability_heavy",
+        "plus|strict|all_listed|rescaled_2024|P5_P95|default",
+        "plus|strict|all_listed|rescaled_2024|P5_P95|access_heavy",
+        "plus|strict|all_listed|rescaled_2024|P5_P95|exposure_heavy",
+        "plus|strict|all_listed|rescaled_2024|P5_P95|road_heavy",
+        "plus|strict|all_listed|rescaled_2024|P5_P95|vulnerability_heavy",
+        "plus|central|corroborated|rescaled_2024|P10_P90|default",
+        "plus|central|corroborated|rescaled_2024|P10_P90|access_heavy",
+        "plus|central|corroborated|rescaled_2024|P10_P90|exposure_heavy",
+        "plus|central|corroborated|rescaled_2024|P10_P90|road_heavy",
+        "plus|central|corroborated|rescaled_2024|P10_P90|vulnerability_heavy",
+        "plus|central|corroborated|rescaled_2024|P5_P95|default",
+        "plus|central|corroborated|rescaled_2024|P5_P95|access_heavy",
+        "plus|central|corroborated|rescaled_2024|P5_P95|exposure_heavy",
+        "plus|central|corroborated|rescaled_2024|P5_P95|road_heavy",
+        "plus|central|corroborated|rescaled_2024|P5_P95|vulnerability_heavy",
+        "plus|central|all_listed|rescaled_2024|P10_P90|default",
+        "plus|central|all_listed|rescaled_2024|P10_P90|access_heavy",
+        "plus|central|all_listed|rescaled_2024|P10_P90|exposure_heavy",
+        "plus|central|all_listed|rescaled_2024|P10_P90|road_heavy",
+        "plus|central|all_listed|rescaled_2024|P10_P90|vulnerability_heavy",
+        "plus|central|all_listed|rescaled_2024|P5_P95|default",
+        "plus|central|all_listed|rescaled_2024|P5_P95|access_heavy",
+        "plus|central|all_listed|rescaled_2024|P5_P95|exposure_heavy",
+        "plus|central|all_listed|rescaled_2024|P5_P95|road_heavy",
+        "plus|central|all_listed|rescaled_2024|P5_P95|vulnerability_heavy",
+        "plus|permissive|corroborated|rescaled_2024|P10_P90|default",
+        "plus|permissive|corroborated|rescaled_2024|P10_P90|access_heavy",
+        "plus|permissive|corroborated|rescaled_2024|P10_P90|exposure_heavy",
+        "plus|permissive|corroborated|rescaled_2024|P10_P90|road_heavy",
+        "plus|permissive|corroborated|rescaled_2024|P10_P90|vulnerability_heavy",
+        "plus|permissive|corroborated|rescaled_2024|P5_P95|default",
+        "plus|permissive|corroborated|rescaled_2024|P5_P95|access_heavy",
+        "plus|permissive|corroborated|rescaled_2024|P5_P95|exposure_heavy",
+        "plus|permissive|corroborated|rescaled_2024|P5_P95|road_heavy",
+        "plus|permissive|corroborated|rescaled_2024|P5_P95|vulnerability_heavy",
+        "plus|permissive|all_listed|rescaled_2024|P10_P90|default",
+        "plus|permissive|all_listed|rescaled_2024|P10_P90|access_heavy",
+        "plus|permissive|all_listed|rescaled_2024|P10_P90|exposure_heavy",
+        "plus|permissive|all_listed|rescaled_2024|P10_P90|road_heavy",
+        "plus|permissive|all_listed|rescaled_2024|P10_P90|vulnerability_heavy",
+        "plus|permissive|all_listed|rescaled_2024|P5_P95|default",
+        "plus|permissive|all_listed|rescaled_2024|P5_P95|access_heavy",
+        "plus|permissive|all_listed|rescaled_2024|P5_P95|exposure_heavy",
+        "plus|permissive|all_listed|rescaled_2024|P5_P95|road_heavy",
+        "plus|permissive|all_listed|rescaled_2024|P5_P95|vulnerability_heavy"
+      ],
+      "rescale_rule_leaves_two_points_open_and_no_stage_builds_the_demand": [
+        "minus|strict|public|rescaled_2024|P10_P90|default",
+        "minus|strict|public|rescaled_2024|P10_P90|access_heavy",
+        "minus|strict|public|rescaled_2024|P10_P90|exposure_heavy",
+        "minus|strict|public|rescaled_2024|P10_P90|road_heavy",
+        "minus|strict|public|rescaled_2024|P10_P90|vulnerability_heavy",
+        "minus|strict|public|rescaled_2024|P5_P95|default",
+        "minus|strict|public|rescaled_2024|P5_P95|access_heavy",
+        "minus|strict|public|rescaled_2024|P5_P95|exposure_heavy",
+        "minus|strict|public|rescaled_2024|P5_P95|road_heavy",
+        "minus|strict|public|rescaled_2024|P5_P95|vulnerability_heavy",
+        "minus|central|public|rescaled_2024|P10_P90|default",
+        "minus|central|public|rescaled_2024|P10_P90|access_heavy",
+        "minus|central|public|rescaled_2024|P10_P90|exposure_heavy",
+        "minus|central|public|rescaled_2024|P10_P90|road_heavy",
+        "minus|central|public|rescaled_2024|P10_P90|vulnerability_heavy",
+        "minus|central|public|rescaled_2024|P5_P95|default",
+        "minus|central|public|rescaled_2024|P5_P95|access_heavy",
+        "minus|central|public|rescaled_2024|P5_P95|exposure_heavy",
+        "minus|central|public|rescaled_2024|P5_P95|road_heavy",
+        "minus|central|public|rescaled_2024|P5_P95|vulnerability_heavy",
+        "minus|permissive|public|rescaled_2024|P10_P90|default",
+        "minus|permissive|public|rescaled_2024|P10_P90|access_heavy",
+        "minus|permissive|public|rescaled_2024|P10_P90|exposure_heavy",
+        "minus|permissive|public|rescaled_2024|P10_P90|road_heavy",
+        "minus|permissive|public|rescaled_2024|P10_P90|vulnerability_heavy",
+        "minus|permissive|public|rescaled_2024|P5_P95|default",
+        "minus|permissive|public|rescaled_2024|P5_P95|access_heavy",
+        "minus|permissive|public|rescaled_2024|P5_P95|exposure_heavy",
+        "minus|permissive|public|rescaled_2024|P5_P95|road_heavy",
+        "minus|permissive|public|rescaled_2024|P5_P95|vulnerability_heavy",
+        "as_provided|strict|public|rescaled_2024|P10_P90|default",
+        "as_provided|strict|public|rescaled_2024|P10_P90|access_heavy",
+        "as_provided|strict|public|rescaled_2024|P10_P90|exposure_heavy",
+        "as_provided|strict|public|rescaled_2024|P10_P90|road_heavy",
+        "as_provided|strict|public|rescaled_2024|P10_P90|vulnerability_heavy",
+        "as_provided|strict|public|rescaled_2024|P5_P95|default",
+        "as_provided|strict|public|rescaled_2024|P5_P95|access_heavy",
+        "as_provided|strict|public|rescaled_2024|P5_P95|exposure_heavy",
+        "as_provided|strict|public|rescaled_2024|P5_P95|road_heavy",
+        "as_provided|strict|public|rescaled_2024|P5_P95|vulnerability_heavy",
+        "as_provided|central|public|rescaled_2024|P10_P90|default",
+        "as_provided|central|public|rescaled_2024|P10_P90|access_heavy",
+        "as_provided|central|public|rescaled_2024|P10_P90|exposure_heavy",
+        "as_provided|central|public|rescaled_2024|P10_P90|road_heavy",
+        "as_provided|central|public|rescaled_2024|P10_P90|vulnerability_heavy",
+        "as_provided|central|public|rescaled_2024|P5_P95|default",
+        "as_provided|central|public|rescaled_2024|P5_P95|access_heavy",
+        "as_provided|central|public|rescaled_2024|P5_P95|exposure_heavy",
+        "as_provided|central|public|rescaled_2024|P5_P95|road_heavy",
+        "as_provided|central|public|rescaled_2024|P5_P95|vulnerability_heavy",
+        "as_provided|permissive|public|rescaled_2024|P10_P90|default",
+        "as_provided|permissive|public|rescaled_2024|P10_P90|access_heavy",
+        "as_provided|permissive|public|rescaled_2024|P10_P90|exposure_heavy",
+        "as_provided|permissive|public|rescaled_2024|P10_P90|road_heavy",
+        "as_provided|permissive|public|rescaled_2024|P10_P90|vulnerability_heavy",
+        "as_provided|permissive|public|rescaled_2024|P5_P95|default",
+        "as_provided|permissive|public|rescaled_2024|P5_P95|access_heavy",
+        "as_provided|permissive|public|rescaled_2024|P5_P95|exposure_heavy",
+        "as_provided|permissive|public|rescaled_2024|P5_P95|road_heavy",
+        "as_provided|permissive|public|rescaled_2024|P5_P95|vulnerability_heavy",
+        "plus|strict|public|rescaled_2024|P10_P90|default",
+        "plus|strict|public|rescaled_2024|P10_P90|access_heavy",
+        "plus|strict|public|rescaled_2024|P10_P90|exposure_heavy",
+        "plus|strict|public|rescaled_2024|P10_P90|road_heavy",
+        "plus|strict|public|rescaled_2024|P10_P90|vulnerability_heavy",
+        "plus|strict|public|rescaled_2024|P5_P95|default",
+        "plus|strict|public|rescaled_2024|P5_P95|access_heavy",
+        "plus|strict|public|rescaled_2024|P5_P95|exposure_heavy",
+        "plus|strict|public|rescaled_2024|P5_P95|road_heavy",
+        "plus|strict|public|rescaled_2024|P5_P95|vulnerability_heavy",
+        "plus|central|public|rescaled_2024|P10_P90|default",
+        "plus|central|public|rescaled_2024|P10_P90|access_heavy",
+        "plus|central|public|rescaled_2024|P10_P90|exposure_heavy",
+        "plus|central|public|rescaled_2024|P10_P90|road_heavy",
+        "plus|central|public|rescaled_2024|P10_P90|vulnerability_heavy",
+        "plus|central|public|rescaled_2024|P5_P95|default",
+        "plus|central|public|rescaled_2024|P5_P95|access_heavy",
+        "plus|central|public|rescaled_2024|P5_P95|exposure_heavy",
+        "plus|central|public|rescaled_2024|P5_P95|road_heavy",
+        "plus|central|public|rescaled_2024|P5_P95|vulnerability_heavy",
+        "plus|permissive|public|rescaled_2024|P10_P90|default",
+        "plus|permissive|public|rescaled_2024|P10_P90|access_heavy",
+        "plus|permissive|public|rescaled_2024|P10_P90|exposure_heavy",
+        "plus|permissive|public|rescaled_2024|P10_P90|road_heavy",
+        "plus|permissive|public|rescaled_2024|P10_P90|vulnerability_heavy",
+        "plus|permissive|public|rescaled_2024|P5_P95|default",
+        "plus|permissive|public|rescaled_2024|P5_P95|access_heavy",
+        "plus|permissive|public|rescaled_2024|P5_P95|exposure_heavy",
+        "plus|permissive|public|rescaled_2024|P5_P95|road_heavy",
+        "plus|permissive|public|rescaled_2024|P5_P95|vulnerability_heavy"
+      ]
+    }
+  },
+  "access_runs": {
+    "what": "Nine flooded runs on the baseline vehicle graph of the context of record: three flood levels by three closure levels, public services. Closure counts and whole-frame counts; inputs of two components, not component values. The unit rows of the minus and plus levels are in the file outside Git; those of the level as provided are the registered task E5 table.",
+    "runs": [
+      {
+        "flood_level": "minus",
+        "closure_level": "strict",
+        "closure_basis": "modelled_from_unosat_4009:CHIANGRAI_20240801_20241012_AccumulatedFlood",
+        "closure": {
+          "vehicle": {
+            "closure_rule_version": "closure_rule_v1",
+            "level": "strict",
+            "closure_basis": "modelled_from_unosat_4009:CHIANGRAI_20240801_20241012_AccumulatedFlood",
+            "edges": 65673,
+            "intersected_edges": 7159,
+            "closed_edges": 6826,
+            "delayed_edges": 96,
+            "intersected_edges_left_open": 237,
+            "closed_edges_by_road_class": {
+              "local": 3147,
+              "primary": 17,
+              "residential": 2297,
+              "secondary": 75,
+              "tertiary": 242,
+              "trunk": 122,
+              "unclassified": 926
+            },
+            "delayed_edges_by_road_class": {
+              "local": 40,
+              "primary": 3,
+              "residential": 29,
+              "secondary": 3,
+              "tertiary": 7,
+              "trunk": 1,
+              "unclassified": 13
+            },
+            "closed_bridge_tagged_edges": 44,
+            "largest_travel_time_factor": 1.9800448943978117,
+            "closure_result_sha256": "78d80626032aa0ba5af20be906a26590eac951ca6daf5205860c4efa64f36468",
+            "grade_join_connectors": 345,
+            "connectors_with_their_coordinate_inside_the_extent": 88,
+            "main_road_entries": 1939,
+            "entries_with_every_main_road_edge_closed": 147,
+            "entries_with_every_edge_closed": 113
+          }
+        },
+        "residents": 81836.8894393444,
+        "access_gap_inputs": {
+          "hospital": {
+            "mode": "vehicle",
+            "threshold_minutes": 30,
+            "baseline_access_residents": 74596.84646940231,
+            "newly_lost_residents": 21861.51530712843
+          },
+          "main_road_entry": {
+            "mode": "vehicle",
+            "threshold_minutes": 15,
+            "baseline_access_residents": 68887.94476729631,
+            "newly_lost_residents": 11982.15845683217
+          }
+        },
+        "road_criticality_inputs": {
+          "residents_losing_all_routes": 12789.994700372219,
+          "residents_with_baseline_route": 75170.53035321832
+        },
+        "residents_not_connected_to_the_graph": {
+          "hospital": 6609.912249416113,
+          "main_road_entry": 6609.912249416113
+        },
+        "cells_in_no_unit": {
+          "demand_cells": 0,
+          "residents": 0.0,
+          "note": "Cells whose centre lies in no unit of the frame, or in more than one. They are in the whole frame and in no unit row."
+        },
+        "newly_lost_residents_within_30_minutes": {
+          "hospital": 21861.51530712843,
+          "main_road_entry": 12853.198957175016
+        }
+      },
+      {
+        "flood_level": "minus",
+        "closure_level": "central",
+        "closure_basis": "modelled_from_unosat_4009:CHIANGRAI_20240801_20241012_AccumulatedFlood",
+        "closure": {
+          "vehicle": {
+            "closure_rule_version": "closure_rule_v1",
+            "level": "central",
+            "closure_basis": "modelled_from_unosat_4009:CHIANGRAI_20240801_20241012_AccumulatedFlood",
+            "edges": 65673,
+            "intersected_edges": 7159,
+            "closed_edges": 6893,
+            "delayed_edges": 33,
+            "intersected_edges_left_open": 233,
+            "closed_edges_by_road_class": {
+              "local": 3175,
+              "primary": 21,
+              "residential": 2316,
+              "secondary": 77,
+              "tertiary": 247,
+              "trunk": 123,
+              "unclassified": 934
+            },
+            "delayed_edges_by_road_class": {
+              "local": 12,
+              "residential": 11,
+              "secondary": 2,
+              "tertiary": 2,
+              "unclassified": 6
+            },
+            "closed_bridge_tagged_edges": 48,
+            "largest_travel_time_factor": 2.9600897887956235,
+            "closure_result_sha256": "263b9e181be60254024106bee4d952140819085328271f87b16387290c918e33",
+            "grade_join_connectors": 345,
+            "connectors_with_their_coordinate_inside_the_extent": 88,
+            "main_road_entries": 1939,
+            "entries_with_every_main_road_edge_closed": 151,
+            "entries_with_every_edge_closed": 115
+          }
+        },
+        "residents": 81836.8894393444,
+        "access_gap_inputs": {
+          "hospital": {
+            "mode": "vehicle",
+            "threshold_minutes": 30,
+            "baseline_access_residents": 74596.84646940231,
+            "newly_lost_residents": 21969.387766301632
+          },
+          "main_road_entry": {
+            "mode": "vehicle",
+            "threshold_minutes": 15,
+            "baseline_access_residents": 68887.94476729631,
+            "newly_lost_residents": 12123.475856155157
+          }
+        },
+        "road_criticality_inputs": {
+          "residents_losing_all_routes": 12961.679112493992,
+          "residents_with_baseline_route": 75170.53035321832
+        },
+        "residents_not_connected_to_the_graph": {
+          "hospital": 6609.912249416113,
+          "main_road_entry": 6609.912249416113
+        },
+        "cells_in_no_unit": {
+          "demand_cells": 0,
+          "residents": 0.0,
+          "note": "Cells whose centre lies in no unit of the frame, or in more than one. They are in the whole frame and in no unit row."
+        },
+        "newly_lost_residents_within_30_minutes": {
+          "hospital": 21969.387766301632,
+          "main_road_entry": 12999.085176438093
+        }
+      },
+      {
+        "flood_level": "minus",
+        "closure_level": "permissive",
+        "closure_basis": "modelled_from_unosat_4009:CHIANGRAI_20240801_20241012_AccumulatedFlood",
+        "closure": {
+          "vehicle": {
+            "closure_rule_version": "closure_rule_v1",
+            "level": "permissive",
+            "closure_basis": "modelled_from_unosat_4009:CHIANGRAI_20240801_20241012_AccumulatedFlood",
+            "edges": 65673,
+            "intersected_edges": 7159,
+            "closed_edges": 7159,
+            "delayed_edges": 0,
+            "intersected_edges_left_open": 0,
+            "closed_edges_by_road_class": {
+              "local": 3274,
+              "primary": 27,
+              "residential": 2419,
+              "secondary": 82,
+              "tertiary": 258,
+              "trunk": 125,
+              "unclassified": 974
+            },
+            "delayed_edges_by_road_class": {},
+            "closed_bridge_tagged_edges": 50,
+            "largest_travel_time_factor": null,
+            "closure_result_sha256": "c3ccc50baadac6b3b86421e542f1c5a42f7b3ea38724481c010d6781986a535e",
+            "grade_join_connectors": 345,
+            "connectors_with_their_coordinate_inside_the_extent": 88,
+            "main_road_entries": 1939,
+            "entries_with_every_main_road_edge_closed": 157,
+            "entries_with_every_edge_closed": 121
+          }
+        },
+        "residents": 81836.8894393444,
+        "access_gap_inputs": {
+          "hospital": {
+            "mode": "vehicle",
+            "threshold_minutes": 30,
+            "baseline_access_residents": 74596.84646940231,
+            "newly_lost_residents": 22109.743947207928
+          },
+          "main_road_entry": {
+            "mode": "vehicle",
+            "threshold_minutes": 15,
+            "baseline_access_residents": 68887.94476729631,
+            "newly_lost_residents": 16984.957982212305
+          }
+        },
+        "road_criticality_inputs": {
+          "residents_losing_all_routes": 20865.236803889275,
+          "residents_with_baseline_route": 75170.53035321832
+        },
+        "residents_not_connected_to_the_graph": {
+          "hospital": 6609.912249416113,
+          "main_road_entry": 6609.912249416113
+        },
+        "cells_in_no_unit": {
+          "demand_cells": 0,
+          "residents": 0.0,
+          "note": "Cells whose centre lies in no unit of the frame, or in more than one. They are in the whole frame and in no unit row."
+        },
+        "newly_lost_residents_within_30_minutes": {
+          "hospital": 22109.743947207928,
+          "main_road_entry": 20852.590192884207
+        }
+      },
+      {
+        "flood_level": "as_provided",
+        "closure_level": "strict",
+        "closure_basis": "modelled_from_unosat_4009:CHIANGRAI_20240801_20241012_AccumulatedFlood",
+        "closure": {
+          "vehicle": {
+            "closure_rule_version": "closure_rule_v1",
+            "level": "strict",
+            "closure_basis": "modelled_from_unosat_4009:CHIANGRAI_20240801_20241012_AccumulatedFlood",
+            "edges": 65673,
+            "intersected_edges": 8288,
+            "closed_edges": 7842,
+            "delayed_edges": 137,
+            "intersected_edges_left_open": 309,
+            "closed_edges_by_road_class": {
+              "local": 3450,
+              "primary": 32,
+              "residential": 2728,
+              "secondary": 82,
+              "tertiary": 326,
+              "trunk": 129,
+              "unclassified": 1095
+            },
+            "delayed_edges_by_road_class": {
+              "local": 38,
+              "primary": 6,
+              "residential": 47,
+              "secondary": 1,
+              "tertiary": 17,
+              "trunk": 2,
+              "unclassified": 26
+            },
+            "closed_bridge_tagged_edges": 59,
+            "largest_travel_time_factor": 1.9987043303609324,
+            "closure_result_sha256": "288a9584eac37d415448e6f769b1c303eb4184c490f8c68b4a082d0783809e7a",
+            "grade_join_connectors": 345,
+            "connectors_with_their_coordinate_inside_the_extent": 108,
+            "main_road_entries": 1939,
+            "entries_with_every_main_road_edge_closed": 163,
+            "entries_with_every_edge_closed": 127
+          }
+        },
+        "residents": 81836.8894393444,
+        "access_gap_inputs": {
+          "hospital": {
+            "mode": "vehicle",
+            "threshold_minutes": 30,
+            "baseline_access_residents": 74596.84646940231,
+            "newly_lost_residents": 22643.255083084106
+          },
+          "main_road_entry": {
+            "mode": "vehicle",
+            "threshold_minutes": 15,
+            "baseline_access_residents": 68887.94476729631,
+            "newly_lost_residents": 17460.348263829947
+          }
+        },
+        "road_criticality_inputs": {
+          "residents_losing_all_routes": 21332.772853940725,
+          "residents_with_baseline_route": 75170.53035321832
+        },
+        "residents_not_connected_to_the_graph": {
+          "hospital": 6609.912249416113,
+          "main_road_entry": 6609.912249416113
+        },
+        "cells_in_no_unit": {
+          "demand_cells": 0,
+          "residents": 0.0,
+          "note": "Cells whose centre lies in no unit of the frame, or in more than one. They are in the whole frame and in no unit row."
+        },
+        "newly_lost_residents_within_30_minutes": {
+          "hospital": 22643.255083084106,
+          "main_road_entry": 21320.126242935658
+        }
+      },
+      {
+        "flood_level": "as_provided",
+        "closure_level": "central",
+        "closure_basis": "modelled_from_unosat_4009:CHIANGRAI_20240801_20241012_AccumulatedFlood",
+        "closure": {
+          "vehicle": {
+            "closure_rule_version": "closure_rule_v1",
+            "level": "central",
+            "closure_basis": "modelled_from_unosat_4009:CHIANGRAI_20240801_20241012_AccumulatedFlood",
+            "edges": 65673,
+            "intersected_edges": 8288,
+            "closed_edges": 7926,
+            "delayed_edges": 55,
+            "intersected_edges_left_open": 307,
+            "closed_edges_by_road_class": {
+              "local": 3472,
+              "primary": 34,
+              "residential": 2754,
+              "secondary": 83,
+              "tertiary": 338,
+              "trunk": 131,
+              "unclassified": 1114
+            },
+            "delayed_edges_by_road_class": {
+              "local": 16,
+              "primary": 4,
+              "residential": 23,
+              "tertiary": 5,
+              "unclassified": 7
+            },
+            "closed_bridge_tagged_edges": 61,
+            "largest_travel_time_factor": 2.982560838481897,
+            "closure_result_sha256": "7c1e9bd288d4fe8f285a7d499d3826b5da7b30a617b44e7f8d3cb1daf581f766",
+            "grade_join_connectors": 345,
+            "connectors_with_their_coordinate_inside_the_extent": 108,
+            "main_road_entries": 1939,
+            "entries_with_every_main_road_edge_closed": 165,
+            "entries_with_every_edge_closed": 129
+          }
+        },
+        "residents": 81836.8894393444,
+        "access_gap_inputs": {
+          "hospital": {
+            "mode": "vehicle",
+            "threshold_minutes": 30,
+            "baseline_access_residents": 74596.84646940231,
+            "newly_lost_residents": 24505.18687567115
+          },
+          "main_road_entry": {
+            "mode": "vehicle",
+            "threshold_minutes": 15,
+            "baseline_access_residents": 68887.94476729631,
+            "newly_lost_residents": 17595.278018265963
+          }
+        },
+        "road_criticality_inputs": {
+          "residents_losing_all_routes": 21797.694873660803,
+          "residents_with_baseline_route": 75170.53035321832
+        },
+        "residents_not_connected_to_the_graph": {
+          "hospital": 6609.912249416113,
+          "main_road_entry": 6609.912249416113
+        },
+        "cells_in_no_unit": {
+          "demand_cells": 0,
+          "residents": 0.0,
+          "note": "Cells whose centre lies in no unit of the frame, or in more than one. They are in the whole frame and in no unit row."
+        },
+        "newly_lost_residents_within_30_minutes": {
+          "hospital": 24505.18687567115,
+          "main_road_entry": 21785.048262655735
+        }
+      },
+      {
+        "flood_level": "as_provided",
+        "closure_level": "permissive",
+        "closure_basis": "modelled_from_unosat_4009:CHIANGRAI_20240801_20241012_AccumulatedFlood",
+        "closure": {
+          "vehicle": {
+            "closure_rule_version": "closure_rule_v1",
+            "level": "permissive",
+            "closure_basis": "modelled_from_unosat_4009:CHIANGRAI_20240801_20241012_AccumulatedFlood",
+            "edges": 65673,
+            "intersected_edges": 8288,
+            "closed_edges": 8288,
+            "delayed_edges": 0,
+            "intersected_edges_left_open": 0,
+            "closed_edges_by_road_class": {
+              "local": 3564,
+              "primary": 49,
+              "residential": 2926,
+              "secondary": 87,
+              "tertiary": 368,
+              "trunk": 133,
+              "unclassified": 1161
+            },
+            "delayed_edges_by_road_class": {},
+            "closed_bridge_tagged_edges": 61,
+            "largest_travel_time_factor": null,
+            "closure_result_sha256": "fe1973ac7a9af8dd117cfcb1f3c1ee6af8a24c9af392c1db20696bcc355553c2",
+            "grade_join_connectors": 345,
+            "connectors_with_their_coordinate_inside_the_extent": 108,
+            "main_road_entries": 1939,
+            "entries_with_every_main_road_edge_closed": 177,
+            "entries_with_every_edge_closed": 141
+          }
+        },
+        "residents": 81836.8894393444,
+        "access_gap_inputs": {
+          "hospital": {
+            "mode": "vehicle",
+            "threshold_minutes": 30,
+            "baseline_access_residents": 74596.84646940231,
+            "newly_lost_residents": 24824.44628700614
+          },
+          "main_road_entry": {
+            "mode": "vehicle",
+            "threshold_minutes": 15,
+            "baseline_access_residents": 68887.94476729631,
+            "newly_lost_residents": 17854.67269447446
+          }
+        },
+        "road_criticality_inputs": {
+          "residents_losing_all_routes": 22109.558058589697,
+          "residents_with_baseline_route": 75170.53035321832
+        },
+        "residents_not_connected_to_the_graph": {
+          "hospital": 6609.912249416113,
+          "main_road_entry": 6609.912249416113
+        },
+        "cells_in_no_unit": {
+          "demand_cells": 0,
+          "residents": 0.0,
+          "note": "Cells whose centre lies in no unit of the frame, or in more than one. They are in the whole frame and in no unit row."
+        },
+        "newly_lost_residents_within_30_minutes": {
+          "hospital": 24824.44628700614,
+          "main_road_entry": 22096.91144758463
+        }
+      },
+      {
+        "flood_level": "plus",
+        "closure_level": "strict",
+        "closure_basis": "modelled_from_unosat_4009:CHIANGRAI_20240801_20241012_AccumulatedFlood",
+        "closure": {
+          "vehicle": {
+            "closure_rule_version": "closure_rule_v1",
+            "level": "strict",
+            "closure_basis": "modelled_from_unosat_4009:CHIANGRAI_20240801_20241012_AccumulatedFlood",
+            "edges": 65673,
+            "intersected_edges": 9673,
+            "closed_edges": 9132,
+            "delayed_edges": 175,
+            "intersected_edges_left_open": 366,
+            "closed_edges_by_road_class": {
+              "local": 3788,
+              "primary": 82,
+              "residential": 3320,
+              "secondary": 92,
+              "tertiary": 432,
+              "trunk": 130,
+              "unclassified": 1288
+            },
+            "delayed_edges_by_road_class": {
+              "local": 55,
+              "primary": 8,
+              "residential": 65,
+              "secondary": 2,
+              "tertiary": 20,
+              "trunk": 4,
+              "unclassified": 21
+            },
+            "closed_bridge_tagged_edges": 70,
+            "largest_travel_time_factor": 1.998637543004173,
+            "closure_result_sha256": "c6c5052b1f48064e9080e58b73997b2a8a3f7252a004772ea21d0d38117e55ac",
+            "grade_join_connectors": 345,
+            "connectors_with_their_coordinate_inside_the_extent": 130,
+            "main_road_entries": 1939,
+            "entries_with_every_main_road_edge_closed": 200,
+            "entries_with_every_edge_closed": 164
+          }
+        },
+        "residents": 81836.8894393444,
+        "access_gap_inputs": {
+          "hospital": {
+            "mode": "vehicle",
+            "threshold_minutes": 30,
+            "baseline_access_residents": 74596.84646940231,
+            "newly_lost_residents": 25457.880482763052
+          },
+          "main_road_entry": {
+            "mode": "vehicle",
+            "threshold_minutes": 15,
+            "baseline_access_residents": 68887.94476729631,
+            "newly_lost_residents": 18232.554947584867
+          }
+        },
+        "road_criticality_inputs": {
+          "residents_losing_all_routes": 22736.679322481155,
+          "residents_with_baseline_route": 75170.53035321832
+        },
+        "residents_not_connected_to_the_graph": {
+          "hospital": 6609.912249416113,
+          "main_road_entry": 6609.912249416113
+        },
+        "cells_in_no_unit": {
+          "demand_cells": 0,
+          "residents": 0.0,
+          "note": "Cells whose centre lies in no unit of the frame, or in more than one. They are in the whole frame and in no unit row."
+        },
+        "newly_lost_residents_within_30_minutes": {
+          "hospital": 25457.880482763052,
+          "main_road_entry": 22724.032711476088
+        }
+      },
+      {
+        "flood_level": "plus",
+        "closure_level": "central",
+        "closure_basis": "modelled_from_unosat_4009:CHIANGRAI_20240801_20241012_AccumulatedFlood",
+        "closure": {
+          "vehicle": {
+            "closure_rule_version": "closure_rule_v1",
+            "level": "central",
+            "closure_basis": "modelled_from_unosat_4009:CHIANGRAI_20240801_20241012_AccumulatedFlood",
+            "edges": 65673,
+            "intersected_edges": 9673,
+            "closed_edges": 9233,
+            "delayed_edges": 76,
+            "intersected_edges_left_open": 364,
+            "closed_edges_by_road_class": {
+              "local": 3818,
+              "primary": 86,
+              "residential": 3356,
+              "secondary": 94,
+              "tertiary": 446,
+              "trunk": 132,
+              "unclassified": 1301
+            },
+            "delayed_edges_by_road_class": {
+              "local": 25,
+              "primary": 4,
+              "residential": 31,
+              "tertiary": 6,
+              "trunk": 2,
+              "unclassified": 8
+            },
+            "closed_bridge_tagged_edges": 72,
+            "largest_travel_time_factor": 2.997275086008346,
+            "closure_result_sha256": "bc429c64de12f6db2f2fbecb102bebaf6dae4682e3b428ad20097017a5711eec",
+            "grade_join_connectors": 345,
+            "connectors_with_their_coordinate_inside_the_extent": 130,
+            "main_road_entries": 1939,
+            "entries_with_every_main_road_edge_closed": 205,
+            "entries_with_every_edge_closed": 168
+          }
+        },
+        "residents": 81836.8894393444,
+        "access_gap_inputs": {
+          "hospital": {
+            "mode": "vehicle",
+            "threshold_minutes": 30,
+            "baseline_access_residents": 74596.84646940231,
+            "newly_lost_residents": 25656.88042923808
+          },
+          "main_road_entry": {
+            "mode": "vehicle",
+            "threshold_minutes": 15,
+            "baseline_access_residents": 68887.94476729631,
+            "newly_lost_residents": 18407.430705279112
+          }
+        },
+        "road_criticality_inputs": {
+          "residents_losing_all_routes": 22930.138415813446,
+          "residents_with_baseline_route": 75170.53035321832
+        },
+        "residents_not_connected_to_the_graph": {
+          "hospital": 6609.912249416113,
+          "main_road_entry": 6609.912249416113
+        },
+        "cells_in_no_unit": {
+          "demand_cells": 0,
+          "residents": 0.0,
+          "note": "Cells whose centre lies in no unit of the frame, or in more than one. They are in the whole frame and in no unit row."
+        },
+        "newly_lost_residents_within_30_minutes": {
+          "hospital": 25656.88042923808,
+          "main_road_entry": 22917.49180480838
+        }
+      },
+      {
+        "flood_level": "plus",
+        "closure_level": "permissive",
+        "closure_basis": "modelled_from_unosat_4009:CHIANGRAI_20240801_20241012_AccumulatedFlood",
+        "closure": {
+          "vehicle": {
+            "closure_rule_version": "closure_rule_v1",
+            "level": "permissive",
+            "closure_basis": "modelled_from_unosat_4009:CHIANGRAI_20240801_20241012_AccumulatedFlood",
+            "edges": 65673,
+            "intersected_edges": 9673,
+            "closed_edges": 9673,
+            "delayed_edges": 0,
+            "intersected_edges_left_open": 0,
+            "closed_edges_by_road_class": {
+              "local": 3942,
+              "primary": 107,
+              "residential": 3545,
+              "secondary": 96,
+              "tertiary": 489,
+              "trunk": 136,
+              "unclassified": 1358
+            },
+            "delayed_edges_by_road_class": {},
+            "closed_bridge_tagged_edges": 73,
+            "largest_travel_time_factor": null,
+            "closure_result_sha256": "a60fe6d717965190ed844755039d73b6d6e417f9f57f8047603f2da64409aa4d",
+            "grade_join_connectors": 345,
+            "connectors_with_their_coordinate_inside_the_extent": 130,
+            "main_road_entries": 1939,
+            "entries_with_every_main_road_edge_closed": 231,
+            "entries_with_every_edge_closed": 194
+          }
+        },
+        "residents": 81836.8894393444,
+        "access_gap_inputs": {
+          "hospital": {
+            "mode": "vehicle",
+            "threshold_minutes": 30,
+            "baseline_access_residents": 74596.84646940231,
+            "newly_lost_residents": 25991.876840621233
+          },
+          "main_road_entry": {
+            "mode": "vehicle",
+            "threshold_minutes": 15,
+            "baseline_access_residents": 68887.94476729631,
+            "newly_lost_residents": 18750.286187559366
+          }
+        },
+        "road_criticality_inputs": {
+          "residents_losing_all_routes": 23239.15814501047,
+          "residents_with_baseline_route": 75170.53035321832
+        },
+        "residents_not_connected_to_the_graph": {
+          "hospital": 6609.912249416113,
+          "main_road_entry": 6609.912249416113
+        },
+        "cells_in_no_unit": {
+          "demand_cells": 0,
+          "residents": 0.0,
+          "note": "Cells whose centre lies in no unit of the frame, or in more than one. They are in the whole frame and in no unit row."
+        },
+        "newly_lost_residents_within_30_minutes": {
+          "hospital": 25991.876840621233,
+          "main_road_entry": 23226.511534005404
+        }
+      }
+    ],
+    "checks": {
+      "as_provided_runs_against_the_e5_table": {
+        "result": "PASS",
+        "compared": [
+          {
+            "closure_level": "strict",
+            "unit_rows_same": true,
+            "closure_result_same": true
+          },
+          {
+            "closure_level": "central",
+            "unit_rows_same": true,
+            "closure_result_same": true
+          },
+          {
+            "closure_level": "permissive",
+            "unit_rows_same": true,
+            "closure_result_same": true
+          }
+        ],
+        "what": "The three runs of this task at the flood level as provided against the unit rows and the closure result of the registered task E5 table: the same, value for value."
+      },
+      "against_calculate_total_access": [
+        {
+          "flood_level": "minus",
+          "closure_level": "permissive",
+          "service": "hospital",
+          "mode": "vehicle",
+          "closed_edges": 7159,
+          "baseline_run": {
+            "cells_compared": 27487,
+            "cells_that_differ": 0,
+            "largest_difference_minutes": 1.4210854715202004e-14
+          },
+          "flooded_run": {
+            "cells_compared": 27487,
+            "cells_that_differ": 0,
+            "largest_difference_minutes": 1.4210854715202004e-14
+          },
+          "same": true
+        },
+        {
+          "flood_level": "as_provided",
+          "closure_level": "permissive",
+          "service": "hospital",
+          "mode": "vehicle",
+          "closed_edges": 8288,
+          "baseline_run": {
+            "cells_compared": 27487,
+            "cells_that_differ": 0,
+            "largest_difference_minutes": 1.4210854715202004e-14
+          },
+          "flooded_run": {
+            "cells_compared": 27487,
+            "cells_that_differ": 0,
+            "largest_difference_minutes": 1.4210854715202004e-14
+          },
+          "same": true
+        },
+        {
+          "flood_level": "plus",
+          "closure_level": "permissive",
+          "service": "hospital",
+          "mode": "vehicle",
+          "closed_edges": 9673,
+          "baseline_run": {
+            "cells_compared": 27487,
+            "cells_that_differ": 0,
+            "largest_difference_minutes": 1.4210854715202004e-14
+          },
+          "flooded_run": {
+            "cells_compared": 27487,
+            "cells_that_differ": 0,
+            "largest_difference_minutes": 1.4210854715202004e-14
+          },
+          "same": true
+        }
+      ],
+      "against_calculate_total_access_all_same": true,
+      "shorter_routes_in_a_flooded_run": 0,
+      "residents_gaining_access": 0.0,
+      "intersected_edges_not_fewer_at_a_larger_flood_level": true
+    },
+    "unit_rows_sha256": "bbdd83c7866d2cf407c20d4a8eeab1d578014ce8473787c65632c4c6872557da"
+  },
+  "measurement_checks": {
+    "demand_cells": 36765,
+    "cells_in_one_unit": 36765,
+    "residents_in_the_units": 81836.8894393444,
+    "unit_residents_same_in_the_context_and_the_access_table": true,
+    "hospital_routes_same_in_the_graph_and_the_access_table": true,
+    "no_unit_row_of_the_access_table_stores_a_ratio": true,
+    "compared_before_any_flood_layer_was_read_for_a_unit": true,
+    "coverage": "by_construction",
+    "combinations_measured": 9,
+    "residents_and_baseline_counts_same_in_every_access_run": true,
+    "default_combination_is_the_measurement_of_task_e8": true,
+    "flooded_land_not_smaller_at_a_larger_flood_level_in_every_unit": true,
+    "residents_inside_not_fewer_at_a_larger_flood_level_in_every_unit": true
+  },
+  "result": {
+    "computed": true,
+    "not_computed_because": null,
+    "default_cell_against_the_e8_rows": {
+      "result": "PASS",
+      "rows": 8,
+      "rows_sha256": "2c4437b93ee1fab17c52073bc818da667e99ddf6ddaa2106dcd647e3cc271c4a",
+      "what": "The rows of the default cell, assembled by this run from the inputs, have the SHA-256 of the rows the registered task E8 receipt records: every value of every unit, leave-one-component-out included."
+    },
+    "summary": {
+      "units": 8,
+      "level": "public",
+      "core_cells_per_lane": 540,
+      "cells_run": 90,
+      "cells_not_run": 450,
+      "cells_not_run_by_reason": {
+        "facility_set_needs_a_walking_context_of_record_and_the_pitch_level": 180,
+        "facility_set_needs_a_walking_context_of_record_and_the_pitch_level+rescale_rule_leaves_two_points_open_and_no_stage_builds_the_demand": 180,
+        "rescale_rule_leaves_two_points_open_and_no_stage_builds_the_demand": 90
+      },
+      "cells_of_the_protocol_set_for_retention": 180,
+      "cells_run_with_a_failed_unit": 0,
+      "unit_cells_run": 720,
+      "unit_cells_with_a_result": 720,
+      "unit_cells_failed": 0,
+      "unit_cells_failed_by_stage_and_error": {},
+      "unit_cells_with_a_component_not_computed": 0,
+      "cells_ranked": 90,
+      "reference_class_counts": {
+        "A": 0,
+        "B": 1,
+        "C": 0,
+        "D": 3,
+        "E": 4,
+        "no_class": 0
+      },
+      "units_without_a_default_cell_result": 0,
+      "class_counts_over_every_unit_cell": {
+        "A": 0,
+        "B": 70,
+        "C": 0,
+        "D": 293,
+        "E": 357,
+        "no_class": 0
+      },
+      "units_by_number_of_classes_over_the_cells_run": {
+        "1": 6,
+        "2": 2
+      },
+      "retention_over_the_cells_run": {
+        "what": "The share of the cells that were run in which a unit keeps the class of its default cell. It is not the retention of the headline rule unless every cell of the protocol's set was run.",
+        "class_retention_min": 0.6,
+        "units_keeping_the_class_in_every_cell_run": 6,
+        "units_keeping_the_class_in_at_least_the_minimum_share": 8,
+        "units_keeping_the_class_in_less_than_the_minimum_share": 0,
+        "units_without_a_class_to_keep": 0
+      },
+      "headline_status_counts": {
+        "not_evaluated": 8,
+        "headline_eligible": 0,
+        "unstable_verify": 0
+      },
+      "outcome_fixed_by_the_bounds_counts": {
+        "at_or_above_the_minimum": 0,
+        "below_the_minimum": 0,
+        "not_fixed": 8
+      },
+      "after_declared_cut_line_6": {
+        "cells": 45,
+        "units_at_or_above_the_minimum": 8,
+        "units_below_the_minimum": 0,
+        "units_without_a_class_in_every_one_of_those_cells": 0,
+        "note": "Counts over the cells that declared cut line 6 would leave. Not the headline: the owners have not invoked the cut (open point E10-OP1)."
+      },
+      "units_whose_fpps_lies_on_both_sides_of_the_class_e_threshold": 1,
+      "class_e_threshold_fpps": 35.0,
+      "units_whose_class_changes_under_leave_one_component_out_in_the_default_cell": 2,
+      "units_with_one_rank_in_every_cell_ranked": 4,
+      "class_counts_by_cell": {
+        "minus|strict|public|worldpop_2020|P10_P90|default": {
+          "D": 4,
+          "E": 4
+        },
+        "minus|strict|public|worldpop_2020|P10_P90|access_heavy": {
+          "D": 4,
+          "E": 4
+        },
+        "minus|strict|public|worldpop_2020|P10_P90|exposure_heavy": {
+          "D": 4,
+          "E": 4
+        },
+        "minus|strict|public|worldpop_2020|P10_P90|road_heavy": {
+          "D": 4,
+          "E": 4
+        },
+        "minus|strict|public|worldpop_2020|P10_P90|vulnerability_heavy": {
+          "D": 4,
+          "E": 4
+        },
+        "minus|strict|public|worldpop_2020|P5_P95|default": {
+          "D": 4,
+          "E": 4
+        },
+        "minus|strict|public|worldpop_2020|P5_P95|access_heavy": {
+          "D": 4,
+          "E": 4
+        },
+        "minus|strict|public|worldpop_2020|P5_P95|exposure_heavy": {
+          "D": 4,
+          "E": 4
+        },
+        "minus|strict|public|worldpop_2020|P5_P95|road_heavy": {
+          "D": 4,
+          "E": 4
+        },
+        "minus|strict|public|worldpop_2020|P5_P95|vulnerability_heavy": {
+          "D": 4,
+          "E": 4
+        },
+        "minus|central|public|worldpop_2020|P10_P90|default": {
+          "D": 4,
+          "E": 4
+        },
+        "minus|central|public|worldpop_2020|P10_P90|access_heavy": {
+          "D": 4,
+          "E": 4
+        },
+        "minus|central|public|worldpop_2020|P10_P90|exposure_heavy": {
+          "D": 4,
+          "E": 4
+        },
+        "minus|central|public|worldpop_2020|P10_P90|road_heavy": {
+          "D": 4,
+          "E": 4
+        },
+        "minus|central|public|worldpop_2020|P10_P90|vulnerability_heavy": {
+          "D": 4,
+          "E": 4
+        },
+        "minus|central|public|worldpop_2020|P5_P95|default": {
+          "D": 4,
+          "E": 4
+        },
+        "minus|central|public|worldpop_2020|P5_P95|access_heavy": {
+          "D": 4,
+          "E": 4
+        },
+        "minus|central|public|worldpop_2020|P5_P95|exposure_heavy": {
+          "D": 4,
+          "E": 4
+        },
+        "minus|central|public|worldpop_2020|P5_P95|road_heavy": {
+          "D": 4,
+          "E": 4
+        },
+        "minus|central|public|worldpop_2020|P5_P95|vulnerability_heavy": {
+          "D": 4,
+          "E": 4
+        },
+        "minus|permissive|public|worldpop_2020|P10_P90|default": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "minus|permissive|public|worldpop_2020|P10_P90|access_heavy": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "minus|permissive|public|worldpop_2020|P10_P90|exposure_heavy": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "minus|permissive|public|worldpop_2020|P10_P90|road_heavy": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "minus|permissive|public|worldpop_2020|P10_P90|vulnerability_heavy": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "minus|permissive|public|worldpop_2020|P5_P95|default": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "minus|permissive|public|worldpop_2020|P5_P95|access_heavy": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "minus|permissive|public|worldpop_2020|P5_P95|exposure_heavy": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "minus|permissive|public|worldpop_2020|P5_P95|road_heavy": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "minus|permissive|public|worldpop_2020|P5_P95|vulnerability_heavy": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "as_provided|strict|public|worldpop_2020|P10_P90|default": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "as_provided|strict|public|worldpop_2020|P10_P90|access_heavy": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "as_provided|strict|public|worldpop_2020|P10_P90|exposure_heavy": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "as_provided|strict|public|worldpop_2020|P10_P90|road_heavy": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "as_provided|strict|public|worldpop_2020|P10_P90|vulnerability_heavy": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "as_provided|strict|public|worldpop_2020|P5_P95|default": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "as_provided|strict|public|worldpop_2020|P5_P95|access_heavy": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "as_provided|strict|public|worldpop_2020|P5_P95|exposure_heavy": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "as_provided|strict|public|worldpop_2020|P5_P95|road_heavy": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "as_provided|strict|public|worldpop_2020|P5_P95|vulnerability_heavy": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "as_provided|central|public|worldpop_2020|P10_P90|default": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "as_provided|central|public|worldpop_2020|P10_P90|access_heavy": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "as_provided|central|public|worldpop_2020|P10_P90|exposure_heavy": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "as_provided|central|public|worldpop_2020|P10_P90|road_heavy": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "as_provided|central|public|worldpop_2020|P10_P90|vulnerability_heavy": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "as_provided|central|public|worldpop_2020|P5_P95|default": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "as_provided|central|public|worldpop_2020|P5_P95|access_heavy": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "as_provided|central|public|worldpop_2020|P5_P95|exposure_heavy": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "as_provided|central|public|worldpop_2020|P5_P95|road_heavy": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "as_provided|central|public|worldpop_2020|P5_P95|vulnerability_heavy": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "as_provided|permissive|public|worldpop_2020|P10_P90|default": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "as_provided|permissive|public|worldpop_2020|P10_P90|access_heavy": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "as_provided|permissive|public|worldpop_2020|P10_P90|exposure_heavy": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "as_provided|permissive|public|worldpop_2020|P10_P90|road_heavy": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "as_provided|permissive|public|worldpop_2020|P10_P90|vulnerability_heavy": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "as_provided|permissive|public|worldpop_2020|P5_P95|default": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "as_provided|permissive|public|worldpop_2020|P5_P95|access_heavy": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "as_provided|permissive|public|worldpop_2020|P5_P95|exposure_heavy": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "as_provided|permissive|public|worldpop_2020|P5_P95|road_heavy": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "as_provided|permissive|public|worldpop_2020|P5_P95|vulnerability_heavy": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "plus|strict|public|worldpop_2020|P10_P90|default": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "plus|strict|public|worldpop_2020|P10_P90|access_heavy": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "plus|strict|public|worldpop_2020|P10_P90|exposure_heavy": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "plus|strict|public|worldpop_2020|P10_P90|road_heavy": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "plus|strict|public|worldpop_2020|P10_P90|vulnerability_heavy": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "plus|strict|public|worldpop_2020|P5_P95|default": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "plus|strict|public|worldpop_2020|P5_P95|access_heavy": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "plus|strict|public|worldpop_2020|P5_P95|exposure_heavy": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "plus|strict|public|worldpop_2020|P5_P95|road_heavy": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "plus|strict|public|worldpop_2020|P5_P95|vulnerability_heavy": {
+          "B": 1,
+          "D": 4,
+          "E": 3
+        },
+        "plus|central|public|worldpop_2020|P10_P90|default": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "plus|central|public|worldpop_2020|P10_P90|access_heavy": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "plus|central|public|worldpop_2020|P10_P90|exposure_heavy": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "plus|central|public|worldpop_2020|P10_P90|road_heavy": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "plus|central|public|worldpop_2020|P10_P90|vulnerability_heavy": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "plus|central|public|worldpop_2020|P5_P95|default": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "plus|central|public|worldpop_2020|P5_P95|access_heavy": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "plus|central|public|worldpop_2020|P5_P95|exposure_heavy": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "plus|central|public|worldpop_2020|P5_P95|road_heavy": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "plus|central|public|worldpop_2020|P5_P95|vulnerability_heavy": {
+          "B": 1,
+          "D": 4,
+          "E": 3
+        },
+        "plus|permissive|public|worldpop_2020|P10_P90|default": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "plus|permissive|public|worldpop_2020|P10_P90|access_heavy": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "plus|permissive|public|worldpop_2020|P10_P90|exposure_heavy": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "plus|permissive|public|worldpop_2020|P10_P90|road_heavy": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "plus|permissive|public|worldpop_2020|P10_P90|vulnerability_heavy": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "plus|permissive|public|worldpop_2020|P5_P95|default": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "plus|permissive|public|worldpop_2020|P5_P95|access_heavy": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "plus|permissive|public|worldpop_2020|P5_P95|exposure_heavy": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "plus|permissive|public|worldpop_2020|P5_P95|road_heavy": {
+          "B": 1,
+          "D": 3,
+          "E": 4
+        },
+        "plus|permissive|public|worldpop_2020|P5_P95|vulnerability_heavy": {
+          "B": 1,
+          "D": 4,
+          "E": 3
+        }
+      },
+      "class_counts_by_cell_note": "For each cell that was run, the number of units in each class; a class no unit has in the cell is left out.",
+      "note": "Counts for the whole case. No value is put beside a unit here; a count that covers every unit states that value for each unit all the same."
+    },
+    "units_sha256": "4696a98769df121541cadab469b4150db88114f6f725b87a26e01f762ca6ef44",
+    "units_sha256_note": "The SHA-256 of the per-unit results alone, in a canonical form: every value of every unit in every cell, without the generation time and the header text of the file that holds them. Two runs that computed the same results have the same value here."
+  },
+  "development_reads": {
+    "what": "Reads of the same inputs made while the code was written, before this run. They are listed because every run is reported.",
+    "reads": [
+      "4 October 2026, 20:17:54Z to 20:18:08Z: --check-inputs for case O2 and the refusal of case O1, made while the code was written; no flood layer was laid over a unit and no access run was made. 20:28:15Z: the reported run of case O2, which reads the same planning context, boundary file, age table and permanent-water layer. No flood layer of case SE1 was read before this run."
+    ]
+  },
+  "open_points": [
+    {
+      "id": "E10-OP1",
+      "point": "The headline rule when cells of the set the protocol names cannot be run.",
+      "signed_files_say": "Protocol v1b ensemble_grid.headline_rule: 'Retention is the share of the 540 core cells whose v1 class equals the class of the default cell'. facility_sets.shelters_in_the_ensemble: 'For a public overlay, class retention is computed over the 180 cells of the public facility set only, and the overlay says so.' Protocol v1a guardrail GR8: 'A class is headlined only if it keeps at least 60 percent retention over the single-state ensemble.' None of them says what retention is while a part of those cells cannot be run. Plan 8.4 declares a conditional cut (line 6) that would leave 135 cells, 45 of them public.",
+      "what_this_task_does": "The rule is evaluated only when every cell of the set the protocol names has a class. Otherwise every headline stays not_evaluated. Beside it the record gives the share of the cells that were run and keep the class, labelled as a share of the cells run, and the lowest and highest retention the cells not run could still give. Where those two numbers lie on one side of the minimum the record says so and still sets no status. It also gives the retention over the cells declared cut line 6 would leave, which is not the headline: the cut is the owners' to invoke.",
+      "for_the_owners": "Whether retention may be taken over the cells that can be run, and from how many cells on; or whether the headline waits for the whole set; or whether cut line 6 is invoked. Also whether a class that cannot reach the minimum whatever the missing cells give may be shown as unstable already."
+    },
+    {
+      "id": "E10-OP2",
+      "point": "The 2024-rescaled demand level of the population-vintage axis.",
+      "signed_files_say": "Protocol v1b ensemble_grid.core_axes[population_vintage].rescale_formula (owner choice 12): within each 1 km cell of the WorldPop 2024 grid, every 2020 100 m count is multiplied by the ratio of the cell's 2024 total to the sum of the 2020 counts inside the cell; a cell whose 2020 sum is zero keeps zero. The formula does not say which 1 km cell a 100 m count is inside (floodguard.age_exposure records that the two Thai grids do not nest), nor what a positive 2020 count becomes in a 1 km cell with no 2024 total.",
+      "what_this_task_does": "The level is not run and not approximated. No stage builds the rescaled demand; the formula exists as a pure function (floodguard.age_exposure.rescale_2020_counts_to_2024) that decides neither point. Every cell of the level is reported as not run. Whether a 2020 count of the frame lies in a 1 km cell with no 2024 total was not measured here.",
+      "for_the_owners": "The two rules the formula leaves out, or the decision to invoke declared cut line 6. With them, the level needs no new access run: travel times do not depend on the vintage, the resident counts of each cell do."
+    },
+    {
+      "id": "E10-OP3",
+      "point": "The two facility sets that add shelters: the second and the third level of the facility axis.",
+      "signed_files_say": "Protocol v1b facility_sets: both sets add DDPM located shelters, whose access is walking, 30 minutes, at the pitch level (owner choice 7). The walking context is not of record (open point E5-OP5), and no access table exists for the subset of the shelters that the second set keeps.",
+      "what_this_task_does": "Neither set is run and neither is approximated from the candidate walking context. Every cell of the two sets is reported as not run. A run at the public level reads the public facility set only, as the protocol says of a public overlay.",
+      "for_the_owners": "A walking build of record in a declared window (E5-OP5), then task E5 for the two shelter sets, then a pitch-level run of this task. Declared cut line 8 would drop the second set."
+    },
+    {
+      "id": "E10-OP4",
+      "point": "The confidence class inside an ensemble cell.",
+      "signed_files_say": "Protocol v1a confidence_rule_v1: 'applies_per: unit x lane' and 'uses_ensemble_output: false'. Protocol v1b: 'Confidence rule v1 uses no ensemble output.' The headline rule compares the v1 class of every cell, and class rule v1 reads the confidence class. Neither file says whether the confidence record is derived again in a cell.",
+      "what_this_task_does": "Every cell carries the confidence of its unit in its lane, derived as task E8 derives it: conditions C1 to C4 and C6 to C8 from the inputs as provided (C4 always compares the plus and the minus level of the flood input as provided), and C5 from the components of the cell, so a cell with a component that is not computed is low confidence and class E.",
+      "for_the_owners": "Whether that is the reading. With the 2024 vintage, C4, C6 and C7 would rest on other resident counts: whether they follow the vintage of the cell."
+    },
+    {
+      "id": "E10-OP5",
+      "point": "What the best and worst rank of a unit are.",
+      "signed_files_say": "Protocol v1b ensemble_grid.per_tambon_outputs: 'Best and worst rank.' It does not say what is ranked, among which units, or how a tie is broken.",
+      "what_this_task_does": "In each cell the units of the case are ranked by FPPS, highest first; a tie goes to the lower unit identifier, as floodguard.sensitivity ranks and as protocol v1a breaks the tie of the demo tambon (reading DR-A03). A cell in which a unit has no FPPS is not ranked.",
+      "for_the_owners": "Whether that is the rank the protocol means."
+    },
+    {
+      "id": "E10-OP6",
+      "point": "The axis with the largest swing.",
+      "signed_files_say": "Protocol v1b ensemble_grid.per_tambon_outputs: 'The axis with the largest swing.' It does not say what swings (the FPPS, the class or the rank) nor how the swing along an axis is summarised over the other axes.",
+      "what_this_task_does": "For each axis with two or more levels run, the FPPS range across its levels is taken with every other axis held fixed; the largest and the mean of those ranges are reported. No axis is named as the one with the largest swing: the record says which axis is largest under each of the two summaries.",
+      "for_the_owners": "The definition of the swing, so that one axis can be named."
+    },
+    {
+      "id": "E10-OP7",
+      "point": "People losing 30-minute access, and the equity figures.",
+      "signed_files_say": "Protocol v1b ensemble_grid.per_tambon_outputs: 'Median and range of people losing 30-minute access' and 'Median and range of EED and EER'. The first names no service; the access-gap threshold of the main-road entry is 15 minutes.",
+      "what_this_task_does": "For each public service the residents newly losing access within 30 minutes are taken from the access runs (hospital and main-road entry, by vehicle), with their median and range over the combinations run. EED and EER are plan task E9 and are not computed.",
+      "for_the_owners": "Which service the figure means, and whether it is counted over cells or over access runs (each access run stands for the same number of cells, so the two agree here)."
+    },
+    {
+      "id": "E10-OP8",
+      "point": "Where the access tables of the minus and plus flood levels go.",
+      "signed_files_say": "Task E5 left the minus and plus flood levels to this task. Guardrail GR6 takes the minimum across the lineage of an output; it does not say whether an intermediate table with a public lineage of its own is committed when the output it feeds is not.",
+      "what_this_task_does": "The access runs of the two levels are written with the ensemble results of the case, outside Git, and bound by SHA-256. The receipt holds their closure counts and whole-frame counts, as the task E5 receipt does.",
+      "for_the_owners": "Whether those tables are committed where their own lineage is public, as the task E5 table of case SE1 is (open points E1-OP1 and E8-OP7)."
+    },
+    {
+      "id": "E10-OP9",
+      "point": "The one-at-a-time items.",
+      "signed_files_say": "Protocol v1b ensemble_grid.one_at_a_time: the flood-likelihood anchors 0.10 and 0.30, class rule v1 and v2, and the terrain proxy for case O1 only. It does not say from which cell an item is varied.",
+      "what_this_task_does": "The two flood anchors are applied to the default cell alone, every other choice held at its default. The v2 result is that of the row of task E8, which is not evaluated where it depends on a trigger nobody evaluated (E8-OP1). The terrain proxy is not run: case O1 has no run.",
+      "for_the_owners": "Whether one at a time means from the default cell."
+    }
+  ],
+  "not_computed": [
+    "the cells of the two facility sets that add shelters",
+    "the cells of the 2024-rescaled demand",
+    "equity difference and ratio by age group (EED, EER)",
+    "the terrain and remoteness proxy (case O1 only)",
+    "the outcomes of class rule v2 triggers B, C and D",
+    "an overlay",
+    "a public projection",
+    "accepted FPPS and accepted class (tier T4 is locked)",
+    "an ensemble of case O1"
+  ],
+  "assumptions": [
+    "A closure is a modelled assumption of closure rule v1 (closure_basis), not an observed closure. A flood intersection does not prove that a road was closed.",
+    "A flood input is used as provided. A product 4009 layer is a preliminary agency extent that was not checked in the field (Field_Validation=0), and FloodGuard did not validate it. The minus and plus levels are the same layer shrunk and grown by 20 m (one pixel; protocol v1b, owner choice 2); neither is a lower or an upper bound of the water, and the level as provided is not a central estimate.",
+    "Residents are modelled WorldPop 2020 counts. A cell counts for the unit whose polygon holds its centre, and a resident is inside a flood extent when the cell centre is.",
+    "The strict, central and permissive closure levels are the three levels of closure rule v1. None of them is a central estimate of what was passable.",
+    "Every cell carries the confidence of its unit in its lane, derived as task E8 derives it. Condition C4 always compares the plus and the minus level of the flood input as provided (open point E10-OP4).",
+    "Each cell is one modelled chain with one declared choice changed. The cells are not samples of a distribution: the share of cells in a class is not a probability, and the range of the FPPS is not a confidence interval.",
+    "The weight presets are those of protocol v1a, normalised to sum to 1 by the scorer. The default is the published default; another preset is a sensitivity view.",
+    "Planning guidance only. Not an official warning. Class E never means safe."
+  ],
+  "limitations": [
+    "Only a part of the predeclared grid can be run today: the public facility set with WorldPop 2020. The cells of the two facility sets that add shelters and of the 2024-rescaled demand are reported as not run, with the reason (open points E10-OP2 and E10-OP3).",
+    "The headline rule is evaluated only when every cell the protocol takes retention over has a class. Until then no class is headlined (open point E10-OP1).",
+    "A resident whose cell does not snap to the vehicle graph within 250 m is in no access count.",
+    "One flood input drives 4 of 5 components (90% of weight), so the flood-level axis moves four components at once.",
+    "The equity figures (EED and EER) that protocol v1b lists among the per-unit outputs are plan task E9."
+  ],
+  "implementation": {
+    "base_commit": "02de0a7ff514324b467510ff54bf298637b74234",
+    "base_commit_note": "The commit the working tree was on. The files below are the ones this run loaded, identified by their own SHA-256, committed or not.",
+    "builder_sha256": "65e129811e387da466d72420d36a1f61146a7614b600fe0ff6ba543a31fe6ace",
+    "e8_builder_sha256": "fb7e11a444ee761aa2982581fc96a5e5b68b8a58b6c4e0e24f99c7c3955243d9",
+    "e5_builder_sha256": "61b93fbfe48f36fc5ba46475828d3d7abeb5188813b7c923d01d7467d98e89f8",
+    "uncertainty_ensemble_module_sha256": "f64d4af708ddaa3af5d3941f2caba8affa50ac54f3b041cb4d455da982ce1b79",
+    "planning_assessment_module_sha256": "db226c3be13905fc164ddadd8024057f34f3f83cdf999db6fcc0391c094343bd",
+    "planning_overlay_module_sha256": "a507441b6d8991297a6460a5d5578c78942f9ea6b204362f8ac7ad5814f9e742",
+    "normalisation_module_sha256": "731e50596822cd5798fa2298d957c17bf44b3771536f3ed8c50930c43f545cfb",
+    "confidence_module_sha256": "acb762cf56e41c86b4af40a5ce8108072b87e2dd7d35e86f56487bfa59eb54f0",
+    "scoring_module_sha256": "b42439ca3b4b84202f422456a1d7b075dccbdc71e8dfc20aa4ecff494389a307",
+    "sensitivity_module_sha256": "4fbf08998764c9b3308a672a23f07273e581e468810a95b8d4d30076ee625964",
+    "flood_inputs_module_sha256": "1d3b3d6328ad50eb7f26455ea576748a546f82f391a83aeb01da46da8d643e5d",
+    "access_diff_module_sha256": "c6178a93fb8f92c17cf1038366cc76f8184112f9b4a6115f26c567ee73209f1c",
+    "closure_rules_module_sha256": "204b591c69cccf39d69131e1fe950dac9d01bd129c0b628b87531f4479aef921",
+    "rights_module_sha256": "9c2d29f610764e647b9bd0426e2d808c0ca3c125cd26aa30fce2ca588f10819c",
+    "rights_basis_module_sha256": "32419611a9d71b429c25a714ebecb7152f6d8bc9f654d0ca5af00e41d38c0c23",
+    "ensemble_version": "uncertainty_ensemble_v1",
+    "software": {
+      "python": "3.11.8",
+      "numpy": "2.2.6",
+      "pandas": "3.0.6",
+      "shapely": "2.1.2"
+    }
+  },
+  "timing_seconds": {
+    "inputs_checked": 14.2,
+    "stages_compared_unit_by_unit": 2.9,
+    "units_read_and_lineage": 0.0,
+    "access_runs": 2075.8,
+    "access": {
+      "minus_edge_intersections_vehicle": 581.2,
+      "minus_strict_runs_and_tables": 2.1,
+      "minus_central_runs_and_tables": 2.1,
+      "minus_permissive_runs_and_tables": 5.3,
+      "as_provided_edge_intersections_vehicle": 623.5,
+      "as_provided_strict_runs_and_tables": 2.4,
+      "as_provided_central_runs_and_tables": 2.6,
+      "as_provided_permissive_runs_and_tables": 6.2,
+      "plus_edge_intersections_vehicle": 839.9,
+      "plus_strict_runs_and_tables": 1.9,
+      "plus_central_runs_and_tables": 1.7,
+      "plus_permissive_runs_and_tables": 4.5
+    },
+    "units_measured_at_three_flood_levels": 5.5,
+    "cells_scored": 16.5
+  },
+  "outputs": {
+    "ensemble": {
+      "files": [
+        {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/uncertainty_ensemble_se1_mae_sai.json",
+          "sha256": "33de00b116e01de8a0fad669451b3dd839bbd412a192b026c5d885135e692fff",
+          "bytes": 1571202,
+          "what": "uncertainty_ensemble_units",
+          "in_git": false,
+          "publication_eligibility": "local",
+          "units": 8,
+          "cells_run": 90
+        },
+        {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/LICENSE_NOTICE.txt",
+          "sha256": "acaafc1b83a5fe5d72a9f50e0e0efe476517328f581c5c487fb2e0a1290de1df",
+          "bytes": 8230,
+          "what": "licence_notice",
+          "in_git": false
+        }
+      ]
+    }
+  },
+  "timestamps": {
+    "run_started_at_utc": "2026-10-04T20:29:38Z",
+    "run_finished_at_utc": "2026-10-04T21:05:02Z",
+    "wall_time_minutes": 35.41,
+    "note": "generated_at_utc is the start of the run; the file of per-unit results carries the same time."
+  }
+}

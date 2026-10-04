@@ -1,0 +1,104 @@
+{
+  "schema_version": "floodguard.a1_diagnosis_figures.v1",
+  "generated_at_utc": "2026-10-04T20:28:45Z",
+  "plan_task": "A1 (abstention diagnosis: why threshold-only change detection failed at the 16 Sep pass)",
+  "figure_id": "pilot_grid_vs_envelope",
+  "title": "Share of the 2024 season envelope inside AOI-01 that the M2 pilot grid leaves out",
+  "official_warning": false,
+  "operational_status": "non_operational",
+  "source_timestamp": "2024-08-01/2024-10-12",
+  "confidence_class": "low",
+  "confidence_basis": "Areas of an unvalidated preliminary agency extent (UNOSAT product 4009 with GISTDA; Field_Validation=0), used as provided, against the grid of the team's own run. Nothing here was checked against an independent source.",
+  "assumptions": [
+    "The accumulated layer of product 4009 is a 2024 season envelope: every area mapped as water at some time between 1 August and October 2024, with no date per patch. It is not an event map of September 2024, it was not checked in the field (Field_Validation=0), and FloodGuard did not validate it. A figure measured against it is a comparison with a season envelope, not a validation.",
+    "The pilot grid is the grid the receipt of the retired M2 run states: 1,280 by 1,280 cells of 10 m in EPSG:32647.",
+    "Every vertex of the layer is projected to EPSG:32647 as it is and areas are measured there.",
+    "AOI-01 is a rectangle that reaches across the border; the product maps Chiang Rai Province, so the envelope lies on the Thai side only."
+  ],
+  "protocol_sha256": {
+    "planning_protocol_v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+    "planning_protocol_v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+  },
+  "status": "diagnosis_figures",
+  "status_note": "Figures of one diagnosis run, written with protocol v1a and v1b in force. A diagnosis figure describes why a method declined or separated poorly; it is not a flood map, not an observation of a flood and not a measure of how correct a method is. No FPPS, A-E class or flood candidate is here.",
+  "receipt_file": "outputs/planning_v1/a1_diagnosis_pilot_grid_vs_envelope.json",
+  "result_document": "docs/proposal_execution/automated_track/WHY_THRESHOLD_ONLY_FAILED.md",
+  "script": "scripts/diagnostics/pilot_grid_vs_envelope.py",
+  "plan_statement": "pilot grid misses 80% of the 4009 envelope inside AOI-01",
+  "measured_against": "vs a season envelope, not an event map",
+  "computes": "The area of the product 4009 accumulated layer inside AOI-01, and the share of it outside the pilot grid of the retired M2 run. Areas only; no radar image is read and no layer is written.",
+  "figures": {
+    "envelope_inside_aoi_01_km2": 15.337,
+    "envelope_inside_aoi_01_and_inside_the_pilot_grid_km2": 3.111,
+    "envelope_inside_aoi_01_and_outside_the_pilot_grid_km2": 12.225,
+    "share_of_the_envelope_in_aoi_01_outside_the_pilot_grid": 0.797136,
+    "share_of_the_envelope_in_aoi_01_inside_the_pilot_grid": 0.202864,
+    "aoi_01_km2": 104.73,
+    "share_of_aoi_01_inside_the_pilot_grid": 0.422666,
+    "pilot_grid": {
+      "crs": "EPSG:32647",
+      "cell_m": 10.0,
+      "width": 1280,
+      "height": 1280,
+      "bounds": [
+        581120.0,
+        2255360.0,
+        593920.0,
+        2268160.0
+      ],
+      "area_km2": 163.84
+    },
+    "area_measure": "EPSG:32647, as every area of the planning runs"
+  },
+  "plan_figure": {
+    "stated_in_the_plan": "pilot grid misses 80% of the 4009 envelope inside AOI-01",
+    "plan_value": 0.8,
+    "measured": 0.797136,
+    "reproduced": true,
+    "note": "Compared as a whole percentage. Protocol v1a (EK-07) says 'about 80%'."
+  },
+  "does_not_show": [
+    "How much of the September 2024 flood the pilot grid left out: the envelope holds water of the whole season, with no date per patch.",
+    "That the M2 run would have found water on a larger grid: it declined every window it had.",
+    "Any radar result: no image is read."
+  ],
+  "limits": [
+    "The share is a share of a season envelope. It is not the share of the September 2024 flood that the grid left out.",
+    "The figure is about where the M2 run looked. The run declined every window, so a larger grid alone would not have given an answer.",
+    "The envelope is not an observation of any day and not a reference."
+  ],
+  "licence": {
+    "applies_to": "every figure of this file that is measured against UNOSAT/GISTDA product 4009",
+    "name": "CC BY-SA 4.0",
+    "url": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "credit": "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009",
+    "share_alike": "Every layer or table derived from product 4009 is shared under CC BY-SA 4.0, in its own file, with the attribution and a change notice. Keeping product 4009 derivatives in their own files is a caution, not legal advice.",
+    "change_notice": "Changed by FloodGuard: clipped to AOI-01 (resources/aoi/aoi-01_mae_sai_core.geojson); geometry repaired (make_valid; 2 parts repaired); reprojected from EPSG:4326 to EPSG:32647; not rasterised; areas were then measured against the pilot grid of the M2 run. Source: UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009, CC BY-SA 4.0.",
+    "standard_sentence": "unvalidated preliminary agency extent (UNOSAT product 4009 with GISTDA; Field_Validation=0), used as provided under CC BY-SA 4.0. FloodGuard did not validate it.",
+    "used_as": "a 2024 season envelope (lane SCN-ENV): a comparison layer, never an event map and never a reference",
+    "rights_record": {
+      "path": "docs/proposal_execution/rights_basis_4009_v1.json",
+      "sha256": "531ab40beb2b3e80a02d6de0d4d7d791b299176af0b192bfe105ca23c7e50cb3"
+    },
+    "not_legal_advice": true
+  },
+  "attributions": [
+    "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009, CC BY-SA 4.0"
+  ],
+  "open_points": [
+    {
+      "id": "A1-OP6",
+      "point": "Whether the product 4009 rights record covers a diagnosis comparison.",
+      "signed_files_say": "The record lists its uses (use_in_this_track): the comparison with the replay model is the only comparison it names, and its limitations say it does not cover use as machine-learning labels or as a qualified reference. Plan row A1 allows these figures 'after the 4009 signature'.",
+      "what_was_done": "The accumulated layer is used as a comparison layer only: no model was fitted to it and nothing is called a reference. Every figure carries the licence, the credit, a change notice and the label 'vs a season envelope, not an event map'."
+    }
+  ],
+  "not_computed": [
+    "any figure from a radar image",
+    "the analysis extent of the product (rights level local; not read)",
+    "FPPS",
+    "A-E class",
+    "flood candidate",
+    "any value for a single tambon"
+  ]
+}

@@ -1,0 +1,93 @@
+{
+  "schema_version": "floodguard.a1_diagnosis_figures.v1",
+  "generated_at_utc": "2026-10-04T20:28:24Z",
+  "plan_task": "A1 (abstention diagnosis: why threshold-only change detection failed at the 16 Sep pass)",
+  "figure_id": "m2_windows_geoid",
+  "title": "The M2 decision rule on the 29 GEOID-Flood tiles of EMSR712-3: windows against the 0.72 gate",
+  "official_warning": false,
+  "operational_status": "non_operational",
+  "source_timestamp": "20240103T053406",
+  "confidence_class": "low",
+  "confidence_basis": "Window counts of the team's own decision rule on a public benchmark sample. The rule accepted no window, so no layer exists to compare, and no label was read.",
+  "assumptions": [
+    "The tiles are the Sentinel-1 GRD layer of the GEOID-Flood sample, linear sigma0, 1,024 by 1,024 cells of 10 m. Each tile is cut into windows of 256 cells at a stride of 128 cells: 49 windows a tile.",
+    "The decision rule is the frozen M2 kernel as the committed benchmark adapted it to sigma0. It was not changed."
+  ],
+  "protocol_sha256": {
+    "planning_protocol_v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+    "planning_protocol_v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+  },
+  "status": "diagnosis_figures",
+  "status_note": "Figures of one diagnosis run, written with protocol v1a and v1b in force. A diagnosis figure describes why a method declined or separated poorly; it is not a flood map, not an observation of a flood and not a measure of how correct a method is. No FPPS, A-E class or flood candidate is here.",
+  "receipt_file": "outputs/planning_v1/a1_diagnosis_m2_windows_geoid.json",
+  "result_document": "docs/proposal_execution/automated_track/WHY_THRESHOLD_ONLY_FAILED.md",
+  "script": "scripts/diagnostics/m2_windows_geoid.py",
+  "plan_statement": "GEOID 0/1,421 windows",
+  "measured_against": null,
+  "computes": "The frozen M2 decision rule on the 29 before-and-after tile pairs of the GEOID-Flood sample, with the counts and the between-class variance fractions of its windows. No label is read and no raster is written.",
+  "figures": {
+    "tiles": 29,
+    "windows": 1421,
+    "windows_the_kernel_accepted": 0,
+    "reason_counts": {
+      "unimodal_or_unstable_histogram": 1421
+    },
+    "between_variance_fraction": {
+      "windows": 1421,
+      "windows_at_or_above_the_gate": 0,
+      "gate": 0.72,
+      "between_variance_fraction_min": 0.531781,
+      "between_variance_fraction_median": 0.614333,
+      "between_variance_fraction_max": 0.712422,
+      "windows_at_or_above_0.70": 3,
+      "windows_at_or_above_0.71": 1
+    },
+    "one_normal_population_in_theory": 0.63662,
+    "one_normal_population_clipped_as_the_kernel_clips": 0.649065,
+    "radiometrically_valid_cells": 30357888,
+    "same_as_the_committed_summary": {
+      "windows": true,
+      "accepted": true,
+      "fraction_min": true,
+      "fraction_median": true,
+      "fraction_max": true,
+      "valid_cells": true
+    }
+  },
+  "plan_figure": {
+    "stated_in_the_plan": "GEOID 0/1,421 windows",
+    "plan_value": {
+      "accepted": 0,
+      "windows": 1421
+    },
+    "measured": {
+      "accepted": 0,
+      "windows": 1421
+    },
+    "reproduced": true,
+    "note": "Computed again from the tiles on disk, not copied from the committed summary; same_as_the_committed_summary compares the two."
+  },
+  "does_not_show": [
+    "Any agreement with the CEMS map of the sample: no window was accepted, and no label is read here.",
+    "That the exact Mae Sai M2 run would decline elsewhere: the tiles are sigma0 with no terrain flattening and no Mae Sai mask.",
+    "Anything about Thailand: the sample is one foreign event (northern Germany, winter 2023-24)."
+  ],
+  "limits": [
+    "No window was accepted, so the run says nothing about agreement with the CEMS map of the sample.",
+    "The CEMS map of this sample was drawn from the same Sentinel-1 pass as the after image. Any later figure against it measures agreement with a same-pass map, not an independent check.",
+    "The before image is from 8 September 2023 and the after image from 3 January 2024: almost four months apart.",
+    "One foreign event (northern Germany, winter 2023-24). It says nothing about Thai land cover or the Mae Sai pass."
+  ],
+  "licence": null,
+  "attributions": [
+    "Modified Copernicus Sentinel-1 data (2016-2026); GEOID-Flood sample, links-ads/geoid-flood, revision 868407460bf3db492f50730a57585916baa71dc6",
+    "Copernicus Emergency Management Service Rapid Mapping products, (c) European Union (the sample's labels, not read here)"
+  ],
+  "open_points": [],
+  "not_computed": [
+    "any comparison with the CEMS map",
+    "FPPS",
+    "A-E class",
+    "flood candidate"
+  ]
+}

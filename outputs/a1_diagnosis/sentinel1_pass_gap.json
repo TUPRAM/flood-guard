@@ -1,0 +1,168 @@
+{
+  "schema_version": "floodguard.a1_diagnosis_figures.v1",
+  "generated_at_utc": "2026-10-04T20:35:45Z",
+  "plan_task": "A1 (abstention diagnosis: why threshold-only change detection failed at the 16 Sep pass)",
+  "figure_id": "sentinel1_pass_gap",
+  "title": "Sentinel-1 passes over Mae Sai in September 2024 and the gap between 6 and 15 September",
+  "official_warning": false,
+  "operational_status": "non_operational",
+  "source_timestamp": "2024-09-01/2024-09-25 (acquisitions); catalogue snapshot of 2026-07-08",
+  "confidence_class": "low",
+  "confidence_basis": "Catalogue metadata as the Copernicus Data Space returned it on 8 July 2026. The snapshot was not taken again and was not compared with another catalogue.",
+  "assumptions": [
+    "Rows with one acquisition start time are one pass: the catalogue lists the original product and its cloud-optimised copy.",
+    "The query asked for IW GRDH dual-polarisation products that cover the point 99.88 E, 20.43 N, with a start time from 1 to 25 September 2024.",
+    "Thailand time is UTC+7."
+  ],
+  "protocol_sha256": {
+    "planning_protocol_v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+    "planning_protocol_v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+  },
+  "status": "diagnosis_figures",
+  "status_note": "Figures of one diagnosis run, written with protocol v1a and v1b in force. A diagnosis figure describes why a method declined or separated poorly; it is not a flood map, not an observation of a flood and not a measure of how correct a method is. No FPPS, A-E class or flood candidate is here.",
+  "receipt_file": "outputs/planning_v1/a1_diagnosis_sentinel1_pass_gap.json",
+  "result_document": "docs/proposal_execution/automated_track/WHY_THRESHOLD_ONLY_FAILED.md",
+  "script": "scripts/diagnostics/sentinel1_pass_gap.py",
+  "plan_statement": "S1 metadata (no pass between 6 Sep 11:31 and 15 Sep 23:16 UTC)",
+  "measured_against": null,
+  "computes": "The distinct Sentinel-1 passes in the committed catalogue snapshot for Mae Sai, the gaps between them and the passes between 6 September 11:31 UTC and 15 September 23:16 UTC. Metadata only.",
+  "figures": {
+    "catalogue_rows": 8,
+    "platforms_in_the_snapshot": [
+      "S1A"
+    ],
+    "passes": [
+      {
+        "start_utc": "2024-09-03T23:16:00Z",
+        "start_in_thailand": "2024-09-04 06:16 ICT",
+        "relative_orbit": 135,
+        "catalogue_rows": 2
+      },
+      {
+        "start_utc": "2024-09-06T11:31:06Z",
+        "start_in_thailand": "2024-09-06 18:31 ICT",
+        "relative_orbit": 172,
+        "catalogue_rows": 2
+      },
+      {
+        "start_utc": "2024-09-15T23:16:01Z",
+        "start_in_thailand": "2024-09-16 06:16 ICT",
+        "relative_orbit": 135,
+        "catalogue_rows": 2
+      },
+      {
+        "start_utc": "2024-09-18T11:31:07Z",
+        "start_in_thailand": "2024-09-18 18:31 ICT",
+        "relative_orbit": 172,
+        "catalogue_rows": 2
+      }
+    ],
+    "pass_count": 4,
+    "gaps_between_neighbouring_passes": [
+      {
+        "from_utc": "2024-09-03T23:16:00Z",
+        "to_utc": "2024-09-06T11:31:06Z",
+        "hours": 60.252,
+        "days": 2.51
+      },
+      {
+        "from_utc": "2024-09-06T11:31:06Z",
+        "to_utc": "2024-09-15T23:16:01Z",
+        "hours": 227.749,
+        "days": 9.49
+      },
+      {
+        "from_utc": "2024-09-15T23:16:01Z",
+        "to_utc": "2024-09-18T11:31:07Z",
+        "hours": 60.252,
+        "days": 2.51
+      }
+    ],
+    "longest_gap": {
+      "from_utc": "2024-09-06T11:31:06Z",
+      "to_utc": "2024-09-15T23:16:01Z",
+      "hours": 227.749,
+      "days": 9.49
+    },
+    "interval": {
+      "after_utc": "2024-09-06T11:31:06Z",
+      "before_utc": "2024-09-15T23:16:01Z",
+      "hours": 227.749,
+      "days": 9.49
+    },
+    "passes_strictly_inside_the_interval": [],
+    "interval_starts_at_a_pass": true,
+    "interval_ends_at_a_pass": true,
+    "passes_by_relative_orbit": {
+      "135": [
+        "2024-09-03T23:16:00Z",
+        "2024-09-15T23:16:01Z"
+      ],
+      "172": [
+        "2024-09-06T11:31:06Z",
+        "2024-09-18T11:31:07Z"
+      ]
+    },
+    "no_pass_strictly_inside_the_interval": true,
+    "replay_keyframes_for_context": {
+      "what": "Two keyframes of the Mae Sai replay, set beside the passes. The replay's stage is an illustrative keyframe curve shaped to the event chronology (lane SCN, tier T1); no gauge record exists for September 2024. They are not observations of when the water rose or peaked.",
+      "stated_in": "docs/demo/replay_numbers.md",
+      "onset_keyframe": {
+        "utc": "2024-09-10T11:15:00Z",
+        "in_thailand": "10 Sep 18:15 ICT",
+        "key": "stage.onset_knot",
+        "inside_the_gap": true,
+        "hours_after_the_pass_of_6_september": 95.73,
+        "hours_before_the_pass_of_15_september_utc": 132.02,
+        "days_before_the_pass_of_15_september_utc": 5.5
+      },
+      "modelled_peak_keyframe": {
+        "utc": "2024-09-12T05:00:00Z",
+        "in_thailand": "12 Sep 12:00 ICT",
+        "key": "stage.peak",
+        "inside_the_gap": true,
+        "hours_after_the_pass_of_6_september": 137.48,
+        "hours_before_the_pass_of_15_september_utc": 90.27,
+        "days_before_the_pass_of_15_september_utc": 3.76
+      }
+    }
+  },
+  "plan_figure": {
+    "stated_in_the_plan": "no pass between 6 Sep 11:31 and 15 Sep 23:16 UTC",
+    "plan_value": {
+      "after_utc": "2024-09-06T11:31",
+      "before_utc": "2024-09-15T23:16",
+      "passes_between": 0
+    },
+    "measured": {
+      "after_utc": "2024-09-06T11:31",
+      "before_utc": "2024-09-15T23:16",
+      "passes_between": 0,
+      "both_ends_are_passes": true
+    },
+    "reproduced": true,
+    "note": "Reproduced from the committed snapshot of the catalogue, not from a new query."
+  },
+  "does_not_show": [
+    "When the flood rose or fell: the pass times say when the radar looked, not what the water did.",
+    "That no other satellite looked in the gap: the snapshot holds Sentinel-1 only.",
+    "Today's catalogue: the snapshot was not taken again, and a product of another mode or type would not be in it."
+  ],
+  "limits": [
+    "The pass times say when the radar looked. They do not say when the water rose or fell.",
+    "The snapshot is one catalogue, one point and one product type. A pass that produced no IW GRDH dual-polarisation product over that point is not in it.",
+    "The catalogue was not queried again in this run."
+  ],
+  "licence": null,
+  "attributions": [
+    "Copernicus Data Space Ecosystem catalogue metadata; Copernicus Sentinel-1 products of 2024"
+  ],
+  "open_points": [],
+  "not_computed": [
+    "any figure from an image",
+    "the time of the flood peak",
+    "FPPS",
+    "A-E class",
+    "flood candidate"
+  ]
+}

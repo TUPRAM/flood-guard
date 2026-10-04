@@ -1,0 +1,92 @@
+{
+  "schema_version": "floodguard.a1_diagnosis_figures.v1",
+  "generated_at_utc": "2026-10-04T20:28:05Z",
+  "plan_task": "A1 (abstention diagnosis: why threshold-only change detection failed at the 16 Sep pass)",
+  "figure_id": "m2_windows_mae_sai",
+  "title": "The 81 windows of the retired M2 run at Mae Sai against the 0.72 gate",
+  "official_warning": false,
+  "operational_status": "non_operational",
+  "source_timestamp": "2024-09-15T23:16:01.675690Z",
+  "confidence_class": "low",
+  "confidence_basis": "Counts read from the team's own run receipt. The run declined every window, so there is no flood layer to check, and nothing here was checked against a flood map.",
+  "assumptions": [
+    "The window records of the receipt are the windows the retired M2 run evaluated: 256 by 256 cells of 10 m at a stride of 128 cells on a 1,280 by 1,280 pilot grid.",
+    "The image pair is 3 and 15 September 2024, 23:16 UTC, relative orbit 135; the second image is 16 September 06:16 in Thailand."
+  ],
+  "protocol_sha256": {
+    "planning_protocol_v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+    "planning_protocol_v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+  },
+  "status": "diagnosis_figures",
+  "status_note": "Figures of one diagnosis run, written with protocol v1a and v1b in force. A diagnosis figure describes why a method declined or separated poorly; it is not a flood map, not an observation of a flood and not a measure of how correct a method is. No FPPS, A-E class or flood candidate is here.",
+  "receipt_file": "outputs/planning_v1/a1_diagnosis_m2_windows_mae_sai.json",
+  "result_document": "docs/proposal_execution/automated_track/WHY_THRESHOLD_ONLY_FAILED.md",
+  "script": "scripts/diagnostics/m2_windows_mae_sai.py",
+  "plan_statement": "Abstention diagnosis (protocol v1a, EK-07: all 81 of 81 windows abstained with between-class variance fractions of 0.598-0.651 against the 0.72 gate)",
+  "measured_against": null,
+  "computes": "Counts and between-class variance fractions of the windows of the retired M2 run at Mae Sai, read from the run's own receipt. No image and no flood map is read.",
+  "figures": {
+    "windows": 81,
+    "windows_the_kernel_accepted": 0,
+    "windows_declined": 81,
+    "reason_counts": {
+      "unimodal_or_unstable_histogram": 81
+    },
+    "windows_whose_only_failed_test_was_the_gate": 81,
+    "between_variance_fraction": {
+      "windows": 81,
+      "windows_at_or_above_the_gate": 0,
+      "gate": 0.72,
+      "between_variance_fraction_min": 0.598414,
+      "between_variance_fraction_median": 0.638857,
+      "between_variance_fraction_max": 0.651191,
+      "windows_at_or_above_0.65": 1,
+      "windows_at_or_above_0.70": 0
+    },
+    "one_normal_population_in_theory": 0.63662,
+    "one_normal_population_clipped_as_the_kernel_clips": 0.649065,
+    "valid_samples_per_window": {
+      "min": 14771,
+      "max": 65497
+    },
+    "classified_cells": 0,
+    "grid_cells": 1638400,
+    "same_as_the_committed_summary": true
+  },
+  "plan_figure": {
+    "stated_in_the_plan": "all 81 of 81 windows abstained with between-class variance fractions of 0.598-0.651 against the 0.72 gate (protocol v1a, EK-07)",
+    "plan_value": {
+      "windows": 81,
+      "declined": 81,
+      "fraction_min": 0.598,
+      "fraction_max": 0.651
+    },
+    "measured": {
+      "windows": 81,
+      "declined": 81,
+      "fraction_min": 0.598,
+      "fraction_max": 0.651
+    },
+    "reproduced": true,
+    "note": "Plan row A1 does not list this figure by itself; disclosure item EK-07 of protocol v1a does, and the figure of one normal population is read against it."
+  },
+  "does_not_show": [
+    "Whether water was present in any window: a declined window has no answer, it is not a dry window.",
+    "That the method would decline on another grid or with another radiometry.",
+    "Any agreement with a flood map: none is read."
+  ],
+  "limits": [
+    "A declined window has no answer. The figure does not say whether the ground was wet or dry.",
+    "The pilot grid holds about two fifths of AOI-01; see the pilot-grid figure.",
+    "M2 is retired as a failed first version (plan guardrail G24). Its gate is not lowered here."
+  ],
+  "licence": null,
+  "attributions": [],
+  "open_points": [],
+  "not_computed": [
+    "any comparison with a flood map",
+    "FPPS",
+    "A-E class",
+    "flood candidate"
+  ]
+}

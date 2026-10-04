@@ -1,0 +1,128 @@
+{
+  "schema_version": "floodguard.a1_diagnosis_run_receipt.v1",
+  "generated_at_utc": "2026-10-04T20:35:41Z",
+  "plan_task": "A1 (abstention diagnosis: why threshold-only change detection failed at the 16 Sep pass)",
+  "figure_id": "bvf_unimodal_gaussian",
+  "title": "Between-class variance fraction of one bell-shaped population against the 0.72 gate",
+  "official_warning": false,
+  "operational_status": "non_operational",
+  "source_timestamp": "not applicable: theory and simulation, no observation",
+  "confidence_class": "low",
+  "confidence_basis": "Arithmetic and a seeded simulation through the unchanged M2 kernel. It reads no image and no flood map, and it was not checked against anything outside the repository.",
+  "assumptions": [
+    "A window with no flood class is modelled as one normal population. Real backscatter change is not normal, and a real window mixes land covers.",
+    "The kernel is the frozen M2 kernel, unchanged: it clips the samples at their 1st and 99th percentiles, builds a 64-bin histogram and divides the between-class variance at the Otsu split by the variance of the clipped samples.",
+    "The simulation is seeded, so a second run gives the same figures."
+  ],
+  "protocol_sha256": {
+    "planning_protocol_v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+    "planning_protocol_v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+  },
+  "run": "Between-class variance fraction of one bell-shaped population against the 0.72 gate",
+  "status": "run_receipt",
+  "status_note": "Receipt of one diagnosis run, made with protocol v1a and v1b in force. Every run is reported: a second run of this figure writes a new receipt that names this one.",
+  "run_kind": "superseding_run",
+  "computes": "The between-class variance fraction of a normal population in theory and through the frozen M2 Otsu kernel, and the separation two populations need before the kernel accepts a window. No image is read.",
+  "protocol_state": {
+    "v1a": "in_force",
+    "v1b": "in_force"
+  },
+  "script": {
+    "path": "scripts/diagnostics/bvf_unimodal_gaussian.py",
+    "sha256": "451ec3fc24a872bb66202c949e8b8c7536ed5983fe803f2f488c4560e26c67ad"
+  },
+  "implementation": {
+    "base_commit": "02de0a7ff514324b467510ff54bf298637b74234",
+    "base_commit_note": "The commit the working tree was on. The files below are the ones this run loaded, identified by their own SHA-256, committed or not.",
+    "files_sha256": {
+      "scripts/diagnostics/bvf_unimodal_gaussian.py": "451ec3fc24a872bb66202c949e8b8c7536ed5983fe803f2f488c4560e26c67ad",
+      "src/floodguard/abstention_diagnosis.py": "c49eb8e0c03751acad6b4ac9b2ebf5d3f242ea0d1f7fe0be402dbb6da050f699",
+      "src/floodguard/diagnosis_run.py": "dc53ef3f7fb4baa89ecbbf23f30bd5e09fa7517dc93b9bc0f1e9aafbac8b20ca",
+      "src/floodguard/diagnosis_layers.py": "c0c294a4c4e6bc7d0502251c365534d6d7ec9c08aee33596e40df4677a85a759"
+    }
+  },
+  "parameters": {
+    "seed": 20240916,
+    "sample_sizes": [
+      4096,
+      16384,
+      65536
+    ],
+    "windows_per_size": 200,
+    "kernel": {
+      "histogram_bins": 64,
+      "clip_quantiles": [
+        0.01,
+        0.99
+      ],
+      "min_between_variance_fraction": 0.72
+    },
+    "two_populations": {
+      "shares_of_the_second_population": [
+        0.5,
+        0.3,
+        0.2,
+        0.1
+      ],
+      "separations_tried": [
+        0.0,
+        6.0
+      ],
+      "separation_step": 0.1,
+      "windows_per_case": 10,
+      "samples_per_window": 65536,
+      "seed": 20240917
+    }
+  },
+  "inputs": {
+    "m2_otsu_kernel": {
+      "path": "src/floodguard/label_factory/sentinel1_processing.py",
+      "sha256": "3977d4112cde8e71aaf444518b2e635c3e8810a480728131c67aaf1c0443a590",
+      "bytes": 53801,
+      "function": "_otsu_threshold with AdaptiveOtsuConfig()"
+    }
+  },
+  "rights": null,
+  "timestamps": {
+    "run_started_at_utc": "2026-10-04T20:35:24Z",
+    "run_finished_at_utc": "2026-10-04T20:35:41Z"
+  },
+  "outputs": {
+    "figures": {
+      "path": "outputs/a1_diagnosis/bvf_unimodal_gaussian.json",
+      "sha256": "b2a7e49295decfbbeea1c2ab8122faf530bcf916d3ccd1b6d650d2abe8c86095",
+      "bytes": 6824
+    }
+  },
+  "supersedes": {
+    "receipt_sha256": "0b57fd4def559b53b6bf3075b5e31b097e8bfee6aec084deac5ed30b32ffbd83",
+    "figures_sha256": "270fa36e882d82c49994623e072fa30f37e607d623758a64857b4445b1adf290",
+    "generated_at_utc": "2026-10-04T20:27:47Z",
+    "reason": "Second run so that the receipt names the shared module as it is committed: after the first run the note on the reads made before the runs was reworded in floodguard.diagnosis_run (its times are now given in UTC). No input, no parameter and no rule of this figure changed.",
+    "figures_same": true,
+    "copies_kept": [
+      "<external_data_workspace>/proposal_execution/planning_v1/a1_diagnosis/superseded_runs/20261004T202747Z_bvf_unimodal_gaussian/a1_diagnosis_bvf_unimodal_gaussian.json",
+      "<external_data_workspace>/proposal_execution/planning_v1/a1_diagnosis/superseded_runs/20261004T202747Z_bvf_unimodal_gaussian/bvf_unimodal_gaussian.json"
+    ]
+  },
+  "run_history": {
+    "rule": "Protocol v1b, change_control: every run is reported. Each earlier run of this figure is listed with the SHA-256 of its receipt and of its figures file.",
+    "earlier_runs": [
+      {
+        "generated_at_utc": "2026-10-04T20:27:47Z",
+        "receipt_sha256": "0b57fd4def559b53b6bf3075b5e31b097e8bfee6aec084deac5ed30b32ffbd83",
+        "figures_sha256": "270fa36e882d82c49994623e072fa30f37e607d623758a64857b4445b1adf290",
+        "run_kind": "first_run",
+        "superseded_because": "Second run so that the receipt names the shared module as it is committed: after the first run the note on the reads made before the runs was reworded in floodguard.diagnosis_run (its times are now given in UTC). No input, no parameter and no rule of this figure changed."
+      }
+    ]
+  },
+  "development_reads": [],
+  "open_points": [],
+  "not_computed": [
+    "any figure from an image",
+    "FPPS",
+    "A-E class",
+    "flood candidate"
+  ]
+}

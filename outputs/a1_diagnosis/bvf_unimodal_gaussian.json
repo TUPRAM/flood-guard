@@ -1,0 +1,141 @@
+{
+  "schema_version": "floodguard.a1_diagnosis_figures.v1",
+  "generated_at_utc": "2026-10-04T20:35:41Z",
+  "plan_task": "A1 (abstention diagnosis: why threshold-only change detection failed at the 16 Sep pass)",
+  "figure_id": "bvf_unimodal_gaussian",
+  "title": "Between-class variance fraction of one bell-shaped population against the 0.72 gate",
+  "official_warning": false,
+  "operational_status": "non_operational",
+  "source_timestamp": "not applicable: theory and simulation, no observation",
+  "confidence_class": "low",
+  "confidence_basis": "Arithmetic and a seeded simulation through the unchanged M2 kernel. It reads no image and no flood map, and it was not checked against anything outside the repository.",
+  "assumptions": [
+    "A window with no flood class is modelled as one normal population. Real backscatter change is not normal, and a real window mixes land covers.",
+    "The kernel is the frozen M2 kernel, unchanged: it clips the samples at their 1st and 99th percentiles, builds a 64-bin histogram and divides the between-class variance at the Otsu split by the variance of the clipped samples.",
+    "The simulation is seeded, so a second run gives the same figures."
+  ],
+  "protocol_sha256": {
+    "planning_protocol_v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+    "planning_protocol_v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+  },
+  "status": "diagnosis_figures",
+  "status_note": "Figures of one diagnosis run, written with protocol v1a and v1b in force. A diagnosis figure describes why a method declined or separated poorly; it is not a flood map, not an observation of a flood and not a measure of how correct a method is. No FPPS, A-E class or flood candidate is here.",
+  "receipt_file": "outputs/planning_v1/a1_diagnosis_bvf_unimodal_gaussian.json",
+  "result_document": "docs/proposal_execution/automated_track/WHY_THRESHOLD_ONLY_FAILED.md",
+  "script": "scripts/diagnostics/bvf_unimodal_gaussian.py",
+  "plan_statement": "BVF theory/simulation (a unimodal Gaussian gives 0.637 < 0.72)",
+  "measured_against": null,
+  "computes": "The between-class variance fraction of a normal population in theory and through the frozen M2 Otsu kernel, and the separation two populations need before the kernel accepts a window. No image is read.",
+  "figures": {
+    "gate": 0.72,
+    "theory_normal_population_split_at_its_mean": 0.63662,
+    "theory_formula": "(E|x|)^2 / var(x) = 2/pi",
+    "theory_same_population_clipped_at_1st_and_99th_percentile": 0.649065,
+    "below_the_gate": {
+      "theory": true,
+      "theory_clipped": true,
+      "every_simulated_window": true
+    },
+    "shortfall_against_the_gate": {
+      "theory": 0.08338,
+      "theory_clipped": 0.070935
+    },
+    "simulated_windows_of_pure_noise_through_the_m2_kernel": [
+      {
+        "samples_per_window": 4096,
+        "windows": 200,
+        "between_variance_fraction_min": 0.63523,
+        "between_variance_fraction_mean": 0.648508,
+        "between_variance_fraction_max": 0.661509,
+        "windows_passing_the_gate": 0,
+        "reason_counts": {
+          "unimodal_or_unstable_histogram": 200
+        }
+      },
+      {
+        "samples_per_window": 16384,
+        "windows": 200,
+        "between_variance_fraction_min": 0.642246,
+        "between_variance_fraction_mean": 0.648924,
+        "between_variance_fraction_max": 0.657677,
+        "windows_passing_the_gate": 0,
+        "reason_counts": {
+          "unimodal_or_unstable_histogram": 200
+        }
+      },
+      {
+        "samples_per_window": 65536,
+        "windows": 200,
+        "between_variance_fraction_min": 0.645272,
+        "between_variance_fraction_mean": 0.648424,
+        "between_variance_fraction_max": 0.652029,
+        "windows_passing_the_gate": 0,
+        "reason_counts": {
+          "unimodal_or_unstable_histogram": 200
+        }
+      }
+    ],
+    "largest_fraction_of_any_simulated_window": 0.661509,
+    "two_populations_through_the_m2_kernel": [
+      {
+        "second_population_share": 0.5,
+        "first_separation_passing_the_gate": 2.6,
+        "first_separation_every_window_accepted": 2.6,
+        "fraction_with_no_separation": 0.648257,
+        "fraction_at_the_largest_separation_tried": 0.902534,
+        "largest_separation_tried": 6.0
+      },
+      {
+        "second_population_share": 0.3,
+        "first_separation_passing_the_gate": 3.0,
+        "first_separation_every_window_accepted": 3.0,
+        "fraction_with_no_separation": 0.648468,
+        "fraction_at_the_largest_separation_tried": 0.885659,
+        "largest_separation_tried": 6.0
+      },
+      {
+        "second_population_share": 0.2,
+        "first_separation_passing_the_gate": 3.7,
+        "first_separation_every_window_accepted": 3.8,
+        "fraction_with_no_separation": 0.648292,
+        "fraction_at_the_largest_separation_tried": 0.855062,
+        "largest_separation_tried": 6.0
+      },
+      {
+        "second_population_share": 0.1,
+        "first_separation_passing_the_gate": 5.3,
+        "first_separation_every_window_accepted": 5.4,
+        "fraction_with_no_separation": 0.647859,
+        "fraction_at_the_largest_separation_tried": 0.766363,
+        "largest_separation_tried": 6.0
+      }
+    ],
+    "two_populations_note": "Both populations are normal with one standard deviation. The separation is the distance between their means in standard deviations. The first column of each row is the share of the window in the second population."
+  },
+  "plan_figure": {
+    "stated_in_the_plan": "a unimodal Gaussian gives 0.637 < 0.72",
+    "plan_value": 0.637,
+    "measured": 0.637,
+    "reproduced": true,
+    "note": "The plan's figure is the theory value 2/pi. The kernel clips the samples before it measures the variance, so through the kernel one population gives a little more; see theory_same_population_clipped_at_1st_and_99th_percentile and the simulated windows. Both stay below 0.72."
+  },
+  "does_not_show": [
+    "Anything about Mae Sai or about any image: it is arithmetic and simulation.",
+    "That a window which failed the gate held no flood.",
+    "That real change values are normal: speckle is not, and a real window is a mixture of land covers."
+  ],
+  "limits": [
+    "The figure says what one population gives the gate. It does not say what the windows at Mae Sai held.",
+    "The two-population table uses equal standard deviations. A flood class that is narrower or wider than the land around it needs a different separation.",
+    "The kernel has two more tests (class share and mean separation); a window can pass the gate and still be declined."
+  ],
+  "licence": null,
+  "attributions": [],
+  "open_points": [],
+  "not_computed": [
+    "any figure from an image",
+    "FPPS",
+    "A-E class",
+    "flood candidate"
+  ]
+}

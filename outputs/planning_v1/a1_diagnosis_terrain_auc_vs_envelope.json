@@ -1,0 +1,225 @@
+{
+  "schema_version": "floodguard.a1_diagnosis_run_receipt.v1",
+  "generated_at_utc": "2026-10-04T20:36:23Z",
+  "plan_task": "A1 (abstention diagnosis: why threshold-only change detection failed at the 16 Sep pass)",
+  "figure_id": "terrain_auc_vs_envelope",
+  "title": "Separation of low and flat ground against the 2024 season envelope, AOI-01",
+  "official_warning": false,
+  "operational_status": "non_operational",
+  "source_timestamp": "GLO-30 surface model (TanDEM-X acquisitions of 2010 to 2015); envelope 2024-08-01/2024-10-12",
+  "confidence_class": "low",
+  "confidence_basis": "A statistic of a 30 m surface model against an unvalidated preliminary agency extent used as a season envelope (UNOSAT product 4009 with GISTDA; Field_Validation=0). No reference of any kind was used; nothing here says how correct a layer is.",
+  "assumptions": [
+    "The accumulated layer of product 4009 is a 2024 season envelope: every area mapped as water at some time between 1 August and October 2024, with no date per patch. It is not an event map of September 2024, it was not checked in the field (Field_Validation=0), and FloodGuard did not validate it. A figure measured against it is a comparison with a season envelope, not a validation.",
+    "GLO-30 is a surface model: it holds roofs and tree tops, so built-up and wooded ground reads higher than it is.",
+    "The height is warped bilinearly from 1 arc-second cells to the 20 m grid, and the slope is taken from that grid.",
+    "A cell is in the comparison when its centre lies in AOI-01 and in a Thai tambon and it is not permanent water under the reading. No radar value is needed."
+  ],
+  "protocol_sha256": {
+    "planning_protocol_v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+    "planning_protocol_v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+  },
+  "run": "Separation of low and flat ground against the 2024 season envelope, AOI-01",
+  "status": "run_receipt",
+  "status_note": "Receipt of one diagnosis run, made with protocol v1a and v1b in force. Every run is reported: a second run of this figure writes a new receipt that names this one.",
+  "run_kind": "superseding_run",
+  "computes": "The rank statistic (area under the ROC curve) of two terrain features of the Copernicus GLO-30 surface model, low elevation and low slope, against the product 4009 accumulated layer, on 20 m cells of AOI-01 on the Thai side, with permanent water left out three ways. No radar image is read and no layer is written.",
+  "protocol_state": {
+    "v1a": "in_force",
+    "v1b": "in_force"
+  },
+  "script": {
+    "path": "scripts/diagnostics/terrain_auc_vs_envelope.py",
+    "sha256": "f1ecbe3793a06a334f853c650d88ded7c2b6b06ab197703a4401dae1b02eaee5"
+  },
+  "implementation": {
+    "base_commit": "02de0a7ff514324b467510ff54bf298637b74234",
+    "base_commit_note": "The commit the working tree was on. The files below are the ones this run loaded, identified by their own SHA-256, committed or not.",
+    "files_sha256": {
+      "scripts/diagnostics/terrain_auc_vs_envelope.py": "f1ecbe3793a06a334f853c650d88ded7c2b6b06ab197703a4401dae1b02eaee5",
+      "src/floodguard/abstention_diagnosis.py": "c49eb8e0c03751acad6b4ac9b2ebf5d3f242ea0d1f7fe0be402dbb6da050f699",
+      "src/floodguard/diagnosis_run.py": "dc53ef3f7fb4baa89ecbbf23f30bd5e09fa7517dc93b9bc0f1e9aafbac8b20ca",
+      "src/floodguard/diagnosis_layers.py": "c0c294a4c4e6bc7d0502251c365534d6d7ec9c08aee33596e40df4677a85a759"
+    }
+  },
+  "parameters": {
+    "cell_m": 20.0,
+    "margin_m": 1000.0,
+    "frame": "AOI-01 (resources/aoi/aoi-01_mae_sai_core.geojson)",
+    "envelope_level": "as_provided",
+    "cell_rule": "cell centre",
+    "permanent_water_readings": {
+      "jrc_surface_water": "JRC Global Surface Water v1.4 (2021): seasonality of 10 months or more, or occurrence of 80 percent or more; nearest cell",
+      "worldcover_class_80": "ESA WorldCover 2021 v200, class 80; nearest cell",
+      "nothing_left_out": "no cell is left out as permanent water"
+    },
+    "footprint_layer_read": false,
+    "dem_resampling": "bilinear onto the 20 m grid",
+    "slope_rule": "central differences over 20 m cells, in degrees",
+    "features": [
+      "low_elevation",
+      "low_slope"
+    ]
+  },
+  "inputs": {
+    "product_4009_archive": {
+      "path": "<external_data_workspace>/unosat/unosat_4009_chiang_rai_2024/FL20240912THA_GDB.zip",
+      "sha256": "1fe3243c2bc986d4111bb3d82aff292abccf7fb1bb1dd722747e994618b66e85",
+      "bytes": 27977189,
+      "geodatabase": "FL20240912THA.gdb",
+      "layer": "CHIANGRAI_20240801_20241012_AccumulatedFlood",
+      "layer_attributes": {
+        "Field_Validation": 0,
+        "Sensor_Date": "2024-10-22",
+        "EventCode": "FL20240912THA",
+        "Water_Class": 7,
+        "Confidence_ID": 4
+      }
+    },
+    "rights_record_4009": {
+      "path": "docs/proposal_execution/rights_basis_4009_v1.json",
+      "sha256": "531ab40beb2b3e80a02d6de0d4d7d791b299176af0b192bfe105ca23c7e50cb3",
+      "bytes": 8170
+    },
+    "aoi_01": {
+      "path": "resources/aoi/aoi-01_mae_sai_core.geojson",
+      "sha256": "d837a1b058c86739150bb6b844f9dcfdedf32feb83be99194e855430d4a613c2",
+      "bytes": 5752,
+      "area_km2_epsg32647": 104.730496
+    },
+    "tambon_boundaries": {
+      "path": "<external_data_workspace>/open_context/hdx_cod_ab/tha_admin_boundaries.gdb.zip",
+      "sha256": "09e62345481bb80030ff6779e074bfb2c16629b70ae1e373ebd31945f1c6e0d8",
+      "bytes": 174679979,
+      "layer": "tha_admin3"
+    },
+    "radar_receipt_read_for_the_grid_and_the_context_files": {
+      "path": "outputs/planning_v1/radar_o1_mae_sai_v1_receipt.json",
+      "sha256": "62beed7f4c62d19701bc72626180aa2557d4a6f529a8b46429e94c471664b5b2"
+    },
+    "jrc_seasonality": {
+      "path": "<external_data_workspace>/open_context/jrc_global_surface_water/seasonality_90E_30Nv1_4_2021.tif",
+      "sha256": "4d934d022e6631e487b6f048ed5d740c9e828ba613779ecf54fa3b57fd5f9383",
+      "bytes": 30249852
+    },
+    "jrc_occurrence": {
+      "path": "<external_data_workspace>/open_context/jrc_global_surface_water/occurrence_90E_30Nv1_4_2021.tif",
+      "sha256": "885420118995cd2e1dfdfdc9aa4c029e41ca27a3efa79a7fcc5b94f7554b0309",
+      "bytes": 71482608
+    },
+    "worldcover": {
+      "path": "<external_data_workspace>/open_context/esa_worldcover/ESA_WorldCover_10m_2021_v200_N18E099_Map.tif",
+      "sha256": "e02c02859074bc0ff0cf1bed21b074520be46c4385e0071c327c173e0ec9f4eb",
+      "bytes": 80234221
+    },
+    "dem_glo30_n20_e099": {
+      "path": "<external_data_workspace>/open_context/copernicus_dem_glo30/Copernicus_DSM_COG_10_N20_00_E099_00_DEM.tif",
+      "sha256": "8965f85514b577b4b606c658412bfe3d713c0abf478d237539af309d8edb3757",
+      "bytes": 44909388
+    }
+  },
+  "rights": {
+    "grant": {
+      "input_id": "unosat_4009",
+      "layer": "CHIANGRAI_20240801_20241012_AccumulatedFlood",
+      "record_id": "rights_basis_4009_v1",
+      "record_path": "docs/proposal_execution/rights_basis_4009_v1.json",
+      "record_sha256": "531ab40beb2b3e80a02d6de0d4d7d791b299176af0b192bfe105ca23c7e50cb3",
+      "record_schema": "floodguard.rights_basis_4009.v1",
+      "record_status": "confirmed",
+      "source": "unosat_gistda_product_4009",
+      "confirmed_by": [
+        "Putu",
+        "Rachmania"
+      ],
+      "confirmed_on": "2026-10-02",
+      "licence": {
+        "name": "CC BY-SA 4.0",
+        "full_name": "Creative Commons Attribution-ShareAlike 4.0 International",
+        "spdx_id": "CC-BY-SA-4.0",
+        "url": "https://creativecommons.org/licenses/by-sa/4.0/",
+        "legal_code_url": "https://creativecommons.org/licenses/by-sa/4.0/legalcode"
+      },
+      "attribution": "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009",
+      "share_alike": "Every layer or table derived from product 4009 is shared under CC BY-SA 4.0, in its own file, with the attribution and a change notice. Keeping product 4009 derivatives in their own files is a caution, not legal advice.",
+      "rights_level": "public",
+      "rights_level_basis": "The confirmed record rights_basis_4009_v1 names this layer as its layer in scope. Layers derived from it may be published under CC BY-SA 4.0 with the credit and a change notice, as a season envelope only (decisions D2, D3 and R6).",
+      "not_legal_advice": true
+    },
+    "lineage": "The accumulated layer is the layer in scope of the confirmed rights record, at rights level public. The analysis extent and the layer of 22 October 2024 (rights level local) were not read.",
+    "envelope_in_aoi_01": {
+      "area_km2": 15.336778,
+      "polygons": 24,
+      "parts_intersecting": 21,
+      "parts_repaired": 2
+    }
+  },
+  "timestamps": {
+    "run_started_at_utc": "2026-10-04T20:36:08Z",
+    "run_finished_at_utc": "2026-10-04T20:36:23Z"
+  },
+  "outputs": {
+    "figures": {
+      "path": "outputs/a1_diagnosis/terrain_auc_vs_envelope.json",
+      "sha256": "619feaf6c5e8297b9e6f0ab9a8675238264a439ecb38cff3e05a314a01b7d418",
+      "bytes": 13991
+    }
+  },
+  "supersedes": {
+    "receipt_sha256": "bde21782390183760c09d7ab69e59896186621b5438f155c16581192765c5628",
+    "figures_sha256": "76f4bf3622655e9600d4ef8846e80434499f57e9adc5a18f7611a2018fd00b96",
+    "generated_at_utc": "2026-10-04T20:29:40Z",
+    "reason": "After the first run two sentences were reworded: they called the expected value high, and the measured values are between 0.6 and 0.7. No input, no parameter and no rule changed.",
+    "figures_same": true,
+    "copies_kept": [
+      "<external_data_workspace>/proposal_execution/planning_v1/a1_diagnosis/superseded_runs/20261004T202940Z_terrain_auc_vs_envelope/a1_diagnosis_terrain_auc_vs_envelope.json",
+      "<external_data_workspace>/proposal_execution/planning_v1/a1_diagnosis/superseded_runs/20261004T202940Z_terrain_auc_vs_envelope/terrain_auc_vs_envelope.json"
+    ]
+  },
+  "run_history": {
+    "rule": "Protocol v1b, change_control: every run is reported. Each earlier run of this figure is listed with the SHA-256 of its receipt and of its figures file.",
+    "earlier_runs": [
+      {
+        "generated_at_utc": "2026-10-04T20:29:40Z",
+        "receipt_sha256": "bde21782390183760c09d7ab69e59896186621b5438f155c16581192765c5628",
+        "figures_sha256": "76f4bf3622655e9600d4ef8846e80434499f57e9adc5a18f7611a2018fd00b96",
+        "run_kind": "first_run",
+        "superseded_because": "After the first run two sentences were reworded: they called the expected value high, and the measured values are between 0.6 and 0.7. No input, no parameter and no rule changed."
+      }
+    ]
+  },
+  "development_reads": [
+    "4 October 2026, about 18:00 to 20:25 UTC, while the scripts were written and before any run: the headers of the stored sigma0, slope and land-cover rasters of tasks A2 and A4, of the GLO-30 tile and of the two JRC tiles were read (size, grid, bands, tags); the receipt of the retired M2 run was read for its keys and its grid, with the header of its mask; AOI-01 and the two radar receipts were read. No cell value was read and no figure was computed.",
+    "The same evening, before any run: the statistics module was tried on invented numbers only (random draws; no file of the external data workspace was opened)."
+  ],
+  "open_points": [
+    {
+      "id": "A1-OP1",
+      "point": "Which terrain feature the plan means by 'terrain AUC vs 4009'.",
+      "signed_files_say": "Plan row A1: 'terrain AUC vs 4009 (to compute)'. No feature, no grid and no domain is named. Protocol v1a announces a HAND and slope mask for M1-v2 on Mae Sai without a HAND source or a limit (open point A4-OP2).",
+      "what_was_done": "Two features of the Copernicus GLO-30 surface model were measured on the 20 m grid: low elevation and low slope. HAND was not computed: no HAND raster and no drainage rule is in the signed files or on disk. Neither figure is named the terrain figure of the plan."
+    },
+    {
+      "id": "A1-OP4",
+      "point": "Which permanent water a diagnosis leaves out.",
+      "signed_files_say": "Protocol v1a names ESA WorldCover 2021 class 80 for the flood-likelihood component, in every case. It says nothing of a diagnosis. The exploratory run used JRC Global Surface Water (seasonality of 10 months or more, or occurrence of 80 percent or more).",
+      "what_was_done": "Every figure is given three ways: JRC water left out, WorldCover class 80 left out, and nothing left out."
+    },
+    {
+      "id": "A1-OP6",
+      "point": "Whether the product 4009 rights record covers a diagnosis comparison.",
+      "signed_files_say": "The record lists its uses (use_in_this_track): the comparison with the replay model is the only comparison it names, and its limitations say it does not cover use as machine-learning labels or as a qualified reference. Plan row A1 allows these figures 'after the 4009 signature'.",
+      "what_was_done": "The accumulated layer is used as a comparison layer only: no model was fitted to it and nothing is called a reference. Every figure carries the licence, the credit, a change notice and the label 'vs a season envelope, not an event map'."
+    }
+  ],
+  "not_computed": [
+    "HAND (height above the nearest drainage)",
+    "any figure from a radar image",
+    "a flood candidate or any threshold",
+    "the analysis extent of the product (rights level local; not read)",
+    "an interval for the statistic",
+    "FPPS",
+    "A-E class",
+    "any value for a single tambon"
+  ]
+}

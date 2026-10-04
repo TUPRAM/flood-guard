@@ -1,0 +1,119 @@
+{
+  "schema_version": "floodguard.a1_diagnosis_run_receipt.v1",
+  "generated_at_utc": "2026-10-04T20:35:45Z",
+  "plan_task": "A1 (abstention diagnosis: why threshold-only change detection failed at the 16 Sep pass)",
+  "figure_id": "sentinel1_pass_gap",
+  "title": "Sentinel-1 passes over Mae Sai in September 2024 and the gap between 6 and 15 September",
+  "official_warning": false,
+  "operational_status": "non_operational",
+  "source_timestamp": "2024-09-01/2024-09-25 (acquisitions); catalogue snapshot of 2026-07-08",
+  "confidence_class": "low",
+  "confidence_basis": "Catalogue metadata as the Copernicus Data Space returned it on 8 July 2026. The snapshot was not taken again and was not compared with another catalogue.",
+  "assumptions": [
+    "Rows with one acquisition start time are one pass: the catalogue lists the original product and its cloud-optimised copy.",
+    "The query asked for IW GRDH dual-polarisation products that cover the point 99.88 E, 20.43 N, with a start time from 1 to 25 September 2024.",
+    "Thailand time is UTC+7."
+  ],
+  "protocol_sha256": {
+    "planning_protocol_v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+    "planning_protocol_v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+  },
+  "run": "Sentinel-1 passes over Mae Sai in September 2024 and the gap between 6 and 15 September",
+  "status": "run_receipt",
+  "status_note": "Receipt of one diagnosis run, made with protocol v1a and v1b in force. Every run is reported: a second run of this figure writes a new receipt that names this one.",
+  "run_kind": "superseding_run",
+  "computes": "The distinct Sentinel-1 passes in the committed catalogue snapshot for Mae Sai, the gaps between them and the passes between 6 September 11:31 UTC and 15 September 23:16 UTC. Metadata only.",
+  "protocol_state": {
+    "v1a": "in_force",
+    "v1b": "in_force"
+  },
+  "script": {
+    "path": "scripts/diagnostics/sentinel1_pass_gap.py",
+    "sha256": "649eddb7b65b791cde5aaa7f8eaf1aea4412d845eff178e513c5c7f005be68b3"
+  },
+  "implementation": {
+    "base_commit": "02de0a7ff514324b467510ff54bf298637b74234",
+    "base_commit_note": "The commit the working tree was on. The files below are the ones this run loaded, identified by their own SHA-256, committed or not.",
+    "files_sha256": {
+      "scripts/diagnostics/sentinel1_pass_gap.py": "649eddb7b65b791cde5aaa7f8eaf1aea4412d845eff178e513c5c7f005be68b3",
+      "src/floodguard/abstention_diagnosis.py": "c49eb8e0c03751acad6b4ac9b2ebf5d3f242ea0d1f7fe0be402dbb6da050f699",
+      "src/floodguard/diagnosis_run.py": "dc53ef3f7fb4baa89ecbbf23f30bd5e09fa7517dc93b9bc0f1e9aafbac8b20ca",
+      "src/floodguard/diagnosis_layers.py": "c0c294a4c4e6bc7d0502251c365534d6d7ec9c08aee33596e40df4677a85a759"
+    }
+  },
+  "parameters": {
+    "interval": {
+      "after_utc": "2024-09-06T11:31:06Z",
+      "before_utc": "2024-09-15T23:16:01Z",
+      "open_interval": true
+    },
+    "snapshot_date": {
+      "date": "2026-07-08",
+      "stated_in": "docs/live_metadata_snapshot_review_log.md",
+      "note": "The log says the snapshot was taken with scripts/query_cdse_metadata.py and that no product was downloaded. The log is a growing document, so it is named and not bound by SHA-256."
+    },
+    "query_profile": [
+      "mae_sai_2024"
+    ],
+    "catalogue_query_as_recorded": [
+      "https://catalogue.dataspace.copernicus.eu/odata/v1/Products?$filter=Collection/Name+eq+'SENTINEL-1'+and+contains(Name,'IW_GRDH_1SDV')+and+ContentDate/Start+ge+2024-09-01T00:00:00.000Z+and+ContentDate/Start+le+2024-09-25T23:59:59.999Z+and+OData.CSC.Intersects(area=geography'SRID=4326;POINT(99.88+20.43)')&$orderby=ContentDate/Start+asc&$top=50"
+    ],
+    "relative_orbit_rule": "Sentinel-1A: (absolute orbit - 73) mod 175 + 1",
+    "replay_keyframes": {
+      "onset_keyframe": "2024-09-10T11:15:00Z",
+      "modelled_peak_keyframe": "2024-09-12T05:00:00Z"
+    }
+  },
+  "inputs": {
+    "catalogue_snapshot": {
+      "path": "outputs/cdse_mae_sai_2024_metadata.csv",
+      "sha256": "335b8f19e05c8436c2f48acf4e9d9de6905b7156088ecd5c335c0712bbf7fa6e",
+      "bytes": 5228,
+      "rows": 8
+    }
+  },
+  "rights": null,
+  "timestamps": {
+    "run_started_at_utc": "2026-10-04T20:35:45Z",
+    "run_finished_at_utc": "2026-10-04T20:35:45Z"
+  },
+  "outputs": {
+    "figures": {
+      "path": "outputs/a1_diagnosis/sentinel1_pass_gap.json",
+      "sha256": "60eba995c1d2ad50b0a0a011378874fcbec8e873f0fb0161d3e7f09c174d26a5",
+      "bytes": 6773
+    }
+  },
+  "supersedes": {
+    "receipt_sha256": "beda329b0cd53a77e677c510339c1774ba2f720292d42737d4b255a23a7430c5",
+    "figures_sha256": "5f082147d197fa89a1dde95d5190c5c33bc09e1498210dea566dc09293ddeb7c",
+    "generated_at_utc": "2026-10-04T20:28:03Z",
+    "reason": "After the first run the script gained two keyframes of the Mae Sai replay, set beside the passes for context, and it no longer binds the growing snapshot log by SHA-256 (the log is named with the date it states). The pass list, the gaps and the interval are computed as before.",
+    "figures_same": false,
+    "copies_kept": [
+      "<external_data_workspace>/proposal_execution/planning_v1/a1_diagnosis/superseded_runs/20261004T202803Z_sentinel1_pass_gap/a1_diagnosis_sentinel1_pass_gap.json",
+      "<external_data_workspace>/proposal_execution/planning_v1/a1_diagnosis/superseded_runs/20261004T202803Z_sentinel1_pass_gap/sentinel1_pass_gap.json"
+    ]
+  },
+  "run_history": {
+    "rule": "Protocol v1b, change_control: every run is reported. Each earlier run of this figure is listed with the SHA-256 of its receipt and of its figures file.",
+    "earlier_runs": [
+      {
+        "generated_at_utc": "2026-10-04T20:28:03Z",
+        "receipt_sha256": "beda329b0cd53a77e677c510339c1774ba2f720292d42737d4b255a23a7430c5",
+        "figures_sha256": "5f082147d197fa89a1dde95d5190c5c33bc09e1498210dea566dc09293ddeb7c",
+        "run_kind": "first_run",
+        "superseded_because": "After the first run the script gained two keyframes of the Mae Sai replay, set beside the passes for context, and it no longer binds the growing snapshot log by SHA-256 (the log is named with the date it states). The pass list, the gaps and the interval are computed as before."
+      }
+    ]
+  },
+  "development_reads": [],
+  "open_points": [],
+  "not_computed": [
+    "any figure from an image",
+    "the time of the flood peak",
+    "FPPS",
+    "A-E class",
+    "flood candidate"
+  ]
+}

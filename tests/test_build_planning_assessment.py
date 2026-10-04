@@ -3,9 +3,11 @@
 Everything the builder reads here is invented and written into a temporary folder by this file: two units in the
 open sea, a road graph of eight nodes, five demand cells, a flood polygon, a water polygon, a footprint, an age
 table, and the receipts and register entries that bind them. The access table is made by the unchanged task E5
-runner from the same invented graph. No file of a real case is read and no component of a real unit is computed.
-What is real is what every run reads unchanged: the two signed protocol files and the national-anchor receipt
-protocol v1b names (constants for all of Thailand).
+runner from the same invented graph. No layer or table of a real case is read and no component of a real unit is
+computed. What is real is what every run reads unchanged: the two signed protocol files and the national-anchor
+receipt protocol v1b names (constants for all of Thailand). One test reads two more committed files, the E1 and
+E5 receipts of the Mae Sai frame, for what they bind for case O1 (nothing): the refusal of that case is worded
+from them.
 """
 
 from __future__ import annotations
@@ -296,7 +298,8 @@ def build_world(tmp_path: Path, residents: dict[str, float] | None = None) -> di
             title_th="กรณีทดสอบ (ข้อมูลทดสอบ ไม่ใช่สถานที่จริง)", frame="Two invented units in the open sea (fixture, not a place)",
             case_reference_date=__import__("datetime").date(2030, 1, 10), lane="OBS", tier="T3",
             fixture_notice="Fixture, not a place: every unit, input, count and date of this file is invented.")},
-        not_run={"FX-O1": "an invented case with no flood input"})
+        not_run={"FX-O1": runner.AwaitedCase(rights_source="fixture_radar_source", rights_source_text="invented radar data",
+                                             open_point="FX-OP1", not_built="this builder does not read an invented radar case")})
     return world
 
 
@@ -412,6 +415,9 @@ def test_a_run_on_an_invented_frame_writes_an_overlay_the_validator_accepts(tmp_
     checked_inputs = runner.check_inputs(CASE, world["frame_set"], world["external"], world["boundaries"], root=world["root"],
                                          output_dir=world["output_dir"], register_dir=world["register_dir"], registry=world["registry"])
     assert checked_inputs["inputs_checked"] is True and checked_inputs["lane_purity"] == "PASS"
+    assert checked_inputs["unit_residents_same_in_the_context_and_the_access_table"] is True
+    assert checked_inputs["no_unit_row_of_the_access_table_stores_a_ratio"] is True
+    assert checked_inputs["licence_block"] is False, "the invented flood input is not product 4009"
     assert checked_inputs["publication_eligibility"] == "local" and checked_inputs["overlay_would_go_to"] == summary["overlay"]
     assert checked_inputs["lineage"]["fx_agency.invented_layer"]["sha256"] == flood_input["sha256"]
     assert sorted(str(path) for path in tmp_path.rglob("*")) == before
@@ -420,10 +426,44 @@ def test_a_run_on_an_invented_frame_writes_an_overlay_the_validator_accepts(tmp_
     checked = runner.verify(CASE, world["frame_set"], world["external"], world["boundaries"], root=world["root"],
                             output_dir=world["output_dir"], register_dir=world["register_dir"], registry=world["registry"])
     assert checked["verified"] is True and checked["verifier"] == {"verified": True, "problems": []}
+    assert checked["receipt_body_same"] is True and checked["receipt_fields_that_differ"] == []
+    assert checked["outputs_block_same"] is True and checked["code_changed_since_the_run"] == []
     overlay_path.write_bytes(raw.replace(b'"action_class": "B"', b'"action_class": "A"', 1))
     changed = runner.verify(CASE, world["frame_set"], world["external"], world["boundaries"], root=world["root"],
                             output_dir=world["output_dir"], register_dir=world["register_dir"], registry=world["registry"])
     assert changed["verified"] is False and changed["overlay_on_disk_same"] is False
+    overlay_path.write_bytes(raw)
+
+    # The receipt carries the SHA-256 of the rows alone and the hashes of its lineage, and names the counts that
+    # cover every row: such a count is a statement about each unit.
+    assert receipt["result"]["rows_sha256"] == runner.rows_sha256(overlay["rows"]) and len(receipt["result"]["rows_sha256"]) == 64
+    assert receipt["lineage_input_sha256"] == {item["input_id"]: item["sha256"] for item in overlay["inputs"]}
+    declared = receipt["rights"]["figures_of_local_level_layers_in_this_receipt"]
+    assert declared["counts_that_cover_every_row"] == runner.counts_that_cover_every_row(receipt["result"]["summary"])
+    assert "headline_status_by_lane_column.OBS.not_evaluated" in declared["counts_that_cover_every_row"]
+    assert "binding_class_by_lane_column.OBS.B" not in declared["counts_that_cover_every_row"], "one row of two is B"
+    assert "states that value for each unit" in declared["what_the_counts_give_away"]
+    assert receipt["licence"] is None, "an invented flood input has no product licence block"
+    assert "In plan task E8" in flood_input["change_notice"] and "not the layer" in flood_input["change_notice"]
+
+    # --verify compares the whole receipt, not only its result block: a body the code would not write does not verify.
+    kept = receipt_path.read_bytes()
+    edited = json.loads(kept)
+    edited["rights"]["rule"] = "another sentence"
+    edited["parameters"]["tolerances"]["residents_between_two_stages"] = 1.0
+    receipt_path.write_bytes(runner.encode(edited))
+    other = runner.verify(CASE, world["frame_set"], world["external"], world["boundaries"], root=world["root"],
+                          output_dir=world["output_dir"], register_dir=world["register_dir"], registry=world["registry"])
+    assert other["verified"] is False and other["receipt_result_same"] is True and other["overlay_bytes_same_as_recomputed"] is True
+    assert other["receipt_body_same"] is False and other["receipt_fields_that_differ"] == ["parameters", "rights"]
+    # A receipt written by other code says so, and still verifies when the code of today writes the same body.
+    edited = json.loads(kept)
+    edited["implementation"]["builder_sha256"] = "0" * 64
+    receipt_path.write_bytes(runner.encode(edited))
+    older = runner.verify(CASE, world["frame_set"], world["external"], world["boundaries"], root=world["root"],
+                          output_dir=world["output_dir"], register_dir=world["register_dir"], registry=world["registry"])
+    assert older["verified"] is True and older["code_changed_since_the_run"] == ["builder_sha256"]
+    receipt_path.write_bytes(kept)
 
 
 def test_a_second_run_needs_a_reason_and_names_the_run_it_replaces(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -441,16 +481,63 @@ def test_a_second_run_needs_a_reason_and_names_the_run_it_replaces(tmp_path: Pat
     assert [entry["receipt_sha256"] for entry in receipt["run_history"]] == [first["receipt_sha256"]]
     assert second["receipt_sha256"] != first["receipt_sha256"] and second["generated_at_utc"] != first["generated_at_utc"]
     assert receipt["run_history"][0]["result_same_as_the_run_that_replaced_it"] is True
-    # The comparison leaves out the content hash of the overlay and nothing else: another row count is a difference.
+    # The rows of the replaced run were read back from the file its receipt bound: the same rows, value by value.
+    supersedes = receipt["supersedes"]
+    assert supersedes["counts_same"] is True and supersedes["rows_same"] is True and supersedes["lineage_inputs_same"] is True
+    assert supersedes["rows_sha256_of_the_superseded_run"] == supersedes["rows_sha256_of_this_run"] == receipt["result"]["rows_sha256"]
+    assert "read back with the SHA-256 that receipt names" in supersedes["rows_of_the_superseded_run_read_from"]
+    assert receipt["run_history"][0]["rows_sha256"] == receipt["result"]["rows_sha256"]
+    # The replaced receipt and the overlay it bound are kept outside the repository, under the time of that run.
+    archive = world["external"] / PROCESSED / "fx_case" / runner.STAGE_FOLDER / runner.SUPERSEDED_FOLDER / "20300201T000000Z"
+    kept = {item["what"]: item for item in supersedes["copies_kept_outside_git"]}
+    assert set(kept) == {"receipt", "file the receipt bound"} and all(item["path"].startswith(LABEL + "/") for item in kept.values())
+    kept_receipt = archive / runner.receipt_path_for(CASE, world["frame_set"], world["output_dir"]).name
+    assert hashlib.sha256(kept_receipt.read_bytes()).hexdigest() == first["receipt_sha256"] == kept["receipt"]["sha256"]
+    kept_overlay = archive / "planning_assessment_overlay_fx-e8_fx_frame.json"
+    assert hashlib.sha256(kept_overlay.read_bytes()).hexdigest() == kept["file the receipt bound"]["sha256"]
+    assert json.loads(kept_overlay.read_text(encoding="ascii"))["generated_at"] == first["generated_at_utc"]
+    # The comparison of the counts leaves out the content hash of the overlay and the rows digest, and nothing
+    # else: another row count is a difference.
     block = receipt["result"]
     other = json.loads(json.dumps(block))
     other["summary"]["content_sha256"] = "0" * 64
+    other["rows_sha256"] = "1" * 64
     assert runner.result_without_the_run_time(other) == runner.result_without_the_run_time(block)
     other["summary"]["row_count"] += 1
     assert runner.result_without_the_run_time(other) != runner.result_without_the_run_time(block)
     assert runner.result_without_the_run_time(None) == {}
     with pytest.raises(FileNotFoundError, match="existing receipt"):
         run(build_world(tmp_path / "other"), replace_reason="nothing to replace")
+
+
+def test_a_second_run_with_another_value_and_the_same_class_counts_is_not_the_same_result(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """The counts of the whole case cannot show that no value of a unit changed; the SHA-256 of the rows can."""
+
+    world = build_world(tmp_path)
+    clock = iter(f"2030-02-01T00:{minute:02d}:00Z" for minute in range(60))
+    monkeypatch.setattr(e5, "utc_now", lambda: next(clock))
+    first = run(world)
+    before = json.loads(runner.receipt_path_for(CASE, world["frame_set"], world["output_dir"]).read_text(encoding="ascii"))
+    # Ten more children in unit 1 of the invented age table: its vulnerability and its FPPS move, its class does not.
+    age_path = world["output_dir"] / "fx_age_table.json"
+    age_table = json.loads(age_path.read_text(encoding="ascii"))
+    age_table["units"][0]["children_0_14"] += 10.0
+    age_sha256 = _write(age_path, _json(age_table))
+    _write(world["output_dir"] / "fx_e7_receipt.json", _json({
+        "generated_at_utc": "2030-01-03T00:00:00Z", "protocol_sha256": HASHES,
+        "outputs": [{"path": "outputs/planning_v1/fx_age_table.json", "sha256": age_sha256}]}))
+    register(world, "fx_age_table.json")
+    register(world, "fx_e7_receipt.json")
+    run(world, replace_reason="an invented age count changed")
+    receipt = json.loads(runner.receipt_path_for(CASE, world["frame_set"], world["output_dir"]).read_text(encoding="ascii"))
+    supersedes = receipt["supersedes"]
+    assert supersedes["receipt_sha256"] == first["receipt_sha256"]
+    assert supersedes["counts_same"] is True, "the same rows by class, reason code and confidence class"
+    assert supersedes["rows_same"] is False and supersedes["result_same"] is False
+    assert supersedes["rows_sha256_of_the_superseded_run"] == before["result"]["rows_sha256"] != receipt["result"]["rows_sha256"]
+    assert supersedes["lineage_inputs_same"] is False and supersedes["lineage_inputs_that_differ"] == ["e7_age_exposure_table"]
+    assert receipt["run_history"][0]["result_same_as_the_run_that_replaced_it"] is False
 
 
 def test_a_run_whose_v2_result_nobody_can_state_writes_no_overlay_and_still_reports(tmp_path: Path) -> None:
@@ -521,12 +608,131 @@ def test_a_run_whose_v2_result_nobody_can_state_writes_no_overlay_and_still_repo
                             output_dir=world["output_dir"], register_dir=world["register_dir"], registry=world["registry"])
     assert checked == {"verified": True, "overlay_written": False, "receipt_result_same": True,
                        "report_bytes_same_as_recomputed": True, "rows_reported_as_computed": True,
-                       "not_written_because": "v2_result_not_evaluable"}
+                       "not_written_because": "v2_result_not_evaluable", "receipt_body_same": True,
+                       "receipt_fields_that_differ": [], "outputs_block_same": True, "code_changed_since_the_run": []}
+    # The rows as computed have their own SHA-256 in the receipt, and the report names no licence for an invented input.
+    assert receipt["result"]["rows_sha256"] == runner.rows_sha256(as_computed["rows"]) and stated["licence"] is None
     # A report that was changed after the run is found.
     report.write_bytes(report.read_bytes().replace(b'"action_class": "B"', b'"action_class": "A"', 1))
     changed = runner.verify(CASE, world["frame_set"], world["external"], world["boundaries"], root=world["root"],
                             output_dir=world["output_dir"], register_dir=world["register_dir"], registry=world["registry"])
     assert changed["verified"] is False and changed["report_bytes_same_as_recomputed"] is False
+
+
+def test_the_command_line_returns_3_for_a_run_that_writes_no_overlay_and_0_for_one_that_does(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+    """The exit code goes through ``main``: 3 says that units were measured, no overlay was written and a receipt was."""
+
+    monkeypatch.delenv(runner.EXTERNAL_DATA_VARIABLE, raising=False)
+    codes = {}
+    for name, residents in (("no_overlay", {**RESIDENTS, "c1": 1000.0}), ("overlay", RESIDENTS)):
+        world = build_world(tmp_path / name, residents)
+        through_main = runner.run
+
+        def run_in_the_world(*positional: Any, world: dict[str, Any] = world, **named: Any) -> dict[str, Any]:
+            return through_main(*positional, **named, root=world["root"], output_dir=world["output_dir"],
+                                register_dir=world["register_dir"], registry=world["registry"], git_commit="0123abc")
+
+        monkeypatch.setitem(runner.FRAME_SETS, "fx_frame", world["frame_set"])
+        monkeypatch.setattr(runner, "run", run_in_the_world)
+        codes[name] = runner.main(["--case", CASE, "--frame", "fx_frame", "--external-data", str(world["external"]),
+                                   "--boundaries", str(world["boundaries"])])
+        monkeypatch.setattr(runner, "run", through_main)
+        printed = json.loads(capsys.readouterr().out)
+        assert printed["overlay_written"] is (name == "overlay")
+        receipt_path = runner.receipt_path_for(CASE, world["frame_set"], world["output_dir"])
+        assert receipt_path.is_file() and (world["register_dir"] / receipt_path.name).is_file()
+    assert codes == {"no_overlay": runner.EXIT_NOT_WRITTEN, "overlay": runner.EXIT_WRITTEN}
+    assert (runner.EXIT_WRITTEN, runner.EXIT_REFUSED, runner.EXIT_NOT_WRITTEN) == (0, 2, 3)
+
+
+@pytest.mark.parametrize("failing, stage, code", [
+    ("guardrail_report", "guardrail_report", "guardrail_failed"),
+    ("whole_case_checks", "whole_case_checks", "whole_case_check_failed"),
+    ("assemble_overlay", "row_assembly", "guardrail_failed"),
+])
+def test_a_run_that_scores_its_units_and_then_fails_a_check_is_still_reported(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str],
+        failing: str, stage: str, code: str) -> None:
+    """Every run on real units is reported: a check that fails after the units were scored ends in a registered receipt."""
+
+    world = build_world(tmp_path)
+    scored: list[int] = []
+    assemble = planning_assessment.assemble_overlay
+
+    def assemble_and_count(*positional: Any, **named: Any) -> dict[str, Any]:
+        overlay = assemble(*positional, **named)
+        scored.append(sum(1 for row in overlay["rows"] if row["fpps_0_100"] is not None))
+        if failing == "assemble_overlay":
+            raise planning_assessment.PlanningAssessmentError("guardrail GR7: an invented breach in unit FX-E8-U1")
+        return overlay
+
+    def fail(*_positional: Any, **_named: Any) -> dict[str, Any]:
+        raise planning_assessment.PlanningAssessmentError(f"an invented failure of {failing} that names unit FX-E8-U1")
+
+    monkeypatch.setattr(planning_assessment, "assemble_overlay", assemble_and_count)
+    if failing != "assemble_overlay":
+        monkeypatch.setattr(planning_assessment, failing, fail)
+    through_main = runner.run
+
+    def run_in_the_world(*positional: Any, **named: Any) -> dict[str, Any]:
+        return through_main(*positional, **named, root=world["root"], output_dir=world["output_dir"],
+                            register_dir=world["register_dir"], registry=world["registry"], git_commit="0123abc")
+
+    monkeypatch.setitem(runner.FRAME_SETS, "fx_frame", world["frame_set"])
+    monkeypatch.setattr(runner, "run", run_in_the_world)
+    exit_code = runner.main(["--case", CASE, "--frame", "fx_frame", "--external-data", str(world["external"]),
+                             "--boundaries", str(world["boundaries"])])
+    monkeypatch.setattr(runner, "run", through_main)
+    summary = json.loads(capsys.readouterr().out)
+    assert scored == [2], "both invented units had an FPPS before the check failed"
+    assert exit_code == runner.EXIT_NOT_WRITTEN == 3
+    assert summary["overlay_written"] is False and summary["not_written_because"] == code
+    assert summary["rows_reported_as_computed"] is False
+
+    receipt_path = runner.receipt_path_for(CASE, world["frame_set"], world["output_dir"])
+    receipt = json.loads(receipt_path.read_text(encoding="ascii"))
+    entry = json.loads((world["register_dir"] / receipt_path.name).read_text(encoding="ascii"))
+    assert entry == {"path": f"outputs/planning_v1/{receipt_path.name}", "sha256": hashlib.sha256(receipt_path.read_bytes()).hexdigest()}
+    result = receipt["result"]
+    assert result["overlay_written"] is False and result["summary"] is None and result["rows_as_computed"] is None
+    assert result["rows_sha256"] is None, "a row that fails a check is not reported"
+    refusal = result["not_written_because"]
+    assert (refusal["code"], refusal["stage"], refusal["error"]) == (code, stage, "PlanningAssessmentError")
+    assert refusal["units_measured"] == 2 and refusal["rows_scored"] == (None if failing == "assemble_overlay" else 2)
+    assert "every run on real units is reported" in refusal["message"]
+    assert "FX-E8-U1" not in json.dumps({key: value for key, value in receipt.items() if key != "parameters"}), (
+        "the receipt in Git names no unit; the message of the check is outside Git")
+    assert receipt["whole_case_checks"] is None and receipt["measurement_checks"]["demand_cells"] == 5
+    assert receipt["rights"]["figures_of_local_level_layers_in_this_receipt"]["figures"] == []
+    # The report outside Git holds the message of the check and no row; no overlay exists.
+    stage_folder = world["external"] / PROCESSED / "fx_case" / runner.STAGE_FOLDER
+    assert sorted(path.name for path in stage_folder.iterdir()) == [runner.NOT_WRITTEN_REPORT_NAME]
+    report = json.loads((stage_folder / runner.NOT_WRITTEN_REPORT_NAME).read_text(encoding="ascii"))
+    assert report["rows_as_computed"] is None and report["not_written_because"]["code"] == code
+    assert "FX-E8-U1" in report["not_written_because"]["message"] and report["official_warning"] is False
+    assert runner.bound_outputs(receipt["outputs"]) == {
+        f"{LABEL}/{PROCESSED}/fx_case/{runner.STAGE_FOLDER}/{runner.NOT_WRITTEN_REPORT_NAME}":
+            hashlib.sha256((stage_folder / runner.NOT_WRITTEN_REPORT_NAME).read_bytes()).hexdigest()}
+    # A second run of the same thing needs a reason, like any other run on these units.
+    with pytest.raises(FileExistsError, match="--replace --reason"):
+        run(world)
+
+
+def test_a_measurement_that_is_refused_after_the_input_checks_is_reported_too(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    world = build_world(tmp_path)
+
+    def refuse(*_positional: Any, **_named: Any) -> Any:
+        raise planning_assessment.PlanningAssessmentError("an invented refusal while unit FX-E8-U2 was measured")
+
+    monkeypatch.setattr(runner, "unit_measurements", refuse)
+    summary = run(world)
+    assert summary["overlay_written"] is False and summary["not_written_because"] == "measurement_refused"
+    receipt = json.loads(runner.receipt_path_for(CASE, world["frame_set"], world["output_dir"]).read_text(encoding="ascii"))
+    refusal = receipt["result"]["not_written_because"]
+    assert (refusal["stage"], refusal["units_measured"], refusal["rows_scored"]) == ("unit_measurements", 0, None)
+    assert "FPPS" not in refusal["message"] and receipt["measurement_checks"] is None
+    assert (world["register_dir"] / runner.receipt_path_for(CASE, world["frame_set"], world["output_dir"]).name).is_file()
 
 
 # ---------------------------------------------------------------------------
@@ -631,7 +837,35 @@ def test_the_builder_refuses_a_table_that_says_it_is_not_usable(tmp_path: Path) 
     assert nothing_was_written(world)
 
 
-def test_the_builder_refuses_components_from_two_flood_inputs_or_two_contexts(tmp_path: Path) -> None:
+def test_the_level_is_part_of_every_name_and_the_pitch_level_is_refused_until_its_lineage_is_built(tmp_path: Path) -> None:
+    """A run at one level never supersedes or deletes the files of another; and no pitch overlay is built yet."""
+
+    world = build_world(tmp_path)
+    frame_set, output_dir, external = world["frame_set"], world["output_dir"], world["external"]
+    public, pitch = (runner.receipt_path_for(CASE, frame_set, output_dir, level) for level in ("public", "pitch"))
+    assert public.name == "e8_planning_assessment_fx-e8_fx_frame.json" == runner.receipt_path_for(CASE, frame_set, output_dir).name
+    assert pitch.name == "e8_planning_assessment_fx-e8_fx_frame_pitch.json"
+    for eligibility in ("public", "pitch", "local"):
+        targets = {level: runner.overlay_target(CASE, frame_set, eligibility, external, output_dir, level)[0]
+                   for level in ("public", "pitch")}
+        assert targets["public"] != targets["pitch"] and targets["pitch"].name.endswith("_fx_frame_pitch.json")
+        assert targets["public"].name == "planning_assessment_overlay_fx-e8_fx_frame.json"
+    assert runner.stage_folder(CASE, frame_set, external).name == runner.STAGE_FOLDER
+    assert runner.stage_folder(CASE, frame_set, external, "pitch").name == runner.STAGE_FOLDER + "_pitch"
+    # A pitch-services table that says it is usable: the builder still refuses, and says what is not built.
+    table = {**world["access_table"], "service_set": "pitch_services", "publication_level": "pitch", "usable_by_task_e8": True}
+    sha256 = _write(output_dir / "fx_access_table.json", _json(table))
+    _write(output_dir / "fx_e5_receipt.json", _json({"generated_at_utc": "2030-01-03T00:00:00Z", "protocol_sha256": HASHES, "outputs": {
+        CASE: {"files": [{"path": "outputs/planning_v1/fx_access_table.json", "sha256": sha256, "what": "unit_table",
+                          "service_set": "pitch_services", "publication_level": "pitch", "in_git": True}]}}}))
+    register(world, "fx_access_table.json")
+    register(world, "fx_e5_receipt.json")
+    with pytest.raises(runner.BuildError, match="pitch level is not built yet.*walking context.*E5-OP5"):
+        run(world, level="pitch")
+    assert nothing_was_written(world) and not pitch.exists()
+
+
+def test_the_builder_refuses_components_from_two_flood_inputs_or_two_contexts(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Guardrail GR3: the access table must come from the flood input, the extent bytes and the context this run reads."""
 
     world = build_world(tmp_path)
@@ -645,36 +879,146 @@ def test_the_builder_refuses_components_from_two_flood_inputs_or_two_contexts(tm
     other_residents = json.loads(json.dumps(table))
     for item in other_residents["runs"]:
         item["units"][0]["residents"] += 1.0
+    measured: list[str] = []
+    measure = runner.unit_measurements
+    monkeypatch.setattr(runner, "unit_measurements", lambda *positional, **named: measured.append("called") or measure(*positional, **named))
+
+    def check(world: dict[str, Any]) -> dict[str, Any]:
+        return runner.check_inputs(CASE, world["frame_set"], world["external"], world["boundaries"], root=world["root"],
+                                   output_dir=world["output_dir"], register_dir=world["register_dir"], registry=world["registry"])
+
     for changed, message in ((other_extent, "closure_extent_sha256"), (other_context, "routing_context_canonical_sha256"),
                              (other_input, "flood_input_id"), (other_residents, "do not agree on the residents")):
         write_access_table(world, changed)
         with pytest.raises(planning_assessment.LanePurityError, match=message):
             run(world)
+        # The input check alone finds it too: nothing has to be measured against the flood input first.
+        with pytest.raises(planning_assessment.LanePurityError, match=message):
+            check(world)
     stored_ratio = json.loads(json.dumps(table))
     for item in stored_ratio["runs"]:
         item["units"][0]["routes"]["share_losing_all_routes"] = 1.0
     write_access_table(world, stored_ratio)
     with pytest.raises(planning_assessment.PlanningAssessmentError, match="never from a stored ratio"):
         run(world)
+    with pytest.raises(planning_assessment.PlanningAssessmentError, match="never from a stored ratio"):
+        check(world)
+    # A table with no row for a unit of the frame.
+    missing_row = json.loads(json.dumps(table))
+    for item in missing_row["runs"]:
+        item["units"] = item["units"][:1]
+    write_access_table(world, missing_row)
+    with pytest.raises(runner.BuildError, match="has no row for unit"):
+        check(world)
+    assert measured == [], "every one of these refusals comes before a unit is measured against the flood input"
+    assert nothing_was_written(world)
+    write_access_table(world, table)
+    assert check(world)["inputs_checked"] is True and measured == []
+
+
+def test_case_o1_and_an_unknown_case_are_refused_before_any_input_of_a_unit_is_read(tmp_path: Path) -> None:
+    """Case O1 is refused from what the committed E1 and E5 receipts bind and what the rights registry holds today."""
+
+    mae_sai = runner.FRAME_SETS["mae_sai"]
+    # The two registered receipts are read from the repository: files in Git, with counts for whole frames only.
+    with pytest.raises(runner.BuildError) as refused:
+        runner.build("O1", mae_sai, tmp_path, tmp_path / "no-boundaries", generated_at_utc="2030-01-01T00:00:00Z", git_commit="0123abc")
+    assert str(refused.value) == (
+        "case O1 cannot be run: the registered E1 receipt binds no flood input of case O1; the registered E5 receipt "
+        "binds no access table of case O1; the rights registry holds no record of Sentinel-1 data (open point E1-OP2)")
+    with pytest.raises(runner.BuildError, match="not a case of frame mae_sai"):
+        runner.build("SE2", mae_sai, tmp_path, tmp_path / "no-boundaries", generated_at_utc="2030-01-01T00:00:00Z",
+                     output_dir=tmp_path, register_dir=tmp_path, git_commit="0123abc")
+    assert not list(tmp_path.iterdir())
+
+
+def test_the_refusal_of_an_awaited_case_follows_what_the_earlier_tasks_have_delivered(tmp_path: Path) -> None:
+    """The sentence is read from the registered receipts and the registry, so it changes when an input is delivered."""
+
+    world = build_world(tmp_path / "world")
+
+    def refusal(registry: rights.RightsRegistry | None = None) -> str:
+        with pytest.raises(runner.BuildError) as refused:
+            runner.run("FX-O1", world["frame_set"], world["external"], world["boundaries"], root=world["root"],
+                       output_dir=world["output_dir"], register_dir=world["register_dir"], registry=registry or world["registry"])
+        return str(refused.value)
+
+    assert refusal() == (
+        "case FX-O1 cannot be run: the registered E1 receipt binds no flood input of case FX-O1; the registered E5 "
+        "receipt binds no access table of case FX-O1; the rights registry holds no record of invented radar data "
+        "(open point FX-OP1)")
+    # Task E1 delivers a flood input for the case: the first clause goes.
+    e1_path = world["output_dir"] / "fx_e1_receipt.json"
+    e1_receipt = json.loads(e1_path.read_text(encoding="ascii"))
+    e1_receipt["outputs"]["FX-O1"] = {"files": [{"path": f"{LABEL}/{PROCESSED}/fx_o1/e1_flood_input/input_record.json", "sha256": "a" * 64}]}
+    e1_path.write_bytes(_json(e1_receipt))
+    register(world, "fx_e1_receipt.json")
+    assert refusal() == (
+        "case FX-O1 cannot be run: the registered E5 receipt binds no access table of case FX-O1; the rights registry "
+        "holds no record of invented radar data (open point FX-OP1)")
+    # Task E5 delivers a table and the owners register a record of the source data: what is left is what is not built.
+    e5_path = world["output_dir"] / "fx_e5_receipt.json"
+    e5_receipt = json.loads(e5_path.read_text(encoding="ascii"))
+    e5_receipt["outputs"]["FX-O1"] = {"files": [{"path": "outputs/planning_v1/fx_o1_table.json", "sha256": "b" * 64, "what": "unit_table"}]}
+    e5_path.write_bytes(_json(e5_receipt))
+    register(world, "fx_e5_receipt.json")
+    with_record = rights.RightsRegistry(world["root"], records=(
+        rights.RegisteredRecord("fx_agency", "rights/fx_rights.json", "an invented layer of a fixture", "fixture_invented_source"),
+        rights.RegisteredRecord("fx_radar", "rights/fx_radar.json", "invented radar data of a fixture", "fixture_radar_source")))
+    assert refusal(with_record) == (
+        "case FX-O1 cannot be run yet: tasks E1 and E5 have delivered a flood input and an access table and the rights "
+        "registry holds a record of invented radar data, and this builder does not read an invented radar case")
+    # A receipt that is not the registered one is refused before it is read for the case.
+    e5_path.write_bytes(e5_path.read_bytes() + b" ")
+    assert "not the file the run register holds" in refusal(with_record)
     assert nothing_was_written(world)
 
 
-def test_case_o1_and_an_unknown_case_are_refused_before_anything_is_read(tmp_path: Path) -> None:
-    mae_sai = runner.FRAME_SETS["mae_sai"]
-    for case_id, message in (("O1", "no radar candidate was delivered"), ("SE2", "not a case of frame mae_sai")):
-        with pytest.raises(runner.BuildError, match=message):
-            runner.build(case_id, mae_sai, tmp_path, tmp_path / "no-boundaries", generated_at_utc="2030-01-01T00:00:00Z",
-                         output_dir=tmp_path, register_dir=tmp_path, git_commit="0123abc")
-    assert not list(tmp_path.iterdir())
-    world = build_world(tmp_path / "world")
-    with pytest.raises(runner.BuildError, match="an invented case with no flood input"):
-        runner.run("FX-O1", world["frame_set"], world["external"], world["boundaries"], root=world["root"],
-                   output_dir=world["output_dir"], register_dir=world["register_dir"], registry=world["registry"])
+def test_the_licence_block_of_a_product_4009_run_names_the_credit_the_licence_and_the_step_of_this_task() -> None:
+    """Product 4009 content ships only under CC BY-SA 4.0 with its credit and a change notice (plan 7.1)."""
+
+    sentence_rules = flood_inputs.rules_from_protocols(V1A, V1B)
+    record = {
+        "source": {"layer": "CHIANGRAI_20240801_20241012_AccumulatedFlood"},
+        "rights": {"licence": {"name": "CC BY-SA 4.0", "full_name": "Creative Commons Attribution-ShareAlike 4.0 International",
+                               "spdx_id": "CC-BY-SA-4.0", "url": "https://creativecommons.org/licenses/by-sa/4.0/",
+                               "legal_code_url": "https://creativecommons.org/licenses/by-sa/4.0/legalcode"},
+                   "attribution": "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009", "share_alike": "an invented sentence",
+                   "record_path": "docs/proposal_execution/rights_basis_4009_v1.json", "record_sha256": "c" * 64,
+                   "record_status": "confirmed", "confirmed_by": ["an invented owner"], "confirmed_on": "2030-01-01",
+                   "rights_level": "public", "rights_level_basis": "an invented basis"}}
+    block = runner.licence_block(record, sentence_rules, runner.FRAME_SETS["mae_sai"], "public", "local", "a notice file")
+    assert (block["name"], block["spdx_id"]) == ("CC BY-SA 4.0", "CC-BY-SA-4.0")
+    assert block["credit"] == "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009" == V1A["wording"]["product_4009_credit"]
+    assert block["standard_sentence"] == V1A["wording"]["standard_4009_sentence"] and "FloodGuard did not validate it" in block["standard_sentence"]
+    notice = block["change_notice"]
+    assert notice.startswith("Changed by FloodGuard: the layer CHIANGRAI_20240801_20241012_AccumulatedFlood")
+    assert "(plan task E5)" in notice and "In plan task E8" in notice and "component values of planning frame v1" in notice
+    assert notice.endswith("Source: UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009, CC BY-SA 4.0.")
+    assert block["rights_record"] == {"path": "docs/proposal_execution/rights_basis_4009_v1.json", "sha256": "c" * 64,
+                                      "record_status": "confirmed", "confirmed_by": ["an invented owner"], "confirmed_on": "2030-01-01"}
+    assert (block["publication_level"], block["flood_input_rights_level"], block["licence_notice_file"]) == ("local", "public", "a notice file")
+    assert [item["id"] for item in block["other_inputs"]] == ["osm", "worldpop-2020", "cod-ab", "esa-worldcover-2021", "worldpop-2024-age-counts"]
+    assert all(item["licence"].strip() and item["attribution"].strip() and item["used_for"].strip() for item in block["other_inputs"])
+    assert "product 4009" in block["applies_to"] and block["not_legal_advice"] is True
+
+
+def test_a_count_that_covers_every_row_is_named_because_it_states_a_value_for_each_unit() -> None:
+    summary = {"row_count": 8, "unit_count": 8,
+               "binding_class_by_lane_column": {"OBS": {"A": 0, "E": 8, "none": 0}, "SCN": {"A": 0, "E": 0, "none": 0}},
+               "confidence_class_by_lane_column": {"OBS": {"low": 3, "medium": 5, "none": 0}},
+               "failed_conditions_by_lane_column": {"OBS": {"C4_input_uncertainty": 8, "C7_baseline_no_route": 0}},
+               "basis_values_by_lane_column": {"OBS": {"pass": 8, "fail": 56}}}
+    assert runner.counts_that_cover_every_row(summary) == [
+        "binding_class_by_lane_column.OBS.E", "failed_conditions_by_lane_column.OBS.C4_input_uncertainty"]
+    assert runner.counts_that_cover_every_row(None) == [] and runner.counts_that_cover_every_row({"row_count": 0}) == []
+    assert runner.rows_sha256([{"b": 1, "a": 2}]) == runner.rows_sha256([{"a": 2, "b": 1}]) != runner.rows_sha256([{"a": 2, "b": 2}])
 
 
 def test_the_mae_sai_frame_set_states_its_cases_its_services_and_the_level_of_each_input() -> None:
     mae_sai = runner.FRAME_SETS["mae_sai"]
     assert set(mae_sai.case_folders) == {"SE1", "O2"} and set(mae_sai.not_run) == {"O1"}
+    assert mae_sai.not_run["O1"].rights_source == rights.SOURCE_SENTINEL1 and mae_sai.not_run["O1"].open_point == "E1-OP2"
     assert mae_sai.context_binding == runner.CONTEXT_BY_PROTOCOL and mae_sai.reporting_frame == "mae_sai"
     assert runner.SERVICE_SETS == {"public": "public_services", "pitch": "pitch_services"}
     levels = {key: item.rights_level for key, item in mae_sai.lineage.items()}
@@ -710,5 +1054,7 @@ def test_the_command_line_wants_replace_and_reason_together_and_an_external_data
     capsys.readouterr()
     # Case O1 is refused by the command line with exit code 2, and nothing is written.
     assert runner.main(["--case", "O1", "--frame", "mae_sai", "--external-data", str(tmp_path)]) == runner.EXIT_REFUSED
-    assert "REFUSED: case O1 cannot be run" in capsys.readouterr().err
+    assert "REFUSED: case O1 cannot be run: the registered E1 receipt binds no flood input of case O1" in capsys.readouterr().err
+    assert runner.main(["--case", "O1", "--frame", "mae_sai", "--external-data", str(tmp_path), "--check-inputs"]) == runner.EXIT_REFUSED
+    assert "the rights registry holds no record of Sentinel-1 data (open point E1-OP2)" in capsys.readouterr().err
     assert not list(tmp_path.iterdir())

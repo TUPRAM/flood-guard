@@ -18,6 +18,13 @@ cases. They are reported in `outputs/planning_v1/README.md`, section "Plan task 
   lineage is `local`.
 - **Case O1** (own radar candidates): refused. Nothing was computed.
 
+The counts above for cases SE1 and O2 are derived from UNOSAT/GISTDA product 4009 and are shared under CC BY-SA 4.0.
+Credit: UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009. Changed by FloodGuard: each layer was repaired,
+projected to EPSG:32647 and clipped to the frames of task E1; road segments were measured against it and closure
+rule v1 was applied (task E5); the shares and counts of each tambon were then turned into component values and
+planning classes (task E8). The layers are unvalidated preliminary agency extents (Field_Validation=0), used as
+provided; FloodGuard did not validate them.
+
 No overlay is in Git and `outputs/planning_v1/overlays/` does not exist: every lineage is below the public level
 today (see "Rights levels today").
 
@@ -38,8 +45,9 @@ a component or wrote a file. The receipts of the runs list them (`development_re
 |---|---|
 | `src/floodguard/planning_assessment.py` | The rows of a case from measurements, the guardrail report, the writer and the verifier. It reads no file besides the protocol files. |
 | `scripts/build_planning_assessment.py` | The run: it checks every input against the file that names it, measures each unit, calls the module, writes the overlay and the receipt, and registers the receipt. |
-| `tests/test_planning_assessment.py` | Every component from invented counts against a hand calculation, class rule v1 at each boundary, the confidence rule, guardrail GR1, class rule v2, the verifier. |
-| `tests/test_build_planning_assessment.py` | A run from start to end on an invented frame in a temporary folder, and every refusal of the script. |
+| `tests/test_planning_assessment.py` | Every component from invented counts against a hand calculation, class rule v1 at each boundary, the confidence rule, guardrail GR1, class rule v2 with its FPPS gate at 35, the verifier. |
+| `tests/test_build_planning_assessment.py` | A run from start to end on an invented frame in a temporary folder, every refusal of the script, a run whose rows fail a check after they were scored, a superseding run, and the exit codes through the command line. |
+| `tests/test_planning_assessment_runs.py` | The committed receipts of the runs on real units and the README section that reports them. It computes nothing. |
 
 ## How to run it
 
@@ -50,13 +58,28 @@ python scripts/build_planning_assessment.py --case SE1 --frame mae_sai --externa
 python scripts/build_planning_assessment.py --case SE1 --frame mae_sai --external-data <external data root> --replace --reason "<why>"
 ```
 
-The external data root can also come from `FLOODGUARD_EXTERNAL_DATA`. The script returns 0 when the overlay was
-written, 2 when it refused to run (nothing is computed and nothing is written), and 3 when it computed the rows
-and could not write the overlay (the receipt is still written, and the rows are reported as computed, see below).
+The external data root can also come from `FLOODGUARD_EXTERNAL_DATA`. The exit codes:
 
-`--check-inputs` checks every input against the file that names it, asks the rights registry and compares the
-stages (guardrail GR3). It measures no unit, computes no component and writes nothing. It prints the lineage with
-its SHA-256 values and rights levels, and where the overlay would go.
+| Code | Meaning | What is written |
+|---|---|---|
+| 0 | The overlay was written (or `--check-inputs` passed, or `--verify` found everything the same) | The overlay, the receipt and its register entry |
+| 1 | `--verify` found a difference | Nothing |
+| 2 | An input check refused the run **before any unit was measured against the flood input** | Nothing |
+| 3 | Units were measured and no overlay was written: a v2 result nobody can state, or a guardrail, a check of the whole case, the overlay parser or a measurement that refused the rows | The receipt and its register entry, and a report outside Git |
+
+Every run on real units is reported. From the first measurement of a unit against the flood input, a run always
+ends in a registered receipt. A run that scored every unit and then failed a guardrail does not return 2 and does
+not go unreported: its receipt says `overlay_written: false`, names the stage (`unit_measurements`, `row_assembly`,
+`guardrail_report` or `whole_case_checks`) and a code (`measurement_refused`, `guardrail_failed`,
+`whole_case_check_failed` or `overlay_refused_by_the_validator`), and counts the units measured and the rows
+scored. The message of the check may name units, so it is in the report outside Git, not in the receipt.
+
+`--check-inputs` makes every check a run makes before it measures a unit against the flood input: every input
+against the file that names it, the rights registry, the comparison of the stages (guardrail GR3) with its
+unit-by-unit part, and the stored-ratio check of every unit row. It lays no flood layer over a unit, computes no
+component and writes nothing. It does sum the residents of each unit from the demand cells of the planning
+context, to compare them with the access table. It prints the lineage with its SHA-256 values and rights levels,
+and where the overlay would go.
 
 ## What a row holds, and where each rule comes from
 
@@ -115,7 +138,7 @@ a run writes"; open point E8-OP6). A unit under GR1 has no v2 class.
 |---|---|
 | GR1 | A unit with fewer than 100 residents gets no binding class, no would-be class, no v2 class and no leave-one-out class. Reason `insufficient_denominator`. Its confidence is still recorded as low with C6 failed, and its FPPS is still stated. |
 | GR2 | `normalisation.reject_batch_scaled_components` recomputes every record of every complete row. |
-| GR3 | Before any unit is measured, the script compares what task E1 and task E5 say of the one flood input, routing context and closure rule: the input identifier and name, the SHA-256 of the closure extent, the canonical SHA-256 of the context, the closure basis, the rule version and the lane. It then compares, unit by unit, the residents the context holds with the residents the access table counted, and the hospital routes. Any difference stops the run. Every row names the same lineage. |
+| GR3 | Before any unit is measured against the flood input, the script compares what task E1 and task E5 say of the one flood input, routing context and closure rule: the input identifier and name, the SHA-256 of the closure extent, the canonical SHA-256 of the context, the closure basis, the rule version and the lane. Still among the input checks, it compares, unit by unit, the residents the context holds with the residents the access table counted, and the hospital routes of the table with the graph. Any difference stops the run with exit code 2, and `--check-inputs` reports it. Every row names the same lineage. |
 | GR5 | Every rule object comes from `load_assessment_rules`, which refuses a protocol file that is not in force. Every run writes a receipt and registers it. |
 | GR6 | The rights level of the overlay is the minimum across its lineage inputs. A pitch-level access gap cannot sit in a public overlay. The script writes nothing under `apps/web/public`. |
 | GR7 | An OBS row that is not event-aligned fails C2, so it is class E. The module also refuses such a row with a class above E. |
@@ -128,15 +151,24 @@ names the SHA-256 of the inputs it was computed from. `--verify` also computes t
 byte for byte with the file the receipt binds. For a run that wrote no overlay, `--verify` computes the report again
 and compares it byte for byte in the same way.
 
+`--verify` compares the receipt too, and not only its result block: the whole body except the fields that belong to
+one run (the run times, `timing_seconds`, `implementation`, `development_reads`, the kind of run and what it
+superseded), and the outputs block. A receipt whose body the code of today would not write does not verify
+(`receipt_body_same`, with the fields that differ). The SHA-256 of the builder and of each module is compared with
+the receipt and reported (`code_changed_since_the_run`); that alone does not fail the verification, because the
+comparison of the body shows whether the change matters.
+
 Every run also checks the rows of the whole case (`whole_case_checks` in the receipt): every component value and
 every FPPS lies between 0 and 100; each FPPS is the weighted sum of its five component values; leave-one-component-out
 follows from the FPPS (without a component of weight w and value v, the FPPS f becomes (f - w v) / (1 - w), up to the
 rounding of the two scores); and the residents of the rows add up to the residents the access table counted for the
-same units. A check that does not hold stops the run before anything is written.
+same units. A check that does not hold means that no overlay is written and no row is reported; the run itself is
+still reported, by its receipt and a register entry, and returns 3 (see "How to run it").
 
 ## What the script refuses
 
-A refusal happens before any value of a unit is computed, and nothing is written.
+A refusal happens before any unit is measured against the flood input and before any component is computed, and
+nothing is written (exit code 2). `--check-inputs` makes every one of these checks.
 
 | Refusal | Why |
 |---|---|
@@ -146,9 +178,10 @@ A refusal happens before any value of a unit is computed, and nothing is written
 | A planning context that is not the one protocol v1b names (checked as task E5 checks it), a national-anchor receipt that is not the one v1b names, a boundary file that is not the one the E1 receipt names | The same |
 | A flood layer with no rights record, with a record the owners did not confirm, or with a record other than the one the flood input names | `floodguard.rights` |
 | An access table that says `usable_by_task_e8: false` (today: both pitch-services tables, open point E5-OP5) | The table's own statement |
-| An access table computed from another flood input, other extent bytes or another context; a table whose unit residents differ from the context's | v1a guardrail GR3 |
-| An access table whose rows store a ratio | Components are computed from counts |
-| Case O1 | Task E1 has no flood input for it and task E5 no table; the rights registry holds no record of Sentinel-1 data (open point E1-OP2) |
+| An access table computed from another flood input, other extent bytes or another context; a table whose unit residents differ from the context's, or whose hospital routes contradict the graph; a table with no row for a unit | v1a guardrail GR3 |
+| An access table with a unit row that stores a ratio | Components are computed from counts |
+| Case O1 | Read at the time of the run, not a fixed sentence: the registered E1 receipt binds no flood input of the case, the registered E5 receipt binds no access table of it, and the rights registry holds no record of Sentinel-1 data (open point E1-OP2). The refusal names what is missing. When all three exist, it says what the builder does not do yet: read the T2 skill measurements of each unit and choose among the candidates |
+| The pitch level, also with a pitch-services table that says it is usable | A pitch overlay has to name the walking context and the DDPM shelter list in its lineage, and guardrail GR3 has to compare the walking context. The builder reads and compares the vehicle context only |
 | A second run without `--replace --reason` | Every run is reported |
 
 ## What a run writes
@@ -158,16 +191,49 @@ A refusal happens before any value of a unit is computed, and nothing is written
   with the licence notice of the rights record beside it when the flood input is product 4009.
 - **The receipt**, `outputs/planning_v1/e8_planning_assessment_<case>_<frame>.json`: the inputs with their
   SHA-256, the parameters, both protocol hashes, the lane-purity comparison, the guardrail report, the checks of the
-  whole case, the counts of the overlay for the whole case (no value of a single unit), the SHA-256 of the overlay,
-  the times, and every earlier run under `run_history`. A receipt that supersedes another says whether the result
-  is the same (`supersedes.result_same`); the comparison leaves out the content hash of the overlay, which changes
-  with the generation time alone.
+  whole case, the counts of the overlay for the whole case, the SHA-256 of the overlay, the SHA-256 of the rows alone
+  (`result.rows_sha256`), the SHA-256 of every lineage input (`lineage_input_sha256`), the times, and every earlier
+  run under `run_history`.
 - **One register entry**, `outputs/planning_v1/run_register/<receipt name>`, with the path and SHA-256 of the receipt.
 
-When the rows were computed and the overlay cannot be written, the receipt is still written and registered. It
-says `overlay_written: false`, gives the reason, the number of rows concerned and the triggers that were not
-evaluated, and binds a report outside Git (`overlay_not_written.json`). The report names the units; the receipt in
-Git does not. The script returns 3.
+A level other than `public` is part of every name: the receipt is `..._<frame>_pitch.json`, the overlay
+`..._<frame>_pitch.json` and the folder outside Git `e8_planning_assessment_pitch/`. A run at one level therefore
+never supersedes the receipt of another level and never deletes its files. (No pitch run is possible today.)
+
+**A superseding run** (`--replace --reason`). Its receipt names the receipt it replaces by SHA-256 and compares the two
+runs under `supersedes`:
+
+- `counts_same`: whether an overlay was written, why not, and the rows by class, reason code and confidence class;
+- `rows_same`: the SHA-256 of the rows alone. A row holds every value of a unit and no generation time, commit or
+  header text, so this comparison covers every component value and every FPPS. The rows of the replaced run are read
+  back from the file its receipt bound, after that file was checked against the SHA-256 the receipt names;
+- `lineage_inputs_same`: the SHA-256 of every lineage input;
+- `result_same`: true only when the counts and the rows are the same.
+
+The replaced receipt and every file it bound are copied to
+`<external data root>/proposal_execution/planning_v1/<case>/e8_planning_assessment/superseded_runs/<time of that run>/`
+before anything is written over them, and the copies are listed with their SHA-256 (`copies_kept_outside_git`).
+
+**Licence, credit and change notice.** Product 4009 content ships only under CC BY-SA 4.0 with its credit and a
+change notice. When the flood input is a product 4009 layer, the receipt carries a `licence` block: the licence by
+name and SPDX identifier, the credit "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009", the standard sentence
+of protocol v1a (an unvalidated preliminary agency extent, used as provided; FloodGuard did not validate it), a change
+notice that names what tasks E1, E5 and E8 did to the layer, the rights record by path and SHA-256, and the other
+inputs with their licences. The report of a run that wrote no overlay carries the same block at its top level. In an
+overlay, the change notice of the flood input is the notice task E1 wrote, carried on by the step of this task.
+
+**What the counts in the receipt give away.** The receipt is committed and holds counts for the whole case. A count
+that covers every row (all eight rows in one class) states that class for each unit the receipt lists, and a count of
+zero states for each unit that it does not have that value. The receipt names the counts that cover every row
+(`rights.figures_of_local_level_layers_in_this_receipt.counts_that_cover_every_row`) and says that keeping the rows
+outside Git separates nothing for them (open point E8-OP7).
+
+When units were measured and the overlay cannot be written, the receipt is still written and registered. It
+says `overlay_written: false`, gives the reason, and binds a report outside Git (`overlay_not_written.json`). For a
+v2 result nobody can state, the receipt gives the number of rows concerned and the triggers that were not evaluated,
+and the report names the units; the receipt in Git does not. For rows that a check refused, the receipt gives the
+stage and the code, and the report gives the message of the check and no row: a row that fails a check is not
+reported as a result (open point E8-OP6). The script returns 3.
 
 **Rows as computed** (open point E8-OP6). A run that computed an FPPS and a class for real units reports them. When
 the reason is a v2 result that nobody can state, the report also holds every row as the run computed it
@@ -208,7 +274,28 @@ outside Git. One recorded owner decision on that review changes the level; the r
   task E1 names `unosat_4009:CHIANGRAI_...` is written `unosat_4009.chiangrai_...`; the overlay and the receipt
   say so. The closure basis of a row names the same identifier.
 - **Scenario of a season-envelope row.** Its identifier is the lane (`SCN-ENV`) and its declaration is the
-  definition and the display text protocol v1a gives that lane.
+  definition protocol v1a gives that lane, joined to "Shown as: " and the lane's display text. The protocols name no
+  field called scenario declaration.
+- **Base of a scenario.** For every scenario case of the portfolio, condition C1 is judged on an agency product used
+  as provided (`scenario_base`), because SE1 is built on product 4009. A scenario case built on another kind of input
+  would need its own value; the builder does not read it from the protocols.
+- **Tolerances.** Two sums of the same resident counts by two stages may differ by 0.000001 residents (guardrail GR3,
+  and the check of the whole case). A score rounded to two decimals may differ from its recombination by 0.011
+  points (the weighted sum and leave-one-component-out in the checks of the whole case). Both are in the receipt
+  (`parameters.tolerances`); neither is a number of the protocols.
+- **A trigger nobody evaluated, on a row whose v2 result an earlier trigger gives.** It is written `met: false` with
+  evidence that starts with "Not evaluated", because schema 1.0 takes true or false only. A reader of `met` alone
+  cannot tell it from a measured false (open point E8-OP1; point 11 of the overlay page). In the O2 overlay this is
+  trigger B on all eight rows.
+- **Rows the protocols do not describe.** A row with a component that is not computed has no FPPS and no
+  leave-one-component-out, although protocol v1a says leave-one-component-out is required on every row. A unit under
+  guardrail GR1 keeps its FPPS and its five leave-one-out FPPS values, with no leave-one-out class (open point
+  E8-OP9; points 3 and 5 of the overlay page).
+- **What condition C8 counts.** A hospital counts as reachable for a unit when it snaps to the same connected part
+  of the undirected baseline vehicle graph as one or more populated cells of the unit that snap to a road. No travel
+  time limits it. The no-route share of condition C7 is 1 for a unit where nobody is connected to the graph, so such
+  a unit fails C7 (open point E8-OP3).
+- **A run whose rows fail a check.** It is reported by its receipt, with no row (open point E8-OP6).
 - **Source timestamp.** The schema takes an instant; the overlay states the last date of the flood input's source
   period at 00:00:00 UTC and says so (open point E8-OP4).
 - **Where a public overlay sits.** `outputs/planning_v1/overlays/`. The web folder is written by a later task.
@@ -226,15 +313,26 @@ They are in `planning_assessment.OPEN_POINTS` and in every receipt. None is deci
 
 | Id | Point | For the owners |
 |---|---|---|
-| E8-OP1 | A v2 result that depends on a trigger nobody evaluated. The overlay is not written in that case. | Allow "not evaluated" for the v2 axis of a row (a schema change), or build the inputs of B, C and D first. |
+| E8-OP1 | A v2 result that depends on a trigger nobody evaluated. The overlay is not written in that case. Where an earlier trigger gives the result, a trigger nobody evaluated is written `met: false`. | Allow "not evaluated" for the v2 axis of a row (a schema change), or build the inputs of B, C and D first. Say whether `met: false` may stand for "not evaluated". |
 | E8-OP2 | Which closure level the overlay row uses. The code takes the default cell of v1b. | Confirm that the row is the default cell. |
-| E8-OP3 | The measurements of C7 and C8 for one unit: the hospital service for C7, OSM hospital objects for C8. | Confirm or amend. |
+| E8-OP3 | The measurements of C7 and C8 for one unit: the hospital service for C7; for C8, OSM hospital objects in the same connected part of the graph, with no time limit. | Confirm or amend; say what "reachable" means in C8 and what the no-route share of a unit with no connected resident is. |
 | E8-OP4 | The source timestamp of an overlay whose flood input has no time of day. | Whether the schema should take a date or a period. |
-| E8-OP5 | The rights level of an input that has no rights record, and the review of the 2024 age rasters. | Record the review, and say whether open-licence inputs need a registry record. |
-| E8-OP6 | What a run reports when its overlay cannot be written. The rows go into the report outside Git as computed, with no v2 result for the rows concerned. | Whether such rows may be shown or used before the overlay exists, and under which label. |
-| E8-OP7 | A figure whose own lineage is public, inside an output whose level is below public. The output goes outside Git as a whole; the receipt holds counts for the whole case. | Whether a per-unit figure computed from public inputs only may be committed while the file it was read from stays outside Git. |
+| E8-OP5 | The rights level of an input that has no rights record, and the review of the 2024 age rasters. The age table of task E7 is held at `local` as a lineage input and has been in Git since task E7 wrote it. | Record the review, say whether open-licence inputs need a registry record, and cover the age table that is in Git. |
+| E8-OP6 | What a run reports when its overlay cannot be written. The rows go into the report outside Git as computed, with no v2 result for the rows concerned. A run whose rows fail a check reports no row. | Whether such rows may be shown or used before the overlay exists, and under which label; whether rows that fail a check should be reported. |
+| E8-OP7 | A figure whose own lineage is public, inside an output whose level is below public. The output goes outside Git as a whole; the receipt holds counts for the whole case. The separation is nominal: a count that covers every row is a statement about each unit, and with the public-lineage components, the age table and the anchors in Git, the vulnerability component, the FPPS and the binding class of each unit can be worked out from committed files. | Whether a per-unit figure computed from public inputs only may be committed while the file it was read from stays outside Git, and whether a level below public is meant to keep such values out of the repository at all. |
+| E8-OP8 | The shelter part of v2 trigger C in a public overlay. The DDPM rows are pitch level. Nothing is evaluated yet. | Whether a public overlay evaluates C on hospitals alone. |
+| E8-OP9 | Leave-one-component-out and the FPPS of a row with a component that is not computed, and of a unit under GR1. | Whether leave-one-component-out is wanted over the components that exist, and whether a unit under GR1 states an FPPS. |
 
 ## Not built here
 
-The evaluators of v2 triggers B, C and D; the ensemble and the headline (E10); equity, shelter supply and travel
-times (E9); the public projection (E12); a pitch-level overlay (it needs a walking context of record first).
+- The evaluators of v2 triggers B, C and D.
+- The ensemble and the headline (E10); equity, shelter supply and travel times (E9); the public projection (E12).
+- **The thinned GeoJSON layers of plan stage P8** ("overlay JSON + thinned GeoJSON layers (at most 5 MB per case)").
+  This task writes the overlay JSON only. No layer for a map is written, and nothing here makes one.
+- **A pitch-level overlay.** It needs a walking context of record first (open point E5-OP5). Its lineage would then
+  have to name that walking context and the DDPM shelter list, and guardrail GR3 would have to compare the walking
+  context too. The builder refuses the pitch level until that is built, also when a pitch-services table says it is
+  usable. The level is already part of the receipt, overlay and folder names.
+- **An overlay of case O1.** Beside the inputs that are missing today, the builder does not read the T2 skill
+  measurements of each unit from the radar candidate table, and nothing chooses among the three candidates.
+- The 5 x 3 class-coverage table of protocol v1a.

@@ -437,6 +437,28 @@ def test_v2_is_the_first_trigger_met_in_the_order_e_a_b_c_d(rules: pa.Assessment
         "class_rule_version": "class_rule_v2", "label": "secondary", "binding": False, "result": None, "trigger_evidence": []}
 
 
+def test_the_v2_fpps_gate_stands_at_35_exactly_and_closes_triggers_c_and_d_below_it(rules: pa.AssessmentRules) -> None:
+    """Protocol v1a: E is 'FPPS below 35', and C and D need an 'FPPS of at least 35'. 35.00 is not below 35."""
+
+    every = pa.V2TriggerInputs(link_isolation=False, serving_facility=True, recurrence_flag=True)
+    met = lambda block: {item["trigger"]: item["met"] for item in block["trigger_evidence"]}  # noqa: E731
+    at_the_gate = v2_of(rules, fpps=35.0, triggers=every)
+    assert at_the_gate["result"] == "C" and met(at_the_gate) == {"E": False, "A": False, "B": False, "C": True, "D": True}
+    assert v2_of(rules, fpps=35.0)["result"] == "no_v2_trigger", "an FPPS of exactly 35 is not E"
+    below = v2_of(rules, fpps=34.99, triggers=every)
+    assert below["result"] == "E"
+    assert met(below) == {"E": True, "A": False, "B": False, "C": False, "D": False}, "C and D are not met under 35, whatever their flags"
+    # With every flag set and B met too, the row under 35 is still E, and B alone keeps its own input.
+    all_set = v2_of(rules, fpps=34.99, triggers=pa.V2TriggerInputs(link_isolation=True, serving_facility=True, recurrence_flag=True))
+    assert all_set["result"] == "E" and met(all_set) == {"E": True, "A": False, "B": True, "C": False, "D": False}
+    # D alone: the flag is set and the FPPS is at the gate, then one cent under it.
+    only_d = pa.V2TriggerInputs(link_isolation=False, serving_facility=False, recurrence_flag=True)
+    assert v2_of(rules, fpps=35.0, triggers=only_d)["result"] == "D" and met(v2_of(rules, fpps=34.99, triggers=only_d))["D"] is False
+    # C also needs medium (or scenario) confidence: a low row with every flag set does not meet it.
+    low = v2_of(rules, confidence_class="low", action_class="E", triggers=every)
+    assert low["result"] == "E" and met(low)["C"] is False and met(low)["D"] is True
+
+
 def test_v2_states_no_result_that_depends_on_a_trigger_nobody_evaluated(rules: pa.AssessmentRules) -> None:
     unknown = pa.V2TriggerInputs()
     # Trigger E stands first: the result is E whatever the others are, and they are written as not evaluated.
@@ -707,8 +729,18 @@ def test_a_written_overlay_is_verified_and_a_changed_one_is_not(rules: pa.Assess
 
 
 def test_the_open_points_are_listed_and_the_module_wording_passes_the_shared_lint() -> None:
-    assert [point["id"] for point in pa.OPEN_POINTS] == ["E8-OP1", "E8-OP2", "E8-OP3", "E8-OP4", "E8-OP5", "E8-OP6", "E8-OP7"]
-    assert all(point["for_the_owners"].strip() and point["signed_files_say"].strip() for point in pa.OPEN_POINTS)
+    assert [point["id"] for point in pa.OPEN_POINTS] == [f"E8-OP{number}" for number in range(1, 10)]
+    assert all(point["for_the_owners"].strip() and point["signed_files_say"].strip() and point["what_this_task_does"].strip()
+               for point in pa.OPEN_POINTS)
+    by_id = {point["id"]: point for point in pa.OPEN_POINTS}
+    # What the code does without a protocol sentence behind it is said where the owners will read it.
+    assert "met false" in by_id["E8-OP1"]["for_the_owners"] and "cannot tell it from a measured false" in by_id["E8-OP1"]["for_the_owners"]
+    assert "No travel time limits it" in by_id["E8-OP3"]["what_this_task_does"]
+    assert "in Git since task E7 wrote it" in by_id["E8-OP5"]["what_this_task_does"]
+    assert "a row that fails a check is not reported" in by_id["E8-OP6"]["what_this_task_does"]
+    assert "separation nominal" in by_id["E8-OP7"]["what_this_task_does"] and "can be worked out" in by_id["E8-OP7"]["for_the_owners"]
+    assert "hospitals alone" in by_id["E8-OP8"]["for_the_owners"]
+    assert "required_on_every_row" in by_id["E8-OP9"]["signed_files_say"] and "under GR1" in by_id["E8-OP9"]["what_this_task_does"]
     lint = load_rules(ROOT / "apps" / "web" / "src" / "lib" / "replay-wording-rules.json")
     sources = ["src/floodguard/planning_assessment.py", "scripts/build_planning_assessment.py"]
     items = [(name, "\n".join(python_strings((ROOT / name).read_text(encoding="utf-8")))) for name in sources]

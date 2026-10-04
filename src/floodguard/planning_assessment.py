@@ -136,7 +136,10 @@ OPEN_POINTS: tuple[Mapping[str, str], ...] = (
                                "'Not evaluated'. Where the result depends on such a trigger, the overlay is not written.",
         "for_the_owners": "Whether an overlay may say 'not evaluated' for the v2 axis of a row (a schema change), or "
                           "whether the inputs of B, C and D are built first: the single-link closures of the top-20 "
-                          "links, the serving-facility test and the recurrence flag.",
+                          "links, the serving-facility test and the recurrence flag. Also whether a trigger nobody "
+                          "evaluated may be written with met false on a row whose result an earlier trigger gives: "
+                          "schema 1.0 takes true or false only, so a reader of 'met' alone cannot tell it from a "
+                          "measured false and has to read the evidence text (point 11 of the overlay page).",
     },
     {
         "id": "E8-OP2",
@@ -157,11 +160,15 @@ OPEN_POINTS: tuple[Mapping[str, str], ...] = (
                             "The share was measured for the whole frame by tasks E0 and E4, for the hospital service.",
         "what_this_task_does": "C7 is the E0 definition applied to one unit, from the counts of the task E5 table: the "
                                "unit's residents connected to the vehicle graph with no modelled route to a hospital, "
-                               "over its connected residents (1 when nobody is connected). C8 counts the hospital "
-                               "destinations that at least one connected resident of the unit can reach on the "
-                               "baseline vehicle graph.",
+                               "over its connected residents (1 when nobody is connected, so such a unit fails "
+                               "C7). C8 counts the hospital destinations that at least one connected resident of the "
+                               "unit can reach on the baseline vehicle graph: a hospital counts when it snaps to the "
+                               "same connected part of the undirected graph as one or more populated cells of the "
+                               "unit that snap to a road. No travel time limits it.",
         "for_the_owners": "Whether C7 is judged on the hospital service, and whether C8 counts OSM hospital objects "
-                          "(as here) or distinct named hospitals. The condition needs one or more either way.",
+                          "(as here) or distinct named hospitals. The condition needs one or more either way. Also "
+                          "whether 'reachable' in C8 means any modelled route, as here, or a route within a time, "
+                          "and what the no-route share of a unit with no connected resident is.",
     },
     {
         "id": "E8-OP4",
@@ -181,9 +188,13 @@ OPEN_POINTS: tuple[Mapping[str, str], ...] = (
                             "the WorldPop 2024 age rasters: 'Public catalog says CC BY 4.0. Public derivatives require "
                             "purpose-specific review.'",
         "what_this_task_does": "The level of each input is stated by the script that reads it, with its basis. This "
-                               "module only takes the minimum.",
+                               "module only takes the minimum. The script holds the age table of task E7 at the local "
+                               "level as a lineage input, while that table has been in Git since task E7 wrote it: the "
+                               "level this task gives it does not keep its counts out of the repository.",
         "for_the_owners": "The purpose-specific review of the age rasters, and whether open-licence inputs need a "
-                          "record in the registry.",
+                          "record in the registry. The answer also has to cover the age table itself, which is in "
+                          "Git: with it, the vulnerability component of each unit can be worked out from committed "
+                          "files alone.",
     },
     {
         "id": "E8-OP6",
@@ -198,9 +209,12 @@ OPEN_POINTS: tuple[Mapping[str, str], ...] = (
                                "class rule v1, its would-be class and leave-one-component-out. A row whose v2 result "
                                "depends on a trigger nobody evaluated carries no v2 result there and says "
                                "'not_evaluated'. The report is not an overlay: it names another schema and the overlay "
-                               "parser refuses it. The receipt in Git holds the counts for the whole case.",
+                               "parser refuses it. The receipt in Git holds the counts for the whole case. A run whose "
+                               "rows fail a guardrail, a check of the whole case or the overlay parser after its units "
+                               "were measured writes and registers its receipt too, with the reason and no row: a row "
+                               "that fails a check is not reported as a result.",
         "for_the_owners": "Whether the rows of such a run may be shown or used before the overlay exists, and under "
-                          "which label.",
+                          "which label. Also whether a run whose rows fail a check should report those rows.",
     },
     {
         "id": "E8-OP7",
@@ -211,9 +225,41 @@ OPEN_POINTS: tuple[Mapping[str, str], ...] = (
         "what_this_task_does": "The overlay or the report of a run goes outside Git as a whole when one of its inputs is "
                                "below the public level. The receipt in Git holds counts for the whole case and no value "
                                "of a single unit. Which figures the README of the output folder quotes for a unit is "
-                               "stated there, with the lineage of each.",
+                               "stated there, with the lineage of each. Two things make that separation nominal, and "
+                               "the receipt says so. A count that covers every row (all rows in one class, with one "
+                               "reason code or one confidence class) states that value for each unit the receipt "
+                               "lists, and the receipt names such counts "
+                               "(rights.figures_of_local_level_layers_in_this_receipt.counts_that_cover_every_row). And "
+                               "where the public-lineage components of each unit are in Git beside the age table of "
+                               "task E7 and the anchors of protocol v1b, the vulnerability component, the FPPS and the "
+                               "binding class of each unit can be worked out from committed files alone.",
         "for_the_owners": "Whether a per-unit figure computed from public inputs only may be committed while the file "
-                          "it was read from stays outside Git.",
+                          "it was read from stays outside Git; and, since the values kept outside Git can be worked "
+                          "out from what is in Git, whether the level below public is meant to keep them out of the "
+                          "repository at all (open points E1-OP1 and E8-OP5).",
+    },
+    {
+        "id": "E8-OP8",
+        "point": "The shelter part of v2 trigger C in a public overlay.",
+        "signed_files_say": "Protocol v1a class_rules.v2, trigger C: 'an OSM hospital or a uniquely located DDPM shelter "
+                            "serving the unit is inside the extent or loses all vehicle routes'. Decision D8b keeps the "
+                            "DDPM rows at the pitch level, and guardrail GR6 takes the minimum across the lineage. "
+                            "Neither says whether a public overlay evaluates C on hospitals alone.",
+        "what_this_task_does": "Nothing: no stage evaluates trigger C yet (open point E8-OP1).",
+        "for_the_owners": "Whether a public overlay evaluates trigger C on hospitals alone, or carries no C result.",
+    },
+    {
+        "id": "E8-OP9",
+        "point": "Leave-one-component-out and the FPPS of a row the protocols do not describe.",
+        "signed_files_say": "Protocol v1a scoring_frame.leave_one_component_out: 'required_on_every_row' is true. "
+                            "Guardrail GR1 with reading DR-A09: a unit with fewer than 100 residents has no binding "
+                            "class, no would-be class and no v2 class. Neither describes a row with a component that "
+                            "is not computed, and GR1 does not name the FPPS or the leave-one-out values.",
+        "what_this_task_does": "A row with a component that is not computed has no FPPS and no "
+                               "leave-one-component-out (point 3 of the overlay page). A unit under GR1 keeps its FPPS "
+                               "and its five leave-one-out FPPS values, with no leave-one-out class (point 5 there).",
+        "for_the_owners": "Whether leave-one-component-out is wanted for a row with a missing component (over the "
+                          "components that exist), and whether a unit under GR1 states an FPPS at all.",
     },
 )
 """What the signed files leave open for this task. None of it is decided here."""

@@ -13,8 +13,10 @@ not an observation of a flood and not an operational product, and class E never 
 modelled assumption (``closure_basis``), and the product 4009 layers are used as provided; FloodGuard did not
 validate them.
 
-**What it reads, and what it checks before it computes anything.** Nothing is rebuilt, and a check that fails
-stops the run before any value of a unit is computed.
+**What it reads, and what it checks before it lays a flood layer over a unit.** Nothing is rebuilt. A check of
+the inputs that fails stops the run before any unit is measured against the flood input and before any component
+is computed; the run then returns 2 and writes nothing. The one thing these checks compute for a unit is its
+resident total, summed from the demand cells of the planning context, to compare it with the access table.
 
 * Protocol v1a and v1b, which must both be in force (``RECEIPTS.jsonl``; guardrail GR5).
 * The flood input task E1 wrote for the case, read back through ``floodguard.flood_inputs.read_written_input``:
@@ -30,25 +32,39 @@ stops the run before any value of a unit is computed.
 * The rights registry (``floodguard.rights``): the flood layer must still have the confirmed record its input
   names. The rights level of the overlay is the minimum across its lineage (guardrail GR6).
 * Guardrail GR3: the E5 table must have been computed from the same flood input, the same extent bytes and the
-  same routing context that this run reads, under closure rule v1.
+  same routing context that this run reads, under closure rule v1. The residents of each unit in the planning
+  context must be the residents the table counted, the hospital routes of the table must agree with the graph,
+  and no unit row of the table may store a ratio of two counts.
+* A case the earlier tasks have not delivered (case O1 today) is refused from what the registered E1 and E5
+  receipts bind and what the rights registry holds, read at the time of the run.
 
 **Where things go.** A public overlay goes into ``outputs/planning_v1/overlays/``; an overlay below the public
 level stays outside Git under ``<external data root>/proposal_execution/planning_v1/<case>/e8_planning_assessment/``
 and is bound by SHA-256 in the receipt. The receipt is ``outputs/planning_v1/e8_planning_assessment_<case>_<frame>.json``
-and is registered in ``outputs/planning_v1/run_register/``. Nothing is written under ``apps/web/public/``::
+and is registered in ``outputs/planning_v1/run_register/``. A level other than public is part of every name
+(``..._pitch.json``, ``e8_planning_assessment_pitch/``), so a run at one level never supersedes or deletes the
+files of another. Nothing is written under ``apps/web/public/``::
 
     python scripts/build_planning_assessment.py --case SE1 --frame mae_sai --external-data <external data root> \
         [--development-read "<what was read before this run>"] [--replace --reason "<why>"] [--verify]
 
-Every run is reported. A run that computed the rows and could not write the overlay (the v2 result of a row
-depends on a trigger nobody evaluated, open point E8-OP1) still writes its receipt, which says so, and a report
-outside Git that names the units and holds every row as the run computed it, with no v2 result for the rows
-concerned (open point E8-OP6). That report is not an overlay. The run returns 3. A second run needs
-``--replace --reason`` and its receipt names every earlier run. ``--verify`` computes the overlay again with the
-generation time of the receipt, compares it byte for byte with the file the receipt binds, runs the verifier on
-that file and writes nothing; for a run that wrote no overlay it compares the report in the same way.
-``--check-inputs`` checks every input against the file that names it and compares the stages; it computes no
-value of a unit and writes nothing.
+Every run is reported. Once a unit has been measured against the flood input, the run writes and registers a
+receipt whatever happens next, and returns 3 when it wrote no overlay:
+
+* the v2 result of a row depends on a trigger nobody evaluated (open point E8-OP1): the receipt says so, and a
+  report outside Git names the units and holds every row as the run computed it, with no v2 result for the rows
+  concerned (open point E8-OP6). That report is not an overlay;
+* a guardrail, a check of the whole case, the overlay parser or a measurement refuses the rows: the receipt
+  gives the stage and a code, the report outside Git gives the message, and no row is reported.
+
+A second run needs ``--replace --reason``; its receipt names every earlier run, says whether the rows are the
+same (a SHA-256 of the rows alone), and a copy of the superseded receipt and of its files is kept outside Git.
+When the flood input is UNOSAT/GISTDA product 4009, the receipt and the report carry the licence (CC BY-SA 4.0),
+the credit and a change notice that names this step. ``--verify`` computes everything again with the generation
+time of the receipt, compares the overlay (or the report) byte for byte with the file the receipt binds,
+compares the whole receipt except its run-specific fields, says whether the code has changed since, runs the
+verifier on the overlay and writes nothing. ``--check-inputs`` makes every check listed above and writes
+nothing: it lays no flood layer over a unit and computes no component.
 """
 
 from __future__ import annotations
@@ -64,6 +80,7 @@ import math
 import os
 from pathlib import Path
 import platform
+import shutil
 import subprocess
 import sys
 import time
@@ -108,7 +125,7 @@ from floodguard.planning_overlay import (  # noqa: E402
 )
 
 RECEIPT_SCHEMA = "floodguard.planning_assessment_run_receipt.v1"
-REPORT_SCHEMA = "floodguard.planning_assessment_not_written.v2"
+REPORT_SCHEMA = "floodguard.planning_assessment_not_written.v3"
 DOCS = ROOT / "docs" / "proposal_execution"
 OUTPUT_DIR = ROOT / "outputs" / "planning_v1"
 REGISTER_DIR = OUTPUT_DIR / "run_register"
@@ -128,6 +145,24 @@ CONTEXT_BY_PROTOCOL, CONTEXT_BY_REGISTER = "protocol_v1b", "run_register"
 RESIDENT_TOLERANCE = 1e-6
 """Two sums of the same resident counts by two stages may differ by rounding; no more than this."""
 EXIT_WRITTEN, EXIT_REFUSED, EXIT_NOT_WRITTEN = 0, 2, 3
+"""0: the overlay was written. 2: refused before a unit was measured against the flood input; nothing is written.
+3: units were measured and no overlay was written; the receipt is written and registered."""
+SUPERSEDED_FOLDER = "superseded_runs"
+"""Where a superseded receipt and its files are copied, beside the files of the stage, outside Git."""
+STAGE_MEASUREMENT, STAGE_ASSEMBLY, STAGE_GUARDRAILS, STAGE_WHOLE_CASE = (
+    "unit_measurements", "row_assembly", "guardrail_report", "whole_case_checks")
+CODE_BY_STAGE: Mapping[str, str] = {
+    STAGE_MEASUREMENT: "measurement_refused", STAGE_ASSEMBLY: "guardrail_failed",
+    STAGE_GUARDRAILS: "guardrail_failed", STAGE_WHOLE_CASE: "whole_case_check_failed"}
+"""What a receipt says when a check stopped the run after its units were measured, by the stage that stopped it."""
+RUN_SPECIFIC_KEYS: tuple[str, ...] = ("timing_seconds", "implementation", "development_reads")
+"""The fields of a receipt body that differ between a run and its recomputation by the clock, the code or the
+command line alone. ``--verify`` compares everything else."""
+RECEIPT_KEYS_NOT_RECOMPUTED: tuple[str, ...] = ("generated_at_utc", "run_kind", "outputs", "timestamps", "supersedes", "run_history")
+"""What :func:`run` adds to the body :func:`build` returns. ``--verify`` takes the generation time from the receipt
+and compares the outputs block on its own."""
+COUNT_GROUPS_NOT_PER_ROW: frozenset[str] = frozenset({"basis_values_by_lane_column"})
+"""Count groups of a summary that count something other than rows (eight basis values for each row)."""
 
 COMPUTES = (
     "For one case and each of its reporting units: the five components of planning frame v1, the confidence record of "
@@ -176,7 +211,14 @@ NOT_COMPUTED = [
     "ensemble cell", "class retention and headline eligibility", "the outcomes of class rule v2 triggers B, C and D",
     "equity difference and ratio by age group", "2SFCA shelter supply", "accepted FPPS and accepted class (tier T4 is locked)",
     "the strict and permissive closure levels", "the minus and plus flood levels as rows",
+    "the thinned GeoJSON layers of plan stage P8", "a pitch-level overlay", "an overlay of case O1",
 ]
+CHANGE_NOTICE_E8_STEP = (
+    "In plan task E8 the flooded share of each unit's land outside permanent water, the share of its residents inside "
+    "the extent and its access counts were then turned into the component values of planning frame v1, an FPPS and "
+    "planning classes."
+)
+"""What this task changed, for the change notice of every file that holds values derived from an agency product."""
 
 
 class BuildError(ValueError):
@@ -195,13 +237,27 @@ class LineageText:
 
 
 @dataclass(frozen=True)
+class AwaitedCase:
+    """A case of the frame this builder cannot run yet: what the earlier tasks have to deliver, and what is not built.
+
+    The refusal of such a case is worded from what the registered E1 and E5 receipts bind and what the rights
+    registry holds when the run is asked for (:func:`refusal_of_an_awaited_case`), not from a fixed sentence.
+    """
+
+    rights_source: str
+    rights_source_text: str
+    open_point: str
+    not_built: str
+
+
+@dataclass(frozen=True)
 class FrameSet:
     """One frame and the files the earlier tasks wrote for it.
 
     ``context_binding`` says what names the planning context of record: protocol v1b
     (``corridor_polygon.e4_build_of_record``) for the Mae Sai frame, or a receipt in the run register for a
-    frame that protocol v1b does not hold. ``not_run`` lists the cases of the frame that cannot be run, each
-    with the reason.
+    frame that protocol v1b does not hold. ``not_run`` lists the cases of the frame that cannot be run yet, each
+    with what it waits for.
     """
 
     name: str
@@ -225,7 +281,7 @@ class FrameSet:
     unit_name_th_field: str = "adm3_name1"
     unit_name_th_language_field: str | None = "lang1"
     fixture_cases: Mapping[str, planning_assessment.CaseSpec] = field(default_factory=dict)
-    not_run: Mapping[str, str] = field(default_factory=dict)
+    not_run: Mapping[str, AwaitedCase] = field(default_factory=dict)
 
 
 _E5_READING = (
@@ -263,7 +319,9 @@ MAE_SAI_LINEAGE: Mapping[str, LineageText] = {
         "Protocol v1b, national_vulnerability_anchors.inputs.age_rasters.rights: 'Public catalog says CC BY 4.0. Public "
         "derivatives require purpose-specific review.' No such review is recorded in the repository, so the input is "
         "held at the local level and every overlay that carries a vulnerability record is local until the owners "
-        "record the review (open point E8-OP5).",
+        "record the review (open point E8-OP5). The table itself has been in Git since task E7 wrote it "
+        "(outputs/planning_v1/age_exposure_mae_sai_v1.json), so this level does not keep the age counts of a unit out "
+        "of the repository; the owners' answer has to cover that file too.",
     ),
     "national_anchors": LineageText(
         "National vulnerability anchors of protocol v1b (constants for all of Thailand)", "CC BY 4.0 (derived constants)",
@@ -298,8 +356,10 @@ FRAME_SETS: dict[str, FrameSet] = {
         rights_input={"SE1": rights.PRODUCT_4009, "O2": rights.PRODUCT_4009},
         reporting_frame="mae_sai",
         not_run={
-            "O1": "case O1 has no flood input of task E1 and no access table of task E5: no radar candidate was delivered "
-                  "to those tasks, and the rights registry holds no record of Sentinel-1 data (open point E1-OP2)",
+            "O1": AwaitedCase(
+                rights_source=rights.SOURCE_SENTINEL1, rights_source_text="Sentinel-1 data", open_point="E1-OP2",
+                not_built="this builder does not read an own radar candidate yet: the T2 skill measurements of each unit "
+                          "and the choice among the candidates of the case are not built"),
         },
     ),
 }
@@ -395,6 +455,112 @@ def protocol_hashes_named(document: Mapping[str, Any]) -> dict[str, Any]:
     """The protocol SHA-256 values a receipt, a table or a record names."""
 
     return dict(document.get("protocol_sha256") or {})
+
+
+def level_suffix(level: str) -> str:
+    """Return what the level adds to the name of a receipt, an overlay and a stage folder: nothing for public."""
+
+    return "" if level == PUBLIC_LEVEL else f"_{level}"
+
+
+def _canonical(value: Any) -> str:
+    return json.dumps(value, sort_keys=True, separators=(",", ":"), allow_nan=False)
+
+
+def rows_sha256(rows: Sequence[Mapping[str, Any]]) -> str:
+    """Return the SHA-256 of the rows of a run alone, in a canonical form.
+
+    A row holds the values of one unit and its lineage identifiers. It holds no generation time, no commit of
+    the code and no header text, so two runs that computed the same rows give the same digest whatever their
+    headers say.
+    """
+
+    return sha256_bytes(_canonical([dict(row) for row in rows]).encode("utf-8"))
+
+
+def counts_that_cover_every_row(summary: Mapping[str, Any] | None) -> list[str]:
+    """Name the counts of a whole-case summary that cover every row: each is a statement about every unit.
+
+    A receipt in Git holds counts for the whole case. A count equal to the number of rows (all rows in one class,
+    with one reason code, one confidence class) gives that value for each unit of the case, so the receipt
+    lists such counts by ``group.column.key``.
+    """
+
+    if not summary or not summary.get("row_count"):
+        return []
+    rows = summary["row_count"]
+    found: list[str] = []
+    for group, columns in summary.items():
+        if not group.endswith("_by_lane_column") or group in COUNT_GROUPS_NOT_PER_ROW or not isinstance(columns, Mapping):
+            continue
+        for column, counts in columns.items():
+            found.extend(f"{group}.{column}.{key}" for key, count in counts.items() if count == rows)
+    return sorted(found)
+
+
+def refusal_of_an_awaited_case(case_id: str, frame_set: FrameSet, registry: rights.RightsRegistry, *, output_dir: Path,
+                               register_dir: Path, root: Path) -> str:
+    """Say why a case the frame set lists under ``not_run`` cannot be run, from what the earlier tasks delivered.
+
+    The registered E1 receipt is read for a flood input of the case, the registered E5 receipt for an access
+    table of it, and the rights registry for a record of the source data the case needs. The sentence names
+    what is missing today; when all three exist it names what this builder does not do yet.
+
+    Raises:
+        BuildError: when a receipt is missing or is not the registered one.
+    """
+
+    awaited = frame_set.not_run[case_id]
+    e1_receipt, _record = load_registered(frame_set.e1_receipt, output_dir, register_dir, root, "the E1 receipt")
+    e5_receipt, _record = load_registered(frame_set.e5_receipt, output_dir, register_dir, root, "the E5 receipt")
+    has_input = bool(bound_outputs((e1_receipt.get("outputs") or {}).get(case_id)))
+    has_table = any(entry.get("what") == "unit_table"
+                    for entry in ((e5_receipt.get("outputs") or {}).get(case_id) or {}).get("files", []))
+    has_record = any(registry.entry(input_id).source == awaited.rights_source for input_id in registry.input_ids())
+    missing = []
+    if not has_input:
+        missing.append(f"the registered E1 receipt binds no flood input of case {case_id}")
+    if not has_table:
+        missing.append(f"the registered E5 receipt binds no access table of case {case_id}")
+    if not has_record:
+        missing.append(f"the rights registry holds no record of {awaited.rights_source_text} (open point {awaited.open_point})")
+    if missing:
+        return f"case {case_id} cannot be run: " + "; ".join(missing)
+    return (f"case {case_id} cannot be run yet: tasks E1 and E5 have delivered a flood input and an access table and the "
+            f"rights registry holds a record of {awaited.rights_source_text}, and {awaited.not_built}")
+
+
+def licence_block(record: Mapping[str, Any], sentence_rules: flood_inputs.FloodInputRules, frame_set: FrameSet, level: str,
+                  eligibility: str, notice_label: str) -> dict[str, Any]:
+    """Return the licence, the credit and the change notice of a run whose flood input is product 4009.
+
+    The block is the one task E5 writes into its tables (``build_access_diff.licence_block``), with the change
+    notice carried on by the step of this task and the two further inputs this task reads. It goes into the
+    receipt, which is committed and holds counts derived from the product, and into the report outside Git.
+    """
+
+    stated = record["rights"]
+    block = e5_builder.licence_block(record, sentence_rules, eligibility, level == PITCH_LEVEL, notice_label)
+    others = list(block["other_inputs"])
+    for key, identifier, used_for in (
+            ("permanent_water", "esa-worldcover-2021", "The land outside permanent water that the flood likelihood is measured on."),
+            ("age_structure", "worldpop-2024-age-counts", "The dependent share of each unit, for the vulnerability component.")):
+        item = frame_set.lineage[key]
+        others.append({"id": identifier, "name": item.name, "licence": item.licence, "attribution": item.attribution,
+                       "used_for": used_for})
+    block.update({
+        "applies_to": "Every figure of this run that is derived from UNOSAT/GISTDA product 4009: the counts of rows by "
+                      "class, reason code, confidence class and v2 result in this file, and every component value, FPPS "
+                      "and class in the overlay or the report this run wrote.",
+        "change_notice": (
+            f"Changed by FloodGuard: the layer {record['source']['layer']} was repaired (make_valid), projected from "
+            "EPSG:4326 to EPSG:32647 and clipped to the frames of plan task E1; road segments were measured against "
+            "it, closure rule v1 was applied to them and modelled access was compared with and without those closures "
+            f"(plan task E5). {CHANGE_NOTICE_E8_STEP} This file holds values derived from the layer, not the layer. "
+            f"Source: {stated['attribution']}, {stated['licence']['name']}."),
+        "other_inputs": others,
+    })
+    return block
 
 
 # ---------------------------------------------------------------------------
@@ -661,33 +827,45 @@ def read_units(boundaries: Path, unit_ids: Sequence[str], frame_set: FrameSet) -
 # ---------------------------------------------------------------------------
 
 
-def unit_measurements(
-    rules: planning_assessment.AssessmentRules,
-    case: planning_assessment.CaseSpec,
-    flood_name: str,
-    units: Sequence[tuple[str, Any]],
-    names: Mapping[str, tuple[str, str]],
-    flood: FloodData,
-    graph: Any,
-    run: Mapping[str, Any],
-    age_table: Mapping[str, Any],
-    services: Sequence[str],
-) -> tuple[list[planning_assessment.UnitMeasurements], dict[str, Any]]:
-    """Measure every unit of the frame: areas, residents, exposure, the counts of the tables, coverage, C7 and C8.
+@dataclass
+class UnitCounts:
+    """What the stages hold for each unit before any flood layer is read: cells, residents, routes and table counts."""
 
-    Returns:
-        The measurements of each unit and the checks that tie the stages together (the residents of each unit
-        in the context and in the access table, and the hospital routes).
+    cells: list[dict[str, Any]]
+    residents: dict[str, float]
+    hospitals_reachable: dict[str, int]
+    access: dict[str, dict[str, Any]]
+    ages: dict[str, dict[str, float | None]]
+    checks: dict[str, Any]
+
+
+def unit_counts_of_the_stages(units: Sequence[tuple[str, Any]], graph: Any, run: Mapping[str, Any], age_table: Mapping[str, Any],
+                              services: Sequence[str]) -> UnitCounts:
+    """Take the counts of each unit from the planning context and the two tables, and compare the stages (GR3).
+
+    No flood layer is read here. The demand cells of the context are laid over the units, the residents of
+    each unit are summed, the hospitals a unit can reach on the baseline graph are counted, and the counts of
+    each unit are taken from its row of the access table and of the age table. This is part of the input
+    checks: it runs before any unit is measured against the flood input, and ``--check-inputs`` runs it too.
 
     Raises:
+        BuildError: when a table has no row for a unit.
+        floodguard.planning_assessment.PlanningAssessmentError: when a unit row of the access table stores a
+            ratio of two counts, or is not a row of a task E5 table.
         floodguard.planning_assessment.LanePurityError: when the access table counts other residents for a
             unit than the planning context holds, or its hospital routes contradict the graph.
-        BuildError: when a table has no row for a unit.
     """
 
     from pyproj import Transformer
 
-    frame = flood_inputs.frame_from_units(flood_inputs.REPORTING_FRAME, "the reporting units of the case", list(units), {})
+    access_rows = {str(row["unit_id"]): row for row in run["units"]}
+    age_rows = {str(row["unit_id"]): row for row in age_table["units"]}
+    missing = [unit_id for unit_id, _geometry in units if unit_id not in access_rows or unit_id not in age_rows]
+    if missing:
+        raise BuildError(f"a table of an earlier task has no row for unit(s) {missing}")
+    # Every unit row of the run that is read: a stored ratio anywhere in it is refused, also for a unit outside the frame.
+    access = {unit_id: planning_assessment.access_counts_from_e5_row(row, services) for unit_id, row in access_rows.items()}
+    ages = {unit_id: planning_assessment.age_counts_from_e7_row(age_rows[unit_id]) for unit_id, _geometry in units}
     population = graph.population
     assignment = access_diff.assign_cells(population, list(units))
     by_id = {row["population_id"]: row for row in population}
@@ -698,22 +876,48 @@ def unit_measurements(
         x, y = transformer.transform(float(row["longitude"]), float(row["latitude"]))
         cells.append({**cell, "x": x, "y": y, "node_id": row.get("node_id"), "snap_distance_m": row.get("snap_distance_m")})
     residents = planning_assessment.residents_by_unit(cells)
-    inside = {level: planning_assessment.residents_by_unit(cells, flood.extents[level]) for level in flood_inputs.LEVELS}
     reachable = planning_assessment.hospitals_reachable_at_baseline(cells, graph.edges, graph.destinations[access_diff.HOSPITAL])
-    access_rows = {str(row["unit_id"]): row for row in run["units"]}
-    age_rows = {str(row["unit_id"]): row for row in age_table["units"]}
+    differing = [
+        unit_id for unit_id, _geometry in units
+        if abs(access[unit_id]["residents"] - residents.get(unit_id, 0.0)) > RESIDENT_TOLERANCE
+        or (reachable.get(unit_id, 0) >= 1) != (access[unit_id]["residents_with_a_baseline_hospital_route"] > 0)]
+    if differing:
+        raise planning_assessment.LanePurityError(
+            "guardrail GR3: the access table and the planning context do not agree on the residents of a unit or on "
+            f"its hospital routes, so they are not one routing context: {differing}"
+        )
+    return UnitCounts(cells=cells, residents=residents, hospitals_reachable=reachable, access=access, ages=ages, checks={
+        "demand_cells": len(cells), "cells_in_one_unit": sum(1 for cell in cells if cell["unit_id"] is not None),
+        "residents_in_the_units": math.fsum(residents.values()),
+        "unit_residents_same_in_the_context_and_the_access_table": True,
+        "hospital_routes_same_in_the_graph_and_the_access_table": True,
+        "no_unit_row_of_the_access_table_stores_a_ratio": True,
+        "compared_before_any_flood_layer_was_read_for_a_unit": True,
+    })
+
+
+def unit_measurements(
+    rules: planning_assessment.AssessmentRules,
+    flood_name: str,
+    units: Sequence[tuple[str, Any]],
+    names: Mapping[str, tuple[str, str]],
+    flood: FloodData,
+    counted: UnitCounts,
+) -> tuple[list[planning_assessment.UnitMeasurements], dict[str, Any]]:
+    """Measure every unit of the frame against the flood input: flooded land, residents inside the extent, coverage.
+
+    The resident totals, the hospital routes and the counts of the two tables were taken, and compared between
+    the stages, by :func:`unit_counts_of_the_stages` before this function runs.
+
+    Returns:
+        The measurements of each unit and the checks that tie the stages together.
+    """
+
+    frame = flood_inputs.frame_from_units(flood_inputs.REPORTING_FRAME, "the reporting units of the case", list(units), {})
+    inside = {level: planning_assessment.residents_by_unit(counted.cells, flood.extents[level]) for level in flood_inputs.LEVELS}
     measured: list[planning_assessment.UnitMeasurements] = []
-    differing: list[str] = []
     for unit_id, _geometry in units:
-        if unit_id not in access_rows or unit_id not in age_rows:
-            raise BuildError(f"a table of an earlier task has no row for unit {unit_id}")
-        counts = planning_assessment.access_counts_from_e5_row(access_rows[unit_id], services)
-        unit_residents = residents.get(unit_id, 0.0)
-        hospitals = reachable.get(unit_id, 0)
-        if abs(counts["residents"] - unit_residents) > RESIDENT_TOLERANCE or (
-                (hospitals >= 1) != (counts["residents_with_a_baseline_hospital_route"] > 0)):
-            differing.append(unit_id)
-        ages = planning_assessment.age_counts_from_e7_row(age_rows[unit_id])
+        counts, ages = counted.access[unit_id], counted.ages[unit_id]
         by_construction = coverage_by_construction_applies(rules.binding.rule, unit_id=unit_id, flood_input=flood_name)
         coverage = None
         if not by_construction and flood.footprint is not None:
@@ -724,7 +928,7 @@ def unit_measurements(
             unit_id=unit_id, unit_name_en=name_en, unit_name_th=name_th,
             flooded_non_permanent_water_land_area=areas["flooded_non_permanent_water_land_area"],
             non_permanent_water_land_area=areas["non_permanent_water_land_area"],
-            unit_residents=unit_residents,
+            unit_residents=counted.residents.get(unit_id, 0.0),
             residents_inside_flood_extent={level: inside[level].get(unit_id, 0.0) for level in flood_inputs.LEVELS},
             access_gap_inputs=counts["access_gap_inputs"],
             residents_losing_all_routes=counts["residents_losing_all_routes"],
@@ -733,19 +937,10 @@ def unit_measurements(
             unit_valid_coverage=coverage, coverage_by_construction=by_construction,
             residents_connected_to_the_graph=counts["residents_connected_to_the_graph"],
             connected_residents_without_a_hospital_route=counts["connected_residents_without_a_hospital_route"],
-            hospitals_reachable_at_baseline=hospitals,
+            hospitals_reachable_at_baseline=counted.hospitals_reachable.get(unit_id, 0),
         ))
-    if differing:
-        raise planning_assessment.LanePurityError(
-            "guardrail GR3: the access table and the planning context do not agree on the residents of a unit or on "
-            f"its hospital routes, so they are not one routing context: {differing}"
-        )
-    cells_in_units = sum(1 for cell in cells if cell["unit_id"] is not None)
     return measured, {
-        "demand_cells": len(cells), "cells_in_one_unit": cells_in_units,
-        "residents_in_the_units": math.fsum(residents.values()),
-        "unit_residents_same_in_the_context_and_the_access_table": True,
-        "hospital_routes_same_in_the_graph_and_the_access_table": True,
+        **counted.checks,
         "coverage": "by_construction" if all(unit.coverage_by_construction for unit in measured) else "measured",
     }
 
@@ -785,9 +980,11 @@ def lineage_inputs(frame_set: FrameSet, flood: FloodData, flood_spec: planning_a
     hashes = context_record.get("input_hashes") or {}
     context_id = "e4_planning_context_vehicle"
     inputs = [
+        # The change notice of the layer as task E1 wrote it, carried on by what this task did with the layer.
         record(flood_spec.input_id, "flood_input", flood_spec.name, extent["sha256"], grant.rights_level, licence,
                grant.attribution, str(flood.record["source_timestamp"]), source_product=product, acquisition_date=acquired,
-               change_notice=str(properties["change_notice"])),
+               change_notice=f"{properties['change_notice']} {CHANGE_NOTICE_E8_STEP} This file holds values derived "
+                             "from the layer, not the layer."),
         plain("routing_context", context_id, "routing_context", str(context_record["canonical_sha256"]),
               f"OpenStreetMap retrieved {context_record.get('osm_retrieved_at_utc')}; population year 2020"),
         plain("population", "worldpop_2020_100m", "population",
@@ -845,19 +1042,30 @@ def case_spec(rules: planning_assessment.AssessmentRules, case_id: str, frame_se
                                                        scenario_base=SCENARIO_BASE_AGENCY)
 
 
-def overlay_target(case_id: str, frame_set: FrameSet, eligibility: str, external: Path, output_dir: Path) -> tuple[Path, bool]:
-    """Return where the overlay of a case goes: into Git when it is public, under the external data root otherwise."""
+def stage_folder(case_id: str, frame_set: FrameSet, external: Path, level: str = PUBLIC_LEVEL) -> Path:
+    """Return the folder outside Git that holds what this task writes for a case at one level."""
 
-    name = f"planning_assessment_overlay_{case_id.lower()}_{frame_set.name}.json"
+    return external / PROCESSED_RELATIVE_PATH / frame_set.case_folders[case_id] / f"{STAGE_FOLDER}{level_suffix(level)}"
+
+
+def overlay_target(case_id: str, frame_set: FrameSet, eligibility: str, external: Path, output_dir: Path,
+                   level: str = PUBLIC_LEVEL) -> tuple[Path, bool]:
+    """Return where the overlay of a case goes: into Git when it is public, under the external data root otherwise.
+
+    ``level`` is the level the run was asked for (which services the access gap reads). It is part of the file
+    name and of the folder outside Git unless it is public, so a run at one level never writes over another.
+    """
+
+    name = f"planning_assessment_overlay_{case_id.lower()}_{frame_set.name}{level_suffix(level)}.json"
     if eligibility == rights.PUBLIC_LEVEL:
         return output_dir / OVERLAY_FOLDER_IN_GIT / name, True
-    return external / PROCESSED_RELATIVE_PATH / frame_set.case_folders[case_id] / STAGE_FOLDER / name, False
+    return stage_folder(case_id, frame_set, external, level) / name, False
 
 
-def receipt_path_for(case_id: str, frame_set: FrameSet, output_dir: Path = OUTPUT_DIR) -> Path:
-    """Return the one place the receipt of a case and frame is written."""
+def receipt_path_for(case_id: str, frame_set: FrameSet, output_dir: Path = OUTPUT_DIR, level: str = PUBLIC_LEVEL) -> Path:
+    """Return the one place the receipt of a case, frame and level is written."""
 
-    return output_dir / f"e8_planning_assessment_{case_id.lower()}_{frame_set.name}.json"
+    return output_dir / f"e8_planning_assessment_{case_id.lower()}_{frame_set.name}{level_suffix(level)}.json"
 
 
 def software_versions() -> dict[str, str]:
@@ -884,20 +1092,25 @@ def prepare(case_id: str, frame_set: FrameSet, external: Path, boundaries: Path,
             registry: rights.RightsRegistry | None = None) -> SimpleNamespace:
     """Check every input of one case against the file that names it, and compare the stages (guardrail GR3).
 
-    No value of a unit is computed here: the tables and layers are read, their SHA-256 values are compared, the
-    rights registry is asked, and the lineage and the rights level of the overlay are worked out.
+    No flood layer is laid over a unit here and no component is computed: the tables and layers are read, their
+    SHA-256 values are compared, the rights registry is asked, the lineage and the rights level of the overlay
+    are worked out, and the counts each stage holds for a unit are compared
+    (:func:`unit_counts_of_the_stages`: the residents of each unit are summed from the cells of the context).
 
     Raises:
         BuildError: when an input is not the one a signed file or a registered receipt names, says it is not
-            usable, or the case cannot be run.
-        ValueError: when a protocol is not in force, the rights registry refuses the flood layer, or the stages
-            do not share one flood input, one routing context and one closure rule.
+            usable, or the case or the level cannot be run.
+        ValueError: when a protocol is not in force, the rights registry refuses the flood layer, the stages
+            do not share one flood input, one routing context and one closure rule, they count other residents
+            for a unit, or a unit row of the access table stores a ratio.
     """
 
     timings: dict[str, float] = {}
     clock = time.perf_counter()
+    registry = registry or rights.RightsRegistry(root)
     if case_id in frame_set.not_run:
-        raise BuildError(f"case {case_id} cannot be run: {frame_set.not_run[case_id]}")
+        raise BuildError(refusal_of_an_awaited_case(case_id, frame_set, registry, output_dir=output_dir,
+                                                    register_dir=register_dir, root=root))
     if case_id not in frame_set.case_folders:
         raise BuildError(f"{case_id!r} is not a case of frame {frame_set.name}")
     if level not in SERVICE_SETS:
@@ -907,8 +1120,8 @@ def prepare(case_id: str, frame_set: FrameSet, external: Path, boundaries: Path,
     frame = rules.binding.frame
     in_force = dict(frame.protocol_sha256)
     hashes = {f"planning_protocol_{name}": in_force[name] for name in ("v1a", "v1b")}
+    v1a = json.loads(v1a_path.read_text(encoding="utf-8"))
     v1b = json.loads(v1b_path.read_text(encoding="utf-8"))
-    registry = registry or rights.RightsRegistry(root)
     case = case_spec(rules, case_id, frame_set)
     unit_ids = list(rules.reporting_frames[frame_set.reporting_frame]) if frame_set.reporting_frame else list(frame_set.unit_ids)
     closure = planning_assessment.ClosureSpec(closure_rules.CLOSURE_RULE_VERSION, rules.reference_closure_level)
@@ -916,6 +1129,13 @@ def prepare(case_id: str, frame_set: FrameSet, external: Path, boundaries: Path,
 
     access_table, run, access_read = load_access_table(case_id, frame_set, level, closure.level, external, hashes,
                                                        output_dir=output_dir, register_dir=register_dir, root=root)
+    if level != PUBLIC_LEVEL:
+        raise BuildError(
+            f"an overlay at the {level} level is not built yet: its lineage has to name the walking context and the "
+            "DDPM shelter list the shelter service rests on, and guardrail GR3 has to compare that walking context "
+            "with a walking context of record. This builder reads and compares the vehicle context only, and no "
+            "walking context of record exists (open point E5-OP5)"
+        )
     age_table, age_read = load_age_table(frame_set, hashes, output_dir=output_dir, register_dir=register_dir, root=root)
     anchors_path = output_dir / "national_vulnerability_anchors_v1.json"
     if not anchors_path.is_file() or sha256_file(anchors_path) != frame.vulnerability_anchor_receipt_sha256:
@@ -951,6 +1171,11 @@ def prepare(case_id: str, frame_set: FrameSet, external: Path, boundaries: Path,
 
     clock = time.perf_counter()
     units, names, unit_summary = read_units(boundaries, unit_ids, frame_set)
+    # Still guardrail GR3, and still before any flood layer is read for a unit: the two stages count the same
+    # residents for each unit and agree on its hospital routes, and no unit row stores a ratio.
+    counted = unit_counts_of_the_stages(units, graph, run, age_table, services)
+    timings["stages_compared_unit_by_unit"] = round(time.perf_counter() - clock, 1)
+    clock = time.perf_counter()
     acquisition = None if record.get("acquisition_date") is None else date.fromisoformat(record["acquisition_date"])
     window = record.get("season_window")
     last_date = record.get("acquisition_date") or (window[1] if window else None)
@@ -971,9 +1196,17 @@ def prepare(case_id: str, frame_set: FrameSet, external: Path, boundaries: Path,
                        "attribution": inputs[0]["attribution"], "change_notice": inputs[0]["change_notice"],
                        "source_timestamp": inputs[0]["source_timestamp"]})
     eligibility = rights.minimum_level(item["rights_level"] for item in inputs)
-    target, in_git = overlay_target(case_id, frame_set, eligibility, external, output_dir)
+    target, in_git = overlay_target(case_id, frame_set, eligibility, external, output_dir, level)
     if is_public_web_path(target):
         raise BuildError("this script writes nothing under apps/web/public")
+    # Product 4009 content ships only with its licence, its credit and a change notice (plan 7.1; rights record).
+    licence, notice = None, None
+    if flood.grant.source == rights.SOURCE_PRODUCT_4009:
+        record_4009, _sha256 = registry.read_record(frame_set.rights_input[case_id])
+        notice_path = root / record_4009["licence_notice_file"]
+        notice = notice_path.read_bytes()
+        licence = licence_block(record, flood_inputs.rules_from_protocols(v1a, v1b), frame_set, level, eligibility,
+                                path_label(notice_path, root, external))
     timings["units_read_and_lineage"] = round(time.perf_counter() - clock, 1)
     return SimpleNamespace(
         rules=rules, frame=frame, hashes=hashes, case=case, unit_ids=unit_ids, closure=closure, services=services,
@@ -981,21 +1214,33 @@ def prepare(case_id: str, frame_set: FrameSet, external: Path, boundaries: Path,
         flood=flood, record=record, boundary=boundary, unit_summary=unit_summary, units=units, names=names, graph=graph,
         context_record=context_record, lane_purity=lane_purity, flood_spec=flood_spec, inputs=inputs, context_id=context_id,
         eligibility=eligibility, target=target, in_git=in_git, registry=registry, v1a_path=v1a_path, v1b_path=v1b_path,
-        receipts_path=receipts_path, timings=timings)
+        receipts_path=receipts_path, timings=timings, counted=counted, licence=licence, notice=notice, level=level)
 
 
 def check_inputs(case_id: str, frame_set: FrameSet, external: Path, boundaries: Path, **arguments: Any) -> dict[str, Any]:
-    """Check the inputs of a case and say what a run would read; compute no value of a unit and write nothing."""
+    """Check the inputs of a case and say what a run would read; write nothing.
+
+    Every check a run makes before it measures a unit against the flood input is made here, the unit-by-unit
+    comparison of the stages included. No flood layer is laid over a unit and no component is computed.
+    """
 
     found = prepare(case_id, frame_set, external, boundaries, **arguments)
     root = arguments.get("root", ROOT)
     return {
         "inputs_checked": True, "case_id": case_id, "lane": found.case.lane, "tier": found.case.tier,
         "units": len(found.unit_ids), "services": found.services, "closure_level": found.closure.level,
-        "lane_purity": found.lane_purity["result"], "publication_eligibility": found.eligibility,
+        "lane_purity": found.lane_purity["result"],
+        "unit_residents_same_in_the_context_and_the_access_table":
+            found.counted.checks["unit_residents_same_in_the_context_and_the_access_table"],
+        "hospital_routes_same_in_the_graph_and_the_access_table":
+            found.counted.checks["hospital_routes_same_in_the_graph_and_the_access_table"],
+        "no_unit_row_of_the_access_table_stores_a_ratio": found.counted.checks["no_unit_row_of_the_access_table_stores_a_ratio"],
+        "publication_eligibility": found.eligibility,
         "overlay_would_go_to": path_label(found.target, root, external), "overlay_in_git": found.in_git,
         "lineage": {item["input_id"]: {"sha256": item["sha256"], "rights_level": item["rights_level"]} for item in found.inputs},
-        "computed": "nothing: no unit was measured",
+        "licence_block": found.licence is not None,
+        "computed": "No flood layer was laid over a unit and no component was computed. The residents of each unit were "
+                    "summed from the demand cells of the planning context, to compare them with the access table.",
     }
 
 
@@ -1005,22 +1250,26 @@ def build(case_id: str, frame_set: FrameSet, external: Path, boundaries: Path, *
           development_reads: Sequence[str] = ()) -> Built:
     """Check every input, measure every unit and assemble the overlay of one case (nothing is written).
 
+    The input checks of :func:`prepare` raise, and the caller then writes nothing: no unit was measured against
+    the flood input. From the first such measurement on, nothing raises to the caller for a refusal: a guardrail
+    that does not hold, a check of the whole case that fails, rows the overlay parser refuses or a measurement
+    that is refused all end in a :class:`Built` whose receipt says that no overlay was written, at which stage,
+    and why. The caller writes and registers that receipt, because every run on real units is reported.
+
     Raises:
-        BuildError, ValueError: see :func:`prepare`; also when a guardrail does not hold for the measured units.
+        BuildError, ValueError: see :func:`prepare`. Nothing of a unit was measured against the flood input.
     """
 
     found = prepare(case_id, frame_set, external, boundaries, level=level, docs=docs, root=root, output_dir=output_dir,
                     register_dir=register_dir, registry=registry)
     rules, frame, hashes, case, unit_ids = found.rules, found.frame, found.hashes, found.case, found.unit_ids
-    closure, services, access_table, access_read = found.closure, found.services, found.access_table, found.access_read
+    closure, services, access_read = found.closure, found.services, found.access_read
     age_read, anchors, flood, record, boundary = found.age_read, found.anchors, found.flood, found.record, found.boundary
     unit_summary, graph, context_record, lane_purity = found.unit_summary, found.graph, found.context_record, found.lane_purity
     flood_spec, inputs, context_id, eligibility = found.flood_spec, found.inputs, found.context_id, found.eligibility
-    target, in_git, registry, timings = found.target, found.in_git, found.registry, found.timings
+    target, in_git, timings = found.target, found.in_git, found.timings
     v1a_path, v1b_path, receipts_path = found.v1a_path, found.v1b_path, found.receipts_path
     clock = time.perf_counter()
-    measured, measurement_checks = unit_measurements(rules, case, flood_spec.name, found.units, found.names, flood, graph,
-                                                     found.run, found.age_table, services)
     commit = git_commit or head_commit(root)
     overlay_assumptions = [
         *ASSUMPTIONS,
@@ -1040,9 +1289,18 @@ def build(case_id: str, frame_set: FrameSet, external: Path, boundaries: Path, *
     as_computed: dict[str, Any] | None = None
     as_computed_record: dict[str, Any] | None = None
     whole_case: dict[str, Any] | None = None
+    measurement_checks: dict[str, Any] | None = None
+    measured: list[planning_assessment.UnitMeasurements] = []
+    rows_digest: str | None = None
+    rows_scored: int | None = None
     schema = load_overlay_schema(root / SCHEMA_RELATIVE_PATH if (root / SCHEMA_RELATIVE_PATH).is_file() else ROOT / SCHEMA_RELATIVE_PATH)
     counted_by_the_table = math.fsum(float(row["residents"]) for row in found.run["units"] if str(row["unit_id"]) in set(unit_ids))
+    # From here on the run reads the flood layer for each unit and scores it. Whatever stops it is reported in the
+    # receipt (every run is reported); nothing below raises a refusal to the caller.
+    stage = STAGE_MEASUREMENT
     try:
+        measured, measurement_checks = unit_measurements(rules, flood_spec.name, found.units, found.names, flood, found.counted)
+        stage = STAGE_ASSEMBLY
         try:
             overlay = planning_assessment.assemble_overlay(
                 rules, case, flood_spec, closure, measured, inputs, routing_context_id=context_id, generated_at=generated_at_utc,
@@ -1052,12 +1310,16 @@ def build(case_id: str, frame_set: FrameSet, external: Path, boundaries: Path, *
             if error.as_computed is None:
                 raise
             # The overlay cannot hold these rows. They are checked as far as they go and reported as computed.
+            rows_scored = len(error.as_computed["rows"])
+            stage = STAGE_GUARDRAILS
             checked = planning_assessment.check_rows_as_computed(error.as_computed, schema, rules, reporting_units=unit_ids,
                                                                  lane=case.lane)
+            stage = STAGE_WHOLE_CASE
             whole_case = planning_assessment.whole_case_checks(
                 error.as_computed["rows"], error.as_computed["scoring_frame"], residents_counted_by_the_access_table=counted_by_the_table,
                 resident_tolerance=RESIDENT_TOLERANCE)
             as_computed, guardrails = error.as_computed, checked["guardrails"]
+            rows_digest = rows_sha256(as_computed["rows"])
             as_computed_record = {
                 "schema_version": planning_assessment.ROWS_AS_COMPUTED_SCHEMA,
                 "where": "In the report outside Git that this receipt binds (outputs), under rows_as_computed. The report "
@@ -1075,29 +1337,59 @@ def build(case_id: str, frame_set: FrameSet, external: Path, boundaries: Path, *
                            "every row as the run computed it (open point E8-OP6).",
             }
         else:
+            rows_scored = len(overlay["rows"])
+            stage = STAGE_GUARDRAILS
             guardrails = planning_assessment.guardrail_report(overlay, rules, reporting_units=unit_ids, lane=case.lane)
             overlay_string = overlay_text(overlay, schema, binding=rules.binding)
             summary = summarise_overlay(overlay)
+            stage = STAGE_WHOLE_CASE
             whole_case = planning_assessment.whole_case_checks(
                 overlay["rows"], overlay["scoring_frame"], residents_counted_by_the_access_table=counted_by_the_table,
                 resident_tolerance=RESIDENT_TOLERANCE)
+            rows_digest = rows_sha256(overlay["rows"])
     except PlanningOverlayError as error:
         overlay_string, summary, as_computed, as_computed_record, guardrails, whole_case = None, None, None, None, None, None
+        rows_digest = None
         refusal = {"code": "overlay_refused_by_the_validator", "message": str(error),
                    "problems": [{"code": item.code, "path": item.path, "message": item.message} for item in error.problems]}
         refusal_for_the_receipt = {
-            "code": refusal["code"], "problems": len(error.problems), "problem_codes": list(error.codes),
+            "code": refusal["code"], "stage": stage, "units_measured": len(measured), "rows_scored": rows_scored,
+            "problems": len(error.problems), "problem_codes": list(error.codes),
             "message": "floodguard.planning_overlay refused the rows the run assembled. The problems are listed in the report "
                        "outside Git. No row is reported.",
+        }
+    except ValueError as error:
+        # A guardrail, a check of the whole case or a measurement refused the run after it had measured units. The
+        # message may name units, so it goes into the report outside Git; the receipt in Git takes the code.
+        overlay_string, summary, as_computed, as_computed_record, guardrails, whole_case = None, None, None, None, None, None
+        rows_digest = None
+        refusal = {"code": CODE_BY_STAGE[stage], "stage": stage, "error": type(error).__name__, "message": str(error)}
+        refusal_for_the_receipt = {
+            "code": refusal["code"], "stage": stage, "error": type(error).__name__,
+            "units_measured": len(measured), "rows_scored": rows_scored,
+            "message": {STAGE_MEASUREMENT: "A check stopped the run while its units were being measured against the flood input",
+                        STAGE_ASSEMBLY: "A check stopped the run after its units had been measured against the flood input, "
+                                        "while an FPPS and a class were being computed for them"}.get(
+                            stage, "A check stopped the run after its units had been measured against the flood input and an "
+                                   "FPPS and a class had been computed for them")
+                       + ". The run is reported here because every run on real units is reported. No overlay was written "
+                         "and no row is reported: a row that fails a check is not a result. The message of the check, "
+                         "which may name units, is in the report outside Git that this receipt binds.",
         }
     timings["units_measured_and_assessed"] = round(time.perf_counter() - clock, 1)
 
     target_label = path_label(target, root, external)
     below_public = eligibility != rights.PUBLIC_LEVEL
-    notice = None
-    if flood.grant.source == rights.SOURCE_PRODUCT_4009 and (not in_git or as_computed is not None):
-        record_4009, _sha256 = registry.read_record(frame_set.rights_input[case_id])
-        notice = (root / record_4009["licence_notice_file"]).read_bytes()
+    counted_summary = summary if as_computed_record is None else as_computed_record["summary"]
+    covering = counts_that_cover_every_row(counted_summary)
+    # The licence notice of the rights record sits beside every file outside Git that holds values of the units.
+    notice = found.notice if (not in_git or as_computed is not None) else None
+    licence = None if found.licence is None else {
+        **found.licence,
+        "where_the_values_are": "The counts for the whole case are in this receipt (result). The values of each unit are in "
+                                "the file this receipt binds (outputs), which carries the same licence, credit and change "
+                                "notice.",
+    }
     receipt = {
         "schema_version": RECEIPT_SCHEMA,
         "plan_task": "E8: planning_assessment.py + writer + verifier; O1/O2/SE1 overlays; verifier passes",
@@ -1120,6 +1412,7 @@ def build(case_id: str, frame_set: FrameSet, external: Path, boundaries: Path, *
         "confidence_class": "low",
         "confidence_basis": CONFIDENCE_BASIS,
         "protocol_sha256": hashes,
+        "licence": licence,
         "parameters": {
             "case_id": case_id,
             "frame_set": frame_set.name,
@@ -1143,6 +1436,12 @@ def build(case_id: str, frame_set: FrameSet, external: Path, boundaries: Path, *
                                   "note": "No stage computes them yet (open point E8-OP1)."},
             "headline": "not evaluated: the ensemble is plan task E10",
             "overlay_input_id_of_the_flood_input": flood_spec.input_id,
+            "tolerances": {
+                "residents_between_two_stages": RESIDENT_TOLERANCE,
+                "rounding_points_of_a_score": planning_assessment.ROUNDING_TOLERANCE_POINTS,
+                "note": "Choices of this task, not rules of the protocols: how far two sums of the same resident counts "
+                        "may differ, and how far a score rounded to two decimals may differ from its recombination.",
+            },
         },
         "inputs": {
             "planning_protocol_v1a": {"path": path_label(v1a_path, root, external), "sha256": hashes["planning_protocol_v1a"]},
@@ -1170,20 +1469,32 @@ def build(case_id: str, frame_set: FrameSet, external: Path, boundaries: Path, *
             "flood_layer": {"rights_level": flood.grant.rights_level, "basis": flood.grant.rights_level_basis},
             "levels_and_git": rights.LEVELS_AND_GIT,
             "figures_of_local_level_layers_in_this_receipt": {
-                "what": "This receipt is committed. It holds counts of rows for the whole case (result.summary, or "
-                        "result.rows_as_computed.summary when the overlay was not written), no value of a single unit "
-                        "and no unit of a row that could not be written. When the lineage is below the public level "
-                        "those counts come from a lineage below the public level; the overlay, or the report that "
-                        "holds the rows as computed, is outside Git.",
+                "what": "This receipt is committed. It holds counts of rows for the whole case: under result.summary "
+                        "when the overlay was written, under result.rows_as_computed.summary when the rows were "
+                        "reported as computed, and nowhere when a check refused the rows. It puts no unit beside a "
+                        "value and names no unit of a row that could not be written. When the lineage is below the "
+                        "public level those counts come from a lineage below the public level; the file that holds the "
+                        "rows is outside Git.",
                 "figures": ([{"where": "result.summary" if as_computed_record is None else "result.rows_as_computed.summary",
                               "publication_eligibility": eligibility,
                               "figures": "The number of rows by class, reason code, confidence class and failed "
-                                         "condition, per lane column."}] if below_public else []),
-                "for_the_owners": "Open point E1-OP1: whether a level below public allows these counts in Git.",
+                                         "condition, per lane column."}] if below_public and counted_summary is not None else []),
+                "counts_that_cover_every_row": covering,
+                "what_the_counts_give_away": "A count that covers every row states that value for each unit listed in "
+                                             "parameters.unit_ids, and a count of zero states for each unit that it does "
+                                             "not have that value. For those counts the receipt in Git says the same as "
+                                             "the file outside Git, so keeping that file outside Git separates nothing "
+                                             "for them. counts_that_cover_every_row names the counts equal to the number "
+                                             "of rows. Other committed files may let further values of a unit be worked "
+                                             "out (open point E8-OP7).",
+                "for_the_owners": "Open points E1-OP1, E8-OP5 and E8-OP7: whether a level below public allows these "
+                                  "counts in Git, and whether it is meant to keep the values of a unit out of the "
+                                  "repository when they can be worked out from committed files.",
             },
             "written_under_apps_web_public": False,
         },
         "lane_purity": lane_purity,
+        "lineage_input_sha256": {item["input_id"]: item["sha256"] for item in inputs},
         "measurement_checks": measurement_checks,
         "graph": graph.record,
         "guardrails": guardrails,
@@ -1192,6 +1503,10 @@ def build(case_id: str, frame_set: FrameSet, external: Path, boundaries: Path, *
             "summary": summary,
             "not_written_because": refusal_for_the_receipt,
             "rows_as_computed": as_computed_record,
+            "rows_sha256": rows_digest,
+            "rows_sha256_note": "The SHA-256 of the rows alone, in a canonical form: every value of every unit, without the "
+                                "generation time, the commit and the header text of the file that holds them. Two runs "
+                                "that computed the same rows have the same value here. Null when no row is reported.",
         },
         "whole_case_checks": whole_case,
         "development_reads": {
@@ -1241,6 +1556,10 @@ def _outputs(built: Built, root: Path, external: Path) -> tuple[dict[str, Any], 
                        "rows": built.receipt["result"]["summary"]["row_count"]})
         outside_git = None if built.in_git else built.target.parent
     else:
+        licence = built.receipt.get("licence")
+        if licence is not None:
+            licence = {**licence, "where_the_values_are": "In this file, under rows_as_computed, when the run reported its "
+                                                          "rows. Otherwise this file holds the reason alone."}
         report = {
             "schema_version": REPORT_SCHEMA,
             "what": "The overlay of this run was not written. This file says why, and for which units."
@@ -1257,6 +1576,7 @@ def _outputs(built: Built, root: Path, external: Path) -> tuple[dict[str, Any], 
             "operational_status": "non_operational",
             "can_feed_decision_layer": False,
             "publication_eligibility": built.receipt["rights"]["publication_eligibility"],
+            "licence": licence,
             "not_written_because": built.refusal,
             "rows_as_computed": built.as_computed,
         }
@@ -1278,22 +1598,96 @@ def _outputs(built: Built, root: Path, external: Path) -> tuple[dict[str, Any], 
     return {"overlay": {"files": listed}}, files
 
 
-def _canonical(value: Any) -> str:
-    return json.dumps(value, sort_keys=True, separators=(",", ":"), allow_nan=False)
-
-
 def result_without_the_run_time(result: Mapping[str, Any] | None) -> dict[str, Any]:
-    """Return the result block of a receipt without what changes from one run to the next by the clock alone.
+    """Return the counts of a result block: the block without what the clock changes and without the rows digest.
 
     The summary of a written overlay carries ``content_sha256``, a digest of the whole overlay, which holds its
-    generation time and the commit of the code. Two runs that computed the same rows differ there and nowhere
-    else in the block.
+    generation time and the commit of the code. ``rows_sha256`` is compared on its own (``rows_same``), and a
+    receipt written before that field existed has none. What is left says whether an overlay was written, why
+    not, and how many rows fall in each class, reason code and confidence class: counts for the whole case.
     """
 
     block = json.loads(json.dumps(result or {}))
     if isinstance(block.get("summary"), dict):
         block["summary"].pop("content_sha256", None)
+    block.pop("rows_sha256", None)
+    block.pop("rows_sha256_note", None)
     return block
+
+
+def rows_and_inputs_of_a_written_file(path: Path) -> tuple[list[Any] | None, dict[str, str] | None]:
+    """Read the rows and the lineage hashes a file of an earlier run holds: an overlay, or a report with rows as computed."""
+
+    try:
+        document = json.loads(path.read_text(encoding="ascii"))
+    except (OSError, ValueError):
+        return None, None
+    holder = document if isinstance(document, Mapping) and isinstance(document.get("rows"), list) else (
+        document.get("rows_as_computed") if isinstance(document, Mapping) else None)
+    if not isinstance(holder, Mapping) or not isinstance(holder.get("rows"), list):
+        return None, None
+    inputs = holder.get("inputs")
+    hashes = {str(item["input_id"]): str(item["sha256"]) for item in inputs} if isinstance(inputs, list) else None
+    return holder["rows"], hashes
+
+
+def superseded_run(previous: Mapping[str, Any], receipt_path: Path, built: Built, replace_reason: str, archive: Path, *,
+                   root: Path, external: Path) -> dict[str, Any]:
+    """Describe the run a new run replaces, compare the two and keep a copy of the replaced files outside Git.
+
+    The rows of the replaced run are read from the file its receipt binds (an overlay, or a report with rows as
+    computed), after that file was checked against the SHA-256 the receipt names, so the comparison holds for
+    every value of every unit and not only for the counts of the whole case. The replaced receipt and every
+    file it binds that is still on disk are copied into ``archive`` before anything is written over them.
+    """
+
+    receipt_sha256 = sha256_file(receipt_path)
+    bound = bound_outputs(previous["outputs"])
+    stamp = str(previous.get("generated_at_utc", "unknown")).replace(":", "").replace("-", "")
+    folder = archive / stamp
+    folder.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(receipt_path, folder / receipt_path.name)
+    kept = [{"path": path_label(folder / receipt_path.name, root, external), "sha256": receipt_sha256, "what": "receipt"}]
+    recorded = (previous.get("result") or {}).get("rows_sha256")
+    old_rows, old_inputs, read_from = recorded, previous.get("lineage_input_sha256"), (
+        None if recorded is None else "the rows_sha256 the superseded receipt records")
+    for label, digest in bound.items():
+        path = external_path(label, external) if label.startswith(EXTERNAL_LABEL) else root / label
+        if not path.is_file() or sha256_file(path) != digest:
+            continue
+        shutil.copyfile(path, folder / path.name)
+        kept.append({"path": path_label(folder / path.name, root, external), "sha256": digest, "what": "file the receipt bound"})
+        rows, inputs = rows_and_inputs_of_a_written_file(path) if path.name != LICENCE_NOTICE_NAME else (None, None)
+        if rows is not None:
+            old_rows, old_inputs = rows_sha256(rows), inputs
+            read_from = "the file the superseded receipt binds, read back with the SHA-256 that receipt names"
+    new_rows = built.receipt["result"]["rows_sha256"]
+    counts_same = (_canonical(result_without_the_run_time(previous.get("result")))
+                   == _canonical(result_without_the_run_time(built.receipt["result"])))
+    rows_same = None if old_rows is None or new_rows is None else old_rows == new_rows
+    return {
+        "receipt_sha256": receipt_sha256,
+        "generated_at_utc": previous.get("generated_at_utc"),
+        "reason": replace_reason,
+        # The same when the counts are the same and the rows are; two runs that both report no row have counts alone.
+        "result_same": bool(counts_same and (rows_same is True or (old_rows is None and new_rows is None))),
+        "counts_same": counts_same,
+        "rows_same": rows_same,
+        "rows_sha256_of_the_superseded_run": old_rows,
+        "rows_sha256_of_this_run": new_rows,
+        "rows_of_the_superseded_run_read_from": read_from,
+        "lineage_inputs_same": None if old_inputs is None else dict(old_inputs) == dict(built.input_sha256),
+        "lineage_inputs_that_differ": None if old_inputs is None else sorted(
+            key for key in {*old_inputs, *built.input_sha256} if old_inputs.get(key) != built.input_sha256.get(key)),
+        "outputs_of_the_superseded_run": bound,
+        "copies_kept_outside_git": kept,
+        "note": "result_same is true only when the counts of the whole case are the same (counts_same: whether an overlay "
+                "was written, why not, and the rows by class, reason code and confidence class) and the rows are the same "
+                "(rows_same: the SHA-256 of the rows alone, which covers every value of every unit and leaves out the "
+                "generation time, the commit and the header text). rows_same is null when the rows of one of the two "
+                "runs cannot be read. The superseded receipt is named by its SHA-256 and copied outside Git with the "
+                "files it bound; run_history lists every earlier run.",
+    }
 
 
 def run(case_id: str, frame_set: FrameSet, external: Path, boundaries: Path, *, level: str = PUBLIC_LEVEL, docs: Path = DOCS,
@@ -1302,16 +1696,18 @@ def run(case_id: str, frame_set: FrameSet, external: Path, boundaries: Path, *, 
         development_reads: Sequence[str] = ()) -> dict[str, Any]:
     """Check the inputs, compute the overlay, write it, write the receipt and register it; return a short summary.
 
-    A run that computed the rows and cannot write the overlay still writes and registers its receipt, with a
-    report of why outside Git: every run is reported.
+    Once a unit has been measured against the flood input, the receipt is written and registered whatever the
+    run found: an overlay, rows that no overlay can hold, or rows that a check refused (:func:`build`). The
+    report of why is outside Git. Every run is reported.
 
     Raises:
         FileExistsError: when the receipt exists and no replacement reason is given.
         FileNotFoundError: when a replacement is asked for and no receipt exists.
-        BuildError, ValueError: see :func:`build`. Nothing is written then.
+        BuildError, ValueError: an input check refused the run (:func:`prepare`). No unit was measured against
+            the flood input, and nothing is written.
     """
 
-    receipt_path = receipt_path_for(case_id, frame_set, output_dir)
+    receipt_path = receipt_path_for(case_id, frame_set, output_dir, level)
     if replace_reason is None and receipt_path.exists():
         raise FileExistsError("the receipt exists; a second run needs --replace --reason")
     if replace_reason is not None and not receipt_path.exists():
@@ -1325,22 +1721,15 @@ def run(case_id: str, frame_set: FrameSet, external: Path, boundaries: Path, *, 
     supersedes, history = None, None
     if replace_reason is not None:
         previous = json.loads(receipt_path.read_text(encoding="ascii"))
-        supersedes = {
-            "receipt_sha256": sha256_file(receipt_path),
-            "generated_at_utc": previous.get("generated_at_utc"),
-            "reason": replace_reason,
-            "result_same": _canonical(result_without_the_run_time(previous.get("result")))
-                           == _canonical(result_without_the_run_time(built.receipt["result"])),
-            "outputs_of_the_superseded_run": bound_outputs(previous["outputs"]),
-            "note": "The superseded receipt is named here by its SHA-256, and run_history lists every earlier run. "
-                    "result_same compares the result blocks of the two receipts (whether the overlay was written, its "
-                    "summary, and the summary of rows reported as computed) without the content hash of the overlay: "
-                    "an overlay carries its generation time, so its bytes and that hash differ between runs.",
-        }
+        supersedes = superseded_run(previous, receipt_path, built, replace_reason,
+                                    stage_folder(case_id, frame_set, external, level) / SUPERSEDED_FOLDER,
+                                    root=root, external=external)
         history = [dict(entry) for entry in previous.get("run_history") or []]
         history.append({"generated_at_utc": supersedes["generated_at_utc"], "receipt_sha256": supersedes["receipt_sha256"],
                         "superseded_because": replace_reason, "result_same_as_the_run_that_replaced_it": supersedes["result_same"],
-                        "outputs_sha256": dict(supersedes["outputs_of_the_superseded_run"])})
+                        "rows_sha256": supersedes["rows_sha256_of_the_superseded_run"],
+                        "outputs_sha256": dict(supersedes["outputs_of_the_superseded_run"]),
+                        "copies_kept_outside_git": [dict(item) for item in supersedes["copies_kept_outside_git"]]})
         for stale in supersedes["outputs_of_the_superseded_run"]:
             stale_path = external_path(stale, external) if stale.startswith(EXTERNAL_LABEL) else root / stale
             if stale_path not in files and stale_path.is_file() and stale_path.name != LICENCE_NOTICE_NAME:
@@ -1381,24 +1770,42 @@ def run(case_id: str, frame_set: FrameSet, external: Path, boundaries: Path, *, 
 def verify(case_id: str, frame_set: FrameSet, external: Path, boundaries: Path, *, level: str = PUBLIC_LEVEL, docs: Path = DOCS,
            root: Path = ROOT, output_dir: Path = OUTPUT_DIR, register_dir: Path = REGISTER_DIR,
            registry: rights.RightsRegistry | None = None) -> dict[str, Any]:
-    """Compute the overlay again, compare it with the file the receipt binds and run the verifier on it; write nothing."""
+    """Compute everything again and compare it with the receipt and with the files the receipt binds; write nothing.
 
-    receipt = json.loads(receipt_path_for(case_id, frame_set, output_dir).read_text(encoding="ascii"))
+    Compared: the overlay, or the report of a run that wrote none, byte for byte; the outputs block of the
+    receipt; and the whole body of the receipt except its run-specific fields (:data:`RUN_SPECIFIC_KEYS`, the
+    run times, the kind of run and what it superseded). A receipt whose body the code of today would not write
+    does not verify. The SHA-256 of the builder and of each module is compared with the receipt and reported
+    (``code_changed_since_the_run``); a difference there alone does not fail the verification, because the
+    comparison of the body shows whether the change matters. The verifier then runs on a written overlay.
+    """
+
+    receipt = json.loads(receipt_path_for(case_id, frame_set, output_dir, level).read_text(encoding="ascii"))
     built = build(case_id, frame_set, external, boundaries, generated_at_utc=receipt["generated_at_utc"], level=level, docs=docs,
                   root=root, output_dir=output_dir, register_dir=register_dir, registry=registry,
                   git_commit=receipt["implementation"]["base_commit"])
     bound = bound_outputs(receipt["outputs"])
     written = receipt["result"]["overlay_written"]
     same_result = _canonical(receipt["result"]) == _canonical(built.receipt["result"])
+    block, files = _outputs(built, root, external)
+    recomputed_body = json.loads(json.dumps(built.receipt))
+    differing = sorted(key for key in {*recomputed_body, *receipt}
+                       if key not in RECEIPT_KEYS_NOT_RECOMPUTED and key not in RUN_SPECIFIC_KEYS
+                       and (key not in receipt or key not in recomputed_body
+                            or _canonical(receipt[key]) != _canonical(recomputed_body[key])))
+    outputs_same = _canonical(receipt["outputs"]) == _canonical(json.loads(json.dumps(block)))
+    stated, today = receipt["implementation"], recomputed_body["implementation"]
+    code_changed = sorted(key for key in today if key.endswith("_sha256") and stated.get(key) != today[key])
+    body = {"receipt_body_same": not differing, "receipt_fields_that_differ": differing, "outputs_block_same": outputs_same,
+            "code_changed_since_the_run": code_changed}
     if not written:
-        _block, files = _outputs(built, root, external)
         recomputed = {path_label(path, root, external): sha256_bytes(data) for path, data in files.items()}
         report_same = recomputed == bound and all(path.is_file() and sha256_file(path) == sha256_bytes(data)
                                                   for path, data in files.items())
-        return {"verified": same_result and built.overlay_text is None and report_same, "overlay_written": False,
-                "receipt_result_same": same_result, "report_bytes_same_as_recomputed": report_same,
+        return {"verified": bool(same_result and built.overlay_text is None and report_same and not differing and outputs_same),
+                "overlay_written": False, "receipt_result_same": same_result, "report_bytes_same_as_recomputed": report_same,
                 "rows_reported_as_computed": built.as_computed is not None,
-                "not_written_because": receipt["result"]["not_written_because"]["code"]}
+                "not_written_because": receipt["result"]["not_written_because"]["code"], **body}
     data = (built.overlay_text or "").encode("ascii")
     digest = sha256_bytes(data)
     on_disk = built.target.is_file() and sha256_file(built.target) == digest
@@ -1407,14 +1814,22 @@ def verify(case_id: str, frame_set: FrameSet, external: Path, boundaries: Path, 
     schema = load_overlay_schema(root / SCHEMA_RELATIVE_PATH if (root / SCHEMA_RELATIVE_PATH).is_file() else ROOT / SCHEMA_RELATIVE_PATH)
     checked = planning_assessment.verify_assessment(built.target, schema, rules, reporting_units=built.reporting_units,
                                                     lane=built.lane, expected_input_sha256=built.input_sha256) if on_disk else None
-    return {"verified": bool(bound.get(built.target_label) == digest and on_disk and same_result and checked and checked["verified"]),
+    return {"verified": bool(bound.get(built.target_label) == digest and on_disk and same_result and not differing
+                             and outputs_same and checked and checked["verified"]),
             "overlay_written": True, "overlay_bytes_same_as_recomputed": bound.get(built.target_label) == digest,
             "overlay_on_disk_same": on_disk, "receipt_result_same": same_result,
-            "verifier": None if checked is None else {"verified": checked["verified"], "problems": checked["problems"]}}
+            "verifier": None if checked is None else {"verified": checked["verified"], "problems": checked["problems"]}, **body}
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """Parse the arguments and make one reported run, or verify the last one."""
+    """Parse the arguments and make one reported run, or verify the last one.
+
+    Returns:
+        0 when the overlay was written (or the inputs were checked, or the run verified); 1 when ``--verify``
+        found a difference; 2 when an input check refused the run before a unit was measured against the flood
+        input, and nothing was written; 3 when units were measured and no overlay was written: the receipt is
+        then written and registered.
+    """
 
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--case", required=True, help="the case of protocol v1a: SE1, O2 or O1")
@@ -1429,9 +1844,11 @@ def main(argv: Sequence[str] | None = None) -> int:
                         help="one read of the inputs made before this run, in a sentence; repeat for each")
     parser.add_argument("--replace", action="store_true", help="make a second run; needs --reason, and the new receipt names the old")
     parser.add_argument("--reason", help="why the run is repeated (one sentence)")
-    parser.add_argument("--verify", action="store_true", help="compute the overlay again, compare and verify it; write nothing")
+    parser.add_argument("--verify", action="store_true",
+                        help="compute everything again, compare it with the receipt and its files, verify the overlay; write nothing")
     parser.add_argument("--check-inputs", action="store_true",
-                        help="check every input against the file that names it; compute no value of a unit and write nothing")
+                        help="check every input against the file that names it and compare the stages unit by unit; lay no "
+                             "flood layer over a unit, compute no component and write nothing")
     args = parser.parse_args(argv)
     if args.replace != bool((args.reason or "").strip()):
         parser.error("--replace and --reason go together")

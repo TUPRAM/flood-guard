@@ -1129,7 +1129,7 @@ try {
     const y = box.top + box.height / 2;
     const hit = document.elementFromPoint(x, y);
     // Map chrome (the legend chip, the notes, the layers drawer) is not a map object: a reader drags the map out from under it.
-    const chrome = Boolean(hit) && !hit.closest(".leaflet-pane");
+    const chrome = Boolean(hit) && !hit.closest(".leaflet-container");
     const named = hit?.closest("[data-testid]");
     const what = hit ? `${hit.tagName} ${hit.className}`.trim().slice(0, 80) + (named ? ` in ${named.dataset.testid}` : "") : "nothing";
     return { x, y, width: box.width, reports: marker.dataset.reports, own: hit === marker || marker.contains(hit), chrome, hit: what };
@@ -1144,7 +1144,8 @@ try {
         const y = box.top + (box.height * row) / 20;
         if (y < 4 || y > window.innerHeight - 4) continue;
         const hit = document.elementFromPoint(x, y);
-        if (hit && hit.closest(".leaflet-pane") && !hit.closest(".leaflet-marker-icon, .leaflet-popup")) free.push({ x, y });
+        // The map itself counts, with or without basemap tiles (they do not load offline or on a closed network).
+        if (hit && element.contains(hit) && !hit.closest(".leaflet-marker-icon, .leaflet-control-container, .leaflet-popup")) free.push({ x, y });
       }
     }
     const cx = box.left + box.width / 2;

@@ -348,7 +348,7 @@ function accessLine(facts: ItemBriefInput["facts"], language: Language): string 
   switch (facts.depthFact) {
     case "not_loaded": parts.push(th ? "ยังอ่านค่าความลึกจากแบบจำลองไม่ได้" : "model depth not loaded"); break;
     case "outside": parts.push(th ? "จุดนี้อยู่นอกพื้นที่ที่แบบจำลองครอบคลุม" : "the point is outside the modelled area"); break;
-    case "dry": parts.push(th ? "แบบจำลองแห้ง ณ จุดนี้" : "model dry at the point"); break;
+    case "dry": parts.push(th ? "แบบจำลองแห้งที่จุดนี้" : "model dry at the point"); break;
     default: parts.push(th ? `แบบจำลองน้ำลึก ${depthValue(facts.depth as number)} ม.` : `model depth ${depthValue(facts.depth as number)} m`);
   }
   if (facts.road) {

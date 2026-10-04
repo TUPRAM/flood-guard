@@ -583,8 +583,11 @@ export function MaeSaiCommandExercise({ initial }: {
           // A popup of the map goes first (the map uses the key up itself when the keyboard is inside the map).
           if (map.current?.closePopup()) break;
           if (picking) { setPicking(false); setDialog("setup"); }
-          else if (exerciseMenu) setExerciseMenu(false);
-          else if (actTray) setActTray(null);
+          else if (exerciseMenu) {
+            // The menu hands the keyboard back to its button.
+            setExerciseMenu(false);
+            stage.current?.querySelector<HTMLElement>("[data-command-exercise-menu]")?.focus({ preventScroll: true });
+          } else if (actTray) setActTray(null);
           else if (openPanel && openPanel !== "card") setOpenPanel(null);
           else if (selected || selectedReport || openPanel === "card") deselect();
           else if (found) setFound(null);

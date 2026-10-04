@@ -175,6 +175,13 @@ legend.fieldTitle { padding-right: 10px; }
 @media (max-width: 1180px) {
   .bar { padding: 6px var(--c-inset) 8px; }
   .exerciseMenu { display: none; }
+  /* The first line of a narrow clock card is full (the replay time, the replay hour and the tag): the button of the
+     situation brief stands at the end of the phase line under it. */
+  .briefButton.briefButton { position: absolute; top: 31px; right: calc(var(--c-inset) - 4px); margin: 0; }
+  .briefButton.briefButton:lang(th) { top: 33px; }
+}
+@media (max-width: 899px) {
+  .briefButton.briefButton { display: none; }
 }
 @media (max-width: 520px) {
   .rosterRow { grid-template-columns: 18px minmax(0, 1fr) 104px 44px; }

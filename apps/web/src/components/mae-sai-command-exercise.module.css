@@ -443,7 +443,7 @@
   .tool.menuButton { display: grid; }
   .tool.toolBasemap { display: none; }
   /* The replay time shares its line with the replay hour and the tag: the card's own label is dropped. */
-  .situation { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; padding: 8px var(--c-inset); }
+  .situation { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; padding: 8px var(--c-inset); }
   .situation > * { grid-column: 1 / -1; }
   .situation > .clock { grid-column: 1; grid-row: 1; }
   .situation > .clockHead { grid-column: 2; grid-row: 1; }

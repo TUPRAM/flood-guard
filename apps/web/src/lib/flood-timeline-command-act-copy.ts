@@ -52,9 +52,7 @@ export const COMMAND_ACT = {
   rosterEmpty: { en: "The roster is empty. Add callsigns in the exercise setup.", th: "ยังไม่มีนามเรียกขานในรายชื่อ เพิ่มได้ที่หน้าตั้งค่าการฝึกซ้อม" },
   editRoster: { en: "Edit the roster", th: "แก้ไขรายชื่อ" },
   undo: { en: "Undo", th: "เลิกทำ" },
-  undone: { en: "Undone", th: "เลิกทำแล้ว" },
   cancel: { en: "Cancel", th: "ยกเลิก" },
-  authorSet: { en: "Urgency set by the author of the item", th: "ระดับความเร่งด่วนที่ผู้เขียนรายการกำหนด" },
   closedNote: { en: "The item is closed. Reopen it to assign it again.", th: "รายการนี้ปิดแล้ว เปิดใหม่ก่อนจึงจะมอบหมายได้อีก" },
   deviceNoActions: {
     en: "No team is assigned to a report saved on this device, and no brief is built from it: it is dated today, outside the 2024 replay, and it names a subdistrict and no point.",
@@ -62,8 +60,6 @@ export const COMMAND_ACT = {
   },
   resetNotice: { en: "Exercise reset on this device", th: "ล้างข้อมูลการฝึกซ้อมในอุปกรณ์เครื่องนี้แล้ว" },
   pickStaging: { en: "Tap the map where the team starts", th: "แตะแผนที่ตรงจุดที่ชุดปฏิบัติการเริ่มออกเดินทาง" },
-  stagingSet: { en: "Staging point set", th: "กำหนดจุดระดมทรัพยากรแล้ว" },
-  started: { en: "Exercise started at this replay hour", th: "เริ่มการฝึกซ้อมที่ชั่วโมงนี้ของการย้อนดู" },
 } as const satisfies Record<string, Localized>;
 
 export const COMMAND_DROP_REASON: Readonly<Record<DropReason, Localized>> = {
@@ -179,7 +175,7 @@ export function commandNodeLine(node: ItemFacts["node"], language: Language): st
 // --- How to get near -------------------------------------------------------------------------------------
 
 export const COMMAND_NEAR = {
-  title: { en: "How to get near", th: "การเข้าใกล้จุดนี้" },
+  title: { en: "How to get near", th: "การเข้าถึงจุดนี้" },
   factsOnly: { en: "facts only", th: "ข้อเท็จจริงเท่านั้น" },
   over: { en: "At or over the 0.3 m level at which roads count as impassable.", th: "ถึงหรือเกินระดับ 0.3 ม. ที่นับว่าถนนสัญจรไม่ได้" },
   under: { en: "Under the 0.3 m level at which roads count as impassable.", th: "ต่ำกว่าระดับ 0.3 ม. ที่นับว่าถนนสัญจรไม่ได้" },
@@ -309,7 +305,6 @@ export const COMMAND_BRIEF = {
   copy: { en: "Copy", th: "คัดลอก" },
   copied: { en: "Copied", th: "คัดลอกแล้ว" },
   copyFailed: { en: "Could not copy. Select the text and copy it by hand.", th: "คัดลอกไม่สำเร็จ โปรดเลือกข้อความแล้วคัดลอกเอง" },
-  sms: { en: "SMS", th: "SMS" },
   smsTitle: { en: "Short version for a text message", th: "ฉบับสั้นสำหรับ SMS" },
   smsOpen: { en: "Open in the message app", th: "เปิดในแอปข้อความ" },
   smsNoRecipient: { en: "No recipient is filled in: you type the number.", th: "ไม่มีการกรอกหมายเลขผู้รับไว้ให้ ต้องพิมพ์หมายเลขเอง" },
@@ -450,7 +445,7 @@ export const COMMAND_HELP_ACT = {
   },
   step2: {
     en: "Select a marker. The detail states the depth in the model, the nearest counted shelters and how to get near: facts only, no advice.",
-    th: "เลือกเครื่องหมายบนแผนที่ รายละเอียดจะบอกความลึกของน้ำตามแบบจำลอง ที่พักพิงที่ใกล้ที่สุด และข้อเท็จจริงเกี่ยวกับการเข้าใกล้จุดนั้น โดยไม่มีคำแนะนำ",
+    th: "เลือกเครื่องหมายบนแผนที่ รายละเอียดจะบอกความลึกของน้ำตามแบบจำลอง ที่พักพิงที่ใกล้ที่สุด และข้อเท็จจริงเกี่ยวกับการเข้าถึงจุดนั้น โดยไม่มีคำแนะนำ",
   },
   step3: {
     en: "Assign a callsign, then open the brief: share it, copy it, or hand the short version to the message app.",

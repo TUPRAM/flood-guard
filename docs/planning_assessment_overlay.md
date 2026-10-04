@@ -8,6 +8,8 @@ here is listed at the end for the owners.
 An overlay is planning guidance for preparedness and post-event prioritisation. It is not an official warning, it is
 non-operational, and class E never means safe.
 
+The code that fills an overlay for a case of the protocol is described in `docs/planning_assessment.md` (task E8).
+
 ## Files
 
 | File | What it is |

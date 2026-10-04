@@ -462,6 +462,17 @@ details.card summary { cursor: pointer; font-weight: 700; color: #17253b; min-he
 :is(.legend, .toggleSwatch) i.legendGauge { display: inline-grid; place-items: center; width: 16px; height: 16px; background: none; }
 :is(.legend, .toggleSwatch) i.legendGauge svg { fill: #1f7a8c; stroke: #fff; stroke-width: 1.6; }
 .popupFrame :global(.leaflet-popup-content) { margin: .7rem .8rem; }
+/* Reported depths (news, not surveyed): a speech bubble with two wave lines, so it never reads as a shelter, a gauge or a facility. */
+/* The box is 28 px around the 22 px bubble: a hit target of at least 24 px. A marker holding several place records shows how many. */
+.reportedDepthIcon { display: grid; place-items: center; background: none; border: 0; filter: drop-shadow(0 1px 2px rgb(15 23 42 / 45%)); }
+.reportedDepthIcon svg { fill: #9a3412; stroke: #fff; stroke-width: 1.5; stroke-linejoin: round; }
+.reportedDepthIcon b { position: absolute; top: -3px; right: -4px; min-width: 15px; height: 15px; padding: 0 3px; border: 1px solid #9a3412; border-radius: 8px; background: #fff; color: #7c2d12; font: 700 10px/13px system-ui, sans-serif; text-align: center; pointer-events: none; }
+.reportedDepthIcon:focus-visible { outline: 3px solid #e8a526; outline-offset: 2px; border-radius: 4px; }
+:is(.legend, .toggleSwatch) i.legendReportedDepth { display: inline-grid; place-items: center; width: 16px; height: 16px; background: none; }
+:is(.legend, .toggleSwatch) i.legendReportedDepth svg { fill: #9a3412; stroke: #fff; stroke-width: 1.5; }
+.popup .reportedDepthReport + .reportedDepthReport { margin-top: .45rem; padding-top: .45rem; border-top: 1px solid #e3e8f1; }
+.popup .reportedDepthReport { display: grid; gap: .2rem; }
+.reportedDepthList li { overflow-wrap: anywhere; }
 
 /* --- Observed evidence: VIIRS daily maps and hourly rain ---------------------------------------- */
 .legend i.viirsSwatch { box-shadow: inset 0 0 0 1px rgb(12 39 64 / 22%); }
@@ -472,6 +483,11 @@ details.card summary { cursor: pointer; font-weight: 700; color: #17253b; min-he
 .viirsTable th[scope="row"], .viirsTable thead th:first-child { text-align: left; color: #17253b; }
 .viirsTable td[data-tone="observed"] { color: #5e2472; font-weight: 700; }
 .viirsTable tr[data-active] { background: #f4eef8; box-shadow: inset 3px 0 0 #9970ab; }
+/* Reported-depth counts: outcomes as rows and three short count columns, so it fits a 286 px card on a phone. Every
+   cell wraps between words only (the card's overflow-wrap: anywhere would let a header shrink to one letter a line). */
+.viirsTable.depthCounts th, .viirsTable.depthCounts td { white-space: normal; overflow-wrap: normal; word-break: normal; }
+.viirsTable.depthCounts thead th:not(:first-child) { width: 22%; text-align: right; }
+.viirsTable.depthCounts th[scope="row"] { font-weight: 500; }
 .viirsReadings { display: grid; gap: .3rem; margin: 0; padding: 0; list-style: none; font-size: .76rem; }
 .viirsReadings li { padding: .3rem .5rem; border-left: 3px solid #dcd0e6; border-radius: .3rem; }
 .viirsReadings li[data-active] { border-left-color: #9970ab; background: #f8f5fb; }

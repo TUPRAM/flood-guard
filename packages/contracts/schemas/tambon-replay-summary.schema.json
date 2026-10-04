@@ -1,0 +1,146 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://floodguard.th/contracts/tambon-replay-summary.schema.json",
+  "title": "FloodGuard case replay: per-subdistrict summary at the modelled peak (tambon_replay_summary.json)",
+  "description": "One record per subdistrict (tambon) of a case replay, at the modelled peak: flooded area, residents in water, impassable road length and walking access to a shelter for two shelter sets, each counted two ways. Every figure is a T1 scenario (model), not an observation. Each record carries its own lane, tier, confidence class, source timestamp, generation time and assumptions so that it can be used alone, for example in a one-page brief. It holds no Flood Preparedness Priority Score and no action class, and it does not copy the season-envelope comparison, which stays in the envelope's own file under its own licence.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["name", "schema_id", "metadata", "records"],
+  "properties": {
+    "name": { "const": "tambon_replay_summary" },
+    "schema_id": { "const": "https://floodguard.th/contracts/tambon-replay-summary.schema.json" },
+    "metadata": {
+      "type": "object",
+      "required": [
+        "floodguard_export", "title", "title_th", "tier", "tier_th", "operational_status", "confidence_class", "confidence_reason",
+        "confidence_reason_th", "lanes", "source_timestamp", "generated_at", "generated_by", "study", "accepted", "licence", "licence_th",
+        "attribution", "licence_inputs", "not_included", "not_included_th", "assumption_1", "assumption_1_th", "input_receipt",
+        "input_sha256", "git_commit", "knee_k", "peak_stage_m", "peak_local_time", "fields"
+      ],
+      "propertyNames": { "not": { "pattern": "[Ff][Pp][Pp][Ss]|[Aa]ction[_-]?[Cc]lass|[Pp]riority[_-]?[Ss]core" } },
+      "properties": {
+        "floodguard_export": { "const": "tambon_replay_summary.json" },
+        "tier": { "type": "string", "pattern": "^T1 scenario \\(model\\) replay" },
+        "operational_status": { "const": "non_operational" },
+        "confidence_class": { "enum": ["low", "medium", "high"] },
+        "lanes": { "const": "SCN" },
+        "generated_at": { "$ref": "#/$defs/instant" },
+        "accepted": { "type": "string", "pattern": "accepted_fpps=null; accepted_action_class=null" },
+        "licence": { "type": "string", "pattern": "^ODbL 1\\.0" },
+        "fields": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["key", "th", "en"],
+            "properties": {
+              "key": { "type": "string", "pattern": "^[a-z][a-z0-9_]*(\\.[a-z0-9_]+)*$" },
+              "th": { "type": "string", "pattern": "[฀-๿]" },
+              "en": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      },
+      "patternProperties": {
+        "^assumption_[0-9]+$": { "type": "string", "minLength": 1 },
+        "^assumption_[0-9]+_th$": { "type": "string", "pattern": "[฀-๿]" }
+      }
+    },
+    "records": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/record" }
+    }
+  },
+  "$defs": {
+    "instant": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(Z|[+-]\\d{2}:\\d{2})$" },
+    "share": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+    "people": { "type": "number", "minimum": 0 },
+    "localized": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["en", "th"],
+      "properties": {
+        "en": { "type": "string", "minLength": 1 },
+        "th": { "type": "string", "pattern": "[฀-๿]" }
+      }
+    },
+    "accessCount": {
+      "description": "One shelter set for one group of residents in one subdistrict at the modelled peak. The set's own baseline is within_reach_before_flood; lost_access and keeping_access are of that baseline.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["residents", "within_reach_before_flood", "already_out_of_reach_before_flood", "lost_access", "keeping_access", "lost_share_of_within_reach"],
+      "properties": {
+        "residents": { "$ref": "#/$defs/people" },
+        "within_reach_before_flood": { "$ref": "#/$defs/people" },
+        "already_out_of_reach_before_flood": { "$ref": "#/$defs/people" },
+        "lost_access": { "$ref": "#/$defs/people" },
+        "keeping_access": { "$ref": "#/$defs/people" },
+        "lost_share_of_within_reach": { "$ref": "#/$defs/share" }
+      }
+    },
+    "accessSet": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["all_residents_at_road_nodes", "residents_whose_homes_flood_at_peak"],
+      "properties": {
+        "all_residents_at_road_nodes": { "$ref": "#/$defs/accessCount" },
+        "residents_whose_homes_flood_at_peak": { "$ref": "#/$defs/accessCount" }
+      }
+    },
+    "record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tambon_id", "tambon_name_th", "tambon_name_en", "lane", "evidence_tier", "confidence_class", "source_timestamp", "generated_at",
+        "operational_status", "assumptions", "area_km2", "modelled_share_of_area", "modelled_peak_stage_m", "modelled_peak_local_time",
+        "modelled_flooded_km2_at_peak", "modelled_flooded_share_of_subdistrict", "modelled_flooded_share_of_district",
+        "modelled_residents_in_water_at_peak", "modelled_road_km_impassable_at_peak", "modelled_access_at_peak"
+      ],
+      "properties": {
+        "tambon_id": { "type": "string", "minLength": 1 },
+        "tambon_name_th": { "type": "string", "pattern": "[฀-๿]" },
+        "tambon_name_en": { "type": "string", "minLength": 1 },
+        "lane": { "const": "SCN" },
+        "evidence_tier": { "const": "T1 scenario (model)" },
+        "confidence_class": { "enum": ["low", "medium", "high"] },
+        "source_timestamp": { "type": "string", "minLength": 1 },
+        "generated_at": { "$ref": "#/$defs/instant" },
+        "operational_status": { "const": "non_operational" },
+        "assumptions": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/localized" } },
+        "area_km2": { "type": "number", "exclusiveMinimum": 0 },
+        "modelled_share_of_area": { "$ref": "#/$defs/share" },
+        "modelled_peak_stage_m": { "type": "number", "minimum": 0 },
+        "modelled_peak_local_time": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\+07:00$" },
+        "modelled_flooded_km2_at_peak": { "type": "number", "minimum": 0 },
+        "modelled_flooded_share_of_subdistrict": { "$ref": "#/$defs/share" },
+        "modelled_flooded_share_of_district": { "$ref": "#/$defs/share" },
+        "modelled_residents_in_water_at_peak": { "$ref": "#/$defs/people" },
+        "modelled_road_km_impassable_at_peak": { "type": "number", "minimum": 0 },
+        "modelled_access_at_peak": {
+          "description": "Walking access at the modelled peak for the sites reported in use in September 2024 and the knee plan (metadata.knee_k sites), each counted two ways, as the replay page does. Nothing here grades a set or a subdistrict.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["reported_2024", "knee_plan"],
+          "properties": {
+            "reported_2024": { "$ref": "#/$defs/accessSet" },
+            "knee_plan": { "$ref": "#/$defs/accessSet" }
+          }
+        },
+        "season_envelope_comparison": {
+          "description": "Where the subdistrict's comparison with the 2024 season envelope is (lane SCN-ENV). It names the file and the entry and holds no figure: those figures are under the envelope's own licence and stay in its own file (the record's assumptions say so).",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["lane", "stage", "file", "entry"],
+          "properties": {
+            "lane": { "const": "SCN-ENV" },
+            "stage": { "type": "string", "minLength": 1 },
+            "file": { "const": "season_envelope.files.statistics" },
+            "entry": { "type": "string", "pattern": "^comparison\\.by_tambon\\[tambon_id=[^\\]]+\\]$" }
+          }
+        }
+      }
+    }
+  }
+}

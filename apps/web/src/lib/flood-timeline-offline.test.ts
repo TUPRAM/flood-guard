@@ -114,7 +114,7 @@ describe("Mae Sai replay offline inventory", () => {
     const { assets } = readCaseReplayAssets(publicRoot);
     const exports = readCaseReplayExports(publicRoot);
     const folder = `${manifestDirectory(TIMELINE_MANIFEST_URL)}${CASE_REPLAY_EXPORT_KEY}/`;
-    expect(exports.length).toBe(8);
+    expect(exports.length).toBe(9); // Eight tables and layers plus the per-subdistrict summary (P3-2).
     expect(exports.map((asset) => asset.url)).toEqual(manifestExportAssets(manifest).map((asset) => asset.href));
     for (const asset of exports) expect(asset.url.startsWith(folder)).toBe(true);
     // The pack is the whole export folder, and no file of it is in the replay's precache set.

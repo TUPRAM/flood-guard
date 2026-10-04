@@ -3,8 +3,9 @@
 Scans the text the bake and the documents put in front of a reader with the rules shared with the web tests
 (``apps/web/src/lib/replay-wording-rules.json``): the served manifest, the strings of the bake scripts (the
 next manifest) and of the export and shelter-check modules, the reported-shelter source file, the replay documents,
-the product 4009 rights record and its notice, and the header of every committed export file. It must pass on the
-current text and fail on one seeded bad string per rule.
+the product 4009 rights record and its notice, the header of every committed export file, and the demo documents (the
+replay beat of the walkthrough and the story, the figures to quote, the video notes and the offline checklist). It must
+pass on the current text and fail on one seeded bad string per rule.
 The web twin is ``apps/web/src/lib/replay-wording-lint.test.tsx``.
 """
 
@@ -36,11 +37,18 @@ BAKE_SCRIPTS = ("scripts/build_mae_sai_flood_timeline.py", "scripts/mae_sai_time
                 # The season-envelope stage writes the product 4009 files: its strings are their text.
                 "scripts/mae_sai_timeline_unosat4009.py",
                 # The export pack's wording, the returned-sheet messages and the import script's output reach a reader too.
-                "src/floodguard/replay_exports.py", "src/floodguard/shelter_validation.py", "scripts/import_shelter_validation.py")
-JSON_DOCUMENTS = ("outputs/mae_sai_reported_shelters_2024.json", "docs/proposal_execution/rights_basis_4009_v1.json",
+                "src/floodguard/replay_exports.py", "src/floodguard/shelter_validation.py", "scripts/import_shelter_validation.py",
+                # The reported depths' block (rules, likely causes, labels) is written by this module.
+                "src/floodguard/reported_depths.py")
+JSON_DOCUMENTS = ("outputs/mae_sai_reported_shelters_2024.json", "outputs/mae_sai_reported_depths_2024.json", "docs/proposal_execution/rights_basis_4009_v1.json",
                   "docs/mae_sai_timeline_r4_input_receipt.json", "apps/web/src/lib/__fixtures__/mae-sai-equity-access-parity.json")
 TEXT_DOCUMENTS = ("docs/decision-log-d1-d16.md", "docs/proposal_execution/rights_basis_4009_v1_NOTICE.txt")
 STUDY_LIBRARY = "docs/studio-study-library.md"
+# The demo documents of the replay (roadmap P4-1). The walkthrough and the story are read by section: their other sections
+# describe the fixture dashboard, and the walkthrough's "words to avoid" table lists banned phrases on purpose
+# (tests/test_demo_docs.py checks that each of those is flagged).
+DEMO_DOCUMENTS = ("docs/demo/replay_numbers.md", "docs/demo/README.md", "docs/demo/offline_dry_run_checklist.md")
+DEMO_SECTIONS = (("docs/demo_walkthrough.md", "## Mae Sai Replay Beat (60-90 s)"), ("docs/demo_story.md", "## Replay Beat (60-90 s)"))
 REPLAY_SECTION = "### Case replay: links, exports and offline copy"
 EXPORT_HEADER = ("T1 scenario (model) replay of a reconstructed 2024 event for preparedness planning and exercises; illustrative stage "
                  "keyframes; not a forecast, not an observed closure record, not an official warning; non_operational; accepted_* null")
@@ -95,6 +103,10 @@ def corpus() -> list[tuple[str, str]]:
     library = (ROOT / STUDY_LIBRARY).read_text(encoding="utf-8")
     items.append((f"{STUDY_LIBRARY} (case replay section)", markdown_section(library, REPLAY_SECTION)))
     items += [(f"{STUDY_LIBRARY} (route table)", line) for line in library.splitlines() if "/studio/cases/mae-sai-2024/" in line]
+    for document in DEMO_DOCUMENTS:
+        items.append((document, (ROOT / document).read_text(encoding="utf-8")))
+    for document, heading in DEMO_SECTIONS:
+        items.append((f"{document} ({heading.lstrip('# ')})", markdown_section((ROOT / document).read_text(encoding="utf-8"), heading)))
     items.append(("export header (P3-1 standard sentence)", EXPORT_HEADER))
     items += export_headers()
     items += envelope_files()
@@ -123,6 +135,8 @@ def test_rules_cover_the_six_banned_groups_and_the_shelter_comparison_rules() ->
         "safe_departure",  # the modelled cut-off hour presented as a safe time to leave (P2-4)
         "shelter_directive",  # "open these shelters": the plans list candidates to verify (P2-9)
         "equity_denominator",  # the equity rates stated over all residents counted, not those within reach before the flood (R8)
+        "report_confirmation",  # a news report "confirming" the model, or the model "confirmed by" reports (C-2)
+        "report_count",  # the reported depths counted as news reports: they are place records (one statement per community)
     )
     assert len(RULES.allow) >= 8
 
@@ -262,7 +276,8 @@ def test_a_malformed_rules_file_is_refused(tmp_path: Path) -> None:
 def test_corpus_covers_manifest_bake_scripts_documents_and_export_header() -> None:
     sources = [source for source, _ in corpus()]
     assert sum(source.startswith("timeline.json") for source in sources) > 100
-    for needle in (*BAKE_SCRIPTS, *TEXT_DOCUMENTS, "export header", "exports/modelled_road_inundation_by_hour.csv header", "exports/README_licences.txt header"):
+    for needle in (*BAKE_SCRIPTS, *TEXT_DOCUMENTS, *DEMO_DOCUMENTS, *(document for document, _ in DEMO_SECTIONS), "export header",
+                   "exports/modelled_road_inundation_by_hour.csv header", "exports/README_licences.txt header"):
         assert any(source.startswith(needle) for source in sources), needle
     for document in JSON_DOCUMENTS:
         assert any(source.startswith(document) for source in sources), document
@@ -291,7 +306,9 @@ def test_lint_fails_on_one_seeded_bad_string_per_rule(rule_id: str) -> None:
     targets = ("timeline.json $.limitations[0]", "scripts/build_mae_sai_flood_timeline.py", "docs/decision-log-d1-d16.md",
                "export header (P3-1 standard sentence)",
                # Product 4009 text: the stage's strings, the statistics file and the licence notice.
-               "scripts/mae_sai_timeline_unosat4009.py", "unosat4009/envelope.json $.comparison.use", "unosat4009/LICENSE")
+               "scripts/mae_sai_timeline_unosat4009.py", "unosat4009/envelope.json $.comparison.use", "unosat4009/LICENSE",
+               # The demo documents: the figures to quote and the walkthrough's replay beat.
+               "docs/demo/replay_numbers.md", "docs/demo_walkthrough.md (Mae Sai Replay Beat (60-90 s))")
     for target in targets:
         index = next(i for i, (source, _) in enumerate(items) if source == target)
         seeded = list(items)
@@ -306,7 +323,7 @@ def test_export_headers_are_linted_like_any_other_text() -> None:
     # The sentence the roadmap fixed is the one the writer puts into every file.
     assert replay_exports.EXPORT_TIER == EXPORT_HEADER
     headers = export_headers()
-    assert len(headers) == 8 and all(EXPORT_HEADER in text for _, text in headers)
+    assert len(headers) == 9 and all(EXPORT_HEADER in text for _, text in headers)
     assert all(replay_exports.EXPORT_TIER_TH in text for _, text in headers)
     seeded = [(source, text.replace("not an observed closure record", "the road closure schedule")) for source, text in headers]
     assert ids(lint_texts(seeded, RULES)) == ["road_schedule"]

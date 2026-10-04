@@ -1,0 +1,1039 @@
+{
+ "name": "tambon_replay_summary",
+ "schema_id": "https://floodguard.th/contracts/tambon-replay-summary.schema.json",
+ "metadata": {
+  "floodguard_export": "tambon_replay_summary.json",
+  "title": "Per-subdistrict replay summary at the modelled peak: water, residents, roads and walking access (modelled, not observed)",
+  "title_th": "สรุปผลการย้อนดูรายตำบล ณ ระดับน้ำสูงสุดตามแบบจำลอง: น้ำ ผู้อยู่อาศัย ถนน และการเดินถึงที่พักพิง (ค่าจากแบบจำลอง ไม่ใช่ค่าที่สังเกตได้)",
+  "tier": "T1 scenario (model) replay of a reconstructed 2024 event for preparedness planning and exercises; illustrative stage keyframes; not a forecast, not an observed closure record, not an official warning; non_operational; accepted_* null",
+  "tier_th": "การย้อนดูสถานการณ์จำลองระดับ T1 (แบบจำลอง) ของเหตุการณ์ปี 2567 (2024) ที่จำลองขึ้นใหม่ เพื่อการวางแผนเตรียมความพร้อมและการฝึกซ้อม ใช้จุดกำหนดระดับน้ำเพื่อการอธิบาย ไม่ใช่การพยากรณ์ ไม่ใช่บันทึกการปิดถนนที่สังเกตได้จริง ไม่ใช่การเตือนภัยอย่างเป็นทางการ ไม่ใช้ในการปฏิบัติการ และไม่มีคะแนนหรือระดับการดำเนินการที่ยอมรับ (accepted_* เป็น null)",
+  "operational_status": "non_operational",
+  "confidence_class": "low",
+  "confidence_reason": "The tables come from a terrain-model reconstruction with illustrative stages, WorldPop 2020 residents, OpenStreetMap roads and sites, and unverified capacity estimates; nothing was checked on the ground.",
+  "confidence_reason_th": "ตารางมาจากการจำลองด้วยแบบจำลองภูมิประเทศและระดับน้ำสมมุติ ผู้อยู่อาศัยตาม WorldPop 2020 ถนนและสถานที่จาก OpenStreetMap และค่าประมาณความจุที่ยังไม่ได้ตรวจสอบ ยังไม่มีการตรวจสอบในพื้นที่",
+  "lanes": "SCN",
+  "source_timestamp": "OpenStreetMap extract 2026-07-09 (roads and sites); WorldPop 2020; reported shelters compiled 2026-09-27; illustrative stage keyframes for 2024-09-09/2024-09-19 ICT on the Copernicus DEM (2011-2015 acquisitions); peak keyframe 2024-09-12T12:00:00+07:00",
+  "generated_at": "2026-10-03T17:47:00+07:00",
+  "generated_by": "scripts/build_mae_sai_flood_timeline.py",
+  "study": "mae-sai-2024-flood-timeline r4",
+  "accepted": "accepted_fpps=null; accepted_action_class=null (no priority score and no action class is computed)",
+  "licence": "ODbL 1.0 (https://opendatacommons.org/licenses/odbl/1-0/): OpenStreetMap-derived, attribution and share-alike",
+  "licence_th": "ODbL 1.0: ดัดแปลงจาก OpenStreetMap ต้องแสดงที่มาและเผยแพร่งานดัดแปลงภายใต้สัญญาอนุญาตเดียวกัน",
+  "attribution": "© OpenStreetMap contributors; WorldPop (www.worldpop.org), University of Southampton; OCHA / HDX Thailand COD-AB; © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018, provided under COPERNICUS by the European Union and ESA; FloodGuard desk research of public reporting, sources linked per site",
+  "licence_inputs": "OpenStreetMap roads and candidate facilities (Geofabrik extract): ODbL 1.0; WorldPop Thailand 100 m population 2020, unconstrained top-down (tha_ppp_2020): CC BY 4.0; HDX Thailand COD-AB subdistrict boundaries v01: CC BY-IGO; Copernicus DEM GLO-30 (tiles N20 E099 and N20 E100): Copernicus DEM licence (free, attribution); Shelters reported in use in September 2024 (FloodGuard desk research): Facts with citations; OSM-derived coordinates © OpenStreetMap contributors (ODbL)",
+  "not_included": "No HII rain values (CC BY-NC), nothing from a source without a stated licence and nothing from UNOSAT/GISTDA product 4009 is in this file.",
+  "not_included_th": "ไฟล์นี้ไม่มีค่าปริมาณฝนของ สสน. (CC BY-NC) ไม่มีข้อมูลจากแหล่งที่ไม่ระบุสัญญาอนุญาต และไม่มีข้อมูลใดจากผลิตภัณฑ์ 4009 ของ UNOSAT/GISTDA",
+  "assumption_1": "The water is a HAND terrain-model reconstruction driven by illustrative stage keyframes (no gauge record was used): modelled, not observed.",
+  "assumption_1_th": "น้ำเป็นการจำลองจากแบบจำลองภูมิประเทศ HAND ด้วยจุดกำหนดระดับน้ำเพื่อการอธิบาย (ไม่ได้ใช้ข้อมูลจากสถานีวัดน้ำ) เป็นค่าจากแบบจำลอง ไม่ใช่ค่าที่สังเกตได้",
+  "assumption_2": "Every figure is for the modelled peak only: the illustrative 3.5 m stage keyframe at 2024-09-12T12:00:00+07:00 (ICT, UTC+7).",
+  "assumption_2_th": "ตัวเลขทุกตัวเป็นค่า ณ ระดับน้ำสูงสุดของแบบจำลองเท่านั้น คือจุดกำหนดระดับน้ำเพื่อการอธิบายที่ 3.5 ม. เวลา 2024-09-12T12:00:00+07:00 (เวลาประเทศไทย UTC+7)",
+  "assumption_3": "Flooded area and residents in water are counted per subdistrict on the replay's 10 m grid, outside mapped channels. Residents are WorldPop 2020 modelled residents, not the 2024 population, tourists or traders.",
+  "assumption_3_th": "พื้นที่น้ำท่วมและผู้อยู่อาศัยในพื้นที่น้ำท่วมนับรายตำบลบนกริด 10 ม. ของการย้อนดู ไม่รวมร่องน้ำในแผนที่ ผู้อยู่อาศัยเป็นประชากรตามแบบจำลอง WorldPop 2020 ไม่ใช่ประชากรปี 2567 (2024) นักท่องเที่ยว หรือผู้ค้า",
+  "assumption_4": "Impassable road length sums the modelled road pieces of the subdistrict whose reconstructed depth reaches 0.3 m at the peak. Bridge decks are not modelled, and no closure report was used.",
+  "assumption_4_th": "ความยาวถนนที่สัญจรไม่ได้คือผลรวมของถนนช่วงต่าง ๆ ในตำบลที่ความลึกจำลองถึง 0.3 ม. ณ ระดับน้ำสูงสุด ไม่ได้จำลองพื้นสะพาน และไม่ได้ใช้รายงานการปิดถนน",
+  "assumption_5": "A resident has access when a dry shelter of the set is within a 2 km walk on roads that are still passable. Two sets are given side by side, the sites reported in use in September 2024 and the first 8 sites of the modelled coverage ranking, each against its own baseline and counted two ways (all residents at road nodes, and residents whose homes flood at the modelled peak). Nothing here grades a set or a subdistrict.",
+  "assumption_5_th": "ผู้อยู่อาศัยเข้าถึงได้เมื่อมีที่พักพิงที่ไม่ถูกน้ำท่วมของชุดนั้นภายในระยะเดิน 2 กม. บนถนนที่ยังสัญจรได้ แสดงสองชุดเคียงกัน คือสถานที่ที่มีรายงานว่าใช้ในเดือนกันยายน 2567 (2024) และ 8 แห่งแรกของการจัดอันดับความครอบคลุมตามแบบจำลอง แต่ละชุดเทียบกับฐานของตัวเอง และนับสองแบบ (ผู้อยู่อาศัยทั้งหมดที่จุดถนน และผู้ที่บ้านถูกน้ำท่วมที่ระดับสูงสุดของแบบจำลอง) ตัวเลขไม่ได้ตัดสินชุดหรือตำบลใด",
+  "assumption_6": "No priority score and no action class is computed for any subdistrict: the replay computes neither.",
+  "assumption_6_th": "ไม่มีการคำนวณคะแนนลำดับความสำคัญหรือระดับการดำเนินการของตำบลใด การย้อนดูไม่ได้คำนวณทั้งสองอย่าง",
+  "assumption_7": "The comparison of this subdistrict with the 2024 season envelope is in the envelope's statistics file, which the replay manifest names at season_envelope.files.statistics. That file is shared under its product's own licence (CC BY-SA 4.0) and this file keeps one licence lineage (ODbL 1.0), so its figures are not copied here. It is a scenario plausibility comparison, not a validation.",
+  "assumption_7_th": "การเปรียบเทียบตำบลนี้กับขอบเขตน้ำตลอดฤดูปี 2567 (2024) อยู่ในไฟล์สถิติของขอบเขตน้ำ ซึ่งไฟล์กำกับของการย้อนดูระบุไว้ที่ season_envelope.files.statistics ไฟล์นั้นเผยแพร่ภายใต้สัญญาอนุญาตของผลิตภัณฑ์ต้นทาง (CC BY-SA 4.0) ส่วนไฟล์นี้มีสายสัญญาอนุญาตเดียว (ODbL 1.0) จึงไม่ได้คัดลอกตัวเลขมาไว้ที่นี่ การเปรียบเทียบนี้เป็นการดูความเป็นไปได้ของสถานการณ์จำลอง ไม่ใช่การยืนยันความถูกต้อง",
+  "input_receipt": "docs/mae_sai_timeline_r4_input_receipt.json lists every input file of the bake with its SHA-256 (also timeline.json input_sha256); input_set_sha256=d56c09f9d9c9551eda1e3b6fbfbff145e0d1358ad7faeec9b8c0612657f75110",
+  "input_sha256": "repo:outputs/mae_sai_road_risk.geojson=cd8648f8fbaabab14fdf45e9e98fff36d90902580831513be39a5dfe0af4439c; repo:outputs/mae_sai_access_edges.csv=266fd0f662b44b8210fc5ab064eadbb26b822ccb869221c92d666f4b172de454; repo:outputs/mae_sai_population_nodes.csv=172235bb7954bb8a60d944c5acc8414e3f73c6b7c204a84e10c3b0b35411f4ac; repo:outputs/mae_sai_admin_context.geojson=5cd03ca936c188d37704f5249afa87da0c687b967db8a0f9c9ebd72b27204db1; repo:outputs/mae_sai_reported_shelters_2024.json=674d95881b857916f65f864e555a1b20f815a25bd9c43e2d475fc0c8f2d00d35; external:open_context/osm_geofabrik/thailand-latest.osm.pbf=b7f46018249638413b1d318bc86519f140c27af20cac7c00d42fe03775b7add1; repo:outputs/mae_sai_facilities.geojson=5f9d2381fc6dccec5343e48e6526a92f80028840e27e4753bb3fbb42445b97ce; external:open_context/worldpop_population/tha_ppp_2020.tif=fb39d85dd150c45c7b25771f29bcd548e611afa0967224ac6d8ca05727230e20; external:open_context/copernicus_dem_glo30/Copernicus_DSM_COG_10_N20_00_E099_00_DEM.tif=8965f85514b577b4b606c658412bfe3d713c0abf478d237539af309d8edb3757; external:open_context/copernicus_dem_glo30/Copernicus_DSM_COG_10_N20_00_E100_00_DEM.tif=353574d52c8d93f0e650207acf4c9045bcebe02bb956b30ca1596cb2dafa17bf",
+  "git_commit": "null: a file cannot hold the hash of the commit that adds it; git log -1 --format=%H -- apps/web/public/studies/mae-sai-2024-timeline/r4/exports/tambon_replay_summary.json",
+  "knee_k": "8",
+  "peak_stage_m": "3.5",
+  "peak_local_time": "2024-09-12T12:00:00+07:00",
+  "records": "one per subdistrict, in the order of the replay's subdistrict list",
+  "fields": [
+   {
+    "key": "tambon_id",
+    "th": "รหัสตำบล",
+    "en": "Subdistrict code (COD-AB ADM3)"
+   },
+   {
+    "key": "tambon_name_th",
+    "th": "ชื่อตำบล",
+    "en": "Subdistrict name in Thai"
+   },
+   {
+    "key": "tambon_name_en",
+    "th": "ชื่อตำบลภาษาอังกฤษ",
+    "en": "Subdistrict name in English"
+   },
+   {
+    "key": "lane",
+    "th": "ช่องทางของหลักฐาน",
+    "en": "Evidence lane of the record's figures: SCN, scenario (model)"
+   },
+   {
+    "key": "evidence_tier",
+    "th": "ระดับของหลักฐาน",
+    "en": "T1 scenario (model): modelled, not observed"
+   },
+   {
+    "key": "confidence_class",
+    "th": "ระดับความเชื่อมั่น",
+    "en": "Confidence class of the figures (low)"
+   },
+   {
+    "key": "source_timestamp",
+    "th": "เวลาของข้อมูลต้นทาง",
+    "en": "The dated inputs the figures come from"
+   },
+   {
+    "key": "generated_at",
+    "th": "เวลาที่สร้างไฟล์",
+    "en": "When the replay's files were generated (declared, not a clock reading)"
+   },
+   {
+    "key": "operational_status",
+    "th": "สถานะการใช้งาน",
+    "en": "non_operational: not for emergency response or evacuation orders"
+   },
+   {
+    "key": "assumptions",
+    "th": "สมมติฐาน",
+    "en": "The assumptions behind the figures, in English and Thai"
+   },
+   {
+    "key": "area_km2",
+    "th": "พื้นที่ตำบล ตร.กม.",
+    "en": "Area of the subdistrict, km2 (COD-AB)"
+   },
+   {
+    "key": "modelled_share_of_area",
+    "th": "สัดส่วนพื้นที่ที่แบบจำลองครอบคลุม",
+    "en": "Share of the subdistrict inside the water model, at most 1"
+   },
+   {
+    "key": "modelled_peak_stage_m",
+    "th": "ระดับน้ำสูงสุดสมมุติ ม.",
+    "en": "The illustrative peak stage keyframe, metres above the mapped channel"
+   },
+   {
+    "key": "modelled_peak_local_time",
+    "th": "เวลาท้องถิ่นของระดับน้ำสูงสุด",
+    "en": "Local time of that keyframe (ICT, UTC+7)"
+   },
+   {
+    "key": "modelled_flooded_km2_at_peak",
+    "th": "พื้นที่น้ำท่วมตามแบบจำลอง ตร.กม.",
+    "en": "Modelled out-of-channel flooded area at the peak, km2"
+   },
+   {
+    "key": "modelled_flooded_share_of_subdistrict",
+    "th": "สัดส่วนน้ำท่วมของพื้นที่ตำบล",
+    "en": "That area divided by the subdistrict's area, four decimals"
+   },
+   {
+    "key": "modelled_flooded_share_of_district",
+    "th": "สัดส่วนของพื้นที่น้ำท่วมทั้งอำเภอ",
+    "en": "That area divided by the district's modelled flooded area at the peak, four decimals"
+   },
+   {
+    "key": "modelled_residents_in_water_at_peak",
+    "th": "ผู้อยู่อาศัยในพื้นที่น้ำท่วมตามแบบจำลอง",
+    "en": "WorldPop 2020 residents on modelled wet cells at the peak, one decimal"
+   },
+   {
+    "key": "modelled_road_km_impassable_at_peak",
+    "th": "ถนนที่สัญจรไม่ได้ตามแบบจำลอง กม.",
+    "en": "Modelled road length with at least 0.3 m of reconstructed depth at the peak, km"
+   },
+   {
+    "key": "modelled_access_at_peak.reported_2024.all_residents_at_road_nodes.residents",
+    "th": "ชุดที่มีรายงานปี 2567 (2024) · ผู้อยู่อาศัยทั้งหมดที่จุดถนน · ผู้อยู่อาศัยที่นับในตำบล (ผู้อยู่อาศัย WorldPop 2020 ที่จุดถนน)",
+    "en": "Residents counted in the subdistrict (WorldPop 2020 residents at road nodes); the sites reported in use in September 2024; all residents at road nodes"
+   },
+   {
+    "key": "modelled_access_at_peak.reported_2024.all_residents_at_road_nodes.within_reach_before_flood",
+    "th": "ชุดที่มีรายงานปี 2567 (2024) · ผู้อยู่อาศัยทั้งหมดที่จุดถนน · ในจำนวนนี้ ผู้ที่มีที่พักพิงของชุดนี้ในระยะเดินก่อนน้ำท่วม ซึ่งเป็นฐานของชุดนั้นเอง",
+    "en": "Of those, residents with a shelter of the set within reach before the flood: the set's own baseline; the sites reported in use in September 2024; all residents at road nodes"
+   },
+   {
+    "key": "modelled_access_at_peak.reported_2024.all_residents_at_road_nodes.already_out_of_reach_before_flood",
+    "th": "ชุดที่มีรายงานปี 2567 (2024) · ผู้อยู่อาศัยทั้งหมดที่จุดถนน · ในจำนวนนี้ ผู้ที่ไม่มีที่พักพิงของชุดนี้ในระยะเดินตั้งแต่ก่อนน้ำท่วม",
+    "en": "Of those, residents with no shelter of the set within reach even before the flood; the sites reported in use in September 2024; all residents at road nodes"
+   },
+   {
+    "key": "modelled_access_at_peak.reported_2024.all_residents_at_road_nodes.lost_access",
+    "th": "ชุดที่มีรายงานปี 2567 (2024) · ผู้อยู่อาศัยทั้งหมดที่จุดถนน · ในฐานนั้น ผู้ที่สูญเสียการเข้าถึง ณ ระดับน้ำสูงสุดของแบบจำลอง",
+    "en": "Of the baseline, residents who have lost access at the modelled peak; the sites reported in use in September 2024; all residents at road nodes"
+   },
+   {
+    "key": "modelled_access_at_peak.reported_2024.all_residents_at_road_nodes.keeping_access",
+    "th": "ชุดที่มีรายงานปี 2567 (2024) · ผู้อยู่อาศัยทั้งหมดที่จุดถนน · ในฐานนั้น ผู้ที่ยังเดินถึงได้ ณ ระดับน้ำสูงสุดของแบบจำลอง",
+    "en": "Of the baseline, residents who still have access at the modelled peak; the sites reported in use in September 2024; all residents at road nodes"
+   },
+   {
+    "key": "modelled_access_at_peak.reported_2024.all_residents_at_road_nodes.lost_share_of_within_reach",
+    "th": "ชุดที่มีรายงานปี 2567 (2024) · ผู้อยู่อาศัยทั้งหมดที่จุดถนน · lost_access หารด้วย within_reach_before_flood ทศนิยมสี่ตำแหน่ง (เป็น null เมื่อฐานเป็น 0.0)",
+    "en": "lost_access divided by within_reach_before_flood, four decimals (null when the baseline is 0.0); the sites reported in use in September 2024; all residents at road nodes"
+   },
+   {
+    "key": "modelled_access_at_peak.reported_2024.residents_whose_homes_flood_at_peak.residents",
+    "th": "ชุดที่มีรายงานปี 2567 (2024) · ผู้ที่บ้านถูกน้ำท่วมที่ระดับสูงสุดของแบบจำลอง · ผู้อยู่อาศัยที่นับในตำบล (ผู้อยู่อาศัย WorldPop 2020 ที่จุดถนน)",
+    "en": "Residents counted in the subdistrict (WorldPop 2020 residents at road nodes); the sites reported in use in September 2024; residents whose homes flood at the modelled peak"
+   },
+   {
+    "key": "modelled_access_at_peak.reported_2024.residents_whose_homes_flood_at_peak.within_reach_before_flood",
+    "th": "ชุดที่มีรายงานปี 2567 (2024) · ผู้ที่บ้านถูกน้ำท่วมที่ระดับสูงสุดของแบบจำลอง · ในจำนวนนี้ ผู้ที่มีที่พักพิงของชุดนี้ในระยะเดินก่อนน้ำท่วม ซึ่งเป็นฐานของชุดนั้นเอง",
+    "en": "Of those, residents with a shelter of the set within reach before the flood: the set's own baseline; the sites reported in use in September 2024; residents whose homes flood at the modelled peak"
+   },
+   {
+    "key": "modelled_access_at_peak.reported_2024.residents_whose_homes_flood_at_peak.already_out_of_reach_before_flood",
+    "th": "ชุดที่มีรายงานปี 2567 (2024) · ผู้ที่บ้านถูกน้ำท่วมที่ระดับสูงสุดของแบบจำลอง · ในจำนวนนี้ ผู้ที่ไม่มีที่พักพิงของชุดนี้ในระยะเดินตั้งแต่ก่อนน้ำท่วม",
+    "en": "Of those, residents with no shelter of the set within reach even before the flood; the sites reported in use in September 2024; residents whose homes flood at the modelled peak"
+   },
+   {
+    "key": "modelled_access_at_peak.reported_2024.residents_whose_homes_flood_at_peak.lost_access",
+    "th": "ชุดที่มีรายงานปี 2567 (2024) · ผู้ที่บ้านถูกน้ำท่วมที่ระดับสูงสุดของแบบจำลอง · ในฐานนั้น ผู้ที่สูญเสียการเข้าถึง ณ ระดับน้ำสูงสุดของแบบจำลอง",
+    "en": "Of the baseline, residents who have lost access at the modelled peak; the sites reported in use in September 2024; residents whose homes flood at the modelled peak"
+   },
+   {
+    "key": "modelled_access_at_peak.reported_2024.residents_whose_homes_flood_at_peak.keeping_access",
+    "th": "ชุดที่มีรายงานปี 2567 (2024) · ผู้ที่บ้านถูกน้ำท่วมที่ระดับสูงสุดของแบบจำลอง · ในฐานนั้น ผู้ที่ยังเดินถึงได้ ณ ระดับน้ำสูงสุดของแบบจำลอง",
+    "en": "Of the baseline, residents who still have access at the modelled peak; the sites reported in use in September 2024; residents whose homes flood at the modelled peak"
+   },
+   {
+    "key": "modelled_access_at_peak.reported_2024.residents_whose_homes_flood_at_peak.lost_share_of_within_reach",
+    "th": "ชุดที่มีรายงานปี 2567 (2024) · ผู้ที่บ้านถูกน้ำท่วมที่ระดับสูงสุดของแบบจำลอง · lost_access หารด้วย within_reach_before_flood ทศนิยมสี่ตำแหน่ง (เป็น null เมื่อฐานเป็น 0.0)",
+    "en": "lost_access divided by within_reach_before_flood, four decimals (null when the baseline is 0.0); the sites reported in use in September 2024; residents whose homes flood at the modelled peak"
+   },
+   {
+    "key": "modelled_access_at_peak.knee_plan.all_residents_at_road_nodes.residents",
+    "th": "แผน 8 แห่งแรก · ผู้อยู่อาศัยทั้งหมดที่จุดถนน · ผู้อยู่อาศัยที่นับในตำบล (ผู้อยู่อาศัย WorldPop 2020 ที่จุดถนน)",
+    "en": "Residents counted in the subdistrict (WorldPop 2020 residents at road nodes); the first 8 sites of the modelled coverage ranking; all residents at road nodes"
+   },
+   {
+    "key": "modelled_access_at_peak.knee_plan.all_residents_at_road_nodes.within_reach_before_flood",
+    "th": "แผน 8 แห่งแรก · ผู้อยู่อาศัยทั้งหมดที่จุดถนน · ในจำนวนนี้ ผู้ที่มีที่พักพิงของชุดนี้ในระยะเดินก่อนน้ำท่วม ซึ่งเป็นฐานของชุดนั้นเอง",
+    "en": "Of those, residents with a shelter of the set within reach before the flood: the set's own baseline; the first 8 sites of the modelled coverage ranking; all residents at road nodes"
+   },
+   {
+    "key": "modelled_access_at_peak.knee_plan.all_residents_at_road_nodes.already_out_of_reach_before_flood",
+    "th": "แผน 8 แห่งแรก · ผู้อยู่อาศัยทั้งหมดที่จุดถนน · ในจำนวนนี้ ผู้ที่ไม่มีที่พักพิงของชุดนี้ในระยะเดินตั้งแต่ก่อนน้ำท่วม",
+    "en": "Of those, residents with no shelter of the set within reach even before the flood; the first 8 sites of the modelled coverage ranking; all residents at road nodes"
+   },
+   {
+    "key": "modelled_access_at_peak.knee_plan.all_residents_at_road_nodes.lost_access",
+    "th": "แผน 8 แห่งแรก · ผู้อยู่อาศัยทั้งหมดที่จุดถนน · ในฐานนั้น ผู้ที่สูญเสียการเข้าถึง ณ ระดับน้ำสูงสุดของแบบจำลอง",
+    "en": "Of the baseline, residents who have lost access at the modelled peak; the first 8 sites of the modelled coverage ranking; all residents at road nodes"
+   },
+   {
+    "key": "modelled_access_at_peak.knee_plan.all_residents_at_road_nodes.keeping_access",
+    "th": "แผน 8 แห่งแรก · ผู้อยู่อาศัยทั้งหมดที่จุดถนน · ในฐานนั้น ผู้ที่ยังเดินถึงได้ ณ ระดับน้ำสูงสุดของแบบจำลอง",
+    "en": "Of the baseline, residents who still have access at the modelled peak; the first 8 sites of the modelled coverage ranking; all residents at road nodes"
+   },
+   {
+    "key": "modelled_access_at_peak.knee_plan.all_residents_at_road_nodes.lost_share_of_within_reach",
+    "th": "แผน 8 แห่งแรก · ผู้อยู่อาศัยทั้งหมดที่จุดถนน · lost_access หารด้วย within_reach_before_flood ทศนิยมสี่ตำแหน่ง (เป็น null เมื่อฐานเป็น 0.0)",
+    "en": "lost_access divided by within_reach_before_flood, four decimals (null when the baseline is 0.0); the first 8 sites of the modelled coverage ranking; all residents at road nodes"
+   },
+   {
+    "key": "modelled_access_at_peak.knee_plan.residents_whose_homes_flood_at_peak.residents",
+    "th": "แผน 8 แห่งแรก · ผู้ที่บ้านถูกน้ำท่วมที่ระดับสูงสุดของแบบจำลอง · ผู้อยู่อาศัยที่นับในตำบล (ผู้อยู่อาศัย WorldPop 2020 ที่จุดถนน)",
+    "en": "Residents counted in the subdistrict (WorldPop 2020 residents at road nodes); the first 8 sites of the modelled coverage ranking; residents whose homes flood at the modelled peak"
+   },
+   {
+    "key": "modelled_access_at_peak.knee_plan.residents_whose_homes_flood_at_peak.within_reach_before_flood",
+    "th": "แผน 8 แห่งแรก · ผู้ที่บ้านถูกน้ำท่วมที่ระดับสูงสุดของแบบจำลอง · ในจำนวนนี้ ผู้ที่มีที่พักพิงของชุดนี้ในระยะเดินก่อนน้ำท่วม ซึ่งเป็นฐานของชุดนั้นเอง",
+    "en": "Of those, residents with a shelter of the set within reach before the flood: the set's own baseline; the first 8 sites of the modelled coverage ranking; residents whose homes flood at the modelled peak"
+   },
+   {
+    "key": "modelled_access_at_peak.knee_plan.residents_whose_homes_flood_at_peak.already_out_of_reach_before_flood",
+    "th": "แผน 8 แห่งแรก · ผู้ที่บ้านถูกน้ำท่วมที่ระดับสูงสุดของแบบจำลอง · ในจำนวนนี้ ผู้ที่ไม่มีที่พักพิงของชุดนี้ในระยะเดินตั้งแต่ก่อนน้ำท่วม",
+    "en": "Of those, residents with no shelter of the set within reach even before the flood; the first 8 sites of the modelled coverage ranking; residents whose homes flood at the modelled peak"
+   },
+   {
+    "key": "modelled_access_at_peak.knee_plan.residents_whose_homes_flood_at_peak.lost_access",
+    "th": "แผน 8 แห่งแรก · ผู้ที่บ้านถูกน้ำท่วมที่ระดับสูงสุดของแบบจำลอง · ในฐานนั้น ผู้ที่สูญเสียการเข้าถึง ณ ระดับน้ำสูงสุดของแบบจำลอง",
+    "en": "Of the baseline, residents who have lost access at the modelled peak; the first 8 sites of the modelled coverage ranking; residents whose homes flood at the modelled peak"
+   },
+   {
+    "key": "modelled_access_at_peak.knee_plan.residents_whose_homes_flood_at_peak.keeping_access",
+    "th": "แผน 8 แห่งแรก · ผู้ที่บ้านถูกน้ำท่วมที่ระดับสูงสุดของแบบจำลอง · ในฐานนั้น ผู้ที่ยังเดินถึงได้ ณ ระดับน้ำสูงสุดของแบบจำลอง",
+    "en": "Of the baseline, residents who still have access at the modelled peak; the first 8 sites of the modelled coverage ranking; residents whose homes flood at the modelled peak"
+   },
+   {
+    "key": "modelled_access_at_peak.knee_plan.residents_whose_homes_flood_at_peak.lost_share_of_within_reach",
+    "th": "แผน 8 แห่งแรก · ผู้ที่บ้านถูกน้ำท่วมที่ระดับสูงสุดของแบบจำลอง · lost_access หารด้วย within_reach_before_flood ทศนิยมสี่ตำแหน่ง (เป็น null เมื่อฐานเป็น 0.0)",
+    "en": "lost_access divided by within_reach_before_flood, four decimals (null when the baseline is 0.0); the first 8 sites of the modelled coverage ranking; residents whose homes flood at the modelled peak"
+   },
+   {
+    "key": "season_envelope_comparison.lane",
+    "th": "ช่องทางของหลักฐาน",
+    "en": "SCN-ENV: a scenario envelope, never an observation for a replay day"
+   },
+   {
+    "key": "season_envelope_comparison.stage",
+    "th": "ระดับน้ำที่เปรียบเทียบ",
+    "en": "Id of the modelled stage the comparison uses"
+   },
+   {
+    "key": "season_envelope_comparison.file",
+    "th": "ไฟล์ที่มีการเปรียบเทียบ",
+    "en": "Where the replay manifest names the statistics file that holds it"
+   },
+   {
+    "key": "season_envelope_comparison.entry",
+    "th": "รายการในไฟล์",
+    "en": "The entry of this subdistrict in that file; its figures are not copied here (one licence lineage per file, see the assumptions)"
+   }
+  ]
+ },
+ "records": [
+  {
+   "tambon_id": "TH570901",
+   "tambon_name_th": "แม่สาย",
+   "tambon_name_en": "Mae Sai",
+   "lane": "SCN",
+   "evidence_tier": "T1 scenario (model)",
+   "confidence_class": "low",
+   "source_timestamp": "OpenStreetMap extract 2026-07-09 (roads and sites); WorldPop 2020; reported shelters compiled 2026-09-27; illustrative stage keyframes for 2024-09-09/2024-09-19 ICT on the Copernicus DEM (2011-2015 acquisitions); peak keyframe 2024-09-12T12:00:00+07:00",
+   "generated_at": "2026-10-03T17:47:00+07:00",
+   "operational_status": "non_operational",
+   "assumptions": [
+    {
+     "en": "The water is a HAND terrain-model reconstruction driven by illustrative stage keyframes (no gauge record was used): modelled, not observed.",
+     "th": "น้ำเป็นการจำลองจากแบบจำลองภูมิประเทศ HAND ด้วยจุดกำหนดระดับน้ำเพื่อการอธิบาย (ไม่ได้ใช้ข้อมูลจากสถานีวัดน้ำ) เป็นค่าจากแบบจำลอง ไม่ใช่ค่าที่สังเกตได้"
+    },
+    {
+     "en": "Every figure is for the modelled peak only: the illustrative 3.5 m stage keyframe at 2024-09-12T12:00:00+07:00 (ICT, UTC+7).",
+     "th": "ตัวเลขทุกตัวเป็นค่า ณ ระดับน้ำสูงสุดของแบบจำลองเท่านั้น คือจุดกำหนดระดับน้ำเพื่อการอธิบายที่ 3.5 ม. เวลา 2024-09-12T12:00:00+07:00 (เวลาประเทศไทย UTC+7)"
+    },
+    {
+     "en": "Flooded area and residents in water are counted per subdistrict on the replay's 10 m grid, outside mapped channels. Residents are WorldPop 2020 modelled residents, not the 2024 population, tourists or traders.",
+     "th": "พื้นที่น้ำท่วมและผู้อยู่อาศัยในพื้นที่น้ำท่วมนับรายตำบลบนกริด 10 ม. ของการย้อนดู ไม่รวมร่องน้ำในแผนที่ ผู้อยู่อาศัยเป็นประชากรตามแบบจำลอง WorldPop 2020 ไม่ใช่ประชากรปี 2567 (2024) นักท่องเที่ยว หรือผู้ค้า"
+    },
+    {
+     "en": "Impassable road length sums the modelled road pieces of the subdistrict whose reconstructed depth reaches 0.3 m at the peak. Bridge decks are not modelled, and no closure report was used.",
+     "th": "ความยาวถนนที่สัญจรไม่ได้คือผลรวมของถนนช่วงต่าง ๆ ในตำบลที่ความลึกจำลองถึง 0.3 ม. ณ ระดับน้ำสูงสุด ไม่ได้จำลองพื้นสะพาน และไม่ได้ใช้รายงานการปิดถนน"
+    },
+    {
+     "en": "A resident has access when a dry shelter of the set is within a 2 km walk on roads that are still passable. Two sets are given side by side, the sites reported in use in September 2024 and the first 8 sites of the modelled coverage ranking, each against its own baseline and counted two ways (all residents at road nodes, and residents whose homes flood at the modelled peak). Nothing here grades a set or a subdistrict.",
+     "th": "ผู้อยู่อาศัยเข้าถึงได้เมื่อมีที่พักพิงที่ไม่ถูกน้ำท่วมของชุดนั้นภายในระยะเดิน 2 กม. บนถนนที่ยังสัญจรได้ แสดงสองชุดเคียงกัน คือสถานที่ที่มีรายงานว่าใช้ในเดือนกันยายน 2567 (2024) และ 8 แห่งแรกของการจัดอันดับความครอบคลุมตามแบบจำลอง แต่ละชุดเทียบกับฐานของตัวเอง และนับสองแบบ (ผู้อยู่อาศัยทั้งหมดที่จุดถนน และผู้ที่บ้านถูกน้ำท่วมที่ระดับสูงสุดของแบบจำลอง) ตัวเลขไม่ได้ตัดสินชุดหรือตำบลใด"
+    },
+    {
+     "en": "No priority score and no action class is computed for any subdistrict: the replay computes neither.",
+     "th": "ไม่มีการคำนวณคะแนนลำดับความสำคัญหรือระดับการดำเนินการของตำบลใด การย้อนดูไม่ได้คำนวณทั้งสองอย่าง"
+    },
+    {
+     "en": "The comparison of this subdistrict with the 2024 season envelope is in the envelope's statistics file, which the replay manifest names at season_envelope.files.statistics. That file is shared under its product's own licence (CC BY-SA 4.0) and this file keeps one licence lineage (ODbL 1.0), so its figures are not copied here. It is a scenario plausibility comparison, not a validation.",
+     "th": "การเปรียบเทียบตำบลนี้กับขอบเขตน้ำตลอดฤดูปี 2567 (2024) อยู่ในไฟล์สถิติของขอบเขตน้ำ ซึ่งไฟล์กำกับของการย้อนดูระบุไว้ที่ season_envelope.files.statistics ไฟล์นั้นเผยแพร่ภายใต้สัญญาอนุญาตของผลิตภัณฑ์ต้นทาง (CC BY-SA 4.0) ส่วนไฟล์นี้มีสายสัญญาอนุญาตเดียว (ODbL 1.0) จึงไม่ได้คัดลอกตัวเลขมาไว้ที่นี่ การเปรียบเทียบนี้เป็นการดูความเป็นไปได้ของสถานการณ์จำลอง ไม่ใช่การยืนยันความถูกต้อง"
+    }
+   ],
+   "area_km2": 21.56,
+   "modelled_share_of_area": 1.0,
+   "modelled_peak_stage_m": 3.5,
+   "modelled_peak_local_time": "2024-09-12T12:00:00+07:00",
+   "modelled_flooded_km2_at_peak": 9.669,
+   "modelled_flooded_share_of_subdistrict": 0.4485,
+   "modelled_flooded_share_of_district": 0.109,
+   "modelled_residents_in_water_at_peak": 5920.5,
+   "modelled_road_km_impassable_at_peak": 57.33,
+   "modelled_access_at_peak": {
+    "reported_2024": {
+     "all_residents_at_road_nodes": {
+      "residents": 17893.1,
+      "within_reach_before_flood": 13460.4,
+      "already_out_of_reach_before_flood": 4432.6,
+      "lost_access": 5659.8,
+      "keeping_access": 7800.7,
+      "lost_share_of_within_reach": 0.4205
+     },
+     "residents_whose_homes_flood_at_peak": {
+      "residents": 5960.4,
+      "within_reach_before_flood": 4663.7,
+      "already_out_of_reach_before_flood": 1296.7,
+      "lost_access": 4440.5,
+      "keeping_access": 223.2,
+      "lost_share_of_within_reach": 0.9521
+     }
+    },
+    "knee_plan": {
+     "all_residents_at_road_nodes": {
+      "residents": 17893.1,
+      "within_reach_before_flood": 13815.3,
+      "already_out_of_reach_before_flood": 4077.8,
+      "lost_access": 8398.7,
+      "keeping_access": 5416.6,
+      "lost_share_of_within_reach": 0.6079
+     },
+     "residents_whose_homes_flood_at_peak": {
+      "residents": 5960.4,
+      "within_reach_before_flood": 5001.1,
+      "already_out_of_reach_before_flood": 959.3,
+      "lost_access": 4820.6,
+      "keeping_access": 180.4,
+      "lost_share_of_within_reach": 0.9639
+     }
+    }
+   },
+   "season_envelope_comparison": {
+    "lane": "SCN-ENV",
+    "stage": "modelled_peak",
+    "file": "season_envelope.files.statistics",
+    "entry": "comparison.by_tambon[tambon_id=TH570901]"
+   }
+  },
+  {
+   "tambon_id": "TH570902",
+   "tambon_name_th": "ห้วยไคร้",
+   "tambon_name_en": "Huai Khrai",
+   "lane": "SCN",
+   "evidence_tier": "T1 scenario (model)",
+   "confidence_class": "low",
+   "source_timestamp": "OpenStreetMap extract 2026-07-09 (roads and sites); WorldPop 2020; reported shelters compiled 2026-09-27; illustrative stage keyframes for 2024-09-09/2024-09-19 ICT on the Copernicus DEM (2011-2015 acquisitions); peak keyframe 2024-09-12T12:00:00+07:00",
+   "generated_at": "2026-10-03T17:47:00+07:00",
+   "operational_status": "non_operational",
+   "assumptions": [
+    {
+     "en": "The water is a HAND terrain-model reconstruction driven by illustrative stage keyframes (no gauge record was used): modelled, not observed.",
+     "th": "น้ำเป็นการจำลองจากแบบจำลองภูมิประเทศ HAND ด้วยจุดกำหนดระดับน้ำเพื่อการอธิบาย (ไม่ได้ใช้ข้อมูลจากสถานีวัดน้ำ) เป็นค่าจากแบบจำลอง ไม่ใช่ค่าที่สังเกตได้"
+    },
+    {
+     "en": "Every figure is for the modelled peak only: the illustrative 3.5 m stage keyframe at 2024-09-12T12:00:00+07:00 (ICT, UTC+7).",
+     "th": "ตัวเลขทุกตัวเป็นค่า ณ ระดับน้ำสูงสุดของแบบจำลองเท่านั้น คือจุดกำหนดระดับน้ำเพื่อการอธิบายที่ 3.5 ม. เวลา 2024-09-12T12:00:00+07:00 (เวลาประเทศไทย UTC+7)"
+    },
+    {
+     "en": "Flooded area and residents in water are counted per subdistrict on the replay's 10 m grid, outside mapped channels. Residents are WorldPop 2020 modelled residents, not the 2024 population, tourists or traders.",
+     "th": "พื้นที่น้ำท่วมและผู้อยู่อาศัยในพื้นที่น้ำท่วมนับรายตำบลบนกริด 10 ม. ของการย้อนดู ไม่รวมร่องน้ำในแผนที่ ผู้อยู่อาศัยเป็นประชากรตามแบบจำลอง WorldPop 2020 ไม่ใช่ประชากรปี 2567 (2024) นักท่องเที่ยว หรือผู้ค้า"
+    },
+    {
+     "en": "Impassable road length sums the modelled road pieces of the subdistrict whose reconstructed depth reaches 0.3 m at the peak. Bridge decks are not modelled, and no closure report was used.",
+     "th": "ความยาวถนนที่สัญจรไม่ได้คือผลรวมของถนนช่วงต่าง ๆ ในตำบลที่ความลึกจำลองถึง 0.3 ม. ณ ระดับน้ำสูงสุด ไม่ได้จำลองพื้นสะพาน และไม่ได้ใช้รายงานการปิดถนน"
+    },
+    {
+     "en": "A resident has access when a dry shelter of the set is within a 2 km walk on roads that are still passable. Two sets are given side by side, the sites reported in use in September 2024 and the first 8 sites of the modelled coverage ranking, each against its own baseline and counted two ways (all residents at road nodes, and residents whose homes flood at the modelled peak). Nothing here grades a set or a subdistrict.",
+     "th": "ผู้อยู่อาศัยเข้าถึงได้เมื่อมีที่พักพิงที่ไม่ถูกน้ำท่วมของชุดนั้นภายในระยะเดิน 2 กม. บนถนนที่ยังสัญจรได้ แสดงสองชุดเคียงกัน คือสถานที่ที่มีรายงานว่าใช้ในเดือนกันยายน 2567 (2024) และ 8 แห่งแรกของการจัดอันดับความครอบคลุมตามแบบจำลอง แต่ละชุดเทียบกับฐานของตัวเอง และนับสองแบบ (ผู้อยู่อาศัยทั้งหมดที่จุดถนน และผู้ที่บ้านถูกน้ำท่วมที่ระดับสูงสุดของแบบจำลอง) ตัวเลขไม่ได้ตัดสินชุดหรือตำบลใด"
+    },
+    {
+     "en": "No priority score and no action class is computed for any subdistrict: the replay computes neither.",
+     "th": "ไม่มีการคำนวณคะแนนลำดับความสำคัญหรือระดับการดำเนินการของตำบลใด การย้อนดูไม่ได้คำนวณทั้งสองอย่าง"
+    },
+    {
+     "en": "The comparison of this subdistrict with the 2024 season envelope is in the envelope's statistics file, which the replay manifest names at season_envelope.files.statistics. That file is shared under its product's own licence (CC BY-SA 4.0) and this file keeps one licence lineage (ODbL 1.0), so its figures are not copied here. It is a scenario plausibility comparison, not a validation.",
+     "th": "การเปรียบเทียบตำบลนี้กับขอบเขตน้ำตลอดฤดูปี 2567 (2024) อยู่ในไฟล์สถิติของขอบเขตน้ำ ซึ่งไฟล์กำกับของการย้อนดูระบุไว้ที่ season_envelope.files.statistics ไฟล์นั้นเผยแพร่ภายใต้สัญญาอนุญาตของผลิตภัณฑ์ต้นทาง (CC BY-SA 4.0) ส่วนไฟล์นี้มีสายสัญญาอนุญาตเดียว (ODbL 1.0) จึงไม่ได้คัดลอกตัวเลขมาไว้ที่นี่ การเปรียบเทียบนี้เป็นการดูความเป็นไปได้ของสถานการณ์จำลอง ไม่ใช่การยืนยันความถูกต้อง"
+    }
+   ],
+   "area_km2": 44.34,
+   "modelled_share_of_area": 1.0,
+   "modelled_peak_stage_m": 3.5,
+   "modelled_peak_local_time": "2024-09-12T12:00:00+07:00",
+   "modelled_flooded_km2_at_peak": 1.579,
+   "modelled_flooded_share_of_subdistrict": 0.0356,
+   "modelled_flooded_share_of_district": 0.0178,
+   "modelled_residents_in_water_at_peak": 196.6,
+   "modelled_road_km_impassable_at_peak": 1.18,
+   "modelled_access_at_peak": {
+    "reported_2024": {
+     "all_residents_at_road_nodes": {
+      "residents": 8911.5,
+      "within_reach_before_flood": 0.0,
+      "already_out_of_reach_before_flood": 8911.5,
+      "lost_access": 0.0,
+      "keeping_access": 0.0,
+      "lost_share_of_within_reach": null
+     },
+     "residents_whose_homes_flood_at_peak": {
+      "residents": 106.4,
+      "within_reach_before_flood": 0.0,
+      "already_out_of_reach_before_flood": 106.4,
+      "lost_access": 0.0,
+      "keeping_access": 0.0,
+      "lost_share_of_within_reach": null
+     }
+    },
+    "knee_plan": {
+     "all_residents_at_road_nodes": {
+      "residents": 8911.5,
+      "within_reach_before_flood": 0.0,
+      "already_out_of_reach_before_flood": 8911.5,
+      "lost_access": 0.0,
+      "keeping_access": 0.0,
+      "lost_share_of_within_reach": null
+     },
+     "residents_whose_homes_flood_at_peak": {
+      "residents": 106.4,
+      "within_reach_before_flood": 0.0,
+      "already_out_of_reach_before_flood": 106.4,
+      "lost_access": 0.0,
+      "keeping_access": 0.0,
+      "lost_share_of_within_reach": null
+     }
+    }
+   },
+   "season_envelope_comparison": {
+    "lane": "SCN-ENV",
+    "stage": "modelled_peak",
+    "file": "season_envelope.files.statistics",
+    "entry": "comparison.by_tambon[tambon_id=TH570902]"
+   }
+  },
+  {
+   "tambon_id": "TH570903",
+   "tambon_name_th": "เกาะช้าง",
+   "tambon_name_en": "Ko Chang",
+   "lane": "SCN",
+   "evidence_tier": "T1 scenario (model)",
+   "confidence_class": "low",
+   "source_timestamp": "OpenStreetMap extract 2026-07-09 (roads and sites); WorldPop 2020; reported shelters compiled 2026-09-27; illustrative stage keyframes for 2024-09-09/2024-09-19 ICT on the Copernicus DEM (2011-2015 acquisitions); peak keyframe 2024-09-12T12:00:00+07:00",
+   "generated_at": "2026-10-03T17:47:00+07:00",
+   "operational_status": "non_operational",
+   "assumptions": [
+    {
+     "en": "The water is a HAND terrain-model reconstruction driven by illustrative stage keyframes (no gauge record was used): modelled, not observed.",
+     "th": "น้ำเป็นการจำลองจากแบบจำลองภูมิประเทศ HAND ด้วยจุดกำหนดระดับน้ำเพื่อการอธิบาย (ไม่ได้ใช้ข้อมูลจากสถานีวัดน้ำ) เป็นค่าจากแบบจำลอง ไม่ใช่ค่าที่สังเกตได้"
+    },
+    {
+     "en": "Every figure is for the modelled peak only: the illustrative 3.5 m stage keyframe at 2024-09-12T12:00:00+07:00 (ICT, UTC+7).",
+     "th": "ตัวเลขทุกตัวเป็นค่า ณ ระดับน้ำสูงสุดของแบบจำลองเท่านั้น คือจุดกำหนดระดับน้ำเพื่อการอธิบายที่ 3.5 ม. เวลา 2024-09-12T12:00:00+07:00 (เวลาประเทศไทย UTC+7)"
+    },
+    {
+     "en": "Flooded area and residents in water are counted per subdistrict on the replay's 10 m grid, outside mapped channels. Residents are WorldPop 2020 modelled residents, not the 2024 population, tourists or traders.",
+     "th": "พื้นที่น้ำท่วมและผู้อยู่อาศัยในพื้นที่น้ำท่วมนับรายตำบลบนกริด 10 ม. ของการย้อนดู ไม่รวมร่องน้ำในแผนที่ ผู้อยู่อาศัยเป็นประชากรตามแบบจำลอง WorldPop 2020 ไม่ใช่ประชากรปี 2567 (2024) นักท่องเที่ยว หรือผู้ค้า"
+    },
+    {
+     "en": "Impassable road length sums the modelled road pieces of the subdistrict whose reconstructed depth reaches 0.3 m at the peak. Bridge decks are not modelled, and no closure report was used.",
+     "th": "ความยาวถนนที่สัญจรไม่ได้คือผลรวมของถนนช่วงต่าง ๆ ในตำบลที่ความลึกจำลองถึง 0.3 ม. ณ ระดับน้ำสูงสุด ไม่ได้จำลองพื้นสะพาน และไม่ได้ใช้รายงานการปิดถนน"
+    },
+    {
+     "en": "A resident has access when a dry shelter of the set is within a 2 km walk on roads that are still passable. Two sets are given side by side, the sites reported in use in September 2024 and the first 8 sites of the modelled coverage ranking, each against its own baseline and counted two ways (all residents at road nodes, and residents whose homes flood at the modelled peak). Nothing here grades a set or a subdistrict.",
+     "th": "ผู้อยู่อาศัยเข้าถึงได้เมื่อมีที่พักพิงที่ไม่ถูกน้ำท่วมของชุดนั้นภายในระยะเดิน 2 กม. บนถนนที่ยังสัญจรได้ แสดงสองชุดเคียงกัน คือสถานที่ที่มีรายงานว่าใช้ในเดือนกันยายน 2567 (2024) และ 8 แห่งแรกของการจัดอันดับความครอบคลุมตามแบบจำลอง แต่ละชุดเทียบกับฐานของตัวเอง และนับสองแบบ (ผู้อยู่อาศัยทั้งหมดที่จุดถนน และผู้ที่บ้านถูกน้ำท่วมที่ระดับสูงสุดของแบบจำลอง) ตัวเลขไม่ได้ตัดสินชุดหรือตำบลใด"
+    },
+    {
+     "en": "No priority score and no action class is computed for any subdistrict: the replay computes neither.",
+     "th": "ไม่มีการคำนวณคะแนนลำดับความสำคัญหรือระดับการดำเนินการของตำบลใด การย้อนดูไม่ได้คำนวณทั้งสองอย่าง"
+    },
+    {
+     "en": "The comparison of this subdistrict with the 2024 season envelope is in the envelope's statistics file, which the replay manifest names at season_envelope.files.statistics. That file is shared under its product's own licence (CC BY-SA 4.0) and this file keeps one licence lineage (ODbL 1.0), so its figures are not copied here. It is a scenario plausibility comparison, not a validation.",
+     "th": "การเปรียบเทียบตำบลนี้กับขอบเขตน้ำตลอดฤดูปี 2567 (2024) อยู่ในไฟล์สถิติของขอบเขตน้ำ ซึ่งไฟล์กำกับของการย้อนดูระบุไว้ที่ season_envelope.files.statistics ไฟล์นั้นเผยแพร่ภายใต้สัญญาอนุญาตของผลิตภัณฑ์ต้นทาง (CC BY-SA 4.0) ส่วนไฟล์นี้มีสายสัญญาอนุญาตเดียว (ODbL 1.0) จึงไม่ได้คัดลอกตัวเลขมาไว้ที่นี่ การเปรียบเทียบนี้เป็นการดูความเป็นไปได้ของสถานการณ์จำลอง ไม่ใช่การยืนยันความถูกต้อง"
+    }
+   ],
+   "area_km2": 47.41,
+   "modelled_share_of_area": 1.0,
+   "modelled_peak_stage_m": 3.5,
+   "modelled_peak_local_time": "2024-09-12T12:00:00+07:00",
+   "modelled_flooded_km2_at_peak": 15.951,
+   "modelled_flooded_share_of_subdistrict": 0.3364,
+   "modelled_flooded_share_of_district": 0.1798,
+   "modelled_residents_in_water_at_peak": 1705.9,
+   "modelled_road_km_impassable_at_peak": 16.55,
+   "modelled_access_at_peak": {
+    "reported_2024": {
+     "all_residents_at_road_nodes": {
+      "residents": 6708.4,
+      "within_reach_before_flood": 2853.7,
+      "already_out_of_reach_before_flood": 3854.6,
+      "lost_access": 457.8,
+      "keeping_access": 2396.0,
+      "lost_share_of_within_reach": 0.1604
+     },
+     "residents_whose_homes_flood_at_peak": {
+      "residents": 1539.7,
+      "within_reach_before_flood": 289.8,
+      "already_out_of_reach_before_flood": 1249.9,
+      "lost_access": 278.7,
+      "keeping_access": 11.2,
+      "lost_share_of_within_reach": 0.9615
+     }
+    },
+    "knee_plan": {
+     "all_residents_at_road_nodes": {
+      "residents": 6708.4,
+      "within_reach_before_flood": 0.0,
+      "already_out_of_reach_before_flood": 6708.4,
+      "lost_access": 0.0,
+      "keeping_access": 0.0,
+      "lost_share_of_within_reach": null
+     },
+     "residents_whose_homes_flood_at_peak": {
+      "residents": 1539.7,
+      "within_reach_before_flood": 0.0,
+      "already_out_of_reach_before_flood": 1539.7,
+      "lost_access": 0.0,
+      "keeping_access": 0.0,
+      "lost_share_of_within_reach": null
+     }
+    }
+   },
+   "season_envelope_comparison": {
+    "lane": "SCN-ENV",
+    "stage": "modelled_peak",
+    "file": "season_envelope.files.statistics",
+    "entry": "comparison.by_tambon[tambon_id=TH570903]"
+   }
+  },
+  {
+   "tambon_id": "TH570904",
+   "tambon_name_th": "โป่งผา",
+   "tambon_name_en": "Pong Pha",
+   "lane": "SCN",
+   "evidence_tier": "T1 scenario (model)",
+   "confidence_class": "low",
+   "source_timestamp": "OpenStreetMap extract 2026-07-09 (roads and sites); WorldPop 2020; reported shelters compiled 2026-09-27; illustrative stage keyframes for 2024-09-09/2024-09-19 ICT on the Copernicus DEM (2011-2015 acquisitions); peak keyframe 2024-09-12T12:00:00+07:00",
+   "generated_at": "2026-10-03T17:47:00+07:00",
+   "operational_status": "non_operational",
+   "assumptions": [
+    {
+     "en": "The water is a HAND terrain-model reconstruction driven by illustrative stage keyframes (no gauge record was used): modelled, not observed.",
+     "th": "น้ำเป็นการจำลองจากแบบจำลองภูมิประเทศ HAND ด้วยจุดกำหนดระดับน้ำเพื่อการอธิบาย (ไม่ได้ใช้ข้อมูลจากสถานีวัดน้ำ) เป็นค่าจากแบบจำลอง ไม่ใช่ค่าที่สังเกตได้"
+    },
+    {
+     "en": "Every figure is for the modelled peak only: the illustrative 3.5 m stage keyframe at 2024-09-12T12:00:00+07:00 (ICT, UTC+7).",
+     "th": "ตัวเลขทุกตัวเป็นค่า ณ ระดับน้ำสูงสุดของแบบจำลองเท่านั้น คือจุดกำหนดระดับน้ำเพื่อการอธิบายที่ 3.5 ม. เวลา 2024-09-12T12:00:00+07:00 (เวลาประเทศไทย UTC+7)"
+    },
+    {
+     "en": "Flooded area and residents in water are counted per subdistrict on the replay's 10 m grid, outside mapped channels. Residents are WorldPop 2020 modelled residents, not the 2024 population, tourists or traders.",
+     "th": "พื้นที่น้ำท่วมและผู้อยู่อาศัยในพื้นที่น้ำท่วมนับรายตำบลบนกริด 10 ม. ของการย้อนดู ไม่รวมร่องน้ำในแผนที่ ผู้อยู่อาศัยเป็นประชากรตามแบบจำลอง WorldPop 2020 ไม่ใช่ประชากรปี 2567 (2024) นักท่องเที่ยว หรือผู้ค้า"
+    },
+    {
+     "en": "Impassable road length sums the modelled road pieces of the subdistrict whose reconstructed depth reaches 0.3 m at the peak. Bridge decks are not modelled, and no closure report was used.",
+     "th": "ความยาวถนนที่สัญจรไม่ได้คือผลรวมของถนนช่วงต่าง ๆ ในตำบลที่ความลึกจำลองถึง 0.3 ม. ณ ระดับน้ำสูงสุด ไม่ได้จำลองพื้นสะพาน และไม่ได้ใช้รายงานการปิดถนน"
+    },
+    {
+     "en": "A resident has access when a dry shelter of the set is within a 2 km walk on roads that are still passable. Two sets are given side by side, the sites reported in use in September 2024 and the first 8 sites of the modelled coverage ranking, each against its own baseline and counted two ways (all residents at road nodes, and residents whose homes flood at the modelled peak). Nothing here grades a set or a subdistrict.",
+     "th": "ผู้อยู่อาศัยเข้าถึงได้เมื่อมีที่พักพิงที่ไม่ถูกน้ำท่วมของชุดนั้นภายในระยะเดิน 2 กม. บนถนนที่ยังสัญจรได้ แสดงสองชุดเคียงกัน คือสถานที่ที่มีรายงานว่าใช้ในเดือนกันยายน 2567 (2024) และ 8 แห่งแรกของการจัดอันดับความครอบคลุมตามแบบจำลอง แต่ละชุดเทียบกับฐานของตัวเอง และนับสองแบบ (ผู้อยู่อาศัยทั้งหมดที่จุดถนน และผู้ที่บ้านถูกน้ำท่วมที่ระดับสูงสุดของแบบจำลอง) ตัวเลขไม่ได้ตัดสินชุดหรือตำบลใด"
+    },
+    {
+     "en": "No priority score and no action class is computed for any subdistrict: the replay computes neither.",
+     "th": "ไม่มีการคำนวณคะแนนลำดับความสำคัญหรือระดับการดำเนินการของตำบลใด การย้อนดูไม่ได้คำนวณทั้งสองอย่าง"
+    },
+    {
+     "en": "The comparison of this subdistrict with the 2024 season envelope is in the envelope's statistics file, which the replay manifest names at season_envelope.files.statistics. That file is shared under its product's own licence (CC BY-SA 4.0) and this file keeps one licence lineage (ODbL 1.0), so its figures are not copied here. It is a scenario plausibility comparison, not a validation.",
+     "th": "การเปรียบเทียบตำบลนี้กับขอบเขตน้ำตลอดฤดูปี 2567 (2024) อยู่ในไฟล์สถิติของขอบเขตน้ำ ซึ่งไฟล์กำกับของการย้อนดูระบุไว้ที่ season_envelope.files.statistics ไฟล์นั้นเผยแพร่ภายใต้สัญญาอนุญาตของผลิตภัณฑ์ต้นทาง (CC BY-SA 4.0) ส่วนไฟล์นี้มีสายสัญญาอนุญาตเดียว (ODbL 1.0) จึงไม่ได้คัดลอกตัวเลขมาไว้ที่นี่ การเปรียบเทียบนี้เป็นการดูความเป็นไปได้ของสถานการณ์จำลอง ไม่ใช่การยืนยันความถูกต้อง"
+    }
+   ],
+   "area_km2": 43.62,
+   "modelled_share_of_area": 1.0,
+   "modelled_peak_stage_m": 3.5,
+   "modelled_peak_local_time": "2024-09-12T12:00:00+07:00",
+   "modelled_flooded_km2_at_peak": 12.525,
+   "modelled_flooded_share_of_subdistrict": 0.2871,
+   "modelled_flooded_share_of_district": 0.1412,
+   "modelled_residents_in_water_at_peak": 1922.1,
+   "modelled_road_km_impassable_at_peak": 37.99,
+   "modelled_access_at_peak": {
+    "reported_2024": {
+     "all_residents_at_road_nodes": {
+      "residents": 9311.6,
+      "within_reach_before_flood": 3678.3,
+      "already_out_of_reach_before_flood": 5633.3,
+      "lost_access": 558.2,
+      "keeping_access": 3120.1,
+      "lost_share_of_within_reach": 0.1518
+     },
+     "residents_whose_homes_flood_at_peak": {
+      "residents": 1562.9,
+      "within_reach_before_flood": 436.3,
+      "already_out_of_reach_before_flood": 1126.6,
+      "lost_access": 397.2,
+      "keeping_access": 39.1,
+      "lost_share_of_within_reach": 0.9104
+     }
+    },
+    "knee_plan": {
+     "all_residents_at_road_nodes": {
+      "residents": 9311.6,
+      "within_reach_before_flood": 3797.6,
+      "already_out_of_reach_before_flood": 5513.9,
+      "lost_access": 804.9,
+      "keeping_access": 2992.8,
+      "lost_share_of_within_reach": 0.2119
+     },
+     "residents_whose_homes_flood_at_peak": {
+      "residents": 1562.9,
+      "within_reach_before_flood": 778.9,
+      "already_out_of_reach_before_flood": 784.0,
+      "lost_access": 551.6,
+      "keeping_access": 227.3,
+      "lost_share_of_within_reach": 0.7082
+     }
+    }
+   },
+   "season_envelope_comparison": {
+    "lane": "SCN-ENV",
+    "stage": "modelled_peak",
+    "file": "season_envelope.files.statistics",
+    "entry": "comparison.by_tambon[tambon_id=TH570904]"
+   }
+  },
+  {
+   "tambon_id": "TH570905",
+   "tambon_name_th": "ศรีเมืองชุม",
+   "tambon_name_en": "Si Mueang Chum",
+   "lane": "SCN",
+   "evidence_tier": "T1 scenario (model)",
+   "confidence_class": "low",
+   "source_timestamp": "OpenStreetMap extract 2026-07-09 (roads and sites); WorldPop 2020; reported shelters compiled 2026-09-27; illustrative stage keyframes for 2024-09-09/2024-09-19 ICT on the Copernicus DEM (2011-2015 acquisitions); peak keyframe 2024-09-12T12:00:00+07:00",
+   "generated_at": "2026-10-03T17:47:00+07:00",
+   "operational_status": "non_operational",
+   "assumptions": [
+    {
+     "en": "The water is a HAND terrain-model reconstruction driven by illustrative stage keyframes (no gauge record was used): modelled, not observed.",
+     "th": "น้ำเป็นการจำลองจากแบบจำลองภูมิประเทศ HAND ด้วยจุดกำหนดระดับน้ำเพื่อการอธิบาย (ไม่ได้ใช้ข้อมูลจากสถานีวัดน้ำ) เป็นค่าจากแบบจำลอง ไม่ใช่ค่าที่สังเกตได้"
+    },
+    {
+     "en": "Every figure is for the modelled peak only: the illustrative 3.5 m stage keyframe at 2024-09-12T12:00:00+07:00 (ICT, UTC+7).",
+     "th": "ตัวเลขทุกตัวเป็นค่า ณ ระดับน้ำสูงสุดของแบบจำลองเท่านั้น คือจุดกำหนดระดับน้ำเพื่อการอธิบายที่ 3.5 ม. เวลา 2024-09-12T12:00:00+07:00 (เวลาประเทศไทย UTC+7)"
+    },
+    {
+     "en": "Flooded area and residents in water are counted per subdistrict on the replay's 10 m grid, outside mapped channels. Residents are WorldPop 2020 modelled residents, not the 2024 population, tourists or traders.",
+     "th": "พื้นที่น้ำท่วมและผู้อยู่อาศัยในพื้นที่น้ำท่วมนับรายตำบลบนกริด 10 ม. ของการย้อนดู ไม่รวมร่องน้ำในแผนที่ ผู้อยู่อาศัยเป็นประชากรตามแบบจำลอง WorldPop 2020 ไม่ใช่ประชากรปี 2567 (2024) นักท่องเที่ยว หรือผู้ค้า"
+    },
+    {
+     "en": "Impassable road length sums the modelled road pieces of the subdistrict whose reconstructed depth reaches 0.3 m at the peak. Bridge decks are not modelled, and no closure report was used.",
+     "th": "ความยาวถนนที่สัญจรไม่ได้คือผลรวมของถนนช่วงต่าง ๆ ในตำบลที่ความลึกจำลองถึง 0.3 ม. ณ ระดับน้ำสูงสุด ไม่ได้จำลองพื้นสะพาน และไม่ได้ใช้รายงานการปิดถนน"
+    },
+    {
+     "en": "A resident has access when a dry shelter of the set is within a 2 km walk on roads that are still passable. Two sets are given side by side, the sites reported in use in September 2024 and the first 8 sites of the modelled coverage ranking, each against its own baseline and counted two ways (all residents at road nodes, and residents whose homes flood at the modelled peak). Nothing here grades a set or a subdistrict.",
+     "th": "ผู้อยู่อาศัยเข้าถึงได้เมื่อมีที่พักพิงที่ไม่ถูกน้ำท่วมของชุดนั้นภายในระยะเดิน 2 กม. บนถนนที่ยังสัญจรได้ แสดงสองชุดเคียงกัน คือสถานที่ที่มีรายงานว่าใช้ในเดือนกันยายน 2567 (2024) และ 8 แห่งแรกของการจัดอันดับความครอบคลุมตามแบบจำลอง แต่ละชุดเทียบกับฐานของตัวเอง และนับสองแบบ (ผู้อยู่อาศัยทั้งหมดที่จุดถนน และผู้ที่บ้านถูกน้ำท่วมที่ระดับสูงสุดของแบบจำลอง) ตัวเลขไม่ได้ตัดสินชุดหรือตำบลใด"
+    },
+    {
+     "en": "No priority score and no action class is computed for any subdistrict: the replay computes neither.",
+     "th": "ไม่มีการคำนวณคะแนนลำดับความสำคัญหรือระดับการดำเนินการของตำบลใด การย้อนดูไม่ได้คำนวณทั้งสองอย่าง"
+    },
+    {
+     "en": "The comparison of this subdistrict with the 2024 season envelope is in the envelope's statistics file, which the replay manifest names at season_envelope.files.statistics. That file is shared under its product's own licence (CC BY-SA 4.0) and this file keeps one licence lineage (ODbL 1.0), so its figures are not copied here. It is a scenario plausibility comparison, not a validation.",
+     "th": "การเปรียบเทียบตำบลนี้กับขอบเขตน้ำตลอดฤดูปี 2567 (2024) อยู่ในไฟล์สถิติของขอบเขตน้ำ ซึ่งไฟล์กำกับของการย้อนดูระบุไว้ที่ season_envelope.files.statistics ไฟล์นั้นเผยแพร่ภายใต้สัญญาอนุญาตของผลิตภัณฑ์ต้นทาง (CC BY-SA 4.0) ส่วนไฟล์นี้มีสายสัญญาอนุญาตเดียว (ODbL 1.0) จึงไม่ได้คัดลอกตัวเลขมาไว้ที่นี่ การเปรียบเทียบนี้เป็นการดูความเป็นไปได้ของสถานการณ์จำลอง ไม่ใช่การยืนยันความถูกต้อง"
+    }
+   ],
+   "area_km2": 41.89,
+   "modelled_share_of_area": 1.0,
+   "modelled_peak_stage_m": 3.5,
+   "modelled_peak_local_time": "2024-09-12T12:00:00+07:00",
+   "modelled_flooded_km2_at_peak": 23.002,
+   "modelled_flooded_share_of_subdistrict": 0.5491,
+   "modelled_flooded_share_of_district": 0.2593,
+   "modelled_residents_in_water_at_peak": 3466.3,
+   "modelled_road_km_impassable_at_peak": 31.86,
+   "modelled_access_at_peak": {
+    "reported_2024": {
+     "all_residents_at_road_nodes": {
+      "residents": 7157.0,
+      "within_reach_before_flood": 1584.4,
+      "already_out_of_reach_before_flood": 5572.6,
+      "lost_access": 407.1,
+      "keeping_access": 1177.3,
+      "lost_share_of_within_reach": 0.2569
+     },
+     "residents_whose_homes_flood_at_peak": {
+      "residents": 2771.3,
+      "within_reach_before_flood": 305.5,
+      "already_out_of_reach_before_flood": 2465.9,
+      "lost_access": 280.3,
+      "keeping_access": 25.2,
+      "lost_share_of_within_reach": 0.9175
+     }
+    },
+    "knee_plan": {
+     "all_residents_at_road_nodes": {
+      "residents": 7157.0,
+      "within_reach_before_flood": 3702.9,
+      "already_out_of_reach_before_flood": 3454.1,
+      "lost_access": 1965.5,
+      "keeping_access": 1737.5,
+      "lost_share_of_within_reach": 0.5308
+     },
+     "residents_whose_homes_flood_at_peak": {
+      "residents": 2771.3,
+      "within_reach_before_flood": 1299.5,
+      "already_out_of_reach_before_flood": 1471.8,
+      "lost_access": 1265.3,
+      "keeping_access": 34.2,
+      "lost_share_of_within_reach": 0.9737
+     }
+    }
+   },
+   "season_envelope_comparison": {
+    "lane": "SCN-ENV",
+    "stage": "modelled_peak",
+    "file": "season_envelope.files.statistics",
+    "entry": "comparison.by_tambon[tambon_id=TH570905]"
+   }
+  },
+  {
+   "tambon_id": "TH570906",
+   "tambon_name_th": "เวียงพางคำ",
+   "tambon_name_en": "Wiang Phang Kham",
+   "lane": "SCN",
+   "evidence_tier": "T1 scenario (model)",
+   "confidence_class": "low",
+   "source_timestamp": "OpenStreetMap extract 2026-07-09 (roads and sites); WorldPop 2020; reported shelters compiled 2026-09-27; illustrative stage keyframes for 2024-09-09/2024-09-19 ICT on the Copernicus DEM (2011-2015 acquisitions); peak keyframe 2024-09-12T12:00:00+07:00",
+   "generated_at": "2026-10-03T17:47:00+07:00",
+   "operational_status": "non_operational",
+   "assumptions": [
+    {
+     "en": "The water is a HAND terrain-model reconstruction driven by illustrative stage keyframes (no gauge record was used): modelled, not observed.",
+     "th": "น้ำเป็นการจำลองจากแบบจำลองภูมิประเทศ HAND ด้วยจุดกำหนดระดับน้ำเพื่อการอธิบาย (ไม่ได้ใช้ข้อมูลจากสถานีวัดน้ำ) เป็นค่าจากแบบจำลอง ไม่ใช่ค่าที่สังเกตได้"
+    },
+    {
+     "en": "Every figure is for the modelled peak only: the illustrative 3.5 m stage keyframe at 2024-09-12T12:00:00+07:00 (ICT, UTC+7).",
+     "th": "ตัวเลขทุกตัวเป็นค่า ณ ระดับน้ำสูงสุดของแบบจำลองเท่านั้น คือจุดกำหนดระดับน้ำเพื่อการอธิบายที่ 3.5 ม. เวลา 2024-09-12T12:00:00+07:00 (เวลาประเทศไทย UTC+7)"
+    },
+    {
+     "en": "Flooded area and residents in water are counted per subdistrict on the replay's 10 m grid, outside mapped channels. Residents are WorldPop 2020 modelled residents, not the 2024 population, tourists or traders.",
+     "th": "พื้นที่น้ำท่วมและผู้อยู่อาศัยในพื้นที่น้ำท่วมนับรายตำบลบนกริด 10 ม. ของการย้อนดู ไม่รวมร่องน้ำในแผนที่ ผู้อยู่อาศัยเป็นประชากรตามแบบจำลอง WorldPop 2020 ไม่ใช่ประชากรปี 2567 (2024) นักท่องเที่ยว หรือผู้ค้า"
+    },
+    {
+     "en": "Impassable road length sums the modelled road pieces of the subdistrict whose reconstructed depth reaches 0.3 m at the peak. Bridge decks are not modelled, and no closure report was used.",
+     "th": "ความยาวถนนที่สัญจรไม่ได้คือผลรวมของถนนช่วงต่าง ๆ ในตำบลที่ความลึกจำลองถึง 0.3 ม. ณ ระดับน้ำสูงสุด ไม่ได้จำลองพื้นสะพาน และไม่ได้ใช้รายงานการปิดถนน"
+    },
+    {
+     "en": "A resident has access when a dry shelter of the set is within a 2 km walk on roads that are still passable. Two sets are given side by side, the sites reported in use in September 2024 and the first 8 sites of the modelled coverage ranking, each against its own baseline and counted two ways (all residents at road nodes, and residents whose homes flood at the modelled peak). Nothing here grades a set or a subdistrict.",
+     "th": "ผู้อยู่อาศัยเข้าถึงได้เมื่อมีที่พักพิงที่ไม่ถูกน้ำท่วมของชุดนั้นภายในระยะเดิน 2 กม. บนถนนที่ยังสัญจรได้ แสดงสองชุดเคียงกัน คือสถานที่ที่มีรายงานว่าใช้ในเดือนกันยายน 2567 (2024) และ 8 แห่งแรกของการจัดอันดับความครอบคลุมตามแบบจำลอง แต่ละชุดเทียบกับฐานของตัวเอง และนับสองแบบ (ผู้อยู่อาศัยทั้งหมดที่จุดถนน และผู้ที่บ้านถูกน้ำท่วมที่ระดับสูงสุดของแบบจำลอง) ตัวเลขไม่ได้ตัดสินชุดหรือตำบลใด"
+    },
+    {
+     "en": "No priority score and no action class is computed for any subdistrict: the replay computes neither.",
+     "th": "ไม่มีการคำนวณคะแนนลำดับความสำคัญหรือระดับการดำเนินการของตำบลใด การย้อนดูไม่ได้คำนวณทั้งสองอย่าง"
+    },
+    {
+     "en": "The comparison of this subdistrict with the 2024 season envelope is in the envelope's statistics file, which the replay manifest names at season_envelope.files.statistics. That file is shared under its product's own licence (CC BY-SA 4.0) and this file keeps one licence lineage (ODbL 1.0), so its figures are not copied here. It is a scenario plausibility comparison, not a validation.",
+     "th": "การเปรียบเทียบตำบลนี้กับขอบเขตน้ำตลอดฤดูปี 2567 (2024) อยู่ในไฟล์สถิติของขอบเขตน้ำ ซึ่งไฟล์กำกับของการย้อนดูระบุไว้ที่ season_envelope.files.statistics ไฟล์นั้นเผยแพร่ภายใต้สัญญาอนุญาตของผลิตภัณฑ์ต้นทาง (CC BY-SA 4.0) ส่วนไฟล์นี้มีสายสัญญาอนุญาตเดียว (ODbL 1.0) จึงไม่ได้คัดลอกตัวเลขมาไว้ที่นี่ การเปรียบเทียบนี้เป็นการดูความเป็นไปได้ของสถานการณ์จำลอง ไม่ใช่การยืนยันความถูกต้อง"
+    }
+   ],
+   "area_km2": 30.34,
+   "modelled_share_of_area": 1.0,
+   "modelled_peak_stage_m": 3.5,
+   "modelled_peak_local_time": "2024-09-12T12:00:00+07:00",
+   "modelled_flooded_km2_at_peak": 0.722,
+   "modelled_flooded_share_of_subdistrict": 0.0238,
+   "modelled_flooded_share_of_district": 0.0081,
+   "modelled_residents_in_water_at_peak": 101.9,
+   "modelled_road_km_impassable_at_peak": 2.98,
+   "modelled_access_at_peak": {
+    "reported_2024": {
+     "all_residents_at_road_nodes": {
+      "residents": 19532.1,
+      "within_reach_before_flood": 11732.9,
+      "already_out_of_reach_before_flood": 7799.1,
+      "lost_access": 0.0,
+      "keeping_access": 11732.9,
+      "lost_share_of_within_reach": 0.0
+     },
+     "residents_whose_homes_flood_at_peak": {
+      "residents": 89.5,
+      "within_reach_before_flood": 0.0,
+      "already_out_of_reach_before_flood": 89.5,
+      "lost_access": 0.0,
+      "keeping_access": 0.0,
+      "lost_share_of_within_reach": null
+     }
+    },
+    "knee_plan": {
+     "all_residents_at_road_nodes": {
+      "residents": 19532.1,
+      "within_reach_before_flood": 2740.0,
+      "already_out_of_reach_before_flood": 16792.1,
+      "lost_access": 1670.9,
+      "keeping_access": 1069.1,
+      "lost_share_of_within_reach": 0.6098
+     },
+     "residents_whose_homes_flood_at_peak": {
+      "residents": 89.5,
+      "within_reach_before_flood": 0.0,
+      "already_out_of_reach_before_flood": 89.5,
+      "lost_access": 0.0,
+      "keeping_access": 0.0,
+      "lost_share_of_within_reach": null
+     }
+    }
+   },
+   "season_envelope_comparison": {
+    "lane": "SCN-ENV",
+    "stage": "modelled_peak",
+    "file": "season_envelope.files.statistics",
+    "entry": "comparison.by_tambon[tambon_id=TH570906]"
+   }
+  },
+  {
+   "tambon_id": "TH570908",
+   "tambon_name_th": "บ้านด้าย",
+   "tambon_name_en": "Ban Dai",
+   "lane": "SCN",
+   "evidence_tier": "T1 scenario (model)",
+   "confidence_class": "low",
+   "source_timestamp": "OpenStreetMap extract 2026-07-09 (roads and sites); WorldPop 2020; reported shelters compiled 2026-09-27; illustrative stage keyframes for 2024-09-09/2024-09-19 ICT on the Copernicus DEM (2011-2015 acquisitions); peak keyframe 2024-09-12T12:00:00+07:00",
+   "generated_at": "2026-10-03T17:47:00+07:00",
+   "operational_status": "non_operational",
+   "assumptions": [
+    {
+     "en": "The water is a HAND terrain-model reconstruction driven by illustrative stage keyframes (no gauge record was used): modelled, not observed.",
+     "th": "น้ำเป็นการจำลองจากแบบจำลองภูมิประเทศ HAND ด้วยจุดกำหนดระดับน้ำเพื่อการอธิบาย (ไม่ได้ใช้ข้อมูลจากสถานีวัดน้ำ) เป็นค่าจากแบบจำลอง ไม่ใช่ค่าที่สังเกตได้"
+    },
+    {
+     "en": "Every figure is for the modelled peak only: the illustrative 3.5 m stage keyframe at 2024-09-12T12:00:00+07:00 (ICT, UTC+7).",
+     "th": "ตัวเลขทุกตัวเป็นค่า ณ ระดับน้ำสูงสุดของแบบจำลองเท่านั้น คือจุดกำหนดระดับน้ำเพื่อการอธิบายที่ 3.5 ม. เวลา 2024-09-12T12:00:00+07:00 (เวลาประเทศไทย UTC+7)"
+    },
+    {
+     "en": "Flooded area and residents in water are counted per subdistrict on the replay's 10 m grid, outside mapped channels. Residents are WorldPop 2020 modelled residents, not the 2024 population, tourists or traders.",
+     "th": "พื้นที่น้ำท่วมและผู้อยู่อาศัยในพื้นที่น้ำท่วมนับรายตำบลบนกริด 10 ม. ของการย้อนดู ไม่รวมร่องน้ำในแผนที่ ผู้อยู่อาศัยเป็นประชากรตามแบบจำลอง WorldPop 2020 ไม่ใช่ประชากรปี 2567 (2024) นักท่องเที่ยว หรือผู้ค้า"
+    },
+    {
+     "en": "Impassable road length sums the modelled road pieces of the subdistrict whose reconstructed depth reaches 0.3 m at the peak. Bridge decks are not modelled, and no closure report was used.",
+     "th": "ความยาวถนนที่สัญจรไม่ได้คือผลรวมของถนนช่วงต่าง ๆ ในตำบลที่ความลึกจำลองถึง 0.3 ม. ณ ระดับน้ำสูงสุด ไม่ได้จำลองพื้นสะพาน และไม่ได้ใช้รายงานการปิดถนน"
+    },
+    {
+     "en": "A resident has access when a dry shelter of the set is within a 2 km walk on roads that are still passable. Two sets are given side by side, the sites reported in use in September 2024 and the first 8 sites of the modelled coverage ranking, each against its own baseline and counted two ways (all residents at road nodes, and residents whose homes flood at the modelled peak). Nothing here grades a set or a subdistrict.",
+     "th": "ผู้อยู่อาศัยเข้าถึงได้เมื่อมีที่พักพิงที่ไม่ถูกน้ำท่วมของชุดนั้นภายในระยะเดิน 2 กม. บนถนนที่ยังสัญจรได้ แสดงสองชุดเคียงกัน คือสถานที่ที่มีรายงานว่าใช้ในเดือนกันยายน 2567 (2024) และ 8 แห่งแรกของการจัดอันดับความครอบคลุมตามแบบจำลอง แต่ละชุดเทียบกับฐานของตัวเอง และนับสองแบบ (ผู้อยู่อาศัยทั้งหมดที่จุดถนน และผู้ที่บ้านถูกน้ำท่วมที่ระดับสูงสุดของแบบจำลอง) ตัวเลขไม่ได้ตัดสินชุดหรือตำบลใด"
+    },
+    {
+     "en": "No priority score and no action class is computed for any subdistrict: the replay computes neither.",
+     "th": "ไม่มีการคำนวณคะแนนลำดับความสำคัญหรือระดับการดำเนินการของตำบลใด การย้อนดูไม่ได้คำนวณทั้งสองอย่าง"
+    },
+    {
+     "en": "The comparison of this subdistrict with the 2024 season envelope is in the envelope's statistics file, which the replay manifest names at season_envelope.files.statistics. That file is shared under its product's own licence (CC BY-SA 4.0) and this file keeps one licence lineage (ODbL 1.0), so its figures are not copied here. It is a scenario plausibility comparison, not a validation.",
+     "th": "การเปรียบเทียบตำบลนี้กับขอบเขตน้ำตลอดฤดูปี 2567 (2024) อยู่ในไฟล์สถิติของขอบเขตน้ำ ซึ่งไฟล์กำกับของการย้อนดูระบุไว้ที่ season_envelope.files.statistics ไฟล์นั้นเผยแพร่ภายใต้สัญญาอนุญาตของผลิตภัณฑ์ต้นทาง (CC BY-SA 4.0) ส่วนไฟล์นี้มีสายสัญญาอนุญาตเดียว (ODbL 1.0) จึงไม่ได้คัดลอกตัวเลขมาไว้ที่นี่ การเปรียบเทียบนี้เป็นการดูความเป็นไปได้ของสถานการณ์จำลอง ไม่ใช่การยืนยันความถูกต้อง"
+    }
+   ],
+   "area_km2": 33.78,
+   "modelled_share_of_area": 1.0,
+   "modelled_peak_stage_m": 3.5,
+   "modelled_peak_local_time": "2024-09-12T12:00:00+07:00",
+   "modelled_flooded_km2_at_peak": 20.41,
+   "modelled_flooded_share_of_subdistrict": 0.6042,
+   "modelled_flooded_share_of_district": 0.2301,
+   "modelled_residents_in_water_at_peak": 2311.9,
+   "modelled_road_km_impassable_at_peak": 14.58,
+   "modelled_access_at_peak": {
+    "reported_2024": {
+     "all_residents_at_road_nodes": {
+      "residents": 5036.1,
+      "within_reach_before_flood": 2.9,
+      "already_out_of_reach_before_flood": 5033.3,
+      "lost_access": 2.9,
+      "keeping_access": 0.0,
+      "lost_share_of_within_reach": 1.0
+     },
+     "residents_whose_homes_flood_at_peak": {
+      "residents": 1809.7,
+      "within_reach_before_flood": 2.9,
+      "already_out_of_reach_before_flood": 1806.9,
+      "lost_access": 2.9,
+      "keeping_access": 0.0,
+      "lost_share_of_within_reach": 1.0
+     }
+    },
+    "knee_plan": {
+     "all_residents_at_road_nodes": {
+      "residents": 5036.1,
+      "within_reach_before_flood": 772.1,
+      "already_out_of_reach_before_flood": 4264.0,
+      "lost_access": 506.7,
+      "keeping_access": 265.4,
+      "lost_share_of_within_reach": 0.6562
+     },
+     "residents_whose_homes_flood_at_peak": {
+      "residents": 1809.7,
+      "within_reach_before_flood": 433.8,
+      "already_out_of_reach_before_flood": 1375.9,
+      "lost_access": 416.0,
+      "keeping_access": 17.8,
+      "lost_share_of_within_reach": 0.959
+     }
+    }
+   },
+   "season_envelope_comparison": {
+    "lane": "SCN-ENV",
+    "stage": "modelled_peak",
+    "file": "season_envelope.files.statistics",
+    "entry": "comparison.by_tambon[tambon_id=TH570908]"
+   }
+  },
+  {
+   "tambon_id": "TH570909",
+   "tambon_name_th": "โป่งงาม",
+   "tambon_name_en": "Pong Ngam",
+   "lane": "SCN",
+   "evidence_tier": "T1 scenario (model)",
+   "confidence_class": "low",
+   "source_timestamp": "OpenStreetMap extract 2026-07-09 (roads and sites); WorldPop 2020; reported shelters compiled 2026-09-27; illustrative stage keyframes for 2024-09-09/2024-09-19 ICT on the Copernicus DEM (2011-2015 acquisitions); peak keyframe 2024-09-12T12:00:00+07:00",
+   "generated_at": "2026-10-03T17:47:00+07:00",
+   "operational_status": "non_operational",
+   "assumptions": [
+    {
+     "en": "The water is a HAND terrain-model reconstruction driven by illustrative stage keyframes (no gauge record was used): modelled, not observed.",
+     "th": "น้ำเป็นการจำลองจากแบบจำลองภูมิประเทศ HAND ด้วยจุดกำหนดระดับน้ำเพื่อการอธิบาย (ไม่ได้ใช้ข้อมูลจากสถานีวัดน้ำ) เป็นค่าจากแบบจำลอง ไม่ใช่ค่าที่สังเกตได้"
+    },
+    {
+     "en": "Every figure is for the modelled peak only: the illustrative 3.5 m stage keyframe at 2024-09-12T12:00:00+07:00 (ICT, UTC+7).",
+     "th": "ตัวเลขทุกตัวเป็นค่า ณ ระดับน้ำสูงสุดของแบบจำลองเท่านั้น คือจุดกำหนดระดับน้ำเพื่อการอธิบายที่ 3.5 ม. เวลา 2024-09-12T12:00:00+07:00 (เวลาประเทศไทย UTC+7)"
+    },
+    {
+     "en": "Flooded area and residents in water are counted per subdistrict on the replay's 10 m grid, outside mapped channels. Residents are WorldPop 2020 modelled residents, not the 2024 population, tourists or traders.",
+     "th": "พื้นที่น้ำท่วมและผู้อยู่อาศัยในพื้นที่น้ำท่วมนับรายตำบลบนกริด 10 ม. ของการย้อนดู ไม่รวมร่องน้ำในแผนที่ ผู้อยู่อาศัยเป็นประชากรตามแบบจำลอง WorldPop 2020 ไม่ใช่ประชากรปี 2567 (2024) นักท่องเที่ยว หรือผู้ค้า"
+    },
+    {
+     "en": "Impassable road length sums the modelled road pieces of the subdistrict whose reconstructed depth reaches 0.3 m at the peak. Bridge decks are not modelled, and no closure report was used.",
+     "th": "ความยาวถนนที่สัญจรไม่ได้คือผลรวมของถนนช่วงต่าง ๆ ในตำบลที่ความลึกจำลองถึง 0.3 ม. ณ ระดับน้ำสูงสุด ไม่ได้จำลองพื้นสะพาน และไม่ได้ใช้รายงานการปิดถนน"
+    },
+    {
+     "en": "A resident has access when a dry shelter of the set is within a 2 km walk on roads that are still passable. Two sets are given side by side, the sites reported in use in September 2024 and the first 8 sites of the modelled coverage ranking, each against its own baseline and counted two ways (all residents at road nodes, and residents whose homes flood at the modelled peak). Nothing here grades a set or a subdistrict.",
+     "th": "ผู้อยู่อาศัยเข้าถึงได้เมื่อมีที่พักพิงที่ไม่ถูกน้ำท่วมของชุดนั้นภายในระยะเดิน 2 กม. บนถนนที่ยังสัญจรได้ แสดงสองชุดเคียงกัน คือสถานที่ที่มีรายงานว่าใช้ในเดือนกันยายน 2567 (2024) และ 8 แห่งแรกของการจัดอันดับความครอบคลุมตามแบบจำลอง แต่ละชุดเทียบกับฐานของตัวเอง และนับสองแบบ (ผู้อยู่อาศัยทั้งหมดที่จุดถนน และผู้ที่บ้านถูกน้ำท่วมที่ระดับสูงสุดของแบบจำลอง) ตัวเลขไม่ได้ตัดสินชุดหรือตำบลใด"
+    },
+    {
+     "en": "No priority score and no action class is computed for any subdistrict: the replay computes neither.",
+     "th": "ไม่มีการคำนวณคะแนนลำดับความสำคัญหรือระดับการดำเนินการของตำบลใด การย้อนดูไม่ได้คำนวณทั้งสองอย่าง"
+    },
+    {
+     "en": "The comparison of this subdistrict with the 2024 season envelope is in the envelope's statistics file, which the replay manifest names at season_envelope.files.statistics. That file is shared under its product's own licence (CC BY-SA 4.0) and this file keeps one licence lineage (ODbL 1.0), so its figures are not copied here. It is a scenario plausibility comparison, not a validation.",
+     "th": "การเปรียบเทียบตำบลนี้กับขอบเขตน้ำตลอดฤดูปี 2567 (2024) อยู่ในไฟล์สถิติของขอบเขตน้ำ ซึ่งไฟล์กำกับของการย้อนดูระบุไว้ที่ season_envelope.files.statistics ไฟล์นั้นเผยแพร่ภายใต้สัญญาอนุญาตของผลิตภัณฑ์ต้นทาง (CC BY-SA 4.0) ส่วนไฟล์นี้มีสายสัญญาอนุญาตเดียว (ODbL 1.0) จึงไม่ได้คัดลอกตัวเลขมาไว้ที่นี่ การเปรียบเทียบนี้เป็นการดูความเป็นไปได้ของสถานการณ์จำลอง ไม่ใช่การยืนยันความถูกต้อง"
+    }
+   ],
+   "area_km2": 42.61,
+   "modelled_share_of_area": 1.0,
+   "modelled_peak_stage_m": 3.5,
+   "modelled_peak_local_time": "2024-09-12T12:00:00+07:00",
+   "modelled_flooded_km2_at_peak": 4.846,
+   "modelled_flooded_share_of_subdistrict": 0.1137,
+   "modelled_flooded_share_of_district": 0.0546,
+   "modelled_residents_in_water_at_peak": 434.9,
+   "modelled_road_km_impassable_at_peak": 1.29,
+   "modelled_access_at_peak": {
+    "reported_2024": {
+     "all_residents_at_road_nodes": {
+      "residents": 7248.8,
+      "within_reach_before_flood": 1212.5,
+      "already_out_of_reach_before_flood": 6036.2,
+      "lost_access": 0.0,
+      "keeping_access": 1212.5,
+      "lost_share_of_within_reach": 0.0
+     },
+     "residents_whose_homes_flood_at_peak": {
+      "residents": 329.1,
+      "within_reach_before_flood": 0.0,
+      "already_out_of_reach_before_flood": 329.1,
+      "lost_access": 0.0,
+      "keeping_access": 0.0,
+      "lost_share_of_within_reach": null
+     }
+    },
+    "knee_plan": {
+     "all_residents_at_road_nodes": {
+      "residents": 7248.8,
+      "within_reach_before_flood": 82.0,
+      "already_out_of_reach_before_flood": 7166.7,
+      "lost_access": 82.0,
+      "keeping_access": 0.0,
+      "lost_share_of_within_reach": 1.0
+     },
+     "residents_whose_homes_flood_at_peak": {
+      "residents": 329.1,
+      "within_reach_before_flood": 66.4,
+      "already_out_of_reach_before_flood": 262.7,
+      "lost_access": 66.4,
+      "keeping_access": 0.0,
+      "lost_share_of_within_reach": 1.0
+     }
+    }
+   },
+   "season_envelope_comparison": {
+    "lane": "SCN-ENV",
+    "stage": "modelled_peak",
+    "file": "season_envelope.files.statistics",
+    "entry": "comparison.by_tambon[tambon_id=TH570909]"
+   }
+  }
+ ]
+}

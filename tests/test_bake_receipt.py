@@ -17,6 +17,7 @@ import re
 import sys
 import tempfile
 
+import numpy as np
 import pytest
 
 from floodguard.bake_receipt import (
@@ -685,6 +686,100 @@ def test_bake_reads_openstreetmap_from_the_pbf_and_keeps_no_derived_cache() -> N
         assert needle not in source, needle
 
 
+# --- Radar size comparison, the replay's last day and the per-subdistrict peak figures (roadmap P2-10, C-3, P3-2) ---------
+
+
+def test_radar_size_comparison_needs_a_same_track_pair_and_keeps_the_cross_track_pair_as_a_sensitivity() -> None:
+    bake = load_bake()
+    codes = np.full((40, 40), 2, dtype=np.uint8)  # HAND 0.10 m: wet from the 0.15 m stage on (HAND < stage).
+    codes[:, :20] = 100  # 5 m: never in the 0.05-2.0 m stages, but inside the low-HAND zone (< 6 m).
+    rng = np.random.default_rng(7)
+    pre = rng.normal(45.0, 1.0, codes.shape)
+    post = pre.copy()
+    post[:, 20:] = 30.0  # Newly dark where the HAND is low.
+    water = {bake.S1_ANCHOR_PRE["id"]: pre, "s1-20240906": pre + 0.5, "s1-20240915": post}
+    meta = {bake.S1_ANCHOR_PRE["id"]: {"pass": "descending", "relative_orbit": 135, "ipf_version": "003.80"},
+            "s1-20240906": {"pass": "ascending", "relative_orbit": 172, "ipf_version": "003.80"},
+            "s1-20240915": {"pass": "descending", "relative_orbit": 135, "ipf_version": "003.80"}}
+    anchor = bake.s1_size_comparison(codes, water, meta, 0.01)
+    assert (anchor["pair"], anchor["best_fit_stage_m"]) == ("same_track", 0.15) and 7.0 < anchor["newly_dark_km2"] <= 8.0
+    assert [(image["id"], image["role"], image["pass"], image["relative_orbit"], image["published_as_layer"]) for image in anchor["images"]] == [
+        ("s1-20240903", "pre_event", "descending", 135, False), ("s1-20240915", "event", "descending", 135, True)]
+    assert [(image["utc"], image["local"]) for image in anchor["images"]] == [
+        ("2024-09-03T23:16:00Z", "2024-09-04T06:16:00+07:00"), ("2024-09-15T23:16:01Z", "2024-09-16T06:16:01+07:00")]
+    assert "processing_allowed False" in anchor["images"][0]["note"] and "R14" in anchor["images"][0]["note"]
+    assert anchor["images"][0]["processor"] == "Sentinel-1 IPF 003.80"
+    [cross] = anchor["sensitivity"]
+    assert (cross["pair"], cross["source_timestamp"]) == ("cross_track", bake.S1_PAIR)
+    assert [(image["id"], image["pass"], image["relative_orbit"]) for image in cross["images"]] == [("s1-20240906", "ascending", 172), ("s1-20240915", "descending", 135)]
+    assert set(bake.S1_FIT_FIELDS) <= set(cross)
+    assert bake.S1_ANCHOR_PAIR == "2024-09-03T23:16:00Z/2024-09-15T23:16:01Z"
+    # A primary pair that is not on one track, or a "cross-track" pair that is, stops the bake: the labels would be untrue.
+    for image, change in (("s1-20240903", {"pass": "ascending"}), ("s1-20240903", {"relative_orbit": 62}), ("s1-20240906", {"pass": "descending", "relative_orbit": 135})):
+        broken = {key: dict(value) for key, value in meta.items()}
+        broken[image].update(change)
+        with pytest.raises(ValueError, match="track"):
+            bake.s1_size_comparison(codes, water, broken, 0.01)
+    # The bake reads the same-track pass from its own SAFE archive and writes no image layer from it.
+    source = (SCRIPTS / "build_mae_sai_flood_timeline.py").read_text(encoding="utf-8")
+    assert 'track(external / S1_ANCHOR_PRE["folder"] / S1_ANCHOR_PRE["file"])' in source
+    assert "s1-20240903" not in {item["id"] for item in bake.OBSERVATIONS}
+
+
+def test_nothing_is_dated_after_the_replays_last_day() -> None:
+    bake = load_bake()
+    manifest = {
+        "layers": [{"id": "hillshade", "date": None}, {"id": "s1-change", "date": bake.S1_PAIR}],
+        "observations": [{"id": "s1-20240915", "local": "2024-09-16T06:16:01+07:00"}],
+        "days": [{"date": "2024-09-19"}], "viirs_daily": {"days": [{"date": "2024-09-18", "nominal_local_time": "2024-09-18T13:30:00+07:00"}]},
+        "s2_crosscheck": {"scenes": [{"id": "s2-20240915", "local_time": "2024-09-15T10:58:15+07:00"}]},
+        "s1_anchor": {"images": [{"id": "s1-20240903", "local": "2024-09-04T06:16:00+07:00"}], "sensitivity": []},
+        "stage_anchors": [{"t": 0.0, "stage_m": 0.0}, {"t": 11.0, "stage_m": 0.0}],
+        "external_references": [dict(bake.O2_REFERENCE)],  # A cited separate case is not a dated replay entry.
+    }
+    assert bake.dated_after_replay(manifest) == []
+    assert len(bake.replay_dates(manifest)) == 9
+    # The end of the last hour (20 Sep 00:00 ICT) is the end of 19 Sep; anything later is refused, wherever it sits.
+    assert bake.local_day("2024-09-19T17:00:00Z") == "2024-09-20" and bake.local_day("2024-09-19") == "2024-09-19"
+    late = {
+        "layers": [{"id": "o2", "date": "2024-10-22T00:00:00Z"}], "observations": [{"id": "o2", "local": "2024-10-22T10:00:00+07:00"}],
+        "days": [{"date": "2024-09-20"}], "viirs_daily": {"days": [{"date": "2024-09-20", "nominal_local_time": "2024-09-20T13:30:00+07:00"}]},
+        "s2_crosscheck": {"scenes": [{"id": "s2", "local_time": "2024-09-25T10:58:15+07:00"}]},
+        "s1_anchor": {"images": [], "sensitivity": [{"images": [{"id": "s1", "local": "2024-09-28T06:16:00+07:00"}]}]},
+        "stage_anchors": [{"t": 11.5, "stage_m": 0.0}],
+    }
+    problems = bake.dated_after_replay(late)
+    assert len(problems) == 7 and all("after the replay's last day (2024-09-19)" in problem for problem in problems)
+    assert bake.O2_REFERENCE["dated"] == "2024-10-22" and bake.O2_REFERENCE["case"] == "O2"
+    assert "not on this map" in bake.O2_REFERENCE["note"] and "no position on the replay slider" in bake.O2_REFERENCE["note"]
+    # The season envelope is the one deliberate exemption: dated to the product's window (to 22 Oct) on a toggle of its
+    # own, never a replay day. The gate skips it by design, and the O2 line says so rather than claiming no later data.
+    exempt = dict(manifest, season_envelope={"season_window": "2024-08-01/2024-10-22", "day_independent": True,
+                                             "files": {"raster": {"href": "/studies/x/r4/unosat4009/envelope.png"}}})
+    assert bake.dated_after_replay(exempt) == [] and not any(path.startswith("season_envelope") for path, _ in bake.replay_dates(exempt))
+    assert "season envelope" in (bake.dated_after_replay.__doc__ or "") and "exemption" in (bake.dated_after_replay.__doc__ or "")
+    note = bake.O2_REFERENCE["note"]
+    assert "CHIANGRAI_20241022_FloodExtent) is not read" in note and "only layer here that includes water after 19 Sep" in note
+    assert "no 22 Oct data" not in note
+
+
+def test_per_subdistrict_peak_figures_come_from_the_peak_day_and_the_drawn_road_pieces() -> None:
+    bake = load_bake()
+    days = [{"index": 0, "stage_m": 0.0, "stats": {"tambon_flooded_km2": {"T1": 0.0, "T2": 0.0}, "tambon_people_in_water": {"T1": 0.0, "T2": 0.0}}},
+            {"index": 3, "stage_m": 3.5, "stats": {"tambon_flooded_km2": {"T1": 5.0, "T2": 2.5}, "tambon_people_in_water": {"T1": 60.8, "T2": 5.5}}},
+            {"index": 4, "stage_m": 3.5, "stats": {"tambon_flooded_km2": {"T1": 9.0, "T2": 9.0}, "tambon_people_in_water": {"T1": 1.0, "T2": 1.0}}}]
+    coverage = {"T1": {"total_km2": 20.0, "modelled_km2": 20.0}, "T2": {"total_km2": 40.0, "modelled_km2": 30.0}}
+    road = lambda t, h, length, m=True, k=1.0: {"properties": {"t": t, "h": h, "len": length, "m": m, "k": k}}  # noqa: E731
+    roads = [road("T1", 3.0, 120), road("T1", 3.3, 120), road("T1", 3.21, 120), road("T1", 2.0, 120, m=False), road("T1", None, 120),
+             road("T2", 1.0, 100, k=0.5), road("T2", 3.4, 100), road("T9", 0.0, 500)]
+    rows, local_time = bake.tambon_peak_figures(days, coverage, roads, ["T1", "T2"])
+    # The first day at the highest stage is the peak, at local noon; 3.3 m and 3.21 m of HAND are only 0.2 m and 0.29 m deep.
+    assert local_time == "2024-09-12T12:00:00+07:00"
+    assert rows == [
+        {"tambon_id": "T1", "area_km2": 20.0, "modelled_km2": 20.0, "flooded_km2": 5.0, "residents_in_water": 60.8, "road_km_impassable": 0.12},
+        {"tambon_id": "T2", "area_km2": 40.0, "modelled_km2": 30.0, "flooded_km2": 2.5, "residents_in_water": 5.5, "road_km_impassable": 0.1}]
+
+
 # --- The committed r4 receipt ---------------------------------------------------------------------------
 
 
@@ -753,6 +848,9 @@ def test_committed_receipt_lists_every_input_kind_the_bake_opens(committed_recei
     record = json.loads((ROOT / "docs" / "proposal_execution" / "rights_basis_4009_v1.json").read_text(encoding="utf-8"))
     assert (archive["bytes"], archive["sha256"]) == (record["archive"]["bytes"], record["archive"]["sha256"])
     assert count(r"cdse/mae_sai_2024/S1A_IW_GRDH_1SDV_.*\.SAFE\.zip$") == 2
+    # The same-track pre-event pass for the radar size comparison (owner decision R14): one original SAFE, never a layer.
+    assert [path for path in paths if path.startswith("sentinel1_original_safe/")] == [
+        "sentinel1_original_safe/S1A_IW_GRDH_1SDV_20240903T231600_20240903T231625_055507_06C5C9_72F7.SAFE.zip"]
     assert count(r"worldpop_population/tha_ppp_2020\.tif$") == 1
     # OpenStreetMap is identified by the extract itself, never by a derived cache.
     assert count(r"^open_context/osm_geofabrik/thailand-latest\.osm\.pbf$") == 1
@@ -762,9 +860,10 @@ def test_committed_receipt_lists_every_input_kind_the_bake_opens(committed_recei
     repo_inputs = sorted(path for root, path in keys if root == "repo")
     assert repo_inputs == ["docs/proposal_execution/rights_basis_4009_v1.json",
                            "outputs/mae_sai_access_edges.csv", "outputs/mae_sai_admin_context.geojson", "outputs/mae_sai_facilities.geojson",
-                           "outputs/mae_sai_population_nodes.csv", "outputs/mae_sai_reported_shelters_2024.json",
-                           "outputs/mae_sai_road_risk.geojson"]
-    assert len(inputs) == 37
+                           "outputs/mae_sai_population_nodes.csv", "outputs/mae_sai_reported_depths_2024.json",
+                           "outputs/mae_sai_reported_shelters_2024.json", "outputs/mae_sai_road_risk.geojson"]
+    # The reported depths (news, not surveyed; roadmap C-2) are an in-repo input like the reported shelters.
+    assert len(inputs) == 39
 
 
 def test_committed_receipt_matches_the_in_repo_inputs_and_the_committed_revision(committed_receipt: dict) -> None:
@@ -776,11 +875,12 @@ def test_committed_receipt_matches_the_in_repo_inputs_and_the_committed_revision
     assert outputs["folder"] == COMMITTED_FOLDER.relative_to(ROOT).as_posix()
     listing = directory_listing(COMMITTED_FOLDER)
     assert outputs["files"] == listing  # The receipt describes exactly the committed revision, byte for byte.
-    assert outputs["file_count"] == len(listing) == 33
-    # 22 files the page loads, the 8 download files of the export pack and the 3 files of the season envelope (its raster,
-    # its statistics and its licence notice), which the receipt lists like any other output.
+    assert outputs["file_count"] == len(listing) == 34
+    # 22 files the page loads, the 9 download files of the export pack (the per-subdistrict summary among them) and the 3
+    # files of the season envelope (its raster, its statistics and its licence notice), listed like any other output.
     exported = [row["name"] for row in listing if row["name"].startswith("exports/")]
-    assert len(exported) == 8 and all(name.count("/") == 1 for name in exported)
+    assert len(exported) == 9 and all(name.count("/") == 1 for name in exported)
+    assert "exports/tambon_replay_summary.json" in exported
     assert [row["name"] for row in listing if row["name"].startswith("unosat4009/")] == ["unosat4009/LICENSE", "unosat4009/envelope.json", "unosat4009/envelope.png"]
     assert outputs["bytes"] == sum(row["bytes"] for row in listing)
 
@@ -860,4 +960,4 @@ def test_the_real_bake_reproduces_the_committed_bytes_with_the_recorded_librarie
         pytest.skip(f"library versions differ from the recorded receipt, so bytes may differ: {drift}")
     comparison = compare_directories(real_bake["out"], COMMITTED_FOLDER)
     assert comparison.matches, (comparison.summary(), comparison.different, comparison.missing_from_fresh, comparison.extra_in_fresh)
-    assert comparison.summary() == "33/33 identical"  # The export pack and the season envelope's files are rebuilt byte for byte too.
+    assert comparison.summary() == "34/34 identical"  # The export pack and the season envelope's files are rebuilt byte for byte too.

@@ -68,8 +68,22 @@ describe("CommandWorkspace", () => {
 
     expect(notice).toContain('data-research-report-notice="true"');
     expect(notice).toContain("Earlier research scores and classes are not accepted event-response priorities.");
+    expect(notice).toContain("The score table of the earlier Mae Sai GeoAI report, with a research score and class for each subdistrict, is not shown on Planning");
     expect(notice).toContain("kept, as historical research, only in Studio&#x27;s archive");
     expect(notice).toContain('href="/studio/archive/mae-sai-geoai/"');
+    // This workspace keeps its own ranking, scores and classes (the page says "retained research comparisons"), so
+    // the notice must not read as if no per-subdistrict research score were shown here: it names them as a separate
+    // retained comparison whose values differ from the report's.
+    expect(html).toContain("FPPS ranking");
+    expect(html).toMatch(/<small>Class<!-- --> <!-- -->[A-E]<\/small>|<small>Class [A-E]<\/small>/);
+    expect(notice).toContain('data-research-retained-ranking="true"');
+    expect(notice).toContain("The ranking, FPPS and classes still shown on this page are a separate retained research comparison, not that report&#x27;s table.");
+    expect(notice).toContain("Their values differ from the report&#x27;s, and they are not accepted priorities either.");
+    expect(notice).not.toMatch(/no longer shown on Planning|per-subdistrict research score table/);
+    // Where no such ranking is shown (the Planning overview), the notice does not speak of one.
+    expect(renderToStaticMarkup(<ResearchReportNotice />)).not.toContain("data-research-retained-ranking");
+    const thaiArchive = renderToStaticMarkup(<ResearchReportNotice language="th" retainedRanking />);
+    expect(thaiArchive).toContain("ลำดับ คะแนน FPPS และชั้นของตำบลที่ยังแสดงในหน้านี้เป็นผลเปรียบเทียบงานวิจัยเดิมอีกชุดหนึ่ง");
     expect(notice).not.toContain("<table");
     expect(notice).not.toMatch(/\d+\.\d|Class [A-E]|FPPS \d/);
     expect(html).not.toMatch(/GEOAI RESEARCH|GeoAI research report|geoai-real-title|Research FPPS|Research class|Sub-district research results/);

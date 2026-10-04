@@ -327,9 +327,9 @@ describe("facility presentation", () => {
     expect(html).not.toContain(">Class ");
   });
 
-  it("gives the map-background notice a one-line form for phones, with the sentence and the actions behind one button", () => {
+  it("gives the map-background notice a compact form, with the sentence and the actions behind one button", () => {
     const areas = (bundleJson as unknown as { areas: AreaRecord[] }).areas;
-    const html = renderToStaticMarkup(createElement(GeoMap, {
+    const render = (extra: Record<string, unknown> = {}) => renderToStaticMarkup(createElement(GeoMap, {
       areas,
       selectedId: areas[0].area_id,
       onSelect: () => undefined,
@@ -338,8 +338,15 @@ describe("facility presentation", () => {
       roadFeatures: collection("roads", []),
       datasetMode: "candidate",
       enableBasemaps: true,
+      ...extra,
     }));
-    const notice = html.slice(html.indexOf('<div class="map-basemap-notice'), html.indexOf('<div class="map-legend"'));
+    const html = render();
+    // The notice stands in one stack with the list button, after it, so a map can place it directly below the button.
+    const stack = html.slice(html.indexOf('<div class="map-top-stack">'));
+    expect(stack.indexOf('<details class="map-text-alternative">')).toBeGreaterThan(0);
+    expect(stack.indexOf('<div class="map-basemap-notice')).toBeGreaterThan(stack.indexOf("</details>"));
+    expect(html.match(/class="map-basemap-notice/g)).toHaveLength(1);
+    const notice = stack.slice(stack.indexOf('<div class="map-basemap-notice'));
 
     // Folded by default: the short line and the button that opens the rest.
     expect(notice).toContain('data-expanded="false"');
@@ -347,6 +354,13 @@ describe("facility presentation", () => {
     expect(notice).toContain(">Loading map background…</span>");
     expect(notice).toMatch(/<button type="button" class="[^"]*noticeToggle[^"]*" aria-expanded="false" aria-controls="([^"]+)">Options<\/button><div id="\1"/);
     expect(notice).toContain(">Hide background</button>");
+    // An ordinary first load is not a problem yet: the notice says so, and the Public home map keeps it out of sight.
+    expect(notice).toContain('data-state="loading" data-pending="true"');
+    // Compact on phones for every map; at every width for a map that asks for it (the Public home map).
+    expect(notice).toContain('data-compact="phone"');
+    expect(render({ compactBasemapNotice: true })).toContain('data-compact="always"');
+    // Without the list the stack holds the notice alone.
+    expect(render({ showTextAlternative: false })).toMatch(/<div class="map-top-stack"><div class="map-basemap-notice/);
 
     // Every state has a short line in both languages, shorter than its sentence and free of a second sentence.
     for (const state of ["loading", "partial", "unavailable", "offline", "hidden"] as const) {
@@ -360,13 +374,29 @@ describe("facility presentation", () => {
     }
     expect(basemapStatusShortLabel("unavailable", "en")).toBe("Map background unavailable");
 
-    // The one-line form is a phone rule: wider screens keep the sentence and its actions in view.
+    // The compact form has the same rules for phones and for a map that asks for it at every width; other maps
+    // keep the sentence and its actions in view on wider screens. The short line is never cut off.
     const stylesheet = readFileSync(resolve(import.meta.dirname, "geo-map.module.css"), "utf8");
     const [wide, phone] = stylesheet.split("@media (max-width: 680px)");
     expect(wide).toContain(".notice .noticeShort, .notice .noticeToggle { display: none; }");
-    expect(phone).toContain('.notice[data-expanded="false"] .noticeFull,');
-    expect(phone).toContain('.notice[data-expanded="false"] .actions,');
-    expect(phone).toContain(".notice .noticeToggle { display: inline-flex;");
+    const always = wide.split("\n").filter((line) => line.startsWith('.notice[data-compact="always"]')).map((line) => line.replace('[data-compact="always"]', ""));
+    const onPhones = phone.split("\n").filter((line) => line.startsWith("  .notice")).map((line) => line.trim());
+    expect(always).toEqual(onPhones);
+    expect(onPhones).toContain('.notice[data-expanded="false"] .noticeFull,');
+    expect(onPhones).toContain('.notice[data-expanded="false"] .actions,');
+    expect(onPhones).toContain(".notice .noticeToggle { display: inline-flex; align-items: center; margin: 0; }");
+    expect(stylesheet).not.toMatch(/text-overflow|nowrap/);
+
+    // On the Public home map the stack is a column placed from the map's upper edge, and nothing places the notice
+    // from the lower edge (that is what let it slide under the search field on a short map).
+    const globals = readFileSync(resolve(import.meta.dirname, "../app/globals.css"), "utf8");
+    const publicTheme = readFileSync(resolve(import.meta.dirname, "../app/public-theme.css"), "utf8");
+    expect(globals).toContain(".map-top-stack { display: contents; }");
+    expect(publicTheme).toMatch(/\.public-home-map \.map-top-stack \{\s+position: absolute;\s+top: 76px;/);
+    expect(publicTheme).toContain("flex-direction: column;");
+    for (const sheet of [globals, publicTheme]) {
+      for (const rule of sheet.match(/[^{}]*\.map-basemap-notice[^{}]*\{[^}]*\}/g) ?? []) expect(rule).not.toMatch(/[^-]bottom:\s*\d/);
+    }
   });
 
   it("presents internal attribution labels as publication-ready copy", () => {

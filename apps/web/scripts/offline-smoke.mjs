@@ -60,6 +60,10 @@ const routeExpectations = {
     /data-research-report-notice="true"/,
     /Earlier research scores and classes are not accepted event-response priorities/,
     /href="\/studio\/archive\/mae-sai-geoai\/"/,
+    // This page keeps its own ranking, scores and classes: it says what they are, and the notice says so too.
+    /Subdistrict scores and classes below are retained research comparisons, not accepted event-response priorities/,
+    /data-research-retained-ranking="true"/,
+    /The ranking, FPPS and classes still shown on this page are a separate retained research comparison/,
   ],
   "studio/index.html": [
     /Every result has a context/i,
@@ -99,11 +103,33 @@ for (const relative of routeFiles) {
 }
 
 // The GeoAI research report, with its research FPPS and A-E classes, is served by Studio's archive only.
+const visibleText = (relative) => readFileSync(resolve(out, relative), "utf8")
+  .replace(/<script\b[\s\S]*?<\/script>/g, " ").replace(/<!--[\s\S]*?-->/g, "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ");
+const scorePattern = /FPPS\s*(\d+(?:\.\d+)?)/g;
+const classPattern = /(?:\b[Cc]lass|ชั้น)\s+[A-E]\b/g;
 for (const relative of ["command/index.html", "command/archive/index.html"]) {
   const html = readFileSync(resolve(out, relative), "utf8");
   const retained = html.match(/GeoAI research report|geoai-real-title|Research FPPS|Research class|GEOAI RESEARCH/);
   if (retained) throw new Error(`${relative} still carries the research report panel: ${retained[0]}`);
 }
+// The Planning overview shows no research score and no research class of any kind.
+const overviewText = visibleText("command/index.html");
+const overviewScores = [...overviewText.matchAll(scorePattern), ...overviewText.matchAll(classPattern)].map((match) => match[0]);
+if (overviewScores.length > 0) throw new Error(`command/index.html shows a research score or class: ${overviewScores.join(", ")}`);
+// The one exception, stated on the page itself (see the expectations above): the map workspace at /command/archive/
+// keeps its own retained ranking until Command is replaced (decision log, R17). Every score on it must be one of
+// the eight retained values of the planning bundle; none may be a value of the GeoAI report's table.
+const archiveText = visibleText("command/archive/index.html");
+const retainedScores = new Set(JSON.parse(readFileSync(resolve(out, "offline-demo/mae-sai/bundle.json"), "utf8")).areas.map((area) => area.fpps_0_100.toFixed(1)));
+const reportScores = JSON.parse(readFileSync(resolve(out, "geoai/mae-sai-real.json"), "utf8")).subdistricts.map((row) => Number(row.fpps).toFixed(1));
+const archiveScores = [...archiveText.matchAll(scorePattern)].map((match) => Number(match[1]).toFixed(1));
+if (retainedScores.size !== 8 || archiveScores.length < 8 || archiveScores.some((score) => !retainedScores.has(score))) {
+  throw new Error(`command/archive/index.html shows a score outside its eight retained values: ${archiveScores.join(", ")}`);
+}
+if (reportScores.some((score) => retainedScores.has(score))) {
+  throw new Error("A retained planning-bundle score equals a score of the GeoAI report: the archive check cannot tell them apart.");
+}
+if ((archiveText.match(classPattern) ?? []).length === 0) throw new Error("command/archive/index.html no longer shows the retained classes its notice describes.");
 const historicalStudyHtml = readFileSync(resolve(out, "studio", "archive", "mae-sai-geoai", "index.html"), "utf8");
 for (const expected of [/HISTORICAL RESEARCH · REPORT ONLY/, /aria-labelledby="geoai-real-title"/, /GeoAI research report/, /Report only/]) {
   if (!expected.test(historicalStudyHtml)) throw new Error(`Studio's archive lacks the historical research report: ${expected}`);
@@ -292,8 +318,8 @@ if (caseReplay.exports.assets.some((asset) => workerCore.includes(asset.url) || 
 if (caseReplay.exports.bytes > caseReplay.exports.budget_bytes) throw new Error("The case-replay export pack is over its budget");
 
 // Evidence library: only its catalogue is in the blocking installation. Each study area (package files, terrain
-// preview, the shared report) is a deferred bucket the worker saves when the reader asks, pinned by SHA-256; the
-// database archives offered for download are never kept by the worker.
+// preview, the shared report) is a deferred bucket the worker saves when a page asks (the reader opened the area, or
+// pressed its save button), pinned by SHA-256; the database archives offered for download are never kept by the worker.
 const evidenceLibrary = auditEvidenceLibrary(out);
 const workerEvidenceAreas = readWorkerEvidenceAreas(serviceWorker);
 if (evidenceLibrary.areas.length === 0 || JSON.stringify(workerEvidenceAreas) !== JSON.stringify(evidenceLibrary.areas)) {
@@ -341,4 +367,4 @@ if (existsSync(proposalEvidencePath)) {
   }
 }
 
-console.log(`offline smoke: ${routeFiles.length} polished routes and ${requiredPublicAssets.length} core assets verified; case replay route precached with ${caseReplay.assets.length} deferred data files (${(caseReplay.bytes / 1e6).toFixed(1)} MB, opt-in) and ${caseReplay.exports.assets.length} export files (${(caseReplay.exports.bytes / 1e6).toFixed(2)} MB of a ${(caseReplay.exports.budget_bytes / 1e6).toFixed(1)} MB export budget); blocking installation ${install.files} files, ${megabytes(install.bytes)} of ${megabytes(install.budget_bytes)} MB budget (${install.bytes} bytes); evidence library: catalogue precached, ${evidenceLibrary.areas.length} study areas saved on request (${megabytes(evidenceAreaBytes)} MB in ${evidenceAreaFiles.size} files, largest area ${megabytes(Math.max(...evidenceLibrary.areas.map((area) => area.bytes)))} MB), ${evidenceLibrary.onlineOnly.length} database archives online only (${megabytes(evidenceLibrary.onlineOnly.reduce((sum, asset) => sum + asset.bytes, 0))} MB); internal safety contracts retained and no external runtime resources`);
+console.log(`offline smoke: ${routeFiles.length} polished routes and ${requiredPublicAssets.length} core assets verified; /command/ shows no research score or class, /command/archive/ only its ${retainedScores.size} retained ones (${archiveScores.length} mentions); case replay route precached with ${caseReplay.assets.length} deferred data files (${(caseReplay.bytes / 1e6).toFixed(1)} MB, opt-in) and ${caseReplay.exports.assets.length} export files (${(caseReplay.exports.bytes / 1e6).toFixed(2)} MB of a ${(caseReplay.exports.budget_bytes / 1e6).toFixed(1)} MB export budget); blocking installation ${install.files} files, ${megabytes(install.bytes)} of ${megabytes(install.budget_bytes)} MB budget (${install.bytes} bytes); evidence library: catalogue precached, ${evidenceLibrary.areas.length} study areas saved when opened or on request (${megabytes(evidenceAreaBytes)} MB in ${evidenceAreaFiles.size} files, largest area ${megabytes(Math.max(...evidenceLibrary.areas.map((area) => area.bytes)))} MB), ${evidenceLibrary.onlineOnly.length} database archives online only (${megabytes(evidenceLibrary.onlineOnly.reduce((sum, asset) => sum + asset.bytes, 0))} MB); internal safety contracts retained and no external runtime resources`);

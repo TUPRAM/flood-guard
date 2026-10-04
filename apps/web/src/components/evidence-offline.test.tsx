@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { evidenceFixtures } from "@/lib/evidence-library.fixtures";
-import type { EvidenceAreaStatus } from "@/lib/evidence-offline";
+import { evidenceActivity, type EvidenceActivity, type EvidenceAreaStatus } from "@/lib/evidence-offline";
 
 import { EvidenceLibrary } from "./evidence-library";
 import { EvidenceOfflineControl, EvidencePackageNotice } from "./evidence-offline";
@@ -13,13 +13,20 @@ vi.mock("react", async (importOriginal) => {
   return { ...react, useState: vi.fn(react.useState) };
 });
 
-/** Render the control with the worker's answer already in its state (first state: areas, second: busy). */
-function control(areas: EvidenceAreaStatus[] | null, options: { th?: boolean; list?: boolean; busy?: Record<string, "saving" | "removing"> } = {}) {
+// The control reads the saves and removals of the page view from the library module: a test sets what it reads.
+vi.mock("@/lib/evidence-offline", async (importOriginal) => {
+  const library = await importOriginal<typeof import("@/lib/evidence-offline")>();
+  return { ...library, evidenceActivity: vi.fn(library.evidenceActivity) };
+});
+
+/** Render the control with the worker's answer already in its state, and the page view's saves and removals. */
+function control(areas: EvidenceAreaStatus[] | null, options: { th?: boolean; list?: boolean } & Partial<EvidenceActivity> = {}) {
   const { catalog } = evidenceFixtures();
-  vi.mocked(useState).mockReturnValueOnce([areas, vi.fn()]).mockReturnValueOnce([options.busy ?? {}, vi.fn()]);
+  vi.mocked(useState).mockReturnValueOnce([areas, vi.fn()]);
+  vi.mocked(evidenceActivity).mockReturnValue({ busy: options.busy ?? {}, failed: options.failed ?? {}, interrupted: options.interrupted ?? {} });
   return renderToStaticMarkup(<EvidenceOfflineControl catalog={catalog} aoiId="test-aoi" th={options.th ?? false} list={options.list ?? false} />);
 }
-const area = (state: EvidenceAreaStatus["state"], cached: number, failed = 0): EvidenceAreaStatus => ({ aoiId: "test-aoi", state, cached, failed, total: 3, bytes: 9_278_000 });
+const area = (state: EvidenceAreaStatus["state"], cached: number, bytes = 9_278_000): EvidenceAreaStatus => ({ aoiId: "test-aoi", state, cached, failed: 0, total: 3, bytes });
 
 describe("study areas saved for offline use", () => {
   beforeEach(() => { vi.mocked(useState).mockReset(); });
@@ -37,6 +44,20 @@ describe("study areas saved for offline use", () => {
     expect(html).not.toContain('data-action="remove"');
     expect(html).toContain("The database files offered for download are not saved and need a connection.");
     expect(html).not.toContain("data-evidence-offline-list");
+    // The rule for saving is stated once, under the row: on open up to 20 MB, on request above, never after a removal.
+    expect(html).toContain("A study area up to 20 MB is saved on this device when you open it while connected; a larger one is saved when you ask.");
+    expect(html).toContain("A copy you remove is not saved again until you ask.");
+    // This area is small enough to be saved on open, so nothing says that it waits for a request.
+    expect(html).not.toContain("saved only when you ask");
+  });
+
+  it("says that an area larger than 20 MB is saved only on request", () => {
+    const html = control([area("none", 0, 51_296_688)]);
+    expect(html).toContain("This area is larger than 20 MB, so it is saved only when you ask.");
+    expect(html).toMatch(/<button type="button" data-action="save">Save this area for offline use \(51 MB\)<\/button>/);
+    // Once it is saved the sentence goes.
+    expect(control([area("saved", 3, 51_296_688)])).not.toContain("saved only when you ask");
+    expect(control([area("none", 0, 51_296_688)], { th: true })).toContain("พื้นที่นี้ใหญ่กว่า 20 MB จึงบันทึกเฉพาะเมื่อคุณสั่ง");
   });
 
   it("says that a saved area was checked file by file and lets the reader remove it", () => {
@@ -49,7 +70,7 @@ describe("study areas saved for offline use", () => {
   });
 
   it("does not call an incomplete copy saved, and reports files that failed their check", () => {
-    const html = control([area("partial", 2, 1)]);
+    const html = control([area("partial", 2)], { failed: { "test-aoi": 1 } });
     expect(html).toContain('data-state="partial"');
     expect(html).toContain("Saved copy incomplete or out of date: 2 of 3 files. It does not open offline yet.");
     expect(html).toContain("1 of 3 files could not be downloaded or did not match their SHA-256, and were not saved.");
@@ -63,6 +84,19 @@ describe("study areas saved for offline use", () => {
     expect(html).toContain('data-state="saving"');
     expect(html).toContain("Saving and checking each file…");
     expect(html.match(/disabled=""/g)).toHaveLength(2);
+    expect(html).not.toContain("data-interrupted");
+  });
+
+  it("says when a save was interrupted, with the buttons free again", () => {
+    // The worker stopped before it answered: the row is not left on "Saving…" with its button disabled.
+    const html = control([area("partial", 1)], { interrupted: { "test-aoi": "saving" } });
+    expect(html).toContain('data-state="partial" data-interrupted="saving"');
+    expect(html).toContain("The save stopped before it finished. Files that passed their check are kept. Try again while connected.");
+    expect(html).not.toContain("Saving and checking each file…");
+    expect(html).toContain('data-action="save"');
+    expect(html).not.toContain('disabled=""');
+    expect(control([area("none", 0)], { interrupted: { "test-aoi": "saving" }, th: true })).toContain("การบันทึกหยุดก่อนเสร็จสิ้น");
+    expect(control([area("saved", 3)], { interrupted: { "test-aoi": "removing" } })).toContain("The removal stopped before it finished. Try again.");
   });
 
   it("lists every study area in the library list, each with its own request", () => {
@@ -92,7 +126,7 @@ describe("a package that is not shown", () => {
     expect(en).toContain('role="alert"');
     expect(en).toContain('data-evidence-unavailable="offline_not_saved"');
     expect(en).toContain("You are offline, and this study area is not saved on this device, so none of its data is shown.");
-    expect(en).toContain("choose “Save this area for offline use” while connected");
+    expect(en).toContain("Opening it while connected saves it on this device; an area larger than 20 MB is saved when you choose “Save this area for offline use”.");
     expect(en).not.toContain("Evidence package unavailable");
     const th = renderToStaticMarkup(<EvidencePackageNotice failure={offline} th invalidLabel="ชุดข้อมูลใช้ไม่ได้" />);
     expect(th).toContain("ขณะนี้ออฟไลน์ และยังไม่ได้บันทึกพื้นที่ศึกษานี้ไว้ในอุปกรณ์");

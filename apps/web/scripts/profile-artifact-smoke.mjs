@@ -253,7 +253,7 @@ function validateCompetition() {
   for (const route of ["/", "/public/", "/public-cases/", "/command/", "/command/cases/", "/command/archive/", "/studio/", "/studio/planning-evidence/", "/studio/candidate-report/", "/studio/library/", "/studio/brief/", "/studio/archive/", "/policy/", EVIDENCE_CATALOG_ASSET, ...collectPublicCaseAssets(out), ...collectCaseBriefAssets(out)]) {
     if (!coreUrls.includes(route)) throw new Error(`Competition cache list omits ${route}`);
   }
-  // The evidence library: its catalogue is precached; each study area is a deferred bucket saved on request, and
+  // The evidence library: its catalogue is precached; each study area is a deferred bucket saved when opened or on request, and
   // its database archives are never kept by the worker.
   const evidenceLibrary = auditEvidenceLibrary(out);
   if (evidenceLibrary.areas.length === 0 || JSON.stringify(readWorkerEvidenceAreas(serviceWorker)) !== JSON.stringify(evidenceLibrary.areas)) {

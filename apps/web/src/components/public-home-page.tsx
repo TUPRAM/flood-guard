@@ -506,6 +506,7 @@ export function PublicHomePage({
           visualPalette="public-risk"
           enableBasemaps
           basemapControlVariant="menu"
+          compactBasemapNotice
           showLegend={false}
           showProvenanceBadge={false}
           showTextAlternative

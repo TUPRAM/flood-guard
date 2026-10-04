@@ -25,7 +25,10 @@ describe("GeoaiRealPanel evidence separation", () => {
       expect(html).toContain('data-research-report-notice="true"');
       expect(html).toContain("Earlier research scores and classes are not accepted event-response priorities.");
       expect(html).toContain("kept, as historical research, only in Studio&#x27;s archive");
+      // The static page and the first render assume a connection, so the report is offered as a link. Without one
+      // the link is replaced by a sentence (browser-offline-smoke.mjs): the report's page is not saved offline.
       expect(html).toContain(`href="${HISTORICAL_RESEARCH_REPORT_ROUTE}"`);
+      expect(html).not.toContain("data-research-report-offline");
       expect(HISTORICAL_RESEARCH_REPORT_ROUTE).toBe("/studio/archive/mae-sai-geoai/");
       expect(html).toContain("/studio/brief/?aoi=aoi-01_mae_sai_core&amp;event=mae_sai_2024");
       expect(html).not.toContain("<table");

@@ -1,5 +1,5 @@
 .notice p { margin: 0; }
-/* The short line and its button are for phones only (below). */
+/* The short line and its button belong to the compact form (below). */
 .notice .noticeShort, .notice .noticeToggle { display: none; }
 .actions { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
 .actions button, .notice .noticeToggle {
@@ -16,16 +16,30 @@
 .actions button:focus-visible, .notice .noticeToggle:focus-visible { outline: 3px solid #08519c; outline-offset: 2px; }
 
 /*
-   Phones: the notice is one line and one button, so it fits between the list button and the map tools. The full
-   sentence and the actions open behind the button; while open, the notice lies above the other map controls, and
-   it folds back to one line after an action.
+   Compact form: a short line and one button in a row of fixed height (the button's 44 px; the line may wrap once on
+   the narrowest phones, inside that height, and is never cut off). The full sentence and the actions open behind the
+   button; while open, the notice lies above the other map controls, and it folds back after an action.
+
+   It is the form on phones for every map, and at every width for a map that asks for it (data-compact="always": the
+   Public home map, whose tools are icons and whose notice has one row under the list button). The two blocks below
+   hold the same rules.
 */
+.notice[data-compact="always"] { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 6px 8px; }
+.notice[data-compact="always"] .noticeShort { display: inline; }
+.notice[data-compact="always"] .noticeToggle { display: inline-flex; align-items: center; margin: 0; }
+.notice[data-compact="always"] .actions { grid-column: 1 / -1; margin-top: 0; }
+.notice[data-compact="always"][data-expanded="false"] p { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.notice[data-compact="always"][data-expanded="false"] .noticeFull,
+.notice[data-compact="always"][data-expanded="false"] .actions,
+.notice[data-compact="always"][data-expanded="true"] .noticeShort { display: none; }
+.notice[data-compact="always"][data-expanded="true"] { z-index: 1950; }
+
 @media (max-width: 680px) {
   .notice { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 6px 8px; }
   .notice .noticeShort { display: inline; }
   .notice .noticeToggle { display: inline-flex; align-items: center; margin: 0; }
   .notice .actions { grid-column: 1 / -1; margin-top: 0; }
-  .notice[data-expanded="false"] p { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .notice[data-expanded="false"] p { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
   .notice[data-expanded="false"] .noticeFull,
   .notice[data-expanded="false"] .actions,
   .notice[data-expanded="true"] .noticeShort { display: none; }

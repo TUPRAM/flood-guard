@@ -6,7 +6,8 @@ import { EVIDENCE_AREA_CACHE, readWorkerEvidenceAreas } from "./evidence-library
 
 const out = resolve(process.env.FLOODGUARD_PROFILE_OUT ?? resolve(process.cwd(), "out"));
 const catalog = JSON.parse(readFileSync(resolve(out, "evidence-library", "catalog.json"), "utf8"));
-// The study areas as the built worker lists them. None is part of the installation: each is saved on request.
+// The study areas as the built worker lists them. None is part of the installation: an area up to 20 MB is saved
+// when a page opens it while connected, a larger one with its save button.
 const evidenceAreas = readWorkerEvidenceAreas(readFileSync(resolve(out, "sw.js"), "utf8"));
 let studyAreasSaved = 0;
 const ROUTE_CASES = {
@@ -117,7 +118,8 @@ try {
   await page.getByRole("alert").filter({ hasText: "No package exists" }).waitFor();
   if (await page.getByRole("heading", { name: "Explicit scenario comparisons" }).count()) throw new Error("Invalid selection silently fell back to a different package.");
   const reference = catalog.packages[0];
-  // The offline part below opens every study area, so each is saved first, on request, from the library list.
+  // The offline part below opens every study area, so each is saved first: the ones opened above are saved
+  // already or are being saved, and the library list's buttons save the rest.
   await saveEveryStudyArea(page);
   await page.goto(`${origin}/studio/library/?aoi=${encodeURIComponent(reference.aoi_id)}&event=${encodeURIComponent(reference.event_id)}`);
   await page.locator("main[data-evidence-library] footer").filter({ hasText: reference.id }).waitFor();
@@ -154,7 +156,7 @@ try {
       throw new Error(`Incomplete offline route coverage: ${JSON.stringify(routeCoverageCounts)}, total ${routeCasesChecked}`);
     }
   }
-  console.log(sharedOnly ? `Shared views browser: ${sharedViewsChecked} case/language/network selections; links for service-result cases passed.` : offlineOnly ? `Offline decision brief browser: ${briefCasesChecked} case/language/viewport/network selections, ${routeCasesChecked} exact route comparisons (${JSON.stringify(routeCoverageCounts)}), and ${workspaceViewportsChecked} workspace language/viewport combinations passed.` : workspaceOnly ? `Route workspace browser: ${workspaceViewportsChecked} language/viewport combinations; visible controls, map, results, accessible detail dialogs and no API requests passed.` : `Evidence browser: ${briefCasesChecked} brief case/language/viewport/network selections, ${sharedViewsChecked} shared-view selections (role links for service-result cases), and ${routeCasesChecked} bounded exact route checks (${JSON.stringify(routeCoverageCounts)}); ${workspaceViewportsChecked} workspace language/viewport combinations, keyboard/details, report download, invalid links, and no unexpected requests passed; ${studyAreasSaved} study areas saved on request before the offline part.`);
+  console.log(sharedOnly ? `Shared views browser: ${sharedViewsChecked} case/language/network selections; links for service-result cases passed.` : offlineOnly ? `Offline decision brief browser: ${briefCasesChecked} case/language/viewport/network selections, ${routeCasesChecked} exact route comparisons (${JSON.stringify(routeCoverageCounts)}), and ${workspaceViewportsChecked} workspace language/viewport combinations passed.` : workspaceOnly ? `Route workspace browser: ${workspaceViewportsChecked} language/viewport combinations; visible controls, map, results, accessible detail dialogs and no API requests passed.` : `Evidence browser: ${briefCasesChecked} brief case/language/viewport/network selections, ${sharedViewsChecked} shared-view selections (role links for service-result cases), and ${routeCasesChecked} bounded exact route checks (${JSON.stringify(routeCoverageCounts)}); ${workspaceViewportsChecked} workspace language/viewport combinations, keyboard/details, report download, invalid links, and no unexpected requests passed; ${studyAreasSaved} study areas saved (by opening them, or with the list's buttons) before the offline part.`);
   await context.close();
 } finally {
   await browser.close();
@@ -162,8 +164,9 @@ try {
 }
 
 /**
- * Ask for every study area in the library list ("Save for offline use"), as a reader would, and wait until each is
- * saved. Nothing of them is installed with the app; the worker stores each file only when its SHA-256 matches.
+ * Have every study area saved, from the library list. An area a page opened while connected may be saved already,
+ * or its save may still be running; every other one is asked for with its button ("Save for offline use"), as a
+ * reader would. Nothing of them is installed with the app; the worker stores each file only when its SHA-256 matches.
  */
 async function saveEveryStudyArea(page) {
   await page.goto(`${origin}/studio/library/`, { waitUntil: "networkidle" });
@@ -173,10 +176,14 @@ async function saveEveryStudyArea(page) {
   for (const area of evidenceAreas) {
     const row = list.locator(`[data-evidence-offline-area="${area.aoi_id}"]`);
     await row.waitFor({ state: "visible" });
-    if (await row.getAttribute("data-state") !== "saved") await row.locator('button[data-action="save"]').click();
-    await page.waitForFunction((id) => (
-      document.querySelector(`[data-evidence-offline-list="true"] [data-evidence-offline-area="${id}"]`)?.getAttribute("data-state") === "saved"
-    ), area.aoi_id, { timeout: 300_000 });
+    // The button is pressed only while it is offered and free: a save that is already running is waited for.
+    await page.waitForFunction((id) => {
+      const current = document.querySelector(`[data-evidence-offline-list="true"] [data-evidence-offline-area="${id}"]`);
+      if (current?.getAttribute("data-state") === "saved") return true;
+      const button = current?.querySelector('button[data-action="save"]');
+      if (button && !button.disabled) button.click();
+      return false;
+    }, area.aoi_id, { timeout: 300_000, polling: 500 });
   }
   if (!(await list.locator("summary").innerText()).includes(`${evidenceAreas.length} of ${evidenceAreas.length} saved on this device`)) {
     throw new Error("The library list does not report every study area as saved.");

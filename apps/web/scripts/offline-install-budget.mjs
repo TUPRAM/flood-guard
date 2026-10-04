@@ -7,8 +7,8 @@ import { resolve, sep } from "node:path";
  * The worker's install step stores `CORE_ASSETS` plus every script and style chunk listed in `/offline-assets.json`
  * with one `cache.addAll`: it is all or nothing, the "available offline" status waits for it, and every new
  * deployment downloads it again. So this list holds the application shell, the pages, small catalogues and indexes
- * and the case briefs only. Anything large is an opt-in bucket saved on request: the landing artwork, the Mae Sai
- * replay's data and export pack, and each study area of the evidence library.
+ * and the case briefs only. Anything large is a deferred bucket, saved after a page asks for it: the landing artwork,
+ * the Mae Sai replay's data and export pack, and each study area of the evidence library.
  *
  * The budget is 12 MB (decimal megabytes), counted as the size of the files as built. A build over it fails, and so
  * do the checks that read a built `out` directory.

@@ -12,9 +12,9 @@ const OPTIONAL_CASE_REPLAY = []; /* __OPTIONAL_CASE_REPLAY__ */
 const OPTIONAL_CASE_REPLAY_EXPORTS = []; /* __OPTIONAL_CASE_REPLAY_EXPORTS__ */
 // Opt-in buckets, one for each study area of the evidence library (derived from the library's catalogue at build
 // time): the area's package file or files, its terrain preview and the report they share, each pinned by SHA-256.
-// Saved only when a reader asks on the area's page, never during installation, and kept in a cache of their own so
-// that a new deployment keeps every saved file whose hash did not change. The database archives a package offers
-// for download are never kept here.
+// Saved only when a page asks (a reader opens the area while connected, or presses its save button), never during
+// installation, and kept in a cache of their own so that a new deployment keeps every saved file whose hash did not
+// change. The database archives a package offers for download are never kept here.
 const OPTIONAL_EVIDENCE_AREAS = []; /* __OPTIONAL_EVIDENCE_AREAS__ */
 const EVIDENCE_AREA_CACHE = "floodguard-saved-areas-v1";
 // Each saved file carries the hash it was checked against, so a later build can tell an unchanged file from a stale one.
@@ -24,6 +24,10 @@ let artworkTask = null;
 let caseReplayTask = null;
 // Saving and removing study areas run one after another: areas share a file (the report).
 let evidenceAreaQueue = Promise.resolve();
+// Study areas with a save or a removal queued or running in this run of the worker. A page that waits for one asks
+// for the status meanwhile; an area it no longer finds here, with no answer received, was interrupted (the browser
+// stopped the worker, and this list started empty again).
+const evidenceAreaWork = new Map();
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -95,15 +99,18 @@ self.addEventListener("message", (event) => {
     }));
   }
   if (event.data?.type === "FLOODGUARD_EVIDENCE_AREAS_STATUS_REQUEST" && APP_PROFILE === "competition") {
-    event.waitUntil(evidenceAreasStatus().then((areas) => reply(event, { type: "FLOODGUARD_EVIDENCE_AREAS_STATUS", areas })));
+    // With nothing in work, a cache left empty by an interrupted save is dropped first (in the queue, so it cannot
+    // run beside a save). `working` names the areas this run of the worker is still saving or removing.
+    const tidy = evidenceAreaWork.size === 0 ? queueEvidenceAreaTask(dropEmptyEvidenceCache).catch(() => undefined) : Promise.resolve();
+    event.waitUntil(tidy.then(evidenceAreasStatus).then((areas) => reply(event, { type: "FLOODGUARD_EVIDENCE_AREAS_STATUS", areas, working: [...evidenceAreaWork.keys()] })));
   }
   if (event.data?.type === "FLOODGUARD_SAVE_EVIDENCE_AREA" && APP_PROFILE === "competition") {
     const aoiId = String(event.data.aoi_id ?? "");
-    event.waitUntil(queueEvidenceAreaTask(() => saveEvidenceArea(aoiId)).then((result) => reply(event, { type: "FLOODGUARD_EVIDENCE_AREA_STATUS", ...result })));
+    event.waitUntil(trackEvidenceAreaWork(aoiId, () => saveEvidenceArea(aoiId)).then((result) => reply(event, { type: "FLOODGUARD_EVIDENCE_AREA_STATUS", ...result })));
   }
   if (event.data?.type === "FLOODGUARD_REMOVE_EVIDENCE_AREA" && APP_PROFILE === "competition") {
     const aoiId = String(event.data.aoi_id ?? "");
-    event.waitUntil(queueEvidenceAreaTask(() => removeEvidenceArea(aoiId)).then((result) => reply(event, { type: "FLOODGUARD_EVIDENCE_AREA_STATUS", ...result })));
+    event.waitUntil(trackEvidenceAreaWork(aoiId, () => removeEvidenceArea(aoiId)).then((result) => reply(event, { type: "FLOODGUARD_EVIDENCE_AREA_STATUS", ...result })));
   }
   if (event.data?.type === "FLOODGUARD_STATUS_REQUEST") {
     const message = { type: "FLOODGUARD_STATUS", cache_name: CACHE_NAME, profile: APP_PROFILE, cached_at: CACHE_CREATED_AT };
@@ -192,14 +199,35 @@ function queueEvidenceAreaTask(task) {
   return run;
 }
 
+/** Queue a save or a removal and list its area as in work until it has ended, whatever the outcome. */
+function trackEvidenceAreaWork(aoiId, task) {
+  evidenceAreaWork.set(aoiId, (evidenceAreaWork.get(aoiId) ?? 0) + 1);
+  const done = () => {
+    const left = (evidenceAreaWork.get(aoiId) ?? 1) - 1;
+    if (left > 0) evidenceAreaWork.set(aoiId, left);
+    else evidenceAreaWork.delete(aoiId);
+  };
+  return queueEvidenceAreaTask(task).then((result) => { done(); return result; }, (error) => { done(); throw error; });
+}
+
+/** A saved-areas cache that holds nothing is removed: an empty cache must not be left behind by a save. */
+async function dropEmptyEvidenceCache() {
+  if (!(await caches.keys()).includes(EVIDENCE_AREA_CACHE)) return;
+  const cache = await caches.open(EVIDENCE_AREA_CACHE);
+  if ((await cache.keys()).length === 0) await caches.delete(EVIDENCE_AREA_CACHE);
+}
+
 async function sha256Hex(buffer) {
   const digest = await crypto.subtle.digest("SHA-256", buffer);
   return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
-/** True when the saved copy of a study-area file is the one this build lists (same SHA-256). */
+/**
+ * True when the saved copy of a study-area file is the one this build lists (same SHA-256). `cache` is the opened
+ * saved-areas cache; without it the cache is looked up by name, which never creates it.
+ */
 async function savedEvidenceMatches(cache, asset) {
-  const response = await cache.match(asset.url);
+  const response = cache ? await cache.match(asset.url) : await caches.match(asset.url, { cacheName: EVIDENCE_AREA_CACHE });
   return Boolean(response && response.headers.get(EVIDENCE_HASH_HEADER) === asset.sha256);
 }
 
@@ -233,9 +261,11 @@ function unknownEvidenceArea(aoiId) {
 }
 
 /**
- * Save one study area because the reader asked. Each file is stored only when its SHA-256 matches this build's list;
- * a file that fails is counted and nothing else is touched. Without a connection nothing can be fetched: the request
- * then reports what is already saved, as the case replay's request does.
+ * Save one study area because a page asked: a reader opened the area while connected, or pressed its save button.
+ * Each file is stored only when its SHA-256 matches this build's list; a file that fails is counted and nothing else
+ * is touched. Without a connection nothing can be fetched: the request then reports what is already saved, as the
+ * case replay's request does. The cache is created with the first file that passes, and removed again when the save
+ * ends with nothing in it.
  */
 async function saveEvidenceArea(aoiId) {
   const area = OPTIONAL_EVIDENCE_AREAS.find((item) => item.aoi_id === aoiId);
@@ -253,15 +283,15 @@ async function saveEvidenceArea(aoiId) {
       await caches.delete(EVIDENCE_AREA_CACHE);
       return unknownEvidenceArea(aoiId);
     }
-    const cache = await caches.open(EVIDENCE_AREA_CACHE);
     for (const asset of area.assets) {
-      if (await savedEvidenceMatches(cache, asset)) continue;
+      if (await savedEvidenceMatches(null, asset)) continue;
       try {
         // "no-cache" revalidates against the network, so a file the page has just loaded is not downloaded twice.
         const response = await fetch(asset.url, { cache: "no-cache" });
         if (!response.ok) throw new Error("Study-area file unavailable");
         const body = await response.arrayBuffer();
         if (await sha256Hex(body) !== asset.sha256) throw new Error("Study-area file belongs to a different build");
+        const cache = await caches.open(EVIDENCE_AREA_CACHE);
         await cache.put(asset.url, new Response(body, {
           status: 200,
           headers: { "Content-Type": response.headers.get("Content-Type") || "application/octet-stream", [EVIDENCE_HASH_HEADER]: asset.sha256 },
@@ -275,6 +305,7 @@ async function saveEvidenceArea(aoiId) {
   } catch {
     // A failed save never invalidates the saved application.
   }
+  await dropEmptyEvidenceCache().catch(() => undefined);
   return { ...(await evidenceAreaState(area)), failed };
 }
 

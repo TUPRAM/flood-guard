@@ -33,6 +33,8 @@ function workerHarness({ version = "000000000001", profile = "competition", illu
     if (path === "/deployment-profile.json") return Response.json({ profile: state.deployed });
     if (path === "/offline-assets.json") return Response.json(["/_next/static/app.js"]);
     if (state.replayBodies && Object.hasOwn(state.replayBodies, path)) {
+      // A test can hold these files back, to look at the worker while a save is running.
+      if (state.fileGate) await state.fileGate;
       state.fetchModes[path] = typeof request === "string" ? undefined : request.cache;
       return new Response(state.replayBodies[path]);
     }
@@ -276,14 +278,14 @@ const areaStatus = (aoiId, state, cached, total, bytes, failed = 0) => ({ aoi_id
 const areaBytes = (files) => Object.values(files).reduce((sum, body) => sum + Buffer.byteLength(body), 0);
 const plain = (value) => JSON.parse(JSON.stringify(value));
 
-test("a study area is saved only when the reader asks, hash-checked, in a cache of its own", async () => {
+test("a study area is saved only when a page asks, hash-checked, in a cache of its own", async () => {
   const worker = workerHarness({ evidenceAreas: studyAreas });
   await worker.dispatch("install");
   await worker.dispatch("activate");
   // Nothing of the library's study areas is part of the blocking installation.
   assert.ok(Object.keys({ ...coreArea, ...basinArea }).every((url) => !worker.state.requests.includes(url)));
   await worker.dispatch("message", { type: "FLOODGUARD_EVIDENCE_AREAS_STATUS_REQUEST" });
-  assert.deepEqual(plain(worker.messages.at(-1)), { type: "FLOODGUARD_EVIDENCE_AREAS_STATUS", areas: [areaStatus("core", "none", 0, 3, areaBytes(coreArea)), areaStatus("basin", "none", 0, 4, areaBytes(basinArea))] });
+  assert.deepEqual(plain(worker.messages.at(-1)), { type: "FLOODGUARD_EVIDENCE_AREAS_STATUS", areas: [areaStatus("core", "none", 0, 3, areaBytes(coreArea)), areaStatus("basin", "none", 0, 4, areaBytes(basinArea))], working: [] });
   // Asking for the state fetches nothing and creates no cache.
   assert.ok(!worker.state.stores.has(AREA_CACHE));
   assert.ok(Object.keys(coreArea).every((url) => !worker.state.requests.includes(url)));
@@ -312,6 +314,56 @@ test("a study area is saved only when the reader asks, hash-checked, in a cache 
   // An area this build does not list is never saved.
   await worker.dispatch("message", { type: "FLOODGUARD_SAVE_EVIDENCE_AREA", aoi_id: "elsewhere" });
   assert.deepEqual(plain(worker.messages.at(-1)), { type: "FLOODGUARD_EVIDENCE_AREA_STATUS", ...areaStatus("elsewhere", "none", 0, 0, 0) });
+});
+
+test("the worker says which study areas it is still working on, so a page can tell a slow save from a stopped one", async () => {
+  const worker = workerHarness({ evidenceAreas: studyAreas });
+  await worker.dispatch("install");
+  await worker.dispatch("activate");
+  let release;
+  worker.state.fileGate = new Promise((resolve) => { release = resolve; });
+  const saving = worker.dispatch("message", { type: "FLOODGUARD_SAVE_EVIDENCE_AREA", aoi_id: "core" });
+  // While the first file is still on its way, the status names the area as in work and answers at once.
+  await worker.dispatch("message", { type: "FLOODGUARD_EVIDENCE_AREAS_STATUS_REQUEST" });
+  assert.deepEqual(plain(worker.messages.at(-1).working), ["core"]);
+  assert.equal(worker.messages.at(-1).areas[0].state, "none");
+  // Nothing has passed its check yet, so no cache exists yet.
+  assert.ok(!worker.state.stores.has(AREA_CACHE));
+
+  // The browser stops the worker: the next message starts it again, with nothing in work. The page that was
+  // waiting for "core" finds it gone from the list and no answer of its own.
+  const restarted = workerHarness({ shared: worker.state, evidenceAreas: studyAreas });
+  await restarted.dispatch("message", { type: "FLOODGUARD_EVIDENCE_AREAS_STATUS_REQUEST" });
+  assert.deepEqual(plain(restarted.messages.at(-1).working), []);
+  assert.equal(restarted.messages.at(-1).areas[0].state, "none");
+
+  // A worker that was not stopped finishes, answers, and no longer lists the area.
+  worker.state.fileGate = null;
+  release();
+  await saving;
+  assert.deepEqual(plain(worker.messages.at(-1)), { type: "FLOODGUARD_EVIDENCE_AREA_STATUS", ...areaStatus("core", "saved", 3, 3, areaBytes(coreArea)) });
+  await worker.dispatch("message", { type: "FLOODGUARD_EVIDENCE_AREAS_STATUS_REQUEST" });
+  assert.deepEqual(plain(worker.messages.at(-1).working), []);
+});
+
+test("a save that stores nothing leaves no cache behind", async () => {
+  const worker = workerHarness({ evidenceAreas: studyAreas });
+  await worker.dispatch("install");
+  await worker.dispatch("activate");
+  // Every file arrives changed: each is refused, and the save ends with nothing stored.
+  for (const url of Object.keys(coreArea)) worker.state.replayBodies[url] = `${coreArea[url]}, from another build`;
+  await worker.dispatch("message", { type: "FLOODGUARD_SAVE_EVIDENCE_AREA", aoi_id: "core" });
+  assert.deepEqual(plain(worker.messages.at(-1)), { type: "FLOODGUARD_EVIDENCE_AREA_STATUS", ...areaStatus("core", "none", 0, 3, areaBytes(coreArea), 3) });
+  assert.ok(!worker.state.stores.has(AREA_CACHE));
+
+  // A cache a stopped worker left empty is dropped by the next status request; one that holds a file is kept.
+  worker.state.stores.set(AREA_CACHE, new Map());
+  await worker.dispatch("message", { type: "FLOODGUARD_EVIDENCE_AREAS_STATUS_REQUEST" });
+  assert.ok(!worker.state.stores.has(AREA_CACHE));
+  for (const url of Object.keys(coreArea)) worker.state.replayBodies[url] = coreArea[url];
+  await worker.dispatch("message", { type: "FLOODGUARD_SAVE_EVIDENCE_AREA", aoi_id: "core" });
+  await worker.dispatch("message", { type: "FLOODGUARD_EVIDENCE_AREAS_STATUS_REQUEST" });
+  assert.deepEqual([...worker.state.stores.get(AREA_CACHE).keys()].sort(), Object.keys(coreArea).sort());
 });
 
 test("a saved study area survives a new deployment when its files did not change", async () => {

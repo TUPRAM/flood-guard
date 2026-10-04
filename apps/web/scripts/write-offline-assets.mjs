@@ -44,8 +44,9 @@ writeFileSync(resolve(out, "offline-assets.json"), `${JSON.stringify(assets, nul
 if (appProfile === "competition") copyCanonicalProposalEvidence();
 const proposalEvidenceAssets = appProfile === "competition" ? collectProposalEvidenceAssets() : [];
 // The evidence library: the whole published set is audited here, but only its catalogue joins the blocking
-// installation. Each study area is an opt-in bucket (package files, terrain preview and the shared report, pinned by
-// SHA-256), saved when the reader asks on the area's page; its database archives are never kept by the worker.
+// installation. Each study area is a deferred bucket (package files, terrain preview and the shared report, pinned by
+// SHA-256), saved when a reader opens the area while connected (up to 20 MB) or asks on the area's page; its database
+// archives are never kept by the worker.
 const evidenceLibrary = appProfile === "competition" ? auditEvidenceLibrary(out) : { urls: [], areas: [], onlineOnly: [] };
 const optionalEvidenceAreas = evidenceLibrary.areas;
 const evidenceCoreAssets = appProfile === "competition" ? [EVIDENCE_CATALOG_ASSET] : [];
@@ -200,7 +201,7 @@ writeFileSync(
 
 const installLine = `blocking install ${install.files} files, ${megabytes(install.bytes)} of ${megabytes(install.budget_bytes)} MB budget (${install.bytes} bytes)`;
 const evidenceAreaBytes = new Map(optionalEvidenceAreas.flatMap((area) => area.assets.map((asset) => [asset.url, asset.bytes])));
-const evidenceAreaLine = `${optionalEvidenceAreas.length} study areas saved on request (${megabytes([...evidenceAreaBytes.values()].reduce((sum, bytes) => sum + bytes, 0))} MB in ${evidenceAreaBytes.size} files), ${evidenceLibrary.onlineOnly.length} database archives online only (${megabytes(evidenceLibrary.onlineOnly.reduce((sum, asset) => sum + asset.bytes, 0))} MB)`;
+const evidenceAreaLine = `${optionalEvidenceAreas.length} study areas saved when opened or on request (${megabytes([...evidenceAreaBytes.values()].reduce((sum, bytes) => sum + bytes, 0))} MB in ${evidenceAreaBytes.size} files), ${evidenceLibrary.onlineOnly.length} database archives online only (${megabytes(evidenceLibrary.onlineOnly.reduce((sum, asset) => sum + asset.bytes, 0))} MB)`;
 // Decimal megabytes, the unit of the replay's 6.5 MB precache budget (case-replay-inventory.mjs).
 const caseReplayMegabytes = (optionalCaseReplay.reduce((sum, asset) => sum + asset.bytes, 0) / 1e6).toFixed(1);
 // The export pack has its own budget line (decimal megabytes), outside the precache budget.

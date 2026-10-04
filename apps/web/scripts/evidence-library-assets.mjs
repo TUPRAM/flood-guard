@@ -46,7 +46,7 @@ export function assertPublicEvidenceText(value) {
 /** The library's catalogue: the one evidence-library file in the blocking service-worker installation. */
 export const EVIDENCE_CATALOG_ASSET = "/evidence-library/catalog.json";
 /**
- * Cache that holds the study areas a reader saved on request. It is not a build cache (`floodguard-offline-<build>`),
+ * Cache that holds the study areas a reader saved (by opening them, or on request). It is not a build cache (`floodguard-offline-<build>`),
  * so a new deployment keeps every saved file whose SHA-256 the new build still lists. Mirrors `EVIDENCE_AREA_CACHE`
  * in public/sw.js.
  */
@@ -60,8 +60,8 @@ export function collectEvidenceLibraryAssets(out) {
 /**
  * Audit the published evidence library and say how each file is kept offline.
  *
- * Offline policy: only the catalogue is part of the blocking installation. Each study area is an opt-in bucket,
- * saved when the reader asks on the area's page: its package file or files (one per event, pinned by the catalogue's
+ * Offline policy: only the catalogue is part of the blocking installation. Each study area is a deferred bucket,
+ * saved when a reader opens it while connected (up to 20 MB) or asks on the area's page: its package file or files (one per event, pinned by the catalogue's
  * SHA-256), its terrain preview and the report every package links to (both hashed here). The database archives a
  * package offers for download are published and hash-checked, but the service worker never keeps them: they are
  * large (up to 66 MB each), and a reader who wants one downloads the file itself while connected.

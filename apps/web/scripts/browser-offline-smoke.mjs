@@ -13,15 +13,24 @@ const out = resolve(process.cwd(), "out");
 if (!existsSync(resolve(out, "public", "index.html"))) {
   throw new Error("Build output is missing; run the production build first.");
 }
-// The evidence library's study areas, as the built worker lists them: each is saved only when the reader asks.
+// The evidence library's study areas, as the built worker lists them. None is part of the installation: an area up
+// to 20 MB is saved when a reader opens it while connected, a larger one when the reader asks.
+const SAVE_ON_OPEN_LIMIT_BYTES = 20_000_000;
 const evidenceAreas = readWorkerEvidenceAreas(readFileSync(resolve(out, "sw.js"), "utf8"));
 const evidenceCatalog = JSON.parse(readFileSync(resolve(out, EVIDENCE_CATALOG_ASSET.slice(1)), "utf8"));
-// The offline pages below open the default case, so its study area is saved first. Another area is left unsaved.
+// The pages below open the default case while connected, which saves its study area. Another area is never opened
+// and stays unsaved; a third is above the size limit and is saved only with its button.
 const savedCase = evidenceCatalog.packages[0];
 const unsavedCase = evidenceCatalog.packages.find((item) => item.aoi_id !== savedCase.aoi_id && item.aoi_id.startsWith("aoi-03"));
 const savedArea = evidenceAreas.find((area) => area.aoi_id === savedCase.aoi_id);
-if (!savedArea || !unsavedCase || !evidenceAreas.some((area) => area.aoi_id === unsavedCase.aoi_id)) {
-  throw new Error("The evidence library does not list the two study areas this check uses.");
+const largeArea = evidenceAreas.find((area) => area.bytes > SAVE_ON_OPEN_LIMIT_BYTES);
+const largeCase = evidenceCatalog.packages.find((item) => item.aoi_id === largeArea?.aoi_id);
+// A fourth, small one is opened, saved by that, and removed: it must then stay unsaved when it is opened again.
+const removedCase = evidenceCatalog.packages.find((item) => item.aoi_id.startsWith("aoi-02"));
+const removedArea = evidenceAreas.find((area) => area.aoi_id === removedCase?.aoi_id);
+if (!savedArea || savedArea.bytes > SAVE_ON_OPEN_LIMIT_BYTES || !unsavedCase || !evidenceAreas.some((area) => area.aoi_id === unsavedCase.aoi_id) || !largeArea || !largeCase
+  || !removedCase || !removedArea || removedArea.bytes > SAVE_ON_OPEN_LIMIT_BYTES || removedArea.aoi_id === savedArea.aoi_id) {
+  throw new Error("The evidence library does not list the four study areas this check uses.");
 }
 
 const contentTypes = {
@@ -40,6 +49,9 @@ const contentTypes = {
 // A stand-in for the next deployment: once set, the worker script is served under this build id and with nothing
 // else changed, so the browser installs a new worker whose study-area files are the same.
 let redeployedBuild = null;
+// While set, a study area's package files are answered this many milliseconds late: long enough to stop the worker
+// in the middle of a save.
+let heldPackageMs = 0;
 
 const server = createServer((request, response) => {
   const requestUrl = new URL(request.url ?? "/", "http://127.0.0.1");
@@ -61,12 +73,16 @@ const server = createServer((request, response) => {
     response.writeHead(404).end("Not found");
     return;
   }
-  response.writeHead(200, {
-    "Cache-Control": "no-store",
-    "Content-Type": contentTypes[extname(filePath)] ?? "application/octet-stream",
-    "Service-Worker-Allowed": "/",
-  });
-  createReadStream(filePath).pipe(response);
+  const send = () => {
+    response.writeHead(200, {
+      "Cache-Control": "no-store",
+      "Content-Type": contentTypes[extname(filePath)] ?? "application/octet-stream",
+      "Service-Worker-Allowed": "/",
+    });
+    createReadStream(filePath).pipe(response);
+  };
+  if (heldPackageMs > 0 && relativePath.startsWith("evidence-library/packages/")) setTimeout(send, heldPackageMs);
+  else send();
 });
 
 await new Promise((resolveListen, rejectListen) => {
@@ -239,21 +255,30 @@ try {
       await list.locator("summary").click();
     }
   }
-  // The map background cannot load here (its tiles are blocked). On phones the notice is one line and one button,
-  // clear of the list button and the map tools; the sentence and the actions open behind the button.
-  const phoneNotice = [];
+  // The map background cannot load here (its tiles are blocked). The notice is a short line and one button in the
+  // column under the search field, directly below the list button, so it stays clear of the search field, the list
+  // button and every map tool at any height of the map. Checked on full-screen phones, on the same phones inside a
+  // browser tab (shorter, where the notice used to slide under the search field) and in laptop windows. The sentence
+  // and the actions open behind the button.
+  const compactNotice = [];
   // The layer menu was left open by the background check above; it is a list the reader opens over the map.
   const layerMenu = page.locator(`${publicMapScope} .map-basemap-menu`);
   if (await layerMenu.getAttribute("open") !== null) await layerMenu.locator("summary").click();
-  for (const [width, height] of [[320, 844], [375, 812], [390, 844]]) {
+  for (const [width, height] of [[320, 844], [375, 812], [390, 844], [390, 664], [375, 635], [360, 740], [320, 568], [1280, 720], [1366, 650]]) {
     await page.setViewportSize({ width, height });
     for (const language of ["th", "en"]) {
       await page.locator(`.language-toggle button[lang="${language}"]`).click();
       await page.waitForFunction((lang) => document.documentElement.lang === lang, language);
-      phoneNotice.push(await assertPhoneMapNotice(page, publicMapScope, language, `${width}x${height}`));
+      compactNotice.push(await assertCompactMapNotice(page, publicMapScope, language, `${width}x${height}`));
     }
   }
-  await assertPhoneMapNoticeActions(page, publicMapScope);
+  await page.setViewportSize({ width: 390, height: 664 });
+  await assertCompactMapNoticeActions(page, publicMapScope);
+  // A card of the rail (here: the address search has no connection) stands below the notice's row, not on it.
+  await page.locator("#public-area-search").fill("Mae Sai Hospital");
+  await page.locator(".public-location-status").filter({ hasText: "Online address search is unavailable" }).waitFor({ state: "visible" });
+  compactNotice.push(await assertCompactMapNotice(page, publicMapScope, "en", "390x664 with the location card", ["location card"]));
+  await page.locator("#public-area-search").fill("");
   await page.setViewportSize({ width: 390, height: 844 });
   await assertPublicPlanningFallback(page, publicMapScope);
   await page.locator(".public-hazard-button").click();
@@ -516,13 +541,28 @@ try {
     await researchNotice.waitFor({ state: "visible" });
     const noticeCopy = await researchNotice.innerText();
     if (!noticeCopy.includes("Earlier research scores and classes are not accepted event-response priorities.")
+      || !noticeCopy.includes("The score table of the earlier Mae Sai GeoAI report, with a research score and class for each subdistrict, is not shown on Planning")
       || !noticeCopy.includes("only in Studio's archive")
       || await researchNotice.locator('a[href="/studio/archive/mae-sai-geoai/"]').count() !== 1) {
       throw new Error(`${commandRoute} lacks the notice that replaces the research report, or its link to Studio's archive.`);
     }
+    const commandBody = await page.locator("body").innerText();
     if (await page.locator('section[aria-labelledby="geoai-real-title"]').count() !== 0 || await researchNotice.locator("table").count() !== 0
-      || /Research FPPS|Research class|GeoAI research report|GEOAI RESEARCH/.test(await page.locator("body").innerText())) {
+      || /Research FPPS|Research class|GeoAI research report|GEOAI RESEARCH/.test(commandBody)) {
       throw new Error(`${commandRoute} still shows the GeoAI research report or its score table.`);
+    }
+    const shownScores = commandBody.match(/FPPS\s*\d+(?:\.\d+)?|\b[Cc]lass\s+[A-E]\b/g) ?? [];
+    if (commandRoute === "/command/") {
+      // The Planning overview shows no research score and no research class of any kind.
+      if (shownScores.length > 0 || await researchNotice.locator('[data-research-retained-ranking="true"]').count() !== 0) {
+        throw new Error(`/command/ shows a research score or class: ${shownScores.join(", ")}`);
+      }
+    } else if (shownScores.length === 0
+      || !noticeCopy.includes("The ranking, FPPS and classes still shown on this page are a separate retained research comparison, not that report's table.")
+      || !noticeCopy.includes("Their values differ from the report's, and they are not accepted priorities either.")) {
+      // The map workspace keeps its own retained ranking (the stated exception): its notice must say so, so that it
+      // does not read as if no per-subdistrict research score were shown on the page.
+      throw new Error("/command/archive/ shows its retained ranking without the notice saying what it is, or the ranking is gone and the notice still describes it.");
     }
   }
   await page.locator('[data-research-report-notice="true"] a[href="/studio/archive/mae-sai-geoai/"]').click();
@@ -544,10 +584,10 @@ try {
     throw new Error(`Content-versioned offline cache was not installed: ${cacheKeys.join(", ")}`);
   }
 
-  // A fresh installation holds the blocking list only, and that list is within its 12 MB budget. The evidence
-  // library's pages were opened above, yet none of its study areas has been saved: only its catalogue is cached.
+  // A fresh installation's build cache holds the blocking list only, and that list is within its 12 MB budget. Of
+  // the evidence library it holds the catalogue alone: study areas are never part of it.
   const install = verifyOfflineInstall(out);
-  const installed = await page.evaluate(async ({ urls, savedCache }) => {
+  const installed = await page.evaluate(async ({ urls }) => {
     const keys = await caches.keys();
     const cache = await caches.open(keys.find((entry) => /^floodguard-offline-[0-9a-f]{12}$/.test(entry)));
     let bytes = 0;
@@ -558,40 +598,117 @@ try {
       else missing.push(url);
     }
     const paths = (await cache.keys()).map((request) => new URL(request.url).pathname);
-    return { bytes, missing, library: paths.filter((path) => path.startsWith("/evidence-library/")), savedCache: keys.includes(savedCache) };
-  }, { urls: [...new Set([...install.coreAssets, ...install.chunkAssets])], savedCache: EVIDENCE_AREA_CACHE });
+    return { bytes, missing, library: paths.filter((path) => path.startsWith("/evidence-library/")) };
+  }, { urls: [...new Set([...install.coreAssets, ...install.chunkAssets])] });
   if (installed.missing.length > 0) throw new Error(`The installation lacks files of its blocking list: ${installed.missing.join(", ")}`);
   if (installed.bytes !== install.bytes || installed.bytes > install.budget_bytes) {
     throw new Error(`A fresh installation is ${installed.bytes} bytes; the built list is ${install.bytes} bytes and the budget ${install.budget_bytes}.`);
   }
-  if (installed.library.join(",") !== EVIDENCE_CATALOG_ASSET || installed.savedCache) {
-    throw new Error(`A fresh installation holds evidence-library files besides the catalogue: ${JSON.stringify(installed)}`);
+  if (installed.library.join(",") !== EVIDENCE_CATALOG_ASSET) {
+    throw new Error(`A fresh installation's build cache holds evidence-library files besides the catalogue: ${JSON.stringify(installed)}`);
   }
 
-  // The reader asks for one study area on its page in the library: "Save this area for offline use". The worker
-  // stores each file only when it matches its pinned SHA-256, in a cache apart from the per-build cache.
+  // Opening a study area while connected saves it, as the replay saves its data: the Planning overview opens the
+  // default case, and with no button pressed its study area is saved, each file checked against its SHA-256. A
+  // reader who opens the case before going offline finds it again without a connection (checked further down).
   await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto(`${baseUrl}/command/`, { waitUntil: "networkidle" });
+  await page.locator(`main[data-planning-candidate="${savedCase.id}"]`).waitFor({ state: "visible" });
+  const openedRow = page.locator(`[data-evidence-offline-control="true"] [data-evidence-offline-area="${savedArea.aoi_id}"]`).first();
+  await page.waitForFunction((id) => (
+    document.querySelector(`[data-evidence-offline-area="${id}"]`)?.getAttribute("data-state") === "saved"
+  ), savedArea.aoi_id, { timeout: 120_000 });
+  if (!(await openedRow.innerText()).includes(`Saved on this device: ${savedArea.assets.length} files`) || !(await openedRow.innerText()).includes("Each file matched its SHA-256")) {
+    throw new Error("The study area saved on open does not report its files and their hash check.");
+  }
+  const rule = await page.locator('[data-evidence-offline-control="true"]').first().innerText();
+  if (!rule.includes("A study area up to 20 MB is saved on this device when you open it while connected; a larger one is saved when you ask.")) {
+    throw new Error("The save control does not state when a study area is saved.");
+  }
+
+  // The library list offers every study area. Only the one that was opened is saved; no other area was touched.
   await page.goto(`${baseUrl}/studio/library/`, { waitUntil: "networkidle" });
   await page.locator("main[data-evidence-library] footer").filter({ hasText: savedCase.id }).waitFor();
   const areaRow = page.locator(`[data-evidence-offline-control="true"] [data-evidence-offline-area="${savedArea.aoi_id}"]`).first();
   await areaRow.waitFor({ state: "visible" });
-  if (await areaRow.getAttribute("data-state") !== "none" || !(await areaRow.innerText()).includes("Not saved on this device")) {
-    throw new Error("A study area reads as saved before the reader asked for it.");
-  }
-  // The library list offers every study area, each with its own request and none saved yet.
   const areaList = page.locator('[data-evidence-offline-list="true"]');
   if (await areaList.locator("[data-evidence-offline-area]").count() !== evidenceAreas.length
-    || await areaList.locator('[data-evidence-offline-area][data-state="none"]').count() !== evidenceAreas.length
-    || !(await areaList.locator("summary").innerText()).includes(`0 of ${evidenceAreas.length} saved on this device`)) {
-    throw new Error("The library list does not offer every study area for saving, unsaved.");
+    || await areaList.locator('[data-evidence-offline-area][data-state="none"]').count() !== evidenceAreas.length - 1
+    || !(await areaList.locator("summary").innerText()).includes(`1 of ${evidenceAreas.length} saved on this device`)) {
+    throw new Error("The library list does not show exactly the opened study area as saved.");
   }
-  await areaRow.getByRole("button", { name: /^Save this area for offline use \(/ }).click();
+
+  // An area above 20 MB is not saved by opening it: its row says that it waits for the reader's request, and the
+  // button saves it. Removing it again leaves the first area (and the report they share) saved.
+  await page.goto(`${baseUrl}/studio/library/?aoi=${largeCase.aoi_id}&event=${largeCase.event_id}`, { waitUntil: "networkidle" });
+  await page.locator("main[data-evidence-library] footer").filter({ hasText: largeCase.id }).waitFor();
+  const largeRow = page.locator(`[data-evidence-offline-control="true"] [data-evidence-offline-area="${largeArea.aoi_id}"]`).first();
+  await largeRow.waitFor({ state: "visible" });
+  await page.waitForTimeout(1_500);
+  const largeStored = () => page.evaluate(async ({ cacheName, assets }) => {
+    if (!(await caches.keys()).includes(cacheName)) return [];
+    const cache = await caches.open(cacheName);
+    const paths = (await cache.keys()).map((request) => new URL(request.url).pathname);
+    return assets.filter((asset) => !asset.shared && paths.includes(asset.url)).map((asset) => asset.url);
+  }, { cacheName: EVIDENCE_AREA_CACHE, assets: largeArea.assets });
+  if (await largeRow.getAttribute("data-state") !== "none" || !(await largeRow.innerText()).includes("This area is larger than 20 MB, so it is saved only when you ask.")
+    || (await largeStored()).length > 0) {
+    throw new Error(`A study area of ${megabytes(largeArea.bytes)} MB was saved by opening it, or its row does not say that it waits for a request.`);
+  }
+  // The browser may stop a worker in the middle of a save (here: while the first package is still on its way).
+  // The row must not stay on "Saving…" with its button disabled: the page asks the worker meanwhile whether it is
+  // still working on the area, and within seconds the row says that the save stopped, with the button free again.
+  heldPackageMs = 8_000;
+  await largeRow.getByRole("button", { name: /^Save this area for offline use \(/ }).click();
+  await page.waitForFunction((id) => (
+    document.querySelector(`[data-evidence-offline-area="${id}"]`)?.getAttribute("data-state") === "saving"
+  ), largeArea.aoi_id);
+  const workerControl = await context.newCDPSession(page);
+  await workerControl.send("ServiceWorker.enable");
+  await workerControl.send("ServiceWorker.stopAllWorkers");
+  const workerStoppedAt = Date.now();
+  await page.waitForFunction((id) => (
+    document.querySelector(`[data-evidence-offline-area="${id}"]`)?.getAttribute("data-interrupted") === "saving"
+  ), largeArea.aoi_id, { timeout: 45_000 });
+  const interruptedAfterMs = Date.now() - workerStoppedAt;
+  heldPackageMs = 0;
+  await workerControl.detach();
+  if (await largeRow.getAttribute("data-state") === "saving" || !(await largeRow.innerText()).includes("The save stopped before it finished.")
+    || !await largeRow.locator('button[data-action="save"]').isEnabled() || (await largeStored()).length > 0) {
+    throw new Error(`A save whose worker was stopped is not reported as interrupted: ${await largeRow.innerText()}`);
+  }
+  // Asked again, the save finishes.
+  await largeRow.getByRole("button", { name: /^Save this area for offline use \(/ }).click();
   await page.waitForFunction((id) => (
     document.querySelector(`[data-evidence-offline-area="${id}"]`)?.getAttribute("data-state") === "saved"
-  ), savedArea.aoi_id, { timeout: 120_000 });
-  if (!(await areaRow.innerText()).includes(`Saved on this device: ${savedArea.assets.length} files`) || !(await areaRow.innerText()).includes("Each file matched its SHA-256")) {
-    throw new Error("The saved study area does not report its files and their hash check.");
-  }
+  ), largeArea.aoi_id, { timeout: 300_000 });
+  if (await largeRow.getAttribute("data-interrupted") !== null) throw new Error("A finished save still reads as interrupted.");
+  if ((await largeStored()).length !== largeArea.assets.filter((asset) => !asset.shared).length) throw new Error("The save button did not save the large study area's files.");
+  await largeRow.getByRole("button", { name: "Remove saved copy", exact: true }).click();
+  await page.waitForFunction((id) => (
+    document.querySelector(`[data-evidence-offline-area="${id}"]`)?.getAttribute("data-state") === "none"
+  ), largeArea.aoi_id, { timeout: 60_000 });
+  // A copy the reader removed is not saved again by opening the area: a second small area is saved by opening it,
+  // removed, and stays unsaved when its page is opened once more.
+  await page.goto(`${baseUrl}/studio/library/?aoi=${removedCase.aoi_id}&event=${removedCase.event_id}`, { waitUntil: "networkidle" });
+  await page.locator("main[data-evidence-library] footer").filter({ hasText: removedCase.id }).waitFor();
+  const removedRow = page.locator(`[data-evidence-offline-control="true"] [data-evidence-offline-area="${removedArea.aoi_id}"]`).first();
+  const removedRowIs = (state) => page.waitForFunction(({ id, expected }) => (
+    document.querySelector(`[data-evidence-offline-area="${id}"]`)?.getAttribute("data-state") === expected
+  ), { id: removedArea.aoi_id, expected: state }, { timeout: 120_000 });
+  await removedRowIs("saved");
+  await removedRow.getByRole("button", { name: "Remove saved copy", exact: true }).click();
+  await removedRowIs("none");
+  await page.reload({ waitUntil: "networkidle" });
+  await page.locator("main[data-evidence-library] footer").filter({ hasText: removedCase.id }).waitFor();
+  await removedRow.waitFor({ state: "visible" });
+  await page.waitForTimeout(1_500);
+  if (await removedRow.getAttribute("data-state") !== "none") throw new Error("A study area the reader removed was saved again by opening it.");
+  await page.goto(`${baseUrl}/studio/library/`, { waitUntil: "networkidle" });
+  await page.locator("main[data-evidence-library] footer").filter({ hasText: savedCase.id }).waitFor();
+  await page.waitForFunction((id) => (
+    document.querySelector(`[data-evidence-offline-area="${id}"]`)?.getAttribute("data-state") === "saved"
+  ), savedArea.aoi_id);
   const savedAudit = await page.evaluate(async ({ cacheName, assets }) => {
     const hex = async (response) => [...new Uint8Array(await crypto.subtle.digest("SHA-256", await response.arrayBuffer()))]
       .map((byte) => byte.toString(16).padStart(2, "0")).join("");
@@ -612,7 +729,7 @@ try {
   }, { cacheName: EVIDENCE_AREA_CACHE, assets: savedArea.assets });
   if (JSON.stringify(savedAudit.paths) !== JSON.stringify(savedArea.assets.map((asset) => asset.url).sort())
     || !savedAudit.verified.every(Boolean) || savedAudit.inBuildCache.length > 0) {
-    throw new Error(`The saved study area is not exactly its own hash-checked files, apart from the build cache: ${JSON.stringify(savedAudit)}`);
+    throw new Error(`The saved study areas are not exactly the opened area's own hash-checked files, apart from the build cache: ${JSON.stringify(savedAudit)}`);
   }
 
   // A new deployment whose study-area files did not change keeps the saved area. The per-build cache is replaced;
@@ -689,6 +806,18 @@ try {
     await page.goto(`${baseUrl}${route.path}`, { waitUntil: "domcontentloaded" });
     await page.locator(route.selector).waitFor({ state: "visible" });
     await waitForFinalVisibleCopy(page, route.path);
+    if (route.path === "/command/" || route.path === "/command/archive/") {
+      // The historical report's page is not part of the installation. Without a connection the notice does not
+      // offer a link that would end on the browser's error page: it says that the report needs a connection. The
+      // current brief, which is saved, stays a link.
+      const offlineNotice = page.locator('[data-research-report-notice="true"]');
+      await offlineNotice.locator('[data-research-report-offline="true"]').waitFor({ state: "visible" });
+      if (await offlineNotice.locator('a[href="/studio/archive/mae-sai-geoai/"]').count() !== 0
+        || !(await offlineNotice.innerText()).includes("The historical research report in Studio's archive needs a connection; it is not saved on this device")
+        || await offlineNotice.locator('a[href^="/studio/brief/"]').count() !== 1) {
+        throw new Error(`${route.path} offers the historical research report as a link without a connection.`);
+      }
+    }
     if (route.path === "/public/") {
       await assertCompactPublicShell(page);
       await assertPublicNavigation(page);
@@ -1025,7 +1154,7 @@ try {
   }
   await legacyContext.close();
   console.log(
-    `browser offline smoke: ${routes.length} routes rendered from a content-versioned service-worker cache; a fresh installation is ${install.files} files, ${megabytes(installed.bytes)} of ${megabytes(install.budget_bytes)} MB budget (${installed.bytes} bytes) with no study area in it; the study area ${savedArea.aoi_id} (${savedArea.assets.length} files, ${megabytes(savedArea.bytes)} MB) was saved on request, kept through a new deployment without a download, opened offline with every file matching its SHA-256, and was removed; the unsaved area ${unsavedCase.aoi_id} said so on six pages without a request; the phone map notice stays one line and one button clear of the map controls (${phoneNotice.join("; ")}); Command shows the research-report notice and Studio's archive the table; the case replay and its ${caseReplay.assets.length} opt-in data files replayed offline, the season envelope's raster, statistics and licence notice among them (toggle on, hatched and credited: ${envelopeOffline.join("; ")}), the reported depths' markers (all 12 located place records) and counts table from the saved manifest, and its ${caseReplay.exports.assets.length} export files downloaded offline (${caseReplay.exports.bytes} of ${caseReplay.exports.budget_bytes} export-budget bytes); approved basemaps failed gracefully and no unapproved external requests occurred`,
+    `browser offline smoke: ${routes.length} routes rendered from a content-versioned service-worker cache; a fresh installation is ${install.files} files, ${megabytes(installed.bytes)} of ${megabytes(install.budget_bytes)} MB budget (${installed.bytes} bytes) with no study area in its build cache; the study area ${savedArea.aoi_id} (${savedArea.assets.length} files, ${megabytes(savedArea.bytes)} MB) was saved by opening it on the Planning overview, kept through a new deployment without a download, opened offline with every file matching its SHA-256, and was removed; the area ${largeArea.aoi_id} (${megabytes(largeArea.bytes)} MB) was not saved by opening it, its first save was reported as interrupted ${(interruptedAfterMs / 1000).toFixed(0)} s after the worker was stopped, and it was saved with its button on the second request and removed again; the area ${removedArea.aoi_id} was saved by opening it, removed, and stayed unsaved when opened again; the unsaved area ${unsavedCase.aoi_id} said so on six pages without a request; the compact map notice stays a short line and one button directly below the list button, clear of the map controls (${compactNotice.join("; ")}); Command shows the research-report notice (offline: as text, without a dead link), /command/ no research score, and Studio's archive the table; the case replay and its ${caseReplay.assets.length} opt-in data files replayed offline, the season envelope's raster, statistics and licence notice among them (toggle on, hatched and credited: ${envelopeOffline.join("; ")}), the reported depths' markers (all 12 located place records) and counts table from the saved manifest, and its ${caseReplay.exports.assets.length} export files downloaded offline (${caseReplay.exports.bytes} of ${caseReplay.exports.budget_bytes} export-budget bytes); approved basemaps failed gracefully and no unapproved external requests occurred`,
   );
   console.log("legacy dashboard offline smoke: embedded Leaflet vectors, text equivalent, and dataset control verified");
 } finally {
@@ -1264,13 +1393,16 @@ async function assertPublicHomeLayout(page, mapScope) {
 }
 
 /**
- * The map-background notice on a phone, folded (its default): one line of text and one button, inside the map and
- * clear of the list button, the search field and every map tool. Opened, it shows the sentence and the actions above
- * the other controls, and folds back.
+ * The compact map-background notice, folded (its default): a short line and one button in a row 62 px tall, directly
+ * below the list button, inside the map and clear of the search field, the list button and every map tool; the line
+ * is never cut off and the tap at its text and at its button reaches the notice. Opened, it shows the sentence and
+ * the actions above the other controls, and folds back. `alsoRequired` names further controls that must be on the
+ * page for the comparison.
  */
-async function assertPhoneMapNotice(page, mapScope, language, label) {
+async function assertCompactMapNotice(page, mapScope, language, label, alsoRequired = []) {
   const notice = page.locator(`${mapScope} .map-basemap-notice`);
   await notice.waitFor({ state: "visible" });
+  await notice.scrollIntoViewIfNeeded();
   if (await page.locator(`${mapScope} .geo-map-shell`).getAttribute("data-basemap-state") !== "unavailable") {
     throw new Error(`The map background is expected to be unavailable for the notice check at ${label}.`);
   }
@@ -1294,6 +1426,7 @@ async function assertPhoneMapNotice(page, mapScope, language, label) {
       "priority card": ".public-risk-indicator",
       "hazard button": ".public-hazard-button",
       "signal banner": ".public-signal-banner",
+      "location card": ".public-location-status",
       "status pill": '[data-pwa-availability="true"] > summary',
     };
     const overlaps = [];
@@ -1308,8 +1441,21 @@ async function assertPhoneMapNotice(page, mapScope, language, label) {
     }
     const paragraph = notice.querySelector("p");
     const top = document.elementFromPoint(box.left + box.width / 2, box.top + Math.min(box.height / 2, 20));
+    const centre = (element) => {
+      const rect = element.getBoundingClientRect();
+      return document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
+    };
+    const toggle = [...notice.querySelectorAll("button")].find((button) => visibleBox(button));
+    const list = visibleBox(document.querySelector(controls["list button"]));
     return {
       expanded: notice.getAttribute("data-expanded"),
+      pending: notice.getAttribute("data-pending"),
+      // The tap at the text and at the button reaches the notice, not a control lying over it.
+      textTakesTap: notice.contains(centre(paragraph)),
+      buttonTakesTap: Boolean(toggle && toggle.contains(centre(toggle))),
+      // Directly below the list button, in the same column.
+      belowList: list ? Math.round(box.top - list.bottom) : null,
+      leftOfList: list ? Math.round(box.left - list.left) : null,
       text: notice.innerText.replace(/\s+/g, " ").trim(),
       buttons: [...notice.querySelectorAll("button")].filter((button) => visibleBox(button)).map((button) => button.textContent.trim()),
       lines: Math.round(paragraph.getBoundingClientRect().height / Number.parseFloat(getComputedStyle(paragraph).lineHeight)),
@@ -1326,14 +1472,21 @@ async function assertPhoneMapNotice(page, mapScope, language, label) {
     ? { short: "พื้นหลังแผนที่ไม่พร้อมใช้", full: "พื้นหลังแผนที่ไม่พร้อมใช้งาน ขอบเขตและหลักฐานการวางแผนยังแสดงอยู่", open: "ตัวเลือก", close: "ปิด", actions: ["ลองอีกครั้ง", "เปลี่ยนเป็น ดาวเทียม", "ซ่อนพื้นหลัง"] }
     : { short: "Map background unavailable", full: "The map background is unavailable. Planning boundaries and evidence remain visible.", open: "Options", close: "Close", actions: ["Retry", "Switch to Satellite", "Hide background"] };
   const folded = await measure();
-  if (folded.expanded !== "false" || folded.text !== `${copy.short} ${copy.open}` || folded.buttons.join("|") !== copy.open || folded.lines !== 1 || folded.truncated) {
-    throw new Error(`The phone map notice is not one line and one button at ${label} (${language}): ${JSON.stringify(folded)}`);
+  if (folded.expanded !== "false" || folded.pending !== null || folded.text !== `${copy.short} ${copy.open}` || folded.buttons.join("|") !== copy.open
+    || folded.lines < 1 || folded.lines > 2 || folded.truncated || folded.height > 64) {
+    throw new Error(`The compact map notice is not a short line and one button in one row at ${label} (${language}): ${JSON.stringify(folded)}`);
   }
-  for (const required of ["list button", "search field", "map layers button", "zoom buttons", "locate button", "priority card", "hazard button"]) {
+  for (const required of ["list button", "search field", "map layers button", "zoom buttons", "locate button", "map attribution", "priority card", "hazard button", ...alsoRequired]) {
     if (!folded.found.includes(required)) throw new Error(`The notice check found no ${required} to compare with at ${label} (${language}).`);
   }
   if (folded.overlaps.length > 0 || !folded.insideMap || folded.scroll > 1) {
-    throw new Error(`The phone map notice overlaps a map control or leaves the map at ${label} (${language}): ${JSON.stringify(folded)}`);
+    throw new Error(`The compact map notice overlaps a map control or leaves the map at ${label} (${language}): ${JSON.stringify(folded)}`);
+  }
+  if (!folded.textTakesTap || !folded.buttonTakesTap) {
+    throw new Error(`The compact map notice is covered: its text or its button does not take the tap at ${label} (${language}): ${JSON.stringify(folded)}`);
+  }
+  if (folded.belowList === null || folded.belowList < 4 || folded.belowList > 12 || Math.abs(folded.leftOfList) > 2) {
+    throw new Error(`The compact map notice is not directly below the list button at ${label} (${language}): ${JSON.stringify(folded)}`);
   }
   // The list button, which the long notice used to reach, takes the tap at its own centre.
   const listTakesTap = await page.locator(`${mapScope} .map-text-alternative > summary`).evaluate((summary) => {
@@ -1345,15 +1498,15 @@ async function assertPhoneMapNotice(page, mapScope, language, label) {
   await notice.getByRole("button", { name: copy.open, exact: true }).click();
   const opened = await measure();
   if (opened.expanded !== "true" || !opened.text.startsWith(copy.full) || opened.buttons.join("|") !== [copy.close, ...copy.actions].join("|") || !opened.onTop || opened.scroll > 1) {
-    throw new Error(`The opened phone map notice lacks its sentence or its actions, or is covered, at ${label} (${language}): ${JSON.stringify(opened)}`);
+    throw new Error(`The opened map notice lacks its sentence or its actions, or is covered, at ${label} (${language}): ${JSON.stringify(opened)}`);
   }
   await notice.getByRole("button", { name: copy.close, exact: true }).click();
-  if (await notice.getAttribute("data-expanded") !== "false") throw new Error(`The phone map notice did not fold back at ${label} (${language}).`);
-  return `${label} ${language}: ${folded.height} px`;
+  if (await notice.getAttribute("data-expanded") !== "false") throw new Error(`The map notice did not fold back at ${label} (${language}).`);
+  return `${label} ${language}: ${folded.height} px, ${folded.lines} line${folded.lines === 1 ? "" : "s"}`;
 }
 
-/** The actions behind the phone notice's button work, and the notice folds back to one line after each. */
-async function assertPhoneMapNoticeActions(page, mapScope) {
+/** The actions behind the compact notice's button work, and the notice folds back to its short line after each. */
+async function assertCompactMapNoticeActions(page, mapScope) {
   const notice = page.locator(`${mapScope} .map-basemap-notice`);
   const stateIs = (state) => page.waitForFunction(({ scope, expected }) => (
     document.querySelector(`${scope} .geo-map-shell`)?.getAttribute("data-basemap-state") === expected
@@ -1363,12 +1516,12 @@ async function assertPhoneMapNoticeActions(page, mapScope) {
   await stateIs("hidden");
   if (await notice.getAttribute("data-expanded") !== "false" || !(await notice.innerText()).includes("Map background hidden")
     || await notice.getByRole("button").count() !== 1) {
-    throw new Error("The phone map notice did not fold back to one line after hiding the background.");
+    throw new Error("The compact map notice did not fold back to its short line after hiding the background.");
   }
   await notice.getByRole("button", { name: "Options", exact: true }).click();
   await notice.getByRole("button", { name: "Show background", exact: true }).click();
   await stateIs("unavailable");
-  if (await notice.getAttribute("data-expanded") !== "false") throw new Error("The phone map notice stayed open after showing the background.");
+  if (await notice.getAttribute("data-expanded") !== "false") throw new Error("The compact map notice stayed open after showing the background.");
 }
 
 async function assertPublicPlanningFallback(page, mapScope) {

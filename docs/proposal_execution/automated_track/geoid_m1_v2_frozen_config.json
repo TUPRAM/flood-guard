@@ -1,0 +1,58 @@
+{
+  "assumptions": [
+    "GEOID S1GRD tiles are linear sigma0 at 10 m with about 4.4 equivalent looks.",
+    "Mapped background in the CEMS-derived label is not confirmed dry land.",
+    "The development tiles are representative enough of the test tiles to choose on."
+  ],
+  "can_feed_decision_layer": false,
+  "confidence": "low: a research benchmark on one foreign event; the development score is agreement with a same-pass CEMS map, not independent accuracy",
+  "declared_benchmark_protocol_sha256": "7478d424c5ebb5ac316a384b9ea17ac0cc65a08847c94fb290388613732f2741",
+  "development": {
+    "abstained_tiles": 9,
+    "coverage": 0.513373,
+    "iou_covered": 0.446255,
+    "iou_strict": 0.44084,
+    "precision": 0.592011,
+    "recall_strict": 0.633216,
+    "tiles": 15,
+    "wording": "agreement with a same-pass CEMS map, not independent accuracy"
+  },
+  "frozen_at_utc": "2026-10-02T16:24:03Z",
+  "land_cover_stratification": "none: no land-cover layer for these tiles is on disk",
+  "method": "m1_v2",
+  "official_warning": false,
+  "otsu_comparator": "same parameters with threshold_method otsu; reported, never selected",
+  "parameters": {
+    "ashman_d_min": 2.0,
+    "block_pixels": 64,
+    "channel": "vh",
+    "direction": "darkening",
+    "equivalent_looks": 4.4,
+    "histogram": {
+      "bin_width_db": 0.1,
+      "lower_db": -25.0,
+      "upper_db": 25.0
+    },
+    "isolated_speckle_cleaning": "majority_3x3_at_least_5_of_9",
+    "kittler_illingworth_rule": "interior_minimum_between_fitted_modes",
+    "min_block_valid_fraction": 0.5,
+    "min_component_weight": 0.1,
+    "min_threshold_class_fraction": 0.01,
+    "speckle_filter": "refined_lee_7x7",
+    "threshold_method": "kittler_illingworth",
+    "threshold_scope": "per_tile"
+  },
+  "planning_protocol_v1a_sha256": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+  "schema": "floodguard.geoid_m1_v2_frozen_config.v1",
+  "selected_run_id": "2026-10-02T16:14:07Z-run-01",
+  "selection_rule": "Pooled development IoU on the primary comparison, with every abstained cell counted as 'not a candidate' (strict reading), for the Kittler-Illingworth threshold.",
+  "slope_mask": "none: no DEM for these tiles is on disk (plan A3)",
+  "source_timestamp": "2024-01-03T05:34:06Z",
+  "tuned_fields": [
+    "channel",
+    "direction",
+    "block_pixels",
+    "threshold_scope"
+  ],
+  "version": "m1_v2_geoid_slope_free_1"
+}

@@ -1,0 +1,225 @@
+{
+  "schema": "floodguard.geoid_m1_benchmark_addendum.v1",
+  "id": "addendum_1",
+  "title": "Corrections after the review of the GEOID M1 benchmark (plan task A3)",
+  "written_on": "2026-10-03",
+  "written_by": "AI coding agent (Claude Code), in answer to a review of the benchmark",
+  "written_after": "The held-out scoring (summary generated 2026-10-02T16:35:47Z).",
+  "what_this_is": "Corrections to wording, reporting and provenance. The files listed under 'corrects_without_editing' are bound to each other by SHA-256 and were not edited. Where one of them is wrong or incomplete, this file says what is wrong and what the correct statement is.",
+  "what_it_does_not_change": [
+    "No score. Every count in the held-out summary stands.",
+    "No parameter of the frozen configuration and no line of the two code modules named in the freeze receipt.",
+    "No test tile was opened for this addendum. The derived checks use the per-tile counts of the committed summary; the recomputed amendment check opened the 15 development tiles only.",
+    "No FPPS, no A-E class and no ensemble was computed, and nothing was run on Mae Sai."
+  ],
+  "source_timestamp": "2024-01-03T05:34:06Z",
+  "confidence": "low: a research benchmark on one foreign event with a spatial split by tile; every score is agreement with a same-pass CEMS map, not independent accuracy",
+  "assumptions": [
+    "GEOID S1GRD tiles are linear sigma0 at 10 m with about 4.4 equivalent looks.",
+    "The CEMS-derived label was drawn from the same Sentinel-1 pass as the post-event input.",
+    "Mapped background is not confirmed dry land.",
+    "Permanent water in the label is modelled; it is a non-flood class in the primary comparison and left out of the secondary one.",
+    "No DEM, slope, HAND or land-cover layer for these tiles is on disk, so neither method uses one.",
+    "Pre-event and post-event passes are almost four months apart and come from different orbit directions."
+  ],
+  "wording": "agreement with a same-pass CEMS map, not independent accuracy",
+  "corrects_without_editing": {
+    "docs/proposal_execution/automated_track/geoid_m1_benchmark_protocol_v2.json": {
+      "what_it_is": "declared benchmark protocol with amendment 1",
+      "sha256": "7478d424c5ebb5ac316a384b9ea17ac0cc65a08847c94fb290388613732f2741"
+    },
+    "docs/proposal_execution/automated_track/geoid_m1_v2_tuning_log.jsonl": {
+      "what_it_is": "tuning log of both sessions",
+      "sha256": "8a682abd142c29707f3c78f7e25cb92810e931a3585383fe0cf26ceeb0a73813"
+    },
+    "docs/proposal_execution/automated_track/geoid_m1_v2_frozen_config.json": {
+      "what_it_is": "frozen configuration",
+      "sha256": "2bfcb0c6ebf4b79402afa63c56209f2c5cda26491f08883d67908195b6c64a68"
+    },
+    "docs/proposal_execution/automated_track/geoid_m1_v2_freeze_receipt.json": {
+      "what_it_is": "freeze receipt",
+      "sha256": "736d92887e0f536077a704af7f70270b81b7779a1f1b6dcbe36865cbf6edf3ee"
+    },
+    "outputs/geoid_m1_benchmark_v2_summary.json": {
+      "what_it_is": "held-out summary, written once",
+      "sha256": "f3ad859128bff30610a77af21f720b57dba6514f3759789b32f2287f27ffefae"
+    },
+    "src/floodguard/sar_change_v2.py": {
+      "what_it_is": "method code named in the freeze receipt",
+      "sha256": "3127b370303b08902dc545442f7aa5a2aa54d283b471c0d65f5899c9c19e1134"
+    },
+    "src/floodguard/geoid_m1_benchmark.py": {
+      "what_it_is": "benchmark code named in the freeze receipt",
+      "sha256": "26d98f5cbdbcdcb1eeafe0b83a6e44b0ff4c9c7fb245078469952d95829e409f"
+    }
+  },
+  "adds": {
+    "outputs/geoid_m1_benchmark_v2_derived_checks.json": {
+      "what_it_is": "Leave one tile out, tile bootstrap, declined-tile accounting, the Otsu comparator across the declared grid, the sign of the M1-literal threshold and Dice. A pure function of the committed summary and tuning log.",
+      "sha256": "b29b0839ccdf9974f7b54f3a5b4c9d9f0605c6073bbc39dbd70d6c15a1dc938a"
+    },
+    "outputs/geoid_m1_v2_amendment_check_reproduction.json": {
+      "what_it_is": "The development-only check quoted in amendment 1, recomputed through a recording tile store, and M1-literal step 4 with and without the added 'below zero' clause on the development tiles.",
+      "sha256": "1efa9149eec33102b3cab5005eb1bf31cb47256657c529ccb76a3b95e9bdcc12"
+    }
+  },
+  "corrections": [
+    {
+      "id": "C1",
+      "review_finding": 3,
+      "where": [
+        "geoid_m1_benchmark_protocol_v2.json, evaluation.two_readings.strict",
+        "geoid_m1_benchmark_protocol_v2.json, evaluation.t2_skill_bar.reading",
+        "outputs/geoid_m1_benchmark_v2_summary.json, t2_skill_bar.reading",
+        "src/floodguard/geoid_m1_benchmark.py, docstring of clears_skill_bar: 'so abstaining cannot buy the bar'"
+      ],
+      "what_is_wrong": "The texts say or imply that requiring both readings (covered and strict) stops a method from gaining by declining. That is false.",
+      "correct_statement": "The covered reading ignores declined tiles. The strict reading counts a declined tile like an answer of 'no flood' everywhere: mapped flood in it is missed, and nothing in it can be a false alarm. Neither reading charges anything for declining a tile with little flood, so declining such a tile raises the strict IoU. The selection rule maximises the strict development IoU and therefore favours configurations that decline such tiles. The frozen configuration declines 9 of 15 development tiles and 10 of 14 test tiles (67.9% of the evaluable test cells). The strict IoU is quoted with the share of cells without an answer.",
+      "why_the_docstring_is_not_edited": "The module is one of the two whose SHA-256 the freeze receipt records. That hash, with the configuration hash, is what pins the method. A corrected docstring needs a new receipt entry and is left to the owners."
+    },
+    {
+      "id": "C2",
+      "review_finding": 1,
+      "where": [
+        "outputs/geoid_m1_benchmark_v2_summary.json, t2_skill_bar.m1_v2_reaches_the_geoid_condition = true",
+        "GEOID_M1_BENCHMARK_V2_RESULT.md as committed in 27f737f: 'the GEOID condition of the bar is met on this benchmark'"
+      ],
+      "what_is_wrong": "A bare yes on a point estimate of 0.411 against 0.40, with no range, that does not survive the removal of either of two tiles.",
+      "correct_statement": "Point estimate 0.411 (strict, with 67.9% of the cells without an answer) and 0.506 (covered); not distinguishable from 0.40 on 14 tiles. Strict IoU with one tile left out: 0.297 without tile 42, 0.380 without tile 49, 0.411 to 0.433 otherwise. Tile bootstrap, 20,000 resamples: 95% range 0.098 to 0.513, 51.1% of resamples at or above 0.40.",
+      "where_the_figures_are": "outputs/geoid_m1_benchmark_v2_derived_checks.json, t2_skill_bar (robust: false)."
+    },
+    {
+      "id": "C3",
+      "review_finding": 2,
+      "where": [
+        "GEOID_M1_BENCHMARK_V2_RESULT.md as committed in 27f737f: result in brief and 'Reading the tables'"
+      ],
+      "what_is_wrong": "The Otsu comparator was shown only at the block size chosen for Kittler-Illingworth (0.171 development, 0.216 test), which reads as if the threshold method lifts the score from about 0.2 to 0.41.",
+      "correct_statement": "The comparator in the tables is Otsu at the configuration selected for Kittler-Illingworth. In the declared grid, Otsu on the mean of VV and VH with 256-cell blocks per tile (run 29) scored 0.475 on the development tiles with 10 of 15 tiles declined, above the frozen M1-v2 (0.441). On the tiles where M1-v2 answered the threshold rules are closer: 0.506 (M1-v2), 0.460 (Otsu comparator) and 0.350 (M1-literal) on the four test tiles. Most of the gain over M1-literal comes from declining tiles. No Otsu variant other than the comparator was scored on the test tiles, and none should be."
+    },
+    {
+      "id": "C4",
+      "review_finding": 7,
+      "where": [
+        "src/floodguard/sar_change_v2.py, m1_literal_from_filtered",
+        "geoid_m1_benchmark_protocol_v2.json, m1_literal.drafter_readings",
+        "the label 'the proposal as written'"
+      ],
+      "what_is_wrong": "M1-literal flags delta-VH below the Otsu threshold and below zero. The proposal's step 4 has no 'below zero' clause. The clause was disclosed as a reading, but the label is stronger than the implementation.",
+      "correct_statement": "The Otsu threshold is above zero on 23 of the 29 tiles (below zero only on tiles 22, 31, 32, 33, 42 and 49). On those 23 tiles the rule is 'delta-VH below zero' and the Otsu threshold has no effect. The clause favours M1-literal: on the 15 development tiles the reading without it scores IoU 0.088 against 0.127 with it. The reading without the clause was not scored on the test tiles."
+    },
+    {
+      "id": "C5",
+      "review_finding": 5,
+      "where": [
+        "geoid_m1_v2_tuning_log.jsonl, session_start.test_tiles_opened = []",
+        "geoid_m1_v2_freeze_receipt.json, test_tiles_opened_before_freeze = false",
+        "geoid_m1_benchmark_protocol_v2.json, amendments[0].development_only_check"
+      ],
+      "what_is_wrong": "Both attestations were written as constants by the scripts; they are not a record of what was opened. The loader guard covers reads through the tile store only. The development-only check quoted in amendment 1 was made by code that was neither committed nor logged, although the protocol's tuning_log clause says every run is logged.",
+      "correct_statement": "The check has been recomputed from the 15 development tiles through a tile store that records what it opens; every published value for the six tiles was recomputed exactly, and the store opened no test tile. The review reports that both tuning sessions reproduce exactly from the 15 development tiles with the committed code; this lane did not repeat that re-run. What was looked at while the amendment was being designed cannot be shown after the fact.",
+      "change_for_future_sessions": "scripts/tune_geoid_m1_v2.py uses the recording tile store and writes its record to the log and to the receipt."
+    },
+    {
+      "id": "C6",
+      "review_finding": 6,
+      "where": [
+        "src/floodguard/sar_change_v2.py, M1V2Config.kittler_illingworth_rule and M1V2Config.isolated_speckle_cleaning (never read)",
+        "src/floodguard/geoid_m1_benchmark.py, load_tiles (names the filter and the looks itself; ignores speckle_filter and equivalent_looks of the configuration)"
+      ],
+      "what_is_wrong": "Four fields of the frozen configuration are names the code does not act on. The configuration SHA-256 alone does not pin the amended threshold rule, the cleaning rule or, on the benchmark path, the speckle filter.",
+      "correct_statement": "The behaviour is pinned by the configuration SHA-256 together with the two code SHA-256 values in the freeze receipt. A lane that uses M1-v2 checks all three."
+    },
+    {
+      "id": "C7",
+      "review_finding": 8,
+      "where": [
+        "GEOID_M1_BENCHMARK_V2_RESULT.md as committed in 27f737f"
+      ],
+      "what_is_wrong": "Dice is in the declared metric list and appeared in no table. 'M1-literal flags 27% to 31% of the cells of those tiles' gave the pooled share per split as if it were a range.",
+      "correct_statement": "Dice of M1-v2 on the test split: 0.583 strict, 0.672 covered. M1-literal flags 27% (test) and 31% (development) of the cells of tiles without mapped flood, pooled by split, and 25% to 44% per tile."
+    },
+    {
+      "id": "C8",
+      "review_finding": 4,
+      "where": [
+        "geoid_m1_v2_tuning_log.jsonl (76 records)",
+        "geoid_m1_v2_freeze_receipt.json"
+      ],
+      "what_is_wrong": "The run records carry no confidence, no assumptions and no agreement wording; only the two session records carry a source timestamp. The receipt carries none of the three.",
+      "correct_statement": "See 'fields_for_files_that_lack_them'.",
+      "change_for_future_sessions": "scripts/tune_geoid_m1_v2.py writes source timestamp, confidence, assumptions and wording into every log record and into the receipt."
+    },
+    {
+      "id": "C9",
+      "review_finding": 9,
+      "where": [
+        "the order of work"
+      ],
+      "what_is_wrong": "The held-out scoring ran before the review that owner decision R11 attaches to the tuning, and after an amendment made once development scores had been seen. The result document disclosed it but did not put it first.",
+      "correct_statement": "The 14 held-out test tiles are used for this configuration. Rachmania's review can accept the frozen M1-v2 with its limits or open a new version; a new version has no unseen tile left in this sample."
+    }
+  ],
+  "fields_for_files_that_lack_them": {
+    "docs/proposal_execution/automated_track/geoid_m1_v2_tuning_log.jsonl": {
+      "sha256": "8a682abd142c29707f3c78f7e25cb92810e931a3585383fe0cf26ceeb0a73813",
+      "source_timestamp": "2024-01-03T05:34:06Z",
+      "confidence": "low: development tiles of one foreign event; every figure is agreement with a same-pass CEMS map, not independent accuracy. A development figure is optimistic by construction, because the configuration was chosen on these tiles.",
+      "assumptions": [
+        "GEOID S1GRD tiles are linear sigma0 at 10 m with about 4.4 equivalent looks.",
+        "The CEMS-derived label was drawn from the same Sentinel-1 pass as the post-event input.",
+        "Mapped background is not confirmed dry land.",
+        "Permanent water in the label is modelled; it is a non-flood class in the primary comparison and left out of the secondary one.",
+        "No DEM, slope, HAND or land-cover layer for these tiles is on disk, so neither method uses one.",
+        "Pre-event and post-event passes are almost four months apart and come from different orbit directions."
+      ],
+      "wording": "agreement with a same-pass CEMS map, not independent accuracy"
+    },
+    "docs/proposal_execution/automated_track/geoid_m1_v2_freeze_receipt.json": {
+      "sha256": "736d92887e0f536077a704af7f70270b81b7779a1f1b6dcbe36865cbf6edf3ee",
+      "source_timestamp": "2024-01-03T05:34:06Z",
+      "confidence": "low: the receipt binds files by hash. Its two statements about test tiles are constants written by the script, not a record of what was opened (correction C5).",
+      "assumptions": [
+        "GEOID S1GRD tiles are linear sigma0 at 10 m with about 4.4 equivalent looks.",
+        "The CEMS-derived label was drawn from the same Sentinel-1 pass as the post-event input.",
+        "Mapped background is not confirmed dry land.",
+        "Permanent water in the label is modelled; it is a non-flood class in the primary comparison and left out of the secondary one.",
+        "No DEM, slope, HAND or land-cover layer for these tiles is on disk, so neither method uses one.",
+        "Pre-event and post-event passes are almost four months apart and come from different orbit directions.",
+        "The development tiles are representative enough of the test tiles to choose on."
+      ],
+      "wording": "agreement with a same-pass CEMS map, not independent accuracy"
+    }
+  },
+  "limits_of_the_frozen_method_recorded_not_corrected": [
+    "The selection rule maximises a score that rewards declining tiles with little flood (correction C1).",
+    "The amended threshold rule declines where the flooded and the unchanged class overlap. On the test split that is every tile with up to 5% mapped flood and tile 50 with 13%.",
+    "Four configuration fields are names without effect (correction C6).",
+    "M1-literal carries a clause the proposal does not contain (correction C4).",
+    "A correction to any of these is a new version (v3). It would need held-out data that has not been used: the 14 test tiles of this sample are used, and no other GEOID activation is on disk."
+  ],
+  "requirements_for_later_lanes": [
+    "Before M1-v2 is run on Mae Sai (plan task A4): call floodguard.geoid_m1_review.require_frozen_m1_v2 and record the configuration SHA-256 and both code SHA-256 values with the outputs.",
+    "Read the GEOID condition of the T2 skill bar from outputs/geoid_m1_benchmark_v2_derived_checks.json (t2_skill_bar: reading, robust, abstained_cell_share), not from the boolean in the summary alone.",
+    "Quote the strict IoU together with the share of cells without an answer.",
+    "Do not score a further Otsu variant, M1 variant or M1-v2 variant on the 14 test tiles without an owner decision that says so."
+  ],
+  "decisions_for_the_owners": [
+    "Rachmania's review of the tuning: accept the frozen M1-v2 with these limits, or open a new version, which has no held-out tile left in this sample.",
+    "Whether amendment 1 and the 64-cell choice are accepted; the frozen run leads the next three by 0.007 to 0.012 of development IoU.",
+    "How protocol v1b reads the GEOID condition of the T2 skill bar: whether a point estimate of 0.411 that is not distinguishable from 0.40 counts as passing, and whether declining needs a limit on this benchmark as it has on Mae Sai (0.20).",
+    "Whether to correct the docstring of clears_skill_bar and re-record the code hash.",
+    "Whether to score M1-literal without the 'below zero' clause on the test tiles.",
+    "Record the review outcome in the decision log before plan task A4 uses M1-v2."
+  ],
+  "safety": {
+    "evidence_tier": "research_benchmark_diagnostic",
+    "fpps_computed": false,
+    "action_class_computed": false,
+    "mae_sai_run": false,
+    "official_warning": false,
+    "accepted_observation": false,
+    "can_feed_decision_layer": false,
+    "human_reviewed_by_floodguard": false
+  }
+}

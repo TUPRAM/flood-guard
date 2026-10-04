@@ -1,0 +1,63 @@
+{
+  "schema": "floodguard.geoid_s1grd_sigma0_benchmark_summary.v1",
+  "evidence_tier": "research_benchmark_diagnostic",
+  "method": "geoid_s1grd_sigma0_m2_change_variant_v1",
+  "generated_at_utc": "2026-09-24T17:20:26.919838Z",
+  "dataset": {
+    "repository": "links-ads/geoid-flood",
+    "revision": "868407460bf3db492f50730a57585916baa71dc6",
+    "event_id": "EMSR712",
+    "aoi_id": "EMSR712-3",
+    "source_radiometry": "linear_sigma0_s1grd",
+    "source_timestamp": "2024-01-03T05:34:06Z",
+    "verified_asset_count": 116,
+    "verified_asset_bytes": 572940276,
+    "published_sha256sums_sha256": "f6af34dbd56743d3f6faf6807207763fc51460167d62b1c2005bfa3df44f62f1"
+  },
+  "protocol_commit": "65cde436967f3ea2e47c4f8b57062bb93d93f01f",
+  "protocol_sha256": "26c55475fa7e5fb9bffa1f27eef6637a4c340a43cce1f99e6e2e8085e512667f",
+  "external_result_file_sha256": "753433f7ab37837056c97dcec62e2256e3bc6658a3154a667ed70eb3b1efafaf",
+  "external_result_self_sha256": "6f2c0a9b90627e63c7287b7b76949104f217efb0bb41bd60493342b349528461",
+  "reference_class_counts": {
+    "background": 16378552,
+    "permanent_water": 454889,
+    "mapped_flood": 962756,
+    "invalid": 12612507
+  },
+  "detector": {
+    "tile_count": 29,
+    "total_windows": 1421,
+    "qualified_windows": 0,
+    "unimodal_or_unstable_histogram_windows": 1421,
+    "between_variance_fraction_min": 0.531781,
+    "between_variance_fraction_median": 0.614333,
+    "between_variance_fraction_max": 0.712422,
+    "frozen_min_between_variance_fraction": 0.72,
+    "source_valid_cells": 30357888,
+    "histogram_abstained_cells": 30357888,
+    "candidate_flood_cells": 0
+  },
+  "primary_agreement_with_cems_derived_map": {
+    "evaluable_cells": 17796197,
+    "reference_flood_cells": 962756,
+    "covered_cells": 0,
+    "evaluated_coverage": 0.0,
+    "iou": null,
+    "dice": null,
+    "precision": null,
+    "recall": null
+  },
+  "result_status": "abstained_no_classified_cells",
+  "confidence": "not_estimated_because_all_cells_abstained",
+  "assumptions": [
+    "The publisher's S1GRD band order is VV then VH and the source filename acquisition times are UTC.",
+    "This Sigma0 GRD adaptation omits the Mae Sai Gamma0 terrain and independent context masks.",
+    "Mapped background and permanent water are CEMS-derived benchmark classes, not field-confirmed dry truth."
+  ],
+  "acceptance_limits": null,
+  "score_description": "Agreement with CEMS-derived benchmark labels from the same radar pass, not independent flood accuracy or Mae Sai validation.",
+  "human_reviewed_by_floodguard": false,
+  "accepted_observation": false,
+  "official_warning": false,
+  "can_feed_decision_layer": false
+}

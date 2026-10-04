@@ -11,7 +11,7 @@
  */
 
 import { ArrowRight, ChevronDown, ChevronUp, CircleHelp, Info, Layers, LocateFixed, Map as MapIcon, Maximize2, Menu, Minimize2, Minus, Plus, Scan, Search, X } from "lucide-react";
-import { useEffect, useId, useRef, type ReactNode, type Ref } from "react";
+import { Fragment, useEffect, useId, useRef, type ReactNode, type Ref } from "react";
 
 import { formatDateWithYear, lowConfidenceRgba, rgbaCss, type Language, type Localized, type TimelineManifest } from "@/lib/flood-timeline";
 import {
@@ -20,6 +20,7 @@ import {
   COMMAND_DRAWER,
   COMMAND_DRAWER_NOT,
   COMMAND_DRAWER_SOURCES,
+  COMMAND_FIGURES,
   COMMAND_HELP,
   COMMAND_HELP_KEYS,
   COMMAND_LANE_ORDER,
@@ -61,7 +62,15 @@ export function CommandBanner({ language, onInfo, infoOpen, infoRef }: { languag
   return (
     <div className={styles.banner} role="region" data-region="A" aria-label={pick(COMMAND_BANNER.label, language)} lang={language}>
       <span className={styles.bannerTag}>{tag}</span>
-      <p className={styles.bannerText} data-command-banner>{rest.map((part) => <span key={part}>{part}</span>)}</p>
+      {/* The dots between the parts are text, so the line reads the same when it is copied, translated or read aloud. */}
+      <p className={styles.bannerText} data-command-banner>
+        {rest.map((part, index) => (
+          <Fragment key={part}>
+            <span className={styles.bannerPart}>{part}{index < rest.length - 1 && <span className={styles.bannerSep}> ·</span>}</span>
+            {index < rest.length - 1 ? " " : null}
+          </Fragment>
+        ))}
+      </p>
       <button ref={infoRef} type="button" className={styles.infoButton} onClick={onInfo} aria-haspopup="dialog" aria-expanded={infoOpen} aria-label={pick(COMMAND_BANNER.info, language)} title={pick(COMMAND_DRAWER.title, language)} data-command-info>
         <Info size={20} aria-hidden="true" />
       </button>
@@ -346,7 +355,7 @@ export function CommandViewPopover({ language, facilities, facilityCount, onFaci
   return (
     <div ref={popoverRef} className={`${styles.panel} ${styles.popover}`} role="group" aria-labelledby={title} lang={language} data-command-popover="view" data-clear-panel>
       <div className={styles.popoverHead}>
-        <h2 id={title}>{t(COMMAND_TOOLS.viewTitle)}</h2>
+        <h2 id={title} tabIndex={-1} data-command-panel-title>{t(COMMAND_TOOLS.viewTitle)}</h2>
         <button type="button" className={styles.iconButton} onClick={onClose} aria-label={t(COMMAND_TOOLS.close)}><X size={18} aria-hidden="true" /></button>
       </div>
       <fieldset className={styles.choiceGroup}>
@@ -430,8 +439,10 @@ export function CommandLegend({ language, open, onToggle, facilities, unmodelled
   }
   return (
     <div ref={legendRef} className={`${styles.panel} ${styles.legend}`} role="group" aria-labelledby={title} data-region="G" data-command-legend="open" data-clear-panel lang={language}>
-      <div className={styles.popoverHead}>
-        <h2 id={title}>{t(COMMAND_LEGEND.title)}</h2>
+      <div className={`${styles.popoverHead} ${styles.legendHead}`}>
+        <h2 id={title} tabIndex={-1} data-command-panel-title>{t(COMMAND_LEGEND.title)}</h2>
+        {/* What the map draws of water and roads is modelled: the same dashed tag as on the clock card. */}
+        <span className={styles.laneTag} data-command-lane="model">{t(COMMAND_FIGURES.modelTag)}</span>
         <button type="button" className={styles.iconButton} onClick={() => onToggle(false)} aria-expanded="true" aria-label={t(COMMAND_LEGEND.close)}><ChevronDown size={18} aria-hidden="true" /></button>
       </div>
       <h3>{t(COMMAND_LEGEND.water)}</h3>
@@ -439,25 +450,26 @@ export function CommandLegend({ language, open, onToggle, facilities, unmodelled
         <li><i className={styles.swatch} style={{ background: rgbaCss(COMMAND_WATER_RGBA.shallow) }} />{t(COMMAND_LEGEND.shallow)}</li>
         <li><i className={styles.swatch} style={{ background: rgbaCss(COMMAND_WATER_RGBA.deep) }} />{t(COMMAND_LEGEND.deep)}</li>
         <li><i className={styles.swatch} style={{ background: `repeating-linear-gradient(135deg, ${LOW_STRIPE} 0 2px, ${LOW_WASH} 2px 6px)` }} />{t(COMMAND_LEGEND.lowConfidence)}</li>
-        <li><i className={styles.swatch} style={{ background: "#cdd2d0" }} />{t(COMMAND_LEGEND.veil)}</li>
+        <li><i className={styles.swatch} style={{ background: "#dde3ea" }} />{t(COMMAND_LEGEND.veil)}</li>
         {mode === "hindsight" && <li className={styles.legendSpan}><i className={styles.swatch} style={{ background: ENVELOPE_SWATCH_BACKGROUND, border: "1px solid #8fa1b4" }} />{t(COMMAND_MARKERS.envelope)}</li>}
       </ul>
       <h3>{t(COMMAND_LEGEND.roads)}</h3>
       <ul className={styles.legendGrid} lang={language}>
-        <li><i className={styles.swatchLine} style={{ borderTopWidth: 1.5, borderTopColor: "#98a3a4" }} />{t(COMMAND_LEGEND.roadDry)}</li>
-        <li><i className={styles.swatchLine} style={{ borderTopWidth: 3, borderTopStyle: "dashed", borderTopColor: "#d98a1e" }} />{t(COMMAND_LEGEND.roadWet)}</li>
-        <li><i className={styles.swatchLine} style={{ borderTopWidth: 4, borderTopColor: "#c62f24" }} />{t(COMMAND_LEGEND.roadImpassable)}</li>
-        {unmodelledRoads && <li><i className={styles.swatchLine} style={{ borderTopWidth: 2, borderTopStyle: "dotted", borderTopColor: "#98a3a4" }} />{t(COMMAND_LEGEND.roadUnmodelled)}</li>}
+        {/* A road is drawn as on the map: a dry one on the ground, a wet or impassable one over modelled water. */}
+        <li><span className={styles.sample}><i style={{ borderTopWidth: 1.5, borderTopColor: "#98a3a4" }} /></span>{t(COMMAND_LEGEND.roadDry)}</li>
+        <li><span className={styles.sample} data-over="water"><i style={{ borderTopWidth: 2.5, borderTopStyle: "dashed", borderTopColor: "#d98a1e" }} /></span>{t(COMMAND_LEGEND.roadWet)}</li>
+        <li><span className={styles.sample} data-over="water"><i style={{ borderTopWidth: 3, borderTopColor: "#c62f24" }} /></span>{t(COMMAND_LEGEND.roadImpassable)}</li>
+        {unmodelledRoads && <li><span className={styles.sample}><i style={{ borderTopWidth: 2, borderTopStyle: "dotted", borderTopColor: "#98a3a4" }} /></span>{t(COMMAND_LEGEND.roadUnmodelled)}</li>}
       </ul>
       <h3>{t(COMMAND_LEGEND.places)}</h3>
       <ul className={`${styles.legendGrid} ${styles.legendWide}`} lang={language}>
-        <li><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d={STAR_PATH} fill="#17616e" stroke="#ffffff" strokeWidth="1.5" strokeLinejoin="round" /></svg>{t(COMMAND_LEGEND.shelter)}</li>
+        <li><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d={STAR_PATH} fill="#17616e" stroke="#ffffff" strokeWidth="2" strokeLinejoin="round" paintOrder="stroke" /></svg>{t(COMMAND_LEGEND.shelter)}</li>
         {wetSites && <li><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d={STAR_PATH} fill="#ffffff" stroke="#17616e" strokeWidth="1.7" strokeLinejoin="round" /><path d="M3.5 21 20.5 3" stroke="#12262d" strokeWidth="2.4" strokeLinecap="round" /></svg>{t(COMMAND_LEGEND.shelterWet)}</li>}
         {mode === "trainee" && <li><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d={STAR_PATH} fill="#ffffff" stroke="#17616e" strokeWidth="1.5" strokeDasharray="2.6 2" strokeLinejoin="round" /></svg>{t(COMMAND_LEGEND_REPORTS.sitePending)}</li>}
-        <li><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 2.5l9.5 9.5-9.5 9.5L2.5 12z" fill="#12262d" stroke="#ffffff" strokeWidth="1.6" strokeLinejoin="round" /></svg>{t(COMMAND_LEGEND.commandCentre)}</li>
+        <li><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 2.5l9.5 9.5-9.5 9.5L2.5 12z" fill="#12262d" stroke="#ffffff" strokeWidth="2" strokeLinejoin="round" paintOrder="stroke" /></svg>{t(COMMAND_LEGEND.commandCentre)}</li>
         {facilities && <li><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="12" cy="12" r="6" fill="#ffffff" stroke="#12262d" strokeWidth="2" /></svg>{t(COMMAND_LEGEND.facility)}</li>}
         {facilities && <li><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="12" cy="12" r="7" fill="#2f86c4" stroke="#ffffff" strokeWidth="2" /></svg>{t(COMMAND_LEGEND.facilityWet)}</li>}
-        <li><i className={styles.swatchLine} style={{ borderTopWidth: 1.5, borderTopStyle: "dashed", borderTopColor: "#5f6f73" }} />{t(COMMAND_LEGEND.boundary)}</li>
+        <li><span className={styles.sample}><i style={{ borderTopWidth: 1.5, borderTopStyle: "dashed", borderTopColor: "#5f6f73" }} /></span>{t(COMMAND_LEGEND.boundary)}</li>
       </ul>
       <h3>{t(COMMAND_LEGEND_REPORTS.records)}</h3>
       <ul className={`${styles.legendGrid} ${styles.legendWide}`} lang={language} data-legend="records">

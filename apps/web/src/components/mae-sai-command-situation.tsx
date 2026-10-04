@@ -3,16 +3,16 @@
 /**
  * Region B1 of the Command exercise replay: the replay clock and the model figures of the district at the replay
  * hour. The replay time is the largest text of the page; under it stand the phase and the assumed river stage, then
- * the three model figures with their captions, the line that says what changed since the hour before, and from
- * 13 Sep the model-limit chip. Every figure here is a T1 scenario (model) with low confidence, rounded as such.
+ * the three model figures with their captions, the line that says what changed since the hour before, and the model
+ * limit of the phase. Every figure here is a T1 scenario (model) with low confidence, rounded as such.
  * Two things on the card are not model figures and say so: the count of open exercise items (invented, plain digits,
  * under the exercise tag), and the chip that says how many place records have a point and at how many of those the
- * model is dry. In focus mode the card is one line.
+ * model is dry. In focus mode the card is two short lines, and the model tag stays in sight.
  */
 
 import { useMemo } from "react";
 
-import { formatHourStamp, phaseAt, type Language, type TimelineManifest } from "@/lib/flood-timeline";
+import { phaseAt, type Language, type TimelineManifest } from "@/lib/flood-timeline";
 import { changeSinceHourBefore, clampCommandHour, commandStage, districtFiguresAt, type CommandModel, type CommandShelterSet } from "@/lib/flood-timeline-command";
 import type { PlaceRecordTally } from "@/lib/flood-timeline-command-feed";
 import type { ExerciseCounts } from "@/lib/flood-timeline-command-incidents";
@@ -24,6 +24,7 @@ import {
   commandChangeLine,
   commandFigureCells,
   commandFocusFigures,
+  commandHourClock,
   commandHourOf,
   commandHourShort,
   commandMoment,
@@ -42,6 +43,21 @@ const LIFE_GLYPH = exerciseMarkerNodes({ shape: "octagon", size: 36, symbol: "!!
 /** Phases in which the model dries faster than the ground did: the card says so. */
 const MODEL_LIMIT_PHASES: readonly string[] = ["receding", "gone"];
 
+/**
+ * A rounded model value as the page sets it: the tilde lighter and the unit small, so the eye lands on the number.
+ * The text is unchanged ("~164 km"): only its weight differs.
+ */
+export function ModelValue({ text, unit = null }: { text: string; unit?: string | null }) {
+  const tilde = text.startsWith("~");
+  return (
+    <>
+      {tilde && <span className={styles.tilde}>~</span>}
+      {tilde ? text.slice(1) : text}
+      {unit && <> <span className={styles.unit}>{unit}</span></>}
+    </>
+  );
+}
+
 export function MaeSaiCommandSituation({ language, hour, manifest, model, set = "reported", exercise = null, tally = null, onRecords, collapsed = false, failed = false, onRetry }: {
   language: Language;
   /** Whole replay hour, 0 … 264. */
@@ -57,7 +73,7 @@ export function MaeSaiCommandSituation({ language, hour, manifest, model, set = 
   tally?: PlaceRecordTally | null;
   /** The place-record chip was pressed: the page opens "Known by now". */
   onRecords?: () => void;
-  /** Focus mode: one 44 px line. */
+  /** Focus mode: the replay time with the model tag, and the two figures under it. */
   collapsed?: boolean;
   /** The replay data could not be loaded. */
   failed?: boolean;
@@ -73,15 +89,20 @@ export function MaeSaiCommandSituation({ language, hour, manifest, model, set = 
   if (collapsed) {
     return (
       <section className={`${styles.panel} ${styles.situationLine}`} data-region="B1" data-clear-panel aria-label={t(COMMAND_SITUATION.label)} lang={language}>
-        <strong data-command-clock>{commandMomentShort(at, language)} · {commandHourShort(at, language)}</strong>
-        {figures && <span title={t(COMMAND_FIGURES.modelTag)}>{commandFocusFigures(figures, language)}</span>}
+        <strong data-command-clock>{commandMomentShort(at, language)}<span className={styles.focusHour}> · {commandHourShort(at, language)}</span></strong>
+        {/* The figures of this line are modelled: the tag says so in words, not only on hover. */}
+        {figures && <span className={styles.laneTag} data-command-lane="model">{t(COMMAND_FIGURES.modelTag)}</span>}
+        {figures && <span className={styles.focusFigures} data-command-focus-figures>{commandFocusFigures(figures, language)}</span>}
       </section>
     );
   }
 
   const cells = figures ? commandFigureCells(figures, language) : [];
-  const changeLine = change ? commandChangeLine(change, change.sinceHour === null ? "" : formatHourStamp(change.sinceHour, language), language) : null;
+  const changeLine = change ? commandChangeLine(change, change.sinceHour === null ? "" : commandHourClock(change.sinceHour, language), language) : null;
   const limit = phase !== null && MODEL_LIMIT_PHASES.includes(phase.id);
+  // The second line of the notes. While the river falls it is the model limit: the model dries at once, so a road it
+  // calls passable again is the very thing the limit is about, and the card does not name such roads then.
+  const roadsLine = !limit && changeLine ? changeLine.roadsCut ?? changeLine.roadsOpen : null;
   return (
     <section className={`${styles.panel} ${styles.situation}`} data-region="B1" data-clear-panel aria-label={t(COMMAND_SITUATION.label)} lang={language}>
       <div className={styles.clockHead}>
@@ -106,7 +127,7 @@ export function MaeSaiCommandSituation({ language, hour, manifest, model, set = 
             <span className={styles.phaseShort}>{commandPhaseShortLine(phase.label, stage, language)}</span>
           </p>
           <div className={styles.figuresHead}>
-            <span className={styles.laneTag}>{t(COMMAND_FIGURES.modelTag)}</span>
+            <span className={styles.laneTag} data-command-lane="model">{t(COMMAND_FIGURES.modelTag)}</span>
             <span className={styles.figuresRule} aria-hidden="true" />
             {/* Reported against model: how many place records have a point by now, and at how many the model is dry. */}
             {tally && tally.located > 0 && (
@@ -114,12 +135,21 @@ export function MaeSaiCommandSituation({ language, hour, manifest, model, set = 
                 {commandRecordTallyChip(tally, language)}
               </button>
             )}
+            {/* A narrow card has three figure columns: the open exercise items stand beside the model tag there. */}
+            {exercise && (
+              <p className={styles.exerciseLine} title={commandOpenItemsText(exercise.open, exercise.lifeAtRisk, language)} data-command-exercise-line>
+                <b className={styles.exTag}>{t(COMMAND_EXERCISE.short)}</b>
+                <span>{exercise.open} {t(COMMAND_EXERCISE.openCaption)}</span>
+                {exercise.lifeAtRisk > 0 && <span className={styles.exerciseLife}><MarkerGlyph nodes={LIFE_GLYPH} viewBox={EXERCISE_MARKER_VIEWBOX} size={15} />{exercise.lifeAtRisk}</span>}
+              </p>
+            )}
           </div>
           <ul className={styles.figures} aria-label={t(COMMAND_FIGURES.label)}>
             {cells.map((cell) => (
               <li key={cell.id} className={styles.figure} title={cell.meaning} data-figure={cell.id}>
-                <strong>{cell.value}</strong>
-                <span>{cell.caption}</span>
+                <strong><ModelValue text={cell.value} unit={cell.unit} /></strong>
+                <span className={styles.captionLong}>{cell.caption}</span>
+                <span className={styles.captionShort}>{cell.captionShort}</span>
                 {cell.sub && <small>{cell.sub}</small>}
               </li>
             ))}
@@ -141,18 +171,16 @@ export function MaeSaiCommandSituation({ language, hour, manifest, model, set = 
               </li>
             )}
           </ul>
-          <div className={styles.notes} data-limit={limit ? "on" : "off"} lang={language}>
-            {/* A tablet has three figure columns: the open exercise items stand on this line there. */}
-            {exercise && (
-              <p className={styles.exerciseLine} title={commandOpenItemsText(exercise.open, exercise.lifeAtRisk, language)} data-command-exercise-line>
-                <b className={styles.exTag}>{t(COMMAND_EXERCISE.short)}</b>
-                <span>{exercise.open} {t(COMMAND_EXERCISE.openCaption)}</span>
-                {exercise.lifeAtRisk > 0 && <span className={styles.exerciseLife}><MarkerGlyph nodes={LIFE_GLYPH} viewBox={EXERCISE_MARKER_VIEWBOX} size={15} />{exercise.lifeAtRisk}</span>}
-              </p>
-            )}
-            {changeLine && <p className={styles.change} title={changeLine.text} data-command-change>{changeLine.text}</p>}
-            {limit && <p className={styles.limitChip} title={t(COMMAND_FIGURES.modelLimit)} data-command-limit>{t(COMMAND_SITUATION.modelLimitShort)}</p>}
+          <div className={styles.notes} data-limit={limit ? "on" : "off"} data-second={roadsLine ? "roads" : "limit"} lang={language}>
+            {/* The first line is never cut: the hour compared with, and the three differences. */}
+            {changeLine && <p className={styles.change} title={changeLine.text} data-command-change>{changeLine.summary}</p>}
+            {roadsLine && <p className={styles.changeRoads} title={roadsLine} data-command-change-roads>{roadsLine}</p>}
+            {/* The limit of the model that matters in this phase: before the river falls, the current; after, the water left behind. */}
+            {limit
+              ? <p className={styles.limitChip} title={t(COMMAND_FIGURES.modelLimit)} data-command-limit data-command-model-note="receding">{t(COMMAND_SITUATION.modelLimitShort)}</p>
+              : <p className={styles.limitChip} title={t(COMMAND_FIGURES.modelCurrent)} data-command-model-note="current">{t(COMMAND_SITUATION.modelCurrentShort)}</p>}
           </div>
+          <p className={styles.narrowNote} data-command-narrow>{t(COMMAND_SITUATION.narrow)}</p>
         </>
       ) : (
         <p className={styles.loadingLine} role="status">

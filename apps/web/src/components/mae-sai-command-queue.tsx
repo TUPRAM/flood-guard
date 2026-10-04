@@ -30,6 +30,7 @@ import {
   commandPlanPositionLabel,
   commandRecordCount,
   commandRowChange,
+  commandSentences,
   commandSetLabel,
   commandSetMeaning,
   commandText,
@@ -158,6 +159,10 @@ export function CommandQueueTable({ language, rows, selected, onSelect, set, pos
     onHold?.("focus", false);
   }, [onHold]);
   return (
+    <>
+    {/* A screen reader hears that the order is held; the pill in the head says it to the eye. The line stands beside
+        the table: a table holds rows only. */}
+    <span className={exercise.srOnly} role="status" data-command-order-status>{pending ? commandSentences([t(COMMAND_TABLE.orderHeld), t(COMMAND_TABLE.orderHeldMeaning)], language) : ""}</span>
     <div className={styles.tableWrap} role="table" aria-label={t(COMMAND_TABLE.title)} aria-describedby={foot} data-command-table data-order-held={pending ? "true" : "false"} lang={language}>
       <div className={styles.head} role="rowgroup">
         <div className={styles.headRow} role="row">
@@ -178,7 +183,9 @@ export function CommandQueueTable({ language, rows, selected, onSelect, set, pos
             <span role="columnheader">
               {pending
                 ? <span className={styles.held} title={t(COMMAND_TABLE.orderHeldMeaning)} data-command-order-held>{t(COMMAND_TABLE.orderHeld)}</span>
-                : t(COMMAND_TABLE.colTambon)}
+                : <span className={styles.colName}>{t(COMMAND_TABLE.colTambon)}</span>}
+              {/* A narrow card has no line of group titles: the left group is named here, in the tag of a modelled figure. */}
+              {!pending && <span className={`${exercise.laneTag} ${styles.headTag}`} title={t(COMMAND_FIGURES.modelTag)} aria-hidden="true">{t(COMMAND_TABLE.groupHour)}</span>}
             </span>
             <span role="columnheader" className={styles.right} title={t(COMMAND_FIGURES.lostAccessMeaning)}>{t(COMMAND_TABLE.colLost)}</span>
             <span role="columnheader" className={styles.right} title={t(COMMAND_FIGURES.inWaterMeaning)}>{t(COMMAND_TABLE.colWater)}</span>
@@ -189,8 +196,6 @@ export function CommandQueueTable({ language, rows, selected, onSelect, set, pos
           </span>
         </div>
       </div>
-      {/* A screen reader hears that the order is held; the pill in the head says it to the eye. */}
-      <span className={exercise.srOnly} role="status">{pending ? `${t(COMMAND_TABLE.orderHeld)}. ${t(COMMAND_TABLE.orderHeldMeaning)}` : ""}</span>
       <div className={styles.body} role="rowgroup" onPointerEnter={() => onHold?.("pointer", true)} onPointerLeave={() => onHold?.("pointer", false)} onFocus={focusIn} onBlur={focusOut}>
         {rows.map(({ row, position, lost, water, change, bar, cells, planningPosition }) => {
           const isSelected = row.id === selected;
@@ -224,7 +229,8 @@ export function CommandQueueTable({ language, rows, selected, onSelect, set, pos
                 </span>
                 <span className={styles.cWater} role="cell" data-kind={water.kind}><span className={styles.num}>{water.text}</span></span>
               </span>
-              <span className={styles.gPlan} role="presentation" data-group="plan">
+              <span className={styles.gPlan} role="presentation" data-group="plan" title={t(COMMAND_TABLE.groupPlanMeaning)}>
+                <Lock className={styles.pillLock} size={10} strokeWidth={2.4} aria-hidden="true" />
                 {COMMAND_PLANNING_CASES.map((id) => (
                   <span key={id} className={styles.cChip} role="cell">
                     <span className={styles.inlineCaption} aria-hidden="true">{id}</span>
@@ -243,26 +249,38 @@ export function CommandQueueTable({ language, rows, selected, onSelect, set, pos
       </div>
       <div id={foot} className={styles.foot} data-command-table-foot>
         <p>{commandNoReachNote(set, language)}</p>
-        <p className={styles.planNote}>
-          <Lock size={10} strokeWidth={2.4} aria-hidden="true" />
-          <span>{!issued && <b data-command-not-issued>{t(COMMAND_TABLE.notIssued)}. </b>}{t(COMMAND_TABLE.planLine)}</span>
+        {/* One line: the full sentence is in the inspector, on hover, and read out with the table. */}
+        <p className={styles.planNote} title={t(COMMAND_TABLE.planLine)} data-command-plan-note>
+          <Lock size={11} strokeWidth={2.4} aria-hidden="true" />
+          <span>
+            {!issued && <b data-command-not-issued>{commandSentences([t(COMMAND_TABLE.notIssued)], language)} </b>}
+            <span aria-hidden="true">{commandSentences([t(COMMAND_TABLE.planLineShort)], language)}</span>
+            <span className={exercise.srOnly}>{t(COMMAND_TABLE.planLine)}</span>
+          </span>
         </p>
-        {showsE && <p className={styles.never} data-command-e-never-safe>{t(COMMAND_TABLE.eNeverSafe)}.</p>}
-        {issued && <p>O1 · {commandCaseLane("O1", language)}. SE1 · {commandCaseLane("SE1", language)}. {t(COMMAND_TABLE.chipKey)}</p>}
+        {showsE && <p className={styles.never} data-command-e-never-safe>{commandSentences([t(COMMAND_TABLE.eNeverSafe)], language)}</p>}
+        {issued && <p>{commandSentences([`O1 · ${commandCaseLane("O1", language)}`, `SE1 · ${commandCaseLane("SE1", language)}`, t(COMMAND_TABLE.chipKey)], language)}</p>}
       </div>
     </div>
+    </>
   );
 }
 
-/** The top row on one line: what the card shows in focus mode. */
+/**
+ * The top row, as the card shows it in focus mode: the subdistrict with the model tag, and its two figures under it.
+ * The figures are modelled, and the tag says so in words.
+ */
 function TopRowLine({ row, language }: { row: CommandTableRow; language: Language }) {
   return (
-    <p className={styles.topRow} title={commandText(COMMAND_FIGURES.modelTag, language)}>
-      <span className={styles.cIdx}>{row.position}</span>
-      <strong lang="th">{row.row.th}</strong>
-      <span lang="en">{row.row.en}</span>
-      <span className={styles.topFigures}>{row.lost.text} {commandText(COMMAND_FIGURES.changeLost, language)} · {row.water.text} {commandText(COMMAND_FIGURES.changeWater, language)}</span>
-    </p>
+    <div className={styles.topRow} data-command-top-row={row.row.id}>
+      <p className={styles.topName}>
+        <span className={styles.cIdx}>{row.position}</span>
+        <strong lang="th">{row.row.th}</strong>
+        <span lang="en">{row.row.en}</span>
+      </p>
+      <span className={exercise.laneTag} data-command-lane="model">{commandText(COMMAND_FIGURES.modelTag, language)}</span>
+      <p className={styles.topFigures}>{row.lost.text} {commandText(COMMAND_FIGURES.changeLost, language)} · {row.water.text} {commandText(COMMAND_FIGURES.changeWater, language)}</p>
+    </div>
   );
 }
 

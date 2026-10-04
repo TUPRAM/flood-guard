@@ -114,13 +114,20 @@ describe("Command exercise page shell", () => {
 describe("Command banner (region A)", () => {
   it("prints the approved exercise line in English and in Thai, with the button of the information drawer", () => {
     const english = html(<CommandBanner language="en" onInfo={noop} infoOpen={false} />);
-    expect(text(english)).toContain("Exercise replay Mae Sai, September 2024 reconstructed, not real-time not an official warning");
+    expect(text(english)).toContain("Exercise replay Mae Sai, September 2024 · reconstructed, not real-time · not an official warning");
+    // The dots between the parts are text of the page, not decoration: the banner reads the same when it is copied
+    // or read aloud, and its own text passes the shared wording lint without any help from the markup.
+    const own = (markup: string) => /<p[^>]*data-command-banner[^>]*>(.*?)<\/p>/.exec(markup)![1].replace(/<[^>]+>/g, "");
+    expect(own(english)).toBe("Mae Sai, September 2024 · reconstructed, not real-time · not an official warning");
+    expect(describeWordingFindings(findWordingViolations(own(english), "banner text"))).toBe("");
     for (const part of ["Exercise replay", "Mae Sai, September 2024", "reconstructed, not real-time", "not an official warning"]) expect(english).toContain(`>${part}<`);
     expect(commandBannerLine("en").split(" · ")).toHaveLength(4);
     expect(english).toContain('aria-label="About this exercise: permitted use, assumptions, limits, sources and licences"');
     expect(english).toContain('aria-haspopup="dialog"');
     const thai = html(<CommandBanner language="th" onInfo={noop} infoOpen={false} />);
-    for (const part of ["ฝึกซ้อมย้อนดูเหตุการณ์", "แม่สาย กันยายน 2567 (2024)", "จำลองย้อนหลัง ไม่ใช่ข้อมูลเรียลไทม์", "ไม่ใช่คำเตือนทางการ"]) expect(thai).toContain(`>${part}<`);
+    for (const part of ["ฝึกซ้อมย้อนดูเหตุการณ์", "แม่สาย กันยายน 2567 (2024)", "จำลองย้อนหลัง ไม่ใช่ข้อมูลเรียลไทม์", "ไม่ใช่คำเตือนอย่างเป็นทางการ"]) expect(thai).toContain(`>${part}<`);
+    expect(own(thai)).toBe("แม่สาย กันยายน 2567 (2024) · จำลองย้อนหลัง ไม่ใช่ข้อมูลเรียลไทม์ · ไม่ใช่คำเตือนอย่างเป็นทางการ");
+    expect(describeWordingFindings(findWordingViolations(own(thai), "banner text"))).toBe("");
     expect(thai).toContain('lang="th"');
     // The banner has no control that closes or hides it.
     for (const markup of [english, thai]) {
@@ -143,7 +150,9 @@ describe("Command clock and figures (region B1)", () => {
     expect(text(english)).toContain("Replay time");
     expect(text(english)).toContain("12 Sep 2024 · 12:00 ICT");
     expect(text(english)).toContain("hour 84 of 264");
-    expect(text(english)).toContain("Phase: Peak · assumed river stage 3.5 m (illustrative curve)");
+    expect(text(english)).toContain("Phase: Peak · assumed stage 3.5 m (illustrative)");
+    // What "assumed" and "illustrative" stand for is the title of the line.
+    expect(english).toContain("No public hourly record for September 2024 was found, so the curve is illustrative.");
     expect(english).toContain('data-command-phase="peak"');
     const thai = situation(84, "th");
     expect(text(thai)).toContain("เวลาในการย้อนดู");
@@ -157,27 +166,62 @@ describe("Command clock and figures (region B1)", () => {
     // The figures of the replay data at the peak, as the plan and the export table give them (163.8 km to one decimal).
     expect([figures.lostAccess, figures.inWater, figures.roadKmImpassable]).toEqual([7086, 16060, 163.77]);
     const english = situation(84, "en");
-    expect(english).toMatch(/data-figure="lostAccess"><strong>~7,100<\/strong><span>lost shelter access<\/span><small>of ~34,500 in reach<\/small>/);
-    expect(english).toMatch(/data-figure="inWater"><strong>~16,100<\/strong><span>residents in modelled water<\/span>/);
-    expect(english).toMatch(/data-figure="roads"><strong>~164 km<\/strong><span>roads impassable<\/span><small>of 307 km<\/small>/);
+    // A figure as the card sets it: the tilde and the unit in their own spans, the number between them.
+    const figure = (markup: string, id: string) => {
+      const item = new RegExp(`data-figure="${id}">(.*?)</li>`).exec(markup)![1];
+      const [, value, rest] = /^<strong>(.*?)<\/strong>(.*)$/.exec(item)!;
+      return [value.replace(/<[^>]+>/g, ""), ...rest.split(/<\/(?:span|small)>/).map((part) => part.replace(/<[^>]+>/g, "")).filter(Boolean)];
+    };
+    expect(figure(english, "lostAccess")).toEqual(["~7,100", "lost shelter access", "lost access", "of ~34,500 in reach"]);
+    expect(figure(english, "inWater")).toEqual(["~16,100", "residents in modelled water", "in water"]);
+    expect(figure(english, "roads")).toEqual(["~164 km", "roads impassable", "roads impassable", "of 307 km"]);
+    // The tilde is set lighter and the unit small; the text itself is unchanged.
+    expect(english).toMatch(/data-figure="roads"><strong><span class="[^"]*tilde[^"]*">~<\/span>164(?:<!-- -->)? <span class="[^"]*unit[^"]*">km<\/span><\/strong>/);
     expect(text(english)).toContain("Model · low confidence");
     for (const exact of ["7,086", "7086", "16,060", "16060", "163.8", "163.77"]) expect(english, exact).not.toContain(exact);
     // The fourth figure, open exercise items, keeps its slot; without the exercise file it says the items are off.
     expect(english).toContain('data-figure="exerciseItems"');
     expect(text(english)).toContain("Exercise items are switched off");
     const thai = situation(84, "th");
-    expect(thai).toMatch(/<strong>~7,100<\/strong><span>สูญเสียการเข้าถึงที่พักพิง<\/span><small>จาก ~34,500 คนในระยะเดิน<\/small>/);
-    expect(thai).toMatch(/<strong>~164 กม.<\/strong><span>ถนนสัญจรไม่ได้<\/span>/);
+    expect(figure(thai, "lostAccess")).toEqual(["~7,100", "สูญเสียการเข้าถึงที่พักพิง", "สูญเสียการเข้าถึง", "จาก ~34,500 คนในระยะเดิน"]);
+    expect(figure(thai, "roads")).toEqual(["~164 กม.", "ถนนสัญจรไม่ได้", "ถนนสัญจรไม่ได้", "จาก 307 กม."]);
     expect(text(thai)).toContain("แบบจำลอง · ความเชื่อมั่นต่ำ");
     // Before the flood the figures are plain zeros.
     expect(situation(30, "en")).toMatch(/data-figure="lostAccess"><strong>0<\/strong>/);
   });
 
   it("says what changed since the hour before", () => {
-    expect(text(situation(84, "en"))).toContain("Since 12 Sep 11:00: +~100 lost access · 0 in water · +~1 km impassable");
-    expect(text(situation(44, "en"))).toContain("newly impassable: Mae Sai bypass, Phahonyothin Rd (Hwy 1) and 1 more");
-    expect(text(situation(0, "en"))).toContain("Start of the replay: no hour before to compare with");
-    expect(text(situation(84, "th"))).toContain("ตั้งแต่ 12 ก.ย. 11:00 น.: +~100 สูญเสียการเข้าถึง");
+    const line = (markup: string, name: string) => new RegExp(`data-command-${name}="true">(.*?)</p>`).exec(markup)?.[1] ?? null;
+    // The first line: the hour compared with and the three differences, each with its sign and no tilde.
+    expect(line(situation(84, "en"), "change")).toBe("Since 11:00: +100 lost access · 0 in water · +1 km impassable");
+    expect(line(situation(84, "th"), "change")).toBe("ตั้งแต่ 11:00 น.: +100 สูญเสียการเข้าถึง · 0 ในน้ำ · +1 กม. สัญจรไม่ได้");
+    expect(line(situation(0, "en"), "change")).toBe("Start of the replay: no hour before to compare with");
+    // The second line names the roads newly impassable as a whole.
+    const onset = situation(44, "en");
+    expect(line(onset, "change")).toBe("Since 19:00: +1,400 lost access · +1,500 in water · +20 km impassable");
+    expect(line(onset, "change-roads")).toBe("newly impassable: Mae Sai bypass, Phahonyothin Rd (Hwy 1) and 1 more");
+    expect(onset).toContain('data-second="roads"');
+    expect(line(situation(84, "en"), "change-roads")).toBeNull();
+    expect(situation(84, "en")).toContain('data-second="limit"');
+    // While the river falls the second line is the model limit: the model dries at once, so a road it calls passable
+    // again is not named on the card (the whole line is still its title).
+    const receding = situation(153, "en");
+    expect(line(receding, "change-roads")).toBeNull();
+    expect(receding).toContain("data-command-limit");
+    expect(receding).toMatch(/title="Since 08:00: [^"]* · passable again in the model: Mueang Daeng Rd"/);
+  });
+
+  it("names the limit of the model that matters before the river falls: depth only, no current", () => {
+    for (const hour of [0, 30, 84, 95]) {
+      const markup = situation(hour, "en");
+      expect(markup, String(hour)).toContain('data-command-model-note="current"');
+      expect(text(markup)).toContain("Model limit: the current is not modelled");
+      expect(markup).toContain('title="The model gives water depth only. The speed of the current, debris and mud are not modelled."');
+    }
+    expect(text(situation(84, "th"))).toContain("ข้อจำกัดของแบบจำลอง: ไม่ได้จำลองกระแสน้ำ");
+    expect(situation(130, "en")).not.toContain('data-command-model-note="current"');
+    // The card has two lines of notes at every hour, so it never changes height while the replay plays.
+    for (const hour of [0, 44, 84, 153, 200]) expect(situation(hour, "en").match(/data-command-model-note=/g), String(hour)).toHaveLength(1);
   });
 
   it("shows the model-limit chip in the Receding and Mostly receded phases only", () => {
@@ -189,18 +233,26 @@ describe("Command clock and figures (region B1)", () => {
       const markup = situation(hour, "en");
       expect(markup, String(hour)).toContain("data-command-limit");
       expect(markup).toContain('data-limit="on"');
-      expect(text(markup)).toContain("Model limit: standing water and mud are not reconstructed");
+      expect(text(markup)).toContain("Model limit: standing water and mud not modelled");
+      expect(markup).toContain('data-command-model-note="receding"');
       // The full sentence of the replay data is the chip's title.
       expect(markup).toContain('title="The model dries as the river falls; standing water and mud are not reconstructed."');
     }
     expect(text(situation(130, "th"))).toContain("ข้อจำกัดของแบบจำลอง: ไม่ได้จำลองน้ำท่วมขังและโคลน");
   });
 
-  it("is one line in focus mode: the short time, the hour and two of the figures", () => {
+  it("keeps the model tag in sight in focus mode, beside the short time and over two of the figures", () => {
     const markup = situation(84, "en", true);
-    expect(text(markup)).toBe("12 Sep 12:00 ICT · h 84 ~7,100 lost access · ~16,100 in water │ Situation at the replay hour │ Model · low confidence");
+    expect(text(markup)).toBe("12 Sep 12:00 ICT · h 84 Model · low confidence ~7,100 lost access · ~16,100 in water │ Situation at the replay hour");
     expect(markup).not.toContain("data-figure");
-    expect(text(situation(84, "th", true))).toContain("12 ก.ย. 12:00 น. · ชม. 84");
+    // The tag is text of the card, not a tooltip: a photo of focus mode, or a touch screen, still shows it.
+    expect(markup).toMatch(/<span class="[^"]*laneTag[^"]*" data-command-lane="model">Model · low confidence<\/span>/);
+    expect(markup).not.toMatch(/title="Model · low confidence"/);
+    const thai = situation(84, "th", true);
+    expect(text(thai)).toContain("12 ก.ย. 12:00 น. · ชม. 84");
+    expect(thai).toMatch(/data-command-lane="model">แบบจำลอง · ความเชื่อมั่นต่ำ<\/span>/);
+    // While the data loads there is no figure, and no tag is needed.
+    expect(html(<MaeSaiCommandSituation language="en" hour={84} manifest={null} model={null} collapsed />)).not.toContain("data-command-lane");
   });
 
   it("says that the data is loading, or that it failed, with a way to try again", () => {

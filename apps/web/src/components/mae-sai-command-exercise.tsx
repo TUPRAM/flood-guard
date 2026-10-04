@@ -15,6 +15,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState, useSyncExternalStore } from "react";
+import { createPortal } from "react-dom";
 
 import type { Language, Localized } from "@/lib/flood-timeline";
 import { buildCommandModel, commandStage, holdTambonOrder, tambonOrderByHour, tambonRowsAt, type CommandModel, type CommandShelterSet } from "@/lib/flood-timeline-command";
@@ -254,6 +255,8 @@ export function MaeSaiCommandExercise({ initial }: {
 
   const stage = useRef<HTMLDivElement | null>(null);
   const map = useRef<CommandMapHandle | null>(null);
+  // The layer of the map the watermark is drawn into: over the markers, under the popups.
+  const [watermarkPane, setWatermarkPane] = useState<HTMLElement | null>(null);
   const languageRef = useRef<Language>(language);
   const shownOrder = useRef<readonly string[] | null>(null);
   const lastLinkWrite = useRef(0);
@@ -506,7 +509,9 @@ export function MaeSaiCommandExercise({ initial }: {
       if (!action) return;
       switch (action.type) {
         case "escape":
-          // Escape closes what is open, then clears the selection, then leaves focus mode.
+          // Escape closes what is open, then clears the selection, then leaves focus mode: one thing per key press.
+          // A popup of the map goes first (the map uses the key up itself when the keyboard is inside the map).
+          if (map.current?.closePopup()) break;
           if (openPanel && openPanel !== "card") setOpenPanel(null);
           else if (selected || selectedReport || openPanel === "card") deselect();
           else if (found) setFound(null);
@@ -537,6 +542,44 @@ export function MaeSaiCommandExercise({ initial }: {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [ready, stops, openPanel, focus, selected, selectedReport, found, deselect]);
+
+  // --- Keyboard focus: a panel that opens takes it, and a panel that closes hands it back to what opened it, so
+  // the focus is never dropped to the page (from where the next Tab would start at the top).
+  const focusState = useRef<{ panel: OpenPanel; leftTab: CommandLeftTab; focus: boolean }>({ panel: null, leftTab: "queue", focus: false });
+  useEffect(() => {
+    const before = focusState.current;
+    focusState.current = { panel: openPanel, leftTab, focus };
+    const root = stage.current;
+    if (!root) return;
+    const active = document.activeElement;
+    const lost = !active || active === document.body;
+    const to = (selector: string): boolean => {
+      const target = root.querySelector<HTMLElement>(selector);
+      if (!target || target.hidden || target.getClientRects().length === 0) return false;
+      target.focus({ preventScroll: true });
+      return true;
+    };
+    const within = (selector: string): boolean => active instanceof Element && active.closest(selector) !== null;
+    if (openPanel !== before.panel) {
+      // What opened: the legend and the card replace their chip, so the focus is lost with it; the view popover and
+      // the menu open beside a button that keeps the focus, and take it from there.
+      if (openPanel === "legend" && lost && to('[data-command-legend="open"] [data-command-panel-title]')) return;
+      if (openPanel === "card" && lost && to('[data-region="D"] [role="tab"][aria-selected="true"]')) return;
+      if (openPanel === "view" && (lost || within('[data-command-tool="view"]')) && to('[data-command-popover="view"] [data-command-panel-title]')) return;
+      if (openPanel === "menu" && (lost || within("[data-command-menu]")) && to("[data-command-menu-panel] a, [data-command-menu-panel] button")) return;
+      // What closed, with the focus inside it: back to its opener.
+      if (lost) {
+        if (before.panel === "legend" && to('[data-command-legend="chip"]')) return;
+        if (before.panel === "card" && to('[data-command-card="chip"]')) return;
+        if (before.panel === "view" && to('[data-command-tool="view"]')) return;
+        if (before.panel === "menu" && to("[data-command-menu]")) return;
+      }
+    }
+    if (!lost) return;
+    // A tablet swaps the table for the detail when a row is chosen; focus mode folds the table away.
+    if (tablet && leftTab !== before.leftTab && to(`[data-command-tab="${leftTab}"]`)) return;
+    if (focus !== before.focus) to('[data-command-tool="focus"]');
+  }, [openPanel, leftTab, focus, tablet]);
 
   // --- The clear rectangle: the part of the map no panel covers, measured when a fit or a popup asks -----
   const getClear = useCallback((): ScreenRect => {
@@ -584,7 +627,7 @@ export function MaeSaiCommandExercise({ initial }: {
   ) : detail && selected ? (
     <CommandTambonDetailBody language={language} hour={hour} detail={detail} set={shelterSet} peak={peaks.records.get(selected) ?? null} peakStatus={peaks.status}
       places={placesNow?.get(selected) ?? []} depths={manifest?.reported_depths ?? null} unlocated={recordsNow.filter((report) => !report.point).length}
-      cells={{ O1: cells.O1.get(selected) ?? null, SE1: cells.SE1.get(selected) ?? null }} facts={facts} />
+      cells={{ O1: cells.O1.get(selected) ?? null, SE1: cells.SE1.get(selected) ?? null }} facts={facts} mode={mode} />
   ) : null;
   const knownPanel = feedRows
     ? <MaeSaiCommandFeed language={language} hour={hour} mode={mode} onMode={setMode} items={feedRows} tally={tally} depths={manifest?.reported_depths ?? null} onPlace={showFeedPlace} />
@@ -612,9 +655,10 @@ export function MaeSaiCommandExercise({ initial }: {
         {data && (
           <MaeSaiCommandMap data={data} hand={hand} hour={hour} stage={stageNow} playing={playing} language={language} basemap={basemap} facilities={facilities} selected={selected}
             reports={reportFrame} envelope={envelopeLayer} onReportAction={selectReport}
-            getClear={getClear} reducedMotion={reducedMotion} onReady={onMapReady} onBasemapIssue={setTileIssue} onView={setView} handle={map} />
+            getClear={getClear} reducedMotion={reducedMotion} onReady={onMapReady} onBasemapIssue={setTileIssue} onView={setView} onWatermarkPane={setWatermarkPane} handle={map} />
         )}
-        <CommandWatermark />
+        {/* The watermark is drawn inside the map, over the markers and under the popups; until the map is there it lies over the stage. */}
+        {watermarkPane ? createPortal(<CommandWatermark />, watermarkPane) : <CommandWatermark />}
         <CommandCredits language={language} view={view} revision={manifest?.revision ?? null} layerCredit={envelopeLayer?.credit ?? null} />
         <div className={styles.left}>
           <MaeSaiCommandSituation language={language} hour={hour} manifest={manifest} model={model} set={shelterSet} exercise={counts} tally={tally}

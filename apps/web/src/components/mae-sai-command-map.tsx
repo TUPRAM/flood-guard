@@ -16,7 +16,7 @@ import type { CircleMarker, GeoJSONOptions, ImageOverlay, LatLng, LatLngBoundsEx
 import { useEffect, useImperativeHandle, useRef, useState, type Ref } from "react";
 
 import { FACTOR_LUT_SIZE, facilityWet, formatDateWithYear, lutEquals, paintDepth, paintLowConfidence, projectToFrame, type FacilityProps, type Language, type ReportedShelter, type RoadProps } from "@/lib/flood-timeline";
-import { COMMAND_CREDITS, COMMAND_FIGURES, COMMAND_MAP, commandFacilityType, commandText } from "@/lib/flood-timeline-command-copy";
+import { COMMAND_CREDITS, COMMAND_FIGURES, COMMAND_MAP, commandFacilityType, commandSiteGroupTitle, commandText } from "@/lib/flood-timeline-command-copy";
 import type { CommandHandRaster, CommandReplayData } from "@/lib/flood-timeline-command-data";
 import { reportedSiteHour } from "@/lib/flood-timeline-command-feed";
 import { CLUSTER_BELOW_ZOOM, modelDepthAt } from "@/lib/flood-timeline-command-incidents";
@@ -27,12 +27,14 @@ import {
   buildTwoToneFactorLut,
   buildTwoToneLut,
   cellsInMask,
+  commandRoadRank,
   commandRoadStyle,
   metresPerPixel,
   outsideLabelPoint,
   pointsBounds,
   reportedSiteWetAt,
   veilRings,
+  type CommandRoadRank,
   type CommandRoadStyle,
   type LatLngBox,
 } from "@/lib/flood-timeline-command-map";
@@ -40,6 +42,7 @@ import { COMMAND_MARKERS } from "@/lib/flood-timeline-command-reports-copy";
 import type { CommandFindTarget } from "@/lib/flood-timeline-command-table";
 import { envelopeHatch, paintEnvelope } from "@/lib/flood-timeline-envelope";
 import { countedInReportedSet, reportedSiteRole } from "@/lib/flood-timeline-evacuation";
+import { groupNearbyPlaces } from "@/lib/flood-timeline-reported-depths";
 import { clearRectPadding, panIntoRect, popupFitInRect, type ScreenRect } from "@/lib/flood-timeline-layout";
 
 import { mountCommandMarkers, type CommandMarkerFrame, type CommandReportAction, type CommandReportSelection } from "./mae-sai-command-markers";
@@ -77,6 +80,8 @@ export interface CommandMapHandle {
   showPlace: (place: CommandMapPlace | null, fit?: boolean) => void;
   /** Bring a selected report inside the clear rectangle, so it is never under a panel. */
   focusReport: (selection: CommandReportSelection) => void;
+  /** Close the open popup, if there is one; true when one was closed (Escape then does nothing else). */
+  closePopup: () => boolean;
 }
 
 /** The 2024 season envelope as the map draws it in hindsight mode: its cells on the water grid, and its short credit. */
@@ -95,24 +100,47 @@ interface MapController {
   setEnvelope: (envelope: CommandEnvelopeLayer | null) => void;
   refreshText: () => void;
 }
-interface RoadEntry { layer: Path; props: RoadProps; style: CommandRoadStyle }
+interface RoadEntry { layer: Path; props: RoadProps; style: CommandRoadStyle; rank: CommandRoadRank; casing: Path | null }
 interface FacilityEntry { layer: CircleMarker; props: FacilityProps; wet: boolean }
 
-/** Line styles per road state, at the district zoom and closer in. Red is used for impassable roads only. */
-const ROAD_STYLES: Record<"far" | "near", Record<CommandRoadStyle, PathOptions>> = {
+/**
+ * Line styles per road state, at the district zoom and closer in. Red is used for impassable roads only, and it is
+ * used sparingly: a through road or a named road (major) keeps a heavy line, the other streets (minor) a thin one, so
+ * a flooded town reads as a net of lines over the water and not as one red patch. Flat line ends keep the pieces from
+ * swelling where they meet.
+ */
+const ROAD_STYLES: Record<"far" | "near", Record<CommandRoadRank, Record<CommandRoadStyle, PathOptions>>> = {
   far: {
-    dry: { color: "#98a3a4", weight: 0.8, opacity: 0.75, dashArray: undefined },
-    wet: { color: "#d98a1e", weight: 1.8, opacity: 1, dashArray: "5 4" },
-    impassable: { color: "#c62f24", weight: 2.4, opacity: 1, dashArray: undefined },
-    unmodelled: { color: "#98a3a4", weight: 1.4, opacity: 1, dashArray: "1 5" },
+    major: {
+      dry: { color: "#98a3a4", weight: 1, opacity: 0.8, dashArray: undefined, lineCap: "butt" },
+      wet: { color: "#d98a1e", weight: 1.8, opacity: 1, dashArray: "5 4", lineCap: "butt" },
+      impassable: { color: "#c62f24", weight: 2.2, opacity: 1, dashArray: undefined, lineCap: "butt" },
+      unmodelled: { color: "#98a3a4", weight: 1.4, opacity: 1, dashArray: "1 5", lineCap: "butt" },
+    },
+    minor: {
+      dry: { color: "#98a3a4", weight: 0.7, opacity: 0.7, dashArray: undefined, lineCap: "butt" },
+      wet: { color: "#d98a1e", weight: 1.2, opacity: 1, dashArray: "4 4", lineCap: "butt" },
+      impassable: { color: "#c62f24", weight: 1.2, opacity: 0.95, dashArray: undefined, lineCap: "butt" },
+      unmodelled: { color: "#98a3a4", weight: 1.1, opacity: 1, dashArray: "1 5", lineCap: "butt" },
+    },
   },
   near: {
-    dry: { color: "#98a3a4", weight: 1.3, opacity: 0.85, dashArray: undefined },
-    wet: { color: "#d98a1e", weight: 2.6, opacity: 1, dashArray: "7 5" },
-    impassable: { color: "#c62f24", weight: 3.4, opacity: 1, dashArray: undefined },
-    unmodelled: { color: "#98a3a4", weight: 1.8, opacity: 1, dashArray: "1 6" },
+    major: {
+      dry: { color: "#98a3a4", weight: 1.5, opacity: 0.85, dashArray: undefined, lineCap: "butt" },
+      wet: { color: "#d98a1e", weight: 2.6, opacity: 1, dashArray: "7 5", lineCap: "butt" },
+      impassable: { color: "#c62f24", weight: 3.2, opacity: 1, dashArray: undefined, lineCap: "butt" },
+      unmodelled: { color: "#98a3a4", weight: 1.8, opacity: 1, dashArray: "1 6", lineCap: "butt" },
+    },
+    minor: {
+      dry: { color: "#98a3a4", weight: 1.1, opacity: 0.8, dashArray: undefined, lineCap: "butt" },
+      wet: { color: "#d98a1e", weight: 1.8, opacity: 1, dashArray: "6 5", lineCap: "butt" },
+      impassable: { color: "#c62f24", weight: 2.1, opacity: 1, dashArray: undefined, lineCap: "butt" },
+      unmodelled: { color: "#98a3a4", weight: 1.5, opacity: 1, dashArray: "1 6", lineCap: "butt" },
+    },
   },
 };
+/** A major road that is impassable lies on a thin white casing, so its red line keeps an edge over the water. */
+const CASING_EXTRA_PX = 1.5;
 /** From this zoom on the roads take the heavier line weights. */
 const NEAR_ZOOM = 13;
 const FACILITY_STYLES = {
@@ -123,12 +151,16 @@ const FACILITY_STYLES = {
 
 const STAR_PATH = "M12 1.8l3.1 6.6 7.2.9-5.3 5 1.4 7.1L12 17.9l-6.4 3.5L7 14.3l-5.3-5 7.2-.9z";
 const DIAMOND_PATH = "M12 2.5l9.5 9.5-9.5 9.5L2.5 12z";
-const STAR_ICON = `<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path d="${STAR_PATH}"/></svg>`;
-/** A reported shelter whose mapped point is in modelled water at this hour: a hollow star struck through. */
-const STAR_WET_ICON = `<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path d="${STAR_PATH}"/><path data-part="slash" d="M3.5 21 20.5 3"/></svg>`;
-/** In trainee mode, a shelter no source has reported yet at the replay hour: a dashed outline of the star. */
-const STAR_PENDING_ICON = `<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path d="${STAR_PATH}"/></svg>`;
-const DIAMOND_ICON = `<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="${DIAMOND_PATH}"/></svg>`;
+/**
+ * A reported shelter is a star. One whose mapped point is in modelled water at this hour is a hollow star struck
+ * through; in trainee mode, one no source has reported yet at the replay hour is a dashed outline (by its class).
+ */
+const starIcon = (size: number, wet: boolean): string =>
+  `<svg viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true" focusable="false"><path d="${STAR_PATH}"/>${wet ? '<path data-part="slash" d="M3.5 21 20.5 3"/>' : ""}</svg>`;
+const diamondIcon = (size: number): string => `<svg viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true" focusable="false"><path d="${DIAMOND_PATH}"/></svg>`;
+/** Below this zoom (the district view) the signs of the reported sites are small, and sites that would cover each other share one count. */
+const SITE_FAR_BELOW_ZOOM = 12.5;
+const SITE_MERGE_PX = 24;
 
 /** "15 Sep 2024", or "15 Sep 2024 or earlier" for a bound; the text itself when it is not a date. */
 function firstUseText(value: string, language: Language): string {
@@ -153,7 +185,7 @@ function placeLabel(thai: string, roman: string): HTMLElement {
   return root;
 }
 
-export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, basemap, facilities, selected = null, reports = null, envelope = null, getClear, reducedMotion, onReady, onBasemapIssue, onView, onReportAction, handle }: {
+export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, basemap, facilities, selected = null, reports = null, envelope = null, getClear, reducedMotion, onReady, onBasemapIssue, onView, onReportAction, onWatermarkPane, handle }: {
   data: CommandReplayData;
   /** The terrain raster of the water layer; null until it has loaded (the roads and the figures do not wait for it). */
   hand: CommandHandRaster | null;
@@ -180,6 +212,12 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
   onView?: (view: CommandMapView) => void;
   /** "Assign" or "Details" was pressed in the popup of an invented item or of a device sign. */
   onReportAction?: (selection: CommandReportSelection, action: CommandReportAction) => void;
+  /**
+   * The layer of the map that holds the exercise watermark: above the water and the roads, under the names, the
+   * markers and the popups, and fixed to the screen while the map moves. The page draws the watermark into it; null
+   * when the map goes away.
+   */
+  onWatermarkPane?: (pane: HTMLElement | null) => void;
   handle?: Ref<CommandMapHandle>;
 }) {
   const element = useRef<HTMLDivElement | null>(null);
@@ -190,12 +228,12 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
   const languageRef = useRef(language);
   const clearRef = useRef(getClear);
   const motionRef = useRef(reducedMotion);
-  const callbacks = useRef({ onReady, onBasemapIssue, onView, onReportAction });
+  const callbacks = useRef({ onReady, onBasemapIssue, onView, onReportAction, onWatermarkPane });
   useEffect(() => {
     languageRef.current = language;
     clearRef.current = getClear;
     motionRef.current = reducedMotion;
-    callbacks.current = { onReady, onBasemapIssue, onView, onReportAction };
+    callbacks.current = { onReady, onBasemapIssue, onView, onReportAction, onWatermarkPane };
   });
   useImperativeHandle(handle, () => ({
     zoomBy: (delta) => mapHandle.current?.zoomBy(delta),
@@ -203,6 +241,7 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
     fitTambon: (id) => mapHandle.current?.fitTambon(id),
     showPlace: (place, fit) => mapHandle.current?.showPlace(place, fit),
     focusReport: (selection) => mapHandle.current?.focusReport(selection),
+    closePopup: () => mapHandle.current?.closePopup() ?? false,
   }), []);
 
   // --- Mount -------------------------------------------------------------------------------------------
@@ -213,6 +252,7 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
     let resizeObserver: ResizeObserver | undefined;
     let removeMapKeys: (() => void) | undefined;
     let removeMarkers: (() => void) | undefined;
+    let removeFocusPan: (() => void) | undefined;
 
     async function mount() {
       const L = await import("leaflet");
@@ -255,6 +295,21 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
         pane.style.zIndex = String(zIndex);
         pane.style.pointerEvents = "none";
       }
+      // The exercise watermark: over the water and the roads, under the names, the markers, the tooltips and the
+      // popups, so it never runs across a name or the text of a popup. The pane is as large as the map and is moved
+      // back to the corner of the screen whenever the map moves, so the watermark stays where it is.
+      const watermarkPane = map.createPane("fg-watermark");
+      watermarkPane.style.zIndex = "436";
+      watermarkPane.style.pointerEvents = "none";
+      const placeWatermark = () => {
+        const { x, y } = map.getSize();
+        watermarkPane.style.width = `${x}px`;
+        watermarkPane.style.height = `${y}px`;
+        L.DomUtil.setPosition(watermarkPane, map.containerPointToLayerPoint([0, 0]));
+      };
+      map.on("move zoom zoomend viewreset resize", placeWatermark);
+      placeWatermark();
+      callbacks.current.onWatermarkPane?.(watermarkPane);
 
       // --- Basemap: grey street tiles (online only), with the terrain shading of the replay data under the water
       // whenever the tiles are not there.
@@ -359,7 +414,7 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
       // --- The veil outside the eight subdistricts: what lies under it is not modelled.
       const veil = veilRings(geometries);
       if (veil.length > 0) {
-        L.polygon(veil, { pane: "fg-veil", renderer: L.svg({ pane: "fg-veil", padding: 0.6 }), stroke: false, fillColor: "#c5cbc9", fillOpacity: 0.66, interactive: false }).addTo(map);
+        L.polygon(veil, { pane: "fg-veil", renderer: L.svg({ pane: "fg-veil", padding: 0.6 }), stroke: false, fillColor: "#c9d1da", fillOpacity: 0.5, interactive: false }).addTo(map);
       }
       const labelIcon = (content: HTMLElement) => L.divIcon({ className: styles.labelIcon, html: content, iconSize: [0, 0] });
       const outside = outsideLabelPoint(geometries, m.bounds);
@@ -382,22 +437,41 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
       // --- Roads: one canvas, restyled piece by piece when the modelled state changes.
       const roads: RoadEntry[] = [];
       let roadScale: "far" | "near" = map.getZoom() >= NEAR_ZOOM ? "near" : "far";
-      L.geoJSON(data.roads as unknown as Parameters<typeof L.geoJSON>[0], {
-        renderer: L.canvas({ pane: "fg-roads", padding: 0.5 }),
+      const roadRenderer = L.canvas({ pane: "fg-roads", padding: 0.5 });
+      const roadGroup = L.geoJSON(data.roads as unknown as Parameters<typeof L.geoJSON>[0], {
+        renderer: roadRenderer,
         interactive: false,
-        style: (feature) => ROAD_STYLES[roadScale][(feature?.properties as RoadProps).m ? "dry" : "unmodelled"],
+        style: (feature) => {
+          const props = feature?.properties as RoadProps;
+          return ROAD_STYLES[roadScale][commandRoadRank(props)][props.m ? "dry" : "unmodelled"];
+        },
         onEachFeature: (feature, layer) => {
           const props = feature.properties as RoadProps;
-          roads.push({ layer: layer as Path, props, style: props.m ? "dry" : "unmodelled" });
+          roads.push({ layer: layer as Path, props, style: props.m ? "dry" : "unmodelled", rank: commandRoadRank(props), casing: null });
         },
-      } as GeoJSONOptions & { renderer: Renderer }).addTo(map);
+      } as GeoJSONOptions & { renderer: Renderer });
+      // The white casing of a major road, drawn only while the road is impassable. The casings go on the map first,
+      // so each lies under its road.
+      const casingGroup = L.layerGroup();
+      for (const entry of roads) {
+        if (entry.rank !== "major" || !entry.props.m) continue;
+        entry.casing = L.polyline((entry.layer as Polyline).getLatLngs() as LatLng[], { renderer: roadRenderer, interactive: false, stroke: false, color: "#ffffff", opacity: 0.92, weight: 0, lineCap: "butt" });
+        casingGroup.addLayer(entry.casing);
+      }
+      casingGroup.addTo(map);
+      roadGroup.addTo(map);
       const styleRoads = (stageNow: number, all: boolean) => {
         for (const entry of roads) {
           const style = commandRoadStyle(entry.props, stageNow, m.impassable_depth_m);
           if (!all && style === entry.style) continue;
-          entry.layer.setStyle(ROAD_STYLES[roadScale][style]);
-          // Wet and impassable pieces are drawn over the dry ones.
-          if (style !== entry.style && (style === "wet" || style === "impassable")) entry.layer.bringToFront();
+          const options = ROAD_STYLES[roadScale][entry.rank][style];
+          entry.casing?.setStyle({ stroke: style === "impassable", weight: (options.weight ?? 0) + CASING_EXTRA_PX });
+          entry.layer.setStyle(options);
+          // Wet and impassable pieces are drawn over the dry ones, each over its own casing.
+          if (style !== entry.style && (style === "wet" || style === "impassable")) {
+            entry.casing?.bringToFront();
+            entry.layer.bringToFront();
+          }
           entry.style = style;
         }
       };
@@ -430,11 +504,26 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
       let openPopups = 0;
       map.on("popupopen", () => { openPopups += 1; });
       map.on("popupclose", () => { openPopups = Math.max(0, openPopups - 1); });
-      const { keyboardPopup, remove } = keyboardPopups(map, () => openPopups > 0);
+      // Escape closes an open popup and does nothing else on that key press: the page's own Escape (clearing the
+      // selection, leaving focus mode) waits for the next one.
+      const { keyboardPopup, remove } = keyboardPopups(map, () => openPopups > 0, { consumeEscape: true });
       removeMapKeys = remove;
+      // A marker that takes the keyboard focus is brought inside the clear rectangle, so its focus ring is never
+      // under a panel. The pointer does not move the map: only focus that came from the keyboard does.
+      const container = map.getContainer();
+      const onMarkerFocus = (event: FocusEvent) => {
+        const target = event.target instanceof HTMLElement ? event.target : null;
+        if (!target?.classList.contains("leaflet-marker-icon") || !target.matches(":focus-visible")) return;
+        const box = container.getBoundingClientRect();
+        const rect = target.getBoundingClientRect();
+        const pan = panIntoRect({ x: rect.left + rect.width / 2 - box.left, y: rect.top + rect.height / 2 - box.top }, clearRef.current(), 28);
+        if (pan.x !== 0 || pan.y !== 0) map.panBy([pan.x, pan.y], { animate: !motionRef.current });
+      };
+      container.addEventListener("focusin", onMarkerFocus);
+      removeFocusPan = () => container.removeEventListener("focusin", onMarkerFocus);
       // In trainee mode a site is known from the day of its first dated 2024 source: before it a shelter is a dashed
       // outline and the command centre is not on the map.
-      const siteMarkers: { marker: Marker; site: ReportedShelter; command: boolean; wet: boolean; fromHour: number | null; pending: boolean }[] = [];
+      const siteMarkers: { marker: Marker; site: ReportedShelter; command: boolean; wet: boolean; fromHour: number | null; pending: boolean; merged: boolean }[] = [];
       const sitePending = (site: ReportedShelter) => siteMarkers.find((entry) => entry.site === site)?.pending ?? false;
       const siteTitle = (site: ReportedShelter, command: boolean) => `${text(command ? COMMAND_MAP.commandCentre : COMMAND_MAP.shelter)}: ${thai() ? site.name_th : site.name_en}`;
       const sitePopup = (site: ReportedShelter, command: boolean) => {
@@ -458,13 +547,97 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
         ];
         return popupElement(lines, site.sources.map((source) => ({ href: source.url, text: `${source.publisher}, ${source.date}: ${source.title}` })));
       };
-      const siteIcon = (command: boolean, wet: boolean, pending = false) => (command
-        ? L.divIcon({ className: styles.commandIcon, html: DIAMOND_ICON, iconSize: [44, 44], iconAnchor: [22, 22], popupAnchor: [0, -10] })
-        : L.divIcon({
-          className: `${styles.shelterIcon}${pending ? ` ${styles.shelterIconPending}` : wet ? ` ${styles.shelterIconWet}` : ""}`,
-          html: pending ? STAR_PENDING_ICON : wet ? STAR_WET_ICON : STAR_ICON, iconSize: [44, 44], iconAnchor: [22, 22], popupAnchor: [0, -11],
-        }));
+      // From the town zoom on a site is a 22 px sign in a 44 px target. At the district zoom the signs are smaller
+      // (14 px in 28 px), and the command centre stands a little above its point, so it does not sit on a star.
+      const siteFar = () => map.getZoom() < SITE_FAR_BELOW_ZOOM;
+      const siteIcon = (command: boolean, wet: boolean, pending = false, far = false) => {
+        const box = far ? 28 : 44;
+        const farClass = far ? ` ${styles.siteFar}` : "";
+        if (command) {
+          return L.divIcon({ className: `${styles.commandIcon}${farClass}`, html: diamondIcon(far ? 13 : 20), iconSize: [box, box], iconAnchor: far ? [14, 22] : [22, 22], popupAnchor: [0, far ? -15 : -10] });
+        }
+        return L.divIcon({
+          className: `${styles.shelterIcon}${pending ? ` ${styles.shelterIconPending}` : wet ? ` ${styles.shelterIconWet}` : ""}${farClass}`,
+          html: starIcon(far ? 14 : 22, wet && !pending), iconSize: [box, box], iconAnchor: [box / 2, box / 2], popupAnchor: [0, far ? -7 : -11],
+        });
+      };
       const labelSite = (entry: (typeof siteMarkers)[number]) => entry.marker.getElement()?.setAttribute("aria-label", siteTitle(entry.site, entry.command));
+      /** One site as the map draws it now: its sign, or nothing while it is merged into a count or not yet on the map. */
+      const showSite = (entry: (typeof siteMarkers)[number]) => {
+        if (entry.merged || (entry.command && entry.pending)) {
+          if (map.hasLayer(entry.marker)) entry.marker.remove();
+          return;
+        }
+        entry.marker.setIcon(siteIcon(entry.command, entry.wet, entry.pending, siteFar()));
+        if (!map.hasLayer(entry.marker)) entry.marker.addTo(map);
+        labelSite(entry);
+      };
+      // At the district zoom, shelters closer than 24 px on screen share one count; a tap shows them apart.
+      let siteBadges: { marker: Marker; count: number; centre: boolean }[] = [];
+      const badgeTitle = (badge: Pick<(typeof siteBadges)[number], "count" | "centre">) => commandSiteGroupTitle(badge.count, badge.centre, languageRef.current);
+      const labelBadge = (badge: (typeof siteBadges)[number]) => badge.marker.getElement()?.setAttribute("aria-label", `${badgeTitle(badge)} ${text(COMMAND_MARKERS.clusterZoom)}`);
+      const glyph = (path: string, size: number): SVGSVGElement => {
+        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.setAttribute("viewBox", "0 0 24 24");
+        svg.setAttribute("width", String(size));
+        svg.setAttribute("height", String(size));
+        svg.setAttribute("aria-hidden", "true");
+        const shape = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        shape.setAttribute("d", path);
+        svg.append(shape);
+        return svg;
+      };
+      const layoutSites = () => {
+        for (const badge of siteBadges) badge.marker.remove();
+        siteBadges = [];
+        const far = siteFar();
+        const stars = siteMarkers.filter((entry) => !entry.command);
+        const centreEntry = siteMarkers.find((entry) => entry.command && !entry.pending);
+        if (centreEntry) centreEntry.merged = false;
+        const at = (entry: (typeof siteMarkers)[number]) => map.latLngToLayerPoint(entry.marker.getLatLng());
+        const groups = far ? groupNearbyPlaces(stars.map(at), SITE_MERGE_PX) : stars.map((_, index) => [index]);
+        for (const members of groups) {
+          const held = members.map((index) => stars[index]);
+          for (const entry of held) entry.merged = held.length > 1;
+          if (held.length === 1) continue;
+          const points = held.map((entry) => entry.marker.getLatLng());
+          const middle = L.latLng(points.reduce((sum, point) => sum + point.lat, 0) / points.length, points.reduce((sum, point) => sum + point.lng, 0) / points.length);
+          // The command centre joins the count it would otherwise lie under: the count then shows its diamond too.
+          const centre = Boolean(centreEntry && !centreEntry.merged && map.latLngToLayerPoint(middle).distanceTo(at(centreEntry)) <= SITE_MERGE_PX * 1.5);
+          if (centre && centreEntry) {
+            centreEntry.merged = true;
+            points.push(centreEntry.marker.getLatLng());
+          }
+          const mark = document.createElement("span");
+          mark.className = styles.siteBadge;
+          mark.dataset.pending = held.every((entry) => entry.pending) && !centre ? "true" : "false";
+          if (centre) mark.append(glyph(DIAMOND_PATH, 11));
+          mark.append(glyph(STAR_PATH, 12), String(held.length));
+          const marker = L.marker(middle, {
+            pane: "fg-shelters", icon: L.divIcon({ className: styles.siteBadgeIcon, html: mark, iconSize: [44, 44], iconAnchor: [22, 22] }), keyboard: true, riseOnHover: true, zIndexOffset: 2050,
+          });
+          const badge = { marker, count: held.length, centre };
+          marker.bindTooltip(() => tooltipElement([[badgeTitle(badge), "title"], [text(COMMAND_MARKERS.clusterZoom), "muted"]]), { direction: "top", offset: [0, -12] });
+          marker.on("add", () => {
+            labelBadge(badge);
+            const element = marker.getElement();
+            element?.setAttribute("data-site-group", String(held.length));
+            element?.setAttribute("data-site-centre", centre ? "true" : "false");
+          });
+          // A tap, or Enter, shows the sites apart: about 400 m around them.
+          marker.on("click", () => {
+            const pad = 0.004;
+            map.closePopup();
+            fitTo([
+              [Math.min(...points.map((point) => point.lat)) - pad, Math.min(...points.map((point) => point.lng)) - pad],
+              [Math.max(...points.map((point) => point.lat)) + pad, Math.max(...points.map((point) => point.lng)) + pad],
+            ], !motionRef.current);
+          });
+          marker.addTo(map);
+          siteBadges.push(badge);
+        }
+        for (const entry of siteMarkers) showSite(entry);
+      };
       for (const site of m.shelters?.reported ?? []) {
         if (site.lat === null || site.lon === null) continue;
         const command = reportedSiteRole(site).role === "relief_command";
@@ -477,13 +650,14 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
         keyboardPopup(marker);
         marker.bindTooltip(() => tooltipElement([[siteTitle(site, command), "title"], [text(COMMAND_MAP.select), "muted"]]), { direction: "top", offset: [0, -12] });
         tooltipLayers.push(marker);
-        const entry = { marker, site, command, wet: false, fromHour: reportedSiteHour(site), pending: false };
+        const entry = { marker, site, command, wet: false, fromHour: reportedSiteHour(site), pending: false, merged: false };
         marker.on("add", () => labelSite(entry));
-        marker.addTo(map);
         siteMarkers.push(entry);
       }
+      layoutSites();
       const refreshText = () => {
         outsideLabel.textContent = text(COMMAND_MAP.outside);
+        for (const badge of siteBadges) labelBadge(badge);
         for (const entry of siteMarkers) {
           labelSite(entry);
           if (entry.marker.isPopupOpen()) entry.marker.getPopup()?.update();
@@ -519,19 +693,17 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
       let reportFrame: CommandMarkerFrame | null = null;
       const syncSites = () => {
         if (!reportFrame) return;
+        let changed = false;
         for (const entry of siteMarkers) {
           const pending = reportFrame.mode === "trainee" && entry.fromHour !== null && reportFrame.hour < entry.fromHour;
           if (pending === entry.pending) continue;
           entry.pending = pending;
-          if (entry.command) {
-            if (pending) entry.marker.remove();
-            else entry.marker.addTo(map);
-          } else {
-            entry.marker.setIcon(siteIcon(false, entry.wet, pending));
-            labelSite(entry);
-          }
-          if (entry.marker.isPopupOpen()) entry.marker.getPopup()?.update();
+          changed = true;
         }
+        if (!changed) return;
+        // A count of the district zoom is dashed while every site it holds is still unreported, so the counts are drawn again.
+        layoutSites();
+        for (const entry of siteMarkers) if (entry.marker.isPopupOpen()) entry.marker.getPopup()?.update();
       };
 
       // --- The 2024 season envelope (scenario): its cells on the water grid, hatched on a canvas of its own above the
@@ -639,6 +811,7 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
           styleRoads(appliedStage(), true);
         }
         paintEnvelopeLayer();
+        layoutSites();
         reportView();
       });
       map.on("moveend", reportView);
@@ -671,8 +844,7 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
             const wet = !entry.command && reportedSiteWetAt(entry.site, frame.stage);
             if (wet === entry.wet) continue;
             entry.wet = wet;
-            if (!entry.pending) entry.marker.setIcon(siteIcon(entry.command, wet));
-            labelSite(entry);
+            showSite(entry);
           }
           refreshText();
         },
@@ -726,6 +898,11 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
           const pan = panIntoRect(map.latLngToContainerPoint(point), clearRef.current(), 64);
           if (pan.x !== 0 || pan.y !== 0) map.panBy([pan.x, pan.y], { animate: !motionRef.current });
         },
+        closePopup() {
+          if (openPopups === 0) return false;
+          map.closePopup();
+          return true;
+        },
       };
       resizeObserver = new ResizeObserver(() => map.invalidateSize());
       resizeObserver.observe(element.current);
@@ -739,6 +916,8 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
       resizeObserver?.disconnect();
       removeMapKeys?.();
       removeMarkers?.();
+      removeFocusPan?.();
+      callbacks.current.onWatermarkPane?.(null);
       controller.current = null;
       mapHandle.current = null;
       setReady(false);

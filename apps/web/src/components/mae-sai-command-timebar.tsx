@@ -192,7 +192,8 @@ export function MaeSaiCommandTimebar({ language, hour, playing, speed, collapsed
           </div>
           <div className={styles.phaseBand} role="img" aria-label={`${t(COMMAND_TIMEBAR.phases)}: ${phases.map((phase) => commandText(phase.label, language)).join(", ")}`}>
             {phases.map((phase) => (
-              <span key={phase.id} className={styles.phase} data-phase={phase.id} style={{ width: pct((phase.to - phase.from) / COMMAND_LAST_HOUR) }} lang={language}>
+              <span key={phase.id} className={styles.phase} data-phase={phase.id} data-current={at >= phase.from && (at < phase.to || phase.to >= COMMAND_LAST_HOUR) ? "true" : undefined}
+                style={{ width: pct((phase.to - phase.from) / COMMAND_LAST_HOUR) }} lang={language}>
                 <span className={styles.phaseName}>{commandText(phase.label, language)}</span>
                 <span className={styles.phaseShortName}>{commandText(COMMAND_PHASE_SHORT[phase.id] ?? phase.label, language)}</span>
               </span>

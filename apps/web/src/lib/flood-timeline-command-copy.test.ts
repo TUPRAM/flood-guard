@@ -8,7 +8,6 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import {
-  formatHourStamp,
   formatMoment,
   TIMELINE_MANIFEST_URL,
   type AreaGeometry,
@@ -57,6 +56,7 @@ import {
   commandFacilityType,
   commandFigureCells,
   commandFocusFigures,
+  commandHourClock,
   commandHourOf,
   commandHourShort,
   commandLaneMeaning,
@@ -64,16 +64,23 @@ import {
   commandLifeAtRisk,
   commandMoment,
   commandMomentShort,
+  commandNoReachLine,
   commandOpenItems,
+  commandPeakLines,
+  commandPercent,
   commandPhaseLine,
   commandPhaseShortLine,
   commandPlaceRecordLine,
   commandRoadList,
   commandScaleLabel,
+  commandSentences,
+  commandShareNote,
+  commandSiteGroupTitle,
   commandSliderText,
   commandSourceSpan,
   commandStageText,
   commandText,
+  commandTextWidth,
 } from "./flood-timeline-command-copy";
 import { COMMAND_SPEEDS } from "./flood-timeline-command-replay";
 import { localizedText } from "./flood-timeline-copy";
@@ -119,14 +126,16 @@ function entries(): { name: string; text: Localized }[] {
 
 /** Every line the copy's functions build, from the served replay data, in one language. */
 function builtLines(language: Language): string[] {
-  const hourText = (hour: number | null) => (hour === null ? "" : formatHourStamp(hour, language));
+  const hourText = (hour: number | null) => (hour === null ? "" : commandHourClock(hour, language));
   const changes = [0, 44, 45, 84, 85, 153, 200].map((hour) => changeSinceHourBefore(model, hour));
   return [
     commandBannerLine(language),
     ...[0, 84, 264].flatMap((hour) => [commandMoment(hour, language), commandMomentShort(hour, language), commandHourOf(hour, language), commandHourShort(hour, language)]),
     ...manifest.phases.map((phase) => commandPhaseLine(phase.label, 3.5, language)),
     ...[0, 0.02, 0.1, 3.4875].map((stage) => commandStageText(stage, language)),
-    ...[0, 44, 84, 200].flatMap((hour) => commandFigureCells(districtFiguresAt(model, hour), language).flatMap((cell) => [cell.value, cell.caption, cell.sub ?? "", cell.meaning])),
+    ...[0, 44, 84, 200].flatMap((hour) => commandFigureCells(districtFiguresAt(model, hour), language).flatMap((cell) => [cell.value, cell.unit ?? "", cell.caption, cell.captionShort, cell.sub ?? "", cell.meaning])),
+    commandSiteGroupTitle(6, false, language), commandSiteGroupTitle(2, true, language),
+    commandNoReachLine(4990, 4993, 0.9994, language), commandNoReachLine(1200, 5000, 0.24, language),
     commandBaseText(34525, language), commandBaseText(34525, language, true),
     commandOpenItems(3, language), commandLifeAtRisk(1, language),
     commandPlaceRecordLine({ located: 12, consistent: 1, wet: 2, dry: 9 }, language),
@@ -148,7 +157,7 @@ function builtLines(language: Language): string[] {
 describe("Command exercise copy", () => {
   it("carries the banner the owner approved on 5 Oct 2026, word for word, and its Thai rendering", () => {
     expect(commandBannerLine("en")).toBe("Exercise replay · Mae Sai, September 2024 · reconstructed, not real-time · not an official warning");
-    expect(commandBannerLine("th")).toBe("ฝึกซ้อมย้อนดูเหตุการณ์ · แม่สาย กันยายน 2567 (2024) · จำลองย้อนหลัง ไม่ใช่ข้อมูลเรียลไทม์ · ไม่ใช่คำเตือนทางการ");
+    expect(commandBannerLine("th")).toBe("ฝึกซ้อมย้อนดูเหตุการณ์ · แม่สาย กันยายน 2567 (2024) · จำลองย้อนหลัง ไม่ใช่ข้อมูลเรียลไทม์ · ไม่ใช่คำเตือนอย่างเป็นทางการ");
     expect(commandBannerParts("en")).toHaveLength(4);
     // The watermark shows both languages at once, whatever the page language.
     expect(COMMAND_BANNER.watermark.en).toBe(COMMAND_BANNER.watermark.th);
@@ -237,7 +246,14 @@ describe("Command clock wording", () => {
     expect(commandHourShort(84, "en")).toBe("h 84");
     expect(commandHourShort(84, "th")).toBe("ชม. 84");
     const peak = manifest.phases.find((phase) => phase.id === "peak")!;
-    expect(commandPhaseLine(peak.label, 3.5, "en")).toBe("Phase: Peak · assumed river stage 3.5 m (illustrative curve)");
+    expect(commandPhaseLine(peak.label, 3.5, "en")).toBe("Phase: Peak · assumed stage 3.5 m (illustrative)");
+    // The line stays on one line of the card at every hour: its longest form is short.
+    const gone = manifest.phases.find((phase) => phase.id === "gone")!;
+    expect(commandPhaseLine(gone.label, 0.02, "en")).toBe("Phase: Mostly receded · assumed stage <0.1 m (illustrative)");
+    for (const phase of manifest.phases) expect(commandPhaseLine(phase.label, 0.02, "en").length, phase.id).toBeLessThanOrEqual(60);
+    // What "assumed" and "illustrative" stand for is said in full on hover and in the drawer.
+    expect(COMMAND_CLOCK.stageMeaning.en).toContain("so the curve is illustrative");
+    expect([commandHourClock(83, "en"), commandHourClock(83, "th"), commandHourClock(264, "en")]).toEqual(["11:00", "11:00 น.", "24:00"]);
     expect(commandPhaseLine(peak.label, 3.5, "th")).toBe("ระยะ: ระดับสูงสุด · ระดับแม่น้ำสมมุติ 3.5 ม. (ค่าเพื่อการอธิบาย)");
     expect([0, 0.02, 0.04, 0.05, 0.1, 3.4875, 3.5].map((stage) => commandStageText(stage, "en"))).toEqual(["0 m", "<0.1 m", "<0.1 m", "0.1 m", "0.1 m", "3.5 m", "3.5 m"]);
     expect(commandStageText(Number.NaN, "th")).toBe("0 ม.");
@@ -247,21 +263,24 @@ describe("Command clock wording", () => {
 describe("Command figures wording", () => {
   it("prints the three model figures of replay hour 84 as the plan draws them", () => {
     const cells = commandFigureCells(districtFiguresAt(model, 84), "en");
-    expect(cells.map((cell) => [cell.id, cell.value, cell.caption, cell.sub])).toEqual([
-      ["lostAccess", "~7,100", "lost shelter access", "of ~34,500 in reach"],
-      ["inWater", "~16,100", "residents in modelled water", null],
-      ["roads", "~164 km", "roads impassable", "of 307 km"],
+    expect(cells.map((cell) => [cell.id, cell.value, cell.unit, cell.caption, cell.sub])).toEqual([
+      ["lostAccess", "~7,100", null, "lost shelter access", "of ~34,500 in reach"],
+      ["inWater", "~16,100", null, "residents in modelled water", null],
+      ["roads", "~164", "km", "roads impassable", "of 307 km"],
     ]);
+    // A narrow card has one line of caption under each figure.
+    expect(cells.map((cell) => cell.captionShort)).toEqual(["lost access", "in water", "roads impassable"]);
     expect(cells[0].meaning).toContain("It is not a count of people stranded.");
     expect(cells[0].meaning).toContain("Counted over all residents at road nodes.");
     const thai = commandFigureCells(districtFiguresAt(model, 84), "th");
-    expect(thai.map((cell) => [cell.value, cell.caption, cell.sub])).toEqual([
-      ["~7,100", "สูญเสียการเข้าถึงที่พักพิง", "จาก ~34,500 คนในระยะเดิน"],
-      ["~16,100", "ผู้อยู่อาศัยในน้ำตามแบบจำลอง", null],
-      ["~164 กม.", "ถนนสัญจรไม่ได้", "จาก 307 กม."],
+    expect(thai.map((cell) => [cell.value, cell.unit, cell.caption, cell.sub])).toEqual([
+      ["~7,100", null, "สูญเสียการเข้าถึงที่พักพิง", "จาก ~34,500 คนในระยะเดิน"],
+      ["~16,100", null, "ผู้อยู่อาศัยในน้ำตามแบบจำลอง", null],
+      ["~164", "กม.", "ถนนสัญจรไม่ได้", "จาก 307 กม."],
     ]);
+    expect(thai.map((cell) => cell.captionShort)).toEqual(["สูญเสียการเข้าถึง", "ในน้ำ", "ถนนสัญจรไม่ได้"]);
     // Before the flood: plain zeros, never "~0".
-    expect(commandFigureCells(districtFiguresAt(model, 0), "en").map((cell) => cell.value)).toEqual(["0", "0", "0 km"]);
+    expect(commandFigureCells(districtFiguresAt(model, 0), "en").map((cell) => cell.value)).toEqual(["0", "0", "0"]);
     // With the ranked plan's sites the base changes with the count.
     expect(commandFigureCells(districtFiguresAt(model, 84, "plan"), "en")[0]).toMatchObject({ value: "~13,400", sub: "of ~24,900 in reach" });
     expect(commandBaseText(34525, "en")).toBe("of ~34,500 who had one in reach");
@@ -284,22 +303,41 @@ describe("Command figures wording", () => {
   it("says what changed since the hour before, with the roads newly impassable as a whole", () => {
     const line = (hour: number, language: Language) => {
       const change = changeSinceHourBefore(model, hour);
-      return commandChangeLine(change, change.sinceHour === null ? "" : formatHourStamp(change.sinceHour, language), language);
+      return commandChangeLine(change, change.sinceHour === null ? "" : commandHourClock(change.sinceHour, language), language);
     };
-    expect(line(0, "en")).toEqual({ lead: "Start of the replay: no hour before to compare with", figures: [], roads: null, text: "Start of the replay: no hour before to compare with" });
+    const start = "Start of the replay: no hour before to compare with";
+    expect(line(0, "en")).toEqual({ lead: start, figures: [], summary: start, roadsCut: null, roadsOpen: null, roads: null, text: start });
+    // A difference is printed with its sign and no tilde: the rounding rule is stated once, in the drawer.
     expect(line(44, "en")).toEqual({
-      lead: "Since 10 Sep 19:00",
-      figures: ["+~1,400 lost access", "+~1,500 in water", "+~20 km impassable"],
+      lead: "Since 19:00",
+      figures: ["+1,400 lost access", "+1,500 in water", "+20 km impassable"],
+      summary: "Since 19:00: +1,400 lost access · +1,500 in water · +20 km impassable",
+      roadsCut: "newly impassable: Mae Sai bypass, Phahonyothin Rd (Hwy 1) and 1 more",
+      roadsOpen: null,
       roads: "newly impassable: Mae Sai bypass, Phahonyothin Rd (Hwy 1) and 1 more",
-      text: "Since 10 Sep 19:00: +~1,400 lost access · +~1,500 in water · +~20 km impassable · newly impassable: Mae Sai bypass, Phahonyothin Rd (Hwy 1) and 1 more",
+      text: "Since 19:00: +1,400 lost access · +1,500 in water · +20 km impassable · newly impassable: Mae Sai bypass, Phahonyothin Rd (Hwy 1) and 1 more",
     });
-    expect(line(44, "th").text).toBe("ตั้งแต่ 10 ก.ย. 19:00 น.: +~1,400 สูญเสียการเข้าถึง · +~1,500 ในน้ำ · +~20 กม. สัญจรไม่ได้ · ถนนที่เริ่มสัญจรไม่ได้: ถนนเลี่ยงเมืองแม่สาย ถนนพหลโยธิน และอีก 1 สาย");
+    expect(COMMAND_DRAWER.rounding.en).toContain("printed with its sign and no tilde");
+    expect(COMMAND_DRAWER.rounding.th).toContain("ไม่มีเครื่องหมาย ~");
+    expect(line(44, "th").text).toBe("ตั้งแต่ 19:00 น.: +1,400 สูญเสียการเข้าถึง · +1,500 ในน้ำ · +20 กม. สัญจรไม่ได้ · ถนนที่เริ่มสัญจรไม่ได้: ถนนเลี่ยงเมืองแม่สาย ถนนพหลโยธิน และอีก 1 สาย");
     // An hour later the same roads lose more length: they are no longer named as newly impassable.
     expect(line(45, "en").roads).toBeNull();
-    expect(line(85, "en").text).toBe("Since 12 Sep 12:00: −~150 lost access · −~180 in water · −~4 km impassable");
-    expect(line(153, "en").roads).toMatch(/^passable again: /);
-    expect(line(200, "en").text).toBe("Since 17 Sep 07:00: no change in the model figures");
-    expect(line(200, "th").text).toBe("ตั้งแต่ 17 ก.ย. 07:00 น.: ตัวเลขจากแบบจำลองไม่เปลี่ยน");
+    expect(line(85, "en").text).toBe("Since 12:00: −150 lost access · −180 in water · −4 km impassable");
+    // A road that is passable again is passable in the model: the line says so.
+    expect(line(153, "en").roadsOpen).toMatch(/^passable again in the model: /);
+    expect(line(153, "en").roadsCut).toBeNull();
+    expect(line(200, "en").text).toBe("Since 07:00: no change in the model figures");
+    expect(line(200, "th").text).toBe("ตั้งแต่ 07:00 น.: ตัวเลขจากแบบจำลองไม่เปลี่ยน");
+    // The first line of the card (the lead with the three differences) and the line of roads are short at every
+    // hour of the replay, in both languages: the card never cuts them.
+    for (const language of LANGUAGES) {
+      for (let hour = 0; hour <= 264; hour += 1) {
+        const made = line(hour, language);
+        expect(commandTextWidth(made.summary), `${language} ${hour}`).toBeLessThanOrEqual(70);
+        for (const roads of [made.roadsCut, made.roadsOpen]) if (roads) expect(commandTextWidth(roads), `${language} ${hour}`).toBeLessThanOrEqual(70);
+        expect(made.summary, `${language} ${hour}`).not.toContain("~");
+      }
+    }
     // Road lists: every name when they fit, a count of the rest when they do not.
     const names = [{ name: "ถนนพหลโยธิน" }, { name: "ถนนเหมืองแดง" }, { name: "ซอย 4" }];
     expect(commandRoadList(names, "en", 3)).toBe("Phahonyothin Rd (Hwy 1), Mueang Daeng Rd, ซอย 4");
@@ -313,7 +351,7 @@ describe("Command lane tags", () => {
     expect(COMMAND_LANE_ORDER).toEqual(["model", "observed", "reported", "calibration", "scenario", "context", "exercise", "device"]);
     expect(Object.keys(COMMAND_LANES).sort()).toEqual([...COMMAND_LANE_ORDER].sort());
     expect(COMMAND_LANE_ORDER.map((lane) => commandLaneTag(lane, "en"))).toEqual(["Model", "Observed", "Reported", "Calibration", "Scenario", "Context", "Exercise · invented", "This device"]);
-    expect(COMMAND_LANE_ORDER.map((lane) => commandLaneTag(lane, "th"))).toEqual(["แบบจำลอง", "สังเกตการณ์", "ตามรายงาน", "ใช้ปรับแบบจำลอง", "สถานการณ์จำลอง", "ข้อมูลประกอบ", "ฝึกซ้อม · สมมุติขึ้น", "อุปกรณ์เครื่องนี้"]);
+    expect(COMMAND_LANE_ORDER.map((lane) => commandLaneTag(lane, "th"))).toEqual(["แบบจำลอง", "ข้อมูลที่สังเกตได้", "ตามรายงาน", "ใช้ปรับแบบจำลอง", "สถานการณ์จำลอง", "ข้อมูลประกอบ", "ฝึกซ้อม · สมมุติขึ้น", "อุปกรณ์เครื่องนี้"]);
     // A tag is short enough for a chip; its sentence is one or two short sentences.
     for (const lane of COMMAND_LANE_ORDER) {
       for (const language of LANGUAGES) {
@@ -365,10 +403,15 @@ describe("Command shell wording", () => {
     const peak = manifest.phases.find((phase) => phase.id === "peak")!;
     expect(commandPhaseShortLine(peak.label, 3.5, "en")).toBe("Peak · assumed stage 3.5 m");
     expect(commandPhaseShortLine(peak.label, 3.5, "th")).toBe("ระดับสูงสุด · ระดับสมมุติ 3.5 ม.");
-    // The chip is the short form of the model limit the replay data states.
-    expect(COMMAND_SITUATION.modelLimitShort.en).toBe("Model limit: standing water and mud are not reconstructed");
+    // The chip is the short form of the model limit the replay data states. It fits a narrow card uncut.
+    expect(COMMAND_SITUATION.modelLimitShort).toEqual({ en: "Model limit: standing water and mud not modelled", th: "ข้อจำกัดของแบบจำลอง: ไม่ได้จำลองน้ำท่วมขังและโคลน" });
     expect(COMMAND_FIGURES.modelLimit.en).toContain("standing water and mud are not reconstructed");
     expect(manifest.limitations.join(" ")).toContain("is not reconstructed");
+    // Before the river falls the chip names the other limit the replay data states: depth only, no current.
+    expect(COMMAND_SITUATION.modelCurrentShort).toEqual({ en: "Model limit: the current is not modelled", th: "ข้อจำกัดของแบบจำลอง: ไม่ได้จำลองกระแสน้ำ" });
+    expect(COMMAND_FIGURES.modelCurrent.en).toContain("The speed of the current, debris and mud are not modelled.");
+    expect(manifest.assumptions.join(" ")).toContain("Flash-flood velocity, debris and mud deposition are not modelled.");
+    for (const chip of [COMMAND_SITUATION.modelLimitShort, COMMAND_SITUATION.modelCurrentShort]) expect(chip.en.length).toBeLessThanOrEqual(48);
   });
 
   it("keys the legend to the 0.3 m depth of the replay data and says what is not modelled", () => {
@@ -402,5 +445,76 @@ describe("Command shell wording", () => {
     }
     expect(commandFacilityType("school", "th")).toBe("โรงเรียน");
     expect(commandFacilityType("unknown_kind", "en")).toBe("unknown_kind");
+  });
+});
+
+describe("Command Thai wording beside its English twin", () => {
+  /** The numbers a text prints, in order of size; the Buddhist year a Thai date adds before "(2024)" is left out. */
+  const numbers = (text: string, language: Language): string[] => {
+    const found = (text.match(/\d+(?:[.,]\d+)*/g) ?? []).map((value) => value.replace(/[.,]$/, ""));
+    return (language === "th" ? found.filter((value) => value !== "2567") : found).sort();
+  };
+
+  /**
+   * Both texts print the same numbers. A 1 or a 2 is left out of the comparison: English writes some as a word or
+   * leaves them out ("one hour", "two gauges", "per second" for "ต่อ 1 วินาที"), and an English road name can carry
+   * one ("Hwy 1"). The speeds, whose only number is such a 1, are pinned word for word in the next test.
+   */
+  const sameNumbers = (english: string, thai: string, name: string) => {
+    const counted = (values: string[]) => values.filter((value) => value !== "1" && value !== "2");
+    expect(counted(numbers(thai, "th")), name).toEqual(counted(numbers(english, "en")));
+  };
+
+  it("carries the same numbers in both languages, entry by entry and built line by built line", () => {
+    for (const { name, text } of entries()) sameNumbers(text.en, text.th, name);
+    const english = builtLines("en");
+    const thai = builtLines("th");
+    expect(thai).toHaveLength(english.length);
+    english.forEach((line, index) => sameNumbers(line, thai[index], line));
+    // The check bites: a Thai speed that names another figure, or drops one, fails it.
+    expect(() => sameNumbers("4 replay hours per second", "1 ชั่วโมงของการย้อนดูต่อ 1 วินาที", "probe")).toThrow();
+    expect(() => sameNumbers("of ~34,500 in reach", "ในระยะเดิน", "probe")).toThrow();
+  });
+
+  it("keeps every denial and every unit of the English text", () => {
+    // The page is not real-time and not an official warning, in the words the shared wording rules allow.
+    expect(COMMAND_BANNER.nature.th).toContain("ไม่ใช่ข้อมูลเรียลไทม์");
+    expect(COMMAND_BANNER.notWarning.th).toBe("ไม่ใช่คำเตือนอย่างเป็นทางการ");
+    expect(COMMAND_DRAWER.notWarning.th).toContain("ไม่ใช่คำเตือนอย่างเป็นทางการ และไม่ใช่ระบบสั่งการ");
+    // The access figure is not a count of people stranded.
+    expect(COMMAND_FIGURES.lostAccessMeaning.en).toContain("It is not a count of people stranded.");
+    expect(COMMAND_FIGURES.lostAccessMeaning.th).toContain("ตัวเลขนี้ไม่ใช่จำนวนผู้ติดค้าง");
+    // The drill speed is one replay hour per minute, not per second, and its button says so in Thai.
+    expect(COMMAND_SPEED_COPY.drill.meaning.th).toContain("ต่อ 1 นาที");
+    expect(COMMAND_SPEED_COPY.drill.short.th).toBe("1 ชม./นาที");
+    expect(COMMAND_SPEED_COPY.hour_per_second.meaning.th).toContain("ต่อ 1 วินาที");
+    // Class E never means safe; nothing is issued yet; an own-model result is a candidate to check first.
+    expect(COMMAND_TABLE.eNeverSafe.th).toBe("ระดับ E ไม่ได้หมายความว่าปลอดภัย");
+    expect(COMMAND_TABLE.notIssued.th).toBe("ยังไม่มีผลการจัดระดับ");
+    expect(COMMAND_TABLE.laneO1.th).toBe("ผลเบื้องต้นจากแบบจำลองของโครงการเอง: ต้องตรวจสอบก่อนดำเนินการ");
+    // The class of the protocol and the position of a row are two different words, and neither is the word for a water level.
+    expect(COMMAND_TABLE.planLine.th).toContain("ระดับการดำเนินการ (A–E)");
+    expect(COMMAND_TABLE.colPlanPosition.th).toBe("อันดับตามแผน");
+    expect(COMMAND_TABLE.colLost.th).toBe(COMMAND_FIGURES.changeLost.th);
+    // The peak line of a subdistrict keeps its base in Thai as in English.
+    const peak = { floodedKm2: 5.2, floodedShare: 0.31, residentsInWater: 5920, roadKmImpassable: 57.1, access: { withinReachBefore: 21400, lostAccess: 5660, lostShare: 0.264 } };
+    expect(commandPeakLines(peak, "en")[3]).toBe("~5,700 lost shelter access, of ~21,400 who had one in reach (26%)");
+    expect(commandPeakLines(peak, "th")[3]).toBe("สูญเสียการเข้าถึงที่พักพิง ~5,700 คน จาก ~21,400 คนที่เดินถึงที่พักพิงได้ก่อนน้ำท่วม (26%)");
+  });
+
+  it("never prints a rounded share that contradicts the count beside it", () => {
+    expect([0.9994, 1, 0.995, 0.994, 0.004, 0, 0.5].map(commandPercent)).toEqual([">99%", "100%", ">99%", "99%", "<1%", "0%", "50%"]);
+    // A share of a base under ten residents is left out.
+    expect([commandShareNote(0.9994, 5000), commandShareNote(1, 2.9), commandShareNote(null, 5000), commandShareNote(0.26, 21400)]).toEqual([" (>99%)", "", "", " (26%)"]);
+    expect(commandNoReachLine(4990, 4993, 0.9994, "en")).toBe("~5,000 of ~5,000 residents (>99%) had no shelter of this set within 2 km before the flood, so they can never count as having lost access.");
+    const tiny = { floodedKm2: 1.2, floodedShare: 0.9996, residentsInWater: 2312, roadKmImpassable: 20, access: { withinReachBefore: 2.9, lostAccess: 2.9, lostShare: 1 } };
+    expect(commandPeakLines(tiny, "en")).toEqual(["Modelled water over ~1.2 km² (>99% of the subdistrict)", "~2,300 residents in modelled water", "~20 km of roads impassable", "<10 lost shelter access, of <10 who had one in reach"]);
+  });
+
+  it("ends an English sentence with a full stop and a Thai one without", () => {
+    expect(commandSentences(["Not issued yet", "Fixed in time; not computed from this hour"], "en")).toBe("Not issued yet. Fixed in time; not computed from this hour.");
+    expect(commandSentences([COMMAND_TABLE.notIssued.th, COMMAND_TABLE.planLineShort.th], "th")).toBe("ยังไม่มีผลการจัดระดับ คงที่ไม่เปลี่ยนตามเวลา ไม่ได้คำนวณจากชั่วโมงนี้");
+    expect(commandSentences(["Already ends."], "en")).toBe("Already ends.");
+    expect(commandSiteGroupTitle(2, true, "en")).toBe("2 shelters reported in use in 2024 and the district command centre stand close together here.");
   });
 });

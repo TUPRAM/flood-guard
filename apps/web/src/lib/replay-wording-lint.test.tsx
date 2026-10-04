@@ -518,6 +518,7 @@ function commandPanels(language: Language): { name: string; html: string }[] {
     panel("banner", <CommandBanner language={language} onInfo={noop} infoOpen={false} />),
     panel("situation, hour 84", <MaeSaiCommandSituation language={language} hour={84} manifest={manifest} model={model} />),
     panel("situation, hour 130", <MaeSaiCommandSituation language={language} hour={130} manifest={manifest} model={model} />),
+    panel("situation, hour 44", <MaeSaiCommandSituation language={language} hour={44} manifest={manifest} model={model} />),
     panel("situation in focus mode", <MaeSaiCommandSituation language={language} hour={44} manifest={manifest} model={model} collapsed />),
     panel("time dock", <MaeSaiCommandTimebar language={language} hour={84} playing={false} speed="drill" days={commandDayChips(manifest.days)} phases={phases}
       stops={commandEventStops(manifest, model.stages)} rainfall={manifest.rainfall ?? null} onTogglePlay={noop} onStep={noop} onSeek={noop} onEvent={noop} onSpeed={noop} />),
@@ -534,7 +535,7 @@ function commandPanels(language: Language): { name: string; html: string }[] {
 }
 
 /** How many panels `commandTablePanels` renders in one language. */
-const COMMAND_TABLE_PANEL_COUNT = 30;
+const COMMAND_TABLE_PANEL_COUNT = 31;
 
 /** The panels of the subdistrict table, the inspector and the find-place box in one language. */
 function commandTablePanels(language: Language): { name: string; node: React.ReactElement }[] {
@@ -558,10 +559,10 @@ function commandTablePanels(language: Language): { name: string; node: React.Rea
   const peaks = parsePeakSummary(readJson<unknown>(manifest.exports!.files.find((file) => file.id === "tambon_replay_summary")!.href));
   const places = placeRecordsOfTambons(manifest.reported_depths!.reports, tambonFeatures);
   const facilityProps = facilityFeatures.map((feature) => feature.properties);
-  const detail = (id: string, hour: number, set: CommandShelterSet, peak: boolean) => (
+  const detail = (id: string, hour: number, set: CommandShelterSet, peak: boolean, mode?: "trainee" | "hindsight") => (
     <CommandTambonDetailBody language={language} hour={hour} detail={tambonDetailAt(model, facilityProps, hour, set, id)!} set={set} peak={peak ? peaks.get(id) ?? null : null}
       peakStatus={peak ? "ready" : "missing"} places={places.get(id) ?? []} depths={manifest.reported_depths ?? null} unlocated={model.placeRecords.unlocated}
-      cells={{ O1: null, SE1: null }} facts={{ O1: null, SE1: null }} />
+      cells={{ O1: null, SE1: null }} facts={{ O1: null, SE1: null }} mode={mode} />
   );
   // The planning overlay fixture: invented units, read in tests only, on invented rows of the left group.
   const overlay = parsePlanningAssessmentOverlay(fixtureOverlay);
@@ -586,6 +587,7 @@ function commandTablePanels(language: Language): { name: string; node: React.Rea
     ...model.tambons.map((tambon) => ({ name: `inspector ${tambon.id}`, node: detail(tambon.id, 84, "reported", true) })),
     { name: "inspector, plan set, hour 130", node: detail("TH570901", 130, "plan", true) },
     { name: "inspector without the peak summary", node: detail("TH570906", 44, "reported", false) },
+    { name: "inspector in trainee mode, before the peak", node: detail("TH570901", 44, "reported", true, "trainee") },
     ...COMMAND_PLANNING_CASES.flatMap((planningCase) => [...cells[planningCase].values()].map((cell) => ({
       name: `case card ${cell.rowId}`, node: <CommandCaseCard planningCase={planningCase} cell={cell} facts={planningFacts(overlay)} language={language} />,
     }))),
@@ -778,15 +780,21 @@ describe("Replay wording lint: current text", () => {
     for (const file of files) expect(sources.has(file), file).toBe(true);
     expect(items.filter((item) => item.source.startsWith("timeline.json")).length).toBeGreaterThan(100);
     // 75 rendered panels of the Studio replay, the Command exercise copy in its two languages, and the Command exercise
-    // page: its shell, and in each language 12 panels around the map, the panels of the table, the inspector and
+    // page: its shell, and in each language 13 panels around the map, the panels of the table, the inspector and
     // the find-place box, and the panels of the reports and of "Known by now".
-    expect(items.filter((item) => / \((en|th)\)$/.test(item.source)).length).toBe(77 + 1 + 2 * (12 + COMMAND_TABLE_PANEL_COUNT + COMMAND_REPORT_PANEL_COUNT));
+    expect(items.filter((item) => / \((en|th)\)$/.test(item.source)).length).toBe(77 + 1 + 2 * (13 + COMMAND_TABLE_PANEL_COUNT + COMMAND_REPORT_PANEL_COUNT));
     const commandRendered = items.filter((item) => /^Command (?!exercise copy)/.test(item.source));
-    expect(commandRendered).toHaveLength(1 + 2 * (12 + COMMAND_TABLE_PANEL_COUNT + COMMAND_REPORT_PANEL_COUNT));
+    expect(commandRendered).toHaveLength(1 + 2 * (13 + COMMAND_TABLE_PANEL_COUNT + COMMAND_REPORT_PANEL_COUNT));
     const commandText = commandRendered.map((item) => item.text).join(" ");
     expect(commandText).toContain("reconstructed, not real-time");
     expect(commandText).toContain("จำลองย้อนหลัง ไม่ใช่ข้อมูลเรียลไทม์");
-    expect(commandText).toContain("Model limit: standing water and mud are not reconstructed");
+    expect(commandText).toContain("Model limit: standing water and mud not modelled");
+    expect(commandText).toContain("Model limit: the current is not modelled");
+    // The model tag is text of both focus-mode cards, and the banner carries its dots as text.
+    expect(commandText).toMatch(/12 Sep 12:00 ICT\s+·\s+h 84|10 Sep 20:00 ICT\s+· h 44/);
+    expect(commandText).toMatch(/Mae Sai, September 2024\s+·\s+reconstructed, not real-time\s+·\s+not an official warning/);
+    expect(commandText).toContain("Trainee mode: the summary at the modelled peak is shown once the replay reaches that hour.");
+    expect(commandText).toContain("newly impassable: Mae Sai bypass, Phahonyothin Rd (Hwy 1) and 1 more");
     expect(commandText).toContain("not yet known at this hour");
     expect(commandText).toContain("It has not been reviewed by a native speaker.");
     expect(commandText).toContain("Not for emergency response, evacuation orders or any operational decision; not an official warning.");
@@ -818,7 +826,7 @@ describe("Replay wording lint: current text", () => {
     expect(commandCopy[0].text).toContain("Exercise replay · Mae Sai, September 2024 · reconstructed, not real-time · not an official warning");
     expect(commandCopy[0].text).toContain("~7,100 · lost shelter access · of ~34,500 in reach");
     expect(commandCopy[0].text).toContain("It has not been reviewed by a native speaker.");
-    expect(commandCopy[1].text).toContain("ฝึกซ้อมย้อนดูเหตุการณ์ · แม่สาย กันยายน 2567 (2024) · จำลองย้อนหลัง ไม่ใช่ข้อมูลเรียลไทม์ · ไม่ใช่คำเตือนทางการ");
+    expect(commandCopy[1].text).toContain("ฝึกซ้อมย้อนดูเหตุการณ์ · แม่สาย กันยายน 2567 (2024) · จำลองย้อนหลัง ไม่ใช่ข้อมูลเรียลไทม์ · ไม่ใช่คำเตือนอย่างเป็นทางการ");
     expect(commandCopy[1].text).toContain("ถนนที่เริ่มสัญจรไม่ได้: ");
     // Reported depths: the Sources entry and the legend in both languages, and the popup of every located report.
     expect(items.filter((item) => item.source.startsWith("reported-depth popup ")).length).toBe(24);

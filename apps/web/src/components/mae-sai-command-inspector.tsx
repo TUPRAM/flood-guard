@@ -35,10 +35,12 @@ import {
   commandRecordCount,
   commandRoadBase,
   commandRoadKmList,
+  commandSentences,
   commandStabilityText,
   commandText,
   commandUnlocatedRecords,
 } from "@/lib/flood-timeline-command-copy";
+import type { CommandMode } from "@/lib/flood-timeline-command-feed";
 import { commandKnownCount } from "@/lib/flood-timeline-command-reports-copy";
 import {
   COMMAND_PLANNING_CASES,
@@ -55,6 +57,7 @@ import { ACTION_TEXT } from "./command-workspace";
 import exercise from "./mae-sai-command-exercise.module.css";
 import styles from "./mae-sai-command-inspector.module.css";
 import { CommandPlanChip } from "./mae-sai-command-queue";
+import { ModelValue } from "./mae-sai-command-situation";
 
 export type CommandCardTab = "detail" | "known";
 export const COMMAND_CARD_TABS: readonly CommandCardTab[] = ["detail", "known"];
@@ -93,7 +96,7 @@ export function CommandCaseCard({ planningCase, cell, facts, language }: {
               {ACTION_TEXT[cell.letter][language]}
             </p>
           )}
-          {cell.letter === "E" && <p className={styles.never} data-command-e-never-safe>{t(COMMAND_TABLE.eNeverSafe)}.</p>}
+          {cell.letter === "E" && <p className={styles.never} data-command-e-never-safe>{commandSentences([t(COMMAND_TABLE.eNeverSafe)], language)}</p>}
           <ul className={styles.facts}>{commandPlanningFactLines(cell, facts, language).map((line) => <li key={line}>{line}</li>)}</ul>
         </>
       ) : (
@@ -126,15 +129,22 @@ export interface CommandTambonDetailProps {
   unlocated: number;
   cells: Record<CommandPlanningCase, CommandPlanningCell | null>;
   facts: Record<CommandPlanningCase, CommandPlanningFacts | null>;
+  /**
+   * Trainee mode hides what lies after the replay hour, so the summary at the modelled peak is held back until the
+   * replay reaches the peak hour. Without a mode (or in hindsight mode) the summary is shown at every hour.
+   */
+  mode?: CommandMode;
 }
 
 /** The inspector of one subdistrict. */
-export function CommandTambonDetailBody({ language, hour, detail, set, peak, peakStatus, places, depths, unlocated, cells, facts }: CommandTambonDetailProps) {
+export function CommandTambonDetailBody({ language, hour, detail, set, peak, peakStatus, places, depths, unlocated, cells, facts, mode = "hindsight" }: CommandTambonDetailProps) {
   const t = (entry: Localized) => commandText(entry, language);
   const { row } = detail;
   const records = places.reduce((sum, place) => sum + place.reports.length, 0);
   const peakHour = peak ? Math.round((Date.parse(peak.peakLocalTime) - TIMELINE_EPOCH_MS) / 3_600_000) : null;
   const peakAccess = peak?.access[set] ?? null;
+  // In trainee mode the peak is a later hour until the replay reaches it: neither its figures nor its time are shown.
+  const peakLater = mode === "trainee" && peakHour !== null && Number.isFinite(peakHour) && hour < peakHour;
   const facilityNames = detail.facilities.inWater.map((facility) => facility.name || commandFacilityType(facility.type, language));
   return (
     <div className={styles.detail} data-command-detail={row.id} lang={language}>
@@ -151,16 +161,16 @@ export function CommandTambonDetailBody({ language, hour, detail, set, peak, pea
         <p className={styles.when}>{commandMoment(hour, language)} · {commandHourOf(hour, language)}</p>
         <ul className={styles.figures}>
           <li title={t(COMMAND_FIGURES.lostAccessMeaning)}>
-            <strong>{roundModelFigure(row.lostAccess).text}</strong>
+            <strong><ModelValue text={roundModelFigure(row.lostAccess).text} /></strong>
             <span>{t(COMMAND_FIGURES.lostAccess)}</span>
             <small>{commandBaseText(detail.withinReachBefore, language, true)}</small>
           </li>
           <li title={t(COMMAND_FIGURES.inWaterMeaning)}>
-            <strong>{roundModelFigure(row.inWater).text}</strong>
+            <strong><ModelValue text={roundModelFigure(row.inWater).text} /></strong>
             <span>{t(COMMAND_FIGURES.inWater)}</span>
           </li>
           <li title={t(COMMAND_FIGURES.roadsMeaning)}>
-            <strong>{roundModelKm(detail.roadKmImpassable).text} {language === "th" ? "กม." : "km"}</strong>
+            <strong><ModelValue text={roundModelKm(detail.roadKmImpassable).text} unit={language === "th" ? "กม." : "km"} /></strong>
             <span>{t(COMMAND_FIGURES.roads)}</span>
             <small>{commandRoadBase(detail.roadKmModelled, language)}</small>
           </li>
@@ -179,12 +189,14 @@ export function CommandTambonDetailBody({ language, hour, detail, set, peak, pea
         {facilityNames.length > 0 && <p className={styles.note}><b>{t(COMMAND_INSPECTOR.facilitiesWet)}:</b> <span lang="th">{facilityNames.join(" · ")}</span></p>}
       </section>
 
-      <section data-command-section="peak">
+      <section data-command-section="peak" data-peak={peakLater ? "later" : peak ? "shown" : peakStatus}>
         <div className={styles.sectionHead}>
           <h4>{t(COMMAND_INSPECTOR.sectionPeak)}</h4>
-          {peak && peakHour !== null && Number.isFinite(peakHour) && <span className={styles.sectionMeta}>{commandMoment(peakHour, language)}</span>}
+          {peak && !peakLater && peakHour !== null && Number.isFinite(peakHour) && <span className={styles.sectionMeta}>{commandMoment(peakHour, language)}</span>}
         </div>
-        {peak ? (
+        {peakLater ? (
+          <p className={styles.note} data-command-peak-later>{t(COMMAND_INSPECTOR.peakLater)}</p>
+        ) : peak ? (
           <>
             <ul className={styles.lines}>
               {commandPeakLines({ ...peak, access: peakAccess }, language).map((line) => <li key={line}>{line}</li>)}
@@ -282,7 +294,7 @@ export function MaeSaiCommandInspector({ language, tab, onTab, onClose, detail, 
   return (
     <aside className={`${exercise.panel} ${styles.card}`} data-region="D" data-clear-panel aria-label={t(COMMAND_INSPECTOR.label)} lang={language}>
       <div className={styles.cardHead}>
-        <div className={styles.cardTabs} role="tablist" aria-label={t(COMMAND_INSPECTOR.label)}>
+        <div className={styles.cardTabs} role="tablist" aria-label={t(COMMAND_INSPECTOR.label)} data-command-card-tabs>
           {COMMAND_CARD_TABS.map((id) => (
             <button key={id} type="button" role="tab" aria-selected={id === tab} aria-controls={panel} onClick={() => onTab(id)} data-command-card-tab={id}>
               {id === "known" && knownCount !== undefined ? commandKnownCount(label[id], knownCount, language) : t(label[id])}

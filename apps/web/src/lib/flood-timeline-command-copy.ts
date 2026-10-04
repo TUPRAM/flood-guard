@@ -33,7 +33,7 @@ export const COMMAND_BANNER = {
   tag: { en: "Exercise replay", th: "ฝึกซ้อมย้อนดูเหตุการณ์" },
   place: { en: "Mae Sai, September 2024", th: "แม่สาย กันยายน 2567 (2024)" },
   nature: { en: "reconstructed, not real-time", th: "จำลองย้อนหลัง ไม่ใช่ข้อมูลเรียลไทม์" },
-  notWarning: { en: "not an official warning", th: "ไม่ใช่คำเตือนทางการ" },
+  notWarning: { en: "not an official warning", th: "ไม่ใช่คำเตือนอย่างเป็นทางการ" },
   /** Accessible name of the banner. */
   label: { en: "Exercise notice", th: "ข้อความแจ้งว่าเป็นการฝึกซ้อม" },
   /** Accessible name of the (i) button that opens the information drawer. */
@@ -63,8 +63,8 @@ export const COMMAND_CLOCK = {
   tag: { en: "Replay", th: "ย้อนดู" },
   tagMeaning: { en: "A time in September 2024, not the time now", th: "เวลาของเหตุการณ์เดือนกันยายน 2567 (2024) ไม่ใช่เวลาปัจจุบัน" },
   phase: { en: "Phase", th: "ระยะ" },
-  stage: { en: "assumed river stage", th: "ระดับแม่น้ำสมมุติ" },
-  stageNote: { en: "illustrative curve", th: "ค่าเพื่อการอธิบาย" },
+  stage: { en: "assumed stage", th: "ระดับแม่น้ำสมมุติ" },
+  stageNote: { en: "illustrative", th: "ค่าเพื่อการอธิบาย" },
   stageMeaning: {
     en: "The assumed level of the Sai River at the Mae Sai border bridges, in metres above the mapped channel. No public hourly record for September 2024 was found, so the curve is illustrative.",
     th: "ระดับแม่น้ำสายสมมุติที่สะพานข้ามแดนแม่สาย เป็นเมตรเหนือร่องน้ำในแผนที่ ไม่พบข้อมูลรายชั่วโมงที่เปิดเผยสำหรับเดือนกันยายน 2567 (2024) จึงเป็นค่าเพื่อการอธิบาย",
@@ -94,6 +94,12 @@ export function commandMomentShort(hour: number, language: Language): string {
   return `${formatShortDate(date, language)} ${time}${language === "th" ? " น." : " ICT"}`;
 }
 
+/** The clock hour of a replay hour on its own: "11:00" / "11:00 น." (the hour the "what changed" line compares with). */
+export function commandHourClock(hour: number, language: Language): string {
+  const { time } = replayClock(hour);
+  return language === "th" ? `${time} น.` : time;
+}
+
 /** "hour 84 of 264" / "ชั่วโมงที่ 84 จาก 264". */
 export function commandHourOf(hour: number, language: Language): string {
   return language === "th" ? `ชั่วโมงที่ ${hour} จาก ${COMMAND_LAST_HOUR}` : `hour ${hour} of ${COMMAND_LAST_HOUR}`;
@@ -111,7 +117,11 @@ export function commandStageText(stage: number, language: Language): string {
   return stage < 0.05 ? `<0.1 ${unit}` : `${stage.toFixed(1)} ${unit}`;
 }
 
-/** "Phase: Peak · assumed river stage 3.5 m (illustrative curve)"; `phaseLabel` is the manifest's own label. */
+/**
+ * "Phase: Peak · assumed stage 3.5 m (illustrative)"; `phaseLabel` is the manifest's own label. The line is one line
+ * at every replay hour (the longest reads "Phase: Mostly receded · assumed stage <0.1 m (illustrative)"), so the card
+ * never changes height while the replay plays. The sentence behind it is `COMMAND_CLOCK.stageMeaning`.
+ */
 export function commandPhaseLine(phaseLabel: Localized, stage: number, language: Language): string {
   return `${pick(COMMAND_CLOCK.phase, language)}: ${pick(phaseLabel, language)} · ${pick(COMMAND_CLOCK.stage, language)} ${commandStageText(stage, language)} (${pick(COMMAND_CLOCK.stageNote, language)})`;
 }
@@ -141,10 +151,15 @@ export const COMMAND_FIGURES = {
   exerciseItems: { en: "open exercise items", th: "รายการฝึกซ้อมที่ยังเปิดอยู่" },
   exerciseTag: { en: "Exercise · invented", th: "ฝึกซ้อม · สมมุติขึ้น" },
   noExerciseItems: { en: "No exercise items yet", th: "ยังไม่มีรายการฝึกซ้อม" },
+  /** The standing limit of the water layer, shown before the river falls: the replay data models depth only. */
+  modelCurrent: {
+    en: "The model gives water depth only. The speed of the current, debris and mud are not modelled.",
+    th: "แบบจำลองให้เฉพาะความลึกของน้ำ ไม่ได้จำลองความเร็วของกระแสน้ำ เศษซากที่ไหลมากับน้ำ และโคลน",
+  },
   /** Shown in the Receding and Mostly receded phases. */
   modelLimit: {
     en: "The model dries as the river falls; standing water and mud are not reconstructed.",
-    th: "แบบจำลองแห้งตามระดับแม่น้ำที่ลดลง ไม่ได้จำลองน้ำท่วมขังและโคลนที่ค้างอยู่",
+    th: "ในแบบจำลอง น้ำจะแห้งทันทีที่ระดับแม่น้ำลดลง จึงไม่ได้จำลองน้ำท่วมขังและโคลนที่ค้างอยู่",
   },
   changeLost: { en: "lost access", th: "สูญเสียการเข้าถึง" },
   changeWater: { en: "in water", th: "ในน้ำ" },
@@ -165,8 +180,13 @@ export function commandBaseText(withinReachBefore: number, language: Language, s
 /** One cell of the figures row: the rounded value, its caption, the line under it and the sentence behind it. */
 export interface CommandFigureCell {
   id: "lostAccess" | "inWater" | "roads";
+  /** The rounded value without its unit: "~7,100", "<10", "0", "~164". */
   value: string;
+  /** The unit printed small after the value ("km" / "กม."); null for a count of residents. */
+  unit: string | null;
   caption: string;
+  /** The caption of a narrow card, one line: "lost access", "in water", "roads impassable". */
+  captionShort: string;
   /** The base or total the value is part of; null when the figure has none. */
   sub: string | null;
   meaning: string;
@@ -183,21 +203,27 @@ export function commandFigureCells(figures: CommandFigures, language: Language):
     {
       id: "lostAccess",
       value: roundModelFigure(figures.lostAccess).text,
+      unit: null,
       caption: pick(COMMAND_FIGURES.lostAccess, language),
+      captionShort: pick(COMMAND_FIGURES.changeLost, language),
       sub: commandBaseText(figures.withinReachBefore, language, true),
       meaning: `${pick(COMMAND_FIGURES.lostAccessMeaning, language)} ${pick(COMMAND_FIGURES.scope, language)}`,
     },
     {
       id: "inWater",
       value: roundModelFigure(figures.inWater).text,
+      unit: null,
       caption: pick(COMMAND_FIGURES.inWater, language),
+      captionShort: pick(COMMAND_FIGURES.changeWater, language),
       sub: null,
       meaning: pick(COMMAND_FIGURES.inWaterMeaning, language),
     },
     {
       id: "roads",
-      value: `${roundModelKm(figures.roadKmImpassable).text} ${km(language)}`,
+      value: roundModelKm(figures.roadKmImpassable).text,
+      unit: km(language),
       caption: pick(COMMAND_FIGURES.roads, language),
+      captionShort: pick(COMMAND_FIGURES.roads, language),
       sub: language === "th" ? `จาก ${total} กม.` : `of ${total} km`,
       meaning: pick(COMMAND_FIGURES.roadsMeaning, language),
     },
@@ -235,46 +261,72 @@ export function commandRoadList(roads: readonly Pick<CommandRoadChange, "name">[
 
 /** The "what changed" line in parts, so the card can lay it out; `text` is the same line as one string. */
 export interface CommandChangeLine {
-  /** "Since 12 Sep 11:00" or the first-hour sentence. */
+  /** "Since 11:00" or the first-hour sentence. */
   lead: string;
-  /** "+~100 lost access", "0 in water", "+~1 km impassable"; empty when nothing moved. */
+  /** "+100 lost access", "0 in water", "+1 km impassable"; empty when nothing moved. */
   figures: string[];
-  /** Named roads cut for the first time, or passable again; null when there is none. */
+  /** The first line of the card: the lead with the three differences, or with "no change". It is never cut. */
+  summary: string;
+  /** Named roads impassable for the first time as a whole road; null when there is none. */
+  roadsCut: string | null;
+  /** Named roads passable again in the model as a whole road; null when there is none. */
+  roadsOpen: string | null;
+  /** Both road lists as one text; null when there is none. */
   roads: string | null;
   text: string;
 }
 
+/** A line of road names is kept to about this many letters, so it fits one line of the card. */
+const ROAD_LINE_CHARS = 68;
+
+/**
+ * How many letters wide a text is, roughly: Thai vowels and tone marks that stand above or below a consonant take no
+ * width of their own, so they are not counted.
+ */
+export function commandTextWidth(text: string): number {
+  return text.replace(/[\u0E31\u0E34-\u0E3A\u0E47-\u0E4E]/g, "").length;
+}
+
+/** The longest list of road names that fits one line of the card: up to `limit` names, then "and n more". */
+function fittedRoadLine(label: string, roads: readonly Pick<CommandRoadChange, "name">[], language: Language, limit: number): string {
+  for (let shown = Math.max(1, limit); shown > 1; shown -= 1) {
+    const line = `${label}: ${commandRoadList(roads, language, shown)}`;
+    if (commandTextWidth(line) <= ROAD_LINE_CHARS) return line;
+  }
+  return `${label}: ${commandRoadList(roads, language, 1)}`;
+}
+
 /**
  * What changed since the hour before, as the situation card says it. `sinceText` is the hour compared with, already
- * formatted (e.g. `formatHourStamp(change.sinceHour, language)`). Differences are rounded like the figures; only roads
- * newly impassable as a whole road (or passable again as a whole) are named.
+ * formatted (e.g. `commandHourClock(change.sinceHour, language)`). A difference is rounded like its figure and printed
+ * with its sign and no tilde ("+100", "−<10", "0"): the rounding rule is stated once, in the information drawer. Only
+ * roads newly impassable as a whole road (or passable again as a whole) are named.
  */
 export function commandChangeLine(change: CommandChange, sinceText: string, language: Language, roadLimit = 2): CommandChangeLine {
   if (change.sinceHour === null) {
     const lead = pick(COMMAND_FIGURES.firstHour, language);
-    return { lead, figures: [], roads: null, text: lead };
+    return { lead, figures: [], summary: lead, roadsCut: null, roadsOpen: null, roads: null, text: lead };
   }
   const lead = language === "th" ? `ตั้งแต่ ${sinceText}` : `Since ${sinceText}`;
+  const plain = (text: string): string => text.replace("~", "");
   const lost = roundModelChange(change.lostAccess);
   const water = roundModelChange(change.inWater);
   const roadKm = roundModelChange(change.roadKmImpassable, roundModelKm);
   const moved = lost.direction !== 0 || water.direction !== 0 || roadKm.direction !== 0;
   const figures = moved
     ? [
-        `${lost.text} ${pick(COMMAND_FIGURES.changeLost, language)}`,
-        `${water.text} ${pick(COMMAND_FIGURES.changeWater, language)}`,
-        `${roadKm.text} ${pick(COMMAND_FIGURES.changeRoads, language)}`,
+        `${plain(lost.text)} ${pick(COMMAND_FIGURES.changeLost, language)}`,
+        `${plain(water.text)} ${pick(COMMAND_FIGURES.changeWater, language)}`,
+        `${plain(roadKm.text)} ${pick(COMMAND_FIGURES.changeRoads, language)}`,
       ]
     : [];
   const cut = change.newlyImpassable.named.filter((road) => road.whole);
   const open = change.passableAgain.named.filter((road) => road.whole);
-  const roadParts = [
-    ...(cut.length > 0 ? [`${language === "th" ? "ถนนที่เริ่มสัญจรไม่ได้" : "newly impassable"}: ${commandRoadList(cut, language, roadLimit)}`] : []),
-    ...(open.length > 0 ? [`${language === "th" ? "ถนนที่กลับมาสัญจรได้" : "passable again"}: ${commandRoadList(open, language, roadLimit)}`] : []),
-  ];
-  const roads = roadParts.length > 0 ? roadParts.join(" · ") : null;
-  const body = moved ? figures.join(" · ") : pick(COMMAND_FIGURES.noChange, language);
-  return { lead, figures, roads, text: `${lead}: ${body}${roads ? ` · ${roads}` : ""}` };
+  const roadsCut = cut.length > 0 ? fittedRoadLine(language === "th" ? "ถนนที่เริ่มสัญจรไม่ได้" : "newly impassable", cut, language, roadLimit) : null;
+  const roadsOpen = open.length > 0 ? fittedRoadLine(language === "th" ? "ถนนที่กลับมาสัญจรได้ในแบบจำลอง" : "passable again in the model", open, language, roadLimit) : null;
+  const roads = roadsCut && roadsOpen ? `${roadsCut} · ${roadsOpen}` : roadsCut ?? roadsOpen;
+  const summary = `${lead}: ${moved ? figures.join(" · ") : pick(COMMAND_FIGURES.noChange, language)}`;
+  return { lead, figures, summary, roadsCut, roadsOpen, roads, text: `${summary}${roads ? ` · ${roads}` : ""}` };
 }
 
 // --- Lane tags -------------------------------------------------------------------------------------------
@@ -292,7 +344,7 @@ export const COMMAND_LANES: Readonly<Record<CommandLane, { tag: Localized; meani
     },
   },
   observed: {
-    tag: { en: "Observed", th: "สังเกตการณ์" },
+    tag: { en: "Observed", th: "ข้อมูลที่สังเกตได้" },
     meaning: {
       en: "A dated measurement or image, used as provided and shown beside the model.",
       th: "ค่าที่ตรวจวัดหรือภาพที่มีวันเวลากำกับ ใช้ตามที่ได้รับและแสดงคู่กับแบบจำลอง",
@@ -372,7 +424,7 @@ export const COMMAND_DRAWER = {
   },
   notWarning: {
     en: "Not an official warning, and not a dispatch system. FloodGuard receives no calls and sends nothing to responders. The hotlines 1784 (disaster), 1669 (medical emergency) and 191 (police) remain the official routes.",
-    th: "ไม่ใช่คำเตือนทางการ และไม่ใช่ระบบสั่งการ FloodGuard ไม่รับสายแจ้งเหตุและไม่ส่งข้อมูลถึงหน่วยกู้ภัย สายด่วน 1784 (สาธารณภัย) 1669 (การแพทย์ฉุกเฉิน) และ 191 (ตำรวจ) ยังคงเป็นช่องทางแจ้งเหตุของทางราชการ",
+    th: "ไม่ใช่คำเตือนอย่างเป็นทางการ และไม่ใช่ระบบสั่งการ FloodGuard ไม่รับสายแจ้งเหตุและไม่ส่งข้อมูลถึงหน่วยกู้ภัย สายด่วน 1784 (สาธารณภัย) 1669 (การแพทย์ฉุกเฉิน) และ 191 (ตำรวจ) ยังคงเป็นช่องทางแจ้งเหตุของทางราชการ",
   },
   notOperational: {
     en: "Not for operational decisions. It is for exercises and after-action review; it does not task real teams.",
@@ -393,8 +445,8 @@ export const COMMAND_DRAWER = {
     th: "แบบจำลองพื้นผิวความละเอียด 30 ม. ทำให้ระดับพื้นดินในเขตสิ่งปลูกสร้างสูงกว่าจริง น้ำจากแบบจำลองและจำนวนผู้อยู่อาศัยในน้ำในเขตเมืองจึงน่าจะต่ำกว่าความเป็นจริง",
   },
   rounding: {
-    en: "Modelled figures are rounded: a tilde, then the nearest 10 below 1,000 and the nearest 100 above. Counted things, such as exercise items, are plain numbers.",
-    th: "ตัวเลขจากแบบจำลองปัดเศษแล้ว: มีเครื่องหมาย ~ นำหน้า ปัดเป็นหลักสิบเมื่อต่ำกว่า 1,000 และเป็นหลักร้อยเมื่อสูงกว่านั้น ส่วนสิ่งที่นับได้จริง เช่น รายการฝึกซ้อม แสดงเป็นตัวเลขตรงตัว",
+    en: "Modelled figures are rounded: a tilde, then the nearest 10 below 1,000 and the nearest 100 above. A difference against the hour before is rounded the same way and printed with its sign and no tilde. Counted things, such as exercise items, are plain numbers.",
+    th: "ตัวเลขจากแบบจำลองปัดเศษแล้ว: มีเครื่องหมาย ~ นำหน้า ปัดเป็นหลักสิบ (10) เมื่อต่ำกว่า 1,000 และเป็นหลักร้อย (100) เมื่อสูงกว่านั้น ผลต่างเทียบกับชั่วโมงก่อนหน้าปัดเศษแบบเดียวกัน แสดงพร้อมเครื่องหมายบวกหรือลบ และไม่มีเครื่องหมาย ~ ส่วนสิ่งที่นับได้จริง เช่น รายการฝึกซ้อม แสดงเป็นตัวเลขตรงตัว",
   },
   lanesTitle: { en: "Kinds of evidence", th: "ประเภทของหลักฐาน" },
   lanesIntro: {
@@ -437,14 +489,47 @@ export const COMMAND_DRAWER_NOT: readonly (keyof typeof COMMAND_DRAWER)[] = ["no
 /** A copy entry in the page language. */
 export const commandText = pick;
 
+/**
+ * Sentences as one text. English sets a full stop after each; Thai sentences take no full stop and are set apart by a
+ * space, as Thai is written.
+ */
+export function commandSentences(parts: readonly string[], language: Language): string {
+  if (language === "th") return parts.join(" ");
+  return parts.map((part) => (/[.!?]$/.test(part) ? part : `${part}.`)).join(" ");
+}
+
+/**
+ * A share as the page prints it: "83%". A share just under the whole reads ">99%" and one just over nothing "<1%", so
+ * a rounded percentage never contradicts the count beside it.
+ */
+export function commandPercent(share: number): string {
+  const percent = Math.round(share * 100);
+  if (percent >= 100 && share < 1) return ">99%";
+  if (percent <= 0 && share > 0) return "<1%";
+  return `${percent}%`;
+}
+
+/** The share in brackets after a count: " (83%)". It is left out when the share is unknown or its base is under ten residents. */
+export function commandShareNote(share: number | null, base: number): string {
+  if (share === null || !Number.isFinite(share) || !(base >= 10)) return "";
+  return ` (${commandPercent(share)})`;
+}
+
 // --- The shell: navigation, tools, time bar, legend, notices and help -------------------------------------
 
 /** The situation card (clock and figures) beyond the figures themselves. */
 export const COMMAND_SITUATION = {
   label: { en: "Situation at the replay hour", th: "สถานการณ์ ณ ชั่วโมงของการย้อนดู" },
   /** The model-limit chip of the Receding and Mostly receded phases; the full sentence is `COMMAND_FIGURES.modelLimit`. */
-  modelLimitShort: { en: "Model limit: standing water and mud are not reconstructed", th: "ข้อจำกัดของแบบจำลอง: ไม่ได้จำลองน้ำท่วมขังและโคลน" },
+  modelLimitShort: { en: "Model limit: standing water and mud not modelled", th: "ข้อจำกัดของแบบจำลอง: ไม่ได้จำลองน้ำท่วมขังและโคลน" },
+  /** The model-limit chip of the hours before the river falls; the full sentence is `COMMAND_FIGURES.modelCurrent`. */
+  modelCurrentShort: { en: "Model limit: the current is not modelled", th: "ข้อจำกัดของแบบจำลอง: ไม่ได้จำลองกระแสน้ำ" },
   exerciseSlot: { en: "exercise items", th: "รายการฝึกซ้อม" },
+  /** Below 900 px the page keeps the banner, this card, the map and the time dock, and says what is left out. */
+  narrow: {
+    en: "Narrow window: the subdistrict table and the map tools need a window at least 900 px wide.",
+    th: "หน้าต่างแคบ: ตารางรายตำบลและเครื่องมือแผนที่ต้องใช้หน้าต่างกว้างอย่างน้อย 900 พิกเซล",
+  },
   loading: { en: "Loading the replay data", th: "กำลังโหลดข้อมูลการย้อนดู" },
   error: { en: "The replay data could not be loaded", th: "โหลดข้อมูลการย้อนดูไม่สำเร็จ" },
   retry: { en: "Try again", th: "ลองอีกครั้ง" },
@@ -481,7 +566,7 @@ export const COMMAND_TOOLS = {
   evidence: { en: "Evidence view", th: "มุมมองหลักฐาน" },
   evidenceNote: {
     en: "Not built yet: candidate sites and satellite images. The 2024 season envelope is drawn in hindsight mode.",
-    th: "ยังไม่ได้จัดทำ: สถานที่ที่เป็นไปได้และภาพถ่ายดาวเทียม ส่วนขอบเขตน้ำตลอดฤดูปี 2567 (2024) แสดงในโหมดมองย้อนหลัง",
+    th: "ยังไม่ได้จัดทำ: สถานที่ที่อาจใช้เป็นที่พักพิงและภาพถ่ายดาวเทียม ส่วนขอบเขตน้ำตลอดฤดูปี 2567 (2024) แสดงในโหมดมองย้อนหลัง",
   },
   facilities: { en: "Key facilities", th: "สถานที่สำคัญ" },
   facilitiesNote: { en: "Schools, health, emergency service and community sites from OpenStreetMap", th: "โรงเรียน สถานพยาบาล หน่วยบริการฉุกเฉิน และสถานที่ชุมชน จาก OpenStreetMap" },
@@ -529,8 +614,8 @@ export const COMMAND_SPEED_COPY: Readonly<Record<"hour_per_second" | "four_per_s
     meaning: { en: "4 replay hours per second", th: "4 ชั่วโมงของการย้อนดูต่อ 1 วินาที" },
   },
   drill: {
-    short: { en: "Drill", th: "ฝึกซ้อม" },
-    meaning: { en: "Drill speed: 1 replay hour per minute", th: "ความเร็วฝึกซ้อม: 1 ชั่วโมงของการย้อนดูต่อ 1 นาที" },
+    short: { en: "Drill", th: "1 ชม./นาที" },
+    meaning: { en: "Drill speed: 1 replay hour per minute", th: "ความเร็วสำหรับฝึกปฏิบัติ: 1 ชั่วโมงของการย้อนดูต่อ 1 นาที" },
   },
 };
 
@@ -569,7 +654,7 @@ export const COMMAND_LEGEND = {
   roadUnmodelled: { en: "not modelled", th: "ไม่ได้จำลอง" },
   places: { en: "Places", th: "สถานที่" },
   shelter: { en: "shelter reported in 2024", th: "ที่พักพิงตามรายงานปี 2567 (2024)" },
-  shelterWet: { en: "shelter, wet in the model", th: "ที่พักพิงที่มีน้ำตามแบบจำลอง" },
+  shelterWet: { en: "shelter, wet in the model", th: "ที่พักพิงที่น้ำท่วมถึงตามแบบจำลอง" },
   commandCentre: { en: "command centre (reported)", th: "ศูนย์บัญชาการ (ตามรายงาน)" },
   facility: { en: "key facility", th: "สถานที่สำคัญ" },
   facilityWet: { en: "facility in modelled water", th: "สถานที่สำคัญในน้ำตามแบบจำลอง" },
@@ -601,12 +686,23 @@ export const COMMAND_MAP = {
   unnamed: { en: "Unnamed", th: "ไม่มีชื่อ" },
 } as const satisfies Record<string, Localized>;
 
+/**
+ * "6 shelters reported in use in 2024 stand close together here.": the count mark of the district zoom. `centre` adds
+ * the district command centre, whose diamond the mark then shows beside the star.
+ */
+export function commandSiteGroupTitle(count: number, centre: boolean, language: Language): string {
+  if (language === "th") {
+    return `ที่พักพิงที่มีรายงานว่าใช้ในปี 2567 (2024) จำนวน ${count} แห่ง${centre ? " และศูนย์บัญชาการเหตุการณ์อำเภอ " : ""}อยู่ใกล้กันในบริเวณนี้`;
+  }
+  return `${count} shelters reported in use in 2024${centre ? " and the district command centre" : ""} stand close together here.`;
+}
+
 /** Credits printed on the map itself; the full list is in the information drawer. */
 export const COMMAND_CREDITS = { osm: "© OpenStreetMap contributors", terrain: "Copernicus DEM © DLR, Airbus DS" } as const;
 
 /** Types of the key facilities (OpenStreetMap). */
 export const COMMAND_FACILITY_TYPES: Readonly<Record<string, Localized>> = {
-  shelter_candidate: { en: "Possible shelter site", th: "จุดพักพิงที่เป็นไปได้" },
+  shelter_candidate: { en: "Possible shelter site", th: "สถานที่ที่อาจใช้เป็นที่พักพิง" },
   school: { en: "School", th: "โรงเรียน" },
   emergency_service: { en: "Emergency service", th: "หน่วยบริการฉุกเฉิน" },
   community_facility: { en: "Community facility", th: "สถานที่ชุมชน" },
@@ -698,9 +794,9 @@ export const COMMAND_TABLE = {
   groupPlanMeaning: { en: "Fixed in time: it does not follow the replay hour", th: "คงที่ ไม่เปลี่ยนตามชั่วโมงของการย้อนดู" },
   colPosition: { en: "Order in this hour", th: "ลำดับในชั่วโมงนี้" },
   colTambon: { en: "subdistrict", th: "ตำบล" },
-  colLost: { en: "lost access", th: "เสียการเข้าถึง" },
+  colLost: { en: "lost access", th: "สูญเสียการเข้าถึง" },
   colWater: { en: "in water", th: "ในน้ำ" },
-  colPlanPosition: { en: "Planning position", th: "ลำดับการวางแผน" },
+  colPlanPosition: { en: "Planning position", th: "อันดับตามแผน" },
   /** The mark on a row where most residents had no shelter of the set in reach before the flood. */
   noReachMeaning: {
     en: "Most residents here had no shelter of the set within a 2 km walk even before the flood, so they can never count as having lost access.",
@@ -708,37 +804,39 @@ export const COMMAND_TABLE = {
   },
   planLine: {
     en: "Planning class from the signed protocol. Fixed in time. Not computed from this replay hour.",
-    th: "ระดับการวางแผนมาจากหลักเกณฑ์ที่ลงนามแล้ว คงที่ไม่เปลี่ยนตามเวลา และไม่ได้คำนวณจากชั่วโมงนี้ของการย้อนดู",
+    th: "ระดับการดำเนินการ (A–E) มาจากหลักเกณฑ์ที่ลงนามแล้ว คงที่ไม่เปลี่ยนตามเวลา และไม่ได้คำนวณจากชั่วโมงนี้ของการย้อนดู",
   },
-  notIssued: { en: "Not issued yet", th: "ยังไม่ออกผล" },
-  notIssuedTask: { en: "Not issued yet (task E8)", th: "ยังไม่ออกผล (งาน E8)" },
+  /** The short form under the table, one line; the full sentence (`planLine`) is in the inspector and on hover. */
+  planLineShort: { en: "Fixed in time; not computed from this hour", th: "คงที่ไม่เปลี่ยนตามเวลา ไม่ได้คำนวณจากชั่วโมงนี้" },
+  notIssued: { en: "Not issued yet", th: "ยังไม่มีผลการจัดระดับ" },
+  notIssuedTask: { en: "Not issued yet (task E8)", th: "ยังไม่มีผลการจัดระดับ (งาน E8)" },
   eNeverSafe: { en: "Class E never means safe", th: "ระดับ E ไม่ได้หมายความว่าปลอดภัย" },
   noClass: { en: "No class: fewer than 100 residents", th: "ไม่จัดระดับ: ผู้อยู่อาศัยน้อยกว่า 100 คน" },
   stabilityHeld: {
     en: "headline-eligible: the class holds when one component at a time is left out",
     th: "ใช้เป็นผลหลักได้: ระดับคงเดิมเมื่อตัดองค์ประกอบออกทีละตัว",
   },
-  stabilityNotEvaluated: { en: "stability not evaluated", th: "ยังไม่ได้ประเมินความคงที่" },
-  stabilityUnstable: { en: "unstable: verify", th: "ไม่คงที่: ต้องตรวจสอบ" },
+  stabilityNotEvaluated: { en: "stability not evaluated", th: "ยังไม่ได้ประเมินความเสถียร" },
+  stabilityUnstable: { en: "unstable: verify", th: "ไม่เสถียร: ต้องตรวจสอบ" },
   /** The key of the chips, under the table once a class is issued. */
   chipKey: {
     en: "A filled chip is headline-eligible; an outlined chip: stability not evaluated; a question mark: unstable: verify.",
-    th: "ป้ายทึบ: ใช้เป็นผลหลักได้ ป้ายโปร่ง: ยังไม่ได้ประเมินความคงที่ เครื่องหมายคำถาม: ไม่คงที่ ต้องตรวจสอบ",
+    th: "ป้ายทึบ: ใช้เป็นผลหลักได้ ป้ายโปร่ง: ยังไม่ได้ประเมินความเสถียร เครื่องหมายคำถาม: ไม่เสถียร ต้องตรวจสอบ",
   },
   /** The lane of each case, as the protocol's display rule words it. */
-  laneO1: { en: "Own model candidate: verify before action", th: "ผลจากแบบจำลองของโครงการเอง: ตรวจสอบก่อนดำเนินการ" },
+  laneO1: { en: "Own model candidate: verify before action", th: "ผลเบื้องต้นจากแบบจำลองของโครงการเอง: ต้องตรวจสอบก่อนดำเนินการ" },
   laneSE1: { en: "Scenario: what-if (2024 season envelope)", th: "สถานการณ์จำลอง: กรณีสมมุติ (ขอบเขตน้ำตลอดฤดูปี 2567 (2024))" },
   orderBy: { en: "Order rows by", th: "เรียงแถวตาม" },
   orderHour: { en: "This hour", th: "ชั่วโมงนี้" },
-  orderPlanning: { en: "Planning", th: "การวางแผน" },
+  orderPlanning: { en: "Planning", th: "แผน" },
   orderPlanningOff: {
     en: "No planning position has been issued, so the rows cannot be ordered by it yet",
-    th: "ยังไม่มีการออกลำดับการวางแผน จึงยังเรียงแถวตามการวางแผนไม่ได้",
+    th: "ยังไม่มีอันดับตามแผน จึงยังเรียงแถวตามแผนไม่ได้",
   },
-  positionFrom: { en: "Planning position from", th: "ลำดับการวางแผนจาก" },
+  positionFrom: { en: "Planning position from", th: "อันดับตามแผนจาก" },
   positionFromMeaning: {
     en: "The planning position comes from one case at a time. The two cases are never averaged or counted together.",
-    th: "ลำดับการวางแผนมาจากกรณีเดียวในแต่ละครั้ง ไม่มีการเฉลี่ยหรือนับสองกรณีรวมกัน",
+    th: "อันดับตามแผนมาจากกรณีเดียวในแต่ละครั้ง ไม่มีการเฉลี่ยหรือนับสองกรณีรวมกัน",
   },
   shelterSet: { en: "Shelter set", th: "ชุดที่พักพิง" },
   setNote: {
@@ -812,14 +910,18 @@ export function commandRowChange(change: { text: string; direction: -1 | 0 | 1 }
   return `${change.text} ${pick(COMMAND_TABLE.sinceBefore, language)}`;
 }
 
-/** "Planning position from SE1" / "ลำดับการวางแผนจาก SE1". */
+/** "Planning position from SE1" / "อันดับตามแผนจาก SE1". */
 export function commandPlanPositionLabel(planningCase: "O1" | "SE1", language: Language): string {
   return `${pick(COMMAND_TABLE.positionFrom, language)} ${planningCase}`;
 }
 
 /** The title of a protocol case on its card. */
 export function commandCaseTitle(planningCase: "O1" | "SE1", language: Language): string {
-  if (planningCase === "O1") return language === "th" ? "O1 · ผลจากเรดาร์ของโครงการเอง 16 ก.ย. 2567 (2024)" : "O1 · own radar candidates, 16 Sep 2024";
+  if (planningCase === "O1") {
+    return language === "th"
+      ? "O1 · พื้นที่ที่อาจมีน้ำท่วมจากการวิเคราะห์ภาพเรดาร์ดาวเทียมของโครงการเอง 16 ก.ย. 2567 (2024)"
+      : "O1 · own radar candidates, 16 Sep 2024";
+  }
   return language === "th" ? "SE1 · ขอบเขตน้ำตลอดฤดู ส.ค.–ต.ค. 2567 (2024)" : "SE1 · season envelope, Aug–Oct 2024";
 }
 
@@ -871,6 +973,11 @@ export const COMMAND_INSPECTOR = {
     th: "จากตารางส่งออก tambon_replay_summary.json แบบจำลอง ความเชื่อมั่นต่ำ",
   },
   peakLoading: { en: "Loading the peak summary", th: "กำลังโหลดสรุป ณ ระดับน้ำสูงสุด" },
+  /** Trainee mode, before the replay reaches the hour of the modelled peak. */
+  peakLater: {
+    en: "Trainee mode: the summary at the modelled peak is shown once the replay reaches that hour.",
+    th: "โหมดผู้ฝึก: สรุป ณ ระดับน้ำสูงสุดตามแบบจำลองจะแสดงเมื่อการย้อนดูไปถึงชั่วโมงนั้น",
+  },
   peakMissing: { en: "The peak summary of the export pack could not be loaded.", th: "โหลดสรุป ณ ระดับน้ำสูงสุดจากชุดไฟล์ส่งออกไม่สำเร็จ" },
   sectionRecords: { en: "Place records here", th: "รายการตามสถานที่ในตำบลนี้" },
   recordsTag: { en: "Reported in news · not surveyed", th: "ตามรายงานข่าว · ไม่ได้สำรวจ" },
@@ -878,10 +985,10 @@ export const COMMAND_INSPECTOR = {
     en: "No located place record in this subdistrict. That is not a sign of little water.",
     th: "ไม่มีรายการตามสถานที่ที่มีจุดบนแผนที่ในตำบลนี้ ซึ่งไม่ได้แปลว่าน้ำน้อย",
   },
-  sectionPlan: { en: "Planning class · fixed in time", th: "ระดับการวางแผน · คงที่ไม่เปลี่ยนตามเวลา" },
+  sectionPlan: { en: "Planning class · fixed in time", th: "ระดับการดำเนินการ · คงที่ไม่เปลี่ยนตามเวลา" },
   notIssuedLine: {
     en: "No planning class has been issued for this subdistrict in this case.",
-    th: "ยังไม่มีการออกระดับการวางแผนของตำบลนี้ในกรณีนี้",
+    th: "ยังไม่มีผลการจัดระดับของตำบลนี้ในกรณีนี้",
   },
   action: { en: "Planning action", th: "ข้อเสนอเพื่อการวางแผน" },
   chipKnown: { en: "Known by now", th: "ทราบแล้วถึงชั่วโมงนี้" },
@@ -910,7 +1017,7 @@ export function commandFacilityCount(inWater: number, modelled: number, language
 export function commandNoReachLine(noReach: number, residents: number, share: number | null, language: Language): string {
   const part = roundModelFigure(noReach).text;
   const whole = roundModelFigure(residents).text;
-  const percent = share === null ? "" : ` (${Math.round(share * 100)}%)`;
+  const percent = commandShareNote(share, residents);
   if (language === "th") return `ผู้อยู่อาศัย ${part} จาก ${whole} คน${percent} ไม่มีที่พักพิงของชุดนี้ในระยะเดิน 2 กม. ตั้งแต่ก่อนน้ำท่วม จึงไม่นับเป็นผู้สูญเสียการเข้าถึง`;
   return `${part} of ${whole} residents${percent} had no shelter of this set within 2 km before the flood, so they can never count as having lost access.`;
 }
@@ -930,7 +1037,7 @@ export function commandPeakLines(
 ): string[] {
   const th = language === "th";
   const area = peak.floodedKm2 < 0.05 ? "0" : `~${peak.floodedKm2.toFixed(1)}`;
-  const share = peak.floodedShare === null ? "" : th ? ` (${Math.round(peak.floodedShare * 100)}% ของตำบล)` : ` (${Math.round(peak.floodedShare * 100)}% of the subdistrict)`;
+  const share = peak.floodedShare === null ? "" : th ? ` (${commandPercent(peak.floodedShare)} ของตำบล)` : ` (${commandPercent(peak.floodedShare)} of the subdistrict)`;
   const water = roundModelFigure(peak.residentsInWater).text;
   const roads = roundModelKm(peak.roadKmImpassable).text;
   const lines = th
@@ -938,7 +1045,7 @@ export function commandPeakLines(
     : [`Modelled water over ${area} km²${share}`, `${water} residents in modelled water`, `${roads} km of roads impassable`];
   if (peak.access) {
     const lost = roundModelFigure(peak.access.lostAccess).text;
-    const percent = peak.access.lostShare === null ? "" : ` (${Math.round(peak.access.lostShare * 100)}%)`;
+    const percent = commandShareNote(peak.access.lostShare, peak.access.withinReachBefore);
     lines.push(th
       ? `สูญเสียการเข้าถึงที่พักพิง ${lost} คน ${commandBaseText(peak.access.withinReachBefore, language)}${percent}`
       : `${lost} lost shelter access, ${commandBaseText(peak.access.withinReachBefore, language)}${percent}`);
@@ -948,7 +1055,7 @@ export function commandPeakLines(
 
 /** "9 more place records have no point and stay at district level." */
 export function commandUnlocatedRecords(count: number, language: Language): string {
-  if (language === "th") return `อีก ${count} รายการไม่มีจุดบนแผนที่ จึงอยู่ในระดับอำเภอ`;
+  if (language === "th") return `อีก ${count} รายการไม่มีจุดบนแผนที่ จึงแสดงเฉพาะในระดับอำเภอ`;
   return `${count} more place ${count === 1 ? "record has" : "records have"} no point and stay at district level.`;
 }
 
@@ -963,7 +1070,7 @@ export function commandPlanningFactLines(
   const anchors = facts.vulnerabilityAnchors;
   return [
     th
-      ? `ชั้นหลักฐาน ${cell.tier}${cell.lane ? ` · ช่องทาง ${cell.lane}` : ""}${cell.confidenceClass ? ` · ความเชื่อมั่น${cell.confidenceClass === "low" ? "ต่ำ" : "ปานกลาง"}` : ""}`
+      ? `ชั้นหลักฐาน ${cell.tier}${cell.lane ? ` · ประเภทหลักฐาน ${cell.lane}` : ""}${cell.confidenceClass ? ` · ความเชื่อมั่น${cell.confidenceClass === "low" ? "ต่ำ" : "ปานกลาง"}` : ""}`
       : `Tier ${cell.tier}${cell.lane ? ` · lane ${cell.lane}` : ""}${cell.confidenceClass ? ` · confidence ${cell.confidenceClass}` : ""}`,
     ...(cell.fpps === null ? [] : [th ? `คะแนนการวางแผน (FPPS) ${cell.fpps.toFixed(1)} จาก 100` : `Planning score (FPPS) ${cell.fpps.toFixed(1)} of 100`]),
     ...(cell.reasonCode ? [th ? `รหัสเหตุผล ${cell.reasonCode}` : `Reason code ${cell.reasonCode}`] : []),
@@ -996,7 +1103,7 @@ export const COMMAND_FIND = {
   noPoint: { en: "no point in the data", th: "ไม่มีจุดในข้อมูล" },
   results: { en: "Names found", th: "ชื่อที่พบ" },
   close: { en: "Close", th: "ปิด" },
-  found: { en: "Found place", th: "สถานที่ที่ค้นพบ" },
+  found: { en: "Found place", th: "สถานที่ที่พบ" },
 } as const satisfies Record<string, Localized>;
 
 /** What kind of name a search result is. A place record is a place news reported water at, not a surveyed site. */

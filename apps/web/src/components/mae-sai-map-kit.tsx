@@ -92,15 +92,20 @@ export function popupElement(lines: PopupLine[], links: { href: string; text: st
  * closing hands focus back to the marker. A popup opened with the pointer leaves focus where it is.
  *
  * `popupsOpen` tells whether the map has a popup open (the page counts them). `keyboardPopup` wires one marker that
- * already has a popup bound; `remove` takes the map's key listener away again.
+ * already has a popup bound; `remove` takes the map's key listener away again. With `consumeEscape` the Escape that
+ * closes a popup is marked as handled (`preventDefault`), so a page whose own Escape does something else (clearing a
+ * selection, say) does one thing per key press.
  */
-export function keyboardPopups(map: LeafletMap, popupsOpen: () => boolean): { keyboardPopup: (marker: Marker) => void; remove: () => void } {
+export function keyboardPopups(map: LeafletMap, popupsOpen: () => boolean, options: { consumeEscape?: boolean } = {}): { keyboardPopup: (marker: Marker) => void; remove: () => void } {
   let keyedMarker: HTMLElement | null = null;
   const mapContainer = map.getContainer();
   const onMapKey = (event: KeyboardEvent) => {
     const target = event.target instanceof HTMLElement ? event.target : null;
     if (event.key === "Enter" && target?.classList.contains("leaflet-marker-icon")) keyedMarker = target;
-    if (event.key === "Escape" && popupsOpen()) map.closePopup();
+    if (event.key === "Escape" && popupsOpen()) {
+      map.closePopup();
+      if (options.consumeEscape) event.preventDefault();
+    }
   };
   mapContainer.addEventListener("keydown", onMapKey);
   const keyboardPopup = (marker: Marker) => {

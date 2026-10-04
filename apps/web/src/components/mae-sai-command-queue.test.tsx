@@ -76,7 +76,8 @@ const findIndex = buildCommandFindIndex({ manifest, tambons: tambons.features, f
 const LANGUAGES: readonly Language[] = ["en", "th"];
 const noop = () => undefined;
 const html = (node: ReactElement) => renderToStaticMarkup(node);
-const text = (markup: string) => visibleText(markup).replace(/\s+/g, " ").trim();
+/** The text a reader sees. A model figure sets its tilde in a span of its own; the text joins it to its number again. */
+const text = (markup: string) => visibleText(markup).replace(/\s+/g, " ").replace(/~ (?=\d)/g, "~").trim();
 const lintOf = (markup: string, source: string) => describeWordingFindings(findWordingViolations(visibleText(markup), source));
 /** The text of one column group of the table: the head cells and every row's cells of that group. */
 const groupText = (markup: string, group: "hour" | "plan") => {
@@ -112,12 +113,12 @@ const fixtureTable = (language: Language, orderBy: CommandOrderBy = "hour", posi
 const NEVER_SAFE = { en: "Class E never means safe", th: "ระดับ E ไม่ได้หมายความว่าปลอดภัย" } as const;
 const count = (haystack: string, needle: string) => haystack.split(needle).length - 1;
 
-const detailOf = (id: string, language: Language, more: { hour?: number; set?: CommandShelterSet; peak?: "ready" | "loading" | "missing" } = {}) => {
+const detailOf = (id: string, language: Language, more: { hour?: number; set?: CommandShelterSet; peak?: "ready" | "loading" | "missing"; mode?: "trainee" | "hindsight" } = {}) => {
   const set = more.set ?? "reported";
   const status = more.peak ?? "ready";
   return html(<CommandTambonDetailBody language={language} hour={more.hour ?? 84} detail={tambonDetailAt(model, facilityProps, more.hour ?? 84, set, id)!} set={set}
     peak={status === "ready" ? peaks.get(id) ?? null : null} peakStatus={status} places={places.get(id) ?? []} depths={manifest.reported_depths ?? null}
-    unlocated={model.placeRecords.unlocated} cells={{ O1: null, SE1: null }} facts={{ O1: null, SE1: null }} />);
+    unlocated={model.placeRecords.unlocated} cells={{ O1: null, SE1: null }} facts={{ O1: null, SE1: null }} mode={more.mode} />);
 };
 
 describe("Subdistrict table (region B2): the rows", () => {
@@ -130,8 +131,15 @@ describe("Subdistrict table (region B2): the rows", () => {
     expect(groupText(markup, "plan")).toContain("Fixed in time: it does not follow the replay hour");
     expect([...markup.matchAll(/data-tambon="(TH\d+)"/g)].map((match) => match[1])).toHaveLength(8);
     // Column captions of the two groups.
-    expect(groupText(markup, "hour")).toContain("subdistrict lost access in water");
+    expect(groupText(markup, "hour")).toMatch(/# subdistrict (?:This hour · model )?lost access in water/);
     expect(groupText(markup, "plan")).toMatch(/O1 SE1 #/);
+    // A narrow card has no line of group titles: there the left group is named in the captions row, by a dashed tag
+    // that a screen reader skips (it has the group title already), and every row's plan cells wear the lock.
+    expect(markup).toMatch(/<span class="[^"]*laneTag[^"]*headTag[^"]*" title="Model · low confidence" aria-hidden="true">This hour · model<\/span>/);
+    expect(count(markup, "pillLock")).toBe(8);
+    // A table holds rows only: the line a screen reader hears when the order is held stands beside it.
+    expect(markup).toMatch(/^<span class="[^"]*" role="status" data-command-order-status="true"><\/span><div class="[^"]*" role="table"/);
+    expect(/role="table".*$/s.exec(markup)![0]).not.toContain('role="status"');
   });
 
   it("prints replay hour 84 as the plan's wireframe does, Thai name first", () => {
@@ -220,8 +228,15 @@ describe("Subdistrict table: the honest empty state of the plan group", () => {
     expect(count(plan, "Planning position from SE1: Not issued yet")).toBe(8);
     // The SE1 chip says it twice too; the eight positions above end in the same words.
     expect(count(plan, "SE1: Not issued yet")).toBe(2 * 8 + 8);
-    expect(text(markup)).toContain("Not issued yet. Planning class from the signed protocol. Fixed in time. Not computed from this replay hour.");
-    expect(text(table("th"))).toContain("ยังไม่ออกผล. ระดับการวางแผนมาจากหลักเกณฑ์ที่ลงนามแล้ว");
+    // The footer is one short line; the full sentence is its title, and a screen reader hears it with the table.
+    const note = (source: string) => /<p[^>]*data-command-plan-note[^>]*>(.*?)<\/p>/.exec(source)![0];
+    expect(note(markup)).toContain('title="Planning class from the signed protocol. Fixed in time. Not computed from this replay hour."');
+    expect(text(note(markup))).toContain("Not issued yet. Fixed in time; not computed from this hour. Planning class from the signed protocol. Fixed in time. Not computed from this replay hour.");
+    expect(note(markup)).toMatch(/<span aria-hidden="true">Fixed in time; not computed from this hour\.<\/span>/);
+    // Thai sentences take no full stop.
+    const thai = note(table("th"));
+    expect(text(thai)).toContain("ยังไม่มีผลการจัดระดับ คงที่ไม่เปลี่ยนตามเวลา ไม่ได้คำนวณจากชั่วโมงนี้ ระดับการดำเนินการ (A–E) มาจากหลักเกณฑ์ที่ลงนามแล้ว");
+    for (const [word] of text(table("th")).matchAll(/[\u0E00-\u0E7F]+\./g)) expect(word).toMatch(/(?:ชม|กม|ม|น)\.$/);
     // No class is shown, so nothing is said about class E.
     expect(text(markup)).not.toContain(NEVER_SAFE.en);
     // The fixture never appears on the page: no invented unit is in a table of the real subdistricts.
@@ -274,7 +289,7 @@ describe("Subdistrict table: the plan group with classes (fixture units on both 
     expect(position(fixtureTable("en", "hour", "O1"))).toEqual(["FX-U03:–:O1", "FX-U13:–:O1", "FX-U14:2:O1", "FX-U15:1:O1", "FX-U01:–:O1"]);
     // Ordered by planning, the rows follow that position; this hour's place of each row stays in the left group.
     const byPlanning = fixtureTable("en", "planning", "SE1");
-    expect([...byPlanning.matchAll(/data-tambon="(FX-U\d+)"/g)].map((match) => match[1])).toEqual(["FX-U13", "FX-U03", "FX-U14", "FX-U15", "FX-U01"]);
+    expect([...byPlanning.matchAll(/data-tambon="(FX-U\d+)"/g)].map((match) => match[1])).toEqual(["FX-U13", "FX-U03", "FX-U01", "FX-U14", "FX-U15"]);
   });
 
   it("reads unstable: verify, and gives no class to a unit under 100 residents", () => {
@@ -286,7 +301,7 @@ describe("Subdistrict table: the plan group with classes (fixture units on both 
     const small = html(<CommandPlanChip planningCase="O1" cell={planningCellOfRow(row("obs-t3-c6-gr1-no-class"), "O1")} language="en" />);
     expect(small).toContain('data-state="empty"');
     expect(text(small)).toContain("No class: fewer than 100 residents");
-    expect(text(html(<CommandPlanChip planningCase="SE1" cell={null} language="th" />))).toContain("SE1: ยังไม่ออกผล");
+    expect(text(html(<CommandPlanChip planningCase="SE1" cell={null} language="th" />))).toContain("SE1: ยังไม่มีผลการจัดระดับ");
   });
 });
 
@@ -307,7 +322,7 @@ describe("Subdistrict table: the controls and the card", () => {
     expect(text(markup)).toContain("All residents at road nodes · figures change with the set · no set is graded");
     expect(text(markup)).toContain("The first 8 sites of the ranked plan: candidates to verify, not a list of sites to open");
     expect(text(markup)).toContain("The 12 located sites among the shelters reported in use in 2024");
-    expect(text(controls("th"))).toContain("เรียงแถวตาม ชั่วโมงนี้ การวางแผน");
+    expect(text(controls("th"))).toContain("เรียงแถวตาม ชั่วโมงนี้ แผน อันดับตามแผนจาก O1 SE1");
     expect(text(controls("th"))).toContain("นับผู้อยู่อาศัยทั้งหมดที่จุดถนน · ตัวเลขเปลี่ยนตามชุดที่เลือก · ไม่ได้ตัดสินชุดใด");
   });
 
@@ -336,11 +351,14 @@ describe("Subdistrict table: the controls and the card", () => {
     expect(text(html(<MaeSaiCommandQueue {...queueProps("th", { rows: null, failed: true })} />))).toContain("โหลดข้อมูลการย้อนดูไม่สำเร็จ");
   });
 
-  it("is one line with the top row in focus mode", () => {
+  it("shows the top row in focus mode, with the model tag in sight over its two figures", () => {
     const markup = html(<MaeSaiCommandQueue {...queueProps("en", { collapsed: true })} />);
     expect(markup).toContain('data-state="collapsed"');
-    expect(text(markup)).toContain("1 แม่สาย Mae Sai ~5,700 lost access · ~5,900 in water");
-    expect(text(markup)).toContain("Model · low confidence");
+    expect(text(markup)).toContain("1 แม่สาย Mae Sai Model · low confidence ~5,700 lost access · ~5,900 in water");
+    // The tag is text of the card, not a tooltip: a photo of focus mode, or a touch screen, still shows it.
+    expect(markup).toMatch(/<span class="[^"]*laneTag[^"]*" data-command-lane="model">Model · low confidence<\/span>/);
+    expect(markup).not.toMatch(/title="Model · low confidence"/);
+    expect(html(<MaeSaiCommandQueue {...queueProps("th", { collapsed: true })} />)).toMatch(/data-command-lane="model">แบบจำลอง · ความเชื่อมั่นต่ำ<\/span>/);
     expect(markup).not.toContain("data-command-table");
   });
 
@@ -405,6 +423,24 @@ describe("Inspector of a subdistrict (region D, Detail)", () => {
     expect(text(detailOf("TH570908", "en"))).toContain("No located place record in this subdistrict. That is not a sign of little water.");
   });
 
+  it("holds the summary at the modelled peak back in trainee mode until the replay reaches the peak hour", () => {
+    // The page opens on 10 Sep 12:00 (replay hour 36), two days before the modelled peak of 12 Sep 12:00 (hour 84).
+    const early = detailOf("TH570901", "en", { hour: 36, mode: "trainee" });
+    expect(early).toContain('data-peak="later"');
+    expect(text(early)).toContain("At the modelled peak Trainee mode: the summary at the modelled peak is shown once the replay reaches that hour.");
+    // Neither the figures of the peak nor its time are on the card before that hour.
+    expect(text(early)).not.toContain("12 Sep 2024 · 12:00 ICT");
+    expect(text(early)).not.toContain("~5,900 residents in modelled water");
+    expect(text(early)).not.toContain("tambon_replay_summary.json");
+    expect(text(detailOf("TH570901", "th", { hour: 83, mode: "trainee" }))).toContain("โหมดผู้ฝึก: สรุป ณ ระดับน้ำสูงสุดตามแบบจำลองจะแสดงเมื่อการย้อนดูไปถึงชั่วโมงนั้น");
+    // From the peak hour on, and at every hour in hindsight mode, the summary is shown.
+    for (const markup of [detailOf("TH570901", "en", { hour: 84, mode: "trainee" }), detailOf("TH570901", "en", { hour: 200, mode: "trainee" }), detailOf("TH570901", "en", { hour: 36, mode: "hindsight" })]) {
+      expect(markup).toContain('data-peak="shown"');
+      expect(text(markup)).toContain("At the modelled peak 12 Sep 2024 · 12:00 ICT");
+      expect(text(markup)).toContain("~5,900 residents in modelled water");
+    }
+  });
+
   it("shows one card per protocol case, which today reads Not issued yet (task E8)", () => {
     for (const id of model.tambons.map((tambon) => tambon.id)) {
       const markup = detailOf(id, "en");
@@ -417,7 +453,10 @@ describe("Inspector of a subdistrict (region D, Detail)", () => {
     expect(plain).toContain("O1 · own radar candidates, 16 Sep 2024 Own model candidate: verify before action");
     expect(plain).toContain("SE1 · season envelope, Aug–Oct 2024 Scenario: what-if (2024 season envelope)");
     expect(plain).toContain("No planning class has been issued for this subdistrict in this case.");
-    expect(count(text(detailOf("TH570901", "th")), "ยังไม่ออกผล (งาน E8)")).toBe(2);
+    expect(count(text(detailOf("TH570901", "th")), "ยังไม่มีผลการจัดระดับ (งาน E8)")).toBe(2);
+    // The Thai page names the class and the position with two different words.
+    expect(text(detailOf("TH570901", "th"))).toContain("ระดับการดำเนินการ · คงที่ไม่เปลี่ยนตามเวลา ระดับการดำเนินการ (A–E) มาจากหลักเกณฑ์ที่ลงนามแล้ว");
+    expect(text(detailOf("TH570901", "th"))).toContain("O1 · พื้นที่ที่อาจมีน้ำท่วมจากการวิเคราะห์ภาพเรดาร์ดาวเทียมของโครงการเอง 16 ก.ย. 2567 (2024) ผลเบื้องต้นจากแบบจำลองของโครงการเอง: ต้องตรวจสอบก่อนดำเนินการ");
   });
 
   it("prints the class name, the action text and Class E never means safe with every E (fixture units)", () => {
@@ -428,7 +467,9 @@ describe("Inspector of a subdistrict (region D, Detail)", () => {
         const markup = card(planningCase, unit, language);
         expect(markup).toContain('data-issued="true"');
         expect(markup).toContain("data-command-e-never-safe");
-        expect(text(markup)).toContain(`${NEVER_SAFE[language]}.`);
+        // An English sentence ends with a full stop; a Thai one does not.
+        expect(text(markup)).toContain(language === "th" ? `${NEVER_SAFE.th} ` : `${NEVER_SAFE.en}.`);
+        if (language === "th") expect(text(markup)).not.toContain(`${NEVER_SAFE.th}.`);
         expect(text(markup)).toContain(ACTION_TEXT.E[language]);
       }
       const classC = card("SE1", "FX-U03", language);

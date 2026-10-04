@@ -1128,13 +1128,37 @@ try {
     const x = box.left + box.width / 2;
     const y = box.top + box.height / 2;
     const hit = document.elementFromPoint(x, y);
-    return { x, y, width: box.width, reports: marker.dataset.reports, own: hit === marker || marker.contains(hit), hit: hit ? `${hit.tagName} ${hit.className}`.slice(0, 80) : "nothing" };
+    // Map chrome (the legend chip, the notes, the layers drawer) is not a map object: a reader drags the map out from under it.
+    const chrome = Boolean(hit) && !hit.closest(".leaflet-pane");
+    const named = hit?.closest("[data-testid]");
+    const what = hit ? `${hit.tagName} ${hit.className}`.trim().slice(0, 80) + (named ? ` in ${named.dataset.testid}` : "") : "nothing";
+    return { x, y, width: box.width, reports: marker.dataset.reports, own: hit === marker || marker.contains(hit), chrome, hit: what };
   }));
+  /** A point of the map that no chrome, control, marker or popup covers, nearest to the map's centre (null when there is none). */
+  const clearMapPoint = (target) => target.locator(".leaflet-container").evaluate((element) => {
+    const box = element.getBoundingClientRect();
+    const free = [];
+    for (let row = 2; row < 19; row += 1) {
+      for (let col = 2; col < 19; col += 1) {
+        const x = box.left + (box.width * col) / 20;
+        const y = box.top + (box.height * row) / 20;
+        if (y < 4 || y > window.innerHeight - 4) continue;
+        const hit = document.elementFromPoint(x, y);
+        if (hit && hit.closest(".leaflet-pane") && !hit.closest(".leaflet-marker-icon, .leaflet-popup")) free.push({ x, y });
+      }
+    }
+    const cx = box.left + box.width / 2;
+    const cy = box.top + box.height / 2;
+    free.sort((a, b) => Math.hypot(a.x - cx, a.y - cy) - Math.hypot(b.x - cx, b.y - cy));
+    return free[0] ?? null;
+  });
   /** Drags the map so the point (x, y) moves to the map's centre, from a spot of the map that is no marker or control. */
   const centreMapOn = async (target, x, y) => {
     const map = await target.locator(".leaflet-container").boundingBox();
-    const dx = map.x + map.width / 2 - x;
-    const dy = map.y + map.height / 2 - y;
+    await dragMapBy(target, map.x + map.width / 2 - x, map.y + map.height / 2 - y);
+  };
+  /** Drags the map by (dx, dy) px, from a spot of the map that is no marker or control. */
+  const dragMapBy = async (target, dx, dy) => {
     const from = await target.locator(".leaflet-container").evaluate((element, [dx, dy]) => {
       const box = element.getBoundingClientRect();
       for (let row = 1; row < 10; row += 1) {
@@ -1185,9 +1209,16 @@ try {
     for (let index = 0; index < count; index += 1) {
       const before = (await depthSpots(target))[index];
       await centreMapOn(target, before.x, before.y);
-      const spot = (await depthSpots(target))[index];
+      let spot = (await depthSpots(target))[index];
       assert(spot.width >= 24, `${label}: marker ${spot.reports} is at least 24 px wide (${spot.width})`);
-      assert(spot.own, `${label}: nothing covers the centre of marker ${spot.reports} (${spot.hit})`);
+      if (!spot.own && spot.chrome) {
+        // Map chrome sits over the middle of this map (a legend chip on a narrow phone, say): bring the marker into the clear.
+        const clear = await clearMapPoint(target);
+        assert(clear, `${label}: the map keeps a clear spot to bring marker ${spot.reports} to (its centre is under ${spot.hit})`);
+        await dragMapBy(target, clear.x - spot.x, clear.y - spot.y);
+        spot = (await depthSpots(target))[index];
+      }
+      assert(spot.own, `${label}: no shelter, marker or map chrome covers the centre of marker ${spot.reports} once it is in the clear (${spot.hit})`);
       if (tap) await target.touchscreen.tap(spot.x, spot.y);
       else await target.mouse.click(spot.x, spot.y);
       await expect(popup, `${label}: marker ${spot.reports} opens a reported-depth popup`).toBeVisible();

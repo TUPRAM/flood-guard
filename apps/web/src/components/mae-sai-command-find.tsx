@@ -52,8 +52,13 @@ export function MaeSaiCommandFind({ language, index, onPick, onClose, initialQue
   const results = useMemo(() => searchCommandPlaces(index, query, COMMAND_FIND_LIMIT), [index, query]);
   const typed = query.trim() !== "";
   const current = Math.min(active, Math.max(0, results.length - 1));
+  // The box takes the keyboard when it opens, and hands it back to where it was (the find tool) when it closes.
   useEffect(() => {
+    const before = document.activeElement;
     field.current?.focus({ preventScroll: true });
+    return () => {
+      if (before instanceof HTMLElement && before.isConnected) before.focus({ preventScroll: true });
+    };
   }, []);
   const pick = (entry: CommandFindEntry | undefined) => { if (entry?.target) onPick(entry); };
   const onKey = (event: KeyboardEvent<HTMLInputElement>) => {

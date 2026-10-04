@@ -6,7 +6,7 @@ import { collectEvidenceLibraryAssets } from "./evidence-library-assets.mjs";
 import { readCaseReplay } from "./case-replay-inventory.mjs";
 
 const out = resolve(process.cwd(), "out");
-const routeFiles = ["index.html", "public/index.html", "public-cases/index.html", "command/index.html", "command/cases/index.html", "command/archive/index.html", "studio/index.html", "studio/planning-evidence/index.html", "studio/library/index.html", "studio/brief/index.html", "studio/archive/index.html"];
+const routeFiles = ["index.html", "public/index.html", "public-cases/index.html", "command/index.html", "command/cases/index.html", "command/archive/index.html", "studio/index.html", "studio/planning-evidence/index.html", "studio/candidate-report/index.html", "studio/library/index.html", "studio/brief/index.html", "studio/archive/index.html"];
 const requiredPublicAssets = [
   "manifest.webmanifest",
   "sw.js",
@@ -65,6 +65,11 @@ const routeExpectations = {
     /Observed-data validation/i,
     /Operational authorization/i,
   ],
+  "studio/candidate-report/index.html": [
+    /Evidence status and decision boundary/i,
+    /verified checksum does not qualify/i,
+    /Loading case catalog/i,
+  ],
   "studio/library/index.html": [/Study-area evidence library/i, /Non-operational/i, /Candidate research evidence/i],
   "studio/brief/index.html": [/Study-area decision brief/i, /Non-operational/i, /Candidate research evidence/i],
   "studio/archive/index.html": [/Historical Mae Sai technical report/i, /separate evidence context/i],
@@ -105,7 +110,7 @@ if (
 ) {
   throw new Error("Service worker does not use a content-derived cache version");
 }
-for (const route of ["/", "/public/", "/public-cases/", "/command/", "/command/cases/", "/command/archive/", "/studio/", "/studio/planning-evidence/", "/studio/library/", "/studio/brief/", "/studio/archive/", ...collectEvidenceLibraryAssets(out)]) {
+for (const route of ["/", "/public/", "/public-cases/", "/command/", "/command/cases/", "/command/archive/", "/studio/", "/studio/planning-evidence/", "/studio/candidate-report/", "/studio/library/", "/studio/brief/", "/studio/archive/", ...collectEvidenceLibraryAssets(out)]) {
   if (!serviceWorker.includes(`"${route}"`)) throw new Error(`Service worker does not precache ${route}`);
 }
 if (!serviceWorker.includes("requestUrl.origin !== self.location.origin")) {
@@ -127,7 +132,9 @@ for (const url of generatedAssets) {
     throw new Error(`Offline production chunk is invalid: ${url}`);
   }
 }
-if (serviceWorker.includes('"/landing/')) {
+// Landing artwork may be named in the worker's optional, deferred list; it must not be in the blocking one.
+const mandatoryAssets = serviceWorker.match(/const CORE_ASSETS = (\[[^;]*\]);/)?.[1];
+if (!mandatoryAssets || JSON.parse(mandatoryAssets).some((url) => url.startsWith("/landing/"))) {
   throw new Error("Optional landing imagery is part of the mandatory offline cache.");
 }
 const dynamicManifestPaths = [

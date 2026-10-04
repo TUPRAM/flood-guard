@@ -220,7 +220,7 @@ async function verifyMainSurfaces(page, offline) {
   const query = "aoi=" + reference.aoi_id + "&event=" + reference.event_id + "&version=" + catalog.package_version
     + "&service=hospital&mode=walking&scenario=" + projectedVariant.candidate_flood_scenario_id;
   await page.goto(origin + "/public/?" + query, { waitUntil: "domcontentloaded" });
-  if (await page.evaluate(() => document.documentElement.lang) === "th") await page.getByRole("button", { name: "Use English", exact: true }).click();
+  await switchPublicToEnglish(page);
   const researchLink = page.locator(".public-home-research-link");
   await researchLink.waitFor();
   if (!(await researchLink.getAttribute("href"))?.includes(query)) throw new Error("Public home research link lost the selected case or scenario");
@@ -269,6 +269,9 @@ async function verifyMainSurfaces(page, offline) {
   if (new URL(page.url()).searchParams.get("scenario") !== projectedVariant.candidate_flood_scenario_id) throw new Error("Studio reload lost the scenario");
   await page.getByRole("button", { name: "ใช้ภาษาไทย", exact: true }).click();
   await page.locator('[data-shared-case="studio"]').getByRole("navigation", { name: "พื้นที่หลัก" }).getByRole("link", { name: "ประชาชน" }).click();
+  // The static document language is English; the Public page applies the saved language when it hydrates.
+  await page.locator("main.public-page").waitFor();
+  await page.waitForFunction(() => document.documentElement.lang === "th", null, { timeout: 10_000 }).catch(() => undefined);
   if (await page.evaluate(() => document.documentElement.lang) !== "th") throw new Error("Thai preference was lost on Studio to Public transition");
   await page.setViewportSize({ width: 390, height: 844 });
   if (await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1)) throw new Error("Main Public page overflows the mobile viewport");
@@ -281,7 +284,7 @@ async function verifyMainSurfaces(page, offline) {
   if (await page.locator("[data-public-case-summary]").count()) throw new Error("Unknown Public case displayed another case");
   for (const [path, role, lowerSelector] of [
     ["/command/", "planning", "[data-planning-candidate]"],
-    ["/studio/", "studio", "[data-evidence-case-id]"],
+    ["/studio/candidate-report/", "studio", "[data-evidence-case-id]"],
   ]) {
     await page.goto(origin + path + "?aoi=unknown&event=unknown", { waitUntil: "domcontentloaded" });
     const card = page.locator('[data-shared-case="' + role + '"]');
@@ -294,12 +297,32 @@ async function verifyMainSurfaces(page, offline) {
   }
 }
 
+/**
+ * Put the Public page in English. The static document language is English while the page itself starts in the
+ * saved (or default Thai) language once it hydrates, so the toggle is pressed until it reports English and stays so.
+ */
+async function switchPublicToEnglish(page) {
+  const english = page.getByRole("button", { name: "Use English", exact: true });
+  await english.waitFor();
+  for (let attempt = 0; attempt < 40; attempt += 1) {
+    const inEnglish = async () => await english.getAttribute("aria-pressed") === "true"
+      && await page.evaluate(() => document.documentElement.lang) === "en";
+    if (await inEnglish()) {
+      await page.waitForTimeout(250);
+      if (await inEnglish()) return;
+    }
+    await english.click();
+    await page.waitForTimeout(250);
+  }
+  throw new Error("The Public page did not switch to English");
+}
+
 async function verifyRoleUrlSynchronization(page) {
   const first = catalog.packages[0];
   const alternative = catalog.packages.find((item) => item.aoi_id.startsWith("aoi-03")) ?? catalog.packages[1];
   for (const [path, role, lowerSelector, detailPath] of [
     ["/command/", "planning", "[data-planning-candidate]", "/command/cases/"],
-    ["/studio/", "studio", "[data-evidence-case-id]", "/studio/library/"],
+    ["/studio/candidate-report/", "studio", "[data-evidence-case-id]", "/studio/library/"],
   ]) {
     await page.goto(origin + path + "?aoi=" + first.aoi_id + "&event=" + first.event_id + "&version=" + catalog.package_version, { waitUntil: "domcontentloaded" });
     const top = page.locator('[data-shared-case="' + role + '"]');

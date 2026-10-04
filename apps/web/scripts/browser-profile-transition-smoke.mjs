@@ -192,7 +192,7 @@ try {
     throw new Error(`Competition cache survived the public-profile transition: ${JSON.stringify(publicCacheAudit)}`);
   }
   if (publicCacheAudit.paths.some((path) => path.startsWith("/landing/"))) throw new Error("Public cache retained competition artwork after downgrade.");
-  for (const forbidden of ["/policy/", "/command/", "/studio/", "/studio/library/", "/studio/brief/", "/evidence-library/catalog.json", "/offline-demo/mae-sai/roads.json", "/offline-demo/mae-sai/facilities.json"]) {
+  for (const forbidden of ["/policy/", "/command/", "/studio/", "/studio/candidate-report/", "/studio/library/", "/studio/brief/", "/evidence-library/catalog.json", "/offline-demo/mae-sai/roads.json", "/offline-demo/mae-sai/facilities.json"]) {
     if (publicCacheAudit.paths.includes(forbidden)) throw new Error(`Public cache retained ${forbidden} after transition.`);
   }
   await performSuccessfulUpdateCheck(page);
@@ -269,15 +269,24 @@ try {
   phase = "competition offline staff-route recovery";
   offlineMode = true;
   await context.setOffline(true);
-  for (const [path, selector] of [["/studio/brief/", "main[data-evidence-library]"], ["/studio/library/", "main[data-evidence-library]"], ["/command/", "main[data-planning-candidate]"], ["/studio/", "main[data-evidence-case-id]"]]) {
+  // The map-bearing planning page is the historical archive; the current overview and the Studio pages have no map.
+  const mapRoute = "/command/archive/";
+  for (const [path, selector] of [
+    ["/studio/brief/", "main[data-evidence-library]"],
+    ["/studio/library/", "main[data-evidence-library]"],
+    ["/command/", "main[data-planning-candidate]"],
+    [mapRoute, "main.command-page"],
+    ["/studio/candidate-report/", "main[data-evidence-case-id]"],
+    ["/studio/", "main.studio-page"],
+  ]) {
     await page.goto(`${baseUrl}${path}`, { waitUntil: "domcontentloaded" });
     await page.locator(selector).waitFor({ state: "visible" });
     await assertAvailabilityPanel(page, { online: false, ready: true });
     await page.waitForFunction((state) => (
       document.querySelector("[data-map-availability]")?.getAttribute("data-map-availability") === state
-    ), path === "/command/" ? "offline" : "none");
+    ), path === mapRoute ? "offline" : "none");
     const rows = await readAvailabilityRows(page);
-    const expectedBackground = path === "/command/" ? "Map background offline" : "No map background active";
+    const expectedBackground = path === mapRoute ? "Map background offline" : "No map background active";
     if (rows["Map backgrounds"] !== expectedBackground) {
       throw new Error(`${path} offline map-background status is misleading: ${JSON.stringify(rows)}`);
     }

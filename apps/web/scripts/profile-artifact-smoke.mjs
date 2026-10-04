@@ -136,7 +136,7 @@ function validatePublicProduction() {
     if (hit) throw new Error(`Public profile contains staff-only sentinel ${JSON.stringify(forbidden)} in ${hit}`);
     if (serviceWorker.includes(forbidden)) throw new Error(`Public service-worker cache inventory contains ${forbidden}`);
   }
-  for (const route of ["/command/", "/command/cases/", "/command/archive/", "/studio/", "/studio/library/", "/studio/brief/", "/studio/archive/", "/policy/"]) {
+  for (const route of ["/command/", "/command/cases/", "/command/archive/", "/studio/", "/studio/candidate-report/", "/studio/library/", "/studio/brief/", "/studio/archive/", "/policy/"]) {
     if (serviceWorker.includes(`"${route}"`)) throw new Error(`Public cache list contains staff route ${route}`);
   }
   // Also no page below those routes (e.g. the /studio/ case replay) in the built precache list.
@@ -190,6 +190,7 @@ function validateCompetition() {
     "studio/studies/c2s-ms-20260915/mae-sai/index.html",
     "studies/c2s-ms-20260915/r1/manifest.json",
     timelineManifestUrl().slice(1),
+    "studio/candidate-report/index.html",
     "studio/library/index.html",
     "studio/brief/index.html",
     "studio/archive/index.html",
@@ -245,7 +246,7 @@ function validateCompetition() {
       throw new Error(`Competition profile published an unapproved aerial reference: ${name}`);
     }
   }
-  for (const route of ["/", "/public/", "/public-cases/", "/command/", "/command/cases/", "/command/archive/", "/studio/", "/studio/library/", "/studio/brief/", "/studio/archive/", "/policy/", ...collectEvidenceLibraryAssets(out), ...collectPublicCaseAssets(out), ...collectCaseBriefAssets(out)]) {
+  for (const route of ["/", "/public/", "/public-cases/", "/command/", "/command/cases/", "/command/archive/", "/studio/", "/studio/planning-evidence/", "/studio/candidate-report/", "/studio/library/", "/studio/brief/", "/studio/archive/", "/policy/", ...collectEvidenceLibraryAssets(out), ...collectPublicCaseAssets(out), ...collectCaseBriefAssets(out)]) {
     if (!serviceWorker.includes(`"${route}"`)) throw new Error(`Competition cache list omits ${route}`);
   }
   const bundle = readJson("offline-demo/mae-sai/bundle.json");

@@ -168,7 +168,7 @@ try {
   if (await page.locator('a[href^="/command"], a[href^="/studio"], a[href^="/policy"]').count()) {
     throw new Error("Public profile root exposes a competition-only link.");
   }
-  for (const staffRoute of ["/public-cases/", "/command/", "/command/cases/", "/command/archive/", "/studio/", "/studio/library/", "/studio/brief/", "/studio/archive/"]) {
+  for (const staffRoute of ["/public-cases/", "/command/", "/command/cases/", "/command/archive/", "/studio/", "/studio/planning-evidence/", "/studio/candidate-report/", "/studio/library/", "/studio/brief/", "/studio/archive/"]) {
     const response = await context.request.get(`${baseUrl}${staffRoute}`);
     if (response.status() !== 404) throw new Error(`Public profile staff route did not return 404: ${staffRoute}: ${response.status()}`);
   }

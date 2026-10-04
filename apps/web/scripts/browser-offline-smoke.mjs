@@ -70,6 +70,7 @@ const routes = [
   { path: "/command/archive/", selector: "main.command-page" },
   { path: "/studio/", selector: "main.studio-page" },
   { path: "/studio/planning-evidence/", selector: "main.studio-page" },
+  { path: "/studio/candidate-report/", selector: "main[data-evidence-case-id]" },
   { path: "/studio/library/", selector: "main[data-evidence-library]" },
   { path: "/studio/brief/", selector: "main[data-evidence-library]" },
   { path: "/studio/archive/", selector: "main.studio-page" },
@@ -152,7 +153,7 @@ try {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`${baseUrl}/`, { waitUntil: "networkidle" });
   const rootBody = await page.locator("body").innerText();
-  if (!rootBody.includes("Synthetic illustration") || !rootBody.toLowerCase().includes("not a confirmed closure")) throw new Error("Landing illustration and assumed-disruption scope is missing.");
+  assertFinalVisibleCopy(rootBody, "/");
   const rootAudit = await page.evaluate(() => ({
     documentWidth: document.documentElement.scrollWidth,
     viewportWidth: window.innerWidth,
@@ -292,7 +293,7 @@ try {
   if (!(await page.locator('main[data-planning-candidate]').innerText()).includes("Accepted FPPS and action class remain unavailable")) {
     throw new Error("Current Planning overview lost its candidate scoring boundary.");
   }
-  await page.goto(`${baseUrl}/studio/`, { waitUntil: "networkidle" });
+  await page.goto(`${baseUrl}/studio/candidate-report/`, { waitUntil: "networkidle" });
   await page.locator('main[data-evidence-case-id="aoi-01_mae_sai_core_mae_sai_2024"]').waitFor({ state: "visible" });
   if (!(await page.locator('main[data-evidence-case-id]').innerText()).includes("Accepted FPPS / action class")) {
     throw new Error("Current Studio report lost its downstream acceptance boundary.");
@@ -1005,23 +1006,20 @@ async function assertPublicPlanningFallback(page, mapScope) {
 
 async function exerciseBasemapSelector(page, scopeSelector, expectedState) {
   const menu = page.locator(`${scopeSelector} .map-basemap-menu`);
-  const openMenu = async () => {
-    if (await menu.count() && await menu.getAttribute("open") === null) {
-      await menu.locator("summary").click();
-    }
-  };
+  if (await menu.count() && await menu.getAttribute("open") === null) {
+    await menu.locator("summary").click();
+  }
   const buttons = page.locator(
     `${scopeSelector} .map-basemap-switcher button[aria-pressed], ${scopeSelector} .map-basemap-menu button[aria-pressed]`,
   );
-  if (await buttons.count() !== 4) {
-    throw new Error(`${scopeSelector} must expose Street, Satellite, Terrain, and Hide background controls.`);
+  if (await buttons.count() !== 3) {
+    throw new Error(`${scopeSelector} must expose Street, Satellite, and Terrain map backgrounds.`);
   }
   const labels = await buttons.allTextContents();
-  if (labels.map((label) => label.trim()).join("|") !== "Street|Satellite|Terrain|Hide background") {
+  if (labels.map((label) => label.trim()).join("|") !== "Street|Satellite|Terrain") {
     throw new Error(`${scopeSelector} map backgrounds are mislabeled: ${labels.join(", ")}.`);
   }
   for (const [index, basemap] of ["street", "satellite", "terrain"].entries()) {
-    await openMenu();
     await buttons.nth(index).click();
     await page.waitForFunction(
       ({ scope, expectedBasemap, state }) => {
@@ -1046,31 +1044,11 @@ async function exerciseBasemapSelector(page, scopeSelector, expectedState) {
         : basemap === "satellite"
           ? "Esri World Imagery"
           : "OpenTopoMap";
-      if (expectedState === "ready" && !attribution.includes(expectedAttribution)) {
-        throw new Error(`${scopeSelector} visible ${basemap} background is missing ${expectedAttribution} attribution.`);
-      }
-      if (expectedState === "unavailable") {
-        const notice = await page.locator(`${scopeSelector} .map-basemap-notice`).innerText();
-        if (!notice.includes("Map background unavailable; boundaries and evidence remain visible")
-          || !attribution.includes("FloodGuard")) {
-          throw new Error(`${scopeSelector} lost its offline background notice or local-data attribution.`);
-        }
+      if (!attribution.includes(expectedAttribution)) {
+        throw new Error(`${scopeSelector} ${basemap} background is missing ${expectedAttribution} attribution.`);
       }
     }
   }
-  await openMenu();
-  await buttons.nth(3).click();
-  await page.waitForFunction(
-    (scope) => document.querySelector(`${scope} .geo-map-shell`)?.getAttribute("data-basemap-state") === "hidden",
-    scopeSelector,
-  );
-  if (await buttons.nth(3).getAttribute("aria-pressed") !== "true") {
-    throw new Error(`${scopeSelector} did not expose the hidden background state.`);
-  }
-  if (await page.locator(`${scopeSelector} .leaflet-overlay-pane canvas, ${scopeSelector} .leaflet-overlay-pane path`).count() === 0) {
-    throw new Error(`${scopeSelector} removed local evidence overlays when hiding only the background.`);
-  }
-  await openMenu();
   await buttons.first().click();
   await page.waitForFunction(
     ({ scope, state }) => {
@@ -1142,6 +1120,7 @@ function requiredFinalCopy(routePath) {
   if (routePath === "/command/cases/") return ["compare before & after routes", "research prototype", "imposed scenarios", "not observed flood conditions or safe-route guidance"];
   if (routePath === "/command/archive/") return ["historical mae sai research archive", "planning intelligence", "source time", "confidence"];
   if (routePath === "/studio/archive/") return ["historical mae sai technical report", "separate evidence context", "technical verification", "observed-data validation", "operational authorization"];
+  if (routePath === "/studio/candidate-report/") return ["evidence status and decision boundary", "candidate", "accepted fpps / action class"];
   if (routePath === "/studio/library/") return ["study-area evidence library", "non-operational", "candidate research evidence"];
   if (routePath === "/studio/brief/") return ["compare before & after routes", "research prototype", "imposed scenarios", "not observed flood conditions or safe-route guidance"];
   return routePath === "/"
@@ -1186,7 +1165,7 @@ function assertFinalVisibleCopy(body, routePath) {
     }
   }
   const forbidden = routePath === "/"
-    ? /coming soon|under construction|work in progress|developer note/iu
+    ? /coming soon|under construction|work in progress|developer note|processing_scope|can_feed_decision_layer|official dispatch confirmed/iu
     : routePath.startsWith("/studio/")
     ? /(?:^|[^\p{L}\p{N}])(?:rehearsals?|server[-_ ]?produced)(?=$|[^\p{L}\p{N}])|developer note|no browser formula/iu
     : routePath === "/public/"

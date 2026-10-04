@@ -30,7 +30,7 @@ const VERCEL_JSON = resolve(HERE, "..", "..", "..", "vercel.json");
 
 const ROUTES = [
   "/", "/policy/", "/public/", "/public-cases/", "/command/", "/command/cases/", "/command/archive/",
-  "/studio/", "/studio/planning-evidence/", "/studio/library/", "/studio/brief/", "/studio/archive/",
+  "/studio/", "/studio/planning-evidence/", "/studio/candidate-report/", "/studio/library/", "/studio/brief/", "/studio/archive/",
   "/studio/archive/mae-sai-geoai/", "/studio/cases/mae-sai-2024/", "/studio/studies/c2s-ms-20260915/",
   ...["data", "models", "results", "rtc", "explorer", "files", "mae-sai"].map((section) => `/studio/studies/c2s-ms-20260915/${section}/`),
 ];
@@ -215,18 +215,25 @@ async function verifyPublicBlockedTiles(browser, base, responseKind) {
   });
 
   try {
-    await page.goto(`${base}/public/`, { waitUntil: "networkidle" });
+    await page.goto(`${base}/public/`, { waitUntil: "load" });
     const shell = page.locator(".public-home-map .geo-map-shell");
     await page.waitForFunction(() => {
       const shell = document.querySelector(".public-home-map .geo-map-shell");
       return shell?.getAttribute("data-map-ready") === "true"
         && Number(shell.getAttribute("data-area-feature-count")) > 0;
     }, null, { timeout: 15_000 });
+    const stateIs = (value) => page.waitForFunction(
+      (expected) => document.querySelector(".public-home-map .geo-map-shell")?.getAttribute("data-basemap-state") === expected,
+      value,
+      { timeout: 18_000 },
+    ).catch(() => undefined);
+    await stateIs("unavailable");
     if (tileRequests === 0) problems.push("No OpenStreetMap tile request was intercepted");
 
     const checkFallback = async (step) => {
       const state = await shell.getAttribute("data-basemap-state");
-      const tileImages = await shell.locator(".leaflet-tile-pane img.leaflet-tile").count();
+      // A displayed tile is a blob image (basemap-tiles.ts); a rejected response never becomes one.
+      const tileImages = await shell.locator('.leaflet-tile-pane img.leaflet-tile[src^="blob:"]').count();
       const localOverlays = await shell.locator(".leaflet-overlay-pane canvas, .leaflet-overlay-pane path").count();
       if (state !== "unavailable") problems.push(`${step}: expected unavailable basemap, got ${state}`);
       if (tileImages !== 0) problems.push(`${step}: ${tileImages} blocked tile images still cover the map`);
@@ -237,13 +244,13 @@ async function verifyPublicBlockedTiles(browser, base, responseKind) {
     await page.getByRole("button", { name: "Use English", exact: true }).click();
     const notice = shell.locator(".map-basemap-notice");
     const noticeText = await notice.count() ? await notice.innerText() : "";
-    if (!noticeText.includes("Map background unavailable; boundaries and evidence remain visible.")) {
+    if (!noticeText.includes("The map background is unavailable. Planning boundaries and evidence remain visible.")) {
       problems.push("Missing truthful map-background fallback notice");
     }
     const retry = notice.getByRole("button", { name: "Retry", exact: true });
     if (await retry.count()) {
       await retry.click();
-      await page.waitForFunction(() => document.querySelector(".public-home-map .geo-map-shell")?.getAttribute("data-basemap-state") === "unavailable");
+      await stateIs("unavailable");
       await checkFallback("retry after 403");
     } else {
       problems.push("Missing map-background Retry action");
@@ -258,7 +265,7 @@ async function verifyPublicBlockedTiles(browser, base, responseKind) {
     const show = notice.getByRole("button", { name: "Show background", exact: true });
     if (await show.count()) {
       await show.click();
-      await page.waitForFunction(() => document.querySelector(".public-home-map .geo-map-shell")?.getAttribute("data-basemap-state") === "unavailable");
+      await stateIs("unavailable");
       await checkFallback("show after 403");
     } else {
       problems.push("Missing Show background action while hidden");
@@ -287,10 +294,13 @@ async function verifyIsolatedTileFailure(browser, base) {
         ? { status: 403, contentType: "text/plain", body: "single missing tile", headers: { "Access-Control-Allow-Origin": "*" } }
         : { status: 200, contentType: "image/png", body: tilePng, headers: { "Access-Control-Allow-Origin": "*" } });
     });
-    await page.goto(`${base}/public/`, { waitUntil: "networkidle" });
+    await page.goto(`${base}/public/`, { waitUntil: "load" });
     const shell = page.locator(".public-home-map .geo-map-shell");
-    await page.waitForFunction(() => document.querySelector(".public-home-map .geo-map-shell")?.getAttribute("data-basemap-state") === "ready");
-    if (requests < 2 || await shell.locator(".leaflet-tile-pane img.leaflet-tile").count() === 0) {
+    // One failed tile among loaded ones is "partial": the loaded tiles stay and the notice says some are missing.
+    await page.waitForFunction(() => ["partial", "ready"].includes(
+      document.querySelector(".public-home-map .geo-map-shell")?.getAttribute("data-basemap-state"),
+    ), null, { timeout: 18_000 });
+    if (requests < 2 || await shell.locator('.leaflet-tile-pane img.leaflet-tile[src^="blob:"]').count() === 0) {
       throw new Error("An isolated tile failure removed the otherwise usable basemap");
     }
     console.log("  ok  /public/ (one failed tile does not remove a usable background)");

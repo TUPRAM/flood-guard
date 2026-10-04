@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { GeoaiRealPanel } from "@/components/geoai-real-panel";
 import { GeoMap } from "@/components/geo-map";
 import { WorkspaceHeader } from "@/components/workspace-header";
 import { ScoreBar } from "@/components/score-bar";
@@ -544,6 +545,9 @@ export function CommandWorkspace() {
 
       </div>
 
+      <div className="command-geoai-layer">
+        <GeoaiRealPanel language={language} variant="command" planningDataVersion={data.status.data_version} />
+      </div>
       <footer className={archiveStyles.footer}>
         <p>{th ? "ผลคะแนนนี้เป็นการเปรียบเทียบงานวิจัยเดิม ชั้น E หมายถึงติดตามและตรวจสอบ ไม่ได้หมายถึงปลอดภัย" : "These retained research scores are not accepted event priorities. Class E means Monitor and Verify; it does not mean safe."}</p>
         <a href={archiveHref("/studio/archive/")}>{th ? "เปิดรายงานเทคนิคย้อนหลัง" : "Open the historical technical report"} →</a>

@@ -57,6 +57,17 @@ describe("CommandWorkspace", () => {
     expect(html).not.toContain("processing_scope");
   });
 
+  it("separates the research report from the planning ranking before the report loads", () => {
+    const html = renderToStaticMarkup(<CommandWorkspace />);
+
+    expect(html).toContain("GEOAI RESEARCH · SEPARATE FROM PLANNING RANKING");
+    expect(html).toContain("Report only");
+    expect(html).toContain("do not set the planning workspace ranking, map colors or recommended actions");
+    expect(html).toContain("Data version used by the ranking and area evidence above");
+    expect(html).toContain(bundleJson.status.data_version);
+    expect(html).toContain("53.6");
+  });
+
   it("keeps unavailable scenario controls clear without exposing implementation notes", () => {
     const html = renderToStaticMarkup(<CommandWorkspace />);
 

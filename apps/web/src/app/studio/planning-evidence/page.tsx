@@ -8,5 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function PlanningEvidencePage() {
-  return <div id="main-content"><StudioWorkspace /></div>;
+  return <StudioWorkspace />;
 }

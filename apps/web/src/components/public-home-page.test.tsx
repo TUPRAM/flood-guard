@@ -16,6 +16,8 @@ describe("PublicHomePage planning context", () => {
       selectedAreaId="TH570903"
       onSelectArea={onSelectArea}
       onLocationChange={onLocationChange}
+      onNavigatePrepare={vi.fn()}
+      onNavigateSos={vi.fn()}
     />);
     const indicator = html.match(/<aside class="public-risk-indicator"[\s\S]*?<\/aside>/)?.[0] ?? "";
 

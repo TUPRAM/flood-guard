@@ -3,9 +3,10 @@
 The rule (owner decision R8, option B): each group's loss rate is, of its residents who had a shelter within
 reach before the flood, the share who lost it. No ratio when a group has fewer than 50 such residents
 (``insufficient_group_denominator``) or when nobody has lost access (``no_loss``); otherwise the same figures
-as ``floodguard.equity`` gives for the same numerators and denominators. ``floodguard.equity`` stays
-unchanged. The inputs are (vulnerable lost, vulnerable within reach, other lost, other within reach); all are
-small synthetic numbers unless a test says otherwise; "vulnerable" is the terrain/remoteness proxy.
+as ``floodguard.equity_v1`` gives for the same numerators and denominators. ``floodguard.equity_v1`` is metric
+version 1, kept unchanged; ``floodguard.equity`` (version 2.0) is not the reference. The inputs are
+(vulnerable lost, vulnerable within reach, other lost, other within reach); all are small synthetic numbers
+unless a test says otherwise; "vulnerable" is the terrain/remoteness proxy.
 """
 
 from __future__ import annotations
@@ -35,7 +36,7 @@ from floodguard.replay_equity import (
 
 
 def reference(vulnerable_lost: float, vulnerable_total: float, other_lost: float, other_total: float) -> pd.Series:
-    """The unchanged ``floodguard.equity`` result for the same four numbers (its totals take the within-reach residents)."""
+    """The unchanged ``floodguard.equity_v1`` result for the same four numbers (its totals take the within-reach residents)."""
     frame = pd.DataFrame({
         "subdistrict_id": ["case"], "subdistrict_name": ["case"], "confidence_class": ["low"],
         "total_vulnerable_population": [vulnerable_total], "vulnerable_population_losing_access": [vulnerable_lost],
@@ -126,7 +127,7 @@ def test_no_loss_gives_no_ratio_with_a_reason() -> None:
     assert (gap.status, gap.reason) == (REASON_NO_LOSS, "no_loss")
     assert (gap.vulnerable_rate, gap.non_vulnerable_rate) == (0.0, 0.0)
     assert gap.interpretation == "Equity gap not computed: neither group has lost access."
-    # floodguard.equity states 1.0 for the same input; the replay does not.
+    # floodguard.equity_v1 states 1.0 for the same input; the replay does not.
     assert float(reference(0, 50, 0, 100)["equity_gap_ratio"]) == 1.0
 
 
@@ -137,7 +138,7 @@ def test_a_loss_too_small_for_the_rounded_rate_is_still_a_loss() -> None:
     assert (other_only.vulnerable_rate, other_only.non_vulnerable_rate) == (0.0, 0.0)
     assert (other_only.status, other_only.reason, other_only.ratio, other_only.band) == ("ratio", None, 0.0, "lower")
     assert (other_only.vulnerable_lost, other_only.non_vulnerable_lost) == (0.0, 3.0)
-    # floodguard.equity reads the same input as zero loss in both groups.
+    # floodguard.equity_v1 reads the same input as zero loss in both groups.
     assert float(reference(0, 7152, 3, 74647)["equity_gap_ratio"]) == 1.0
     # Both groups lost a little: the ratio comes from the unrounded rates, (1 / 7152) / (3 / 74647).
     both = replay_equity_gap(1, 7152, 3, 74647)
@@ -215,7 +216,7 @@ def test_reason_is_none_exactly_when_there_is_a_ratio() -> None:
         assert gap.status == (gap.reason or "ratio"), case
 
 
-# --- Agreement with the unchanged floodguard.equity ----------------------------------------------------
+# --- Agreement with the unchanged floodguard.equity_v1 -------------------------------------------------
 
 
 @pytest.mark.parametrize(
@@ -240,7 +241,8 @@ def test_same_rates_ratio_and_wording_as_floodguard_equity_wherever_a_ratio_or_u
 
 
 def test_floodguard_equity_is_not_wrapped_or_imported() -> None:
-    # Plan section 5.6 keeps equity.py unchanged; the replay's rule is its own function, not a wrapper.
+    # Plan section 5.6 kept the equity module unchanged (that code is now equity_v1.py); the replay's rule is its
+    # own function, not a wrapper of either version.
     source = inspect.getsource(replay_equity)
     assert "import pandas" not in source and "from floodguard.equity" not in source and "import equity" not in source
     assert float(reference(0, 100, 0, 100)["equity_gap_ratio"]) == 1.0

@@ -19,19 +19,24 @@ three-minute script, source boundaries and readiness checklist.
 6. Open `/studio/library/` for source, rights and quality detail; return to the
    concise brief for the decision story.
 
-The research archive in `/studio/` and the older `/command/` workspace do not
-provide accepted event FPPS/action classes. Their retained scores are report-only
-comparators. Do not combine them with current brief numbers. The release handoff
-identifies the tested preview, package hashes and local reproduction commands.
+The research archives at `/studio/archive/` and `/studio/archive/mae-sai-geoai/`
+and the older map workspace at `/command/archive/` do not provide accepted event
+FPPS/action classes. Their retained scores are report-only comparators. Do not
+combine them with current brief numbers. The release handoff identifies the
+tested preview, package hashes and local reproduction commands.
+
+The Mae Sai replay beat (60-90 seconds, on the web app's case replay at
+`/studio/cases/mae-sai-2024/`) is current and is the last part of this file:
+[Mae Sai Replay Beat](#mae-sai-replay-beat-60-90-s).
 
 ## Archived synthetic-dashboard walkthrough
 
-Everything below describes the older static fixture-backed dashboard at
-`outputs/dashboard.html`. These numerical examples remain for software
-rehearsal; they are not the current Mae Sai case or a finals-ready evidence claim.
-This is not an official warning, real flood validation, or real-data ML output.
-
-The Mae Sai replay beat (60-90 seconds, on the web app's case replay) is the last section: [Mae Sai Replay Beat](#mae-sai-replay-beat-60-90-s).
+The sections from here up to the Mae Sai Replay Beat (Setup, the archived 3-5 minute
+and 10 minute paths, Exact Phrases To Use and Avoid Saying) describe the older static
+fixture-backed dashboard at `outputs/dashboard.html`. These numerical examples remain
+for software rehearsal; they are not the current Mae Sai case or a finals-ready
+evidence claim. This is not an official warning, real flood validation, or real-data
+ML output.
 
 ## Setup
 

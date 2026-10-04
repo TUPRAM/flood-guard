@@ -5,10 +5,10 @@ to four decimals, the ratio rounded to three, a ratio of 1.0 when neither group 
 below this docstring is that code, unchanged.
 
 It has one use: the Mae Sai replay's own rule (``floodguard.replay_equity``) states that it gives "the same
-rates, ratio, band limits and rounding as ``floodguard.equity``", meaning this version, and
-``tests/test_replay_equity.py`` and ``apps/web/scripts/equity-access-parity-fixture.py`` check it against
-this module. Scoring code uses ``floodguard.equity`` (2.0), never this file. Whether the replay should move
-to 2.0 is an open owner decision (``docs/unified_lineage_merge_report.md``).
+rates, ratio, band limits and rounding as ``floodguard.equity_v1``", and ``tests/test_replay_equity.py`` and
+``apps/web/scripts/equity-access-parity-fixture.py`` check it against this module. Scoring code uses
+``floodguard.equity`` (2.0), never this file. Whether the replay should move to 2.0 is an open owner decision
+(``docs/unified_lineage_merge_report.md``).
 """
 
 from __future__ import annotations

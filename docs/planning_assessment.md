@@ -18,6 +18,13 @@ cases. They are reported in `outputs/planning_v1/README.md`, section "Plan task 
   lineage is `local`.
 - **Case O1** (own radar candidates): refused. Nothing was computed.
 
+A review of the task followed the same day. Both cases were then run again with `--replace --reason`: the receipts
+gained the licence, credit and change notice of product 4009, the SHA-256 of the rows alone, the counts that cover
+every row and two more open points, and the first SE1 receipt lost a wrong sentence. No rule and no input changed,
+and the rows of each case are the rows of the run before (`supersedes.rows_same`, read back from the file that run
+wrote). The receipts in Git are those of the superseding runs; the replaced ones are in the Git history and are kept
+outside Git beside the files they bound.
+
 The counts above for cases SE1 and O2 are derived from UNOSAT/GISTDA product 4009 and are shared under CC BY-SA 4.0.
 Credit: UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009. Changed by FloodGuard: each layer was repaired,
 projected to EPSG:32647 and clipped to the frames of task E1; road segments were measured against it and closure
@@ -28,8 +35,8 @@ provided; FloodGuard did not validate them.
 No overlay is in Git and `outputs/planning_v1/overlays/` does not exist: every lineage is below the public level
 today (see "Rights levels today").
 
-Reads of the real inputs made while the code was written, on 4 October 2026 (UTC). None measured a unit, computed
-a component or wrote a file. The receipts of the runs list them (`development_reads`).
+Reads of the real inputs made while the code was written, on 4 October 2026 (UTC). None laid a flood layer over a
+unit, computed a component or wrote a file. The receipts of the runs list them (`development_reads`).
 
 - The shape of the E5 public table of case SE1, the E7 table and receipt, the E1 receipt, the two E1 input
   records, the properties of the permanent-water layer and the E4 receipt was read with every number masked, and
@@ -38,6 +45,11 @@ a component or wrote a file. The receipts of the runs list them (`development_re
   `adm3_name1`, which was then corrected) and from 17:06:33Z to 17:06:48Z, and for case O2 from 17:06:55Z to
   17:07:01Z. Every input was the file its receipt binds, and the lane-purity comparison passed for both cases.
 - `--check-inputs --level pitch` for case SE1 and a run of case O1 were both refused, as they should be.
+- After the review fixes, from 19:16:41Z to 19:17:13Z: `--check-inputs` for cases SE1 and O2 with the changed
+  builder, which now also compares the residents of each tambon in the context and in the access table; then case O1
+  and `--check-inputs --level pitch` for case SE1, both refused. No flood layer was laid over a tambon.
+
+The reads the reviewer made, and every run and `--verify` since, are in the runs table of the README section.
 
 ## Files
 

@@ -4,6 +4,9 @@ These tests read the two committed receipts and the README of the output folder.
 FPPS and no class. The overlay of case O2 and the report of case SE1 are outside Git (their lineage is below the
 public level); one test compares the README with the SE1 report when the external data root is at hand
 (``FLOODGUARD_EXTERNAL_DATA``) and is skipped anywhere else.
+
+Both receipts are superseding runs made after a review of the task: they carry the licence, the credit and a
+change notice for UNOSAT/GISTDA product 4009, the SHA-256 of the rows alone, and the counts that cover every row.
 """
 
 from __future__ import annotations
@@ -30,6 +33,13 @@ EXTERNAL_DATA_VARIABLE = "FLOODGUARD_EXTERNAL_DATA"
 SECTION_HEADING = "### Plan task E8: the planning assessment of the Mae Sai cases"
 MAE_SAI_UNITS = ["TH570901", "TH570902", "TH570903", "TH570904", "TH570905", "TH570906", "TH570908", "TH570909"]
 ACTION_CLASSES = ("A", "B", "C", "D", "E")
+E8_RECEIPTS = sorted(OUTPUTS.glob("e8_planning_assessment_*.json"))
+PRODUCT_4009_CREDIT = "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009"
+RIGHTS_RECORD_4009 = "docs/proposal_execution/rights_basis_4009_v1.json"
+FIRST_SE1_RECEIPT = "098ac3b104a4c6da5b12867d378e99d398ef1741d5c36db3191ba2940262adee"
+"""The first SE1 receipt (commit 317434d), which the receipt here supersedes."""
+SECOND_O2_RECEIPT = "2ea03b0cf950ce7378dd7a6e169c31233bc6398f64fa6742e311d7a66ac02e6f"
+"""The second O2 receipt (commit 317434d), which the receipt here supersedes."""
 TIMES = {1: "once", 2: "twice", 3: "three times", 4: "four times", 5: "five times", 6: "six times", 7: "seven times",
          8: "eight times"}
 
@@ -102,10 +112,87 @@ def test_each_receipt_is_registered_names_the_protocols_and_holds_no_value_of_a_
     assert whole["residents_same_as_the_access_table"] is True
     assert whole["residents_of_the_rows"] == receipt["measurement_checks"]["residents_in_the_units"]
     assert receipt["measurement_checks"]["demand_cells"] == receipt["measurement_checks"]["cells_in_one_unit"] == 36765
-    # A receipt lists the open points the module had when it ran; points written down since stand after them.
-    listed = [point["id"] for point in receipt["open_points"]]
-    assert listed == [point["id"] for point in planning_assessment.OPEN_POINTS][:len(listed)] and len(listed) >= 7
+    assert receipt["open_points"] == [dict(point) for point in planning_assessment.OPEN_POINTS]
     assert receipt["development_reads"]["reads"], "the reads made before the run are listed"
+    # The SHA-256 of the rows alone and of each lineage input: what a later run is compared with.
+    assert re.fullmatch(r"[0-9a-f]{64}", receipt["result"]["rows_sha256"])
+    assert set(receipt["lineage_input_sha256"]) == set(rights["lineage_levels"])
+    assert all(re.fullmatch(r"[0-9a-f]{64}", value) for value in receipt["lineage_input_sha256"].values())
+    # A superseding run: the rows are those of the run it replaced, read back from the file that run wrote.
+    supersedes = receipt["supersedes"]
+    assert receipt["run_kind"] == "superseding_run" and "review" in supersedes["reason"]
+    assert (supersedes["counts_same"], supersedes["rows_same"], supersedes["lineage_inputs_same"], supersedes["result_same"]) == (
+        True, True, True, True)
+    assert supersedes["rows_sha256_of_the_superseded_run"] == supersedes["rows_sha256_of_this_run"] == receipt["result"]["rows_sha256"]
+    assert "read back with the SHA-256 that receipt names" in supersedes["rows_of_the_superseded_run_read_from"]
+    kept = supersedes["copies_kept_outside_git"]
+    assert kept[0] == {"path": kept[0]["path"], "sha256": supersedes["receipt_sha256"], "what": "receipt"}
+    assert all(f"/{case.lower()}_mae_sai/e8_planning_assessment/superseded_runs/" in item["path"] for item in kept)
+    assert {item["sha256"] for item in kept[1:]} == set(supersedes["outputs_of_the_superseded_run"].values())
+    assert receipt["run_history"][-1]["receipt_sha256"] == supersedes["receipt_sha256"]
+    assert receipt["parameters"]["tolerances"]["residents_between_two_stages"] == 1e-6
+    assert receipt["measurement_checks"]["compared_before_any_flood_layer_was_read_for_a_unit"] is True
+
+
+@pytest.mark.parametrize("path", E8_RECEIPTS, ids=lambda path: path.name)
+def test_every_e8_receipt_whose_lineage_holds_product_4009_carries_its_licence_credit_and_change_notice(path: Path) -> None:
+    """Product 4009 content ships only under CC BY-SA 4.0 with its credit and a change notice (plan 7.1)."""
+
+    receipt = json.loads(path.read_text(encoding="ascii"))
+    holds_product_4009 = receipt["inputs"]["rights_record"]["input_id"] == "unosat_4009" or any(
+        name.startswith("unosat_4009") for name in receipt["rights"]["lineage_levels"])
+    licence = receipt.get("licence")
+    if not holds_product_4009:
+        assert licence is None
+        return
+    assert licence is not None, f"{path.name} holds figures derived from product 4009 and states no licence"
+    assert (licence["name"], licence["spdx_id"]) == ("CC BY-SA 4.0", "CC-BY-SA-4.0")
+    assert licence["full_name"] == "Creative Commons Attribution-ShareAlike 4.0 International" and licence["url"].startswith("https://")
+    assert licence["credit"] == PRODUCT_4009_CREDIT and licence["not_legal_advice"] is True
+    v1a = json.loads((DOCS / "planning_protocol_v1a.json").read_text(encoding="utf-8"))
+    assert licence["standard_sentence"] == v1a["wording"]["standard_4009_sentence"]
+    notice = licence["change_notice"]
+    layer = receipt["inputs"]["rights_record"]["layer"]
+    assert notice.startswith(f"Changed by FloodGuard: the layer {layer} was repaired")
+    assert "(plan task E5)" in notice and "In plan task E8" in notice and "planning classes" in notice
+    assert notice.endswith(f"Source: {PRODUCT_4009_CREDIT}, CC BY-SA 4.0.")
+    record = licence["rights_record"]
+    assert record["path"] == RIGHTS_RECORD_4009 == receipt["inputs"]["rights_record"]["path"]
+    assert record["sha256"] == _sha256(ROOT / RIGHTS_RECORD_4009) == receipt["inputs"]["rights_record"]["sha256"]
+    assert record["record_status"] == "confirmed" and record["confirmed_by"]
+    assert licence["publication_level"] == receipt["rights"]["publication_eligibility"]
+    assert licence["flood_input_rights_level"] == receipt["rights"]["flood_layer"]["rights_level"]
+    assert (ROOT / licence["licence_notice_file"]).is_file()
+    assert {item["id"] for item in licence["other_inputs"]} == {
+        "osm", "worldpop-2020", "cod-ab", "esa-worldcover-2021", "worldpop-2024-age-counts"}
+    assert "product 4009" in licence["applies_to"] and "this receipt binds" in licence["where_the_values_are"]
+    text = path.read_text(encoding="ascii")
+    assert "FL20240912THA" in text and "Changed by FloodGuard" in text
+
+
+def test_the_receipts_name_the_counts_that_cover_every_row_and_say_what_they_give_away() -> None:
+    """A count that covers all eight rows is a statement about each tambon, whatever file the rows are kept in."""
+
+    declared = {case: _receipt(case)["rights"]["figures_of_local_level_layers_in_this_receipt"] for case in RECEIPTS}
+    for block in declared.values():
+        assert "states that value for each unit" in block["what_the_counts_give_away"]
+        assert "E8-OP7" in block["for_the_owners"] and "E1-OP1" in block["for_the_owners"]
+    assert declared["O2"]["counts_that_cover_every_row"] == [
+        "binding_class_by_lane_column.OBS.E",
+        "confidence_class_by_lane_column.OBS.medium",
+        "headline_status_by_lane_column.OBS.not_evaluated",
+        "reason_code_by_lane_column.OBS.low_priority_score",
+        "v2_result_by_lane_column.OBS.E",
+        "would_be_class_by_lane_column.OBS.none",
+    ]
+    # In case SE1 the classes differ between the tambons, so the counts of the classes do not cover every row.
+    assert declared["SE1"]["counts_that_cover_every_row"] == [
+        "confidence_class_by_lane_column.SCN.medium",
+        "headline_status_by_lane_column.SCN.not_evaluated",
+        "would_be_class_by_lane_column.SCN.none",
+    ]
+    assert declared["SE1"]["figures"][0]["where"] == "result.rows_as_computed.summary"
+    assert declared["O2"]["figures"][0]["where"] == "result.summary"
 
 
 def test_the_two_cases_count_the_same_residents_as_the_access_tables() -> None:
@@ -121,7 +208,13 @@ def test_the_two_cases_count_the_same_residents_as_the_access_tables() -> None:
 def test_the_se1_run_wrote_no_overlay_and_reports_its_rows_as_computed() -> None:
     receipt = _receipt("SE1")
     result = receipt["result"]
-    assert receipt["run_kind"] == "first_run" and (receipt["parameters"]["lane"], receipt["parameters"]["tier"]) == ("SCN-ENV", "T1")
+    assert (receipt["parameters"]["lane"], receipt["parameters"]["tier"]) == ("SCN-ENV", "T1")
+    # The second run of the case: it replaced the first receipt, which is in the Git history, and found the same rows.
+    assert receipt["supersedes"]["receipt_sha256"] == FIRST_SE1_RECEIPT and len(receipt["run_history"]) == 1
+    assert receipt["supersedes"]["generated_at_utc"] == "2026-10-04T17:51:58Z"
+    # The sentence of the first receipt that named result.summary and an overlay outside Git is gone.
+    what = receipt["rights"]["figures_of_local_level_layers_in_this_receipt"]["what"]
+    assert "the overlay itself is outside Git" not in what and "result.rows_as_computed.summary" in what
     assert result["overlay_written"] is False and result["summary"] is None
     refusal = result["not_written_because"]
     assert (refusal["code"], refusal["open_point"], refusal["rows"]) == ("v2_result_not_evaluable", "E8-OP1", 4)
@@ -150,6 +243,7 @@ def test_the_se1_run_wrote_no_overlay_and_reports_its_rows_as_computed() -> None
     files = _bound(receipt)
     assert [item["what"] for item in files] == ["overlay_not_written_report", "licence_notice"]
     assert files[0]["holds_rows_as_computed"] is True and files[0]["path"].endswith("/overlay_not_written.json")
+    assert files[0]["path"].endswith("/se1_mae_sai/e8_planning_assessment/overlay_not_written.json")
 
 
 def test_the_o2_run_wrote_its_overlay_outside_git_and_every_row_is_class_e() -> None:
@@ -170,12 +264,16 @@ def test_the_o2_run_wrote_its_overlay_outside_git_and_every_row_is_class_e() -> 
     assert counts["inputs_by_rights_level"]["local"] == 3, "the layer of 22 October, its access table and the age table"
     files = _bound(receipt)
     assert [item["what"] for item in files] == ["planning_assessment_overlay", "licence_notice"] and files[0]["rows"] == 8
-    # The second run changed a Thai word in the overlay header and nothing in the result.
+    # The second run changed a Thai word in the overlay header, the third added the licence block after a review;
+    # neither changed a row.
     assert receipt["run_kind"] == "superseding_run" and receipt["supersedes"]["result_same"] is True
-    assert "Thai title" in receipt["supersedes"]["reason"] and len(receipt["run_history"]) == 1
-    earlier = receipt["run_history"][0]
-    assert earlier["receipt_sha256"] == receipt["supersedes"]["receipt_sha256"] and earlier["generated_at_utc"] < receipt["generated_at_utc"]
-    assert earlier["result_same_as_the_run_that_replaced_it"] is True
+    assert receipt["supersedes"]["receipt_sha256"] == SECOND_O2_RECEIPT and len(receipt["run_history"]) == 2
+    first, second = receipt["run_history"]
+    assert "Thai title" in first["superseded_because"] and first["generated_at_utc"] == "2026-10-04T17:53:46Z"
+    assert second["receipt_sha256"] == SECOND_O2_RECEIPT and second["generated_at_utc"] == "2026-10-04T17:59:18Z"
+    assert first["generated_at_utc"] < second["generated_at_utc"] < receipt["generated_at_utc"]
+    assert first["result_same_as_the_run_that_replaced_it"] is True and second["result_same_as_the_run_that_replaced_it"] is True
+    assert second["rows_sha256"] == result["rows_sha256"], "the rows of the second run, read back from its overlay"
 
 
 def test_the_readme_reports_the_runs_as_the_receipts_hold_them() -> None:
@@ -187,9 +285,12 @@ def test_the_readme_reports_the_runs_as_the_receipts_hold_them() -> None:
         assert f"`{RECEIPTS[case].name}`" in section
         assert _short(_bound(receipt)[0]["sha256"]) in section, "the file outside Git is named by its SHA-256"
         assert receipt["timestamps"]["run_started_at_utc"][11:] in section
-    assert _short(_sha256(RECEIPTS["SE1"])) in section
-    assert _short(o2["supersedes"]["receipt_sha256"]) in section, "the superseded O2 receipt is named"
-    assert _short(next(iter(o2["supersedes"]["outputs_of_the_superseded_run"].values()))) in section
+    assert _short(_sha256(RECEIPTS["SE1"])) in section and _short(_sha256(RECEIPTS["O2"])) in section
+    for receipt in (se1, o2):
+        assert _short(receipt["supersedes"]["receipt_sha256"]) in section, "the superseded receipt is named"
+        assert _short(next(iter(receipt["supersedes"]["outputs_of_the_superseded_run"].values()))) in section
+        for earlier in receipt["run_history"]:
+            assert _short(earlier["receipt_sha256"]) in section, "every earlier run is named"
     # Which classes appear, and which do not, in the words of the receipt's counts.
     classes = se1["result"]["rows_as_computed"]["summary"]["binding_class_by_lane_column"]["SCN"]
     appear = ", ".join(f"{name} {TIMES[classes[name]]}" for name in ACTION_CLASSES if classes[name])
@@ -207,7 +308,15 @@ def test_the_readme_reports_the_runs_as_the_receipts_hold_them() -> None:
     # Every open point of the receipts is listed, and one more that was written down after the runs.
     for point in planning_assessment.OPEN_POINTS:
         assert f"**{point['id']}," in section, point["id"]
-    assert "**E8-OP8," in section and "not in the receipts" in section
+    assert "not in the receipts" not in section, "every open point of this section is in the receipts since the review"
+    # What the separation by rights level does not keep out of Git is said plainly, for both cases.
+    assert "**They can be worked out from committed files all the same.**" in section
+    assert "is nominal for case SE1" in section and "**The separation is nominal**" in section
+    assert "`age_exposure_mae_sai_v1.json`" in section and "E8-OP5" in section and "E8-OP7" in section
+    # The review and the runs after it are in the runs table.
+    assert "**The review.**" in section and "18:29:48Z to 18:30:16Z" in section and "18:50:22Z to 18:50:31Z" in section
+    assert "38 tamper attempts" in section and "twelve command-line refusals" in section
+    assert "the thinned GeoJSON layers that plan stage P8 names" in section
     # One table holds values of single tambons: the eight rows of case SE1. Nothing of case O2 is given per tambon.
     rows = [line for line in section.splitlines() if re.match(r"\| TH\d{6} ", line)]
     assert [line.split()[1] for line in rows] == MAE_SAI_UNITS
@@ -215,6 +324,8 @@ def test_the_readme_reports_the_runs_as_the_receipts_hold_them() -> None:
     assert all("E7-OP1" in line for line in codes_outside_the_table), codes_outside_the_table
     o2_part = section.split("**Case O2: the overlay was written, outside Git.**", 1)[1].split("**Case O1: refused.**", 1)[0]
     assert not re.search(r"TH\d{6}", o2_part) and "| " not in o2_part
+    assert "**The four statements above are statements about each tambon all the same.**" in o2_part
+    assert "No per-tambon value of case O2 is in this file" not in section
     residents = sum(float(line.split("|")[2].replace(",", "")) for line in rows)
     assert residents == pytest.approx(se1["whole_case_checks"]["residents_of_the_rows"], abs=4.0), "eight rounded counts"
 
@@ -230,8 +341,16 @@ def test_the_readme_table_of_case_se1_repeats_the_report_the_receipt_binds() -> 
     assert _sha256(report) == bound["sha256"], "the report is the file the receipt binds"
     document = json.loads(report.read_text(encoding="ascii"))
     assert document["publication_eligibility"] == "local" and document["official_warning"] is False
+    # The report carries the licence block of the receipt, worded for the file that holds the rows.
+    receipt_licence = _receipt("SE1")["licence"]
+    assert {key: value for key, value in document["licence"].items() if key != "where_the_values_are"} == {
+        key: value for key, value in receipt_licence.items() if key != "where_the_values_are"}
+    assert "rows_as_computed" in document["licence"]["where_the_values_are"]
     as_computed = document["rows_as_computed"]
     assert as_computed["schema_version"] == planning_assessment.ROWS_AS_COMPUTED_SCHEMA
+    # The receipt in Git records the SHA-256 of these rows alone.
+    canonical = json.dumps(as_computed["rows"], sort_keys=True, separators=(",", ":"), allow_nan=False).encode("utf-8")
+    assert hashlib.sha256(canonical).hexdigest() == _receipt("SE1")["result"]["rows_sha256"]
     expected = []
     for row in as_computed["rows"]:
         components = row["components"]

@@ -1,6 +1,6 @@
 {
   "schema_version": "floodguard.planning_assessment_run_receipt.v1",
-  "generated_at_utc": "2026-10-04T17:59:18Z",
+  "generated_at_utc": "2026-10-04T19:36:40Z",
   "run_kind": "superseding_run",
   "plan_task": "E8: planning_assessment.py + writer + verifier; O1/O2/SE1 overlays; verifier passes",
   "status": "run_receipt",
@@ -23,6 +23,72 @@
   "protocol_sha256": {
     "planning_protocol_v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
     "planning_protocol_v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+  },
+  "licence": {
+    "applies_to": "Every figure of this run that is derived from UNOSAT/GISTDA product 4009: the counts of rows by class, reason code, confidence class and v2 result in this file, and every component value, FPPS and class in the overlay or the report this run wrote.",
+    "name": "CC BY-SA 4.0",
+    "full_name": "Creative Commons Attribution-ShareAlike 4.0 International",
+    "spdx_id": "CC-BY-SA-4.0",
+    "url": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "legal_code_url": "https://creativecommons.org/licenses/by-sa/4.0/legalcode",
+    "credit": "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009",
+    "share_alike": "Every layer or table derived from product 4009 is shared under CC BY-SA 4.0, in its own file, with the attribution and a change notice. Keeping product 4009 derivatives in their own files is a caution, not legal advice.",
+    "standard_sentence": "unvalidated preliminary agency extent (UNOSAT product 4009 with GISTDA; Field_Validation=0), used as provided under CC BY-SA 4.0. FloodGuard did not validate it.",
+    "change_notice": "Changed by FloodGuard: the layer CHIANGRAI_20241022_FloodExtent was repaired (make_valid), projected from EPSG:4326 to EPSG:32647 and clipped to the frames of plan task E1; road segments were measured against it, closure rule v1 was applied to them and modelled access was compared with and without those closures (plan task E5). In plan task E8 the flooded share of each unit's land outside permanent water, the share of its residents inside the extent and its access counts were then turned into the component values of planning frame v1, an FPPS and planning classes. This file holds values derived from the layer, not the layer. Source: UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009, CC BY-SA 4.0.",
+    "rights_record": {
+      "path": "docs/proposal_execution/rights_basis_4009_v1.json",
+      "sha256": "531ab40beb2b3e80a02d6de0d4d7d791b299176af0b192bfe105ca23c7e50cb3",
+      "record_status": "confirmed",
+      "confirmed_by": [
+        "Putu",
+        "Rachmania"
+      ],
+      "confirmed_on": "2026-10-02"
+    },
+    "flood_input_rights_level": "local",
+    "flood_input_rights_level_basis": "The confirmed record rights_basis_4009_v1 covers the product and its archive under CC BY-SA 4.0 (decision D2), but it names only CHIANGRAI_20240801_20241012_AccumulatedFlood as its layer in scope, and decision R6 allows publication as a season envelope only. This layer is read and processed outside Git; nothing derived from it is written into public web files until the owners extend the record.",
+    "publication_level": "local",
+    "publication_level_rule": "Protocol v1a guardrail GR6: the rights level of an output is the minimum across its lineage. Nothing here is written under apps/web/public/.",
+    "licence_notice_file": "docs/proposal_execution/rights_basis_4009_v1_NOTICE.txt",
+    "other_inputs": [
+      {
+        "id": "osm",
+        "name": "OpenStreetMap Thailand extract (Geofabrik), roads and hospitals of the planning context",
+        "licence": "ODbL 1.0",
+        "attribution": "(c) OpenStreetMap contributors",
+        "used_for": "The road graph, the hospitals and the main-road entries."
+      },
+      {
+        "id": "worldpop-2020",
+        "name": "WorldPop Thailand 100 m population 2020 (tha_ppp_2020.tif)",
+        "licence": "CC BY 4.0",
+        "attribution": "WorldPop (www.worldpop.org), University of Southampton",
+        "used_for": "The residents of each demand cell."
+      },
+      {
+        "id": "cod-ab",
+        "name": "HDX Thailand COD-AB subdistrict boundaries (tha_admin3)",
+        "licence": "CC BY-IGO",
+        "attribution": "OCHA / HDX Thailand COD-AB",
+        "used_for": "The tambon each demand cell counts for."
+      },
+      {
+        "id": "esa-worldcover-2021",
+        "name": "Permanent water of the reporting frame (plan task E1): ESA WorldCover 2021 v200, class 80",
+        "licence": "CC BY 4.0",
+        "attribution": "ESA WorldCover project 2021 / Contains modified Copernicus Sentinel data (2021) processed by ESA WorldCover consortium",
+        "used_for": "The land outside permanent water that the flood likelihood is measured on."
+      },
+      {
+        "id": "worldpop-2024-age-counts",
+        "name": "Age counts per unit (plan task E7): WorldPop Global2 R2025A v1, 2024, 1 km constrained age counts",
+        "licence": "CC BY 4.0 (public catalogue); public derivatives need a purpose-specific review that is not recorded",
+        "attribution": "WorldPop (www.worldpop.org), University of Southampton",
+        "used_for": "The dependent share of each unit, for the vulnerability component."
+      }
+    ],
+    "not_legal_advice": true,
+    "where_the_values_are": "The counts for the whole case are in this receipt (result). The values of each unit are in the file this receipt binds (outputs), which carries the same licence, credit and change notice."
   },
   "parameters": {
     "case_id": "O2",
@@ -74,7 +140,12 @@
       "note": "No stage computes them yet (open point E8-OP1)."
     },
     "headline": "not evaluated: the ensemble is plan task E10",
-    "overlay_input_id_of_the_flood_input": "unosat_4009.chiangrai_20241022_floodextent"
+    "overlay_input_id_of_the_flood_input": "unosat_4009.chiangrai_20241022_floodextent",
+    "tolerances": {
+      "residents_between_two_stages": 1e-06,
+      "rounding_points_of_a_score": 0.011,
+      "note": "Choices of this task, not rules of the protocols: how far two sums of the same resident counts may differ, and how far a score rounded to two decimals may differ from its recombination."
+    }
   },
   "inputs": {
     "planning_protocol_v1a": {
@@ -253,7 +324,7 @@
       },
       "age_structure": {
         "rights_level": "local",
-        "basis": "Protocol v1b, national_vulnerability_anchors.inputs.age_rasters.rights: 'Public catalog says CC BY 4.0. Public derivatives require purpose-specific review.' No such review is recorded in the repository, so the input is held at the local level and every overlay that carries a vulnerability record is local until the owners record the review (open point E8-OP5)."
+        "basis": "Protocol v1b, national_vulnerability_anchors.inputs.age_rasters.rights: 'Public catalog says CC BY 4.0. Public derivatives require purpose-specific review.' No such review is recorded in the repository, so the input is held at the local level and every overlay that carries a vulnerability record is local until the owners record the review (open point E8-OP5). The table itself has been in Git since task E7 wrote it (outputs/planning_v1/age_exposure_mae_sai_v1.json), so this level does not keep the age counts of a unit out of the repository; the owners' answer has to cover that file too."
       },
       "national_anchors": {
         "rights_level": "public",
@@ -266,7 +337,7 @@
     },
     "levels_and_git": "Protocol v1a guardrail GR6 says that only a public output may be written under apps/web/public/. Plan 3.1 keeps pitch variants outside Git and puts committed outputs (small tables and GeoJSON) in outputs/planning_v1/. Neither says whether a figure derived from a local-level input may be committed. Until the owners decide (open point E1-OP1), tasks E1 and E5 keep every layer and every per-unit table whose lineage is below public outside Git, and their run receipts in Git hold whole-frame figures of local-level inputs and say so.",
     "figures_of_local_level_layers_in_this_receipt": {
-      "what": "This receipt is committed. It holds counts of rows for the whole case (result.summary, or result.rows_as_computed.summary when the overlay was not written), no value of a single unit and no unit of a row that could not be written. When the lineage is below the public level those counts come from a lineage below the public level; the overlay, or the report that holds the rows as computed, is outside Git.",
+      "what": "This receipt is committed. It holds counts of rows for the whole case: under result.summary when the overlay was written, under result.rows_as_computed.summary when the rows were reported as computed, and nowhere when a check refused the rows. It puts no unit beside a value and names no unit of a row that could not be written. When the lineage is below the public level those counts come from a lineage below the public level; the file that holds the rows is outside Git.",
       "figures": [
         {
           "where": "result.summary",
@@ -274,7 +345,16 @@
           "figures": "The number of rows by class, reason code, confidence class and failed condition, per lane column."
         }
       ],
-      "for_the_owners": "Open point E1-OP1: whether a level below public allows these counts in Git."
+      "counts_that_cover_every_row": [
+        "binding_class_by_lane_column.OBS.E",
+        "confidence_class_by_lane_column.OBS.medium",
+        "headline_status_by_lane_column.OBS.not_evaluated",
+        "reason_code_by_lane_column.OBS.low_priority_score",
+        "v2_result_by_lane_column.OBS.E",
+        "would_be_class_by_lane_column.OBS.none"
+      ],
+      "what_the_counts_give_away": "A count that covers every row states that value for each unit listed in parameters.unit_ids, and a count of zero states for each unit that it does not have that value. For those counts the receipt in Git says the same as the file outside Git, so keeping that file outside Git separates nothing for them. counts_that_cover_every_row names the counts equal to the number of rows. Other committed files may let further values of a unit be worked out (open point E8-OP7).",
+      "for_the_owners": "Open points E1-OP1, E8-OP5 and E8-OP7: whether a level below public allows these counts in Git, and whether it is meant to keep the values of a unit out of the repository when they can be worked out from committed files."
     },
     "written_under_apps_web_public": false
   },
@@ -312,12 +392,24 @@
       }
     }
   },
+  "lineage_input_sha256": {
+    "unosat_4009.chiangrai_20241022_floodextent": "676c50ebfa8cf5be8429527735a09997b0b575efd87ef268cf660c2aae0e7596",
+    "e4_planning_context_vehicle": "0b2672b6d4d1d94da3a4c39d819d980a9e5bf7845bb22fea1284a2893a6351a6",
+    "worldpop_2020_100m": "fb39d85dd150c45c7b25771f29bcd548e611afa0967224ac6d8ca05727230e20",
+    "unit_boundaries": "09e62345481bb80030ff6779e074bfb2c16629b70ae1e373ebd31945f1c6e0d8",
+    "e1_permanent_water": "a92e168c56b1fddbabf772171ba140a303e2b48f1007d7da1223b5d7c4d150ee",
+    "e7_age_exposure_table": "68d4935ddf9f905dd4512c516924049be5303bae5a501a27bcff060106da16cb",
+    "e5_access_table": "6f7226da371703c5013c0488e28009a17c93e1bad0ee3d893effdd61c8cf6e8c",
+    "national_vulnerability_anchors": "2ad161d4c67cbe1567fbb853fe951da3ffb257f06088fbc80e8e297938c73a59"
+  },
   "measurement_checks": {
     "demand_cells": 36765,
     "cells_in_one_unit": 36765,
     "residents_in_the_units": 81836.8894393444,
     "unit_residents_same_in_the_context_and_the_access_table": true,
     "hospital_routes_same_in_the_graph_and_the_access_table": true,
+    "no_unit_row_of_the_access_table_stores_a_ratio": true,
+    "compared_before_any_flood_layer_was_read_for_a_unit": true,
     "coverage": "by_construction"
   },
   "graph": {
@@ -695,10 +787,12 @@
         "public": 5,
         "none": 0
       },
-      "content_sha256": "a60468f89a79f29988a6ad21f99ea6894da1cc908ef52df197c366db43da7ddf"
+      "content_sha256": "261bcf358a0a923d15ddee7921ae95a556d44b73c530ef3d0cf39d6c5a393dae"
     },
     "not_written_because": null,
-    "rows_as_computed": null
+    "rows_as_computed": null,
+    "rows_sha256": "03c3ddcf3c4740a2da6144463cc5c142251d7a3ffed523fa04cd4a99ac28d09e",
+    "rows_sha256_note": "The SHA-256 of the rows alone, in a canonical form: every value of every unit, without the generation time, the commit and the header text of the file that holds them. Two runs that computed the same rows have the same value here. Null when no row is reported."
   },
   "whole_case_checks": {
     "result": "PASS",
@@ -720,7 +814,10 @@
     "reads": [
       "4 October 2026 (UTC), while the code was written: the shape of the E7 table and receipt, of the E1 receipt, of the two E1 input records, of the properties of the permanent-water layer and of the E4 receipt was read with every number masked, and the field names of the boundary layer were listed. No unit was measured, and no table of case O2 was read.",
       "4 October 2026, 17:06:55Z to 17:07:01Z: --check-inputs for case O2. Every input was the file its receipt binds and the lane-purity comparison passed. No unit was measured.",
-      "4 October 2026, after the first run of 17:53:46Z and its --verify: the overlay that run wrote outside Git was read once, to check its rows and to write the README of the output folder. Nothing was computed from it."
+      "4 October 2026, after the first run of 17:53:46Z and its --verify: the overlay that run wrote outside Git was read once, to check its rows and to write the README of the output folder. Nothing was computed from it.",
+      "4 October 2026, 17:59:25Z to 18:22:31Z: --verify of the second run of this case twice. The overlay had the same bytes each time and the verifier accepted it. Nothing was written.",
+      "4 October 2026, about 18:24Z to 18:51Z, during the review of this task: the reviewer recomputed all eight rows of this case in memory from the registered inputs with a script of their own (0 differences; no value was printed); ran --verify once (the same bytes); tried the command-line refusals (all returned 2); ran the input checks alone on a temporary copy of the inputs with 38 tamper attempts; and rebuilt the overlay of the first run once in memory to compare its SHA-256 with run_history (the same). Nothing was written.",
+      "4 October 2026, 19:17:01Z to 19:17:10Z, with the changed builder, before this run: --check-inputs for case O2. Every input was the file its receipt binds, the lane-purity comparison passed, and each unit had the same residents in the planning context and in the access table. No unit was measured against a flood layer."
     ]
   },
   "open_points": [
@@ -729,7 +826,7 @@
       "point": "A v2 result that depends on a trigger nobody evaluated.",
       "signed_files_say": "Protocol v1a class_rules.v2: five triggers, evaluated in the order E, A, B, C, D; the first one met gives the class, and a unit that meets none gets 'no_v2_trigger'. Protocol v1b class_rule_v2_inputs defines the inputs of B, C and D, and says that the recurrence flag cannot be computed where the JRC tile is not on disk. Neither says what the v2 result is when a trigger cannot be evaluated.",
       "what_this_task_does": "Triggers E and A are computed from the row. The outcomes of B, C and D are inputs, and no stage computes them yet. Where an earlier trigger in the order is met, the result is stated and a trigger that was not evaluated is written with met false and the words 'Not evaluated'. Where the result depends on such a trigger, the overlay is not written.",
-      "for_the_owners": "Whether an overlay may say 'not evaluated' for the v2 axis of a row (a schema change), or whether the inputs of B, C and D are built first: the single-link closures of the top-20 links, the serving-facility test and the recurrence flag."
+      "for_the_owners": "Whether an overlay may say 'not evaluated' for the v2 axis of a row (a schema change), or whether the inputs of B, C and D are built first: the single-link closures of the top-20 links, the serving-facility test and the recurrence flag. Also whether a trigger nobody evaluated may be written with met false on a row whose result an earlier trigger gives: schema 1.0 takes true or false only, so a reader of 'met' alone cannot tell it from a measured false and has to read the evidence text (point 11 of the overlay page)."
     },
     {
       "id": "E8-OP2",
@@ -742,8 +839,8 @@
       "id": "E8-OP3",
       "point": "The two measurements of confidence conditions C7 and C8 for one unit.",
       "signed_files_say": "Protocol v1a confidence_rule_v1: C7 'Baseline vehicle connected-no-route share is at most 10 percent' and C8 'At least one hospital is reachable at baseline', per unit and lane. The share was measured for the whole frame by tasks E0 and E4, for the hospital service.",
-      "what_this_task_does": "C7 is the E0 definition applied to one unit, from the counts of the task E5 table: the unit's residents connected to the vehicle graph with no modelled route to a hospital, over its connected residents (1 when nobody is connected). C8 counts the hospital destinations that at least one connected resident of the unit can reach on the baseline vehicle graph.",
-      "for_the_owners": "Whether C7 is judged on the hospital service, and whether C8 counts OSM hospital objects (as here) or distinct named hospitals. The condition needs one or more either way."
+      "what_this_task_does": "C7 is the E0 definition applied to one unit, from the counts of the task E5 table: the unit's residents connected to the vehicle graph with no modelled route to a hospital, over its connected residents (1 when nobody is connected, so such a unit fails C7). C8 counts the hospital destinations that at least one connected resident of the unit can reach on the baseline vehicle graph: a hospital counts when it snaps to the same connected part of the undirected graph as one or more populated cells of the unit that snap to a road. No travel time limits it.",
+      "for_the_owners": "Whether C7 is judged on the hospital service, and whether C8 counts OSM hospital objects (as here) or distinct named hospitals. The condition needs one or more either way. Also whether 'reachable' in C8 means any modelled route, as here, or a route within a time, and what the no-route share of a unit with no connected resident is."
     },
     {
       "id": "E8-OP4",
@@ -756,22 +853,36 @@
       "id": "E8-OP5",
       "point": "The rights level of an input that has no rights record.",
       "signed_files_say": "Protocol v1a guardrail GR6: the rights level of an overlay is the minimum across its lineage. The rights registry holds a record for product 4009 only. Protocol v1b says of the WorldPop 2024 age rasters: 'Public catalog says CC BY 4.0. Public derivatives require purpose-specific review.'",
-      "what_this_task_does": "The level of each input is stated by the script that reads it, with its basis. This module only takes the minimum.",
-      "for_the_owners": "The purpose-specific review of the age rasters, and whether open-licence inputs need a record in the registry."
+      "what_this_task_does": "The level of each input is stated by the script that reads it, with its basis. This module only takes the minimum. The script holds the age table of task E7 at the local level as a lineage input, while that table has been in Git since task E7 wrote it: the level this task gives it does not keep its counts out of the repository.",
+      "for_the_owners": "The purpose-specific review of the age rasters, and whether open-licence inputs need a record in the registry. The answer also has to cover the age table itself, which is in Git: with it, the vulnerability component of each unit can be worked out from committed files alone."
     },
     {
       "id": "E8-OP6",
       "point": "What a run reports when its overlay cannot be written.",
       "signed_files_say": "Protocol v1a case_portfolio: 'Every cell of every case is reported whatever it shows.' Protocol v1b change_control: 'Every run is reported.' Class rule v1 is binding and class rule v2 is a secondary axis that is never binding. Overlay schema 1.0 has no row without a v2 result, except under guardrail GR1. None of them says where the rows of a run go when the overlay cannot hold them.",
-      "what_this_task_does": "The run writes the rows it computed into its report outside Git, beside the reason: every row with its components, its confidence record, its FPPS, its binding class of class rule v1, its would-be class and leave-one-component-out. A row whose v2 result depends on a trigger nobody evaluated carries no v2 result there and says 'not_evaluated'. The report is not an overlay: it names another schema and the overlay parser refuses it. The receipt in Git holds the counts for the whole case.",
-      "for_the_owners": "Whether the rows of such a run may be shown or used before the overlay exists, and under which label."
+      "what_this_task_does": "The run writes the rows it computed into its report outside Git, beside the reason: every row with its components, its confidence record, its FPPS, its binding class of class rule v1, its would-be class and leave-one-component-out. A row whose v2 result depends on a trigger nobody evaluated carries no v2 result there and says 'not_evaluated'. The report is not an overlay: it names another schema and the overlay parser refuses it. The receipt in Git holds the counts for the whole case. A run whose rows fail a guardrail, a check of the whole case or the overlay parser after its units were measured writes and registers its receipt too, with the reason and no row: a row that fails a check is not reported as a result.",
+      "for_the_owners": "Whether the rows of such a run may be shown or used before the overlay exists, and under which label. Also whether a run whose rows fail a check should report those rows."
     },
     {
       "id": "E8-OP7",
       "point": "A figure whose own lineage is public, inside an output whose level is below public.",
       "signed_files_say": "Protocol v1a guardrail GR6: 'An overlay's rights level is the minimum across its lineage.' The rule speaks of an overlay as a whole. It does not say whether one figure of it, computed from public inputs only, may be quoted where the overlay may not be kept.",
-      "what_this_task_does": "The overlay or the report of a run goes outside Git as a whole when one of its inputs is below the public level. The receipt in Git holds counts for the whole case and no value of a single unit. Which figures the README of the output folder quotes for a unit is stated there, with the lineage of each.",
-      "for_the_owners": "Whether a per-unit figure computed from public inputs only may be committed while the file it was read from stays outside Git."
+      "what_this_task_does": "The overlay or the report of a run goes outside Git as a whole when one of its inputs is below the public level. The receipt in Git holds counts for the whole case and no value of a single unit. Which figures the README of the output folder quotes for a unit is stated there, with the lineage of each. Two things make that separation nominal, and the receipt says so. A count that covers every row (all rows in one class, with one reason code or one confidence class) states that value for each unit the receipt lists, and the receipt names such counts (rights.figures_of_local_level_layers_in_this_receipt.counts_that_cover_every_row). And where the public-lineage components of each unit are in Git beside the age table of task E7 and the anchors of protocol v1b, the vulnerability component, the FPPS and the binding class of each unit can be worked out from committed files alone.",
+      "for_the_owners": "Whether a per-unit figure computed from public inputs only may be committed while the file it was read from stays outside Git; and, since the values kept outside Git can be worked out from what is in Git, whether the level below public is meant to keep them out of the repository at all (open points E1-OP1 and E8-OP5)."
+    },
+    {
+      "id": "E8-OP8",
+      "point": "The shelter part of v2 trigger C in a public overlay.",
+      "signed_files_say": "Protocol v1a class_rules.v2, trigger C: 'an OSM hospital or a uniquely located DDPM shelter serving the unit is inside the extent or loses all vehicle routes'. Decision D8b keeps the DDPM rows at the pitch level, and guardrail GR6 takes the minimum across the lineage. Neither says whether a public overlay evaluates C on hospitals alone.",
+      "what_this_task_does": "Nothing: no stage evaluates trigger C yet (open point E8-OP1).",
+      "for_the_owners": "Whether a public overlay evaluates trigger C on hospitals alone, or carries no C result."
+    },
+    {
+      "id": "E8-OP9",
+      "point": "Leave-one-component-out and the FPPS of a row the protocols do not describe.",
+      "signed_files_say": "Protocol v1a scoring_frame.leave_one_component_out: 'required_on_every_row' is true. Guardrail GR1 with reading DR-A09: a unit with fewer than 100 residents has no binding class, no would-be class and no v2 class. Neither describes a row with a component that is not computed, and GR1 does not name the FPPS or the leave-one-out values.",
+      "what_this_task_does": "A row with a component that is not computed has no FPPS and no leave-one-component-out (point 3 of the overlay page). A unit under GR1 keeps its FPPS and its five leave-one-out FPPS values, with no leave-one-out class (point 5 there).",
+      "for_the_owners": "Whether leave-one-component-out is wanted for a row with a missing component (over the components that exist), and whether a unit under GR1 states an FPPS at all."
     }
   ],
   "not_computed": [
@@ -782,7 +893,10 @@
     "2SFCA shelter supply",
     "accepted FPPS and accepted class (tier T4 is locked)",
     "the strict and permissive closure levels",
-    "the minus and plus flood levels as rows"
+    "the minus and plus flood levels as rows",
+    "the thinned GeoJSON layers of plan stage P8",
+    "a pitch-level overlay",
+    "an overlay of case O1"
   ],
   "assumptions": [
     "A closure is a modelled assumption of closure rule v1 (closure_basis), not an observed closure. A flood intersection does not prove that a road was closed.",
@@ -802,10 +916,10 @@
     "The equity figures, the shelter supply and the travel-time summaries of plan 7.1 are plan task E9 and are not in schema 1.0 of the overlay."
   ],
   "implementation": {
-    "base_commit": "a62e5dcd6deaf6b213401533fb3b5fd5927f4e42",
+    "base_commit": "8056d744daf6f5932cc9d97a99cd2c0dc64d2370",
     "base_commit_note": "The commit the working tree was on. The files below are the ones this run loaded, identified by their own SHA-256, committed or not.",
-    "builder_sha256": "be54f7577a4e219a7ca90674fbed1687d302a2e7fc8a830662c5c3ea90148b55",
-    "planning_assessment_module_sha256": "0f0d653f3a468f9f082f56c13f93039b88d6b07035e8664f46a5af3ad6f5422e",
+    "builder_sha256": "fb7e11a444ee761aa2982581fc96a5e5b68b8a58b6c4e0e24f99c7c3955243d9",
+    "planning_assessment_module_sha256": "db226c3be13905fc164ddadd8024057f34f3f83cdf999db6fcc0391c094343bd",
     "planning_overlay_module_sha256": "a507441b6d8991297a6460a5d5578c78942f9ea6b204362f8ac7ad5814f9e742",
     "normalisation_module_sha256": "731e50596822cd5798fa2298d957c17bf44b3771536f3ed8c50930c43f545cfb",
     "confidence_module_sha256": "acb762cf56e41c86b4af40a5ce8108072b87e2dd7d35e86f56487bfa59eb54f0",
@@ -823,17 +937,18 @@
     }
   },
   "timing_seconds": {
-    "inputs_checked": 3.1,
-    "units_read_and_lineage": 1.1,
-    "units_measured_and_assessed": 2.3
+    "inputs_checked": 7.3,
+    "stages_compared_unit_by_unit": 2.7,
+    "units_read_and_lineage": 0.0,
+    "units_measured_and_assessed": 0.9
   },
   "outputs": {
     "overlay": {
       "files": [
         {
           "path": "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e8_planning_assessment/planning_assessment_overlay_o2_mae_sai.json",
-          "sha256": "fe9055eb0667367532003331302e96b3e6b02ad58c6f87178f4068dc19e853a3",
-          "bytes": 120262,
+          "sha256": "5796982aad7576a89029f641b432cf2830950cf47bbcc245cf5b84fc34bf0bd8",
+          "bytes": 120565,
           "what": "planning_assessment_overlay",
           "in_git": false,
           "publication_eligibility": "local",
@@ -850,21 +965,45 @@
     }
   },
   "timestamps": {
-    "run_started_at_utc": "2026-10-04T17:59:18Z",
-    "run_finished_at_utc": "2026-10-04T17:59:24Z",
-    "wall_time_minutes": 0.11,
+    "run_started_at_utc": "2026-10-04T19:36:40Z",
+    "run_finished_at_utc": "2026-10-04T19:36:51Z",
+    "wall_time_minutes": 0.18,
     "note": "generated_at_utc is the start of the run; the overlay carries the same time."
   },
   "supersedes": {
-    "receipt_sha256": "7412cb1efc5cd89ca332ecb5cb036aa244bd6b35b5abb2ccc8890793f174d679",
-    "generated_at_utc": "2026-10-04T17:53:46Z",
-    "reason": "The Thai title of the case in the overlay header said dew for residual water; it is corrected. No rule, no input and no value of a unit was changed.",
+    "receipt_sha256": "2ea03b0cf950ce7378dd7a6e169c31233bc6398f64fa6742e311d7a66ac02e6f",
+    "generated_at_utc": "2026-10-04T17:59:18Z",
+    "reason": "After a review: the receipt gains the licence, the credit and a change notice for UNOSAT/GISTDA product 4009; the change notice of the flood input in the overlay names the step of task E8; the receipt records the SHA-256 of the rows alone and of each lineage input; and the open points are extended. No rule and no input was changed; supersedes.rows_same compares the rows of the two runs.",
     "result_same": true,
+    "counts_same": true,
+    "rows_same": true,
+    "rows_sha256_of_the_superseded_run": "03c3ddcf3c4740a2da6144463cc5c142251d7a3ffed523fa04cd4a99ac28d09e",
+    "rows_sha256_of_this_run": "03c3ddcf3c4740a2da6144463cc5c142251d7a3ffed523fa04cd4a99ac28d09e",
+    "rows_of_the_superseded_run_read_from": "the file the superseded receipt binds, read back with the SHA-256 that receipt names",
+    "lineage_inputs_same": true,
+    "lineage_inputs_that_differ": [],
     "outputs_of_the_superseded_run": {
-      "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e8_planning_assessment/planning_assessment_overlay_o2_mae_sai.json": "5442ae7bf0bdd49e6521eab573db78383bf1439e9c3cc12d185d86157d2bcf9a",
+      "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e8_planning_assessment/planning_assessment_overlay_o2_mae_sai.json": "fe9055eb0667367532003331302e96b3e6b02ad58c6f87178f4068dc19e853a3",
       "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e8_planning_assessment/LICENSE_NOTICE.txt": "acaafc1b83a5fe5d72a9f50e0e0efe476517328f581c5c487fb2e0a1290de1df"
     },
-    "note": "The superseded receipt is named here by its SHA-256, and run_history lists every earlier run. result_same compares the result blocks of the two receipts (whether the overlay was written, its summary, and the summary of rows reported as computed) without the content hash of the overlay: an overlay carries its generation time, so its bytes and that hash differ between runs."
+    "copies_kept_outside_git": [
+      {
+        "path": "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e8_planning_assessment/superseded_runs/20261004T175918Z/e8_planning_assessment_o2_mae_sai.json",
+        "sha256": "2ea03b0cf950ce7378dd7a6e169c31233bc6398f64fa6742e311d7a66ac02e6f",
+        "what": "receipt"
+      },
+      {
+        "path": "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e8_planning_assessment/superseded_runs/20261004T175918Z/planning_assessment_overlay_o2_mae_sai.json",
+        "sha256": "fe9055eb0667367532003331302e96b3e6b02ad58c6f87178f4068dc19e853a3",
+        "what": "file the receipt bound"
+      },
+      {
+        "path": "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e8_planning_assessment/superseded_runs/20261004T175918Z/LICENSE_NOTICE.txt",
+        "sha256": "acaafc1b83a5fe5d72a9f50e0e0efe476517328f581c5c487fb2e0a1290de1df",
+        "what": "file the receipt bound"
+      }
+    ],
+    "note": "result_same is true only when the counts of the whole case are the same (counts_same: whether an overlay was written, why not, and the rows by class, reason code and confidence class) and the rows are the same (rows_same: the SHA-256 of the rows alone, which covers every value of every unit and leaves out the generation time, the commit and the header text). rows_same is null when the rows of one of the two runs cannot be read. The superseded receipt is named by its SHA-256 and copied outside Git with the files it bound; run_history lists every earlier run."
   },
   "run_history": [
     {
@@ -876,6 +1015,34 @@
         "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e8_planning_assessment/planning_assessment_overlay_o2_mae_sai.json": "5442ae7bf0bdd49e6521eab573db78383bf1439e9c3cc12d185d86157d2bcf9a",
         "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e8_planning_assessment/LICENSE_NOTICE.txt": "acaafc1b83a5fe5d72a9f50e0e0efe476517328f581c5c487fb2e0a1290de1df"
       }
+    },
+    {
+      "generated_at_utc": "2026-10-04T17:59:18Z",
+      "receipt_sha256": "2ea03b0cf950ce7378dd7a6e169c31233bc6398f64fa6742e311d7a66ac02e6f",
+      "superseded_because": "After a review: the receipt gains the licence, the credit and a change notice for UNOSAT/GISTDA product 4009; the change notice of the flood input in the overlay names the step of task E8; the receipt records the SHA-256 of the rows alone and of each lineage input; and the open points are extended. No rule and no input was changed; supersedes.rows_same compares the rows of the two runs.",
+      "result_same_as_the_run_that_replaced_it": true,
+      "rows_sha256": "03c3ddcf3c4740a2da6144463cc5c142251d7a3ffed523fa04cd4a99ac28d09e",
+      "outputs_sha256": {
+        "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e8_planning_assessment/planning_assessment_overlay_o2_mae_sai.json": "fe9055eb0667367532003331302e96b3e6b02ad58c6f87178f4068dc19e853a3",
+        "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e8_planning_assessment/LICENSE_NOTICE.txt": "acaafc1b83a5fe5d72a9f50e0e0efe476517328f581c5c487fb2e0a1290de1df"
+      },
+      "copies_kept_outside_git": [
+        {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e8_planning_assessment/superseded_runs/20261004T175918Z/e8_planning_assessment_o2_mae_sai.json",
+          "sha256": "2ea03b0cf950ce7378dd7a6e169c31233bc6398f64fa6742e311d7a66ac02e6f",
+          "what": "receipt"
+        },
+        {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e8_planning_assessment/superseded_runs/20261004T175918Z/planning_assessment_overlay_o2_mae_sai.json",
+          "sha256": "fe9055eb0667367532003331302e96b3e6b02ad58c6f87178f4068dc19e853a3",
+          "what": "file the receipt bound"
+        },
+        {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e8_planning_assessment/superseded_runs/20261004T175918Z/LICENSE_NOTICE.txt",
+          "sha256": "acaafc1b83a5fe5d72a9f50e0e0efe476517328f581c5c487fb2e0a1290de1df",
+          "what": "file the receipt bound"
+        }
+      ]
     }
   ]
 }

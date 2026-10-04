@@ -3,14 +3,14 @@
 /**
  * The panels around the map of the Command exercise replay: the banner with its information drawer (region A), the
  * navigation (C), the round map tools (E), the legend (G), the watermark and the map credits (H), the one-line notice
- * (I), the help sheet and the card reserved for the subdistrict table (B2).
+ * (I) and the help sheet.
  *
  * The page is an exercise and after-action tool on a reconstructed 2024 event: the banner says so on every screen
  * and cannot be dismissed, and the drawer lists the permitted use, the assumptions, the limits and the sources of the
  * replay data.
  */
 
-import { ChevronDown, ChevronUp, CircleHelp, Info, Layers, LocateFixed, Map as MapIcon, Maximize2, Menu, Minimize2, Minus, Plus, Scan, Search, Table2, X } from "lucide-react";
+import { ChevronDown, ChevronUp, CircleHelp, Info, Layers, LocateFixed, Map as MapIcon, Maximize2, Menu, Minimize2, Minus, Plus, Scan, Search, X } from "lucide-react";
 import { useEffect, useId, useRef, type ReactNode, type Ref } from "react";
 
 import { formatDateWithYear, lowConfidenceRgba, rgbaCss, type Language, type Localized, type TimelineManifest } from "@/lib/flood-timeline";
@@ -26,7 +26,6 @@ import {
   COMMAND_LEGEND,
   COMMAND_MAP,
   COMMAND_NAV,
-  COMMAND_SITUATION,
   COMMAND_TOOLS,
   commandBannerParts,
   commandDataLine,
@@ -264,19 +263,22 @@ export function CommandNav({ language, hour, menuOpen, onMenu, onLanguage, onHel
 
 // --- E. Tool rail ------------------------------------------------------------------------------------------
 
-export function CommandToolRail({ language, focus, basemap, nextFit, viewOpen, disabled, onView, onBasemap, onZoom, onFit, onFocus, railRef }: {
+export function CommandToolRail({ language, focus, basemap, nextFit, viewOpen, findOpen = false, disabled, onView, onBasemap, onZoom, onFit, onFind, onFocus, railRef }: {
   language: Language;
   focus: boolean;
   basemap: CommandBasemap;
   /** What the fit button shows next: the town, then the whole district, in turn. */
   nextFit: CommandFitTarget;
   viewOpen: boolean;
+  /** The find-place box is open. */
+  findOpen?: boolean;
   /** True until the map is ready. */
   disabled: boolean;
   onView: () => void;
   onBasemap: () => void;
   onZoom: (delta: number) => void;
   onFit: () => void;
+  onFind?: () => void;
   onFocus: () => void;
   railRef?: Ref<HTMLDivElement>;
 }) {
@@ -301,7 +303,7 @@ export function CommandToolRail({ language, focus, basemap, nextFit, viewOpen, d
       <button type="button" className={styles.tool} onClick={onFit} disabled={disabled} aria-label={fitLabel} title={fitLabel} data-command-tool="fit" data-fit={nextFit}>
         {nextFit === "town" ? <LocateFixed size={20} aria-hidden="true" /> : <Scan size={20} aria-hidden="true" />}
       </button>
-      <button type="button" className={styles.tool} disabled aria-label={t(COMMAND_TOOLS.find)} title={t(COMMAND_TOOLS.find)} data-command-tool="find">
+      <button type="button" className={styles.tool} onClick={onFind} disabled={disabled} aria-expanded={findOpen} aria-label={t(COMMAND_TOOLS.find)} title={t(COMMAND_TOOLS.find)} data-command-tool="find">
         <Search size={20} aria-hidden="true" />
       </button>
       <button type="button" className={styles.tool} onClick={onFocus} aria-pressed={focus} aria-label={focusLabel} title={`${focusLabel} ( F )`} data-command-tool="focus">
@@ -447,17 +449,4 @@ export function CommandCredits({ language, view, revision }: { language: Languag
 /** One line at the top centre of the map. It says what the page did or could not do; it is never a warning. */
 export function CommandNotice({ message, language }: { message: string | null; language: Language }) {
   return <div role="status" data-region="I" lang={language}>{message && <p className={styles.notice} data-command-notice>{message}</p>}</div>;
-}
-
-// --- B2. Reserved card -------------------------------------------------------------------------------------
-
-/** The card of the subdistrict table. The table is not built yet; the card keeps its place and says so. */
-export function CommandTableCard({ language, cardRef }: { language: Language; cardRef?: Ref<HTMLElement> }) {
-  return (
-    <section ref={cardRef} className={`${styles.panel} ${styles.table}`} data-region="B2" data-clear-panel aria-label={pick(COMMAND_SITUATION.tableTitle, language)} lang={language}>
-      <Table2 size={22} aria-hidden="true" />
-      <strong>{pick(COMMAND_SITUATION.tableTitle, language)}</strong>
-      <span>{pick(COMMAND_SITUATION.tableSoon, language)}</span>
-    </section>
-  );
 }

@@ -25,7 +25,7 @@ const COMMAND_AREA_STORAGE_KEY = "floodguard:command:selected-area:v1";
 const COMMAND_TABS = ["summary", "facilities", "scenario", "verification", "method"] as const;
 type CommandTab = typeof COMMAND_TABS[number];
 
-const ACTION_TEXT = {
+export const ACTION_TEXT = {
   A: { en: "Prepare life-safety resources and verify the area first.", th: "เตรียมทรัพยากรเพื่อความปลอดภัยและตรวจสอบพื้นที่เป็นลำดับแรก" },
   B: { en: "Verify critical links and prepare continuity options.", th: "ตรวจสอบเส้นทางสำคัญและเตรียมทางเลือกเพื่อความต่อเนื่อง" },
   C: { en: "Verify essential-service access and backup arrangements.", th: "ตรวจสอบการเข้าถึงบริการจำเป็นและแผนสำรอง" },

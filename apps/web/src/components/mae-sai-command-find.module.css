@@ -1,0 +1,25 @@
+/* The find-place box of the Command exercise replay: a white panel left of the tool rail, like the view popover.
+   The tokens (--c-*) are set on the page root in mae-sai-command-exercise.module.css. */
+.find { position: absolute; z-index: 20; top: calc(50% - 166px); right: calc(var(--c-margin) + var(--c-rail) + var(--c-gap)); display: flex; flex-direction: column; width: 300px;
+  max-height: calc(50% + 166px - 2 * var(--c-margin) - var(--c-dock) - 36px - 2 * var(--c-gap)); padding: 12px 14px 12px; overflow: hidden; }
+.field { flex: none; display: grid; grid-template-columns: 16px minmax(0, 1fr); align-items: center; gap: 8px; height: 44px; padding: 0 12px; border: 1px solid var(--c-line); border-radius: 10px; background: #ffffff; color: var(--c-muted); }
+.field:focus-within { border-color: var(--c-focus); box-shadow: 0 0 0 2px rgb(29 111 184 / 28%); }
+.field input { min-width: 0; height: 40px; padding: 0; border: 0; background: none; color: var(--c-ink); font: inherit; font-size: 13.5px; outline: none; }
+.find .field input:focus-visible { outline: none; }
+.field input::placeholder { color: #8fa1b4; }
+.field input::-webkit-search-cancel-button { -webkit-appearance: none; }
+.hint { margin-top: 8px; color: var(--c-muted); font-size: 11px; line-height: 1.45; }
+.hint:lang(th) { line-height: 1.55; }
+.results { flex: 1 1 auto; display: grid; gap: 2px; min-height: 0; margin: 8px -6px 0; padding: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; list-style: none; }
+.results li { display: grid; grid-template-columns: 16px minmax(0, 1fr); align-items: center; gap: 10px; min-height: 44px; padding: 5px 8px; border-radius: 8px; color: var(--c-muted); cursor: pointer; }
+.results li[aria-selected="true"] { background: var(--c-tint); }
+.results li[aria-disabled="true"] { cursor: default; opacity: .62; }
+.names { display: grid; min-width: 0; }
+/* A long Thai name wraps; it is never cut. */
+.names strong { color: var(--c-ink); font-size: 13px; font-weight: 600; line-height: 1.5; overflow-wrap: anywhere; }
+.names span { color: #33495f; font-size: 11px; line-height: 1.35; overflow-wrap: anywhere; }
+.names small { overflow: hidden; color: var(--c-muted); font-size: 10.5px; line-height: 1.4; white-space: nowrap; text-overflow: ellipsis; }
+.names small:lang(th) { font-size: 11px; line-height: 1.5; }
+@media (max-width: 899px) {
+  .find { display: none; }
+}

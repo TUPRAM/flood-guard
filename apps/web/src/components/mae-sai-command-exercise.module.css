@@ -1,6 +1,6 @@
 /* Command exercise replay (Mae Sai, September 2024): a pale full-screen map under opaque white panels.
-   Regions (plan section 3): A banner, B1 clock and figures, B2 subdistrict table, C navigation, E tool rail,
-   F time dock, G legend, H watermark and credits, I one-line notice.
+   Regions (plan section 3): A banner, B1 clock and figures, B2 subdistrict table, C navigation, D right card,
+   E tool rail, F time dock, G legend, H watermark and credits, I one-line notice.
    Colour: most of the screen is neutral. Water is one blue in two tones; red is for impassable roads only; amber is
    for wet roads and the exercise tag only. Ink, muted text, lines and the dark accent are the site's Command palette
    (globals.css, `.command-page`: --ink, --muted, --line, --navy); the two blues are the site's primary 300 and 500. */
@@ -142,13 +142,13 @@
 .situationLine strong { font-size: 13px; font-weight: 600; white-space: nowrap; }
 .situationLine span { overflow: hidden; color: var(--c-muted); font-size: 12px; white-space: nowrap; text-overflow: ellipsis; }
 
-/* --- B2. Subdistrict table (reserved) ----------------------------------------------------------------- */
-.table { flex: 1 1 auto; display: grid; place-content: center; justify-items: center; gap: 4px; min-height: 44px; padding: 16px; overflow: hidden; color: var(--c-muted); text-align: center; }
-.table svg { color: #9fb0c2; }
-.table strong { color: var(--c-ink); font-size: 13px; font-weight: 600; }
-.table span { max-width: 28ch; font-size: 12px; }
-.page[data-focus="on"] .table { flex: none; display: flex; align-items: center; justify-content: flex-start; gap: 8px; min-height: 44px; padding: 4px 16px; }
-.page[data-focus="on"] .table span, .page[data-focus="on"] .table svg { display: none; }
+/* B2, the subdistrict table, is in mae-sai-command-queue.module.css; D, the right card, in mae-sai-command-inspector.module.css. */
+/* On a short desktop screen the clock card gives the table under it a few pixels. */
+@media (min-width: 1181px) and (max-height: 840px) {
+  .situation { padding: 8px 16px 9px; }
+  .figuresHead { margin: 4px 0 3px; }
+  .notes { margin-top: 5px; }
+}
 
 /* --- C. Navigation ------------------------------------------------------------------------------------ */
 .nav { position: absolute; z-index: 12; top: var(--c-margin); right: var(--c-margin); display: flex; align-items: center; height: 44px; padding: 0 6px; border-radius: 22px; background: var(--c-panel); box-shadow: var(--c-shadow); }

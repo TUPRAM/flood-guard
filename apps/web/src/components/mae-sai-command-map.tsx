@@ -10,7 +10,7 @@
  * reader asks: every fit, zoom and popup stays inside the clear rectangle the page measures between its panels.
  */
 
-import type { CircleMarker, GeoJSONOptions, ImageOverlay, LatLngBoundsExpression, Layer, Map as LeafletMap, Marker, Path, PathOptions, Renderer } from "leaflet";
+import type { CircleMarker, GeoJSONOptions, ImageOverlay, LatLng, LatLngBoundsExpression, Layer, Map as LeafletMap, Marker, Path, PathOptions, Polyline, Renderer } from "leaflet";
 import { useEffect, useImperativeHandle, useRef, useState, type Ref } from "react";
 
 import { FACTOR_LUT_SIZE, facilityWet, formatDateWithYear, lutEquals, paintDepth, paintLowConfidence, projectToFrame, type FacilityProps, type Language, type ReportedShelter, type RoadProps } from "@/lib/flood-timeline";
@@ -32,6 +32,7 @@ import {
   type CommandRoadStyle,
   type LatLngBox,
 } from "@/lib/flood-timeline-command-map";
+import type { CommandFindTarget } from "@/lib/flood-timeline-command-table";
 import { countedInReportedSet, reportedSiteRole } from "@/lib/flood-timeline-evacuation";
 import { clearRectPadding, popupFitInRect, type ScreenRect } from "@/lib/flood-timeline-layout";
 
@@ -52,10 +53,21 @@ const LITTLE_ENDIAN = new Uint8Array(new Uint32Array([1]).buffer)[0] === 1;
 export type CommandBasemap = "street" | "terrain";
 export type CommandFitTarget = "town" | "district";
 
+/** A place the find-place box shows on the map: where it is, its name and the lines under the name. */
+export interface CommandMapPlace {
+  target: Exclude<CommandFindTarget, { type: "tambon" }>;
+  title: string;
+  lines: readonly string[];
+}
+
 /** What the page can ask of the map. */
 export interface CommandMapHandle {
   zoomBy: (delta: number) => void;
   fit: (target: CommandFitTarget) => void;
+  /** Fit one subdistrict inside the clear rectangle. */
+  fitTambon: (id: string) => void;
+  /** Mark a found place and, when asked, bring it inside the clear rectangle; null takes the mark away. */
+  showPlace: (place: CommandMapPlace | null, fit?: boolean) => void;
 }
 
 /** The scale of the map as the page prints it under the scale bar. */
@@ -64,6 +76,7 @@ export interface CommandMapView { metresPerPixel: number; zoom: number }
 interface MapFrame { stage: number; hour: number; hand: CommandHandRaster | null }
 interface MapController {
   update: (frame: MapFrame, exact: boolean) => void;
+  setSelected: (id: string | null) => void;
   setBasemap: (basemap: CommandBasemap, fallback: boolean) => void;
   setFacilities: (visible: boolean) => void;
   refreshText: () => void;
@@ -124,7 +137,7 @@ function placeLabel(thai: string, roman: string): HTMLElement {
   return root;
 }
 
-export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, basemap, facilities, getClear, reducedMotion, onReady, onBasemapIssue, onView, handle }: {
+export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, basemap, facilities, selected = null, getClear, reducedMotion, onReady, onBasemapIssue, onView, handle }: {
   data: CommandReplayData;
   /** The terrain raster of the water layer; null until it has loaded (the roads and the figures do not wait for it). */
   hand: CommandHandRaster | null;
@@ -136,6 +149,8 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
   basemap: CommandBasemap;
   /** The 42 key facilities are hidden until the reader asks for them. */
   facilities: boolean;
+  /** The subdistrict selected in the table: it is outlined on the map. */
+  selected?: string | null;
   /** The clear rectangle between the page's panels, in the map's own pixels, measured when it is asked for. */
   getClear: () => ScreenRect;
   reducedMotion: boolean;
@@ -163,6 +178,8 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
   useImperativeHandle(handle, () => ({
     zoomBy: (delta) => mapHandle.current?.zoomBy(delta),
     fit: (target) => mapHandle.current?.fit(target),
+    fitTambon: (id) => mapHandle.current?.fitTambon(id),
+    showPlace: (place, fit) => mapHandle.current?.showPlace(place, fit),
   }), []);
 
   // --- Mount -------------------------------------------------------------------------------------------
@@ -208,7 +225,7 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
 
       for (const [name, zIndex] of [
         ["fg-imagery", 250], ["fg-water", 350], ["fg-veil", 370], ["fg-tambons", 380], ["fg-highlight", 390], ["fg-roads", 400],
-        ["fg-labels", 440], ["fg-facilities", 450], ["fg-shelters", 460], ["fg-reported-depths", 462],
+        ["fg-selection", 430], ["fg-labels", 440], ["fg-facilities", 450], ["fg-shelters", 460], ["fg-reported-depths", 462],
       ] as const) {
         const pane = map.createPane(name);
         pane.style.zIndex = String(zIndex);
@@ -444,6 +461,73 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
       };
       refreshText();
 
+      // --- The selected subdistrict: a dark outline over a white casing, above the roads and under the names.
+      const selectionRenderer = L.svg({ pane: "fg-selection", padding: 0.6 });
+      let selectionLayers: Layer[] = [];
+      let shownSelection: string | null = null;
+      const setSelected = (id: string | null) => {
+        if (id === shownSelection) return;
+        shownSelection = id;
+        for (const layer of selectionLayers) layer.remove();
+        selectionLayers = [];
+        const feature = id ? data.tambons.features.find((item) => item.properties.id === id) : null;
+        if (!feature) return;
+        const rings = areaPolygons(feature.geometry).map((polygon) => polygon.map((ring) => ring.map(([lon, lat]) => [lat, lon] as [number, number])));
+        const shared = { pane: "fg-selection", renderer: selectionRenderer, interactive: false, lineJoin: "round" as const };
+        selectionLayers = [
+          L.polygon(rings, { ...shared, color: "#ffffff", weight: 6.5, opacity: 0.92, fill: false }).addTo(map),
+          L.polygon(rings, { ...shared, color: "#12262d", weight: 2.6, opacity: 1, fillColor: "#12262d", fillOpacity: 0.035 }).addTo(map),
+        ];
+      };
+      const fitTambon = (id: string) => {
+        const feature = data.tambons.features.find((item) => item.properties.id === id);
+        const box = feature ? areaBounds([feature.geometry]) : null;
+        if (!box) return;
+        map.closePopup();
+        fitTo(box, !motionRef.current);
+      };
+
+      // --- A place found with the find-place box: a ring at its point (with the stated tolerance of a place record
+      // as a dashed circle), or a pale casing along a named road, and its name beside it.
+      let placeLayers: Layer[] = [];
+      const showPlace = (place: CommandMapPlace | null, fit = false) => {
+        for (const layer of placeLayers) layer.remove();
+        placeLayers = [];
+        if (!place) return;
+        const { target } = place;
+        const label = () => tooltipElement([[place.title, "title"], ...place.lines.map((line) => [line, "muted"] as [string, string])]);
+        const shared = { pane: "fg-selection", renderer: selectionRenderer, interactive: false };
+        if (target.type === "road") {
+          const pieces = roads.filter((entry) => entry.props.n?.trim() === target.name).map((entry) => (entry.layer as Polyline).getLatLngs() as LatLng[]);
+          const casing = L.polyline(pieces, { ...shared, color: "#12262d", weight: 10, opacity: 0.2, lineCap: "round", lineJoin: "round" }).addTo(map);
+          casing.bindTooltip(label, { permanent: true, direction: "top", offset: [0, -6] });
+          placeLayers = [casing];
+          if (fit) {
+            map.closePopup();
+            fitTo(target.box, !motionRef.current);
+          }
+          return;
+        }
+        const site = target.siteId ? siteMarkers.find((entry) => entry.site.id === target.siteId) : undefined;
+        if (fit) {
+          map.closePopup();
+          // About 400 m around the point, or the stated tolerance of a place record when that is wider.
+          const span = Math.max(0.0036, ((target.toleranceM ?? 0) * 1.7) / 111_320);
+          fitTo([[target.lat - span, target.lon - span], [target.lat + span, target.lon + span]], !site && !motionRef.current);
+        }
+        // A reported site has its own marker: its popup says what the data holds.
+        if (site) {
+          if (fit) site.marker.openPopup();
+          return;
+        }
+        const at: [number, number] = [target.lat, target.lon];
+        if (target.toleranceM) placeLayers.push(L.circle(at, { ...shared, radius: target.toleranceM, color: "#12262d", weight: 1.2, opacity: 0.7, dashArray: "4 4", fill: false }).addTo(map));
+        placeLayers.push(L.circleMarker(at, { ...shared, radius: 12, color: "#ffffff", weight: 5.5, opacity: 0.95, fill: false }).addTo(map));
+        const ring = L.circleMarker(at, { ...shared, radius: 12, color: "#12262d", weight: 2.4, fill: false }).addTo(map);
+        ring.bindTooltip(label, { permanent: true, direction: "top", offset: [0, -12] });
+        placeLayers.push(ring);
+      };
+
       const reportView = () => callbacks.current.onView?.({ metresPerPixel: metresPerPixel(map.getCenter().lat, map.getZoom()), zoom: map.getZoom() });
       map.on("zoomend", () => {
         const next = map.getZoom() >= NEAR_ZOOM ? "near" : "far";
@@ -502,6 +586,7 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
           if (visible && !map.hasLayer(facilityGroup)) facilityGroup.addTo(map);
           if (!visible && map.hasLayer(facilityGroup)) facilityGroup.remove();
         },
+        setSelected,
         refreshText,
       };
       mapHandle.current = {
@@ -514,6 +599,8 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
           map.closePopup();
           fitTo(target === "town" ? townBox : districtBox, !motionRef.current);
         },
+        fitTambon,
+        showPlace,
       };
       resizeObserver = new ResizeObserver(() => map.invalidateSize());
       resizeObserver.observe(element.current);
@@ -547,6 +634,9 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
   useEffect(() => {
     if (ready) controller.current?.setFacilities(facilities);
   }, [ready, facilities]);
+  useEffect(() => {
+    if (ready) controller.current?.setSelected(selected);
+  }, [ready, selected]);
   useEffect(() => {
     if (ready) controller.current?.refreshText();
   }, [ready, language]);

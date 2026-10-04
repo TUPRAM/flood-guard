@@ -8,7 +8,8 @@
  *   2. every text value of the served manifest;
  *   3. the reader-visible text of the main panels rendered with that manifest, in both languages, the lines the
  *      Command exercise copy builds from the replay data, and the panels of the Command exercise page as rendered,
- *      in both languages.
+ *      in both languages: the subdistrict table, the inspector and the find-place box among them, with the plan group
+ *      of the table rendered once on the invented units of the planning overlay fixture.
  * It must pass on the current text and fail on one seeded bad string per rule. The Python twin is
  * `tests/test_replay_wording_lint.py`.
  */
@@ -26,11 +27,13 @@ import {
   CommandInfoBody,
   CommandLegend,
   CommandNav,
-  CommandTableCard,
   CommandToolRail,
   CommandViewPopover,
 } from "@/components/mae-sai-command-chrome";
 import { MaeSaiCommandExercise } from "@/components/mae-sai-command-exercise";
+import { MaeSaiCommandFind } from "@/components/mae-sai-command-find";
+import { CommandCardChip, CommandCaseCard, CommandKnownPlaceholder, CommandTambonDetailBody, MaeSaiCommandInspector } from "@/components/mae-sai-command-inspector";
+import { CommandQueueTable, MaeSaiCommandQueue } from "@/components/mae-sai-command-queue";
 import { MaeSaiCommandSituation } from "@/components/mae-sai-command-situation";
 import { MaeSaiCommandTimebar } from "@/components/mae-sai-command-timebar";
 import { AccessCard, ExternalChecks, PeopleInWaterCard, ReportedSheltersCard, ShelterPlanCard } from "@/components/mae-sai-evacuation-panels";
@@ -68,19 +71,31 @@ import {
   type TambonProps,
   type TimelineManifest,
 } from "./flood-timeline";
-import { buildCommandModel, changeSinceHourBefore, COMMAND_SHELTER_SETS, districtFiguresAt } from "./flood-timeline-command";
+import fixtureOverlay from "./__fixtures__/planning-assessment-overlay.fixture.json";
+import { buildCommandModel, changeSinceHourBefore, COMMAND_SHELTER_SETS, districtFiguresAt, tambonOrderByHour, tambonRowsAt, type CommandShelterSet, type CommandTambonRow } from "./flood-timeline-command";
 import {
   COMMAND_BANNER,
+  COMMAND_CLASS_NAMES,
   COMMAND_CLOCK,
   COMMAND_DRAWER,
   COMMAND_FIGURES,
+  COMMAND_FIND,
+  COMMAND_FIND_KIND,
+  COMMAND_INSPECTOR,
   COMMAND_LANE_ORDER,
+  COMMAND_TABLE,
   commandBannerLine,
   commandBaseText,
+  commandCaseLane,
+  commandCaseTitle,
   commandChangeLine,
+  commandChipLabel,
+  commandClassLine,
   commandDataLine,
   commandDrawerHeading,
   commandFigureCells,
+  commandFindCount,
+  commandFindKindText,
   commandHourOf,
   commandHourShort,
   commandLaneMeaning,
@@ -88,11 +103,32 @@ import {
   commandLifeAtRisk,
   commandMoment,
   commandMomentShort,
+  commandNoReachNote,
   commandOpenItems,
   commandPhaseLine,
   commandPlaceRecordLine,
+  commandPlanPositionLabel,
+  commandRecordCount,
+  commandRowChange,
+  commandSetLabel,
+  commandSetMeaning,
+  commandToleranceText,
+  commandUnlocatedRecords,
 } from "./flood-timeline-command-copy";
 import { commandDayChips, commandEventStops, commandPhaseSpans } from "./flood-timeline-command-replay";
+import {
+  buildCommandFindIndex,
+  COMMAND_PLANNING_CASES,
+  commandTableRows,
+  lostAccessScale,
+  parsePeakSummary,
+  placeRecordsOfTambons,
+  planningCells,
+  planningFacts,
+  tambonDetailAt,
+  tambonRowsBefore,
+  type CommandPlanningCell,
+} from "./flood-timeline-command-table";
 import { parseSeasonEnvelopeDocument, shippableEnvelope } from "./flood-timeline-envelope";
 import { reportedDepthPopup, shippableReportedDepths } from "./flood-timeline-reported-depths";
 import {
@@ -107,6 +143,7 @@ import {
   summarizeAccessSets,
   tambonResidents,
 } from "./flood-timeline-evacuation";
+import { parsePlanningAssessmentOverlay } from "./planning-assessment-overlay";
 import {
   describeWordingFindings,
   findWordingViolations,
@@ -294,7 +331,9 @@ function commandModel(): ReturnType<typeof buildCommandModel> {
 
 function commandCopyLines(language: Language): string[] {
   const model = commandModel();
-  const blocks: Record<string, Localized>[] = [COMMAND_BANNER, COMMAND_CLOCK, COMMAND_FIGURES, COMMAND_DRAWER];
+  const blocks: Record<string, Localized>[] = [COMMAND_BANNER, COMMAND_CLOCK, COMMAND_FIGURES, COMMAND_DRAWER, COMMAND_TABLE, COMMAND_INSPECTOR, COMMAND_FIND, COMMAND_FIND_KIND, COMMAND_CLASS_NAMES];
+  const letters = ["A", "B", "C", "D", "E"] as const;
+  const headlines = ["not_evaluated", "headline_eligible", "unstable_verify"] as const;
   const hours = [0, 36, 44, 45, 60, 84, 85, 100, 153, 200, 264];
   const depthCounts = manifest.reported_depths!.counts.all;
   return [
@@ -322,6 +361,23 @@ function commandCopyLines(language: Language): string[] {
     commandDrawerHeading("limits", manifest.limitations.length, language),
     commandDrawerHeading("sources", manifest.sources.length, language),
     commandDataLine(manifest.revision, "3 Oct 2026", "3-19 Sep 2024", language),
+    // The table, the inspector and the find-place box: the lines their functions build, joined as the page joins them.
+    ...COMMAND_SHELTER_SETS.flatMap((set) => [commandSetLabel(set, 12, language), commandSetMeaning(set, 12, language), commandNoReachNote(set, language)]),
+    ...COMMAND_PLANNING_CASES.flatMap((planningCase) => [
+      commandCaseTitle(planningCase, language),
+      commandCaseLane(planningCase, language),
+      commandPlanPositionLabel(planningCase, language),
+      commandChipLabel(planningCase, null, language),
+      commandChipLabel(planningCase, { letter: null, headline: "not_evaluated" }, language),
+      ...letters.flatMap((letter) => headlines.map((headline) => commandChipLabel(planningCase, { letter, headline }, language))),
+    ]),
+    ...letters.map((letter) => commandClassLine(letter, language)),
+    ...[0, 1, 9].map((records) => commandRecordCount(records, language)),
+    ...[1, 9].map((records) => commandUnlocatedRecords(records, language)),
+    ...[{ text: "+~100", direction: 1 as const }, { text: "−<10", direction: -1 as const }, { text: "0", direction: 0 as const }].map((change) => commandRowChange(change, language)),
+    ...[1, 3].map((names) => commandFindCount(names, language)),
+    ...(["tambon", "shelter", "command_centre", "place_record", "facility", "road"] as const).map((kind) => commandFindKindText({ kind, facilityType: "school", records: 2 }, language)),
+    commandToleranceText(150, language),
   ];
 }
 
@@ -331,7 +387,11 @@ function commandCopyLines(language: Language): string[] {
  * The panels of the Command exercise page in one language, rendered with the served replay data: the banner, the clock
  * and figures at the peak and in the receding phase (with the model-limit chip) and as the one line of focus mode,
  * the time dock, the information drawer, the help sheet, the navigation with its menu, the tool rail, the view
- * popover, the open legend with every entry, the map credits and the card reserved for the subdistrict table.
+ * popover, the open legend with every entry and the map credits; then the subdistrict table at the peak and in the
+ * receding phase, with both shelter sets and with its order held, its card as it waits, in focus mode and on a tablet,
+ * the inspector of every subdistrict, the right card and its chip, and the find-place box with and without results.
+ * The plan group with classes is rendered on the invented units of the planning overlay fixture: once as the table, and
+ * as one case card per invented class.
  */
 function commandPanels(language: Language): { name: string; html: string }[] {
   const model = commandModel();
@@ -352,8 +412,76 @@ function commandPanels(language: Language): { name: string; html: string }[] {
     panel("view popover", <CommandViewPopover language={language} facilities facilityCount={manifest.facilities_count.total} onFacilities={noop} onClose={noop} />),
     panel("legend", <CommandLegend language={language} open onToggle={noop} facilities unmodelledRoads wetSites />),
     panel("credits", <CommandCredits language={language} view={{ metresPerPixel: 35.8, zoom: 12 }} revision={manifest.revision} />),
-    panel("table card", <CommandTableCard language={language} />),
+    ...commandTablePanels(language).map(({ name, node }) => panel(name, node)),
   ];
+}
+
+/** How many panels `commandTablePanels` renders in one language. */
+const COMMAND_TABLE_PANEL_COUNT = 30;
+
+/** The panels of the subdistrict table, the inspector and the find-place box in one language. */
+function commandTablePanels(language: Language): { name: string; node: React.ReactElement }[] {
+  const model = commandModel();
+  const noop = () => undefined;
+  const scale = lostAccessScale(model);
+  const tambonFeatures = readJson<GeoCollection<AreaGeometry, TambonProps>>(manifest.vectors.tambons.href).features;
+  const facilityFeatures = readJson<GeoCollection<{ coordinates: number[] }, FacilityProps>>(manifest.vectors.facilities.href).features;
+  const roadFeatures = readJson<GeoCollection<LineGeometry, RoadProps>>(manifest.vectors.roads.href).features;
+  const noCells = { O1: new Map<string, CommandPlanningCell>(), SE1: new Map<string, CommandPlanningCell>() };
+  const rows = (hour: number, set: CommandShelterSet = "reported") => commandTableRows({
+    rows: tambonRowsAt(model, hour, set), before: tambonRowsBefore(model, hour, set), order: tambonOrderByHour(model, set)[hour], scale, orderBy: "hour", positionFrom: "SE1", cells: noCells,
+  });
+  const queue = (more: Partial<Parameters<typeof MaeSaiCommandQueue>[0]> = {}) => (
+    <MaeSaiCommandQueue language={language} rows={rows(84)} selected="TH570901" onSelect={noop} set="reported" onSet={noop} setSites={{ reported: 12, plan: 8 }} orderBy="hour" onOrderBy={noop}
+      canOrderByPlanning={false} positionFrom="SE1" onPositionFrom={noop} pending={false} optionsOpen onOptions={noop} {...more} />
+  );
+  const table = (hour: number, set: CommandShelterSet, pending = false) => (
+    <CommandQueueTable language={language} rows={rows(hour, set)} selected={null} onSelect={noop} set={set} positionFrom="SE1" pending={pending} />
+  );
+  const peaks = parsePeakSummary(readJson<unknown>(manifest.exports!.files.find((file) => file.id === "tambon_replay_summary")!.href));
+  const places = placeRecordsOfTambons(manifest.reported_depths!.reports, tambonFeatures);
+  const facilityProps = facilityFeatures.map((feature) => feature.properties);
+  const detail = (id: string, hour: number, set: CommandShelterSet, peak: boolean) => (
+    <CommandTambonDetailBody language={language} hour={hour} detail={tambonDetailAt(model, facilityProps, hour, set, id)!} set={set} peak={peak ? peaks.get(id) ?? null : null}
+      peakStatus={peak ? "ready" : "missing"} places={places.get(id) ?? []} depths={manifest.reported_depths ?? null} unlocated={model.placeRecords.unlocated}
+      cells={{ O1: null, SE1: null }} facts={{ O1: null, SE1: null }} />
+  );
+  // The planning overlay fixture: invented units, read in tests only, on invented rows of the left group.
+  const overlay = parsePlanningAssessmentOverlay(fixtureOverlay);
+  const cells = { O1: planningCells(overlay, "O1"), SE1: planningCells(overlay, "SE1") };
+  const invented: CommandTambonRow[] = ["FX-U03", "FX-U13", "FX-U14", "FX-U15"].map((id, index) => ({
+    id, th: `หน่วยทดสอบ ${id.slice(-2)}`, en: `Fixture unit ${id.slice(-2)}`, lostAccess: 400 - index * 100, inWater: 900 - index * 50,
+    residents: 2000, noReachBefore: 100, noReachShare: 0.05, mostHadNoReach: false, placeRecords: 0,
+  }));
+  const fixtureRows = commandTableRows({ rows: invented, before: null, order: invented.map((row) => row.id), scale: 1000, orderBy: "planning", positionFrom: "SE1", cells });
+  const index = buildCommandFindIndex({ manifest, tambons: tambonFeatures, facilities: facilityFeatures, roads: roadFeatures });
+  const find = (query: string) => <MaeSaiCommandFind language={language} index={index} onPick={noop} onClose={noop} initialQuery={query} />;
+  const panels = [
+    { name: "table card with its controls", node: queue() },
+    { name: "table card, waiting", node: queue({ rows: null }) },
+    { name: "table card, data failed", node: queue({ rows: null, failed: true }) },
+    { name: "table card in focus mode", node: queue({ collapsed: true }) },
+    { name: "table card on a tablet", node: queue({ layout: "tablet", tab: "queue" }) },
+    { name: "table, hour 0", node: table(0, "reported") },
+    { name: "table, hour 84, plan set", node: table(84, "plan") },
+    { name: "table, hour 130, order held", node: table(130, "reported", true) },
+    { name: "table, fixture units", node: <CommandQueueTable language={language} rows={fixtureRows} selected={null} onSelect={noop} set="reported" positionFrom="SE1" pending={false} /> },
+    ...model.tambons.map((tambon) => ({ name: `inspector ${tambon.id}`, node: detail(tambon.id, 84, "reported", true) })),
+    { name: "inspector, plan set, hour 130", node: detail("TH570901", 130, "plan", true) },
+    { name: "inspector without the peak summary", node: detail("TH570906", 44, "reported", false) },
+    ...COMMAND_PLANNING_CASES.flatMap((planningCase) => [...cells[planningCase].values()].map((cell) => ({
+      name: `case card ${cell.rowId}`, node: <CommandCaseCard planningCase={planningCase} cell={cell} facts={planningFacts(overlay)} language={language} />,
+    }))),
+    { name: "right card, known by now", node: <MaeSaiCommandInspector language={language} tab="known" onTab={noop} onClose={noop} detail={null} known={<CommandKnownPlaceholder language={language} />} /> },
+    { name: "right card, nothing selected", node: <MaeSaiCommandInspector language={language} tab="detail" onTab={noop} onClose={noop} detail={null} known={null} /> },
+    { name: "right card chip", node: <CommandCardChip language={language} label={COMMAND_INSPECTOR.chipKnown[language]} onOpen={noop} /> },
+    { name: "find-place box", node: find("") },
+    { name: "find-place box, names found", node: find(language === "th" ? "วัด" : "mae") },
+    { name: "find-place box, roads", node: find("ถนน") },
+    { name: "find-place box, nothing found", node: find("zzz") },
+  ];
+  if (panels.length !== COMMAND_TABLE_PANEL_COUNT) throw new Error(`Expected ${COMMAND_TABLE_PANEL_COUNT} table panels, got ${panels.length}`);
+  return panels;
 }
 
 function corpus(): { source: string; text: string }[] {
@@ -519,15 +647,19 @@ describe("Replay wording lint: current text", () => {
       "src/app/command/exercise/page.tsx", "src/components/mae-sai-command-exercise.tsx", "src/components/mae-sai-command-map.tsx",
       "src/components/mae-sai-command-situation.tsx", "src/components/mae-sai-command-timebar.tsx", "src/components/mae-sai-command-chrome.tsx",
       "src/lib/flood-timeline-command-replay.ts", "src/lib/flood-timeline-command-map.ts", "src/lib/flood-timeline-command-data.ts",
+      // The subdistrict table, the inspector and the find-place box, and the pure functions behind them.
+      "src/components/mae-sai-command-queue.tsx", "src/components/mae-sai-command-inspector.tsx", "src/components/mae-sai-command-find.tsx",
+      "src/lib/flood-timeline-command-table.ts",
     ]) expect(files).toContain(file);
     const sources = new Set(items.map((item) => item.source));
     for (const file of files) expect(sources.has(file), file).toBe(true);
     expect(items.filter((item) => item.source.startsWith("timeline.json")).length).toBeGreaterThan(100);
     // 75 rendered panels of the Studio replay, the Command exercise copy in its two languages, and the Command exercise
-    // page: its shell and 13 panels in each language.
-    expect(items.filter((item) => / \((en|th)\)$/.test(item.source)).length).toBe(77 + 1 + 2 * 13);
+    // page: its shell, and in each language 12 panels around the map and the panels of the table, the inspector and
+    // the find-place box.
+    expect(items.filter((item) => / \((en|th)\)$/.test(item.source)).length).toBe(77 + 1 + 2 * (12 + COMMAND_TABLE_PANEL_COUNT));
     const commandRendered = items.filter((item) => /^Command (?!exercise copy)/.test(item.source));
-    expect(commandRendered).toHaveLength(1 + 2 * 13);
+    expect(commandRendered).toHaveLength(1 + 2 * (12 + COMMAND_TABLE_PANEL_COUNT));
     const commandText = commandRendered.map((item) => item.text).join(" ");
     expect(commandText).toContain("reconstructed, not real-time");
     expect(commandText).toContain("จำลองย้อนหลัง ไม่ใช่ข้อมูลเรียลไทม์");
@@ -535,6 +667,15 @@ describe("Replay wording lint: current text", () => {
     expect(commandText).toContain("not yet known at this hour");
     expect(commandText).toContain("It has not been reviewed by a native speaker.");
     expect(commandText).toContain("Not for emergency response, evacuation orders or any operational decision; not an official warning.");
+    // The table and the inspector are in the corpus with their honest empty state, and the fixture table with its E.
+    expect(commandText).toContain("Not issued yet.");
+    expect(commandText).toContain("Planning class from the signed protocol. Fixed in time. Not computed from this replay hour.");
+    expect(commandText).toContain("Not issued yet (task E8)");
+    expect(commandText).toContain("Class E never means safe.");
+    expect(commandText).toContain("ระดับ E ไม่ได้หมายความว่าปลอดภัย");
+    expect(commandText).toContain("Own model candidate: verify before action");
+    expect(commandText).toContain("+ most residents had no reported shelter within 2 km before the flood");
+    expect(commandText).toContain("The data holds no list of villages or sois.");
     const commandCopy = items.filter((item) => item.source.startsWith("Command exercise copy ("));
     expect(commandCopy.map((item) => item.source)).toEqual(["Command exercise copy (en)", "Command exercise copy (th)"]);
     expect(commandCopy[0].text).toContain("Exercise replay · Mae Sai, September 2024 · reconstructed, not real-time · not an official warning");
@@ -605,7 +746,14 @@ describe("Replay wording lint: current text", () => {
     const commandRoute = items.find((item) => item.source === "src/app/command/exercise/page.tsx")!;
     const commandDock = items.find((item) => item.source === "Command time dock (th)")!;
     const commandDrawer = items.find((item) => item.source === "Command information drawer (en)")!;
-    const targets = [source, manifestItem, rendered, envelopeSource, envelopeFile, envelopeRendered, commandSource, commandBuilt, commandComponent, commandRoute, commandDock, commandDrawer];
+    // The table and the inspector: a component file, the pure functions, and three rendered panels.
+    const commandQueue = items.find((item) => item.source === "src/components/mae-sai-command-queue.tsx")!;
+    const commandTable = items.find((item) => item.source === "src/lib/flood-timeline-command-table.ts")!;
+    const commandTableCard = items.find((item) => item.source === "Command table card with its controls (th)")!;
+    const commandInspector = items.find((item) => item.source === "Command inspector TH570901 (en)")!;
+    const commandFixture = items.find((item) => item.source === "Command table, fixture units (en)")!;
+    const targets = [source, manifestItem, rendered, envelopeSource, envelopeFile, envelopeRendered, commandSource, commandBuilt, commandComponent, commandRoute, commandDock, commandDrawer,
+      commandQueue, commandTable, commandTableCard, commandInspector, commandFixture];
     // The rest of the corpus is clean (the test above), so only the planted items need linting again.
     const others = items.filter((item) => !targets.includes(item));
     expect(lint(others)).toEqual([]);

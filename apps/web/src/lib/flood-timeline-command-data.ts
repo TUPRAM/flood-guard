@@ -1,7 +1,8 @@
 /**
  * Loads the replay files of the Command exercise replay (Mae Sai, September 2024) in the browser: the manifest, the
  * three vector files, the access node file and the terrain raster the water is painted from. The same r4 files as the
- * Studio replay, read with the same decoders. This module uses `fetch` and, as a fallback decoder, a canvas.
+ * Studio replay, read with the same decoders. Also the two optional planning overlays of the table's plan group and
+ * the per-subdistrict summary of the export pack. This module uses `fetch` and, as a fallback decoder, a canvas.
  */
 
 import {
@@ -24,6 +25,15 @@ import {
   type TambonProps,
   type TimelineManifest,
 } from "./flood-timeline";
+import {
+  COMMAND_OVERLAY_HREFS,
+  COMMAND_PLANNING_CASES,
+  NO_COMMAND_OVERLAYS,
+  parsePeakSummary,
+  readCommandOverlay,
+  type CommandOverlays,
+  type CommandPeakRecord,
+} from "./flood-timeline-command-table";
 import { parseAccessNodes, type AccessNodes } from "./flood-timeline-evacuation";
 
 /** The files the page cannot draw anything without. */
@@ -95,6 +105,32 @@ export async function loadCommandReplay(signal: AbortSignal): Promise<CommandRep
     fetchBytes(access.nodes.href, signal),
   ]);
   return { manifest, roads, facilities, tambons, nodes: parseAccessNodes(nodeBytes, access) };
+}
+
+/**
+ * The planning overlays of the two protocol cases the table shows. Each file is optional: a file that is not there,
+ * is not JSON or is refused by the reader gives no overlay, and the table then shows its empty state for that case.
+ * Neither file exists yet.
+ */
+export async function loadCommandOverlays(signal: AbortSignal): Promise<CommandOverlays> {
+  const overlays: CommandOverlays = { ...NO_COMMAND_OVERLAYS };
+  await Promise.all(COMMAND_PLANNING_CASES.map(async (planningCase) => {
+    try {
+      const response = await fetch(COMMAND_OVERLAY_HREFS[planningCase], { signal });
+      if (!response.ok) return;
+      overlays[planningCase] = readCommandOverlay(await response.json(), planningCase).overlay;
+    } catch {
+      // No file, no JSON, or an aborted request: no overlay for this case.
+    }
+  }));
+  return overlays;
+}
+
+/** The per-subdistrict summary at the modelled peak, from the export pack the manifest names; empty when it has none. */
+export async function loadCommandPeakSummary(manifest: Pick<TimelineManifest, "exports">, signal: AbortSignal): Promise<Map<string, CommandPeakRecord>> {
+  const file = manifest.exports?.files.find((item) => item.id === "tambon_replay_summary");
+  if (!file) return new Map();
+  return parsePeakSummary(await fetchJson<unknown>(file.href, signal));
 }
 
 /** The terrain raster of the water layer. It loads on its own: the figures and the roads do not wait for it. */

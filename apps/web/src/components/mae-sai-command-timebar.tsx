@@ -54,7 +54,7 @@ const RainRow = memo(function RainRow({ rainfall }: { rainfall: Pick<Rainfall, "
   );
 });
 
-export function MaeSaiCommandTimebar({ language, hour, playing, speed, collapsed = false, disabled = false, days, phases, stops, rainfall, onTogglePlay, onStep, onSeek, onEvent, onSpeed }: {
+export function MaeSaiCommandTimebar({ language, hour, playing, speed, collapsed = false, disabled = false, days, phases, stops, rainfall, onTogglePlay, onStep, onSeek, onEvent, onSpeed, onDrag }: {
   language: Language;
   /** Whole replay hour, 0 … 264. */
   hour: number;
@@ -74,6 +74,8 @@ export function MaeSaiCommandTimebar({ language, hour, playing, speed, collapsed
   onSeek: (hour: number) => void;
   onEvent: (direction: -1 | 1) => void;
   onSpeed: (speed: CommandSpeedId) => void;
+  /** The time thumb is being dragged, or has been let go. */
+  onDrag?: (dragging: boolean) => void;
 }) {
   const at = clampCommandHour(hour);
   const t = (entry: Localized) => commandText(entry, language);
@@ -84,6 +86,18 @@ export function MaeSaiCommandTimebar({ language, hour, playing, speed, collapsed
   const activeDay = commandDayIndex(at, days.length);
   const speedIndex = COMMAND_SPEEDS.findIndex((item) => item.id === speed);
   const nextSpeed = COMMAND_SPEEDS[(speedIndex + 1) % COMMAND_SPEEDS.length].id;
+  // A drag ends wherever the pointer is let go, so the end is heard on the window.
+  const startDrag = () => {
+    if (!onDrag) return;
+    onDrag(true);
+    const end = () => {
+      onDrag(false);
+      window.removeEventListener("pointerup", end);
+      window.removeEventListener("pointercancel", end);
+    };
+    window.addEventListener("pointerup", end);
+    window.addEventListener("pointercancel", end);
+  };
 
   return (
     <section className={`${styles.panel} ${styles.dock}`} data-region="F" data-clear-panel data-collapsed={collapsed ? "true" : "false"} aria-label={t(COMMAND_TIMEBAR.label)} lang={language}>
@@ -153,7 +167,7 @@ export function MaeSaiCommandTimebar({ language, hour, playing, speed, collapsed
           {!atEnd && <div className={styles.future} style={{ left: pct(share) }} data-command-future><span>{t(COMMAND_TIMEBAR.notYetKnown)}</span></div>}
           <div className={styles.playhead} style={{ left: pct(share) }} aria-hidden="true" />
           <input type="range" className={styles.range} min={0} max={COMMAND_LAST_HOUR} step={1} value={at} disabled={disabled}
-            onChange={(event) => onSeek(Number(event.currentTarget.value))}
+            onChange={(event) => onSeek(Number(event.currentTarget.value))} onPointerDown={startDrag}
             aria-label={t(COMMAND_TIMEBAR.slider)} aria-valuetext={commandSliderText(at, language)} data-command-slider />
         </div>
       </div>

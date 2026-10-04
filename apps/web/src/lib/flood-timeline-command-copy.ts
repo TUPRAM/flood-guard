@@ -439,14 +439,12 @@ export const commandText = pick;
 
 // --- The shell: navigation, tools, time bar, legend, notices and help -------------------------------------
 
-/** The situation card (clock and figures) beyond the figures themselves, and the card reserved under it. */
+/** The situation card (clock and figures) beyond the figures themselves. */
 export const COMMAND_SITUATION = {
   label: { en: "Situation at the replay hour", th: "สถานการณ์ ณ ชั่วโมงของการย้อนดู" },
   /** The model-limit chip of the Receding and Mostly receded phases; the full sentence is `COMMAND_FIGURES.modelLimit`. */
   modelLimitShort: { en: "Model limit: standing water and mud are not reconstructed", th: "ข้อจำกัดของแบบจำลอง: ไม่ได้จำลองน้ำท่วมขังและโคลน" },
   exerciseSlot: { en: "exercise items", th: "รายการฝึกซ้อม" },
-  tableTitle: { en: "Subdistrict table", th: "ตารางรายตำบล" },
-  tableSoon: { en: "The table of the eight subdistricts is not built yet", th: "ยังไม่ได้จัดทำตารางของ 8 ตำบล" },
   loading: { en: "Loading the replay data", th: "กำลังโหลดข้อมูลการย้อนดู" },
   error: { en: "The replay data could not be loaded", th: "โหลดข้อมูลการย้อนดูไม่สำเร็จ" },
   retry: { en: "Try again", th: "ลองอีกครั้ง" },
@@ -491,7 +489,7 @@ export const COMMAND_TOOLS = {
   zoomOut: { en: "Zoom out", th: "ย่อแผนที่" },
   fitTown: { en: "Show the town", th: "แสดงเขตเมืองแม่สาย" },
   fitDistrict: { en: "Show the whole district", th: "แสดงทั้งอำเภอ" },
-  find: { en: "Find a place (not built yet)", th: "ค้นหาสถานที่ (ยังไม่ได้จัดทำ)" },
+  find: { en: "Find a place", th: "ค้นหาสถานที่" },
   focusOn: { en: "Focus mode: more map, smaller panels", th: "โหมดเน้นแผนที่: ย่อแผงข้อมูลให้เห็นแผนที่มากขึ้น" },
   focusOff: { en: "Leave focus mode", th: "ออกจากโหมดเน้นแผนที่" },
   close: { en: "Close", th: "ปิด" },
@@ -651,7 +649,7 @@ export const COMMAND_HELP = {
   keyBrackets: { en: "Previous or next event", th: "เหตุการณ์ก่อนหน้าหรือถัดไป" },
   keyFocus: { en: "Focus mode on or off", th: "เปิดหรือปิดโหมดเน้นแผนที่" },
   keyHelp: { en: "This help", th: "หน้าวิธีใช้นี้" },
-  keyEscape: { en: "Close what is open", th: "ปิดสิ่งที่เปิดอยู่" },
+  keyEscape: { en: "Close what is open, or clear the selection", th: "ปิดสิ่งที่เปิดอยู่ หรือยกเลิกการเลือก" },
   hotlines: {
     en: "In a real emergency call 1784 (disaster), 1669 (medical emergency) or 191 (police). This page does not reach them.",
     th: "หากเกิดเหตุฉุกเฉินจริง โทร 1784 (สาธารณภัย) 1669 (การแพทย์ฉุกเฉิน) หรือ 191 (ตำรวจ) หน้านี้ไม่ได้เชื่อมต่อกับหน่วยงานดังกล่าว",
@@ -680,4 +678,348 @@ export const COMMAND_DRAWER_SOURCES = {
 /** "data r4" / "ข้อมูลชุด r4": the revision of the replay data, in the map credits. */
 export function commandDataTag(revision: string, language: Language): string {
   return language === "th" ? `ข้อมูลชุด ${revision}` : `data ${revision}`;
+}
+
+// --- The subdistrict table (region B2) -------------------------------------------------------------------
+
+/**
+ * The table of the eight subdistricts. Its left column group is a model count of this replay hour and holds no rating
+ * of any kind (decision D7); its right column group is the planning class of the signed protocol, fixed in time.
+ */
+export const COMMAND_TABLE = {
+  title: { en: "Subdistrict table", th: "ตารางรายตำบล" },
+  loading: { en: "The table appears when the replay data has loaded", th: "ตารางจะแสดงเมื่อโหลดข้อมูลการย้อนดูเสร็จ" },
+  groupHour: { en: "This hour · model", th: "ชั่วโมงนี้ · แบบจำลอง" },
+  groupHourTag: { en: "low confidence", th: "ความเชื่อมั่นต่ำ" },
+  groupPlan: { en: "Plan · fixed", th: "แผน · คงที่" },
+  groupPlanMeaning: { en: "Fixed in time: it does not follow the replay hour", th: "คงที่ ไม่เปลี่ยนตามชั่วโมงของการย้อนดู" },
+  colPosition: { en: "Order in this hour", th: "ลำดับในชั่วโมงนี้" },
+  colTambon: { en: "subdistrict", th: "ตำบล" },
+  colLost: { en: "lost access", th: "เสียการเข้าถึง" },
+  colWater: { en: "in water", th: "ในน้ำ" },
+  colPlanPosition: { en: "Planning position", th: "ลำดับการวางแผน" },
+  /** The mark on a row where most residents had no shelter of the set in reach before the flood. */
+  noReachMeaning: {
+    en: "Most residents here had no shelter of the set within a 2 km walk even before the flood, so they can never count as having lost access.",
+    th: "ผู้อยู่อาศัยส่วนใหญ่ในตำบลนี้ไม่มีที่พักพิงของชุดนี้ในระยะเดิน 2 กม. ตั้งแต่ก่อนน้ำท่วม จึงไม่นับเป็นผู้สูญเสียการเข้าถึง",
+  },
+  planLine: {
+    en: "Planning class from the signed protocol. Fixed in time. Not computed from this replay hour.",
+    th: "ระดับการวางแผนมาจากหลักเกณฑ์ที่ลงนามแล้ว คงที่ไม่เปลี่ยนตามเวลา และไม่ได้คำนวณจากชั่วโมงนี้ของการย้อนดู",
+  },
+  notIssued: { en: "Not issued yet", th: "ยังไม่ออกผล" },
+  notIssuedTask: { en: "Not issued yet (task E8)", th: "ยังไม่ออกผล (งาน E8)" },
+  eNeverSafe: { en: "Class E never means safe", th: "ระดับ E ไม่ได้หมายความว่าปลอดภัย" },
+  noClass: { en: "No class: fewer than 100 residents", th: "ไม่จัดระดับ: ผู้อยู่อาศัยน้อยกว่า 100 คน" },
+  stabilityHeld: {
+    en: "headline-eligible: the class holds when one component at a time is left out",
+    th: "ใช้เป็นผลหลักได้: ระดับคงเดิมเมื่อตัดองค์ประกอบออกทีละตัว",
+  },
+  stabilityNotEvaluated: { en: "stability not evaluated", th: "ยังไม่ได้ประเมินความคงที่" },
+  stabilityUnstable: { en: "unstable: verify", th: "ไม่คงที่: ต้องตรวจสอบ" },
+  /** The key of the chips, under the table once a class is issued. */
+  chipKey: {
+    en: "A filled chip is headline-eligible; an outlined chip: stability not evaluated; a question mark: unstable: verify.",
+    th: "ป้ายทึบ: ใช้เป็นผลหลักได้ ป้ายโปร่ง: ยังไม่ได้ประเมินความคงที่ เครื่องหมายคำถาม: ไม่คงที่ ต้องตรวจสอบ",
+  },
+  /** The lane of each case, as the protocol's display rule words it. */
+  laneO1: { en: "Own model candidate: verify before action", th: "ผลจากแบบจำลองของโครงการเอง: ตรวจสอบก่อนดำเนินการ" },
+  laneSE1: { en: "Scenario: what-if (2024 season envelope)", th: "สถานการณ์จำลอง: กรณีสมมุติ (ขอบเขตน้ำตลอดฤดูปี 2567 (2024))" },
+  orderBy: { en: "Order rows by", th: "เรียงแถวตาม" },
+  orderHour: { en: "This hour", th: "ชั่วโมงนี้" },
+  orderPlanning: { en: "Planning", th: "การวางแผน" },
+  orderPlanningOff: {
+    en: "No planning position has been issued, so the rows cannot be ordered by it yet",
+    th: "ยังไม่มีการออกลำดับการวางแผน จึงยังเรียงแถวตามการวางแผนไม่ได้",
+  },
+  positionFrom: { en: "Planning position from", th: "ลำดับการวางแผนจาก" },
+  positionFromMeaning: {
+    en: "The planning position comes from one case at a time. The two cases are never averaged or counted together.",
+    th: "ลำดับการวางแผนมาจากกรณีเดียวในแต่ละครั้ง ไม่มีการเฉลี่ยหรือนับสองกรณีรวมกัน",
+  },
+  shelterSet: { en: "Shelter set", th: "ชุดที่พักพิง" },
+  setNote: {
+    en: "All residents at road nodes · figures change with the set · no set is graded",
+    th: "นับผู้อยู่อาศัยทั้งหมดที่จุดถนน · ตัวเลขเปลี่ยนตามชุดที่เลือก · ไม่ได้ตัดสินชุดใด",
+  },
+  orderHeld: { en: "Order held", th: "คงลำดับไว้" },
+  orderHeldMeaning: {
+    en: "The order of the rows is held while the pointer or the keyboard is in the table, or the time thumb is dragged. The numbers still follow the replay hour.",
+    th: "คงลำดับแถวไว้ขณะที่ตัวชี้หรือแป้นพิมพ์อยู่ในตาราง หรือขณะลากตัวเลื่อนเวลา ตัวเลขยังเปลี่ยนตามชั่วโมงของการย้อนดู",
+  },
+  options: { en: "Table options", th: "ตัวเลือกของตาราง" },
+  tabQueue: { en: "Subdistricts", th: "ตำบล" },
+  tabs: { en: "Left column", th: "แผงด้านซ้าย" },
+  sinceBefore: { en: "since the hour before", th: "เทียบกับชั่วโมงก่อนหน้า" },
+} as const satisfies Record<string, Localized>;
+
+/** The names of the five planning classes. They appear only beside a class of the signed protocol, never beside a replay hour. */
+export const COMMAND_CLASS_NAMES: Readonly<Record<"A" | "B" | "C" | "D" | "E", Localized>> = {
+  A: { en: "Protect lives now", th: "ปกป้องชีวิตทันที" },
+  B: { en: "Keep routes open", th: "รักษาเส้นทางให้สัญจรได้" },
+  C: { en: "Protect essential services", th: "คุ้มครองบริการจำเป็น" },
+  D: { en: "Build resilience", th: "สร้างความพร้อมระยะยาว" },
+  E: { en: "Monitor and verify", th: "ติดตามและตรวจสอบ" },
+};
+
+/** "Class E · Monitor and verify" / "ระดับ E · ติดตามและตรวจสอบ". */
+export function commandClassLine(letter: "A" | "B" | "C" | "D" | "E", language: Language): string {
+  return `${language === "th" ? "ระดับ" : "Class"} ${letter} · ${pick(COMMAND_CLASS_NAMES[letter], language)}`;
+}
+
+/** The short label of a shelter set on its switch, with the number of sites it counts: "2024 · 12" and "Plan · 8". */
+export function commandSetLabel(set: "reported" | "plan", sites: number, language: Language): string {
+  if (language === "th") return set === "reported" ? `ปี 2567 · ${sites}` : `แผน · ${sites}`;
+  return set === "reported" ? `2024 · ${sites}` : `Plan · ${sites}`;
+}
+
+/** What a shelter set is, in one sentence. The sites of the plan are candidates to verify. */
+export function commandSetMeaning(set: "reported" | "plan", sites: number, language: Language): string {
+  if (set === "reported") {
+    return language === "th"
+      ? `สถานที่ ${sites} แห่งที่ระบุตำแหน่งได้ จากที่พักพิงที่มีรายงานว่าใช้ในปี 2567 (2024)`
+      : `The ${sites} located sites among the shelters reported in use in 2024`;
+  }
+  return language === "th"
+    ? `สถานที่ ${sites} แห่งแรกของแผนจัดอันดับ: เป็นสถานที่ที่ควรตรวจสอบ ไม่ใช่รายชื่อที่พักพิงที่ต้องเปิด`
+    : `The first ${sites} sites of the ranked plan: candidates to verify, not a list of sites to open`;
+}
+
+/** The one-line footer of the "+" mark, for the shelter set the table counts. */
+export function commandNoReachNote(set: "reported" | "plan", language: Language): string {
+  if (language === "th") {
+    return set === "reported"
+      ? "+ ผู้อยู่อาศัยส่วนใหญ่ไม่มีที่พักพิงตามรายงานในระยะเดิน 2 กม. ตั้งแต่ก่อนน้ำท่วม"
+      : "+ ผู้อยู่อาศัยส่วนใหญ่ไม่มีสถานที่ของแผนในระยะเดิน 2 กม. ตั้งแต่ก่อนน้ำท่วม";
+  }
+  return set === "reported"
+    ? "+ most residents had no reported shelter within 2 km before the flood"
+    : "+ most residents had no site of the plan within 2 km before the flood";
+}
+
+/** "7 located place records (news, not surveyed)": the count a row carries. */
+export function commandRecordCount(count: number, language: Language): string {
+  if (language === "th") return `รายการตามสถานที่ที่มีจุดบนแผนที่ ${count} รายการ (จากข่าว ไม่ได้สำรวจ)`;
+  return `${count} located place ${count === 1 ? "record" : "records"} (news, not surveyed)`;
+}
+
+/** "+~100 since the hour before" / "no change since the hour before": what the change arrow of a row means. */
+export function commandRowChange(change: { text: string; direction: -1 | 0 | 1 }, language: Language): string {
+  if (change.direction === 0) return language === "th" ? "ไม่เปลี่ยนจากชั่วโมงก่อนหน้า" : "no change since the hour before";
+  return `${change.text} ${pick(COMMAND_TABLE.sinceBefore, language)}`;
+}
+
+/** "Planning position from SE1" / "ลำดับการวางแผนจาก SE1". */
+export function commandPlanPositionLabel(planningCase: "O1" | "SE1", language: Language): string {
+  return `${pick(COMMAND_TABLE.positionFrom, language)} ${planningCase}`;
+}
+
+/** The title of a protocol case on its card. */
+export function commandCaseTitle(planningCase: "O1" | "SE1", language: Language): string {
+  if (planningCase === "O1") return language === "th" ? "O1 · ผลจากเรดาร์ของโครงการเอง 16 ก.ย. 2567 (2024)" : "O1 · own radar candidates, 16 Sep 2024";
+  return language === "th" ? "SE1 · ขอบเขตน้ำตลอดฤดู ส.ค.–ต.ค. 2567 (2024)" : "SE1 · season envelope, Aug–Oct 2024";
+}
+
+/** The lane sentence of a case: the protocol's own display wording. */
+export function commandCaseLane(planningCase: "O1" | "SE1", language: Language): string {
+  return pick(planningCase === "O1" ? COMMAND_TABLE.laneO1 : COMMAND_TABLE.laneSE1, language);
+}
+
+/** The stability of a class under guardrail GR8, in a few words. */
+export function commandStabilityText(headline: "not_evaluated" | "headline_eligible" | "unstable_verify", language: Language): string {
+  return pick(headline === "headline_eligible" ? COMMAND_TABLE.stabilityHeld : headline === "unstable_verify" ? COMMAND_TABLE.stabilityUnstable : COMMAND_TABLE.stabilityNotEvaluated, language);
+}
+
+/** What a chip of the plan group says to a screen reader, and on hover. Wherever it names class E it adds that E never means safe. */
+export function commandChipLabel(
+  planningCase: "O1" | "SE1",
+  cell: { letter: "A" | "B" | "C" | "D" | "E" | null; headline: "not_evaluated" | "headline_eligible" | "unstable_verify" } | null,
+  language: Language,
+): string {
+  if (!cell) return `${planningCase}: ${pick(COMMAND_TABLE.notIssued, language)}`;
+  if (cell.letter === null) return `${planningCase}: ${pick(COMMAND_TABLE.noClass, language)} · ${commandCaseLane(planningCase, language)}`;
+  const never = cell.letter === "E" ? ` · ${pick(COMMAND_TABLE.eNeverSafe, language)}` : "";
+  return `${planningCase}: ${commandClassLine(cell.letter, language)}${never} · ${commandCaseLane(planningCase, language)} · ${commandStabilityText(cell.headline, language)}`;
+}
+
+// --- The right card (region D): detail and what is known ---------------------------------------------------
+
+export const COMMAND_INSPECTOR = {
+  label: { en: "Detail and what is known", th: "รายละเอียดและสิ่งที่ทราบ" },
+  tabDetail: { en: "Detail", th: "รายละเอียด" },
+  tabKnown: { en: "Known by now", th: "ทราบแล้วถึงชั่วโมงนี้" },
+  tabKnownShort: { en: "Known", th: "ทราบแล้ว" },
+  close: { en: "Close the card", th: "ปิดแผงนี้" },
+  deselect: { en: "Clear the selection", th: "ยกเลิกการเลือก" },
+  empty: { en: "Select a subdistrict in the table to see its detail.", th: "เลือกตำบลในตารางเพื่อดูรายละเอียด" },
+  knownSoon: {
+    en: "The list of what had been reported or observed by this replay hour is not built yet.",
+    th: "ยังไม่ได้จัดทำรายการสิ่งที่มีรายงานหรือสังเกตได้แล้วถึงชั่วโมงนี้ของการย้อนดู",
+  },
+  kind: { en: "Subdistrict", th: "ตำบล" },
+  sectionHour: { en: "At this replay hour", th: "ณ ชั่วโมงนี้ของการย้อนดู" },
+  facilities: { en: "key facilities in modelled water", th: "สถานที่สำคัญในน้ำตามแบบจำลอง" },
+  facilitiesNone: { en: "no key facility mapped here", th: "ไม่มีสถานที่สำคัญในแผนที่ของตำบลนี้" },
+  facilitiesWet: { en: "In modelled water", th: "อยู่ในน้ำตามแบบจำลอง" },
+  roadsNamed: { en: "Named roads with impassable pieces", th: "ถนนที่มีชื่อซึ่งมีช่วงสัญจรไม่ได้" },
+  sectionPeak: { en: "At the modelled peak", th: "ณ ระดับน้ำสูงสุดตามแบบจำลอง" },
+  peakSource: {
+    en: "From the export table tambon_replay_summary.json. Model, low confidence.",
+    th: "จากตารางส่งออก tambon_replay_summary.json แบบจำลอง ความเชื่อมั่นต่ำ",
+  },
+  peakLoading: { en: "Loading the peak summary", th: "กำลังโหลดสรุป ณ ระดับน้ำสูงสุด" },
+  peakMissing: { en: "The peak summary of the export pack could not be loaded.", th: "โหลดสรุป ณ ระดับน้ำสูงสุดจากชุดไฟล์ส่งออกไม่สำเร็จ" },
+  sectionRecords: { en: "Place records here", th: "รายการตามสถานที่ในตำบลนี้" },
+  recordsTag: { en: "Reported in news · not surveyed", th: "ตามรายงานข่าว · ไม่ได้สำรวจ" },
+  recordsNone: {
+    en: "No located place record in this subdistrict. That is not a sign of little water.",
+    th: "ไม่มีรายการตามสถานที่ที่มีจุดบนแผนที่ในตำบลนี้ ซึ่งไม่ได้แปลว่าน้ำน้อย",
+  },
+  sectionPlan: { en: "Planning class · fixed in time", th: "ระดับการวางแผน · คงที่ไม่เปลี่ยนตามเวลา" },
+  notIssuedLine: {
+    en: "No planning class has been issued for this subdistrict in this case.",
+    th: "ยังไม่มีการออกระดับการวางแผนของตำบลนี้ในกรณีนี้",
+  },
+  action: { en: "Planning action", th: "ข้อเสนอเพื่อการวางแผน" },
+  chipKnown: { en: "Known by now", th: "ทราบแล้วถึงชั่วโมงนี้" },
+} as const satisfies Record<string, Localized>;
+
+/** "Detail: แม่สาย": the chip that reopens the card on the selected subdistrict. */
+export function commandDetailChip(name: string, language: Language): string {
+  return `${pick(COMMAND_INSPECTOR.tabDetail, language)}: ${name}`;
+}
+
+/** "of 121 km modelled here": the modelled road length of the subdistrict (a length of data, so no tilde). */
+export function commandRoadBase(km: number, language: Language): string {
+  const whole = Math.round(km).toLocaleString("en-US");
+  return language === "th" ? `จากถนนในแบบจำลอง ${whole} กม.` : `of ${whole} km modelled here`;
+}
+
+/** "3 of 9": key facilities in modelled water among those the model covers. Counted things keep plain digits. */
+export function commandFacilityCount(inWater: number, modelled: number, language: Language): string {
+  return language === "th" ? `${inWater} จาก ${modelled} แห่ง` : `${inWater} of ${modelled}`;
+}
+
+/**
+ * The sentence behind the "+" mark of one subdistrict: how many residents had no shelter of the set in reach even
+ * before the flood. They can never count as having lost access.
+ */
+export function commandNoReachLine(noReach: number, residents: number, share: number | null, language: Language): string {
+  const part = roundModelFigure(noReach).text;
+  const whole = roundModelFigure(residents).text;
+  const percent = share === null ? "" : ` (${Math.round(share * 100)}%)`;
+  if (language === "th") return `ผู้อยู่อาศัย ${part} จาก ${whole} คน${percent} ไม่มีที่พักพิงของชุดนี้ในระยะเดิน 2 กม. ตั้งแต่ก่อนน้ำท่วม จึงไม่นับเป็นผู้สูญเสียการเข้าถึง`;
+  return `${part} of ${whole} residents${percent} had no shelter of this set within 2 km before the flood, so they can never count as having lost access.`;
+}
+
+/** "Phahonyothin Rd (Hwy 1) ~12 km, Mae Sai bypass ~3 km": the named roads with impassable pieces in a subdistrict. */
+export function commandRoadKmList(roads: readonly { name: string; km: number }[], language: Language, limit = 3): string {
+  const shown = roads.slice(0, limit).map((road) => `${roadLabel(road, language)} ${roundModelKm(road.km).text} ${km(language)}`);
+  const more = roads.length - shown.length;
+  if (more <= 0) return shown.join(language === "th" ? " · " : ", ");
+  return language === "th" ? `${shown.join(" · ")} และอีก ${more} สาย` : `${shown.join(", ")} and ${more} more`;
+}
+
+/** The figures of one subdistrict at the modelled peak, as the inspector lists them (rounded: the model is low confidence). */
+export function commandPeakLines(
+  peak: { floodedKm2: number; floodedShare: number | null; residentsInWater: number; roadKmImpassable: number; access: { withinReachBefore: number; lostAccess: number; lostShare: number | null } | null },
+  language: Language,
+): string[] {
+  const th = language === "th";
+  const area = peak.floodedKm2 < 0.05 ? "0" : `~${peak.floodedKm2.toFixed(1)}`;
+  const share = peak.floodedShare === null ? "" : th ? ` (${Math.round(peak.floodedShare * 100)}% ของตำบล)` : ` (${Math.round(peak.floodedShare * 100)}% of the subdistrict)`;
+  const water = roundModelFigure(peak.residentsInWater).text;
+  const roads = roundModelKm(peak.roadKmImpassable).text;
+  const lines = th
+    ? [`น้ำตามแบบจำลองครอบคลุม ${area} ตร.กม.${share}`, `ผู้อยู่อาศัยในน้ำตามแบบจำลอง ${water} คน`, `ถนนสัญจรไม่ได้ ${roads} กม.`]
+    : [`Modelled water over ${area} km²${share}`, `${water} residents in modelled water`, `${roads} km of roads impassable`];
+  if (peak.access) {
+    const lost = roundModelFigure(peak.access.lostAccess).text;
+    const percent = peak.access.lostShare === null ? "" : ` (${Math.round(peak.access.lostShare * 100)}%)`;
+    lines.push(th
+      ? `สูญเสียการเข้าถึงที่พักพิง ${lost} คน ${commandBaseText(peak.access.withinReachBefore, language)}${percent}`
+      : `${lost} lost shelter access, ${commandBaseText(peak.access.withinReachBefore, language)}${percent}`);
+  }
+  return lines;
+}
+
+/** "9 more place records have no point and stay at district level." */
+export function commandUnlocatedRecords(count: number, language: Language): string {
+  if (language === "th") return `อีก ${count} รายการไม่มีจุดบนแผนที่ จึงอยู่ในระดับอำเภอ`;
+  return `${count} more place ${count === 1 ? "record has" : "records have"} no point and stay at district level.`;
+}
+
+/** The facts a class is shown with (decision-log rule R2): its tier and lane, the protocol versions and the anchors. */
+export function commandPlanningFactLines(
+  cell: { tier: string; lane: string | null; confidenceClass: string | null; fpps: number | null; reasonCode: string | null; floodInput: string | null; otherRows: number; sourceTimestamp: string },
+  facts: { protocol: { v1a: string; v1b: string }; classRule: string; floodAnchor: number; vulnerabilityAnchors: { lower: string; lowerValue: number; upper: string; upperValue: number } },
+  language: Language,
+): string[] {
+  const th = language === "th";
+  const short = (hash: string) => hash.slice(0, 8);
+  const anchors = facts.vulnerabilityAnchors;
+  return [
+    th
+      ? `ชั้นหลักฐาน ${cell.tier}${cell.lane ? ` · ช่องทาง ${cell.lane}` : ""}${cell.confidenceClass ? ` · ความเชื่อมั่น${cell.confidenceClass === "low" ? "ต่ำ" : "ปานกลาง"}` : ""}`
+      : `Tier ${cell.tier}${cell.lane ? ` · lane ${cell.lane}` : ""}${cell.confidenceClass ? ` · confidence ${cell.confidenceClass}` : ""}`,
+    ...(cell.fpps === null ? [] : [th ? `คะแนนการวางแผน (FPPS) ${cell.fpps.toFixed(1)} จาก 100` : `Planning score (FPPS) ${cell.fpps.toFixed(1)} of 100`]),
+    ...(cell.reasonCode ? [th ? `รหัสเหตุผล ${cell.reasonCode}` : `Reason code ${cell.reasonCode}`] : []),
+    th
+      ? `หลักเกณฑ์ v1a ${short(facts.protocol.v1a)} · v1b ${short(facts.protocol.v1b)} · ${facts.classRule}`
+      : `Protocol v1a ${short(facts.protocol.v1a)} · v1b ${short(facts.protocol.v1b)} · ${facts.classRule}`,
+    th
+      ? `ค่าอ้างอิง: สัดส่วนพื้นที่น้ำท่วม ${facts.floodAnchor.toFixed(2)} · สัดส่วนผู้พึ่งพิง ${anchors.lower} ${anchors.lowerValue.toFixed(3)} ถึง ${anchors.upper} ${anchors.upperValue.toFixed(3)}`
+      : `Anchors: flooded share ${facts.floodAnchor.toFixed(2)} · dependent share ${anchors.lower} ${anchors.lowerValue.toFixed(3)} to ${anchors.upper} ${anchors.upperValue.toFixed(3)}`,
+    ...(cell.floodInput
+      ? [th
+        ? `ข้อมูลน้ำท่วมที่ใช้: ${cell.floodInput}${cell.otherRows > 0 ? ` (อีก ${cell.otherRows} ชุดข้อมูลไม่ได้แสดง)` : ""}`
+        : `Flood input: ${cell.floodInput}${cell.otherRows > 0 ? ` (${cell.otherRows} more ${cell.otherRows === 1 ? "input is" : "inputs are"} not shown)` : ""}`]
+      : []),
+    th ? `วันที่ของข้อมูล ${cell.sourceTimestamp}` : `Dated ${cell.sourceTimestamp}`,
+  ];
+}
+
+// --- Find a place -----------------------------------------------------------------------------------------
+
+export const COMMAND_FIND = {
+  title: { en: "Find a place", th: "ค้นหาสถานที่" },
+  field: { en: "Name of a place", th: "ชื่อสถานที่" },
+  placeholder: { en: "Subdistrict, shelter, place, road", th: "ตำบล ที่พักพิง สถานที่ ถนน" },
+  hint: {
+    en: "Searches the names in the replay data: subdistricts, reported shelters, place records, named facilities and named roads. The data holds no list of villages or sois.",
+    th: "ค้นจากชื่อที่มีในข้อมูลการย้อนดู: ตำบล ที่พักพิงตามรายงาน รายการตามสถานที่ สถานที่สำคัญที่มีชื่อ และถนนที่มีชื่อ ข้อมูลไม่มีรายชื่อหมู่บ้านหรือซอย",
+  },
+  none: { en: "No name in the replay data matches.", th: "ไม่พบชื่อที่ตรงกันในข้อมูลการย้อนดู" },
+  noPoint: { en: "no point in the data", th: "ไม่มีจุดในข้อมูล" },
+  results: { en: "Names found", th: "ชื่อที่พบ" },
+  close: { en: "Close", th: "ปิด" },
+  found: { en: "Found place", th: "สถานที่ที่ค้นพบ" },
+} as const satisfies Record<string, Localized>;
+
+/** What kind of name a search result is. A place record is a place news reported water at, not a surveyed site. */
+export const COMMAND_FIND_KIND: Readonly<Record<"tambon" | "shelter" | "command_centre" | "place_record" | "road", Localized>> = {
+  tambon: { en: "Subdistrict", th: "ตำบล" },
+  shelter: { en: "Shelter reported in 2024", th: "ที่พักพิงตามรายงานปี 2567 (2024)" },
+  command_centre: { en: "Command centre (reported)", th: "ศูนย์บัญชาการ (ตามรายงาน)" },
+  place_record: { en: "Place record (news, not surveyed)", th: "รายการตามสถานที่ (จากข่าว ไม่ได้สำรวจ)" },
+  road: { en: "Road", th: "ถนน" },
+};
+
+/** The kind line of a search result: "Shelter reported in 2024", "School", "Place record (news, not surveyed) · 2 records". */
+export function commandFindKindText(entry: { kind: "tambon" | "shelter" | "command_centre" | "place_record" | "facility" | "road"; facilityType: string | null; records: number }, language: Language): string {
+  if (entry.kind === "facility") return commandFacilityType(entry.facilityType ?? "", language) || pick(COMMAND_TOOLS.facilities, language);
+  const kind = pick(COMMAND_FIND_KIND[entry.kind], language);
+  if (entry.kind !== "place_record" || entry.records <= 1) return kind;
+  return language === "th" ? `${kind} · ${entry.records} รายการ` : `${kind} · ${entry.records} records`;
+}
+
+/** "3 names" / "พบ 3 ชื่อ": the count a screen reader hears while typing. */
+export function commandFindCount(count: number, language: Language): string {
+  if (language === "th") return `พบ ${count} ชื่อ`;
+  return `${count} ${count === 1 ? "name" : "names"}`;
+}
+
+/** "placed to within ±150 m": how closely a place record is located. */
+export function commandToleranceText(metres: number, language: Language): string {
+  return language === "th" ? `ตำแหน่งคลาดเคลื่อนได้ ±${metres} ม.` : `placed to within ±${metres} m`;
 }

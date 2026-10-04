@@ -11,7 +11,7 @@
 import { useMemo } from "react";
 
 import { formatHourStamp, phaseAt, type Language, type TimelineManifest } from "@/lib/flood-timeline";
-import { changeSinceHourBefore, clampCommandHour, commandStage, districtFiguresAt, type CommandModel } from "@/lib/flood-timeline-command";
+import { changeSinceHourBefore, clampCommandHour, commandStage, districtFiguresAt, type CommandModel, type CommandShelterSet } from "@/lib/flood-timeline-command";
 import {
   COMMAND_CLOCK,
   COMMAND_FIGURES,
@@ -33,13 +33,15 @@ import styles from "./mae-sai-command-exercise.module.css";
 /** Phases in which the model dries faster than the ground did: the card says so. */
 const MODEL_LIMIT_PHASES: readonly string[] = ["receding", "gone"];
 
-export function MaeSaiCommandSituation({ language, hour, manifest, model, collapsed = false, failed = false, onRetry }: {
+export function MaeSaiCommandSituation({ language, hour, manifest, model, set = "reported", collapsed = false, failed = false, onRetry }: {
   language: Language;
   /** Whole replay hour, 0 … 264. */
   hour: number;
   /** The replay data; null while it loads. */
   manifest: TimelineManifest | null;
   model: CommandModel | null;
+  /** The shelter set the access figure counts: the one the table's switch has chosen. */
+  set?: CommandShelterSet;
   /** Focus mode: one 44 px line. */
   collapsed?: boolean;
   /** The replay data could not be loaded. */
@@ -48,8 +50,8 @@ export function MaeSaiCommandSituation({ language, hour, manifest, model, collap
 }) {
   const at = clampCommandHour(hour);
   const t = (entry: { en: string; th: string }) => commandText(entry, language);
-  const figures = useMemo(() => (model ? districtFiguresAt(model, at) : null), [model, at]);
-  const change = useMemo(() => (model ? changeSinceHourBefore(model, at) : null), [model, at]);
+  const figures = useMemo(() => (model ? districtFiguresAt(model, at, set) : null), [model, at, set]);
+  const change = useMemo(() => (model ? changeSinceHourBefore(model, at, set) : null), [model, at, set]);
   const phase = manifest ? phaseAt(at / 24, manifest.phases) : null;
   const stage = model ? commandStage(model, at) : 0;
 

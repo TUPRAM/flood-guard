@@ -34,7 +34,6 @@ import {
   CommandLegend,
   CommandNav,
   CommandNotice,
-  CommandTableCard,
   CommandToolRail,
   CommandViewPopover,
   CommandWatermark,
@@ -70,9 +69,13 @@ describe("Command exercise page shell", () => {
     const markup = html(<MaeSaiCommandExercise />);
     expect(markup).toMatch(/^<main id="main-content" class="command-page [^"]*" data-command-exercise="true" data-focus="off" data-hour="36"/);
     expect(markup).toContain('data-command-ready="false"');
-    for (const region of ["A", "B1", "B2", "C", "E", "F", "G", "H", "I"]) expect(markup, region).toContain(`data-region="${region}"`);
-    // Region D (the right card) is not built in this stage.
-    expect(markup).not.toContain('data-region="D"');
+    for (const region of ["A", "B1", "B2", "C", "D", "E", "F", "G", "H", "I"]) expect(markup, region).toContain(`data-region="${region}"`);
+    // Region D (the right card) is its chip until something is selected or the chip is pressed.
+    expect(markup).toContain('data-command-card="chip"');
+    expect(text(markup)).toContain("Known by now");
+    // The table waits for the replay data and says so.
+    expect(markup).toMatch(/data-region="B2"[^>]*data-state="waiting"/);
+    expect(text(markup)).toContain("The table appears when the replay data has loaded");
     expect(text(markup)).toContain("Exercise replay");
     expect(text(markup)).toContain("Loading the replay data");
     // The clock needs no data: the page opens on 10 Sep 12:00.
@@ -320,10 +323,11 @@ describe("Command navigation, tools and legend (regions C, E, G)", () => {
     expect(markup).toContain('aria-label="Help and keys"');
   });
 
-  it("has seven round tools; find a place waits for a later stage", () => {
+  it("has seven round tools, the find-place box among them", () => {
     const rail = html(<CommandToolRail language="en" focus={false} basemap="street" nextFit="town" viewOpen={false} disabled={false} onView={noop} onBasemap={noop} onZoom={noop} onFit={noop} onFocus={noop} />);
     expect([...rail.matchAll(/data-command-tool="([a-z-]+)"/g)].map((match) => match[1])).toEqual(["view", "basemap", "zoom-in", "zoom-out", "fit", "find", "focus"]);
-    expect(rail).toMatch(/disabled="" aria-label="Find a place \(not built yet\)"/);
+    expect(rail).toMatch(/aria-expanded="false" aria-label="Find a place"/);
+    expect(rail).not.toMatch(/disabled=""[^>]*aria-label="Find a place"/);
     expect(rail).toContain('aria-label="Basemap: Grey street map"');
     expect(rail).toContain('aria-label="Show the town"');
     const next = html(<CommandToolRail language="en" focus basemap="terrain" nextFit="district" viewOpen disabled={false} onView={noop} onBasemap={noop} onZoom={noop} onFit={noop} onFocus={noop} />);
@@ -413,7 +417,6 @@ describe("Command panels: wording", () => {
         ["legend", <CommandLegend key="f" language={language} open onToggle={noop} facilities unmodelledRoads wetSites />],
         ["credits", <CommandCredits key="g" language={language} view={{ metresPerPixel: 35.8, zoom: 12 }} revision="r4" />],
         ["notice", <CommandNotice key="h" language={language} message={language === "th" ? "โหลดแผนที่ถนนไม่ได้ จึงแสดงภูมิประเทศแบบแสงเงาแทน" : "Street map unavailable: showing terrain shading"} />],
-        ["table", <CommandTableCard key="i" language={language} />],
       ];
       for (const [name, node] of panels) expect(lintOf(html(node), `${name} ${language}`), `${name} ${language}`).toBe("");
     }

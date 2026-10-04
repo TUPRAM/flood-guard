@@ -22,6 +22,7 @@ import {
 import { buildCommandModel, changeSinceHourBefore, districtFiguresAt } from "./flood-timeline-command";
 import {
   COMMAND_BANNER,
+  COMMAND_CLASS_NAMES,
   COMMAND_CLOCK,
   COMMAND_CREDITS,
   COMMAND_DRAWER,
@@ -29,8 +30,11 @@ import {
   COMMAND_DRAWER_SOURCES,
   COMMAND_FACILITY_TYPES,
   COMMAND_FIGURES,
+  COMMAND_FIND,
+  COMMAND_FIND_KIND,
   COMMAND_HELP,
   COMMAND_HELP_KEYS,
+  COMMAND_INSPECTOR,
   COMMAND_LANE_OF,
   COMMAND_LANE_ORDER,
   COMMAND_LANES,
@@ -40,6 +44,7 @@ import {
   COMMAND_PHASE_SHORT,
   COMMAND_SITUATION,
   COMMAND_SPEED_COPY,
+  COMMAND_TABLE,
   COMMAND_TIMEBAR,
   COMMAND_TOOLS,
   commandBannerLine,
@@ -96,6 +101,8 @@ function entries(): { name: string; text: Localized }[] {
     // The shell: the situation card, the navigation, the map tools, the time bar, the legend, the map and the help sheet.
     COMMAND_SITUATION, COMMAND_NAV, COMMAND_TOOLS, COMMAND_TIMEBAR, COMMAND_LEGEND, COMMAND_MAP, COMMAND_HELP, COMMAND_DRAWER_SOURCES,
     COMMAND_PHASE_SHORT, COMMAND_FACILITY_TYPES,
+    // The subdistrict table, the right card and the find-place box.
+    COMMAND_TABLE, COMMAND_INSPECTOR, COMMAND_FIND, COMMAND_FIND_KIND, COMMAND_CLASS_NAMES,
   };
   return [
     ...Object.entries(blocks).flatMap(([block, items]) => Object.entries(items).map(([key, text]) => ({ name: `${block}.${key}`, text }))),

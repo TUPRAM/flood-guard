@@ -62,6 +62,10 @@ let phase = "initial competition page";
 let offlineMode = false;
 let expectedDeniedNavigation = false;
 const pendingRequests = new Map();
+// Requests for the landing's own artwork: those still on their way, and the paths that have arrived.
+const landingArtworkInFlight = new Set();
+const landingArtworkArrived = new Set();
+const landingCameraFrames = expectedArtworkUrls.filter((url) => url.includes("/camera/"));
 
 try {
   const context = await browser.newContext({ serviceWorkers: "allow" });
@@ -88,11 +92,16 @@ try {
   page.on("request", (request) => {
     const url = new URL(request.url());
     pendingRequests.set(request, request.url());
+    if (url.origin === baseUrl && url.pathname.startsWith("/landing/")) landingArtworkInFlight.add(request);
     if (!approvedOrigins.has(url.origin)) unexpectedRequests.push(request.url());
   });
-  page.on("requestfinished", (request) => pendingRequests.delete(request));
+  page.on("requestfinished", (request) => {
+    pendingRequests.delete(request);
+    if (landingArtworkInFlight.delete(request)) landingArtworkArrived.add(new URL(request.url()).pathname);
+  });
   page.on("requestfailed", (request) => {
     pendingRequests.delete(request);
+    landingArtworkInFlight.delete(request);
     const reason = request.failure()?.errorText ?? "failed";
     if (reason === "net::ERR_ABORTED" || expectedResourceFailure(request.url())) return;
     resourceErrors.push(`${phase}: ${request.url()}: ${reason}`);
@@ -128,8 +137,13 @@ try {
   // A saved study area lives outside the build cache. The public profile must not keep it either.
   phase = "save a study area before the downgrade";
   await saveDefaultStudyArea(page);
+  landingArtworkArrived.clear();
   await page.goto(`${baseUrl}/`, { waitUntil: "domcontentloaded" });
   await page.locator("main[data-fg-landing]").waitFor({ state: "visible" });
+  // The landing goes on loading its scene artwork after it is visible. The next step swaps the
+  // build behind the server; a frame still on its way would reach the public build, which does
+  // not ship it, and the 404 would belong to this test's own swap and not to the product.
+  await waitForLandingArtworkToSettle(page, "the landing to finish loading its artwork before the profile downgrade");
 
   phase = "competition to public downgrade";
   activeOut = publicOut;
@@ -417,6 +431,24 @@ async function performSuccessfulUpdateCheck(page) {
     return values["Last successful update check"] !== undefined
       && values["Last successful update check"] !== "Not checked yet";
   }, undefined, "a successful saved-app update check timestamp");
+}
+
+async function waitForLandingArtworkToSettle(page, description, quietMs = 1_500, timeoutMs = 45_000) {
+  const deadline = Date.now() + timeoutMs;
+  let quietSince = null;
+  while (Date.now() < deadline) {
+    const framesArrived = landingCameraFrames.every((url) => landingArtworkArrived.has(url));
+    if (framesArrived && landingArtworkInFlight.size === 0) {
+      quietSince ??= Date.now();
+      if (Date.now() - quietSince >= quietMs) return;
+    } else {
+      quietSince = null;
+    }
+    await page.waitForTimeout(100);
+  }
+  const missing = landingCameraFrames.filter((url) => !landingArtworkArrived.has(url));
+  const inFlight = [...landingArtworkInFlight].map((request) => request.url());
+  throw new Error(`Timed out waiting for ${description}; camera frames not yet loaded: ${missing.slice(0, 4).join(", ") || "none"}; still in flight: ${inFlight.slice(0, 4).join(", ") || "none"}`);
 }
 
 async function waitForEvaluated(page, predicate, argument, description, timeoutMs = 30_000) {

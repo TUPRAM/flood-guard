@@ -4,10 +4,11 @@
  * Scans three bodies of text with the shared rules in `replay-wording-rules.json`:
  *   1. every string in the replay's source files (literals, templates and JSX text, in English and Thai), which also
  *      covers the captions drawn into the exported PNG and video, and the files of the Command exercise replay
- *      (`mae-sai-command-*`, `mae-sai-map-kit`, `flood-timeline-command*`);
+ *      (`mae-sai-command-*`, `mae-sai-map-kit`, `flood-timeline-command*` and the page of its route);
  *   2. every text value of the served manifest;
- *   3. the reader-visible text of the main panels rendered with that manifest, in both languages, and the lines the
- *      Command exercise copy builds from the replay data, in both languages.
+ *   3. the reader-visible text of the main panels rendered with that manifest, in both languages, the lines the
+ *      Command exercise copy builds from the replay data, and the panels of the Command exercise page as rendered,
+ *      in both languages.
  * It must pass on the current text and fail on one seeded bad string per rule. The Python twin is
  * `tests/test_replay_wording_lint.py`.
  */
@@ -18,6 +19,20 @@ import { renderToStaticMarkup } from "react-dom/server";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
 
+import {
+  CommandBanner,
+  CommandCredits,
+  CommandHelpSheet,
+  CommandInfoBody,
+  CommandLegend,
+  CommandNav,
+  CommandTableCard,
+  CommandToolRail,
+  CommandViewPopover,
+} from "@/components/mae-sai-command-chrome";
+import { MaeSaiCommandExercise } from "@/components/mae-sai-command-exercise";
+import { MaeSaiCommandSituation } from "@/components/mae-sai-command-situation";
+import { MaeSaiCommandTimebar } from "@/components/mae-sai-command-timebar";
 import { AccessCard, ExternalChecks, PeopleInWaterCard, ReportedSheltersCard, ShelterPlanCard } from "@/components/mae-sai-evacuation-panels";
 import {
   HowToRead,
@@ -77,6 +92,7 @@ import {
   commandPhaseLine,
   commandPlaceRecordLine,
 } from "./flood-timeline-command-copy";
+import { commandDayChips, commandEventStops, commandPhaseSpans } from "./flood-timeline-command-replay";
 import { parseSeasonEnvelopeDocument, shippableEnvelope } from "./flood-timeline-envelope";
 import { reportedDepthPopup, shippableReportedDepths } from "./flood-timeline-reported-depths";
 import {
@@ -122,6 +138,8 @@ function replaySourceFiles(): string[] {
     ...list("src/components", /^mae-sai-.*\.tsx$/),
     ...list("src/lib", /^flood-timeline.*\.ts$/),
     "src/app/studio/cases/mae-sai-2024/page.tsx",
+    // The route of the Command exercise replay: its title and description are replay text too.
+    "src/app/command/exercise/page.tsx",
   ].sort();
 }
 
@@ -261,14 +279,21 @@ function renderedPanels(language: Language): { name: string; html: string }[] {
  * changed since the hour before, the lane tags and the drawer's headings). Joined lines are linted as built, so two
  * clean parts cannot join into a banned claim.
  */
-function commandCopyLines(language: Language): string[] {
+let commandModelCache: ReturnType<typeof buildCommandModel> | null = null;
+/** The model of the Command exercise page, built once from the served replay files. */
+function commandModel(): ReturnType<typeof buildCommandModel> {
   const access = manifest.access!;
-  const model = buildCommandModel({
+  commandModelCache ??= buildCommandModel({
     manifest,
     roads: readJson<GeoCollection<LineGeometry, RoadProps>>(manifest.vectors.roads.href).features,
     tambons: readJson<GeoCollection<AreaGeometry, TambonProps>>(manifest.vectors.tambons.href).features,
     nodes: parseAccessNodes(new Uint8Array(readFileSync(resolve(publicRoot, access.nodes.href.replace(/^\//, "")))), access),
   });
+  return commandModelCache;
+}
+
+function commandCopyLines(language: Language): string[] {
+  const model = commandModel();
   const blocks: Record<string, Localized>[] = [COMMAND_BANNER, COMMAND_CLOCK, COMMAND_FIGURES, COMMAND_DRAWER];
   const hours = [0, 36, 44, 45, 60, 84, 85, 100, 153, 200, 264];
   const depthCounts = manifest.reported_depths!.counts.all;
@@ -300,6 +325,37 @@ function commandCopyLines(language: Language): string[] {
   ];
 }
 
+// --- 5. The panels of the Command exercise page as rendered -------------------------------------------------
+
+/**
+ * The panels of the Command exercise page in one language, rendered with the served replay data: the banner, the clock
+ * and figures at the peak and in the receding phase (with the model-limit chip) and as the one line of focus mode,
+ * the time dock, the information drawer, the help sheet, the navigation with its menu, the tool rail, the view
+ * popover, the open legend with every entry, the map credits and the card reserved for the subdistrict table.
+ */
+function commandPanels(language: Language): { name: string; html: string }[] {
+  const model = commandModel();
+  const noop = () => undefined;
+  const panel = (name: string, node: React.ReactElement) => ({ name: `Command ${name} (${language})`, html: renderToStaticMarkup(node) });
+  const phases = commandPhaseSpans(manifest.phases).map((span, index) => ({ ...span, label: manifest.phases[index].label }));
+  return [
+    panel("banner", <CommandBanner language={language} onInfo={noop} infoOpen={false} />),
+    panel("situation, hour 84", <MaeSaiCommandSituation language={language} hour={84} manifest={manifest} model={model} />),
+    panel("situation, hour 130", <MaeSaiCommandSituation language={language} hour={130} manifest={manifest} model={model} />),
+    panel("situation in focus mode", <MaeSaiCommandSituation language={language} hour={44} manifest={manifest} model={model} collapsed />),
+    panel("time dock", <MaeSaiCommandTimebar language={language} hour={84} playing={false} speed="drill" days={commandDayChips(manifest.days)} phases={phases}
+      stops={commandEventStops(manifest, model.stages)} rainfall={manifest.rainfall ?? null} onTogglePlay={noop} onStep={noop} onSeek={noop} onEvent={noop} onSpeed={noop} />),
+    panel("information drawer", <CommandInfoBody language={language} manifest={manifest} />),
+    panel("help sheet", <CommandHelpSheet open={false} onClose={noop} onAbout={noop} language={language} />),
+    panel("navigation and menu", <CommandNav language={language} hour={84} menuOpen onMenu={noop} onLanguage={noop} onHelp={noop} basemap="terrain" onBasemap={noop} />),
+    panel("tool rail", <CommandToolRail language={language} focus basemap="street" nextFit="district" viewOpen={false} disabled={false} onView={noop} onBasemap={noop} onZoom={noop} onFit={noop} onFocus={noop} />),
+    panel("view popover", <CommandViewPopover language={language} facilities facilityCount={manifest.facilities_count.total} onFacilities={noop} onClose={noop} />),
+    panel("legend", <CommandLegend language={language} open onToggle={noop} facilities unmodelledRoads wetSites />),
+    panel("credits", <CommandCredits language={language} view={{ metresPerPixel: 35.8, zoom: 12 }} revision={manifest.revision} />),
+    panel("table card", <CommandTableCard language={language} />),
+  ];
+}
+
 function corpus(): { source: string; text: string }[] {
   const sources = replaySourceFiles().flatMap((file) =>
     sourceStrings(readFileSync(resolve(webRoot, file), "utf8"), file).map((text) => ({ source: file, text })));
@@ -320,6 +376,10 @@ function corpus(): { source: string; text: string }[] {
     { name: "MaeSaiFloodTimeline shell (en)", html: renderToStaticMarkup(<MaeSaiFloodTimeline />) },
     ...renderedPanels("en"),
     ...renderedPanels("th"),
+    // The Command exercise page: its shell before the data loads, and its panels with the served data.
+    { name: "Command exercise shell (en)", html: renderToStaticMarkup(<MaeSaiCommandExercise />) },
+    ...commandPanels("en"),
+    ...commandPanels("th"),
   ].map(({ name, html }) => ({ source: name, text: visibleText(html) }));
   // The Command exercise copy, one item per language, as the page builds its lines.
   const command = (["en", "th"] as const).map((language) => ({ source: `Command exercise copy (${language})`, text: commandCopyLines(language).join("\n") }));
@@ -454,12 +514,27 @@ describe("Replay wording lint: current text", () => {
       "src/lib/flood-timeline-evacuation.ts", "src/lib/flood-timeline-link.ts", "src/app/studio/cases/mae-sai-2024/page.tsx",
       // The Command exercise replay: the shared map kit, the pure figures and the copy.
       "src/components/mae-sai-map-kit.tsx", "src/lib/flood-timeline-command.ts", "src/lib/flood-timeline-command-copy.ts",
+      // Its page: the route, the shell, the map, the clock card, the time dock and the panels around the map, and
+      // the replay controls, the map arithmetic and the loader behind them.
+      "src/app/command/exercise/page.tsx", "src/components/mae-sai-command-exercise.tsx", "src/components/mae-sai-command-map.tsx",
+      "src/components/mae-sai-command-situation.tsx", "src/components/mae-sai-command-timebar.tsx", "src/components/mae-sai-command-chrome.tsx",
+      "src/lib/flood-timeline-command-replay.ts", "src/lib/flood-timeline-command-map.ts", "src/lib/flood-timeline-command-data.ts",
     ]) expect(files).toContain(file);
     const sources = new Set(items.map((item) => item.source));
     for (const file of files) expect(sources.has(file), file).toBe(true);
     expect(items.filter((item) => item.source.startsWith("timeline.json")).length).toBeGreaterThan(100);
-    // 75 rendered panels of the Studio replay, and the Command exercise copy in its two languages.
-    expect(items.filter((item) => / \((en|th)\)$/.test(item.source)).length).toBe(77);
+    // 75 rendered panels of the Studio replay, the Command exercise copy in its two languages, and the Command exercise
+    // page: its shell and 13 panels in each language.
+    expect(items.filter((item) => / \((en|th)\)$/.test(item.source)).length).toBe(77 + 1 + 2 * 13);
+    const commandRendered = items.filter((item) => /^Command (?!exercise copy)/.test(item.source));
+    expect(commandRendered).toHaveLength(1 + 2 * 13);
+    const commandText = commandRendered.map((item) => item.text).join(" ");
+    expect(commandText).toContain("reconstructed, not real-time");
+    expect(commandText).toContain("จำลองย้อนหลัง ไม่ใช่ข้อมูลเรียลไทม์");
+    expect(commandText).toContain("Model limit: standing water and mud are not reconstructed");
+    expect(commandText).toContain("not yet known at this hour");
+    expect(commandText).toContain("It has not been reviewed by a native speaker.");
+    expect(commandText).toContain("Not for emergency response, evacuation orders or any operational decision; not an official warning.");
     const commandCopy = items.filter((item) => item.source.startsWith("Command exercise copy ("));
     expect(commandCopy.map((item) => item.source)).toEqual(["Command exercise copy (en)", "Command exercise copy (th)"]);
     expect(commandCopy[0].text).toContain("Exercise replay · Mae Sai, September 2024 · reconstructed, not real-time · not an official warning");
@@ -525,7 +600,12 @@ describe("Replay wording lint: current text", () => {
     // The Command exercise replay: its copy file, and the lines it builds in Thai.
     const commandSource = items.find((item) => item.source === "src/lib/flood-timeline-command-copy.ts")!;
     const commandBuilt = items.find((item) => item.source === "Command exercise copy (th)")!;
-    const targets = [source, manifestItem, rendered, envelopeSource, envelopeFile, envelopeRendered, commandSource, commandBuilt];
+    // Its page: a component file, the route's page and two rendered panels.
+    const commandComponent = items.find((item) => item.source === "src/components/mae-sai-command-chrome.tsx")!;
+    const commandRoute = items.find((item) => item.source === "src/app/command/exercise/page.tsx")!;
+    const commandDock = items.find((item) => item.source === "Command time dock (th)")!;
+    const commandDrawer = items.find((item) => item.source === "Command information drawer (en)")!;
+    const targets = [source, manifestItem, rendered, envelopeSource, envelopeFile, envelopeRendered, commandSource, commandBuilt, commandComponent, commandRoute, commandDock, commandDrawer];
     // The rest of the corpus is clean (the test above), so only the planted items need linting again.
     const others = items.filter((item) => !targets.includes(item));
     expect(lint(others)).toEqual([]);

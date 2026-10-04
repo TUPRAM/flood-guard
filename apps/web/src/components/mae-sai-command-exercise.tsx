@@ -29,6 +29,7 @@ import {
   mergeCommandLink,
   parseCommandLink,
   type CommandKeyTarget,
+  type CommandReplayState,
 } from "@/lib/flood-timeline-command-replay";
 import { clearRect, type ScreenRect } from "@/lib/flood-timeline-layout";
 import { useLanguage } from "@/lib/use-language";
@@ -89,13 +90,16 @@ function keyTarget(target: EventTarget | null): CommandKeyTarget {
   return "page";
 }
 
-export function MaeSaiCommandExercise() {
+export function MaeSaiCommandExercise({ initial }: {
+  /** Where the replay starts before the address is read: the hour, and whether focus mode is on. */
+  initial?: Partial<Pick<CommandReplayState, "hour" | "focus">>;
+} = {}) {
   const [language, setLanguage] = useLanguage("en");
   const [load, setLoad] = useState<LoadState>({ status: "loading" });
   const [reloadKey, setReloadKey] = useState(0);
   const [hand, setHand] = useState<CommandHandRaster | null>(null);
   const [handFailed, setHandFailed] = useState(false);
-  const [replay, dispatch] = useReducer(commandReplayReducer, undefined, () => initialCommandReplay());
+  const [replay, dispatch] = useReducer(commandReplayReducer, initial, (start) => ({ ...initialCommandReplay(start?.hour), focus: start?.focus ?? false }));
   const [linkReady, setLinkReady] = useState(false);
   const [openPanel, setOpenPanel] = useState<OpenPanel>(null);
   const [dialog, setDialog] = useState<"info" | "help" | null>(null);
@@ -262,13 +266,14 @@ export function MaeSaiCommandExercise() {
       data-command-ready={mapReady && ready && (hand !== null || handFailed) ? "true" : "false"} lang={language}>
       <CommandBanner language={language} onInfo={() => setDialog("info")} infoOpen={dialog === "info"} />
       <div ref={stage} className={styles.stage}>
+        {/* The map's fifteen site markers come first in the tab order: this link passes them. */}
+        <a className={styles.skipLink} href="#command-time">{commandText(COMMAND_NAV.skip, language)}</a>
         {data && (
           <MaeSaiCommandMap data={data} hand={hand} hour={hour} stage={stageNow} playing={playing} language={language} basemap={basemap} facilities={facilities}
             getClear={getClear} reducedMotion={reducedMotion} onReady={onMapReady} onBasemapIssue={setTileIssue} onView={setView} handle={map} />
         )}
         <CommandWatermark />
         <CommandCredits language={language} view={view} revision={manifest?.revision ?? null} />
-        <a className={styles.srOnly} href="#command-time">{commandText(COMMAND_NAV.skip, language)}</a>
         <div className={styles.left}>
           <MaeSaiCommandSituation language={language} hour={hour} manifest={manifest} model={model} collapsed={focus} failed={load.status === "error"} onRetry={retry} />
           <CommandTableCard language={language} />
@@ -282,7 +287,7 @@ export function MaeSaiCommandExercise() {
           <CommandViewPopover language={language} facilities={facilities} facilityCount={data?.facilities.features.length ?? 0} onFacilities={setFacilities} onClose={() => setOpenPanel(null)} />
         )}
         <CommandLegend language={language} open={openPanel === "legend"} onToggle={(open) => setOpenPanel(open ? "legend" : null)} facilities={facilities} unmodelledRoads={unmodelledRoads} wetSites={wetSites} />
-        <div id="command-time">
+        <div id="command-time" tabIndex={-1}>
           <MaeSaiCommandTimebar language={language} hour={hour} playing={playing} speed={speed} collapsed={focus} disabled={!ready} days={days} phases={phases} stops={stops}
             rainfall={manifest?.rainfall ?? null}
             onTogglePlay={() => dispatch({ type: "toggle_play" })} onStep={(hours) => dispatch({ type: "step", hours })} onSeek={(next) => dispatch({ type: "seek", hour: next })}

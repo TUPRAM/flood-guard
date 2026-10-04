@@ -26,11 +26,13 @@ import {
   areaPolygons,
   buildTwoToneFactorLut,
   buildTwoToneLut,
+  cellsInMask,
   COMMAND_WATER_RGBA,
   commandRoadStyle,
   commandScaleBar,
   metresPerPixel,
   outsideLabelPoint,
+  pointsBounds,
   reportedSiteWetAt,
   veilRings,
 } from "./flood-timeline-command-map";
@@ -227,5 +229,34 @@ describe("Command map: scale bar", () => {
     expect(commandScaleBar(2.2, 120).metres).toBe(200);
     expect(commandScaleBar(0, 120)).toEqual({ metres: 50, pixels: 0 });
     for (const scale of [0.6, 4.5, 35.8, 70, 143]) expect(commandScaleBar(scale, 120).pixels).toBeLessThanOrEqual(120);
+  });
+});
+
+describe("Command map: the town and the water inside the district", () => {
+  it("bounds a set of points with a margin", () => {
+    expect(pointsBounds([[20.43, 99.88], [20.44, 99.87], [20.435, 99.9]])).toEqual([[20.43, 99.87], [20.44, 99.9]]);
+    expect(pointsBounds([[20.5, 99.5]], 0.25)).toEqual([[20.25, 99.25], [20.75, 99.75]]);
+    expect(pointsBounds([])).toBeNull();
+    // The town of the page: the located place records of the replay data lie within about 3 km of each other.
+    const points = manifest.reported_depths!.reports.flatMap((report) => (report.point ? [[report.point.lat, report.point.lon] as [number, number]] : []));
+    const [[south, west], [north, east]] = pointsBounds(points)!;
+    expect(points).toHaveLength(12);
+    expect(north - south).toBeLessThan(0.03);
+    expect(east - west).toBeLessThan(0.03);
+  });
+
+  it("keeps the cells inside a mask, with their hatch stripes", () => {
+    // A 4 x 2 grid; the mask (one byte per cell) holds the left half.
+    const mask = new Uint8Array([255, 255, 0, 0, 255, 200, 127, 0]);
+    const cells = new Uint32Array([0, 2, 3, 5, 6]);
+    expect(cellsInMask(cells, mask)).toEqual({ cells: new Uint32Array([0, 5]), parallel: null });
+    const stripes = new Uint8Array([1, 0, 1, 1, 0]);
+    expect(cellsInMask(cells, mask, 1, 0, stripes)).toEqual({ cells: new Uint32Array([0, 5]), parallel: new Uint8Array([1, 1]) });
+    // The alpha bytes of canvas image data: four bytes per cell, the fourth is the mask.
+    const rgba = new Uint8ClampedArray(8 * 4);
+    for (const cell of [0, 1, 4, 5]) rgba[cell * 4 + 3] = 255;
+    expect(cellsInMask(cells, rgba, 4, 3).cells).toEqual(new Uint32Array([0, 5]));
+    expect(cellsInMask(new Uint32Array(0), mask).cells).toHaveLength(0);
+    expect(() => cellsInMask(cells, mask, 1, 0, new Uint8Array(2))).toThrow();
   });
 });

@@ -55,13 +55,13 @@ const pick = commandText;
 export function CommandBanner({ language, onInfo, infoOpen, infoRef }: { language: Language; onInfo: () => void; infoOpen: boolean; infoRef?: Ref<HTMLButtonElement> }) {
   const [tag, ...rest] = commandBannerParts(language);
   return (
-    <header className={styles.banner} data-region="A" aria-label={pick(COMMAND_BANNER.label, language)} lang={language}>
+    <div className={styles.banner} role="region" data-region="A" aria-label={pick(COMMAND_BANNER.label, language)} lang={language}>
       <span className={styles.bannerTag}>{tag}</span>
       <p className={styles.bannerText} data-command-banner>{rest.map((part) => <span key={part}>{part}</span>)}</p>
       <button ref={infoRef} type="button" className={styles.infoButton} onClick={onInfo} aria-haspopup="dialog" aria-expanded={infoOpen} aria-label={pick(COMMAND_BANNER.info, language)} title={pick(COMMAND_DRAWER.title, language)} data-command-info>
         <Info size={20} aria-hidden="true" />
       </button>
-    </header>
+    </div>
   );
 }
 
@@ -285,7 +285,7 @@ export function CommandToolRail({ language, focus, basemap, nextFit, viewOpen, d
   const fitLabel = t(nextFit === "town" ? COMMAND_TOOLS.fitTown : COMMAND_TOOLS.fitDistrict);
   const focusLabel = t(focus ? COMMAND_TOOLS.focusOff : COMMAND_TOOLS.focusOn);
   return (
-    <div ref={railRef} className={styles.rail} data-region="E" data-clear-panel role="toolbar" aria-orientation="vertical" aria-label={t(COMMAND_TOOLS.label)} lang={language}>
+    <div ref={railRef} className={styles.rail} data-region="E" data-clear-panel role="group" aria-label={t(COMMAND_TOOLS.label)} lang={language}>
       <button type="button" className={styles.tool} onClick={onView} aria-expanded={viewOpen} aria-label={t(COMMAND_TOOLS.view)} title={t(COMMAND_TOOLS.view)} data-command-tool="view">
         <Layers size={20} aria-hidden="true" />
       </button>

@@ -1132,7 +1132,21 @@ def test_owner_choices_sheet_ticks_no_box_the_owners_did_not_answer() -> None:
 RUNS_AFTER_V1B_CAME_INTO_FORCE = {
     "outputs/planning_v1/e6_critical_links_se1_vehicle.json":
         "a7a9131ea79ce55144122f516948d03a2ce93218f8e3b2a353843024662db3e5",
+    "outputs/planning_v1/age_exposure_mae_sai_v1.json":
+        "68d4935ddf9f905dd4512c516924049be5303bae5a501a27bcff060106da16cb",
+    "outputs/planning_v1/age_exposure_mae_sai_v1_receipt.json":
+        "00e0a67123b5294bc6e01f7645176bcb828ff90de7e0ac69991db42b2d80b147",
 }
+
+
+def _protocol_hashes_named(receipt: dict[str, Any]) -> dict[str, Any]:
+    """The protocol SHA-256 values a run receipt names, in either of the two shapes the builders write."""
+
+    if "protocols_in_force" in receipt:
+        named = receipt["protocols_in_force"]
+        return {name: named[name]["sha256"] for name in ("v1a", "v1b") if isinstance(named.get(name), dict)}
+    named = receipt.get("protocol_sha256") or {}
+    return {"v1a": named.get("planning_protocol_v1a"), "v1b": named.get("planning_protocol_v1b")}
 
 
 def test_v1b_lists_every_engineering_run_with_its_receipt(
@@ -1164,7 +1178,7 @@ def test_v1b_lists_every_engineering_run_with_its_receipt(
             f"{name} is registered as a run made after v1b came into force and was generated before that")
         for protocol in ("v1a", "v1b"):
             in_force = hashlib.sha256(PROTOCOL_PATHS[protocol].read_bytes()).hexdigest()
-            assert receipt["protocols_in_force"][protocol]["sha256"] == in_force, (
+            assert _protocol_hashes_named(receipt).get(protocol) == in_force, (
                 f"{name} does not name the SHA-256 of protocol {protocol} in force")
     committed = sorted(
         [

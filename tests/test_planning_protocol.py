@@ -1139,11 +1139,14 @@ def test_v1b_lists_every_engineering_run_with_its_receipt(protocols: dict[str, d
             assert run["per_unit_values_note"].strip()
         for earlier in run.get("earlier_runs", []):
             assert earlier["generated_at_utc"] < run["generated_at_utc"] and len(earlier["evidence_sha256"]) == 64
+    # The list is of the runs made before v1b came into force. The signed file cannot list a later run; such a
+    # run names the signed v1b by its SHA-256 in what it writes (tests/test_planning_v1_outputs.py checks that).
+    signed_v1b = hashlib.sha256(PROTOCOL_PATHS["v1b"].read_bytes()).hexdigest().encode("ascii")
     committed = sorted(
         [
             path.relative_to(ROOT).as_posix()
             for path in (ROOT / "outputs" / "planning_v1").glob("*.json")
-            if "grade_join_log" not in path.name
+            if "grade_join_log" not in path.name and signed_v1b not in path.read_bytes()
         ]
         # Planning-frame builds name tambons, so their receipts sit beside the frames, not in outputs/.
         + [path.relative_to(ROOT).as_posix() for path in (ROOT / "resources" / "planning_frames").glob("*_receipt.json")]

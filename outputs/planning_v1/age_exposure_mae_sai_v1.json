@@ -1,0 +1,485 @@
+{
+  "schema_version": "floodguard.age_exposure.v1",
+  "generated_at_utc": "2026-10-04T08:21:33Z",
+  "receipt_file": "outputs/planning_v1/age_exposure_mae_sai_v1_receipt.json",
+  "age_exposure_version": "age_exposure_v1",
+  "plan_task": "E7: age_exposure.py + vulnerability (dependent share per unit)",
+  "case_frame": "mae_sai",
+  "case_frame_label": "Mae Sai reporting frame: the eight full tambons of protocol v1a (case_portfolio.mae_sai_reporting_frame)",
+  "status": "unit_inputs",
+  "status_note": "Written with protocol v1a and v1b in force (protocol_sha256). These are inputs to the vulnerability component. The component, the FPPS and the A-E class belong to plan task E8 and are not here.",
+  "official_warning": false,
+  "operational_status": "non_operational",
+  "computes": "The dependent share of each unit and the age counts behind it: an input to the vulnerability component. No vulnerability component value, no FPPS, no A-E class and no ensemble.",
+  "source_timestamp": "2025-09-01",
+  "source_timestamps": {
+    "age_counts_year_represented": 2024,
+    "age_counts_publication_date": "2025-09-01",
+    "tambon_boundaries_valid_on": [
+      "2022-01-22"
+    ]
+  },
+  "confidence_class": "low",
+  "confidence_basis": "Modelled 1 km age counts, not observed counts, allocated to units by area. No independent check of a unit's share exists.",
+  "protocol_sha256": {
+    "planning_protocol_v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+    "planning_protocol_v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+  },
+  "definition": "Dependent share: residents aged 0-14 plus residents aged 60 and over, divided by all residents (protocol v1a scoring_frame.components.vulnerability_context_0_100), from the WorldPop 2024 1 km age counts.",
+  "age_groups": {
+    "children_0_14": [
+      "00",
+      "01",
+      "05",
+      "10"
+    ],
+    "older_adults_60_plus": [
+      "60",
+      "65",
+      "70",
+      "75",
+      "80",
+      "85",
+      "90"
+    ],
+    "other_15_59": [
+      "15",
+      "20",
+      "25",
+      "30",
+      "35",
+      "40",
+      "45",
+      "50",
+      "55"
+    ]
+  },
+  "allocation": "Each 1 km cell's counts go to a unit by the fraction of the cell's projected area (EPSG:32647) inside the unit, on cells where all 20 age bands are valid (protocol v1b national_vulnerability_anchors.method.allocation, drafter reading DR-B04; floodguard.evidence_age_surface.summarize_geometry).",
+  "allocation_in_protocol_v1b": "Each 1 km cell's counts are allocated to a tambon by the projected-area fraction of the cell inside the tambon, as in scripts/bridge_worldpop_age_access.py.",
+  "caveat": "Modelled 1 km age composition; not observed. Mixed vintages are disclosed: 2020 demand, 2024 age, 2022 boundaries, 2026 OSM.",
+  "range_rule": "Low and high are the smallest and the largest dependent share over three allocations of the same cells: the projected-area fraction (the value of record), only the cells wholly inside the unit, and every cell that touches the unit counted in full. It shows how far the 1 km cell size can move the share. It is not a confidence interval and it does not cover the error of the modelled age counts.",
+  "range_rule_status": "Not in the plan and not in the protocol. Plan 1.3 (MVP-02) and plan 5 item 5 give a range for residents inside a flood input, [known, known + unsupported], and no formula for the effect of the 1 km cell size on a unit's share. The two allocation extremes are shown so a reader can see that effect; the owners have not decided how, or whether, the range enters the vulnerability component.",
+  "age_cells_rule": "The number of distinct 1 km cells of the age grid that overlap the unit and carry a valid count in all 20 age bands. A cell on the unit's edge counts once, whatever share of it is inside.",
+  "unsupported_area_rule": "The part of the unit's projected area (EPSG:32647) that lies in cells with no valid count in at least one of the 20 age bands, or outside the age grid. It has no age count: it is unknown, not zero.",
+  "counts_unit": "modelled 2024 residents",
+  "share_precision": "Shares and counts are written at full double precision. The protocol rounds the national anchors to six decimal places and states no rounding for a unit's share.",
+  "unit_count": 8,
+  "units": [
+    {
+      "unit_id": "TH570901",
+      "unit_name": "Mae Sai",
+      "status": "modelled_research_estimate",
+      "residents": 25361.623309922947,
+      "children_0_14": 4723.718139266645,
+      "older_60_plus": 5183.500022131469,
+      "other_15_59": 15454.405148524831,
+      "dependent_share": 0.390638171710477,
+      "dependent_share_unavailable_reason": null,
+      "allocation_range": {
+        "low": 0.3887722622304585,
+        "high": 0.4055507105420384,
+        "projected_area_fraction": 0.390638171710477,
+        "cells_wholly_inside": {
+          "cells": 11,
+          "residents": 9978.365358814597,
+          "dependent_share": 0.4055507105420384
+        },
+        "cells_any_touching": {
+          "cells": 42,
+          "residents": 43269.80312133394,
+          "dependent_share": 0.3887722622304585
+        },
+        "extremes_available": 2,
+        "value_of_record_between_the_two_extremes": true
+      },
+      "age_cells": {
+        "with_valid_counts": 42,
+        "wholly_inside": 11,
+        "partly_inside": 31,
+        "without_valid_counts": 1,
+        "cell_equivalents": 26.780672947749984
+      },
+      "area": {
+        "unit_km2": 21.561380365785528,
+        "supported_km2": 21.474711107799774,
+        "unsupported_km2": 0.0866692579858795,
+        "supported_fraction": 0.9959803474306643,
+        "unsupported_fraction": 0.004019652569341515,
+        "unsupported_in_cells_without_valid_counts_km2": 0.0866692579858795,
+        "unsupported_outside_the_age_grid_km2": 0.0,
+        "reconciliation_residual_km2": -1.2530254611675673e-13
+      },
+      "band_mask_mismatch": false
+    },
+    {
+      "unit_id": "TH570902",
+      "unit_name": "Huai Khrai",
+      "status": "modelled_research_estimate",
+      "residents": 8759.42466091965,
+      "children_0_14": 1537.0489758858937,
+      "older_60_plus": 2033.1594648441128,
+      "other_15_59": 5189.216220189644,
+      "dependent_share": 0.4075848105251208,
+      "dependent_share_unavailable_reason": null,
+      "allocation_range": {
+        "low": 0.4055508836699047,
+        "high": 0.4107247982944075,
+        "projected_area_fraction": 0.4075848105251208,
+        "cells_wholly_inside": {
+          "cells": 27,
+          "residents": 5078.200996897183,
+          "dependent_share": 0.4055508836699047
+        },
+        "cells_any_touching": {
+          "cells": 73,
+          "residents": 13562.079514659476,
+          "dependent_share": 0.4107247982944075
+        },
+        "extremes_available": 2,
+        "value_of_record_between_the_two_extremes": true
+      },
+      "age_cells": {
+        "with_valid_counts": 73,
+        "wholly_inside": 27,
+        "partly_inside": 46,
+        "without_valid_counts": 10,
+        "cell_equivalents": 46.801219093317364
+      },
+      "area": {
+        "unit_km2": 44.337338418906405,
+        "supported_km2": 37.56133373111209,
+        "unsupported_km2": 6.776004687794337,
+        "supported_fraction": 0.8471715955573716,
+        "unsupported_fraction": 0.1528284044426289,
+        "unsupported_in_cells_without_valid_counts_km2": 6.776004687794337,
+        "unsupported_outside_the_age_grid_km2": 0.0,
+        "reconciliation_residual_km2": -2.4868995751603507e-14
+      },
+      "band_mask_mismatch": false
+    },
+    {
+      "unit_id": "TH570903",
+      "unit_name": "Ko Chang",
+      "status": "modelled_research_estimate",
+      "residents": 7685.8602250647755,
+      "children_0_14": 1339.3985444177174,
+      "older_60_plus": 1766.122840512862,
+      "other_15_59": 4580.338840134196,
+      "dependent_share": 0.4040564483339152,
+      "dependent_share_unavailable_reason": null,
+      "allocation_range": {
+        "low": 0.40338342549817957,
+        "high": 0.4055507085540044,
+        "projected_area_fraction": 0.4040564483339152,
+        "cells_wholly_inside": {
+          "cells": 34,
+          "residents": 5561.706445155665,
+          "dependent_share": 0.4055507085540044
+        },
+        "cells_any_touching": {
+          "cells": 75,
+          "residents": 8746.392840775661,
+          "dependent_share": 0.40338342549817957
+        },
+        "extremes_available": 2,
+        "value_of_record_between_the_two_extremes": true
+      },
+      "age_cells": {
+        "with_valid_counts": 75,
+        "wholly_inside": 34,
+        "partly_inside": 41,
+        "without_valid_counts": 13,
+        "cell_equivalents": 56.61277078501968
+      },
+      "area": {
+        "unit_km2": 47.41444754481585,
+        "supported_km2": 45.401116835440476,
+        "unsupported_km2": 2.0133307093751918,
+        "supported_fraction": 0.9575376111369349,
+        "unsupported_fraction": 0.04246238886306128,
+        "unsupported_in_cells_without_valid_counts_km2": 2.0133307093751918,
+        "unsupported_outside_the_age_grid_km2": 0.0,
+        "reconciliation_residual_km2": 1.8252066524837574e-13
+      },
+      "band_mask_mismatch": false
+    },
+    {
+      "unit_id": "TH570904",
+      "unit_name": "Pong Pha",
+      "status": "modelled_research_estimate",
+      "residents": 10188.002733936546,
+      "children_0_14": 1762.015122441823,
+      "older_60_plus": 2369.7366002547574,
+      "other_15_59": 6056.251011239967,
+      "dependent_share": 0.4055507080827128,
+      "dependent_share_unavailable_reason": null,
+      "allocation_range": {
+        "low": 0.40555070725766124,
+        "high": 0.4055507088504084,
+        "projected_area_fraction": 0.4055507080827128,
+        "cells_wholly_inside": {
+          "cells": 35,
+          "residents": 9077.151614570059,
+          "dependent_share": 0.4055507088504084
+        },
+        "cells_any_touching": {
+          "cells": 74,
+          "residents": 13266.202389339509,
+          "dependent_share": 0.40555070725766124
+        },
+        "extremes_available": 2,
+        "value_of_record_between_the_two_extremes": true
+      },
+      "age_cells": {
+        "with_valid_counts": 74,
+        "wholly_inside": 35,
+        "partly_inside": 39,
+        "without_valid_counts": 5,
+        "cell_equivalents": 50.827338763727575
+      },
+      "area": {
+        "unit_km2": 43.61891454469629,
+        "supported_km2": 40.773289317105075,
+        "unsupported_km2": 2.8456252275911584,
+        "supported_fraction": 0.9347616680219013,
+        "unsupported_fraction": 0.06523833197809742,
+        "unsupported_in_cells_without_valid_counts_km2": 2.8456252275911584,
+        "unsupported_outside_the_age_grid_km2": 0.0,
+        "reconciliation_residual_km2": 5.5067062021407764e-14
+      },
+      "band_mask_mismatch": false
+    },
+    {
+      "unit_id": "TH570905",
+      "unit_name": "Si Mueang Chum",
+      "status": "modelled_research_estimate",
+      "residents": 4554.733726107885,
+      "children_0_14": 787.0284799937979,
+      "older_60_plus": 1060.1913508744328,
+      "other_15_59": 2707.5138952396537,
+      "dependent_share": 0.4055604436939761,
+      "dependent_share_unavailable_reason": null,
+      "allocation_range": {
+        "low": 0.4055507100841107,
+        "high": 0.405576026398334,
+        "projected_area_fraction": 0.4055604436939761,
+        "cells_wholly_inside": {
+          "cells": 31,
+          "residents": 3105.7848390932195,
+          "dependent_share": 0.4055507100841107
+        },
+        "cells_any_touching": {
+          "cells": 74,
+          "residents": 5596.831897521857,
+          "dependent_share": 0.405576026398334
+        },
+        "extremes_available": 2,
+        "value_of_record_between_the_two_extremes": true
+      },
+      "age_cells": {
+        "with_valid_counts": 74,
+        "wholly_inside": 31,
+        "partly_inside": 43,
+        "without_valid_counts": 0,
+        "cell_equivalents": 52.22096440175949
+      },
+      "area": {
+        "unit_km2": 41.88944610156768,
+        "supported_km2": 41.889446101567586,
+        "unsupported_km2": 0.0,
+        "supported_fraction": 0.9999999999999978,
+        "unsupported_fraction": 0.0,
+        "unsupported_in_cells_without_valid_counts_km2": 0.0,
+        "unsupported_outside_the_age_grid_km2": 0.0,
+        "reconciliation_residual_km2": 9.237055564881302e-14
+      },
+      "band_mask_mismatch": false
+    },
+    {
+      "unit_id": "TH570906",
+      "unit_name": "Wiang Phang Kham",
+      "status": "modelled_research_estimate",
+      "residents": 21362.734252543974,
+      "children_0_14": 3695.4325248678224,
+      "older_60_plus": 4967.401533713017,
+      "other_15_59": 12699.900193963136,
+      "dependent_share": 0.4055114835100862,
+      "dependent_share_unavailable_reason": null,
+      "allocation_range": {
+        "low": 0.40550273446443935,
+        "high": 0.4055507099002747,
+        "projected_area_fraction": 0.4055114835100862,
+        "cells_wholly_inside": {
+          "cells": 14,
+          "residents": 8470.576749280095,
+          "dependent_share": 0.4055507099002747
+        },
+        "cells_any_touching": {
+          "cells": 48,
+          "residents": 29269.19531691703,
+          "dependent_share": 0.40550273446443935
+        },
+        "extremes_available": 2,
+        "value_of_record_between_the_two_extremes": true
+      },
+      "age_cells": {
+        "with_valid_counts": 48,
+        "wholly_inside": 14,
+        "partly_inside": 34,
+        "without_valid_counts": 11,
+        "cell_equivalents": 34.735284053551226
+      },
+      "area": {
+        "unit_km2": 30.340979889315584,
+        "supported_km2": 27.856725449708147,
+        "unsupported_km2": 2.4842544396073296,
+        "supported_fraction": 0.9181221421104381,
+        "unsupported_fraction": 0.08187785788955837,
+        "unsupported_in_cells_without_valid_counts_km2": 2.4842544396073296,
+        "unsupported_outside_the_age_grid_km2": 0.0,
+        "reconciliation_residual_km2": 1.0702549957386509e-13
+      },
+      "band_mask_mismatch": false
+    },
+    {
+      "unit_id": "TH570908",
+      "unit_name": "Ban Dai",
+      "status": "modelled_research_estimate",
+      "residents": 3196.9194558101044,
+      "children_0_14": 551.2333467173371,
+      "older_60_plus": 745.2881165782244,
+      "other_15_59": 1900.397992514543,
+      "dependent_share": 0.4055533713679442,
+      "dependent_share_unavailable_reason": null,
+      "allocation_range": {
+        "low": 0.40555071725513514,
+        "high": 0.40556598183923104,
+        "projected_area_fraction": 0.4055533713679442,
+        "cells_wholly_inside": {
+          "cells": 23,
+          "residents": 1472.9620406460017,
+          "dependent_share": 0.40555071725513514
+        },
+        "cells_any_touching": {
+          "cells": 62,
+          "residents": 4972.472863856703,
+          "dependent_share": 0.40556598183923104
+        },
+        "extremes_available": 2,
+        "value_of_record_between_the_two_extremes": true
+      },
+      "age_cells": {
+        "with_valid_counts": 62,
+        "wholly_inside": 23,
+        "partly_inside": 39,
+        "without_valid_counts": 0,
+        "cell_equivalents": 42.09664597219914
+      },
+      "area": {
+        "unit_km2": 33.781002486159196,
+        "supported_km2": 33.78100248615922,
+        "unsupported_km2": 0.0,
+        "supported_fraction": 1.0,
+        "unsupported_fraction": 0.0,
+        "unsupported_in_cells_without_valid_counts_km2": 0.0,
+        "unsupported_outside_the_age_grid_km2": 0.0,
+        "reconciliation_residual_km2": -2.1316282072803006e-14
+      },
+      "band_mask_mismatch": false
+    },
+    {
+      "unit_id": "TH570909",
+      "unit_name": "Pong Ngam",
+      "status": "modelled_research_estimate",
+      "residents": 6773.822852553605,
+      "children_0_14": 1172.7639169686622,
+      "older_60_plus": 1574.6039981539448,
+      "other_15_59": 4026.4549374309977,
+      "dependent_share": 0.40558602947328337,
+      "dependent_share_unavailable_reason": null,
+      "allocation_range": {
+        "low": 0.40555070646176755,
+        "high": 0.4056743097366447,
+        "projected_area_fraction": 0.40558602947328337,
+        "cells_wholly_inside": {
+          "cells": 25,
+          "residents": 5235.32391408924,
+          "dependent_share": 0.40555070646176755
+        },
+        "cells_any_touching": {
+          "cells": 68,
+          "residents": 7943.205099846527,
+          "dependent_share": 0.4056743097366447
+        },
+        "extremes_available": 2,
+        "value_of_record_between_the_two_extremes": true
+      },
+      "age_cells": {
+        "with_valid_counts": 68,
+        "wholly_inside": 25,
+        "partly_inside": 43,
+        "without_valid_counts": 14,
+        "cell_equivalents": 47.475331918711746
+      },
+      "area": {
+        "unit_km2": 42.61061539871571,
+        "supported_km2": 38.09213750536549,
+        "unsupported_km2": 4.5184778933501955,
+        "supported_fraction": 0.8939588679705761,
+        "unsupported_fraction": 0.10604113202942343,
+        "unsupported_in_cells_without_valid_counts_km2": 4.5184778933501955,
+        "unsupported_outside_the_age_grid_km2": 0.0,
+        "reconciliation_residual_km2": 2.042810365310288e-14
+      },
+      "band_mask_mismatch": false
+    }
+  ],
+  "not_computed": [
+    "vulnerability component (0-100)",
+    "FPPS",
+    "A-E class",
+    "would-be class",
+    "ensemble cell",
+    "age-resolved exposure inside a flood input",
+    "2024-rescaled demand"
+  ],
+  "input_hashes": {
+    "age_acquisition_manifest_sha256": "f7a169877177a374bc461724dcb93b6ec96d76451347cd2e98dc2fc7b0f8356c",
+    "age_rasters_sha256": {
+      "tha_t_00_2024_CN_1km_R2025A_UA_v1.tif": "7aaf3531637200181ecbde91c4abcbe0af406382995c4d15be526f49ec331618",
+      "tha_t_01_2024_CN_1km_R2025A_UA_v1.tif": "d338d2065980bc4de9481c2ce8d4aa807198cc1806eeb88c5a07796cd3748eec",
+      "tha_t_05_2024_CN_1km_R2025A_UA_v1.tif": "1b9e10aa084221cd0339946ca48adabe021d6fcd5f05148007298c00eb6edf67",
+      "tha_t_10_2024_CN_1km_R2025A_UA_v1.tif": "d082f4af3584c5fce4e9968007c5198e20a4a71cec75dbcc5b42f9373efb4da6",
+      "tha_t_15_2024_CN_1km_R2025A_UA_v1.tif": "72a433d96b62f5eb376d5278f9d33ae9a0af913882b47b67515ce3bae1a75027",
+      "tha_t_20_2024_CN_1km_R2025A_UA_v1.tif": "48125bedda478f9a1cdfca6dc951ff7a710315487cc267bfea70eca92bf9363a",
+      "tha_t_25_2024_CN_1km_R2025A_UA_v1.tif": "95287a04fd729ef7b5638514666612d9def231a53402e5ef35a4e8d064e9e64c",
+      "tha_t_30_2024_CN_1km_R2025A_UA_v1.tif": "5629bc7a9ddf339965a6dc6d2c4656c4506ab96b9e61702baf75c476e1ba139e",
+      "tha_t_35_2024_CN_1km_R2025A_UA_v1.tif": "4d231bb9ded5ed0e00a0991f1cac8416c5a5e69ccb6cf7ac2717e81152bdcf63",
+      "tha_t_40_2024_CN_1km_R2025A_UA_v1.tif": "3e1d6bcdd8d01f2098a9699defe2059212c113d317b123952d811fb07a09b438",
+      "tha_t_45_2024_CN_1km_R2025A_UA_v1.tif": "2483f4f0902c31104c57d3e2d23c62a8698862fd1141559c1191efc01900dd04",
+      "tha_t_50_2024_CN_1km_R2025A_UA_v1.tif": "b48be91826dd7bc2a1042eb5583d3a64f56d89ae00861e7f9d236d022207cc2e",
+      "tha_t_55_2024_CN_1km_R2025A_UA_v1.tif": "5b2b71cd2fb35bbad5d7fcd75e3749a0de35c9310aeddd76774dd339cbdb128a",
+      "tha_t_60_2024_CN_1km_R2025A_UA_v1.tif": "58b3d0d6a2c10ed3e858bf9b6afa1d815d2042a32d0d770ce57df8badfde6b98",
+      "tha_t_65_2024_CN_1km_R2025A_UA_v1.tif": "0c55d48ff61ad6ed5ca9486e608a975570965f5a59eccba430305ef3ffec3ad1",
+      "tha_t_70_2024_CN_1km_R2025A_UA_v1.tif": "c46f69a4eb9ad945b559e9a0625955622a266897985dcb1559252e31713eea3c",
+      "tha_t_75_2024_CN_1km_R2025A_UA_v1.tif": "3460c0a3064dd4bfef3134a6d21bbe0a1e7da648a44e5ec59c73e051465876a7",
+      "tha_t_80_2024_CN_1km_R2025A_UA_v1.tif": "b79b21607293aeceab2a44398ae4c1049ed8eb721cef4a253015694bbfdbdf4a",
+      "tha_t_85_2024_CN_1km_R2025A_UA_v1.tif": "f27f8428327a460868050ae0f71f82e162e3015aacbb7e2dcb4ca8a3c8c65efa",
+      "tha_t_90_2024_CN_1km_R2025A_UA_v1.tif": "ef8c9707c99c05e61b7a226cd6967c4e18bf0cbe28341ba3cb803c21205f0e8b"
+    },
+    "tambon_boundaries_sha256": "09e62345481bb80030ff6779e074bfb2c16629b70ae1e373ebd31945f1c6e0d8"
+  },
+  "assumptions": [
+    "WorldPop Global2 R2025A 2024 age counts are modelled estimates at about 1 km, not observed counts.",
+    "A cell's counts are spread evenly over the cell, so a unit takes the share of each cell that its area covers. Within a cell the age composition is taken as uniform.",
+    "Units are the 2022 COD-AB tha_admin3 polygons. Boundaries (2022), age counts (2024) and the cases' 2020 demand and 2026 roads have different vintages.",
+    "The counts are computed by the code and from the input bytes that produced the national vulnerability anchors, so a unit's share can be compared with those anchors.",
+    "The low/high range re-allocates the same cells two other ways. The plan gives no formula for it; it is not a confidence interval."
+  ],
+  "limitations": [
+    "A unit of a few dozen 1 km cells has many cells that lie only partly inside it. The range shows how much that can move the share; it does not cover the error of the modelled counts themselves.",
+    "Area with no valid age count carries no count. It is reported as unsupported area, not as zero residents.",
+    "The plan's range for age-resolved exposure, [known, known + unsupported], needs resident counts inside a flood input. No flood input is read here, so that range is not in this file.",
+    "A dependent share is not a measure of need in any place, and it is not the vulnerability component."
+  ]
+}

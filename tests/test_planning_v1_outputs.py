@@ -2,7 +2,9 @@
 
 AGENTS.md asks every output for a source timestamp, a confidence and its
 assumptions. These tests read the committed files only. They compute no FPPS,
-no A-E class and no ensemble, and they check that no file names a tambon.
+no A-E class and no ensemble. A file written before protocol v1b came into
+force names no tambon. A file written after it may, and it names the two
+signed protocol files by SHA-256.
 """
 
 from __future__ import annotations
@@ -21,7 +23,8 @@ from floodguard.hospital_counts import count_hospitals
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUTS = ROOT / "outputs" / "planning_v1"
 PROTOCOL = ROOT / "docs" / "proposal_execution" / "planning_protocol_v1b.json"
-UTC = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
+RECEIPTS = ROOT / "docs" / "proposal_execution" / "RECEIPTS.jsonl"
+UTC =re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
 DOCUMENTATION = {"README.md"}
 FILES = sorted(path for path in OUTPUTS.iterdir() if path.name not in DOCUMENTATION) if OUTPUTS.is_dir() else []
 
@@ -75,11 +78,50 @@ def test_a_candidate_file_says_it_is_a_candidate_inside_the_file(path: Path) -> 
         assert "OI-02" in document["status_note"] and "not" in document["status_note"], path.name
 
 
-@pytest.mark.parametrize("path", FILES, ids=lambda path: path.name)
-def test_no_output_names_a_tambon(path: Path) -> None:
+def _recorded_protocols() -> dict[str, dict[str, str]]:
+    """Return the SHA-256 and the receipt time of each protocol file recorded in RECEIPTS.jsonl."""
+
+    recorded: dict[str, dict[str, str]] = {}
+    for line in RECEIPTS.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        receipt = json.loads(line)
+        for name in ("v1a", "v1b"):
+            digest = receipt.get("output_hashes", {}).get(f"planning_protocol_{name}_sha256")
+            if digest:
+                recorded[name] = {"sha256": digest, "time_utc": receipt["time_utc"]}
+    return recorded
+
+
+RECORDED = _recorded_protocols()
+
+
+def _written_with_v1b_in_force(path: Path) -> bool:
+    """A file names the signed v1b by SHA-256 only if it was written after v1b came into force."""
+
+    return "v1b" in RECORDED and RECORDED["v1b"]["sha256"].encode("ascii") in path.read_bytes()
+
+
+BEFORE_V1B = [path for path in FILES if not _written_with_v1b_in_force(path)]
+UNDER_V1B = [path for path in FILES if _written_with_v1b_in_force(path)]
+
+
+@pytest.mark.parametrize("path", BEFORE_V1B, ids=lambda path: path.name)
+def test_no_output_written_before_v1b_was_in_force_names_a_tambon(path: Path) -> None:
     text = path.read_bytes().decode("ascii")
     assert not re.search(r"TH\d{6}", text), "an eight-character tambon code"
     assert "subdistrict_id" not in text and "adm3_pcode\":" not in text
+
+
+@pytest.mark.parametrize("path", UNDER_V1B, ids=lambda path: path.name)
+def test_an_output_written_with_v1b_in_force_names_both_signed_protocols(path: Path) -> None:
+    """Such a file may hold values for a tambon. It says which signed rules it was made under, and when."""
+
+    text = path.read_bytes().decode("ascii")
+    assert RECORDED["v1a"]["sha256"] in text and RECORDED["v1b"]["sha256"] in text
+    assert _sha256(PROTOCOL) == RECORDED["v1b"]["sha256"]
+    for document in _documents(path):
+        assert document["generated_at_utc"] > RECORDED["v1b"]["time_utc"], path.name
 
 
 def test_join_logs_and_corridors_match_their_spike_receipts() -> None:

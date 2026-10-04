@@ -1,0 +1,453 @@
+{
+  "schema_version": "floodguard.planning_context_e4.v1",
+  "generated_at_utc": "2026-10-03T05:29:02Z",
+  "protocol_item": "Plan task E4 (plan 8.1, row E4) for protocol v1b open items OI-04 (join log) and OI-06 (facility counts)",
+  "case": "se1_mae_sai",
+  "case_title": "Mae Sai: the eight tambons, routed through the corridor of record",
+  "travel_mode": "legacy_vehicle",
+  "run_kind": "build_of_record",
+  "status": "of_record",
+  "status_note": "Build of record of plan task E4 for case se1_mae_sai (vehicle), made in a compute window the operator declared (run.compute_window) under decision log R13. Protocol v1b open items OI-04 (join log) and OI-06 (facility counts) close from it only if its values match corridor_polygon.run_of_record.e4_reproduction_check (reproduction_check) or the owners accept the difference.",
+  "official_warning": false,
+  "operational_status": "non_operational",
+  "computes": "One baseline context with its grade joins and facility table, and the baseline connected-no-route share to hospitals for the whole frame. No flood layer, no closure, no access loss, no FPPS, no A-E class, no ensemble, and no figure for a single tambon.",
+  "source_timestamp": "2026-07-10T02:46:49Z",
+  "source_timestamps": {
+    "osm_retrieved_at_utc": "2026-07-10T02:46:49Z",
+    "population_year_represented": 2020,
+    "boundaries_valid_on": "2022-01-22",
+    "ddpm_list_file_dated": "2026-09-21 (open-data folder date)"
+  },
+  "confidence_class": "low",
+  "confidence_basis": "OSM roads and hospitals, DDPM listed shelters and DGA health-facility records are unverified map and list records; travel times are modelled class speeds on an undirected graph; the grade joins are coordinate coincidences whose passability is unknown.",
+  "context_call": {
+    "function": "floodguard.evidence_context.build_context_inputs (unchanged)",
+    "aoi_geometry": "The union of the eight Mae Sai tambons of protocol v1a, clipped to AOI-02 (owner choice 21).",
+    "routing_geometry": "The corridor of record (protocol v1b corridor_polygon.geometry_file).",
+    "reporting_geometry": "The union of the COD-AB tha_admin3 polygons that intersect the routing geometry.",
+    "reporting_units_intersecting": 26,
+    "travel_mode": "legacy_vehicle",
+    "facilities_supplied": 82,
+    "facilities_supplied_service": "ddpm_located_shelter",
+    "facilities_supplied_note": "OSM hospitals are extracted by the builder itself; supplied and extracted facilities never merge (facility_sets.identity_rule). Main-road entries are graph nodes and are not supplied.",
+    "reviewed_junctions_supplied": 20,
+    "reviewed_junctions_applied": 20
+  },
+  "routing_source": {
+    "path": "outputs/planning_v1/corridor_of_record.geojson",
+    "sha256": "4e49d5eca2f7522e2de10cf81cc68b4ebcbea036225d1b862f4a80cb1affbac2",
+    "geometry_sha256": "4b271a6619db2a78442476895c58f93e6ba1079ff6b7bb52f63cabefa796353b",
+    "checked_against_protocol_v1b": true
+  },
+  "context": {
+    "canonical_sha256": "0b2672b6d4d1d94da3a4c39d819d980a9e5bf7845bb22fea1284a2893a6351a6",
+    "edges": 65328,
+    "road_nodes": 62378,
+    "connected_components": 252,
+    "segments_omitted_at_routing_boundary_or_degenerate": 52601,
+    "population_cells": 36765,
+    "modelled_population_2020": 81836.9,
+    "population_snap_coverage_fraction": 0.919231,
+    "input_hashes": {
+      "aoi_geometry": "7ce3ee8f4eabd3390a5fb04ca9a3f449322ca047c5c49ab5fa6b3fa43d9538de",
+      "extracted_osm_points": "10d5c78e786fc40b340ef144835bec6d80f1509a114fce3fed1edd8f91a7bcd7",
+      "extracted_osm_roads": "bd781d472ee223e4c3a2a910c035b6ebe5617f8de67dcf5b91ca3c33df42e333",
+      "osm": "b7f46018249638413b1d318bc86519f140c27af20cac7c00d42fe03775b7add1",
+      "public_origin_records": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "reporting_geometry": "609801855b25bc5298eeb7b1dc6a36b36573249372aa38110cae7b2da3ca71c2",
+      "reviewed_junctions": "d6748d29953d4b3af3f980e3006a589cb81dd2492a382a080567e61b93abe9eb",
+      "routing_geometry": "4b271a6619db2a78442476895c58f93e6ba1079ff6b7bb52f63cabefa796353b",
+      "supplied_facilities": "a43bb3e5f4d0419aba7b09a8e4f8138600971785523669675ebda01c9e197865",
+      "worldpop": "fb39d85dd150c45c7b25771f29bcd548e611afa0967224ac6d8ca05727230e20"
+    },
+    "retained": true,
+    "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e4_vehicle/context_inputs.json",
+    "retained_note": "The context file is kept outside Git at this path (pitch level, because it holds the supplied DDPM rows). Its canonical SHA-256 names it: the builder's hash of every field except its generation time."
+  },
+  "grade_joins": {
+    "rule_version": "grade_join_endpoint_coincident_v1",
+    "coincidence_tolerance_m": 0.0,
+    "tolerance_decision": "Owner choice 20, option A (decision log R12): 0 m.",
+    "join_count": 345,
+    "grade_split_count": 371,
+    "possible_endpoint_transition_count": 345,
+    "joins_where_every_node_is_an_endpoint": 345,
+    "joins_sha256": "d289f728feafef649687b39f7da71228c79427bf377f7e63bc1c0eed4f2ee357",
+    "log_path": "outputs/planning_v1/grade_join_log_e4_se1_vehicle.json",
+    "log_sha256": "a337fee5c17d81b1b61fc64114c09e59103174282702aa01e33905d051fb636e"
+  },
+  "edge_counts": {
+    "edges": 65328,
+    "by_road_class": {
+      "local": 16837,
+      "primary": 985,
+      "residential": 32928,
+      "secondary": 4122,
+      "tertiary": 2965,
+      "trunk": 992,
+      "unclassified": 6499
+    },
+    "by_bridge_tag": {
+      "no": 65136,
+      "yes": 192
+    },
+    "by_tunnel_tag": {
+      "building_passage": 1,
+      "no": 65327
+    },
+    "bridge_yes_edges": 192,
+    "tunnel_culvert_edges": 0
+  },
+  "facilities": {
+    "counts": {
+      "osm_hospitals": 6,
+      "dga_matched_hospitals": 6,
+      "located_ddpm_shelters": 82,
+      "corroborated_shelters": 48
+    },
+    "hospital_count_breakdown": {
+      "osm_objects": 6,
+      "distinct_named_hospitals": 4,
+      "unnamed_objects": 1,
+      "objects_that_repeat_a_named_hospital": 1
+    },
+    "hospitals_in_routing_context": [
+      {
+        "facility_id": "OSM-node-7856667792",
+        "name": "\u0e42\u0e23\u0e07\u0e1e\u0e22\u0e32\u0e1a\u0e32\u0e25\u0e41\u0e21\u0e48\u0e1f\u0e49\u0e32\u0e2b\u0e25\u0e27\u0e07",
+        "source_geometry_type": "Point",
+        "snapped_to_graph": true,
+        "dga_matched": true
+      },
+      {
+        "facility_id": "OSM-way-1010348419",
+        "name": "Unnamed OSM candidate",
+        "source_geometry_type": "MultiPolygon",
+        "snapped_to_graph": true,
+        "dga_matched": true
+      },
+      {
+        "facility_id": "OSM-way-371233866",
+        "name": "\u0e42\u0e23\u0e07\u0e1e\u0e22\u0e32\u0e1a\u0e32\u0e25\u0e41\u0e21\u0e48\u0e2a\u0e32\u0e22",
+        "source_geometry_type": "MultiPolygon",
+        "snapped_to_graph": true,
+        "dga_matched": true
+      },
+      {
+        "facility_id": "OSM-way-447735125",
+        "name": "\u0e42\u0e23\u0e07\u0e1e\u0e22\u0e32\u0e1a\u0e32\u0e25\u0e41\u0e21\u0e48\u0e08\u0e31\u0e19",
+        "source_geometry_type": "MultiPolygon",
+        "snapped_to_graph": true,
+        "dga_matched": true
+      },
+      {
+        "facility_id": "OSM-way-527539157",
+        "name": "\u0e42\u0e23\u0e07\u0e1e\u0e22\u0e32\u0e1a\u0e32\u0e25\u0e40\u0e0a\u0e35\u0e22\u0e07\u0e41\u0e2a\u0e19",
+        "source_geometry_type": "MultiPolygon",
+        "snapped_to_graph": true,
+        "dga_matched": true
+      },
+      {
+        "facility_id": "OSM-way-549948901",
+        "name": "\u0e42\u0e23\u0e07\u0e1e\u0e22\u0e32\u0e1a\u0e32\u0e25\u0e41\u0e21\u0e48\u0e1f\u0e49\u0e32\u0e2b\u0e25\u0e27\u0e07",
+        "source_geometry_type": "MultiPolygon",
+        "snapped_to_graph": true,
+        "dga_matched": true
+      }
+    ],
+    "hospitals_outside_routing_context": 2,
+    "dga_match_rule": "An OSM hospital is matched when a DGA record lies within 150 m of its OSM footprint or point, measured in EPSG:32647.",
+    "dga_records_read": 10622,
+    "main_road_entries": 1939,
+    "main_road_entry_definition": "The destination is the nearest node on a trunk or primary edge (including links) inside the routing context.",
+    "main_road_entry_node_ids_sha256": "10d17aa72a96150ffbbfc2d2fddd53bc921ede042fdebe66540b8a43092da15d",
+    "ddpm_rows_with_a_coordinate_in_the_routing_context": {
+      "listed_rows": 92,
+      "listed_places": 41140.0,
+      "located_rows": 82,
+      "located_places": 40640.0,
+      "unlocated_rows": 10,
+      "unlocated_places": 500.0,
+      "rows_without_a_listed_capacity": 0
+    },
+    "ddpm_location_rule": "A coordinate shared by at least 3 rows of the national file is a placeholder and those rows are not located (facility_sets.shelter_location_rule). Only located rows are supplied; each carries location_status.",
+    "supplied_shelters_snapped_within_100_m": 81,
+    "shelter_corroboration": {
+      "rule": "A DDPM row whose location status is 'located' is corroborated when an OSM object tagged building=* (any value but 'no') or amenity=* (any value but 'no') lies within the match distance of its coordinate, measured in EPSG:32647 from the shelter point to the nearest point of the object (0 m when the point is inside it).",
+      "match_distance_m": 150.0,
+      "metric_epsg": 32647,
+      "located_rows": 82,
+      "located_places": 40640.0,
+      "corroborated_rows": 48,
+      "corroborated_places": 26320.0,
+      "matched_to_a_building_rows": 20,
+      "matched_to_an_amenity_only_rows": 28,
+      "not_corroborated_rows": 34,
+      "match_rate": 0.5853658536585366,
+      "osm_objects_read": {
+        "total": 2081,
+        "building": 1134,
+        "amenity": 1097,
+        "building_and_amenity": 150
+      },
+      "osm_extract": {
+        "bounds_wgs84": [
+          99.620576,
+          20.105851,
+          100.104382,
+          20.467074
+        ],
+        "margin_deg": 0.002,
+        "ogr_runtime": {
+          "gdal_version": "3.13.0",
+          "executable_sha256": "8c122ebfa5f4926fa1b80dee201515670fdcdda783d8aa337c37b09d0b05f080"
+        },
+        "layers": {
+          "multipolygons": {
+            "where": "building IS NOT NULL OR amenity IS NOT NULL",
+            "features_read": 1159,
+            "objects_kept": 1159,
+            "with_building": 1047,
+            "with_amenity": 258,
+            "file_sha256": "5ec21357e151e6c3a0b2aa6d3dcfb69100fd7223876e48dac827ab71722e51df"
+          },
+          "points": {
+            "where": "other_tags LIKE '%building%' OR other_tags LIKE '%amenity%'",
+            "features_read": 929,
+            "objects_kept": 922,
+            "with_building": 87,
+            "with_amenity": 839,
+            "file_sha256": "9efa8b479d69afcda324c64714582f3f9b930c7833e8ef0e1be3682645649aea"
+          }
+        },
+        "retained": false,
+        "retained_note": "The extracted files were written outside Git and not kept; their SHA-256 values name them."
+      }
+    },
+    "pii_whitelist": {
+      "rule": "Shelter rows keep only whitelisted columns (floodguard.planning_context.SHELTER_FACILITY_KEYS): no coordinator name, no phone number and no personal identifier. The build refuses any other column, before and after the context builder.",
+      "checked_at_build": true,
+      "test": "tests/test_planning_context.py::test_pii_whitelist_keeps_no_personal_column_and_refuses_one"
+    },
+    "facility_table": {
+      "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e4_vehicle/planning_facilities.json",
+      "sha256": "db0c8903659fc3dd35940ab5c4893aafcc75b4c3b4f5a3d282607ac6d1e7468c",
+      "publication_level": "pitch",
+      "retained_outside_git": true
+    }
+  },
+  "acceptance": {
+    "plan_row": "E4: at least 4 hospitals; no-route share at most 10%; PII whitelist test; load_aois still 6.",
+    "hospitals_in_context_min": 4,
+    "hospital_count": 4,
+    "hospital_count_unit": "distinct named hospitals (owner choice 22)",
+    "named_ways_within_routing_context": {
+      "447735125": true,
+      "527539157": true,
+      "549948901": true
+    },
+    "baseline_vehicle_no_route_share_max": 0.1,
+    "baseline_vehicle_no_route_share": 0.00075,
+    "load_aois_counts": {
+      "resources/aoi": 6,
+      "resources/aoi/upload": 6
+    },
+    "criteria_met": {
+      "hospitals_in_context_min": true,
+      "named_ways_within_routing_context": true,
+      "baseline_vehicle_no_route_share_max": true,
+      "pii_whitelist": true,
+      "load_aois_still_returns_6": true
+    },
+    "measured_criteria_met": true,
+    "criteria_note": "pii_whitelist is enforced by this build and checked by the test named under facilities.pii_whitelist. The compute window is recorded under run."
+  },
+  "baseline_no_route": {
+    "definition": "Residents on graph-connected demand cells with no modelled route to any OSM hospital in the routing context, divided by all residents on graph-connected demand cells. Whole frame only.",
+    "travel_mode": "legacy_vehicle",
+    "with_grade_joins": {
+      "residents": 81836.889439,
+      "graph_connected_residents": 75226.97719,
+      "connected_residents_without_a_route": 56.446837,
+      "share": 0.00075,
+      "residents_not_connected_to_the_graph": 6609.912249
+    },
+    "without_grade_joins": {
+      "residents": 81836.889439,
+      "graph_connected_residents": 75226.97719,
+      "connected_residents_without_a_route": 1062.855133,
+      "share": 0.014129,
+      "residents_not_connected_to_the_graph": 6609.912249
+    }
+  },
+  "reproduction_check": {
+    "rule": "Protocol v1b corridor_polygon.run_of_record.e4_reproduction_check: a value that differs is reported here, and the open item does not close on it until the owners accept the difference in the decision log (accepted_differences).",
+    "source": "outputs/planning_v1/e0_context_run_of_record.json",
+    "source_sha256": "e038546b84e96715bac5b649a3996201cfaf5c9c67d7f6dcd6b0f88b316c678d",
+    "values": {
+      "corridor_geometry_sha256": {
+        "expected": "4b271a6619db2a78442476895c58f93e6ba1079ff6b7bb52f63cabefa796353b",
+        "observed": "4b271a6619db2a78442476895c58f93e6ba1079ff6b7bb52f63cabefa796353b",
+        "same": true
+      },
+      "edge_count": {
+        "expected": 65328,
+        "observed": 65328,
+        "same": true
+      },
+      "grade_split_count": {
+        "expected": 371,
+        "observed": 371,
+        "same": true
+      },
+      "joins_sha256": {
+        "expected": "d289f728feafef649687b39f7da71228c79427bf377f7e63bc1c0eed4f2ee357",
+        "observed": "d289f728feafef649687b39f7da71228c79427bf377f7e63bc1c0eed4f2ee357",
+        "same": true
+      },
+      "join_count": {
+        "expected": 345,
+        "observed": 345,
+        "same": true
+      },
+      "facility_counts.osm_hospitals": {
+        "expected": 6,
+        "observed": 6,
+        "same": true
+      },
+      "facility_counts.dga_matched_hospitals": {
+        "expected": 6,
+        "observed": 6,
+        "same": true
+      },
+      "facility_counts.located_ddpm_shelters": {
+        "expected": 82,
+        "observed": 82,
+        "same": true
+      },
+      "facility_counts.corroborated_shelters": {
+        "expected": 48,
+        "observed": 48,
+        "same": true
+      },
+      "mae_sai_hospital_facility_id": {
+        "expected": "OSM-way-371233866",
+        "observed": "OSM-way-371233866",
+        "same": true
+      },
+      "inputs.aoi_02_sha256": {
+        "expected": "d49de53e86264c06218fd9a03cc2b5da1549085a49fae2f3cd288bf6334f5a56",
+        "observed": "d49de53e86264c06218fd9a03cc2b5da1549085a49fae2f3cd288bf6334f5a56",
+        "same": true
+      },
+      "inputs.boundaries_sha256": {
+        "expected": "09e62345481bb80030ff6779e074bfb2c16629b70ae1e373ebd31945f1c6e0d8",
+        "observed": "09e62345481bb80030ff6779e074bfb2c16629b70ae1e373ebd31945f1c6e0d8",
+        "same": true
+      },
+      "inputs.ddpm_file_sha256": {
+        "expected": "91a8f26a5dd2446b68b562dcda13024d1bd4981720f985722a6467d4edeef9d7",
+        "observed": "91a8f26a5dd2446b68b562dcda13024d1bd4981720f985722a6467d4edeef9d7",
+        "same": true
+      },
+      "inputs.dga_file_sha256": {
+        "expected": "15d208b7c269562c9444f5f034f5e16c3a33a2e069a19637264b2ddc2f1ee58d",
+        "observed": "15d208b7c269562c9444f5f034f5e16c3a33a2e069a19637264b2ddc2f1ee58d",
+        "same": true
+      },
+      "inputs.osm_pbf_sha256": {
+        "expected": "b7f46018249638413b1d318bc86519f140c27af20cac7c00d42fe03775b7add1",
+        "observed": "b7f46018249638413b1d318bc86519f140c27af20cac7c00d42fe03775b7add1",
+        "same": true
+      },
+      "inputs.reviewed_junctions_sha256": {
+        "expected": "43de4cc50efc790af1aa502e820e178856389041b568ff61bf2c463cfe240f07",
+        "observed": "43de4cc50efc790af1aa502e820e178856389041b568ff61bf2c463cfe240f07",
+        "same": true
+      },
+      "inputs.worldpop_2020_sha256": {
+        "expected": "fb39d85dd150c45c7b25771f29bcd548e611afa0967224ac6d8ca05727230e20",
+        "observed": "fb39d85dd150c45c7b25771f29bcd548e611afa0967224ac6d8ca05727230e20",
+        "same": true
+      }
+    },
+    "context_canonical_sha256": {
+      "expected": "62749072c90c1ad72b07ff78f073f9f0c2bd1c66b52a812995414fbfc95c1c10",
+      "observed": "0b2672b6d4d1d94da3a4c39d819d980a9e5bf7845bb22fea1284a2893a6351a6",
+      "same": false,
+      "facilities_supplied": 82,
+      "expected_to_differ": true,
+      "reason": "The spike supplied no facility to build_context_inputs; this build supplies the DDPM located shelters (plan 3.1 P2), and the canonical SHA-256 of the context covers the supplied facilities, so the two hashes differ by construction. The road graph, the joins and the counts above must still match."
+    },
+    "differences": [],
+    "differences_accepted_by_the_owners": [],
+    "all_same": true
+  },
+  "frame_hospital_check": null,
+  "input_hashes": {
+    "aoi_02_sha256": "d49de53e86264c06218fd9a03cc2b5da1549085a49fae2f3cd288bf6334f5a56",
+    "boundaries_sha256": "09e62345481bb80030ff6779e074bfb2c16629b70ae1e373ebd31945f1c6e0d8",
+    "ddpm_file_sha256": "91a8f26a5dd2446b68b562dcda13024d1bd4981720f985722a6467d4edeef9d7",
+    "dga_file_sha256": "15d208b7c269562c9444f5f034f5e16c3a33a2e069a19637264b2ddc2f1ee58d",
+    "osm_pbf_sha256": "b7f46018249638413b1d318bc86519f140c27af20cac7c00d42fe03775b7add1",
+    "reviewed_junctions_sha256": "43de4cc50efc790af1aa502e820e178856389041b568ff61bf2c463cfe240f07",
+    "routing_file_sha256": "4e49d5eca2f7522e2de10cf81cc68b4ebcbea036225d1b862f4a80cb1affbac2",
+    "worldpop_2020_sha256": "fb39d85dd150c45c7b25771f29bcd548e611afa0967224ac6d8ca05727230e20"
+  },
+  "assumptions": [
+    "The routing geometry, demand area and reporting geometry follow protocol v1b for this case and are named by their hashes.",
+    "Road times are fixed class speeds on an undirected graph. One-way rules, turn restrictions and road condition are not represented.",
+    "A grade join shows that two ways end at the same OSM coordinate (0 m tolerance). It does not show that the transition can be driven.",
+    "A hospital is an OSM object tagged amenity=hospital or healthcare=hospital whose routing point lies in the routing context, as build_context_inputs extracts it. Every such object is a destination, named or not.",
+    "A DGA match is a DGA health-facility record within 150 m of the hospital's OSM footprint or point, measured in EPSG:32647. It corroborates the location; it does not show the hospital is open.",
+    "A DDPM row is located unless at least 3 rows of the national file share its exact coordinate (facility_sets.shelter_location_rule); only located rows inside the routing context are supplied.",
+    "A located shelter is corroborated when an OSM building or amenity lies within 150 m of its listed coordinate (owner choice 19). That shows a mapped structure near the coordinate, not that it is the shelter or was open.",
+    "Listed capacity is a planning figure (capacity_status listed_planned_unverified), not an available capacity.",
+    "A main-road entry is a node of a trunk or primary edge, links included, of the routing context (owner choice 8). Grade-join connectors are not main roads."
+  ],
+  "limitations": [
+    "One build on one machine. Facility counts are counts of map and list records; no hospital and no shelter was checked on the ground.",
+    "The facility table and the context hold DDPM rows (pitch level) and stay outside Git."
+  ],
+  "run": {
+    "generated_at_utc": "2026-10-03T05:29:02Z",
+    "run_started_at_utc": "2026-10-03T05:26:53Z",
+    "run_started_at_local": "2026-10-03T13:26:53+08:00",
+    "run_finished_at_utc": "2026-10-03T05:29:06Z",
+    "run_finished_at_local": "2026-10-03T13:29:06+08:00",
+    "wall_time_minutes": 2.21,
+    "timing_seconds": {
+      "shelters_and_osm_match_objects": 32.1,
+      "context_build": 96.2,
+      "assembly_and_baseline_access": 4.2
+    },
+    "peak_working_set_gib": 0.58,
+    "peak_note": "Peak working set of this Python process over the whole build; it leaves out the ogr2ogr child processes.",
+    "compute_window": {
+      "plan_rule": "Builds run serially in a declared compute window with no concurrent SNAP jobs.",
+      "declared": true,
+      "declared_by_the_operator": "Declared by the AI coding agent on 2026-10-03 at 13:26:50 +08:00 (05:26:50Z), under decision log R13 (3 Oct 2026, Putu for both owners: the owners accepted in advance that the agent declares the E4 build's compute window on the terms of the corridor run of record, no other project job running and the window recorded). Checked with tasklist at 13:26:50 +08:00 (384 processes): no python, node, pnpm, GDAL or SNAP job of the FloodGuard project running. Running and idle, not FloodGuard jobs: one Adobe Creative Cloud node helper, two blender-mcp MCP servers (two uv and four python processes), three Codex CUA node servers and their two node_repl helpers. Serial: one build of record; the same PowerShell script that started it samples the process list about every 3 s and runs nothing else.",
+      "authority": "Decision log R13 (3 October 2026, Putu for both owners): the owners accepted in advance that the agent declares the E4 build's compute window on the terms of the corridor run of record: no other project job running, and the window recorded.",
+      "note": "Declared when the operator passes --compute-window. This script cannot see what else runs on the machine; the declaration says what was checked."
+    },
+    "machine": {
+      "logical_processors": 16,
+      "system": "Windows",
+      "release": "10",
+      "python": "3.11.8"
+    },
+    "implementation": {
+      "base_commit": "14191ec8909ae13d56eb9abd749225dfc3c36388",
+      "builder_sha256": "b550ede8511396e923b6627d7b10b4ba902913aa4bd0104f4648f631e9c66eb3",
+      "planning_context_sha256": "e20de7f0caeb350909f3b32eae0f1df921c30e1972c070ddd9ca923f6fa7e4f9",
+      "evidence_context_sha256": "3e85955494e0bf2d4592ea772322afcb20a7a5cdf00036e52a4e33d1263c2994",
+      "grade_join_sha256": "87247e54da2acbdbbf5e00f5353b0aedf68e471eb463df99b46d9163aec7d634",
+      "ddpm_shelters_sha256": "c2f0e646497f1ee85676c8aac821d589071713ec43cdf61e40fa3618386a15bf",
+      "shelter_corroboration_sha256": "89734526dc966e96beb9deba8782e7cbd58cce640090e63b46102ade20a30efc",
+      "hospital_counts_sha256": "ffe39f1d95e09d3507b9acbe54db3a635e25f0801fbe231b17beb0102b0f316e"
+    },
+    "protocol_v1b_sha256_at_build": "2f1be8f64adc02635a0600c4ce694d4bfba64d00dc25596d8d3769414d97fb93",
+    "processed_folder": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e4_vehicle",
+    "note": "Everything outside this section is a function of the inputs and the generation time: --verify rebuilds it byte for byte. This section records the run itself and is not compared."
+  }
+}

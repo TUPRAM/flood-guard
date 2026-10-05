@@ -7,7 +7,7 @@ import { megabytes, verifyOfflineInstall } from "./offline-install-budget.mjs";
 import { readCaseReplay } from "./case-replay-inventory.mjs";
 
 const out = resolve(process.cwd(), "out");
-const routeFiles = ["index.html", "public/index.html", "public-cases/index.html", "command/index.html", "command/cases/index.html", "command/archive/index.html", "studio/index.html", "studio/planning-evidence/index.html", "studio/candidate-report/index.html", "studio/library/index.html", "studio/brief/index.html", "studio/archive/index.html"];
+const routeFiles = ["index.html", "public/index.html", "public-cases/index.html", "command/index.html", "command/ver2/index.html", "command/cases/index.html", "command/archive/index.html", "studio/index.html", "studio/planning-evidence/index.html", "studio/candidate-report/index.html", "studio/library/index.html", "studio/brief/index.html", "studio/archive/index.html"];
 const requiredPublicAssets = [
   "manifest.webmanifest",
   "sw.js",
@@ -44,19 +44,16 @@ const routeExpectations = {
     /public-tab-sos/i,
   ],
   "public-cases/index.html": [/Understand the study cases/i, /Candidate research evidence/i, /Non-operational/i],
+  // The three Planning addresses since the owner's request of 5 Oct 2026 (decision log R19): the map workspace is the
+  // default page at /command/, the planning overview is at /command/ver2/, and /command/archive/ only forwards.
   "command/index.html": [
-    /Planning case/i,
-    /Candidate.*low confidence/i,
-    /Loading case catalog/i,
-    // The research score table is not on Command: a notice says where the historical report is kept.
-    /data-research-report-notice="true"/,
-    /Earlier research scores and classes are not accepted event-response priorities/,
-    /href="\/studio\/archive\/mae-sai-geoai\/"/,
-  ],
-  "command/cases/index.html": [/Study-area decision brief/i, /Candidate research evidence/i, /Non-operational/i],
-  "command/archive/index.html": [
+    /<title>Planning workspace \(retained research comparison\) \| FloodGuard/,
+    /class="command-page/,
     /Historical Mae Sai research archive/i,
     /not accepted event-response priorities/i,
+    // The header's Planning link is this page.
+    /<a href="\/command\/" aria-current="page">Planning<\/a>/,
+    // The research score table is not on Command: a notice says where the historical report is kept.
     /data-research-report-notice="true"/,
     /Earlier research scores and classes are not accepted event-response priorities/,
     /href="\/studio\/archive\/mae-sai-geoai\/"/,
@@ -64,6 +61,31 @@ const routeExpectations = {
     /Subdistrict scores and classes below are retained research comparisons, not accepted event-response priorities/,
     /data-research-retained-ranking="true"/,
     /The ranking, FPPS and classes still shown on this page are a separate retained research comparison/,
+    // A link to the other Planning page, the overview.
+    /<a href="\/command\/ver2\/" data-planning-overview-link="true">Current planning overview<\/a>/,
+    /<a href="\/command\/ver2\/">Open the current candidate overview<\/a>/,
+  ],
+  "command/ver2/index.html": [
+    /<title>Planning overview \| FloodGuard/,
+    /data-planning-candidate=/,
+    /Planning case/i,
+    /Candidate.*low confidence/i,
+    /Loading case catalog/i,
+    // The header's Planning link leads to the map workspace, another page: it marks the section only.
+    /<a href="\/command\/" aria-current="true">Planning<\/a>/,
+    // The research score table is not on Command: a notice says where the historical report is kept.
+    /data-research-report-notice="true"/,
+    /Earlier research scores and classes are not accepted event-response priorities/,
+    /href="\/studio\/archive\/mae-sai-geoai\/"/,
+    // A link back to the map workspace, there before any case has loaded.
+    /<a href="\/command\/" data-planning-workspace-link="true">← Back to the map workspace<\/a>/,
+  ],
+  "command/cases/index.html": [/Study-area decision brief/i, /Candidate research evidence/i, /Non-operational/i],
+  "command/archive/index.html": [
+    /<title>Moved to Planning · ย้ายไปที่หน้าการวางแผนแล้ว \| FloodGuard/,
+    /data-command-forward="\/command\/"/,
+    /<p lang="en">This page has moved\. The Planning map workspace is now at <a href="\/command\/">\/command\/<\/a>\.<\/p>/,
+    /<p lang="th">หน้านี้ย้ายแล้ว พื้นที่ทำงานแผนที่สำหรับการวางแผนอยู่ที่ <a href="\/command\/">\/command\/<\/a><\/p>/,
   ],
   "studio/index.html": [
     /Every result has a context/i,
@@ -107,29 +129,58 @@ const visibleText = (relative) => readFileSync(resolve(out, relative), "utf8")
   .replace(/<script\b[\s\S]*?<\/script>/g, " ").replace(/<!--[\s\S]*?-->/g, "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ");
 const scorePattern = /FPPS\s*(\d+(?:\.\d+)?)/g;
 const classPattern = /(?:\b[Cc]lass|ชั้น)\s+[A-E]\b/g;
-for (const relative of ["command/index.html", "command/archive/index.html"]) {
+for (const relative of ["command/index.html", "command/ver2/index.html", "command/archive/index.html"]) {
   const html = readFileSync(resolve(out, relative), "utf8");
   const retained = html.match(/GeoAI research report|geoai-real-title|Research FPPS|Research class|GEOAI RESEARCH/);
   if (retained) throw new Error(`${relative} still carries the research report panel: ${retained[0]}`);
 }
-// The Planning overview shows no research score and no research class of any kind.
-const overviewText = visibleText("command/index.html");
+// The Planning overview, at /command/ver2/, shows no research score and no research class of any kind, and its
+// notice does not speak of a ranking on the page.
+const overviewText = visibleText("command/ver2/index.html");
 const overviewScores = [...overviewText.matchAll(scorePattern), ...overviewText.matchAll(classPattern)].map((match) => match[0]);
-if (overviewScores.length > 0) throw new Error(`command/index.html shows a research score or class: ${overviewScores.join(", ")}`);
-// The one exception, stated on the page itself (see the expectations above): the map workspace at /command/archive/
-// keeps its own retained ranking until Command is replaced (decision log, R17). Every score on it must be one of
-// the eight retained values of the planning bundle; none may be a value of the GeoAI report's table.
-const archiveText = visibleText("command/archive/index.html");
+if (overviewScores.length > 0) throw new Error(`command/ver2/index.html shows a research score or class: ${overviewScores.join(", ")}`);
+if (readFileSync(resolve(out, "command/ver2/index.html"), "utf8").includes("data-research-retained-ranking")) {
+  throw new Error("command/ver2/index.html describes a retained ranking it does not show.");
+}
+// The old workspace address only forwards: it shows no score, no class, no notice and no page of its own.
+const forwardHtml = readFileSync(resolve(out, "command/archive/index.html"), "utf8").replace(/<script\b[\s\S]*?<\/script>/g, " ");
+const forwardText = visibleText("command/archive/index.html");
+const forwardScores = [...forwardText.matchAll(scorePattern), ...forwardText.matchAll(classPattern)].map((match) => match[0]);
+if (forwardScores.length > 0) throw new Error(`command/archive/index.html shows a research score or class: ${forwardScores.join(", ")}`);
+const forwardContent = forwardHtml.match(/data-research-report-notice|rank-score|class="command-page|data-planning-candidate|<table\b|<h1\b|<h2\b/);
+if (forwardContent) throw new Error(`command/archive/index.html has content of its own beside the forward: ${forwardContent[0]}`);
+// The one exception, stated on the page itself (see the expectations above): the map workspace keeps its own retained
+// ranking. Since 5 Oct 2026 it is the default Planning page at /command/ (R19); whether the ranking stays once
+// Command is replaced is open (R17, point g). Every score on it must be one of the eight retained values of the
+// planning bundle; none may be a value of the GeoAI report's table.
+const workspaceText = visibleText("command/index.html");
 const retainedScores = new Set(JSON.parse(readFileSync(resolve(out, "offline-demo/mae-sai/bundle.json"), "utf8")).areas.map((area) => area.fpps_0_100.toFixed(1)));
 const reportScores = JSON.parse(readFileSync(resolve(out, "geoai/mae-sai-real.json"), "utf8")).subdistricts.map((row) => Number(row.fpps).toFixed(1));
-const archiveScores = [...archiveText.matchAll(scorePattern)].map((match) => Number(match[1]).toFixed(1));
-if (retainedScores.size !== 8 || archiveScores.length < 8 || archiveScores.some((score) => !retainedScores.has(score))) {
-  throw new Error(`command/archive/index.html shows a score outside its eight retained values: ${archiveScores.join(", ")}`);
+const workspaceScores = [...workspaceText.matchAll(scorePattern)].map((match) => Number(match[1]).toFixed(1));
+if (retainedScores.size !== 8 || workspaceScores.length < 8 || workspaceScores.some((score) => !retainedScores.has(score))) {
+  throw new Error(`command/index.html shows a score outside its eight retained values: ${workspaceScores.join(", ")}`);
 }
 if (reportScores.some((score) => retainedScores.has(score))) {
-  throw new Error("A retained planning-bundle score equals a score of the GeoAI report: the archive check cannot tell them apart.");
+  throw new Error("A retained planning-bundle score equals a score of the GeoAI report: the workspace check cannot tell them apart.");
 }
-if ((archiveText.match(classPattern) ?? []).length === 0) throw new Error("command/archive/index.html no longer shows the retained classes its notice describes.");
+if ((workspaceText.match(classPattern) ?? []).length === 0) throw new Error("command/index.html no longer shows the retained classes its notice describes.");
+// The ranking rail lists each of the eight retained values, and the page's label stands before the first score and
+// the first class a reader meets: in the banner above the workspace, and again at the head of the small-screen summary.
+const workspaceHtml = readFileSync(resolve(out, "command/index.html"), "utf8").replace(/<script\b[\s\S]*?<\/script>/g, " ");
+const railScores = [...workspaceHtml.matchAll(/<span class="rank-score class-[a-e]"><b>(\d+\.\d)<\/b>/g)].map((match) => match[1]);
+if (railScores.length !== 8 || railScores.some((score) => !retainedScores.has(score)) || new Set(railScores).size !== retainedScores.size) {
+  throw new Error(`command/index.html does not list its eight retained values in the ranking: ${railScores.join(", ")}`);
+}
+const workspaceLabel = "Subdistrict scores and classes below are retained research comparisons, not accepted event-response priorities.";
+const labelAt = workspaceText.indexOf(workspaceLabel);
+const firstNumberAt = Math.min(workspaceText.search(new RegExp(scorePattern.source)), workspaceText.search(new RegExp(classPattern.source)));
+if (labelAt < 0 || firstNumberAt < 0 || labelAt > firstNumberAt || workspaceHtml.indexOf(workspaceLabel) > workspaceHtml.indexOf('class="rank-score')) {
+  throw new Error("command/index.html shows a retained score or class before the label that says what they are.");
+}
+const summaryLabelAt = workspaceText.indexOf("The FPPS and class below are retained research comparisons, not accepted event-response priorities.");
+if (summaryLabelAt < 0 || summaryLabelAt > firstNumberAt) {
+  throw new Error("command/index.html shows its small-screen readout before the label of that summary.");
+}
 const historicalStudyHtml = readFileSync(resolve(out, "studio", "archive", "mae-sai-geoai", "index.html"), "utf8");
 for (const expected of [/HISTORICAL RESEARCH · REPORT ONLY/, /aria-labelledby="geoai-real-title"/, /GeoAI research report/, /Report only/]) {
   if (!expected.test(historicalStudyHtml)) throw new Error(`Studio's archive lacks the historical research report: ${expected}`);
@@ -159,7 +210,7 @@ if (
 ) {
   throw new Error("Service worker does not use a content-derived cache version");
 }
-for (const route of ["/", "/public/", "/public-cases/", "/command/", "/command/cases/", "/command/archive/", "/studio/", "/studio/planning-evidence/", "/studio/candidate-report/", "/studio/library/", "/studio/brief/", "/studio/archive/", EVIDENCE_CATALOG_ASSET]) {
+for (const route of ["/", "/public/", "/public-cases/", "/command/", "/command/ver2/", "/command/cases/", "/command/archive/", "/studio/", "/studio/planning-evidence/", "/studio/candidate-report/", "/studio/library/", "/studio/brief/", "/studio/archive/", EVIDENCE_CATALOG_ASSET]) {
   if (!serviceWorker.includes(`"${route}"`)) throw new Error(`Service worker does not precache ${route}`);
 }
 if (!serviceWorker.includes("requestUrl.origin !== self.location.origin")) {
@@ -367,4 +418,4 @@ if (existsSync(proposalEvidencePath)) {
   }
 }
 
-console.log(`offline smoke: ${routeFiles.length} polished routes and ${requiredPublicAssets.length} core assets verified; /command/ shows no research score or class, /command/archive/ only its ${retainedScores.size} retained ones (${archiveScores.length} mentions); case replay route precached with ${caseReplay.assets.length} deferred data files (${(caseReplay.bytes / 1e6).toFixed(1)} MB, opt-in) and ${caseReplay.exports.assets.length} export files (${(caseReplay.exports.bytes / 1e6).toFixed(2)} MB of a ${(caseReplay.exports.budget_bytes / 1e6).toFixed(1)} MB export budget); blocking installation ${install.files} files, ${megabytes(install.bytes)} of ${megabytes(install.budget_bytes)} MB budget (${install.bytes} bytes); evidence library: catalogue precached, ${evidenceLibrary.areas.length} study areas saved when opened or on request (${megabytes(evidenceAreaBytes)} MB in ${evidenceAreaFiles.size} files, largest area ${megabytes(Math.max(...evidenceLibrary.areas.map((area) => area.bytes)))} MB), ${evidenceLibrary.onlineOnly.length} database archives online only (${megabytes(evidenceLibrary.onlineOnly.reduce((sum, asset) => sum + asset.bytes, 0))} MB); internal safety contracts retained and no external runtime resources`);
+console.log(`offline smoke: ${routeFiles.length} polished routes and ${requiredPublicAssets.length} core assets verified; /command/ver2/ and the forward at /command/archive/ show no research score or class, /command/ only its ${retainedScores.size} retained ones (${workspaceScores.length} mentions) under its label; case replay route precached with ${caseReplay.assets.length} deferred data files (${(caseReplay.bytes / 1e6).toFixed(1)} MB, opt-in) and ${caseReplay.exports.assets.length} export files (${(caseReplay.exports.bytes / 1e6).toFixed(2)} MB of a ${(caseReplay.exports.budget_bytes / 1e6).toFixed(1)} MB export budget); blocking installation ${install.files} files, ${megabytes(install.bytes)} of ${megabytes(install.budget_bytes)} MB budget (${install.bytes} bytes); evidence library: catalogue precached, ${evidenceLibrary.areas.length} study areas saved when opened or on request (${megabytes(evidenceAreaBytes)} MB in ${evidenceAreaFiles.size} files, largest area ${megabytes(Math.max(...evidenceLibrary.areas.map((area) => area.bytes)))} MB), ${evidenceLibrary.onlineOnly.length} database archives online only (${megabytes(evidenceLibrary.onlineOnly.reduce((sum, asset) => sum + asset.bytes, 0))} MB); internal safety contracts retained and no external runtime resources`);

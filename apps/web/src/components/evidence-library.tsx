@@ -10,7 +10,7 @@ import { MainRoadStatus } from "./main-road-status";
 import { EvidenceFeatureBrowser } from "./evidence-library-features";
 import { EvidenceOfflineControl, EvidencePackageNotice, useOnline, useRetryWhenOnline } from "./evidence-offline";
 import { useLanguage } from "@/lib/use-language";
-import { STUDIO_CANDIDATE_REPORT_ROUTE, caseHref, pushCaseSelection, readCaseSelection, resolveAnalysisSelection, resolveEvidenceCase, type CaseSelection } from "@/lib/case-selection";
+import { PLANNING_OVERVIEW_ROUTE, PLANNING_WORKSPACE_ROUTE, STUDIO_CANDIDATE_REPORT_ROUTE, caseHref, pushCaseSelection, readCaseSelection, resolveAnalysisSelection, resolveEvidenceCase, type CaseSelection } from "@/lib/case-selection";
 import { EVIDENCE_CATALOG_URL, evidenceAssetUrl, fetchEvidencePackage, gaugeSegments, parseEvidenceCatalog, sourceClockCoordinate } from "@/lib/evidence-library";
 import { evidencePackageFailure, readEvidenceAreas, type EvidencePackageFailure } from "@/lib/evidence-offline";
 import styles from "./evidence-library.module.css";
@@ -156,7 +156,7 @@ export function EvidenceLibrary({ initialCatalog = null, initialPackage = null, 
       <LanguageToggle language={language} onChange={setLanguage} />
     </header>
     <nav className={styles.subnav} aria-label={th ? "หน้าของพื้นที่นี้" : "Pages in this area"}>
-      {role === "public" ? <><a href={link("/public/")}>{th ? "หน้าแรก" : "Home"}</a><a href={link("/public-cases/")} aria-current="page">{th ? "กรณีศึกษา" : "Study cases"}</a></> : role === "planning" ? <><a href={link("/command/")}>{th ? "ภาพรวม" : "Overview"}</a><a href={link("/command/cases/")} aria-current="page">{th ? "เปรียบเทียบเส้นทาง" : "Route comparison"}</a><a href={link("/command/archive/")}>{th ? "คลังงานวิจัย" : "Research archive"}</a></> : <><a href={link(STUDIO_CANDIDATE_REPORT_ROUTE)}>{th ? "รายงานการตรวจสอบ" : "Validation report"}</a><a href={link("/studio/brief/")} aria-current={view === "brief" ? "page" : undefined}>{th ? "บทสรุปและเส้นทาง" : "Decision brief"}</a><a href={link("/studio/library/")} aria-current={view === "evidence" ? "page" : undefined}>{th ? "คลังหลักฐาน" : "Evidence library"}</a><a href={link("/studio/archive/")}>{th ? "รายงานเก่า" : "Historical report"}</a></>}
+      {role === "public" ? <><a href={link("/public/")}>{th ? "หน้าแรก" : "Home"}</a><a href={link("/public-cases/")} aria-current="page">{th ? "กรณีศึกษา" : "Study cases"}</a></> : role === "planning" ? <><a href={link(PLANNING_OVERVIEW_ROUTE)}>{th ? "ภาพรวม" : "Overview"}</a><a href={link("/command/cases/")} aria-current="page">{th ? "เปรียบเทียบเส้นทาง" : "Route comparison"}</a><a href={link(PLANNING_WORKSPACE_ROUTE)}>{th ? "พื้นที่ทำงานแผนที่" : "Map workspace"}</a></> : <><a href={link(STUDIO_CANDIDATE_REPORT_ROUTE)}>{th ? "รายงานการตรวจสอบ" : "Validation report"}</a><a href={link("/studio/brief/")} aria-current={view === "brief" ? "page" : undefined}>{th ? "บทสรุปและเส้นทาง" : "Decision brief"}</a><a href={link("/studio/library/")} aria-current={view === "evidence" ? "page" : undefined}>{th ? "คลังหลักฐาน" : "Evidence library"}</a><a href={link("/studio/archive/")}>{th ? "รายงานเก่า" : "Historical report"}</a></>}
     </nav>
     <div data-app-availability-slot />
     <div id="main-content" tabIndex={-1} className={styles.content}>

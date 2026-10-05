@@ -168,7 +168,7 @@ try {
   if (await page.locator('a[href^="/command"], a[href^="/studio"], a[href^="/policy"]').count()) {
     throw new Error("Public profile root exposes a competition-only link.");
   }
-  for (const staffRoute of ["/public-cases/", "/command/", "/command/cases/", "/command/archive/", "/studio/", "/studio/planning-evidence/", "/studio/candidate-report/", "/studio/library/", "/studio/brief/", "/studio/archive/"]) {
+  for (const staffRoute of ["/public-cases/", "/command/", "/command/ver2/", "/command/cases/", "/command/archive/", "/studio/", "/studio/planning-evidence/", "/studio/candidate-report/", "/studio/library/", "/studio/brief/", "/studio/archive/"]) {
     const response = await context.request.get(`${baseUrl}${staffRoute}`);
     if (response.status() !== 404) throw new Error(`Public profile staff route did not return 404: ${staffRoute}: ${response.status()}`);
   }
@@ -194,6 +194,9 @@ try {
   for (const forbidden of [
     "/policy/",
     "/command/",
+    "/command/ver2/",
+    "/command/cases/",
+    "/command/archive/",
     "/studio/",
     "/studio/library/",
     "/studio/brief/",
@@ -221,14 +224,18 @@ try {
     await assertCompactPublicShell(page);
     await exercisePublicPages(page);
   }
-  let commandLoaded = true;
-  try {
-    await page.goto(`${baseUrl}/command/`, { waitUntil: "domcontentloaded", timeout: 5000 });
-    commandLoaded = await page.locator("main[data-planning-candidate], main.command-page").count() > 0;
-  } catch {
-    commandLoaded = false;
+  // None of the Planning pages opens: not the map workspace, not the planning overview, not the forward.
+  const commandPaths = ["/command/", "/command/ver2/", "/command/archive/"];
+  for (const commandPath of commandPaths) {
+    let commandLoaded = true;
+    try {
+      await page.goto(`${baseUrl}${commandPath}`, { waitUntil: "domcontentloaded", timeout: 5000 });
+      commandLoaded = await page.locator("main[data-planning-candidate], main.command-page, main[data-command-forward]").count() > 0;
+    } catch {
+      commandLoaded = false;
+    }
+    if (commandLoaded) throw new Error(`Public profile recovered ${commandPath} while offline.`);
   }
-  if (commandLoaded) throw new Error("Public profile recovered Command while offline.");
   if (unexpectedRequests.length) {
     throw new Error(`Public profile attempted unapproved requests: ${[...new Set(unexpectedRequests)].join(", ")}`);
   }
@@ -246,7 +253,7 @@ try {
   const unexpectedFailures = requestFailures.filter((failure) => !(
     expectedOfflineTileFailure(failure)
     || failure.error === "net::ERR_ABORTED"
-    || (failure.offline && failure.url === `${baseUrl}/command/` && failure.resourceType === "document")
+    || (failure.offline && commandPaths.some((path) => failure.url === `${baseUrl}${path}`) && failure.resourceType === "document")
   ));
   if (pageErrors.length || unexpectedConsoleErrors.length || unexpectedFailures.length) {
     throw new Error(`Public profile browser errors: ${JSON.stringify({ pageErrors, consoleErrors: unexpectedConsoleErrors, requestFailures: unexpectedFailures })}`);

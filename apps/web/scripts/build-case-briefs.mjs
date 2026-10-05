@@ -257,6 +257,11 @@ export function renderCaseHtml(item, source, fontCss = "") {
   const rows = messageRows(item);
   const scenario = projected.services.some((service) => service.variants.some((variant) => variant.candidate_flood_scenario_id !== null));
   const labels = scenario ? [...SOURCE_LABELS, "Modified Copernicus Sentinel candidate scenario"] : SOURCE_LABELS;
+  // The "Same case" links at the foot of the brief. "Planning" is the planning overview of this case, at /command/ver2/
+  // since 5 Oct 2026 (decision log R19); /command/ is the map workspace, which does not read a case. The eight
+  // published briefs were built before that and are not rebuilt here (their hashes are pinned in briefs/catalog.json
+  // and in the receipts): their "Planning" link opens /command/ with the case query, and the workspace carries the
+  // query on to its link to the overview.
   const query = new URLSearchParams({ aoi: reference.aoi_id, event: reference.event_id, version: source.catalog.package_version });
   const content = rows.map(([enLabel, thLabel, en, th]) => `<section class="point"><div lang="en"><h2>${escapeHtml(enLabel)}</h2><p>${escapeHtml(en)}</p></div><div lang="th"><h2>${escapeHtml(thLabel)}</h2><p>${escapeHtml(th)}</p></div></section>`).join("\n");
   const html = `<!doctype html>
@@ -291,7 +296,7 @@ a { color:#005f78; }
 <div class="status"><span lang="en">Candidate research scenario · low confidence · non-operational · not an official warning</span><span lang="th">ฉากทัศน์วิจัยที่ยังไม่ผ่านการรับรอง · ความเชื่อมั่นต่ำ · ไม่ใช่ระบบปฏิบัติการ · ไม่ใช่คำเตือนทางการ</span></div>
 ${content}
 <footer class="footer"><div><p><strong>Source and scope / แหล่งข้อมูลและขอบเขต:</strong> ${escapeHtml(labels.join("; "))}.</p><p>Study AOI intersections only. Candidate sites and imposed closures are not surveyed entrances or observed road closures. / เฉพาะส่วนตัดกับพื้นที่ศึกษา จุดบริการและการปิดถนนยังเป็นข้อมูล/สมมติฐานที่ต้องตรวจสอบ</p></div><div><p class="hash">Source package SHA-256: ${reference.source_package_sha256}</p><p class="hash">Public projection SHA-256: ${reference.sha256}</p><p class="hash">Projection catalog SHA-256: ${source.catalogSha256}</p></div></footer>
-<nav class="links" aria-label="Same case"><a href="/public/?${query}">Public</a> · <a href="/command/?${query}">Planning</a> · <a href="/studio/?${query}">Studio</a></nav>
+<nav class="links" aria-label="Same case"><a href="/public/?${query}">Public</a> · <a href="/command/ver2/?${query}">Planning</a> · <a href="/studio/?${query}">Studio</a></nav>
 </main></body></html>\n`;
   assertPublicEvidenceText(html);
   return html;

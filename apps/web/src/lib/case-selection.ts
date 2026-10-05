@@ -19,6 +19,16 @@ const CASE_KEYS = ["aoi", "event", "version", "service", "mode", "scenario", "or
  */
 export const STUDIO_CANDIDATE_REPORT_ROUTE = "/studio/candidate-report/";
 
+/**
+ * The two Planning pages (owner request of 5 Oct 2026, decision log R19). `/command/` is the map workspace: the
+ * default Planning page and the address of every "Planning" link in a header. The candidate planning overview
+ * (shared case header plus `PlanningCandidateOverview`) keeps its own address below it, and pages link there when
+ * they mean "the planning overview of this case". `/command/archive/`, the workspace's address before the swap,
+ * only forwards to `/command/`.
+ */
+export const PLANNING_WORKSPACE_ROUTE = "/command/";
+export const PLANNING_OVERVIEW_ROUTE = "/command/ver2/";
+
 export function readCaseSelection(search: string): CaseSelection {
   const query = new URLSearchParams(search);
   return Object.fromEntries(CASE_KEYS.flatMap((key) => {

@@ -50,7 +50,7 @@ describe("PwaRegister", () => {
 
   it("requires every role route before calling the competition app saved offline", () => {
     expect(requiredOfflinePaths("competition")).toEqual(expect.arrayContaining([
-      "/public-cases/", "/command/", "/command/cases/", "/command/archive/",
+      "/public-cases/", "/command/", "/command/ver2/", "/command/cases/", "/command/archive/",
       "/studio/", "/studio/brief/", "/studio/library/", "/studio/archive/",
     ]));
   });

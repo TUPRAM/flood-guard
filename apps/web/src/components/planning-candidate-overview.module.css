@@ -3,6 +3,8 @@
 .page h1 { margin-bottom: 8px; font-size: clamp(1.7rem, 3vw, 2.5rem); line-height: 1.14; }
 .page h2 { margin-bottom: 10px; font-size: clamp(1.1rem, 1.6vw, 1.4rem); line-height: 1.25; }
 .eyebrow { margin: 0 0 5px; color: #086978; font-size: .71rem; font-weight: 800; letter-spacing: .09em; }
+.switch { margin: 0 0 10px; }
+.switch a { display: inline-flex; align-items: center; min-height: 44px; color: #0a6073; font-weight: 750; }
 .intro { margin-bottom: 17px; }
 .intro > div:first-child { max-width: 780px; }
 .intro p:last-child { margin-bottom: 0; color: #526a77; }

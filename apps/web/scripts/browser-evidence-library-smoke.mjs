@@ -240,6 +240,7 @@ async function verifySharedViews(page, offline) {
         const studioLink = mainNav.getByRole("link", { name: th ? "หลักฐาน" : "Studio", exact: true });
         if (!(await studioLink.getAttribute("href"))?.includes(`${query}&version=${pkg.package_version}&service=pharmacy&mode=modelled_vehicle`)) throw new Error("Public-to-Studio link lost case and selection identity");
         await command.click();
+        await openPlanningOverviewFromWorkspace(page, th, { aoi: reference.aoi_id, event: reference.event_id, service: "pharmacy", mode: "modelled_vehicle" });
         const main = page.locator('[data-shared-case="planning"]');
         await page.locator(`[data-shared-case="planning"][data-case-id="${reference.id}"]`).waitFor();
         if (await main.getByRole("combobox", { name: th ? "บริการ" : "Service", exact: true }).inputValue() !== "pharmacy") throw new Error("Planning did not retain selected service");
@@ -287,6 +288,7 @@ async function verifyMainSurfaces(page, offline) {
   }
   const language = await page.evaluate(() => document.documentElement.lang);
   await page.getByRole("navigation", { name: "Main areas" }).getByRole("link", { name: "Planning" }).click();
+  await openPlanningOverviewFromWorkspace(page, false, { aoi: reference.aoi_id, event: reference.event_id, version: catalog.package_version, service: "hospital", mode: "walking", scenario: projectedVariant.candidate_flood_scenario_id });
   const planning = page.locator('[data-shared-case="planning"]');
   await page.locator('[data-shared-case="planning"][data-case-id="' + reference.id + '"]').waitFor();
   const overview = page.locator('[data-planning-candidate="' + reference.id + '"]');
@@ -331,7 +333,7 @@ async function verifyMainSurfaces(page, offline) {
   await page.locator("main[data-evidence-library]").getByRole("alert").filter({ hasText: "Another area's data will not be substituted" }).waitFor();
   if (await page.locator("[data-public-case-summary]").count()) throw new Error("Unknown Public case displayed another case");
   for (const [path, role, lowerSelector] of [
-    ["/command/", "planning", "[data-planning-candidate]"],
+    ["/command/ver2/", "planning", "[data-planning-candidate]"],
     ["/studio/candidate-report/", "studio", "[data-evidence-case-id]"],
   ]) {
     await page.goto(origin + path + "?aoi=unknown&event=unknown", { waitUntil: "domcontentloaded" });
@@ -343,6 +345,27 @@ async function verifyMainSurfaces(page, offline) {
       throw new Error("Unknown " + role + " case displayed another package");
     }
   }
+}
+
+/**
+ * "Planning" in a header opens the map workspace, the default Planning page (owner request of 5 Oct 2026, decision
+ * log R19). The workspace shows the Mae Sai planning bundle whatever case the address names, and carries that case
+ * on: its link to the planning overview must hold every part of the selection. Follow it to the overview.
+ */
+async function openPlanningOverviewFromWorkspace(page, th, carried) {
+  await page.locator("main.command-page").waitFor();
+  if (new URL(page.url()).pathname !== "/command/") throw new Error("The header's Planning link does not open the default Planning page");
+  const link = page.locator('main.command-page a[data-planning-overview-link="true"]').filter({ hasText: th ? "ภาพรวมปัจจุบัน" : "Current planning overview" });
+  await link.waitFor();
+  await page.waitForFunction(() => document.querySelector('main.command-page a[data-planning-overview-link="true"]')?.getAttribute("href")?.includes("?"));
+  const href = await link.getAttribute("href");
+  const target = new URL(href ?? "", origin);
+  if (target.pathname !== "/command/ver2/" || Object.entries(carried).some(([key, value]) => target.searchParams.get(key) !== value)) {
+    throw new Error("The map workspace lost part of the selected case on its link to the planning overview: " + href);
+  }
+  await link.click();
+  await page.locator('[data-shared-case="planning"]').waitFor();
+  if (new URL(page.url()).pathname !== "/command/ver2/") throw new Error("The workspace's overview link does not open the planning overview");
 }
 
 /**
@@ -369,7 +392,7 @@ async function verifyRoleUrlSynchronization(page) {
   const first = catalog.packages[0];
   const alternative = catalog.packages.find((item) => item.aoi_id.startsWith("aoi-03")) ?? catalog.packages[1];
   for (const [path, role, lowerSelector, detailPath] of [
-    ["/command/", "planning", "[data-planning-candidate]", "/command/cases/"],
+    ["/command/ver2/", "planning", "[data-planning-candidate]", "/command/cases/"],
     ["/studio/candidate-report/", "studio", "[data-evidence-case-id]", "/studio/library/"],
   ]) {
     await page.goto(origin + path + "?aoi=" + first.aoi_id + "&event=" + first.event_id + "&version=" + catalog.package_version, { waitUntil: "domcontentloaded" });
@@ -401,12 +424,22 @@ async function verifyRoleUrlSynchronization(page) {
     if (detailSelected.searchParams.get("aoi") !== alternative.aoi_id || detailSelected.searchParams.get("event") !== alternative.event_id) {
       throw new Error(role + " detail selector left a divergent URL");
     }
-    const archiveLink = detail.getByRole("navigation", { name: "Pages in this area" }).getByRole("link", { name: role === "planning" ? "Research archive" : "Historical report" });
+    const areaPages = detail.getByRole("navigation", { name: "Pages in this area" });
+    if (role === "planning") {
+      // The comparison page names the two other Planning pages: the overview of this case and the map workspace.
+      const overviewTarget = new URL(await areaPages.getByRole("link", { name: "Overview", exact: true }).getAttribute("href"), origin);
+      if (overviewTarget.pathname !== "/command/ver2/" || overviewTarget.searchParams.get("aoi") !== alternative.aoi_id || overviewTarget.searchParams.get("event") !== alternative.event_id) {
+        throw new Error("The comparison page's Overview link does not open the planning overview of the selected case");
+      }
+    }
+    const archiveLink = areaPages.getByRole("link", { name: role === "planning" ? "Map workspace" : "Historical report" });
     await archiveLink.click();
+    await page.locator(role === "planning" ? "main.command-page" : "main.studio-page").waitFor();
     const archived = new URL(page.url());
     if (archived.searchParams.get("aoi") !== alternative.aoi_id || archived.searchParams.get("event") !== alternative.event_id) {
       throw new Error(role + " archive link dropped the selected case");
     }
+    if (role === "planning" && archived.pathname !== "/command/") throw new Error("The Map workspace link does not open the default Planning page");
     await page.getByRole("link", { name: role === "planning" ? "Current planning overview" : "Open the current study-case report" }).click();
     await page.locator('[data-shared-case="' + role + '"][data-case-id="' + alternative.id + '"]').waitFor();
   }

@@ -11,16 +11,16 @@ import { buildFilteredAreaGeoJson, buildVerificationQueueExport, CommandWorkspac
 import { ResearchReportNotice } from "./research-report-notice";
 
 describe("CommandWorkspace", () => {
-  it("renders the historical Mae Sai planning archive with explicit research boundaries", () => {
+  it("renders the Mae Sai map workspace, the default Planning page, with explicit research boundaries", () => {
     const html = renderToStaticMarkup(<CommandWorkspace />);
     const visibleText = html.replace(/<[^>]*>/g, " ");
 
     expect(html).toContain('aria-label="Planning data context"');
     expect(html).toContain("Planning intelligence");
     expect(html).toContain("Planning workspace");
-    // Served at /command/archive/: the Planning link leads to the candidate overview, so it marks the section only.
-    expect(html).toContain('<a href="/command/" aria-current="true">Planning</a>');
-    expect(html).not.toContain('aria-current="page"');
+    // Served at /command/ (owner request of 5 Oct 2026, R19): the header's Planning link names the current page.
+    expect(html).toContain('<a href="/command/" aria-current="page">Planning</a>');
+    expect(html).not.toContain('aria-current="true">Planning');
     expect(html).toContain('aria-label="Use English" aria-pressed="true"');
     expect(html).toContain("Source time");
     expect(html).toContain("Confidence");
@@ -28,7 +28,11 @@ describe("CommandWorkspace", () => {
     expect(html).toContain("Historical Mae Sai research archive");
     expect(html).toContain("2020 population context");
     expect(html).toContain("Data version: mae-sai-candidate-2024-09-15-v1");
-    expect(html).toContain("Current planning overview");
+    // The link to the other Planning page, the candidate overview at /command/ver2/, in the banner and in the
+    // small-screen summary. It is a link before the page has read its own address too; it never points at this page.
+    expect(html).toContain('<a href="/command/ver2/" data-planning-overview-link="true">Current planning overview</a>');
+    expect(html).toContain('<a href="/command/ver2/">Open the current candidate overview</a>');
+    expect(html).not.toContain('href="/command/archive/');
     expect(html).toContain("not accepted event-response priorities");
     expect(html).toContain("Open shared case comparisons");
     expect(html).not.toContain('href="/command/cases/"');

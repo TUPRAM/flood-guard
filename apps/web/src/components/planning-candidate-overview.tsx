@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import type { EvidenceLibraryCatalog, EvidenceLibraryPackage, FinalsServiceId } from "@floodguard/contracts";
-import { STUDIO_CANDIDATE_REPORT_ROUTE, caseHref, readCaseSelection, resolveAnalysisSelection, resolveEvidenceCase, type CaseSelection } from "@/lib/case-selection";
+import { PLANNING_WORKSPACE_ROUTE, STUDIO_CANDIDATE_REPORT_ROUTE, caseHref, readCaseSelection, resolveAnalysisSelection, resolveEvidenceCase, type CaseSelection } from "@/lib/case-selection";
 import { EVIDENCE_CATALOG_URL, fetchEvidencePackage, parseEvidenceCatalog } from "@/lib/evidence-library";
 import { evidencePackageFailure, type EvidencePackageFailure } from "@/lib/evidence-offline";
 import { useLanguage } from "@/lib/use-language";
@@ -82,6 +82,11 @@ export function PlanningCandidateOverview() {
   const mapAttributions = [...new Set(mapLayers.flatMap((layer) => layer.attribution ? [layer.attribution] : []))];
 
   return <main id="main-content" tabIndex={-1} className={styles.page} data-planning-candidate={evidence?.id ?? (failure ? "unavailable" : "loading")}>
+    {/* The other Planning page: the map workspace at /command/, the default page since 5 Oct 2026 (R19). This link is shown
+        whatever the state of the case below, and carries the selected case. */}
+    <nav className={styles.switch} aria-label={th ? "หน้าการวางแผนอีกหน้าหนึ่ง" : "The other Planning page"}>
+      <a href={caseHref(PLANNING_WORKSPACE_ROUTE, query)} data-planning-workspace-link="true">{th ? "← กลับไปที่พื้นที่ทำงานแผนที่" : "← Back to the map workspace"}</a>
+    </nav>
     {catalogError ? <p className={styles.error} role="alert">{th ? "โหลดรายการกรณีศึกษาไม่ได้" : "Case catalog unavailable"}: {catalogError}</p> : null}
     {catalog && !reference ? <p className={styles.loading}>{th ? "เลือกกรณีศึกษาที่เผยแพร่ด้านบนเพื่อดูผลเฉพาะกรณีนั้น" : "Choose a published case above to inspect its own results."}</p> : null}
     {failure ? <EvidencePackageNotice failure={failure} th={th} className={styles.error} invalidLabel={th ? "ตรวจสอบชุดข้อมูลไม่ผ่าน" : "Package verification failed"} brief /> : null}
@@ -147,10 +152,11 @@ export function PlanningCandidateOverview() {
             <a href={caseHref("/studio/library/", query)}>{th ? "ตรวจสอบแหล่งข้อมูล สิทธิ์ และค่าแฮชทั้งหมด" : "Inspect all sources, rights and hashes"} →</a>
           </details>
         </section>
-        <nav className={styles.footerNav} aria-label={th ? "มุมมองที่เกี่ยวข้อง" : "Related views"}><a href={caseHref(STUDIO_CANDIDATE_REPORT_ROUTE, query)}>{th ? "รายงานการตรวจสอบ" : "Validation report"} →</a><a href={caseHref("/studio/brief/", query)}>{th ? "บทสรุปเพื่อการตัดสินใจ" : "Decision brief"} →</a><a href="/command/archive/">{th ? "คลังเปรียบเทียบงานวิจัยเดิม" : "Historical research archive"} →</a></nav>
+        <nav className={styles.footerNav} aria-label={th ? "มุมมองที่เกี่ยวข้อง" : "Related views"}><a href={caseHref(STUDIO_CANDIDATE_REPORT_ROUTE, query)}>{th ? "รายงานการตรวจสอบ" : "Validation report"} →</a><a href={caseHref("/studio/brief/", query)}>{th ? "บทสรุปเพื่อการตัดสินใจ" : "Decision brief"} →</a><a href={caseHref(PLANNING_WORKSPACE_ROUTE, query)}>{th ? "พื้นที่ทำงานแผนที่" : "Map workspace"} →</a></nav>
       </> : null}
     </> : null}
-    {/* The research score table is not shown on Command (R17): this notice says where the report is kept. */}
+    {/* The research score table is not shown on Command (R17): this notice says where the report is kept. This page, at
+        /command/ver2/ since 5 Oct 2026 (R19), shows no research score and no research class. */}
     <ResearchReportNotice language={language} />
   </main>;
 }

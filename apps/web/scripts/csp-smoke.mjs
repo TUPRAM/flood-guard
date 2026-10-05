@@ -29,7 +29,7 @@ const OUT_DIR = resolve(HERE, "..", "out");
 const VERCEL_JSON = resolve(HERE, "..", "..", "..", "vercel.json");
 
 const ROUTES = [
-  "/", "/policy/", "/public/", "/public-cases/", "/command/", "/command/cases/", "/command/archive/",
+  "/", "/policy/", "/public/", "/public-cases/", "/command/", "/command/ver2/", "/command/cases/", "/command/archive/",
   "/studio/", "/studio/planning-evidence/", "/studio/candidate-report/", "/studio/library/", "/studio/brief/", "/studio/archive/",
   "/studio/archive/mae-sai-geoai/", "/studio/cases/mae-sai-2024/", "/studio/studies/c2s-ms-20260915/",
   ...["data", "models", "results", "rtc", "explorer", "files", "mae-sai"].map((section) => `/studio/studies/c2s-ms-20260915/${section}/`),
@@ -390,6 +390,12 @@ async function main() {
       });
 
       await page.goto(`${base}${route}`, { waitUntil: "networkidle" });
+      // The old workspace address forwards to the default Planning page. Under the policy the script that sends the
+      // reader on must have run, and the page that is measured below is the one the reader lands on.
+      if (route === "/command/archive/") {
+        await page.waitForURL(`${base}/command/`, { timeout: 15_000 }).catch(() => problems.push("the forward to /command/ did not run"));
+        await page.locator("main.command-page").waitFor({ state: "visible", timeout: 15_000 }).catch(() => problems.push("the forward did not open the map workspace"));
+      }
       // Hydration is the thing 'unsafe-inline' protects; if it were blocked the
       // React root would stay empty.
       const rendered = await page.evaluate(
@@ -398,7 +404,8 @@ async function main() {
       if (rendered < 50) problems.push(`route rendered only ${rendered} chars of text`);
 
       try {
-        if (route === "/command/archive/") await verifyMapRecovery(page, context, mock, base);
+        // The map checks run on the map workspace, the default Planning page.
+        if (route === "/command/") await verifyMapRecovery(page, context, mock, base);
         if (route === "/public/") await verifyPublicLocation(page, context, mock, base);
       } catch (error) {
         problems.push(error.message);

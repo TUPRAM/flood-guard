@@ -412,3 +412,15 @@ def test_a_missing_or_malformed_baseline_is_refused(tmp_path: Path) -> None:
     _write(tmp_path, guard.BASELINE_PATH.as_posix(), json.dumps({"schema": guard.BASELINE_SCHEMA, "files": {"a.py": entry}}))
     with pytest.raises(guard.GuardError, match="definitions"):
         guard.load_baseline(tmp_path)
+
+
+def test_an_f_string_is_one_string_literal_on_every_python_version() -> None:
+    # From Python 3.12 the tokenizer splits an f-string into parts. Read that way, its short parts became
+    # naming lines on 3.12 and not on 3.11, so the baseline held on one version and failed on the other.
+    source = 'x = (\n    f"AIT reference-candidate {field} changed; "\n    f"see {other.name}"\n)\n'
+    tokens = list(guard._python_tokens(source))
+    assert [value for _, kind, value in tokens if kind == "string"] == [
+        'f"AIT reference-candidate {field} changed; " f"see {other.name}"'
+    ]
+    assert [value for _, kind, value in tokens if kind == "identifier"] == ["x"]
+    assert sorted(value for _, _, value in guard._fstring_identifiers(source)) == ["field", "name", "other"]

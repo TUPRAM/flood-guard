@@ -176,13 +176,44 @@ def _is_short(text: str) -> bool:
 
 
 def _python_tokens(text: str) -> Iterator[tuple[int, str, str]]:
-    """Yield the identifiers and the string literals of Python source, adjacent literals joined as Python joins them."""
+    """Yield the identifiers and the string literals of Python source, adjacent literals joined as Python joins them.
+
+    From Python 3.12 the tokenizer splits an f-string into its parts. The parts are put back together from the
+    source, so that an f-string is one string literal on every Python version, as it was before 3.12; the names
+    used inside its expressions come from the syntax tree (``_fstring_identifiers``) on every version.
+    """
+
+    source_lines = text.splitlines(keepends=True)
+
+    def source_between(start: tuple[int, int], end: tuple[int, int]) -> str:
+        if start[0] == end[0]:
+            return source_lines[start[0] - 1][start[1]:end[1]]
+        parts = [source_lines[start[0] - 1][start[1]:]]
+        parts.extend(source_lines[start[0]:end[0] - 1])
+        parts.append(source_lines[end[0] - 1][:end[1]])
+        return "".join(parts)
 
     pending: list[str] = []
     pending_line = 0
+    fstring_depth = 0
+    fstring_start = (0, 0)
     for token in tokenize.generate_tokens(io.StringIO(text).readline):
         kind = tokenize.tok_name[token.type]
-        if kind in ("STRING", "FSTRING_START", "FSTRING_MIDDLE", "FSTRING_END"):
+        if kind == "FSTRING_START":
+            if fstring_depth == 0:
+                fstring_start = token.start
+            fstring_depth += 1
+            continue
+        if kind == "FSTRING_END":
+            fstring_depth -= 1
+            if fstring_depth == 0:
+                if not pending:
+                    pending_line = fstring_start[0]
+                pending.append(source_between(fstring_start, token.end))
+            continue
+        if fstring_depth > 0:
+            continue
+        if kind == "STRING":
             if not pending:
                 pending_line = token.start[0]
             pending.append(token.string)

@@ -19,7 +19,7 @@ import { FACTOR_LUT_SIZE, facilityWet, formatDateWithYear, lutEquals, paintDepth
 import { COMMAND_CREDITS, COMMAND_FIGURES, COMMAND_MAP, commandFacilityType, commandSiteGroupTitle, commandText } from "@/lib/flood-timeline-command-copy";
 import type { CommandHandRaster, CommandReplayData } from "@/lib/flood-timeline-command-data";
 import { COMMAND_GO } from "@/lib/flood-timeline-command-act-copy";
-import { reportedSiteDate, reportedSiteHour } from "@/lib/flood-timeline-command-feed";
+import { feedDate, reportedSiteDate, reportedSiteHour } from "@/lib/flood-timeline-command-feed";
 import { CLUSTER_BELOW_ZOOM, modelDepthAt } from "@/lib/flood-timeline-command-incidents";
 import {
   areaBounds,
@@ -577,7 +577,10 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
             : { text: `${text(wet ? COMMAND_MAP.wetNow : COMMAND_MAP.dryNow)} (${text(COMMAND_FIGURES.modelTag)})`, tone: wet ? "alert" : undefined },
           ...(command ? [] : [{ text: text(countedInReportedSet(site) ? COMMAND_MAP.counted : COMMAND_MAP.notCounted), tone: "muted" as const }]),
         ];
-        return popupElement(lines, site.sources.map((source) => ({ href: source.url, text: `${source.publisher}, ${source.date}: ${source.title}` })));
+        // In trainee mode the sources listed are those dated by the replay day: a later article is a later fact.
+        const today = trainee && reportFrame ? feedDate(reportFrame.hour) : null;
+        const sources = today === null ? site.sources : site.sources.filter((source) => /^\d{4}-\d{2}-\d{2}$/.test(source.date) && source.date <= today);
+        return popupElement(lines, sources.map((source) => ({ href: source.url, text: `${source.publisher}, ${source.date}: ${source.title}` })));
       };
       // From the town zoom on a site is a 22 px sign in a 44 px target. At the district zoom the signs are smaller
       // (14 px in 28 px), and the command centre stands a little above its point, so it does not sit on a star.

@@ -320,7 +320,9 @@ export function MaeSaiCommandExercise({ initial }: {
       if (link.hour !== null) dispatch({ type: "seek", hour: link.hour });
       // Without an hour in the address the replay opens at the start hour of the exercise this device has stored.
       else if (initialHour.current === undefined) dispatch({ type: "seek", hour: readCommandDevice().setup.startHour });
-      if (link.language && link.language !== languageRef.current) setLanguage(link.language);
+      // The language the address names wins over the one this browser has stored. It is set even when it equals the
+      // language of the first render: that render knows only the default, not what the browser has stored.
+      if (link.language) setLanguage(link.language);
       setLinkReady(true);
       try {
         // The invented items of the exercise are a file of their own: without it the replay still runs.

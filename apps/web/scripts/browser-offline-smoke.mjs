@@ -1548,7 +1548,15 @@ async function assertCompactMapNotice(page, mapScope, language, label, alsoRequi
   const notice = page.locator(`${mapScope} .map-basemap-notice`);
   await notice.waitFor({ state: "visible" });
   await notice.scrollIntoViewIfNeeded();
-  if (await page.locator(`${mapScope} .geo-map-shell`).getAttribute("data-basemap-state") !== "unavailable") {
+  // A resize, a scroll or a pan asks for tiles again, and the notice then passes through its loading wording before
+  // it settles on "unavailable". On a slow runner a single look can fall inside that moment, so wait for it to settle.
+  const loadingWording = /Loading map background|กำลังโหลดพื้นหลังแผนที่/;
+  const settled = await page.waitForFunction(([scope, loadingSource]) => {
+    const shell = document.querySelector(`${scope} .geo-map-shell`);
+    const text = document.querySelector(`${scope} .map-basemap-notice`)?.innerText ?? "";
+    return shell?.getAttribute("data-basemap-state") === "unavailable" && !new RegExp(loadingSource).test(text);
+  }, [mapScope, loadingWording.source], { timeout: 20_000 }).then(() => true, () => false);
+  if (!settled) {
     throw new Error(`The map background is expected to be unavailable for the notice check at ${label}.`);
   }
   const measure = () => page.evaluate((scope) => {
@@ -1616,7 +1624,11 @@ async function assertCompactMapNotice(page, mapScope, language, label, alsoRequi
   const copy = language === "th"
     ? { short: "พื้นหลังแผนที่ไม่พร้อมใช้", full: "พื้นหลังแผนที่ไม่พร้อมใช้งาน ขอบเขตและหลักฐานการวางแผนยังแสดงอยู่", open: "ตัวเลือก", close: "ปิด", actions: ["ลองอีกครั้ง", "เปลี่ยนเป็น ดาวเทียม", "ซ่อนพื้นหลัง"] }
     : { short: "Map background unavailable", full: "The map background is unavailable. Planning boundaries and evidence remain visible.", open: "Options", close: "Close", actions: ["Retry", "Switch to Satellite", "Hide background"] };
-  const folded = await measure();
+  let folded = await measure();
+  for (let attempt = 0; attempt < 40 && loadingWording.test(folded.text); attempt += 1) {
+    await page.waitForTimeout(250);
+    folded = await measure();
+  }
   if (folded.expanded !== "false" || folded.pending !== null || folded.text !== `${copy.short} ${copy.open}` || folded.buttons.join("|") !== copy.open
     || folded.lines < 1 || folded.lines > 2 || folded.truncated || folded.height > 64) {
     throw new Error(`The compact map notice is not a short line and one button in one row at ${label} (${language}): ${JSON.stringify(folded)}`);

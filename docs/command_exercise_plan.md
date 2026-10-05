@@ -198,6 +198,9 @@ Where stage 4 differs from the plan:
 - **What the exercise shows, the items, the pause and the speed are stored with the setup.** A change on the time dock or in the view popover is the same change as on the setup sheet. Without an hour in the address the page opens at the stored start hour.
 - **The staging badge** is drawn beside its point from the town zoom on; a point tapped on the map is drawn at every zoom.
 - **The right card** may be up to 600 px tall (548 px at 1440 x 800), because the action bar takes 62 px of it.
+- **The navigation and the notice.** The navigation pill carries the Exercise menu and is about 520 px wide in English. The one-line notice therefore stands in the middle of the free band between the left column and the navigation, not in the middle of the screen, and is never wider than that band; a long notice wraps. On a tablet it stays in the middle, as before.
+- **The situation brief on a tablet** has its button at the end of the phase line of the clock card: the first line of that card is full. The card keeps its measured heights (193 and 198 px at 1440 x 800, 148 and 152 px at 1024 x 700).
+- **The language in the address** now wins over the language the browser has stored, also when it is the page's default language.
 
 Checked in a browser at 1440 x 800, 1440 x 900 and 1024 x 700 in both languages: the path select, assign, brief, done; the undo and its end after 10 seconds; the reload; the tap for the staging point; the export; the reset and its undo. An automated accessibility check (axe-core, WCAG 2 A and AA) reports nothing in seven states of the act flow.
 

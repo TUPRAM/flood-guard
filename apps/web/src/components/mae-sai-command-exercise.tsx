@@ -49,6 +49,7 @@ import {
   buildCommandFeed,
   feedAt,
   feedEventHours,
+  modelPeakHour,
   placeRecordsAt,
   placeRecordTally,
   type CommandFeedPlace,
@@ -101,6 +102,7 @@ import {
 } from "@/lib/flood-timeline-command-replay";
 import {
   buildCommandFindIndex,
+  commandFindManifestAt,
   commandHoldReducer,
   commandTableRows,
   DEFAULT_POSITION_CASE,
@@ -461,7 +463,11 @@ export function MaeSaiCommandExercise({ initial }: {
   const selectedDevice = selectedReport?.type === "device" ? model?.tambons.find((tambon) => tambon.id === selectedReport.tambonId) ?? null : null;
   const facilityProps = useMemo(() => data?.facilities.features.map((feature) => feature.properties) ?? [], [data]);
   const detail = useMemo(() => (model && selected ? tambonDetailAt(model, facilityProps, hour, shelterSet, selected) : null), [model, facilityProps, hour, shelterSet, selected]);
-  const findIndex = useMemo(() => (data ? buildCommandFindIndex({ manifest: data.manifest, tambons: data.tambons.features, facilities: data.facilities.features, roads: data.roads.features }) : []), [data]);
+  // The find-place box: the base map's names once, and the reported sites and place records the mode shows at this
+  // hour (in trainee mode, none of a later hour).
+  const findBase = useMemo(() => (data ? buildCommandFindIndex({ manifest: {}, tambons: data.tambons.features, facilities: data.facilities.features, roads: data.roads.features }) : []), [data]);
+  const findKnown = useMemo(() => (data ? buildCommandFindIndex({ manifest: commandFindManifestAt(data.manifest, hour, mode), tambons: [], facilities: [], roads: [] }) : []), [data, hour, mode]);
+  const findIndex = useMemo(() => [...findBase.filter((entry) => entry.kind === "tambon"), ...findKnown, ...findBase.filter((entry) => entry.kind !== "tambon")], [findBase, findKnown]);
   const select = useCallback((id: string) => {
     setSelection((current) => ({ tambon: id, report: null, fit: current.fit + 1 }));
     setActTray(null);
@@ -599,6 +605,9 @@ export function MaeSaiCommandExercise({ initial }: {
         case "help":
           setDialog("help");
           break;
+        case "undo":
+          // The undo key has its own listener, beside the undo itself.
+          return;
         case "toggle_focus":
           dispatch({ type: "focus" });
           break;
@@ -668,7 +677,16 @@ export function MaeSaiCommandExercise({ initial }: {
       const rect = panel.getBoundingClientRect();
       return { left: rect.left - box.left, top: rect.top - box.top, right: rect.right - box.left, bottom: rect.bottom - box.top };
     });
-    return clearRect({ width: box.width, height: box.height }, panels);
+    const rect = clearRect({ width: box.width, height: box.height }, panels);
+    // The one-line notice is thin and comes and goes, so it does not shape the rectangle; but a popup must not open
+    // under it (its first line is the exercise tag). Where the notice lies over the rectangle, the rectangle starts
+    // below it.
+    const notice = element.querySelector<HTMLElement>("[data-command-notice]")?.getBoundingClientRect();
+    if (notice && notice.width > 0 && notice.left - box.left < rect.right && notice.right - box.left > rect.left) {
+      const below = notice.bottom - box.top + 8;
+      if (below > rect.top && below < rect.bottom - 120) return { ...rect, top: below };
+    }
+    return rect;
   }, []);
 
   const toggle = (panel: Exclude<OpenPanel, null>) => setOpenPanel((current) => (current === panel ? null : panel));
@@ -697,7 +715,7 @@ export function MaeSaiCommandExercise({ initial }: {
     const timer = window.setTimeout(() => setPendingUndo((current) => (current === pendingUndo ? null : current)), COMMAND_UNDO_MS);
     return () => window.clearTimeout(timer);
   }, [pendingUndo]);
-  const undoLast = () => {
+  const undoLast = useCallback(() => {
     if (!pendingUndo) return;
     if (pendingUndo.kind === "item") {
       const stored = readCommandDevice();
@@ -707,7 +725,20 @@ export function MaeSaiCommandExercise({ initial }: {
       restoreCommandDevice(pendingUndo.backup);
     }
     setPendingUndo(null);
-  };
+  }, [pendingUndo]);
+  // The key U takes the last action back while its line with "Undo" is on screen: after "Done" on an item the Undo
+  // button is a dozen Tab presses away, and it is gone after ten seconds.
+  useEffect(() => {
+    if (!pendingUndo) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || document.querySelector("dialog[open]")) return;
+      if (commandKeyAction(event, keyTarget(event.target))?.type !== "undo") return;
+      undoLast();
+      event.preventDefault();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [pendingUndo, undoLast]);
   /** "Reset exercise": every Command key of this device is cleared. The sheet closes, so the undo is in reach. */
   const resetExercise = () => {
     setPendingUndo({ key: `reset:${Date.now()}`, kind: "reset", backup: resetCommandDevice() });
@@ -723,15 +754,27 @@ export function MaeSaiCommandExercise({ initial }: {
     setExerciseMenu(false);
     setDialog(name);
   };
-  const closeSheet = (name: CommandDialog) => {
-    setDialog((current) => (current === name ? null : current));
-    window.requestAnimationFrame(() => {
-      if (document.activeElement && document.activeElement !== document.body) return;
-      const opener = stage.current?.querySelector<HTMLElement>("[data-command-exercise-menu]");
-      const menu = stage.current?.querySelector<HTMLElement>("[data-command-menu]");
-      (opener && opener.getClientRects().length > 0 ? opener : menu)?.focus({ preventScroll: true });
-    });
-  };
+  const closeSheet = (name: CommandDialog) => setDialog((current) => (current === name ? null : current));
+  // A dialog that closes hands the keyboard back to what opened it. The browser does that itself while the opener is
+  // still there; a sheet opened from the Exercise menu has lost its opener (the menu closed), so the focus would drop
+  // to the page. It then goes to "Undo" when an action can be undone (after "Reset exercise" the sheet closes for
+  // exactly that), otherwise to the Exercise menu, or to the menu button of a tablet. The `close` event of a dialog
+  // does not bubble, so it is heard while it is captured.
+  useEffect(() => {
+    const onDialogClose = (event: Event) => {
+      if (!(event.target instanceof HTMLDialogElement)) return;
+      const active = document.activeElement;
+      if (active && active !== document.body) return;
+      const root = stage.current;
+      const shown = (selector: string): HTMLElement | null => {
+        const found = root?.querySelector<HTMLElement>(selector) ?? null;
+        return found && found.getClientRects().length > 0 ? found : null;
+      };
+      (shown("[data-command-notice-action]") ?? shown("[data-command-exercise-menu]") ?? shown("[data-command-menu]"))?.focus({ preventScroll: true });
+    };
+    document.addEventListener("close", onDialogClose, true);
+    return () => document.removeEventListener("close", onDialogClose, true);
+  }, []);
   // The exercise menu closes on a press anywhere else.
   useEffect(() => {
     if (!exerciseMenu) return;
@@ -784,8 +827,9 @@ export function MaeSaiCommandExercise({ initial }: {
         : undefined;
 
   // --- What the map draws of the reports, and the season envelope of hindsight mode ------------------------
-  const reportFrame = useMemo<CommandMarkerFrame | null>(() => (data ? { hour, mode, items, handling, device: deviceByTambon, noReports, selected: selectedReport } : null),
-    [data, hour, mode, items, handling, deviceByTambon, noReports, selectedReport]);
+  const peakHour = useMemo(() => (model ? modelPeakHour(model.stages) : null), [model]);
+  const reportFrame = useMemo<CommandMarkerFrame | null>(() => (data ? { hour, mode, peakHour, items, handling, device: deviceByTambon, noReports, selected: selectedReport } : null),
+    [data, hour, mode, peakHour, items, handling, deviceByTambon, noReports, selectedReport]);
   const envelopeLayer = useMemo<CommandEnvelopeLayer | null>(() => (mode === "hindsight" && envelope ? { cells: envelope.cells, credit: envelope.block.map_credit } : null), [mode, envelope]);
   const tambonName = useCallback((id: string): Localized | null => model?.tambons.find((tambon) => tambon.id === id) ?? null, [model]);
   // The modelled depth at the selected item's point, at this replay hour (model, low confidence; no current).

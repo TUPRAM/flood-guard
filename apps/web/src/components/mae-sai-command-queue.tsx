@@ -15,7 +15,7 @@
  */
 
 import { ArrowDown, ArrowUp, Lock, MessageSquare, SlidersHorizontal, Table2 } from "lucide-react";
-import { useEffect, useId, type FocusEvent, type ReactNode } from "react";
+import { useEffect, useId, useRef, type FocusEvent, type ReactNode } from "react";
 
 import type { Language, Localized } from "@/lib/flood-timeline";
 import { COMMAND_SHELTER_SETS, type CommandShelterSet } from "@/lib/flood-timeline-command";
@@ -158,12 +158,37 @@ export function CommandQueueTable({ language, rows, selected, onSelect, set, pos
     onHold?.("pointer", false);
     onHold?.("focus", false);
   }, [onHold]);
+  // Where the table scrolls inside its card (a tablet), it fades at its lower edge so a cut row reads as "more
+  // below". The fade is only as tall as what is cut below the last row: it never lies over a row that is in view, and
+  // it is gone once the table is scrolled to its end.
+  const wrap = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const element = wrap.current;
+    if (!element || typeof ResizeObserver !== "function") return;
+    const measure = () => {
+      const rowsShown = element.querySelectorAll<HTMLElement>("[data-tambon]");
+      const last = rowsShown.length > 0 ? rowsShown[rowsShown.length - 1] : null;
+      const box = element.getBoundingClientRect();
+      const atEnd = element.scrollTop + element.clientHeight >= element.scrollHeight - 1;
+      const spare = last ? box.bottom - last.getBoundingClientRect().bottom : 0;
+      const fade = atEnd ? 0 : spare >= 0 ? Math.min(22, Math.floor(spare)) : 22;
+      element.style.setProperty("--fade", `${fade}px`);
+    };
+    const observer = new ResizeObserver(measure);
+    observer.observe(element);
+    element.addEventListener("scroll", measure, { passive: true });
+    measure();
+    return () => {
+      observer.disconnect();
+      element.removeEventListener("scroll", measure);
+    };
+  }, [rows.length, language]);
   return (
     <>
     {/* A screen reader hears that the order is held; the pill in the head says it to the eye. The line stands beside
         the table: a table holds rows only. */}
     <span className={exercise.srOnly} role="status" data-command-order-status>{pending ? commandSentences([t(COMMAND_TABLE.orderHeld), t(COMMAND_TABLE.orderHeldMeaning)], language) : ""}</span>
-    <div className={styles.tableWrap} role="table" aria-label={t(COMMAND_TABLE.title)} aria-describedby={foot} data-command-table data-order-held={pending ? "true" : "false"} lang={language}>
+    <div ref={wrap} className={styles.tableWrap} role="table" aria-label={t(COMMAND_TABLE.title)} aria-describedby={foot} data-command-table data-order-held={pending ? "true" : "false"} lang={language}>
       <div className={styles.head} role="rowgroup">
         <div className={styles.headRow} role="row">
           <span className={`${styles.gHour} ${styles.groupTitle}`} role="columnheader" aria-colspan={4} data-group="hour">

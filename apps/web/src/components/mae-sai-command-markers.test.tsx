@@ -14,7 +14,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { TIMELINE_MANIFEST_URL, type AreaGeometry, type GeoCollection, type Language, type RoadProps, type TambonProps, type TimelineManifest } from "@/lib/flood-timeline";
 import { buildCommandModel } from "@/lib/flood-timeline-command";
-import { buildCommandFeed, feedAt, feedEventHours, knownBy, placeRecordsAt, placeRecordTally } from "@/lib/flood-timeline-command-feed";
+import { buildCommandFeed, feedAt, feedEventHours, feedEventMarks, knownBy, markHalfWidthPx, placeRecordsAt, placeRecordTally } from "@/lib/flood-timeline-command-feed";
 import {
   EXERCISE_FILE_URL,
   EXERCISE_STATUSES,
@@ -27,8 +27,10 @@ import {
 } from "@/lib/flood-timeline-command-incidents";
 import {
   COMMAND_STATUS,
+  commandClusterTitle,
   commandDeviceMeta,
   commandFeedHeadline,
+  commandItemLine,
   commandItemMarkerTitle,
   commandItemPlaceLine,
   commandItemStateLine,
@@ -45,10 +47,10 @@ import { parseAccessNodes } from "@/lib/flood-timeline-evacuation";
 import type { PublicReport } from "@/lib/public-report";
 import { describeWordingFindings, findWordingViolations, visibleText } from "@/lib/replay-wording-lint";
 
-import { CommandLegend, CommandNotice, CommandViewPopover } from "./mae-sai-command-chrome";
+import { COMMAND_LEGEND_TABS, CommandLegend, CommandNotice, CommandViewPopover, type CommandLegendTab } from "./mae-sai-command-chrome";
 import { CommandModeSegments, CommandModeSwitch, MaeSaiCommandFeed } from "./mae-sai-command-feed";
 import { CommandDeviceDetailBody, CommandItemDetailBody } from "./mae-sai-command-incident";
-import { clusterMarkerNodes, exerciseMarkerNodes, EXERCISE_MARKER_VIEWBOX, MarkerGlyph, placeRecordMarkerNodes, type SvgNode } from "./mae-sai-command-markers";
+import { ClusterGlyph, exerciseMarkerNodes, EXERCISE_MARKER_VIEWBOX, MarkerGlyph, placeRecordMarkerNodes, type SvgNode } from "./mae-sai-command-markers";
 import { keyboardPopups } from "./mae-sai-map-kit";
 import { MaeSaiCommandSituation } from "./mae-sai-command-situation";
 import { MaeSaiCommandTimebar, type CommandPhaseBandItem } from "./mae-sai-command-timebar";
@@ -92,21 +94,23 @@ describe("Marker drawings: every state", () => {
           // An octagon is a path, a rounded square a rect.
           expect(nodes[0].tag, name).toBe(kind === "call" ? "path" : "rect");
           if (spec.closed) {
-            // Grey with a tick, and no urgency symbol.
+            // Grey with a tick, no urgency symbol and no edge: a closed item recedes.
             expect(nodes).toHaveLength(2);
-            expect(nodes[0].attrs.fill).toBe("#b4bcbd");
+            expect(nodes[0].attrs.fill).toBe("#c3cacb");
             expect(nodes.some((node) => node.tag === "text")).toBe(false);
             continue;
           }
-          expect(nodes).toHaveLength(3);
-          expect(nodes[0].attrs.fill, name).toBe(spec.fill);
-          expect(nodes[0].attrs.stroke).toBe("#ffffff");
+          expect(nodes).toHaveLength(4);
+          // The edge is drawn in the SVG itself, under the white casing: a soft dark line, wider for the halo.
+          expect(nodes[0].attrs, name).toMatchObject({ fill: "none", stroke: "#0c2740", "stroke-opacity": 0.28, "stroke-width": urgency === "life_at_risk" ? 5 : 3.4 });
+          expect(nodes[1].attrs.fill, name).toBe(spec.fill);
+          expect(nodes[1].attrs.stroke).toBe("#ffffff");
           // The white halo of a life-at-risk item is wider than the casing of the others.
-          expect(nodes[0].attrs["stroke-width"]).toBe(urgency === "life_at_risk" ? 3.4 : 2);
+          expect(nodes[1].attrs["stroke-width"]).toBe(urgency === "life_at_risk" ? 3.4 : 2);
           // Dashed while new; solid once acknowledged or assigned.
-          expect(nodes[1].attrs["stroke-dasharray"], name).toBe(status === "new" ? "3 2.5" : undefined);
-          expect(nodes[2]).toMatchObject({ tag: "text", text: spec.symbol });
-          expect(nodes[2].attrs.fill).toBe(spec.symbolColour);
+          expect(nodes[2].attrs["stroke-dasharray"], name).toBe(status === "new" ? "3 2.5" : undefined);
+          expect(nodes[3]).toMatchObject({ tag: "text", text: spec.symbol });
+          expect(nodes[3].attrs.fill).toBe(spec.symbolColour);
         }
       }
     }
@@ -121,21 +125,53 @@ describe("Marker drawings: every state", () => {
 
   it("draws a place record as a white bubble with its count, and a dashed badge where the model is dry at the point", () => {
     const plain = placeRecordMarkerNodes(3, false);
-    expect(plain).toHaveLength(2);
-    expect(plain[0].attrs.fill).toBe("#ffffff");
-    expect(plain[1]).toMatchObject({ tag: "text", text: "3" });
+    expect(plain).toHaveLength(3);
+    // A white casing under the bubble keeps its outline readable on modelled water.
+    expect(plain[0].attrs).toMatchObject({ fill: "none", stroke: "#ffffff" });
+    expect(plain[1].attrs.fill).toBe("#ffffff");
+    expect(plain[2]).toMatchObject({ tag: "text", text: "3" });
     const dry = placeRecordMarkerNodes(2, true);
-    expect(dry).toHaveLength(5);
-    expect(dry[2].attrs["stroke-dasharray"]).toBe("2 1.6");
+    expect(dry).toHaveLength(6);
+    expect(dry[3].attrs["stroke-dasharray"]).toBe("2 1.6");
     // Urgency colours are for exercise markers only.
     for (const colour of ["#D55E00", "#E69F00", "#0072B2"]) expect(attr(dry, "fill")).not.toContain(colour);
   });
 
-  it("draws a count mark with the total, and \"!!\" with its count when it holds a life-at-risk item", () => {
-    expect(clusterMarkerNodes(7, 0).map((node) => node.text).filter(Boolean)).toEqual(["7"]);
-    const withLife = clusterMarkerNodes(22, 2);
-    expect(withLife.map((node) => node.text).filter(Boolean)).toEqual(["22", "!!2"]);
-    expect(attr(withLife, "fill")).toContain("#D55E00");
+  it("draws a count mark with two counts that are never added: place records, and invented items behind the EX tag", () => {
+    // Eleven place records and eleven invented items, two of them at life at risk: "11", then "EX 11 !!2". No "22".
+    const both = html(<ClusterGlyph records={11} items={11} lifeAtRisk={2} />);
+    expect(text(both)).toBe("11 EX 11 !!2");
+    expect(both).not.toContain("22");
+    expect(both).toMatch(/<b>EX<\/b>11<i>!!2<\/i>/);
+    // Records only: no exercise tag. Items only: the tag, and no count of records.
+    expect(text(html(<ClusterGlyph records={7} items={0} lifeAtRisk={0} />))).toBe("7");
+    expect(text(html(<ClusterGlyph records={0} items={3} lifeAtRisk={0} />))).toBe("EX 3");
+    // The words a screen reader hears, and the tooltip: the two kinds apart, the invented ones named as invented.
+    expect(commandClusterTitle(11, 11, 2, "en")).toBe("11 place records · 11 exercise items (invented), 2 at life at risk. Select to zoom in.");
+    expect(commandClusterTitle(1, 1, 0, "en")).toBe("1 place record · 1 exercise item (invented). Select to zoom in.");
+    expect(commandClusterTitle(4, 0, 0, "en")).toBe("4 place records. Select to zoom in.");
+    expect(commandClusterTitle(11, 11, 2, "th")).toBe("รายการตามสถานที่ 11 รายการ · รายการฝึกซ้อม (สมมุติขึ้น) 11 รายการ เสี่ยงต่อชีวิต 2 รายการ เลือกเพื่อขยายแผนที่");
+    for (const language of LANGUAGES) {
+      expect(commandClusterTitle(11, 11, 2, language)).not.toContain("22");
+      expect(lintOf(commandClusterTitle(11, 11, 2, language), `cluster title (${language})`)).toBe("");
+    }
+  });
+
+  it("starts the line under every exercise marker with the EX tag, whatever its state", () => {
+    for (const urgency of EXERCISE_URGENCIES) {
+      for (const status of EXERCISE_STATUSES) {
+        for (const language of LANGUAGES) {
+          const spec = exerciseMarkerSpec({ kind: "call", urgency }, status);
+          const line = commandItemLine(spec, { callsign: status === "assigned" ? "BOAT-1" : null }, 22, language);
+          expect(line.tag, `${urgency} ${status}`).toBe("EX");
+          const waits = spec.showsWaiting ? (language === "th" ? "22 ชม." : "22 h") : "";
+          expect(line.text).toBe([status === "assigned" ? "BOAT-1" : "", waits].filter(Boolean).join(" · "));
+        }
+      }
+    }
+    // An item of information shows no waiting clock on the map, and an item that has just arrived none yet.
+    expect(commandItemLine(exerciseMarkerSpec({ kind: "report", urgency: "information" }), { callsign: null }, 40, "en")).toEqual({ tag: "EX", text: "" });
+    expect(commandItemLine(exerciseMarkerSpec({ kind: "call", urgency: "life_at_risk" }), { callsign: null }, 0, "en")).toEqual({ tag: "EX", text: "" });
   });
 
   it("renders the same drawing in the legend", () => {
@@ -219,7 +255,19 @@ describe("Time dock: event marks and the mode switch", () => {
     expect([...hindsight.matchAll(/data-filled="/g)].length).toBeGreaterThan(marks.length);
     expect(hindsight).not.toContain("data-command-future");
     expect(text(hindsight)).toContain("Hindsight mode · everything is shown");
-    expect(text(timebar(84, "th"))).toContain("โหมดผู้ฝึก · ซ่อนสิ่งที่ยังไม่เกิด");
+    // The Thai word is the one for a person who takes part in an exercise, not for the trainer.
+    expect(text(timebar(84, "th"))).toContain("โหมดผู้เข้ารับการฝึก · ซ่อนสิ่งที่ยังไม่เกิดขึ้น");
+    // No two marks touch, at the width the dock has on a desktop and on a tablet.
+    for (const width of [940, 640]) {
+      const drawn = feedEventMarks(feed, width / 264);
+      for (let index = 1; index < drawn.length; index += 1) {
+        const gap = (drawn[index].hour - drawn[index - 1].hour) * (width / 264);
+        expect(gap, `${width} px, mark ${index}`).toBeGreaterThanOrEqual(markHalfWidthPx(drawn[index].count) + markHalfWidthPx(drawn[index - 1].count));
+      }
+    }
+    // In trainee mode the band names only the phases the replay has reached.
+    expect(timebar(30, "en")).toMatch(/aria-label="Phases of the event: Dry \/ normal, Onset"/);
+    expect(timebar(30, "en", "hindsight")).toMatch(/aria-label="Phases of the event: Dry \/ normal, Onset, Peak, Receding, Mostly receded"/);
   });
 
   it("stops the event buttons at the hours of the marks, and pauses playback when a life-at-risk item arrives", () => {
@@ -366,23 +414,49 @@ describe("Exercise options, legend and notice", () => {
   });
 
   it("explains the marker grammar in the legend", () => {
-    const shown = text(html(<CommandLegend language="en" open onToggle={noop} facilities={false} unmodelledRoads={false} wetSites={false} />));
-    for (const entry of [
-      "2024 place records at a point, with their count", "model dry at the point", "call: life at risk", "call: urgent", "call: information", "depth or road report",
-      "dashed: new", "solid: acknowledged or assigned", "grey, tick: done or dropped", "callsign and hours waited (replay)", "reports saved on this device",
-      "no reports received", "several items", "stated tolerance of the selected place", "shelter not yet reported at this hour",
-      "never by the model. The colours are not those of medical triage.",
-    ]) expect(shown, entry).toContain(entry);
-    // What the map draws of water and roads is modelled: the legend wears the model tag in its head, as text.
-    const legend = html(<CommandLegend language="en" open onToggle={noop} facilities={false} unmodelledRoads={false} wetSites={false} />);
+    // The legend has three short parts, one on screen at a time.
+    const part = (tab: CommandLegendTab, mode: "trainee" | "hindsight" = "trainee") => html(<CommandLegend language="en" open onToggle={noop} facilities={false} unmodelledRoads={false} wetSites={false} mode={mode} initialTab={tab} />);
+    expect(COMMAND_LEGEND_TABS).toEqual(["map", "reports", "exercise"]);
+    const expected: Record<CommandLegendTab, string[]> = {
+      map: ["Modelled water", "under 0.3 m", "wet, under 0.3 m", "impassable", "shelter reported in 2024", "shelter not yet reported at this hour", "subdistrict boundary", "Bridge decks and the current are not modelled."],
+      reports: [
+        "2024 place records at a point, with their count", "model dry at the point", "stated tolerance of the selected place", "count mark: place records above, invented items (EX) below",
+        "no reports received", "reports saved on this device", "Time bar", "reported or observed, at its hour", "event of the model", "hourly rain at two gauges (observed)",
+      ],
+      exercise: [
+        "Exercise items (invented)", "Life at risk", "Urgent", "Information", "call for help", "depth or road report", "dashed: new", "solid: acknowledged or assigned", "grey, tick: done or dropped",
+        "under every item: EX (invented), then the callsign and the hours waited in replay time", "staging point of the exercise", "never by the model. The colours are not those of medical triage.",
+      ],
+    };
+    for (const tab of COMMAND_LEGEND_TABS) {
+      const shown = text(part(tab));
+      for (const entry of expected[tab]) expect(shown, `${tab}: ${entry}`).toContain(entry);
+      // Each part names its three tabs, and marks the one it shows.
+      expect(part(tab)).toMatch(new RegExp(`role="tab" aria-selected="true"[^>]*data-command-legend-tab="${tab}"`));
+      expect(part(tab).match(/role="tab"/g)).toHaveLength(3);
+    }
+    // The marker grammar is a grid: a row per shape (the kind), a column per urgency; six markers, then the three states.
+    const grid = part("exercise");
+    expect(grid.match(/<th scope="col">/g)).toHaveLength(3);
+    expect(grid.match(/<th scope="row">/g)).toHaveLength(2);
+    expect(/<table[^>]*data-legend="exercise">.*?<\/table>/s.exec(grid)![0].match(/<svg/g)).toHaveLength(6);
+    expect(/<ul[^>]*data-legend="states">.*?<\/ul>/s.exec(grid)![0].match(/<svg/g)).toHaveLength(3);
+    // The line under a marker starts with the exercise tag, in the legend as on the map.
+    expect(grid).toMatch(/<b>EX<\/b><span>BOAT-2 · 6 h<\/span>/);
+    // The count mark of the legend keeps the two counts apart.
+    expect(text(part("reports"))).toContain("11 EX 7 !!2");
+    // What the map draws of water and roads is modelled: the map part wears the model tag, as text.
+    const legend = part("map");
     expect(legend).toMatch(/data-command-lane="model">Model · low confidence<\/span>/);
-    // Wet and impassable roads are drawn over modelled water, a dry road on the ground.
-    expect(legend.match(/data-over="water"/g)).toHaveLength(2);
+    // Wet and impassable roads are drawn on their white casing over modelled water, a dry road on the ground.
+    expect(legend.match(/data-over="water" data-casing="true"/g)).toHaveLength(2);
     // Its title can take the keyboard focus when the legend opens.
     expect(legend).toMatch(/<h2 id="[^"]*" tabindex="-1" data-command-panel-title="true">Legend<\/h2>/);
-    // The season envelope is in the legend in hindsight mode only.
-    expect(shown).not.toContain("2024 season envelope (scenario)");
-    expect(text(html(<CommandLegend language="en" open onToggle={noop} facilities={false} unmodelledRoads={false} wetSites={false} mode="hindsight" />))).toContain("2024 season envelope (scenario)");
+    // The season envelope is in the legend in hindsight mode only, drawn in the page's ink and white: no yellow.
+    expect(text(legend)).not.toContain("2024 season envelope (scenario)");
+    const hindsight = part("map", "hindsight");
+    expect(text(hindsight)).toContain("2024 season envelope (scenario)");
+    expect(/<i[^>]*data-legend-envelope[^>]*>/.exec(hindsight)![0]).not.toMatch(/255,? ?204|ffcc00/i);
   });
 
   it("names what a step forward brought, and is a button that shows it", () => {

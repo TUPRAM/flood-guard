@@ -5,8 +5,9 @@
    for wet roads and the exercise tag only. Ink, muted text, lines and the dark accent are the site's Command palette
    (globals.css, `.command-page`: --ink, --muted, --line, --navy); the two blues are the site's primary 300 and 500.
    Type: six sizes (26, 19, 14, 13, 12, 11 px). Nothing a reader has to read is under 11 px.
-   Depth: panels at rest carry a hairline and a soft shadow (--c-shadow); what opens over the map (legend, popovers,
-   the right card, popups) carries the deeper one (--c-shadow-over). */
+   Depth: two levels. Panels at rest carry a hairline and a quiet shadow (--c-shadow); what opens over the map (legend,
+   popovers, the right card, popups) carries the deeper one (--c-shadow-over). The left column is one sheet: the clock
+   card and the table share one shadow and a hairline between them. */
 .page {
   --c-ink: var(--ink, #0c2740);
   --c-muted: var(--muted, #526a82);
@@ -17,15 +18,15 @@
   --c-ground: #f4f6f9;
   --c-water-1: #8dc0e4;
   --c-water-2: #2f86c4;
-  --c-wet: #d98a1e;
+  --c-wet: #b86e00;
   --c-cut: #c62f24;
   --c-exercise: #f4b860;
   --c-site: #17616e;
   --c-focus: #1d6fb8;
-  /* Quiet text that is still data (a zero, a dash): 4.8 to 1 on white. */
-  --c-quiet: #617589;
-  --c-shadow: 0 0 0 1px rgb(12 39 64 / 6%), 0 1px 2px rgb(12 39 64 / 6%), 0 8px 24px rgb(12 39 64 / 10%);
-  --c-shadow-over: 0 0 0 1px rgb(12 39 64 / 8%), 0 12px 32px rgb(12 39 64 / 18%);
+  /* Quiet text that is still data (a zero, a dash): 6.4 to 1 on white, 5.2 to 1 on the selected row of the table. */
+  --c-quiet: #4e6074;
+  --c-shadow: 0 0 0 1px rgb(12 39 64 / 7%), 0 2px 8px rgb(12 39 64 / 8%);
+  --c-shadow-over: 0 0 0 1px rgb(12 39 64 / 10%), 0 16px 40px rgb(12 39 64 / 20%);
   --c-shadow-tool: 0 0 0 1px rgb(12 39 64 / 6%), 0 1px 2px rgb(12 39 64 / 8%), 0 4px 12px rgb(12 39 64 / 10%);
   --c-radius: 12px;
   --c-radius-control: 8px;
@@ -82,13 +83,20 @@
 .stage { position: relative; flex: 1 1 auto; min-height: 0; }
 .map { position: absolute; inset: 0; z-index: 0; isolation: isolate; background: var(--c-ground); }
 .basemapTiles { filter: grayscale(1) contrast(.82) brightness(1.2); }
-.hillshade { filter: grayscale(1) contrast(.8) brightness(1.14); transition: none; }
+.hillshade { filter: grayscale(1) contrast(.7) brightness(1.16); transition: none; }
 .waterLayer { image-rendering: auto; }
+/* From the town zoom on, the 30 m cells of the model would read as hard squares: the edge of the water is softened
+   by less than a pixel and gets a thin darker rim, so pale water stands off the white ground. The painter and the
+   extent it draws are unchanged. */
+.map[data-water-soft="true"] .waterLayer { filter: blur(.7px) drop-shadow(0 0 .5px rgb(31 111 168 / 60%)); }
+/* The veil outside the district is light, and the district casts a faint shade on it: it reads as a lit sheet. */
+.veilPane { filter: drop-shadow(0 0 6px rgb(12 39 64 / 10%)); }
 .labelIcon { border: 0; background: none; }
-/* A subdistrict's name stands on a pale plate, so it never runs into a name of the street map and reads over water. */
-.placeLabel { position: absolute; left: 0; top: 0; display: grid; justify-items: center; padding: 0 6px 1px; border-radius: 6px; background: rgb(255 255 255 / 76%); transform: translate(-50%, -50%); white-space: nowrap; color: #12262d; font-family: var(--c-font); pointer-events: none; }
-.placeLabel span:first-child { font-size: 14px; font-weight: 600; line-height: 1.5; }
-.placeLabel span:last-child { margin-top: -3px; font-size: 11px; font-weight: 500; line-height: 1.3; color: #33474e; }
+/* A subdistrict's name is drawn on the map with a white halo (a stroke behind the letters), not on a plate: the
+   water and the roads under it stay in sight, most of all in the town. Thai first, the romanised name under it. */
+.placeLabel { position: absolute; left: 0; top: 0; display: grid; justify-items: center; padding: 0 4px 1px; transform: translate(-50%, -50%); white-space: nowrap; color: #12262d; font-family: var(--c-font); font-kerning: none; pointer-events: none; -webkit-text-stroke: 3.5px rgb(255 255 255 / 94%); paint-order: stroke fill; }
+.placeLabel span:first-child { font-size: 14px; font-weight: 700; line-height: 1.5; }
+.placeLabel span:last-child { margin-top: -3px; font-size: 11px; font-weight: 600; line-height: 1.3; color: #2c4047; -webkit-text-stroke-width: 3px; }
 /* One crisp halo for text drawn on the map itself: a stroke behind the letters. */
 .outsideLabel { position: absolute; left: 0; top: 0; display: grid; transform: translate(-50%, -50%); white-space: nowrap; color: #4b5c64; font-family: var(--c-font); font-size: 11px; line-height: 1.4; text-align: center; pointer-events: none; -webkit-text-stroke: 3px #e3e8ee; paint-order: stroke fill; }
 /* The label starts at its point and runs away from the district, so it never lies on a subdistrict's marks. */
@@ -97,16 +105,22 @@
 .outsideLabel:lang(th) { line-height: 1.5; }
 /* Reported sites: a 44 px target around a 22 px sign. A white ring and a hairline keep the sign crisp on any ground. */
 .shelterIcon, .commandIcon, .siteBadgeIcon { display: grid; place-items: center; border: 0; border-radius: 50%; background: none; }
-.shelterIcon svg { fill: var(--c-site); stroke: #ffffff; stroke-width: 2; stroke-linejoin: round; paint-order: stroke fill; filter: drop-shadow(0 0 .6px rgb(12 39 64 / 85%)) drop-shadow(0 1px 1px rgb(12 39 64 / 20%)); }
-.shelterIconWet svg { fill: #ffffff; stroke: var(--c-site); stroke-width: 1.7; paint-order: normal; filter: drop-shadow(0 0 .6px rgb(255 255 255 / 90%)); }
+.shelterIcon svg, .commandIcon svg { overflow: visible; shape-rendering: geometricPrecision; }
+/* The edge of a sign is a soft dark line drawn under its white casing: crisp on a 1x screen, with no blur filter. */
+.shelterIcon svg [data-part="edge"], .commandIcon svg [data-part="edge"] { fill: none; stroke: rgb(12 39 64 / 30%); stroke-width: 3.8; stroke-linejoin: round; }
+.shelterIcon svg [data-part="sign"] { fill: var(--c-site); stroke: #ffffff; stroke-width: 2; stroke-linejoin: round; paint-order: stroke fill; }
+.shelterIconWet svg [data-part="edge"] { stroke: rgb(255 255 255 / 85%); }
+.shelterIconWet svg [data-part="sign"] { fill: #ffffff; stroke: var(--c-site); stroke-width: 1.7; paint-order: normal; }
 .shelterIconWet svg [data-part="slash"] { fill: none; stroke: #12262d; stroke-width: 2.4; stroke-linecap: round; }
 /* Trainee mode: a shelter no source has reported yet at the replay hour is a dashed outline. */
-.shelterIconPending svg { fill: rgb(255 255 255 / 70%); stroke: var(--c-site); stroke-width: 1.4; stroke-dasharray: 2.6 2; paint-order: normal; filter: none; }
-.envelopeLayer { image-rendering: auto; opacity: .78; }
-.commandIcon svg { fill: #12262d; stroke: #ffffff; stroke-width: 2; stroke-linejoin: round; paint-order: stroke fill; filter: drop-shadow(0 0 .6px rgb(12 39 64 / 85%)) drop-shadow(0 1px 1px rgb(12 39 64 / 20%)); }
+.shelterIconPending svg [data-part="edge"] { stroke: none; }
+.shelterIconPending svg [data-part="sign"] { fill: rgb(255 255 255 / 70%); stroke: var(--c-site); stroke-width: 1.4; stroke-dasharray: 2.6 2; paint-order: normal; }
+/* The 2024 season envelope (hindsight mode): a quiet hatch of dark ink and white, with no colour of its own. */
+.envelopeLayer { image-rendering: auto; opacity: .6; }
+.commandIcon svg [data-part="sign"] { fill: #12262d; stroke: #ffffff; stroke-width: 2; stroke-linejoin: round; paint-order: stroke fill; }
 .shelterIcon:focus-visible, .commandIcon:focus-visible { outline: 3px solid var(--c-focus); outline-offset: -8px; }
-/* At the district zoom the signs are smaller, and sites that would cover each other share one count. */
-.siteFar:focus-visible { outline-offset: -2px; }
+/* At the district zoom the sign is smaller inside the same 44 px target, and sites that would cover each other share one count. */
+.siteFar:focus-visible { outline-offset: -11px; }
 .siteBadge { display: inline-flex; align-items: center; gap: 3px; height: 22px; padding: 0 7px 0 5px; border: 2px solid #ffffff; border-radius: 11px; background: var(--c-site); color: #ffffff; font-family: var(--c-font); font-size: 12px; font-weight: 700; line-height: 1; box-shadow: 0 0 0 .75px rgb(12 39 64 / 80%), 0 1px 2px rgb(12 39 64 / 22%); }
 .siteBadge svg { fill: #ffffff; }
 .siteBadge[data-pending="true"] { border: 1.4px dashed var(--c-site); background: rgb(255 255 255 / 88%); color: var(--c-site); box-shadow: none; }
@@ -128,12 +142,17 @@
 .map :global(.leaflet-popup-content-wrapper) { border-radius: var(--c-radius); background: var(--c-panel); color: var(--c-ink); box-shadow: var(--c-shadow-over); }
 .map :global(.leaflet-popup-tip) { box-shadow: none; }
 .map :global(.leaflet-popup .leaflet-popup-content) { margin: 12px var(--c-inset) 14px; font-family: var(--c-font); line-height: 1.45; }
-.map :global(.leaflet-popup-content) > div { color: var(--c-ink); }
-.map :global(.leaflet-popup-content) strong { color: var(--c-ink); }
+.map :global(.leaflet-popup-content) > div { color: var(--c-ink); font-size: 12px; }
+.map :global(.leaflet-popup-content) strong { color: var(--c-ink); font-size: 13px; }
+.map :global(.leaflet-popup-content):lang(th), .map :global(.leaflet-tooltip):lang(th) { line-height: 1.55; }
+.map :global(.leaflet-tooltip) strong { font-size: 12px; }
 .map :global(.leaflet-popup-content) [data-tone="muted"] { color: var(--c-muted); }
 .map :global(.leaflet-popup-content) [data-tone="alert"] { color: var(--c-ink); font-weight: 600; }
-.map :global(.leaflet-popup-content) a { color: var(--c-focus); text-underline-offset: 2px; }
-.map :global(.leaflet-popup-content) a:hover { color: var(--c-ink); }
+/* A link is ink with a quiet underline: blue is kept for water. Each link is as tall as a finger needs. */
+.map :global(.leaflet-popup-content) a { color: var(--c-ink); text-decoration-color: var(--c-muted); text-underline-offset: 2px; }
+.map :global(.leaflet-popup-content) a:hover { text-decoration-color: var(--c-ink); }
+.map :global(.leaflet-popup-content) ul { padding-left: 0; list-style: none; }
+.map :global(.leaflet-popup-content) li > a { box-sizing: border-box; display: block; min-height: 44px; padding: 6px 0; }
 /* A long popup scrolls inside itself and fades at its lower edge, so a cut line reads as "more below". */
 .map :global(.leaflet-popup-scrolled) { border: 0; padding-right: 6px; scrollbar-width: thin; mask-image: linear-gradient(#000 calc(100% - 22px), transparent); -webkit-mask-image: linear-gradient(#000 calc(100% - 22px), transparent); }
 .map :global(.leaflet-popup-scrolled) > :last-child { padding-bottom: 18px; }
@@ -149,8 +168,12 @@
 
 /* --- Panels ------------------------------------------------------------------------------------------- */
 .panel { border-radius: var(--c-radius); background: var(--c-panel); box-shadow: var(--c-shadow); }
-.left { position: absolute; z-index: 10; top: var(--c-margin); left: var(--c-margin); bottom: calc(var(--c-margin) + var(--c-dock) + var(--c-gap)); display: flex; flex-direction: column; gap: var(--c-gap); width: var(--c-left); pointer-events: none; }
+.left { position: absolute; z-index: 10; top: var(--c-margin); left: var(--c-margin); bottom: calc(var(--c-margin) + var(--c-dock) + var(--c-gap)); display: flex; flex-direction: column; gap: 0; width: var(--c-left); pointer-events: none; }
 .left > * { pointer-events: auto; }
+/* One column, one sheet: the clock card and the table under it touch, with a hairline between them. Each keeps the
+   shadow of a panel; the table's shadow is cut at its upper edge so it does not fall on the clock card. */
+.left > .panel:not(:last-child) { border-radius: var(--c-radius) var(--c-radius) 0 0; }
+.left > .panel:not(:first-child) { border-top: 1px solid var(--c-line); border-radius: 0 0 var(--c-radius) var(--c-radius); clip-path: inset(0 -24px -24px -24px); }
 .page[data-focus="on"] .left { bottom: auto; }
 
 /* --- B1. Clock and figures ---------------------------------------------------------------------------- */
@@ -172,26 +195,30 @@
 .phaseLine { overflow: hidden; color: var(--c-muted); font-size: 12px; white-space: nowrap; text-overflow: ellipsis; }
 .phaseShort, .hourShort { display: none; }
 .figuresHead { display: flex; align-items: center; gap: 8px; margin: 6px 0 5px; }
-.figuresRule { flex: 1 1 auto; min-width: 8px; height: 1px; background: var(--c-line); }
 /* Solid means reported. The chip says how the model reads at the points of the place records known by now. */
-.figuresHead .recordChip { position: relative; flex: none; max-width: 62%; overflow: hidden; padding: 0 6px; border: 1px solid #8fa1b4; border-radius: 4px; background: #ffffff; color: var(--c-muted); font-size: 11px; font-weight: 600; line-height: 1.5; white-space: nowrap; text-overflow: ellipsis; }
+.figuresHead .recordChip { position: relative; flex: none; max-width: 62%; margin-left: auto; overflow: hidden; padding: 0 6px; border: 1px solid #8fa1b4; border-radius: 4px; background: #ffffff; color: var(--c-muted); font-size: 11px; font-weight: 600; line-height: 1.5; white-space: nowrap; text-overflow: ellipsis; }
 .recordChip::after { content: ""; position: absolute; inset: -14px 0; }
 .recordChip:hover { background: var(--c-tint); color: var(--c-ink); }
 /* Dashed means modelled. Every modelled figure of the card sits under this tag. */
 .laneTag { flex: none; padding: 0 6px; border: 1px dashed #8fa1b4; border-radius: 4px; color: var(--c-muted); font-size: 11px; font-weight: 600; line-height: 1.5; white-space: nowrap; }
+/* Thai tags are a little taller, so the stacked marks of a word never touch the border. */
+.laneTag:lang(th), .recordChip:lang(th), .limitChip:lang(th) { line-height: 1.7; }
 .figures { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.1fr) minmax(0, 1.05fr) 68px; gap: 0 8px; padding: 0; list-style: none; }
 .figures:lang(th) { grid-template-columns: minmax(0, 1.6fr) minmax(0, 1.12fr) minmax(0, 1.12fr) 52px; gap: 0 7px; }
 .figure { display: flex; flex-direction: column; min-width: 0; }
 .figure strong { font-family: var(--c-font-head); font-size: 19px; font-weight: 600; line-height: 1.25; letter-spacing: -.01em; white-space: nowrap; }
 /* The eye lands on the number: the tilde is lighter and the unit is small. */
-.tilde { margin-right: -.03em; font-weight: 500; opacity: .5; }
+.tilde { margin-right: -.03em; font-weight: 500; opacity: .66; }
 .unit { margin-left: 3px; color: var(--c-muted); font-family: var(--c-font); font-size: max(11px, .6em); font-weight: 500; letter-spacing: 0; }
 .figure > span, .figure > small { color: var(--c-muted); font-size: 11px; line-height: 1.35; text-wrap: balance; }
 .figure:lang(th) > span, .figure:lang(th) > small { line-height: 1.5; }
 .captionShort { display: none; }
 .figureSlot strong { color: var(--c-quiet); }
 /* The count of open exercise items: plain digits under the amber exercise tag, and the life-at-risk count with its glyph. */
-.figureExercise strong { display: flex; align-items: center; gap: 5px; }
+/* It stands at the right edge of the card, apart from the three model figures; its second line may run to the left
+   past its column (the Thai words are longer than the column), never over a model figure's own text. */
+.figureExercise { align-items: flex-end; }
+.figureExercise strong { display: flex; align-items: center; gap: 5px; font-variant-numeric: normal; }
 .exTag { padding: 0 4px; border-radius: 3px; background: var(--c-exercise); color: #1c2733; font-family: var(--c-font); font-size: 11px; font-weight: 700; line-height: 15px; letter-spacing: .03em; }
 .figureExercise small { display: flex; align-items: center; gap: 3px; opacity: 1; white-space: nowrap; }
 .figureExercise small svg { width: 13px; height: 13px; }
@@ -206,7 +233,9 @@
 .change:lang(th), .changeRoads:lang(th) { line-height: 17px; }
 /* On a desktop the second line is either the roads or the chip; a narrower card keeps the chip alone. */
 .notes[data-second="roads"] .limitChip { display: none; }
-.limitChip { justify-self: start; max-width: 100%; overflow: hidden; padding: 0 7px; border: 1px dashed #8fa1b4; border-radius: 4px; background: var(--c-tint); color: var(--c-ink); font-size: 11px; line-height: 18px; white-space: nowrap; text-overflow: ellipsis; }
+/* The model limit is a plain line behind a small "i": a fact about the model, not another pill. */
+.limitChip { justify-self: start; display: flex; align-items: center; gap: 5px; max-width: 100%; overflow: hidden; color: var(--c-muted); font-size: 11px; line-height: 18px; white-space: nowrap; text-overflow: ellipsis; }
+.limitChip::before { content: "i"; flex: none; display: grid; place-items: center; width: 12px; height: 12px; border: 1px solid currentColor; border-radius: 50%; font-size: 9px; font-weight: 700; line-height: 1; }
 .narrowNote { display: none; }
 .loadingLine { display: flex; align-items: center; gap: 8px; min-height: 96px; color: var(--c-muted); font-size: 12px; }
 .loadingLine button { min-height: 44px; padding: 0 14px; border: 1px solid var(--c-line); border-radius: var(--c-radius-control); background: #ffffff; color: var(--c-ink); font-weight: 600; }
@@ -247,7 +276,8 @@
 .menu .navLabel { display: inline; }
 
 /* --- E. Tool rail: round tools that never move ---------------------------------------------------------- */
-.rail { position: absolute; z-index: 11; top: 50%; right: var(--c-margin); display: flex; flex-direction: column; gap: 4px; transform: translateY(-50%); }
+/* The rail hangs from the navigation, on its right edge, like the chip or the card beside it; it never moves. */
+.rail { position: absolute; z-index: 11; top: calc(var(--c-margin) + 44px + var(--c-gap)); right: var(--c-margin); display: flex; flex-direction: column; gap: var(--c-gap); }
 .tool { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 50%; background: var(--c-panel); color: var(--c-ink); box-shadow: var(--c-shadow-tool); }
 .tool:hover:not(:disabled) { background: var(--c-tint); }
 .tool[aria-pressed="true"], .tool[aria-expanded="true"], .tool[aria-pressed="true"]:hover:not(:disabled), .tool[aria-expanded="true"]:hover:not(:disabled) { background: var(--c-accent); color: #ffffff; }
@@ -275,26 +305,62 @@
 .legendChip { position: absolute; z-index: 11; right: calc(var(--c-margin) + var(--c-rail) + var(--c-gap)); bottom: calc(var(--c-margin) + var(--c-dock) + var(--c-gap)); display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 120px; height: 36px; padding: 0 14px; border: 0; border-radius: 18px; background: var(--c-panel); color: var(--c-ink); box-shadow: var(--c-shadow); font-size: 12px; }
 .legendChip::after { content: ""; position: absolute; inset: -4px 0; }
 .legendChip:hover { background: var(--c-tint); }
-.legend { position: absolute; z-index: 12; right: calc(var(--c-margin) + var(--c-rail) + var(--c-gap)); bottom: calc(var(--c-margin) + var(--c-dock) + var(--c-gap)); width: 288px; max-height: calc(100% - var(--c-dock) - 132px); overflow: auto; padding: 10px var(--c-inset) 12px; box-shadow: var(--c-shadow-over); scrollbar-width: thin; }
-.legendHead { display: flex; align-items: center; gap: 8px; }
-.legendHead h2 { flex: 1 1 auto; }
+.legend { position: absolute; z-index: 12; right: calc(var(--c-margin) + var(--c-rail) + var(--c-gap)); bottom: calc(var(--c-margin) + var(--c-dock) + var(--c-gap)); width: 296px; max-height: calc(100% - var(--c-dock) - 132px); overflow: auto; padding: 10px var(--c-inset) 14px; box-shadow: var(--c-shadow-over); scrollbar-width: thin; }
+.legendHead { display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }
+.legendHead h2 { flex: 1 1 auto; white-space: nowrap; }
+.legendHead .iconButton { flex: none; }
+/* Three short parts, one on screen at a time, so nothing is cut and nothing scrolls. The tabs are the page's own. */
+.legendTabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 0 calc(-1 * var(--c-inset)); padding: 0 calc(var(--c-inset) - 8px); border-bottom: 1px solid var(--c-line); }
+.legendTabs button { height: 44px; padding: 6px 4px 0; border: 0; border-bottom: 2.5px solid transparent; background: none; color: var(--c-muted); font-size: 12px; font-weight: 600; white-space: nowrap; }
+.legendTabs button[aria-selected="true"] { border-bottom-color: var(--c-ink); color: var(--c-ink); }
+.legendTabs button:hover { color: var(--c-ink); }
+.legendTabs button:focus-visible { outline-offset: -3px; }
+.legendTitle { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 10px 0 4px; }
+.legendTitle h3 { margin: 0; }
 .legend h3 { margin: 10px 0 4px; color: var(--c-muted); font-size: 11px; font-weight: 700; line-height: 1.5; letter-spacing: .07em; text-transform: uppercase; }
 .legend h3:lang(th) { letter-spacing: 0; }
 .legendGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 10px; padding: 0; list-style: none; }
 .legendGrid li { display: grid; grid-template-columns: 28px 1fr; align-items: center; gap: 7px; min-height: 20px; font-size: 11px; line-height: 1.35; }
 .legendGrid[data-legend] li { grid-template-columns: 30px 1fr; min-height: 30px; }
+.legendGrid[data-legend="timebar"] li { min-height: 20px; }
 .legendGrid:lang(th) li { line-height: 1.5; }
 .legendWide { grid-template-columns: 1fr; }
 /* Every sample is one 28 x 16 px box on the ground colour of the map; a road is drawn over ground and water. */
 .swatch, .sample { position: relative; display: grid; place-items: center; width: 28px; height: 16px; overflow: hidden; border-radius: 4px; background: var(--c-ground); box-shadow: inset 0 0 0 1px rgb(12 39 64 / 12%); }
-.sample[data-over="water"] { background: linear-gradient(90deg, var(--c-ground) 0 50%, var(--c-water-1) 50% 100%); }
-.sample > i { display: block; width: 100%; height: 0; border-top-style: solid; }
+.sample[data-over="water"] { background: linear-gradient(90deg, var(--c-ground) 0 34%, var(--c-water-1) 34% 100%); }
+.sample > i { position: relative; display: block; width: 100%; height: 0; border-top-style: solid; }
+/* A wet or impassable road lies on a thin white casing, as on the map. */
+.sample[data-casing="true"]::before { content: ""; position: absolute; top: 50%; right: 0; left: 0; height: 5.5px; background: rgb(255 255 255 / 92%); transform: translateY(-50%); }
 .swatchLine { display: block; width: 24px; height: 0; border-top-style: solid; }
 .legend svg { display: block; margin: 0 auto; }
 .legendSpan { grid-column: 1 / -1; }
-/* The signs of the map as they are drawn there: the callsign and waiting line, the sign of this device, "no reports received". */
-.legendGrid li:has(.legendPill), .legendGrid li:has(.legendSign), .legendGrid li:has(.legendNoReports) { grid-column: 1 / -1; grid-template-columns: auto minmax(0, 1fr); gap: 8px; }
-.legendPill { padding: 0 4px; border: 1px solid #12262d; border-radius: 3px; background: #ffffff; color: #12262d; font-size: 11px; font-weight: 600; line-height: 14px; white-space: nowrap; }
+/* The signs of the map as they are drawn there: the line under an item, the sign of this device, "no reports received", a count mark. */
+.legendGrid li:has(.legendPill), .legendGrid li:has(.legendSign), .legendGrid li:has(.legendNoReports), .legendGrid li:has([data-legend-cluster]) { grid-column: 1 / -1; grid-template-columns: auto minmax(0, 1fr); gap: 8px; }
+.legendGrid[data-legend] li:has(.legendPill), .legendGrid[data-legend] li:has(.legendSign), .legendGrid[data-legend] li:has(.legendNoReports), .legendGrid[data-legend] li:has([data-legend-cluster]) { grid-template-columns: auto minmax(0, 1fr); padding: 3px 0; }
+.legendPair { display: grid; justify-items: center; gap: 3px; }
+/* The line under an exercise marker: the amber exercise tag, then the callsign and the hours waited. */
+.legendPill { display: inline-flex; align-items: stretch; overflow: hidden; border: 1px solid #12262d; border-radius: 4px; background: #ffffff; color: #12262d; font-size: 11px; font-weight: 600; line-height: 14px; white-space: nowrap; }
+.legendPill b { padding: 0 3.5px; background: var(--c-exercise); color: #1c2733; font-weight: 700; letter-spacing: .03em; }
+.legendPill span { padding: 0 4px; border-left: 1px solid #12262d; }
+/* The marker grammar as a grid: a row per shape (the kind of an item), a column per urgency. */
+.legendMatrix { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 11px; line-height: 1.35; }
+.legendMatrix:lang(th) { line-height: 1.5; }
+.legendMatrix th { padding: 2px 2px; color: var(--c-ink); font-weight: 500; text-align: center; vertical-align: bottom; }
+.legendMatrix tbody th { width: 34%; padding: 2px 6px 2px 0; text-align: left; vertical-align: middle; }
+.legendMatrix thead td { width: 34%; }
+.legendMatrix td { padding: 2px 0; text-align: center; }
+.legendMatrix tbody tr { border-top: 1px solid var(--c-line); }
+/* The three handling states, as outlines of one marker. */
+.legendStates { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 6px; margin: 6px 0 0; padding: 6px 0 0; border-top: 1px solid var(--c-line); list-style: none; }
+.legendStates li { display: grid; justify-items: center; align-content: start; gap: 2px; font-size: 11px; line-height: 1.35; text-align: center; }
+.legendStates:lang(th) li { line-height: 1.5; }
+.legendStates + .legendGrid { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--c-line); }
+.legendMark { display: grid; place-items: center; width: 28px; height: 16px; }
+.legendMark i { box-sizing: border-box; display: grid; place-items: center; min-width: 7px; height: 7px; border: 1.3px solid var(--c-ink); border-radius: 4px; background: #ffffff; color: var(--c-ink); font-size: 11px; font-style: normal; font-weight: 700; line-height: 1; }
+.legendMark i[data-filled="true"] { background: var(--c-ink); color: #ffffff; }
+.legendMark i[data-count] { min-width: 15px; height: 14px; padding: 0 2.5px; border-radius: 7px; }
+.legendRain { display: flex; align-items: flex-end; justify-content: center; gap: 1.5px; width: 28px; height: 16px; }
+.legendRain i { display: block; width: 3px; background: #8496aa; }
 .legendSign { padding: 0 6px; border: 1px dashed #12262d; border-radius: 4px; background: #ffffff; color: #12262d; font-size: 11px; font-weight: 600; line-height: 16px; white-space: nowrap; }
 .legendNoReports { padding: 0 5px; border: 1px dotted #7b888d; border-radius: 3px; color: #4b5c64; font-size: 11px; line-height: 15px; white-space: nowrap; }
 .legendPill:lang(th), .legendSign:lang(th), .legendNoReports:lang(th) { line-height: 17px; }
@@ -304,9 +370,9 @@
 /* --- H. Credits and scale bar: above the time dock, right of the left column ----------------------------- */
 .credits { position: absolute; z-index: 2; left: calc(var(--c-margin) + var(--c-left) + 16px); bottom: calc(var(--c-margin) + var(--c-dock) + 6px); display: flex; align-items: flex-end; gap: 10px; max-width: calc(100% - var(--c-left) - 260px); color: #3f5158; font-size: 11px; line-height: 1.5; pointer-events: none; -webkit-text-stroke: 3px #f7f9fb; paint-order: stroke fill; }
 .page[data-focus="on"] .credits { left: var(--c-margin); max-width: calc(100% - 260px); }
-/* The open legend is 288 px wide: the credits end before it. */
-.stage:has(.legend) .credits { max-width: calc(100% - var(--c-left) - 408px); }
-.page[data-focus="on"] .stage:has(.legend) .credits { max-width: calc(100% - 408px); }
+/* The open legend is 296 px wide: the credits end before it. */
+.stage:has(.legend) .credits { max-width: calc(100% - var(--c-left) - 416px); }
+.page[data-focus="on"] .stage:has(.legend) .credits { max-width: calc(100% - 416px); }
 .scale { flex: none; display: grid; gap: 1px; justify-items: start; }
 .scaleBar { display: block; height: 5px; border: 1.5px solid #33474e; border-top: 0; box-shadow: 0 0 0 1px rgb(247 249 251 / 85%); }
 .creditText { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
@@ -332,6 +398,7 @@
 .ctlGap { width: 4px; }
 .speeds { display: flex; }
 .speeds button { min-width: 50px; height: 44px; padding: 0 9px; border: 1px solid var(--c-line); border-right-width: 0; background: #ffffff; color: var(--c-ink); font-size: 12px; font-weight: 500; white-space: nowrap; }
+.speeds button:lang(th) { line-height: 1.5; }
 .speeds button:first-child { border-radius: var(--c-radius-control) 0 0 var(--c-radius-control); }
 .speeds button:last-child { border-right-width: 1px; border-radius: 0 var(--c-radius-control) var(--c-radius-control) 0; }
 .speeds button[aria-pressed="true"] { border-color: var(--c-accent); background: var(--c-accent); color: #ffffff; font-weight: 600; }
@@ -340,11 +407,11 @@
 .speedCycle { display: none; min-width: 56px; width: auto; padding: 0 8px; white-space: nowrap; }
 .modeRow { grid-column: 1 / -1; display: flex; align-items: center; min-width: 0; min-height: 18px; }
 .speedNote { grid-column: 1 / -1; overflow: hidden; color: var(--c-muted); font-size: 11px; line-height: 1.45; white-space: nowrap; text-overflow: ellipsis; }
-.timeline { position: relative; flex: 1 1 auto; display: grid; grid-template-rows: 26px minmax(0, 1fr); gap: 2px; min-width: 0; }
+.timeline { position: relative; flex: 1 1 auto; display: grid; grid-template-rows: 24px minmax(0, 1fr); gap: 2px; min-width: 0; }
 .days { position: relative; }
-.day { position: absolute; top: 0; z-index: 2; display: grid; place-items: center; width: calc(100% * 24 / 264); height: 26px; padding: 0; border: 0; background: none; }
+.day { position: absolute; top: 0; z-index: 6; display: grid; place-items: center; width: calc(100% * 24 / 264); height: 24px; padding: 0; border: 0; background: none; }
 /* A day chip is 22 px to the eye; its target is its whole day wide and 44 px tall. The focus ring is drawn on the chip. */
-.day::before { content: ""; position: absolute; inset: -8px 0 -10px; }
+.day::before { content: ""; position: absolute; inset: -8px 0 -12px; }
 .day > span { position: relative; min-width: 30px; padding: 0 8px; border: 1px solid var(--c-line); border-radius: 11px; background: #ffffff; color: var(--c-ink); font-size: 12px; font-weight: 600; line-height: 20px; }
 .day:hover > span { background: var(--c-tint); }
 .day[aria-current="true"] > span { border-color: var(--c-accent); background: var(--c-accent); color: #ffffff; }
@@ -358,26 +425,31 @@
 .marks i { position: absolute; top: 4px; display: grid; place-items: center; box-sizing: border-box; min-width: 7px; height: 7px; padding: 0; border: 1.3px solid var(--c-ink); border-radius: 4px; background: #ffffff; color: var(--c-ink); font-family: var(--c-font); font-size: 11px; font-style: normal; font-weight: 700; line-height: 1; transform: translateX(-50%); }
 .marks i[data-filled="true"] { background: var(--c-ink); color: #ffffff; }
 .marks i:not([data-count="1"]) { top: 0; min-width: 15px; height: 14px; padding: 0 2.5px; border-radius: 7px; }
-.phaseBand { position: absolute; top: 13px; right: 0; left: 0; display: flex; height: 16px; overflow: hidden; border-radius: 4px; }
-.phase { flex: none; overflow: hidden; padding: 0 0 0 6px; border-right: 1px solid #ffffff; color: #1c3147; font-size: 11px; line-height: 16px; white-space: nowrap; }
+.phaseBand { position: absolute; top: 12px; right: 0; left: 0; display: flex; height: 15px; overflow: hidden; border-radius: 4px; }
+.phase { flex: none; overflow: hidden; padding: 0 0 0 6px; border-right: 1px solid #ffffff; color: #1c3147; font-size: 11px; line-height: 15px; white-space: nowrap; }
 .phase:last-child { border-right: 0; }
 .phase[data-phase="dry"], .phase[data-phase="gone"] { background: #e3e8ee; }
 .phase[data-phase="onset"], .phase[data-phase="receding"] { background: #c9d9e8; }
 .phase[data-phase="peak"] { background: #9dbdd9; }
-.phase[data-current="true"] { font-weight: 700; }
+/* The name of the phase the replay is in is a present fact, and it is never cut: where the phase has only just begun
+   its name runs on over the hatch of the future, on a chip of the phase's own colour. Only the name is lifted; the
+   band of the phase stays under the hatch, so the hatch still hides when the phase ends. */
+.phase[data-current="true"] { overflow: visible; font-weight: 700; }
+.phase[data-current="true"] .phaseName, .phase[data-current="true"] .phaseShortName { position: relative; z-index: 3; padding-right: 6px; border-radius: 0 4px 4px 0; background: inherit; }
 .phaseShortName { display: none; }
-.rain { position: absolute; right: 0; bottom: 0; left: 0; top: 31px; }
+/* The rain of the two gauges has the row under the phases to itself: the legend and the row's title name it. */
+.rain { position: absolute; right: 0; bottom: 0; left: 0; top: 29px; }
 .rainBars { position: absolute; inset: 0; }
 .rain svg { display: block; width: 100%; height: 100%; }
-.rainLabel { position: absolute; left: 4px; top: -1px; color: var(--c-muted); font-size: 11px; line-height: 1.3; pointer-events: none; -webkit-text-stroke: 3px #ffffff; paint-order: stroke fill; }
 /* Everything right of the playhead is not yet known at this replay hour: the hatch is opaque, so no later phase name
    and no later rain can be read through it. */
-.future { position: absolute; top: 12px; right: 0; bottom: 0; display: grid; place-items: end center; overflow: hidden; border-radius: 0 4px 4px 0; background: repeating-linear-gradient(-45deg, #f4f6f9 0 6px, #cfd8e2 6px 7.5px); container-type: inline-size; pointer-events: none; }
+.future { position: absolute; z-index: 2; top: 11px; right: 0; bottom: 0; display: grid; place-items: end center; overflow: hidden; border-radius: 0 4px 4px 0; background: repeating-linear-gradient(-45deg, #f4f6f9 0 6px, #cfd8e2 6px 7.5px); container-type: inline-size; pointer-events: none; }
 .future span { margin-bottom: 1px; padding: 0 7px; border-radius: 4px; background: #f4f6f9; color: var(--c-ink); font-size: 11px; line-height: 1.5; white-space: nowrap; }
 @container (max-width: 190px) { .future span { display: none; } }
-.playhead { position: absolute; top: -4px; bottom: -2px; width: 2px; margin-left: -1px; background: var(--c-ink); pointer-events: none; }
-.playhead::before { content: ""; position: absolute; top: -5px; left: 50%; width: 12px; height: 12px; border: 2px solid #ffffff; border-radius: 50%; background: var(--c-accent); transform: translateX(-50%); box-shadow: 0 1px 3px rgb(12 39 64 / 35%); }
-.range { position: absolute; top: -4px; left: 0; width: 100%; height: calc(100% + 12px); margin: 0; padding: 0; opacity: 0; cursor: pointer; appearance: none; -webkit-appearance: none; background: transparent; }
+.playhead { position: absolute; z-index: 4; top: -2px; bottom: 0; width: 2px; margin-left: -1px; background: var(--c-ink); pointer-events: none; }
+/* The knob hangs at the foot of the track: clear of the day chips above it and of the marks of the hour it stands at. */
+.playhead::before { content: ""; position: absolute; bottom: -5px; left: 50%; width: 10px; height: 10px; border: 2px solid #ffffff; border-radius: 50%; background: var(--c-accent); transform: translateX(-50%); box-shadow: 0 1px 3px rgb(12 39 64 / 35%); }
+.range { position: absolute; z-index: 5; top: -4px; left: 0; width: 100%; height: calc(100% + 12px); margin: 0; padding: 0; opacity: 0; cursor: pointer; appearance: none; -webkit-appearance: none; background: transparent; }
 .range::-webkit-slider-thumb { width: 2px; height: 40px; appearance: none; -webkit-appearance: none; }
 .range::-moz-range-thumb { width: 2px; height: 40px; border: 0; }
 .line, .focusPlay, .focusTime { display: none; }
@@ -393,7 +465,7 @@
 /* The elapsed part is the dark accent: blue is kept for water. */
 .dock[data-collapsed="true"] .line > i { display: block; height: 100%; border-radius: 2px; background: var(--c-accent); }
 .dock[data-collapsed="true"] .playhead { top: 50%; bottom: auto; width: 0; height: 0; }
-.dock[data-collapsed="true"] .playhead::before { top: -8px; width: 16px; height: 16px; }
+.dock[data-collapsed="true"] .playhead::before { top: -8px; bottom: auto; width: 16px; height: 16px; }
 .dock[data-collapsed="true"] .range { top: 0; height: 44px; }
 
 /* --- Drawer and help sheet (native dialogs) ------------------------------------------------------------ */
@@ -439,15 +511,18 @@
 
 /* --- Tablet in landscape (1024 x 700): a narrower left column, one menu button, six tools, no rain row -- */
 @media (max-width: 1180px) {
-  .page { --c-left: 320px; --c-dock: 72px; --c-inset: 12px; }
+  .page { --c-left: 320px; --c-dock: 64px; --c-inset: 12px; }
   .page[data-focus="on"] { --c-dock: 44px; }
-  .banner { min-height: 44px; }
+  /* The banner, the clock card and the dock are a little lower than on a desktop, so the eight rows of the table are
+     in view at 1024 x 700. Every control keeps its 44 px. */
+  .banner { min-height: 36px; }
   .bannerText { font-size: 12px; }
   .nav { display: none; }
   .tool.menuButton { display: grid; }
   .tool.toolBasemap { display: none; }
   /* The replay time shares its line with the replay hour and the tag: the card's own label is dropped. */
-  .situation { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; padding: 8px var(--c-inset); }
+  .situation { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; padding: 6px var(--c-inset); }
+  .situation:lang(th) { padding: 4px var(--c-inset) 3px; }
   .situation > * { grid-column: 1 / -1; }
   .situation > .clock { grid-column: 1; grid-row: 1; }
   .situation > .clockHead { grid-column: 2; grid-row: 1; }
@@ -455,8 +530,8 @@
   .clockLong, .phaseLong, .hourLong { display: none; }
   .clockShort, .phaseShort, .hourShort { display: inline; }
   .clockTime { font-size: 22px; }
-  .figuresHead { margin: 5px 0 4px; }
-  .figuresRule { display: none; }
+  .figuresHead { margin: 3px 0 2px; }
+  .figuresHead .recordChip { margin-left: 0; }
   .figures, .figures:lang(th) { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 8px; }
   .figureSlot, .figureExercise { display: none; }
   .figure strong { font-size: 17px; }
@@ -468,23 +543,27 @@
   /* The open exercise items stand beside the model tag; the model limit of the phase has the line under the figures. */
   .exerciseLine { flex: none; display: flex; align-items: center; gap: 5px; margin-left: auto; color: var(--c-ink); font-size: 11px; line-height: 18px; white-space: nowrap; }
   .exerciseLife { display: inline-flex; align-items: center; gap: 2px; font-weight: 600; }
-  .notes, .notes:lang(th) { grid-template-rows: 20px; margin-top: 5px; }
-  .dock { gap: 12px; padding: 6px var(--c-inset) 6px 10px; }
+  .notes, .notes:lang(th) { grid-template-rows: 20px; margin-top: 3px; }
+  .dock { gap: 12px; padding: 4px var(--c-inset) 4px 10px; }
   .transport { grid-template-columns: repeat(3, 44px) 4px repeat(2, 44px) 4px auto; grid-template-rows: 44px; }
   .speeds, .speedNote, .modeRow { display: none; }
   .speedCycle { display: grid; }
-  .timeline { grid-template-rows: 26px minmax(0, 1fr); }
-  .day { height: 26px; }
-  .day::before { inset: -9px 0; }
+  .timeline { grid-template-rows: 24px minmax(0, 1fr); }
+  .day { height: 24px; }
+  .day::before { inset: -10px 0; }
   .rain { display: none; }
-  .phaseBand { top: 14px; height: 18px; }
-  .phase { line-height: 18px; }
+  .phaseBand { top: 13px; height: 17px; }
+  .phase { line-height: 17px; }
+  .future { top: 12px; }
+  .playhead::before { bottom: -3px; width: 8px; height: 8px; }
   .phaseName { display: none; }
   .phaseShortName { display: inline; }
   .legend { max-height: calc(100% - var(--c-dock) - 40px); }
   .notice { left: 50%; max-width: calc(100% - 2 * var(--c-left) - 40px); }
-  .credits { max-width: calc(100% - var(--c-left) - 250px); }
-  .stage:has(.legend) .credits { max-width: calc(100% - var(--c-left) - 408px); }
+  /* The credits end before the legend chip; a long line (the Thai one) wraps instead of losing the data revision. */
+  .credits { max-width: calc(100% - var(--c-left) - 224px); }
+  .creditText { white-space: normal; text-wrap: balance; }
+  .stage:has(.legend) .credits { max-width: calc(100% - var(--c-left) - 416px); }
   .focusHour { display: none; }
 }
 .menuTool { display: none; }
@@ -527,6 +606,7 @@
   .tool, .ctl, .navItem > span, .day > span, .speeds button { transition: background-color .12s ease, color .12s ease; }
   /* What opens over the map arrives with a short rise; nothing loops and nothing pulses. */
   .legend, .popover, .menu { animation: commandRise .16s ease-out both; }
+  .legendTabs button { transition: color .12s ease, border-color .12s ease; }
 }
 @keyframes commandRise {
   from { opacity: 0; translate: 0 8px; }

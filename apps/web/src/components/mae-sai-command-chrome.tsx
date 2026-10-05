@@ -11,7 +11,7 @@
  */
 
 import { ArrowRight, ChevronDown, ChevronUp, CircleHelp, ClipboardList, FileText, Info, Layers, ListChecks, LocateFixed, Map as MapIcon, Maximize2, Menu, Minimize2, Minus, Plus, Scan, Search, Settings2, X } from "lucide-react";
-import { Fragment, useEffect, useId, useRef, type ReactNode, type Ref } from "react";
+import { Fragment, useEffect, useId, useRef, useState, type ReactNode, type Ref } from "react";
 
 import { formatDateWithYear, lowConfidenceRgba, rgbaCss, type Language, type Localized, type TimelineManifest } from "@/lib/flood-timeline";
 import { COMMAND_EXERCISE_MENU, COMMAND_HELP_ACT, COMMAND_HELP_ACT_STEPS, COMMAND_NEAR } from "@/lib/flood-timeline-command-act-copy";
@@ -40,16 +40,15 @@ import {
   commandText,
 } from "@/lib/flood-timeline-command-copy";
 import type { CommandMode } from "@/lib/flood-timeline-command-feed";
-import { exerciseMarkerSpec } from "@/lib/flood-timeline-command-incidents";
-import { COMMAND_LEGEND_REPORTS, COMMAND_MARKERS, COMMAND_MODE, commandDeviceSign, commandWaitingShort } from "@/lib/flood-timeline-command-reports-copy";
-import { COMMAND_WATER_RGBA, commandScaleBar } from "@/lib/flood-timeline-command-map";
+import { EXERCISE_URGENCIES, exerciseMarkerSpec, type ExerciseUrgency } from "@/lib/flood-timeline-command-incidents";
+import { COMMAND_EXERCISE, COMMAND_LEGEND_REPORTS, COMMAND_MARKERS, COMMAND_MODE, COMMAND_URGENCY, commandDeviceSign, commandWaitingShort } from "@/lib/flood-timeline-command-reports-copy";
+import { COMMAND_ENVELOPE_RGBA, COMMAND_WATER_RGBA, COMMAND_WET_ROAD, commandScaleBar } from "@/lib/flood-timeline-command-map";
 import { studioReplayHref } from "@/lib/flood-timeline-command-replay";
 import { localizedText } from "@/lib/flood-timeline-copy";
 
 import act from "./mae-sai-command-act.module.css";
 import type { CommandBasemap, CommandFitTarget, CommandMapView } from "./mae-sai-command-map";
-import { clusterMarkerNodes, EXERCISE_MARKER_VIEWBOX, exerciseMarkerNodes, MarkerGlyph, placeRecordMarkerNodes } from "./mae-sai-command-markers";
-import { ENVELOPE_SWATCH_BACKGROUND } from "./mae-sai-season-envelope";
+import { ClusterGlyph, exerciseMarkerNodes, MarkerGlyph, NoReportsGlyph, placeRecordMarkerNodes } from "./mae-sai-command-markers";
 import styles from "./mae-sai-command-exercise.module.css";
 
 /** The address of this page while it is tried out; it moves to the Command root in a later change. */
@@ -397,8 +396,8 @@ export interface CommandExerciseOptions {
 }
 
 /**
- * The view popover: the Rescue preset (the only one built so far), the key facilities (off until asked for), and the
- * options of the exercise.
+ * The view popover: the Rescue view (the only one the page has; a view that is not built is not offered), the key
+ * facilities (off until asked for), and the options of the exercise.
  */
 export function CommandViewPopover({ language, facilities, facilityCount, onFacilities, exercise, onClose, popoverRef }: {
   language: Language;
@@ -423,11 +422,6 @@ export function CommandViewPopover({ language, facilities, facilityCount, onFaci
           <input type="radio" name="command-view" checked readOnly />
           <span>{t(COMMAND_TOOLS.rescue)}</span>
           <small>{t(COMMAND_TOOLS.rescueNote)}</small>
-        </label>
-        <label className={styles.choice} data-disabled="true" lang={language}>
-          <input type="radio" name="command-view" disabled />
-          <span>{t(COMMAND_TOOLS.evidence)}</span>
-          <small>{t(COMMAND_TOOLS.evidenceNote)}</small>
         </label>
       </fieldset>
       <fieldset className={styles.choiceGroup}>
@@ -464,18 +458,27 @@ const STAR_PATH = "M12 1.8l3.1 6.6 7.2.9-5.3 5 1.4 7.1L12 17.9l-6.4 3.5L7 14.3l-
 export const STAGING_FLAG_PATH = "M6 21V4h11l-2.4 4L17 12H6";
 const LOW_STRIPE = rgbaCss(lowConfidenceRgba(COMMAND_WATER_RGBA.shallow, true));
 const LOW_WASH = rgbaCss(lowConfidenceRgba(COMMAND_WATER_RGBA.shallow, false));
+/** The season envelope as this page draws it: dark ink stripes with a white edge, running the other way than the low-confidence hatch. */
+const ENVELOPE_SAMPLE = `repeating-linear-gradient(45deg, ${rgbaCss(COMMAND_ENVELOPE_RGBA.dark)} 0 2px, ${rgbaCss(COMMAND_ENVELOPE_RGBA.light)} 2px 3.5px, transparent 3.5px 7px)`;
 
 /** The legend draws the markers a little closer than the map does, so their symbols stay readable at 30 px. */
 const LEGEND_ITEM_VIEWBOX = "-20 -20 40 40";
 const LEGEND_RECORD_VIEWBOX = "-16 -23 37 37";
-const glyph = (kind: "call" | "report", urgency: "life_at_risk" | "urgent" | "information", status: "new" | "assigned" | "done" = "new") =>
+const glyph = (kind: "call" | "report", urgency: ExerciseUrgency, status: "new" | "assigned" | "done" = "new") =>
   <MarkerGlyph nodes={exerciseMarkerNodes(exerciseMarkerSpec({ kind, urgency }, status))} viewBox={LEGEND_ITEM_VIEWBOX} size={30} />;
 
+/** The three parts of the legend: what the map draws of the model, the reports of 2024, and the exercise. */
+export type CommandLegendTab = "map" | "reports" | "exercise";
+export const COMMAND_LEGEND_TABS: readonly CommandLegendTab[] = ["map", "reports", "exercise"];
+const LEGEND_TAB_LABEL: Readonly<Record<CommandLegendTab, Localized>> = { map: COMMAND_LEGEND.tabMap, reports: COMMAND_LEGEND.tabReports, exercise: COMMAND_LEGEND.tabExercise };
+
 /**
- * The legend chip, and the open legend: the marker grammar as a grid, the water and road keys, and the places. The
- * chip and the open legend never show together.
+ * The legend chip, and the open legend. The open legend has three short parts, one on screen at a time, so nothing is
+ * cut and nothing scrolls: the map (water, roads and places of the model), the reports (place records of 2024 and
+ * the marks that go with them), and the exercise (the marker grammar as a grid of shape by urgency, the three
+ * handling states, and the staging point). The chip and the open legend never show together.
  */
-export function CommandLegend({ language, open, onToggle, facilities, unmodelledRoads, wetSites, mode = "trainee", legendRef }: {
+export function CommandLegend({ language, open, onToggle, facilities, unmodelledRoads, wetSites, mode = "trainee", initialTab = "map", legendRef }: {
   language: Language;
   open: boolean;
   onToggle: (open: boolean) => void;
@@ -487,10 +490,14 @@ export function CommandLegend({ language, open, onToggle, facilities, unmodelled
   unmodelledRoads: boolean;
   /** A reported site can be in modelled water during the replay. */
   wetSites: boolean;
+  /** The part the legend opens on. */
+  initialTab?: CommandLegendTab;
   legendRef?: Ref<HTMLDivElement>;
 }) {
   const t = (entry: Localized) => pick(entry, language);
   const title = useId();
+  const panel = useId();
+  const [tab, setTab] = useState<CommandLegendTab>(initialTab);
   if (!open) {
     return (
       <button type="button" className={styles.legendChip} onClick={() => onToggle(true)} aria-expanded="false" data-region="G" data-command-legend="chip" lang={language}>
@@ -502,68 +509,118 @@ export function CommandLegend({ language, open, onToggle, facilities, unmodelled
     <div ref={legendRef} className={`${styles.panel} ${styles.legend}`} role="group" aria-labelledby={title} data-region="G" data-command-legend="open" data-clear-panel lang={language}>
       <div className={`${styles.popoverHead} ${styles.legendHead}`}>
         <h2 id={title} tabIndex={-1} data-command-panel-title>{t(COMMAND_LEGEND.title)}</h2>
-        {/* What the map draws of water and roads is modelled: the same dashed tag as on the clock card. */}
-        <span className={styles.laneTag} data-command-lane="model">{t(COMMAND_FIGURES.modelTag)}</span>
         <button type="button" className={styles.iconButton} onClick={() => onToggle(false)} aria-expanded="true" aria-label={t(COMMAND_LEGEND.close)}><ChevronDown size={18} aria-hidden="true" /></button>
       </div>
-      <h3>{t(COMMAND_LEGEND.water)}</h3>
-      <ul className={styles.legendGrid} lang={language}>
-        <li><i className={styles.swatch} style={{ background: rgbaCss(COMMAND_WATER_RGBA.shallow) }} />{t(COMMAND_LEGEND.shallow)}</li>
-        <li><i className={styles.swatch} style={{ background: rgbaCss(COMMAND_WATER_RGBA.deep) }} />{t(COMMAND_LEGEND.deep)}</li>
-        <li><i className={styles.swatch} style={{ background: `repeating-linear-gradient(135deg, ${LOW_STRIPE} 0 2px, ${LOW_WASH} 2px 6px)` }} />{t(COMMAND_LEGEND.lowConfidence)}</li>
-        <li><i className={styles.swatch} style={{ background: "#dde3ea" }} />{t(COMMAND_LEGEND.veil)}</li>
-        {mode === "hindsight" && <li className={styles.legendSpan}><i className={styles.swatch} style={{ background: ENVELOPE_SWATCH_BACKGROUND, border: "1px solid #8fa1b4" }} />{t(COMMAND_MARKERS.envelope)}</li>}
-      </ul>
-      <h3>{t(COMMAND_LEGEND.roads)}</h3>
-      <ul className={styles.legendGrid} lang={language}>
-        {/* A road is drawn as on the map: a dry one on the ground, a wet or impassable one over modelled water. */}
-        <li><span className={styles.sample}><i style={{ borderTopWidth: 1.5, borderTopColor: "#98a3a4" }} /></span>{t(COMMAND_LEGEND.roadDry)}</li>
-        <li><span className={styles.sample} data-over="water"><i style={{ borderTopWidth: 2.5, borderTopStyle: "dashed", borderTopColor: "#d98a1e" }} /></span>{t(COMMAND_LEGEND.roadWet)}</li>
-        <li><span className={styles.sample} data-over="water"><i style={{ borderTopWidth: 3, borderTopColor: "#c62f24" }} /></span>{t(COMMAND_LEGEND.roadImpassable)}</li>
-        {unmodelledRoads && <li><span className={styles.sample}><i style={{ borderTopWidth: 2, borderTopStyle: "dotted", borderTopColor: "#98a3a4" }} /></span>{t(COMMAND_LEGEND.roadUnmodelled)}</li>}
-      </ul>
-      <h3>{t(COMMAND_LEGEND.places)}</h3>
-      <ul className={`${styles.legendGrid} ${styles.legendWide}`} lang={language}>
-        <li><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d={STAR_PATH} fill="#17616e" stroke="#ffffff" strokeWidth="2" strokeLinejoin="round" paintOrder="stroke" /></svg>{t(COMMAND_LEGEND.shelter)}</li>
-        {wetSites && <li><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d={STAR_PATH} fill="#ffffff" stroke="#17616e" strokeWidth="1.7" strokeLinejoin="round" /><path d="M3.5 21 20.5 3" stroke="#12262d" strokeWidth="2.4" strokeLinecap="round" /></svg>{t(COMMAND_LEGEND.shelterWet)}</li>}
-        {mode === "trainee" && <li><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d={STAR_PATH} fill="#ffffff" stroke="#17616e" strokeWidth="1.5" strokeDasharray="2.6 2" strokeLinejoin="round" /></svg>{t(COMMAND_LEGEND_REPORTS.sitePending)}</li>}
-        <li><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 2.5l9.5 9.5-9.5 9.5L2.5 12z" fill="#12262d" stroke="#ffffff" strokeWidth="2" strokeLinejoin="round" paintOrder="stroke" /></svg>{t(COMMAND_LEGEND.commandCentre)}</li>
-        {facilities && <li><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="12" cy="12" r="6" fill="#ffffff" stroke="#12262d" strokeWidth="2" /></svg>{t(COMMAND_LEGEND.facility)}</li>}
-        {facilities && <li><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="12" cy="12" r="7" fill="#2f86c4" stroke="#ffffff" strokeWidth="2" /></svg>{t(COMMAND_LEGEND.facilityWet)}</li>}
-        <li><span className={styles.sample}><i style={{ borderTopWidth: 1.5, borderTopStyle: "dashed", borderTopColor: "#5f6f73" }} /></span>{t(COMMAND_LEGEND.boundary)}</li>
-      </ul>
-      <h3>{t(COMMAND_LEGEND_REPORTS.records)}</h3>
-      <ul className={`${styles.legendGrid} ${styles.legendWide}`} lang={language} data-legend="records">
-        <li><MarkerGlyph nodes={placeRecordMarkerNodes(3, false)} viewBox={LEGEND_RECORD_VIEWBOX} size={30} />{t(COMMAND_LEGEND_REPORTS.bubble)}</li>
-        <li title={t(COMMAND_MARKERS.modelDryMeaning)}><MarkerGlyph nodes={placeRecordMarkerNodes(2, true)} viewBox={LEGEND_RECORD_VIEWBOX} size={30} />{t(COMMAND_MARKERS.modelDry)}</li>
-      </ul>
-      <h3>{t(COMMAND_LEGEND_REPORTS.exercise)}</h3>
-      <ul className={styles.legendGrid} lang={language} data-legend="exercise">
-        <li>{glyph("call", "life_at_risk")}{t(COMMAND_LEGEND_REPORTS.callLife)}</li>
-        <li>{glyph("call", "urgent")}{t(COMMAND_LEGEND_REPORTS.callUrgent)}</li>
-        <li>{glyph("call", "information")}{t(COMMAND_LEGEND_REPORTS.callInfo)}</li>
-        <li>{glyph("report", "information")}{t(COMMAND_LEGEND_REPORTS.report)}</li>
-        <li>{glyph("call", "urgent", "new")}{t(COMMAND_LEGEND_REPORTS.stateNew)}</li>
-        <li>{glyph("call", "urgent", "assigned")}{t(COMMAND_LEGEND_REPORTS.stateSolid)}</li>
-        <li>{glyph("call", "urgent", "done")}{t(COMMAND_LEGEND_REPORTS.stateClosed)}</li>
-        <li><span className={styles.legendPill} lang={language}>BOAT-2 · {commandWaitingShort(6, language)}</span>{t(COMMAND_LEGEND_REPORTS.waiting)}</li>
-      </ul>
-      <h3>{t(COMMAND_LEGEND_REPORTS.other)}</h3>
-      <ul className={`${styles.legendGrid} ${styles.legendWide}`} lang={language} data-legend="other">
-        <li><span className={styles.legendSign} lang={language}>{commandDeviceSign(2, language)}</span>{t(COMMAND_LEGEND_REPORTS.device)}</li>
-        <li title={t(COMMAND_MARKERS.noReportsMeaning)}><span className={styles.legendNoReports} lang={language}>{t(COMMAND_MARKERS.noReports)}</span>{t(COMMAND_LEGEND_REPORTS.noReports)}</li>
-        <li><MarkerGlyph nodes={clusterMarkerNodes(7, 2)} viewBox={EXERCISE_MARKER_VIEWBOX} size={30} />{t(COMMAND_LEGEND_REPORTS.cluster)}</li>
-        <li><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="rgb(18 38 45 / 4%)" stroke="#12262d" strokeWidth="1.2" strokeDasharray="3 3" /></svg>{t(COMMAND_MARKERS.tolerance)}</li>
-        {/* The exercise: where the team starts, and the straight line from there. A straight line is never a route. */}
-        <li>
-          <span className={act.stagingBadge} aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="12" height="12"><path d={STAGING_FLAG_PATH} fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
-          </span>
-          {t(COMMAND_NEAR.legendStaging)}
-        </li>
-        <li><span className={styles.sample}><i style={{ borderTopWidth: 1.6, borderTopStyle: "dashed", borderTopColor: "#12262d" }} /></span>{t(COMMAND_NEAR.legendLine)}</li>
-      </ul>
-      <p className={styles.legendNote} lang={language}>{t(COMMAND_LEGEND.note)} {t(COMMAND_LEGEND_REPORTS.urgencyRule)}</p>
+      <div className={styles.legendTabs} role="tablist" aria-label={t(COMMAND_LEGEND.tabs)}>
+        {COMMAND_LEGEND_TABS.map((id) => (
+          <button key={id} type="button" role="tab" aria-selected={id === tab} aria-controls={panel} onClick={() => setTab(id)} data-command-legend-tab={id}>{t(LEGEND_TAB_LABEL[id])}</button>
+        ))}
+      </div>
+      <div id={panel} role="tabpanel" className={styles.legendBody} data-legend-tab={tab}>
+        {tab === "map" && (
+          <>
+            <div className={styles.legendTitle}>
+              <h3>{t(COMMAND_LEGEND.water)}</h3>
+              {/* What the map draws of water and roads is modelled: the same dashed tag as on the clock card. */}
+              <span className={styles.laneTag} data-command-lane="model">{t(COMMAND_FIGURES.modelTag)}</span>
+            </div>
+            <ul className={styles.legendGrid} lang={language}>
+              <li><i className={styles.swatch} style={{ background: rgbaCss(COMMAND_WATER_RGBA.shallow) }} />{t(COMMAND_LEGEND.shallow)}</li>
+              <li><i className={styles.swatch} style={{ background: rgbaCss(COMMAND_WATER_RGBA.deep) }} />{t(COMMAND_LEGEND.deep)}</li>
+              <li><i className={styles.swatch} style={{ background: `repeating-linear-gradient(135deg, ${LOW_STRIPE} 0 2px, ${LOW_WASH} 2px 6px)` }} />{t(COMMAND_LEGEND.lowConfidence)}</li>
+              <li><i className={styles.swatch} style={{ background: "#e6ebf0" }} />{t(COMMAND_LEGEND.veil)}</li>
+              {mode === "hindsight" && <li className={styles.legendSpan}><i className={styles.swatch} style={{ background: ENVELOPE_SAMPLE }} data-legend-envelope />{t(COMMAND_MARKERS.envelope)}</li>}
+            </ul>
+            <h3>{t(COMMAND_LEGEND.roads)}</h3>
+            <ul className={styles.legendGrid} lang={language}>
+              {/* A road is drawn as on the map: a dry one on the ground, a wet or impassable one on its white casing over modelled water. */}
+              <li><span className={styles.sample}><i style={{ borderTopWidth: 1.5, borderTopColor: "#98a3a4" }} /></span>{t(COMMAND_LEGEND.roadDry)}</li>
+              <li><span className={styles.sample} data-over="water" data-casing="true"><i style={{ borderTopWidth: 2.5, borderTopStyle: "dashed", borderTopColor: COMMAND_WET_ROAD }} /></span>{t(COMMAND_LEGEND.roadWet)}</li>
+              <li><span className={styles.sample} data-over="water" data-casing="true"><i style={{ borderTopWidth: 3, borderTopColor: "#c62f24" }} /></span>{t(COMMAND_LEGEND.roadImpassable)}</li>
+              {unmodelledRoads && <li><span className={styles.sample}><i style={{ borderTopWidth: 2, borderTopStyle: "dotted", borderTopColor: "#98a3a4" }} /></span>{t(COMMAND_LEGEND.roadUnmodelled)}</li>}
+            </ul>
+            <h3>{t(COMMAND_LEGEND.places)}</h3>
+            <ul className={`${styles.legendGrid} ${styles.legendWide}`} lang={language}>
+              <li><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d={STAR_PATH} fill="#17616e" stroke="#ffffff" strokeWidth="2" strokeLinejoin="round" paintOrder="stroke" /></svg>{t(COMMAND_LEGEND.shelter)}</li>
+              {wetSites && <li><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d={STAR_PATH} fill="#ffffff" stroke="#17616e" strokeWidth="1.7" strokeLinejoin="round" /><path d="M3.5 21 20.5 3" stroke="#12262d" strokeWidth="2.4" strokeLinecap="round" /></svg>{t(COMMAND_LEGEND.shelterWet)}</li>}
+              {mode === "trainee" && <li><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d={STAR_PATH} fill="#ffffff" stroke="#17616e" strokeWidth="1.5" strokeDasharray="2.6 2" strokeLinejoin="round" /></svg>{t(COMMAND_LEGEND_REPORTS.sitePending)}</li>}
+              <li><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 2.5l9.5 9.5-9.5 9.5L2.5 12z" fill="#12262d" stroke="#ffffff" strokeWidth="2" strokeLinejoin="round" paintOrder="stroke" /></svg>{t(COMMAND_LEGEND.commandCentre)}</li>
+              {facilities && <li><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="12" cy="12" r="6" fill="#ffffff" stroke="#12262d" strokeWidth="2" /></svg>{t(COMMAND_LEGEND.facility)}</li>}
+              {facilities && <li><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="12" cy="12" r="7" fill="#2f86c4" stroke="#ffffff" strokeWidth="2" /></svg>{t(COMMAND_LEGEND.facilityWet)}</li>}
+              <li><span className={styles.sample}><i style={{ borderTopWidth: 1.5, borderTopStyle: "dashed", borderTopColor: "#5f6f73" }} /></span>{t(COMMAND_LEGEND.boundary)}</li>
+            </ul>
+            <p className={styles.legendNote} lang={language}>{t(COMMAND_LEGEND.note)}</p>
+          </>
+        )}
+        {tab === "reports" && (
+          <>
+            <h3>{t(COMMAND_LEGEND_REPORTS.records)}</h3>
+            <ul className={`${styles.legendGrid} ${styles.legendWide}`} lang={language} data-legend="records">
+              <li><MarkerGlyph nodes={placeRecordMarkerNodes(3, false)} viewBox={LEGEND_RECORD_VIEWBOX} size={30} />{t(COMMAND_LEGEND_REPORTS.bubble)}</li>
+              <li title={t(COMMAND_MARKERS.modelDryMeaning)}><MarkerGlyph nodes={placeRecordMarkerNodes(2, true)} viewBox={LEGEND_RECORD_VIEWBOX} size={30} />{t(COMMAND_MARKERS.modelDry)}</li>
+              <li><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="rgb(18 38 45 / 4%)" stroke="#12262d" strokeWidth="1.2" strokeDasharray="3 3" /></svg>{t(COMMAND_MARKERS.tolerance)}</li>
+            </ul>
+            <h3>{t(COMMAND_LEGEND_REPORTS.other)}</h3>
+            <ul className={`${styles.legendGrid} ${styles.legendWide}`} lang={language} data-legend="other">
+              <li><ClusterGlyph records={11} items={7} lifeAtRisk={2} />{t(COMMAND_LEGEND_REPORTS.cluster)}</li>
+              <li title={t(COMMAND_MARKERS.noReportsMeaning)}>
+                <span className={styles.legendPair}><NoReportsGlyph size={16} /><span className={styles.legendNoReports} lang={language}>{t(COMMAND_MARKERS.noReports)}</span></span>
+                {t(COMMAND_LEGEND_REPORTS.noReports)}
+              </li>
+              <li><span className={styles.legendSign} lang={language}>{commandDeviceSign(2, language)}</span>{t(COMMAND_LEGEND_REPORTS.device)}</li>
+            </ul>
+            {/* The time bar: its marks are the rows of "Known by now", and the grey bars under the phases are the rain. */}
+            <h3>{t(COMMAND_LEGEND.timebar)}</h3>
+            <ul className={`${styles.legendGrid} ${styles.legendWide}`} lang={language} data-legend="timebar">
+              <li><span className={styles.legendMark}><i data-filled="true" /></span>{t(COMMAND_LEGEND.markFilled)}</li>
+              <li><span className={styles.legendMark}><i data-filled="false" /></span>{t(COMMAND_LEGEND.markHollow)}</li>
+              <li><span className={styles.legendMark}><i data-filled="true" data-count="3">3</i></span>{t(COMMAND_LEGEND.markCount)}</li>
+              <li><span className={styles.legendRain}><i style={{ height: 5 }} /><i style={{ height: 13 }} /><i style={{ height: 8 }} /><i style={{ height: 3 }} /></span>{t(COMMAND_LEGEND.rainBars)}</li>
+            </ul>
+          </>
+        )}
+        {tab === "exercise" && (
+          <>
+            <h3>{t(COMMAND_LEGEND_REPORTS.exercise)}</h3>
+            {/* The marker grammar as a grid: the shape says the kind, and symbol, size and colour together say the urgency. */}
+            <table className={styles.legendMatrix} data-legend="exercise">
+              <thead>
+                <tr>
+                  <td />
+                  {EXERCISE_URGENCIES.map((urgency) => <th key={urgency} scope="col">{t(COMMAND_URGENCY[urgency])}</th>)}
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th scope="row">{t(COMMAND_LEGEND_REPORTS.rowCall)}</th>
+                  {EXERCISE_URGENCIES.map((urgency) => <td key={urgency}>{glyph("call", urgency)}</td>)}
+                </tr>
+                <tr>
+                  <th scope="row">{t(COMMAND_LEGEND_REPORTS.rowReport)}</th>
+                  {EXERCISE_URGENCIES.map((urgency) => <td key={urgency}>{glyph("report", urgency)}</td>)}
+                </tr>
+              </tbody>
+            </table>
+            <ul className={styles.legendStates} lang={language} data-legend="states">
+              <li>{glyph("call", "urgent", "new")}<span>{t(COMMAND_LEGEND_REPORTS.stateNew)}</span></li>
+              <li>{glyph("call", "urgent", "assigned")}<span>{t(COMMAND_LEGEND_REPORTS.stateSolid)}</span></li>
+              <li>{glyph("call", "urgent", "done")}<span>{t(COMMAND_LEGEND_REPORTS.stateClosed)}</span></li>
+            </ul>
+            <ul className={`${styles.legendGrid} ${styles.legendWide}`} lang={language} data-legend="line">
+              <li><span className={styles.legendPill} lang={language}><b>{t(COMMAND_EXERCISE.short)}</b><span>BOAT-2 · {commandWaitingShort(6, language)}</span></span>{t(COMMAND_LEGEND_REPORTS.waiting)}</li>
+              {/* The exercise: where the team starts, and the straight line from there. A straight line is never a route. */}
+              <li>
+                <span className={act.stagingBadge} aria-hidden="true">
+                  <svg viewBox="0 0 24 24" width="12" height="12"><path d={STAGING_FLAG_PATH} fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                </span>
+                {t(COMMAND_NEAR.legendStaging)}
+              </li>
+              <li><span className={styles.sample}><i style={{ borderTopWidth: 1.6, borderTopStyle: "dashed", borderTopColor: "#12262d" }} /></span>{t(COMMAND_NEAR.legendLine)}</li>
+            </ul>
+            <p className={styles.legendNote} lang={language}>{t(COMMAND_LEGEND_REPORTS.urgencyRule)}</p>
+          </>
+        )}
+      </div>
     </div>
   );
 }

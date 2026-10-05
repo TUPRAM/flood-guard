@@ -47,7 +47,7 @@
 .urgencyRow b { color: var(--c-ink); font-family: var(--c-font-mono); font-size: 12px; font-weight: 600; }
 .steps { display: flex; gap: 8px; }
 .step.step { position: relative; display: grid; place-items: center; width: 36px; height: 36px; padding: 0; border: 1px solid var(--c-line); border-radius: var(--c-radius-control); background: var(--c-panel); color: var(--c-ink); }
-.step::after { content: ""; position: absolute; inset: -4px; }
+.step::after { content: ""; position: absolute; inset: -5px; }
 .step:hover:not(:disabled) { background: var(--c-tint); border-color: #9fb0c2; }
 .step:disabled { color: #a9b6c4; }
 
@@ -81,9 +81,10 @@
 .navExercise.navExercise { gap: 6px; }
 .navExercise svg:last-child { margin-right: -4px; color: var(--c-muted); }
 .helpSteps { display: grid; gap: 5px; margin: 0; padding-left: 20px; }
-.briefButton.briefButton { position: relative; display: grid; flex: none; place-items: center; width: 24px; height: 24px; margin: -4px -4px -4px 0; padding: 0; border: 0; border-radius: 6px; background: none; color: var(--c-muted); }
-.briefButton::after { content: ""; position: absolute; inset: -10px; }
-.briefButton:hover { background: var(--c-tint); color: var(--c-ink); }
+/* The button of the situation brief: the round icon button of the page, on the tint. */
+.briefButton.briefButton { position: relative; display: grid; flex: none; place-items: center; width: 28px; height: 28px; margin: -5px -4px -5px 0; padding: 0; border: 0; border-radius: 50%; background: var(--c-tint); color: var(--c-ink); }
+.briefButton::after { content: ""; position: absolute; inset: -8px; }
+.briefButton:hover { background: #e3e9f0; }
 
 /* --- The notice with an action: undo, or leaving the choice of a staging point --------------------------- */
 .noticeAction.noticeAction { position: relative; flex: none; margin: 0 -6px 0 12px; padding: 0 10px; border: 1px solid rgb(255 255 255 / 60%); border-radius: 10px; background: none; color: #ffffff; font-size: 12px; font-weight: 600; line-height: 20px; overflow: hidden; }
@@ -117,7 +118,7 @@ legend.fieldTitle { padding-right: 10px; }
 .rosterRow strong { overflow: hidden; font-family: var(--c-font-mono); font-size: 13px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
 .addRow { display: grid; grid-template-columns: minmax(0, 1fr) minmax(112px, 148px) auto; gap: 8px; }
 .input, .select { width: 100%; min-width: 0; height: 44px; padding: 0 10px; border: 1px solid #9fb0c2; border-radius: 8px; background: #ffffff; color: var(--c-ink); font: inherit; font-size: 14px; }
-.rosterRow .select { height: 36px; border-color: var(--c-line); font-size: 13px; }
+.rosterRow .select { height: 44px; border-color: var(--c-line); font-size: 13px; }
 .input:lang(th), .select:lang(th) { line-height: 1.5; }
 .problem { padding: 6px 10px; border-left: 3px solid var(--c-ink); border-radius: 0 6px 6px 0; background: var(--c-tint); color: var(--c-ink); font-size: 12px; font-weight: 600; }
 .removeButton.removeButton { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--c-muted); }
@@ -134,6 +135,9 @@ legend.fieldTitle { padding-right: 10px; }
 .option small { grid-column: 2 / -1; color: var(--c-muted); font-size: 11px; line-height: 1.45; }
 .option:lang(th) small { line-height: 1.5; }
 .optionText { display: grid; gap: 1px; min-width: 0; }
+/* The label of an option that has a line under it: 21 px to the eye, 44 px to the finger. */
+.optionText > label { position: relative; }
+.optionText > label::after { content: ""; position: absolute; inset: -12px 0 -11px; }
 .optionText small { grid-column: auto; }
 .startRow { display: grid; gap: 4px; }
 .startMoment { font-family: var(--c-font-head); font-size: 19px; font-weight: 600; line-height: 1.4; letter-spacing: -.01em; }
@@ -177,8 +181,9 @@ legend.fieldTitle { padding-right: 10px; }
   .exerciseMenu { display: none; }
   /* The first line of a narrow clock card is full (the replay time, the replay hour and the tag): the button of the
      situation brief stands at the end of the phase line under it. */
-  .briefButton.briefButton { position: absolute; top: 31px; right: calc(var(--c-inset) - 4px); margin: 0; }
-  .briefButton.briefButton:lang(th) { top: 33px; }
+  .briefButton.briefButton { position: absolute; top: 28px; right: calc(var(--c-inset) - 4px); width: 24px; height: 24px; margin: 0; }
+  .briefButton.briefButton::after { inset: -10px; }
+  .briefButton.briefButton:lang(th) { top: 30px; }
 }
 @media (max-width: 899px) {
   .briefButton.briefButton { display: none; }

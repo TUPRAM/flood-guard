@@ -35,6 +35,7 @@ import {
   type CommandTambonRow,
   type RoundedFigure,
 } from "./flood-timeline-command";
+import { placeRecordsAt, reportedSitePendingAt, type CommandMode } from "./flood-timeline-command-feed";
 import type { LatLngBox } from "./flood-timeline-command-map";
 import { roadNameText } from "./flood-timeline-copy";
 import { accessSnapshot, reportedSiteRole } from "./flood-timeline-evacuation";
@@ -542,6 +543,21 @@ function lineBox(geometries: readonly LineGeometry[]): LatLngBox | null {
   return Number.isFinite(west) ? [[south, west], [north, east]] : null;
 }
 
+/**
+ * The reported sites and the place records the find-place box may list at a replay hour. In hindsight mode: all of
+ * them. In trainee mode: the sites reported by the replay day and the place records published by the replay hour, so
+ * the box names nothing that lies after the hour (a place record of a later article, or a shelter before its first
+ * report). Subdistricts, key facilities and roads are places of the base map and are always listed.
+ */
+export function commandFindManifestAt(manifest: Pick<TimelineManifest, "shelters" | "reported_depths">, hour: number, mode: CommandMode): Pick<TimelineManifest, "shelters" | "reported_depths"> {
+  if (mode === "hindsight") return manifest;
+  return {
+    shelters: manifest.shelters ? { ...manifest.shelters, reported: manifest.shelters.reported.filter((site) => !reportedSitePendingAt(site, hour, mode)) } : manifest.shelters,
+    reported_depths: manifest.reported_depths ? { ...manifest.reported_depths, reports: placeRecordsAt(manifest.reported_depths.reports, hour, mode) } : manifest.reported_depths,
+  };
+}
+
+/** The names the find-place box searches: subdistricts, reported sites, the places of the place records, named facilities and named roads. */
 export function buildCommandFindIndex(input: {
   manifest: Pick<TimelineManifest, "shelters" | "reported_depths">;
   tambons: readonly { properties: { id: string; th: string; en: string } }[];

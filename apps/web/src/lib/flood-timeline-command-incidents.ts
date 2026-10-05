@@ -89,7 +89,8 @@ export const EXERCISE_URGENCY_RULE: Readonly<Record<Exclude<ExerciseUrgency, "in
 };
 
 /**
- * The stated-fact rule. Life at risk: people on a roof, or water at chest height or above with people present.
+ * The stated-fact rule. Life at risk: people on a roof, or people standing in water at chest height or above (people
+ * who are dry on an upper floor above deep water are not in it, so the depth band alone never sets this level).
  * Urgent: an infant or a bedridden person, or no food for a day. Anything else is information. The rule reads only
  * what the item states; the model plays no part.
  */
@@ -159,7 +160,7 @@ function parseItem(value: unknown, index: number): ExerciseItem {
   const depthBand = oneOf(value.depth_band, EXERCISE_DEPTH_BANDS, `${id} depth band`);
   const peopleBand = oneOf(value.people_band, EXERCISE_PEOPLE_BANDS, `${id} people band`);
   if (facts.length > 0 && peopleBand === "none_stated") throw new ExerciseFileError(`${id}: a stated fact about people needs a number of people`);
-  if (facts.includes("chest_or_above_with_people") && depthBand !== "chest" && depthBand !== "over_head") throw new ExerciseFileError(`${id}: "water at chest height or above" needs that depth band`);
+  if (facts.includes("chest_or_above_with_people") && depthBand !== "chest" && depthBand !== "over_head") throw new ExerciseFileError(`${id}: "people standing in water at chest height or above" needs that depth band`);
   if (kind === "report" && facts.length > 0) throw new ExerciseFileError(`${id}: a report of depth or of a road states no fact about people`);
   if (typeof value.tambon_id !== "string" || !/^TH\d{6}$/.test(value.tambon_id)) throw new ExerciseFileError(`${id}: the subdistrict code is missing`);
   const point = value.point;
@@ -281,7 +282,7 @@ export function mostUrgentItem<T extends Pick<ExerciseItem, "urgency" | "hour" |
  * The colours of the urgency levels: colour-blind safe, and on purpose not the red, yellow and green of medical
  * triage, so a marker is never read as a patient's condition. They are used on exercise markers and nowhere else.
  */
-export const EXERCISE_COLOURS = { life_at_risk: "#D55E00", urgent: "#E69F00", information: "#0072B2", closed: "#b4bcbd" } as const;
+export const EXERCISE_COLOURS = { life_at_risk: "#D55E00", urgent: "#E69F00", information: "#0072B2", closed: "#c3cacb" } as const;
 
 /** How one exercise marker is drawn. Each meaning has at least two cues, so colour is never the only one. */
 export interface ExerciseMarkerSpec {
@@ -298,7 +299,7 @@ export interface ExerciseMarkerSpec {
   outline: "dashed" | "solid" | "none";
   /** Done or dropped: grey, with a tick in place of the symbol. */
   closed: boolean;
-  /** The line under the marker: the callsign once assigned, with the waiting clock while the item is open. */
+  /** The line under the marker: the callsign once assigned, with the waiting clock while an urgent or life-at-risk item is open. */
   showsCallsign: boolean;
   showsWaiting: boolean;
 }
@@ -321,8 +322,62 @@ export function exerciseMarkerSpec(item: Pick<ExerciseItem, "kind" | "urgency">,
     outline: closed ? "none" : status === "new" ? "dashed" : "solid",
     closed,
     showsCallsign: status === "assigned",
-    showsWaiting: !closed,
+    // An item of information waits for nobody to be moved: its waiting clock is in its popup and in the inspector, not
+    // on the map, where the lines of the urgent items need the room.
+    showsWaiting: !closed && item.urgency !== "information",
   };
+}
+
+// --- Markers that would cover each other at the town zoom --------------------------------------------------
+
+/** A box on screen, in pixels. */
+export interface MarkerBox { left: number; top: number; right: number; bottom: number }
+
+/** The box of a place-record bubble whose tail ends at (x, y): the bubble above the point, with room for its dry badge. */
+export const recordBubbleBox = (x: number, y: number): MarkerBox => ({ left: x - 14, top: y - 28, right: x + 20, bottom: y + 1 });
+
+/** The box of an exercise marker `size` px wide whose middle is at (x, y), with the line of `lineWidth` px under it. */
+export function exerciseMarkerBox(x: number, y: number, size: number, lineWidth: number): MarkerBox {
+  const half = Math.max(size / 2 + 2, lineWidth / 2);
+  return { left: x - half, top: y - size / 2 - 2, right: x + half, bottom: y + size / 2 + 3 + (lineWidth > 0 ? 17 : 0) };
+}
+
+/** The area two boxes share, in square pixels; 0 when they do not touch. */
+const sharedArea = (a: MarkerBox, b: MarkerBox): number => Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left)) * Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top));
+
+/**
+ * Where a marker may stand when its own point is taken, in the order they are tried: its point, then beside it, then
+ * below it, then further out, and last above it (the bubbles of the place records stand above their points, so the
+ * places above are seldom free).
+ */
+export const ITEM_MARKER_OFFSETS: readonly (readonly [number, number])[] = [
+  [0, 0], [36, 4], [-36, 4], [0, 40], [40, 36], [-40, 36], [62, 0], [-62, 0], [0, 66], [66, 40], [-66, 40],
+  [0, -46], [44, -40], [-44, -40], [88, 8], [-88, 8], [80, 56], [-80, 56],
+];
+
+/**
+ * Places the exercise markers of the town zoom so that none covers a place-record bubble or another exercise marker.
+ * `items` are taken in the order given (the caller puts the most urgent first, so those keep their own point); each
+ * takes the first offset of `ITEM_MARKER_OFFSETS` at which its box is free. A marker moved off its point is drawn
+ * with a thin line back to it; one that finds no free place takes the place where it covers least. The result depends
+ * only on the distances on screen, so it changes with the zoom and never with a pan.
+ */
+export function placeItemMarkers(
+  obstacles: readonly MarkerBox[],
+  items: readonly { x: number; y: number; size: number; lineWidth: number }[],
+): { dx: number; dy: number }[] {
+  const taken: MarkerBox[] = [...obstacles];
+  return items.map((item) => {
+    let best: { dx: number; dy: number; box: MarkerBox; covered: number } | null = null;
+    for (const [dx, dy] of ITEM_MARKER_OFFSETS) {
+      const box = exerciseMarkerBox(item.x + dx, item.y + dy, item.size, item.lineWidth);
+      const covered = taken.reduce((sum, other) => sum + sharedArea(box, other), 0);
+      if (best === null || covered < best.covered) best = { dx, dy, box, covered };
+      if (covered === 0) break;
+    }
+    taken.push(best!.box);
+    return { dx: best!.dx, dy: best!.dy };
+  });
 }
 
 // --- Clusters of the district zoom -----------------------------------------------------------------------
@@ -332,17 +387,25 @@ export const CLUSTER_BELOW_ZOOM = 13;
 /** Markers within this many pixels of a cluster's first marker join it. */
 export const CLUSTER_RADIUS_PX = 40;
 
-/** One marker as the clustering reads it: where it is on screen, how many things it stands for, and whether it is an open life-at-risk item. */
-export interface ClusterPoint { x: number; y: number; count: number; lifeAtRisk: boolean }
+/**
+ * One marker as the clustering reads it: where it is on screen, how many 2024 place records it holds, how many
+ * invented exercise items, and whether it is an open life-at-risk item.
+ */
+export interface ClusterPoint { x: number; y: number; records: number; items: number; lifeAtRisk: boolean }
 export interface MarkerCluster {
   /** Indices into the points, in their order. */
   members: number[];
   /** The middle of the members on screen. */
   x: number;
   y: number;
-  /** Everything the cluster stands for: place records and exercise items are counted side by side in one mark, and the popup of each keeps them apart. */
-  total: number;
-  /** Open life-at-risk items among them: the mark then shows "!!" and this count beside the total. */
+  /** The 2024 place records the cluster holds (reported in news). */
+  records: number;
+  /**
+   * The invented exercise items it holds. The two counts are never added: a count mark prints them apart, the
+   * invented ones under the exercise tag, so no photo of the screen shows invented items as reports of 2024.
+   */
+  items: number;
+  /** Open life-at-risk items among the exercise items: the mark then shows "!!" and this count. */
   lifeAtRisk: number;
 }
 
@@ -378,7 +441,8 @@ export function clusterMarkers(points: readonly ClusterPoint[], radius: number =
     members,
     x: members.reduce((sum, index) => sum + points[index].x, 0) / members.length,
     y: members.reduce((sum, index) => sum + points[index].y, 0) / members.length,
-    total: members.reduce((sum, index) => sum + points[index].count, 0),
+    records: members.reduce((sum, index) => sum + points[index].records, 0),
+    items: members.reduce((sum, index) => sum + points[index].items, 0),
     lifeAtRisk: members.filter((index) => points[index].lifeAtRisk).length,
   }));
 }

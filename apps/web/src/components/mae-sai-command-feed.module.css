@@ -30,13 +30,14 @@
 .tag[data-lane="device"] { border-style: dashed; border-color: #12262d; color: #12262d; }
 /* A place link moves the map. It is 24 px to the eye and 44 px to the finger. */
 .places .placeLink { position: relative; display: inline-flex; align-items: center; gap: 4px; min-height: 24px; padding: 0 8px; border: 1px solid var(--c-line); border-radius: 12px; background: #ffffff; color: var(--c-ink); font-size: 11px; line-height: 1.5; text-align: left; }
-.placeLink::after { content: ""; position: absolute; inset: -10px -2px; }
+.placeLink::after { content: ""; position: absolute; inset: -11px -2px; }
 .placeLink:hover { background: var(--c-tint); border-color: #9fb0c2; }
 .placeLink svg { flex: none; color: var(--c-muted); }
 .places { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 3px; }
-.sourceLink { position: relative; color: var(--c-focus); text-decoration: underline; text-underline-offset: 2px; }
-.sourceLink::after { content: ""; position: absolute; inset: -14px -4px; }
-.sourceLink:hover { color: var(--c-ink); }
+/* A link is ink with a quiet underline: blue is kept for water. */
+.sourceLink { position: relative; color: var(--c-ink); text-decoration: underline; text-decoration-color: var(--c-muted); text-underline-offset: 2px; }
+.sourceLink::after { content: ""; position: absolute; inset: -15px -4px; }
+.sourceLink:hover { text-decoration-color: var(--c-ink); }
 .empty { padding: 20px 16px; color: var(--c-muted); text-align: center; }
 .jump { position: sticky; top: 32px; z-index: 2; display: flex; justify-content: center; height: 0; overflow: visible; }
 .jump.jump button { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 14px; border: 0; border-radius: 16px; background: var(--c-accent); color: #ffffff; font-size: 12px; font-weight: 600; box-shadow: var(--c-shadow-tool); }
@@ -48,7 +49,8 @@
 .modeText { min-width: 0; color: var(--c-ink); font-size: 12px; font-weight: 600; }
 .segments { flex: none; display: inline-flex; }
 .segments.segments button { position: relative; min-width: 62px; height: 28px; padding: 0 9px; border: 1px solid var(--c-line); border-right-width: 0; background: var(--c-panel); color: var(--c-ink); font-size: 12px; font-weight: 500; white-space: nowrap; }
-.segments button::after { content: ""; position: absolute; inset: -8px 0; }
+.segments button:lang(th) { line-height: 1.5; }
+.segments button::after { content: ""; position: absolute; inset: -9px 0; }
 .segments button:first-child { border-radius: var(--c-radius-control) 0 0 var(--c-radius-control); }
 .segments button:last-child { border-right-width: 1px; border-radius: 0 var(--c-radius-control) var(--c-radius-control) 0; }
 .segments button[aria-pressed="true"] { border-color: var(--c-accent); background: var(--c-accent); color: #ffffff; font-weight: 600; }

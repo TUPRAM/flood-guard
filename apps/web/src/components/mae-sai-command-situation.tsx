@@ -18,7 +18,7 @@ import { COMMAND_BRIEF } from "@/lib/flood-timeline-command-act-copy";
 import { changeSinceHourBefore, clampCommandHour, commandStage, districtFiguresAt, type CommandModel, type CommandShelterSet } from "@/lib/flood-timeline-command";
 import type { PlaceRecordTally } from "@/lib/flood-timeline-command-feed";
 import type { ExerciseCounts } from "@/lib/flood-timeline-command-incidents";
-import { COMMAND_EXERCISE, commandOpenItemsText, commandRecordTallyChip, commandRecordTallyLine } from "@/lib/flood-timeline-command-reports-copy";
+import { COMMAND_EXERCISE, commandAtRiskShort, commandOpenItemsText, commandRecordTallyChip, commandRecordTallyLine } from "@/lib/flood-timeline-command-reports-copy";
 import {
   COMMAND_CLOCK,
   COMMAND_FIGURES,
@@ -169,7 +169,7 @@ export function MaeSaiCommandSituation({ language, hour, manifest, model, set = 
                 <strong aria-hidden="true">{exercise.open}<b className={styles.exTag}>{t(COMMAND_EXERCISE.short)}</b></strong>
                 <span aria-hidden="true">{t(COMMAND_EXERCISE.openCaption)}</span>
                 <small aria-hidden="true" data-life={exercise.lifeAtRisk > 0 ? "true" : "false"}>
-                  {exercise.lifeAtRisk > 0 && <><MarkerGlyph nodes={LIFE_GLYPH} viewBox={EXERCISE_MARKER_VIEWBOX} size={15} />{exercise.lifeAtRisk} {t(COMMAND_EXERCISE.atRisk)}</>}
+                  {exercise.lifeAtRisk > 0 && <><MarkerGlyph nodes={LIFE_GLYPH} viewBox={EXERCISE_MARKER_VIEWBOX} size={15} />{commandAtRiskShort(exercise.lifeAtRisk, language)}</>}
                 </small>
                 <span className={styles.srOnly}>{commandOpenItemsText(exercise.open, exercise.lifeAtRisk, language)}</span>
               </li>

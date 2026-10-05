@@ -452,6 +452,11 @@ export type OrderRow = Pick<CommandTambonRow, "id" | "lostAccess" | "inWater">;
 /** The rules compare whole residents, as the table prints them: 0.3 of a modelled resident is nobody. */
 const wholeLost = (row: OrderRow): number => Math.round(row.lostAccess);
 const byWaterThenCode = (a: OrderRow, b: OrderRow): number => b.inWater - a.inWater || a.id.localeCompare(b.id);
+/** The figure of a row as the table prints it, as a number to compare: 0 for "0", 1 for every "<10", else the rounded count. */
+const printedLost = (row: OrderRow): number => {
+  const figure = roundModelFigure(row.lostAccess);
+  return figure.kind === "under_ten" ? 1 : figure.value;
+};
 
 /**
  * The plain order: most residents who lost shelter access first; ties, including rows that are all zero, by residents
@@ -465,8 +470,8 @@ export function plainTambonOrder(rows: readonly OrderRow[]): string[] {
  * One step of the ordering rules from the order of the hour before:
  *   1. rows are ordered by residents who lost shelter access, highest first;
  *   2. a row overtakes the row above it only when it leads by at least `lead` residents, so two rows a few residents
- *      apart do not swap back and forth; a row above zero always overtakes a row at zero, so a row that reads "0" never
- *      stands over a row that reads "<10";
+ *      apart do not swap back and forth; a row whose printed figure is higher always overtakes, so a row that reads
+ *      "0" never stands over a row that reads "<10", nor "~1,600" over "~1,700";
  *   3. rows with the same count (all the zero rows among them) are ordered by residents in water, then by code.
  * Without an order to start from (the first hour, or other rows than before) the plain order is returned; a `lead` of 0
  * gives the plain order at every step.
@@ -480,8 +485,9 @@ export function stepTambonOrder(previous: readonly string[] | null, rows: readon
   const overtakes = (below: OrderRow, above: OrderRow): boolean => {
     const gap = wholeLost(below) - wholeLost(above);
     if (gap === 0) return byWaterThenCode(below, above) < 0;
-    // The lead applies between two rows above zero. A row with nobody counted gives way to any row with somebody.
-    return gap > 0 && (gap >= lead || wholeLost(above) === 0);
+    // The lead applies between two rows that print the same figure. A row gives way to any row that prints a higher
+    // one (a row with nobody counted to any row with somebody): the table never shows a lower figure over a higher one.
+    return gap > 0 && (gap >= lead || printedLost(below) > printedLost(above));
   };
   // Adjacent swaps until nothing moves. A swap needs the lower row to lead (or to win a tie), and both relations are
   // strict orders, so the passes end; the bound is a safeguard only.

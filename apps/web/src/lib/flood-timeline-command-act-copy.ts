@@ -114,10 +114,10 @@ export function commandActionNotice(undo: Pick<CommandUndo, "itemId" | "action" 
   }
 }
 
-// --- Where people go -------------------------------------------------------------------------------------
+// --- Shelters near the point of an item ------------------------------------------------------------------
 
 export const COMMAND_GO = {
-  title: { en: "Where people go", th: "ที่พักพิงใกล้จุดนี้" },
+  title: { en: "Shelters near this point", th: "ที่พักพิงใกล้จุดนี้" },
   dry: { en: "dry in the model at this stage", th: "แห้งตามแบบจำลอง ณ ระดับน้ำนี้" },
   wet: { en: "in modelled water at this stage", th: "อยู่ในน้ำตามแบบจำลอง ณ ระดับน้ำนี้" },
   openingUnknown: { en: "opening time not known", th: "ไม่ทราบเวลาที่เริ่มเปิดใช้" },
@@ -186,7 +186,7 @@ export const COMMAND_NEAR = {
   stagingLead: { en: "From the staging point", th: "จากจุดระดมทรัพยากร" },
   stagingOnMap: { en: "point set on the map", th: "จุดที่กำหนดบนแผนที่" },
   straightLine: { en: "straight line, not a route", th: "เส้นตรง ไม่ใช่เส้นทาง" },
-  legendStaging: { en: "staging point of the exercise (set by the facilitator)", th: "จุดระดมทรัพยากรของการฝึกซ้อม (ผู้อำนวยการฝึกกำหนด)" },
+  legendStaging: { en: "staging point of the exercise (set by the facilitator)", th: "จุดระดมทรัพยากรของการฝึกซ้อม (ผู้ควบคุมการฝึกกำหนด)" },
   legendLine: { en: "straight line from the staging point to the selected item: not a route", th: "เส้นตรงจากจุดระดมทรัพยากรถึงรายการที่เลือก ไม่ใช่เส้นทาง" },
   noAdvice: {
     en: "The page gives no advice on the kind of team to send: the model has depth and no current.",
@@ -236,7 +236,7 @@ export function commandLineLabel(metres: number, language: Language): string {
 
 export const COMMAND_SETUP = {
   title: { en: "Exercise setup", th: "ตั้งค่าการฝึกซ้อม" },
-  intro: { en: "For the facilitator of an exercise.", th: "สำหรับผู้อำนวยการฝึก" },
+  intro: { en: "For the facilitator of an exercise.", th: "สำหรับผู้ควบคุมการฝึก" },
   deviceOnly: { en: "Saved on this device only", th: "บันทึกไว้ในอุปกรณ์เครื่องนี้เท่านั้น" },
   roster: { en: "Roster", th: "รายชื่อชุดปฏิบัติการ" },
   rosterRule: {
@@ -362,7 +362,7 @@ export const COMMAND_LOG = {
 
 export const COMMAND_ROLE: Readonly<Record<CommandRole, Localized>> = {
   coordinator: { en: "Coordinator", th: "ผู้ประสานงาน" },
-  facilitator: { en: "Facilitator", th: "ผู้อำนวยการฝึก" },
+  facilitator: { en: "Facilitator", th: "ผู้ควบคุมการฝึก" },
 };
 
 export const COMMAND_LOG_ACTION: Readonly<Record<CommandLogAction, Localized>> = {
@@ -441,11 +441,11 @@ export const COMMAND_HELP_ACT = {
   title: { en: "From seeing to acting", th: "จากการอ่านสถานการณ์สู่การสั่งการในการฝึกซ้อม" },
   step1: {
     en: "The facilitator sets the roster, the staging point and the start hour in the exercise setup (the Exercise menu).",
-    th: "ผู้อำนวยการฝึกกำหนดรายชื่อชุดปฏิบัติการ จุดระดมทรัพยากร และชั่วโมงเริ่มต้น ที่หน้าตั้งค่าการฝึกซ้อม (เมนูการฝึกซ้อม)",
+    th: "ผู้ควบคุมการฝึกกำหนดรายชื่อชุดปฏิบัติการ จุดระดมทรัพยากร และชั่วโมงเริ่มต้น ที่หน้าตั้งค่าการฝึกซ้อม (เมนูการฝึกซ้อม)",
   },
   step2: {
     en: "Select a marker. The detail states the depth in the model, the nearest counted shelters and how to get near: facts only, no advice.",
-    th: "เลือกเครื่องหมายบนแผนที่ รายละเอียดจะบอกความลึกของน้ำตามแบบจำลอง ที่พักพิงที่ใกล้ที่สุด และข้อเท็จจริงเกี่ยวกับการเข้าถึงจุดนั้น โดยไม่มีคำแนะนำ",
+    th: "เลือกเครื่องหมายบนแผนที่ รายละเอียดจะบอกความลึกของน้ำตามแบบจำลอง ที่พักพิงที่นับไว้ซึ่งอยู่ใกล้ที่สุด และข้อเท็จจริงเกี่ยวกับการเข้าถึงจุดนั้น โดยไม่มีคำแนะนำ",
   },
   step3: {
     en: "Assign a callsign, then open the brief: share it, copy it, or hand the short version to the message app.",

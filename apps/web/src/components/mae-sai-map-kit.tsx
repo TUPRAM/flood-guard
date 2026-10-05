@@ -86,6 +86,19 @@ export function popupElement(lines: PopupLine[], links: { href: string; text: st
 }
 
 /**
+ * Keeps the tooltip of a marker out of the way: it closes when the marker's popup opens, and it does not open while
+ * the popup is open or while `selected` says that the marker's thing is already selected (its details are then in a
+ * panel, and the tooltip would only cover its neighbours). Closing a popup hands the keyboard focus back to its
+ * marker, and Leaflet opens a tooltip on focus: without this the tooltip would stand there with the pointer elsewhere.
+ */
+export function quietTooltip(marker: Marker, selected: () => boolean = () => false): void {
+  marker.on("popupopen", () => marker.closeTooltip());
+  marker.on("tooltipopen", () => {
+    if (marker.isPopupOpen() || selected()) marker.closeTooltip();
+  });
+}
+
+/**
  * Keyboard handling of marker popups on one map. Enter on a focused marker opens its popup (Leaflet turns it into a
  * click). Focus then moves into the popup so its links can be reached and a screen reader reads it; Escape closes it
  * from the marker or from inside it (Leaflet listens for keys only while the map container itself has focus), and

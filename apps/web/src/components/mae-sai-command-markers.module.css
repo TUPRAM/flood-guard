@@ -5,16 +5,41 @@
 .pinIcon { display: grid; place-items: center; border: 0; border-radius: 50%; background: none; }
 .pinIcon:focus-visible { outline: 3px solid var(--c-focus); outline-offset: -3px; }
 .pin { position: relative; display: grid; place-items: center; width: 44px; height: 44px; }
-/* A tight dark edge and a short shadow: the sign stays crisp on pale ground and on water. */
-.pin svg { display: block; overflow: visible; filter: drop-shadow(0 0 .6px rgb(12 39 64 / 70%)) drop-shadow(0 1px 1.2px rgb(12 39 64 / 26%)); }
+/* The edge of a sign is drawn in the SVG itself (a soft dark line under its white casing), not with a blur filter, so
+   it stays crisp on a 1x screen. */
+.pin svg { display: block; overflow: visible; shape-rendering: geometricPrecision; }
 .pin svg text { font-family: var(--c-font-head); font-weight: 700; }
-/* The line under an exercise marker: the callsign once assigned, and the waiting clock in replay hours. */
-.pinLine { position: absolute; top: calc(50% + var(--half, 13px) + 3px); left: 50%; display: inline-flex; align-items: center; gap: 3px; padding: 0 4px; border: 1px solid #12262d; border-radius: 3px; background: #ffffff; color: #12262d; font-family: var(--c-font); font-size: 11px; font-weight: 600; line-height: 14px; white-space: nowrap; transform: translateX(-50%); pointer-events: none; }
+/* A marker that stands beside its point: the thin line and the dot that say where the point is, under the sign. */
+.pin svg.leader { position: absolute; inset: 0; pointer-events: none; }
+/* The line under an exercise marker: the amber exercise tag first, then the callsign once assigned and the waiting
+   clock in replay hours. The tag is always there, so the marker says "invented" on any photo of the map. */
+.pinLine { position: absolute; top: calc(50% + var(--half, 13px) + 3px); left: 50%; display: inline-flex; align-items: stretch; overflow: hidden; border: 1px solid #12262d; border-radius: 4px; background: #ffffff; color: #12262d; font-family: var(--c-font); font-size: 11px; font-weight: 600; line-height: 14px; white-space: nowrap; transform: translateX(-50%); pointer-events: none; box-shadow: 0 0 0 1px rgb(255 255 255 / 85%); }
 .pinLine:lang(th) { line-height: 16px; }
-.pinLine:empty { display: none; }
-.pinLine svg { filter: none; }
+.pinLine b { padding: 0 3.5px; background: var(--c-exercise); color: #1c2733; font-weight: 700; letter-spacing: .03em; }
+.pinLine span { padding: 0 4px; border-left: 1px solid #12262d; }
+.pinLine span:empty { display: none; }
+.pinLine[data-state="done"] b, .pinLine[data-state="dropped"] b { background: #e7ebee; }
 /* The selected item wears the ring of every selected thing on the map: dark, over a white casing. */
 .selectedPin .pin::before { content: ""; position: absolute; inset: -1px; border: 2.4px solid #0c2740; border-radius: 50%; box-shadow: 0 0 0 2.5px rgb(255 255 255 / 92%), inset 0 0 0 1.5px rgb(255 255 255 / 92%); pointer-events: none; }
+
+/* --- A count mark of the district zoom: two pills that stand above their point. The 2024 place records are the
+   white pill with the bubble of a place record; the invented items are the dark pill behind the amber "EX" tag, with
+   "!!" and that count in the life-at-risk colour. The two counts are never added. ------------------------------ */
+.clusterIcon { border: 0; background: none; }
+.clusterIcon:focus-visible { outline: none; }
+.cluster { position: absolute; left: 0; bottom: 14px; display: grid; justify-items: center; gap: 3px; transform: translateX(-50%); color: #12262d; font-family: var(--c-font); font-size: 12px; font-weight: 700; line-height: 1; white-space: nowrap; cursor: pointer; }
+/* The mark is 20 to 43 px tall to the eye and at least 44 px to the finger. */
+.cluster::after { content: ""; position: absolute; top: 50%; left: 50%; width: max(100%, 44px); height: max(100%, 44px); transform: translate(-50%, -50%); }
+.clusterIcon:focus-visible .cluster { outline: 3px solid var(--c-focus); outline-offset: 4px; border-radius: 12px; }
+.clusterRecords, .clusterItems { box-sizing: border-box; display: inline-flex; align-items: center; gap: 3px; height: 20px; border: 1.5px solid #12262d; border-radius: 10px; box-shadow: 0 0 0 2px #ffffff, 0 0 0 2.75px rgb(12 39 64 / 28%); }
+.clusterRecords { padding: 0 7px 0 5px; background: #ffffff; }
+.clusterRecords svg { display: block; fill: none; stroke: #12262d; stroke-width: 2.4; stroke-linejoin: round; }
+.clusterItems { overflow: hidden; padding: 0 7px 0 0; gap: 5px; background: #12262d; color: #ffffff; }
+.clusterItems b { align-self: stretch; display: grid; place-items: center; padding: 0 4px 0 6px; background: var(--c-exercise); color: #1c2733; font-size: 11px; letter-spacing: .03em; }
+.clusterItems i { align-self: stretch; display: grid; place-items: center; margin-right: -7px; padding: 0 7px 0 5px; background: #d55e00; color: #ffffff; font-size: 11px; font-style: normal; }
+/* The same mark as a sample in the legend. */
+.cluster[data-legend-cluster] { position: static; transform: none; cursor: default; }
+.cluster[data-legend-cluster]::after { content: none; }
 
 /* The sign of the reports saved on this device, above a subdistrict's name; "no reports received" below it. */
 .signIcon { border: 0; background: none; }
@@ -27,8 +52,15 @@
 .signIcon[data-selected="true"] .deviceSign { border-style: solid; border-width: 1.5px; }
 .noReports { position: absolute; left: 0; top: 21px; padding: 0 5px; border: 1px dotted #7b888d; border-radius: 3px; background: rgb(255 255 255 / 84%); color: #4b5c64; font-family: var(--c-font); font-size: 11px; line-height: 15px; white-space: nowrap; transform: translateX(-50%); pointer-events: none; }
 .noReports:lang(th) { line-height: 17px; }
+/* At the district zoom: a small struck-through speech bubble under the name. */
+.noReportsMark { position: absolute; left: 0; top: 16px; display: grid; place-items: center; width: 18px; height: 18px; transform: translateX(-50%); pointer-events: none; }
+.noReportsGlyph { display: block; overflow: visible; }
+.noReportsGlyph [data-part="bubble"] { fill: rgb(255 255 255 / 92%); stroke: #4b5c64; stroke-width: 1.9; stroke-linejoin: round; }
+.noReportsGlyph [data-part="casing"] { fill: none; stroke: #ffffff; stroke-width: 5; stroke-linecap: round; }
+.noReportsGlyph [data-part="slash"] { fill: none; stroke: #4b5c64; stroke-width: 2.1; stroke-linecap: round; }
+.srOnly { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
 /* A small map (below 900 px, out of this week's scope) has no room for the mark under every name. */
-@media (max-width: 899px) { .noReports { display: none; } }
+@media (max-width: 899px) { .noReports, .noReportsMark { display: none; } }
 
 /* --- Popups: text nodes only, at most six lines for an invented item or a device sign, then two actions ---- */
 .itemPopup { display: grid; gap: 3px; min-width: 232px; font-family: var(--c-font); font-size: 12px; line-height: 1.45; color: var(--c-ink); }
@@ -50,6 +82,9 @@
 /* A place record keeps the replay's own popup: one section per record, with its source. */
 .recordSection { display: grid; gap: .2rem; }
 .recordSection + .recordSection { margin-top: .45rem; padding-top: .45rem; border-top: 1px solid #e3e8f1; }
+/* The link to the source is as tall as a finger needs. */
+.recordSection p:has(> a) { margin: 0 !important; }
+.recordSection a { box-sizing: border-box; display: block; min-height: 44px; padding: 6px 0; }
 
 /* --- Glyphs of the legend: the same drawings as the markers ---------------------------------------------- */
 .glyph { display: block; margin: 0 auto; overflow: visible; }

@@ -23,19 +23,25 @@ import {
   exerciseArrivals,
   exerciseCounts,
   ExerciseFileError,
+  exerciseMarkerBox,
   exerciseMarkerSpec,
   exerciseUrgency,
   hasAddressOrName,
   hasPhonePattern,
   isOpenStatus,
+  ITEM_MARKER_OFFSETS,
   lifeAtRiskHours,
   modelDepthAt,
   mostUrgentItem,
   parseExerciseFile,
+  placeItemMarkers,
+  recordBubbleBox,
   tambonsWithoutReports,
   waitingHours,
   type ExerciseHandling,
   type ExerciseKind,
+  type ExerciseUrgency,
+  type MarkerBox,
 } from "./flood-timeline-command-incidents";
 import { describeWordingFindings, findWordingViolations } from "./replay-wording-lint";
 
@@ -88,6 +94,13 @@ describe("The served exercise file", () => {
     expect(exerciseUrgency(["no_food_for_a_day", "on_roof"])).toBe("life_at_risk");
     expect(exerciseUrgency([])).toBe("information");
     expect(file.rule.en).toContain("never by the model");
+    // "Life at risk" is about people in the water, not about deep water under people who are dry upstairs: an item
+    // with water above head height outside and people on an upper floor follows the rule at "urgent" (EX-07).
+    expect(file.rule.en).toContain("people standing in water at chest height or above");
+    expect(file.rule.th).toContain("มีคนยืนอยู่ในน้ำที่ลึกระดับอกขึ้นไป");
+    const dryUpstairs = file.items.find((item) => item.id === "EX-07")!;
+    expect(dryUpstairs).toMatchObject({ urgency: "urgent", depthBand: "over_head", facts: ["no_food_for_a_day"] });
+    expect(dryUpstairs.text.en).toContain("on an upper floor");
     expect(file.rule.th).toContain("แบบจำลองไม่ได้เป็นผู้กำหนด");
   });
 
@@ -110,6 +123,11 @@ describe("The served exercise file", () => {
       expect(hasAddressOrName(text), text).toBe(false);
     }
     expect(hasPhonePattern("call 081-234-5678")).toBe(true);
+    // The line is at seven digits: six in a run are a count or a code, seven are refused.
+    expect(hasPhonePattern("ref 123456")).toBe(false);
+    expect(hasPhonePattern("ref 1234567")).toBe(true);
+    expect(hasPhonePattern("ref 123 456")).toBe(false);
+    expect(hasPhonePattern("ref 123 4567")).toBe(true);
     expect(hasPhonePattern("โทร 0812345678")).toBe(true);
     expect(hasPhonePattern("+66 81 234 5678")).toBe(true);
     expect(hasPhonePattern("(053) 731 111")).toBe(true);
@@ -219,7 +237,9 @@ describe("Exercise markers: every state", () => {
           expect(spec.outline).toBe(!open ? "none" : status === "new" ? "dashed" : "solid");
           expect(spec.fill).toBe(open ? EXERCISE_COLOURS[urgency] : EXERCISE_COLOURS.closed);
           expect(spec.showsCallsign).toBe(status === "assigned");
-          expect(spec.showsWaiting).toBe(open);
+          // The waiting clock is on the map for an open item that is urgent or at life at risk; an item of
+          // information keeps its clock in the popup and the inspector.
+          expect(spec.showsWaiting).toBe(open && urgency !== "information");
           expect(spec.halo).toBe(open && urgency === "life_at_risk");
           expect(spec.shape).toBe(kind === "call" ? "octagon" : "square");
         }
@@ -231,32 +251,78 @@ describe("Exercise markers: every state", () => {
 });
 
 describe("Clusters of the district zoom", () => {
-  it("merges markers within 40 px of a group's first marker, and counts the life-at-risk items it holds", () => {
+  it("merges markers within 40 px of a group's first marker, and counts place records and invented items apart", () => {
     const clusters = clusterMarkers([
-      { x: 100, y: 100, count: 3, lifeAtRisk: false },
-      { x: 120, y: 110, count: 1, lifeAtRisk: true },
-      { x: 139, y: 100, count: 1, lifeAtRisk: false },
-      { x: 190, y: 100, count: 1, lifeAtRisk: false },
-      { x: 400, y: 300, count: 2, lifeAtRisk: true },
+      { x: 100, y: 100, records: 3, items: 0, lifeAtRisk: false },
+      { x: 120, y: 110, records: 0, items: 1, lifeAtRisk: true },
+      { x: 139, y: 100, records: 0, items: 1, lifeAtRisk: false },
+      { x: 190, y: 100, records: 1, items: 0, lifeAtRisk: false },
+      { x: 400, y: 300, records: 0, items: 1, lifeAtRisk: true },
     ]);
     expect(CLUSTER_RADIUS_PX).toBe(40);
     expect(clusters.map((cluster) => cluster.members)).toEqual([[0, 1, 2], [3], [4]]);
-    expect(clusters[0]).toMatchObject({ total: 5, lifeAtRisk: 1 });
+    // The two kinds are never added (owner decision 5): a cluster has no total.
+    expect(clusters[0]).toMatchObject({ records: 3, items: 2, lifeAtRisk: 1 });
+    expect(clusters[0]).not.toHaveProperty("total");
     expect(clusters[0].x).toBeCloseTo((100 + 120 + 139) / 3);
-    expect(clusters[2]).toMatchObject({ total: 2, lifeAtRisk: 1, x: 400, y: 300 });
+    expect(clusters[1]).toMatchObject({ records: 1, items: 0, lifeAtRisk: 0 });
+    expect(clusters[2]).toMatchObject({ records: 0, items: 1, lifeAtRisk: 1, x: 400, y: 300 });
     expect(clusterMarkers([])).toEqual([]);
   });
 
   it("merges two groups whose middles are within 40 px, so two count marks never stand on each other", () => {
     // The fourth marker is 41 px from the first, so it starts a group; that group's middle is 21 px from the first group's.
     const clusters = clusterMarkers([
-      { x: 100, y: 100, count: 3, lifeAtRisk: false },
-      { x: 120, y: 110, count: 1, lifeAtRisk: true },
-      { x: 139, y: 100, count: 1, lifeAtRisk: false },
-      { x: 141, y: 100, count: 1, lifeAtRisk: true },
+      { x: 100, y: 100, records: 3, items: 0, lifeAtRisk: false },
+      { x: 120, y: 110, records: 0, items: 1, lifeAtRisk: true },
+      { x: 139, y: 100, records: 0, items: 1, lifeAtRisk: false },
+      { x: 141, y: 100, records: 0, items: 1, lifeAtRisk: true },
     ]);
     expect(clusters.map((cluster) => cluster.members)).toEqual([[0, 1, 2, 3]]);
-    expect(clusters[0]).toMatchObject({ total: 6, lifeAtRisk: 2 });
+    expect(clusters[0]).toMatchObject({ records: 3, items: 3, lifeAtRisk: 2 });
+  });
+});
+
+describe("Exercise markers of the town zoom: none covers a place record or another item", () => {
+  const overlap = (a: MarkerBox, b: MarkerBox): boolean => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+
+  it("leaves a marker on its point when nothing is in the way", () => {
+    expect(placeItemMarkers([], [{ x: 100, y: 100, size: 30, lineWidth: 60 }])).toEqual([{ dx: 0, dy: 0 }]);
+    expect(placeItemMarkers([recordBubbleBox(400, 400)], [{ x: 100, y: 100, size: 36, lineWidth: 60 }])).toEqual([{ dx: 0, dy: 0 }]);
+    expect(ITEM_MARKER_OFFSETS[0]).toEqual([0, 0]);
+  });
+
+  it("moves a marker off a place-record bubble, and the second of two markers off the first", () => {
+    const bubble = recordBubbleBox(100, 100);
+    const items = [{ x: 104, y: 92, size: 30, lineWidth: 60 }, { x: 110, y: 96, size: 26, lineWidth: 26 }];
+    const placed = placeItemMarkers([bubble], items);
+    const boxes = items.map((item, index) => exerciseMarkerBox(item.x + placed[index].dx, item.y + placed[index].dy, item.size, item.lineWidth));
+    expect(placed[0]).not.toEqual({ dx: 0, dy: 0 });
+    for (const box of boxes) expect(overlap(box, bubble)).toBe(false);
+    expect(overlap(boxes[0], boxes[1])).toBe(false);
+    // The first in the list is placed first: the caller lists the most urgent first, so those keep the nearer place.
+    expect(Math.hypot(placed[0].dx, placed[0].dy)).toBeLessThanOrEqual(Math.hypot(placed[1].dx, placed[1].dy));
+    for (const shift of placed) expect(ITEM_MARKER_OFFSETS.some(([dx, dy]) => dx === shift.dx && dy === shift.dy)).toBe(true);
+  });
+
+  it("depends on distances only, so a pan of the map moves no marker", () => {
+    const at = (shift: number) => placeItemMarkers([recordBubbleBox(100 + shift, 100 + shift)], [{ x: 104 + shift, y: 92 + shift, size: 30, lineWidth: 60 }, { x: 150 + shift, y: 96 + shift, size: 26, lineWidth: 26 }]);
+    expect(at(0)).toEqual(at(731));
+  });
+
+  it("takes the place where it covers least when every place is taken", () => {
+    // A wall of obstacles around the point: every offset collides, and the marker still gets a place of the list.
+    const wall: MarkerBox[] = [{ left: -400, top: -400, right: 600, bottom: 600 }];
+    const [shift] = placeItemMarkers(wall, [{ x: 100, y: 100, size: 30, lineWidth: 60 }]);
+    expect(ITEM_MARKER_OFFSETS.some(([dx, dy]) => dx === shift.dx && dy === shift.dy)).toBe(true);
+  });
+
+  it("keeps the real place records above the invented items of information in the drawing order", () => {
+    // The layer draws an item at 3000 + 100 per urgency step (information 3100, urgent 3200, life at risk 3300) and a
+    // place record at 3150: a real 2024 record is never under an invented item of information.
+    const rank = (urgency: ExerciseUrgency) => 3000 + (3 - EXERCISE_URGENCIES.indexOf(urgency)) * 100;
+    expect(rank("information")).toBeLessThan(3150);
+    expect(rank("urgent")).toBeGreaterThan(3150);
   });
 });
 

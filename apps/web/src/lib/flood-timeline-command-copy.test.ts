@@ -157,7 +157,7 @@ function builtLines(language: Language): string[] {
 describe("Command exercise copy", () => {
   it("carries the banner the owner approved on 5 Oct 2026, word for word, and its Thai rendering", () => {
     expect(commandBannerLine("en")).toBe("Exercise replay · Mae Sai, September 2024 · reconstructed, not real-time · not an official warning");
-    expect(commandBannerLine("th")).toBe("ฝึกซ้อมย้อนดูเหตุการณ์ · แม่สาย กันยายน 2567 (2024) · จำลองย้อนหลัง ไม่ใช่ข้อมูลเรียลไทม์ · ไม่ใช่คำเตือนอย่างเป็นทางการ");
+    expect(commandBannerLine("th")).toBe("ฝึกซ้อมย้อนดูเหตุการณ์ · แม่สาย กันยายน 2567 (2024) · จำลองย้อนหลัง ไม่ใช่ข้อมูลเรียลไทม์ · ไม่ใช่ประกาศเตือนภัยอย่างเป็นทางการ");
     expect(commandBannerParts("en")).toHaveLength(4);
     // The watermark shows both languages at once, whatever the page language.
     expect(COMMAND_BANNER.watermark.en).toBe(COMMAND_BANNER.watermark.th);
@@ -289,7 +289,7 @@ describe("Command figures wording", () => {
 
   it("keeps counted exercise items as plain digits", () => {
     expect([commandOpenItems(3, "en"), commandLifeAtRisk(1, "en")]).toEqual(["3 open", "1 life at risk"]);
-    expect([commandOpenItems(3, "th"), commandLifeAtRisk(1, "th")]).toEqual(["เปิดอยู่ 3", "เสี่ยงต่อชีวิต 1"]);
+    expect([commandOpenItems(3, "th"), commandLifeAtRisk(1, "th")]).toEqual(["ยังไม่ปิด 3", "เสี่ยงต่อชีวิต 1"]);
   });
 
   it("states what the model shows at the located place records, from the replay data's own counts", () => {
@@ -319,7 +319,7 @@ describe("Command figures wording", () => {
     });
     expect(COMMAND_DRAWER.rounding.en).toContain("printed with its sign and no tilde");
     expect(COMMAND_DRAWER.rounding.th).toContain("ไม่มีเครื่องหมาย ~");
-    expect(line(44, "th").text).toBe("ตั้งแต่ 19:00 น.: +1,400 สูญเสียการเข้าถึง · +1,500 ในน้ำ · +20 กม. สัญจรไม่ได้ · ถนนที่เริ่มสัญจรไม่ได้: ถนนเลี่ยงเมืองแม่สาย ถนนพหลโยธิน และอีก 1 สาย");
+    expect(line(44, "th").text).toBe("ตั้งแต่ 19:00 น.: สูญเสียการเข้าถึง +1,400 · ในน้ำ +1,500 · สัญจรไม่ได้ +20 กม. · ถนนที่เริ่มสัญจรไม่ได้: ถนนเลี่ยงเมืองแม่สาย ถนนพหลโยธิน และอีก 1 สาย");
     // An hour later the same roads lose more length: they are no longer named as newly impassable.
     expect(line(45, "en").roads).toBeNull();
     expect(line(85, "en").text).toBe("Since 12:00: −150 lost access · −180 in water · −4 km impassable");
@@ -351,7 +351,7 @@ describe("Command lane tags", () => {
     expect(COMMAND_LANE_ORDER).toEqual(["model", "observed", "reported", "calibration", "scenario", "context", "exercise", "device"]);
     expect(Object.keys(COMMAND_LANES).sort()).toEqual([...COMMAND_LANE_ORDER].sort());
     expect(COMMAND_LANE_ORDER.map((lane) => commandLaneTag(lane, "en"))).toEqual(["Model", "Observed", "Reported", "Calibration", "Scenario", "Context", "Exercise · invented", "This device"]);
-    expect(COMMAND_LANE_ORDER.map((lane) => commandLaneTag(lane, "th"))).toEqual(["แบบจำลอง", "ข้อมูลที่สังเกตได้", "ตามรายงาน", "ใช้ปรับแบบจำลอง", "สถานการณ์จำลอง", "ข้อมูลประกอบ", "ฝึกซ้อม · สมมุติขึ้น", "อุปกรณ์เครื่องนี้"]);
+    expect(COMMAND_LANE_ORDER.map((lane) => commandLaneTag(lane, "th"))).toEqual(["แบบจำลอง", "ข้อมูลสังเกตการณ์", "ตามรายงาน", "ใช้ปรับแบบจำลอง", "สถานการณ์จำลอง", "ข้อมูลประกอบ", "ฝึกซ้อม · สมมุติขึ้น", "อุปกรณ์เครื่องนี้"]);
     // A tag is short enough for a chip; its sentence is one or two short sentences.
     for (const lane of COMMAND_LANE_ORDER) {
       for (const language of LANGUAGES) {
@@ -437,7 +437,7 @@ describe("Command shell wording", () => {
   });
 
   it("lists the keys of the page in the help sheet and names the official hotlines", () => {
-    expect(COMMAND_HELP_KEYS.map((row) => row.keys.join(" "))).toEqual(["Space", "← →", "Shift ← →", "[ ]", "F", "?", "Esc"]);
+    expect(COMMAND_HELP_KEYS.map((row) => row.keys.join(" "))).toEqual(["Space", "← →", "Shift ← →", "[ ]", "F", "?", "U", "Esc"]);
     for (const row of COMMAND_HELP_KEYS) expect(COMMAND_HELP[row.text], row.text).toBeDefined();
     for (const number of ["1784", "1669", "191"]) {
       expect(COMMAND_HELP.hotlines.en).toContain(number);
@@ -479,8 +479,9 @@ describe("Command Thai wording beside its English twin", () => {
   it("keeps every denial and every unit of the English text", () => {
     // The page is not real-time and not an official warning, in the words the shared wording rules allow.
     expect(COMMAND_BANNER.nature.th).toContain("ไม่ใช่ข้อมูลเรียลไทม์");
-    expect(COMMAND_BANNER.notWarning.th).toBe("ไม่ใช่คำเตือนอย่างเป็นทางการ");
-    expect(COMMAND_DRAWER.notWarning.th).toContain("ไม่ใช่คำเตือนอย่างเป็นทางการ และไม่ใช่ระบบสั่งการ");
+    // The Thai denial names the agencies' own term for an official notice of danger.
+    expect(COMMAND_BANNER.notWarning.th).toBe("ไม่ใช่ประกาศเตือนภัยอย่างเป็นทางการ");
+    expect(COMMAND_DRAWER.notWarning.th).toContain("ไม่ใช่ประกาศเตือนภัยอย่างเป็นทางการ และไม่ใช่ระบบสั่งการ");
     // The access figure is not a count of people stranded.
     expect(COMMAND_FIGURES.lostAccessMeaning.en).toContain("It is not a count of people stranded.");
     expect(COMMAND_FIGURES.lostAccessMeaning.th).toContain("ตัวเลขนี้ไม่ใช่จำนวนผู้ติดค้าง");

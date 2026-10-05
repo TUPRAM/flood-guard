@@ -16,8 +16,8 @@
     "life_at_risk": ["on_roof", "chest_or_above_with_people"],
     "urgent": ["infant_or_bedridden", "no_food_for_a_day"],
     "text": {
-      "en": "Urgency is set by the author of an item from the facts it states, never by the model. Life at risk: people on a roof, or water at chest height or above with people present. Urgent: an infant or a bedridden person, or no food for a day. Anything else is information.",
-      "th": "ผู้เขียนรายการกำหนดระดับความเร่งด่วนจากข้อเท็จจริงที่รายการระบุ แบบจำลองไม่ได้เป็นผู้กำหนด เสี่ยงต่อชีวิต: มีคนอยู่บนหลังคา หรือน้ำลึกระดับอกขึ้นไปและมีคนอยู่ในจุดนั้น เร่งด่วน: มีเด็กทารกหรือผู้ป่วยติดเตียง หรือขาดอาหารมาแล้ว 1 วัน นอกจากนั้นเป็นข้อมูลทั่วไป"
+      "en": "Urgency is set by the author of an item from the facts it states, never by the model. Life at risk: people on a roof, or people standing in water at chest height or above. Urgent: an infant or a bedridden person, or no food for a day. Anything else is information.",
+      "th": "ผู้เขียนรายการกำหนดระดับความเร่งด่วนจากข้อเท็จจริงที่รายการระบุ แบบจำลองไม่ได้เป็นผู้กำหนด เสี่ยงต่อชีวิต: มีคนอยู่บนหลังคา หรือมีคนยืนอยู่ในน้ำที่ลึกระดับอกขึ้นไป เร่งด่วน: มีเด็กทารกหรือผู้ป่วยติดเตียง หรือขาดอาหารมาแล้ว 1 วัน นอกจากนั้นเป็นข้อมูลทั่วไป"
     }
   },
   "items": [

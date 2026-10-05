@@ -275,10 +275,11 @@ describe("The brief of an invented item", () => {
     expect(th[1]).toBe("เหตุ: ขอความช่วยเหลือ (เสี่ยงต่อชีวิต) · น้ำสูงเกินศีรษะ");
     expect(th[2]).toBe("ที่: หมู่บ้านปิยะพร ต.แม่สาย (±400 ม.) 20.4345,99.8955");
     expect(th[3]).toBe("คน: 1–2 คน · ต้องการ: การอพยพ");
-    expect(th[4]).toMatch(/^เข้าถึง: แบบจำลองน้ำลึก ~1\.4 ม\. · ถนนที่น้ำต่ำกว่า 0\.3 ม\. ใกล้สุด (~[\d.]+|<10) (ม|กม)\. · ไม่ทราบความแรงกระแสน้ำ$/);
+    // Every modelled clause of the Thai line says that it is modelled, as the English line does: the brief leaves the device.
+    expect(th[4]).toMatch(/^เข้าถึง: แบบจำลองน้ำลึก ~1\.4 ม\. · ถนนที่น้ำต่ำกว่า 0\.3 ม\. ตามแบบจำลอง ใกล้สุด (~[\d.]+|<10) (ม|กม)\. · ไม่ทราบความแรงกระแสน้ำ$/);
     expect(th[5]).toMatch(/^ที่พักพิงใกล้สุด \(เส้นตรง\): .+ ~[\d.]+ (ม|กม)\.$/);
     expect(th[6]).toBe("เวลาในการย้อนดู: 12 ก.ย. 2567 (2024) · 12:00 น.");
-    expect(th[7]).toBe("ที่มา: รายการฝึกซ้อม (สมมุติขึ้น) · แบบจำลองความเชื่อมั่นต่ำ");
+    expect(th[7]).toBe("ที่มา: รายการฝึกซ้อม (สมมุติขึ้น) · แบบจำลอง ความเชื่อมั่นต่ำ");
     const en = itemBriefLines({ item: entry, tambon: tambonOf(entry), callsign: "BOAT-2", hour: PEAK, facts }, "en");
     expect(en[0]).toBe("[EXERCISE – not a real incident] EX-05 · team BOAT-2");
     expect(en[1]).toBe("What: Call for help (Life at risk) · water above head height");

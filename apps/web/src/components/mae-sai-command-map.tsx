@@ -19,7 +19,7 @@ import { FACTOR_LUT_SIZE, facilityWet, formatDateWithYear, lutEquals, paintDepth
 import { COMMAND_CREDITS, COMMAND_FIGURES, COMMAND_MAP, commandFacilityType, commandSiteGroupTitle, commandText } from "@/lib/flood-timeline-command-copy";
 import type { CommandHandRaster, CommandReplayData } from "@/lib/flood-timeline-command-data";
 import { COMMAND_GO } from "@/lib/flood-timeline-command-act-copy";
-import { feedDate, reportedSiteDate, reportedSiteHour } from "@/lib/flood-timeline-command-feed";
+import { reportedSiteDate, reportedSitePendingAt, reportedSiteSourcesAt } from "@/lib/flood-timeline-command-feed";
 import { CLUSTER_BELOW_ZOOM, modelDepthAt } from "@/lib/flood-timeline-command-incidents";
 import {
   areaBounds,
@@ -28,6 +28,8 @@ import {
   buildTwoToneFactorLut,
   buildTwoToneLut,
   cellsInMask,
+  COMMAND_ENVELOPE_RGBA,
+  COMMAND_WET_ROAD,
   commandRoadRank,
   commandRoadStyle,
   metresPerPixel,
@@ -49,7 +51,7 @@ import { clearRectPadding, panIntoRect, popupFitInRect, type ScreenRect } from "
 import act from "./mae-sai-command-act.module.css";
 import { STAGING_FLAG_PATH } from "./mae-sai-command-chrome";
 import { mountCommandMarkers, type CommandMarkerFrame, type CommandReportAction, type CommandReportSelection } from "./mae-sai-command-markers";
-import { createCanvasOverlay, keyboardPopups, MAP_POPUP_FRAME_CLASS, popupElement, tooltipElement, type PopupLine } from "./mae-sai-map-kit";
+import { createCanvasOverlay, keyboardPopups, MAP_POPUP_FRAME_CLASS, popupElement, quietTooltip, tooltipElement, type PopupLine } from "./mae-sai-map-kit";
 import styles from "./mae-sai-command-exercise.module.css";
 
 /** During playback the map repaints at most this often, unless the stage has moved by PAINT_STAGE_STEP_M (as on the Studio replay). */
@@ -128,13 +130,13 @@ const ROAD_STYLES: Record<"far" | "near", Record<CommandRoadRank, Record<Command
   far: {
     major: {
       dry: { color: "#98a3a4", weight: 1, opacity: 0.8, dashArray: undefined, lineCap: "butt" },
-      wet: { color: "#d98a1e", weight: 1.8, opacity: 1, dashArray: "5 4", lineCap: "butt" },
+      wet: { color: COMMAND_WET_ROAD, weight: 2.2, opacity: 1, dashArray: "5 4", lineCap: "butt" },
       impassable: { color: "#c62f24", weight: 2.2, opacity: 1, dashArray: undefined, lineCap: "butt" },
       unmodelled: { color: "#98a3a4", weight: 1.4, opacity: 1, dashArray: "1 5", lineCap: "butt" },
     },
     minor: {
       dry: { color: "#98a3a4", weight: 0.7, opacity: 0.7, dashArray: undefined, lineCap: "butt" },
-      wet: { color: "#d98a1e", weight: 1.2, opacity: 1, dashArray: "4 4", lineCap: "butt" },
+      wet: { color: COMMAND_WET_ROAD, weight: 1.6, opacity: 1, dashArray: "4 4", lineCap: "butt" },
       impassable: { color: "#c62f24", weight: 1.2, opacity: 0.95, dashArray: undefined, lineCap: "butt" },
       unmodelled: { color: "#98a3a4", weight: 1.1, opacity: 1, dashArray: "1 5", lineCap: "butt" },
     },
@@ -142,19 +144,22 @@ const ROAD_STYLES: Record<"far" | "near", Record<CommandRoadRank, Record<Command
   near: {
     major: {
       dry: { color: "#98a3a4", weight: 1.5, opacity: 0.85, dashArray: undefined, lineCap: "butt" },
-      wet: { color: "#d98a1e", weight: 2.6, opacity: 1, dashArray: "7 5", lineCap: "butt" },
+      wet: { color: COMMAND_WET_ROAD, weight: 2.6, opacity: 1, dashArray: "7 5", lineCap: "butt" },
       impassable: { color: "#c62f24", weight: 3.2, opacity: 1, dashArray: undefined, lineCap: "butt" },
       unmodelled: { color: "#98a3a4", weight: 1.8, opacity: 1, dashArray: "1 6", lineCap: "butt" },
     },
     minor: {
       dry: { color: "#98a3a4", weight: 1.1, opacity: 0.8, dashArray: undefined, lineCap: "butt" },
-      wet: { color: "#d98a1e", weight: 1.8, opacity: 1, dashArray: "6 5", lineCap: "butt" },
+      wet: { color: COMMAND_WET_ROAD, weight: 2.2, opacity: 1, dashArray: "6 5", lineCap: "butt" },
       impassable: { color: "#c62f24", weight: 2.1, opacity: 1, dashArray: undefined, lineCap: "butt" },
       unmodelled: { color: "#98a3a4", weight: 1.5, opacity: 1, dashArray: "1 6", lineCap: "butt" },
     },
   },
 };
-/** A major road that is impassable lies on a thin white casing, so its red line keeps an edge over the water. */
+/**
+ * A road that is wet or impassable lies on a thin white casing, so its line keeps an edge over the water: a wet road
+ * is by definition in the pale water tone, and amber on that blue would hardly show without it.
+ */
 const CASING_EXTRA_PX = 1.5;
 /** From this zoom on the roads take the heavier line weights. */
 const NEAR_ZOOM = 13;
@@ -171,11 +176,16 @@ const DIAMOND_PATH = "M12 2.5l9.5 9.5-9.5 9.5L2.5 12z";
  * through; in trainee mode, one no source has reported yet at the replay hour is a dashed outline (by its class).
  */
 const starIcon = (size: number, wet: boolean): string =>
-  `<svg viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true" focusable="false"><path d="${STAR_PATH}"/>${wet ? '<path data-part="slash" d="M3.5 21 20.5 3"/>' : ""}</svg>`;
-const diamondIcon = (size: number): string => `<svg viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true" focusable="false"><path d="${DIAMOND_PATH}"/></svg>`;
+  `<svg viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true" focusable="false"><path data-part="edge" d="${STAR_PATH}"/><path data-part="sign" d="${STAR_PATH}"/>${wet ? '<path data-part="slash" d="M3.5 21 20.5 3"/>' : ""}</svg>`;
+const diamondIcon = (size: number): string => `<svg viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true" focusable="false"><path data-part="edge" d="${DIAMOND_PATH}"/><path data-part="sign" d="${DIAMOND_PATH}"/></svg>`;
 /** Below this zoom (the district view) the signs of the reported sites are small, and sites that would cover each other share one count. */
 const SITE_FAR_BELOW_ZOOM = 12.5;
-const SITE_MERGE_PX = 24;
+/** Every sign has a 44 px target, so signs closer than this would stack: they share one count. */
+const SITE_MERGE_PX = 36;
+/** From this zoom on the edge of the modelled water is softened a little, so the 30 m cells do not read as hard squares. */
+const WATER_SOFT_FROM_ZOOM = 14;
+/** Room kept around a marker that takes the keyboard focus, so its tooltip (up to 260 px wide, above it) clears the panels. */
+const FOCUS_ROOM_PX = { side: 136, above: 96, below: 40 } as const;
 
 /** "15 Sep 2024", or "15 Sep 2024 or earlier" for a bound; the text itself when it is not a date. */
 function firstUseText(value: string, language: Language): string {
@@ -436,7 +446,9 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
       // --- The veil outside the eight subdistricts: what lies under it is not modelled.
       const veil = veilRings(geometries);
       if (veil.length > 0) {
-        L.polygon(veil, { pane: "fg-veil", renderer: L.svg({ pane: "fg-veil", padding: 0.6 }), stroke: false, fillColor: "#c9d1da", fillOpacity: 0.5, interactive: false }).addTo(map);
+        // A light veil: the district reads as a lit sheet on a pale ground, and the land outside stays readable.
+        L.polygon(veil, { pane: "fg-veil", renderer: L.svg({ pane: "fg-veil", padding: 0.6 }), stroke: false, fillColor: "#dfe5ec", fillOpacity: 0.42, interactive: false }).addTo(map);
+        map.getPane("fg-veil")?.classList.add(styles.veilPane);
       }
       const labelIcon = (content: HTMLElement) => L.divIcon({ className: styles.labelIcon, html: content, iconSize: [0, 0] });
       const outside = outsideLabelPoint(geometries, m.bounds);
@@ -474,11 +486,11 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
           roads.push({ layer: layer as Path, props, style: props.m ? "dry" : "unmodelled", rank: commandRoadRank(props), casing: null });
         },
       } as GeoJSONOptions & { renderer: Renderer });
-      // The white casing of a major road, drawn only while the road is impassable. The casings go on the map first,
-      // so each lies under its road.
+      // The white casing of a road, drawn only while the road is wet (any road) or impassable (a major road). The
+      // casings go on the map first, so each lies under its road.
       const casingGroup = L.layerGroup();
       for (const entry of roads) {
-        if (entry.rank !== "major" || !entry.props.m) continue;
+        if (!entry.props.m) continue;
         entry.casing = L.polyline((entry.layer as Polyline).getLatLngs() as LatLng[], { renderer: roadRenderer, interactive: false, stroke: false, color: "#ffffff", opacity: 0.92, weight: 0, lineCap: "butt" });
         casingGroup.addLayer(entry.casing);
       }
@@ -489,7 +501,7 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
           const style = commandRoadStyle(entry.props, stageNow, m.impassable_depth_m);
           if (!all && style === entry.style) continue;
           const options = ROAD_STYLES[roadScale][entry.rank][style];
-          entry.casing?.setStyle({ stroke: style === "impassable", weight: (options.weight ?? 0) + CASING_EXTRA_PX });
+          entry.casing?.setStyle({ stroke: style === "wet" || (style === "impassable" && entry.rank === "major"), weight: (options.weight ?? 0) + CASING_EXTRA_PX });
           entry.layer.setStyle(options);
           // Wet and impassable pieces are drawn over the dry ones, each over its own casing.
           if (style !== entry.style && (style === "wet" || style === "impassable")) {
@@ -526,7 +538,13 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
 
       // --- The shelters reported in use in 2024 (stars) and the district command centre (diamond).
       let openPopups = 0;
-      map.on("popupopen", () => { openPopups += 1; });
+      map.on("popupopen", (event) => {
+        openPopups += 1;
+        // Leaflet names the close control in English: it takes the page's language, like every other control.
+        const close = event.popup.getElement()?.querySelector<HTMLElement>(".leaflet-popup-close-button");
+        close?.setAttribute("aria-label", text(COMMAND_MAP.popupClose));
+        close?.setAttribute("title", text(COMMAND_MAP.popupClose));
+      });
       map.on("popupclose", () => { openPopups = Math.max(0, openPopups - 1); });
       // Escape closes an open popup and does nothing else on that key press: the page's own Escape (clearing the
       // selection, leaving focus mode) waits for the next one.
@@ -540,14 +558,19 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
         if (!target?.classList.contains("leaflet-marker-icon") || !target.matches(":focus-visible")) return;
         const box = container.getBoundingClientRect();
         const rect = target.getBoundingClientRect();
-        const pan = panIntoRect({ x: rect.left + rect.width / 2 - box.left, y: rect.top + rect.height / 2 - box.top }, clearRef.current(), 28);
+        // The marker is brought well inside the clear rectangle, with room for its tooltip above it: a marker that
+        // only just clears a panel would have its tooltip cut by it. Leaflet's own pan on focus is switched off on
+        // every marker: it stops at the edge of the window, under the panels.
+        const clear = clearRef.current();
+        const room: ScreenRect = { left: clear.left + FOCUS_ROOM_PX.side, top: clear.top + FOCUS_ROOM_PX.above, right: clear.right - FOCUS_ROOM_PX.side, bottom: clear.bottom - FOCUS_ROOM_PX.below };
+        const pan = panIntoRect({ x: rect.left + rect.width / 2 - box.left, y: rect.top + rect.height / 2 - box.top }, room, 0);
         if (pan.x !== 0 || pan.y !== 0) map.panBy([pan.x, pan.y], { animate: !motionRef.current });
       };
       container.addEventListener("focusin", onMarkerFocus);
       removeFocusPan = () => container.removeEventListener("focusin", onMarkerFocus);
       // In trainee mode a site is known from the day of its first dated 2024 source: before it a shelter is a dashed
       // outline and the command centre is not on the map.
-      const siteMarkers: { marker: Marker; site: ReportedShelter; command: boolean; wet: boolean; fromHour: number | null; pending: boolean; merged: boolean }[] = [];
+      const siteMarkers: { marker: Marker; site: ReportedShelter; command: boolean; wet: boolean; pending: boolean; merged: boolean }[] = [];
       const sitePending = (site: ReportedShelter) => siteMarkers.find((entry) => entry.site === site)?.pending ?? false;
       const siteTitle = (site: ReportedShelter, command: boolean) => `${text(command ? COMMAND_MAP.commandCentre : COMMAND_MAP.shelter)}: ${thai() ? site.name_th : site.name_en}`;
       const sitePopup = (site: ReportedShelter, command: boolean) => {
@@ -578,22 +601,21 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
           ...(command ? [] : [{ text: text(countedInReportedSet(site) ? COMMAND_MAP.counted : COMMAND_MAP.notCounted), tone: "muted" as const }]),
         ];
         // In trainee mode the sources listed are those dated by the replay day: a later article is a later fact.
-        const today = trainee && reportFrame ? feedDate(reportFrame.hour) : null;
-        const sources = today === null ? site.sources : site.sources.filter((source) => /^\d{4}-\d{2}-\d{2}$/.test(source.date) && source.date <= today);
+        const sources = reportFrame ? reportedSiteSourcesAt(site.sources, reportFrame.hour, reportFrame.mode) : site.sources;
         return popupElement(lines, sources.map((source) => ({ href: source.url, text: `${source.publisher}, ${source.date}: ${source.title}` })));
       };
-      // From the town zoom on a site is a 22 px sign in a 44 px target. At the district zoom the signs are smaller
-      // (14 px in 28 px), and the command centre stands a little above its point, so it does not sit on a star.
+      // A site is a sign in a 44 px target: 22 px from the town zoom on, 14 px at the district zoom, where the
+      // command centre stands a little above its point, so it does not sit on a star.
       const siteFar = () => map.getZoom() < SITE_FAR_BELOW_ZOOM;
       const siteIcon = (command: boolean, wet: boolean, pending = false, far = false) => {
-        const box = far ? 28 : 44;
+        // The target is 44 px at every zoom; only the sign inside it is smaller at the district zoom.
         const farClass = far ? ` ${styles.siteFar}` : "";
         if (command) {
-          return L.divIcon({ className: `${styles.commandIcon}${farClass}`, html: diamondIcon(far ? 13 : 20), iconSize: [box, box], iconAnchor: far ? [14, 22] : [22, 22], popupAnchor: [0, far ? -15 : -10] });
+          return L.divIcon({ className: `${styles.commandIcon}${farClass}`, html: diamondIcon(far ? 13 : 20), iconSize: [44, 44], iconAnchor: far ? [22, 30] : [22, 22], popupAnchor: [0, far ? -15 : -10] });
         }
         return L.divIcon({
           className: `${styles.shelterIcon}${pending ? ` ${styles.shelterIconPending}` : wet ? ` ${styles.shelterIconWet}` : ""}${farClass}`,
-          html: starIcon(far ? 14 : 22, wet && !pending), iconSize: [box, box], iconAnchor: [box / 2, box / 2], popupAnchor: [0, far ? -7 : -11],
+          html: starIcon(far ? 14 : 22, wet && !pending), iconSize: [44, 44], iconAnchor: [22, 22], popupAnchor: [0, far ? -7 : -11],
         });
       };
       const labelSite = (entry: (typeof siteMarkers)[number]) => entry.marker.getElement()?.setAttribute("aria-label", siteTitle(entry.site, entry.command));
@@ -607,7 +629,7 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
         if (!map.hasLayer(entry.marker)) entry.marker.addTo(map);
         labelSite(entry);
       };
-      // At the district zoom, shelters closer than 24 px on screen share one count; a tap shows them apart.
+      // At the district zoom, shelters closer than 36 px on screen share one count; a tap shows them apart.
       let siteBadges: { marker: Marker; count: number; centre: boolean }[] = [];
       const badgeTitle = (badge: Pick<(typeof siteBadges)[number], "count" | "centre">) => commandSiteGroupTitle(badge.count, badge.centre, languageRef.current);
       const labelBadge = (badge: (typeof siteBadges)[number]) => badge.marker.getElement()?.setAttribute("aria-label", `${badgeTitle(badge)} ${text(COMMAND_MARKERS.clusterZoom)}`);
@@ -648,26 +670,35 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
           mark.dataset.pending = held.every((entry) => entry.pending) && !centre ? "true" : "false";
           if (centre) mark.append(glyph(DIAMOND_PATH, 11));
           mark.append(glyph(STAR_PATH, 12), String(held.length));
+          // The count stands on its point; a count mark of the reports at the same place stands above its own point.
           const marker = L.marker(middle, {
-            pane: "fg-shelters", icon: L.divIcon({ className: styles.siteBadgeIcon, html: mark, iconSize: [44, 44], iconAnchor: [22, 22] }), keyboard: true, riseOnHover: true, zIndexOffset: 2050,
+            pane: "fg-shelters", icon: L.divIcon({ className: styles.siteBadgeIcon, html: mark, iconSize: [44, 44], iconAnchor: [22, 22] }), keyboard: true, autoPanOnFocus: false, riseOnHover: true, zIndexOffset: 2050,
           });
           const badge = { marker, count: held.length, centre };
           marker.bindTooltip(() => tooltipElement([[badgeTitle(badge), "title"], [text(COMMAND_MARKERS.clusterZoom), "muted"]]), { direction: "top", offset: [0, -12] });
-          marker.on("add", () => {
-            labelBadge(badge);
-            const element = marker.getElement();
-            element?.setAttribute("data-site-group", String(held.length));
-            element?.setAttribute("data-site-centre", centre ? "true" : "false");
-          });
-          // A tap, or Enter, shows the sites apart: about 400 m around them.
-          marker.on("click", () => {
+          // A tap, or Enter or Space on the focused count, shows the sites apart: about 400 m around them.
+          const apart = () => {
             const pad = 0.004;
             map.closePopup();
             fitTo([
               [Math.min(...points.map((point) => point.lat)) - pad, Math.min(...points.map((point) => point.lng)) - pad],
               [Math.max(...points.map((point) => point.lat)) + pad, Math.max(...points.map((point) => point.lng)) + pad],
             ], !motionRef.current);
+          };
+          marker.on("add", () => {
+            labelBadge(badge);
+            const element = marker.getElement();
+            element?.setAttribute("data-site-group", String(held.length));
+            element?.setAttribute("data-site-centre", centre ? "true" : "false");
+            // Leaflet turns Enter into a click only for a marker with a popup: a count has none, so it takes the keys itself.
+            element?.addEventListener("keydown", (event) => {
+              if (event.key !== "Enter" && event.key !== " ") return;
+              event.preventDefault();
+              event.stopPropagation();
+              apart();
+            });
           });
+          marker.on("click", apart);
           marker.addTo(map);
           siteBadges.push(badge);
         }
@@ -676,7 +707,7 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
       for (const site of m.shelters?.reported ?? []) {
         if (site.lat === null || site.lon === null) continue;
         const command = reportedSiteRole(site).role === "relief_command";
-        const marker = L.marker([site.lat, site.lon], { pane: "fg-shelters", icon: siteIcon(command, false), keyboard: true, riseOnHover: true, zIndexOffset: command ? 2100 : 2000 });
+        const marker = L.marker([site.lat, site.lon], { pane: "fg-shelters", icon: siteIcon(command, false), keyboard: true, autoPanOnFocus: false, riseOnHover: true, zIndexOffset: command ? 2100 : 2000 });
         marker.bindPopup(() => {
           const popup = marker.getPopup();
           if (popup) Object.assign(popup.options, popupFitInRect(clearRef.current(), size(), POPUP_WIDTH));
@@ -684,8 +715,10 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
         }, { className: MAP_POPUP_FRAME_CLASS, autoPan: true });
         keyboardPopup(marker);
         marker.bindTooltip(() => tooltipElement([[siteTitle(site, command), "title"], [text(COMMAND_MAP.select), "muted"]]), { direction: "top", offset: [0, -12] });
+        // The tooltip never stands over the marker's own open popup.
+        quietTooltip(marker);
         tooltipLayers.push(marker);
-        const entry = { marker, site, command, wet: false, fromHour: reportedSiteHour(site), pending: false, merged: false };
+        const entry = { marker, site, command, wet: false, pending: false, merged: false };
         marker.on("add", () => labelSite(entry));
         siteMarkers.push(entry);
       }
@@ -730,13 +763,19 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
         },
         panes: { markers: "fg-reported-depths", labels: "fg-labels", selection: "fg-selection" },
         selectionRenderer,
+        // The signs of the reported sites: an invented item is placed clear of them. Items stand alone only from the
+        // town zoom on, where every site has its own sign (a command centre not yet reported has none).
+        otherSigns: () => siteMarkers.filter((entry) => !(entry.command && entry.pending)).map((entry) => {
+          const at = map.latLngToLayerPoint(entry.marker.getLatLng());
+          return { left: at.x - 12, top: at.y - 12, right: at.x + 12, bottom: at.y + 12 };
+        }),
       });
       removeMarkers = markerLayer.remove;
       const syncSites = () => {
         if (!reportFrame) return;
         let changed = false;
         for (const entry of siteMarkers) {
-          const pending = reportFrame.mode === "trainee" && entry.fromHour !== null && reportFrame.hour < entry.fromHour;
+          const pending = reportedSitePendingAt(entry.site, reportFrame.hour, reportFrame.mode);
           if (pending === entry.pending) continue;
           entry.pending = pending;
           changed = true;
@@ -764,7 +803,9 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
         const hatch = envelopeHatch(Math.abs(east - west) / m.hand.width);
         const key = `${hatch.period}:${hatch.dark}:${hatch.light}`;
         if (key === envelopeLayer.hatchKey) return;
-        paintEnvelope(envelopeLayer.cells, m.hand.width, envelopeLayer.pixels, hatch, LITTLE_ENDIAN);
+        // The page's own quiet hatch (dark ink and white), not the yellow of the Studio replay: yellow is not in this
+        // page's colours, and at the town zoom it would cover the water tones and the roads.
+        paintEnvelope(envelopeLayer.cells, m.hand.width, envelopeLayer.pixels, hatch, LITTLE_ENDIAN, COMMAND_ENVELOPE_RGBA);
         envelopeLayer.context.putImageData(envelopeLayer.image, 0, 0);
         envelopeLayer.hatchKey = key;
       };
@@ -918,7 +959,10 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
       });
 
       const reportView = () => callbacks.current.onView?.({ metresPerPixel: metresPerPixel(map.getCenter().lat, map.getZoom()), zoom: map.getZoom() });
+      const markZoom = () => { map.getContainer().dataset.waterSoft = map.getZoom() >= WATER_SOFT_FROM_ZOOM ? "true" : "false"; };
+      markZoom();
       map.on("zoomend", () => {
+        markZoom();
         const next = map.getZoom() >= NEAR_ZOOM ? "near" : "far";
         if (next !== roadScale) {
           roadScale = next;

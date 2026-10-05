@@ -172,7 +172,7 @@ describe("The inspector in incident mode", () => {
   it("lists the three nearest counted shelters with distance, bearing, their state in the model and what was reported", () => {
     const markup = incident(item("EX-05"), 84, "hindsight", 0.6);
     const shown = text(markup);
-    expect(shown).toContain("Where people go 3 nearest of the 12 counted sites · straight line");
+    expect(shown).toContain("Shelters near this point 3 nearest of the 12 counted sites · straight line");
     expect([...markup.matchAll(/data-command-site="(R\d\d)"/g)]).toHaveLength(3);
     expect(shown).toMatch(/~[\d.]+ km · (north|south|east|west)(-(east|west))? dry in the model at this stage/);
     expect(shown).toContain("reported in use by 15 Sep 2024; opening time not known");

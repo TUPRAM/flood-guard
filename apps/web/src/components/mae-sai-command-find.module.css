@@ -1,10 +1,10 @@
 /* The find-place box of the Command exercise replay: a white panel left of the tool rail, like the view popover.
    The tokens (--c-*) are set on the page root in mae-sai-command-exercise.module.css. */
-.find { position: absolute; z-index: 20; top: calc(50% - 166px); right: calc(var(--c-margin) + var(--c-rail) + var(--c-gap)); display: flex; flex-direction: column; width: 300px;
-  max-height: calc(50% + 166px - 2 * var(--c-margin) - var(--c-dock) - 36px - 2 * var(--c-gap)); padding: 12px var(--c-inset) 12px; overflow: hidden; box-shadow: var(--c-shadow-over); }
-.field { flex: none; display: grid; grid-template-columns: 16px minmax(0, 1fr); align-items: center; gap: 8px; height: 44px; padding: 0 12px; border: 1px solid var(--c-line); border-radius: var(--c-radius-control); background: #ffffff; color: var(--c-muted); }
+.find { position: absolute; z-index: 20; top: calc(var(--c-margin) + 44px + var(--c-gap)); right: calc(var(--c-margin) + var(--c-rail) + var(--c-gap)); display: flex; flex-direction: column; width: 300px;
+  max-height: calc(100% - 3 * var(--c-margin) - 44px - var(--c-dock) - 36px - 3 * var(--c-gap)); padding: 12px var(--c-inset) 12px; overflow: hidden; box-shadow: var(--c-shadow-over); }
+.field { flex: none; display: grid; grid-template-columns: 16px minmax(0, 1fr); align-items: center; gap: 8px; height: 46px; padding: 0 12px; border: 1px solid var(--c-line); border-radius: var(--c-radius-control); background: #ffffff; color: var(--c-muted); }
 .field:focus-within { border-color: var(--c-focus); box-shadow: 0 0 0 2px rgb(29 111 184 / 28%); }
-.field input { min-width: 0; height: 40px; padding: 0; border: 0; background: none; color: var(--c-ink); font: inherit; font-size: 14px; outline: none; }
+.field input { min-width: 0; height: 44px; padding: 0; border: 0; background: none; color: var(--c-ink); font: inherit; font-size: 14px; outline: none; }
 .find .field input:focus-visible { outline: none; }
 .field input::placeholder { color: var(--c-quiet); }
 .field input::-webkit-search-cancel-button { -webkit-appearance: none; }

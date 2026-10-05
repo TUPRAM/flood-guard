@@ -20,6 +20,7 @@
 import {
   tFromDate,
   tFromLocalDate,
+  TIMELINE_EPOCH_MS,
   type RainStation,
   type ReportedDepthReport,
   type ReportedShelter,
@@ -138,6 +139,56 @@ export function reportedSiteDate(site: Pick<ReportedShelter, "first_use" | "sour
 export function reportedSiteHour(site: Pick<ReportedShelter, "first_use" | "sources">): number | null {
   const date = reportedSiteDate(site);
   return date === null ? null : Math.round(tFromLocalDate(date) * 24);
+}
+
+/**
+ * Whether the map draws a reported site as "not yet reported" at a replay hour: in trainee mode, before the start of
+ * the day of its first dated 2024 source. Hindsight mode shows every site as reported, and so does a site without a date.
+ */
+export function reportedSitePendingAt(site: Pick<ReportedShelter, "first_use" | "sources">, hour: number, mode: CommandMode): boolean {
+  const from = reportedSiteHour(site);
+  return mode === "trainee" && from !== null && clampCommandHour(hour) < from;
+}
+
+const ISO_DAY = /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/;
+
+/**
+ * The sources a popup of a reported site lists at a replay hour: all of them in hindsight; in trainee mode those dated
+ * by the replay day. A later article is a later fact, and so is a source without a date in the data.
+ */
+export function reportedSiteSourcesAt<S extends { date: string }>(sources: readonly S[], hour: number, mode: CommandMode): S[] {
+  if (mode === "hindsight") return [...sources];
+  const today = feedDate(clampCommandHour(hour));
+  return sources.filter((source) => ISO_DAY.test(source.date) && source.date <= today);
+}
+
+/** The first replay hour at which the assumed river stage is at its highest: the hour of the modelled peak. Null without stages. */
+export function modelPeakHour(stages: ArrayLike<number>): number | null {
+  if (stages.length === 0) return null;
+  let peak = 0;
+  for (let hour = 1; hour < stages.length; hour += 1) if (stages[hour] > stages[peak]) peak = hour;
+  return stages[peak] > 0 ? peak : null;
+}
+
+/**
+ * What the popup of a place record may tell at a replay hour. In hindsight mode: everything (null). In trainee mode:
+ * nothing after the replay hour, so the depth at the modelled peak waits until the replay has reached the peak hour,
+ * and a first-wet time still to come is left out.
+ */
+export function placeRecordHorizon(hour: number, mode: CommandMode, peakHour: number | null): { atMs: number; peakReached: boolean } | null {
+  if (mode === "hindsight") return null;
+  const at = clampCommandHour(hour);
+  return { atMs: TIMELINE_EPOCH_MS + at * 3_600_000, peakReached: peakHour !== null && at >= peakHour };
+}
+
+/**
+ * The places with a bubble on the map at a replay hour, each with the place records the mode shows there: in trainee
+ * mode only the records published by the hour, and no place whose records are all still to come.
+ */
+export function placeRecordPlacesAt<P extends { reports: readonly Pick<ReportedDepthReport, "source">[] }>(places: readonly P[], hour: number, mode: CommandMode): (Omit<P, "reports"> & { reports: P["reports"][number][] })[] {
+  return places
+    .map((place) => ({ ...place, reports: placeRecordsAt(place.reports, hour, mode) }))
+    .filter((place) => place.reports.length > 0);
 }
 
 /** The hours at which a gauge reaches the display rule after an hour under it; index 0 is 9 Sep 00:00–01:00. */
@@ -289,9 +340,8 @@ export function buildCommandFeed(manifest: TimelineManifest, model: Pick<Command
     if (hour <= 0 || hour >= COMMAND_LAST_HOUR) continue;
     items.push({ id: `model:phase:${phase.id}`, lane: "model", time: hour, fromHour: hour, precision: "time", hindsightOnly: false, places: [], source: null, detail: { kind: "model_phase", phaseId: phase.id, label: phase.label } });
   }
-  let peak = 0;
-  for (let hour = 1; hour < model.stages.length; hour += 1) if (model.stages[hour] > model.stages[peak]) peak = hour;
-  if (model.stages.length > 0 && model.stages[peak] > 0) {
+  const peak = modelPeakHour(model.stages);
+  if (peak !== null) {
     items.push({ id: "model:peak", lane: "model", time: peak, fromHour: peak, precision: "time", hindsightOnly: false, places: [], source: null, detail: { kind: "model_peak", stage: model.stages[peak] } });
   }
   const pending = new Set(model.tambons.map((_, index) => index));
@@ -375,29 +425,45 @@ export function feedMarkItems(feed: readonly CommandFeedItem[]): CommandFeedItem
   return feed.filter((item) => !item.hindsightOnly && item.precision !== "held" && item.precision !== "none" && item.fromHour >= 0 && item.fromHour <= COMMAND_LAST_HOUR);
 }
 
-/** A merged mark is a wider pill with its count: a mark closer than this to its first hour joins it, so the pill covers no neighbour. */
-export const MERGED_MARK_REACH_PX = 13;
+/**
+ * Half the drawn width of a mark (px): a single mark is a 7 px dot, a mark with a count a 15 px pill, and a count of
+ * two digits a 19 px pill.
+ */
+export const markHalfWidthPx = (count: number): number => (count <= 1 ? 3.5 : count < 10 ? 7.5 : 9.5);
+/** The clear space kept between two marks when one of them carries a count. */
+export const MARK_CLEAR_PX = 2;
+/** Two count pills of one digit therefore stand at least this far apart, middle to middle. */
+export const MERGED_MARK_REACH_PX = 2 * markHalfWidthPx(2) + MARK_CLEAR_PX;
 
 /**
- * The marks of the track. Marks that would stand closer than `minGapPx` to the first mark of a group merge into one
- * with a count (a mark that already holds several reaches `MERGED_MARK_REACH_PX`); a merged mark is filled when it
+ * The marks of the track. Two single marks closer than `minGapPx` merge into one with a count; a mark with a count is
+ * a wider pill, so it merges with any neighbour its pill would touch. Distances are measured between the places the
+ * marks are drawn at (the mean hour of what each holds), so no two marks ever overlap. A merged mark is filled when it
  * holds an observed or reported row. In trainee mode the marks after the replay hour are left out: the future is hidden.
+ * Merging runs from the left and only ever reworks the last marks, so marks well before the replay hour stay where
+ * they are while the replay plays. A `minGapPx` of 0 merges nothing.
  */
 export function feedEventMarks(feed: readonly CommandFeedItem[], pxPerHour: number, options: { upTo?: number; minGapPx?: number } = {}): CommandEventMark[] {
   const minGap = options.minGapPx ?? 6;
   const upTo = options.upTo ?? COMMAND_LAST_HOUR;
-  const marks: (CommandEventMark & { sum: number })[] = [];
+  type Mark = CommandEventMark & { sum: number };
+  const marks: Mark[] = [];
+  const tooClose = (earlier: Mark, later: Mark): boolean => {
+    if (minGap <= 0) return false;
+    const need = earlier.count === 1 && later.count === 1 ? minGap : Math.max(minGap, markHalfWidthPx(earlier.count) + markHalfWidthPx(later.count) + MARK_CLEAR_PX);
+    return (later.hour - earlier.hour) * pxPerHour < need;
+  };
   for (const item of feedMarkItems(feed).sort((a, b) => a.fromHour - b.fromHour)) {
     if (item.fromHour > upTo) break;
-    const filled = item.lane !== "model";
-    const last = marks[marks.length - 1];
-    if (last && (item.fromHour - last.firstHour) * pxPerHour < (last.count > 1 && minGap > 0 ? Math.max(minGap, MERGED_MARK_REACH_PX) : minGap)) {
-      last.count += 1;
-      last.sum += item.fromHour;
-      last.hour = last.sum / last.count;
-      last.filled = last.filled || filled;
-    } else {
-      marks.push({ hour: item.fromHour, firstHour: item.fromHour, filled, count: 1, sum: item.fromHour });
+    marks.push({ hour: item.fromHour, firstHour: item.fromHour, filled: item.lane !== "model", count: 1, sum: item.fromHour });
+    // The new mark joins the one before it when the two would touch; the wider pill may then touch the one before that.
+    while (marks.length > 1 && tooClose(marks[marks.length - 2], marks[marks.length - 1])) {
+      const later = marks.pop()!;
+      const earlier = marks[marks.length - 1];
+      earlier.count += later.count;
+      earlier.sum += later.sum;
+      earlier.hour = earlier.sum / earlier.count;
+      earlier.filled = earlier.filled || later.filled;
     }
   }
   return marks.map(({ hour, firstHour, filled, count }) => ({ hour, firstHour, filled, count }));

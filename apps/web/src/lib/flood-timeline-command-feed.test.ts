@@ -8,7 +8,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { TIMELINE_EPOCH_MS, TIMELINE_MANIFEST_URL, type AreaGeometry, type GeoCollection, type RoadProps, type TambonProps, type TimelineManifest } from "./flood-timeline";
+import { formatLocalStamp, TIMELINE_EPOCH_MS, TIMELINE_MANIFEST_URL, type AreaGeometry, type GeoCollection, type RoadProps, type TambonProps, type TimelineManifest } from "./flood-timeline";
 import { buildCommandModel } from "./flood-timeline-command";
 import {
   buildCommandFeed,
@@ -20,7 +20,12 @@ import {
   groupFeedByDay,
   hindsightFeed,
   knownBy,
+  markHalfWidthPx,
+  MERGED_MARK_REACH_PX,
+  modelPeakHour,
+  placeRecordHorizon,
   placeRecordHour,
+  placeRecordPlacesAt,
   placeRecordsAt,
   placeRecordTally,
   RADARSAT2_ACQUIRED_LOCAL,
@@ -29,10 +34,13 @@ import {
   rainRuleHours,
   reportedSiteDate,
   reportedSiteHour,
+  reportedSitePendingAt,
+  reportedSiteSourcesAt,
   type CommandFeedItem,
   type CommandFeedKind,
 } from "./flood-timeline-command-feed";
 import { parseAccessNodes } from "./flood-timeline-evacuation";
+import { reportedDepthPlaces, reportedDepthPopup, shippableReportedDepths } from "./flood-timeline-reported-depths";
 
 const publicRoot = resolve(import.meta.dirname, "../../public");
 const read = (href: string) => readFileSync(resolve(publicRoot, href.replace(/^\//, "")));
@@ -262,5 +270,135 @@ describe("Place records known by now", () => {
     expect(placeRecordTally(reports)).toMatchObject({ consistent: 1, wet: 2, dry: 9 });
     expect(placeRecordTally(placeRecordsAt(reports, 36, "trainee"))).toEqual({ located: 5, consistent: 0, wet: 0, dry: 5, other: 0 });
     expect(placeRecordTally([])).toEqual({ located: 0, consistent: 0, wet: 0, dry: 0, other: 0 });
+  });
+});
+
+describe("Marks of the time track: none touches another", () => {
+  it("measures between the places the marks are drawn at, and gives a count pill its width", () => {
+    expect([markHalfWidthPx(1), markHalfWidthPx(2), markHalfWidthPx(9), markHalfWidthPx(10)]).toEqual([3.5, 7.5, 7.5, 9.5]);
+    expect(MERGED_MARK_REACH_PX).toBe(17);
+    for (const pxPerHour of [1.6, 2.4, 3.56, 4, 6]) {
+      for (const upTo of [30, 60, 84, 130, 264]) {
+        const marks = feedEventMarks(feed, pxPerHour, { upTo });
+        expect(marks.reduce((sum, mark) => sum + mark.count, 0)).toBe(feedMarkItems(feed).filter((item) => item.fromHour <= upTo).length);
+        for (let index = 1; index < marks.length; index += 1) {
+          const gap = (marks[index].hour - marks[index - 1].hour) * pxPerHour;
+          // Two pills with a count keep 2 px clear; a dot beside a pill too; two dots may touch at 6 px.
+          const pill = marks[index].count > 1 || marks[index - 1].count > 1;
+          expect(gap, `${pxPerHour} px/h up to ${upTo}, mark ${index}`).toBeGreaterThanOrEqual(pill ? markHalfWidthPx(marks[index].count) + markHalfWidthPx(marks[index - 1].count) + 2 : 6);
+        }
+      }
+    }
+  });
+
+  it("only reworks the last marks as the replay hour moves on, so the marks behind it stay where they are", () => {
+    const pxPerHour = 3.56;
+    for (let hour = 31; hour <= 200; hour += 1) {
+      const before = feedEventMarks(feed, pxPerHour, { upTo: hour - 1 });
+      const now = feedEventMarks(feed, pxPerHour, { upTo: hour });
+      // Every mark but the last three of the hour before is drawn again exactly as it was.
+      const steady = before.slice(0, Math.max(0, before.length - 3));
+      expect(now.slice(0, steady.length), `hour ${hour}`).toEqual(steady);
+    }
+  });
+});
+
+describe("What the map shows of the reports at a replay hour", () => {
+  const block = shippableReportedDepths(manifest)!;
+  const reports = block.reports;
+  const places = reportedDepthPlaces(block);
+  const sites = manifest.shelters!.reported;
+  const peakHour = modelPeakHour(model.stages);
+  const shownIds = (hour: number, mode: "trainee" | "hindsight") => placeRecordPlacesAt(places, hour, mode).flatMap((place) => place.reports.map((report) => report.id)).sort();
+
+  it("puts a bubble on the map only for the place records published by the replay hour in trainee mode", () => {
+    expect(placeRecordPlacesAt(places, 20, "trainee")).toEqual([]);
+    for (const hour of [20, 31, 36, 60, 84, 107, 108, 130, 264]) {
+      const located = placeRecordsAt(reports, hour, "trainee").filter((report) => report.point !== null).map((report) => report.id).sort();
+      expect(shownIds(hour, "trainee"), `hour ${hour}`).toEqual(located);
+      for (const place of placeRecordPlacesAt(places, hour, "trainee")) expect(place.reports.length).toBeGreaterThan(0);
+    }
+    // The record of the article of 13 Sep 11:32 (Piyaphon village) is on the map from replay hour 108, not before.
+    expect(shownIds(107, "trainee")).not.toContain("ms-c2-22");
+    expect(shownIds(108, "trainee")).toContain("ms-c2-22");
+    // Hindsight shows every located record at every hour.
+    expect(shownIds(0, "hindsight")).toEqual(reports.filter((report) => report.point !== null).map((report) => report.id).sort());
+  });
+
+  it("holds the modelled peak and a later first-wet time back in the popup of a place record", () => {
+    expect(peakHour).toBe(84);
+    expect(modelPeakHour([])).toBeNull();
+    expect(modelPeakHour([0, 0])).toBeNull();
+    expect(modelPeakHour([0, 1, 3, 3, 2])).toBe(2);
+    expect(placeRecordHorizon(36, "hindsight", peakHour)).toBeNull();
+    expect(placeRecordHorizon(36, "trainee", peakHour)).toEqual({ atMs: TIMELINE_EPOCH_MS + 36 * 3_600_000, peakReached: false });
+    expect(placeRecordHorizon(83, "trainee", peakHour)?.peakReached).toBe(false);
+    expect(placeRecordHorizon(84, "trainee", peakHour)?.peakReached).toBe(true);
+    expect(placeRecordHorizon(84, "trainee", null)?.peakReached).toBe(false);
+    // Ko Sai: first wet in the model on 10 Sep 19:00 (replay hour 43), 3.34 m at the modelled peak.
+    const koSai = reports.find((report) => report.id === "ms-c2-07")!;
+    expect(hourOf(koSai.model!.first_wet!)).toBe(43);
+    for (const language of ["en", "th"] as const) {
+      const lines = (hour: number | null) => reportedDepthPopup(koSai, block, language, hour === null ? undefined : placeRecordHorizon(hour, "trainee", peakHour) ?? undefined).lines.map((line) => line.text).join("\n");
+      const peakWords = language === "th" ? "ที่ระดับสูงสุดของแบบจำลอง" : "At the modelled peak";
+      const firstWet = formatLocalStamp(koSai.model!.first_wet!, language);
+      // At 10 Sep 12:00 (hour 36) the popup names neither the depth at the peak nor the hour the point floods.
+      expect(lines(36)).not.toContain(peakWords);
+      expect(lines(36)).not.toContain("3.34");
+      expect(lines(36)).not.toContain(firstWet);
+      expect(lines(36)).toContain(language === "th" ? "จุดนี้สูงจากร่องน้ำ" : "The point is");
+      // At hour 60 the point has been wet since hour 43: that time has passed and is told; the peak is still to come.
+      expect(lines(60)).toContain(firstWet);
+      expect(lines(60)).not.toContain(peakWords);
+      expect(lines(60)).not.toContain("3.34");
+      // From the peak hour on, and in hindsight, the popup is the replay's own.
+      expect(lines(84)).toContain(peakWords);
+      expect(lines(84)).toContain("3.34");
+      expect(lines(84)).toBe(lines(null));
+    }
+    // For every located record and every hour from its publication to the hour before the peak: no later fact.
+    for (const report of reports) {
+      if (!report.model) continue;
+      for (let hour = placeRecordHour(report).fromHour; hour < peakHour!; hour += 1) {
+        const text = reportedDepthPopup(report, block, "en", placeRecordHorizon(hour, "trainee", peakHour)!).lines.map((line) => line.text).join("\n");
+        expect(text, `${report.id} at hour ${hour}`).not.toContain("At the modelled peak");
+        expect(text).not.toContain("never wet in the model");
+        if (report.model.first_wet && hourOf(report.model.first_wet) > hour) expect(text, `${report.id} at hour ${hour}`).not.toContain(formatLocalStamp(report.model.first_wet, "en"));
+        // The window the report describes ended before its article was published, so its line never names a later time.
+        expect(hourOf(report.model.window_max_at)).toBeLessThanOrEqual(hour);
+      }
+    }
+  });
+
+  it("draws a reported site as not yet reported before its day, in trainee mode only", () => {
+    const centre = sites.find((site) => site.id === "R05")!;
+    expect(reportedSiteHour(centre)).toBe(48);
+    expect(reportedSitePendingAt(centre, 47, "trainee")).toBe(true);
+    expect(reportedSitePendingAt(centre, 48, "trainee")).toBe(false);
+    expect(reportedSitePendingAt(centre, 0, "hindsight")).toBe(false);
+    for (const hour of [20, 60, 84, 130]) {
+      for (const site of sites) {
+        const from = reportedSiteHour(site);
+        expect(reportedSitePendingAt(site, hour, "trainee"), `${site.id} at ${hour}`).toBe(from !== null && hour < from);
+        expect(reportedSitePendingAt(site, hour, "hindsight")).toBe(false);
+      }
+    }
+    // At 9 Sep 20:00 every dated site is still to come; at 14 Sep 10:00 the two shelters of 11 Sep and the command centre are known.
+    expect(sites.filter((site) => !reportedSitePendingAt(site, 20, "trainee") && reportedSiteHour(site) !== null)).toEqual([]);
+    expect(sites.filter((site) => !reportedSitePendingAt(site, 130, "trainee")).length).toBeLessThan(sites.length);
+  });
+
+  it("lists in the popup of a site only the sources dated by the replay day, in trainee mode only", () => {
+    for (const hour of [20, 60, 84, 130, 264]) {
+      const today = feedDate(hour);
+      for (const site of sites) {
+        const listed = reportedSiteSourcesAt(site.sources, hour, "trainee");
+        for (const source of listed) expect(source.date <= today, `${site.id} ${source.date} at ${hour}`).toBe(true);
+        expect(listed).toEqual(site.sources.filter((source) => /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(source.date) && source.date <= today));
+        expect(reportedSiteSourcesAt(site.sources, hour, "hindsight")).toEqual(site.sources);
+      }
+    }
+    // A source without a plain date ("accessed 2026-...") is a later fact in trainee mode.
+    expect(reportedSiteSourcesAt([{ date: "accessed 2026-10-01" }, { date: "2024-09-11" }, { date: "2024-09-16" }], 84, "trainee")).toEqual([{ date: "2024-09-11" }]);
   });
 });

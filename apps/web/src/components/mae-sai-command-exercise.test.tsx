@@ -125,8 +125,8 @@ describe("Command banner (region A)", () => {
     expect(english).toContain('aria-label="About this exercise: permitted use, assumptions, limits, sources and licences"');
     expect(english).toContain('aria-haspopup="dialog"');
     const thai = html(<CommandBanner language="th" onInfo={noop} infoOpen={false} />);
-    for (const part of ["ฝึกซ้อมย้อนดูเหตุการณ์", "แม่สาย กันยายน 2567 (2024)", "จำลองย้อนหลัง ไม่ใช่ข้อมูลเรียลไทม์", "ไม่ใช่คำเตือนอย่างเป็นทางการ"]) expect(thai).toContain(`>${part}<`);
-    expect(own(thai)).toBe("แม่สาย กันยายน 2567 (2024) · จำลองย้อนหลัง ไม่ใช่ข้อมูลเรียลไทม์ · ไม่ใช่คำเตือนอย่างเป็นทางการ");
+    for (const part of ["ฝึกซ้อมย้อนดูเหตุการณ์", "แม่สาย กันยายน 2567 (2024)", "จำลองย้อนหลัง ไม่ใช่ข้อมูลเรียลไทม์", "ไม่ใช่ประกาศเตือนภัยอย่างเป็นทางการ"]) expect(thai).toContain(`>${part}<`);
+    expect(own(thai)).toBe("แม่สาย กันยายน 2567 (2024) · จำลองย้อนหลัง ไม่ใช่ข้อมูลเรียลไทม์ · ไม่ใช่ประกาศเตือนภัยอย่างเป็นทางการ");
     expect(describeWordingFindings(findWordingViolations(own(thai), "banner text"))).toBe("");
     expect(thai).toContain('lang="th"');
     // The banner has no control that closes or hides it.
@@ -194,7 +194,8 @@ describe("Command clock and figures (region B1)", () => {
     const line = (markup: string, name: string) => new RegExp(`data-command-${name}="true">(.*?)</p>`).exec(markup)?.[1] ?? null;
     // The first line: the hour compared with and the three differences, each with its sign and no tilde.
     expect(line(situation(84, "en"), "change")).toBe("Since 11:00: +100 lost access · 0 in water · +1 km impassable");
-    expect(line(situation(84, "th"), "change")).toBe("ตั้งแต่ 11:00 น.: +100 สูญเสียการเข้าถึง · 0 ในน้ำ · +1 กม. สัญจรไม่ได้");
+    // Thai puts the noun before its number.
+    expect(line(situation(84, "th"), "change")).toBe("ตั้งแต่ 11:00 น.: สูญเสียการเข้าถึง +100 · ในน้ำ 0 · สัญจรไม่ได้ +1 กม.");
     expect(line(situation(0, "en"), "change")).toBe("Start of the replay: no hour before to compare with");
     // The second line names the roads newly impassable as a whole.
     const onset = situation(44, "en");
@@ -305,9 +306,11 @@ describe("Command time dock (region F)", () => {
     // The hatched part starts at the playhead: hour 84 of 264.
     expect(markup).toContain(`left:${((84 / 264) * 100).toFixed(3)}%`);
     expect(timebar(84, "th")).toContain(">ยังไม่ทราบ ณ ชั่วโมงนี้<");
-    // The rain of the two gauges is observed, and labelled as such.
-    expect(markup).toContain('aria-label="Rain per hour at two gauges (observed)"');
-    expect(text(markup)).toContain("Rain mm/h · observed");
+    // The rain of the two gauges is observed, and named as such: by the row's own name and title (the plot holds no
+    // label that could run into its bars), and by a line of the legend.
+    expect(markup).toMatch(/role="img" aria-label="Rain per hour at two gauges \(observed\)" title="Rain per hour at two gauges \(observed\)" data-command-rain="true"/);
+    expect(text(markup)).not.toContain("Rain mm/h");
+    expect(text(html(<CommandLegend language="en" open onToggle={noop} facilities={false} unmodelledRoads={false} wetSites={false} initialTab="reports" />))).toContain("hourly rain at two gauges (observed)");
   });
 
   it("names the replay hour on the slider", () => {
@@ -393,8 +396,10 @@ describe("Command navigation, tools and legend (regions C, E, G)", () => {
     expect(text(off)).toContain("Key facilities (42)");
     expect(off).toMatch(/<input type="checkbox" data-command-facilities="true"\/>/);
     expect(html(<CommandViewPopover language="en" facilities facilityCount={42} onFacilities={noop} onClose={noop} />)).toMatch(/<input type="checkbox" data-command-facilities="true" checked=""\/>/);
-    // The Evidence view is named, and said to be not built yet.
-    expect(text(off)).toContain("Not built yet: candidate sites and satellite images. The 2024 season envelope is drawn in hindsight mode.");
+    // A view that is not built is not offered: the popover names the one view the page has.
+    expect(text(off)).toContain("Rescue view");
+    expect(text(off)).not.toContain("Evidence view");
+    expect(off).not.toContain("disabled");
   });
 
   it("is a chip until opened, then a grid of what the map draws", () => {

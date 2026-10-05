@@ -174,7 +174,7 @@ import {
   type RoadFeature,
 } from "./flood-timeline-command-brief";
 import { buildCommandFeed, feedAt, placeRecordsAt, placeRecordTally, type CommandMode } from "./flood-timeline-command-feed";
-import { EXERCISE_FILE_URL, exerciseCounts, parseExerciseFile, type ExerciseHandling, type ExerciseItem } from "./flood-timeline-command-incidents";
+import { EXERCISE_FILE_URL, EXERCISE_STATUSES, exerciseCounts, parseExerciseFile, type ExerciseHandling, type ExerciseItem } from "./flood-timeline-command-incidents";
 import {
   applyItemAction,
   COMMAND_LOG_ACTIONS,
@@ -198,6 +198,7 @@ import {
   COMMAND_PEOPLE_BAND,
   COMMAND_STATUS,
   COMMAND_URGENCY,
+  commandAtRiskShort,
   commandClusterTitle,
   commandDeviceCount,
   commandDeviceMeta,
@@ -209,6 +210,7 @@ import {
   commandFeedJump,
   commandFeedNote,
   commandFeedTime,
+  commandItemLine,
   commandItemMarkerTitle,
   commandItemPlaceLine,
   commandItemStateLine,
@@ -503,7 +505,8 @@ function commandCopyLines(language: Language): string[] {
     ...[0, 6, 30].map((hours) => commandWaitingText(hours, language)),
     ...[undefined, null, 0, 0.02, 1.4].map((depth) => commandModelHereLine(depth, language)),
     commandDeviceSign(2, language), commandDeviceMeta("2026-10-05T03:40:00.000Z", language), commandDeviceCount(1, language), commandDeviceCount(3, language), commandDeviceSignTitle(2, tambonName, language),
-    commandClusterTitle(22, 2, language), commandClusterTitle(5, 0, language),
+    commandClusterTitle(11, 11, 2, language), commandClusterTitle(5, 0, 0, language), commandClusterTitle(0, 3, 1, language),
+    commandAtRiskShort(2, language), ...EXERCISE_STATUSES.map((status) => commandItemLine({ showsCallsign: status === "assigned", showsWaiting: true }, { callsign: "BOAT-1" }, 22, language).text),
     commandOpenItemsText(11, 2, language), commandOpenItemsText(0, 0, language),
     ...[[1, 0, false], [0, 2, false], [2, 1, true]].map(([calls, reports, paused]) => commandNewItemsNotice(calls as number, reports as number, paused as boolean, language)),
     ...feed.flatMap((item) => [commandFeedHeadline(item, manifest.reported_depths ?? null, language), commandFeedNote(item, language) ?? "", commandFeedTime(item, language), commandFeedAge(item, 84, language) ?? ""]),
@@ -1065,7 +1068,7 @@ describe("Replay wording lint: current text", () => {
     expect(commandCopy[0].text).toContain("[EXERCISE – not a real incident] Situation brief");
     expect(commandCopy[0].text).toContain("Refused: seven or more digits. A callsign is not a phone number.");
     expect(commandCopy[1].text).toContain("[ฝึกซ้อม] EX-05 ชุด BOAT-2: ขอความช่วยเหลือ");
-    expect(commandCopy[1].text).toContain("ฝึกซ้อมย้อนดูเหตุการณ์ · แม่สาย กันยายน 2567 (2024) · จำลองย้อนหลัง ไม่ใช่ข้อมูลเรียลไทม์ · ไม่ใช่คำเตือนอย่างเป็นทางการ");
+    expect(commandCopy[1].text).toContain("ฝึกซ้อมย้อนดูเหตุการณ์ · แม่สาย กันยายน 2567 (2024) · จำลองย้อนหลัง ไม่ใช่ข้อมูลเรียลไทม์ · ไม่ใช่ประกาศเตือนภัยอย่างเป็นทางการ");
     expect(commandCopy[1].text).toContain("ถนนที่เริ่มสัญจรไม่ได้: ");
     // Reported depths: the Sources entry and the legend in both languages, and the popup of every located report.
     expect(items.filter((item) => item.source.startsWith("reported-depth popup ")).length).toBe(24);

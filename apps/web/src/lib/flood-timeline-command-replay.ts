@@ -183,7 +183,8 @@ export type CommandKeyAction =
   | { type: "event"; direction: -1 | 1 }
   | { type: "toggle_focus" }
   | { type: "escape" }
-  | { type: "help" };
+  | { type: "help" }
+  | { type: "undo" };
 
 export interface CommandKeyInput { key: string; shiftKey?: boolean; altKey?: boolean; ctrlKey?: boolean; metaKey?: boolean }
 
@@ -198,7 +199,8 @@ export const COMMAND_DAY_HOURS = 24;
 /**
  * The action of a key press, or null when the key is not one of the page's:
  *   Space plays or pauses; the arrow keys step one replay hour, with Shift one day; `[` and `]` go to the previous
- *   and the next event; F switches focus mode; `?` opens the help; Escape closes what is open.
+ *   and the next event; F switches focus mode; `?` opens the help; U takes back the last action of the exercise
+ *   while its line with "Undo" is on screen; Escape closes what is open.
  * Keys held with Alt, Ctrl or the Command key are left to the browser.
  */
 export function commandKeyAction(input: CommandKeyInput, target: CommandKeyTarget = "page"): CommandKeyAction | null {
@@ -222,6 +224,8 @@ export function commandKeyAction(input: CommandKeyInput, target: CommandKeyTarge
     case "f":
     case "F": return { type: "toggle_focus" };
     case "?": return { type: "help" };
+    case "u":
+    case "U": return { type: "undo" };
     default: return null;
   }
 }

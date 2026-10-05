@@ -54,9 +54,8 @@ export const COMMAND_EXERCISE = {
     en: "Invented for practice. No real person, call or address. Never counted with real reports.",
     th: "สมมุติขึ้นเพื่อการฝึกซ้อม ไม่ใช่บุคคล การขอความช่วยเหลือ หรือที่อยู่จริง และไม่นับรวมกับรายงานจริง",
   },
-  itemsOff: { en: "Exercise items are switched off", th: "ปิดการแสดงรายการฝึกซ้อมอยู่" },
-  openCaption: { en: "open items", th: "เปิดอยู่" },
-  atRisk: { en: "at risk", th: "เสี่ยง" },
+  itemsOff: { en: "Exercise items are switched off", th: "ปิดการแสดงรายการฝึกซ้อมไว้" },
+  openCaption: { en: "open items", th: "ยังไม่ปิด" },
   select: { en: "Select for the item", th: "เลือกเพื่อดูรายการ" },
 } as const satisfies Record<string, Localized>;
 
@@ -136,6 +135,24 @@ export function commandWaitingShort(hours: number, language: Language): string {
   return language === "th" ? `${hours} ชม.` : `${hours} h`;
 }
 
+/**
+ * The line under an exercise marker on the map: the short exercise tag first, which is never dropped (a marker says
+ * "invented" wherever it is shown, also on a cropped photo of the map), then the callsign once a team is assigned and
+ * the hours an urgent or life-at-risk item has waited.
+ */
+export function commandItemLine(
+  shows: { showsCallsign: boolean; showsWaiting: boolean },
+  handling: Pick<ExerciseHandling, "callsign">,
+  waiting: number,
+  language: Language,
+): { tag: string; text: string } {
+  const parts = [
+    shows.showsCallsign && handling.callsign ? handling.callsign : "",
+    shows.showsWaiting && waiting > 0 ? commandWaitingShort(waiting, language) : "",
+  ].filter(Boolean);
+  return { tag: pick(COMMAND_EXERCISE.short, language), text: parts.join(" · ") };
+}
+
 /** "waiting 6 h in replay time" / "รอมาแล้ว 6 ชม. ตามเวลาในการย้อนดู". */
 export function commandWaitingText(hours: number, language: Language): string {
   if (hours <= 0) return language === "th" ? "เพิ่งได้รับในชั่วโมงนี้ของการย้อนดู" : "received at this replay hour";
@@ -176,9 +193,14 @@ export function commandItemMarkerTitle(item: Pick<ExerciseItem, "id" | "kind" | 
   return `${commandItemTitle(item, language)}: ${commandItemStateLine(item, handling, language)} · ${pick(item.place, language)}`;
 }
 
+/** Under the count of open items, beside the "!!" glyph: "2 at risk" / "เสี่ยงต่อชีวิต 2". Thai puts the words first. */
+export function commandAtRiskShort(count: number, language: Language): string {
+  return language === "th" ? `เสี่ยงต่อชีวิต ${count}` : `${count} at risk`;
+}
+
 /** Figure 4 of the situation card, for a screen reader: "Open exercise items: 3 (invented). 1 at life at risk." */
 export function commandOpenItemsText(open: number, lifeAtRisk: number, language: Language): string {
-  if (language === "th") return `รายการฝึกซ้อมที่ยังเปิดอยู่ ${open} รายการ (สมมุติขึ้น)${lifeAtRisk > 0 ? ` เสี่ยงต่อชีวิต ${lifeAtRisk} รายการ` : ""}`;
+  if (language === "th") return `รายการฝึกซ้อมที่ยังไม่ปิด ${open} รายการ (สมมุติขึ้น)${lifeAtRisk > 0 ? ` เสี่ยงต่อชีวิต ${lifeAtRisk} รายการ` : ""}`;
   return `Open exercise items: ${open} (invented).${lifeAtRisk > 0 ? ` ${lifeAtRisk} at life at risk.` : ""}`;
 }
 
@@ -223,21 +245,26 @@ export const COMMAND_LEGEND_REPORTS = {
   records: { en: "Place records (news, not surveyed)", th: "รายการตามสถานที่ (จากข่าว ไม่ได้สำรวจ)" },
   bubble: { en: "2024 place records at a point, with their count", th: "รายการตามสถานที่ปี 2567 (2024) ณ จุดนั้น พร้อมจำนวน" },
   exercise: { en: "Exercise items (invented)", th: "รายการฝึกซ้อม (สมมุติขึ้น)" },
-  callLife: { en: "call: life at risk", th: "ขอความช่วยเหลือ: เสี่ยงต่อชีวิต" },
-  callUrgent: { en: "call: urgent", th: "ขอความช่วยเหลือ: เร่งด่วน" },
-  callInfo: { en: "call: information", th: "ขอความช่วยเหลือ: ข้อมูลทั่วไป" },
-  report: { en: "depth or road report", th: "รายงานระดับน้ำหรือถนน" },
+  /** The two rows of the grid: the shape says the kind of an item. */
+  rowCall: { en: "call for help", th: "ขอความช่วยเหลือ" },
+  rowReport: { en: "depth or road report", th: "รายงานระดับน้ำหรือถนน" },
   stateNew: { en: "dashed: new", th: "เส้นประ: ใหม่" },
   stateSolid: { en: "solid: acknowledged or assigned", th: "เส้นทึบ: รับทราบหรือมอบหมายแล้ว" },
   stateClosed: { en: "grey, tick: done or dropped", th: "สีเทา มีเครื่องหมายถูก: เสร็จสิ้นหรือยุติ" },
-  waiting: { en: "callsign and hours waited (replay)", th: "นามเรียกขานและชั่วโมงที่รอ (ในการย้อนดู)" },
+  waiting: {
+    en: "under every item: EX (invented), then the callsign and the hours waited in replay time",
+    th: "ใต้ทุกรายการ: EX (สมมุติขึ้น) ตามด้วยนามเรียกขานและชั่วโมงที่รอตามเวลาในการย้อนดู",
+  },
   other: { en: "Other marks", th: "เครื่องหมายอื่น" },
   device: { en: "reports saved on this device (dated when saved; outside the replay)", th: "รายงานที่บันทึกไว้ในอุปกรณ์เครื่องนี้ (ลงวันที่ที่บันทึก ไม่อยู่ในการย้อนดู)" },
   noReports: {
     en: "residents in modelled water and no report by this hour; silence is not safety",
     th: "มีผู้อยู่อาศัยในน้ำตามแบบจำลอง แต่ยังไม่มีรายงานถึงชั่วโมงนี้ การไม่มีรายงานไม่ได้แปลว่าปลอดภัย",
   },
-  cluster: { en: "several items; \u201c!!\u201d counts those at life at risk", th: "หลายรายการรวมกัน \u201c!!\u201d คือจำนวนที่เสี่ยงต่อชีวิต" },
+  cluster: {
+    en: "count mark: place records above, invented items (EX) below; \u201c!!\u201d counts those at life at risk",
+    th: "เครื่องหมายรวม: บนคือรายการตามสถานที่ ล่างคือรายการฝึกซ้อม (EX สมมุติขึ้น) \u201c!!\u201d คือจำนวนที่เสี่ยงต่อชีวิต",
+  },
   sitePending: { en: "shelter not yet reported at this hour", th: "ที่พักพิงที่ยังไม่มีรายงาน ณ ชั่วโมงนี้" },
   urgencyRule: {
     en: "Urgency is set by the author of an invented item from the facts it states, never by the model. The colours are not those of medical triage.",
@@ -245,11 +272,26 @@ export const COMMAND_LEGEND_REPORTS = {
   },
 } as const satisfies Record<string, Localized>;
 
-/** "5 markers here · 1 at life at risk. Select to zoom in." */
-export function commandClusterTitle(total: number, lifeAtRisk: number, language: Language): string {
+/**
+ * What a count mark of the district zoom holds, in words: "11 place records · 11 exercise items (invented), 2 at life
+ * at risk". The two kinds are counted apart and never added: invented items are not reports of 2024.
+ */
+export function commandClusterCounts(records: number, items: number, lifeAtRisk: number, language: Language): string {
+  const th = language === "th";
+  const parts: string[] = [];
+  if (records > 0) parts.push(th ? `รายการตามสถานที่ ${records} รายการ` : `${records} place ${records === 1 ? "record" : "records"}`);
+  if (items > 0) {
+    const life = lifeAtRisk > 0 ? (th ? ` เสี่ยงต่อชีวิต ${lifeAtRisk} รายการ` : `, ${lifeAtRisk} at life at risk`) : "";
+    parts.push(th ? `รายการฝึกซ้อม (สมมุติขึ้น) ${items} รายการ${life}` : `${items} exercise ${items === 1 ? "item" : "items"} (invented)${life}`);
+  }
+  return parts.join(" · ");
+}
+
+/** The accessible name of a count mark: what it holds, then "Select to zoom in." */
+export function commandClusterTitle(records: number, items: number, lifeAtRisk: number, language: Language): string {
   const zoom = pick(COMMAND_MARKERS.clusterZoom, language);
-  if (language === "th") return `รวม ${total} รายการในบริเวณนี้${lifeAtRisk > 0 ? ` · เสี่ยงต่อชีวิต ${lifeAtRisk} รายการ (ฝึกซ้อม)` : ""} ${zoom}`;
-  return `${total} items here${lifeAtRisk > 0 ? ` · ${lifeAtRisk} at life at risk (exercise)` : ""}. ${zoom}.`;
+  const counts = commandClusterCounts(records, items, lifeAtRisk, language);
+  return language === "th" ? `${counts} ${zoom}` : `${counts}. ${zoom}.`;
 }
 
 // --- Reports saved on this device ------------------------------------------------------------------------
@@ -299,10 +341,10 @@ export function commandDeviceSignTitle(count: number, tambon: Localized, languag
 // --- The two modes ---------------------------------------------------------------------------------------
 
 export const COMMAND_MODE = {
-  label: { en: "What the exercise shows of the future", th: "การแสดงสิ่งที่ยังไม่เกิด ณ ชั่วโมงนี้" },
-  trainee: { en: "Trainee", th: "ผู้ฝึก" },
+  label: { en: "What the exercise shows of the future", th: "การแสดงสิ่งที่ยังไม่เกิดขึ้น ณ ชั่วโมงนี้" },
+  trainee: { en: "Trainee", th: "ผู้เข้ารับการฝึก" },
   hindsight: { en: "Hindsight", th: "มองย้อนหลัง" },
-  traineeLine: { en: "Trainee mode · the future is hidden", th: "โหมดผู้ฝึก · ซ่อนสิ่งที่ยังไม่เกิด" },
+  traineeLine: { en: "Trainee mode · the future is hidden", th: "โหมดผู้เข้ารับการฝึก · ซ่อนสิ่งที่ยังไม่เกิดขึ้น" },
   hindsightLine: { en: "Hindsight mode · everything is shown", th: "โหมดมองย้อนหลัง · แสดงทั้งหมด" },
   traineeMeaning: {
     en: "Place records appear when their article was published, and the list holds nothing of a later hour.",
@@ -313,12 +355,12 @@ export const COMMAND_MODE = {
     th: "แสดงทุกอย่างที่ข้อมูลการย้อนดูมี รวมทั้งขอบเขตน้ำตลอดฤดูปี 2567 (2024) และตัวเลขสะสมของหน่วยงาน",
   },
   /** The switch of the time dock is on in trainee mode and off in hindsight mode. */
-  switchLabel: { en: "Trainee mode: hide the future", th: "โหมดผู้ฝึก: ซ่อนสิ่งที่ยังไม่เกิด" },
+  switchLabel: { en: "Trainee mode: hide the future", th: "โหมดผู้เข้ารับการฝึก: ซ่อนสิ่งที่ยังไม่เกิดขึ้น" },
   exercise: { en: "Exercise", th: "การฝึกซ้อม" },
   items: { en: "Exercise items", th: "รายการฝึกซ้อม" },
   itemsNote: { en: "Invented calls and reports, each shown from its replay hour", th: "การขอความช่วยเหลือและรายงานที่สมมุติขึ้น แสดงเมื่อถึงชั่วโมงของแต่ละรายการ" },
   pause: { en: "Pause when a life-at-risk item arrives", th: "หยุดการเล่นเมื่อมีรายการเสี่ยงต่อชีวิตเข้ามา" },
-  pauseNote: { en: "Playback stops at that replay hour, so the team can act", th: "การเล่นจะหยุดที่ชั่วโมงนั้น เพื่อให้ทีมมีเวลาดำเนินการ" },
+  pauseNote: { en: "Playback stops at that replay hour, so the team can act", th: "การเล่นจะหยุดที่ชั่วโมงนั้น เพื่อให้ชุดปฏิบัติการมีเวลาดำเนินการ" },
 } as const satisfies Record<string, Localized>;
 
 export const commandModeLine = (mode: CommandMode, language: Language): string => pick(mode === "hindsight" ? COMMAND_MODE.hindsightLine : COMMAND_MODE.traineeLine, language);
@@ -326,7 +368,7 @@ export const commandModeLine = (mode: CommandMode, language: Language): string =
 // --- "Known by now" --------------------------------------------------------------------------------------
 
 export const COMMAND_FEED = {
-  title: { en: "Known by now", th: "ทราบแล้วถึงชั่วโมงนี้" },
+  title: { en: "Known by now", th: "ข้อมูลที่ทราบถึงชั่วโมงนี้" },
   /** The fixed first line: what is missing. */
   missing: {
     en: "No public hourly river-level record for the Sai was found.",
@@ -355,7 +397,7 @@ export const COMMAND_FEED = {
     en: "Used to tune the model as the water fell, so agreement with it is not independent evidence.",
     th: "ใช้ปรับแบบจำลองช่วงน้ำลด ความสอดคล้องกับภาพนี้จึงไม่ใช่หลักฐานอิสระ",
   },
-  viirsNote: { en: "Nominal 13:30 pass. The map itself is not drawn on this page.", th: "เวลาผ่านโดยประมาณ 13:30 น. หน้านี้ไม่แสดงแผนที่ดังกล่าว" },
+  viirsNote: { en: "Nominal 13:30 pass. The map itself is not drawn on this page.", th: "ดาวเทียมผ่านเวลาประมาณ 13:30 น. หน้านี้ไม่แสดงแผนที่ดังกล่าว" },
   radarsatNote: { en: "Calibration: used to set the model. Acquired at this time and published later.", th: "ใช้ปรับแบบจำลอง: ภาพบันทึก ณ เวลานี้ และเผยแพร่ภายหลัง" },
   unosatNote: {
     en: "Preliminary, not field-validated. A cumulative figure that was known while the model was tuned; the data holds no publication time.",
@@ -371,7 +413,7 @@ export const COMMAND_FEED = {
   },
 } as const satisfies Record<string, Localized>;
 
-/** "Known by now (12)" / "ทราบแล้วถึงชั่วโมงนี้ (12)": the chip and the tab, with the number of rows. */
+/** "Known by now (12)" / "ข้อมูลที่ทราบถึงชั่วโมงนี้ (12)": the chip and the tab, with the number of rows. */
 export function commandKnownCount(label: Localized, count: number, language: Language): string {
   return `${pick(label, language)} (${count})`;
 }
@@ -464,7 +506,7 @@ export function commandFeedHeadline(item: Pick<CommandFeedItem, "detail" | "plac
       return `${detail.shelters} ${detail.shelters === 1 ? "shelter" : "shelters"}${centre ? " and the district command centre" : ""} reported in use`;
     }
     case "model_phase":
-      return th ? `เริ่มระยะของแบบจำลอง: ${detail.label.th}` : `Model phase begins: ${detail.label.en}`;
+      return th ? `แบบจำลองเข้าสู่ระยะ: ${detail.label.th}` : `Model phase begins: ${detail.label.en}`;
     case "model_peak":
       return th ? `ระดับแม่น้ำสมมุติสูงสุดในแบบจำลอง: ${detail.stage.toFixed(1)} ม.` : `Highest assumed river stage in the model: ${detail.stage.toFixed(1)} m`;
     case "model_first_loss": {

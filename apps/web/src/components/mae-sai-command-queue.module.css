@@ -23,6 +23,7 @@
 /* A segment is 26 px to the eye and 44 px to the finger: its hit area reaches over the label above and the note below.
    It is the same control as the speeds of the time dock: 8 px corners, the body face, 12 px, 600 when pressed. */
 .segments button { position: relative; min-width: 44px; height: 26px; padding: 0 8px; border: 1px solid var(--c-line); border-right-width: 0; background: #ffffff; color: var(--c-ink); font-size: 12px; font-weight: 500; line-height: 1; white-space: nowrap; }
+.segments button:lang(th) { line-height: 1.5; }
 .segments button::after { content: ""; position: absolute; inset: -10px 0; }
 .segments button:first-child { border-radius: var(--c-radius-control) 0 0 var(--c-radius-control); }
 .segments button:last-child { border-right-width: 1px; border-radius: 0 var(--c-radius-control) var(--c-radius-control) 0; }
@@ -65,7 +66,7 @@
 .row[data-selected="true"] { background: #e8f0f8; box-shadow: inset 3px 0 0 var(--c-accent); }
 .row[data-selected="true"] .gPlan { background: #dde7f1; }
 .row:has(.rowButton:focus-visible) { outline: 3px solid var(--c-focus); outline-offset: -3px; }
-.cIdx { color: var(--c-muted); font-size: 12px; font-weight: 500; }
+.cIdx { color: var(--c-muted); font-size: 12px; font-weight: 500; font-variant-numeric: normal; }
 .cName { min-width: 0; }
 .rowButton { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: 5px; width: 100%; padding: 0; border: 0; background: none; color: inherit; text-align: left; }
 .row .rowButton:focus-visible { outline: none; }
@@ -142,7 +143,8 @@
   .control:nth-child(3) { grid-column: 1 / -1; justify-self: start; justify-items: start; }
   .setNote { text-align: left; }
   /* The rows and the footer scroll together under the head, so more rows are in view. */
-  .tableWrap { overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; mask-image: linear-gradient(#000 calc(100% - 22px), transparent); -webkit-mask-image: linear-gradient(#000 calc(100% - 22px), transparent); }
+  /* The fade is as tall as what is cut: it never lies over the last row once that row is in view, and it is gone at the end (--fade is set by the table). */
+  .tableWrap { overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; mask-image: linear-gradient(#000 calc(100% - var(--fade, 22px)), transparent); -webkit-mask-image: linear-gradient(#000 calc(100% - var(--fade, 22px)), transparent); }
   .head { position: sticky; top: 0; z-index: 2; background: var(--c-panel); }
   .body { flex: none; overflow: visible; }
   .headRow, .row { grid-template-columns: minmax(0, 1fr); }

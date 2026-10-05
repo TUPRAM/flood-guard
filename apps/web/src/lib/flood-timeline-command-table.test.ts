@@ -31,9 +31,11 @@ import {
   tambonRowsAt,
   type CommandTambonRow,
 } from "./flood-timeline-command";
+import { placeRecordHour } from "./flood-timeline-command-feed";
 import {
   buildCommandFindIndex,
   COMMAND_OVERLAY_HREFS,
+  commandFindManifestAt,
   COMMAND_PLANNING_CASES,
   commandHoldReducer,
   commandOverlayRefusal,
@@ -148,11 +150,14 @@ describe("Order of the rows: order, ties, the 25-resident rule and the hold", ()
     expect(plainTambonOrder([row("C", 0, 1), row("B", 0, 3), row("A", 0, 1)])).toEqual(["B", "A", "C"]);
   });
 
-  it("lets a row overtake only when it leads by at least 25 residents", () => {
+  it("lets a row overtake when it leads by at least 25 residents, or when its printed figure is higher", () => {
     expect(ORDER_LEAD_RESIDENTS).toBe(25);
     const before = ["A", "B"];
-    expect(stepTambonOrder(before, [row("A", 300), row("B", 324)])).toEqual(["A", "B"]);
-    expect(stepTambonOrder(before, [row("A", 300), row("B", 325)])).toEqual(["B", "A"]);
+    // Both rows print "~1,300": the lead decides.
+    expect(stepTambonOrder(before, [row("A", 1300), row("B", 1324)])).toEqual(["A", "B"]);
+    expect(stepTambonOrder(before, [row("A", 1300), row("B", 1325)])).toEqual(["B", "A"]);
+    // "~320" is printed over "~300" at once: the table never shows a lower figure above a higher one.
+    expect(stepTambonOrder(before, [row("A", 300), row("B", 324)])).toEqual(["B", "A"]);
   });
 
   it("holds the order while the pointer, the keyboard or the time thumb holds it, and still updates the numbers", () => {
@@ -365,6 +370,35 @@ describe("Find a place: only the names the replay data holds", () => {
     // Four reported shelters have no coordinates: they are listed, and cannot be shown.
     expect(kinds("shelter").filter((entry) => entry.target === null)).toHaveLength(4);
     expect(kinds("place_record").filter((entry) => entry.target === null).length).toBeGreaterThan(0);
+  });
+
+  it("lists no place record and no reported site of a later hour in trainee mode", () => {
+    const at = (hour: number, mode: "trainee" | "hindsight") => buildCommandFindIndex({ manifest: commandFindManifestAt(manifest, hour, mode), tambons: tambons.features, facilities: facilities.features, roads: roads.features });
+    const names = (list: ReturnType<typeof at>, kind: string) => list.filter((entry) => entry.kind === kind);
+    // 9 Sep 20:00: no article has been published and no site has been reported. The base map's names are all there.
+    const early = at(20, "trainee");
+    expect(names(early, "place_record")).toEqual([]);
+    expect(names(early, "shelter")).toEqual([]);
+    expect(names(early, "command_centre")).toEqual([]);
+    expect(names(early, "tambon")).toHaveLength(8);
+    expect(names(early, "road")).toHaveLength(6);
+    expect(names(early, "facility")).toHaveLength(kinds("facility").length);
+    expect(searchCommandPlaces(early, "sai").every((entry) => entry.kind !== "place_record" && entry.kind !== "shelter")).toBe(true);
+    expect(searchCommandPlaces(early, "piyaphon")).toEqual([]);
+    // 11 Sep 12:00 (hour 60): the records published by then, and the sites reported by 11 Sep.
+    const noon = at(60, "trainee");
+    const published = manifest.reported_depths!.reports.filter((report) => placeRecordHour(report).fromHour <= 60).length;
+    expect(names(noon, "place_record").reduce((sum, entry) => sum + entry.records, 0)).toBe(published);
+    expect(published).toBeGreaterThan(0);
+    expect(published).toBeLessThan(manifest.reported_depths!.reports.length);
+    expect(names(noon, "command_centre")).toHaveLength(1);
+    expect(names(noon, "shelter").length).toBeLessThan(18);
+    // The record of the article of 13 Sep 11:32 is found from hour 108 on.
+    expect(searchCommandPlaces(at(107, "trainee"), "piyaphon")).toEqual([]);
+    expect(searchCommandPlaces(at(108, "trainee"), "piyaphon").map((entry) => entry.kind)).toEqual(["place_record"]);
+    // Hindsight lists everything at every hour: the same index as the whole replay.
+    expect(at(0, "hindsight")).toEqual(index);
+    expect(commandFindManifestAt(manifest, 0, "hindsight")).toBe(manifest);
   });
 
   it("finds a name in either language, names that start with the query first, subdistricts before the rest", () => {

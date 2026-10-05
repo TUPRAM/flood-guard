@@ -323,7 +323,7 @@ describe("Subdistrict table: the controls and the card", () => {
     expect(text(markup)).toContain("The first 8 sites of the ranked plan: candidates to verify, not a list of sites to open");
     expect(text(markup)).toContain("The 12 located sites among the shelters reported in use in 2024");
     expect(text(controls("th"))).toContain("เรียงแถวตาม ชั่วโมงนี้ แผน อันดับตามแผนจาก O1 SE1");
-    expect(text(controls("th"))).toContain("นับผู้อยู่อาศัยทั้งหมดที่จุดถนน · ตัวเลขเปลี่ยนตามชุดที่เลือก · ไม่ได้ตัดสินชุดใด");
+    expect(text(controls("th"))).toContain("นับผู้อยู่อาศัยทั้งหมดที่จุดบนโครงข่ายถนน · ตัวเลขเปลี่ยนตามชุดที่เลือก · ไม่ได้ตัดสินชุดใด");
   });
 
   it("cannot order by planning while no planning position is issued, and can once one is", () => {
@@ -432,7 +432,7 @@ describe("Inspector of a subdistrict (region D, Detail)", () => {
     expect(text(early)).not.toContain("12 Sep 2024 · 12:00 ICT");
     expect(text(early)).not.toContain("~5,900 residents in modelled water");
     expect(text(early)).not.toContain("tambon_replay_summary.json");
-    expect(text(detailOf("TH570901", "th", { hour: 83, mode: "trainee" }))).toContain("โหมดผู้ฝึก: สรุป ณ ระดับน้ำสูงสุดตามแบบจำลองจะแสดงเมื่อการย้อนดูไปถึงชั่วโมงนั้น");
+    expect(text(detailOf("TH570901", "th", { hour: 83, mode: "trainee" }))).toContain("โหมดผู้เข้ารับการฝึก: สรุป ณ ระดับน้ำสูงสุดตามแบบจำลองจะแสดงเมื่อการย้อนดูไปถึงชั่วโมงนั้น");
     // From the peak hour on, and at every hour in hindsight mode, the summary is shown.
     for (const markup of [detailOf("TH570901", "en", { hour: 84, mode: "trainee" }), detailOf("TH570901", "en", { hour: 200, mode: "trainee" }), detailOf("TH570901", "en", { hour: 36, mode: "hindsight" })]) {
       expect(markup).toContain('data-peak="shown"');

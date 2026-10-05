@@ -29,6 +29,23 @@ export const COMMAND_WATER_RGBA: { shallow: Rgba; deep: Rgba } = {
   deep: [47, 134, 196, 232],
 };
 
+/**
+ * A wet road: the one amber of the map. It is dark enough to read on the white casing a wet road lies on (about 4 to
+ * 1), because a wet road is by definition drawn over the pale water tone.
+ */
+export const COMMAND_WET_ROAD = "#b86e00";
+
+/**
+ * The hatch of the 2024 season envelope on this page (hindsight mode): dark ink stripes with a white edge and no wash,
+ * so the layer adds no colour of its own and the two water tones and the roads stay readable under it. The Studio
+ * replay keeps its own colours for the same layer; here it is told apart by the direction of its hatch.
+ */
+export const COMMAND_ENVELOPE_RGBA: { dark: Rgba; light: Rgba; wash: Rgba } = {
+  dark: [18, 38, 45, 132],
+  light: [255, 255, 255, 160],
+  wash: [0, 0, 0, 0],
+};
+
 const pack = ([r, g, b, a]: Rgba, littleEndian: boolean): number =>
   (littleEndian ? ((a << 24) | (b << 16) | (g << 8) | r) : ((r << 24) | (g << 16) | (b << 8) | a)) >>> 0;
 

@@ -190,7 +190,8 @@ export function MaeSaiCommandTimebar({ language, hour, playing, speed, collapsed
               </i>
             ))}
           </div>
-          <div className={styles.phaseBand} role="img" aria-label={`${t(COMMAND_TIMEBAR.phases)}: ${phases.map((phase) => commandText(phase.label, language)).join(", ")}`}>
+          {/* In trainee mode the band names only the phases the replay has reached: a later phase is a later fact. */}
+          <div className={styles.phaseBand} role="img" aria-label={`${t(COMMAND_TIMEBAR.phases)}: ${phases.filter((phase) => hindsight || phase.from <= at).map((phase) => commandText(phase.label, language)).join(", ")}`}>
             {phases.map((phase) => (
               <span key={phase.id} className={styles.phase} data-phase={phase.id} data-current={at >= phase.from && (at < phase.to || phase.to >= COMMAND_LAST_HOUR) ? "true" : undefined}
                 style={{ width: pct((phase.to - phase.from) / COMMAND_LAST_HOUR) }} lang={language}>
@@ -200,10 +201,9 @@ export function MaeSaiCommandTimebar({ language, hour, playing, speed, collapsed
             ))}
           </div>
           {rainfall && (
-            <div className={styles.rain} role="img" aria-label={t(COMMAND_TIMEBAR.rain)}>
-              {/* In trainee mode the rain of later hours is not drawn. */}
+            <div className={styles.rain} role="img" aria-label={t(COMMAND_TIMEBAR.rain)} title={t(COMMAND_TIMEBAR.rain)} data-command-rain>
+              {/* In trainee mode the rain of later hours is not drawn. The row has no label inside the plot: its name is its title and a line of the legend. */}
               <div className={styles.rainBars} style={hindsight ? undefined : { clipPath: `inset(0 ${pct(1 - share)} 0 0)` }}><RainRow rainfall={rainfall} /></div>
-              <span className={styles.rainLabel} aria-hidden="true">{t(COMMAND_TIMEBAR.rainShort)}</span>
             </div>
           )}
           <div className={styles.line} aria-hidden="true"><i style={{ width: pct(share) }} /></div>

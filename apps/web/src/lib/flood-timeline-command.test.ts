@@ -362,23 +362,29 @@ describe("Ordering rules of the table", () => {
     expect(stepTambonOrder(null, [row("C", 10), row("A", 300), row("B", 40)])).toEqual(["A", "B", "C"]);
   });
 
-  it("lets a row overtake only when it leads by at least 25 residents", () => {
+  it("lets a row overtake when it leads by at least 25 residents, or when its printed figure is higher", () => {
     expect(ORDER_LEAD_RESIDENTS).toBe(25);
     const before = ["A", "B", "C"];
-    expect(stepTambonOrder(before, [row("A", 300), row("B", 324), row("C", 10)])).toEqual(["A", "B", "C"]);
-    expect(stepTambonOrder(before, [row("A", 300), row("B", 325), row("C", 10)])).toEqual(["B", "A", "C"]);
+    // Two rows that print the same figure ("~1,300"): the lead of 25 decides.
+    expect(stepTambonOrder(before, [row("A", 1300), row("B", 1324), row("C", 10)])).toEqual(["A", "B", "C"]);
+    expect(stepTambonOrder(before, [row("A", 1300), row("B", 1325), row("C", 10)])).toEqual(["B", "A", "C"]);
     // Once ahead, a row is not overtaken back until the other leads by 25 again.
-    expect(stepTambonOrder(["B", "A", "C"], [row("A", 310), row("B", 300), row("C", 10)])).toEqual(["B", "A", "C"]);
-    expect(stepTambonOrder(["B", "A", "C"], [row("A", 325), row("B", 300), row("C", 10)])).toEqual(["A", "B", "C"]);
+    expect(stepTambonOrder(["B", "A", "C"], [row("A", 1310), row("B", 1300), row("C", 10)])).toEqual(["B", "A", "C"]);
+    expect(stepTambonOrder(["B", "A", "C"], [row("A", 1325), row("B", 1300), row("C", 10)])).toEqual(["A", "B", "C"]);
     // A row can pass several rows in one step when it leads each of them.
     expect(stepTambonOrder(before, [row("A", 100), row("B", 90), row("C", 130)])).toEqual(["C", "A", "B"]);
     // It passes nobody when the row just above keeps it back, even if it leads a row further up by 25.
-    expect(stepTambonOrder(before, [row("A", 100), row("B", 110), row("C", 126)])).toEqual(["A", "B", "C"]);
-    // A row above zero always overtakes a row at zero, whatever its lead: a row that reads "0" never stands over a
-    // row that reads "<10". Between two rows above zero the lead of 25 still holds.
+    expect(stepTambonOrder(before, [row("A", 1200), row("B", 1210), row("C", 1226)])).toEqual(["A", "B", "C"]);
+    // A row whose printed figure is higher always overtakes, whatever its lead: the table never shows a lower figure
+    // over a higher one. "~1,700" passes "~1,600" with a lead of 23, "~320" passes "~300", and a row above zero passes
+    // a row at zero, so a row that reads "0" never stands over a row that reads "<10".
+    expect(stepTambonOrder(["A", "B"], [row("A", 1647.8), row("B", 1670.9)])).toEqual(["B", "A"]);
+    expect(stepTambonOrder(["A", "B"], [row("A", 300), row("B", 324)])).toEqual(["B", "A"]);
     expect(stepTambonOrder(["A", "B"], [row("A", 0, 900), row("B", 2, 10)])).toEqual(["B", "A"]);
     expect(stepTambonOrder(["A", "B", "C"], [row("A", 0, 900), row("B", 0.4, 10), row("C", 1.9, 10)])).toEqual(["C", "A", "B"]);
-    expect(stepTambonOrder(["A", "B"], [row("A", 1, 900), row("B", 24, 10)])).toEqual(["A", "B"]);
+    expect(stepTambonOrder(["A", "B"], [row("A", 1, 900), row("B", 24, 10)])).toEqual(["B", "A"]);
+    // Two rows that both read "<10" print the same figure: the lead of 25 holds between them.
+    expect(stepTambonOrder(["A", "B"], [row("A", 2, 900), row("B", 8, 10)])).toEqual(["A", "B"]);
     // Rows with the same count are re-ordered by residents in water, then by code, whatever the order before.
     expect(stepTambonOrder(["B", "A", "C"], [row("A", 0, 40), row("B", 0, 10), row("C", 0, 80)])).toEqual(["C", "A", "B"]);
     expect(stepTambonOrder(["B", "A"], [row("A", 7, 3), row("B", 7, 3)])).toEqual(["A", "B"]);
@@ -392,19 +398,20 @@ describe("Ordering rules of the table", () => {
 
   it("holds the shown order while the numbers update, and shows the ruled order when the hold ends", () => {
     let state: TambonOrderState | null = null;
-    state = reduceTambonOrder(state, [row("A", 300), row("B", 100), row("C", 10)]);
+    state = reduceTambonOrder(state, [row("A", 3000), row("B", 1000), row("C", 10)]);
     expect(state).toEqual({ order: ["A", "B", "C"], ruled: ["A", "B", "C"], held: false, pending: false });
     // Held and nothing to move: no "Order held" line.
-    state = reduceTambonOrder(state, [row("A", 290), row("B", 120), row("C", 10)], { hold: true });
+    state = reduceTambonOrder(state, [row("A", 2900), row("B", 1200), row("C", 10)], { hold: true });
     expect(state).toEqual({ order: ["A", "B", "C"], ruled: ["A", "B", "C"], held: true, pending: false });
     // Held while B overtakes A: the shown order stays, the ruled order moves on, and the table says so.
-    state = reduceTambonOrder(state, [row("A", 200), row("B", 260), row("C", 10)], { hold: true });
+    state = reduceTambonOrder(state, [row("A", 2000), row("B", 2600), row("C", 10)], { hold: true });
     expect(state).toEqual({ order: ["A", "B", "C"], ruled: ["B", "A", "C"], held: true, pending: true });
-    // The ruled order keeps its own memory under the hold: A is 10 ahead again, which is not enough to pass B back.
-    state = reduceTambonOrder(state, [row("A", 270), row("B", 260), row("C", 10)], { hold: true });
+    // The ruled order keeps its own memory under the hold: A is 10 ahead again and prints the same "~2,600", which
+    // is not enough to pass B back.
+    state = reduceTambonOrder(state, [row("A", 2610), row("B", 2600), row("C", 10)], { hold: true });
     expect(state).toMatchObject({ order: ["A", "B", "C"], ruled: ["B", "A", "C"], held: true, pending: true });
     // Released: the ruled order of the latest hour.
-    state = reduceTambonOrder(state, [row("A", 270), row("B", 260), row("C", 10)]);
+    state = reduceTambonOrder(state, [row("A", 2610), row("B", 2600), row("C", 10)]);
     expect(state).toEqual({ order: ["B", "A", "C"], ruled: ["B", "A", "C"], held: false, pending: false });
     // A hold with nothing shown yet, or over other rows, shows the ruled order.
     expect(reduceTambonOrder(null, [row("B", 5), row("A", 9)], { hold: true })).toEqual({ order: ["A", "B"], ruled: ["A", "B"], held: false, pending: false });
@@ -448,6 +455,27 @@ describe("Ordering rules of the table", () => {
       // The same count for the ranked plan's sites: 18 without the rule, 17 with it.
       expect(orderChangeHours(hours.map((hour) => plainTambonOrder(tambonRowsAt(model, hour, "plan"))))).toHaveLength(18);
       expect(orderChangeHours(tambonOrderByHour(model, "plan"))).toHaveLength(17);
+    });
+
+    it("never prints a lower figure above a higher one, at any hour and with either shelter set", () => {
+      const printed = (value: number) => {
+        const figure = roundModelFigure(value);
+        return figure.kind === "under_ten" ? 1 : figure.value;
+      };
+      for (const set of COMMAND_SHELTER_SETS) {
+        const orders = tambonOrderByHour(model, set);
+        for (const hour of hours) {
+          const rows = tambonRowsAt(model, hour, set);
+          const figures = orders[hour].map((id) => printed(rows.find((item) => item.id === id)!.lostAccess));
+          expect(figures, `${set} hour ${hour}`).toEqual([...figures].sort((a, b) => b - a));
+        }
+      }
+      // The two hours a review named, with the ranked plan's sites: "~1,700" stood under "~1,600" at hour 91, and
+      // "~380" under "~360" at hour 125.
+      const plan = tambonOrderByHour(model, "plan");
+      const read = (hour: number) => plan[hour].map((id) => `${nameOf(id)} ${roundModelFigure(tambonRowsAt(model, hour, "plan").find((item) => item.id === id)!.lostAccess).text}`);
+      expect(read(91).slice(1, 3)).toEqual(["Wiang Phang Kham ~1,700", "Si Mueang Chum ~1,600"]);
+      expect(read(125).indexOf("Pong Pha ~380")).toBeLessThan(read(125).indexOf("Si Mueang Chum ~360"));
     });
 
     it("never keeps a row that reads 0 above a row with somebody counted, with either shelter set", () => {

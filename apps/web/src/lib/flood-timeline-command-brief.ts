@@ -353,7 +353,7 @@ function accessLine(facts: ItemBriefInput["facts"], language: Language): string 
   }
   if (facts.road) {
     parts.push(th
-      ? `ถนนที่น้ำต่ำกว่า 0.3 ม. ใกล้สุด ${commandDistanceText(facts.road.distanceM, language)}`
+      ? `ถนนที่น้ำต่ำกว่า 0.3 ม. ตามแบบจำลอง ใกล้สุด ${commandDistanceText(facts.road.distanceM, language)}`
       : `nearest road under 0.3 m in the model ${commandDistanceText(facts.road.distanceM, language)}`);
   }
   parts.push(th ? "ไม่ทราบความแรงกระแสน้ำ" : "strength of the current not known");
@@ -391,7 +391,7 @@ export function itemBriefLines(input: ItemBriefInput, language: Language = BRIEF
     accessLine(facts, language),
     shelterLine(facts.sites, language),
     `${th ? "เวลาในการย้อนดู" : "Replay time"}: ${commandMoment(input.hour, language)}`,
-    th ? "ที่มา: รายการฝึกซ้อม (สมมุติขึ้น) · แบบจำลองความเชื่อมั่นต่ำ" : "Source: exercise item (invented) · model, low confidence",
+    th ? "ที่มา: รายการฝึกซ้อม (สมมุติขึ้น) · แบบจำลอง ความเชื่อมั่นต่ำ" : "Source: exercise item (invented) · model, low confidence",
     tag,
   ];
 }
@@ -486,7 +486,9 @@ export function situationBriefLines(input: SituationBriefInput, language: Langua
   const total = Math.round(figures.roadKmTotal).toLocaleString("en-US");
   const top = input.rows.filter((row) => Math.round(row.lostAccess) > 0).slice(0, 3)
     .map((row) => `${th ? row.th : row.en} ${roundModelFigure(row.lostAccess).text}`);
-  const roads = change.newlyImpassable.named;
+  // As on the situation card: a road is named when it became impassable as a whole since the hour before, not when
+  // one more piece of an already impassable road changed.
+  const roads = change.newlyImpassable.named.filter((road) => road.whole);
   const since = change.sinceHour === null ? null : commandHourClock(change.sinceHour, language);
   const set = input.setNote ? ` · ${input.setNote}` : "";
   return [

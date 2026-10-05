@@ -8,6 +8,7 @@ import { readCaseReplay } from "./case-replay-inventory.mjs";
 import { EVIDENCE_AREA_CACHE, EVIDENCE_CATALOG_ASSET, readWorkerEvidenceAreas } from "./evidence-library-assets.mjs";
 import { readLandingArtwork } from "./landing-artwork-inventory.mjs";
 import { megabytes, verifyOfflineInstall } from "./offline-install-budget.mjs";
+import { RESEARCH_SCORE_SELECTOR, collectRenderedPage, collectWorkspaceRanking, forbiddenValues, readReportScores, readRetainedRanking, researchScoreTraces, workspaceRankingProblems } from "./research-score-guard.mjs";
 
 const out = resolve(process.cwd(), "out");
 if (!existsSync(resolve(out, "public", "index.html"))) {
@@ -32,6 +33,10 @@ if (!savedArea || savedArea.bytes > SAVE_ON_OPEN_LIMIT_BYTES || !unsavedCase || 
   || !removedCase || !removedArea || removedArea.bytes > SAVE_ON_OPEN_LIMIT_BYTES || removedArea.aoi_id === savedArea.aoi_id) {
   throw new Error("The evidence library does not list the four study areas this check uses.");
 }
+// The retained ranking of the planning bundle, which only the map workspace may show, and every value a Planning page
+// without research scores must not show as a number of its own (research-score-guard.mjs lists the written forms).
+const retainedRanking = readRetainedRanking(out);
+const forbiddenScores = forbiddenValues(retainedRanking, readReportScores(out));
 
 const contentTypes = {
   ".bin": "application/octet-stream",
@@ -559,9 +564,19 @@ try {
     }
     const shownScores = commandBody.match(/FPPS\s*\d+(?:\.\d+)?|\b[Cc]lass\s+[A-E]\b/g) ?? [];
     if (commandRoute === "/command/ver2/") {
-      // The Planning overview shows no research score and no research class of any kind.
-      if (shownScores.length > 0 || await researchNotice.locator('[data-research-retained-ranking="true"]').count() !== 0) {
-        throw new Error(`/command/ver2/ shows a research score or class: ${shownScores.join(", ")}`);
+      // The Planning overview shows none of the written forms of a research score or class (research-score-guard.mjs),
+      // once its case has loaded and in both languages: no ranking markup, no "FPPS <number>", no class with a letter
+      // A to E, and none of the retained or the report's values as a number of its own. The built file, which the
+      // static check reads, is the page before a case has loaded.
+      await page.locator(`main[data-planning-candidate="${savedCase.id}"]`).waitFor({ state: "visible" });
+      for (const [language, heading] of [["th", "ภาพรวมเพื่อการวางแผน"], ["en", "Planning overview"]]) {
+        await page.locator(`[data-shared-case="planning"] .language-toggle button[lang="${language}"]`).click();
+        await page.locator("main[data-planning-candidate] h1").filter({ hasText: heading }).waitFor({ state: "visible" });
+        const traces = await renderedScoreTraces(page);
+        if (traces.length > 0) throw new Error(`/command/ver2/ shows a written form of a research score or class (${language}): ${traces.join(", ")}`);
+      }
+      if (await researchNotice.locator('[data-research-retained-ranking="true"]').count() !== 0) {
+        throw new Error("/command/ver2/ describes a retained ranking it does not show.");
       }
       // Its header's Planning link leads to the map workspace, another page, and it offers a link back to it.
       const sharedHeader = page.locator('[data-shared-case="planning"] header');
@@ -582,6 +597,17 @@ try {
         // The map workspace keeps its own retained ranking (the stated exception): its notice must say so, so that it
         // does not read as if no per-subdistrict research score were shown on the page.
         throw new Error("/command/ shows its retained ranking without the notice saying what it is, or the ranking is gone and the notice still describes it.");
+      }
+      // The ranking is the planning bundle's, row by row, in both languages: each row of the rail and of the map's
+      // text list has the bundle's value and class (the badge too), and no number with one decimal on the page, as
+      // it is first shown, is anything but one of the eight retained values.
+      for (const language of ["th", "en"]) {
+        await page.locator(`main.command-page .language-toggle button[lang="${language}"]`).click();
+        await page.waitForFunction((expected) => document.querySelector("main.command-page")?.getAttribute("lang") === expected, language);
+        const ranking = await page.evaluate(collectWorkspaceRanking);
+        const rendered = await page.evaluate(collectRenderedPage, { selector: RESEARCH_SCORE_SELECTOR, exclude: null });
+        const problems = workspaceRankingProblems({ ...ranking, text: rendered.text }, retainedRanking);
+        if (problems.length > 0) throw new Error(`/command/ does not show its retained ranking as the planning bundle holds it (${language}): ${problems.join("; ")}`);
       }
       // The default Planning page shows the retained ranking again (R19): its label stands on the screen above the
       // first score of the ranking, and it says "retained research comparisons, not accepted event-response priorities".
@@ -641,6 +667,15 @@ try {
   await page.locator("main.command-page").waitFor({ state: "visible" });
   if (new URL(page.url()).pathname !== "/command/") throw new Error("The link back from the planning overview does not open the map workspace.");
   await page.locator('.language-toggle button[lang="en"]').click();
+  // The comparison page, the third Planning page, names one current page: itself, in its row of pages. Its header's
+  // Planning link leads to the map workspace, another page, so there it marks the section only.
+  await page.goto(`${baseUrl}/command/cases/${caseQuery}`, { waitUntil: "networkidle" });
+  await page.locator("main[data-evidence-library] footer").filter({ hasText: savedCase.id }).waitFor();
+  const comparisonMarks = await page.locator("main[data-evidence-library] > header nav a[aria-current], main[data-evidence-library] > nav a[aria-current]")
+    .evaluateAll((links) => links.map((link) => `${new URL(link.href).pathname} ${link.getAttribute("aria-current")}`));
+  if (JSON.stringify(comparisonMarks) !== JSON.stringify(["/command/ true", "/command/cases/ page"])) {
+    throw new Error(`/command/cases/ must mark Planning as its section and itself as the current page: ${JSON.stringify(comparisonMarks)}`);
+  }
   // The old workspace address forwards to the default Planning page and keeps the query of the old link. With no
   // script it is one sentence in each language with a link, and nothing of its own beside it.
   await page.goto(`${baseUrl}/command/archive/${caseQuery}`, { waitUntil: "domcontentloaded" });
@@ -656,7 +691,8 @@ try {
     || !forwardCopy.includes("หน้านี้ย้ายแล้ว พื้นที่ทำงานแผนที่สำหรับการวางแผนอยู่ที่ /command/")
     || await forward.locator('a[href="/command/"]').count() !== 2
     || await plainPage.locator("main").count() !== 1
-    || /FPPS\s*\d|\b[Cc]lass\s+[A-E]\b|ชั้น\s+[A-E]\b/.test(await plainPage.locator("body").innerText())
+    || researchScoreTraces((await plainPage.locator("body").innerText()).replace(/\s+/g, " "), forbiddenScores).length !== 0
+    || await plainPage.locator(RESEARCH_SCORE_SELECTOR).count() !== 0
     || await plainPage.locator('[data-research-report-notice], .ranked-areas, table, h1, h2').count() !== 0) {
     throw new Error("/command/archive/ is not a plain forward to /command/: it lacks its sentence and link, or has content of its own.");
   }
@@ -1253,7 +1289,7 @@ try {
   }
   await legacyContext.close();
   console.log(
-    `browser offline smoke: ${routes.length} routes rendered from a content-versioned service-worker cache; a fresh installation is ${install.files} files, ${megabytes(installed.bytes)} of ${megabytes(install.budget_bytes)} MB budget (${installed.bytes} bytes) with no study area in its build cache; the study area ${savedArea.aoi_id} (${savedArea.assets.length} files, ${megabytes(savedArea.bytes)} MB) was saved by opening it on the Planning overview, kept through a new deployment without a download, opened offline with every file matching its SHA-256, and was removed; the area ${largeArea.aoi_id} (${megabytes(largeArea.bytes)} MB) was not saved by opening it, its first save was reported as interrupted ${(interruptedAfterMs / 1000).toFixed(0)} s after the worker was stopped, and it was saved with its button on the second request and removed again; the area ${removedArea.aoi_id} was saved by opening it, removed, and stayed unsaved when opened again; the unsaved area ${unsavedCase.aoi_id} said so on six pages without a request; the compact map notice stays a short line and one button directly below the list button, clear of the map controls (${compactNotice.join("; ")}); Command shows the research-report notice (offline: as text, without a dead link), /command/ver2/ no research score, /command/ its retained ranking under its label (above the first score at 1280 px and on a phone), the two pages link to each other in both languages, /command/archive/ forwards to /command/ online, offline and with the case query, and Studio's archive shows the table; the case replay and its ${caseReplay.assets.length} opt-in data files replayed offline, the season envelope's raster, statistics and licence notice among them (toggle on, hatched and credited: ${envelopeOffline.join("; ")}), the reported depths' markers (all 12 located place records) and counts table from the saved manifest, and its ${caseReplay.exports.assets.length} export files downloaded offline (${caseReplay.exports.bytes} of ${caseReplay.exports.budget_bytes} export-budget bytes); approved basemaps failed gracefully and no unapproved external requests occurred`,
+    `browser offline smoke: ${routes.length} routes rendered from a content-versioned service-worker cache; a fresh installation is ${install.files} files, ${megabytes(installed.bytes)} of ${megabytes(install.budget_bytes)} MB budget (${installed.bytes} bytes) with no study area in its build cache; the study area ${savedArea.aoi_id} (${savedArea.assets.length} files, ${megabytes(savedArea.bytes)} MB) was saved by opening it on the Planning overview, kept through a new deployment without a download, opened offline with every file matching its SHA-256, and was removed; the area ${largeArea.aoi_id} (${megabytes(largeArea.bytes)} MB) was not saved by opening it, its first save was reported as interrupted ${(interruptedAfterMs / 1000).toFixed(0)} s after the worker was stopped, and it was saved with its button on the second request and removed again; the area ${removedArea.aoi_id} was saved by opening it, removed, and stayed unsaved when opened again; the unsaved area ${unsavedCase.aoi_id} said so on six pages without a request; the compact map notice stays a short line and one button directly below the list button, clear of the map controls (${compactNotice.join("; ")}); Command shows the research-report notice (offline: as text, without a dead link), /command/ver2/, with its case loaded, none of the written forms of a research score or class in English or Thai, /command/ its retained ranking row by row as the planning bundle holds it in both languages, under its label (above the first score at 1280 px and on a phone), the two pages link to each other in both languages, /command/cases/ marks Planning as its section, /command/archive/ forwards to /command/ online, offline and with the case query, and Studio's archive shows the table; the case replay and its ${caseReplay.assets.length} opt-in data files replayed offline, the season envelope's raster, statistics and licence notice among them (toggle on, hatched and credited: ${envelopeOffline.join("; ")}), the reported depths' markers (all 12 located place records) and counts table from the saved manifest, and its ${caseReplay.exports.assets.length} export files downloaded offline (${caseReplay.exports.bytes} of ${caseReplay.exports.budget_bytes} export-budget bytes); approved basemaps failed gracefully and no unapproved external requests occurred`,
   );
   console.log("legacy dashboard offline smoke: embedded Leaflet vectors, text equivalent, and dataset control verified");
 } finally {
@@ -1277,6 +1313,16 @@ async function waitForEvaluated(page, predicate, argument, description, timeoutM
 }
 
 /** Runs in the page: true when the current build cache holds every listed URL. */
+/**
+ * The written forms of a research score or class on a rendered page that must show none (research-score-guard.mjs
+ * lists them), read from the whole document, hidden text included. The row that says how large the saved copy of a
+ * study area is ("9.3 MB") is left out: a size is not a score, and one of them could equal a retained value.
+ */
+async function renderedScoreTraces(page) {
+  const rendered = await page.evaluate(collectRenderedPage, { selector: RESEARCH_SCORE_SELECTOR, exclude: '[data-evidence-offline-control="true"]' });
+  return [...researchScoreTraces(rendered.text, forbiddenScores), ...rendered.marked];
+}
+
 async function buildCacheHolds(urls) {
   const key = (await caches.keys()).find((entry) => /^floodguard-offline-[0-9a-f]{12}$/.test(entry));
   if (!key) return false;

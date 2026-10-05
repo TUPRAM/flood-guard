@@ -36,6 +36,8 @@
   --c-left: 420px;
   --c-dock: 88px;
   --c-rail: 44px;
+  /* Room kept for the navigation pill at the top right (its widest form, in English with the exercise menu). */
+  --c-nav: 530px;
   --c-font: "Inter Variable", "Noto Sans Thai Variable", "Segoe UI", "Leelawadee UI", Tahoma, sans-serif;
   --c-font-head: "Manrope Variable", "Noto Sans Thai Variable", "Segoe UI", "Leelawadee UI", Tahoma, sans-serif;
   --c-font-mono: "JetBrains Mono Variable", "Noto Sans Thai Variable", ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -314,7 +316,9 @@
 .page button.notice::after { content: ""; position: absolute; inset: -8px 0; }
 .page button.notice:hover { background: #173a5c; }
 .notice svg { flex: none; margin-right: 7px; }
-.notice { position: absolute; z-index: 13; top: var(--c-margin); left: 50%; display: flex; align-items: center; max-width: min(520px, calc(100% - 2 * var(--c-left) - 80px)); min-height: 28px; padding: 3px 14px; border-radius: 14px; background: var(--c-accent); color: #ffffff; font-size: 12px; box-shadow: var(--c-shadow-tool); transform: translateX(-50%); }
+/* The one-line notice stands in the middle of the free band between the left column and the navigation, and is never
+   wider than that band: it does not run under either of them at any width of a desktop. */
+.notice { position: absolute; z-index: 13; top: var(--c-margin); left: calc((var(--c-left) + 100% - var(--c-nav)) / 2); display: flex; align-items: center; max-width: min(520px, calc(100% - 2 * var(--c-margin) - var(--c-left) - var(--c-nav) - 16px)); min-height: 28px; padding: 3px 14px; border-radius: 14px; background: var(--c-accent); color: #ffffff; font-size: 12px; box-shadow: var(--c-shadow-tool); transform: translateX(-50%); }
 
 /* --- F. Time dock ------------------------------------------------------------------------------------- */
 .dock { position: absolute; z-index: 10; left: var(--c-margin); right: var(--c-margin); bottom: var(--c-margin); display: flex; align-items: stretch; gap: 16px; height: var(--c-dock); padding: 8px var(--c-inset); }
@@ -478,7 +482,7 @@
   .phaseName { display: none; }
   .phaseShortName { display: inline; }
   .legend { max-height: calc(100% - var(--c-dock) - 40px); }
-  .notice { max-width: calc(100% - 2 * var(--c-left) - 40px); }
+  .notice { left: 50%; max-width: calc(100% - 2 * var(--c-left) - 40px); }
   .credits { max-width: calc(100% - var(--c-left) - 250px); }
   .stage:has(.legend) .credits { max-width: calc(100% - var(--c-left) - 408px); }
   .focusHour { display: none; }

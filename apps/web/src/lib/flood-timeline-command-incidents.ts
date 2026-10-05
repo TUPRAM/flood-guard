@@ -234,9 +234,18 @@ export const exerciseHandling = (handling: ExerciseHandlingMap | null | undefine
 export const isOpenStatus = (status: ExerciseStatus): boolean => status !== "done" && status !== "dropped";
 
 /** The items that have arrived by replay `hour`, in the order of their arrival. An item never shows before its hour. */
-export function arrivedExerciseItems(items: readonly ExerciseItem[], hour: number): ExerciseItem[] {
+export function arrivedExerciseItems<T extends Pick<ExerciseItem, "hour">>(items: readonly T[], hour: number): T[] {
   const at = clampCommandHour(hour);
   return items.filter((item) => item.hour <= at);
+}
+
+/**
+ * The selected item as the inspector may show it at replay `hour`: the item with that id once it has arrived, and
+ * nothing before its hour (a step back in time takes a selected item off the screen with its marker).
+ */
+export function shownExerciseItem<T extends Pick<ExerciseItem, "id" | "hour">>(items: readonly T[], id: string | null | undefined, hour: number): T | null {
+  if (!id) return null;
+  return arrivedExerciseItems(items, hour).find((item) => item.id === id) ?? null;
 }
 
 /** The items that arrive after replay hour `after` and up to `upTo`: what a step forward brings. */

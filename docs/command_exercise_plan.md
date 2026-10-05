@@ -246,6 +246,7 @@ What changed on the panels:
 - **The clock card.** The model limit is a plain line behind a small "i". The count of open items stands at the right edge; in Thai its second line reads "เสี่ยงต่อชีวิต 2". The button of the situation brief is a round icon button. The card is 193 px tall in English and 200 px in Thai at 1440 x 800, 138 and 139 px at 1024 x 700.
 - **The table on a tablet.** All eight rows of 44 px are in view at 1024 x 700 (the banner is 36 px and the dock 64 px tall there). The fade at the lower edge is as tall as what is cut and never lies over a row in view.
 - **The tool rail** hangs from the navigation, and so do the view popover and the find-place box. The view popover names the one view the page has; a view that is not built is not offered.
+- **The right card** rises like the legend when it opens (where the reader has not asked for less motion).
 - **The time dock.** Marks never touch: a mark with a count is a wider pill, and distances are measured where the marks are drawn. The rain row is 17 px tall and has no label inside the plot; the legend names it. The name of the phase the replay is in is never cut by the hatch of the future. The knob of the playhead hangs at the foot of the track.
 - **Type.** Popups use the page's 12 and 13 px; Thai tags and segmented buttons have taller lines; links are ink with a quiet underline, because blue is kept for water.
 

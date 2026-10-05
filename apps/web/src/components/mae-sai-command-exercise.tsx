@@ -57,6 +57,7 @@ import {
 } from "@/lib/flood-timeline-command-feed";
 import {
   arrivedExerciseItems,
+  shownExerciseItem,
   deviceReportsByTambon,
   exerciseArrivals,
   exerciseCounts,
@@ -459,7 +460,7 @@ export function MaeSaiCommandExercise({ initial }: {
   // --- The selected subdistrict or report, and its inspector ----------------------------------------------
   const selected = selection.tambon;
   const selectedReport = selection.report;
-  const selectedItem = useMemo(() => (selectedReport?.type === "exercise" ? items.find((item) => item.id === selectedReport.id && item.hour <= hour) ?? null : null), [selectedReport, items, hour]);
+  const selectedItem = useMemo(() => shownExerciseItem(items, selectedReport?.type === "exercise" ? selectedReport.id : null, hour), [selectedReport, items, hour]);
   const selectedDevice = selectedReport?.type === "device" ? model?.tambons.find((tambon) => tambon.id === selectedReport.tambonId) ?? null : null;
   const facilityProps = useMemo(() => data?.facilities.features.map((feature) => feature.properties) ?? [], [data]);
   const detail = useMemo(() => (model && selected ? tambonDetailAt(model, facilityProps, hour, shelterSet, selected) : null), [model, facilityProps, hour, shelterSet, selected]);

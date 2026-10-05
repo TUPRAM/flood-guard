@@ -30,6 +30,7 @@ import {
   hasPhonePattern,
   isOpenStatus,
   ITEM_MARKER_OFFSETS,
+  shownExerciseItem,
   lifeAtRiskHours,
   modelDepthAt,
   mostUrgentItem,
@@ -247,6 +248,21 @@ describe("Exercise markers: every state", () => {
     }
     expect(EXERCISE_STATUSES).toEqual(["new", "acknowledged", "assigned", "done", "dropped"]);
     expect(EXERCISE_STATUSES.filter(isOpenStatus)).toEqual(["new", "acknowledged", "assigned"]);
+  });
+});
+
+describe("The selected item in the inspector", () => {
+  it("is shown from its replay hour on, and never before it", () => {
+    const item = file.items.find((entry) => entry.id === "EX-05")!;
+    expect(item.hour).toBe(46);
+    expect(shownExerciseItem(file.items, "EX-05", 45)).toBeNull();
+    expect(shownExerciseItem(file.items, "EX-05", 46)).toBe(item);
+    expect(shownExerciseItem(file.items, "EX-05", 264)).toBe(item);
+    expect(shownExerciseItem(file.items, "EX-99", 264)).toBeNull();
+    expect(shownExerciseItem(file.items, null, 264)).toBeNull();
+    for (const entry of file.items) {
+      for (const hour of [0, entry.hour - 1, entry.hour, entry.hour + 1]) expect(shownExerciseItem(file.items, entry.id, hour) !== null, `${entry.id} at ${hour}`).toBe(hour >= entry.hour);
+    }
   });
 });
 

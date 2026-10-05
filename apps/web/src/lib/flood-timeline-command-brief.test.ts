@@ -40,6 +40,8 @@ import {
   type ItemFacts,
   type LatLon,
 } from "./flood-timeline-command-brief";
+import { commandNodeLine } from "./flood-timeline-command-act-copy";
+import { commandChangeLine } from "./flood-timeline-command-copy";
 import { EXERCISE_FILE_URL, parseExerciseFile, type ExerciseItem } from "./flood-timeline-command-incidents";
 import { accessSnapshot, countedInReportedSet, parseAccessNodes, REPORTED_SET_ID } from "./flood-timeline-evacuation";
 import { roadState } from "./flood-timeline";
@@ -179,6 +181,18 @@ describe("The access model at the nearest resident node", () => {
     // Before the flood nobody has lost access: a node either keeps it or never had it.
     const before = new Set(Array.from({ length: nodes.count }, (_, index) => nodeAccessAt(nodes, setIndex, index, 0, levels)));
     expect([...before].sort()).toEqual(["kept", "none_before"]);
+  });
+
+  it("says each state of a node in its own words: kept, lost, none before the flood, or no node near", () => {
+    const line = (access: "kept" | "lost" | "none_before", language: Language) => commandNodeLine({ distanceM: 120, access }, language);
+    expect(line("kept", "en")).toBe("Access model, resident node ~120 m away: access to a shelter of the 2024 set kept at this stage");
+    expect(line("lost", "en")).toBe("Access model, resident node ~120 m away: access to a shelter of the 2024 set lost at this stage");
+    expect(line("kept", "th")).toContain("ยังเข้าถึงที่พักพิงของชุดปี 2567 (2024) ได้");
+    expect(line("lost", "th")).toContain("สูญเสียการเข้าถึงที่พักพิงของชุดปี 2567 (2024)");
+    // The three states never read alike, in either language.
+    for (const language of ["en", "th"] as const) expect(new Set([line("kept", language), line("lost", language), line("none_before", language)]).size).toBe(3);
+    expect(line("none_before", "en")).not.toMatch(/kept|lost at this stage/);
+    expect(commandNodeLine(null, "en")).toBe("Access model: no resident node within 300 m of this point");
   });
 });
 
@@ -408,6 +422,14 @@ describe("The situation brief", () => {
     // An hour of the onset names the roads, as the clock card does.
     expect(brief(44, "en")[6]).toMatch(/^Newly impassable since 19:00: .+/);
     expect(brief(44, "th")[6]).toMatch(/^ถนนที่เริ่มสัญจรไม่ได้ตั้งแต่ 19:00 น\.: .+/);
+    // 11 Sep 12:00: one more piece of Mueang Daeng Road changed, and most of that road was impassable already. It
+    // is not named as newly impassable, in the brief as on the clock card.
+    const partial = changeSinceHourBefore(model, 60).newlyImpassable.named;
+    expect(partial.length).toBeGreaterThan(0);
+    expect(partial.every((road) => !road.whole)).toBe(true);
+    expect(commandChangeLine(changeSinceHourBefore(model, 60), "11:00", "en").roadsCut).toBeNull();
+    expect(brief(60, "en")[6]).toBe("No named road became impassable this hour");
+    expect(brief(60, "th")[6]).toBe("ไม่มีถนนที่มีชื่อเริ่มสัญจรไม่ได้ในชั่วโมงนี้");
     expect(en[7]).toBe("Source: model, low confidence · current not modelled");
     expect(en[8]).toBe("[EXERCISE – not a real incident]");
     const th = brief(PEAK, "th");

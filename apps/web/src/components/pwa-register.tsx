@@ -185,6 +185,15 @@ function readableTime(value: string | null, language: Language): string {
   }).format(timestamp);
 }
 
+/**
+ * What the competition build must hold, beside the public files, before it calls the app saved offline. The profile
+ * is fixed when the site is built, so the public-production bundle is compiled without this list and carries none of
+ * these addresses here (scripts/profile-artifact-smoke.mjs fails on a Command address anywhere in the public build).
+ */
+const STAFF_OFFLINE_PATHS: readonly string[] = process.env.NEXT_PUBLIC_FLOODGUARD_APP_PROFILE === "public-production"
+  ? []
+  : ["/public-cases/", "/command/", "/command/ver2/", "/command/cases/", "/command/archive/", "/studio/", "/studio/planning-evidence/", "/studio/candidate-report/", "/studio/brief/", "/studio/library/", "/studio/archive/", "/offline-demo/mae-sai/bundle.json"];
+
 export function requiredOfflinePaths(profile: AppProfile): string[] {
   const publicPaths = [
     "/",
@@ -193,9 +202,7 @@ export function requiredOfflinePaths(profile: AppProfile): string[] {
     "/offline-demo/mae-sai/public-bundle.json",
     "/offline-demo/mae-sai/public-areas.json",
   ];
-  return profile === "public-production"
-    ? publicPaths
-    : [...publicPaths, "/public-cases/", "/command/", "/command/cases/", "/command/archive/", "/studio/", "/studio/planning-evidence/", "/studio/candidate-report/", "/studio/brief/", "/studio/library/", "/studio/archive/", "/offline-demo/mae-sai/bundle.json"];
+  return profile === "public-production" ? publicPaths : [...publicPaths, ...STAFF_OFFLINE_PATHS];
 }
 
 async function inspectOfflineCache(status: WorkerCacheStatus | null): Promise<CacheState> {

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import type { EvidenceLibraryCatalog, EvidenceLibraryPackage } from "@floodguard/contracts";
 import { LanguageToggle } from "./language-toggle";
-import { STUDIO_CANDIDATE_REPORT_ROUTE, caseHref, pushCaseSelection, readCaseSelection, resolveAnalysisSelection, resolveEvidenceCase, type CaseSelection } from "@/lib/case-selection";
+import { PLANNING_WORKSPACE_ROUTE, STUDIO_CANDIDATE_REPORT_ROUTE, caseHref, pushCaseSelection, readCaseSelection, resolveAnalysisSelection, resolveEvidenceCase, type CaseSelection } from "@/lib/case-selection";
 import { EVIDENCE_CATALOG_URL, fetchEvidencePackage, parseEvidenceCatalog } from "@/lib/evidence-library";
 import { evidencePackageFailure, type EvidencePackageFailure } from "@/lib/evidence-offline";
 import { useLanguage } from "@/lib/use-language";
@@ -62,10 +62,12 @@ export function CandidateCaseContext({ role }: { role: "planning" | "studio" }) 
 
   return <section className={styles.case} aria-labelledby={`${role}-shared-case-title`} data-shared-case={role} data-case-id={evidence?.id}>
     <header className={styles.header}>
-      <a className={styles.brand} href={caseHref(role === "planning" ? "/command/" : STUDIO_CANDIDATE_REPORT_ROUTE, query)}>FloodGuard <span>{role === "planning" ? (th ? "การวางแผน" : "Planning") : (th ? "หลักฐาน" : "Studio")}</span></a>
+      <a className={styles.brand} href={caseHref(role === "planning" ? PLANNING_WORKSPACE_ROUTE : STUDIO_CANDIDATE_REPORT_ROUTE, query)}>FloodGuard <span>{role === "planning" ? (th ? "การวางแผน" : "Planning") : (th ? "หลักฐาน" : "Studio")}</span></a>
       <nav aria-label={th ? "พื้นที่หลัก" : "Main areas"}>
         <a href={caseHref("/public/", query)}>{th ? "ประชาชน" : "Public"}</a>
-        <a href={caseHref("/command/", query)} aria-current={role === "planning" ? "page" : undefined}>{th ? "การวางแผน" : "Planning"}</a>
+        {/* The Planning link is the map workspace at /command/. The planning overview that carries this header is below it, at
+            /command/ver2/, so there the link marks the current section and does not name the current page. */}
+        <a href={caseHref(PLANNING_WORKSPACE_ROUTE, query)} aria-current={role === "planning" ? "true" : undefined}>{th ? "การวางแผน" : "Planning"}</a>
         <a href={caseHref(STUDIO_CANDIDATE_REPORT_ROUTE, query)} aria-current={role === "studio" ? "page" : undefined}>{th ? "หลักฐาน" : "Studio"}</a>
       </nav>
       <LanguageToggle language={language} onChange={setLanguage} />
@@ -112,7 +114,8 @@ export function CandidateCaseContext({ role }: { role: "planning" | "studio" }) 
         <p className={styles.caution}>{th ? "ขอบเขตน้ำท่วมเป็นข้อมูลผู้สมัคร การปิดถนนเป็นสมมติฐาน ไม่ใช่สภาพถนนที่สังเกต" : "Candidate flood extent and imposed road closures are assumptions, not observed road conditions."}</p>
         <div className={styles.lowerRow}>
           <nav aria-label={th ? "รายละเอียดกรณีศึกษา" : "Case details"}>
-            {role === "planning" ? <><a href={caseHref("/command/cases/", query)}>{th ? "เปรียบเทียบเส้นทาง" : "Route comparison"}</a><a href={caseHref("/command/archive/", query)}>{th ? "คลังงานวิจัยย้อนหลัง" : "Historical research archive"}</a></> : <><a href={caseHref("/studio/brief/", query)}>{th ? "บทสรุปและเส้นทาง" : "Decision brief"}</a><a href={caseHref("/studio/library/", query)}>{th ? "คลังหลักฐาน" : "Evidence library"}</a><a href={caseHref("/studio/archive/", query)}>{th ? "รายงานเก่า" : "Historical report"}</a></>}
+            {/* The link to the map workspace, the other Planning page, stands directly below this block, at the head of the overview. */}
+            {role === "planning" ? <a href={caseHref("/command/cases/", query)}>{th ? "เปรียบเทียบเส้นทาง" : "Route comparison"}</a> : <><a href={caseHref("/studio/brief/", query)}>{th ? "บทสรุปและเส้นทาง" : "Decision brief"}</a><a href={caseHref("/studio/library/", query)}>{th ? "คลังหลักฐาน" : "Evidence library"}</a><a href={caseHref("/studio/archive/", query)}>{th ? "รายงานเก่า" : "Historical report"}</a></>}
           </nav>
           <details className={styles.provenance}><summary>{th ? "แหล่งข้อมูลและที่มา" : "Sources and provenance"}</summary><p>{evidence.id} · {evidence.package_version}</p><p>{th ? "เวลาสังเกตการณ์ของแหล่งข้อมูล" : "Source observation time"}: {evidence.source_timestamp ?? (th ? "หลายช่วงเวลา ดูข้อมูลรายแหล่ง" : "mixed periods; see source records")}</p><GenerationTimes sourceAnalysisGeneratedAt={analysis?.generated_at ?? null} releaseGeneratedAt={evidence.generated_at} th={th} /><p>SHA-256: <code>{reference?.sha256}</code></p></details>
         </div>

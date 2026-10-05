@@ -19,6 +19,16 @@ const CASE_KEYS = ["aoi", "event", "version", "service", "mode", "scenario", "or
  */
 export const STUDIO_CANDIDATE_REPORT_ROUTE = "/studio/candidate-report/";
 
+/**
+ * The two Planning pages (owner request of 5 Oct 2026, decision log R19). `/command/` is the map workspace: the
+ * default Planning page and the address of every "Planning" link in a header. The candidate planning overview
+ * (shared case header plus `PlanningCandidateOverview`) keeps its own address below it, and pages link there when
+ * they mean "the planning overview of this case". `/command/archive/`, the workspace's address before the swap,
+ * only forwards to `/command/`.
+ */
+export const PLANNING_WORKSPACE_ROUTE = "/command/";
+export const PLANNING_OVERVIEW_ROUTE = "/command/ver2/";
+
 export function readCaseSelection(search: string): CaseSelection {
   const query = new URLSearchParams(search);
   return Object.fromEntries(CASE_KEYS.flatMap((key) => {
@@ -41,8 +51,11 @@ export function pushCaseSelection(selection: CaseSelection): void {
   window.dispatchEvent(new Event("popstate"));
 }
 
-/** An explicit unknown or mixed-version selection never falls back to another case. */
-export function resolveEvidenceCase(catalog: EvidenceLibraryCatalog, selection: CaseSelection) {
+/**
+ * An explicit unknown or mixed-version selection never falls back to another case. Only the catalogue's version and
+ * its list of cases are read, so a caller that holds no more of the catalogue than that can ask too.
+ */
+export function resolveEvidenceCase(catalog: Pick<EvidenceLibraryCatalog, "package_version" | "packages">, selection: CaseSelection) {
   if (Boolean(selection.aoi) !== Boolean(selection.event)) return { reference: null, reason: "incomplete_case" } as const;
   if (selection.version && selection.version !== catalog.package_version) return { reference: null, reason: "version_mismatch" } as const;
   const reference = selection.aoi && selection.event

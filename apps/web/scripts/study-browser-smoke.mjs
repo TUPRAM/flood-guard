@@ -1212,6 +1212,13 @@ try {
       await centreMapOn(target, before.x, before.y);
       let spot = (await depthSpots(target))[index];
       assert(spot.width >= 24, `${label}: marker ${spot.reports} is at least 24 px wide (${spot.width})`);
+      if (!spot.own && spot.hit === "nothing") {
+        // The marker's centre is outside the window: the page scrolled when the last popup took the focus, or the
+        // map is taller than a phone. A reader scrolls back to it; so does the check.
+        await depthMarkers(target).nth(index).evaluate((marker) => marker.scrollIntoView({ block: "center", inline: "center", behavior: "instant" }));
+        await target.waitForTimeout(200);
+        spot = (await depthSpots(target))[index];
+      }
       if (!spot.own && spot.chrome) {
         // Map chrome sits over the middle of this map (a legend chip on a narrow phone, say): bring the marker into the clear.
         const clear = await clearMapPoint(target);

@@ -244,6 +244,15 @@ and a test fails if any code treats one as confirmed:
 | Who | Putu |
 | Reply | `Q5 yes` |
 
+**Note of 5 October 2026, after decision R19 (added after this sheet was drafted).** Putu asked for the two Planning
+addresses to be swapped, and that is built on branch `claude/unify-lineages`. The map workspace of this question is
+now the default Planning page at `/command/`; `/command/archive/` only forwards to it. So the older ranking stands
+on the default Planning page again, labelled as before: its scores and classes "are retained research comparisons,
+not accepted event-response priorities". The request was about the two addresses and did not mention the ranking,
+so this question is still open, and R19 says so. Where this sheet says `/command/archive/` for the map workspace,
+read `/command/`. Option 2 would now take the ranking rail, the readout and the A to E legend off the default
+Planning page.
+
 ### Q6 (E1-OP1 first half, E1-OP10, E1-OP8, A1-OP6). One new version of the rights record for product 4009
 
 | | |
@@ -365,6 +374,15 @@ from a preview. The older ranking on the Command archive page (R17, point g) is 
 | After a yes | The change is made as its own reviewed step: header, policy card, landing links and the offline list. |
 | Who | Putu |
 | Reply | `Q12 yes` |
+
+**Note of 5 October 2026, after decision R19 (added after this sheet was drafted).** The addresses this question
+names have changed on branch `claude/unify-lineages`. "Today's text page", the planning overview, is now at
+`/command/ver2/`. `/command/` is the map workspace. `/command/archive/` holds one sentence with a link and forwards
+to `/command/`. The plan of the new page was written before that: it moves the text page to `/command/planning/`
+and keeps `/command/archive/` behind a menu link. If the new page takes `/command/`, the map workspace needs an
+address of its own again, and the overview can keep only one of `/command/planning/` and `/command/ver2/`. R19
+leaves both to the work on the new page (R19, point h). Nothing on branch `claude/command-exercise` was changed.
+The counts of files in the Risk row are the plan's, from before the swap.
 
 ### Q13 (plan choice 3; decision R17, part 1). The two rankings and the class form to keep
 
@@ -896,6 +914,11 @@ feature freeze; Fri 23 Oct, number freeze; Tue 27 Oct, the single release; Sat 3
   gate of R18, the older ranking on the Command archive page and the rights record of product 4009 moved into
   part 1. Point h of R17 is asked (Q19), and open point E1-OP9 stands beside the Sentinel-1 record (Q7). A dated
   list opens the sheet, four actions were added, and the list of words was extended.
+- **Notes added after decision R19 (5 October 2026).** The sheet was drafted when the decision log ended at R18.
+  R19 swapped the two Planning addresses the same day: the map workspace is at `/command/`, the planning overview
+  at `/command/ver2/`, and `/command/archive/` forwards. Two dated notes say what that changes, under Q5 and under
+  Q12. No question, count, option or recommendation was changed. Elsewhere on the sheet, `/command/archive/` still
+  names the map workspace and "today's `/command/`" the text page, as they were when it was drafted.
 - **Ids of the first version.** If you already answered with an id of the first version, this table places it.
 
   | First version | This version |

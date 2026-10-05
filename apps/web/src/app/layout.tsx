@@ -19,8 +19,15 @@ export const metadata: Metadata = {
   icons: { icon: "/floodguard-logo.png" },
 };
 
-/** Pages where the floating app-status pill would cover the page's own map and timeline controls: it hides itself there. */
-const AUTO_HIDE_AVAILABILITY_PATHS = ["/studio/cases/", "/command/exercise/"] as const;
+/**
+ * Pages where the floating app-status pill would cover the page's own map and timeline controls: it hides itself there.
+ * This list is written into every built page. The public-production build has no Command page, and its artifact check
+ * (scripts/profile-artifact-smoke.mjs) fails on a Command address anywhere in that build, so the profile, which is
+ * fixed when the site is built, leaves the exercise page's address out of it.
+ */
+const AUTO_HIDE_AVAILABILITY_PATHS: readonly string[] = process.env.NEXT_PUBLIC_FLOODGUARD_APP_PROFILE === "public-production"
+  ? ["/studio/cases/"]
+  : ["/studio/cases/", "/command/exercise/"];
 
 export const viewport: Viewport = {
   width: "device-width",

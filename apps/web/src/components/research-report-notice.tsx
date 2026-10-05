@@ -14,8 +14,10 @@ const CURRENT_BRIEF_HREF = "/studio/brief/?aoi=aoi-01_mae_sai_core&event=mae_sai
  * report's table, with its per-subdistrict research FPPS and A–E classes, predates the signed protocol and is shown
  * only in Studio's archive, labelled as historical research. This notice loads nothing and shows no score.
  *
- * `retainedRanking` is for the map workspace at /command/archive/, which keeps its own ranking, scores and classes
- * from the planning bundle: there the notice says so, and that those values are not the report's.
+ * `retainedRanking` is for the map workspace, which keeps its own ranking, scores and classes from the planning
+ * bundle: there the notice says so, and that those values are not the report's. The workspace is the default
+ * Planning page at /command/ (owner request of 5 Oct 2026, R19; it was at /command/archive/ before). The planning
+ * overview at /command/ver2/ shows no such ranking and uses the notice without it.
  *
  * The report's page is not part of the offline installation (its images alone would take the installation over its
  * 12 MB budget), so without a connection the link is replaced by a sentence that says it needs one.

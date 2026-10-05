@@ -5,6 +5,15 @@ Date: 4 October 2026. Branch: `claude/unify-lineages`. Local only; nothing was p
 This branch puts the three lines of the FloodGuard repository on one branch, ready to merge into `master`.
 The merge computed nothing: no FPPS, no action class, no ensemble.
 
+**Note of 5 October 2026 (decision log, R19).** Since the owner's request of that day the map workspace is at
+`/command/`, the planning overview is at `/command/ver2/`, and `/command/archive/` only forwards to `/command/`.
+Sections 2 to 5 were written before that and are kept as they were written. Where they give `/command/archive/`
+as the address of the map workspace, read `/command/`: the `csp-smoke.mjs` row of section 3, items 7, 9 and 11 of
+section 4, and the "Historical archive" row of section 5. Item 9 of section 4 has also changed in substance. The
+section mark it describes (`aria-current="true"`) is now on the Planning link of `/command/ver2/` and of
+`/command/cases/`; the header of `/command/` names Planning as the current page; `/command/archive/` has no header.
+What follows from the swap is in section 8, items 2, 11, 12 and 13.
+
 ## 1. What was merged
 
 | Step | Commit | What it is |
@@ -109,6 +118,8 @@ These are places where the two lines met without a textual conflict.
    with two links and no table, and its tests said so. Commit `04ffe6d` put the replay line's panel back above the
    archive footer, because the replay line's offline smoke and unit test read it. That reverses a decision of
    PR #31. It is not a repair; it is owner decision 11 in section 8.
+   The two addresses were swapped on 5 October 2026 at the owner's request (section 8, item 2; decision log, R19):
+   the map workspace is at `/command/` and the candidate overview at `/command/ver2/`.
 3. **Equity.** The scoring line moved `floodguard.equity` to metric version 2.0. The replay's own rule was written
    against the earlier version and its tests compared it with the module as it is now; 23 tests failed. `equity.py` stays at
    2.0. The earlier code is kept unchanged as `equity_v1.py`, used only as the replay's reference. No replay data,
@@ -180,6 +191,9 @@ and `qa:visual` and `workspace-browser-smoke.mjs` (they expect the map workspace
 `test:live-api`, which `README.md` documents, is stale in the same way: `live-api-smoke.mjs` opens `/command/`
 expecting the map workspace and `/studio/` expecting the evidence report. It needs both development servers and
 was not run.
+Since 5 October 2026 (R19) the map workspace is at `/command/` again, which is the address `qa:visual`,
+`workspace-browser-smoke.mjs` and `live-api-smoke.mjs` open for it. What they expect of `/studio/` is unchanged.
+They are still not part of `verify:frontend` and were not run after the swap.
 
 Documents that name addresses the unified branch moved. They are the scoring line's documents and were not edited:
 
@@ -191,6 +205,11 @@ Documents that name addresses the unified branch moved. They are the scoring lin
 - `docs/geoai_methodology.md`, lines 5 and 6, and `docs/positioning-and-claims.md`, lines 40 to 42 and 114 to 115,
   describe `/command/` as the map workspace and `/studio/` as the evidence workspace. They were already out of
   date on the scoring line, which had moved those to `/command/archive/` and `/studio/archive/` itself.
+  Since 5 October 2026 (R19) what they say of `/command/` holds again: it is the map workspace.
+- Since the same change, the `/command/` step of the demo path in `pitch_outline.md` opens the map workspace, which
+  does not read the case query; the planning overview of the case is at `/command/ver2/`. In the same folder,
+  `acceptance_checklist.csv` and `proposal_requirements.csv` name `apps/web/src/app/command/page.tsx` as the file of
+  the overview, which is now `apps/web/src/app/command/ver2/page.tsx`. The folder was not edited.
 
 ## 6. Where things are now
 
@@ -201,7 +220,7 @@ Documents that name addresses the unified branch moved. They are the scoring lin
 | Study library | `/studio/`, `/studio/studies/c2s-ms-20260915/`, `/studio/archive/mae-sai-geoai/` | `studio-library.tsx`, `c2s-study-*.tsx`, `apps/web/public/studies/` |
 | Signed protocols | none | `docs/proposal_execution/planning_protocol_v1a.json`, `planning_protocol_v1b.json`, `RECEIPTS.jsonl`, `tests/test_planning_protocol.py` |
 | Planning outputs | none | `outputs/planning_v1/`, `resources/planning_frames/`, `scripts/build_planning_context.py` (E4), `src/floodguard/planning_context.py`, `closure_rules.py`, `grade_join.py`, `normalisation.py`, `ddpm_shelters.py`, `planning_frames.py` |
-| Public evidence (PR #31) | `/command/`, `/command/cases/`, `/public-cases/`, `/studio/candidate-report/`, `/studio/library/`, `/studio/brief/` | `apps/web/public/evidence-library/`, `briefs/`, `public-case-projections/`, `src/floodguard/evidence_*.py`, `scripts/build_evidence_library.py` |
+| Public evidence (PR #31) | `/command/ver2/` (at `/command/` until 5 October 2026), `/command/cases/`, `/public-cases/`, `/studio/candidate-report/`, `/studio/library/`, `/studio/brief/` | `apps/web/public/evidence-library/`, `briefs/`, `public-case-projections/`, `src/floodguard/evidence_*.py`, `scripts/build_evidence_library.py` |
 | Radar benchmark | none | `docs/proposal_execution/automated_track/geoid_*`, `src/floodguard/geoid_m1_benchmark.py`, `geoid_m1_review.py`, `geoid_radar_benchmark.py`, `sar_change_v2.py`, `scripts/tune_geoid_m1_v2.py`, `score_geoid_m1_benchmark.py`, `outputs/geoid_*.json` |
 
 ## 7. Test results
@@ -239,6 +258,20 @@ lockfile, planning file, evidence-library file or Python file.
 
 The full Python suite was not run again: nothing it covers changed.
 
+Run again on 5 October 2026, on the swap of the two Planning addresses (decision log, R19) and on the fixes that
+answer the review of the swap (section 8, items 2, 11, 12 and 13). They changed page code, the smoke scripts and
+their tests, and documents; no dependency, lockfile, planning file, evidence-library file or Python file.
+
+| Check | Result |
+|---|---|
+| `pnpm verify:frontend` | Passed end to end: 12 contract tests, 976 web tests in 94 files, 18 evidence asset tests, 27 service-worker, budget and score-check tests, both profiles (Public 55 files, 3.0 MB; competition 139 files, 10.5 MB, each under the 12 MB budget) and the profile transition, 13 routes offline, all routes under the production headers, 57 study checks, 11 policy check groups, the evidence browser smoke |
+| The score checks, tried against changed builds | 17 changes to the three built Planning files and 3 to the overview's script, which show only once a case has loaded, each made its check fail; the unchanged build passed (section 8, item 11) |
+| The link from a brief of another place | With the map workspace's sentence for a selected case taken out of the build, the evidence browser check failed on the Hat Yai brief; with it, the check passed with and without a connection (section 8, item 13) |
+| Public-production build | No Command address in any shipped file; the artifact check now fails on one. Before the fix one script file named the four |
+| `python -m pytest -q` on `tests/test_planning_protocol.py`, the wording lint, the two owner-record tests, `tests/test_ait_mbrsc_guard.py` and the six test files that read the changed documents or the web sources | 490 passed, 4 skipped (the four protocol skips) |
+
+The full Python suite was not run again: nothing it covers changed.
+
 The two local failures need the `requests` package, which the local environment lacks. It is a declared
 dependency (the `evidence` extra); nothing was installed:
 
@@ -265,6 +298,26 @@ that used to skip there for lack of Pillow now run.
    **Decided on 4 October 2026 (decision log, R17):** Command is to be replaced entirely by a rescue-coordination
    exercise replay of Mae Sai 2024. A detailed plan is written first and the page is built in a later change.
    Nothing of it is built on this branch; until then `/command/` and `/command/archive/` stay as described here.
+   **Changed on 5 October 2026 at the owner's request (R19).** The owner asked for the two addresses to be swapped,
+   and the paragraph above describes the branch as it was before that. Now `/command/` is the map workspace, as on
+   `master`, under the same "historical research" banner, and it is the default Planning page. The scoring line's
+   candidate overview is at `/command/ver2/`, with the same content. `/command/archive/` holds one sentence with a
+   link in each language and forwards to `/command/`, keeping the query of an old link, so that old links,
+   bookmarks and saved offline copies keep working. `/command/cases/` is unchanged. Each of the two pages links to
+   the other in both languages. The "Planning" link of every header, the landing and the policy page lead to
+   `/command/`, the map workspace they were written for. From a page of a selected case that link opens the
+   workspace, which does not read the case; the workspace carries the case on its link to the overview and, since
+   the review of the swap, says in one line which case its address names (item 13).
+   The offline installation holds the three addresses (141 files, 10,512,158 bytes of the 12 MB budget; 139 files
+   and 10,514,833 bytes after the fixes that answer the review of the swap), and the public-production build
+   still ships none of them.
+   **Still open.** The replacement of Command (R17, part 1), of which nothing is built on this branch. The address
+   of the overview once the new page takes `/command/`: the plan of the new page proposes `/command/planning/` and
+   keeps `/command/archive/` behind a menu link, which has to be reconciled with `/command/ver2/` and with the
+   forward (R19, point h; question Q12 of `docs/owner_decision_sheet_2026-10-05.md`). The forward page, the link
+   labels, the page title and the line for a selected case are choices made while building (R19, points a to d
+   and i), for the owner to confirm or change. Whether the default page should save a study area when it is shown
+   is open too (R19, point j; item 12).
 3. **The candidate report's address** (`/studio/candidate-report/`), and whether the study library should list the
    scoring line's pages. Today the library does not link to them, and they do not link back to the library.
    The scoring line's header on `/studio/archive/` also had "Decision brief", "Evidence library" and "Archive"
@@ -314,6 +367,42 @@ Found by the review and left for the owners:
     the install list (the page is 18.7 kB, its files 1.9 MB; with them the list would be about 12.4 MB, over the
     12 MB budget). Without a connection the notice now says that the report needs one, and the offline smoke
     checks that on both pages.
+    **Since 5 October 2026 (R19).** The map workspace is the default Planning page at `/command/`. So what this
+    item says of `/command/archive/` is now true of `/command/`, and what it says of `/command/` is true of
+    `/command/ver2/`; `/command/archive/` only forwards. The retained ranking therefore stands on the default
+    Planning page again: the "FPPS ranking" rail with a score and a class badge in every row, the selected area's
+    readout, the A to E legend and the map's text list. It is labelled as before, above the ranking: its scores and
+    classes "are retained research comparisons, not accepted event-response priorities". The notice below it is the
+    one described above (the GeoAI report's table is kept in Studio's archive as historical research; the ranking,
+    FPPS and classes shown on the page are a separate retained comparison whose values differ from the report's).
+    `/command/ver2/` carries the notice without that addition and shows no research score or class.
+    The owner's request was about the two addresses and did not mention the ranking, so the question above is
+    **still open for the owner** (R17, point g; question Q5 of `docs/owner_decision_sheet_2026-10-05.md`): whether
+    the retained ranking stays once the new exercise page takes `/command/`, and before any score of the protocol
+    appears on Command.
+    The checks moved with the pages. What they look for is a list of written forms, kept in one file with its own
+    tests (`apps/web/scripts/research-score-guard.mjs`), and not every way a score could be written: the markup of
+    the ranking; the word FPPS followed in the same sentence by a number; "class", "ชั้น…" or "ระดับ…" followed by a
+    letter A to E; and the eight retained values and the GeoAI report's values written with a decimal point. Where
+    this item says that a check fails on "any research score or class", read: on any of these forms.
+    The static offline check reads the built files. It fails when `/command/ver2/` or the forward at
+    `/command/archive/` holds one of the forms; the built `/command/ver2/` is the page before a case has loaded, in
+    English. On `/command/` it compares every row of the ranking rail and of the map's text list with the planning
+    bundle (its value and class, and the badge of the rail), fails on any number with one decimal that is not one
+    of the eight retained values, wherever it stands on the page, and fails when a score or a class stands before
+    the label.
+    The browser check applies the same list to `/command/ver2/` with its case loaded, in English and in Thai, and to
+    the forward; on `/command/` it compares the rows with the bundle in both languages. It measures at 1280 px and
+    on a phone that the label is above the first score, follows the links between the two pages in both languages,
+    opens the forward with and without a connection, and checks on both pages that the notice's link to the report
+    is a sentence when there is no connection.
+    Not found by either check: a whole number (the report's 44 and 34 would be taken for a count), a new value
+    that stands away from the word FPPS, and a class given as a bare letter. Until the review of the swap the two
+    checks looked only for "FPPS" directly followed by a number and for "Class" or "ชั้น" followed by a letter, and
+    the browser read the loaded overview in English only; a score written as "FPPS: 53.6", in a table, or in Thai
+    on the loaded page passed. Tried after the change: 17 changes to the three built files (a score in each of
+    those forms, a ninth value, a row with another class or value) and 3 to the overview's script that show only
+    once a case has loaded (two of them in Thai only). Each made its check fail, and the unchanged build passed.
 12. **What a browser must download before the site works offline.** After the merge the install list was 84
     files, 297.6 MB, plus 75 script chunks, 3.3 MB: 301 MB together. The evidence library was 290.6 MB of it
     (largest file 66.4 MB), the briefs 2.7 MB, everything else 4.3 MB. Installation is all or nothing, the
@@ -327,6 +416,17 @@ Found by the review and left for the owners:
     library's catalogue (44 kB), the public case indexes (35 kB), the eight briefs (2.7 MB) and the files it held
     before for the Public and Mae Sai views (4.0 MB). The replay's own budgets are unchanged (6.5 MB of data,
     1.0 MB of exports, both saved once the replay has rendered).
+    Since the swap of 5 October 2026 (R19; item 2) the list also holds the page at `/command/ver2/` and its page
+    code: 141 files, 10,512,158 bytes, still 10.5 MB of the 12 MB budget. After the fixes that answer the review
+    of the swap it is 139 files, 10,514,833 bytes: the build makes two script files fewer, and the page code is
+    2.7 kB larger (the fixes add the line the map workspace shows for a selected case, item 13).
+    **A consequence of the swap, not decided (R19, point j).** The next paragraph was measured when the overview
+    was the default Planning page, and it still names it `/command/`. The page that saves a study area when it is
+    shown is now `/command/ver2/`: opened once with a connection it saved Mae Sai core (3 files, 9.3 MB), as
+    before. The default Planning page, the map workspace, reads no case package and saves nothing. So a reader
+    who followed "Planning" while connected and then lost the connection finds the workspace, and behind its link
+    an overview that says the study area is not saved on this device. Whether the workspace should also save
+    Mae Sai core when it is shown is a choice of 9.3 MB per reader for the owner; it is not built.
     A study area is its package file or files, its terrain preview and the report: 101.8 MB for all six (5.5 MB
     to 51.3 MB each). The first build saved an area only when the reader pressed "Save this area for offline
     use". The review of 5 October found that this was not the decision: `/command/` and five other pages, opened
@@ -354,6 +454,19 @@ Found by the review and left for the owners:
     `build-case-briefs.mjs`, line 294. Rebuilding the briefs changes the `html_sha256` and `pdf_sha256` that
     `briefs/catalog.json` pins for each of the eight, so it was not done. The target would be
     `/studio/candidate-report/`.
+    **The "Planning" link of the same briefs, since 5 October 2026 (R19, points e and i).** Each brief links
+    "Planning" to `/command/?aoi=...`. Until the swap that was the planning overview of the brief's case. Now it is
+    the map workspace, which shows the retained Mae Sai comparison whatever the case, and six of the eight briefs
+    are of Hat Yai or Chao Phraya cases. The briefs were not built again, for the reason above; the script writes
+    `/command/ver2/` for the next build. What was done instead is on the page that receives the link: when its
+    address names a case, the map workspace says so in one line under its context bar, in both languages ("Selected
+    case: Hat Yai core — Hat Yai · November 2025. This map does not show the results of that case. It shows the
+    retained Mae Sai research comparison only."), with a link to the planning overview of that case. The same line
+    answers the "Planning" link of a header on a page of a selected case. The evidence browser check follows the
+    link from the Hat Yai brief to the workspace, reads the line in both languages at two screen sizes, and follows
+    it on to the Hat Yai overview, with and without a connection. This is a choice made while building. The other
+    way, sending `/command/` on to `/command/ver2/` whenever its address names a case, was not built; R19, point i,
+    says why and asks the owner.
 14. **The map notice on phones (Public page).** When the map background cannot load, the notice covered part of
     "View map results as a list": 73 by 39 px at 390 by 844, 88 by 46 px at 375 by 812, 122 by 46 px at 320 by
     844. The list button is on top, so it hid the first words of the notice; the button itself still worked,

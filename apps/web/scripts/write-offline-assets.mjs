@@ -67,7 +67,10 @@ const coreAssets = appProfile === "public-production"
   : [
       ...publicCoreAssets,
       "/policy/",
+      // The three Planning addresses: the map workspace (default), the planning overview, and the old workspace
+      // address, which forwards to the default. All three open without a connection.
       "/command/",
+      "/command/ver2/",
       "/command/archive/",
       "/studio/",
       "/studio/planning-evidence/",
@@ -122,6 +125,7 @@ const versionedFiles = [
   ...(appProfile === "competition" ? [
     resolve(out, "policy", "index.html"),
     resolve(out, "command", "index.html"),
+    resolve(out, "command", "ver2", "index.html"),
     resolve(out, "command", "archive", "index.html"),
     resolve(out, "command", "cases", "index.html"),
     resolve(out, "public-cases", "index.html"),
@@ -243,7 +247,7 @@ function collectOptionalLandingAssets() {
   }
   // A shared dependency referenced by a route remains mandatory even if the
   // optional canvas also appears in its dynamic-import dependency manifest.
-  for (const route of ["index.html", "public/index.html", "command/index.html", "studio/index.html", "studio/library/index.html", "studio/brief/index.html"]) {
+  for (const route of ["index.html", "public/index.html", "command/index.html", "command/ver2/index.html", "studio/index.html", "studio/library/index.html", "studio/brief/index.html"]) {
     const path = resolve(out, route);
     if (!existsSync(path)) continue;
     const html = readFileSync(path, "utf8");

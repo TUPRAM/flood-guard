@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { evidenceFixtures } from "./evidence-library.fixtures";
 import { finalsAnalysisFixture } from "./finals-analysis.fixtures";
-import { caseHref, pushCaseSelection, readCaseSelection, resolveAnalysisSelection, resolveEvidenceCase } from "./case-selection";
+import { PLANNING_OVERVIEW_ROUTE, caseHref, pushCaseSelection, readCaseSelection, resolveAnalysisSelection, resolveEvidenceCase } from "./case-selection";
 
 describe("case selection", () => {
   it("round-trips the same case and optional result identity through role links", () => {
@@ -14,10 +14,11 @@ describe("case selection", () => {
   it("notifies every same-page role view when a case or scenario is pushed", () => {
     const pushState = vi.fn();
     const dispatchEvent = vi.fn();
-    vi.stubGlobal("window", { location: { pathname: "/command/" }, history: { pushState }, dispatchEvent });
+    // The Planning page that pushes a selection is the planning overview, at /command/ver2/ since 5 Oct 2026 (R19).
+    vi.stubGlobal("window", { location: { pathname: PLANNING_OVERVIEW_ROUTE }, history: { pushState }, dispatchEvent });
     try {
       pushCaseSelection({ aoi: "aoi-05", event: "event-2025", version: "v2", service: "hospital", mode: "walking", scenario: "candidate" });
-      expect(pushState).toHaveBeenCalledWith(null, "", "/command/?aoi=aoi-05&event=event-2025&version=v2&service=hospital&mode=walking&scenario=candidate");
+      expect(pushState).toHaveBeenCalledWith(null, "", "/command/ver2/?aoi=aoi-05&event=event-2025&version=v2&service=hospital&mode=walking&scenario=candidate");
       expect(dispatchEvent).toHaveBeenCalledOnce();
       expect(dispatchEvent.mock.calls[0][0]).toHaveProperty("type", "popstate");
     } finally {

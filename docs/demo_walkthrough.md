@@ -20,10 +20,17 @@ three-minute script, source boundaries and readiness checklist.
    concise brief for the decision story.
 
 The research archives at `/studio/archive/` and `/studio/archive/mae-sai-geoai/`
-and the older map workspace at `/command/archive/` do not provide accepted event
+and the older map workspace at `/command/` do not provide accepted event
 FPPS/action classes. Their retained scores are report-only comparators. Do not
 combine them with current brief numbers. The release handoff identifies the
 tested preview, package hashes and local reproduction commands.
+
+Since 5 October 2026 the map workspace is the default Planning page at
+`/command/`, which is where the "Planning" link of every header leads; its
+earlier address, `/command/archive/`, forwards to it. The page says above its
+ranking that its scores and classes are retained research comparisons, not
+accepted event-response priorities. The planning overview of a selected study
+case, which shows no research score, is at `/command/ver2/`.
 
 The Mae Sai replay beat (60-90 seconds, on the web app's case replay at
 `/studio/cases/mae-sai-2024/`) is current and is the last part of this file:

@@ -1,0 +1,4 @@
+.forward { max-width: 640px; margin: 0 auto; padding: 48px 20px; color: #183648; font: 16px/1.6 var(--font-sans), Arial, sans-serif; }
+.forward p { margin: 0 0 12px; }
+.forward a { color: #0a6073; font-weight: 750; }
+.forward a:focus-visible { outline: 3px solid #e0a730; outline-offset: 3px; }

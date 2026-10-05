@@ -133,7 +133,10 @@ try {
     const cache = await caches.open(key);
     return { key, paths: (await cache.keys()).map((request) => new URL(request.url).pathname) };
   });
-  if (!competitionCache?.paths.includes("/command/")) throw new Error("Competition profile did not cache Command before transition.");
+  // The three Planning addresses: the map workspace (default), the planning overview and the forward from the old address.
+  for (const commandPath of ["/command/", "/command/ver2/", "/command/archive/"]) {
+    if (!competitionCache?.paths.includes(commandPath)) throw new Error(`Competition profile did not cache ${commandPath} before transition.`);
+  }
   // A saved study area lives outside the build cache. The public profile must not keep it either.
   phase = "save a study area before the downgrade";
   await saveDefaultStudyArea(page);
@@ -212,7 +215,7 @@ try {
     throw new Error(`Competition cache survived the public-profile transition: ${JSON.stringify(publicCacheAudit)}`);
   }
   if (publicCacheAudit.paths.some((path) => path.startsWith("/landing/"))) throw new Error("Public cache retained competition artwork after downgrade.");
-  for (const forbidden of ["/policy/", "/command/", "/studio/", "/studio/candidate-report/", "/studio/library/", "/studio/brief/", "/evidence-library/catalog.json", "/offline-demo/mae-sai/roads.json", "/offline-demo/mae-sai/facilities.json"]) {
+  for (const forbidden of ["/policy/", "/command/", "/command/ver2/", "/command/cases/", "/command/archive/", "/studio/", "/studio/candidate-report/", "/studio/library/", "/studio/brief/", "/evidence-library/catalog.json", "/offline-demo/mae-sai/roads.json", "/offline-demo/mae-sai/facilities.json"]) {
     if (publicCacheAudit.paths.includes(forbidden)) throw new Error(`Public cache retained ${forbidden} after transition.`);
   }
   await performSuccessfulUpdateCheck(page);
@@ -222,17 +225,20 @@ try {
   offlineMode = true;
   await context.setOffline(true);
   await page.waitForFunction(() => document.querySelector('[data-pwa-availability="true"]')?.textContent?.includes("Offline"));
-  let commandRecovered = false;
-  expectedDeniedNavigation = true;
-  try {
-    await page.goto(`${baseUrl}/command/`, { waitUntil: "domcontentloaded", timeout: 5000 });
-    commandRecovered = await page.locator("main[data-planning-candidate], main.command-page").count() > 0;
-  } catch {
-    commandRecovered = false;
-  } finally {
-    expectedDeniedNavigation = false;
+  // None of the Planning pages is left: not the map workspace, not the planning overview, not the forward.
+  for (const commandPath of ["/command/", "/command/ver2/", "/command/archive/"]) {
+    let commandRecovered = false;
+    expectedDeniedNavigation = true;
+    try {
+      await page.goto(`${baseUrl}${commandPath}`, { waitUntil: "domcontentloaded", timeout: 5000 });
+      commandRecovered = await page.locator("main[data-planning-candidate], main.command-page, main[data-command-forward]").count() > 0;
+    } catch {
+      commandRecovered = false;
+    } finally {
+      expectedDeniedNavigation = false;
+    }
+    if (commandRecovered) throw new Error(`${commandPath} remained available offline after the public-profile downgrade.`);
   }
-  if (commandRecovered) throw new Error("Command remained available offline after the public-profile downgrade.");
 
   // Reconnect the Public profile before switching the same origin back to the
   // broader competition build. This proves the online/offline indicator and
@@ -293,12 +299,13 @@ try {
   phase = "competition offline staff-route recovery";
   offlineMode = true;
   await context.setOffline(true);
-  // The map-bearing planning page is the historical archive; the current overview and the Studio pages have no map.
-  const mapRoute = "/command/archive/";
+  // The map-bearing planning page is the map workspace, the default Planning page at /command/; the planning
+  // overview at /command/ver2/ and the Studio pages have no map.
+  const mapRoute = "/command/";
   for (const [path, selector] of [
     ["/studio/brief/", "main[data-evidence-library]"],
     ["/studio/library/", "main[data-evidence-library]"],
-    ["/command/", "main[data-planning-candidate]"],
+    ["/command/ver2/", "main[data-planning-candidate]"],
     [mapRoute, "main.command-page"],
     ["/studio/candidate-report/", "main[data-evidence-case-id]"],
     ["/studio/", "main.studio-page"],
@@ -382,7 +389,7 @@ function expectedResourceFailure(resource) {
   const url = new URL(resource, baseUrl);
   return basemapOrigins.has(url.origin)
     || (offlineMode && url.origin === baseUrl && (
-      (expectedDeniedNavigation && url.pathname === "/command/")
+      (expectedDeniedNavigation && url.pathname.startsWith("/command/"))
       || url.searchParams.has("_rsc")
     ));
 }

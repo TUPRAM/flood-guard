@@ -214,6 +214,72 @@ Open points for the owners after stage 4:
 4. No Assign and no brief for a report saved on this device.
 5. The Thai of the brief, of the setup sheet and of the log was written by an AI assistant and no native speaker has read it.
 
+**Fix pass f2 (5 Oct 2026): what trainee mode may tell, the counts kept apart, the marker layout and the look.** Two reviews of stages 1 to 4 (a designer's, and one of the code, the honesty rules and the Thai text) were worked through. One file was added: `apps/web/src/lib/flood-timeline-command-data.test.ts`. Where this section gives a size, a rule or a wording, it replaces the one in the notes above.
+
+What changed in the rules (honesty):
+
+- **The popup of a place record tells nothing of a later hour in trainee mode.** The line "At the modelled peak ..." with the depth at the peak is held back until the replay reaches the peak hour (replay hour 84), and a first-wet time still to come is left out. Before the peak the line reads "The point is 2.64 m above its channel", with "First wet 10 Sep 19:00 ICT" in front once that hour has passed. The shared popup builder takes an optional horizon for this; the Studio replay passes none and is unchanged.
+- **The find-place box lists what is known by the replay hour.** In trainee mode it lists the place records published by the hour and the sites reported by the replay day, beside the subdistricts, key facilities and roads of the base map. At 9 Sep 20:00 it lists no place record and no shelter.
+- **A count mark never adds invented items to place records.** At the district zoom a mark is two pills: the 2024 place records in a white pill with the bubble of a place record, and the invented items in a dark pill behind the amber "EX" tag, with "!!" and that count for the open items at life at risk. Its name reads "11 place records · 11 exercise items (invented), 2 at life at risk. Select to zoom in." The clustering holds two counts and no total.
+- **Every exercise marker wears the "EX" tag.** The line under a marker starts with the tag, then the callsign once assigned and the hours waited. An item of information shows the tag alone: its waiting clock is in the popup and the inspector.
+- **The situation brief names a road only when it became impassable as a whole**, as the clock card does.
+- **The urgency rule reads "people standing in water at chest height or above"** (it read "water at chest height or above with people present"). Item EX-07 (people who are dry on an upper floor above deep water, without food for a day) follows the rule at "urgent". The split of the 14 items is unchanged: 2, 4 and 8.
+- **Order of the rows.** A row whose printed figure is higher always passes the row above it; the lead of 25 residents applies between two rows that print the same figure. So "~1,700" never stands under "~1,600" (it did at hour 91 with the plan's sites). With the 2024 set the order still changes 12 times in the replay; with the plan's sites 17 times.
+- **Trainee mode in the phase band.** The name a screen reader hears lists only the phases the replay has reached.
+
+What changed on the map:
+
+- **Markers that would cover each other stand apart.** At the town zoom an invented item that would cover a place-record bubble, the sign of a reported site or another item stands beside its point, with a thin line and a dot back to the point. The most urgent items are placed first and keep their own point. A marker only moves when its state or the zoom changes, never from one replay hour to the next. A place record is drawn above an invented item of information. Measured at the town zoom at hour 84: at 1440 x 800 one pair of signs still overlaps (a place-record bubble over the star of the shelter at the same place); it was six.
+- **Names with a halo.** A subdistrict's name is drawn with a white stroke behind its letters, not on a plate, so the water and the roads under it stay in sight.
+- **"No reports received"** is a small struck-through speech bubble under the name below zoom 12.5, and the words from zoom 12.5 on. The legend names both.
+- **A lighter veil** outside the district, a fainter terrain shading, and from zoom 14 on a softened edge of the modelled water (a blur of 0.7 px and a thin darker rim). The painter and the extent it draws are unchanged.
+- **Roads.** A wet road lies on a white casing like an impassable major road, and its amber is darker (#b86e00), so its dashes read on the pale water tone.
+- **Signs.** The edge of a sign is a soft dark line in its drawing, with no blur filter. A shelter star keeps its 44 px target at the district zoom (the sign inside it is 14 px), and shelters closer than 36 px share one count. A closed item is a paler grey.
+- **The season envelope of hindsight mode** is a hatch of dark ink and white on this page, with no colour of its own. The Studio replay keeps its yellow.
+- **Tooltips.** A tooltip closes when its marker's popup opens, and does not open on the selected item.
+- **Popups open below the one-line notice.** The clear rectangle starts under the notice where the notice lies over it (on a tablet). The close control of a popup is named in the page's language.
+
+What changed on the panels:
+
+- **The legend has three tabs**: Map (water, roads, places), Reports (place records, the count mark, "no reports received", the reports of this device, and the marks and the rain row of the time bar) and Exercise (the marker grammar as a grid of shape by urgency, the three handling states, the line under a marker, the staging point). No part scrolls at 1440 x 800 or 1024 x 700 (the tallest is 542 px of the 544 px it may take).
+- **The left column is one sheet**: the clock card and the table touch, with a hairline between them.
+- **The clock card.** The model limit is a plain line behind a small "i". The count of open items stands at the right edge; in Thai its second line reads "เสี่ยงต่อชีวิต 2". The button of the situation brief is a round icon button. The card is 193 px tall in English and 200 px in Thai at 1440 x 800, 138 and 139 px at 1024 x 700.
+- **The table on a tablet.** All eight rows of 44 px are in view at 1024 x 700 (the banner is 36 px and the dock 64 px tall there). The fade at the lower edge is as tall as what is cut and never lies over a row in view.
+- **The tool rail** hangs from the navigation, and so do the view popover and the find-place box. The view popover names the one view the page has; a view that is not built is not offered.
+- **The time dock.** Marks never touch: a mark with a count is a wider pill, and distances are measured where the marks are drawn. The rain row is 17 px tall and has no label inside the plot; the legend names it. The name of the phase the replay is in is never cut by the hatch of the future. The knob of the playhead hangs at the foot of the track.
+- **Type.** Popups use the page's 12 and 13 px; Thai tags and segmented buttons have taller lines; links are ink with a quiet underline, because blue is kept for water.
+
+Keyboard and touch:
+
+- A count mark of the reports or of the shelters answers Enter and Space.
+- A marker that takes the keyboard focus is brought well inside the clear rectangle, with room for its tooltip. Checked with the Tab key over the 32 markers of the town zoom at both sizes: none outside the window, none under a panel.
+- A sheet opened from the Exercise menu hands the focus back to that menu when it closes. After "Reset exercise" the focus is on "Undo". The key U undoes the last action while its line is on screen; the help sheet lists it.
+- Smaller controls reach 44 px: the source links of popups, the selects of the roster, the find field, the mode segments, the place and source links of "Known by now" and the urgency steps.
+
+Thai wording (written by an AI assistant; no native speaker has read it):
+
+- The trainee is "ผู้เข้ารับการฝึก" (it read "ผู้ฝึก", which means the trainer) and the facilitator "ผู้ควบคุมการฝึก".
+- Open items are "ยังไม่ปิด". "Known by now" is "ข้อมูลที่ทราบถึงชั่วโมงนี้". The observed lane is "ข้อมูลสังเกตการณ์". A road node is "จุดบนโครงข่ายถนน".
+- The line that says what changed puts the noun before its number: "สูญเสียการเข้าถึง +100 · ในน้ำ 0 · สัญจรไม่ได้ +1 กม."
+- The banner ends "ไม่ใช่ประกาศเตือนภัยอย่างเป็นทางการ".
+- The Thai brief says "ตามแบบจำลอง" in its road clause, where the English says "in the model".
+- The section of the inspector with the nearest sites is "Shelters near this point" in English, as its Thai name says.
+
+Where fix pass f2 differs from a review, and what was left:
+
+- **Shelters still count from the start of their day in trainee mode**, as the plan says and as open point 3 after stage 3 asks the owners. A review asked for the end of the day.
+- **The assumptions of the replay data in the information drawer** are shown as the data writes them, in a list that is closed until it is opened.
+- **The skip link of the site** ("Skip to content") stays in English: it belongs to the layout every page shares.
+- **Not done:** a time readout on the playhead (it would cover the day chips or the newest marks), a cross-fade of the water and of the figures while playing, and the rise of popups.
+- **The marker layer has no test that mounts it**: the tests of this repo run without a browser document. Its decisions are pure functions with tests (which records and sites an hour shows, what a popup may tell, the two counts of a mark, the placement, the line under a marker), and the layer was checked in a browser.
+
+Open points for the owners after fix pass f2:
+
+1. The reworded urgency rule.
+2. The order rule: a higher printed figure always passes.
+3. An item of information shows no waiting clock on the map.
+4. The Thai wording was changed again by an AI assistant and no native speaker has read it.
+
 Prepared 4 Oct 2026 for Putu and Rachmania; corrected by the critic the same day. The repo was read only on the branch `claude/unify-lineages`, in a local checkout; nothing was edited, built or run. All paths below are relative to the repo root.
 
 Terms used in this plan:

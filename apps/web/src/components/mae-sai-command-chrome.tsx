@@ -416,14 +416,11 @@ export function CommandViewPopover({ language, facilities, facilityCount, onFaci
         <h2 id={title} tabIndex={-1} data-command-panel-title>{t(COMMAND_TOOLS.viewTitle)}</h2>
         <button type="button" className={styles.iconButton} onClick={onClose} aria-label={t(COMMAND_TOOLS.close)}><X size={18} aria-hidden="true" /></button>
       </div>
-      <fieldset className={styles.choiceGroup}>
-        <legend className={styles.srOnly}>{t(COMMAND_TOOLS.view)}</legend>
-        <label className={styles.choice} lang={language}>
-          <input type="radio" name="command-view" checked readOnly />
-          <span>{t(COMMAND_TOOLS.rescue)}</span>
-          <small>{t(COMMAND_TOOLS.rescueNote)}</small>
-        </label>
-      </fieldset>
+      {/* The page has one view: it is named, not offered as a choice of one. */}
+      <p className={styles.viewNow} lang={language} data-command-view="rescue">
+        <strong>{t(COMMAND_TOOLS.rescue)}</strong>
+        <small>{t(COMMAND_TOOLS.rescueNote)}</small>
+      </p>
       <fieldset className={styles.choiceGroup}>
         <legend className={styles.srOnly}>{t(COMMAND_TOOLS.facilities)}</legend>
         <label className={styles.choice} lang={language}>

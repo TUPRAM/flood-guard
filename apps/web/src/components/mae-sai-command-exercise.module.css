@@ -282,8 +282,13 @@
 .tool:hover:not(:disabled) { background: var(--c-tint); }
 .tool[aria-pressed="true"], .tool[aria-expanded="true"], .tool[aria-pressed="true"]:hover:not(:disabled), .tool[aria-expanded="true"]:hover:not(:disabled) { background: var(--c-accent); color: #ffffff; }
 .tool:disabled { color: #8496aa; box-shadow: 0 0 0 1px rgb(12 39 64 / 6%); }
-/* The view popover stands beside the rail and ends above the legend chip. */
-.popover { position: absolute; z-index: 20; right: calc(var(--c-margin) + var(--c-rail) + var(--c-gap)); bottom: calc(var(--c-margin) + var(--c-dock) + 2 * var(--c-gap) + 36px); width: 280px; max-height: calc(100% - var(--c-dock) - 176px); overflow: auto; padding: 12px var(--c-inset) 14px; box-shadow: var(--c-shadow-over); scrollbar-width: thin; }
+/* The view popover hangs from the navigation beside its button, the first tool of the rail, and ends above the legend chip. */
+.popover { position: absolute; z-index: 20; top: calc(var(--c-margin) + 44px + var(--c-gap)); right: calc(var(--c-margin) + var(--c-rail) + var(--c-gap)); width: 280px; max-height: calc(100% - 3 * var(--c-margin) - 44px - var(--c-dock) - 36px - 3 * var(--c-gap)); overflow: auto; padding: 12px var(--c-inset) 14px; box-shadow: var(--c-shadow-over); scrollbar-width: thin; }
+.viewNow { display: grid; gap: 2px; padding: 2px 0 10px; }
+.viewNow strong { font-size: 13px; font-weight: 600; }
+.viewNow small { color: var(--c-muted); font-size: 11px; line-height: 1.4; }
+.viewNow:lang(th) small { line-height: 1.5; }
+.viewNow + .choiceGroup { padding-top: 4px; border-top: 1px solid var(--c-line); }
 .popoverHead { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
 .popoverHead h2 { font-family: var(--c-font-head); font-size: 14px; font-weight: 600; }
 .popoverHead h2:focus-visible { outline-offset: 4px; border-radius: 4px; }
@@ -581,8 +586,9 @@
   .narrowNote { display: block; margin-top: 5px; color: var(--c-muted); font-size: 11px; line-height: 1.45; }
   .narrowNote:lang(th) { line-height: 1.5; }
   .menu { right: var(--c-margin); top: calc(var(--c-margin) + 44px + var(--c-gap)); }
-  /* A small map keeps the Thai names only. */
+  /* A small map keeps the Thai names only, and has no room for the label outside the district (the veil says it). */
   .placeLabel span:last-child { display: none; }
+  .outsideLabel { display: none; }
   .legendChip, .legend { right: var(--c-margin); }
   .legend { max-width: calc(100% - 2 * var(--c-margin)); max-height: calc(100% - var(--c-dock) - 2 * var(--c-margin) - var(--c-gap)); }
   .notice { top: auto; bottom: calc(var(--c-margin) + var(--c-dock) + var(--c-gap) + 44px); max-width: calc(100% - 2 * var(--c-margin)); }

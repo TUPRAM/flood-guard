@@ -709,12 +709,38 @@ export function MaeSaiCommandExercise({ initial }: {
     setPendingUndo({ key: `${itemId}:${nowMs}`, kind: "item", undo: result.undo, authorUrgency: authored.urgency });
     if (action.type !== "urgency") setActTray(null);
   }, [exerciseFile]);
+  /**
+   * Where the keyboard focus goes when the thing that had it has left the screen: "Undo" while an action can be
+   * undone, otherwise the Exercise menu, or the menu button of a tablet.
+   */
+  const focusFallback = useCallback(() => {
+    const root = stage.current;
+    const shown = (selector: string): HTMLElement | null => {
+      const found = root?.querySelector<HTMLElement>(selector) ?? null;
+      return found && found.getClientRects().length > 0 ? found : null;
+    };
+    (shown("[data-command-notice-action]") ?? shown("[data-command-exercise-menu]") ?? shown("[data-command-menu]"))?.focus({ preventScroll: true });
+  }, []);
+  /**
+   * The line with "Undo" has left the screen while the keyboard focus was on its button (the action was undone, or
+   * its ten seconds ran out): the focus goes on to the Exercise menu and is not dropped to the page.
+   */
+  const refocusIfLost = useCallback(() => {
+    window.requestAnimationFrame(() => {
+      const active = document.activeElement;
+      if (!active || active === document.body) focusFallback();
+    });
+  }, [focusFallback]);
   // An action can be undone for ten seconds; then its line leaves the screen and the action stands.
   useEffect(() => {
     if (!pendingUndo) return;
-    const timer = window.setTimeout(() => setPendingUndo((current) => (current === pendingUndo ? null : current)), COMMAND_UNDO_MS);
+    const timer = window.setTimeout(() => {
+      const onButton = document.activeElement instanceof HTMLElement && document.activeElement.matches("[data-command-notice-action]");
+      setPendingUndo((current) => (current === pendingUndo ? null : current));
+      if (onButton) refocusIfLost();
+    }, COMMAND_UNDO_MS);
     return () => window.clearTimeout(timer);
-  }, [pendingUndo]);
+  }, [pendingUndo, refocusIfLost]);
   const undoLast = useCallback(() => {
     if (!pendingUndo) return;
     if (pendingUndo.kind === "item") {
@@ -763,18 +789,15 @@ export function MaeSaiCommandExercise({ initial }: {
   useEffect(() => {
     const onDialogClose = (event: Event) => {
       if (!(event.target instanceof HTMLDialogElement)) return;
+      // The browser moves the focus out of a closed dialog a moment after this event: an element inside the dialog
+      // that still has it counts as lost.
       const active = document.activeElement;
-      if (active && active !== document.body) return;
-      const root = stage.current;
-      const shown = (selector: string): HTMLElement | null => {
-        const found = root?.querySelector<HTMLElement>(selector) ?? null;
-        return found && found.getClientRects().length > 0 ? found : null;
-      };
-      (shown("[data-command-notice-action]") ?? shown("[data-command-exercise-menu]") ?? shown("[data-command-menu]"))?.focus({ preventScroll: true });
+      if (active && active !== document.body && !event.target.contains(active)) return;
+      focusFallback();
     };
     document.addEventListener("close", onDialogClose, true);
     return () => document.removeEventListener("close", onDialogClose, true);
-  }, []);
+  }, [focusFallback]);
   // The exercise menu closes on a press anywhere else.
   useEffect(() => {
     if (!exerciseMenu) return;
@@ -823,7 +846,7 @@ export function MaeSaiCommandExercise({ initial }: {
       : undoNotice ?? arrivalNotice ?? (mapReady && basemapFallback ? commandText(COMMAND_MAP.basemapFallback, language) : null);
   const noticeAction = handFailed ? undefined
     : picking ? { id: "pick", label: commandText(COMMAND_ACT.cancel, language), onPress: () => { setPicking(false); setDialog("setup"); } }
-      : pendingUndo ? { id: pendingUndo.key, label: commandText(COMMAND_ACT.undo, language), onPress: undoLast, timed: true }
+      : pendingUndo ? { id: pendingUndo.key, label: commandText(COMMAND_ACT.undo, language), onPress: () => { undoLast(); refocusIfLost(); }, timed: true }
         : undefined;
 
   // --- What the map draws of the reports, and the season envelope of hindsight mode ------------------------

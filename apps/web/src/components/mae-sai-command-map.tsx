@@ -184,8 +184,8 @@ const SITE_FAR_BELOW_ZOOM = 12.5;
 const SITE_MERGE_PX = 36;
 /** From this zoom on the edge of the modelled water is softened a little, so the 30 m cells do not read as hard squares. */
 const WATER_SOFT_FROM_ZOOM = 14;
-/** Room kept around a marker that takes the keyboard focus, so its tooltip (up to 260 px wide, above it) clears the panels. */
-const FOCUS_ROOM_PX = { side: 136, above: 96, below: 40 } as const;
+/** Room kept around a marker that takes the keyboard focus, so its tooltip (up to 280 px wide and up to about 130 px tall, above it) clears the panels. */
+const FOCUS_ROOM_PX = { side: 150, above: 148, below: 40 } as const;
 
 /** "15 Sep 2024", or "15 Sep 2024 or earlier" for a bound; the text itself when it is not a date. */
 function firstUseText(value: string, language: Language): string {
@@ -556,14 +556,26 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
       const onMarkerFocus = (event: FocusEvent) => {
         const target = event.target instanceof HTMLElement ? event.target : null;
         if (!target?.classList.contains("leaflet-marker-icon") || !target.matches(":focus-visible")) return;
-        const box = container.getBoundingClientRect();
-        const rect = target.getBoundingClientRect();
+        // Where the marker is on the map, from the place Leaflet gave its icon (its upper left corner in the map's own
+        // pixels, with the anchor as a negative margin). The icon's box on screen cannot be used here: a browser
+        // scrolls the map's container to show a focused element that lies outside it, and Leaflet scrolls it back a
+        // moment later, so at this moment the box of a far marker reads as if it were in view.
+        const corner = L.DomUtil.getPosition(target);
+        if (!corner) return;
+        const style = window.getComputedStyle(target);
+        const middle = map.layerPointToContainerPoint(L.point(
+          corner.x + (Number.parseFloat(style.marginLeft) || 0) + target.offsetWidth / 2,
+          corner.y + (Number.parseFloat(style.marginTop) || 0) + target.offsetHeight / 2,
+        ));
         // The marker is brought well inside the clear rectangle, with room for its tooltip above it: a marker that
         // only just clears a panel would have its tooltip cut by it. Leaflet's own pan on focus is switched off on
         // every marker: it stops at the edge of the window, under the panels.
         const clear = clearRef.current();
         const room: ScreenRect = { left: clear.left + FOCUS_ROOM_PX.side, top: clear.top + FOCUS_ROOM_PX.above, right: clear.right - FOCUS_ROOM_PX.side, bottom: clear.bottom - FOCUS_ROOM_PX.below };
-        const pan = panIntoRect({ x: rect.left + rect.width / 2 - box.left, y: rect.top + rect.height / 2 - box.top }, room, 0);
+        const pan = panIntoRect({ x: middle.x, y: middle.y }, room, 0);
+        // The browser's own scroll of the container is undone at once, so the pan starts from the map as it is drawn.
+        container.scrollTop = 0;
+        container.scrollLeft = 0;
         if (pan.x !== 0 || pan.y !== 0) map.panBy([pan.x, pan.y], { animate: !motionRef.current });
       };
       container.addEventListener("focusin", onMarkerFocus);

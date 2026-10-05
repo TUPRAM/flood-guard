@@ -218,7 +218,7 @@ def build_world(tmp_path: Path, residents: dict[str, float] | None = None) -> di
         "schema_version": flood_inputs.INPUT_RECORD_SCHEMA, "case_id": CASE, "input_id": INPUT_ID, "input_name": FLOOD_NAME,
         "lane": "OBS", "tier": "T3", "temporal_relation": "event_aligned", "case_reference_date": "2030-01-10",
         "acquisition_date": "2030-01-11", "season_window": None, "source_timestamp": "2030-01-11", "label": None,
-        "field_validation": None, "source": {"layer": "INVENTED_LAYER"},
+        "field_validation": None, "source": {"layer": "INVENTED_LAYER"}, "levels": {"one_pixel_m": 20.0},
         "rights": {"licence": {"name": LICENCE, "full_name": LICENCE, "spdx_id": "none", "url": "none", "legal_code_url": "none"},
                    "attribution": ATTRIBUTION, "share_alike": None, "record_path": "rights/fx_rights.json",
                    "record_sha256": rights_sha256, "record_status": "confirmed", "confirmed_by": ["an invented owner"],

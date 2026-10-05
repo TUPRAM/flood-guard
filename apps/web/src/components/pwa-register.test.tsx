@@ -1,5 +1,5 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { PwaRegister, mapAvailabilityCopy, pwaAvailabilityCopy, requiredOfflinePaths } from "./pwa-register";
 
@@ -53,5 +53,20 @@ describe("PwaRegister", () => {
       "/public-cases/", "/command/", "/command/ver2/", "/command/cases/", "/command/archive/",
       "/studio/", "/studio/brief/", "/studio/library/", "/studio/archive/",
     ]));
+  });
+
+  it("is compiled without the staff addresses when the site is built for the public profile", async () => {
+    // The profile is a build-time constant, so the public bundle drops the list (the build's own artifact check then
+    // fails on a Command address anywhere in the public build).
+    vi.stubEnv("NEXT_PUBLIC_FLOODGUARD_APP_PROFILE", "public-production");
+    vi.resetModules();
+    try {
+      const built = await import("./pwa-register");
+      expect(built.requiredOfflinePaths("competition").join(" ")).not.toMatch(/\/command\/|\/studio\/|\/public-cases\//);
+      expect(built.requiredOfflinePaths("public-production")).toEqual(requiredOfflinePaths("public-production"));
+    } finally {
+      vi.unstubAllEnvs();
+      vi.resetModules();
+    }
   });
 });

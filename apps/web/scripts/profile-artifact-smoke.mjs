@@ -127,6 +127,9 @@ function validatePublicProduction() {
     "/offline-demo/mae-sai/facilities.json",
     "/offline-demo/mae-sai/access-hotspots.json",
     "/offline-demo/bundle.json",
+    // No address of a Command page in any shipped file: the list of pages the competition build keeps offline is
+    // compiled out of this profile (requiredOfflinePaths in pwa-register.tsx).
+    "/command/",
     "/api/v1/scenario-runs",
     "/evidence-library/catalog.json",
     "/public-case-projections/catalog.json",

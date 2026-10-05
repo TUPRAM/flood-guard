@@ -109,6 +109,8 @@ These are places where the two lines met without a textual conflict.
    with two links and no table, and its tests said so. Commit `04ffe6d` put the replay line's panel back above the
    archive footer, because the replay line's offline smoke and unit test read it. That reverses a decision of
    PR #31. It is not a repair; it is owner decision 11 in section 8.
+   The two addresses were swapped on 5 October 2026 at the owner's request (section 8, item 2; decision log, R19):
+   the map workspace is at `/command/` and the candidate overview at `/command/ver2/`.
 3. **Equity.** The scoring line moved `floodguard.equity` to metric version 2.0. The replay's own rule was written
    against the earlier version and its tests compared it with the module as it is now; 23 tests failed. `equity.py` stays at
    2.0. The earlier code is kept unchanged as `equity_v1.py`, used only as the replay's reference. No replay data,
@@ -180,6 +182,9 @@ and `qa:visual` and `workspace-browser-smoke.mjs` (they expect the map workspace
 `test:live-api`, which `README.md` documents, is stale in the same way: `live-api-smoke.mjs` opens `/command/`
 expecting the map workspace and `/studio/` expecting the evidence report. It needs both development servers and
 was not run.
+Since 5 October 2026 (R19) the map workspace is at `/command/` again, which is the address `qa:visual`,
+`workspace-browser-smoke.mjs` and `live-api-smoke.mjs` open for it. What they expect of `/studio/` is unchanged.
+They are still not part of `verify:frontend` and were not run after the swap.
 
 Documents that name addresses the unified branch moved. They are the scoring line's documents and were not edited:
 
@@ -191,6 +196,11 @@ Documents that name addresses the unified branch moved. They are the scoring lin
 - `docs/geoai_methodology.md`, lines 5 and 6, and `docs/positioning-and-claims.md`, lines 40 to 42 and 114 to 115,
   describe `/command/` as the map workspace and `/studio/` as the evidence workspace. They were already out of
   date on the scoring line, which had moved those to `/command/archive/` and `/studio/archive/` itself.
+  Since 5 October 2026 (R19) what they say of `/command/` holds again: it is the map workspace.
+- Since the same change, the `/command/` step of the demo path in `pitch_outline.md` opens the map workspace, which
+  does not read the case query; the planning overview of the case is at `/command/ver2/`. In the same folder,
+  `acceptance_checklist.csv` and `proposal_requirements.csv` name `apps/web/src/app/command/page.tsx` as the file of
+  the overview, which is now `apps/web/src/app/command/ver2/page.tsx`. The folder was not edited.
 
 ## 6. Where things are now
 
@@ -201,7 +211,7 @@ Documents that name addresses the unified branch moved. They are the scoring lin
 | Study library | `/studio/`, `/studio/studies/c2s-ms-20260915/`, `/studio/archive/mae-sai-geoai/` | `studio-library.tsx`, `c2s-study-*.tsx`, `apps/web/public/studies/` |
 | Signed protocols | none | `docs/proposal_execution/planning_protocol_v1a.json`, `planning_protocol_v1b.json`, `RECEIPTS.jsonl`, `tests/test_planning_protocol.py` |
 | Planning outputs | none | `outputs/planning_v1/`, `resources/planning_frames/`, `scripts/build_planning_context.py` (E4), `src/floodguard/planning_context.py`, `closure_rules.py`, `grade_join.py`, `normalisation.py`, `ddpm_shelters.py`, `planning_frames.py` |
-| Public evidence (PR #31) | `/command/`, `/command/cases/`, `/public-cases/`, `/studio/candidate-report/`, `/studio/library/`, `/studio/brief/` | `apps/web/public/evidence-library/`, `briefs/`, `public-case-projections/`, `src/floodguard/evidence_*.py`, `scripts/build_evidence_library.py` |
+| Public evidence (PR #31) | `/command/ver2/` (at `/command/` until 5 October 2026), `/command/cases/`, `/public-cases/`, `/studio/candidate-report/`, `/studio/library/`, `/studio/brief/` | `apps/web/public/evidence-library/`, `briefs/`, `public-case-projections/`, `src/floodguard/evidence_*.py`, `scripts/build_evidence_library.py` |
 | Radar benchmark | none | `docs/proposal_execution/automated_track/geoid_*`, `src/floodguard/geoid_m1_benchmark.py`, `geoid_m1_review.py`, `geoid_radar_benchmark.py`, `sar_change_v2.py`, `scripts/tune_geoid_m1_v2.py`, `score_geoid_m1_benchmark.py`, `outputs/geoid_*.json` |
 
 ## 7. Test results
@@ -265,6 +275,23 @@ that used to skip there for lack of Pillow now run.
    **Decided on 4 October 2026 (decision log, R17):** Command is to be replaced entirely by a rescue-coordination
    exercise replay of Mae Sai 2024. A detailed plan is written first and the page is built in a later change.
    Nothing of it is built on this branch; until then `/command/` and `/command/archive/` stay as described here.
+   **Changed on 5 October 2026 at the owner's request (R19).** The owner asked for the two addresses to be swapped,
+   and the paragraph above describes the branch as it was before that. Now `/command/` is the map workspace, as on
+   `master`, under the same "historical research" banner, and it is the default Planning page. The scoring line's
+   candidate overview is at `/command/ver2/`, with the same content. `/command/archive/` holds one sentence with a
+   link in each language and forwards to `/command/`, keeping the query of an old link, so that old links,
+   bookmarks and saved offline copies keep working. `/command/cases/` is unchanged. Each of the two pages links to
+   the other in both languages. The "Planning" link of every header, the landing and the policy page lead to
+   `/command/`, the map workspace they were written for. From a page of a selected case that link opens the
+   workspace, which does not read the case; the workspace carries the case on its link to the overview.
+   The offline installation holds the three addresses (141 files, 10,512,158 bytes of the 12 MB budget), and the
+   public-production build still ships none of them.
+   **Still open.** The replacement of Command (R17, part 1), of which nothing is built on this branch. The address
+   of the overview once the new page takes `/command/`: the plan of the new page proposes `/command/planning/` and
+   keeps `/command/archive/` behind a menu link, which has to be reconciled with `/command/ver2/` and with the
+   forward (R19, point h; question Q12 of `docs/owner_decision_sheet_2026-10-05.md`). The forward page, the link
+   labels and the page title are choices made while building (R19, points a to d), for the owner to confirm or
+   change.
 3. **The candidate report's address** (`/studio/candidate-report/`), and whether the study library should list the
    scoring line's pages. Today the library does not link to them, and they do not link back to the library.
    The scoring line's header on `/studio/archive/` also had "Decision brief", "Evidence library" and "Archive"
@@ -314,6 +341,25 @@ Found by the review and left for the owners:
     the install list (the page is 18.7 kB, its files 1.9 MB; with them the list would be about 12.4 MB, over the
     12 MB budget). Without a connection the notice now says that the report needs one, and the offline smoke
     checks that on both pages.
+    **Since 5 October 2026 (R19).** The map workspace is the default Planning page at `/command/`. So what this
+    item says of `/command/archive/` is now true of `/command/`, and what it says of `/command/` is true of
+    `/command/ver2/`; `/command/archive/` only forwards. The retained ranking therefore stands on the default
+    Planning page again: the "FPPS ranking" rail with a score and a class badge in every row, the selected area's
+    readout, the A to E legend and the map's text list. It is labelled as before, above the ranking: its scores and
+    classes "are retained research comparisons, not accepted event-response priorities". The notice below it is the
+    one described above (the GeoAI report's table is kept in Studio's archive as historical research; the ranking,
+    FPPS and classes shown on the page are a separate retained comparison whose values differ from the report's).
+    `/command/ver2/` carries the notice without that addition and shows no research score or class.
+    The owner's request was about the two addresses and did not mention the ranking, so the question above is
+    **still open for the owner** (R17, point g; question Q5 of `docs/owner_decision_sheet_2026-10-05.md`): whether
+    the retained ranking stays once the new exercise page takes `/command/`, and before any score of the protocol
+    appears on Command.
+    The checks moved with the pages. The static offline check fails when `/command/ver2/` or the forward at
+    `/command/archive/` shows any research score or class, when `/command/` shows a score that is not one of its
+    eight retained values, and when a score or a class stands on `/command/` before the label. The browser check
+    measures at 1280 px and on a phone that the label is above the first score, follows the links between the two
+    pages in both languages, opens the forward with and without a connection, and checks on both pages that the
+    notice's link to the report is a sentence when there is no connection.
 12. **What a browser must download before the site works offline.** After the merge the install list was 84
     files, 297.6 MB, plus 75 script chunks, 3.3 MB: 301 MB together. The evidence library was 290.6 MB of it
     (largest file 66.4 MB), the briefs 2.7 MB, everything else 4.3 MB. Installation is all or nothing, the
@@ -327,6 +373,8 @@ Found by the review and left for the owners:
     library's catalogue (44 kB), the public case indexes (35 kB), the eight briefs (2.7 MB) and the files it held
     before for the Public and Mae Sai views (4.0 MB). The replay's own budgets are unchanged (6.5 MB of data,
     1.0 MB of exports, both saved once the replay has rendered).
+    Since the swap of 5 October 2026 (R19; item 2) the list also holds the page at `/command/ver2/` and its page
+    code: 141 files, 10,512,158 bytes, still 10.5 MB of the 12 MB budget.
     A study area is its package file or files, its terrain preview and the report: 101.8 MB for all six (5.5 MB
     to 51.3 MB each). The first build saved an area only when the reader pressed "Save this area for offline
     use". The review of 5 October found that this was not the decision: `/command/` and five other pages, opened

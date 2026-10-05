@@ -62,6 +62,10 @@ let phase = "initial competition page";
 let offlineMode = false;
 let expectedDeniedNavigation = false;
 const pendingRequests = new Map();
+// Requests for the landing's own artwork: those still on their way, and the paths that have arrived.
+const landingArtworkInFlight = new Set();
+const landingArtworkArrived = new Set();
+const landingCameraFrames = expectedArtworkUrls.filter((url) => url.includes("/camera/"));
 
 try {
   const context = await browser.newContext({ serviceWorkers: "allow" });
@@ -88,11 +92,16 @@ try {
   page.on("request", (request) => {
     const url = new URL(request.url());
     pendingRequests.set(request, request.url());
+    if (url.origin === baseUrl && url.pathname.startsWith("/landing/")) landingArtworkInFlight.add(request);
     if (!approvedOrigins.has(url.origin)) unexpectedRequests.push(request.url());
   });
-  page.on("requestfinished", (request) => pendingRequests.delete(request));
+  page.on("requestfinished", (request) => {
+    pendingRequests.delete(request);
+    if (landingArtworkInFlight.delete(request)) landingArtworkArrived.add(new URL(request.url()).pathname);
+  });
   page.on("requestfailed", (request) => {
     pendingRequests.delete(request);
+    landingArtworkInFlight.delete(request);
     const reason = request.failure()?.errorText ?? "failed";
     if (reason === "net::ERR_ABORTED" || expectedResourceFailure(request.url())) return;
     resourceErrors.push(`${phase}: ${request.url()}: ${reason}`);
@@ -125,6 +134,16 @@ try {
     return { key, paths: (await cache.keys()).map((request) => new URL(request.url).pathname) };
   });
   if (!competitionCache?.paths.includes("/command/")) throw new Error("Competition profile did not cache Command before transition.");
+  // A saved study area lives outside the build cache. The public profile must not keep it either.
+  phase = "save a study area before the downgrade";
+  await saveDefaultStudyArea(page);
+  landingArtworkArrived.clear();
+  await page.goto(`${baseUrl}/`, { waitUntil: "domcontentloaded" });
+  await page.locator("main[data-fg-landing]").waitFor({ state: "visible" });
+  // The landing goes on loading its scene artwork after it is visible. The next step swaps the
+  // build behind the server; a frame still on its way would reach the public build, which does
+  // not ship it, and the 404 would belong to this test's own swap and not to the product.
+  await waitForLandingArtworkToSettle(page, "the landing to finish loading its artwork before the profile downgrade");
 
   phase = "competition to public downgrade";
   activeOut = publicOut;
@@ -186,8 +205,9 @@ try {
       waiting: await readWorker(registration?.waiting),
       installing: await readWorker(registration?.installing),
     };
-    return { keys, paths: (await cache.keys()).map((request) => new URL(request.url).pathname), profiles, workers };
+    return { keys, paths: (await cache.keys()).map((request) => new URL(request.url).pathname), profiles, workers, savedAreas: (await caches.keys()).includes("floodguard-saved-areas-v1") };
   });
+  if (publicCacheAudit.savedAreas) throw new Error("A study area saved under the competition profile survived the public-profile transition.");
   if (publicCacheAudit.keys.includes(competitionCache.key)) {
     throw new Error(`Competition cache survived the public-profile transition: ${JSON.stringify(publicCacheAudit)}`);
   }
@@ -266,6 +286,10 @@ try {
 
   // The activated competition worker must now serve both staff routes offline,
   // and the availability panel must report the cached snapshot and map limits.
+  // The staff pages below open the default study case. Its study area is not part of the installation: it is
+  // saved when the library page opens it while connected.
+  phase = "save a study area by opening it";
+  await saveDefaultStudyArea(page);
   phase = "competition offline staff-route recovery";
   offlineMode = true;
   await context.setOffline(true);
@@ -360,9 +384,20 @@ function expectedResourceFailure(resource) {
     || (offlineMode && url.origin === baseUrl && (
       (expectedDeniedNavigation && url.pathname === "/command/")
       || url.searchParams.has("_rsc")
-      // The optional research report is outside the planning-view cache.
-      || url.pathname === "/geoai/mae-sai-real.json"
     ));
+}
+
+/**
+ * Open the default case on the library page while connected and wait until the worker has saved its study area:
+ * an area of this size is saved by opening it, with no button pressed.
+ */
+async function saveDefaultStudyArea(page) {
+  await page.goto(`${baseUrl}/studio/library/`, { waitUntil: "domcontentloaded" });
+  const row = page.locator('[data-evidence-offline-control="true"] [data-evidence-offline-area]').first();
+  await row.waitFor({ state: "visible" });
+  await waitForEvaluated(page, () => (
+    document.querySelector('[data-evidence-offline-control="true"] [data-evidence-offline-area]')?.getAttribute("data-state") === "saved"
+  ), undefined, "the default study area to be saved by opening it", 120_000);
 }
 
 async function readAvailabilityRows(page) {
@@ -396,6 +431,24 @@ async function performSuccessfulUpdateCheck(page) {
     return values["Last successful update check"] !== undefined
       && values["Last successful update check"] !== "Not checked yet";
   }, undefined, "a successful saved-app update check timestamp");
+}
+
+async function waitForLandingArtworkToSettle(page, description, quietMs = 1_500, timeoutMs = 45_000) {
+  const deadline = Date.now() + timeoutMs;
+  let quietSince = null;
+  while (Date.now() < deadline) {
+    const framesArrived = landingCameraFrames.every((url) => landingArtworkArrived.has(url));
+    if (framesArrived && landingArtworkInFlight.size === 0) {
+      quietSince ??= Date.now();
+      if (Date.now() - quietSince >= quietMs) return;
+    } else {
+      quietSince = null;
+    }
+    await page.waitForTimeout(100);
+  }
+  const missing = landingCameraFrames.filter((url) => !landingArtworkArrived.has(url));
+  const inFlight = [...landingArtworkInFlight].map((request) => request.url());
+  throw new Error(`Timed out waiting for ${description}; camera frames not yet loaded: ${missing.slice(0, 4).join(", ") || "none"}; still in flight: ${inFlight.slice(0, 4).join(", ") || "none"}`);
 }
 
 async function waitForEvaluated(page, predicate, argument, description, timeoutMs = 30_000) {

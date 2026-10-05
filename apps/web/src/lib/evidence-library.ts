@@ -1,5 +1,6 @@
 import { EVIDENCE_AVAILABILITIES } from "@floodguard/contracts";
 import { parseDecisionBrief } from "./decision-brief";
+import { assertEvidenceAreaReachable, deviceOffline, EvidencePackageUnavailableError, saveEvidenceAreaOnOpen } from "./evidence-offline";
 import type { EvidenceLibraryCatalog, EvidenceLibraryGauge, EvidenceLibraryPackage, EvidencePackageReference } from "@floodguard/contracts";
 
 export const EVIDENCE_CATALOG_URL = "/evidence-library/catalog.json";
@@ -133,13 +134,26 @@ export function parseEvidencePackage(value: unknown, catalog: EvidenceLibraryCat
 export async function fetchEvidencePackage(catalog: EvidenceLibraryCatalog, reference: EvidencePackageReference, signal?: AbortSignal): Promise<EvidenceLibraryPackage> {
   const url = evidenceAssetUrl(reference.url);
   if (!url) throw new Error("Invalid evidence asset URL.");
-  const response = await fetch(url, { signal });
+  // A study area is not part of the installation. Without a connection, an area that is not saved is not requested
+  // at all, so the page can say so plainly.
+  await assertEvidenceAreaReachable(reference.aoi_id);
+  let response: Response;
+  try {
+    response = await fetch(url, { signal });
+  } catch (error) {
+    if (signal?.aborted) throw error;
+    throw new EvidencePackageUnavailableError(deviceOffline() ? "offline_not_saved" : "unreachable");
+  }
   if (!response.ok) throw new Error(`Evidence package unavailable (${response.status}).`);
   const bytes = await response.arrayBuffer();
   const digest = await crypto.subtle.digest("SHA-256", bytes);
   const actual = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
   if (actual !== reference.sha256) throw new Error("Evidence package checksum does not match the catalog.");
-  return parseEvidencePackage(JSON.parse(new TextDecoder().decode(bytes)), catalog, reference);
+  const evidence = parseEvidencePackage(JSON.parse(new TextDecoder().decode(bytes)), catalog, reference);
+  // The reader has opened this study area and its package passed its checks: the area is kept for offline use, as
+  // the Mae Sai replay keeps its data once it has rendered (size limit and exceptions: saveEvidenceAreaOnOpen).
+  void saveEvidenceAreaOnOpen(reference.aoi_id).catch(() => undefined);
+  return evidence;
 }
 
 /**

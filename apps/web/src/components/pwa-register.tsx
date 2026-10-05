@@ -13,6 +13,8 @@ import { useLanguage } from "@/lib/use-language";
 import styles from "./pwa-register.module.css";
 
 const OFFLINE_CACHE_PATTERN = /^floodguard-offline-[0-9a-f]{12}$/;
+/** Study areas a reader saved (by opening them, or on request): public/sw.js keeps them apart from the build cache. */
+const SAVED_AREAS_CACHE = "floodguard-saved-areas-v1";
 const LAST_REFRESH_KEY = "floodguard:last-saved-app-refresh";
 const EXPECTED_PROFILE = resolveDeploymentProfile(process.env.NEXT_PUBLIC_FLOODGUARD_APP_PROFILE);
 
@@ -247,7 +249,7 @@ async function removeDevelopmentWorker(): Promise<boolean> {
     .map((registration) => registration.unregister()));
   if ("caches" in window) {
     const keys = await caches.keys();
-    await Promise.all(keys.filter((key) => OFFLINE_CACHE_PATTERN.test(key)).map((key) => caches.delete(key)));
+    await Promise.all(keys.filter((key) => OFFLINE_CACHE_PATTERN.test(key) || key === SAVED_AREAS_CACHE).map((key) => caches.delete(key)));
   }
   return wasControlled;
 }

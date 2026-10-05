@@ -528,6 +528,8 @@ button { color: inherit; }
 .map-basemap-notice { position: absolute; z-index: 550; top: 70px; left: 64px; max-width: min(360px, calc(100% - 76px)); margin: 0; padding: 8px 10px; border: 1px solid #f3c969; border-radius: 9px; background: rgb(255 248 226 / 96%); color: #6b4a00; box-shadow: 0 6px 18px rgb(8 40 80 / 12%); font-size: .7rem; font-weight: 750; line-height: 1.4; }
 .map-basemap-notice button { display: inline-block; min-height: 32px; margin: 5px 0 0; padding: 4px 9px; border: 1px solid currentColor; border-radius: 5px; background: #fff; color: inherit; font: inherit; cursor: pointer; }
 .map-basemap-notice button:focus-visible { outline: 3px solid #123b52; outline-offset: 2px; }
+/* The list button and the map-background notice share this wrapper. It has no box of its own, so each is placed by its own rule; the Public home map makes it a column (public-theme.css). */
+.map-top-stack { display: contents; }
 .facility-type-marker { border: 0 !important; background: transparent !important; }
 .facility-type-marker > span { width: 30px; height: 30px; display: grid; place-items: center; border: 2px solid #fff; border-radius: 10px; background: #08519c; color: #fff; box-shadow: 0 4px 12px rgb(12 39 64 / 35%); }
 .facility-type-marker svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
@@ -1612,13 +1614,6 @@ button.model-card { cursor: pointer; }
 .public-home-map .map-basemap-menu > div {
   width: 148px;
   transform: translateX(calc(-100% + 48px));
-}
-.public-home-map .map-basemap-notice {
-  top: auto;
-  right: calc(var(--public-map-tool-inset) + 12px);
-  bottom: 278px;
-  left: auto;
-  max-width: min(280px, calc(100% - 24px));
 }
 /*
    Selected-area pin and its label. The pin marks a place, so it stays on the
@@ -2824,7 +2819,6 @@ button.model-card { cursor: pointer; }
     white-space: normal;
   }
   .public-home-map .map-basemap-menu { right: 10px; bottom: 218px; }
-  .public-home-map .map-basemap-notice { right: 10px; bottom: 272px; }
   .public-risk-indicator { padding: 9px 11px 10px; }
   .public-risk-headline > strong { font-size: .82rem; }
   .public-risk-scale { min-width: 150px; }

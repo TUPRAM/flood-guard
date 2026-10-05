@@ -1,0 +1,147 @@
+{
+  "schema_version": "floodguard.a1_diagnosis_run_receipt.v1",
+  "generated_at_utc": "2026-10-04T22:14:49Z",
+  "plan_task": "A1 (abstention diagnosis: why threshold-only change detection failed at the 16 Sep pass)",
+  "figure_id": "m2_windows_mae_sai",
+  "title": "The 81 windows of the retired M2 run at Mae Sai against the 0.72 gate",
+  "official_warning": false,
+  "operational_status": "non_operational",
+  "source_timestamp": "2024-09-15T23:16:01.675690Z",
+  "confidence_class": "low",
+  "confidence_basis": "Counts read from the team's own run receipt. The run declined every window, so there is no flood layer to check, and nothing here was checked against a flood map.",
+  "assumptions": [
+    "The window records of the receipt are the windows the retired M2 run evaluated: 256 by 256 cells of 10 m at a stride of 128 cells on a 1,280 by 1,280 pilot grid.",
+    "The image pair is 3 and 15 September 2024, 23:16 UTC, relative orbit 135; the second image is 16 September 06:16 in Thailand."
+  ],
+  "protocol_sha256": {
+    "planning_protocol_v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+    "planning_protocol_v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+  },
+  "run": "The 81 windows of the retired M2 run at Mae Sai against the 0.72 gate",
+  "status": "run_receipt",
+  "status_note": "Receipt of one diagnosis run, made with protocol v1a and v1b in force. Every run is reported: a second run of this figure writes a new receipt that names this one.",
+  "run_kind": "superseding_run",
+  "computes": "Counts and between-class variance fractions of the windows of the retired M2 run at Mae Sai, read from the run's own receipt. No image and no flood map is read.",
+  "measured_against": null,
+  "licence": null,
+  "attributions": [],
+  "protocol_state": {
+    "v1a": "in_force",
+    "v1b": "in_force"
+  },
+  "script": {
+    "path": "scripts/diagnostics/m2_windows_mae_sai.py",
+    "sha256": "0aa5c3db61ea10f33fedfce75d532ce7464cce38c3333f0be98fb3f96817e6ae"
+  },
+  "implementation": {
+    "base_commit": "b26e5d2c641d1ee0319fcf39a595a097ffecf3cd",
+    "base_commit_note": "The commit the working tree was on. The files below are the ones this run loaded, identified by their own SHA-256, committed or not.",
+    "files_sha256": {
+      "scripts/diagnostics/m2_windows_mae_sai.py": "0aa5c3db61ea10f33fedfce75d532ce7464cce38c3333f0be98fb3f96817e6ae",
+      "src/floodguard/abstention_diagnosis.py": "95707c004f72c931153583fc6360bb102a6e9cf3e2bb155608010b02bcc1b4d5",
+      "src/floodguard/diagnosis_run.py": "d8a145887c9da9a26f8f3016f9af8d3a538fa4fd3f8f11a8f4d63585a5bdd978",
+      "src/floodguard/diagnosis_layers.py": "373c62ba1e4e7cd19e5ca89ad7167ccaaf14ad4c7198434285c27cb4749bcaae"
+    },
+    "software": {
+      "python": "3.11.8",
+      "numpy": "2.2.6",
+      "rasterio": "1.4.4",
+      "gdal": "3.10.3",
+      "pandas": "3.0.6"
+    },
+    "software_note": "The libraries the run had loaded when it finished. A figure can move in its last decimals under another version of GDAL, PROJ, GEOS or numpy; --verify reports the versions beside the comparison."
+  },
+  "parameters": {
+    "kernel_configuration": {
+      "histogram_bins": 64,
+      "max_terrain_slope_degrees": 20.0,
+      "min_between_variance_fraction": 0.72,
+      "min_class_fraction": 0.08,
+      "min_mean_separation_db": 1.5,
+      "min_valid_samples": 4096,
+      "stride_pixels": 128,
+      "window_pixels": 256
+    },
+    "grid": {
+      "crs": "EPSG:32647",
+      "width": 1280,
+      "height": 1280,
+      "transform": [
+        10.0,
+        0.0,
+        581120.0,
+        0.0,
+        -10.0,
+        2268160.0
+      ]
+    },
+    "radiometry": "SNAP terrain-flattened Gamma0, not Sigma0",
+    "speckle_filter_applied": false,
+    "marks": [
+      0.65,
+      0.7
+    ]
+  },
+  "inputs": {
+    "m2_run_receipt": {
+      "path": "<external_data_workspace>/proposal_execution/mae_sai_2024_gamma0_otsu_v1_20260923r3/candidate_receipt.json",
+      "sha256": "7814cfb5f936952a581ab72c40bde7ab14f638715834f39974dddfa81c5394fe",
+      "bytes": 36969,
+      "self_hash_verified_by": "outputs/sar_m2_abstention_diagnostic_v1.json (source_receipt_self_hash_verified)"
+    },
+    "committed_summary": {
+      "path": "outputs/sar_m2_abstention_diagnostic_v1.json",
+      "sha256": "911c5660eb18e2a0616fba02fcb2f6b9c4a0e43d93f3228c1e065ca8618f6126",
+      "bytes": 2468
+    }
+  },
+  "rights": null,
+  "timestamps": {
+    "run_started_at_utc": "2026-10-04T22:14:49Z",
+    "run_finished_at_utc": "2026-10-04T22:14:49Z"
+  },
+  "outputs": {
+    "figures": {
+      "path": "outputs/a1_diagnosis/m2_windows_mae_sai.json",
+      "sha256": "f4b421b4fa3c3928c97186017e0620cde09185648b1c966bebd02b3a4bda1c80",
+      "bytes": 4410
+    }
+  },
+  "supersedes": {
+    "receipt_sha256": "f52139a904df0db74f9609652dcac5876d1294bddedd8ad6e3409efcbd359860",
+    "figures_sha256": "3ca4568ecc9fc33bc2c05297b434a9c70a87b5bbc4d209b602426a3fa615a725",
+    "generated_at_utc": "2026-10-04T20:28:05Z",
+    "reason": "Review of 4 October 2026 (UTC): the shared modules changed, so the earlier receipt names code that is no longer in the checkout. The receipt gains the library versions. No rule of this figure changed.",
+    "figures_same": true,
+    "copies_kept": [
+      "<external_data_workspace>/proposal_execution/planning_v1/a1_diagnosis/superseded_runs/20261004T202805Z_m2_windows_mae_sai/a1_diagnosis_m2_windows_mae_sai.json",
+      "<external_data_workspace>/proposal_execution/planning_v1/a1_diagnosis/superseded_runs/20261004T202805Z_m2_windows_mae_sai/m2_windows_mae_sai.json"
+    ]
+  },
+  "run_history": {
+    "rule": "Protocol v1b, change_control: every run is reported. Each earlier run of this figure is listed with the SHA-256 of its receipt and of its figures file.",
+    "earlier_runs": [
+      {
+        "generated_at_utc": "2026-10-04T20:28:05Z",
+        "run_started_at_utc": "2026-10-04T20:28:05Z",
+        "run_finished_at_utc": "2026-10-04T20:28:05Z",
+        "receipt_sha256": "f52139a904df0db74f9609652dcac5876d1294bddedd8ad6e3409efcbd359860",
+        "figures_sha256": "3ca4568ecc9fc33bc2c05297b434a9c70a87b5bbc4d209b602426a3fa615a725",
+        "run_kind": "first_run",
+        "superseded_because": "Review of 4 October 2026 (UTC): the shared modules changed, so the earlier receipt names code that is no longer in the checkout. The receipt gains the library versions. No rule of this figure changed."
+      }
+    ]
+  },
+  "development_reads": [
+    "4 October 2026, about 18:00 to 20:25 UTC, while the scripts were written and before any run: the headers of the stored sigma0, slope and land-cover rasters of tasks A2 and A4, of the GLO-30 tile and of the two JRC tiles were read (size, grid, bands, tags); the receipt of the retired M2 run was read for its keys and its grid, with the header of its mask; AOI-01 and the two radar receipts were read. No cell value was read and no figure was computed.",
+    "The same evening, before any run: the statistics module was tried on invented numbers only (random draws; no file of the external data workspace was opened).",
+    "4 October 2026, about 21:40 to 22:10 UTC (5 October in local time), after the review of the first runs and before the superseding runs: the committed figures files and receipts were read; the eight superseded copies kept outside Git were read for their run times and their SHA-256; the text of five exploratory scripts of the plan session was read, to check what they had computed and that the guard refuses such text. None of them was run. No raster and no flood layer was opened and no cell value was read. The two figures that read nothing outside Git (the pass list and the one-population simulation) were computed once without writing, to try the changed scripts; no other figure was computed."
+  ],
+  "open_points": [],
+  "not_computed": [
+    "any comparison with a flood map",
+    "FPPS",
+    "A-E class",
+    "flood candidate"
+  ]
+}

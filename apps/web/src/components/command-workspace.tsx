@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { GeoaiRealPanel } from "@/components/geoai-real-panel";
+import { ResearchReportNotice } from "@/components/research-report-notice";
 import { GeoMap } from "@/components/geo-map";
 import { WorkspaceHeader } from "@/components/workspace-header";
 import { ScoreBar } from "@/components/score-bar";
@@ -546,8 +546,13 @@ export function CommandWorkspace() {
 
       </div>
 
+      {/*
+        The GeoAI research report's score table is not shown on Command (R17): this notice says where the report is
+        kept. The ranking, FPPS and classes above are this workspace's own retained comparison and stay with the
+        page until Command is replaced (R17, part 1); the notice says that too.
+      */}
       <div className="command-geoai-layer">
-        <GeoaiRealPanel language={language} variant="command" planningDataVersion={data.status.data_version} />
+        <ResearchReportNotice language={language} retainedRanking />
       </div>
       <footer className={archiveStyles.footer}>
         <p>{th ? "ผลคะแนนนี้เป็นการเปรียบเทียบงานวิจัยเดิม ชั้น E หมายถึงติดตามและตรวจสอบ ไม่ได้หมายถึงปลอดภัย" : "These retained research scores are not accepted event priorities. Class E means Monitor and Verify; it does not mean safe."}</p>

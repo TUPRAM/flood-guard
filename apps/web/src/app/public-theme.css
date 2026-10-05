@@ -254,15 +254,68 @@
 }
 .public-home-map .public-map-search-field { margin-bottom: 52px; }
 .public-map-rail:has(.public-address-suggestions) { z-index: 2000; }
+/*
+   The list button and the map-background notice stand in one column under the search field, the notice directly
+   below the button. Both are placed from the map's upper edge, so the notice cannot slide under the search field or
+   the list button when the map is short (it was placed from the lower edge before, and did). The column is as wide
+   as the search field; the notice stops short of the tool column on the right.
+*/
+.public-home-map .map-top-stack {
+  position: absolute;
+  top: 76px;
+  right: calc(var(--public-map-tool-inset) + 12px);
+  left: calc(var(--public-map-tool-inset) + 12px);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  pointer-events: none;
+}
+.public-home-map .map-top-stack > * {
+  position: relative;
+  top: auto;
+  right: auto;
+  bottom: auto;
+  left: auto;
+  pointer-events: auto;
+}
 .public-home-map .map-text-alternative {
   z-index: 720;
-  top: 76px;
-  right: auto;
-  left: calc(var(--public-map-tool-inset) + 12px);
-  max-width: min(380px, calc(100% - 24px));
+  max-width: min(380px, 100%);
   border: 1px solid var(--fg-neutral-200);
   color: var(--fg-neutral-900);
 }
+/* The open list lies over the column, opaque; it does not push the notice down the map. */
+.public-home-map .map-top-stack > .map-text-alternative[open] { position: absolute; top: 0; left: 0; background: var(--fg-surface, #fff); }
+.public-home-map .map-top-stack > .map-basemap-notice { max-width: calc(100% - 56px); }
+/* Opened, the notice lies above the map's controls and below an open list or the address suggestions. */
+.public-home-map .map-top-stack > .map-basemap-notice[data-expanded="true"] { z-index: 1850; }
+/*
+   Not yet due (the background is loading for the first time, or again after it was ready): the notice keeps its
+   place in the page for screen readers and takes none on the map, so an ordinary load or pan moves nothing.
+*/
+.public-home-map .map-top-stack > .map-basemap-notice[data-pending="true"] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+.public-home-map .map-top-stack > .map-basemap-notice[data-pending="true"] > :not(p) { display: none; }
+/*
+   While the notice is due it takes one row of the column (62 px and the gap above it: 70 px). The attribution, the
+   priority card and the tools are placed from the map's lower edge, so the map is then at least 448 px tall and
+   that row stays clear of them; the page already scrolls when the map is taller than the screen. The rail leaves
+   the same row free before its own cards (a location, a signal), and when it shows one, the map is that row taller
+   than it would be, so the card keeps the distance it had to the tools below it.
+*/
+.public-home-page:has(.map-basemap-notice:not([data-pending="true"])) { grid-template-rows: auto minmax(448px, 1fr); }
+.public-home-page:has(.map-basemap-notice:not([data-pending="true"])) .public-home-map { min-height: 448px; }
+.public-home-page:has(.map-basemap-notice:not([data-pending="true"])):has(.public-location-status, .public-signal-banner) { min-height: calc(100% + 70px); }
+.public-home-map:has(.map-basemap-notice:not([data-pending="true"])) .public-map-search-field { margin-bottom: 122px; }
 .public-home-map .map-results-list { max-height: min(50vh, 420px); }
 .public-home-map .map-results-list dt { overflow-wrap: anywhere; }
 .public-home-map .leaflet-control-attribution {
@@ -271,10 +324,11 @@
 }
 @media (max-width: 680px) {
   .public-home-map .public-map-search-field { margin-bottom: 64px; }
-  .public-home-map .map-text-alternative { max-width: calc(100% - 180px); }
-  .public-home-map .map-text-alternative[open] {
+  .public-home-map:has(.map-basemap-notice:not([data-pending="true"])) .public-map-search-field { margin-bottom: 134px; }
+  .public-home-map .map-text-alternative { max-width: calc(100% - 156px); }
+  .public-home-map .map-top-stack > .map-text-alternative[open] {
     z-index: 1900;
-    width: calc(100% - 24px);
+    width: 100%;
     max-width: none;
   }
   /*

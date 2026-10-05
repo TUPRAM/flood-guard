@@ -1,13 +1,13 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { closeSync, ftruncateSync, mkdtempSync, mkdirSync, openSync, rmSync, writeFileSync } from "node:fs";
+import { closeSync, ftruncateSync, mkdtempSync, mkdirSync, openSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { resolve, sep } from "node:path";
 import { test } from "node:test";
 import { gzipSync } from "node:zlib";
-import { assertPublicEvidenceText, collectEvidenceLibraryAssets } from "./evidence-library-assets.mjs";
+import { assertPublicEvidenceText, auditEvidenceLibrary, collectEvidenceLibraryAssets, EVIDENCE_CATALOG_ASSET, readWorkerEvidenceAreas } from "./evidence-library-assets.mjs";
 
-function fixture(run, mutate = () => {}) {
+function fixture(run, mutate = () => {}, mutateCatalog = () => {}) {
   const out = mkdtempSync(resolve(tmpdir(), "floodguard-evidence-assets-test-"));
   const root = resolve(out, "evidence-library");
   mkdirSync(root);
@@ -15,6 +15,7 @@ function fixture(run, mutate = () => {}) {
   const catalog = { non_operational: true, package_version: "v1", datasets: [{ id: "test-source", rights: { public_derivatives: false } }], packages: [{ id: "test", aoi_id: "test-aoi", event_id: "test-event", url: "/evidence-library/package.json" }] };
   try {
     mutate(data, catalog);
+    mutateCatalog(catalog);
     const bytes = JSON.stringify(data);
     catalog.packages[0].sha256 = createHash("sha256").update(bytes).digest("hex");
     writeFileSync(resolve(root, "package.json"), bytes);
@@ -107,3 +108,48 @@ test("rejects an oversized compressed download before reading or auditing it", (
   try { ftruncateSync(handle, 80 * 1024 * 1024 + 1); } finally { closeSync(handle); }
   assert.throws(() => collectEvidenceLibraryAssets(out), /exceeds 80 MiB/);
 }, (data) => { data.downloads = [{ title: "Oversized fixture", url: "/evidence-library/database.json.gz", sha256: "0".repeat(64) }]; }));
+
+test("groups the files a reader saves on request by study area and keeps download archives out of them", () => {
+  const archive = gzipSync(JSON.stringify({ schema_version: "synthetic-test", edges: [] }));
+  const png = Buffer.from("synthetic terrain preview");
+  fixture((out, root) => {
+    // A second study area that shares the report with the first.
+    const second = { id: "second", package_version: "v1", aoi_id: "second-aoi", event_id: "test-event", dataset_mode: "candidate", official_warning: false, operational_status: "non_operational", assessment: { fpps: null, action_class: null }, layers: [], report_url: "/evidence-library/report.md" };
+    const secondBytes = JSON.stringify(second);
+    writeFileSync(resolve(root, "second.json"), secondBytes);
+    writeFileSync(resolve(root, "database.json.gz"), archive);
+    writeFileSync(resolve(root, "terrain.png"), png);
+    const catalog = JSON.parse(readFileSync(resolve(root, "catalog.json"), "utf8"));
+    catalog.packages.push({ id: "second", aoi_id: "second-aoi", event_id: "test-event", url: "/evidence-library/second.json", sha256: createHash("sha256").update(secondBytes).digest("hex") });
+    writeFileSync(resolve(root, "catalog.json"), JSON.stringify(catalog));
+
+    const library = auditEvidenceLibrary(out);
+    const digest = (bytes) => createHash("sha256").update(bytes).digest("hex");
+    const reportRecord = { url: "/evidence-library/report.md", sha256: digest("Synthetic test report"), bytes: 21, shared: true };
+    assert.deepEqual(library.areas.map((area) => area.aoi_id), ["test-aoi", "second-aoi"]);
+    assert.deepEqual(library.areas[0].assets, [
+      // The package is pinned by the catalogue's own SHA-256; the report and the preview are hashed at build time.
+      { url: "/evidence-library/package.json", sha256: catalog.packages[0].sha256, bytes: readFileSync(resolve(root, "package.json")).byteLength },
+      reportRecord,
+      { url: "/evidence-library/terrain.png", sha256: digest(png), bytes: png.byteLength },
+    ]);
+    assert.deepEqual(library.areas[1].assets, [{ url: "/evidence-library/second.json", sha256: catalog.packages[1].sha256, bytes: Buffer.byteLength(secondBytes) }, reportRecord]);
+    assert.equal(library.areas[0].bytes, library.areas[0].assets.reduce((sum, asset) => sum + asset.bytes, 0));
+    // The download archive is published and hash-checked, and belongs to no study area's saved copy.
+    assert.deepEqual(library.onlineOnly, [{ url: "/evidence-library/database.json.gz", sha256: digest(archive), bytes: archive.byteLength }]);
+    assert.ok(library.areas.every((area) => area.assets.every((asset) => asset.url !== "/evidence-library/database.json.gz")));
+    // The catalogue is the one file left for the blocking installation, and it is in no study area.
+    assert.equal(EVIDENCE_CATALOG_ASSET, "/evidence-library/catalog.json");
+    assert.ok(library.areas.every((area) => area.assets.every((asset) => asset.url !== EVIDENCE_CATALOG_ASSET)));
+    assert.deepEqual(library.urls, collectEvidenceLibraryAssets(out));
+    assert.equal(library.urls.length, 6);
+
+    // The worker's list is read back as written.
+    const worker = `const OPTIONAL_EVIDENCE_AREAS = ${JSON.stringify(library.areas)};\nconst CORE_ASSETS = [];`;
+    assert.deepEqual(readWorkerEvidenceAreas(worker), library.areas);
+    assert.throws(() => readWorkerEvidenceAreas("const CORE_ASSETS = [];"), /no study-area list/);
+  }, (data) => {
+    data.downloads = [{ title: "Synthetic database", url: "/evidence-library/database.json.gz", sha256: createHash("sha256").update(archive).digest("hex") }];
+    data.layers = [{ id: "terrain", dataset_id: "cleared-source", availability: "available", image_url: "/evidence-library/terrain.png" }];
+  }, (catalog) => { catalog.datasets.push({ id: "cleared-source", rights: { public_derivatives: true } }); });
+});

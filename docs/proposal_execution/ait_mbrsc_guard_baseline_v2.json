@@ -1,0 +1,272 @@
+{
+  "schema": "floodguard.ait_mbrsc_guard_baseline.v2",
+  "guardrail": "GR9_ait_mbrsc_guard (planning protocol v1a; plan 2.3 item 9, plan 0 item 3, plan row 8.1 A1)",
+  "recorded_on": "2026-10-04",
+  "replaces": "docs/proposal_execution/ait_mbrsc_guard_baseline_v1.json (4 October 2026), after the review of plan task A1: the guard now also reads the bare product words in identifiers and short strings, the folder reference_candidates alone and imports of the legacy reader modules, so more files name a product.",
+  "what_this_is": "The code files that named the AIT or MBRSC product, or their folders in the external data workspace, on the day this baseline was written. They are the inspection, registration and gate code of the earlier reference-candidate work, which the plan keeps unchanged (plan 2.2, AIT invariant: processing_allowed=false), with the tests and the web files that name the blocked records. Each is listed with the SHA-256 of the lines that name a product, so that a new or changed line fails the guard. A Python file under scripts/ or src/ is also listed with the SHA-256 of the names of its functions and classes, so that it fails when it gains or loses one.",
+  "what_this_is_not": "Not a grant, and not a proof that a listed file processes neither product. The guard notices a new or changed naming line, and a new function or class in a legacy file under scripts/ or src/. It does not notice new code inside an existing function, or new code in a legacy test or web file that names no product. A new file that names a product fails the guard until a grant is recorded.",
+  "grant": "The guardrail says 'a recorded grant receipt' and gives neither its form nor its place (open point A1-OP7). The guard reads the rights registry (floodguard.rights.REGISTERED_RECORDS): a product is granted when a registered record of its source is confirmed by the owners and signed by a human.",
+  "grant_sources": {
+    "ait": "sentinel_asia_ait_vap001",
+    "mbrsc": "sentinel_asia_mbrsc"
+  },
+  "reader_modules": {
+    "floodguard.ait_reference_candidate": [
+      "ait",
+      "mbrsc"
+    ],
+    "floodguard.public_reference_files": [
+      "ait",
+      "mbrsc"
+    ],
+    "floodguard.sentinel_asia_geometry_review": [
+      "ait",
+      "mbrsc"
+    ]
+  },
+  "reader_modules_note": "Legacy modules whose naming lines hold a data file name or the product folder as a path part. An import of one of them names its products.",
+  "files": {
+    "apps/web/scripts/browser-offline-smoke.mjs": {
+      "products": [
+        "ait"
+      ],
+      "naming_lines": 1,
+      "naming_lines_sha256": "565f0717cfbf75e99a9ea41d08ea08edd75a1d26fa2cea6f6277f7049205c7e4"
+    },
+    "apps/web/scripts/build-mae-sai-offline-bundle.py": {
+      "products": [
+        "ait",
+        "mbrsc"
+      ],
+      "naming_lines": 25,
+      "naming_lines_sha256": "abbd7613e8b353fc93a1646c86e4b0d1ccd35b7e5c125ea3686609b96a77b9a5"
+    },
+    "apps/web/scripts/offline-smoke.mjs": {
+      "products": [
+        "ait"
+      ],
+      "naming_lines": 1,
+      "naming_lines_sha256": "14ef5fa6ae18ad7b9ba84cad2cd5a80ce8913ba05c67606f6e89bf4a22b6ca39"
+    },
+    "apps/web/scripts/profile-artifact-smoke.mjs": {
+      "products": [
+        "ait"
+      ],
+      "naming_lines": 1,
+      "naming_lines_sha256": "14ef5fa6ae18ad7b9ba84cad2cd5a80ce8913ba05c67606f6e89bf4a22b6ca39"
+    },
+    "apps/web/src/components/qualified-evidence-foundation-panel.test.tsx": {
+      "products": [
+        "ait"
+      ],
+      "naming_lines": 1,
+      "naming_lines_sha256": "161c6c7272a39279af11fa9fc223ad542fccef50a41e249f1b691e2ee89d2de7"
+    },
+    "apps/web/src/lib/mae-sai-offline-bundle.test.ts": {
+      "products": [
+        "ait"
+      ],
+      "naming_lines": 1,
+      "naming_lines_sha256": "6f843ed33f2fa1f76eb049f634b4a5b80261af04dd3f6a5f1719e719dd24bb36"
+    },
+    "apps/web/src/lib/qualified-evidence-foundation.test.ts": {
+      "products": [
+        "ait"
+      ],
+      "naming_lines": 1,
+      "naming_lines_sha256": "6f843ed33f2fa1f76eb049f634b4a5b80261af04dd3f6a5f1719e719dd24bb36"
+    },
+    "apps/web/src/lib/qualified-evidence-foundation.ts": {
+      "products": [
+        "ait"
+      ],
+      "naming_lines": 1,
+      "naming_lines_sha256": "0f213892cf033597ded3bb58cf10605462ca11faf1bbb87cc90164249deb7d1c"
+    },
+    "apps/web/src/lib/types.ts": {
+      "products": [
+        "ait"
+      ],
+      "naming_lines": 1,
+      "naming_lines_sha256": "06385f0831b34c47cf6bd662cc0505fa484a0199a066fbe4cb707431ffe916e3"
+    },
+    "scripts/build_mae_sai_file_manifest.py": {
+      "products": [
+        "mbrsc"
+      ],
+      "naming_lines": 1,
+      "naming_lines_sha256": "0b0c30dc45dd7122449ec0728c36ea868216a7dd795c2d049baa061217f344fc",
+      "definitions": 4,
+      "definitions_sha256": "7b3304835d9d008dfacf19b0e7b16d2f88d268054460cc6ce876fd719298b0ab"
+    },
+    "scripts/build_public_reference_manifest.py": {
+      "products": [
+        "ait",
+        "mbrsc"
+      ],
+      "naming_lines": 5,
+      "naming_lines_sha256": "360843e0dab3492311816cccc1c3d5a184f5e067c586c95a3dc40c0b8440461f",
+      "definitions": 1,
+      "definitions_sha256": "0d6e4079e36703ebd37c00722f5891d28b0e2811dc114b129215123adcce3605"
+    },
+    "scripts/inspect_ait_reference_candidate.py": {
+      "products": [
+        "ait",
+        "mbrsc"
+      ],
+      "naming_lines": 8,
+      "naming_lines_sha256": "af284912ab07249942a62c8a56cd827e68530dc5526ad7bf9c8fcbd51363c8b1",
+      "definitions": 1,
+      "definitions_sha256": "0d6e4079e36703ebd37c00722f5891d28b0e2811dc114b129215123adcce3605"
+    },
+    "scripts/inspect_sentinel_asia_reference_candidate.py": {
+      "products": [
+        "ait",
+        "mbrsc"
+      ],
+      "naming_lines": 6,
+      "naming_lines_sha256": "8824c1ae35cb45586187d50623bc758d2e285f009e4d124262c452c6ba2a06d0",
+      "definitions": 1,
+      "definitions_sha256": "0d6e4079e36703ebd37c00722f5891d28b0e2811dc114b129215123adcce3605"
+    },
+    "scripts/review_sentinel_asia_geometry_quality.py": {
+      "products": [
+        "ait",
+        "mbrsc"
+      ],
+      "naming_lines": 7,
+      "naming_lines_sha256": "a9ee6086034a64aa4e72870fd3816c0a788f4ef25ad1cade07ee63ef850d6fbd",
+      "definitions": 1,
+      "definitions_sha256": "0d6e4079e36703ebd37c00722f5891d28b0e2811dc114b129215123adcce3605"
+    },
+    "src/floodguard/ait_reference_candidate.py": {
+      "products": [
+        "ait",
+        "mbrsc"
+      ],
+      "naming_lines": 115,
+      "naming_lines_sha256": "d1899b314d4ae0acdd081f8823cab2ab481e8bec257c79af6b45fec4caa4bff6",
+      "definitions": 29,
+      "definitions_sha256": "386d32d6c4de1c2afed42591bbe9e73db87c7029b8f604f139e69f920a1a74ab"
+    },
+    "src/floodguard/label_factory/rights_clearance.py": {
+      "products": [
+        "ait",
+        "mbrsc"
+      ],
+      "naming_lines": 7,
+      "naming_lines_sha256": "0c20a7b10f774ab87f77189a8cdc36c98c67ea4d4cdedc7b631fd43df07c3a24",
+      "definitions": 41,
+      "definitions_sha256": "c23b1bce229e0921349689928495b58762385dd7fa7c0348109a65d77680214d"
+    },
+    "src/floodguard/public_reference_files.py": {
+      "products": [
+        "ait",
+        "mbrsc"
+      ],
+      "naming_lines": 8,
+      "naming_lines_sha256": "ea0edbccadf5e5e924c72374b905f58ffc48d56c6a0e4bd7f9a8fe9f2fbbdc75",
+      "definitions": 16,
+      "definitions_sha256": "73ece61c165b5886711e8d38490f05542914cd5f1d491bc1e2c70e9b81b60688"
+    },
+    "src/floodguard/public_reference_inventory.py": {
+      "products": [
+        "ait",
+        "mbrsc"
+      ],
+      "naming_lines": 19,
+      "naming_lines_sha256": "9bdfb71e1bb4069d255255182d848dbb7e9fc7500762c9b64ebfdf5f71ed9eae",
+      "definitions": 20,
+      "definitions_sha256": "06283cfbdbeea212e1161d04972d9cf00bb6246a5db3a67a9fbb201ffd7fcdc3"
+    },
+    "src/floodguard/reference_decision.py": {
+      "products": [
+        "ait",
+        "mbrsc"
+      ],
+      "naming_lines": 4,
+      "naming_lines_sha256": "0b4d6c998268853faf36a05b2464f738c4fb2bc779e19811675ec245be75e366",
+      "definitions": 2,
+      "definitions_sha256": "ccd201eb145af31782ea14b2d3032b6432a6620ae4ea9eaff28636841fcfb411"
+    },
+    "src/floodguard/sentinel_asia_geometry_review.py": {
+      "products": [
+        "ait",
+        "mbrsc"
+      ],
+      "naming_lines": 9,
+      "naming_lines_sha256": "f7708de74b663422210ea14aa10519e617dd173e4b9eaa0a5fd0e8f29cd9d228",
+      "definitions": 12,
+      "definitions_sha256": "b41c3b69bedbd3599b80b3cd91b97ddc2ba3df3ad1911e5dcffc619882f11959"
+    },
+    "tests/test_ait_reference_candidate.py": {
+      "products": [
+        "ait",
+        "mbrsc"
+      ],
+      "naming_lines": 36,
+      "naming_lines_sha256": "52df3ef92aa6785aad7827e7d9212b71524c4317300ffa9b911a6df4da8e5dbf"
+    },
+    "tests/test_contract_schemas.py": {
+      "products": [
+        "ait"
+      ],
+      "naming_lines": 4,
+      "naming_lines_sha256": "7d007c5c87425b64bcdff331a07d2daea29ba43c5ce4b35032cf3c603d15096e"
+    },
+    "tests/test_label_factory_rights_clearance.py": {
+      "products": [
+        "ait",
+        "mbrsc"
+      ],
+      "naming_lines": 2,
+      "naming_lines_sha256": "dbdb8c354c4bb798ff82a12620f7c42ce9005de980a41ecf18f97c2909afa02c"
+    },
+    "tests/test_offline_bundle_builder.py": {
+      "products": [
+        "ait"
+      ],
+      "naming_lines": 3,
+      "naming_lines_sha256": "3926683f705a7b3537b7fa727a1f463f41ed43a584ae9d983de9bf0e5c1110e7"
+    },
+    "tests/test_output_docs.py": {
+      "products": [
+        "ait",
+        "mbrsc"
+      ],
+      "naming_lines": 30,
+      "naming_lines_sha256": "8133c3606934a4b1be207e40b36c732e390b7c4e90f409ea5d2d0dc93c44e6dc"
+    },
+    "tests/test_public_reference_files.py": {
+      "products": [
+        "ait",
+        "mbrsc"
+      ],
+      "naming_lines": 4,
+      "naming_lines_sha256": "4278d80aabe38518fe08f84e608c6e2d95689dfb3b96de6e37a639694c2ea736"
+    },
+    "tests/test_public_reference_inventory.py": {
+      "products": [
+        "ait",
+        "mbrsc"
+      ],
+      "naming_lines": 15,
+      "naming_lines_sha256": "8ae1812670be2fec0d7d77ac51c914255b4019ca872aa217d4bc2af4176c1e7f"
+    },
+    "tests/test_reference_gates.py": {
+      "products": [
+        "mbrsc"
+      ],
+      "naming_lines": 5,
+      "naming_lines_sha256": "ef84f247ed33956d9912711a7d352cf16e7895241649967de572ce4437924718"
+    },
+    "tests/test_sentinel_asia_geometry_review.py": {
+      "products": [
+        "ait",
+        "mbrsc"
+      ],
+      "naming_lines": 4,
+      "naming_lines_sha256": "16e30d76d136bb5a08c06cc68b3405f9d0f7476b2813e75d326198c5cbb680b9"
+    }
+  }
+}

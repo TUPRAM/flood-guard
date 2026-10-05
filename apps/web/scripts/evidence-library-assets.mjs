@@ -43,12 +43,48 @@ export function assertPublicEvidenceText(value) {
   }
 }
 
-/** Only catalog-bound, publication-cleared evidence enters the competition cache. */
+/** The library's catalogue: the one evidence-library file in the blocking service-worker installation. */
+export const EVIDENCE_CATALOG_ASSET = "/evidence-library/catalog.json";
+/**
+ * Cache that holds the study areas a reader saved (by opening them, or on request). It is not a build cache (`floodguard-offline-<build>`),
+ * so a new deployment keeps every saved file whose SHA-256 the new build still lists. Mirrors `EVIDENCE_AREA_CACHE`
+ * in public/sw.js.
+ */
+export const EVIDENCE_AREA_CACHE = "floodguard-saved-areas-v1";
+
+/** Every catalog-bound, publication-cleared file of the evidence library, as a sorted list of URLs. */
 export function collectEvidenceLibraryAssets(out) {
+  return auditEvidenceLibrary(out).urls;
+}
+
+/**
+ * Audit the published evidence library and say how each file is kept offline.
+ *
+ * Offline policy: only the catalogue is part of the blocking installation. Each study area is a deferred bucket,
+ * saved when a reader opens it while connected (up to 20 MB) or asks on the area's page: its package file or files (one per event, pinned by the catalogue's
+ * SHA-256), its terrain preview and the report every package links to (both hashed here). The database archives a
+ * package offers for download are published and hash-checked, but the service worker never keeps them: they are
+ * large (up to 66 MB each), and a reader who wants one downloads the file itself while connected.
+ *
+ * Returns `urls` (every published file, sorted), `areas` (`{ aoi_id, bytes, assets: [{ url, sha256, bytes, shared? }] }`
+ * in catalogue order; `shared` marks a file that more than one area lists) and `onlineOnly` (the download archives).
+ */
+export function auditEvidenceLibrary(out) {
   const root = resolve(out, "evidence-library");
   const catalogPath = resolve(root, "catalog.json");
   if (!existsSync(catalogPath)) throw new Error("Evidence-library catalog is missing from the competition export.");
-  const urls = new Set(["/evidence-library/catalog.json"]);
+  const urls = new Set([EVIDENCE_CATALOG_ASSET]);
+  const areaFiles = new Map();
+  const onlineOnly = new Map();
+  const hashed = new Map();
+  const pinned = (url, bytes, sha256) => {
+    if (!hashed.has(url)) hashed.set(url, { url, sha256: sha256 ?? createHash("sha256").update(bytes).digest("hex"), bytes: bytes.byteLength });
+    return hashed.get(url);
+  };
+  const keep = (aoiId, record) => {
+    if (!areaFiles.has(aoiId)) areaFiles.set(aoiId, new Map());
+    areaFiles.get(aoiId).set(record.url, record);
+  };
   const catalog = JSON.parse(readFileSync(catalogPath, "utf8"));
   assertPublicEvidenceText(catalog);
   if (catalog.non_operational !== true || !Array.isArray(catalog.packages) || !Array.isArray(catalog.datasets)) {
@@ -72,12 +108,18 @@ export function collectEvidenceLibraryAssets(out) {
     if (data.id !== reference.id || data.package_version !== catalog.package_version || data.aoi_id !== reference.aoi_id || data.event_id !== reference.event_id
       || data.dataset_mode !== "candidate" || data.official_warning !== false || data.operational_status !== "non_operational"
       || data.assessment?.fpps !== null || data.assessment?.action_class !== null) throw new Error(`Invalid evidence package boundary: ${reference.id}`);
-    if (data.report_url !== null) assertPublicEvidenceText(readFileSync(asset(data.report_url), "utf8"));
+    keep(reference.aoi_id, pinned(reference.url, bytes, reference.sha256));
+    if (data.report_url !== null) {
+      const report = readFileSync(asset(data.report_url));
+      assertPublicEvidenceText(report.toString("utf8"));
+      keep(reference.aoi_id, pinned(data.report_url, report));
+    }
     for (const download of data.downloads ?? []) {
       const archivePath = asset(download.url);
       if (statSync(archivePath).size > MAX_DOWNLOAD_BYTES) throw new Error(`Evidence download exceeds 80 MiB: ${download.url}`);
       const archive = readFileSync(archivePath);
       if (createHash("sha256").update(archive).digest("hex") !== download.sha256) throw new Error(`Evidence download hash mismatch: ${download.url}`);
+      onlineOnly.set(download.url, { url: download.url, sha256: download.sha256, bytes: archive.byteLength });
       if (auditedDownloads.has(download.url)) continue;
       if (download.url.endsWith(".json.gz")) {
         const result = spawnSync(process.execPath, [GZIP_AUDITOR, archivePath], {
@@ -97,7 +139,7 @@ export function collectEvidenceLibraryAssets(out) {
           throw new Error(`Uncleared evidence derivative in ${reference.id}: ${layer.id}`);
         }
       }
-      if (layer.image_url) asset(layer.image_url);
+      if (layer.image_url) keep(reference.aoi_id, pinned(layer.image_url, readFileSync(asset(layer.image_url))));
     }
   }
   function audit(directory) {
@@ -111,5 +153,21 @@ export function collectEvidenceLibraryAssets(out) {
     }
   }
   audit(root);
-  return [...urls].sort();
+  const listedBy = new Map();
+  for (const files of areaFiles.values()) for (const url of files.keys()) listedBy.set(url, (listedBy.get(url) ?? 0) + 1);
+  const areas = [...areaFiles].map(([aoiId, files]) => {
+    const assets = [...files.values()].map((record) => {
+      if (onlineOnly.has(record.url)) throw new Error(`Evidence file is both a page file and a download: ${record.url}`);
+      return listedBy.get(record.url) > 1 ? { ...record, shared: true } : { ...record };
+    });
+    return { aoi_id: aoiId, bytes: assets.reduce((sum, item) => sum + item.bytes, 0), assets };
+  });
+  return { urls: [...urls].sort(), areas, onlineOnly: [...onlineOnly.values()].sort((a, b) => a.url.localeCompare(b.url)) };
+}
+
+/** The study-area lists the build wrote into the service worker (`OPTIONAL_EVIDENCE_AREAS`). */
+export function readWorkerEvidenceAreas(serviceWorker) {
+  const declaration = serviceWorker.match(/const OPTIONAL_EVIDENCE_AREAS = (\[[^;]*\]);/)?.[1];
+  if (!declaration) throw new Error("The service worker has no study-area list.");
+  return JSON.parse(declaration);
 }

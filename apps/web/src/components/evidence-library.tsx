@@ -8,9 +8,11 @@ import { DecisionBriefPanel } from "./decision-brief";
 import { GenerationTimes } from "./generation-times";
 import { MainRoadStatus } from "./main-road-status";
 import { EvidenceFeatureBrowser } from "./evidence-library-features";
+import { EvidenceOfflineControl, EvidencePackageNotice, useOnline, useRetryWhenOnline } from "./evidence-offline";
 import { useLanguage } from "@/lib/use-language";
 import { STUDIO_CANDIDATE_REPORT_ROUTE, caseHref, pushCaseSelection, readCaseSelection, resolveAnalysisSelection, resolveEvidenceCase, type CaseSelection } from "@/lib/case-selection";
 import { EVIDENCE_CATALOG_URL, evidenceAssetUrl, fetchEvidencePackage, gaugeSegments, parseEvidenceCatalog, sourceClockCoordinate } from "@/lib/evidence-library";
+import { evidencePackageFailure, readEvidenceAreas, type EvidencePackageFailure } from "@/lib/evidence-offline";
 import styles from "./evidence-library.module.css";
 
 const EvidenceMap = dynamic(() => import("./evidence-library-map").then((module) => module.EvidenceLibraryMap), { ssr: false });
@@ -59,7 +61,10 @@ export function EvidenceLibrary({ initialCatalog = null, initialPackage = null, 
     aoi: initialAoiId ?? initialCatalog?.packages[0]?.aoi_id ?? "",
     event: initialEventId ?? initialCatalog?.packages[0]?.event_id ?? "",
   }));
-  const [loaded, setLoaded] = useState<{ package: EvidenceLibraryPackage | null; referenceHash: string; error: string | null }>({ package: initialPackage, referenceHash: initialCatalog?.packages.find((item) => item.id === initialPackage?.id)?.sha256 ?? "", error: null });
+  const [loaded, setLoaded] = useState<{ package: EvidenceLibraryPackage | null; referenceHash: string; failure: EvidencePackageFailure | null }>({ package: initialPackage, referenceHash: initialCatalog?.packages.find((item) => item.id === initialPackage?.id)?.sha256 ?? "", failure: null });
+  const online = useOnline();
+  // Offline, a download link is offered only for a file the saved copy of the area holds.
+  const [savedOffline, setSavedOffline] = useState<{ aoiId: string; saved: boolean } | null>(null);
 
   useEffect(() => {
     if (initialCatalog) return;
@@ -84,21 +89,33 @@ export function EvidenceLibrary({ initialCatalog = null, initialPackage = null, 
 
   const resolved = catalog ? resolveEvidenceCase(catalog, selection) : null;
   const reference = resolved?.reference ?? null;
+  const packageFailure = reference && loaded.referenceHash === reference.sha256 ? loaded.failure : null;
+  // A package that could not be reached is requested again when the connection returns.
+  const retry = useRetryWhenOnline(Boolean(packageFailure && packageFailure.kind !== "invalid"));
   useEffect(() => {
     if (!catalog || !reference || (initialPackage?.id === reference.id && initialCatalog?.packages.find((item) => item.id === initialPackage.id)?.sha256 === reference.sha256)) return;
     const controller = new AbortController();
     fetchEvidencePackage(catalog, reference, controller.signal)
-      .then((next) => { if (!controller.signal.aborted) setLoaded({ package: next, referenceHash: reference.sha256, error: null }); })
-      .catch((error: unknown) => { if (!controller.signal.aborted) setLoaded({ package: null, referenceHash: reference.sha256, error: error instanceof Error ? error.message : "Package unavailable" }); });
+      .then((next) => { if (!controller.signal.aborted) setLoaded({ package: next, referenceHash: reference.sha256, failure: null }); })
+      .catch((error: unknown) => { if (!controller.signal.aborted) setLoaded({ package: null, referenceHash: reference.sha256, failure: evidencePackageFailure(error) }); });
     return () => controller.abort();
-  }, [catalog, reference, initialCatalog, initialPackage]);
+  }, [catalog, reference, initialCatalog, initialPackage, retry]);
+
+  const selectedAoiId = reference?.aoi_id ?? null;
+  useEffect(() => {
+    if (online || !selectedAoiId) return;
+    let active = true;
+    readEvidenceAreas()
+      .then((areas) => { if (active) setSavedOffline({ aoiId: selectedAoiId, saved: areas?.find((area) => area.aoiId === selectedAoiId)?.state === "saved" }); })
+      .catch(() => undefined);
+    return () => { active = false; };
+  }, [online, selectedAoiId]);
 
   function choose(next: CaseSelection) {
     setSelection(next);
     pushCaseSelection(next);
   }
   const evidence = reference && loaded.referenceHash === reference.sha256 ? loaded.package : null;
-  const packageError = reference && loaded.referenceHash === reference.sha256 ? loaded.error : null;
   const aoi = catalog?.aois.find((item) => item.id === selection.aoi);
   const event = catalog?.events.find((item) => item.id === selection.event);
   const reportUrl = evidenceAssetUrl(evidence?.report_url);
@@ -110,6 +127,24 @@ export function EvidenceLibrary({ initialCatalog = null, initialPackage = null, 
   const analysis = evidence?.decision_brief?.finals_analysis;
   const analysisError = analysis ? resolveAnalysisSelection(analysis, selection).reason : (selection.service || selection.mode || selection.scenario || selection.origin ? "unknown_service" : null);
   const workspace = view === "brief" && Boolean(evidence?.decision_brief?.finals_analysis?.routes);
+  // The report is part of a saved copy; the database archives never are, so they need a connection.
+  const reportReachable = online || (savedOffline?.aoiId === selectedAoiId && savedOffline.saved);
+  const needsConnection = th ? "ต้องใช้การเชื่อมต่อ ไฟล์นี้ไม่ได้บันทึกไว้ในอุปกรณ์" : "needs a connection; this file is not saved on this device";
+  const downloads = evidence ? <div className={styles.downloads}>
+    {reportUrl
+      ? reportReachable
+        ? <a className={styles.download} href={reportUrl} download>{th ? "ดาวน์โหลดรายงาน" : "Download report"}</a>
+        : <span data-evidence-download-offline="report">{th ? "รายงาน" : "Report"}: {needsConnection}</span>
+      : <span>{th ? "ไม่มีรายงานให้ดาวน์โหลด" : "Report download unavailable"}</span>}
+    {evidence.downloads?.map((item) => {
+      const url = evidenceAssetUrl(item.url);
+      return url ? <div key={url}>
+        {online ? <a className={styles.download} href={url} download>{item.title}</a> : <span data-evidence-download-offline="database">{item.title}: {needsConnection}</span>}
+        <small>SHA-256: <code>{item.sha256}</code></small>
+      </div> : null;
+    })}
+  </div> : null;
+  const offlineControl = catalog ? <EvidenceOfflineControl catalog={catalog} aoiId={selectedAoiId} th={th} list={view === "evidence"} /> : null;
   return <main className={`${styles.library} ${workspace ? styles.workspace : ""}`} data-evidence-library="true" data-route-workspace={workspace ? "true" : undefined}>
     <header className={styles.header}>
       <a className={styles.brand} href={link(role === "planning" ? "/command/" : role === "public" ? "/public/" : STUDIO_CANDIDATE_REPORT_ROUTE)}>FloodGuard <span>{role === "planning" ? (th ? "การวางแผน" : "Planning") : role === "public" ? "Public" : "Studio"}</span></a>
@@ -147,9 +182,11 @@ export function EvidenceLibrary({ initialCatalog = null, initialPackage = null, 
           </select></label>
           <div className={styles.selectionMeta}>{event ? `${event.start} — ${event.end}` : null}<small>{catalog.packages.length} {th ? "ชุดพื้นที่/เหตุการณ์" : "area/event packages"} · {catalog.package_version}</small></div>
         </section>
+        {/* The route workspace has no room above the map: there the control is in "Sources and downloads". */}
+        {workspace ? null : offlineControl}
         {!reference ? <p className={styles.error} role="alert">{resolved?.reason === "version_mismatch" ? (th ? "เวอร์ชันของลิงก์ไม่ตรงกับแค็ตตาล็อกที่เผยแพร่" : "The link's package version differs from the published catalog.") : (th ? "ไม่มีชุดข้อมูลสำหรับพื้นที่และเหตุการณ์ที่เลือก ระบบจะไม่ใช้ข้อมูลของพื้นที่อื่นแทน" : "No package exists for this area/event selection. Another area's data will not be substituted.")}</p> : null}
-        {packageError ? <p className={styles.error} role="alert">{th ? "ชุดข้อมูลใช้ไม่ได้" : "Evidence package unavailable"}: {packageError}</p> : null}
-        {reference && !evidence && !packageError ? <p role="status">{th ? "กำลังโหลดและตรวจสอบชุดข้อมูล…" : "Loading and verifying evidence package…"}</p> : null}
+        {packageFailure ? <EvidencePackageNotice failure={packageFailure} th={th} className={styles.error} invalidLabel={th ? "ชุดข้อมูลใช้ไม่ได้" : "Evidence package unavailable"} /> : null}
+        {reference && !evidence && !packageFailure ? <p role="status">{th ? "กำลังโหลดและตรวจสอบชุดข้อมูล…" : "Loading and verifying evidence package…"}</p> : null}
         {evidence && aoi ? <>
           {view === "evidence" ? <section className={`${styles.panel} ${styles.overview}`} aria-labelledby="evidence-overview-title">
             <p className={styles.eyebrow}>{th ? "ชุดหลักฐานที่ตรวจสอบค่าแฮชแล้ว · ยังไม่รับรอง" : "HASH-VERIFIED PACKAGE · CANDIDATE ONLY"}</p>
@@ -191,8 +228,8 @@ export function EvidenceLibrary({ initialCatalog = null, initialPackage = null, 
           </section>
           <section className={styles.panel} aria-labelledby="evidence-scenario-title"><h2 id="evidence-scenario-title">{th ? "สถานการณ์สมมติเพื่อทดสอบวิธี" : "Explicit scenario comparisons"}</h2><p>{th ? "ผลคำนวณล่วงหน้าตามสมมติฐาน ไม่ใช่ค่าที่สังเกตหรือเส้นทางปลอดภัยที่ยืนยัน" : "Precomputed results under stated assumptions, not observed outcomes or confirmed safe routes."}</p><div className={styles.scenarios}>{evidence.scenarios.map((scenario) => <article key={scenario.id}><p className={styles.eyebrow}>{scenario.kind}</p><h3>{scenario.title}</h3><p>{scenario.summary}</p><dl>{scenario.metrics.map((metric, index) => <div key={index}><dt>{metric.label}</dt><dd>{metric.value ?? (th ? "ยังไม่มี" : "Unavailable")} {metric.unit}</dd></div>)}</dl><details><summary>{th ? "สมมติฐาน" : "Assumptions"}</summary><ul>{scenario.assumptions.map((item, index) => <li key={index}>{item}</li>)}</ul></details></article>)}</div>{!evidence.scenarios.length ? <p>{th ? "ไม่มีผลสถานการณ์สมมติในชุดนี้" : "No scenario results are included in this package."}</p> : null}</section>
           </>}
-          {workspace ? <footer className={styles.workspaceFooter}><span>{evidence.id}</span><button type="button" aria-haspopup="dialog" onClick={() => sourcesDialog.current?.showModal()}>{th ? "แหล่งข้อมูลและดาวน์โหลด" : "Sources and downloads"}</button><dialog ref={sourcesDialog} className={styles.workspaceDialog} aria-labelledby="workspace-sources-title"><div className={styles.workspaceDialogHeader}><h2 id="workspace-sources-title">{th ? "แหล่งข้อมูลและดาวน์โหลด" : "Sources and downloads"}</h2><button type="button" onClick={() => sourcesDialog.current?.close()}>{th ? "ปิด" : "Close"}</button></div><div className={styles.workspaceDialogBody}><div className={styles.provenance}><div><strong>{th ? "ชุดข้อมูลที่ตรวจสอบย้อนกลับได้" : "Traceable evidence package"}</strong><p>{evidence.id}</p><GenerationTimes sourceAnalysisGeneratedAt={evidence.decision_brief?.finals_analysis?.generated_at ?? null} releaseGeneratedAt={evidence.generated_at} th={th} /><p>{th ? "ความเชื่อมั่น: ต่ำ · เวลาสังเกตการณ์ของแหล่งข้อมูล: " : "Confidence: low · Source observation time: "}{evidence.source_timestamp ?? (th ? "หลายช่วงเวลา ดูข้อมูลกำกับแต่ละแหล่ง" : "mixed source periods; see dataset metadata")}</p><details><summary>{th ? "สมมติฐานของชุดข้อมูล" : "Package assumptions"}</summary><ul>{evidence.assumptions.map((item, index) => <li key={index}>{item}</li>)}</ul></details><details><summary>{th ? "ค่าแฮชข้อมูลนำเข้า" : "Input checksums"}</summary><dl>{Object.entries(evidence.input_hashes).map(([name, hash]) => <div key={name}><dt>{name}</dt><dd><code>{hash}</code></dd></div>)}</dl></details></div><div className={styles.downloads}>{reportUrl ? <a className={styles.download} href={reportUrl} download>{th ? "ดาวน์โหลดรายงาน" : "Download report"}</a> : <span>{th ? "ไม่มีรายงานให้ดาวน์โหลด" : "Report download unavailable"}</span>}{evidence.downloads?.map((item) => { const url = evidenceAssetUrl(item.url); return url ? <div key={url}><a className={styles.download} href={url} download>{item.title}</a><small>SHA-256: <code>{item.sha256}</code></small></div> : null; })}</div></div></div></dialog></footer> : (
-          <footer id="evidence-provenance" className={styles.provenance}><div><strong>{th ? "ชุดข้อมูลที่ตรวจสอบย้อนกลับได้" : "Traceable evidence package"}</strong><p>{evidence.id}</p><GenerationTimes sourceAnalysisGeneratedAt={evidence.decision_brief?.finals_analysis?.generated_at ?? null} releaseGeneratedAt={evidence.generated_at} th={th} /><p>{th ? "ความเชื่อมั่น: ต่ำ · เวลาสังเกตการณ์ของแหล่งข้อมูล: " : "Confidence: low · Source observation time: "}{evidence.source_timestamp ?? (th ? "หลายช่วงเวลา ดูข้อมูลกำกับแต่ละแหล่ง" : "mixed source periods; see dataset metadata")}</p><details><summary>{th ? "สมมติฐานของชุดข้อมูล" : "Package assumptions"}</summary><ul>{evidence.assumptions.map((item, index) => <li key={index}>{item}</li>)}</ul></details><details><summary>{th ? "ค่าแฮชข้อมูลนำเข้า" : "Input checksums"}</summary><dl>{Object.entries(evidence.input_hashes).map(([name, hash]) => <div key={name}><dt>{name}</dt><dd><code>{hash}</code></dd></div>)}</dl></details></div><div className={styles.downloads}>{reportUrl ? <a className={styles.download} href={reportUrl} download>{th ? "ดาวน์โหลดรายงาน" : "Download report"}</a> : <span>{th ? "ไม่มีรายงานให้ดาวน์โหลด" : "Report download unavailable"}</span>}{evidence.downloads?.map((item) => { const url = evidenceAssetUrl(item.url); return url ? <div key={url}><a className={styles.download} href={url} download>{item.title}</a><small>SHA-256: <code>{item.sha256}</code></small></div> : null; })}</div></footer>)}
+          {workspace ? <footer className={styles.workspaceFooter}><span>{evidence.id}</span><button type="button" aria-haspopup="dialog" onClick={() => sourcesDialog.current?.showModal()}>{th ? "แหล่งข้อมูลและดาวน์โหลด" : "Sources and downloads"}</button><dialog ref={sourcesDialog} className={styles.workspaceDialog} aria-labelledby="workspace-sources-title"><div className={styles.workspaceDialogHeader}><h2 id="workspace-sources-title">{th ? "แหล่งข้อมูลและดาวน์โหลด" : "Sources and downloads"}</h2><button type="button" onClick={() => sourcesDialog.current?.close()}>{th ? "ปิด" : "Close"}</button></div><div className={styles.workspaceDialogBody}><div className={styles.provenance}><div><strong>{th ? "ชุดข้อมูลที่ตรวจสอบย้อนกลับได้" : "Traceable evidence package"}</strong><p>{evidence.id}</p><GenerationTimes sourceAnalysisGeneratedAt={evidence.decision_brief?.finals_analysis?.generated_at ?? null} releaseGeneratedAt={evidence.generated_at} th={th} /><p>{th ? "ความเชื่อมั่น: ต่ำ · เวลาสังเกตการณ์ของแหล่งข้อมูล: " : "Confidence: low · Source observation time: "}{evidence.source_timestamp ?? (th ? "หลายช่วงเวลา ดูข้อมูลกำกับแต่ละแหล่ง" : "mixed source periods; see dataset metadata")}</p><details><summary>{th ? "สมมติฐานของชุดข้อมูล" : "Package assumptions"}</summary><ul>{evidence.assumptions.map((item, index) => <li key={index}>{item}</li>)}</ul></details><details><summary>{th ? "ค่าแฮชข้อมูลนำเข้า" : "Input checksums"}</summary><dl>{Object.entries(evidence.input_hashes).map(([name, hash]) => <div key={name}><dt>{name}</dt><dd><code>{hash}</code></dd></div>)}</dl></details></div>{downloads}</div>{offlineControl}</div></dialog></footer> : (
+          <footer id="evidence-provenance" className={styles.provenance}><div><strong>{th ? "ชุดข้อมูลที่ตรวจสอบย้อนกลับได้" : "Traceable evidence package"}</strong><p>{evidence.id}</p><GenerationTimes sourceAnalysisGeneratedAt={evidence.decision_brief?.finals_analysis?.generated_at ?? null} releaseGeneratedAt={evidence.generated_at} th={th} /><p>{th ? "ความเชื่อมั่น: ต่ำ · เวลาสังเกตการณ์ของแหล่งข้อมูล: " : "Confidence: low · Source observation time: "}{evidence.source_timestamp ?? (th ? "หลายช่วงเวลา ดูข้อมูลกำกับแต่ละแหล่ง" : "mixed source periods; see dataset metadata")}</p><details><summary>{th ? "สมมติฐานของชุดข้อมูล" : "Package assumptions"}</summary><ul>{evidence.assumptions.map((item, index) => <li key={index}>{item}</li>)}</ul></details><details><summary>{th ? "ค่าแฮชข้อมูลนำเข้า" : "Input checksums"}</summary><dl>{Object.entries(evidence.input_hashes).map(([name, hash]) => <div key={name}><dt>{name}</dt><dd><code>{hash}</code></dd></div>)}</dl></details></div>{downloads}</footer>)}
 
         </> : null}
       </> : null}

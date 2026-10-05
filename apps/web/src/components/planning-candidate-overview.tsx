@@ -5,9 +5,12 @@ import { useEffect, useState } from "react";
 import type { EvidenceLibraryCatalog, EvidenceLibraryPackage, FinalsServiceId } from "@floodguard/contracts";
 import { STUDIO_CANDIDATE_REPORT_ROUTE, caseHref, readCaseSelection, resolveAnalysisSelection, resolveEvidenceCase, type CaseSelection } from "@/lib/case-selection";
 import { EVIDENCE_CATALOG_URL, fetchEvidencePackage, parseEvidenceCatalog } from "@/lib/evidence-library";
+import { evidencePackageFailure, type EvidencePackageFailure } from "@/lib/evidence-offline";
 import { useLanguage } from "@/lib/use-language";
+import { EvidencePackageNotice, useRetryWhenOnline } from "./evidence-offline";
 import { SERVICE_NAMES } from "./finals-analysis";
 import { MainRoadStatus } from "./main-road-status";
+import { ResearchReportNotice } from "./research-report-notice";
 import styles from "./planning-candidate-overview.module.css";
 
 const EvidenceMap = dynamic(() => import("./evidence-library-map").then((module) => module.EvidenceLibraryMap), { ssr: false });
@@ -30,7 +33,7 @@ export function PlanningCandidateOverview() {
   const [selection, setSelection] = useState<CaseSelection>({});
   const [catalog, setCatalog] = useState<EvidenceLibraryCatalog | null>(null);
   const [catalogError, setCatalogError] = useState<string | null>(null);
-  const [loaded, setLoaded] = useState<{ hash: string; value: EvidenceLibraryPackage | null; error: string | null }>({ hash: "", value: null, error: null });
+  const [loaded, setLoaded] = useState<{ hash: string; value: EvidenceLibraryPackage | null; failure: EvidencePackageFailure | null }>({ hash: "", value: null, failure: null });
 
   useEffect(() => {
     const onPopState = () => setSelection(readCaseSelection(window.location.search));
@@ -51,17 +54,19 @@ export function PlanningCandidateOverview() {
 
   const resolved = catalog ? resolveEvidenceCase(catalog, selection) : null;
   const reference = resolved?.reference;
+  const failure = reference?.sha256 === loaded.hash ? loaded.failure : null;
+  // A package that could not be reached is requested again when the connection returns.
+  const retry = useRetryWhenOnline(Boolean(failure && failure.kind !== "invalid"));
   useEffect(() => {
     if (!catalog || !reference) return;
     const controller = new AbortController();
     fetchEvidencePackage(catalog, reference, controller.signal)
-      .then((value) => { if (!controller.signal.aborted) setLoaded({ hash: reference.sha256, value, error: null }); })
-      .catch((error: unknown) => { if (!controller.signal.aborted) setLoaded({ hash: reference.sha256, value: null, error: error instanceof Error ? error.message : "Package unavailable" }); });
+      .then((value) => { if (!controller.signal.aborted) setLoaded({ hash: reference.sha256, value, failure: null }); })
+      .catch((error: unknown) => { if (!controller.signal.aborted) setLoaded({ hash: reference.sha256, value: null, failure: evidencePackageFailure(error) }); });
     return () => controller.abort();
-  }, [catalog, reference]);
+  }, [catalog, reference, retry]);
 
   const evidence = reference?.sha256 === loaded.hash ? loaded.value : null;
-  const error = reference?.sha256 === loaded.hash ? loaded.error : null;
   const brief = evidence?.decision_brief;
   const analysis = brief?.finals_analysis;
   const choice = analysis ? resolveAnalysisSelection(analysis, selection) : null;
@@ -76,11 +81,11 @@ export function PlanningCandidateOverview() {
   const mapLayers = evidence?.layers.filter((layer) => MAP_LAYER_IDS.has(layer.id) && (layer.data || layer.image_url)) ?? [];
   const mapAttributions = [...new Set(mapLayers.flatMap((layer) => layer.attribution ? [layer.attribution] : []))];
 
-  return <main id="main-content" tabIndex={-1} className={styles.page} data-planning-candidate={evidence?.id ?? "loading"}>
+  return <main id="main-content" tabIndex={-1} className={styles.page} data-planning-candidate={evidence?.id ?? (failure ? "unavailable" : "loading")}>
     {catalogError ? <p className={styles.error} role="alert">{th ? "โหลดรายการกรณีศึกษาไม่ได้" : "Case catalog unavailable"}: {catalogError}</p> : null}
     {catalog && !reference ? <p className={styles.loading}>{th ? "เลือกกรณีศึกษาที่เผยแพร่ด้านบนเพื่อดูผลเฉพาะกรณีนั้น" : "Choose a published case above to inspect its own results."}</p> : null}
-    {error ? <p className={styles.error} role="alert">{th ? "ตรวจสอบชุดข้อมูลไม่ผ่าน" : "Package verification failed"}: {error}</p> : null}
-    {reference && !evidence && !error ? <p className={styles.loading} role="status">{th ? "กำลังตรวจสอบชุดข้อมูลเพื่อการวางแผน…" : "Verifying planning evidence…"}</p> : null}
+    {failure ? <EvidencePackageNotice failure={failure} th={th} className={styles.error} invalidLabel={th ? "ตรวจสอบชุดข้อมูลไม่ผ่าน" : "Package verification failed"} brief /> : null}
+    {reference && !evidence && !failure ? <p className={styles.loading} role="status">{th ? "กำลังตรวจสอบชุดข้อมูลเพื่อการวางแผน…" : "Verifying planning evidence…"}</p> : null}
     {evidence && aoi && event ? <>
       <header className={styles.intro}>
         <div><p className={styles.eyebrow}>{th ? "การวางแผน · ชุดข้อมูลผู้สมัคร" : "PLANNING · CANDIDATE EVIDENCE"}</p>
@@ -145,5 +150,7 @@ export function PlanningCandidateOverview() {
         <nav className={styles.footerNav} aria-label={th ? "มุมมองที่เกี่ยวข้อง" : "Related views"}><a href={caseHref(STUDIO_CANDIDATE_REPORT_ROUTE, query)}>{th ? "รายงานการตรวจสอบ" : "Validation report"} →</a><a href={caseHref("/studio/brief/", query)}>{th ? "บทสรุปเพื่อการตัดสินใจ" : "Decision brief"} →</a><a href="/command/archive/">{th ? "คลังเปรียบเทียบงานวิจัยเดิม" : "Historical research archive"} →</a></nav>
       </> : null}
     </> : null}
+    {/* The research score table is not shown on Command (R17): this notice says where the report is kept. */}
+    <ResearchReportNotice language={language} />
   </main>;
 }

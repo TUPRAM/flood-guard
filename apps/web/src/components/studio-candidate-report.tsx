@@ -5,8 +5,10 @@ import type { EvidenceLibraryCatalog, EvidenceLibraryPackage } from "@floodguard
 
 import { caseHref, readCaseSelection, resolveEvidenceCase, type CaseSelection } from "@/lib/case-selection";
 import { EVIDENCE_CATALOG_URL, fetchEvidencePackage, parseEvidenceCatalog } from "@/lib/evidence-library";
+import { evidencePackageFailure, type EvidencePackageFailure } from "@/lib/evidence-offline";
 import { useLanguage } from "@/lib/use-language";
 
+import { EvidencePackageNotice, useRetryWhenOnline } from "./evidence-offline";
 import styles from "./studio-candidate-report.module.css";
 
 type ReportTab = "technical" | "observed" | "quality" | "models" | "governance" | "files";
@@ -124,7 +126,7 @@ export function StudioCandidateReport() {
   const [catalog, setCatalog] = useState<EvidenceLibraryCatalog | null>(null);
   const [catalogError, setCatalogError] = useState<string | null>(null);
   const [selection, setSelection] = useState<CaseSelection>({});
-  const [loaded, setLoaded] = useState<{ hash: string; value: EvidenceLibraryPackage | null; error: string | null }>({ hash: "", value: null, error: null });
+  const [loaded, setLoaded] = useState<{ hash: string; value: EvidenceLibraryPackage | null; failure: EvidencePackageFailure | null }>({ hash: "", value: null, failure: null });
   const [activeTab, setActiveTab] = useState<ReportTab>("technical");
 
   useEffect(() => {
@@ -146,19 +148,21 @@ export function StudioCandidateReport() {
 
   const resolved = catalog ? resolveEvidenceCase(catalog, selection) : null;
   const reference = resolved?.reference;
+  const packageFailure = reference?.sha256 === loaded.hash ? loaded.failure : null;
+  // A package that could not be reached is requested again when the connection returns.
+  const retry = useRetryWhenOnline(Boolean(packageFailure && packageFailure.kind !== "invalid"));
   useEffect(() => {
     if (!catalog || !reference) return;
     const controller = new AbortController();
     fetchEvidencePackage(catalog, reference, controller.signal)
-      .then((value) => { if (!controller.signal.aborted) setLoaded({ hash: reference.sha256, value, error: null }); })
+      .then((value) => { if (!controller.signal.aborted) setLoaded({ hash: reference.sha256, value, failure: null }); })
       .catch((error: unknown) => {
-        if (!controller.signal.aborted) setLoaded({ hash: reference.sha256, value: null, error: error instanceof Error ? error.message : "Package unavailable" });
+        if (!controller.signal.aborted) setLoaded({ hash: reference.sha256, value: null, failure: evidencePackageFailure(error) });
       });
     return () => controller.abort();
-  }, [catalog, reference]);
+  }, [catalog, reference, retry]);
 
   const evidence = reference?.sha256 === loaded.hash ? loaded.value : null;
-  const packageError = reference?.sha256 === loaded.hash ? loaded.error : null;
   const aoi = catalog?.aois.find((item) => item.id === reference?.aoi_id);
   const event = catalog?.events.find((item) => item.id === reference?.event_id);
   const stages = evidence ? candidateDecisionStages() : [];
@@ -187,8 +191,8 @@ export function StudioCandidateReport() {
     {catalogError ? <p className={styles.error} role="alert">{th ? "โหลดรายการกรณีศึกษาไม่ได้" : "Case catalog unavailable"}: {catalogError}</p> : null}
     {!catalog && !catalogError ? <p className={styles.loading} role="status">{th ? "กำลังโหลดรายการกรณีศึกษา…" : "Loading case catalog…"}</p> : null}
     {catalog && !reference ? <p className={styles.loading}>{th ? "เลือกกรณีศึกษาที่เผยแพร่ด้านบนเพื่อดูรายงานของแพ็กเกจนั้น" : "Choose a published case above to inspect its own package report."}</p> : null}
-    {packageError ? <p className={styles.error} role="alert">{th ? "ตรวจสอบแพ็กเกจไม่ผ่าน" : "Package verification failed"}: {packageError}</p> : null}
-    {reference && !evidence && !packageError ? <p className={styles.loading} role="status">{th ? "กำลังตรวจสอบ checksum ของแพ็กเกจ…" : "Verifying package checksum…"}</p> : null}
+    {packageFailure ? <EvidencePackageNotice failure={packageFailure} th={th} className={styles.error} invalidLabel={th ? "ตรวจสอบแพ็กเกจไม่ผ่าน" : "Package verification failed"} brief /> : null}
+    {reference && !evidence && !packageFailure ? <p className={styles.loading} role="status">{th ? "กำลังตรวจสอบ checksum ของแพ็กเกจ…" : "Verifying package checksum…"}</p> : null}
 
     {evidence && reference && aoi && event ? <>
       <section className={styles.summary} aria-label={th ? "สรุปการตรวจสอบ" : "Validation summary"}>

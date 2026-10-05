@@ -15,8 +15,12 @@ vi.mock("@/lib/use-language", () => ({ useLanguage: () => [preference.language, 
 
 /** The text a reader sees, in page order. */
 const visible = (html: string) => html.replace(/<!-- -->/g, "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ");
-const SCORE = /FPPS\s*\d+(?:\.\d+)?/g;
-const CLASS = /(?:(?<![A-Za-z])[Cc]lass|ชั้น)\s+[A-E](?![A-Za-z])/g;
+// The written forms of a research score or class, as scripts/research-score-guard.mjs lists them for the build checks:
+// the word FPPS followed in the same sentence by a number, and a class followed by a letter A to E.
+const SCORE = /FPPS[^.!?]{0,40}?\d+(?:\.\d+)?/g;
+const CLASS = /(?:(?<![A-Za-z])(?:[Cc]lass(?:es)?|CLASS(?:ES)?)\W{0,3}|(?:ชั้น|ระดับ)[^\sA-Za-z0-9]{0,24}\s{0,2})[A-E](?![A-Za-z0-9])/g;
+// The ranking's own markup, which only the map workspace has.
+const RANKING_MARKUP = /class="[^"]*\b(?:rank-score|fpps-block|decision-class|action-class-legend|class-[a-e])\b/;
 
 /**
  * The three Planning addresses since the owner's request of 5 Oct 2026 (decision log R19): the map workspace is the
@@ -25,6 +29,9 @@ const CLASS = /(?:(?<![A-Za-z])[Cc]lass|ชั้น)\s+[A-E](?![A-Za-z])/g;
  * The route files under src/app/command/ are not imported here: the public-production build moves that folder
  * aside and still type-checks every test. These are the components each route file renders; the built pages, their
  * titles and their addresses are checked by scripts/offline-smoke.mjs and scripts/browser-offline-smoke.mjs.
+ *
+ * The overview is rendered here as it is before a case has loaded (these tests run no effect). The page with its
+ * case loaded is checked for research scores in the browser, in English and in Thai, by browser-offline-smoke.mjs.
  */
 const workspacePage = () => <CommandWorkspace />;
 const overviewPage = () => <><CandidateCaseContext role="planning" /><PlanningCandidateOverview /></>;
@@ -87,6 +94,7 @@ describe("Planning pages after the swap of 5 Oct 2026", () => {
       expect(html).toContain('data-shared-case="planning"');
       expect(html).not.toContain('class="command-page');
       expect([...text.matchAll(SCORE), ...text.matchAll(CLASS)].map((match) => match[0])).toEqual([]);
+      expect(html).not.toMatch(RANKING_MARKUP);
       // The notice of the overview: where the historical report is kept, and nothing about a ranking on this page.
       expect(html).toContain('data-research-report-notice="true"');
       expect(html).not.toContain("data-research-retained-ranking");
@@ -112,7 +120,8 @@ describe("Planning pages after the swap of 5 Oct 2026", () => {
     expect(html).toContain('<p lang="en">This page has moved. The Planning map workspace is now at <a href="/command/">/command/</a>.</p>');
     expect(html).toContain('<p lang="th">หน้านี้ย้ายแล้ว พื้นที่ทำงานแผนที่สำหรับการวางแผนอยู่ที่ <a href="/command/">/command/</a></p>');
     expect([...text.matchAll(SCORE), ...text.matchAll(CLASS)].map((match) => match[0])).toEqual([]);
-    expect(html).not.toMatch(/data-research-report-notice|rank-score|command-page|data-planning-candidate|<table|<h1|<h2/);
+    expect(html).not.toMatch(RANKING_MARKUP);
+    expect(html).not.toMatch(/data-research-report-notice|command-page|data-planning-candidate|<table|<h1|<h2/);
     // The old link's query and fragment go with the reader.
     expect(commandArchiveForwardTarget("", "")).toBe("/command/");
     expect(commandArchiveForwardTarget("?aoi=aoi-01_mae_sai_core&event=mae_sai_2024", "#main-content"))
@@ -129,7 +138,11 @@ describe("Planning pages after the swap of 5 Oct 2026", () => {
       const html = renderToStaticMarkup(<EvidenceLibrary view="brief" role="planning" initialCatalog={catalog} initialPackage={evidence} />);
       expect(html).toMatch(new RegExp(`<a href="/command/ver2/[^"]*">${overview}</a>`));
       expect(html).toMatch(new RegExp(`<a href="/command/(?:\\?[^"]*)?">${workspace}</a>`));
-      expect(html).toMatch(new RegExp(`<a href="/command/(?:\\?[^"]*)?"[^>]*>${planning}</a>`));
+      // The header's Planning link leads to the map workspace, another page: it marks the section. The one page this
+      // header names as current is the comparison page itself, in the row of pages below it.
+      expect(html).toMatch(new RegExp(`<a href="/command/(?:\\?[^"]*)?" aria-current="true">${planning}</a>`));
+      expect(html.match(/aria-current="page"/g)).toHaveLength(1);
+      expect(html).toMatch(/<a href="\/command\/cases\/[^"]*" aria-current="page">/);
       expect(html).not.toContain('href="/command/archive/');
     }
   });

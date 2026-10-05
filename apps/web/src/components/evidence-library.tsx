@@ -150,7 +150,9 @@ export function EvidenceLibrary({ initialCatalog = null, initialPackage = null, 
       <a className={styles.brand} href={link(role === "planning" ? "/command/" : role === "public" ? "/public/" : STUDIO_CANDIDATE_REPORT_ROUTE)}>FloodGuard <span>{role === "planning" ? (th ? "การวางแผน" : "Planning") : role === "public" ? "Public" : "Studio"}</span></a>
       <nav aria-label={th ? "พื้นที่หลัก" : "Main areas"}>
         <a href={link("/public/")} aria-current={role === "public" ? "page" : undefined}>{th ? "ประชาชน" : "Public"}</a>
-        <a href={link("/command/")} aria-current={role === "planning" ? "page" : undefined}>{th ? "การวางแผน" : "Planning"}</a>
+        {/* On the comparison page (/command/cases/) the Planning link leads to the map workspace, another page: it marks the
+            section. The page itself is named as the current one in the row of pages below. */}
+        <a href={link(PLANNING_WORKSPACE_ROUTE)} aria-current={role === "planning" ? "true" : undefined}>{th ? "การวางแผน" : "Planning"}</a>
         <a href={link(STUDIO_CANDIDATE_REPORT_ROUTE)} aria-current={role === "studio" ? "page" : undefined}>{th ? "หลักฐาน" : "Studio"}</a>
       </nav>
       <LanguageToggle language={language} onChange={setLanguage} />

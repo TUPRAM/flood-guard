@@ -51,8 +51,11 @@ export function pushCaseSelection(selection: CaseSelection): void {
   window.dispatchEvent(new Event("popstate"));
 }
 
-/** An explicit unknown or mixed-version selection never falls back to another case. */
-export function resolveEvidenceCase(catalog: EvidenceLibraryCatalog, selection: CaseSelection) {
+/**
+ * An explicit unknown or mixed-version selection never falls back to another case. Only the catalogue's version and
+ * its list of cases are read, so a caller that holds no more of the catalogue than that can ask too.
+ */
+export function resolveEvidenceCase(catalog: Pick<EvidenceLibraryCatalog, "package_version" | "packages">, selection: CaseSelection) {
   if (Boolean(selection.aoi) !== Boolean(selection.event)) return { reference: null, reason: "incomplete_case" } as const;
   if (selection.version && selection.version !== catalog.package_version) return { reference: null, reason: "version_mismatch" } as const;
   const reference = selection.aoi && selection.event

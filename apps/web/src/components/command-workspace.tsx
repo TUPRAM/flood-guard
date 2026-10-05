@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { CommandCaseNotice } from "@/components/command-case-notice";
 import { ResearchReportNotice } from "@/components/research-report-notice";
 import { GeoMap } from "@/components/geo-map";
 import { WorkspaceHeader } from "@/components/workspace-header";
@@ -162,7 +163,8 @@ export function CommandWorkspace() {
   const data = useFloodGuardData({ studyArea: "mae_sai_candidate_v1", role: "command" });
   const [language, setLanguage] = useLanguage("en");
   // The query this page was opened with (a selected case) is carried on every link to another page. The workspace
-  // itself does not read it: it always shows the Mae Sai planning bundle.
+  // itself does not read it: it always shows the Mae Sai planning bundle. When the query names a case, one line
+  // under the context bar says so and leads to the planning overview of that case (CommandCaseNotice).
   const [pageQuery, setPageQuery] = useState<string | null>(null);
   const withPageQuery = (path: string) => pageQuery === null ? undefined : `${path}${pageQuery}`;
   useEffect(() => {
@@ -357,6 +359,8 @@ export function CommandWorkspace() {
         </dl>
         <p className="command-context-advisory">{th ? "ยืนยันสภาพถนน สถานที่ และคำแนะนำปัจจุบันกับ ปภ. และหน่วยงานท้องถิ่นก่อนดำเนินการ" : "Confirm current road and facility conditions, and follow DDPM and local-authority instructions before action."}</p>
       </section>
+
+      <CommandCaseNotice search={pageQuery} language={language} />
 
       {data.status.dataset_mode !== "official_input" ? <section className={`command-context-bar command-research-notice ${archiveStyles.notice}`} aria-label={th ? "ขอบเขตการวิจัย" : "Research scope"}>
         <div><strong>{th ? "พื้นที่ทำงานวิจัยเดิม" : "Historical research workspace"}</strong><h1>{th ? "คลังเปรียบเทียบงานวิจัยแม่สาย" : "Historical Mae Sai research archive"}</h1>

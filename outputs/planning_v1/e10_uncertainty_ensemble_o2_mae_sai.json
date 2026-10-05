@@ -1,7 +1,7 @@
 {
-  "schema_version": "floodguard.uncertainty_ensemble_run_receipt.v1",
-  "generated_at_utc": "2026-10-04T20:28:15Z",
-  "run_kind": "first_run",
+  "schema_version": "floodguard.uncertainty_ensemble_run_receipt.v2",
+  "generated_at_utc": "2026-10-04T22:58:03Z",
+  "run_kind": "superseding_run",
   "plan_task": "E10: uncertainty_ensemble.py + LOCO + headline rule; 540 cells per lane reported",
   "status": "run_receipt",
   "status_note": "Written with protocol v1a and v1b in force (protocol_sha256). The run computed an FPPS and a class for real units in every cell of the ensemble that can be run today, which protocol v1b allows since it is in force; every run is reported, and so is every cell.",
@@ -198,6 +198,7 @@
           "count": 5
         }
       ],
+      "one_pixel_m": 20.0,
       "core_cells_per_lane": 540,
       "routing_combinations_per_lane": 27,
       "cells_of_the_public_facility_set": 180,
@@ -308,7 +309,7 @@
         "axis": "facilities",
         "level": "corroborated",
         "code": "facility_set_needs_a_walking_context_of_record_and_the_pitch_level",
-        "reason": "The corroborated facility set adds DDPM located shelters, reached by walking within 30 minutes, at the pitch level (protocol v1b facility_sets, owner choice 7). The registered E5 receipt says the shelter tables rest on a candidate walking context and are not usable until the owners accept a walking build of record (open point E5-OP5). No access table exists for the subset of the shelters this set keeps. The set is not approximated from the candidate tables.",
+        "reason": "This facility set adds DDPM located shelters, reached by walking within 30 minutes, at the pitch level (protocol v1b facility_sets, owner choice 7). The registered E5 receipt says the shelter tables rest on a candidate walking context and are not usable until the owners accept a walking build of record (open point E5-OP5). No access table exists for the subset of the shelters this set keeps. The set is not approximated from the candidate tables.",
         "open_points": [
           "E10-OP3",
           "E5-OP5"
@@ -318,7 +319,7 @@
         "axis": "facilities",
         "level": "all_listed",
         "code": "facility_set_needs_a_walking_context_of_record_and_the_pitch_level",
-        "reason": "The all_listed facility set adds DDPM located shelters, reached by walking within 30 minutes, at the pitch level (protocol v1b facility_sets, owner choice 7). The registered E5 receipt says the shelter tables rest on a candidate walking context and are not usable until the owners accept a walking build of record (open point E5-OP5). The set is not approximated from the candidate tables.",
+        "reason": "This facility set adds DDPM located shelters, reached by walking within 30 minutes, at the pitch level (protocol v1b facility_sets, owner choice 7). The registered E5 receipt says the shelter tables rest on a candidate walking context and are not usable until the owners accept a walking build of record (open point E5-OP5). The set is not approximated from the candidate tables.",
         "open_points": [
           "E10-OP3",
           "E5-OP5"
@@ -335,9 +336,11 @@
       }
     ],
     "one_pixel_m": {
-      "minus": 20,
-      "plus": 20,
-      "source": "planning_protocol_v1b.json /ensemble_grid/core_axes/0/one_pixel_m (owner choice 2); the levels are those task E1 wrote"
+      "minus": 20.0,
+      "plus": 20.0,
+      "source": "planning_protocol_v1b.json /ensemble_grid/core_axes/0/one_pixel_m (owner choice 2)",
+      "input_record_of_task_e1": 20.0,
+      "note": "The levels are those task E1 wrote; its input record states the same distance."
     },
     "closure_rule": {
       "version": "closure_rule_v1",
@@ -612,7 +615,7 @@
     },
     "levels_and_git": "Protocol v1a guardrail GR6 says that only a public output may be written under apps/web/public/. Plan 3.1 keeps pitch variants outside Git and puts committed outputs (small tables and GeoJSON) in outputs/planning_v1/. Neither says whether a figure derived from a local-level input may be committed. Until the owners decide (open point E1-OP1), tasks E1 and E5 keep every layer and every per-unit table whose lineage is below public outside Git, and their run receipts in Git hold whole-frame figures of local-level inputs and say so.",
     "figures_of_local_level_layers_in_this_receipt": {
-      "what": "This receipt is committed. It holds the closure counts and whole-frame resident counts of the access runs, and counts of units and cells for the whole case. It puts no unit beside a value. When the lineage is below the public level those counts come from a lineage below the public level; the file that holds the values of each unit is outside Git.",
+      "what": "This receipt is committed. It holds the closure counts and whole-frame resident counts of the access runs, and counts of units and cells for the whole case. It names no unit beside a value. Some of its counts state a value of a single unit all the same (counts_that_state_a_value_of_a_single_unit). When the lineage is below the public level those counts come from a lineage below the public level; the file that holds the values of each unit is outside Git.",
       "figures": [
         {
           "where": "access_runs and result.summary",
@@ -621,9 +624,20 @@
           "figures": "The closure counts and whole-frame resident counts of nine access runs; the number of units by class in each cell, by retention and by headline status."
         }
       ],
-      "cells_in_which_every_unit_has_one_class": 90,
-      "what_the_counts_give_away": "In a cell where every unit of the case has one class, the class count states the class of each unit listed in parameters.unit_ids, and so does a count of units that covers every unit. For those counts the receipt in Git says the same as the file outside Git (open point E8-OP7).",
-      "for_the_owners": "Open points E1-OP1, E8-OP5 and E8-OP7: whether a level below public allows these counts in Git."
+      "counts_that_state_a_value_of_a_single_unit": {
+        "states_a_value_of_a_single_unit": true,
+        "cells_in_which_every_unit_has_one_class": 90,
+        "classes_one_unit_alone_holds_in_the_default_cell": [],
+        "cells_in_which_such_a_class_has_another_count": 0,
+        "cells_whose_class_counts_differ_from_the_default_cell": 0,
+        "units_with_more_than_one_class_over_the_cells_run": 0,
+        "what": "A count names no unit. Two kinds of count state the class of a single unit all the same. In a cell where every unit of the case has one class, class_counts_by_cell states the class of each unit. And a class that one unit alone holds in the default cell marks that unit: in every cell, the count of that class says whether the unit holds it there, for whoever knows which unit it is. A cell whose counts differ from those of the default cell says that a unit changed class there, and between which classes.",
+        "where": "result.summary.class_counts_by_cell, read with reference_class_counts, class_counts_over_every_unit_cell, units_by_number_of_classes_over_the_cells_run and retention_over_the_cells_run of the same summary.",
+        "who_can_read_them": "Whoever knows the class of each unit in the default cell, which is the row of the task E8 run of the case. Those rows are in a file outside Git; where committed files let a reader work them out (the README of the output folder says so for each case), the counts here follow single units through the cells.",
+        "cannot_be_rebuilt_from_committed_files": "The class of a unit in a cell of the minus or plus flood level rests on the access runs of that level, whose unit rows are outside Git (open point E10-OP8). What these counts state of such a cell cannot be worked out from the other committed files."
+      },
+      "what_the_counts_give_away": "In a cell where every unit of the case has one class, the class count states the class of each unit listed in parameters.unit_ids, and so does a count of units that covers every unit. A class that one unit alone holds in the default cell marks that unit, and its count in each cell says whether the unit holds it there. For those counts the receipt in Git says the same as the file outside Git (open points E8-OP7 and E10-OP10).",
+      "for_the_owners": "Open points E1-OP1, E8-OP5, E8-OP7 and E10-OP10: whether a level below public allows these counts in Git."
     },
     "written_under_apps_web_public": false
   },
@@ -1920,8 +1934,10 @@
     "combinations_measured": 9,
     "residents_and_baseline_counts_same_in_every_access_run": true,
     "default_combination_is_the_measurement_of_task_e8": true,
+    "each_combination_carries_the_flood_measurements_of_its_own_level": true,
     "flooded_land_not_smaller_at_a_larger_flood_level_in_every_unit": true,
-    "residents_inside_not_fewer_at_a_larger_flood_level_in_every_unit": true
+    "residents_inside_not_fewer_at_a_larger_flood_level_in_every_unit": true,
+    "flood_level_checks_read": "The measurements handed to the ensemble: for each unit and closure level, the flooded land and the residents inside the extent of the minus, the as-provided and the plus combination."
   },
   "result": {
     "computed": true,
@@ -1972,7 +1988,7 @@
         "1": 8
       },
       "retention_over_the_cells_run": {
-        "what": "The share of the cells that were run in which a unit keeps the class of its default cell. It is not the retention of the headline rule unless every cell of the protocol's set was run.",
+        "what": "The share of the cells that were run in which a unit keeps the class of its default cell. A cell that was run and failed counts as run and keeps no class. It is not the retention of the headline rule unless every cell of the protocol's set was run.",
         "class_retention_min": 0.6,
         "units_keeping_the_class_in_every_cell_run": 8,
         "units_keeping_the_class_in_at_least_the_minimum_share": 8,
@@ -1989,12 +2005,63 @@
         "below_the_minimum": 0,
         "not_fixed": 8
       },
+      "other_reading_of_the_protocol_set": {
+        "over": "the 540 core cells (protocol v1b ensemble_grid.headline_rule)",
+        "cells": 540,
+        "outcome_fixed_by_the_bounds_counts": {
+          "at_or_above_the_minimum": 0,
+          "below_the_minimum": 0,
+          "not_fixed": 8
+        },
+        "note": "The same counts with the core cells as the set of the rule. Which set applies to a result that is not a public overlay is open point E10-OP11; no status is set from either."
+      },
       "after_declared_cut_line_6": {
+        "levels_kept": {
+          "population_vintage": "worldpop_2020",
+          "vulnerability_anchors": "P10_P90"
+        },
         "cells": 45,
         "units_at_or_above_the_minimum": 8,
         "units_below_the_minimum": 0,
+        "units_keeping_the_class_in_every_one_of_those_cells": 8,
         "units_without_a_class_in_every_one_of_those_cells": 0,
-        "note": "Counts over the cells that declared cut line 6 would leave. Not the headline: the owners have not invoked the cut (open point E10-OP1)."
+        "levels_kept_are": "the levels of the default cell",
+        "other_levels_the_cut_could_keep": [
+          {
+            "levels_kept": {
+              "population_vintage": "worldpop_2020",
+              "vulnerability_anchors": "P5_P95"
+            },
+            "cells": 45,
+            "units_at_or_above_the_minimum": 8,
+            "units_below_the_minimum": 0,
+            "units_keeping_the_class_in_every_one_of_those_cells": 8,
+            "units_without_a_class_in_every_one_of_those_cells": 0
+          },
+          {
+            "levels_kept": {
+              "population_vintage": "rescaled_2024",
+              "vulnerability_anchors": "P10_P90"
+            },
+            "cells": 45,
+            "units_at_or_above_the_minimum": 0,
+            "units_below_the_minimum": 0,
+            "units_keeping_the_class_in_every_one_of_those_cells": 0,
+            "units_without_a_class_in_every_one_of_those_cells": 8
+          },
+          {
+            "levels_kept": {
+              "population_vintage": "rescaled_2024",
+              "vulnerability_anchors": "P5_P95"
+            },
+            "cells": 45,
+            "units_at_or_above_the_minimum": 0,
+            "units_below_the_minimum": 0,
+            "units_keeping_the_class_in_every_one_of_those_cells": 0,
+            "units_without_a_class_in_every_one_of_those_cells": 8
+          }
+        ],
+        "note": "Counts over the cells that declared cut line 6 would leave. Not the headline: the owners have not invoked the cut (open point E10-OP1). The cut does not say which level of its two axes stays: the first counts keep the levels of the default cell, and other_levels_the_cut_could_keep gives the counts for every other pair (open point E10-OP12)."
       },
       "units_whose_fpps_lies_on_both_sides_of_the_class_e_threshold": 0,
       "class_e_threshold_fpps": 35.0,
@@ -2273,31 +2340,44 @@
         }
       },
       "class_counts_by_cell_note": "For each cell that was run, the number of units in each class; a class no unit has in the cell is left out.",
-      "note": "Counts for the whole case. No value is put beside a unit here; a count that covers every unit states that value for each unit all the same."
+      "note": "Counts for the whole case. No unit is named beside a value here. Some counts state a value of a single unit all the same: a count that covers every unit states that value for each unit, and a class that one unit alone holds in the default cell marks that unit in every cell (open point E10-OP10; counts_that_state_a_value_of_a_single_unit counts them).",
+      "counts_that_state_a_value_of_a_single_unit": {
+        "cells_in_which_every_unit_has_one_class": 90,
+        "classes_one_unit_alone_holds_in_the_default_cell": [],
+        "cells_in_which_such_a_class_has_another_count": 0,
+        "cells_whose_class_counts_differ_from_the_default_cell": 0,
+        "units_with_more_than_one_class_over_the_cells_run": 0,
+        "states_a_value_of_a_single_unit": true,
+        "what": "A count names no unit. Two kinds of count state the class of a single unit all the same. In a cell where every unit of the case has one class, class_counts_by_cell states the class of each unit. And a class that one unit alone holds in the default cell marks that unit: in every cell, the count of that class says whether the unit holds it there, for whoever knows which unit it is. A cell whose counts differ from those of the default cell says that a unit changed class there, and between which classes."
+      }
     },
-    "units_sha256": "e67f72a630337e12ef04c001390b3e7eb2121deb0dc6ab8df8d16292303411d1",
+    "units_sha256": "930f694cdd7c9cd76b9cde8b28fe52a76e897e6d28d3f26c7d012523bb3e4e48",
     "units_sha256_note": "The SHA-256 of the per-unit results alone, in a canonical form: every value of every unit in every cell, without the generation time and the header text of the file that holds them. Two runs that computed the same results have the same value here."
   },
   "development_reads": {
     "what": "Reads of the same inputs made while the code was written, before this run. They are listed because every run is reported.",
     "reads": [
-      "4 October 2026, 20:17:54Z to 20:18:08Z: --check-inputs for case O2 while the code was written (every input was the file its receipt binds; no flood layer was laid over a unit, no access run was made and no component was computed), then case O1 with and without --check-inputs, refused with 2."
+      "4 October 2026, 21:45:28Z to 21:46:32Z, the review: --verify of the first run of this case (the file outside Git had the same bytes, the receipt body and the outputs block were the same, no code had changed). Nothing was written.",
+      "4 October 2026, about 21:47Z to 21:50Z and 22:10Z, the review, in memory with scripts of the reviewer: the per-unit files of both cases, the task E8 files outside Git and the committed task E5 table of case SE1 were read; all 1,440 unit-cells were rescored (FPPS, class, leave-one-component-out); retention, bounds, cut-line counts and headline status were recomputed for all 16 units; the default cell and its leave-one-component-out were compared with the task E8 rows, the access gap and the road criticality were recomputed from counts (120 combinations), the exposure was compared with the task E8 measurements, and the one-at-a-time anchors and the 30-minute losses were compared: 0 differences. The reporting-frame extents of both cases at the three levels were laid over three of the eight units with the boundary file and the permanent-water layer (flood likelihood only, 18 values, 0 differences). Nothing was written.",
+      "4 October 2026, about 21:58Z, the review: ten command-line refusals (case O1 three ways, second runs of cases SE1 and O2 without --replace, --replace without --reason and the reverse, two unknown cases); all returned 2 and nothing was written.",
+      "4 October 2026, between 22:20Z and 22:35Z and again at 22:52:22Z, while the review fixes were written: the runs test read the per-unit file of this case outside Git and compared it with the receipt of the first run. No component was computed and nothing was written.",
+      "4 October 2026, 22:52:49Z to 22:53:20Z: --check-inputs for cases O2 and SE1 with the changed builder (every input was the file its receipt binds, and the input record of task E1 states the 20 m of protocol v1b). No flood layer was laid over a unit, no access run was made and no component was computed."
     ]
   },
   "open_points": [
     {
       "id": "E10-OP1",
       "point": "The headline rule when cells of the set the protocol names cannot be run.",
-      "signed_files_say": "Protocol v1b ensemble_grid.headline_rule: 'Retention is the share of the 540 core cells whose v1 class equals the class of the default cell'. facility_sets.shelters_in_the_ensemble: 'For a public overlay, class retention is computed over the 180 cells of the public facility set only, and the overlay says so.' Protocol v1a guardrail GR8: 'A class is headlined only if it keeps at least 60 percent retention over the single-state ensemble.' None of them says what retention is while a part of those cells cannot be run. Plan 8.4 declares a conditional cut (line 6) that would leave 135 cells, 45 of them public.",
+      "signed_files_say": "Protocol v1b ensemble_grid.headline_rule: 'Retention is the share of the 540 core cells whose v1 class equals the class of the default cell'. facility_sets.shelters_in_the_ensemble: 'For a public overlay, class retention is computed over the 180 cells of the public facility set only, and the overlay says so.' Protocol v1a guardrail GR8: 'A class is headlined only if it keeps at least 60 percent retention over the single-state ensemble.' The rule goes on: 'Otherwise it is shown as unstable: verify.' The demo-tambon rule of v1a: 'If no unit is headline-eligible, it is the highest-FPPS unit, shown as unstable: verify.' None of them says what retention is while a part of those cells cannot be run, nor how a class is shown while its retention is not evaluated. Plan 8.4 declares a conditional cut (line 6) that would leave 135 cells, 45 of them public.",
       "what_this_task_does": "The rule is evaluated only when every cell of the set the protocol names has a class. Otherwise every headline stays not_evaluated. Beside it the record gives the share of the cells that were run and keep the class, labelled as a share of the cells run, and the lowest and highest retention the cells not run could still give. Where those two numbers lie on one side of the minimum the record says so and still sets no status. It also gives the retention over the cells declared cut line 6 would leave, which is not the headline: the cut is the owners' to invoke.",
-      "for_the_owners": "Whether retention may be taken over the cells that can be run, and from how many cells on; or whether the headline waits for the whole set; or whether cut line 6 is invoked. Also whether a class that cannot reach the minimum whatever the missing cells give may be shown as unstable already."
+      "for_the_owners": "Whether retention may be taken over the cells that can be run, and from how many cells on; or whether the headline waits for the whole set; or whether cut line 6 is invoked. Also whether a class that cannot reach the minimum whatever the missing cells give may be shown as unstable already. And how a class of task E8 is shown until then: guardrail GR8 knows two displays, headlined or 'unstable: verify', and no class is headline-eligible today. This task writes no page and no overlay and sets no display."
     },
     {
       "id": "E10-OP2",
       "point": "The 2024-rescaled demand level of the population-vintage axis.",
-      "signed_files_say": "Protocol v1b ensemble_grid.core_axes[population_vintage].rescale_formula (owner choice 12): within each 1 km cell of the WorldPop 2024 grid, every 2020 100 m count is multiplied by the ratio of the cell's 2024 total to the sum of the 2020 counts inside the cell; a cell whose 2020 sum is zero keeps zero. The formula does not say which 1 km cell a 100 m count is inside (floodguard.age_exposure records that the two Thai grids do not nest), nor what a positive 2020 count becomes in a 1 km cell with no 2024 total.",
+      "signed_files_say": "Protocol v1b ensemble_grid.core_axes[population_vintage].rescale_formula (owner choice 12): within each 1 km cell of the WorldPop 2024 grid, every 2020 100 m count is multiplied by the ratio of the cell's 2024 total to the sum of the 2020 counts inside the cell; a cell whose 2020 sum is zero keeps zero. The formula does not say which 1 km cell a 100 m count is inside (floodguard.age_exposure records that the two Thai grids do not nest), nor what a positive 2020 count becomes in a 1 km cell with no 2024 total. The owners' record may already hold both answers: docs/proposal_execution/planning_protocol_v1b_owner_choices.md, entry 12, recommends option A because it 'matches the plan's words and the way `bridge_worldpop_age_access.py` already spreads 2024 counts over 2020 cells', and the owners answered A (decision log R12). That script (scripts/bridge_worldpop_age_access.py, allocate_cell_masses) puts a 2020 demand cell in the 1 km cell that holds its centre, within its unit, and reports the 2020 residents whose 1 km cell has no usable 2024 count as a figure of their own ('2020_demand_population_without_age_source_support'): they are neither set to zero nor given a 2024 count. Protocol v1b itself does not name the script.",
       "what_this_task_does": "The level is not run and not approximated. No stage builds the rescaled demand; the formula exists as a pure function (floodguard.age_exposure.rescale_2020_counts_to_2024) that decides neither point. Every cell of the level is reported as not run. Whether a 2020 count of the frame lies in a 1 km cell with no 2024 total was not measured here.",
-      "for_the_owners": "The two rules the formula leaves out, or the decision to invoke declared cut line 6. With them, the level needs no new access run: travel times do not depend on the vintage, the resident counts of each cell do."
+      "for_the_owners": "Whether the two rules of that script are the two rules of the rescale: the 1 km cell that holds the centre of the 100 m cell, and a positive 2020 count with no 2024 total reported as unsupported, neither zero nor rescaled. Confirm or reject it; or give two other rules; or invoke declared cut line 6. The level stays not run until then. With the two rules it needs no new access run: travel times do not depend on the vintage, the resident counts of each cell do."
     },
     {
       "id": "E10-OP3",
@@ -2347,6 +2427,27 @@
       "signed_files_say": "Protocol v1b ensemble_grid.one_at_a_time: the flood-likelihood anchors 0.10 and 0.30, class rule v1 and v2, and the terrain proxy for case O1 only. It does not say from which cell an item is varied.",
       "what_this_task_does": "The two flood anchors are applied to the default cell alone, every other choice held at its default. The v2 result is that of the row of task E8, which is not evaluated where it depends on a trigger nobody evaluated (E8-OP1). The terrain proxy is not run: case O1 has no run.",
       "for_the_owners": "Whether one at a time means from the default cell."
+    },
+    {
+      "id": "E10-OP10",
+      "point": "Counts for the whole case that state a value of a single unit.",
+      "signed_files_say": "Guardrail GR6 takes the minimum rights level across the lineage of an overlay and speaks of apps/web/public/ only. Nothing says whether a count that states the class of one unit in one cell may stand in a committed receipt when the lineage is below the public level (open points E1-OP1, E8-OP5 and E8-OP7 ask the same of other figures).",
+      "what_this_task_does": "The receipt in Git holds, for each cell that was run, the number of units in each class (result.summary.class_counts_by_cell), and names no unit beside a value. Those counts state values of single units all the same: where every unit has one class, the class of each; and where one unit alone holds a class in the default cell, that unit can be followed through the cells by whoever knows which unit it is. The receipt says how many such cells and classes it holds (rights.figures_of_local_level_layers_in_this_receipt). Unlike the rows of task E8, the class of a unit in a cell of the minus or plus flood level cannot be rebuilt from committed files: the access tables of those levels are outside Git (E10-OP8). The counts have been in the receipts since the first runs of this task and are in the Git history.",
+      "for_the_owners": "Whether such counts may stand in Git. If not, class_counts_by_cell and every sentence that follows a single unit through the cells leave the receipt and the README of the output folder and are kept in the file outside Git only; what is in the Git history stays there unless the owners decide otherwise."
+    },
+    {
+      "id": "E10-OP11",
+      "point": "The cells retention is taken over, for an output that is not a public overlay.",
+      "signed_files_say": "Protocol v1b ensemble_grid.headline_rule: 'Retention is the share of the 540 core cells'. facility_sets.shelters_in_the_ensemble: 'For a public overlay, class retention is computed over the 180 cells of the public facility set only, and the overlay says so.' The second sentence is written for a public overlay. The results of this task are not an overlay, and their publication eligibility follows their lineage, which may be below the public level.",
+      "what_this_task_does": "A run at the public level reads the public facility set only and takes the 180 cells of that set as the set of the rule, whatever the publication eligibility of its results; should every one of the 180 have a class, the rule would be evaluated over them. Beside it every record gives the same counts and bounds over the 540 core cells (other_reading_of_the_protocol_set). No status is set from either today.",
+      "for_the_owners": "Which set applies to a result that is not a public overlay: the 180 cells of the public facility set, because it reads that set only, or the 540 core cells, because the sentence on the 180 cells is written for a public overlay."
+    },
+    {
+      "id": "E10-OP12",
+      "point": "The levels declared cut line 6 would keep.",
+      "signed_files_say": "Protocol v1b ensemble_grid.declared_cuts.cut_line_6 and plan 8.4: 'Population-vintage and vulnerability-anchor axes (540 to 135 cells).' The cut names the two axes and the number of cells that stay, not the level of each axis that stays.",
+      "what_this_task_does": "The share after the cut is given with the levels of the default cell kept (WorldPop 2020 and the P10 / P90 anchors), and the record says so. The same share is given for every other pair of levels the cut could keep, where all of its cells were run (other_levels_the_cut_could_keep). None of them is the headline.",
+      "for_the_owners": "Which level of each of the two axes stays when the cut is invoked."
     }
   ],
   "not_computed": [
@@ -2378,12 +2479,12 @@
     "The equity figures (EED and EER) that protocol v1b lists among the per-unit outputs are plan task E9."
   ],
   "implementation": {
-    "base_commit": "02de0a7ff514324b467510ff54bf298637b74234",
+    "base_commit": "a96e1dde6e2e5e86c4998fcc44b27cf027150dd4",
     "base_commit_note": "The commit the working tree was on. The files below are the ones this run loaded, identified by their own SHA-256, committed or not.",
-    "builder_sha256": "65e129811e387da466d72420d36a1f61146a7614b600fe0ff6ba543a31fe6ace",
+    "builder_sha256": "0919d8ba0bf7d4dee99913c75c6a6a05bfd81429b9609c55f70a10c6a2d47430",
     "e8_builder_sha256": "fb7e11a444ee761aa2982581fc96a5e5b68b8a58b6c4e0e24f99c7c3955243d9",
     "e5_builder_sha256": "61b93fbfe48f36fc5ba46475828d3d7abeb5188813b7c923d01d7467d98e89f8",
-    "uncertainty_ensemble_module_sha256": "f64d4af708ddaa3af5d3941f2caba8affa50ac54f3b041cb4d455da982ce1b79",
+    "uncertainty_ensemble_module_sha256": "19d709c3d055b9926d82ebf1627b455bac9dc0931e0451e39910b0b9d7c49ed8",
     "planning_assessment_module_sha256": "db226c3be13905fc164ddadd8024057f34f3f83cdf999db6fcc0391c094343bd",
     "planning_overlay_module_sha256": "a507441b6d8991297a6460a5d5578c78942f9ea6b204362f8ac7ad5814f9e742",
     "normalisation_module_sha256": "731e50596822cd5798fa2298d957c17bf44b3771536f3ed8c50930c43f545cfb",
@@ -2404,34 +2505,34 @@
     }
   },
   "timing_seconds": {
-    "inputs_checked": 4.4,
-    "stages_compared_unit_by_unit": 3.1,
+    "inputs_checked": 3.0,
+    "stages_compared_unit_by_unit": 2.4,
     "units_read_and_lineage": 0.0,
-    "access_runs": 36.9,
+    "access_runs": 29.3,
     "access": {
-      "minus_edge_intersections_vehicle": 0.5,
-      "minus_strict_runs_and_tables": 2.2,
-      "minus_central_runs_and_tables": 2.1,
-      "minus_permissive_runs_and_tables": 6.1,
-      "as_provided_edge_intersections_vehicle": 0.4,
-      "as_provided_strict_runs_and_tables": 2.6,
-      "as_provided_central_runs_and_tables": 2.4,
-      "as_provided_permissive_runs_and_tables": 5.9,
-      "plus_edge_intersections_vehicle": 0.9,
-      "plus_strict_runs_and_tables": 2.3,
-      "plus_central_runs_and_tables": 2.9,
-      "plus_permissive_runs_and_tables": 7.4
+      "minus_edge_intersections_vehicle": 0.4,
+      "minus_strict_runs_and_tables": 1.9,
+      "minus_central_runs_and_tables": 1.9,
+      "minus_permissive_runs_and_tables": 5.2,
+      "as_provided_edge_intersections_vehicle": 0.3,
+      "as_provided_strict_runs_and_tables": 1.9,
+      "as_provided_central_runs_and_tables": 1.9,
+      "as_provided_permissive_runs_and_tables": 5.1,
+      "plus_edge_intersections_vehicle": 0.8,
+      "plus_strict_runs_and_tables": 1.9,
+      "plus_central_runs_and_tables": 1.9,
+      "plus_permissive_runs_and_tables": 5.1
     },
-    "units_measured_at_three_flood_levels": 0.8,
-    "cells_scored": 14.7
+    "units_measured_at_three_flood_levels": 0.6,
+    "cells_scored": 10.5
   },
   "outputs": {
     "ensemble": {
       "files": [
         {
           "path": "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e10_uncertainty_ensemble/uncertainty_ensemble_o2_mae_sai.json",
-          "sha256": "4c05795ac03dac8e338dd83ab6f5cad99aa49ee71de0e2da4b58df47fb374e5a",
-          "bytes": 1563459,
+          "sha256": "df7ffb942ff72a538a5cb1721fd5fcb1e3d5e1fa4f3ae781b828f21e0de028c3",
+          "bytes": 1595026,
           "what": "uncertainty_ensemble_units",
           "in_git": false,
           "publication_eligibility": "local",
@@ -2449,9 +2550,95 @@
     }
   },
   "timestamps": {
-    "run_started_at_utc": "2026-10-04T20:28:15Z",
-    "run_finished_at_utc": "2026-10-04T20:29:15Z",
-    "wall_time_minutes": 1.01,
+    "run_started_at_utc": "2026-10-04T22:58:03Z",
+    "run_finished_at_utc": "2026-10-04T22:58:49Z",
+    "wall_time_minutes": 0.77,
     "note": "generated_at_utc is the start of the run; the file of per-unit results carries the same time."
-  }
+  },
+  "supersedes": {
+    "receipt_sha256": "e59b86c5c68559eeb574142273c9fde1c9221ffda15720b8ad10a76454e869fe",
+    "generated_at_utc": "2026-10-04T20:28:15Z",
+    "reason": "After the review of 4 October 2026: the receipt says which of its counts state the class of a single unit and lists three more open points (E10-OP10 to E10-OP12); the headline record gives the other reading of the set of the protocol and every pair of levels declared cut line 6 could keep; a share over the cells run keeps a failed cell in its denominator; the 20 m of the minus and plus levels is read from protocol v1b; the reason of a level that is not run was reworded. No rule of the scoring and no input changed.",
+    "result_same": false,
+    "summary_same": false,
+    "summary_fields_that_differ": [
+      "after_declared_cut_line_6",
+      "counts_that_state_a_value_of_a_single_unit",
+      "note",
+      "other_reading_of_the_protocol_set",
+      "retention_over_the_cells_run"
+    ],
+    "units_same": false,
+    "units_sha256_of_the_superseded_run": "e67f72a630337e12ef04c001390b3e7eb2121deb0dc6ab8df8d16292303411d1",
+    "units_sha256_of_this_run": "930f694cdd7c9cd76b9cde8b28fe52a76e897e6d28d3f26c7d012523bb3e4e48",
+    "unit_cells_same": true,
+    "unit_cells_sha256_of_the_superseded_run": "aa279d45f2238e13c6a37edf4bd4ce666ae38378ec458d4c5cb8660c53582700",
+    "unit_cells_sha256_of_this_run": "aa279d45f2238e13c6a37edf4bd4ce666ae38378ec458d4c5cb8660c53582700",
+    "unit_record_fields_that_differ": [
+      "class_shares_over",
+      "headline_stability",
+      "share_of_the_cells_run_that_failed"
+    ],
+    "access_unit_rows_same": true,
+    "lineage_inputs_same": true,
+    "outputs_of_the_superseded_run": {
+      "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e10_uncertainty_ensemble/uncertainty_ensemble_o2_mae_sai.json": "4c05795ac03dac8e338dd83ab6f5cad99aa49ee71de0e2da4b58df47fb374e5a",
+      "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e10_uncertainty_ensemble/LICENSE_NOTICE.txt": "acaafc1b83a5fe5d72a9f50e0e0efe476517328f581c5c487fb2e0a1290de1df"
+    },
+    "copies_kept_outside_git": [
+      {
+        "path": "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e10_uncertainty_ensemble/superseded_runs/20261004T202815Z/e10_uncertainty_ensemble_o2_mae_sai.json",
+        "sha256": "e59b86c5c68559eeb574142273c9fde1c9221ffda15720b8ad10a76454e869fe",
+        "what": "receipt",
+        "copied": true
+      },
+      {
+        "path": "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e10_uncertainty_ensemble/superseded_runs/20261004T202815Z/uncertainty_ensemble_o2_mae_sai.json",
+        "sha256": "4c05795ac03dac8e338dd83ab6f5cad99aa49ee71de0e2da4b58df47fb374e5a",
+        "what": "file the receipt bound",
+        "copied": true
+      },
+      {
+        "path": "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e10_uncertainty_ensemble/superseded_runs/20261004T202815Z/LICENSE_NOTICE.txt",
+        "sha256": "acaafc1b83a5fe5d72a9f50e0e0efe476517328f581c5c487fb2e0a1290de1df",
+        "what": "file the receipt bound",
+        "copied": true
+      }
+    ],
+    "note": "result_same is true only when the counts of the whole case are the same (summary_same) and the per-unit results are the same (units_same: the SHA-256 of the results alone, which covers every value of every unit in every cell and every summary of a unit). unit_cells_same compares the cells alone, read back from the file the superseded receipt bound: the FPPS, the class, the reason code and leave-one-component-out of every unit in every cell that was run, without the summaries of a unit; unit_record_fields_that_differ and summary_fields_that_differ name the fields whose value changed, was added or was dropped. The superseded receipt is named by its SHA-256 and copied outside Git with the files it bound; run_history lists every earlier run."
+  },
+  "run_history": [
+    {
+      "generated_at_utc": "2026-10-04T20:28:15Z",
+      "receipt_sha256": "e59b86c5c68559eeb574142273c9fde1c9221ffda15720b8ad10a76454e869fe",
+      "superseded_because": "After the review of 4 October 2026: the receipt says which of its counts state the class of a single unit and lists three more open points (E10-OP10 to E10-OP12); the headline record gives the other reading of the set of the protocol and every pair of levels declared cut line 6 could keep; a share over the cells run keeps a failed cell in its denominator; the 20 m of the minus and plus levels is read from protocol v1b; the reason of a level that is not run was reworded. No rule of the scoring and no input changed.",
+      "result_same_as_the_run_that_replaced_it": false,
+      "unit_cells_same_as_the_run_that_replaced_it": true,
+      "units_sha256": "e67f72a630337e12ef04c001390b3e7eb2121deb0dc6ab8df8d16292303411d1",
+      "outputs_sha256": {
+        "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e10_uncertainty_ensemble/uncertainty_ensemble_o2_mae_sai.json": "4c05795ac03dac8e338dd83ab6f5cad99aa49ee71de0e2da4b58df47fb374e5a",
+        "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e10_uncertainty_ensemble/LICENSE_NOTICE.txt": "acaafc1b83a5fe5d72a9f50e0e0efe476517328f581c5c487fb2e0a1290de1df"
+      },
+      "copies_kept_outside_git": [
+        {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e10_uncertainty_ensemble/superseded_runs/20261004T202815Z/e10_uncertainty_ensemble_o2_mae_sai.json",
+          "sha256": "e59b86c5c68559eeb574142273c9fde1c9221ffda15720b8ad10a76454e869fe",
+          "what": "receipt",
+          "copied": true
+        },
+        {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e10_uncertainty_ensemble/superseded_runs/20261004T202815Z/uncertainty_ensemble_o2_mae_sai.json",
+          "sha256": "4c05795ac03dac8e338dd83ab6f5cad99aa49ee71de0e2da4b58df47fb374e5a",
+          "what": "file the receipt bound",
+          "copied": true
+        },
+        {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e10_uncertainty_ensemble/superseded_runs/20261004T202815Z/LICENSE_NOTICE.txt",
+          "sha256": "acaafc1b83a5fe5d72a9f50e0e0efe476517328f581c5c487fb2e0a1290de1df",
+          "what": "file the receipt bound",
+          "copied": true
+        }
+      ]
+    }
+  ]
 }

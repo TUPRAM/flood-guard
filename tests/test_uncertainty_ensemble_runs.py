@@ -18,7 +18,7 @@ from typing import Any
 import pytest
 
 from floodguard import uncertainty_ensemble as ue
-from floodguard.wording_lint import find_violations, json_strings, load_rules
+from floodguard.wording_lint import find_violations, json_strings, load_rules, markdown_section
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUTS = ROOT / "outputs" / "planning_v1"
@@ -37,6 +37,17 @@ CLASSES = ("A", "B", "C", "D", "E")
 FACILITY_SET_NAME = "corroborated"
 """The name protocol v1b gives its second facility set. The shared lint keeps that word for one claim it refuses (a
 season envelope said to support a model); as the identifier of a level in a receipt it is the protocol's own word."""
+LEVEL_NAME_PATHS = re.compile(
+    r"\$\.parameters\.grid\.axes\[2\]\.(?:levels|levels_as_protocol_v1b_states_them)\[1\]"
+    r"|\$\.parameters\.levels_not_run\[0\]\.level")
+"""The places of a receipt that hold the name of that facility set as an identifier and nothing else."""
+CELL_ID_PATHS = re.compile(r"\$\.cells\.(?:run|not_run\.[a-z0-9_+]+)\[\d+\]")
+"""The places of a receipt that hold a cell identifier: six level names joined by a bar."""
+QUOTED_CUT_LINE_PATH = "$.parameters.grid.declared_cuts.cut_line_8"
+"""The one sentence of protocol v1b with that word that a receipt quotes, with the grid."""
+FIRST_RUN_RECEIPTS = {"SE1": "cac28f7352b276c8f550faea0375e0ae19f9a82ce246875e18cc796b58191ee3",
+                      "O2": "e59b86c5c68559eeb574142273c9fde1c9221ffda15720b8ad10a76454e869fe"}
+"""The SHA-256 of the receipt of the first run of each case (4 October 2026; both are in the Git history, commit b9ecf25)."""
 
 pytestmark = pytest.mark.skipif(not all(path.is_file() for path in RECEIPTS.values()),
                                 reason="the uncertainty ensemble has not been run on this checkout")
@@ -55,9 +66,11 @@ def _files(receipt: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 def _section() -> str:
+    """The README section of this task: from its heading to the next heading of the same level, and no further."""
+
     readme = (OUTPUTS / "README.md").read_text(encoding="utf-8")
     assert readme.count(SECTION_HEADING) == 1
-    return readme.split(SECTION_HEADING, 1)[1]
+    return markdown_section(readme, SECTION_HEADING)
 
 
 def _short(sha256: str) -> str:
@@ -77,8 +90,17 @@ def grid() -> ue.EnsembleGrid:
     return ue.load_grid(DOCS / "planning_protocol_v1a.json", DOCS / "planning_protocol_v1b.json", DOCS / "RECEIPTS.jsonl")
 
 
+def test_the_readme_section_of_this_task_ends_where_the_next_section_starts() -> None:
+    """A section a later task appends, with a tambon code in it, is not read as part of this one."""
+
+    readme = (OUTPUTS / "README.md").read_text(encoding="utf-8")
+    later = readme.rstrip("\n") + "\n\n### Plan task E99: an invented later section\n\nTH570901 in a table of that task.\n"
+    assert markdown_section(later, SECTION_HEADING).rstrip() == _section().rstrip()
+    assert "TH570901" not in markdown_section(later, SECTION_HEADING) and _section().startswith(SECTION_HEADING)
+
+
 @pytest.mark.parametrize("case", CASES)
-def test_each_receipt_is_registered_names_the_protocols_and_holds_no_value_of_a_single_tambon(case: str) -> None:
+def test_each_receipt_is_registered_names_the_protocols_and_names_no_tambon_beside_a_value(case: str) -> None:
     path = RECEIPTS[case]
     receipt = _receipt(case)
     entry = json.loads((REGISTER / path.name).read_text(encoding="ascii"))
@@ -100,7 +122,33 @@ def test_each_receipt_is_registered_names_the_protocols_and_holds_no_value_of_a_
     rights = receipt["rights"]
     assert rights["publication_eligibility"] == "local" and rights["written_under_apps_web_public"] is False
     assert rights["lineage_levels"]["e7_age_exposure_table"] == "local"
-    assert rights["figures_of_local_level_layers_in_this_receipt"]["figures"], "the counts of a local lineage are declared"
+    declared = rights["figures_of_local_level_layers_in_this_receipt"]
+    assert declared["figures"], "the counts of a local lineage are declared"
+    # No tambon is named beside a value. That is not the same as holding no value of a single tambon, and the receipt
+    # does not say it is: it counts the counts that state the class of one tambon (open point E10-OP10).
+    assert "names no unit beside a value" in declared["what"] and "puts no unit beside a value" not in json.dumps(receipt)
+    assert "E10-OP10" in declared["for_the_owners"] and "E10-OP10" in declared["what_the_counts_give_away"]
+    single = declared["counts_that_state_a_value_of_a_single_unit"]
+    by_cell = receipt["result"]["summary"]["class_counts_by_cell"]
+    default = by_cell["as_provided|central|public|worldpop_2020|P10_P90|default"]
+    alone = sorted(name for name, count in default.items() if count == 1)
+    assert single["states_a_value_of_a_single_unit"] is True, "true of both cases, for another reason in each"
+    assert single["classes_one_unit_alone_holds_in_the_default_cell"] == alone
+    assert single["cells_in_which_such_a_class_has_another_count"] == sum(
+        1 for counts in by_cell.values() if any(counts.get(name, 0) != 1 for name in alone))
+    assert single["cells_whose_class_counts_differ_from_the_default_cell"] == sum(1 for counts in by_cell.values() if counts != default)
+    assert single["cells_in_which_every_unit_has_one_class"] == sum(1 for counts in by_cell.values() if max(counts.values()) == 8)
+    assert single == {**receipt["result"]["summary"]["counts_that_state_a_value_of_a_single_unit"], **{
+        key: single[key] for key in ("where", "who_can_read_them", "cannot_be_rebuilt_from_committed_files")}}
+    if case == "SE1":
+        # One tambon alone is class B in the default cell; the count of class B follows it through the 90 cells.
+        assert alone == ["B"] and single["cells_in_which_such_a_class_has_another_count"] == 20
+        assert single["cells_whose_class_counts_differ_from_the_default_cell"] == 23
+        assert single["cells_in_which_every_unit_has_one_class"] == 0 and single["units_with_more_than_one_class_over_the_cells_run"] == 2
+    else:
+        # All eight tambons are class E in every cell: each count states the class of each tambon.
+        assert alone == [] and single["cells_in_which_every_unit_has_one_class"] == 90
+        assert single["cells_whose_class_counts_differ_from_the_default_cell"] == 0
     files = _files(receipt)
     assert [item["what"] for item in files] == ["uncertainty_ensemble_units", "licence_notice"]
     assert all(item["path"].startswith(EXTERNAL_LABEL + "/") and item["in_git"] is False for item in files)
@@ -109,11 +157,38 @@ def test_each_receipt_is_registered_names_the_protocols_and_holds_no_value_of_a_
     public = ROOT / "apps" / "web" / "public"
     assert not list(public.rglob("uncertainty_ensemble_*")) if public.is_dir() else True
     assert receipt["lane_purity"]["result"] == "PASS"
-    # The receipts here are those of the first runs and list the nine open points of then. The review of 4 October
-    # 2026 added three; the superseding runs, and the full comparison, follow in the next commit.
-    listed = [point["id"] for point in receipt["open_points"]]
-    assert listed == [point["id"] for point in ue.OPEN_POINTS][:len(listed)] and len(listed) >= 9
+    assert [dict(point) for point in receipt["open_points"]] == [dict(point) for point in ue.OPEN_POINTS]
+    assert len(receipt["open_points"]) == 12
     assert receipt["development_reads"]["reads"], "the reads made before the run are listed"
+    # The distance of the minus and plus levels is the one protocol v1b states and task E1 wrote its levels with.
+    pixel = json.loads((DOCS / "planning_protocol_v1b.json").read_text(encoding="utf-8"))["ensemble_grid"]["core_axes"][0]["one_pixel_m"]
+    stated = parameters["one_pixel_m"]
+    assert stated["minus"] == stated["plus"] == stated["input_record_of_task_e1"] == pixel["minus"] == pixel["plus"] == 20
+    assert parameters["grid"]["one_pixel_m"] == 20 and any("shrunk and grown by 20 m (one pixel" in line for line in receipt["assumptions"])
+
+
+@pytest.mark.parametrize("case", CASES)
+def test_each_receipt_is_a_superseding_run_whose_cells_are_those_of_the_first_run(case: str) -> None:
+    """The second runs replaced the first runs after a review; no FPPS and no class of a cell changed."""
+
+    receipt = _receipt(case)
+    assert receipt["schema_version"] == "floodguard.uncertainty_ensemble_run_receipt.v2" and receipt["run_kind"] == "superseding_run"
+    supersedes = receipt["supersedes"]
+    assert supersedes["receipt_sha256"] == FIRST_RUN_RECEIPTS[case] and supersedes["reason"].strip()
+    assert supersedes["unit_cells_same"] is True, "every FPPS, class, reason code and leave-one-out of every cell is the same"
+    assert supersedes["access_unit_rows_same"] is True and supersedes["lineage_inputs_same"] is True
+    # The per-unit records and the summary gained fields, so the SHA-256 of the whole results differs; the fields are named.
+    assert supersedes["units_same"] is False and supersedes["result_same"] is False
+    assert supersedes["unit_record_fields_that_differ"] == ["class_shares_over", "headline_stability", "share_of_the_cells_run_that_failed"]
+    assert supersedes["summary_fields_that_differ"] == [
+        "after_declared_cut_line_6", "counts_that_state_a_value_of_a_single_unit", "note", "other_reading_of_the_protocol_set",
+        "retention_over_the_cells_run"]
+    history = receipt["run_history"]
+    assert len(history) == 1 and history[0]["receipt_sha256"] == supersedes["receipt_sha256"]
+    assert history[0]["unit_cells_same_as_the_run_that_replaced_it"] is True
+    assert all(item["copied"] is True and item["path"].startswith(EXTERNAL_LABEL + "/") for item in supersedes["copies_kept_outside_git"])
+    assert [item["what"] for item in supersedes["copies_kept_outside_git"]].count("receipt") == 1
+    assert _short(supersedes["receipt_sha256"]) in _section(), "the README names the receipt of the first run"
 
 
 @pytest.mark.parametrize("case", CASES)
@@ -135,10 +210,7 @@ def test_each_receipt_carries_the_licence_the_credit_and_a_change_notice_for_pro
 @pytest.mark.parametrize("case", CASES)
 def test_each_receipt_reports_every_cell_of_the_grid_protocol_v1b_states(case: str, grid: ue.EnsembleGrid) -> None:
     receipt = _receipt(case)
-    # The grid record gained the one-pixel distance after the review; a receipt of the first runs does not hold it yet.
-    stated = receipt["parameters"]["grid"]
-    assert stated == {key: value for key, value in ue.grid_record(grid).items() if key in stated or key != "one_pixel_m"}, (
-        "the grid is the one the protocol files in force state")
+    assert receipt["parameters"]["grid"] == ue.grid_record(grid), "the grid is the one the protocol files in force state"
     every = [ue.cell_id(cell) for cell in ue.cells(grid)]
     cells = receipt["cells"]
     not_run = [identifier for identifiers in cells["not_run"].values() for identifier in identifiers]
@@ -182,6 +254,10 @@ def test_the_access_runs_reproduce_the_e5_table_and_the_default_cell_is_the_e8_r
     measured = receipt["measurement_checks"]
     assert measured["combinations_measured"] == 9 and measured["default_combination_is_the_measurement_of_task_e8"] is True
     assert measured["residents_and_baseline_counts_same_in_every_access_run"] is True
+    # The checks of the flood levels read the measurements that were handed to the ensemble.
+    assert measured["each_combination_carries_the_flood_measurements_of_its_own_level"] is True
+    assert measured["flooded_land_not_smaller_at_a_larger_flood_level_in_every_unit"] is True
+    assert measured["residents_inside_not_fewer_at_a_larger_flood_level_in_every_unit"] is True
     # The default cell: the rows the registered task E8 receipt records, by their SHA-256.
     e8 = json.loads(E8_RECEIPTS[case].read_text(encoding="ascii"))
     check = receipt["result"]["default_cell_against_the_e8_rows"]
@@ -224,8 +300,17 @@ def test_the_counts_of_each_receipt_add_up_and_no_class_is_headlined(case: str) 
     assert counts["outcome_fixed_by_the_bounds_counts"]["at_or_above_the_minimum"] == 0, "90 of 180 cells cannot reach 0.6 alone"
     after_cut = counts["after_declared_cut_line_6"]
     assert after_cut["cells"] == 45 and after_cut["units_at_or_above_the_minimum"] + after_cut["units_below_the_minimum"] == 8
-    declared = receipt["rights"]["figures_of_local_level_layers_in_this_receipt"]
-    assert declared["cells_in_which_every_unit_has_one_class"] == sum(1 for item in by_cell.values() if max(item.values()) == 8)
+    # Cut line 6 does not say which level of its two axes stays (E10-OP12): the levels of the default cell, and the others.
+    assert after_cut["levels_kept"] == {"population_vintage": "worldpop_2020", "vulnerability_anchors": "P10_P90"}
+    others = after_cut["other_levels_the_cut_could_keep"]
+    assert [tuple(item["levels_kept"].values()) for item in others] == [
+        ("worldpop_2020", "P5_P95"), ("rescaled_2024", "P10_P90"), ("rescaled_2024", "P5_P95")]
+    assert others[0]["units_at_or_above_the_minimum"] + others[0]["units_below_the_minimum"] == 8
+    assert all(item["units_without_a_class_in_every_one_of_those_cells"] == 8 for item in others[1:]), "the 2024 demand was not run"
+    # The other reading of the protocol's set (E10-OP11): over the 540 core cells no outcome is fixed either.
+    other = counts["other_reading_of_the_protocol_set"]
+    assert other["cells"] == 540 and other["outcome_fixed_by_the_bounds_counts"] == {
+        "at_or_above_the_minimum": 0, "below_the_minimum": 0, "not_fixed": 8}
 
 
 def test_the_readme_reports_the_runs_as_the_receipts_hold_them() -> None:
@@ -258,8 +343,16 @@ def test_the_readme_reports_the_runs_as_the_receipts_hold_them() -> None:
             lambda s: s["units_whose_class_changes_under_leave_one_component_out_in_the_default_cell"]),
         row("Tambons whose retention over the 180 cells cannot reach 0.6 whatever the cells not run give",
             lambda s: s["outcome_fixed_by_the_bounds_counts"]["below_the_minimum"]),
-        row("After declared cut line 6 (45 cells): tambons at or above 0.6 / below",
+        row("After declared cut line 6, keeping WorldPop 2020 and P10 / P90 (45 cells): tambons at or above 0.6 / below",
             lambda s: f"{s['after_declared_cut_line_6']['units_at_or_above_the_minimum']} / {s['after_declared_cut_line_6']['units_below_the_minimum']}"),
+        row("The same, keeping WorldPop 2020 and P5 / P95 (45 cells)",
+            lambda s: (f"{s['after_declared_cut_line_6']['other_levels_the_cut_could_keep'][0]['units_at_or_above_the_minimum']} / "
+                       f"{s['after_declared_cut_line_6']['other_levels_the_cut_could_keep'][0]['units_below_the_minimum']}")),
+        row("Tambons that keep the class in every one of those 45 cells: P10 / P90 kept; P5 / P95 kept",
+            lambda s: (f"{s['after_declared_cut_line_6']['units_keeping_the_class_in_every_one_of_those_cells']}; "
+                       f"{s['after_declared_cut_line_6']['other_levels_the_cut_could_keep'][0]['units_keeping_the_class_in_every_one_of_those_cells']}")),
+        row("Tambons whose retention over the 540 core cells is fixed by the bounds (the other reading, E10-OP11)",
+            lambda s: 8 - s["other_reading_of_the_protocol_set"]["outcome_fixed_by_the_bounds_counts"]["not_fixed"]),
         row("Headline status", lambda s: f"not evaluated for all {s['headline_status_counts']['not_evaluated']}"),
     ):
         assert line in section, line
@@ -276,17 +369,64 @@ def test_the_readme_reports_the_runs_as_the_receipts_hold_them() -> None:
     assert "CC BY-SA 4.0" in section and PRODUCT_4009_CREDIT in section and "Changed by FloodGuard" in section
     assert "It is not an official warning" in section and "Class E never means safe" in section
     assert "is not a probability" in section and "**No class is headlined.**" in section
-    for point in receipts["SE1"]["open_points"]:
+    for point in ue.OPEN_POINTS:
         assert f"**{point['id']}," in section, point["id"]
+    # The section says of case SE1, as of case O2, that its counts are statements about single tambons.
+    single = receipts["SE1"]["rights"]["figures_of_local_level_layers_in_this_receipt"]["counts_that_state_a_value_of_a_single_unit"]
+    assert "**These counts are statements about single tambons.**" in section
+    assert f"no tambon is class B in {single['cells_in_which_such_a_class_has_another_count']} cells" in section
+    assert f"{single['cells_whose_class_counts_differ_from_the_default_cell']} of the 90 cells" in section
+    # Guardrail GR8 has two displays; the section does not tell a page to show a class without the second.
+    assert "without a stability claim" not in section and "stable against" not in section
+    assert "Otherwise it is shown as unstable: verify" in section
+
+
+def _lint_findings(receipt: dict[str, Any], grid: ue.EnsembleGrid) -> tuple[list[str], int]:
+    """Lint every string of a receipt; return what is left after the three places that hold the protocol's own word.
+
+    The name protocol v1b gives its second facility set is let through where it stands as an identifier (the
+    level lists of the grid, the level of a reason, a cell identifier) and in the sentence on declared cut line 8
+    that the receipt quotes from the protocol, and only there, and only when the string is exactly that
+    identifier, cell or sentence. Anywhere else the word is a finding like any other.
+    """
+
+    rules = load_rules(ROOT / "apps" / "web" / "src" / "lib" / "replay-wording-rules.json")
+    cut_line_8 = json.loads((DOCS / "planning_protocol_v1b.json").read_text(encoding="utf-8"))["ensemble_grid"]["declared_cuts"]["cut_line_8"]
+    cell_ids = {ue.cell_id(cell) for cell in ue.cells(grid)}
+    left, let_through = [], 0
+    for path, text in json_strings(receipt):
+        found = find_violations(text, rules, path)
+        only_the_name = bool(found) and all(finding.match.lower() == FACILITY_SET_NAME for finding in found)
+        if only_the_name and ((LEVEL_NAME_PATHS.fullmatch(path) and text == FACILITY_SET_NAME)
+                              or (CELL_ID_PATHS.fullmatch(path) and text in cell_ids)
+                              or (path == QUOTED_CUT_LINE_PATH and text == cut_line_8)):
+            let_through += 1
+            continue
+        left.extend(finding.describe() for finding in found)
+    return left, let_through
 
 
 @pytest.mark.parametrize("case", CASES)
-def test_the_text_of_each_receipt_passes_the_shared_wording_lint(case: str) -> None:
+def test_the_text_of_each_receipt_passes_the_shared_wording_lint(case: str, grid: ue.EnsembleGrid) -> None:
+    receipt = _receipt(case)
+    left, let_through = _lint_findings(receipt, grid)
+    assert left == []
+    assert let_through == 3 + 1 + 180, "two level lists, one level of a reason, one quoted sentence and 180 cell identifiers"
+    # The same word in a sentence of the receipt is a finding: the first receipts carried one, in the reason of a level.
+    assert all(FACILITY_SET_NAME not in item["reason"] for item in receipt["parameters"]["levels_not_run"])
+    for place in ("reason", "code"):
+        changed = json.loads(json.dumps(receipt))
+        changed["parameters"]["levels_not_run"][0][place] = "The corroborated facility set adds shelters."
+        assert len(_lint_findings(changed, grid)[0]) == 1, place
+    changed = json.loads(json.dumps(receipt))
+    changed["limitations"].append("The season envelope is corroborated by the ensemble.")
+    assert len(_lint_findings(changed, grid)[0]) == 1
+    # A cell identifier that is not a cell of the grid, or a changed quote of the protocol, is not let through.
+    changed = json.loads(json.dumps(receipt))
+    changed["cells"]["run"][0] = "minus|strict|corroborated|worldpop_2020|P10_P90|approved"
+    changed["parameters"]["grid"]["declared_cuts"]["cut_line_8"] += " The ensemble corroborated the set."
+    assert len(_lint_findings(changed, grid)[0]) == 3
     rules = load_rules(ROOT / "apps" / "web" / "src" / "lib" / "replay-wording-rules.json")
-    findings = [finding for path, text in json_strings(_receipt(case)) for finding in find_violations(text, rules, path)]
-    # One word is let through: the name protocol v1b gives its second facility set, as the identifier of a level and in
-    # the sentence of the protocol on declared cut line 8, which the receipt quotes with the grid.
-    assert [finding.describe() for finding in findings if finding.match.lower() != FACILITY_SET_NAME] == []
     assert find_violations("The ensemble validates the classes.", rules), "the lint does see a claim"
 
 
@@ -349,6 +489,31 @@ def test_the_results_outside_git_are_the_files_the_receipt_binds(case: str) -> N
             components = item["components"]
             smaller = (item["flood_input_single_state"], item["passability"]) in other
             assert (components["road_criticality_0_100"] < 75) is smaller and components["access_gap_0_100"] >= 55
+        # The class-E tambon that is D in 3 cells is the class-E tambon with the highest FPPS in the default cell, which
+        # is how the README says a reader of the committed files can tell which one it is (open point E10-OP10).
+        class_e = [unit for unit in units if unit["reference_cell"]["action_class"] == "E"]
+        mover = next(unit for unit in class_e if unit["class_counts"]["D"])
+        assert mover["unit_id"] == max(class_e, key=lambda unit: unit["reference_cell"]["fpps_0_100"])["unit_id"]
+        assert (mover["class_counts"]["E"], mover["class_counts"]["D"]) == (87, 3)
+        assert "which class-E tambon has the highest FPPS there" in section
+
+        # After cut line 6, for the two tambons that move: the levels of the default cell kept, and P5 / P95 kept.
+        def kept_after_the_cut(unit: dict[str, Any]) -> tuple[int, int]:
+            cut = unit["headline_stability"]["after_declared_cut_line_6"]
+            other_pair = cut["other_levels_the_cut_could_keep"][0]
+            assert (cut["cells"], other_pair["cells"], other_pair["levels_kept"]["vulnerability_anchors"]) == (45, 45, "P5_P95")
+            return cut["cells_keeping_the_reference_class"], other_pair["cells_keeping_the_reference_class"]
+
+        assert kept_after_the_cut(moving) == (35, 35) and kept_after_the_cut(mover) == (45, 42)
+        assert ("the tambon that is class B keeps its class in 35 of the 45 cells under either pair, and the class-E tambon that "
+                "moves keeps class E in all 45 under P10 / P90 and in 42 under P5 / P95") in section
+        # The bounds under both readings of the protocol's set, for a tambon that keeps its class in all 90 cells run.
+        steady = [unit["headline_stability"] for unit in units if unit["headline_stability"]["cells_keeping_the_reference_class"] == 90]
+        assert len(steady) == 6
+        for headline in steady:
+            assert headline["bounds_over_the_protocol_set"] == {"lower": 0.5, "upper": 1.0, "cells_without_a_class": 90}
+            assert headline["other_reading_of_the_protocol_set"]["bounds"] == {"lower": 90 / 540, "upper": 1.0, "cells_without_a_class": 450}
+        assert "between 0.5 and 1.0" in section and "between 0.167 and 1.0" in section
     else:
         assert changed == {0.1: 0, 0.3: 0} and v2.count(("evaluated", "E")) == 8
         assert {(cell["action_class"], cell["action_reason_code"]) for unit in units for cell in unit["cells"]} == {("E", "low_priority_score")}

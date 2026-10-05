@@ -42,14 +42,20 @@ may name this notice as its rights basis.
    and combination with other data, free of charge; that changed data carry
    the credit above; and that the notice gives no warranty that the data are
    fit for a purpose.
-   To be checked by the owners against the provider's page (the notice at the
-   address above) before they confirm:
+   To be checked by the owners against the provider's pages before they
+   confirm. The first four points are for the notice at the address above, the
+   fifth for the terms of the service the archives were downloaded from:
    - the exact wording of the credit and how the year is written;
    - whether the notice has changed since 20 July 2026, the last check the
      project recorded;
    - whether it sets any condition beyond the credit, or asks for derived
-     data to be shared on the same terms.
-   Nothing in this section was quoted from the provider's page when the draft
+     data to be shared on the same terms;
+   - whether "free, full and open access" and "Copernicus data and
+     information policy" are the provider's own words for these terms;
+   - the terms of the Copernicus Data Space Ecosystem
+     (https://dataspace.copernicus.eu/terms-and-conditions), and that they
+     add nothing for Sentinel product data.
+   Nothing in this section was quoted from a provider's page when the draft
    was written.
 
 4. Changes made by FloodGuard (change notice)
@@ -65,18 +71,27 @@ may name this notice as its rights basis.
    not a term of the provider's notice.
 
 5. What the rights record would cover once confirmed, and what it would not
-   It would cover: reading the two archives outside Git; making the radar
-   candidates of case O1 from them; loading those candidates as Tier 2 flood
-   inputs; tables for the eight Mae Sai tambons and statistics for whole
-   areas, each with the credit.
+   It would cover five uses: reading the two archives outside Git; making the
+   radar candidates of case O1 from them; loading those candidates as Tier 2
+   flood inputs; tables for the eight Mae Sai tambons and statistics for
+   whole areas, each with the credit; and ranking the change in radar
+   brightness against other layers in the diagnosis of plan task A1, which
+   reads rasters made from the same two scenes.
+   The third use is included only if the owners say so. The acquisition
+   manifest of July 2026 blocks "decision-eligible processing" of both
+   archives, and the record quotes that note and asks the owners what it
+   means for a planning score (acquisition_note in the record).
    Under the code as it is today the rights level would be "local": nothing
    made from the two scenes is written into public web files through the
    rights registry. Whether the owners also want a publication scope is a
    choice the record leaves to them.
+   One use exists already and is not changed by the record: the Mae Sai
+   replay reads the pre-event archive of section 1 for a radar size
+   comparison and publishes figures made from it, under owner decision R14.
    It would not cover: any other Sentinel-1 scene or download; the Sentinel-1
-   images of the Mae Sai replay, which have their own source list; the
-   training data of a classifier; any third-party flood map; use as labels or
-   as a reference.
+   image layers of the Mae Sai replay, which are made from other copies and
+   have their own source list; the training data of a classifier; any
+   third-party flood map; use as labels or as a reference.
 
 6. Limits
    - A flood candidate made from these scenes is a Tier 2 own candidate:
@@ -132,12 +147,18 @@ FloodGuard Thailand
    ไฟล์ของโครงการบันทึกว่าประกาศดังกล่าวอนุญาตให้ทำซ้ำ แจกจ่าย เผยแพร่ต่อสาธารณะ
    ดัดแปลง แก้ไข และรวมกับข้อมูลอื่นได้โดยไม่มีค่าใช้จ่าย ข้อมูลที่ถูกดัดแปลงต้องมีเครดิตตามข้อ 2
    และประกาศไม่ได้รับประกันว่าข้อมูลเหมาะกับวัตถุประสงค์ใด
-   สิ่งที่เจ้าของโครงการต้องตรวจกับหน้าเว็บของผู้ให้ข้อมูล (ประกาศตามที่อยู่ข้างต้น) ก่อนยืนยัน:
+   สิ่งที่เจ้าของโครงการต้องตรวจกับหน้าเว็บของผู้ให้ข้อมูลก่อนยืนยัน
+   สี่ข้อแรกตรวจกับประกาศตามที่อยู่ข้างต้น ข้อที่ห้าตรวจกับเงื่อนไขของบริการที่ใช้ดาวน์โหลดไฟล์:
    - ถ้อยคำของเครดิต และวิธีเขียนปี
    - ประกาศมีการเปลี่ยนแปลงหลังวันที่ 20 กรกฎาคม 2569 (2026) หรือไม่
      ซึ่งเป็นการตรวจครั้งล่าสุดที่โครงการบันทึกไว้
    - ประกาศมีเงื่อนไขอื่นนอกจากเครดิตหรือไม่ และกำหนดให้เผยแพร่ข้อมูลที่ดัดแปลง
      ภายใต้เงื่อนไขเดียวกันหรือไม่
+   - คำว่า "free, full and open access" และ "Copernicus data and information policy"
+     เป็นถ้อยคำของผู้ให้ข้อมูลเองสำหรับเงื่อนไขเหล่านี้หรือไม่
+   - เงื่อนไขของ Copernicus Data Space Ecosystem
+     (https://dataspace.copernicus.eu/terms-and-conditions)
+     และเงื่อนไขนั้นไม่ได้เพิ่มข้อกำหนดใดสำหรับข้อมูลผลิตภัณฑ์ Sentinel ใช่หรือไม่
    ขณะเขียนฉบับร่างนี้ไม่ได้คัดลอกข้อความใดจากหน้าเว็บของผู้ให้ข้อมูล
 
 4. สิ่งที่ FloodGuard เปลี่ยนแปลง (ประกาศการเปลี่ยนแปลง)
@@ -151,15 +172,23 @@ FloodGuard Thailand
    รายการการเปลี่ยนแปลงเป็นกฎของ FloodGuard เอง เป็นข้อควรระวัง ไม่ใช่เงื่อนไขของประกาศของผู้ให้ข้อมูล
 
 5. สิ่งที่บันทึกสิทธิ์จะครอบคลุมเมื่อเจ้าของโครงการทั้งสองคนยืนยัน และสิ่งที่ไม่ครอบคลุม
-   ครอบคลุม: การอ่านไฟล์ภาพทั้งสองนอก Git การจัดทำชั้นข้อมูลเรดาร์ของกรณี O1
+   ครอบคลุมการใช้ห้าอย่าง: การอ่านไฟล์ภาพทั้งสองนอก Git การจัดทำชั้นข้อมูลเรดาร์ของกรณี O1
    การใช้ชั้นข้อมูลเหล่านั้นเป็นข้อมูลน้ำท่วมระดับ 2 (Tier 2) ตารางของแปดตำบลในอำเภอแม่สาย
-   และสถิติของทั้งพื้นที่ โดยมีเครดิตกำกับทุกครั้ง
+   และสถิติของทั้งพื้นที่ โดยมีเครดิตกำกับทุกครั้ง และการจัดอันดับการเปลี่ยนแปลงความสว่างของภาพเรดาร์
+   เทียบกับชั้นข้อมูลอื่นในงานวินิจฉัยตามแผน (งาน A1) ซึ่งอ่านข้อมูลที่จัดทำจากสองภาพเดียวกัน
+   การใช้อย่างที่สามจะรวมอยู่ด้วยก็ต่อเมื่อเจ้าของโครงการระบุเช่นนั้น
+   บันทึกการได้มาของข้อมูลเมื่อเดือนกรกฎาคม 2569 (2026) ระงับการประมวลผลที่เรียกว่า
+   "decision-eligible processing" ของไฟล์ทั้งสอง บันทึกสิทธิ์คัดข้อความนั้นไว้
+   และถามเจ้าของโครงการว่าข้อความนั้นมีผลอย่างไรต่อคะแนนเพื่อการวางแผน (ดู acquisition_note ในบันทึกสิทธิ์)
    ตามโค้ดในปัจจุบัน ระดับสิทธิ์จะเป็น "local" คือไม่มีสิ่งใดที่จัดทำจากสองภาพนี้
    ถูกเขียนลงในไฟล์เว็บสาธารณะผ่านทะเบียนสิทธิ์ เจ้าของโครงการเป็นผู้เลือกว่า
    จะกำหนดขอบเขตการเผยแพร่เพิ่มหรือไม่
-   ไม่ครอบคลุม: ภาพ Sentinel-1 อื่นหรือการดาวน์โหลดใหม่ ภาพ Sentinel-1 ในหน้าย้อนดูเหตุการณ์แม่สาย
-   ซึ่งมีรายการแหล่งข้อมูลของตนเอง ข้อมูลฝึกของตัวจำแนก แผนที่น้ำท่วมของหน่วยงานอื่น
-   และการใช้เป็นป้ายกำกับหรือข้อมูลอ้างอิง
+   มีการใช้อยู่แล้วหนึ่งอย่างซึ่งบันทึกสิทธิ์ฉบับนี้ไม่เปลี่ยนแปลง: หน้าย้อนดูเหตุการณ์แม่สาย
+   อ่านไฟล์ภาพก่อนเหตุการณ์ในข้อ 1 เพื่อเปรียบเทียบขนาดพื้นที่จากเรดาร์
+   และเผยแพร่ตัวเลขที่ได้จากไฟล์นั้น ตามการตัดสินใจ R14 ของเจ้าของโครงการ
+   ไม่ครอบคลุม: ภาพ Sentinel-1 อื่นหรือการดาวน์โหลดใหม่ ชั้นภาพ Sentinel-1 ในหน้าย้อนดูเหตุการณ์แม่สาย
+   ซึ่งจัดทำจากสำเนาอื่นและมีรายการแหล่งข้อมูลของตนเอง ข้อมูลฝึกของตัวจำแนก
+   แผนที่น้ำท่วมของหน่วยงานอื่น และการใช้เป็นป้ายกำกับหรือข้อมูลอ้างอิง
 
 6. ข้อจำกัด
    - พื้นที่ที่อาจมีน้ำท่วมซึ่งจัดทำจากสองภาพนี้เป็นผลของโครงการเองในระดับ 2 (Tier 2)

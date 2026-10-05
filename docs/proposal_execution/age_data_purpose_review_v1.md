@@ -49,6 +49,33 @@ metrics, hosted display, downloads and downstream decisions.
 The credit the builders write today is "WorldPop (www.worldpop.org), University of Southampton"
 (`scripts/build_planning_assessment.py`).
 
+**The whole row of the project's register, because it speaks to this decision.** The third file above is the
+project's own register of sources and rights. Its row for this data set, cell by cell:
+
+| Column of the register | What the row says, word for word |
+|---|---|
+| Source family | WorldPop Global2 R2025A v1 2024 `1km_ua` age series |
+| Current identity/time and purpose | Official [exact Thailand 2024 product](https://hub.worldpop.org/geodata/summary?id=98910) supplies all 20 total-sex constrained bands. Acquisition manifest SHA-256 `f7a169877177a374bc461724dcb93b6ec96d76451347cd2e98dc2fc7b0f8356c`, 51,593,135 source bytes, status PASS after a recorded partial retry. A separate 100 m acquisition attempt has one complete band and is not an analysis input. |
+| Processing | Modelled 2024 counts reviewed at full COD-AB unit and fractional AOI-intersection grain, output SHA-256 `a526c587e4c0bc1921b7464a3256f34cb31a6e174a558d7f2e329b1797ec6d5a`; six intersecting units, including a small Pong Ngam sliver. The selected Thai reporting units cover 81.04% of AOI geometry; outside area is not labelled missing Thai population. |
+| Human label / independent final evaluation | No measured local ages, event-day presence, 2024 historical route reconstruction or accepted demographic equity. Coarse 1 km cells make partial-unit estimates uncertain. |
+| Hosted/download derivative | Catalog states CC BY 4.0 with an ODbL caveat for some building/OSM-derived products; hosted age derivatives still await product-specific attribution/share-alike review. Age bytes and detailed results remain in configured external roots. |
+| Downstream decision | Age-vulnerability score and accepted group access remain unavailable; a mixed-vintage scenario sensitivity may be shown only with its own label. |
+
+The last two cells are the ones that matter here. Once more, on their own:
+
+- Under "Hosted/download derivative": "Catalog states CC BY 4.0 with an ODbL caveat for some building/OSM-derived
+  products; hosted age derivatives still await product-specific attribution/share-alike review. Age bytes and detailed
+  results remain in configured external roots."
+- Under "Downstream decision": "Age-vulnerability score and accepted group access remain unavailable; a
+  mixed-vintage scenario sensitivity may be shown only with its own label."
+
+The register is dated 23 September 2026. It is older than the signed protocols (v1a on 2 October, v1b on 3 October),
+which make the age mix one of the five score components. And the repository has already moved past its first
+statement: the age table committed on 4 October holds the age counts of each tambon in Git, not in an external root.
+So please say with your answer whether it **replaces these two statements of the register**. The signature block
+has a line for that. If you answer "no", the register still says that an age-vulnerability score is unavailable, and
+the committed age table needs a decision of its own.
+
 **To be checked by the owners against the provider's page.** No file in the repository settles these three points,
 and nothing here is quoted from memory:
 
@@ -191,17 +218,20 @@ Tick one. A recommendation is not a decision, so none is ticked.
   credit and the labels of section 6.
 - [ ] **B. Confirm for pitch use only.** The same derivatives may be shown in the pitch and in material handed out
   with it, with the credit and the labels. Nothing that carries the component goes under `apps/web/public/`, and
-  pitch variants stay outside Git (plan 3.1).
-- [ ] **C. Decline.** No derivative of the age counts is shown outside the team.
+  pitch variants stay outside Git (plan 3.1). **This means slides and screenshots only:** no page of the site can
+  show a score, at the pitch or after it (see the table).
+- [ ] **C. Decline.** No derivative of the age counts for a tambon is shown outside the team. The five national
+  anchors are derived from the same rasters and are already in Git; the table says what that leaves open.
 
 What each answer leads to. None of this is done now; each step is a later, reviewed change.
 
 | | A. Public | B. Pitch only | C. Decline |
 |---|---|---|---|
 | Level of the age counts in task E8 | `public` | `pitch` | stays `local` |
-| A score or class on a public page | Possible for a case whose other inputs are public. Case SE1 still needs an answer to E8-OP1 before its overlay exists; case O2 stays `local` because of its flood layer (E1-OP1). | Not possible: a score needs all five components, and one of them would be below public. | Not possible, for the same reason. |
-| The pitch | May show them | May show them | May not show them |
+| A score or class on a page of the site | Possible for a case whose other inputs are public. Case SE1 still needs an answer to E8-OP1 before its overlay exists; case O2 stays `local` because of its flood layer (E1-OP1). | Not possible, on any page: the Command planning columns, the public priority band and the briefs all stay empty. A score needs all five components, and one of them would be below public. Guardrail GR6 of protocol v1a says "Only public overlays may be written to apps/web/public/", and the new Command page (branch `claude/command-exercise`) reads an overlay only when it is `public`. | Not possible, for the same reason. |
+| The pitch | May show them, on pages and on slides | May show them on slides or screenshots only | May not show them |
 | The age table and the SE1 table already in Git | Stay | You say whether they stay (E8-OP5, E8-OP7, E1-OP1) | You say whether they are taken out. They stay in the Git history either way. |
+| The five national anchors (P5, P10, P75, P90, P95). They are derived from the same age rasters, they are in Git inside the signed protocol v1b and in `outputs/planning_v1/national_vulnerability_anchors_v1.json`, and the builder marks them `public` with the licence text "CC BY 4.0 (derived constants)". | Stay `public`. | They cannot leave Git: a signed protocol is not edited. You say whether a constant for all of Thailand counts as a "public derivative" under the signed sentence. If it does, the builder's `public` label for the anchors needs your word as well. | The same: declining cannot take them out of the signed protocol. You say whether the anchors are outside this review (constants for all of Thailand, with no tambon in them), or whether `planning_protocol_v2` has to deal with them. |
 | The signed scoring frame | Unchanged | Unchanged | Unchanged. Taking the component out of the score would need `planning_protocol_v2` with a written reason (protocol v1b, `change_control`). |
 
 Conditions you can attach to A or B (suggested by the drafter; strike any, add your own):
@@ -216,7 +246,9 @@ Conditions you can attach to A or B (suggested by the drafter; strike any, add y
 **The drafter's suggestion, for what it is worth.** The files show a coarse, modelled, openly catalogued data set
 and aggregates of thousands of residents, so option A with the five conditions looks defensible. Two things only you
 can settle: what the provider's page says about the licence, and whether you are comfortable with a public label on
-border tambons. If either is in doubt, B keeps the pitch whole and loses nothing that exists today.
+border tambons. If either is in doubt, B is the cautious choice. Know what it costs before you take it: under B the
+scores exist for slides and screenshots only. The Command planning columns, the public priority band and the briefs
+cannot read them, so the site shows no SE1 score at the pitch.
 
 ## 8. What happens after you answer
 
@@ -239,6 +271,7 @@ that says how the answer was given.
 | Option chosen (A, B or C) | | |
 | Conditions (numbers from section 7, or your own) | | |
 | Licence points of section 2 checked against the provider's page (yes or no, and the date) | | |
+| This answer replaces the two statements of the register of 23 September 2026 (yes or no) | | |
 | Date | | |
 
 Decision-log row: _none yet_

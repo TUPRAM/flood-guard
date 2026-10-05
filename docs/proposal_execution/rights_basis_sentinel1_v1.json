@@ -63,15 +63,47 @@
       "path": "outputs/cdse_mae_sai_acquisition_manifest.csv",
       "sha256": "abc4cd0ea20b5c2b3e7f5e4d103b1117cb77d9ac4b9ea1010ea0d8d03b068809",
       "bytes": 1891,
-      "what_it_gives": "Both product names, both catalogue product ids, the same SHA-256 and size for each archive, and the column source_license_status with the value confirmed_copernicus_sentinel_legal_notice. It marks download_attempted False for both archives, gives retrieved_at_utc 2026-07-20T07:00:00Z and names nobody who downloaded them."
+      "what_it_gives": "Both product names, both catalogue product ids, the same SHA-256 and size for each archive, and the column source_license_status with the value confirmed_copernicus_sentinel_legal_notice. It marks download_attempted False for both archives, gives retrieved_at_utc 2026-07-20T07:00:00Z and names nobody who downloaded them. It also marks processing_allowed False for both archives, with a reason: that sentence is quoted word for word under acquisition_note."
     },
     "acquisition_manifest_outside_git": {
+      "path_label": "<external_data_workspace>/sentinel1_original_safe/cdse_mae_sai_acquisition_manifest.csv",
       "sha256": "6ea1b440a6c9faa35ea9c74fc036c255b5a74549b68db25d0b2355ffe23b1133",
       "bytes": 1628,
-      "note": "The radar receipt names a copy of the manifest outside Git with this SHA-256. It is another file than the committed manifest. It was not read for this draft; the radar receipt says that it gives the same SHA-256 for both archives."
+      "note": "The radar receipt names a copy of the manifest outside Git with this SHA-256. It is another file than the committed manifest, and it words the reason for processing_allowed False differently (acquisition_note). It was not opened for this draft: what is said of it here is what the radar receipt records, including that it gives the same SHA-256 for both archives."
     },
     "pair_note": "docs/mae_sai_pair_decision_note.md names the two products and their catalogue product ids as the approved active pair, and retires the earlier selection of COG products of 6 and 15 September.",
     "radar_table": "outputs/planning_v1/radar_o1_mae_sai_v1.json (image_pair) gives the pass direction and the relative orbit of both scenes."
+  },
+  "acquisition_note": {
+    "what_it_is": "The acquisition manifest of July 2026 marks both archives processing_allowed False. The manifest exists in two copies, and the two copies give different reasons. Both reasons are quoted here word for word, each with its file.",
+    "committed_manifest": {
+      "path": "outputs/cdse_mae_sai_acquisition_manifest.csv",
+      "sha256": "abc4cd0ea20b5c2b3e7f5e4d103b1117cb77d9ac4b9ea1010ea0d8d03b068809",
+      "processing_allowed": "False",
+      "reference_mask_status": "unresolved",
+      "reason_blocked": "qualified, official, or decision-eligible processing remains blocked because reference mask status is unresolved; the non-operational cross-border calibration baseline is governed separately"
+    },
+    "manifest_outside_git": {
+      "path_label": "<external_data_workspace>/sentinel1_original_safe/cdse_mae_sai_acquisition_manifest.csv",
+      "sha256": "6ea1b440a6c9faa35ea9c74fc036c255b5a74549b68db25d0b2355ffe23b1133",
+      "processing_allowed": "False",
+      "reason_in_the_manifest": "reference mask status remains unresolved; do not run baseline yet",
+      "quoted_from": "outputs/planning_v1/radar_o1_mae_sai_v1_receipt.json (inputs.pre_event_safe.acquisition_manifest and inputs.post_event_safe.acquisition_manifest). The copy itself was not opened for this draft."
+    },
+    "which_one_decision_R14_quotes": "Decision R14 quotes the note as 'processing_allowed False / do not run baseline yet'. Those are the words of the copy outside Git. R14 reads them as a gate on the finals baseline only, not on rights, and allows the replay to read the 3 September archive. R14 does not quote the committed sentence.",
+    "what_the_committed_sentence_adds": "The committed sentence blocks 'qualified, official, or decision-eligible processing' and says that the baseline is governed separately. So it points another way than the words R14 read: it is not about the baseline, and it names a kind of processing that R14 does not speak of.",
+    "questions_for_the_owners": [
+      "Does the reading of R14 also hold for plan tasks A2 and A4, for the diagnosis of plan task A1, and for the 15 September archive? R14 names the replay and the 3 September archive only.",
+      "Is loading a radar candidate of case O1 into a planning score (an FPPS and an A-E class) 'decision-eligible processing' in the sense of the committed sentence? If it is, this record should be confirmed without the third use under use_in_this_track, until the reference-mask status is resolved or the owners lift the note in writing."
+    ],
+    "drafter_note": "The drafter does not answer either question. The cautious branch is to confirm the record without the third use: every O1 row would be class E under class rule v1 either way, because the candidate table records the Tier 2 skill bar as not met at Mae Sai."
+  },
+  "existing_use_under_decision_R14": {
+    "what": "The Mae Sai replay, which is in production, reads the 3 September archive of this record (the pre-event scene, the same file) for its radar size comparison on one track. The bake script is scripts/build_mae_sai_flood_timeline.py (S1_ANCHOR_PRE). Figures made from the archive are published in apps/web/public/studies/mae-sai-2024-timeline/r4/timeline.json (s1_anchor). The image itself is not published as a layer.",
+    "authority": "Decision R14 (3 October 2026): the replay may read the 3 September 2024 Sentinel-1 file.",
+    "how_this_record_treats_it": "As an existing use that decision R14 covers. This record neither grants it nor withdraws it, and the level local of this record is not applied to it.",
+    "why_the_owners_should_look": "If the record is confirmed at the local level, two rules apply to one archive: figures made from it for the replay are public under R14, and figures made from it for case O1 may not be written into public web files. The owners confirm that reading, or choose option B under publication_scope so that one record covers both uses.",
+    "status": "pending_owner_answer"
   },
   "legal_notice_title": "Legal notice on the use of Copernicus Sentinel Data and Service Information",
   "legal_notice_url": "https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice",
@@ -117,10 +149,19 @@
         ]
       },
       {
-        "term": "The project's own register of 23 September 2026 lists the Mae Sai pair as allowed for the existing documented research processing scope, says that candidate derivatives are subject to the Copernicus notice and to package export checks, and calls itself an engineering register, not a legal clearance.",
+        "term": "The project's own register of 23 September 2026 lists the Mae Sai pair as allowed for the existing documented research processing scope, says that candidate derivatives are subject to the Copernicus notice and to package export checks, asks for a separate accepted-input receipt before a downstream decision, and calls itself an engineering register, not a legal clearance.",
         "recorded_in": [
           "docs/proposal_execution/SOURCES_AND_RIGHTS.md"
-        ]
+        ],
+        "register_row_word_for_word": {
+          "source_family": "Copernicus Sentinel-1 original SAFE",
+          "current_identity_time_and_purpose": "Mae Sai same-track 3/15 September 2024 UTC; exact product IDs in `docs/mae_sai_pair_decision_note.md`; local archive identities are governed by the acquisition manifest",
+          "processing": "Allowed for the existing documented research processing scope",
+          "human_label_or_independent_final_evaluation": "No qualified Thai event reference follows from the SAR source itself",
+          "hosted_or_download_derivative": "Candidate derivatives already subject to Copernicus notice and package export checks",
+          "downstream_decision": "Separate accepted-input receipt required"
+        },
+        "register_note": "The register was checked on 23 September 2026, before planning protocols v1a and v1b were signed (2 and 3 October 2026). No accepted-input receipt for the pair is in the repository. The owners say whether their confirmation of this record is meant to be that receipt, or whether one is still needed before a candidate of case O1 enters a planning score."
       }
     ],
     "to_be_checked_by_the_owners_against_the_providers_page": [
@@ -189,9 +230,9 @@
     "rank the change in backscatter against other layers in the diagnosis of plan task A1, which reads the stored sigma0 rasters of the same two scenes"
   ],
   "would_allow_once_confirmed_and_registered": {
-    "uses": "The five uses listed under use_in_this_track, and nothing else.",
+    "uses": "The five uses listed under use_in_this_track, and nothing else. The third (loading the candidates into case O1) only if the owners say that the committed acquisition note does not stand in its way (acquisition_note).",
     "rights_level": "local",
-    "rights_level_basis": "floodguard.rights gives the level local to every confirmed record that is not the product 4009 record: such a record 'states no publication scope', so the input is read and processed outside Git and nothing derived from it is written into public web files. A request for a public write through the registry would still be refused.",
+    "rights_level_basis": "floodguard.rights gives the level local to every confirmed record that is not the product 4009 record: such a record 'states no publication scope', so the input is read and processed outside Git and nothing derived from it is written into public web files. A request for a public write through the registry would still be refused. One use of one of the two archives is public already, under another authority: see existing_use_under_decision_R14.",
     "what_changes_for_case_O1": "floodguard.flood_inputs.load_o1 would accept a radar candidate whose receipt names this record, instead of refusing every candidate. Open point E1-OP2 would close for the two scenes.",
     "what_does_not_change": "Case O1 still cannot be scored that day. The radar candidates have not been delivered to plan task E1 in the form its loader reads, the geocoding of record is open (A4-OP1), the planning-assessment builder does not read a radar candidate yet, and the candidate table records the Tier 2 skill bar as not met at Mae Sai, so every O1 row would be low confidence and class E under class rule v1."
   },
@@ -217,9 +258,10 @@
   },
   "would_not_allow": [
     "any use before both owners confirm the record and it is added to floodguard.rights.REGISTERED_RECORDS",
-    "a write under apps/web/public/ of anything made from the two scenes (the level is local under today's code)",
-    "any other Sentinel-1 scene or copy: the passes of 6 and 18 September 2024, the copies of the 6 and 15 September passes that the replay reads, and any new download (protocol v1b lists the 18 September pass as download DL-4, which is not approved)",
-    "the Sentinel-1 images the Mae Sai replay shows: they are published under the replay's own source list, and this record changes nothing about them",
+    "a write under apps/web/public/ of anything made from the two scenes under this record (the level is local under today's code). The replay's published size comparison, which reads the 3 September archive, rests on decision R14 and not on this record (existing_use_under_decision_R14)",
+    "any other Sentinel-1 scene or copy: the passes of 6 and 18 September 2024, the COG copies of the 6 and 15 September passes that the replay shows as image layers, and any new download (protocol v1b lists the 18 September pass as download DL-4, which is not approved)",
+    "the Sentinel-1 image layers the Mae Sai replay shows: they are made from those other copies and are published under the replay's own source list, and this record changes nothing about them",
+    "loading a candidate into a planning score while the committed acquisition note blocks 'decision-eligible processing', unless the owners say that the note does not cover it (acquisition_note); and without the separate accepted-input receipt the project's register asks for, unless the owners say that their confirmation is that receipt",
     "the training data of the A6-prime classifier (the GEOID-Flood sample): the second half of open point E1-OP2 asks whether it needs a record of its own, and this record does not answer that",
     "any third-party flood map or reference product, whatever satellite it was made from",
     "use as machine-learning labels, as a qualified reference, or as a check of how correct another layer is",
@@ -228,14 +270,18 @@
   "open_points_this_record_touches": [
     {"id": "E1-OP2", "effect": "Closes for the two scenes only once the record is confirmed and registered. The question about the A6-prime training data stays open."},
     {"id": "A1-OP5", "effect": "The statistics of plan task A1 for whole areas are already committed with the Copernicus credit line, before any signed record. A confirmed record would cover that use from then on."},
-    {"id": "A4-OP5", "effect": "Stays open: see the first question under for_the_owners."},
+    {"id": "A4-OP5", "effect": "Stays open: see acquisition_note and the first two questions under for_the_owners."},
+    {"id": "E1-OP9", "effect": "Stays as the code has it: until this record is confirmed, the registry refuses every use of it. The fallback of plan 4.1 (run at the local level without a signed record) was written for the product 4009 record; the plan lists the radar candidates as always on and names no record for them. The owners say whether they want anything else."},
     {"id": "E1-OP1", "effect": "Stays open: what the level local allows in Git. The radar tables of 4 October 2026 are in Git with values for single tambons."},
     {"id": "A4-OP1", "effect": "Not touched: which geocoding case O1 uses is a method choice, not a rights question."}
   ],
   "for_the_owners": [
-    "The committed acquisition manifest marks both archives processing_allowed False, because the status of a reference mask was unresolved in July. Decision R14 says that this note gates the finals baseline only, not rights, and allows the replay to read the 3 September archive. R14 does not name plan tasks A2 and A4 or the 15 September archive. Please say whether the same reading holds for them (open point A4-OP5). If it does not, this record should not be confirmed as drafted.",
-    "Please open the provider's page named under licence and check the five points listed there. Correct the record and the notice where the page says something else.",
-    "Please choose option A or B under publication_scope. Option B needs more work before it has any effect.",
+    "The acquisition manifest marks both archives processing_allowed False, and its two copies give two different reasons (acquisition_note quotes both). Decision R14 quotes the words of the copy outside Git ('do not run baseline yet') and reads them as a gate on the finals baseline only, not on rights, for the replay and the 3 September archive. Please say whether that reading also holds for plan tasks A2 and A4, for the diagnosis of plan task A1 and for the 15 September archive (open point A4-OP5). If it does not, this record should not be confirmed as drafted.",
+    "The committed copy says something R14 does not speak of: 'qualified, official, or decision-eligible processing remains blocked because reference mask status is unresolved; the non-operational cross-border calibration baseline is governed separately'. Please say whether loading a candidate of case O1 into a planning score is 'decision-eligible processing' in that sense. If it is, or if you are not sure, confirm the record without the third use under use_in_this_track.",
+    "The project's register of 23 September 2026 asks for a 'Separate accepted-input receipt' before the pair feeds a downstream decision. None exists. Please say whether your confirmation of this record is that receipt.",
+    "Please open the two provider pages named under licence and check the five points listed there: four on the legal notice and one on the terms of the download service. Correct the record and the notice where a page says something else.",
+    "Please choose option A or B under publication_scope. Option B needs more work before it has any effect. Under option A no page of the site can show a radar result of case O1: the new Command page reads public results only.",
+    "The replay already reads the 3 September archive and publishes figures made from it, under decision R14 (existing_use_under_decision_R14). Please confirm that this stays a use under R14 that the record does not change, or say that the record should cover it.",
     "Please read the limits. Then follow owner_confirmation.how_to_confirm, or say what should change."
   ],
   "limitations": [
@@ -246,6 +292,7 @@
     "The second scene was taken on 16 September 2024 at 06:16 in Thailand, several days after the flood peak. A candidate made from the pair is residual water at that pass at most.",
     "The layers of the run of record are displaced by about 680 m and its two dates are offset from each other by about 9 m (outputs/planning_v1/README.md, open point A4-OP1). A rights record changes nothing about that.",
     "The radar tables and the diagnosis figures made from the two scenes were committed on 4 October 2026 with the credit line, before this draft existed. This record does not say whether that was within the rules; the owners do.",
+    "The committed acquisition manifest blocks 'qualified, official, or decision-eligible processing' of both archives. This record does not lift that note, and the drafter does not say what it means for a planning score (acquisition_note).",
     "The Thai half of the notice file was written by the AI coding agent and was not reviewed by a native speaker (decision R18; roadmap item H12 is unsigned).",
     "This record is not legal advice."
   ],
@@ -255,10 +302,10 @@
     "The terms have not changed since 20 July 2026 in a way that matters for the uses listed. The owners check this.",
     "A radar candidate made from the two scenes is adapted data, so it carries the credit line for modified data."
   ],
-  "confidence": "medium",
-  "confidence_reason": "The two archives are identified by name, size and SHA-256 in a committed receipt and in the committed acquisition manifest, and the repository records a check of the provider's pages on 20 July 2026. No provider page was opened for this draft, the form of the credit line is to be checked, and no owner has read the record.",
+  "confidence": "low",
+  "confidence_reason": "Firm: the two archives are identified by name, size and SHA-256 in a committed receipt and in the committed acquisition manifest, and the repository records a check of the provider's pages on 20 July 2026. Not firm: no provider page was opened for this draft and five licence points are unchecked; what the committed acquisition note means for a planning score is undecided; the form of the credit line is to be checked; and no owner has read the record. The confidence stays low until the owners have checked.",
   "decision_refs": [
-    {"id": "R14", "summary": "The replay may read the 3 September 2024 Sentinel-1 archive; the July acquisition note 'processing_allowed False / do not run baseline yet' gates the finals baseline only, not rights. R14 does not name plan tasks A2 and A4 or the 15 September archive."},
+    {"id": "R14", "summary": "The replay may read the 3 September 2024 Sentinel-1 archive. R14 quotes the July acquisition note as 'processing_allowed False / do not run baseline yet', which are the words of the manifest copy outside Git, and says that it gates the finals baseline only, not rights. R14 does not quote the sentence of the committed manifest (acquisition_note), and it does not name plan tasks A2 and A4 or the 15 September archive."},
     {"id": "R15", "summary": "The radar answers of 3 October 2026. They concern the benchmark and the skill bar, not rights."},
     {"id": "R16", "summary": "The supervised radar classifier is deferred until Mae Sai is complete, so its training data is not part of this record."},
     {"id": "D12", "summary": "Extra Sentinel-1 dates need an existing Earth Engine account or one download that the owner approves first. No extra date is part of this record."}
@@ -272,7 +319,7 @@
     "confirmed_by": [],
     "confirmed_on": null,
     "note": "Nobody has confirmed this record. It was drafted on 5 October 2026 and has not been shown to either owner.",
-    "how_to_confirm": "Both owners read this file and the notice file, check the provider's pages named under licence, answer the first question under for_the_owners and choose option A or B under publication_scope. Then, in one change: set owner_confirmation.status to confirmed, list both names in confirmed_by, set confirmed_on (YYYY-MM-DD), set record_status to confirmed and record_status_text to match, set signed_by_human and human_rights_clearance to true, fill signed_decision with the new decision-log row, replace the draft status lines of the notice file, and add the row to the decision log. A separate, reviewed change then adds the record to floodguard.rights.REGISTERED_RECORDS as a record of copernicus_sentinel1 and updates the tests that say no such record exists. Until both changes are merged, the code refuses every radar candidate of case O1."
+    "how_to_confirm": "Both owners read this file and the notice file, check the provider's pages named under licence, answer the questions under for_the_owners (the first three decide which uses the record covers) and choose option A or B under publication_scope. Then, in one change: set owner_confirmation.status to confirmed, list both names in confirmed_by, set confirmed_on (YYYY-MM-DD), set record_status to confirmed and record_status_text to match, set signed_by_human and human_rights_clearance to true, fill signed_decision with the new decision-log row, replace the draft status lines of the notice file, and add the row to the decision log. A separate, reviewed change then adds the record to floodguard.rights.REGISTERED_RECORDS as a record of copernicus_sentinel1 and updates the tests that say no such record exists. Until both changes are merged, the code refuses every radar candidate of case O1."
   },
   "registration": {
     "registered": false,

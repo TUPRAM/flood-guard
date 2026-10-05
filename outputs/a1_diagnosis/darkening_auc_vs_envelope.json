@@ -1,0 +1,726 @@
+{
+  "schema_version": "floodguard.a1_diagnosis_figures.v1",
+  "generated_at_utc": "2026-10-04T22:15:47Z",
+  "plan_task": "A1 (abstention diagnosis: why threshold-only change detection failed at the 16 Sep pass)",
+  "figure_id": "darkening_auc_vs_envelope",
+  "title": "Separation of the VH darkening at the 16 September 2024 pass against the 2024 season envelope, AOI-01",
+  "official_warning": false,
+  "operational_status": "non_operational",
+  "source_timestamp": "2024-09-15T23:16:01Z",
+  "confidence_class": "low",
+  "confidence_basis": "A statistic of own radar layers (tier T2, unqualified, approximate geocoding) against an unvalidated preliminary agency extent used as a season envelope (UNOSAT product 4009 with GISTDA; Field_Validation=0). No reference of any kind was used; nothing here says how correct a layer is.",
+  "assumptions": [
+    "The accumulated layer of product 4009 is a 2024 season envelope: every area mapped as water at some time between 1 August and October 2024, with no date per patch. It is not an event map of September 2024, it was not checked in the field (Field_Validation=0), and FloodGuard did not validate it. A figure measured against it is a comparison with a season envelope, not a validation.",
+    "One image pair: 3 September 2024 23:16 UTC and 15 September 2024 23:16 UTC (16 September 06:16 in Thailand), both descending on relative orbit 135. The second image was taken several days after the keyframe the Mae Sai replay sets for the modelled peak. That keyframe is illustrative: no gauge record gives the time of the peak.",
+    "The radar values are the stored sigma0 rasters of tasks A2 and A4: sigma0 from the SAFE calibration table, thermal noise not removed, 10 m cells, averaged here to 20 m.",
+    "A cell is in the comparison when its centre lies in AOI-01 and in a Thai tambon, it is not permanent water under the reading, and it has a radar value on both dates. The second set of cells keeps only those with a GLO-30 slope under 5 degrees.",
+    "The smoothing window is a free choice. The 5 by 5 window is the one of the exploratory script; the other windows are given so that the choice can be seen."
+  ],
+  "protocol_sha256": {
+    "planning_protocol_v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+    "planning_protocol_v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+  },
+  "status": "diagnosis_figures",
+  "status_note": "Figures of one diagnosis run, written with protocol v1a and v1b in force. A diagnosis figure describes why a method declined or separated poorly; it is not a flood map, not an observation of a flood and not a measure of how correct a method is. No FPPS, A-E class or flood candidate is here.",
+  "receipt_file": "outputs/planning_v1/a1_diagnosis_darkening_auc_vs_envelope.json",
+  "result_document": "docs/proposal_execution/automated_track/WHY_THRESHOLD_ONLY_FAILED.md",
+  "script": "scripts/diagnostics/darkening_auc_vs_envelope.py",
+  "plan_statement": "darkening-dVH AUC vs the 4009 envelope 0.421",
+  "measured_against": "vs a season envelope, not an event map",
+  "computes": "The rank statistic (area under the ROC curve) of the VH darkening between 3 and 15 September 2024 against the product 4009 accumulated layer, on 20 m cells of AOI-01 on the Thai side, for two geocodings, three ways of leaving out permanent water, two sets of cells and six smoothing windows. No threshold is applied and no layer is written.",
+  "figures": {
+    "feature": "darkening of VH in dB: VH before (3 September 2024) minus VH after (15 September 2024, 23:16 UTC), each a mean over a window of 20 m cells of linear sigma0; positive where the later image is darker",
+    "statistic": "area under the ROC curve: the probability that a cell inside the envelope has a larger value than a cell outside it, a tie counting one half; 0.5 is no separation",
+    "domain": {
+      "grid": {
+        "crs": "EPSG:32647",
+        "cell_m": 20.0,
+        "width": 655,
+        "height": 579,
+        "bounds": [
+          586440.0,
+          2251700.0,
+          599540.0,
+          2263280.0
+        ]
+      },
+      "cell_rule": "A cell belongs to a polygon when its centre lies in it.",
+      "thai_side_of_aoi_01": {
+        "rule": "The Thai side of the frame: the union of the COD-AB tha_admin3 polygons that meet it, cut to the frame.",
+        "units_meeting_the_frame": [
+          "TH570901",
+          "TH570903",
+          "TH570904",
+          "TH570905",
+          "TH570906",
+          "TH570909"
+        ],
+        "all_units_are_in_the_reporting_frame_of_protocol_v1a": true,
+        "area_km2": 84.868817,
+        "share_of_frame": 0.810354
+      },
+      "why_the_thai_side": "Product 4009 maps Chiang Rai Province. A cell across the border is not a cell the product left dry, so it is in no comparison. Task E1 measured that the product's footprint covers the whole reporting frame of protocol v1a, and every Thai unit that meets AOI-01 is in that frame; the footprint layer itself (rights level local) is not read here.",
+      "cells_in_aoi_01": 261806,
+      "cells_in_aoi_01_on_the_thai_side": 212158,
+      "envelope_cells_in_aoi_01_on_the_thai_side": 38350,
+      "envelope_km2_by_cell_count": 15.34,
+      "envelope_cells_outside_the_thai_side": 0,
+      "jrc_cells_with_no_value_in_the_domain": 0,
+      "by_permanent_water_reading": {
+        "jrc_surface_water": {
+          "cells_left_out_as_permanent_water": 194,
+          "envelope_cells_left_out_as_permanent_water": 117,
+          "cells": 211964,
+          "envelope_cells": 38233,
+          "envelope_share_of_the_cells": 0.180375,
+          "slope_under_5_degrees": {
+            "cells": 155387,
+            "envelope_cells": 37246,
+            "envelope_share_of_the_cells": 0.239698
+          }
+        },
+        "worldcover_class_80": {
+          "cells_left_out_as_permanent_water": 776,
+          "envelope_cells_left_out_as_permanent_water": 302,
+          "cells": 211382,
+          "envelope_cells": 38048,
+          "envelope_share_of_the_cells": 0.179996,
+          "slope_under_5_degrees": {
+            "cells": 154810,
+            "envelope_cells": 37062,
+            "envelope_share_of_the_cells": 0.239403
+          }
+        },
+        "nothing_left_out": {
+          "cells_left_out_as_permanent_water": 0,
+          "envelope_cells_left_out_as_permanent_water": 0,
+          "cells": 212158,
+          "envelope_cells": 38350,
+          "envelope_share_of_the_cells": 0.180762,
+          "slope_under_5_degrees": {
+            "cells": 155578,
+            "envelope_cells": 37363,
+            "envelope_share_of_the_cells": 0.240156
+          }
+        }
+      },
+      "sets_of_cells": {
+        "all_cells": "every cell of AOI-01 on the Thai side that the permanent-water reading keeps",
+        "slope_under_5_degrees": "the cells of that set whose slope is under 5 degrees; the slope is taken by central differences from the GLO-30 height warped bilinearly onto the grid"
+      },
+      "slope_in_the_domain": {
+        "cells_with_no_slope_value": 0,
+        "share_of_envelope_cells_under_the_limit": 0.974263,
+        "share_of_other_cells_under_the_limit": 0.680147,
+        "limit_degrees": 5.0
+      }
+    },
+    "cells_with_a_radar_value_in_the_domain": {
+      "gcp_polynomial": 212158,
+      "annotation_grid_with_cell_height": 212158
+    },
+    "readings": [
+      {
+        "geocoding": "gcp_polynomial",
+        "permanent_water": "jrc_surface_water",
+        "cells": "all_cells",
+        "window_cells": 5,
+        "auc": 0.421149,
+        "cells_inside_the_layer": 38233,
+        "cells_outside_the_layer": 173731,
+        "cells_left_out_for_no_value": 0,
+        "median_inside_the_layer": -0.4416,
+        "median_outside_the_layer": -0.1713,
+        "auc_of_brightening": 0.578851
+      },
+      {
+        "geocoding": "gcp_polynomial",
+        "permanent_water": "worldcover_class_80",
+        "cells": "all_cells",
+        "window_cells": 5,
+        "auc": 0.421468,
+        "cells_inside_the_layer": 38048,
+        "cells_outside_the_layer": 173334,
+        "cells_left_out_for_no_value": 0,
+        "median_inside_the_layer": -0.4408,
+        "median_outside_the_layer": -0.1716,
+        "auc_of_brightening": 0.578532
+      },
+      {
+        "geocoding": "gcp_polynomial",
+        "permanent_water": "nothing_left_out",
+        "cells": "all_cells",
+        "window_cells": 5,
+        "auc": 0.421308,
+        "cells_inside_the_layer": 38350,
+        "cells_outside_the_layer": 173808,
+        "cells_left_out_for_no_value": 0,
+        "median_inside_the_layer": -0.4402,
+        "median_outside_the_layer": -0.1713,
+        "auc_of_brightening": 0.578692
+      },
+      {
+        "geocoding": "gcp_polynomial",
+        "permanent_water": "jrc_surface_water",
+        "cells": "slope_under_5_degrees",
+        "window_cells": 5,
+        "auc": 0.444622,
+        "cells_inside_the_layer": 37246,
+        "cells_outside_the_layer": 118141,
+        "cells_left_out_for_no_value": 0,
+        "median_inside_the_layer": -0.4424,
+        "median_outside_the_layer": -0.2468,
+        "auc_of_brightening": 0.555378
+      },
+      {
+        "geocoding": "gcp_polynomial",
+        "permanent_water": "worldcover_class_80",
+        "cells": "slope_under_5_degrees",
+        "window_cells": 5,
+        "auc": 0.445068,
+        "cells_inside_the_layer": 37062,
+        "cells_outside_the_layer": 117748,
+        "cells_left_out_for_no_value": 0,
+        "median_inside_the_layer": -0.4419,
+        "median_outside_the_layer": -0.2476,
+        "auc_of_brightening": 0.554932
+      },
+      {
+        "geocoding": "gcp_polynomial",
+        "permanent_water": "nothing_left_out",
+        "cells": "slope_under_5_degrees",
+        "window_cells": 5,
+        "auc": 0.444785,
+        "cells_inside_the_layer": 37363,
+        "cells_outside_the_layer": 118215,
+        "cells_left_out_for_no_value": 0,
+        "median_inside_the_layer": -0.441,
+        "median_outside_the_layer": -0.2467,
+        "auc_of_brightening": 0.555215
+      },
+      {
+        "geocoding": "annotation_grid_with_cell_height",
+        "permanent_water": "jrc_surface_water",
+        "cells": "all_cells",
+        "window_cells": 5,
+        "auc": 0.377043,
+        "cells_inside_the_layer": 38233,
+        "cells_outside_the_layer": 173731,
+        "cells_left_out_for_no_value": 0,
+        "median_inside_the_layer": -0.6215,
+        "median_outside_the_layer": -0.1432,
+        "auc_of_brightening": 0.622957
+      },
+      {
+        "geocoding": "annotation_grid_with_cell_height",
+        "permanent_water": "worldcover_class_80",
+        "cells": "all_cells",
+        "window_cells": 5,
+        "auc": 0.376696,
+        "cells_inside_the_layer": 38048,
+        "cells_outside_the_layer": 173334,
+        "cells_left_out_for_no_value": 0,
+        "median_inside_the_layer": -0.6237,
+        "median_outside_the_layer": -0.1434,
+        "auc_of_brightening": 0.623304
+      },
+      {
+        "geocoding": "annotation_grid_with_cell_height",
+        "permanent_water": "nothing_left_out",
+        "cells": "all_cells",
+        "window_cells": 5,
+        "auc": 0.377477,
+        "cells_inside_the_layer": 38350,
+        "cells_outside_the_layer": 173808,
+        "cells_left_out_for_no_value": 0,
+        "median_inside_the_layer": -0.6192,
+        "median_outside_the_layer": -0.1433,
+        "auc_of_brightening": 0.622523
+      },
+      {
+        "geocoding": "annotation_grid_with_cell_height",
+        "permanent_water": "jrc_surface_water",
+        "cells": "slope_under_5_degrees",
+        "window_cells": 5,
+        "auc": 0.385713,
+        "cells_inside_the_layer": 37246,
+        "cells_outside_the_layer": 118141,
+        "cells_left_out_for_no_value": 0,
+        "median_inside_the_layer": -0.6389,
+        "median_outside_the_layer": -0.1902,
+        "auc_of_brightening": 0.614287
+      },
+      {
+        "geocoding": "annotation_grid_with_cell_height",
+        "permanent_water": "worldcover_class_80",
+        "cells": "slope_under_5_degrees",
+        "window_cells": 5,
+        "auc": 0.385406,
+        "cells_inside_the_layer": 37062,
+        "cells_outside_the_layer": 117748,
+        "cells_left_out_for_no_value": 0,
+        "median_inside_the_layer": -0.6415,
+        "median_outside_the_layer": -0.1907,
+        "auc_of_brightening": 0.614594
+      },
+      {
+        "geocoding": "annotation_grid_with_cell_height",
+        "permanent_water": "nothing_left_out",
+        "cells": "slope_under_5_degrees",
+        "window_cells": 5,
+        "auc": 0.386184,
+        "cells_inside_the_layer": 37363,
+        "cells_outside_the_layer": 118215,
+        "cells_left_out_for_no_value": 0,
+        "median_inside_the_layer": -0.6373,
+        "median_outside_the_layer": -0.1902,
+        "auc_of_brightening": 0.613816
+      }
+    ],
+    "readings_note": "The readings with the 5 by 5 window: two geocodings, three ways of leaving out permanent water and two sets of cells.",
+    "readings_by_smoothing_window": [
+      {
+        "geocoding": "gcp_polynomial",
+        "permanent_water": "jrc_surface_water",
+        "cells": "all_cells",
+        "window_cells": 1,
+        "auc": 0.466766,
+        "cells_inside_the_layer": 38233,
+        "cells_outside_the_layer": 173731,
+        "cells_left_out_for_no_value": 0,
+        "median_inside_the_layer": -0.4828,
+        "median_outside_the_layer": -0.211,
+        "auc_of_brightening": 0.533234
+      },
+      {
+        "geocoding": "gcp_polynomial",
+        "permanent_water": "jrc_surface_water",
+        "cells": "slope_under_5_degrees",
+        "window_cells": 1,
+        "auc": 0.477731,
+        "cells_inside_the_layer": 37246,
+        "cells_outside_the_layer": 118141,
+        "cells_left_out_for_no_value": 0,
+        "median_inside_the_layer": -0.4827,
+        "median_outside_the_layer": -0.2973,
+        "auc_of_brightening": 0.522269
+      },
+      {
+        "geocoding": "gcp_polynomial",
+        "permanent_water": "jrc_surface_water",
+        "cells": "all_cells",
+        "window_cells": 3,
+        "auc": 0.442038,
+        "cells_inside_the_layer": 38233,
+        "cells_outside_the_layer": 173731,
+        "cells_left_out_for_no_value": 0,
+        "median_inside_the_layer": -0.4673,
+        "median_outside_the_layer": -0.1861,
+        "auc_of_brightening": 0.557962
+      },
+      {
+        "geocoding": "gcp_polynomial",
+        "permanent_water": "jrc_surface_water",
+        "cells": "slope_under_5_degrees",
+        "window_cells": 3,
+        "auc": 0.460023,
+        "cells_inside_the_layer": 37246,
+        "cells_outside_the_layer": 118141,
+        "cells_left_out_for_no_value": 0,
+        "median_inside_the_layer": -0.4694,
+        "median_outside_the_layer": -0.2656,
+        "auc_of_brightening": 0.539977
+      },
+      {
+        "geocoding": "gcp_polynomial",
+        "permanent_water": "jrc_surface_water",
+        "cells": "all_cells",
+        "window_cells": 5,
+        "auc": 0.421149,
+        "cells_inside_the_layer": 38233,
+        "cells_outside_the_layer": 173731,
+        "cells_left_out_for_no_value": 0,
+        "median_inside_the_layer": -0.4416,
+        "median_outside_the_layer": -0.1713,
+        "auc_of_brightening": 0.578851
+      },
+      {
+        "geocoding": "gcp_polynomial",
+        "permanent_water": "jrc_surface_water",
+        "cells": "slope_under_5_degrees",
+        "window_cells": 5,
+        "auc": 0.444622,
+        "cells_inside_the_layer": 37246,
+        "cells_outside_the_layer": 118141,
+        "cells_left_out_for_no_value": 0,
+        "median_inside_the_layer": -0.4424,
+        "median_outside_the_layer": -0.2468,
+        "auc_of_brightening": 0.555378
+      },
+      {
+        "geocoding": "gcp_polynomial",
+        "permanent_water": "jrc_surface_water",
+        "cells": "all_cells",
+        "window_cells": 9,
+        "auc": 0.386386,
+        "cells_inside_the_layer": 38233,
+        "cells_outside_the_layer": 173731,
+        "cells_left_out_for_no_value": 0,
+        "median_inside_the_layer": -0.4272,
+        "median_outside_the_layer": -0.1567,
+        "auc_of_brightening": 0.613614
+      },
+      {
+        "geocoding": "gcp_polynomial",
+        "permanent_water": "jrc_surface_water",
+        "cells": "slope_under_5_degrees",
+        "window_cells": 9,
+        "auc": 0.418599,
+        "cells_inside_the_layer": 37246,
+        "cells_outside_the_layer": 118141,
+        "cells_left_out_for_no_value": 0,
+        "median_inside_the_layer": -0.4289,
+        "median_outside_the_layer": -0.2284,
+        "auc_of_brightening": 0.581401
+      },
+      {
+        "geocoding": "gcp_polynomial",
+        "permanent_water": "jrc_surface_water",
+        "cells": "all_cells",
+        "window_cells": 15,
+        "auc": 0.34899,
+        "cells_inside_the_layer": 38233,
+        "cells_outside_the_layer": 173731,
+        "cells_left_out_for_no_value": 0,
+        "median_inside_the_layer": -0.4373,
+        "median_outside_the_layer": -0.1484,
+        "auc_of_brightening": 0.65101
+      },
+      {
+        "geocoding": "gcp_polynomial",
+        "permanent_water": "jrc_surface_water",
+        "cells": "slope_under_5_degrees",
+        "window_cells": 15,
+        "auc": 0.391479,
+        "cells_inside_the_layer": 37246,
+        "cells_outside_the_layer": 118141,
+        "cells_left_out_for_no_value": 0,
+        "median_inside_the_layer": -0.4397,
+        "median_outside_the_layer": -0.222,
+        "auc_of_brightening": 0.608521
+      },
+      {
+        "geocoding": "gcp_polynomial",
+        "permanent_water": "jrc_surface_water",
+        "cells": "all_cells",
+        "window_cells": 25,
+        "auc": 0.298757,
+        "cells_inside_the_layer": 38233,
+        "cells_outside_the_layer": 173731,
+        "cells_left_out_for_no_value": 0,
+        "median_inside_the_layer": -0.463,
+        "median_outside_the_layer": -0.1468,
+        "auc_of_brightening": 0.701243
+      },
+      {
+        "geocoding": "gcp_polynomial",
+        "permanent_water": "jrc_surface_water",
+        "cells": "slope_under_5_degrees",
+        "window_cells": 25,
+        "auc": 0.352469,
+        "cells_inside_the_layer": 37246,
+        "cells_outside_the_layer": 118141,
+        "cells_left_out_for_no_value": 0,
+        "median_inside_the_layer": -0.4668,
+        "median_outside_the_layer": -0.2256,
+        "auc_of_brightening": 0.647531
+      },
+      {
+        "geocoding": "annotation_grid_with_cell_height",
+        "permanent_water": "jrc_surface_water",
+        "cells": "all_cells",
+        "window_cells": 1,
+        "auc": 0.444724,
+        "cells_inside_the_layer": 38233,
+        "cells_outside_the_layer": 173731,
+        "cells_left_out_for_no_value": 0,
+        "median_inside_the_layer": -0.6222,
+        "median_outside_the_layer": -0.1487,
+        "auc_of_brightening": 0.555276
+      },
+      {
+        "geocoding": "annotation_grid_with_cell_height",
+        "permanent_water": "jrc_surface_water",
+        "cells": "slope_under_5_degrees",
+        "window_cells": 1,
+        "auc": 0.450529,
+        "cells_inside_the_layer": 37246,
+        "cells_outside_the_layer": 118141,
+        "cells_left_out_for_no_value": 0,
+        "median_inside_the_layer": -0.6343,
+        "median_outside_the_layer": -0.2099,
+        "auc_of_brightening": 0.549471
+      },
+      {
+        "geocoding": "annotation_grid_with_cell_height",
+        "permanent_water": "jrc_surface_water",
+        "cells": "all_cells",
+        "window_cells": 3,
+        "auc": 0.405082,
+        "cells_inside_the_layer": 38233,
+        "cells_outside_the_layer": 173731,
+        "cells_left_out_for_no_value": 0,
+        "median_inside_the_layer": -0.6361,
+        "median_outside_the_layer": -0.146,
+        "auc_of_brightening": 0.594918
+      },
+      {
+        "geocoding": "annotation_grid_with_cell_height",
+        "permanent_water": "jrc_surface_water",
+        "cells": "slope_under_5_degrees",
+        "window_cells": 3,
+        "auc": 0.412489,
+        "cells_inside_the_layer": 37246,
+        "cells_outside_the_layer": 118141,
+        "cells_left_out_for_no_value": 0,
+        "median_inside_the_layer": -0.6527,
+        "median_outside_the_layer": -0.1965,
+        "auc_of_brightening": 0.587511
+      },
+      {
+        "geocoding": "annotation_grid_with_cell_height",
+        "permanent_water": "jrc_surface_water",
+        "cells": "all_cells",
+        "window_cells": 5,
+        "auc": 0.377043,
+        "cells_inside_the_layer": 38233,
+        "cells_outside_the_layer": 173731,
+        "cells_left_out_for_no_value": 0,
+        "median_inside_the_layer": -0.6215,
+        "median_outside_the_layer": -0.1432,
+        "auc_of_brightening": 0.622957
+      },
+      {
+        "geocoding": "annotation_grid_with_cell_height",
+        "permanent_water": "jrc_surface_water",
+        "cells": "slope_under_5_degrees",
+        "window_cells": 5,
+        "auc": 0.385713,
+        "cells_inside_the_layer": 37246,
+        "cells_outside_the_layer": 118141,
+        "cells_left_out_for_no_value": 0,
+        "median_inside_the_layer": -0.6389,
+        "median_outside_the_layer": -0.1902,
+        "auc_of_brightening": 0.614287
+      },
+      {
+        "geocoding": "annotation_grid_with_cell_height",
+        "permanent_water": "jrc_surface_water",
+        "cells": "all_cells",
+        "window_cells": 9,
+        "auc": 0.337572,
+        "cells_inside_the_layer": 38233,
+        "cells_outside_the_layer": 173731,
+        "cells_left_out_for_no_value": 0,
+        "median_inside_the_layer": -0.6065,
+        "median_outside_the_layer": -0.1438,
+        "auc_of_brightening": 0.662428
+      },
+      {
+        "geocoding": "annotation_grid_with_cell_height",
+        "permanent_water": "jrc_surface_water",
+        "cells": "slope_under_5_degrees",
+        "window_cells": 9,
+        "auc": 0.349529,
+        "cells_inside_the_layer": 37246,
+        "cells_outside_the_layer": 118141,
+        "cells_left_out_for_no_value": 0,
+        "median_inside_the_layer": -0.6275,
+        "median_outside_the_layer": -0.1892,
+        "auc_of_brightening": 0.650471
+      },
+      {
+        "geocoding": "annotation_grid_with_cell_height",
+        "permanent_water": "jrc_surface_water",
+        "cells": "all_cells",
+        "window_cells": 15,
+        "auc": 0.299601,
+        "cells_inside_the_layer": 38233,
+        "cells_outside_the_layer": 173731,
+        "cells_left_out_for_no_value": 0,
+        "median_inside_the_layer": -0.5972,
+        "median_outside_the_layer": -0.1378,
+        "auc_of_brightening": 0.700399
+      },
+      {
+        "geocoding": "annotation_grid_with_cell_height",
+        "permanent_water": "jrc_surface_water",
+        "cells": "slope_under_5_degrees",
+        "window_cells": 15,
+        "auc": 0.317265,
+        "cells_inside_the_layer": 37246,
+        "cells_outside_the_layer": 118141,
+        "cells_left_out_for_no_value": 0,
+        "median_inside_the_layer": -0.6163,
+        "median_outside_the_layer": -0.1876,
+        "auc_of_brightening": 0.682735
+      },
+      {
+        "geocoding": "annotation_grid_with_cell_height",
+        "permanent_water": "jrc_surface_water",
+        "cells": "all_cells",
+        "window_cells": 25,
+        "auc": 0.254389,
+        "cells_inside_the_layer": 38233,
+        "cells_outside_the_layer": 173731,
+        "cells_left_out_for_no_value": 0,
+        "median_inside_the_layer": -0.5671,
+        "median_outside_the_layer": -0.1314,
+        "auc_of_brightening": 0.745611
+      },
+      {
+        "geocoding": "annotation_grid_with_cell_height",
+        "permanent_water": "jrc_surface_water",
+        "cells": "slope_under_5_degrees",
+        "window_cells": 25,
+        "auc": 0.281764,
+        "cells_inside_the_layer": 37246,
+        "cells_outside_the_layer": 118141,
+        "cells_left_out_for_no_value": 0,
+        "median_inside_the_layer": -0.58,
+        "median_outside_the_layer": -0.1931,
+        "auc_of_brightening": 0.718236
+      }
+    ],
+    "readings_by_smoothing_window_note": "JRC surface water left out. A window of 1 cell is no smoothing; a window of 25 cells is a mean over 500 m. The rows of the 5 by 5 window repeat the readings above.",
+    "windows_cells": [
+      1,
+      3,
+      5,
+      9,
+      15,
+      25
+    ],
+    "the_value_falls_at_every_step_as_the_window_grows": {
+      "gcp_polynomial": {
+        "all_cells": true,
+        "slope_under_5_degrees": true
+      },
+      "annotation_grid_with_cell_height": {
+        "all_cells": true,
+        "slope_under_5_degrees": true
+      }
+    },
+    "reading_that_follows_the_exploratory_definition": {
+      "geocoding": "gcp_polynomial",
+      "permanent_water": "jrc_surface_water",
+      "cells": "all_cells",
+      "window_cells": 5,
+      "auc": 0.421149
+    },
+    "smallest_and_largest_auc_over_the_readings": [
+      0.254389,
+      0.477731
+    ],
+    "every_reading_is_below_one_half": true,
+    "reading_below_one_half": "A value below one half means that the cells inside the envelope tended to darken less than the cells outside it. auc_of_brightening is one minus the value; it adds no measurement. It is the feature the exploratory script called brightening.",
+    "geocodings": {
+      "gcp_polynomial": "the run of record of tasks A2 and A4: the plan's fallback, a control-point polynomial warp. The A2/A4 result measured that it displaces the radar content by about 680 m.",
+      "annotation_grid_with_cell_height": "the sensitivity run of tasks A2 and A4: a DEM height for every cell. It is not in the plan and replaces nothing."
+    },
+    "no_interval_is_given": "Neighbouring cells are not independent, so an interval computed from the cell count would be far too narrow. None is given."
+  },
+  "plan_figure": {
+    "stated_in_the_plan": "darkening-dVH AUC vs the 4009 envelope 0.421",
+    "plan_value": 0.421,
+    "measured": 0.421149,
+    "reproduced": true,
+    "note": "The plan gives the figure and no definition. The measured value is the reading that follows the exploratory script as far as cleared files allow (control-point warp, JRC water left out, all cells, 5 by 5 window). It differs from that script in two stated ways: calibrated sigma0 instead of uncalibrated amplitudes, and the Thai side from the COD-AB boundaries instead of the product's analysis extent. The script printed the rank statistic of seven features on one line; only this one was carried into the plan (open point A1-OP2)."
+  },
+  "does_not_show": [
+    "How correct any radar method is: the envelope is not a reference, it is a comparison layer for a whole season.",
+    "That the radar saw no water: a value near one half says that darkening alone does not tell the envelope from the rest.",
+    "A property of the pass that holds for every window: the value moves with the smoothing window, which no signed file names.",
+    "A flood candidate: no threshold is applied, and the candidates of tasks A2 and A4 are not read."
+  ],
+  "limits": [
+    "The envelope holds water of August and of early October as well, and the pass is one morning, several days after the keyframe the replay sets for the modelled peak. A cell can be inside the envelope and dry at the pass, or wet at the pass and outside it.",
+    "The value depends on the smoothing window (readings_by_smoothing_window). No window is the window of record, so no single value describes the pass.",
+    "On all cells the comparison mixes hill and plain; the readings on the cells with a slope under 5 degrees leave the hills out. Neither set of cells is the domain of record.",
+    "Under the geocoding of the run of record the radar content lies about 680 m from where it belongs, and the two dates lie about 9 m apart (open point A4-OP1). That reading compares displaced radar cells with the envelope.",
+    "Darkening is one feature. Water under buildings or trees, and water standing on fields that were already wet on 3 September, does not darken the image.",
+    "No interval is given: the cells are not independent.",
+    "The envelope is not a reference and the figure is not a validation."
+  ],
+  "licence": {
+    "applies_to": "every figure of this file that is measured against UNOSAT/GISTDA product 4009",
+    "name": "CC BY-SA 4.0",
+    "url": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "credit": "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009",
+    "share_alike": "Every layer or table derived from product 4009 is shared under CC BY-SA 4.0, in its own file, with the attribution and a change notice. Keeping product 4009 derivatives in their own files is a caution, not legal advice.",
+    "change_notice": "Changed by FloodGuard: clipped to AOI-01 (resources/aoi/aoi-01_mae_sai_core.geojson); geometry repaired (make_valid; 2 parts repaired); reprojected from EPSG:4326 to EPSG:32647; rasterised to 20 m cells by cell centre; the radar darkening was then ranked against the cells of the layer. Source: UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009, CC BY-SA 4.0.",
+    "standard_sentence": "unvalidated preliminary agency extent (UNOSAT product 4009 with GISTDA; Field_Validation=0), used as provided under CC BY-SA 4.0. FloodGuard did not validate it.",
+    "used_as": "a 2024 season envelope (lane SCN-ENV): a comparison layer, never an event map and never a reference",
+    "rights_record": {
+      "path": "docs/proposal_execution/rights_basis_4009_v1.json",
+      "sha256": "531ab40beb2b3e80a02d6de0d4d7d791b299176af0b192bfe105ca23c7e50cb3"
+    },
+    "not_legal_advice": true
+  },
+  "attributions": [
+    "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009, CC BY-SA 4.0",
+    "Contains modified Copernicus Sentinel data 2024",
+    "Copernicus DEM GLO-30: (c) DLR e.V. 2010-2014 and (c) Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved",
+    "JRC Global Surface Water (EC JRC/Google)",
+    "ESA WorldCover 2021 v200 (CC BY 4.0)",
+    "HDX Thailand COD-AB boundaries"
+  ],
+  "open_points": [
+    {
+      "id": "A1-OP2",
+      "point": "The definition behind the plan's figure 0.421 (darkening of VH against the season envelope).",
+      "signed_files_say": "Plan row A1 and disclosure item EK-07 of protocol v1a give the figure and no definition. The exploratory script that produced it was never committed.",
+      "what_was_done": "The definition of the exploratory script was rebuilt from cleared files: 20 m cells, a 5 by 5 mean, VH before minus VH after in dB, the cells of AOI-01 on the Thai side outside JRC surface water. Two things differ and are stated: the radar values are calibrated sigma0 (the exploratory run used uncalibrated amplitudes), and the Thai side is taken from the COD-AB boundaries (the exploratory run used the product's analysis extent, which is held at the local level and is not read here). The 5 by 5 mean is the window of that script; neither the plan nor a protocol names a window, so the figure is also given for windows of 1, 3, 9, 15 and 25 cells, and no window is named the window of record. The script ranked seven features against the same layer on one printed line: the darkening of VH, the same change read as brightening, the absolute change of VH and of VV, the negated VH after the event, the negated height and the negated slope. Only 0.421 was carried into the plan. The reading 'auc_of_brightening' here is the second of those features; the absolute changes and the VH after the event are not computed here, because the plan does not list them."
+    },
+    {
+      "id": "A1-OP3",
+      "point": "Which geocoding of the radar layers a figure against a mapped layer uses.",
+      "signed_files_say": "Plan row A4 gives the fallback geocoding of the run of record. The A2/A4 result measured that it displaces the radar content by about 680 m and leaves the two dates about 9 m apart (open point A4-OP1). The owners have not decided which layers case O1 uses.",
+      "what_was_done": "The figure is given under both geocodings: the run of record and the sensitivity run. Neither is named the figure of record."
+    },
+    {
+      "id": "A1-OP4",
+      "point": "Which permanent water a diagnosis leaves out.",
+      "signed_files_say": "Protocol v1a names ESA WorldCover 2021 class 80 for the flood-likelihood component, in every case. It says nothing of a diagnosis. The exploratory run used JRC Global Surface Water (seasonality of 10 months or more, or occurrence of 80 percent or more).",
+      "what_was_done": "Every figure is given three ways: JRC water left out, WorldCover class 80 left out, and nothing left out."
+    },
+    {
+      "id": "A1-OP5",
+      "point": "The rights record of the Sentinel-1 data behind a committed figure.",
+      "signed_files_say": "No signed rights record covers Sentinel-1 data (open point E1-OP2), and the acquisition manifest of July marks both SAFE files 'do not run baseline yet' (open point A4-OP5). Plan row A1 lists figures made from them as team-owned or cleared.",
+      "what_was_done": "The stored sigma0 rasters of tasks A2 and A4 were read, and statistics for the whole area are committed with the Copernicus attribution, as the A2/A4 tables are. No radar layer is written."
+    },
+    {
+      "id": "A1-OP6",
+      "point": "Whether the product 4009 rights record covers a diagnosis comparison.",
+      "signed_files_say": "The record lists its uses (use_in_this_track): the comparison with the replay model is the only comparison it names, and its limitations say it does not cover use as machine-learning labels or as a qualified reference. Plan row A1 allows these figures 'after the 4009 signature'.",
+      "what_was_done": "The accumulated layer is used as a comparison layer only: no model was fitted to it and nothing is called a reference. Every figure carries the licence, the credit, a change notice and the label 'vs a season envelope, not an event map'."
+    },
+    {
+      "id": "A1-OP10",
+      "point": "On which cells a rank statistic against the season envelope is taken.",
+      "signed_files_say": "Plan row A1 names no domain. Plan row A2 removes slopes of 5 degrees or more from the UN-SPIDER practice, the A2/A4 result reports its areas by that slope class, and the exploratory script looked at the cells under 5 degrees as well. Protocol v1a announces a HAND and slope mask for M1-v2 and gives no limit (open point A4-OP2).",
+      "what_was_done": "Each rank statistic is given on two sets of cells: every cell of AOI-01 on the Thai side, and the cells of that set whose GLO-30 slope is under 5 degrees. On the first set a terrain feature mostly tells hill from plain. Neither set is named the domain of record."
+    }
+  ],
+  "not_computed": [
+    "a flood candidate or any threshold",
+    "any comparison of the candidates of tasks A2 and A4 with product 4009",
+    "the absolute change of VH or of VV and the VH after the event (features of the exploratory script that plan row A1 does not list)",
+    "the analysis extent of the product (rights level local; not read)",
+    "an interval for the statistic",
+    "FPPS",
+    "A-E class",
+    "any value for a single tambon"
+  ]
+}

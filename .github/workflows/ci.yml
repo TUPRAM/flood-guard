@@ -26,8 +26,10 @@ jobs:
           enable-cache: true
       - name: Install Python 3.12
         run: uv python install 3.12
+      # The diagnostics extra belongs to the diagnosis scripts of plan task A1 (scripts/diagnostics/). The plan
+      # keeps it out of the default sync; the scripts read files outside Git and are not run here.
       - name: Sync root environment without GeoAI
-        run: uv sync --locked --all-extras
+        run: uv sync --locked --all-extras --no-extra diagnostics
       - name: Run root tests
         run: uv run pytest --junitxml=.tmp/proposal-evidence/root.xml
       - name: Verify committed public evidence packages

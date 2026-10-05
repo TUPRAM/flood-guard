@@ -5,9 +5,10 @@ Scans the text the bake and the documents put in front of a reader with the rule
 next manifest) and of the export and shelter-check modules, the reported-shelter source file, the replay documents,
 the product 4009 rights record and its notice, the header of every committed export file, the demo documents (the
 replay beat of the walkthrough and the story, the figures to quote, the video notes and the offline checklist), the
-plan of the Command exercise replay (``docs/command_exercise_plan.md``) and the file of invented exercise items the
-Command page serves (``apps/web/public/exercises/mae-sai-2024/injects.v1.json``). It must pass on the current text and
-fail on one seeded bad string per rule.
+plan of the Command exercise replay (``docs/command_exercise_plan.md``) with its handoff and its layout as built
+(``docs/command_exercise_handoff.md``, ``docs/command_exercise_layout.md``), and the file of invented exercise items
+the Command page serves (``apps/web/public/exercises/mae-sai-2024/injects.v1.json``). It must pass on the current text
+and fail on one seeded bad string per rule.
 The web twin is ``apps/web/src/lib/replay-wording-lint.test.tsx``.
 """
 
@@ -48,7 +49,10 @@ JSON_DOCUMENTS = ("outputs/mae_sai_reported_shelters_2024.json", "outputs/mae_sa
                   "apps/web/public/exercises/mae-sai-2024/injects.v1.json")
 TEXT_DOCUMENTS = ("docs/decision-log-d1-d16.md", "docs/proposal_execution/rights_basis_4009_v1_NOTICE.txt",
                   # The plan of the Command exercise replay: its banner, its labels and its Thai drafts are replay text.
-                  "docs/command_exercise_plan.md")
+                  "docs/command_exercise_plan.md",
+                  # The handoff of that page and its layout as built: they quote the banner and describe what the page says.
+                  # Both are read by the same loop as the plan, which the seeded test below plants its bad strings in.
+                  "docs/command_exercise_handoff.md", "docs/command_exercise_layout.md")
 STUDY_LIBRARY = "docs/studio-study-library.md"
 # The demo documents of the replay (roadmap P4-1). The walkthrough and the story are read by section: their other sections
 # describe the fixture dashboard, and the walkthrough's "words to avoid" table lists banned phrases on purpose

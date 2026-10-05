@@ -2,6 +2,8 @@
 
 For the next chat and for the owner. This is what the page looks like today on branch `claude/command-exercise`, at the temporary route `/command/exercise/`. It is not the plan: every size below was measured in headless Chromium on the built site (competition build, replay hour 84, trainee mode, street tiles loaded), on 5 Oct 2026. Where a number comes from a style sheet and not from a measurement, the text says so.
 
+A review on the same day led to corrections in sections 1, 6, 9, 13 and 14. The numbers added then were measured the same way; for the app-status pill the browser was also run with its service worker allowed.
+
 Read with:
 
 - `docs/command_exercise_handoff.md`: what is built, what is not, and the open questions;
@@ -33,7 +35,7 @@ The page is one full-screen map with opaque white panels floating over it. The c
 | A | 0, 0 · 1440 x 36 | 0, 0 · 1440 x 36 | 0, 0 · 1024 x 36 |
 | B1 | 12, 48 · 420 x 193 (TH 200) | 12, 48 · 420 x 214 (TH 223) | 12, 48 · 320 x 138 (TH 139) |
 | B2 | 12, 241 · 420 x 451 (TH from 248, 444 tall); ends at 692 | 12, 262 · 420 x 530 (TH from 271, 521 tall); ends at 792 | 12, 186 · 320 x 430; ends at 616 |
-| B2 rows | 8 in view, 46.5 px each (TH 45.1) | 8 in view, 47.1 px each (TH 45.0); the three controls are open above them | 8 in view, 44 px each, two lines per row |
+| B2 rows | 8 in view, 46.5 px each (TH 45.1), with the three controls behind their button. With the controls opened (they take 71 px, TH 74) the rows shrink to 37.8 px (TH 35.9): still 8 in view, no scroll (weak spot 19) | 8 in view, 47.1 px each (TH 45.0); the three controls are open above them | 8 in view, 44 px each, two lines per row. With the controls opened (141 px, TH 148) the rows stay 44 px and the table scrolls inside its card |
 | C | 906, 48 · 522 x 44 (TH 953, 475 wide); ends at 1428 | the same | none: one menu button, 968, 48 · 44 x 44 |
 | D (chip) | 1205, 100 · 171 x 36 (TH 201 wide); ends at 1376 | the same | none: its content is the tabs "Subdistricts, Detail, Known (35)" in B2 |
 | D (open) | 1036, 100 · 340 x 548; ends at 648 | 1036, 100 · 340 x 600; ends at 700 | none |
@@ -61,10 +63,12 @@ How much of the window the banner and the panels cover (measured on a 4 px grid,
 | Find-place box | 1076, 100 · 300 x 162 when empty | The same place; it also lies over the chip. |
 | Tablet menu | 740, 48 · 220 x 446 at 1024 x 700 | Opens left of the menu button and the rail. |
 | Map popup | An item popup measured 321 x 291; 12 px corners; 44 x 44 close control | An item popup has six lines and two buttons of 140 x 44. The body of any popup is at most 300 px tall; a long place-record popup scrolls inside and fades at its lower edge. |
-| Information drawer | 460 px wide, full height, at the right edge | A native dialog over a dimmed page. |
-| Help sheet | 440 px wide, from y 12 to 12 px above the bottom | |
-| Setup sheet | 560 px wide, from y 12 to 12 px above the bottom; it scrolls inside | |
-| Log sheet, brief sheet | 560 px wide, centred; 406 px and about 490 to 670 px tall | These two stay clear of the banner. |
+| Information drawer | 460 px wide, full height, at the right edge (from x 980; from x 564 at 1024 x 700) | A native dialog over a dimmed page. It lies over the right end of the banner. At 1440 wide that is clear of the banner's words; at 1024 wide it covers the end of the line (weak spot 4). |
+| Help sheet | 440 px wide (x 500 to 940; x 292 to 732 at 1024 x 700), from y 12 to 12 px above the bottom | It lies over the lower 24 px of the banner (weak spot 4). |
+| Setup sheet | 560 px wide (x 440 to 1000; x 232 to 792 at 1024 x 700), from y 12 to 12 px above the bottom; it scrolls inside | It lies over the lower 24 px of the banner (weak spot 4). |
+| Log sheet | 560 px wide, centred; 406 px tall (TH 395) in a fresh browser, before any action | Clear of the banner at both sizes. |
+| Situation brief | 560 x 492 px (TH 493), centred | Clear of the banner at both sizes (from y 154; from y 104 at 1024 x 700). |
+| Brief of an item | 560 px wide, centred; 664 px tall (TH 668) for the item of reference image 5 | At 1440 x 800 it runs from y 68 to y 732 and is clear of the banner. At 1024 x 700 it runs from y 18 (TH 16) to y 682 and lies over the lower half of the banner from x 232 to x 792 (weak spot 4). |
 
 ## 2. Focus mode
 
@@ -169,11 +173,11 @@ Every meaning has at least two cues, so colour is never the only one. Every mark
 |---|---|---|---|---|---|
 | Place record(s) at a point (2024 news) | Speech bubble with a count | about 26 x 26 px | White, ink count | Ink 1.6 px over a white casing | A small dashed round badge at its top right where the model is dry at the point |
 | Exercise call for help | Octagon | 36, 30 or 26 px by urgency | By urgency (below) | By handling state (below) | Under it: the amber "EX" tag, then the callsign once assigned, then the hours waited |
-| Exercise report (depth or road) | Rounded square | the same | the same | the same | the same |
+| Exercise report (depth or road) | Rounded square | 32, 26 or 22 px by urgency: 4 px smaller than the octagon of the same urgency (an information report measured 22 x 22 px) | the same | the same | the same |
 | Reports saved on this device | A text sign above the subdistrict's name | 18 px tall | White | Dashed ink; solid when selected | The count in words |
 | Count mark (below zoom 13) | Two pills, one above the other | 20 px tall each | White pill: place records. Dark pill: exercise items. | Ink | The dark pill starts with the amber "EX" tag and ends with "!!" and a count on vermillion when it holds a life-at-risk item. The two counts are never added. |
 | Shelter reported in 2024 | Star | 22 px; 14 px below zoom 12.5 | Teal `#17616e` | White 2 px ring | Not yet reported at this hour (trainee mode): dashed teal outline on white. In modelled water: hollow and struck through in dark ink (no case in the data today). |
-| Command centre | Diamond | 20 px | Ink `#12262d` | White ring | Not drawn before its day in trainee mode |
+| Command centre | Diamond | 20 px; 13 px below zoom 12.5, where it stands alone and not inside a count badge | Ink `#12262d` | White ring | Not drawn before its day in trainee mode |
 | Shelter count badge | Pill with a star (and the diamond when it holds the command centre) | 22 px tall | Teal, white text | White 2 px | Dashed when none of its sites is reported yet |
 | Key facility (off by default) | Circle | radius 4.5 px; 5.5 px when wet | White; blue `#2f86c4` when in modelled water | Ink; white when wet | None |
 | "No reports received" | A struck-through speech bubble under the name; the words from zoom 12.5 | 18 px glyph; 17 px text chip | Grey | Dotted | None |
@@ -189,6 +193,8 @@ Urgency of an exercise item (symbol, size and colour together):
 | Urgent | `!` dark | 30 px | Orange `#E69F00` | |
 | Information | `i` white | 26 px | Blue `#0072B2` | No waiting clock on the map |
 
+The sizes are those of the octagon. The rounded square of a report is drawn 4 px smaller: 32, 26 or 22 px.
+
 Handling state of an exercise item:
 
 | State | Outline | Line under the marker |
@@ -196,7 +202,7 @@ Handling state of an exercise item:
 | New | Dashed ink | "EX", and the hours waited for urgent and life-at-risk items |
 | Acknowledged | Solid ink | the same |
 | Assigned | Solid ink | "EX", the callsign, the hours waited |
-| Done or dropped | None; the marker is grey `#c3cacb` with a tick | "EX" on grey |
+| Done or dropped | No ink outline, only a thin grey line (1.4 px, `#6b787b`) around the shape; the marker is grey `#c3cacb` with a tick | "EX" on grey |
 
 A marker that would cover a place-record bubble, a shelter sign or another item stands beside its point, with a thin line and a dot back to the point. The most urgent items are placed first and keep their own point.
 
@@ -285,7 +291,19 @@ All from the tokens in the same style sheet.
 
 ## 9. Breakpoints
 
-Defined in `apps/web/src/components/mae-sai-command-exercise.module.css` and mirrored by two media queries in `mae-sai-command-exercise.tsx`. Each was checked one pixel either side.
+The widths are not defined in one place. Seven style sheets in `apps/web/src/components/` repeat them as plain numbers, and two media queries in `mae-sai-command-exercise.tsx` mirror them (`TABLET_QUERY`, `COMPACT_QUERY`). A change of 1180 or 899 has to be made in every one of them:
+
+| Style sheet | Media queries it holds |
+|---|---|
+| `mae-sai-command-exercise.module.css` | 1180 px (twice), 899 px, 560 px, the desktop height rule (1181 px and up, 840 px or less), reduced motion |
+| `mae-sai-command-queue.module.css` | 1180 px, the desktop height rule, coarse pointer (the only one), reduced motion |
+| `mae-sai-command-act.module.css` | 1180 px, 899 px, 520 px (the only one), reduced motion |
+| `mae-sai-command-inspector.module.css` | 1180 px, reduced motion (twice) |
+| `mae-sai-command-feed.module.css` | 1180 px |
+| `mae-sai-command-find.module.css` | 899 px |
+| `mae-sai-command-markers.module.css` | 899 px |
+
+The conditions of the table below were each checked one pixel either side, except the 520 px row, which was read from the style sheet and not tried in a browser.
 
 | Condition | What changes |
 |---|---|
@@ -294,6 +312,7 @@ Defined in `apps/web/src/components/mae-sai-command-exercise.module.css` and mir
 | Width 1180 px or less (tablet) | Left column 320 px. No navigation pill: one menu button. No right card: its content becomes the tabs Subdistricts, Detail, Known in B2. Six tools (no basemap tool; it moves into the menu). Dock 64 px: no rain row, no trainee switch, one speed button that cycles, short phase names. The clock card drops its label, the fourth figure and the "since" line; open items stand beside the model tag. Rows are two lines and 44 px. Inset 12 px. The notice is centred in the window. |
 | Width 899 px or less | See below. |
 | Width 560 px or less | Phase names are hidden in the band. |
+| Width 520 px or less | In the setup sheet the rows of the roster change: the select of a row is 104 px wide (112 to 148 px above this width), between the callsign and the 44 px remove button; in the row that adds a callsign the Add button moves to a line of its own (`mae-sai-command-act.module.css`). |
 | Coarse pointer (touch) | A table row is never under 44 px; the table scrolls inside its card if needed. |
 | Reduced motion | No transitions, no rise of panels, fits are not animated. |
 
@@ -440,11 +459,14 @@ Taken after the merge of the unified branch, at replay hour 84 in trainee mode. 
 
 10. `10-setup-sheet-en.jpg`: the facilitator's setup sheet with the five example callsigns and the staging point choices.
 
-Not among the ten: hindsight mode with the season envelope, the Reports and Exercise tabs of the legend, a map popup, the view popover, the find box, the log sheet, the help sheet, and any width under 900 px. The folders of the earlier build steps hold shots of all of them.
+Not among the ten: hindsight mode with the season envelope, the Reports and Exercise tabs of the legend, a map popup, the view popover, the find box, the log sheet, the help sheet, and any width under 900 px. The folders of the earlier build steps hold shots of all of them. Shots of the item brief on a tablet, of the wide app-status pill and of the rows with the controls open are in `handoff/review-fix/results` of the same screenshot folder (see the handoff, section 2).
 
 ## 13. Layout rules to keep
 
-The design bar the owner set:
+The design bar. Where each rule comes from:
+
+- Rule 1: the full-screen map and the HUD panels are the owner's decision (R17, part 1). The look of the GISTDA disaster platform is written in the plan (section 3, "copied from the GISTDA screenshot"), and the build brief names it as the owner's reference; no row of the decision log records it.
+- Rules 2 to 7 are the plan's, written by the planner (sections 3 and 8). No row R17 to R19 records them as owner decisions.
 
 1. **A clean full map with floating panels**, in the style of the GISTDA disaster platform: a pale map edge to edge, one card column on the left, a thin column of round tools on the right, a navigation pill top right, a legend chip bottom right, and nothing in the centre. The layout is copied, not the branding.
 2. **Restrained colour.** Most of the screen is neutral: white panels, ink text, grey lines, a pale map. Water is one blue in two tones. Amber is for wet roads and the exercise tag. The three urgency colours appear on exercise markers only.
@@ -452,7 +474,7 @@ The design bar the owner set:
 4. **Nothing overlaps.** Measured today: no two panels overlap at 1440 x 800, 1440 x 900 or 1024 x 700, in English or Thai, at rest, with a subdistrict selected, with the card open, with the legend open, or in focus mode. The one-panel-at-a-time rule of section 3 is what keeps this true. One exception by design: the view popover and the find box open over the "Known by now" chip (weak spot 5).
 5. **A selected thing is never under a panel.** Every fit, pan and popup uses the clear rectangle of section 4. New panels must carry `data-clear-panel`.
 6. **Thai is never clipped.** Size a component for the longer of the two strings. Thai line height is 1.5 or more. Measured today: no text is cut with an ellipsis at rest, in the town view or with a subdistrict selected, in either language, at 1440 x 800 and 1024 x 700.
-7. **44 px touch targets.** A control may look smaller, but its hit area reaches 44 px. Two places fall short today; see the weak spots.
+7. **44 px touch targets.** A control may look smaller, but its hit area reaches 44 px. Two places fall short today and a third in part (a radio in the setup sheet); see weak spot 9, which also says what was scanned.
 
 Rules that follow from the honesty rules and shape the layout too:
 
@@ -466,19 +488,19 @@ Rules that follow from the honesty rules and shape the layout too:
 
 ## 14. Known weak spots
 
-From the second visual review, the two fix reports, the measurements of this handoff and a look at the ten images. None was fixed here: this handoff changed no behaviour.
+From the second visual review, the stage reports, the two fix reports, the measurements of this handoff, a look at the ten images, and the review of the handoff itself (which added to 2, 4, 7 and 9 and brought 19). None was fixed here: this handoff changed no behaviour.
 
 | # | Weak spot | Where to see it |
 |---|---|---|
 | 1 | **Crowded markers at the town zoom.** Near the border crossing the exercise markers, their "EX" lines, the place-record bubbles and the leader lines sit close together. One pair still overlaps at 1440 x 800 and two or three at 1024 x 700 (as the second fix report states). | Images 3 and 4 |
-| 2 | **Markers at the edge of a selected subdistrict slip under a panel.** The outline itself stays inside the clear rectangle, with only about 27 px to spare on the left, so 44 px markers on the western border run under the left column. With an item selected, neighbours on the right run under the card. | Images 3 and 4 |
+| 2 | **Markers at the edge of a selected subdistrict slip under a panel.** The outline itself stays inside the clear rectangle, with only about 27 px to spare on the left, so 44 px markers on the western border run under the left column. With an item selected, neighbours on the right run under the card. The legend chip is not a clear panel either (section 4), and the stage 3 report says that on a tablet a marker at the edge can sit under it. The checks after the review did not see that: no marker that can be pressed lay under the chip at 1024 x 700 or 1440 x 800 in the district view, in the town view or with an item selected, nor on the tablet with each of the eight subdistricts selected in turn (hour 84, trainee mode). Other hours and a map moved by hand were not tried. | Images 3 and 4 |
 | 3 | **Three count marks stack at the town in the district view.** The place-record pill, the exercise pill and the shelter badge stand in one pile, and the shelter badge touches the name "แม่สาย". At phone width it covers the first letters of the name. | Images 1, 2 and 9 |
-| 4 | **Tall sheets cover part of the banner.** The setup sheet and the help sheet start 12 px from the top, so they lie over the middle of the banner. Most of "not real-time · not an official warning" is hidden while the setup sheet is open, and part of it under the help sheet. The exercise tag at the left stays visible. The brief and log sheets do not do this. | Image 10 |
+| 4 | **Tall sheets cover part of the banner.** The setup sheet and the help sheet start 12 px from the top, so they lie over the middle of the banner. Most of "not real-time · not an official warning" is hidden while the setup sheet is open, and part of it under the help sheet. The brief of an item does the same on a tablet: it is 664 px tall (TH 668) in a 700 px window, runs from y 18 (TH 16) and cuts through the words of the banner from x 232 to x 792; at 1440 x 800 it starts at y 68 and is clear. On a tablet the information drawer starts at x 564 and covers the end of the banner line: in English the words "not an official warning" run from x 497 to x 623, and the Thai line ends at x 683. The exercise tag at the left stays visible in every case. The log sheet and the situation brief stay clear at both sizes. | Image 10 (the setup sheet); the item brief on a tablet is not in the ten images |
 | 5 | **The view popover and the find box lie over the "Known by now" chip.** They hang from the same corner. Measured: the whole chip (171 x 36) is covered while either is open. | Not in the ten images |
 | 6 | **Focus mode does not re-fit the map.** The panels fold away but the district stays where the last fit put it, right of centre, with a wide empty band on the left. | Image 7 |
-| 7 | **The app-status pill lies over the time dock for the first seconds.** A pill of about 131 x 44 px ("Online") stands at the bottom right for about 3.5 seconds after the page is ready, then hides itself. On a tablet it covers day chips 18 and 19; on a phone it covers the replay time. | Not in the ten images |
+| 7 | **The app-status pill lies over the time dock for the first seconds.** It stands at the bottom right for about 3.5 to 4 seconds after the page is ready, then hides itself. It has two states. With the service worker blocked, as in the measuring scripts, it reads "Online" and is about 131 x 44 px (TH 138): on a tablet it covers day chips 18 and 19, on a phone the replay time. With the service worker running, as for a visitor, it reads "Online · app pages saved offline" and has a 44 px close button beside it: 274 x 44 px together, from x 732 to x 1006 at 1024 x 700. There it covers the lower part of day chips 16 to 19 and half of chip 15, the phase name "Mostly receded" and most of the label "not yet known at this hour". At 1440 x 800 the wide form stands at x 1148 to 1422 over the right end of the track and covers no day chip. The wide form was measured in English only. | Not in the ten images |
 | 8 | **The count chips on the time track differ by width and language.** Marks merge by their distance on screen, so the track reads 10 and 10 in English, 9 and 11 in Thai, and other numbers on a tablet. The totals agree, but it can read as a data mismatch. | Images 1, 2 and 9 |
-| 9 | **Two targets under 44 px.** The place-record chip on the clock card is 190 x 19 px (TH 205 x 21): its larger hit area is cut off by the chip's own `overflow: hidden`. In "Known by now" a source link answers on about 27 px of height and a place link on about 33 px. | Images 1 and 6 |
+| 9 | **Targets under 44 px: two, and a third in part.** (a) The place-record chip on the clock card is 190 x 19 px (TH 205 x 21): its larger hit area is cut off by the chip's own `overflow: hidden`. (b) In "Known by now" a source link answers on about 27 px of height and a place link on about 33 px. (c) In the setup sheet the radio of "A point on the map" answers on its own 18 x 18 px only. Its label is 329 x 20 px (TH 353 x 21; 337 and 361 px wide on a tablet) and answers on a band 45 px tall through an invisible extension, and the button "Pick on the map" in the same row is 44 px tall; so the choice has a 44 px target, but the round radio has not. The two site radios above it sit in labels 46 px tall (TH 48). What was scanned: the page at rest, the town view, an item popup, the item inspector, "Known by now" and the open legend for the first measurements; after the review also the six sheets and dialogs, the view popover, the find box, the two menus and the two trays of the action bar, at 1440 x 800 and 1024 x 700 in both languages. Not scanned: the popups of place records and of shelters, and widths under 900 px. | Images 1, 6 and 10 |
 | 10 | **A column of dashes.** Until a class is issued, the plan group is 104 px of dashes in every row. | Images 1 and 2 |
 | 11 | **A busy clock card.** Tags, a chip, an "EX" tag, a round icon button and a model-limit line share 193 px. | Image 1 |
 | 12 | **The legend has no room to grow.** The Reports tab is 540 px (TH 542) of the 544 px it may take at 1440 x 800. One more row and it scrolls. | Not in the ten images |
@@ -488,3 +510,4 @@ From the second visual review, the two fix reports, the measurements of this han
 | 16 | **No motion polish.** No cross-fade of the water or the figures, no cue on a row that changes place, no time readout on the playhead. | |
 | 17 | **Two "404" lines in the browser console on every load**, for the two overlay files that do not exist yet. | Browser console |
 | 18 | **An unused map pane** (`fg-highlight`) is created and holds nothing. | Code |
+| 19 | **Rows shrink when the three controls are opened on a short desktop.** At 1440 x 800 the controls start behind their button. Opened, they take 71 px (TH 74) and the eight rows shrink from 46.5 to 37.8 px (TH from 45.1 to 35.9), with no scroll. That is under 44 px for a mouse; the style sheet lets a row go down to 33 px. On a tablet a row keeps 44 px and the table scrolls (measured). The style sheet gives a touch screen of any width the same 44 px (read, not measured). | Not in the ten images |

@@ -1166,7 +1166,7 @@ export function commandPlanScoreLabel(planningCase: string, language: Language):
 /**
  * Three things a combined team (planners before the season, coordinators at the start of an event) could check for
  * a class. A draft written by the project team: no practitioner and no agency has reviewed it, and the card says so.
- * The items name checks and agreements. None names a site to open, a road to take or a time to leave.
+ * The items name checks and agreements for a team. None is an instruction to residents.
  */
 export const COMMAND_CLASS_CHECKLIST: Readonly<Record<"A" | "B" | "C" | "D" | "E", readonly [Localized, Localized, Localized]>> = {
   A: [

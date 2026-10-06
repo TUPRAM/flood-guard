@@ -1,6 +1,6 @@
 {
   "schema_version": "floodguard.uncertainty_ensemble_run_receipt.v2",
-  "generated_at_utc": "2026-10-04T22:59:13Z",
+  "generated_at_utc": "2026-10-06T12:57:54Z",
   "run_kind": "superseding_run",
   "plan_task": "E10: uncertainty_ensemble.py + LOCO + headline rule; 540 cells per lane reported",
   "status": "run_receipt",
@@ -430,16 +430,16 @@
     "e8_run": {
       "receipt": {
         "path": "outputs/planning_v1/e8_planning_assessment_se1_mae_sai.json",
-        "sha256": "d8d8a569cf7a4a2fcbd747cb71e3d4e0cff89a6c91be75c3e30dcf288ce3eed5",
+        "sha256": "e58f22ec9ed4fcbb7b92c53898880d6fea3b62f945e7748d4b8c0753bc49b912",
         "registered_in": "outputs/planning_v1/run_register/e8_planning_assessment_se1_mae_sai.json"
       },
-      "rows_sha256": "2c4437b93ee1fab17c52073bc818da667e99ddf6ddaa2106dcd647e3cc271c4a",
+      "rows_sha256": "362d1563eb21bdf0229c6d1dc522e425ad06f64fd7d613614987f6951a519dbc",
       "rows_file": {
-        "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e8_planning_assessment/overlay_not_written.json",
-        "sha256": "8b46b09cf37e4c5fdaf725ac8d357048e54cddd7a016e0a6c3eef1f15003f5ad"
+        "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e8_planning_assessment/planning_assessment_overlay_se1_mae_sai.json",
+        "sha256": "6f2371d69f70846160ce1eebbd98e692312d357e47a11b5ea011eef8c2d2808f"
       },
-      "overlay_written": false,
-      "generated_at_utc": "2026-10-04T19:35:49Z",
+      "overlay_written": true,
+      "generated_at_utc": "2026-10-06T12:55:57Z",
       "note": "The rows are read for one comparison: the default cell of this run must be these rows. Every cell is computed by this run from the inputs."
     },
     "flood_input": {
@@ -2016,7 +2016,7 @@
     "default_cell_against_the_e8_rows": {
       "result": "PASS",
       "rows": 8,
-      "rows_sha256": "2c4437b93ee1fab17c52073bc818da667e99ddf6ddaa2106dcd647e3cc271c4a",
+      "rows_sha256": "362d1563eb21bdf0229c6d1dc522e425ad06f64fd7d613614987f6951a519dbc",
       "what": "The rows of the default cell, assembled by this run from the inputs, have the SHA-256 of the rows the registered task E8 receipt records: every value of every unit, leave-one-component-out included."
     },
     "summary": {
@@ -2591,12 +2591,7 @@
   "development_reads": {
     "what": "Reads of the same inputs made while the code was written, before this run. They are listed because every run is reported.",
     "reads": [
-      "4 October 2026, 21:45:31Z to 22:20:11Z, the review: --verify of the first run of this case (the file outside Git had the same bytes, the receipt body and the outputs block were the same, no code had changed). Nothing was written.",
-      "4 October 2026, about 21:47Z to 21:50Z and 22:10Z, the review, in memory with scripts of the reviewer: the per-unit files of both cases, the task E8 files outside Git and the committed task E5 table of case SE1 were read; all 1,440 unit-cells were rescored (FPPS, class, leave-one-component-out); retention, bounds, cut-line counts and headline status were recomputed for all 16 units; the default cell and its leave-one-component-out were compared with the task E8 rows, the access gap and the road criticality were recomputed from counts (120 combinations), the exposure was compared with the task E8 measurements, and the one-at-a-time anchors and the 30-minute losses were compared: 0 differences. The reporting-frame extents of both cases at the three levels were laid over three of the eight units with the boundary file and the permanent-water layer (flood likelihood only, 18 values, 0 differences). Nothing was written.",
-      "4 October 2026, about 21:58Z, the review: ten command-line refusals (case O1 three ways, second runs of cases SE1 and O2 without --replace, --replace without --reason and the reverse, two unknown cases); all returned 2 and nothing was written.",
-      "4 October 2026, between 22:20Z and 22:35Z and again at 22:52:22Z, while the review fixes were written: the runs test read the per-unit file of this case outside Git and compared it with the receipt of the first run. No component was computed and nothing was written.",
-      "4 October 2026, 22:52:49Z to 22:53:20Z: --check-inputs for cases O2 and SE1 with the changed builder (every input was the file its receipt binds, and the input record of task E1 states the 20 m of protocol v1b). No flood layer was laid over a unit, no access run was made and no component was computed.",
-      "4 October 2026, 22:58:03Z to 22:58:49Z: the superseding run of case O2, which reads the same planning context, boundary file, age table and permanent-water layer. No flood layer of case SE1 was laid over a unit between the first run of this case, its two --verify runs and this run, other than by the review as listed above."
+      "Before this run the agent and the owners knew the result of the ensemble of 4 October 2026 for this case (decision log R18; docs/owner_decision_sheet_2026-10-05.md), and the rows of plan task E8 of 6 October 2026."
     ]
   },
   "open_points": [
@@ -2714,14 +2709,14 @@
     "The equity figures (EED and EER) that protocol v1b lists among the per-unit outputs are plan task E9."
   ],
   "implementation": {
-    "base_commit": "a96e1dde6e2e5e86c4998fcc44b27cf027150dd4",
+    "base_commit": "487d29aa64afa3568860a9b9f9c6320a0f351eed",
     "base_commit_note": "The commit the working tree was on. The files below are the ones this run loaded, identified by their own SHA-256, committed or not.",
     "builder_sha256": "0919d8ba0bf7d4dee99913c75c6a6a05bfd81429b9609c55f70a10c6a2d47430",
-    "e8_builder_sha256": "fb7e11a444ee761aa2982581fc96a5e5b68b8a58b6c4e0e24f99c7c3955243d9",
+    "e8_builder_sha256": "5e36ccf986497540f8d221b85a0a55d0c65188579dca63ab5ac7cd9c8753161a",
     "e5_builder_sha256": "61b93fbfe48f36fc5ba46475828d3d7abeb5188813b7c923d01d7467d98e89f8",
-    "uncertainty_ensemble_module_sha256": "19d709c3d055b9926d82ebf1627b455bac9dc0931e0451e39910b0b9d7c49ed8",
-    "planning_assessment_module_sha256": "db226c3be13905fc164ddadd8024057f34f3f83cdf999db6fcc0391c094343bd",
-    "planning_overlay_module_sha256": "a507441b6d8991297a6460a5d5578c78942f9ea6b204362f8ac7ad5814f9e742",
+    "uncertainty_ensemble_module_sha256": "a85247125245476a803e3198676574811a9e0eee3f497b0bef1efcc3fdbfc617",
+    "planning_assessment_module_sha256": "488a94ce39f6c03c10279f883c9eafb6d3aecacb225b2f89e50755864bae9204",
+    "planning_overlay_module_sha256": "f3075fa1539db1287a7fc700707e25648ba62feadc61efc75bd32824ab2f91cb",
     "normalisation_module_sha256": "731e50596822cd5798fa2298d957c17bf44b3771536f3ed8c50930c43f545cfb",
     "confidence_module_sha256": "acb762cf56e41c86b4af40a5ce8108072b87e2dd7d35e86f56487bfa59eb54f0",
     "scoring_module_sha256": "b42439ca3b4b84202f422456a1d7b075dccbdc71e8dfc20aa4ecff494389a307",
@@ -2733,40 +2728,40 @@
     "rights_basis_module_sha256": "32419611a9d71b429c25a714ebecb7152f6d8bc9f654d0ca5af00e41d38c0c23",
     "ensemble_version": "uncertainty_ensemble_v1",
     "software": {
-      "python": "3.11.8",
-      "numpy": "2.2.6",
-      "pandas": "3.0.6",
+      "python": "3.12.13",
+      "numpy": "2.5.0",
+      "pandas": "3.0.4",
       "shapely": "2.1.2"
     }
   },
   "timing_seconds": {
-    "inputs_checked": 12.8,
-    "stages_compared_unit_by_unit": 2.5,
+    "inputs_checked": 12.7,
+    "stages_compared_unit_by_unit": 3.5,
     "units_read_and_lineage": 0.0,
-    "access_runs": 1869.9,
+    "access_runs": 1958.9,
     "access": {
-      "minus_edge_intersections_vehicle": 517.3,
-      "minus_strict_runs_and_tables": 1.8,
-      "minus_central_runs_and_tables": 1.7,
-      "minus_permissive_runs_and_tables": 4.6,
-      "as_provided_edge_intersections_vehicle": 556.7,
-      "as_provided_strict_runs_and_tables": 1.9,
-      "as_provided_central_runs_and_tables": 1.9,
-      "as_provided_permissive_runs_and_tables": 5.1,
-      "plus_edge_intersections_vehicle": 769.2,
+      "minus_edge_intersections_vehicle": 625.0,
+      "minus_strict_runs_and_tables": 2.6,
+      "minus_central_runs_and_tables": 2.0,
+      "minus_permissive_runs_and_tables": 5.5,
+      "as_provided_edge_intersections_vehicle": 570.7,
+      "as_provided_strict_runs_and_tables": 1.7,
+      "as_provided_central_runs_and_tables": 1.6,
+      "as_provided_permissive_runs_and_tables": 4.4,
+      "plus_edge_intersections_vehicle": 735.8,
       "plus_strict_runs_and_tables": 1.7,
-      "plus_central_runs_and_tables": 1.7,
-      "plus_permissive_runs_and_tables": 4.6
+      "plus_central_runs_and_tables": 1.6,
+      "plus_permissive_runs_and_tables": 4.3
     },
-    "units_measured_at_three_flood_levels": 5.4,
-    "cells_scored": 16.7
+    "units_measured_at_three_flood_levels": 5.2,
+    "cells_scored": 15.1
   },
   "outputs": {
     "ensemble": {
       "files": [
         {
           "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/uncertainty_ensemble_se1_mae_sai.json",
-          "sha256": "78c8317eb026eeb2ceabc4a93285f45291795544fbc6ede97bbf137e98d0107f",
+          "sha256": "5c2d5974df030be6d037ff6dc52d956655b7ee29a85a9114303bdb33ff8d9ec2",
           "bytes": 1602849,
           "what": "uncertainty_ensemble_units",
           "in_git": false,
@@ -2785,56 +2780,46 @@
     }
   },
   "timestamps": {
-    "run_started_at_utc": "2026-10-04T22:59:13Z",
-    "run_finished_at_utc": "2026-10-04T23:31:08Z",
-    "wall_time_minutes": 31.92,
+    "run_started_at_utc": "2026-10-06T12:57:54Z",
+    "run_finished_at_utc": "2026-10-06T13:31:17Z",
+    "wall_time_minutes": 33.38,
     "note": "generated_at_utc is the start of the run; the file of per-unit results carries the same time."
   },
   "supersedes": {
-    "receipt_sha256": "cac28f7352b276c8f550faea0375e0ae19f9a82ce246875e18cc796b58191ee3",
-    "generated_at_utc": "2026-10-04T20:29:38Z",
-    "reason": "After the review of 4 October 2026: the receipt says which of its counts state the class of a single unit and lists three more open points (E10-OP10 to E10-OP12); the headline record gives the other reading of the set of the protocol and every pair of levels declared cut line 6 could keep; a share over the cells run keeps a failed cell in its denominator; the 20 m of the minus and plus levels is read from protocol v1b; the reason of a level that is not run was reworded. No rule of the scoring and no input changed.",
-    "result_same": false,
-    "summary_same": false,
-    "summary_fields_that_differ": [
-      "after_declared_cut_line_6",
-      "counts_that_state_a_value_of_a_single_unit",
-      "note",
-      "other_reading_of_the_protocol_set",
-      "retention_over_the_cells_run"
-    ],
-    "units_same": false,
-    "units_sha256_of_the_superseded_run": "4696a98769df121541cadab469b4150db88114f6f725b87a26e01f762ca6ef44",
+    "receipt_sha256": "5d432b0b71b6f90e2b65d9d322e95dec2f7b32775aad5a117b1cd5e64217089e",
+    "generated_at_utc": "2026-10-04T22:59:13Z",
+    "reason": "The run of plan task E8 this table rests on was replaced on 6 October 2026 under overlay schema 1.1 (decision log R20; sheet Q1, option 3): its rows differ from those of 4 October 2026 in the class_v2 block only, so the default cell is compared with the new rows. No input, no axis, no level and no rule of the binding class was changed; the same cells are run.",
+    "result_same": true,
+    "summary_same": true,
+    "summary_fields_that_differ": [],
+    "units_same": true,
+    "units_sha256_of_the_superseded_run": "eb13676a27c8f0c084d3fedb7e25097c7024c63bf0cbab4e28eb1d013b8838e7",
     "units_sha256_of_this_run": "eb13676a27c8f0c084d3fedb7e25097c7024c63bf0cbab4e28eb1d013b8838e7",
     "unit_cells_same": true,
     "unit_cells_sha256_of_the_superseded_run": "53ffe917764b11299ba56fb4a02a79cd7b538660cff6be255f74cea0d444c28d",
     "unit_cells_sha256_of_this_run": "53ffe917764b11299ba56fb4a02a79cd7b538660cff6be255f74cea0d444c28d",
-    "unit_record_fields_that_differ": [
-      "class_shares_over",
-      "headline_stability",
-      "share_of_the_cells_run_that_failed"
-    ],
+    "unit_record_fields_that_differ": [],
     "access_unit_rows_same": true,
     "lineage_inputs_same": true,
     "outputs_of_the_superseded_run": {
-      "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/uncertainty_ensemble_se1_mae_sai.json": "33de00b116e01de8a0fad669451b3dd839bbd412a192b026c5d885135e692fff",
+      "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/uncertainty_ensemble_se1_mae_sai.json": "78c8317eb026eeb2ceabc4a93285f45291795544fbc6ede97bbf137e98d0107f",
       "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/LICENSE_NOTICE.txt": "acaafc1b83a5fe5d72a9f50e0e0efe476517328f581c5c487fb2e0a1290de1df"
     },
     "copies_kept_outside_git": [
       {
-        "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/superseded_runs/20261004T202938Z/e10_uncertainty_ensemble_se1_mae_sai.json",
-        "sha256": "cac28f7352b276c8f550faea0375e0ae19f9a82ce246875e18cc796b58191ee3",
+        "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/superseded_runs/20261004T225913Z/e10_uncertainty_ensemble_se1_mae_sai.json",
+        "sha256": "5d432b0b71b6f90e2b65d9d322e95dec2f7b32775aad5a117b1cd5e64217089e",
         "what": "receipt",
         "copied": true
       },
       {
-        "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/superseded_runs/20261004T202938Z/uncertainty_ensemble_se1_mae_sai.json",
-        "sha256": "33de00b116e01de8a0fad669451b3dd839bbd412a192b026c5d885135e692fff",
+        "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/superseded_runs/20261004T225913Z/uncertainty_ensemble_se1_mae_sai.json",
+        "sha256": "78c8317eb026eeb2ceabc4a93285f45291795544fbc6ede97bbf137e98d0107f",
         "what": "file the receipt bound",
         "copied": true
       },
       {
-        "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/superseded_runs/20261004T202938Z/LICENSE_NOTICE.txt",
+        "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/superseded_runs/20261004T225913Z/LICENSE_NOTICE.txt",
         "sha256": "acaafc1b83a5fe5d72a9f50e0e0efe476517328f581c5c487fb2e0a1290de1df",
         "what": "file the receipt bound",
         "copied": true
@@ -2869,6 +2854,38 @@
         },
         {
           "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/superseded_runs/20261004T202938Z/LICENSE_NOTICE.txt",
+          "sha256": "acaafc1b83a5fe5d72a9f50e0e0efe476517328f581c5c487fb2e0a1290de1df",
+          "what": "file the receipt bound",
+          "copied": true
+        }
+      ]
+    },
+    {
+      "generated_at_utc": "2026-10-04T22:59:13Z",
+      "receipt_sha256": "5d432b0b71b6f90e2b65d9d322e95dec2f7b32775aad5a117b1cd5e64217089e",
+      "superseded_because": "The run of plan task E8 this table rests on was replaced on 6 October 2026 under overlay schema 1.1 (decision log R20; sheet Q1, option 3): its rows differ from those of 4 October 2026 in the class_v2 block only, so the default cell is compared with the new rows. No input, no axis, no level and no rule of the binding class was changed; the same cells are run.",
+      "result_same_as_the_run_that_replaced_it": true,
+      "unit_cells_same_as_the_run_that_replaced_it": true,
+      "units_sha256": "eb13676a27c8f0c084d3fedb7e25097c7024c63bf0cbab4e28eb1d013b8838e7",
+      "outputs_sha256": {
+        "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/uncertainty_ensemble_se1_mae_sai.json": "78c8317eb026eeb2ceabc4a93285f45291795544fbc6ede97bbf137e98d0107f",
+        "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/LICENSE_NOTICE.txt": "acaafc1b83a5fe5d72a9f50e0e0efe476517328f581c5c487fb2e0a1290de1df"
+      },
+      "copies_kept_outside_git": [
+        {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/superseded_runs/20261004T225913Z/e10_uncertainty_ensemble_se1_mae_sai.json",
+          "sha256": "5d432b0b71b6f90e2b65d9d322e95dec2f7b32775aad5a117b1cd5e64217089e",
+          "what": "receipt",
+          "copied": true
+        },
+        {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/superseded_runs/20261004T225913Z/uncertainty_ensemble_se1_mae_sai.json",
+          "sha256": "78c8317eb026eeb2ceabc4a93285f45291795544fbc6ede97bbf137e98d0107f",
+          "what": "file the receipt bound",
+          "copied": true
+        },
+        {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/superseded_runs/20261004T225913Z/LICENSE_NOTICE.txt",
           "sha256": "acaafc1b83a5fe5d72a9f50e0e0efe476517328f581c5c487fb2e0a1290de1df",
           "what": "file the receipt bound",
           "copied": true

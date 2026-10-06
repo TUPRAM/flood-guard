@@ -37,6 +37,7 @@ E8_RECEIPTS = sorted(OUTPUTS.glob("e8_planning_assessment_*.json"))
 PRODUCT_4009_CREDIT = "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009"
 RIGHTS_RECORD_4009 = "docs/proposal_execution/rights_basis_4009_v1.json"
 FIRST_SE1_RECEIPT = "098ac3b104a4c6da5b12867d378e99d398ef1741d5c36db3191ba2940262adee"
+SECOND_SE1_RECEIPT = "d8d8a569cf7a4a2fcbd747cb71e3d4e0cff89a6c91be75c3e30dcf288ce3eed5"
 """The first SE1 receipt (commit 317434d), which the receipt here supersedes."""
 SECOND_O2_RECEIPT = "2ea03b0cf950ce7378dd7a6e169c31233bc6398f64fa6742e311d7a66ac02e6f"
 """The second O2 receipt (commit 317434d), which the receipt here supersedes."""
@@ -120,7 +121,7 @@ def test_each_receipt_is_registered_names_the_protocols_and_holds_no_value_of_a_
     assert all(re.fullmatch(r"[0-9a-f]{64}", value) for value in receipt["lineage_input_sha256"].values())
     # A superseding run: the rows are those of the run it replaced, read back from the file that run wrote.
     supersedes = receipt["supersedes"]
-    assert receipt["run_kind"] == "superseding_run" and "review" in supersedes["reason"]
+    assert receipt["run_kind"] == "superseding_run" and "decision log R20" in supersedes["reason"]
     assert (supersedes["counts_same"], supersedes["rows_same"], supersedes["lineage_inputs_same"], supersedes["result_same"]) == (
         True, True, True, True)
     assert supersedes["rows_sha256_of_the_superseded_run"] == supersedes["rows_sha256_of_this_run"] == receipt["result"]["rows_sha256"]
@@ -191,7 +192,7 @@ def test_the_receipts_name_the_counts_that_cover_every_row_and_say_what_they_giv
         "headline_status_by_lane_column.SCN.not_evaluated",
         "would_be_class_by_lane_column.SCN.none",
     ]
-    assert declared["SE1"]["figures"][0]["where"] == "result.rows_as_computed.summary"
+    assert declared["SE1"]["figures"][0]["where"] == "result.summary"
     assert declared["O2"]["figures"][0]["where"] == "result.summary"
 
 
@@ -205,25 +206,21 @@ def test_the_two_cases_count_the_same_residents_as_the_access_tables() -> None:
     assert sum(row["residents"] for row in run["units"]) == pytest.approx(totals["SE1"], abs=1e-6)
 
 
-def test_the_se1_run_wrote_no_overlay_and_reports_its_rows_as_computed() -> None:
+def test_the_se1_run_wrote_its_overlay_outside_git_under_schema_1_1() -> None:
     receipt = _receipt("SE1")
     result = receipt["result"]
     assert (receipt["parameters"]["lane"], receipt["parameters"]["tier"]) == ("SCN-ENV", "T1")
-    # The second run of the case: it replaced the first receipt, which is in the Git history, and found the same rows.
-    assert receipt["supersedes"]["receipt_sha256"] == FIRST_SE1_RECEIPT and len(receipt["run_history"]) == 1
-    assert receipt["supersedes"]["generated_at_utc"] == "2026-10-04T17:51:58Z"
-    # The sentence of the first receipt that named result.summary and an overlay outside Git is gone.
-    what = receipt["rights"]["figures_of_local_level_layers_in_this_receipt"]["what"]
-    assert "the overlay itself is outside Git" not in what and "result.rows_as_computed.summary" in what
-    assert result["overlay_written"] is False and result["summary"] is None
-    refusal = result["not_written_because"]
-    assert (refusal["code"], refusal["open_point"], refusal["rows"]) == ("v2_result_not_evaluable", "E8-OP1", 4)
-    assert refusal["triggers_not_evaluated"] == ["B", "C", "D"]
-    reported = result["rows_as_computed"]
-    assert reported["schema_version"] == planning_assessment.ROWS_AS_COMPUTED_SCHEMA
-    assert reported["checked_by_the_overlay_parser"]["result"] == "PASS" and reported["checked_by_the_overlay_parser"]["rows"] == 8
-    counts = reported["summary"]
-    assert counts["row_count"] == counts["unit_count"] == 8 and counts["rows_without_a_v2_result"] == 4
+    # The runs of 4 October 2026 wrote no overlay (open point E8-OP1). Decision log R20 answered it; the two runs of
+    # 6 October 2026 wrote the overlay, and the second lists the reads made before it.
+    history = receipt["run_history"]
+    assert [item["receipt_sha256"] for item in history[:2]] == [FIRST_SE1_RECEIPT, SECOND_SE1_RECEIPT] and len(history) == 3
+    assert receipt["run_kind"] == "superseding_run" and receipt["supersedes"]["receipt_sha256"] == history[-1]["receipt_sha256"]
+    assert receipt["supersedes"]["rows_same"] is True, "the two runs of 6 October 2026 gave the same rows"
+    assert history[1]["result_same_as_the_run_that_replaced_it"] is False, "the class_v2 block changed with schema 1.1"
+    assert "decision log R20" in receipt["supersedes"]["reason"] and len(receipt["development_reads"]["reads"]) == 2
+    assert result["overlay_written"] is True and result["not_written_because"] is None and result["rows_as_computed"] is None
+    counts = result["summary"]
+    assert counts["row_count"] == counts["unit_count"] == 8
     assert counts["rows_by_lane"]["SCN-ENV"] == 8 and counts["rows_by_temporal_relation"]["season_window"] == 8
     # Scenario classes are counted in the SCN column, and in no other.
     classes = counts["binding_class_by_lane_column"]
@@ -241,9 +238,9 @@ def test_the_se1_run_wrote_no_overlay_and_reports_its_rows_as_computed() -> None
     assert counts["headline_status_by_lane_column"]["SCN"]["not_evaluated"] == 8 and counts["rows_under_gr1"] == 0
     assert counts["inputs_by_rights_level"] == {"local": 1, "pitch": 0, "public": 7, "none": 0}
     files = _bound(receipt)
-    assert [item["what"] for item in files] == ["overlay_not_written_report", "licence_notice"]
-    assert files[0]["holds_rows_as_computed"] is True and files[0]["path"].endswith("/overlay_not_written.json")
-    assert files[0]["path"].endswith("/se1_mae_sai/e8_planning_assessment/overlay_not_written.json")
+    assert [item["what"] for item in files] == ["planning_assessment_overlay", "licence_notice"] and files[0]["rows"] == 8
+    assert files[0]["path"].endswith("/se1_mae_sai/e8_planning_assessment/planning_assessment_overlay_se1_mae_sai.json")
+    assert files[0]["in_git"] is False and files[0]["publication_eligibility"] == "local"
 
 
 def test_the_o2_run_wrote_its_overlay_outside_git_and_every_row_is_class_e() -> None:
@@ -265,15 +262,16 @@ def test_the_o2_run_wrote_its_overlay_outside_git_and_every_row_is_class_e() -> 
     files = _bound(receipt)
     assert [item["what"] for item in files] == ["planning_assessment_overlay", "licence_notice"] and files[0]["rows"] == 8
     # The second run changed a Thai word in the overlay header, the third added the licence block after a review;
-    # neither changed a row.
-    assert receipt["run_kind"] == "superseding_run" and receipt["supersedes"]["result_same"] is True
-    assert receipt["supersedes"]["receipt_sha256"] == SECOND_O2_RECEIPT and len(receipt["run_history"]) == 2
-    first, second = receipt["run_history"]
+    # neither changed a row. The two runs of 6 October 2026 wrote the class_v2 block of overlay schema 1.1.
+    assert receipt["run_kind"] == "superseding_run" and receipt["supersedes"]["rows_same"] is True
+    assert len(receipt["run_history"]) == 4 and receipt["supersedes"]["receipt_sha256"] == receipt["run_history"][-1]["receipt_sha256"]
+    assert receipt["run_history"][2]["result_same_as_the_run_that_replaced_it"] is False, "the class_v2 block changed with schema 1.1"
+    first, second = receipt["run_history"][:2]
     assert "Thai title" in first["superseded_because"] and first["generated_at_utc"] == "2026-10-04T17:53:46Z"
     assert second["receipt_sha256"] == SECOND_O2_RECEIPT and second["generated_at_utc"] == "2026-10-04T17:59:18Z"
     assert first["generated_at_utc"] < second["generated_at_utc"] < receipt["generated_at_utc"]
     assert first["result_same_as_the_run_that_replaced_it"] is True and second["result_same_as_the_run_that_replaced_it"] is True
-    assert second["rows_sha256"] == result["rows_sha256"], "the rows of the second run, read back from its overlay"
+    assert receipt["run_history"][-1]["rows_sha256"] == result["rows_sha256"], "the rows of the run before, read back from its overlay"
 
 
 def test_the_readme_reports_the_runs_as_the_receipts_hold_them() -> None:
@@ -292,11 +290,12 @@ def test_the_readme_reports_the_runs_as_the_receipts_hold_them() -> None:
         for earlier in receipt["run_history"]:
             assert _short(earlier["receipt_sha256"]) in section, "every earlier run is named"
     # Which classes appear, and which do not, in the words of the receipt's counts.
-    classes = se1["result"]["rows_as_computed"]["summary"]["binding_class_by_lane_column"]["SCN"]
+    classes = se1["result"]["summary"]["binding_class_by_lane_column"]["SCN"]
     appear = ", ".join(f"{name} {TIMES[classes[name]]}" for name in ACTION_CLASSES if classes[name])
     assert appear == "B once, D three times, E four times"
     assert f"**Binding classes of class rule v1: {appear}.**" in section and "**Classes A and C do not appear.**" in section
-    assert "**The overlay of case SE1 was not written**" in section and "which is not an overlay" in section
+    assert "**Update, 6 October 2026: overlay schema 1.1; the overlay of case SE1 is written, outside Git.**" in section
+    assert "that held until this update" in section
     assert "**Binding class E for all eight rows, each with the reason `low_priority_score`.**" in section
     assert "**Classes A, B, C and D do not appear.**" in section
     assert "scenario result under the 2024 season envelope, not an observation" in section
@@ -337,22 +336,17 @@ def test_the_readme_table_of_case_se1_repeats_the_report_the_receipt_binds() -> 
     bound = _bound(_receipt("SE1"))[0]
     report = Path(external) / bound["path"][len(EXTERNAL_LABEL) + 1:] if external else None
     if report is None or not report.is_file():
-        pytest.skip(f"the SE1 report is outside Git; set {EXTERNAL_DATA_VARIABLE} to compare the README with it")
+        pytest.skip(f"the SE1 overlay is outside Git; set {EXTERNAL_DATA_VARIABLE} to compare the README with it")
     assert _sha256(report) == bound["sha256"], "the report is the file the receipt binds"
     document = json.loads(report.read_text(encoding="ascii"))
     assert document["publication_eligibility"] == "local" and document["official_warning"] is False
-    # The report carries the licence block of the receipt, worded for the file that holds the rows.
-    receipt_licence = _receipt("SE1")["licence"]
-    assert {key: value for key, value in document["licence"].items() if key != "where_the_values_are"} == {
-        key: value for key, value in receipt_licence.items() if key != "where_the_values_are"}
-    assert "rows_as_computed" in document["licence"]["where_the_values_are"]
-    as_computed = document["rows_as_computed"]
-    assert as_computed["schema_version"] == planning_assessment.ROWS_AS_COMPUTED_SCHEMA
+    # Since overlay schema 1.1 (decision log R20) the file the receipt binds is the overlay itself.
+    assert document["schema_version"] == "1.1" and document["case"]["case_id"] == "SE1"
     # The receipt in Git records the SHA-256 of these rows alone.
-    canonical = json.dumps(as_computed["rows"], sort_keys=True, separators=(",", ":"), allow_nan=False).encode("utf-8")
+    canonical = json.dumps(document["rows"], sort_keys=True, separators=(",", ":"), allow_nan=False).encode("utf-8")
     assert hashlib.sha256(canonical).hexdigest() == _receipt("SE1")["result"]["rows_sha256"]
     expected = []
-    for row in as_computed["rows"]:
+    for row in document["rows"]:
         components = row["components"]
         values = [f"{components[name]['value_0_100']:.2f}" for name in (
             "flood_likelihood_0_100", "exposure_0_100", "access_gap_0_100", "road_criticality_0_100")]
@@ -362,5 +356,4 @@ def test_the_readme_table_of_case_se1_repeats_the_report_the_receipt_binds() -> 
                         + f" | {confidence['confidence_class']} | {', '.join(confidence['failed_conditions']) or 'none'} |")
     rows = [line for line in _section().splitlines() if re.match(r"\| TH\d{6} ", line)]
     assert rows == expected
-    assert planning_assessment.rows_without_a_v2_result(as_computed) == [
-        item["unit_id"] for item in document["not_written_because"]["rows"]]
+    assert sum(1 for row in document["rows"] if row["class_v2"]["result"] == "not_evaluated") == 4

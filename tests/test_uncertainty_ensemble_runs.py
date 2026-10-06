@@ -121,12 +121,14 @@ def test_each_receipt_is_registered_names_the_protocols_and_names_no_tambon_besi
     without_the_list = json.loads(json.dumps(receipt))
     del without_the_list["parameters"]["unit_ids"]
     assert not re.search(r"TH\d{6}", json.dumps(without_the_list))
-    # Guardrail GR6: the lineage is below the public level, and the per-unit results are outside Git.
+    # Guardrail GR6. The age table is public since decision log R21, so the lineage of case SE1 is public and
+    # that of case O2 is still local (its flood layer). The per-unit results of both stay outside Git.
     rights = receipt["rights"]
-    assert rights["publication_eligibility"] == "local" and rights["written_under_apps_web_public"] is False
-    assert rights["lineage_levels"]["e7_age_exposure_table"] == "local"
+    assert rights["publication_eligibility"] == ("public" if case == "SE1" else "local")
+    assert rights["written_under_apps_web_public"] is False
+    assert rights["lineage_levels"]["e7_age_exposure_table"] == "public"
     declared = rights["figures_of_local_level_layers_in_this_receipt"]
-    assert declared["figures"], "the counts of a local lineage are declared"
+    assert bool(declared["figures"]) is (case != "SE1"), "the counts of a local lineage are declared; case SE1 has none"
     # No tambon is named beside a value. That is not the same as holding no value of a single tambon, and the receipt
     # does not say it is: it counts the counts that state the class of one tambon (open point E10-OP10).
     assert "names no unit beside a value" in declared["what"] and "puts no unit beside a value" not in json.dumps(receipt)
@@ -172,18 +174,20 @@ def test_each_receipt_is_registered_names_the_protocols_and_names_no_tambon_besi
 
 @pytest.mark.parametrize("case", CASES)
 def test_each_receipt_is_a_superseding_run_whose_cells_are_those_of_the_first_run(case: str) -> None:
-    """The second runs replaced the first after a review; the third followed the E8 runs of 6 October 2026 (R20).
+    """The second runs replaced the first after a review; the third and fourth followed the E8 runs of 6 October 2026.
 
-    No FPPS and no class of a cell changed in either step. The third runs rest on E8 rows whose class_v2 block has
-    the format of overlay schema 1.1; this table keeps its own two fields for the secondary class as they were.
+    No FPPS and no class of a cell changed in any step. The third runs rest on E8 rows whose class_v2 block has the
+    format of overlay schema 1.1 (decision log R20); this table keeps its own two fields for the secondary class as
+    they were. The fourth runs rest on the E8 runs made after the age table became public (decision log R21).
     """
 
     receipt = _receipt(case)
     assert receipt["schema_version"] == "floodguard.uncertainty_ensemble_run_receipt.v2" and receipt["run_kind"] == "superseding_run"
     supersedes = receipt["supersedes"]
     history = receipt["run_history"]
-    assert [item["receipt_sha256"] for item in history] == [FIRST_RUN_RECEIPTS[case], SECOND_RUN_RECEIPTS[case]]
-    assert supersedes["receipt_sha256"] == SECOND_RUN_RECEIPTS[case] and "decision log R20" in supersedes["reason"]
+    assert [item["receipt_sha256"] for item in history[:2]] == [FIRST_RUN_RECEIPTS[case], SECOND_RUN_RECEIPTS[case]]
+    assert len(history) == 3 and supersedes["receipt_sha256"] == history[-1]["receipt_sha256"]
+    assert "decision log R21" in supersedes["reason"]
     assert supersedes["unit_cells_same"] is True, "every FPPS, class, reason code and leave-one-out of every cell is the same"
     assert supersedes["access_unit_rows_same"] is True
     assert supersedes["units_same"] is True and supersedes["result_same"] is True and supersedes["summary_same"] is True
@@ -447,7 +451,7 @@ def test_the_results_outside_git_are_the_files_the_receipt_binds(case: str) -> N
         pytest.skip(f"the per-unit results are outside Git; set {EXTERNAL_DATA_VARIABLE} to compare them with the receipt")
     assert _sha256(path) == bound["sha256"], "the file is the one the receipt binds"
     document = json.loads(path.read_text(encoding="ascii"))
-    assert document["publication_eligibility"] == "local" and document["official_warning"] is False
+    assert document["publication_eligibility"] == ("public" if case == "SE1" else "local") and document["official_warning"] is False
     assert document["generated_at_utc"] == receipt["generated_at_utc"] and document["protocol_sha256"] == receipt["protocol_sha256"]
     assert document["licence"]["credit"] == PRODUCT_4009_CREDIT and "In plan task E10" in document["licence"]["change_notice"]
     canonical = json.dumps(document["units"], sort_keys=True, separators=(",", ":"), allow_nan=False).encode("utf-8")

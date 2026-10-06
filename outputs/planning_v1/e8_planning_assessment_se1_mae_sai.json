@@ -1,6 +1,6 @@
 {
   "schema_version": "floodguard.planning_assessment_run_receipt.v1",
-  "generated_at_utc": "2026-10-06T12:55:57Z",
+  "generated_at_utc": "2026-10-06T13:43:19Z",
   "run_kind": "superseding_run",
   "plan_task": "E8: planning_assessment.py + writer + verifier; O1/O2/SE1 overlays; verifier passes",
   "status": "run_receipt",
@@ -47,7 +47,7 @@
     },
     "flood_input_rights_level": "public",
     "flood_input_rights_level_basis": "The confirmed record rights_basis_4009_v1 names this layer as its layer in scope. Layers derived from it may be published under CC BY-SA 4.0 with the credit and a change notice, as a season envelope only (decisions D2, D3 and R6).",
-    "publication_level": "local",
+    "publication_level": "public",
     "publication_level_rule": "Protocol v1a guardrail GR6: the rights level of an output is the minimum across its lineage. Nothing here is written under apps/web/public/.",
     "licence_notice_file": "docs/proposal_execution/rights_basis_4009_v1_NOTICE.txt",
     "other_inputs": [
@@ -82,7 +82,7 @@
       {
         "id": "worldpop-2024-age-counts",
         "name": "Age counts per unit (plan task E7): WorldPop Global2 R2025A v1, 2024, 1 km constrained age counts",
-        "licence": "CC BY 4.0 (public catalogue); public derivatives need a purpose-specific review that is not recorded",
+        "licence": "CC BY 4.0 (WorldPop's statement for its datasets; the ODbL for datasets derived from OpenStreetMap or Microsoft building data, and the product page does not say which applies to this product)",
         "attribution": "WorldPop (www.worldpop.org), University of Southampton",
         "used_for": "The dependent share of each unit, for the vulnerability component."
       }
@@ -294,14 +294,14 @@
   "rights": {
     "registry": "floodguard.rights.REGISTERED_RECORDS",
     "rule": "Protocol v1a guardrail GR6: the rights level of an overlay is the minimum across its lineage. The registry is asked for the flood layer before any file of it is read. An overlay goes into Git only when that minimum is public; any other overlay stays outside Git and is bound here by SHA-256. Nothing is written under apps/web/public/.",
-    "publication_eligibility": "local",
+    "publication_eligibility": "public",
     "lineage_levels": {
       "unosat_4009.chiangrai_20240801_20241012_accumulatedflood": "public",
       "e4_planning_context_vehicle": "public",
       "worldpop_2020_100m": "public",
       "unit_boundaries": "public",
       "e1_permanent_water": "public",
-      "e7_age_exposure_table": "local",
+      "e7_age_exposure_table": "public",
       "e5_access_table": "public",
       "national_vulnerability_anchors": "public"
     },
@@ -323,8 +323,8 @@
         "basis": "No rights record exists for this input. The layer is an open-licence land-cover class; task E1 wrote it with its licence, credit and change notice (open point E8-OP5)."
       },
       "age_structure": {
-        "rights_level": "local",
-        "basis": "Protocol v1b, national_vulnerability_anchors.inputs.age_rasters.rights: 'Public catalog says CC BY 4.0. Public derivatives require purpose-specific review.' No such review is recorded in the repository, so the input is held at the local level and every overlay that carries a vulnerability record is local until the owners record the review (open point E8-OP5). The table itself has been in Git since task E7 wrote it (outputs/planning_v1/age_exposure_mae_sai_v1.json), so this level does not keep the age counts of a unit out of the repository; the owners' answer has to cover that file too."
+        "rights_level": "public",
+        "basis": "Protocol v1b, national_vulnerability_anchors.inputs.age_rasters.rights: 'Public catalog says CC BY 4.0. Public derivatives require purpose-specific review.' The review is recorded: docs/proposal_execution/age_data_purpose_review_v1.md, answered on 6 October 2026 with option A (public use) and its five conditions (decision log R21; open point E8-OP5). The per-unit component is tambon level only, carries the credit and the words 'modelled, not observed', and no display ranks units by the dependent share alone."
       },
       "national_anchors": {
         "rights_level": "public",
@@ -338,13 +338,7 @@
     "levels_and_git": "Protocol v1a guardrail GR6 says that only a public output may be written under apps/web/public/. Plan 3.1 keeps pitch variants outside Git and puts committed outputs (small tables and GeoJSON) in outputs/planning_v1/. Neither says whether a figure derived from a local-level input may be committed. Until the owners decide (open point E1-OP1), tasks E1 and E5 keep every layer and every per-unit table whose lineage is below public outside Git, and their run receipts in Git hold whole-frame figures of local-level inputs and say so.",
     "figures_of_local_level_layers_in_this_receipt": {
       "what": "This receipt is committed. It holds counts of rows for the whole case: under result.summary when the overlay was written, under result.rows_as_computed.summary when the rows were reported as computed, and nowhere when a check refused the rows. It puts no unit beside a value and names no unit of a row that could not be written. When the lineage is below the public level those counts come from a lineage below the public level; the file that holds the rows is outside Git.",
-      "figures": [
-        {
-          "where": "result.summary",
-          "publication_eligibility": "local",
-          "figures": "The number of rows by class, reason code, confidence class and failed condition, per lane column."
-        }
-      ],
+      "figures": [],
       "counts_that_cover_every_row": [
         "confidence_class_by_lane_column.SCN.medium",
         "headline_status_by_lane_column.SCN.not_evaluated",
@@ -481,14 +475,14 @@
     },
     "GR6_publication_eligibility": {
       "result": "PASS",
-      "publication_eligibility": "local",
+      "publication_eligibility": "public",
       "lineage_levels": {
         "unosat_4009.chiangrai_20240801_20241012_accumulatedflood": "public",
         "e4_planning_context_vehicle": "public",
         "worldpop_2020_100m": "public",
         "unit_boundaries": "public",
         "e1_permanent_water": "public",
-        "e7_age_exposure_table": "local",
+        "e7_age_exposure_table": "public",
         "e5_access_table": "public",
         "national_vulnerability_anchors": "public"
       }
@@ -509,7 +503,7 @@
     "summary": {
       "case_id": "SE1",
       "dataset_mode": "candidate",
-      "publication_eligibility": "local",
+      "publication_eligibility": "public",
       "protocol_sha256": {
         "v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
         "v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
@@ -783,12 +777,12 @@
       "rows_without_fpps": 0,
       "obs_rows_not_event_aligned": 0,
       "inputs_by_rights_level": {
-        "local": 1,
+        "local": 0,
         "pitch": 0,
-        "public": 7,
+        "public": 8,
         "none": 0
       },
-      "content_sha256": "3b7bae055e49081d0ae9c18118863590daaf03245df232c7a7f632eac22a7dac"
+      "content_sha256": "141e3b6f3d36be743a3e6c232bf2544e228d02d0eba6633388ef8c74a921ac1f"
     },
     "not_written_because": null,
     "rows_as_computed": null,
@@ -813,8 +807,7 @@
   "development_reads": {
     "what": "Reads of the same inputs made while the code was written, before this run. They are listed because every run is reported.",
     "reads": [
-      "Before this run the agent and the owners knew the FPPS and the class of every tambon of this case from the runs of 4 October 2026 (decision log R18; docs/owner_decision_sheet_2026-10-05.md).",
-      "6 October 2026, 2026-10-06T12:54:04Z: a first run of this case under overlay schema 1.1. Its rows were then compared, field by field, with the rows of the run of 4 October 2026 kept outside Git: every component record, confidence record, FPPS, binding class, would-be class, leave-one-component-out and headline slot was the same on all eight rows; the class_v2 block differed on all eight rows. For case SE1 the assumptions of the four rows whose v2 result is not stated differed too."
+      "Before this run the agent and the owners knew the FPPS and the class of every tambon of this case from the runs of 4 and 6 October 2026 (decision log R18 and R20; docs/owner_decision_sheet_2026-10-05.md)."
     ]
   },
   "open_points": [
@@ -913,9 +906,9 @@
     "The equity figures, the shelter supply and the travel-time summaries of plan 7.1 are plan task E9 and are not in this schema of the overlay."
   ],
   "implementation": {
-    "base_commit": "487d29aa64afa3568860a9b9f9c6320a0f351eed",
+    "base_commit": "3381b2a3b2ac15c029add0f94dc5d90c57a90a19",
     "base_commit_note": "The commit the working tree was on. The files below are the ones this run loaded, identified by their own SHA-256, committed or not.",
-    "builder_sha256": "5e36ccf986497540f8d221b85a0a55d0c65188579dca63ab5ac7cd9c8753161a",
+    "builder_sha256": "245e66f44c27ef4fe7023028d9f4db2367365908c8f44e661073bcbba0528077",
     "planning_assessment_module_sha256": "488a94ce39f6c03c10279f883c9eafb6d3aecacb225b2f89e50755864bae9204",
     "planning_overlay_module_sha256": "f3075fa1539db1287a7fc700707e25648ba62feadc61efc75bd32824ab2f91cb",
     "normalisation_module_sha256": "731e50596822cd5798fa2298d957c17bf44b3771536f3ed8c50930c43f545cfb",
@@ -934,45 +927,38 @@
     }
   },
   "timing_seconds": {
-    "inputs_checked": 12.7,
-    "stages_compared_unit_by_unit": 3.3,
+    "inputs_checked": 10.5,
+    "stages_compared_unit_by_unit": 2.5,
     "units_read_and_lineage": 0.0,
-    "units_measured_and_assessed": 3.0
+    "units_measured_and_assessed": 2.3
   },
   "outputs": {
     "overlay": {
       "files": [
         {
-          "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e8_planning_assessment/planning_assessment_overlay_se1_mae_sai.json",
-          "sha256": "6f2371d69f70846160ce1eebbd98e692312d357e47a11b5ea011eef8c2d2808f",
-          "bytes": 127361,
+          "path": "outputs/planning_v1/overlays/planning_assessment_overlay_se1_mae_sai.json",
+          "sha256": "bb101e8021cffedc94044572c98863bd46bd38ed314e38435b436dfc8b552205",
+          "bytes": 127454,
           "what": "planning_assessment_overlay",
-          "in_git": false,
-          "publication_eligibility": "local",
+          "in_git": true,
+          "publication_eligibility": "public",
           "rows": 8
-        },
-        {
-          "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e8_planning_assessment/LICENSE_NOTICE.txt",
-          "sha256": "acaafc1b83a5fe5d72a9f50e0e0efe476517328f581c5c487fb2e0a1290de1df",
-          "bytes": 8230,
-          "what": "licence_notice",
-          "in_git": false
         }
       ]
     }
   },
   "timestamps": {
-    "run_started_at_utc": "2026-10-06T12:55:57Z",
-    "run_finished_at_utc": "2026-10-06T12:56:16Z",
-    "wall_time_minutes": 0.32,
+    "run_started_at_utc": "2026-10-06T13:43:19Z",
+    "run_finished_at_utc": "2026-10-06T13:43:35Z",
+    "wall_time_minutes": 0.26,
     "note": "generated_at_utc is the start of the run; the overlay carries the same time."
   },
   "supersedes": {
-    "receipt_sha256": "2bff396d45f23e78e8903338a5aa64f446ac0e3aed00cd6a99ddc88adcbb66f9",
-    "generated_at_utc": "2026-10-06T12:54:04Z",
-    "reason": "Overlay schema 1.1 (decision log R20; sheet Q1, option 3): a class-rule-v2 result that depends on a trigger nobody evaluated is written not_evaluated, and such a trigger is written met null, never false. No input and no rule of the binding class was changed. This run replaces the run of 2026-10-06T12:54:04Z, which listed no reads made before it and whose reason said that the same rows were expected: the rows of this format differ from those of 4 October 2026 in the class_v2 block. For case SE1 the assumptions of the four rows whose v2 result is not stated differed too. supersedes.rows_same compares the rows with those of the run it replaces.",
-    "result_same": true,
-    "counts_same": true,
+    "receipt_sha256": "e58f22ec9ed4fcbb7b92c53898880d6fea3b62f945e7748d4b8c0753bc49b912",
+    "generated_at_utc": "2026-10-06T12:55:57Z",
+    "reason": "The age counts are now at the public level: the purpose review of the 2024 age counts was answered with option A and five conditions (decision log R21; sheet Q2; open point E8-OP5). No input, no rule and no value of a row is expected to change; the rights level of the age table in the lineage changes, and with it where the overlay of a case whose other inputs are public is kept.",
+    "result_same": false,
+    "counts_same": false,
     "rows_same": true,
     "rows_sha256_of_the_superseded_run": "362d1563eb21bdf0229c6d1dc522e425ad06f64fd7d613614987f6951a519dbc",
     "rows_sha256_of_this_run": "362d1563eb21bdf0229c6d1dc522e425ad06f64fd7d613614987f6951a519dbc",
@@ -980,22 +966,22 @@
     "lineage_inputs_same": true,
     "lineage_inputs_that_differ": [],
     "outputs_of_the_superseded_run": {
-      "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e8_planning_assessment/planning_assessment_overlay_se1_mae_sai.json": "d6592ea09ab5d4b81c7c5c7d5562aa4f2ddf14e6d2848d34b3604148a96627cd",
+      "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e8_planning_assessment/planning_assessment_overlay_se1_mae_sai.json": "6f2371d69f70846160ce1eebbd98e692312d357e47a11b5ea011eef8c2d2808f",
       "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e8_planning_assessment/LICENSE_NOTICE.txt": "acaafc1b83a5fe5d72a9f50e0e0efe476517328f581c5c487fb2e0a1290de1df"
     },
     "copies_kept_outside_git": [
       {
-        "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e8_planning_assessment/superseded_runs/20261006T125404Z/e8_planning_assessment_se1_mae_sai.json",
-        "sha256": "2bff396d45f23e78e8903338a5aa64f446ac0e3aed00cd6a99ddc88adcbb66f9",
+        "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e8_planning_assessment/superseded_runs/20261006T125557Z/e8_planning_assessment_se1_mae_sai.json",
+        "sha256": "e58f22ec9ed4fcbb7b92c53898880d6fea3b62f945e7748d4b8c0753bc49b912",
         "what": "receipt"
       },
       {
-        "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e8_planning_assessment/superseded_runs/20261006T125404Z/planning_assessment_overlay_se1_mae_sai.json",
-        "sha256": "d6592ea09ab5d4b81c7c5c7d5562aa4f2ddf14e6d2848d34b3604148a96627cd",
+        "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e8_planning_assessment/superseded_runs/20261006T125557Z/planning_assessment_overlay_se1_mae_sai.json",
+        "sha256": "6f2371d69f70846160ce1eebbd98e692312d357e47a11b5ea011eef8c2d2808f",
         "what": "file the receipt bound"
       },
       {
-        "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e8_planning_assessment/superseded_runs/20261006T125404Z/LICENSE_NOTICE.txt",
+        "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e8_planning_assessment/superseded_runs/20261006T125557Z/LICENSE_NOTICE.txt",
         "sha256": "acaafc1b83a5fe5d72a9f50e0e0efe476517328f581c5c487fb2e0a1290de1df",
         "what": "file the receipt bound"
       }
@@ -1082,6 +1068,34 @@
         },
         {
           "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e8_planning_assessment/superseded_runs/20261006T125404Z/LICENSE_NOTICE.txt",
+          "sha256": "acaafc1b83a5fe5d72a9f50e0e0efe476517328f581c5c487fb2e0a1290de1df",
+          "what": "file the receipt bound"
+        }
+      ]
+    },
+    {
+      "generated_at_utc": "2026-10-06T12:55:57Z",
+      "receipt_sha256": "e58f22ec9ed4fcbb7b92c53898880d6fea3b62f945e7748d4b8c0753bc49b912",
+      "superseded_because": "The age counts are now at the public level: the purpose review of the 2024 age counts was answered with option A and five conditions (decision log R21; sheet Q2; open point E8-OP5). No input, no rule and no value of a row is expected to change; the rights level of the age table in the lineage changes, and with it where the overlay of a case whose other inputs are public is kept.",
+      "result_same_as_the_run_that_replaced_it": false,
+      "rows_sha256": "362d1563eb21bdf0229c6d1dc522e425ad06f64fd7d613614987f6951a519dbc",
+      "outputs_sha256": {
+        "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e8_planning_assessment/planning_assessment_overlay_se1_mae_sai.json": "6f2371d69f70846160ce1eebbd98e692312d357e47a11b5ea011eef8c2d2808f",
+        "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e8_planning_assessment/LICENSE_NOTICE.txt": "acaafc1b83a5fe5d72a9f50e0e0efe476517328f581c5c487fb2e0a1290de1df"
+      },
+      "copies_kept_outside_git": [
+        {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e8_planning_assessment/superseded_runs/20261006T125557Z/e8_planning_assessment_se1_mae_sai.json",
+          "sha256": "e58f22ec9ed4fcbb7b92c53898880d6fea3b62f945e7748d4b8c0753bc49b912",
+          "what": "receipt"
+        },
+        {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e8_planning_assessment/superseded_runs/20261006T125557Z/planning_assessment_overlay_se1_mae_sai.json",
+          "sha256": "6f2371d69f70846160ce1eebbd98e692312d357e47a11b5ea011eef8c2d2808f",
+          "what": "file the receipt bound"
+        },
+        {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e8_planning_assessment/superseded_runs/20261006T125557Z/LICENSE_NOTICE.txt",
           "sha256": "acaafc1b83a5fe5d72a9f50e0e0efe476517328f581c5c487fb2e0a1290de1df",
           "what": "file the receipt bound"
         }

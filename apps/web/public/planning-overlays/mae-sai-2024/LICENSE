@@ -1,0 +1,49 @@
+FloodGuard Thailand
+Licence notice for the planning assessment overlay of case SE1 (Case SE1: 2024 season envelope scenario, Mae Sai (8 tambons))
+
+1. Files this notice covers
+   - se1.json
+   - LICENSE
+
+2. What the file is
+   A planning assessment for preparedness and for prioritisation after an event. It is not an official warning,
+   not an observation of a flood and not an operational product. A scenario result is not an observation.
+   Class E never means safe. FloodGuard did not validate the flood layer it uses.
+   It is a byte-for-byte copy of outputs/planning_v1/overlays/planning_assessment_overlay_se1_mae_sai.json
+   SHA-256: bb101e8021cffedc94044572c98863bd46bd38ed314e38435b436dfc8b552205
+   Source period of the flood input: 2024-10-12T00:00:00Z; generated at 2026-10-06T13:43:19Z.
+
+3. Inputs, with the licence and the credit of each
+   - UNOSAT/GISTDA product 4009, accumulated layer (unosat_4009.chiangrai_20240801_20241012_accumulatedflood)
+     Licence: CC BY-SA 4.0
+     Credit: UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009
+     Changed by FloodGuard: clipped to the eight Mae Sai subdistricts of protocol v1a (HDX Thailand COD-AB, layer tha_admin3); geometry repaired (make_valid; 3 parts repaired); reprojected from EPSG:4326 to EPSG:32647; extent otherwise as provided; coordinates snapped to a 0.001 m grid; not rasterised. Source: UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009, CC BY-SA 4.0. In plan task E8 the flooded share of each unit's land outside permanent water, the share of its residents inside the extent and its access counts were then turned into the component values of planning frame v1, an FPPS and planning classes. This file holds values derived from the layer, not the layer.
+   - Planning context of record (plan task E4), vehicle mode: OpenStreetMap roads and hospitals, WorldPop 2020 demand cells (e4_planning_context_vehicle)
+     Licence: ODbL 1.0 (roads and hospitals); CC BY 4.0 (demand cells)
+     Credit: (c) OpenStreetMap contributors; WorldPop (www.worldpop.org), University of Southampton
+   - WorldPop Thailand 100 m population 2020 (tha_ppp_2020.tif) (worldpop_2020_100m)
+     Licence: CC BY 4.0
+     Credit: WorldPop (www.worldpop.org), University of Southampton
+   - HDX Thailand COD-AB subdistrict boundaries (tha_admin3), valid on 2022-01-22 (unit_boundaries)
+     Licence: CC BY-IGO
+     Credit: OCHA / HDX Thailand COD-AB
+   - Permanent water of the reporting frame (plan task E1): ESA WorldCover 2021 v200, class 80 (e1_permanent_water)
+     Licence: CC BY 4.0
+     Credit: ESA WorldCover project 2021 / Contains modified Copernicus Sentinel data (2021) processed by ESA WorldCover consortium
+     Changed by FloodGuard: cells of class 80 polygonised by their footprints; reprojected from EPSG:4326 to EPSG:32647; clipped to the eight Mae Sai subdistricts of protocol v1a (HDX Thailand COD-AB, layer tha_admin3); coordinates snapped to a 0.001 m grid. Source: ESA WorldCover project 2021 / Contains modified Copernicus Sentinel data (2021) processed by ESA WorldCover consortium.
+   - Age counts per unit (plan task E7): WorldPop Global2 R2025A v1, 2024, 1 km constrained age counts (e7_age_exposure_table)
+     Licence: CC BY 4.0 (WorldPop's statement for its datasets; the ODbL for datasets derived from OpenStreetMap or Microsoft building data, and the product page does not say which applies to this product)
+     Credit: WorldPop (www.worldpop.org), University of Southampton
+   - Access difference table of plan task E5, public services: resident counts per unit under closure rule v1 (e5_access_table)
+     Licence: CC BY-SA 4.0
+     Credit: UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009
+     Changed by FloodGuard: the layer CHIANGRAI_20240801_20241012_AccumulatedFlood was repaired (make_valid), projected from EPSG:4326 to EPSG:32647 and clipped to the routing corridor (plan task E1); road segments were then measured against it, closure rule v1 was applied to them, and modelled access was compared with and without those closures. This file holds resident counts per subdistrict, not the layer. Source: UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009, CC BY-SA 4.0.
+   - National vulnerability anchors of protocol v1b (constants for all of Thailand) (national_vulnerability_anchors)
+     Licence: CC BY 4.0 (derived constants)
+     Credit: WorldPop (www.worldpop.org), University of Southampton; HDX Thailand COD-AB
+
+4. Licence of this file
+   The file holds values derived from every input above, so the terms of each apply to it.
+   It is shared under CC BY-SA 4.0, as the run receipt of plan task E8 states: anyone who shares or adapts
+   it must give the credits above, say what was changed and share the result under the same licence.
+   Where an input is under the ODbL, its terms for a derived database apply as well.

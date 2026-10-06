@@ -80,6 +80,8 @@ function validatePublicProduction() {
     "public-case-projections",
     "briefs",
     "public-cases",
+    "planning-overlays",
+    "exercises",
     "offline-demo/bundle.json",
     "offline-demo/areas.geojson",
     "offline-demo/roads.geojson",

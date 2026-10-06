@@ -90,16 +90,26 @@ def test_each_receipt_is_registered_names_the_protocols_and_holds_no_value_of_a_
     without_the_list = json.loads(json.dumps(receipt))
     del without_the_list["parameters"]["unit_ids"]
     assert not re.search(r"TH\d{6}", json.dumps(without_the_list))
-    # Guardrail GR6: the lineage is below the public level, so nothing the run wrote is in Git.
+    # Guardrail GR6. The age table is public since the purpose review was answered (decision log R21). Every input
+    # of case SE1 is then public and its overlay is in Git; case O2 stays local because of its flood layer, and
+    # nothing that run wrote is in Git. The run itself writes nothing under apps/web/public/: publishing is a step
+    # of its own (scripts/publish_planning_overlay.py).
     rights = receipt["rights"]
-    assert rights["publication_eligibility"] == "local" and rights["written_under_apps_web_public"] is False
-    assert rights["lineage_levels"]["e7_age_exposure_table"] == "local"
-    assert rights["figures_of_local_level_layers_in_this_receipt"]["figures"], "the counts of a local lineage are declared"
+    assert rights["lineage_levels"]["e7_age_exposure_table"] == "public" and rights["written_under_apps_web_public"] is False
     files = _bound(receipt)
-    assert files and all(item["path"].startswith(EXTERNAL_LABEL + "/") and item["in_git"] is False for item in files)
-    assert all(f"/{case.lower()}_mae_sai/e8_planning_assessment/" in item["path"] for item in files)
-    assert any(item["what"] == "licence_notice" for item in files), "product 4009 values go with their licence notice"
-    assert not (OUTPUTS / "overlays").exists(), "no overlay is public today, so none is in Git"
+    if case == "SE1":
+        assert rights["publication_eligibility"] == "public" and set(rights["lineage_levels"].values()) == {"public"}
+        assert rights["figures_of_local_level_layers_in_this_receipt"]["figures"] == []
+        assert [item["what"] for item in files] == ["planning_assessment_overlay"] and files[0]["in_git"] is True
+        assert files[0]["path"] == "outputs/planning_v1/overlays/planning_assessment_overlay_se1_mae_sai.json"
+        assert _sha256(ROOT / files[0]["path"]) == files[0]["sha256"], "the overlay in Git is the file the receipt binds"
+        assert sorted(path.name for path in (OUTPUTS / "overlays").iterdir()) == ["planning_assessment_overlay_se1_mae_sai.json"]
+    else:
+        assert rights["publication_eligibility"] == "local"
+        assert rights["figures_of_local_level_layers_in_this_receipt"]["figures"], "the counts of a local lineage are declared"
+        assert files and all(item["path"].startswith(EXTERNAL_LABEL + "/") and item["in_git"] is False for item in files)
+        assert all(f"/{case.lower()}_mae_sai/e8_planning_assessment/" in item["path"] for item in files)
+        assert any(item["what"] == "licence_notice" for item in files), "product 4009 values go with their licence notice"
     assert not list((ROOT / "apps" / "web" / "public").rglob("planning_assessment_overlay_*")) if (ROOT / "apps" / "web" / "public").is_dir() else True
     # The guardrails and the checks of the whole frame.
     assert all(item["result"] == "PASS" for item in receipt["guardrails"].values())
@@ -121,9 +131,11 @@ def test_each_receipt_is_registered_names_the_protocols_and_holds_no_value_of_a_
     assert all(re.fullmatch(r"[0-9a-f]{64}", value) for value in receipt["lineage_input_sha256"].values())
     # A superseding run: the rows are those of the run it replaced, read back from the file that run wrote.
     supersedes = receipt["supersedes"]
-    assert receipt["run_kind"] == "superseding_run" and "decision log R20" in supersedes["reason"]
+    assert receipt["run_kind"] == "superseding_run" and "decision log R21" in supersedes["reason"]
+    # The rows and the lineage files are the same. The counts differ in one place, inputs_by_rights_level: the age
+    # table moved from local to public (decision log R21), and with the counts the result block as a whole.
     assert (supersedes["counts_same"], supersedes["rows_same"], supersedes["lineage_inputs_same"], supersedes["result_same"]) == (
-        True, True, True, True)
+        False, True, True, False)
     assert supersedes["rows_sha256_of_the_superseded_run"] == supersedes["rows_sha256_of_this_run"] == receipt["result"]["rows_sha256"]
     assert "read back with the SHA-256 that receipt names" in supersedes["rows_of_the_superseded_run_read_from"]
     kept = supersedes["copies_kept_outside_git"]
@@ -192,7 +204,7 @@ def test_the_receipts_name_the_counts_that_cover_every_row_and_say_what_they_giv
         "headline_status_by_lane_column.SCN.not_evaluated",
         "would_be_class_by_lane_column.SCN.none",
     ]
-    assert declared["SE1"]["figures"][0]["where"] == "result.summary"
+    assert declared["SE1"]["figures"] == [], "every input of case SE1 is public, so no figure comes from a local lineage"
     assert declared["O2"]["figures"][0]["where"] == "result.summary"
 
 
@@ -206,18 +218,18 @@ def test_the_two_cases_count_the_same_residents_as_the_access_tables() -> None:
     assert sum(row["residents"] for row in run["units"]) == pytest.approx(totals["SE1"], abs=1e-6)
 
 
-def test_the_se1_run_wrote_its_overlay_outside_git_under_schema_1_1() -> None:
+def test_the_se1_run_wrote_its_overlay_into_git_at_the_public_level() -> None:
     receipt = _receipt("SE1")
     result = receipt["result"]
     assert (receipt["parameters"]["lane"], receipt["parameters"]["tier"]) == ("SCN-ENV", "T1")
     # The runs of 4 October 2026 wrote no overlay (open point E8-OP1). Decision log R20 answered it; the two runs of
     # 6 October 2026 wrote the overlay, and the second lists the reads made before it.
     history = receipt["run_history"]
-    assert [item["receipt_sha256"] for item in history[:2]] == [FIRST_SE1_RECEIPT, SECOND_SE1_RECEIPT] and len(history) == 3
+    assert [item["receipt_sha256"] for item in history[:2]] == [FIRST_SE1_RECEIPT, SECOND_SE1_RECEIPT] and len(history) == 4
     assert receipt["run_kind"] == "superseding_run" and receipt["supersedes"]["receipt_sha256"] == history[-1]["receipt_sha256"]
-    assert receipt["supersedes"]["rows_same"] is True, "the two runs of 6 October 2026 gave the same rows"
+    assert receipt["supersedes"]["rows_same"] is True, "the runs of 6 October 2026 gave the same rows"
     assert history[1]["result_same_as_the_run_that_replaced_it"] is False, "the class_v2 block changed with schema 1.1"
-    assert "decision log R20" in receipt["supersedes"]["reason"] and len(receipt["development_reads"]["reads"]) == 2
+    assert "decision log R21" in receipt["supersedes"]["reason"] and len(receipt["development_reads"]["reads"]) == 1
     assert result["overlay_written"] is True and result["not_written_because"] is None and result["rows_as_computed"] is None
     counts = result["summary"]
     assert counts["row_count"] == counts["unit_count"] == 8
@@ -236,11 +248,11 @@ def test_the_se1_run_wrote_its_overlay_outside_git_under_schema_1_1() -> None:
     v2 = counts["v2_result_by_lane_column"]["SCN"]
     assert (v2["E"], v2["not_evaluated"]) == (4, 4) and sum(v2.values()) == 8
     assert counts["headline_status_by_lane_column"]["SCN"]["not_evaluated"] == 8 and counts["rows_under_gr1"] == 0
-    assert counts["inputs_by_rights_level"] == {"local": 1, "pitch": 0, "public": 7, "none": 0}
+    assert counts["inputs_by_rights_level"] == {"local": 0, "pitch": 0, "public": 8, "none": 0}
     files = _bound(receipt)
-    assert [item["what"] for item in files] == ["planning_assessment_overlay", "licence_notice"] and files[0]["rows"] == 8
-    assert files[0]["path"].endswith("/se1_mae_sai/e8_planning_assessment/planning_assessment_overlay_se1_mae_sai.json")
-    assert files[0]["in_git"] is False and files[0]["publication_eligibility"] == "local"
+    assert [item["what"] for item in files] == ["planning_assessment_overlay"] and files[0]["rows"] == 8
+    assert files[0]["path"] == "outputs/planning_v1/overlays/planning_assessment_overlay_se1_mae_sai.json"
+    assert files[0]["in_git"] is True and files[0]["publication_eligibility"] == "public"
 
 
 def test_the_o2_run_wrote_its_overlay_outside_git_and_every_row_is_class_e() -> None:
@@ -258,13 +270,13 @@ def test_the_o2_run_wrote_its_overlay_outside_git_and_every_row_is_class_e() -> 
     assert counts["rows_by_confidence_kind"]["observed"] == 8
     assert counts["would_be_class_by_lane_column"]["OBS"]["none"] == 8
     assert counts["v2_result_by_lane_column"]["OBS"]["E"] == 8 and counts["headline_status_by_lane_column"]["OBS"]["not_evaluated"] == 8
-    assert counts["inputs_by_rights_level"]["local"] == 3, "the layer of 22 October, its access table and the age table"
+    assert counts["inputs_by_rights_level"]["local"] == 2, "the layer of 22 October and its access table"
     files = _bound(receipt)
     assert [item["what"] for item in files] == ["planning_assessment_overlay", "licence_notice"] and files[0]["rows"] == 8
     # The second run changed a Thai word in the overlay header, the third added the licence block after a review;
     # neither changed a row. The two runs of 6 October 2026 wrote the class_v2 block of overlay schema 1.1.
     assert receipt["run_kind"] == "superseding_run" and receipt["supersedes"]["rows_same"] is True
-    assert len(receipt["run_history"]) == 4 and receipt["supersedes"]["receipt_sha256"] == receipt["run_history"][-1]["receipt_sha256"]
+    assert len(receipt["run_history"]) == 5 and receipt["supersedes"]["receipt_sha256"] == receipt["run_history"][-1]["receipt_sha256"]
     assert receipt["run_history"][2]["result_same_as_the_run_that_replaced_it"] is False, "the class_v2 block changed with schema 1.1"
     first, second = receipt["run_history"][:2]
     assert "Thai title" in first["superseded_because"] and first["generated_at_utc"] == "2026-10-04T17:53:46Z"
@@ -281,7 +293,7 @@ def test_the_readme_reports_the_runs_as_the_receipts_hold_them() -> None:
     se1, o2 = _receipt("SE1"), _receipt("O2")
     for case, receipt in (("SE1", se1), ("O2", o2)):
         assert f"`{RECEIPTS[case].name}`" in section
-        assert _short(_bound(receipt)[0]["sha256"]) in section, "the file outside Git is named by its SHA-256"
+        assert _short(_bound(receipt)[0]["sha256"]) in section, "the file the receipt binds is named by its SHA-256"
         assert receipt["timestamps"]["run_started_at_utc"][11:] in section
     assert _short(_sha256(RECEIPTS["SE1"])) in section and _short(_sha256(RECEIPTS["O2"])) in section
     for receipt in (se1, o2):
@@ -296,6 +308,7 @@ def test_the_readme_reports_the_runs_as_the_receipts_hold_them() -> None:
     assert f"**Binding classes of class rule v1: {appear}.**" in section and "**Classes A and C do not appear.**" in section
     assert "**Update, 6 October 2026: overlay schema 1.1; the overlay of case SE1 is written, outside Git.**" in section
     assert "that held until this update" in section
+    assert "**Second update, 6 October 2026: the age table is public; the overlay of case SE1 is in Git and published.**" in section
     assert "**Binding class E for all eight rows, each with the reason `low_priority_score`.**" in section
     assert "**Classes A, B, C and D do not appear.**" in section
     assert "scenario result under the 2024 season envelope, not an observation" in section
@@ -329,17 +342,14 @@ def test_the_readme_reports_the_runs_as_the_receipts_hold_them() -> None:
     assert residents == pytest.approx(se1["whole_case_checks"]["residents_of_the_rows"], abs=4.0), "eight rounded counts"
 
 
-def test_the_readme_table_of_case_se1_repeats_the_report_the_receipt_binds() -> None:
-    """Skipped unless the external data root is at hand: the report is outside Git."""
+def test_the_readme_table_of_case_se1_repeats_the_overlay_the_receipt_binds() -> None:
+    """The overlay of case SE1 is in Git since decision log R21, so the README table is compared with it on every run."""
 
-    external = os.environ.get(EXTERNAL_DATA_VARIABLE)
     bound = _bound(_receipt("SE1"))[0]
-    report = Path(external) / bound["path"][len(EXTERNAL_LABEL) + 1:] if external else None
-    if report is None or not report.is_file():
-        pytest.skip(f"the SE1 overlay is outside Git; set {EXTERNAL_DATA_VARIABLE} to compare the README with it")
-    assert _sha256(report) == bound["sha256"], "the report is the file the receipt binds"
+    report = ROOT / bound["path"]
+    assert bound["in_git"] is True and _sha256(report) == bound["sha256"], "the overlay in Git is the file the receipt binds"
     document = json.loads(report.read_text(encoding="ascii"))
-    assert document["publication_eligibility"] == "local" and document["official_warning"] is False
+    assert document["publication_eligibility"] == "public" and document["official_warning"] is False
     # Since overlay schema 1.1 (decision log R20) the file the receipt binds is the overlay itself.
     assert document["schema_version"] == "1.1" and document["case"]["case_id"] == "SE1"
     # The receipt in Git records the SHA-256 of these rows alone.

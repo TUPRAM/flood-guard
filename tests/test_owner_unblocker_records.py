@@ -704,18 +704,25 @@ def test_the_builders_give_the_age_counts_the_public_level_and_cite_the_recorded
     assert o2["publication_eligibility"] == rights.LOCAL_LEVEL and o2["written_under_apps_web_public"] is False
     assert {key for key, level in o2["lineage_levels"].items() if level == rights.LOCAL_LEVEL} >= {"unosat4009.accumulated_22oct"} or \
         any(level == rights.LOCAL_LEVEL for key, level in o2["lineage_levels"].items() if key != "e7_age_exposure_table")
-    # Nothing of the planning assessment is under the public web folder: not by name, and not by content. The new
-    # Command page reads planning-overlays/mae-sai-2024/se1.json and o1.json, which no file name above would catch.
+    # Under the public web folder there is exactly one planning assessment overlay: the published copy of case SE1,
+    # which is public since decision log R21. Nothing else of the planning assessment is there, by name or by content.
     public = ROOT / rights.PUBLIC_WEB_ROOT
     assert not [path.name for path in public.rglob("*planning_assessment*")] and not [path.name for path in public.rglob("*age_exposure*")]
-    assert not [path.relative_to(public).as_posix() for path in public.rglob("planning-overlays*")]
+    published = sorted(path.relative_to(public).as_posix() for path in public.rglob("planning-overlays/**/*") if path.is_file())
+    assert published == ["planning-overlays/mae-sai-2024/LICENSE", "planning-overlays/mae-sai-2024/se1.json"]
     assert not [path.relative_to(public).as_posix() for path in public.rglob("planning-assessments*")]
     marker = planning_overlay.SCHEMA_ID.rsplit("/", 1)[-1].removesuffix(".schema.json").encode("ascii")
     assert marker == b"planning-assessment-overlay"
     json_files = sorted(public.rglob("*.json"))
     assert len(json_files) > 50
-    assert not [path.relative_to(public).as_posix() for path in json_files if marker in path.read_bytes()], (
-        "a file under the public web folder says it is a planning-assessment overlay")
+    assert [path.relative_to(public).as_posix() for path in json_files if marker in path.read_bytes()] == [
+        "planning-overlays/mae-sai-2024/se1.json"], "one file under the public web folder says it is a planning-assessment overlay"
+    # It is the overlay the registered E8 receipt binds, byte for byte, at the public level.
+    se1 = read_json(OUTPUTS / "e8_planning_assessment_se1_mae_sai.json")
+    bound = se1["outputs"]["overlay"]["files"][0]
+    assert se1["rights"]["publication_eligibility"] == rights.PUBLIC_LEVEL and bound["in_git"] is True
+    copy = (public / "planning-overlays" / "mae-sai-2024" / "se1.json").read_bytes()
+    assert hashlib.sha256(copy).hexdigest() == bound["sha256"] and copy == (ROOT / bound["path"]).read_bytes()
 
 
 # --- 3. The compute window of a walking context build of record (open point E5-OP5) ----------------------------

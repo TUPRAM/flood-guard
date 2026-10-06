@@ -942,7 +942,7 @@ function shapeProblems(value: unknown, spec: OverlaySpec, path: string, out: Pla
       if (value !== null) fail("must be null");
       return;
     case "const":
-      if (value !== spec.value) fail(`must be ${show(spec.value)}`);
+      if (!sameConstant(value, spec.value)) fail(`must be ${show(spec.value)}`);
       return;
     case "enum":
       if (!(value === null || typeof value === "string") || !spec.values.includes(value)) fail(`${show(value)} is not one of ${show(spec.values)}`);
@@ -1031,6 +1031,21 @@ const declaresProduct4009 = (item: PlanningOverlayInput): boolean => item.source
 const namesProduct4009 = (item: PlanningOverlayInput): boolean => [item.input_id, item.name, item.attribution].some((text) => PRODUCT_4009_TEXT.test(text));
 
 /** Deep equality of two JSON values; the order of object keys does not matter. */
+/**
+ * How far a number of an overlay may stand from a signed constant of the binding and still be that constant.
+ *
+ * The binding is a JSON module. A production bundle prints its numbers again, and the shortest form a bundler picks
+ * is not always the same float: the frame's weight 0.39999999999999997 (0.30 / 0.75) was shipped as `.4`, one unit in
+ * the last place away, and every real overlay was then refused in the browser while the tests, which read the JSON
+ * itself, passed. No signed number has more than a few decimals, so a relative tolerance of 1e-12 cannot take one
+ * signed value for another.
+ */
+const BUNDLED_NUMBER_TOLERANCE = 1e-12;
+
+function sameConstant(value: unknown, constant: unknown): boolean {
+  return typeof value === "number" && typeof constant === "number" ? sameJson(value, constant, BUNDLED_NUMBER_TOLERANCE) : value === constant;
+}
+
 function sameJson(left: unknown, right: unknown, tolerance = 0): boolean {
   if (typeof left === "number" && typeof right === "number") return left === right || Math.abs(left - right) <= tolerance * Math.max(1, Math.abs(left), Math.abs(right));
   if (Array.isArray(left) || Array.isArray(right)) return Array.isArray(left) && Array.isArray(right) && left.length === right.length && left.every((item, index) => sameJson(item, right[index], tolerance));
@@ -1578,7 +1593,7 @@ function rowProblems(overlay: PlanningAssessmentOverlay, row: PlanningOverlayRow
 function protocolProblems(overlay: PlanningAssessmentOverlay): PlanningOverlayProblem[] {
   const out: PlanningOverlayProblem[] = [];
   if (!sameJson(overlay.protocol_sha256, BINDING.protocol_sha256)) out.push({ code: "protocol_not_in_force", path: "$.protocol_sha256", message: "is not the SHA-256 of the protocol files in force" });
-  if (!sameJson(overlay.scoring_frame, BINDING.scoring_frame)) out.push({ code: "frame_not_protocol_frame", path: "$.scoring_frame", message: "is not the frame v1 header of the protocols in force" });
+  if (!sameJson(overlay.scoring_frame, BINDING.scoring_frame, BUNDLED_NUMBER_TOLERANCE)) out.push({ code: "frame_not_protocol_frame", path: "$.scoring_frame", message: "is not the frame v1 header of the protocols in force" });
   return out;
 }
 

@@ -1,0 +1,2749 @@
+{
+  "schema_version": "1.1",
+  "schema_id": "https://floodguard.th/contracts/planning-assessment-overlay.schema.json",
+  "dataset_mode": "candidate",
+  "operational_status": "non_operational",
+  "official_warning": false,
+  "can_feed_decision_layer": false,
+  "accepted_fpps": null,
+  "accepted_action_class": null,
+  "source_timestamp": "2024-10-12T00:00:00Z",
+  "generated_at": "2026-10-06T13:43:19Z",
+  "source_name": "FloodGuard planning assessment overlay: case SE1, Mae Sai",
+  "data_version": "planning_assessment_v1",
+  "git_commit": "3381b2a3b2ac15c029add0f94dc5d90c57a90a19",
+  "case": {
+    "case_id": "SE1",
+    "kind": "portfolio_case",
+    "title_en": "Case SE1: 2024 season envelope scenario, Mae Sai (8 tambons)",
+    "title_th": "\u0e01\u0e23\u0e13\u0e35 SE1: \u0e2a\u0e16\u0e32\u0e19\u0e01\u0e32\u0e23\u0e13\u0e4c\u0e08\u0e33\u0e25\u0e2d\u0e07\u0e02\u0e2d\u0e1a\u0e40\u0e02\u0e15\u0e19\u0e49\u0e33\u0e17\u0e48\u0e27\u0e21\u0e2a\u0e30\u0e2a\u0e21\u0e15\u0e25\u0e2d\u0e14\u0e24\u0e14\u0e39\u0e01\u0e32\u0e25 \u0e1e.\u0e28. 2567 \u0e2d\u0e33\u0e40\u0e20\u0e2d\u0e41\u0e21\u0e48\u0e2a\u0e32\u0e22 (8 \u0e15\u0e33\u0e1a\u0e25)",
+    "frame": "Mae Sai, 8 tambons",
+    "case_reference_date": null,
+    "fixture_notice": null
+  },
+  "protocol_sha256": {
+    "v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+    "v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+  },
+  "evidence_tier_model_version": "evidence_tiers_v1",
+  "normalisation_version": "planning_frame_v1",
+  "confidence_rule_version": "confidence_rule_v1",
+  "class_rule_version": "class_rule_v1",
+  "secondary_class_rule_version": "class_rule_v2",
+  "scoring_frame": {
+    "normalisation_version": "planning_frame_v1",
+    "normalisation_rule": "Absolute, declared anchors. No batch scaling and no max-normalisation (guardrail 2).",
+    "weights": {
+      "flood_likelihood_0_100": 0.3,
+      "exposure_0_100": 0.25,
+      "access_gap_0_100": 0.2,
+      "road_criticality_0_100": 0.15,
+      "vulnerability_context_0_100": 0.1
+    },
+    "flood_anchor": 0.2,
+    "flood_anchor_sensitivity_one_at_a_time": [
+      0.1,
+      0.3
+    ],
+    "flood_anchor_disclosure": "The 0.20 anchor was declared after the 0.05 anchor was seen to saturate in 6 of the 8 Mae Sai tambons. It was chosen after seeing the data. Plan 3.4 says 5 of 8; the per-tambon envelope shares kept from that analysis show 6 above 0.05, and the owners corrected the count at signing on 2026-10-02.",
+    "permanent_water": {
+      "source": "ESA WorldCover 2021 v200",
+      "class": 80
+    },
+    "exposure_kind": "share_only",
+    "access_services": [
+      {
+        "service": "hospital",
+        "mode": "vehicle",
+        "threshold_minutes": 30,
+        "level": "public"
+      },
+      {
+        "service": "main_road_entry",
+        "mode": "vehicle",
+        "threshold_minutes": 15,
+        "level": "public"
+      },
+      {
+        "service": "ddpm_located_shelter",
+        "mode": "walking",
+        "threshold_minutes": 30,
+        "level": "pitch"
+      }
+    ],
+    "vulnerability_anchor_version": "national_vulnerability_anchors_v1",
+    "vulnerability_anchors": {
+      "lower": "P10",
+      "upper": "P90",
+      "values": {
+        "P5": 0.313095,
+        "P10": 0.351416,
+        "P75": 0.454083,
+        "P90": 0.477677,
+        "P95": 0.494407
+      }
+    },
+    "vulnerability_anchor_sensitivity": {
+      "lower": "P5",
+      "upper": "P95"
+    },
+    "vulnerability_anchor_receipt_sha256": "2ad161d4c67cbe1567fbb853fe951da3ffb257f06088fbc80e8e297938c73a59",
+    "leave_one_component_out_weights": {
+      "flood_likelihood_0_100": {
+        "flood_likelihood_0_100": 0.0,
+        "exposure_0_100": 0.35714285714285715,
+        "access_gap_0_100": 0.28571428571428575,
+        "road_criticality_0_100": 0.2142857142857143,
+        "vulnerability_context_0_100": 0.14285714285714288
+      },
+      "exposure_0_100": {
+        "flood_likelihood_0_100": 0.39999999999999997,
+        "exposure_0_100": 0.0,
+        "access_gap_0_100": 0.26666666666666666,
+        "road_criticality_0_100": 0.19999999999999998,
+        "vulnerability_context_0_100": 0.13333333333333333
+      },
+      "access_gap_0_100": {
+        "flood_likelihood_0_100": 0.37499999999999994,
+        "exposure_0_100": 0.3125,
+        "access_gap_0_100": 0.0,
+        "road_criticality_0_100": 0.18749999999999997,
+        "vulnerability_context_0_100": 0.125
+      },
+      "road_criticality_0_100": {
+        "flood_likelihood_0_100": 0.35294117647058826,
+        "exposure_0_100": 0.29411764705882354,
+        "access_gap_0_100": 0.23529411764705885,
+        "road_criticality_0_100": 0.0,
+        "vulnerability_context_0_100": 0.11764705882352942
+      },
+      "vulnerability_context_0_100": {
+        "flood_likelihood_0_100": 0.3333333333333333,
+        "exposure_0_100": 0.2777777777777778,
+        "access_gap_0_100": 0.22222222222222224,
+        "road_criticality_0_100": 0.16666666666666666,
+        "vulnerability_context_0_100": 0.0
+      }
+    },
+    "lane_disclosure": "One flood input drives 4 of 5 components (90% of weight). This sentence appears on the overlay and in the brief appendix.",
+    "protocol_sha256": {
+      "v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+      "v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+    }
+  },
+  "publication_eligibility": "public",
+  "inputs": [
+    {
+      "input_id": "unosat_4009.chiangrai_20240801_20241012_accumulatedflood",
+      "role": "flood_input",
+      "name": "UNOSAT/GISTDA product 4009, accumulated layer",
+      "source_product": "unosat_product_4009",
+      "acquisition_date": null,
+      "sha256": "405918085b2cf9ce38b46143de0a27efb02ce919a5d8e146b4954f47d10f8368",
+      "rights_level": "public",
+      "licence": "CC BY-SA 4.0",
+      "attribution": "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009",
+      "change_notice": "Changed by FloodGuard: clipped to the eight Mae Sai subdistricts of protocol v1a (HDX Thailand COD-AB, layer tha_admin3); geometry repaired (make_valid; 3 parts repaired); reprojected from EPSG:4326 to EPSG:32647; extent otherwise as provided; coordinates snapped to a 0.001 m grid; not rasterised. Source: UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009, CC BY-SA 4.0. In plan task E8 the flooded share of each unit's land outside permanent water, the share of its residents inside the extent and its access counts were then turned into the component values of planning frame v1, an FPPS and planning classes. This file holds values derived from the layer, not the layer.",
+      "source_timestamp": "2024-08-01/2024-10-12"
+    },
+    {
+      "input_id": "e4_planning_context_vehicle",
+      "role": "routing_context",
+      "name": "Planning context of record (plan task E4), vehicle mode: OpenStreetMap roads and hospitals, WorldPop 2020 demand cells",
+      "source_product": null,
+      "acquisition_date": null,
+      "sha256": "0b2672b6d4d1d94da3a4c39d819d980a9e5bf7845bb22fea1284a2893a6351a6",
+      "rights_level": "public",
+      "licence": "ODbL 1.0 (roads and hospitals); CC BY 4.0 (demand cells)",
+      "attribution": "(c) OpenStreetMap contributors; WorldPop (www.worldpop.org), University of Southampton",
+      "change_notice": null,
+      "source_timestamp": "OpenStreetMap retrieved 2026-07-10T02:46:49Z; population year 2020"
+    },
+    {
+      "input_id": "worldpop_2020_100m",
+      "role": "population",
+      "name": "WorldPop Thailand 100 m population 2020 (tha_ppp_2020.tif)",
+      "source_product": null,
+      "acquisition_date": null,
+      "sha256": "fb39d85dd150c45c7b25771f29bcd548e611afa0967224ac6d8ca05727230e20",
+      "rights_level": "public",
+      "licence": "CC BY 4.0",
+      "attribution": "WorldPop (www.worldpop.org), University of Southampton",
+      "change_notice": null,
+      "source_timestamp": "2020"
+    },
+    {
+      "input_id": "unit_boundaries",
+      "role": "boundaries",
+      "name": "HDX Thailand COD-AB subdistrict boundaries (tha_admin3), valid on 2022-01-22",
+      "source_product": null,
+      "acquisition_date": null,
+      "sha256": "09e62345481bb80030ff6779e074bfb2c16629b70ae1e373ebd31945f1c6e0d8",
+      "rights_level": "public",
+      "licence": "CC BY-IGO",
+      "attribution": "OCHA / HDX Thailand COD-AB",
+      "change_notice": null,
+      "source_timestamp": "2022-01-22"
+    },
+    {
+      "input_id": "e1_permanent_water",
+      "role": "permanent_water",
+      "name": "Permanent water of the reporting frame (plan task E1): ESA WorldCover 2021 v200, class 80",
+      "source_product": null,
+      "acquisition_date": null,
+      "sha256": "a92e168c56b1fddbabf772171ba140a303e2b48f1007d7da1223b5d7c4d150ee",
+      "rights_level": "public",
+      "licence": "CC BY 4.0",
+      "attribution": "ESA WorldCover project 2021 / Contains modified Copernicus Sentinel data (2021) processed by ESA WorldCover consortium",
+      "change_notice": "Changed by FloodGuard: cells of class 80 polygonised by their footprints; reprojected from EPSG:4326 to EPSG:32647; clipped to the eight Mae Sai subdistricts of protocol v1a (HDX Thailand COD-AB, layer tha_admin3); coordinates snapped to a 0.001 m grid. Source: ESA WorldCover project 2021 / Contains modified Copernicus Sentinel data (2021) processed by ESA WorldCover consortium.",
+      "source_timestamp": "2021-01-01/2021-12-31"
+    },
+    {
+      "input_id": "e7_age_exposure_table",
+      "role": "age_structure",
+      "name": "Age counts per unit (plan task E7): WorldPop Global2 R2025A v1, 2024, 1 km constrained age counts",
+      "source_product": null,
+      "acquisition_date": null,
+      "sha256": "68d4935ddf9f905dd4512c516924049be5303bae5a501a27bcff060106da16cb",
+      "rights_level": "public",
+      "licence": "CC BY 4.0 (WorldPop's statement for its datasets; the ODbL for datasets derived from OpenStreetMap or Microsoft building data, and the product page does not say which applies to this product)",
+      "attribution": "WorldPop (www.worldpop.org), University of Southampton",
+      "change_notice": null,
+      "source_timestamp": "2025-09-01"
+    },
+    {
+      "input_id": "e5_access_table",
+      "role": "other",
+      "name": "Access difference table of plan task E5, public services: resident counts per unit under closure rule v1",
+      "source_product": "unosat_product_4009",
+      "acquisition_date": null,
+      "sha256": "d4a618fad7fb3df12666ab1eba353b84aa80c6ebe3c370fd9e11096f7dbe116b",
+      "rights_level": "public",
+      "licence": "CC BY-SA 4.0",
+      "attribution": "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009",
+      "change_notice": "Changed by FloodGuard: the layer CHIANGRAI_20240801_20241012_AccumulatedFlood was repaired (make_valid), projected from EPSG:4326 to EPSG:32647 and clipped to the routing corridor (plan task E1); road segments were then measured against it, closure rule v1 was applied to them, and modelled access was compared with and without those closures. This file holds resident counts per subdistrict, not the layer. Source: UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009, CC BY-SA 4.0.",
+      "source_timestamp": "2024-08-01/2024-10-12"
+    },
+    {
+      "input_id": "national_vulnerability_anchors",
+      "role": "other",
+      "name": "National vulnerability anchors of protocol v1b (constants for all of Thailand)",
+      "source_product": null,
+      "acquisition_date": null,
+      "sha256": "2ad161d4c67cbe1567fbb853fe951da3ffb257f06088fbc80e8e297938c73a59",
+      "rights_level": "public",
+      "licence": "CC BY 4.0 (derived constants)",
+      "attribution": "WorldPop (www.worldpop.org), University of Southampton; HDX Thailand COD-AB",
+      "change_notice": null,
+      "source_timestamp": "2025-09-01"
+    }
+  ],
+  "assumptions": [
+    "A closure is a modelled assumption of closure rule v1 (closure_basis), not an observed closure. A flood intersection does not prove that a road was closed.",
+    "A flood input is used as provided. A product 4009 layer is a preliminary agency extent that was not checked in the field (Field_Validation=0), and FloodGuard did not validate it.",
+    "Residents are modelled WorldPop 2020 counts. A cell counts for the unit whose polygon holds its centre, and a resident is inside the flood extent when the cell centre is (the extent covers the point).",
+    "Flood likelihood is measured on the unit's land outside permanent water (the permanent-water layer of task E1), by polygon overlay in EPSG:32647, with the flood extent as provided, clipped to the reporting frame.",
+    "The access gap and the road criticality are computed from the resident counts of the task E5 table at the closure level of the row. No stored ratio is read.",
+    "Vulnerability is computed from the modelled 2024 age counts of the task E7 table, allocated to the unit by area. The age counts and the resident counts of the exposure are of two vintages.",
+    "Confidence condition C4 compares the exposure at the plus and the minus level of the flood input (one pixel, 20 m). C7 is the unit's residents connected to the vehicle graph with no modelled route to a hospital, over its connected residents. C8 counts the hospital destinations a connected resident of the unit can reach on the baseline vehicle graph (open point E8-OP3).",
+    "Every row is the default cell of protocol v1b. The ensemble has not run, so no class is headlined.",
+    "Planning guidance only. Not an official warning. Class E never means safe.",
+    "The flood input is written as 'unosat_4009.chiangrai_20240801_20241012_accumulatedflood' in this file; task E1 names it 'unosat_4009:CHIANGRAI_20240801_20241012_AccumulatedFlood'. The closure basis of a row names the same input.",
+    "The rights level of this file is the minimum across its lineage (guardrail GR6). An input with no rights record states the level its row gives, with the basis in the run receipt (open point E8-OP5).",
+    "The flood input: unvalidated preliminary agency extent (UNOSAT product 4009 with GISTDA; Field_Validation=0), used as provided under CC BY-SA 4.0. FloodGuard did not validate it.",
+    "Every row is the default cell of protocol v1b: the flood input as provided, the closure level the reference-cell sentence names, the public services unless the access-gap record says pitch, the frame's own anchors and weights. The ensemble has not run, so every headline slot is not_evaluated.",
+    "source_timestamp is the last date of the flood input's source period at 00:00:00 UTC: the schema takes an instant, and the flood input has no time of day. Each input states its own source time.",
+    "The component records were produced by floodguard.normalisation and the confidence records by floodguard.confidence under the two signed protocol files, from the measurements each record echoes.",
+    "One flood input drives 4 of 5 components (90% of weight). This sentence appears on the overlay and in the brief appendix."
+  ],
+  "rows": [
+    {
+      "row_id": "SE1:TH570901:SCN-ENV",
+      "unit_id": "TH570901",
+      "unit_name_en": "Mae Sai",
+      "unit_name_th": "\u0e41\u0e21\u0e48\u0e2a\u0e32\u0e22",
+      "tier": "T1",
+      "lane": "SCN-ENV",
+      "temporal_relation": "season_window",
+      "flood_input": "UNOSAT/GISTDA product 4009, accumulated layer",
+      "scenario": {
+        "id": "SCN-ENV",
+        "declaration": "The UNOSAT/GISTDA product 4009 accumulated layer treated as if every area ever mapped flooded in the season were flooded at once. A scenario, part of the SCN column. Shown as: 2024 season envelope scenario: all roads ever mapped flooded treated as closed at once."
+      },
+      "lineage": {
+        "flood_input_id": "unosat_4009.chiangrai_20240801_20241012_accumulatedflood",
+        "routing_context_id": "e4_planning_context_vehicle",
+        "closure_rule": {
+          "version": "closure_rule_v1",
+          "level": "central",
+          "closure_basis": "modelled_from_unosat_4009.chiangrai_20240801_20241012_accumulatedflood"
+        }
+      },
+      "normalisation_version": "planning_frame_v1",
+      "components": {
+        "flood_likelihood_0_100": {
+          "component": "flood_likelihood_0_100",
+          "value_0_100": 100.0,
+          "normalisation_version": "planning_frame_v1",
+          "protocol_sha256": {
+            "v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+            "v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+          },
+          "definition": "100 x min(1, flooded share of the unit's non-permanent-water land / anchor)",
+          "inputs": {
+            "flooded_non_permanent_water_land_area": 12396579.139159478,
+            "non_permanent_water_land_area": 21447121.803356577
+          },
+          "flooded_share": 0.5780066552901917,
+          "anchor": 0.2,
+          "anchor_sensitivity_one_at_a_time": [
+            {
+              "anchor": 0.1,
+              "value_0_100": 100.0
+            },
+            {
+              "anchor": 0.3,
+              "value_0_100": 100.0
+            }
+          ],
+          "anchor_disclosure": "The 0.20 anchor was declared after the 0.05 anchor was seen to saturate in 6 of the 8 Mae Sai tambons. It was chosen after seeing the data. Plan 3.4 says 5 of 8; the per-tambon envelope shares kept from that analysis show 6 above 0.05, and the owners corrected the count at signing on 2026-10-02.",
+          "permanent_water": {
+            "source": "ESA WorldCover 2021 v200",
+            "class": 80
+          }
+        },
+        "exposure_0_100": {
+          "component": "exposure_0_100",
+          "value_0_100": 56.21298515319471,
+          "normalisation_version": "planning_frame_v1",
+          "protocol_sha256": {
+            "v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+            "v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+          },
+          "definition": "100 x residents whose population cell centre is inside the flood extent / unit residents",
+          "inputs": {
+            "residents_inside_flood_extent": 10058.22838795185,
+            "unit_residents": 17893.069298028946
+          },
+          "exposed_share": 0.5621298515319471,
+          "kind": "share_only"
+        },
+        "access_gap_0_100": {
+          "component": "access_gap_0_100",
+          "value_0_100": 67.85976398059978,
+          "normalisation_version": "planning_frame_v1",
+          "protocol_sha256": {
+            "v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+            "v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+          },
+          "definition": "Baseline-access-weighted mean of newly-lost access shares, counted only for people who had access at baseline",
+          "inputs": {
+            "services": {
+              "hospital": {
+                "mode": "vehicle",
+                "threshold_minutes": 30,
+                "baseline_access_residents": 17453.231825232506,
+                "newly_lost_residents": 12073.299697637558
+              },
+              "main_road_entry": {
+                "mode": "vehicle",
+                "threshold_minutes": 15,
+                "baseline_access_residents": 17453.231825232506,
+                "newly_lost_residents": 11614.144149541855
+              }
+            }
+          },
+          "services": [
+            {
+              "service": "hospital",
+              "mode": "vehicle",
+              "threshold_minutes": 30,
+              "baseline_access_residents": 17453.231825232506,
+              "newly_lost_residents": 12073.299697637558,
+              "newly_lost_share": 0.6917515230722446
+            },
+            {
+              "service": "main_road_entry",
+              "mode": "vehicle",
+              "threshold_minutes": 15,
+              "baseline_access_residents": 17453.231825232506,
+              "newly_lost_residents": 11614.144149541855,
+              "newly_lost_share": 0.6654437565397511
+            }
+          ],
+          "baseline_access_residents_all_services": 34906.46365046501,
+          "publication_level": "public"
+        },
+        "road_criticality_0_100": {
+          "component": "road_criticality_0_100",
+          "value_0_100": 66.54437565397511,
+          "normalisation_version": "planning_frame_v1",
+          "protocol_sha256": {
+            "v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+            "v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+          },
+          "definition": "100 x residents with a baseline route to any hospital or main road who lose all routes / those residents",
+          "inputs": {
+            "residents_losing_all_routes": 11614.144149541855,
+            "residents_with_baseline_route": 17453.231825232506
+          },
+          "share_losing_all_routes": 0.6654437565397511
+        },
+        "vulnerability_context_0_100": {
+          "component": "vulnerability_context_0_100",
+          "value_0_100": 31.064360103655904,
+          "normalisation_version": "planning_frame_v1",
+          "protocol_sha256": {
+            "v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+            "v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+          },
+          "definition": "100 x clip((dependent share - lower anchor) / (upper anchor - lower anchor), 0, 1), where dependent share is residents aged 0-14 plus residents aged 60 and over, divided by all residents",
+          "inputs": {
+            "children_0_14": 4723.718139266645,
+            "older_60_plus": 5183.500022131469,
+            "residents": 25361.623309922947
+          },
+          "dependent_share": 0.390638171710477,
+          "anchors": {
+            "lower": "P10",
+            "lower_value": 0.351416,
+            "upper": "P90",
+            "upper_value": 0.477677
+          },
+          "anchor_sensitivity": {
+            "lower": "P5",
+            "lower_value": 0.313095,
+            "upper": "P95",
+            "upper_value": 0.494407,
+            "value_0_100": 42.7678100238688
+          },
+          "anchor_version": "national_vulnerability_anchors_v1",
+          "anchor_receipt_sha256": "2ad161d4c67cbe1567fbb853fe951da3ffb257f06088fbc80e8e297938c73a59",
+          "caveat": "Modelled 1 km age composition applied to 2020 100 m counts; not observed; within-cell composition assumed uniform."
+        }
+      },
+      "fpps_0_100": 70.71,
+      "confidence": {
+        "unit_id": "TH570901",
+        "lane": "SCN-ENV",
+        "tier": "T1",
+        "flood_input": "UNOSAT/GISTDA product 4009, accumulated layer",
+        "scenario_base": "agency_product_as_provided",
+        "confidence_rule_version": "confidence_rule_v1",
+        "confidence_class": "medium",
+        "confidence_kind": "scenario",
+        "basis": {
+          "C1_tier": "by_scenario_declaration",
+          "C2_recency": "by_scenario_declaration",
+          "C3_coverage": "by_construction",
+          "C4_input_uncertainty": "pass",
+          "C5_components": "pass",
+          "C6_residents": "pass",
+          "C7_baseline_no_route": "pass",
+          "C8_hospital": "pass"
+        },
+        "failed_conditions": [],
+        "reason_code": null,
+        "guardrail_gr1": {
+          "id": "GR1_minimum_denominators",
+          "applies": false,
+          "unit_residents_min_for_class": 100.0,
+          "no_binding_class": false,
+          "no_would_be_class": false,
+          "no_v2_class": false
+        },
+        "t2_skill_condition": null,
+        "measurements": {
+          "recency_days": null,
+          "acquisition_date": null,
+          "case_reference_date": null,
+          "unit_valid_coverage": null,
+          "coverage_by_construction": true,
+          "exposure_plus_one_pixel_0_100": 60.372980012795985,
+          "exposure_minus_one_pixel_0_100": 50.68160645107934,
+          "exposure_plus_minus_one_pixel_points": 9.691373561716645,
+          "t2_abstention_fraction": null,
+          "component_status": {
+            "flood_likelihood_0_100": "computed",
+            "exposure_0_100": "computed",
+            "access_gap_0_100": "computed",
+            "road_criticality_0_100": "computed",
+            "vulnerability_context_0_100": "computed"
+          },
+          "unit_residents": 17893.069298028946,
+          "baseline_vehicle_no_route_share": 0.0,
+          "hospitals_reachable_at_baseline": 6.0
+        },
+        "thresholds": {
+          "recency_window_days": 3.0,
+          "unit_valid_coverage_min": 0.8,
+          "exposure_plus_minus_one_pixel_max_points": 15.0,
+          "exposure_plus_minus_one_pixel_float_guard_points": 1e-09,
+          "t2_abstention_fraction_max": 0.2,
+          "unit_residents_min": 100.0,
+          "baseline_vehicle_no_route_share_max": 0.1,
+          "hospitals_reachable_at_baseline_min": 1.0
+        },
+        "uses_ensemble_output": false,
+        "rights_are_an_input": false,
+        "protocol_v1a_sha256": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+        "assumptions": [
+          "Derived from the listed measurements only. No ensemble output and no rights level is read.",
+          "A condition whose measurement is missing is recorded as fail: medium needs every condition shown.",
+          "High requires tier T4, which is locked in this release, so high is never assigned.",
+          "C4 compares the difference of two exposures with a float guard of 1e-09 points, so two exposures exactly the limit apart are not failed by binary rounding.",
+          "Scenario confidence (drafter reading DR-A07, confirmed at signing): C1 is judged on the base flood input and C2 is replaced by the scenario declaration. It is never shown or counted as observed confidence."
+        ]
+      },
+      "action_class": "D",
+      "action_reason_code": "resilience",
+      "would_be_class": null,
+      "class_v2": {
+        "class_rule_version": "class_rule_v2",
+        "label": "secondary",
+        "binding": false,
+        "result": "not_evaluated",
+        "trigger_evidence": [
+          {
+            "trigger": "E",
+            "met": false,
+            "evidence": "Confidence medium; exposure 56.21 against a floor of 10; FPPS 70.71 against a minimum of 35."
+          },
+          {
+            "trigger": "A",
+            "met": false,
+            "evidence": "v1 class D; dependent share 0.390638 against the national P75 of 0.454083."
+          },
+          {
+            "trigger": "B",
+            "met": null,
+            "evidence": "Not evaluated: A top-20 critical link inside the flood extent, closed on its own, takes every route from at least 500 residents of the unit: no stage has closed the top-20 links one at a time. No earlier trigger in the order E, A, B, C, D is met, so the v2 result depends on a trigger that was not evaluated and is not stated."
+          },
+          {
+            "trigger": "C",
+            "met": null,
+            "evidence": "Not evaluated: FPPS 70.71 against a minimum of 35, confidence medium, and a serving hospital or uniquely located shelter inside the extent or without a vehicle route: no stage has run the serving-facility test. No earlier trigger in the order E, A, B, C, D is met, so the v2 result depends on a trigger that was not evaluated and is not stated."
+          },
+          {
+            "trigger": "D",
+            "met": null,
+            "evidence": "Not evaluated: FPPS 70.71 against a minimum of 35, and the recurrence flag: no stage has computed the recurrence flag. No earlier trigger in the order E, A, B, C, D is met, so the v2 result depends on a trigger that was not evaluated and is not stated."
+          }
+        ]
+      },
+      "leave_one_component_out": {
+        "flood_likelihood_0_100": {
+          "fpps_0_100": 58.16,
+          "action_class": "D"
+        },
+        "exposure_0_100": {
+          "fpps_0_100": 75.55,
+          "action_class": "D"
+        },
+        "access_gap_0_100": {
+          "fpps_0_100": 71.43,
+          "action_class": "D"
+        },
+        "road_criticality_0_100": {
+          "fpps_0_100": 71.45,
+          "action_class": "D"
+        },
+        "vulnerability_context_0_100": {
+          "fpps_0_100": 75.12,
+          "action_class": "D"
+        }
+      },
+      "headline_stability": {
+        "guardrail": "GR8_headline_stability",
+        "status": "not_evaluated",
+        "class_retention": null,
+        "class_retention_min": 0.6
+      },
+      "accepted_fpps": null,
+      "accepted_action_class": null,
+      "source_timestamp": "2024-10-12T00:00:00Z",
+      "assumptions": [
+        "Road closure is modelled from the flood input (closure_rule_v1, central level): a flood intersection does not prove a road closure.",
+        "Residents are modelled counts. A population cell counts for the unit whose polygon holds its centre, and a resident is inside the flood extent when the cell centre is.",
+        "A v2 trigger written as 'Not evaluated' with met false was not shown to be met and was not shown to be unmet. The v2 result stands without it, because an earlier trigger in the order is met."
+      ]
+    },
+    {
+      "row_id": "SE1:TH570902:SCN-ENV",
+      "unit_id": "TH570902",
+      "unit_name_en": "Huai Khrai",
+      "unit_name_th": "\u0e2b\u0e49\u0e27\u0e22\u0e44\u0e04\u0e23\u0e49",
+      "tier": "T1",
+      "lane": "SCN-ENV",
+      "temporal_relation": "season_window",
+      "flood_input": "UNOSAT/GISTDA product 4009, accumulated layer",
+      "scenario": {
+        "id": "SCN-ENV",
+        "declaration": "The UNOSAT/GISTDA product 4009 accumulated layer treated as if every area ever mapped flooded in the season were flooded at once. A scenario, part of the SCN column. Shown as: 2024 season envelope scenario: all roads ever mapped flooded treated as closed at once."
+      },
+      "lineage": {
+        "flood_input_id": "unosat_4009.chiangrai_20240801_20241012_accumulatedflood",
+        "routing_context_id": "e4_planning_context_vehicle",
+        "closure_rule": {
+          "version": "closure_rule_v1",
+          "level": "central",
+          "closure_basis": "modelled_from_unosat_4009.chiangrai_20240801_20241012_accumulatedflood"
+        }
+      },
+      "normalisation_version": "planning_frame_v1",
+      "components": {
+        "flood_likelihood_0_100": {
+          "component": "flood_likelihood_0_100",
+          "value_0_100": 0.0,
+          "normalisation_version": "planning_frame_v1",
+          "protocol_sha256": {
+            "v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+            "v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+          },
+          "definition": "100 x min(1, flooded share of the unit's non-permanent-water land / anchor)",
+          "inputs": {
+            "flooded_non_permanent_water_land_area": 0.0,
+            "non_permanent_water_land_area": 44258556.34485191
+          },
+          "flooded_share": 0.0,
+          "anchor": 0.2,
+          "anchor_sensitivity_one_at_a_time": [
+            {
+              "anchor": 0.1,
+              "value_0_100": 0.0
+            },
+            {
+              "anchor": 0.3,
+              "value_0_100": 0.0
+            }
+          ],
+          "anchor_disclosure": "The 0.20 anchor was declared after the 0.05 anchor was seen to saturate in 6 of the 8 Mae Sai tambons. It was chosen after seeing the data. Plan 3.4 says 5 of 8; the per-tambon envelope shares kept from that analysis show 6 above 0.05, and the owners corrected the count at signing on 2026-10-02.",
+          "permanent_water": {
+            "source": "ESA WorldCover 2021 v200",
+            "class": 80
+          }
+        },
+        "exposure_0_100": {
+          "component": "exposure_0_100",
+          "value_0_100": 0.0,
+          "normalisation_version": "planning_frame_v1",
+          "protocol_sha256": {
+            "v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+            "v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+          },
+          "definition": "100 x residents whose population cell centre is inside the flood extent / unit residents",
+          "inputs": {
+            "residents_inside_flood_extent": 0.0,
+            "unit_residents": 8911.487386196852
+          },
+          "exposed_share": 0.0,
+          "kind": "share_only"
+        },
+        "access_gap_0_100": {
+          "component": "access_gap_0_100",
+          "value_0_100": 1.3605479828801381,
+          "normalisation_version": "planning_frame_v1",
+          "protocol_sha256": {
+            "v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+            "v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+          },
+          "definition": "Baseline-access-weighted mean of newly-lost access shares, counted only for people who had access at baseline",
+          "inputs": {
+            "services": {
+              "hospital": {
+                "mode": "vehicle",
+                "threshold_minutes": 30,
+                "baseline_access_residents": 7148.752592325211,
+                "newly_lost_residents": 192.64701753854752
+              },
+              "main_road_entry": {
+                "mode": "vehicle",
+                "threshold_minutes": 15,
+                "baseline_access_residents": 7010.764011472464,
+                "newly_lost_residents": 0.0
+              }
+            }
+          },
+          "services": [
+            {
+              "service": "hospital",
+              "mode": "vehicle",
+              "threshold_minutes": 30,
+              "baseline_access_residents": 7148.752592325211,
+              "newly_lost_residents": 192.64701753854752,
+              "newly_lost_share": 0.026948340294413092
+            },
+            {
+              "service": "main_road_entry",
+              "mode": "vehicle",
+              "threshold_minutes": 15,
+              "baseline_access_residents": 7010.764011472464,
+              "newly_lost_residents": 0.0,
+              "newly_lost_share": 0.0
+            }
+          ],
+          "baseline_access_residents_all_services": 14159.516603797674,
+          "publication_level": "public"
+        },
+        "road_criticality_0_100": {
+          "component": "road_criticality_0_100",
+          "value_0_100": 0.0,
+          "normalisation_version": "planning_frame_v1",
+          "protocol_sha256": {
+            "v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+            "v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+          },
+          "definition": "100 x residents with a baseline route to any hospital or main road who lose all routes / those residents",
+          "inputs": {
+            "residents_losing_all_routes": 0.0,
+            "residents_with_baseline_route": 7213.945144534111
+          },
+          "share_losing_all_routes": 0.0
+        },
+        "vulnerability_context_0_100": {
+          "component": "vulnerability_context_0_100",
+          "value_0_100": 44.4862709190651,
+          "normalisation_version": "planning_frame_v1",
+          "protocol_sha256": {
+            "v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+            "v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+          },
+          "definition": "100 x clip((dependent share - lower anchor) / (upper anchor - lower anchor), 0, 1), where dependent share is residents aged 0-14 plus residents aged 60 and over, divided by all residents",
+          "inputs": {
+            "children_0_14": 1537.0489758858937,
+            "older_60_plus": 2033.1594648441128,
+            "residents": 8759.42466091965
+          },
+          "dependent_share": 0.4075848105251208,
+          "anchors": {
+            "lower": "P10",
+            "lower_value": 0.351416,
+            "upper": "P90",
+            "upper_value": 0.477677
+          },
+          "anchor_sensitivity": {
+            "lower": "P5",
+            "lower_value": 0.313095,
+            "upper": "P95",
+            "upper_value": 0.494407,
+            "value_0_100": 52.11448250811904
+          },
+          "anchor_version": "national_vulnerability_anchors_v1",
+          "anchor_receipt_sha256": "2ad161d4c67cbe1567fbb853fe951da3ffb257f06088fbc80e8e297938c73a59",
+          "caveat": "Modelled 1 km age composition applied to 2020 100 m counts; not observed; within-cell composition assumed uniform."
+        }
+      },
+      "fpps_0_100": 4.72,
+      "confidence": {
+        "unit_id": "TH570902",
+        "lane": "SCN-ENV",
+        "tier": "T1",
+        "flood_input": "UNOSAT/GISTDA product 4009, accumulated layer",
+        "scenario_base": "agency_product_as_provided",
+        "confidence_rule_version": "confidence_rule_v1",
+        "confidence_class": "medium",
+        "confidence_kind": "scenario",
+        "basis": {
+          "C1_tier": "by_scenario_declaration",
+          "C2_recency": "by_scenario_declaration",
+          "C3_coverage": "by_construction",
+          "C4_input_uncertainty": "pass",
+          "C5_components": "pass",
+          "C6_residents": "pass",
+          "C7_baseline_no_route": "pass",
+          "C8_hospital": "pass"
+        },
+        "failed_conditions": [],
+        "reason_code": null,
+        "guardrail_gr1": {
+          "id": "GR1_minimum_denominators",
+          "applies": false,
+          "unit_residents_min_for_class": 100.0,
+          "no_binding_class": false,
+          "no_would_be_class": false,
+          "no_v2_class": false
+        },
+        "t2_skill_condition": null,
+        "measurements": {
+          "recency_days": null,
+          "acquisition_date": null,
+          "case_reference_date": null,
+          "unit_valid_coverage": null,
+          "coverage_by_construction": true,
+          "exposure_plus_one_pixel_0_100": 0.0,
+          "exposure_minus_one_pixel_0_100": 0.0,
+          "exposure_plus_minus_one_pixel_points": 0.0,
+          "t2_abstention_fraction": null,
+          "component_status": {
+            "flood_likelihood_0_100": "computed",
+            "exposure_0_100": "computed",
+            "access_gap_0_100": "computed",
+            "road_criticality_0_100": "computed",
+            "vulnerability_context_0_100": "computed"
+          },
+          "unit_residents": 8911.487386196852,
+          "baseline_vehicle_no_route_share": 0.00045765464293960866,
+          "hospitals_reachable_at_baseline": 6.0
+        },
+        "thresholds": {
+          "recency_window_days": 3.0,
+          "unit_valid_coverage_min": 0.8,
+          "exposure_plus_minus_one_pixel_max_points": 15.0,
+          "exposure_plus_minus_one_pixel_float_guard_points": 1e-09,
+          "t2_abstention_fraction_max": 0.2,
+          "unit_residents_min": 100.0,
+          "baseline_vehicle_no_route_share_max": 0.1,
+          "hospitals_reachable_at_baseline_min": 1.0
+        },
+        "uses_ensemble_output": false,
+        "rights_are_an_input": false,
+        "protocol_v1a_sha256": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+        "assumptions": [
+          "Derived from the listed measurements only. No ensemble output and no rights level is read.",
+          "A condition whose measurement is missing is recorded as fail: medium needs every condition shown.",
+          "High requires tier T4, which is locked in this release, so high is never assigned.",
+          "C4 compares the difference of two exposures with a float guard of 1e-09 points, so two exposures exactly the limit apart are not failed by binary rounding.",
+          "Scenario confidence (drafter reading DR-A07, confirmed at signing): C1 is judged on the base flood input and C2 is replaced by the scenario declaration. It is never shown or counted as observed confidence."
+        ]
+      },
+      "action_class": "E",
+      "action_reason_code": "low_priority_score",
+      "would_be_class": null,
+      "class_v2": {
+        "class_rule_version": "class_rule_v2",
+        "label": "secondary",
+        "binding": false,
+        "result": "E",
+        "trigger_evidence": [
+          {
+            "trigger": "E",
+            "met": true,
+            "evidence": "Confidence medium; exposure 0.00 against a floor of 10; FPPS 4.72 against a minimum of 35."
+          },
+          {
+            "trigger": "A",
+            "met": false,
+            "evidence": "v1 class E; dependent share 0.407585 against the national P75 of 0.454083."
+          },
+          {
+            "trigger": "B",
+            "met": null,
+            "evidence": "Not evaluated: A top-20 critical link inside the flood extent, closed on its own, takes every route from at least 500 residents of the unit: no stage has closed the top-20 links one at a time. The result does not depend on it: trigger E stands before it in the order E, A, B, C, D."
+          },
+          {
+            "trigger": "C",
+            "met": false,
+            "evidence": "FPPS 4.72 against a minimum of 35, confidence medium, and a serving hospital or uniquely located shelter inside the extent or without a vehicle route: no stage has run the serving-facility test."
+          },
+          {
+            "trigger": "D",
+            "met": false,
+            "evidence": "FPPS 4.72 against a minimum of 35, and the recurrence flag: no stage has computed the recurrence flag."
+          }
+        ]
+      },
+      "leave_one_component_out": {
+        "flood_likelihood_0_100": {
+          "fpps_0_100": 6.74,
+          "action_class": "E"
+        },
+        "exposure_0_100": {
+          "fpps_0_100": 6.29,
+          "action_class": "E"
+        },
+        "access_gap_0_100": {
+          "fpps_0_100": 5.56,
+          "action_class": "E"
+        },
+        "road_criticality_0_100": {
+          "fpps_0_100": 5.55,
+          "action_class": "E"
+        },
+        "vulnerability_context_0_100": {
+          "fpps_0_100": 0.3,
+          "action_class": "E"
+        }
+      },
+      "headline_stability": {
+        "guardrail": "GR8_headline_stability",
+        "status": "not_evaluated",
+        "class_retention": null,
+        "class_retention_min": 0.6
+      },
+      "accepted_fpps": null,
+      "accepted_action_class": null,
+      "source_timestamp": "2024-10-12T00:00:00Z",
+      "assumptions": [
+        "Road closure is modelled from the flood input (closure_rule_v1, central level): a flood intersection does not prove a road closure.",
+        "Residents are modelled counts. A population cell counts for the unit whose polygon holds its centre, and a resident is inside the flood extent when the cell centre is.",
+        "A v2 trigger written as 'Not evaluated' with met false was not shown to be met and was not shown to be unmet. The v2 result stands without it, because an earlier trigger in the order is met."
+      ]
+    },
+    {
+      "row_id": "SE1:TH570903:SCN-ENV",
+      "unit_id": "TH570903",
+      "unit_name_en": "Ko Chang",
+      "unit_name_th": "\u0e40\u0e01\u0e32\u0e30\u0e0a\u0e49\u0e32\u0e07",
+      "tier": "T1",
+      "lane": "SCN-ENV",
+      "temporal_relation": "season_window",
+      "flood_input": "UNOSAT/GISTDA product 4009, accumulated layer",
+      "scenario": {
+        "id": "SCN-ENV",
+        "declaration": "The UNOSAT/GISTDA product 4009 accumulated layer treated as if every area ever mapped flooded in the season were flooded at once. A scenario, part of the SCN column. Shown as: 2024 season envelope scenario: all roads ever mapped flooded treated as closed at once."
+      },
+      "lineage": {
+        "flood_input_id": "unosat_4009.chiangrai_20240801_20241012_accumulatedflood",
+        "routing_context_id": "e4_planning_context_vehicle",
+        "closure_rule": {
+          "version": "closure_rule_v1",
+          "level": "central",
+          "closure_basis": "modelled_from_unosat_4009.chiangrai_20240801_20241012_accumulatedflood"
+        }
+      },
+      "normalisation_version": "planning_frame_v1",
+      "components": {
+        "flood_likelihood_0_100": {
+          "component": "flood_likelihood_0_100",
+          "value_0_100": 100.0,
+          "normalisation_version": "planning_frame_v1",
+          "protocol_sha256": {
+            "v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+            "v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+          },
+          "definition": "100 x min(1, flooded share of the unit's non-permanent-water land / anchor)",
+          "inputs": {
+            "flooded_non_permanent_water_land_area": 22096769.275216065,
+            "non_permanent_water_land_area": 47205242.38945257
+          },
+          "flooded_share": 0.46809990070410734,
+          "anchor": 0.2,
+          "anchor_sensitivity_one_at_a_time": [
+            {
+              "anchor": 0.1,
+              "value_0_100": 100.0
+            },
+            {
+              "anchor": 0.3,
+              "value_0_100": 100.0
+            }
+          ],
+          "anchor_disclosure": "The 0.20 anchor was declared after the 0.05 anchor was seen to saturate in 6 of the 8 Mae Sai tambons. It was chosen after seeing the data. Plan 3.4 says 5 of 8; the per-tambon envelope shares kept from that analysis show 6 above 0.05, and the owners corrected the count at signing on 2026-10-02.",
+          "permanent_water": {
+            "source": "ESA WorldCover 2021 v200",
+            "class": 80
+          }
+        },
+        "exposure_0_100": {
+          "component": "exposure_0_100",
+          "value_0_100": 37.24072659140115,
+          "normalisation_version": "planning_frame_v1",
+          "protocol_sha256": {
+            "v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+            "v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+          },
+          "definition": "100 x residents whose population cell centre is inside the flood extent / unit residents",
+          "inputs": {
+            "residents_inside_flood_extent": 2498.2579822540283,
+            "unit_residents": 6708.402898967266
+          },
+          "exposed_share": 0.3724072659140115,
+          "kind": "share_only"
+        },
+        "access_gap_0_100": {
+          "component": "access_gap_0_100",
+          "value_0_100": 100.0,
+          "normalisation_version": "planning_frame_v1",
+          "protocol_sha256": {
+            "v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+            "v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+          },
+          "definition": "Baseline-access-weighted mean of newly-lost access shares, counted only for people who had access at baseline",
+          "inputs": {
+            "services": {
+              "hospital": {
+                "mode": "vehicle",
+                "threshold_minutes": 30,
+                "baseline_access_residents": 5709.620454907417,
+                "newly_lost_residents": 5709.620454907417
+              },
+              "main_road_entry": {
+                "mode": "vehicle",
+                "threshold_minutes": 15,
+                "baseline_access_residents": 2963.1568821668625,
+                "newly_lost_residents": 2963.1568821668625
+              }
+            }
+          },
+          "services": [
+            {
+              "service": "hospital",
+              "mode": "vehicle",
+              "threshold_minutes": 30,
+              "baseline_access_residents": 5709.620454907417,
+              "newly_lost_residents": 5709.620454907417,
+              "newly_lost_share": 1.0
+            },
+            {
+              "service": "main_road_entry",
+              "mode": "vehicle",
+              "threshold_minutes": 15,
+              "baseline_access_residents": 2963.1568821668625,
+              "newly_lost_residents": 2963.1568821668625,
+              "newly_lost_share": 1.0
+            }
+          ],
+          "baseline_access_residents_all_services": 8672.77733707428,
+          "publication_level": "public"
+        },
+        "road_criticality_0_100": {
+          "component": "road_criticality_0_100",
+          "value_0_100": 100.0,
+          "normalisation_version": "planning_frame_v1",
+          "protocol_sha256": {
+            "v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+            "v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+          },
+          "definition": "100 x residents with a baseline route to any hospital or main road who lose all routes / those residents",
+          "inputs": {
+            "residents_losing_all_routes": 5972.365630179644,
+            "residents_with_baseline_route": 5972.365630179644
+          },
+          "share_losing_all_routes": 1.0
+        },
+        "vulnerability_context_0_100": {
+          "component": "vulnerability_context_0_100",
+          "value_0_100": 41.69177207048509,
+          "normalisation_version": "planning_frame_v1",
+          "protocol_sha256": {
+            "v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+            "v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+          },
+          "definition": "100 x clip((dependent share - lower anchor) / (upper anchor - lower anchor), 0, 1), where dependent share is residents aged 0-14 plus residents aged 60 and over, divided by all residents",
+          "inputs": {
+            "children_0_14": 1339.3985444177174,
+            "older_60_plus": 1766.122840512862,
+            "residents": 7685.8602250647755
+          },
+          "dependent_share": 0.4040564483339152,
+          "anchors": {
+            "lower": "P10",
+            "lower_value": 0.351416,
+            "upper": "P90",
+            "upper_value": 0.477677
+          },
+          "anchor_sensitivity": {
+            "lower": "P5",
+            "lower_value": 0.313095,
+            "upper": "P95",
+            "upper_value": 0.494407,
+            "value_0_100": 50.168465591861086
+          },
+          "anchor_version": "national_vulnerability_anchors_v1",
+          "anchor_receipt_sha256": "2ad161d4c67cbe1567fbb853fe951da3ffb257f06088fbc80e8e297938c73a59",
+          "caveat": "Modelled 1 km age composition applied to 2020 100 m counts; not observed; within-cell composition assumed uniform."
+        }
+      },
+      "fpps_0_100": 78.48,
+      "confidence": {
+        "unit_id": "TH570903",
+        "lane": "SCN-ENV",
+        "tier": "T1",
+        "flood_input": "UNOSAT/GISTDA product 4009, accumulated layer",
+        "scenario_base": "agency_product_as_provided",
+        "confidence_rule_version": "confidence_rule_v1",
+        "confidence_class": "medium",
+        "confidence_kind": "scenario",
+        "basis": {
+          "C1_tier": "by_scenario_declaration",
+          "C2_recency": "by_scenario_declaration",
+          "C3_coverage": "by_construction",
+          "C4_input_uncertainty": "pass",
+          "C5_components": "pass",
+          "C6_residents": "pass",
+          "C7_baseline_no_route": "pass",
+          "C8_hospital": "pass"
+        },
+        "failed_conditions": [],
+        "reason_code": null,
+        "guardrail_gr1": {
+          "id": "GR1_minimum_denominators",
+          "applies": false,
+          "unit_residents_min_for_class": 100.0,
+          "no_binding_class": false,
+          "no_would_be_class": false,
+          "no_v2_class": false
+        },
+        "t2_skill_condition": null,
+        "measurements": {
+          "recency_days": null,
+          "acquisition_date": null,
+          "case_reference_date": null,
+          "unit_valid_coverage": null,
+          "coverage_by_construction": true,
+          "exposure_plus_one_pixel_0_100": 41.89325935147768,
+          "exposure_minus_one_pixel_0_100": 32.91598378892689,
+          "exposure_plus_minus_one_pixel_points": 8.977275562550794,
+          "t2_abstention_fraction": null,
+          "component_status": {
+            "flood_likelihood_0_100": "computed",
+            "exposure_0_100": "computed",
+            "access_gap_0_100": "computed",
+            "road_criticality_0_100": "computed",
+            "vulnerability_context_0_100": "computed"
+          },
+          "unit_residents": 6708.402898967266,
+          "baseline_vehicle_no_route_share": 0.0,
+          "hospitals_reachable_at_baseline": 6.0
+        },
+        "thresholds": {
+          "recency_window_days": 3.0,
+          "unit_valid_coverage_min": 0.8,
+          "exposure_plus_minus_one_pixel_max_points": 15.0,
+          "exposure_plus_minus_one_pixel_float_guard_points": 1e-09,
+          "t2_abstention_fraction_max": 0.2,
+          "unit_residents_min": 100.0,
+          "baseline_vehicle_no_route_share_max": 0.1,
+          "hospitals_reachable_at_baseline_min": 1.0
+        },
+        "uses_ensemble_output": false,
+        "rights_are_an_input": false,
+        "protocol_v1a_sha256": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+        "assumptions": [
+          "Derived from the listed measurements only. No ensemble output and no rights level is read.",
+          "A condition whose measurement is missing is recorded as fail: medium needs every condition shown.",
+          "High requires tier T4, which is locked in this release, so high is never assigned.",
+          "C4 compares the difference of two exposures with a float guard of 1e-09 points, so two exposures exactly the limit apart are not failed by binary rounding.",
+          "Scenario confidence (drafter reading DR-A07, confirmed at signing): C1 is judged on the base flood input and C2 is replaced by the scenario declaration. It is never shown or counted as observed confidence."
+        ]
+      },
+      "action_class": "B",
+      "action_reason_code": "critical_route_access",
+      "would_be_class": null,
+      "class_v2": {
+        "class_rule_version": "class_rule_v2",
+        "label": "secondary",
+        "binding": false,
+        "result": "not_evaluated",
+        "trigger_evidence": [
+          {
+            "trigger": "E",
+            "met": false,
+            "evidence": "Confidence medium; exposure 37.24 against a floor of 10; FPPS 78.48 against a minimum of 35."
+          },
+          {
+            "trigger": "A",
+            "met": false,
+            "evidence": "v1 class B; dependent share 0.404056 against the national P75 of 0.454083."
+          },
+          {
+            "trigger": "B",
+            "met": null,
+            "evidence": "Not evaluated: A top-20 critical link inside the flood extent, closed on its own, takes every route from at least 500 residents of the unit: no stage has closed the top-20 links one at a time. No earlier trigger in the order E, A, B, C, D is met, so the v2 result depends on a trigger that was not evaluated and is not stated."
+          },
+          {
+            "trigger": "C",
+            "met": null,
+            "evidence": "Not evaluated: FPPS 78.48 against a minimum of 35, confidence medium, and a serving hospital or uniquely located shelter inside the extent or without a vehicle route: no stage has run the serving-facility test. No earlier trigger in the order E, A, B, C, D is met, so the v2 result depends on a trigger that was not evaluated and is not stated."
+          },
+          {
+            "trigger": "D",
+            "met": null,
+            "evidence": "Not evaluated: FPPS 78.48 against a minimum of 35, and the recurrence flag: no stage has computed the recurrence flag. No earlier trigger in the order E, A, B, C, D is met, so the v2 result depends on a trigger that was not evaluated and is not stated."
+          }
+        ]
+      },
+      "leave_one_component_out": {
+        "flood_likelihood_0_100": {
+          "fpps_0_100": 69.26,
+          "action_class": "B"
+        },
+        "exposure_0_100": {
+          "fpps_0_100": 92.23,
+          "action_class": "B"
+        },
+        "access_gap_0_100": {
+          "fpps_0_100": 73.1,
+          "action_class": "B"
+        },
+        "road_criticality_0_100": {
+          "fpps_0_100": 74.68,
+          "action_class": "B"
+        },
+        "vulnerability_context_0_100": {
+          "fpps_0_100": 82.57,
+          "action_class": "B"
+        }
+      },
+      "headline_stability": {
+        "guardrail": "GR8_headline_stability",
+        "status": "not_evaluated",
+        "class_retention": null,
+        "class_retention_min": 0.6
+      },
+      "accepted_fpps": null,
+      "accepted_action_class": null,
+      "source_timestamp": "2024-10-12T00:00:00Z",
+      "assumptions": [
+        "Road closure is modelled from the flood input (closure_rule_v1, central level): a flood intersection does not prove a road closure.",
+        "Residents are modelled counts. A population cell counts for the unit whose polygon holds its centre, and a resident is inside the flood extent when the cell centre is.",
+        "A v2 trigger written as 'Not evaluated' with met false was not shown to be met and was not shown to be unmet. The v2 result stands without it, because an earlier trigger in the order is met."
+      ]
+    },
+    {
+      "row_id": "SE1:TH570904:SCN-ENV",
+      "unit_id": "TH570904",
+      "unit_name_en": "Pong Pha",
+      "unit_name_th": "\u0e42\u0e1b\u0e48\u0e07\u0e1c\u0e32",
+      "tier": "T1",
+      "lane": "SCN-ENV",
+      "temporal_relation": "season_window",
+      "flood_input": "UNOSAT/GISTDA product 4009, accumulated layer",
+      "scenario": {
+        "id": "SCN-ENV",
+        "declaration": "The UNOSAT/GISTDA product 4009 accumulated layer treated as if every area ever mapped flooded in the season were flooded at once. A scenario, part of the SCN column. Shown as: 2024 season envelope scenario: all roads ever mapped flooded treated as closed at once."
+      },
+      "lineage": {
+        "flood_input_id": "unosat_4009.chiangrai_20240801_20241012_accumulatedflood",
+        "routing_context_id": "e4_planning_context_vehicle",
+        "closure_rule": {
+          "version": "closure_rule_v1",
+          "level": "central",
+          "closure_basis": "modelled_from_unosat_4009.chiangrai_20240801_20241012_accumulatedflood"
+        }
+      },
+      "normalisation_version": "planning_frame_v1",
+      "components": {
+        "flood_likelihood_0_100": {
+          "component": "flood_likelihood_0_100",
+          "value_0_100": 73.19560387673162,
+          "normalisation_version": "planning_frame_v1",
+          "protocol_sha256": {
+            "v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+            "v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+          },
+          "definition": "100 x min(1, flooded share of the unit's non-permanent-water land / anchor)",
+          "inputs": {
+            "flooded_non_permanent_water_land_area": 6360324.8051571455,
+            "non_permanent_water_land_area": 43447450.85967553
+          },
+          "flooded_share": 0.14639120775346326,
+          "anchor": 0.2,
+          "anchor_sensitivity_one_at_a_time": [
+            {
+              "anchor": 0.1,
+              "value_0_100": 100.0
+            },
+            {
+              "anchor": 0.3,
+              "value_0_100": 48.797069251154426
+            }
+          ],
+          "anchor_disclosure": "The 0.20 anchor was declared after the 0.05 anchor was seen to saturate in 6 of the 8 Mae Sai tambons. It was chosen after seeing the data. Plan 3.4 says 5 of 8; the per-tambon envelope shares kept from that analysis show 6 above 0.05, and the owners corrected the count at signing on 2026-10-02.",
+          "permanent_water": {
+            "source": "ESA WorldCover 2021 v200",
+            "class": 80
+          }
+        },
+        "exposure_0_100": {
+          "component": "exposure_0_100",
+          "value_0_100": 9.71576965723603,
+          "normalisation_version": "planning_frame_v1",
+          "protocol_sha256": {
+            "v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+            "v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+          },
+          "definition": "100 x residents whose population cell centre is inside the flood extent / unit residents",
+          "inputs": {
+            "residents_inside_flood_extent": 908.3669049441814,
+            "unit_residents": 9349.407581597567
+          },
+          "exposed_share": 0.09715769657236031,
+          "kind": "share_only"
+        },
+        "access_gap_0_100": {
+          "component": "access_gap_0_100",
+          "value_0_100": 8.31674439896631,
+          "normalisation_version": "planning_frame_v1",
+          "protocol_sha256": {
+            "v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+            "v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+          },
+          "definition": "Baseline-access-weighted mean of newly-lost access shares, counted only for people who had access at baseline",
+          "inputs": {
+            "services": {
+              "hospital": {
+                "mode": "vehicle",
+                "threshold_minutes": 30,
+                "baseline_access_residents": 8609.448951303959,
+                "newly_lost_residents": 749.7978025972843
+              },
+              "main_road_entry": {
+                "mode": "vehicle",
+                "threshold_minutes": 15,
+                "baseline_access_residents": 8557.12553074956,
+                "newly_lost_residents": 677.9023191332817
+              }
+            }
+          },
+          "services": [
+            {
+              "service": "hospital",
+              "mode": "vehicle",
+              "threshold_minutes": 30,
+              "baseline_access_residents": 8609.448951303959,
+              "newly_lost_residents": 749.7978025972843,
+              "newly_lost_share": 0.08709010377298566
+            },
+            {
+              "service": "main_road_entry",
+              "mode": "vehicle",
+              "threshold_minutes": 15,
+              "baseline_access_residents": 8557.12553074956,
+              "newly_lost_residents": 677.9023191332817,
+              "newly_lost_share": 0.07922079870130186
+            }
+          ],
+          "baseline_access_residents_all_services": 17166.57448205352,
+          "publication_level": "public"
+        },
+        "road_criticality_0_100": {
+          "component": "road_criticality_0_100",
+          "value_0_100": 8.475538562385104,
+          "normalisation_version": "planning_frame_v1",
+          "protocol_sha256": {
+            "v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+            "v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+          },
+          "definition": "100 x residents with a baseline route to any hospital or main road who lose all routes / those residents",
+          "inputs": {
+            "residents_losing_all_routes": 729.697165876627,
+            "residents_with_baseline_route": 8609.448951303959
+          },
+          "share_losing_all_routes": 0.08475538562385104
+        },
+        "vulnerability_context_0_100": {
+          "component": "vulnerability_context_0_100",
+          "value_0_100": 42.87524103461307,
+          "normalisation_version": "planning_frame_v1",
+          "protocol_sha256": {
+            "v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+            "v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+          },
+          "definition": "100 x clip((dependent share - lower anchor) / (upper anchor - lower anchor), 0, 1), where dependent share is residents aged 0-14 plus residents aged 60 and over, divided by all residents",
+          "inputs": {
+            "children_0_14": 1762.015122441823,
+            "older_60_plus": 2369.7366002547574,
+            "residents": 10188.002733936546
+          },
+          "dependent_share": 0.4055507080827128,
+          "anchors": {
+            "lower": "P10",
+            "lower_value": 0.351416,
+            "upper": "P90",
+            "upper_value": 0.477677
+          },
+          "anchor_sensitivity": {
+            "lower": "P5",
+            "lower_value": 0.313095,
+            "upper": "P95",
+            "upper_value": 0.494407,
+            "value_0_100": 50.99260285183155
+          },
+          "anchor_version": "national_vulnerability_anchors_v1",
+          "anchor_receipt_sha256": "2ad161d4c67cbe1567fbb853fe951da3ffb257f06088fbc80e8e297938c73a59",
+          "caveat": "Modelled 1 km age composition applied to 2020 100 m counts; not observed; within-cell composition assumed uniform."
+        }
+      },
+      "fpps_0_100": 31.61,
+      "confidence": {
+        "unit_id": "TH570904",
+        "lane": "SCN-ENV",
+        "tier": "T1",
+        "flood_input": "UNOSAT/GISTDA product 4009, accumulated layer",
+        "scenario_base": "agency_product_as_provided",
+        "confidence_rule_version": "confidence_rule_v1",
+        "confidence_class": "medium",
+        "confidence_kind": "scenario",
+        "basis": {
+          "C1_tier": "by_scenario_declaration",
+          "C2_recency": "by_scenario_declaration",
+          "C3_coverage": "by_construction",
+          "C4_input_uncertainty": "pass",
+          "C5_components": "pass",
+          "C6_residents": "pass",
+          "C7_baseline_no_route": "pass",
+          "C8_hospital": "pass"
+        },
+        "failed_conditions": [],
+        "reason_code": null,
+        "guardrail_gr1": {
+          "id": "GR1_minimum_denominators",
+          "applies": false,
+          "unit_residents_min_for_class": 100.0,
+          "no_binding_class": false,
+          "no_would_be_class": false,
+          "no_v2_class": false
+        },
+        "t2_skill_condition": null,
+        "measurements": {
+          "recency_days": null,
+          "acquisition_date": null,
+          "case_reference_date": null,
+          "unit_valid_coverage": null,
+          "coverage_by_construction": true,
+          "exposure_plus_one_pixel_0_100": 10.435232791358432,
+          "exposure_minus_one_pixel_0_100": 9.120396806104859,
+          "exposure_plus_minus_one_pixel_points": 1.3148359852535734,
+          "t2_abstention_fraction": null,
+          "component_status": {
+            "flood_likelihood_0_100": "computed",
+            "exposure_0_100": "computed",
+            "access_gap_0_100": "computed",
+            "road_criticality_0_100": "computed",
+            "vulnerability_context_0_100": "computed"
+          },
+          "unit_residents": 9349.407581597567,
+          "baseline_vehicle_no_route_share": 0.005333135089390013,
+          "hospitals_reachable_at_baseline": 6.0
+        },
+        "thresholds": {
+          "recency_window_days": 3.0,
+          "unit_valid_coverage_min": 0.8,
+          "exposure_plus_minus_one_pixel_max_points": 15.0,
+          "exposure_plus_minus_one_pixel_float_guard_points": 1e-09,
+          "t2_abstention_fraction_max": 0.2,
+          "unit_residents_min": 100.0,
+          "baseline_vehicle_no_route_share_max": 0.1,
+          "hospitals_reachable_at_baseline_min": 1.0
+        },
+        "uses_ensemble_output": false,
+        "rights_are_an_input": false,
+        "protocol_v1a_sha256": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+        "assumptions": [
+          "Derived from the listed measurements only. No ensemble output and no rights level is read.",
+          "A condition whose measurement is missing is recorded as fail: medium needs every condition shown.",
+          "High requires tier T4, which is locked in this release, so high is never assigned.",
+          "C4 compares the difference of two exposures with a float guard of 1e-09 points, so two exposures exactly the limit apart are not failed by binary rounding.",
+          "Scenario confidence (drafter reading DR-A07, confirmed at signing): C1 is judged on the base flood input and C2 is replaced by the scenario declaration. It is never shown or counted as observed confidence."
+        ]
+      },
+      "action_class": "E",
+      "action_reason_code": "low_priority_score",
+      "would_be_class": null,
+      "class_v2": {
+        "class_rule_version": "class_rule_v2",
+        "label": "secondary",
+        "binding": false,
+        "result": "E",
+        "trigger_evidence": [
+          {
+            "trigger": "E",
+            "met": true,
+            "evidence": "Confidence medium; exposure 9.72 against a floor of 10; FPPS 31.61 against a minimum of 35."
+          },
+          {
+            "trigger": "A",
+            "met": false,
+            "evidence": "v1 class E; dependent share 0.405551 against the national P75 of 0.454083."
+          },
+          {
+            "trigger": "B",
+            "met": null,
+            "evidence": "Not evaluated: A top-20 critical link inside the flood extent, closed on its own, takes every route from at least 500 residents of the unit: no stage has closed the top-20 links one at a time. The result does not depend on it: trigger E stands before it in the order E, A, B, C, D."
+          },
+          {
+            "trigger": "C",
+            "met": false,
+            "evidence": "FPPS 31.61 against a minimum of 35, confidence medium, and a serving hospital or uniquely located shelter inside the extent or without a vehicle route: no stage has run the serving-facility test."
+          },
+          {
+            "trigger": "D",
+            "met": false,
+            "evidence": "FPPS 31.61 against a minimum of 35, and the recurrence flag: no stage has computed the recurrence flag."
+          }
+        ]
+      },
+      "leave_one_component_out": {
+        "flood_likelihood_0_100": {
+          "fpps_0_100": 13.79,
+          "action_class": "E"
+        },
+        "exposure_0_100": {
+          "fpps_0_100": 38.91,
+          "action_class": "D"
+        },
+        "access_gap_0_100": {
+          "fpps_0_100": 37.43,
+          "action_class": "D"
+        },
+        "road_criticality_0_100": {
+          "fpps_0_100": 35.69,
+          "action_class": "D"
+        },
+        "vulnerability_context_0_100": {
+          "fpps_0_100": 30.36,
+          "action_class": "E"
+        }
+      },
+      "headline_stability": {
+        "guardrail": "GR8_headline_stability",
+        "status": "not_evaluated",
+        "class_retention": null,
+        "class_retention_min": 0.6
+      },
+      "accepted_fpps": null,
+      "accepted_action_class": null,
+      "source_timestamp": "2024-10-12T00:00:00Z",
+      "assumptions": [
+        "Road closure is modelled from the flood input (closure_rule_v1, central level): a flood intersection does not prove a road closure.",
+        "Residents are modelled counts. A population cell counts for the unit whose polygon holds its centre, and a resident is inside the flood extent when the cell centre is.",
+        "A v2 trigger written as 'Not evaluated' with met false was not shown to be met and was not shown to be unmet. The v2 result stands without it, because an earlier trigger in the order is met."
+      ]
+    },
+    {
+      "row_id": "SE1:TH570905:SCN-ENV",
+      "unit_id": "TH570905",
+      "unit_name_en": "Si Mueang Chum",
+      "unit_name_th": "\u0e28\u0e23\u0e35\u0e40\u0e21\u0e37\u0e2d\u0e07\u0e0a\u0e38\u0e21",
+      "tier": "T1",
+      "lane": "SCN-ENV",
+      "temporal_relation": "season_window",
+      "flood_input": "UNOSAT/GISTDA product 4009, accumulated layer",
+      "scenario": {
+        "id": "SCN-ENV",
+        "declaration": "The UNOSAT/GISTDA product 4009 accumulated layer treated as if every area ever mapped flooded in the season were flooded at once. A scenario, part of the SCN column. Shown as: 2024 season envelope scenario: all roads ever mapped flooded treated as closed at once."
+      },
+      "lineage": {
+        "flood_input_id": "unosat_4009.chiangrai_20240801_20241012_accumulatedflood",
+        "routing_context_id": "e4_planning_context_vehicle",
+        "closure_rule": {
+          "version": "closure_rule_v1",
+          "level": "central",
+          "closure_basis": "modelled_from_unosat_4009.chiangrai_20240801_20241012_accumulatedflood"
+        }
+      },
+      "normalisation_version": "planning_frame_v1",
+      "components": {
+        "flood_likelihood_0_100": {
+          "component": "flood_likelihood_0_100",
+          "value_0_100": 100.0,
+          "normalisation_version": "planning_frame_v1",
+          "protocol_sha256": {
+            "v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+            "v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+          },
+          "definition": "100 x min(1, flooded share of the unit's non-permanent-water land / anchor)",
+          "inputs": {
+            "flooded_non_permanent_water_land_area": 21529807.619769476,
+            "non_permanent_water_land_area": 41717537.02649047
+          },
+          "flooded_share": 0.516085300196369,
+          "anchor": 0.2,
+          "anchor_sensitivity_one_at_a_time": [
+            {
+              "anchor": 0.1,
+              "value_0_100": 100.0
+            },
+            {
+              "anchor": 0.3,
+              "value_0_100": 100.0
+            }
+          ],
+          "anchor_disclosure": "The 0.20 anchor was declared after the 0.05 anchor was seen to saturate in 6 of the 8 Mae Sai tambons. It was chosen after seeing the data. Plan 3.4 says 5 of 8; the per-tambon envelope shares kept from that analysis show 6 above 0.05, and the owners corrected the count at signing on 2026-10-02.",
+          "permanent_water": {
+            "source": "ESA WorldCover 2021 v200",
+            "class": 80
+          }
+        },
+        "exposure_0_100": {
+          "component": "exposure_0_100",
+          "value_0_100": 42.580024081305965,
+          "normalisation_version": "planning_frame_v1",
+          "protocol_sha256": {
+            "v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+            "v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+          },
+          "definition": "100 x residents whose population cell centre is inside the flood extent / unit residents",
+          "inputs": {
+            "residents_inside_flood_extent": 3047.691168040037,
+            "unit_residents": 7157.560930967331
+          },
+          "exposed_share": 0.42580024081305967,
+          "kind": "share_only"
+        },
+        "access_gap_0_100": {
+          "component": "access_gap_0_100",
+          "value_0_100": 38.679532742341856,
+          "normalisation_version": "planning_frame_v1",
+          "protocol_sha256": {
+            "v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+            "v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+          },
+          "definition": "Baseline-access-weighted mean of newly-lost access shares, counted only for people who had access at baseline",
+          "inputs": {
+            "services": {
+              "hospital": {
+                "mode": "vehicle",
+                "threshold_minutes": 30,
+                "baseline_access_residents": 6529.838788986206,
+                "newly_lost_residents": 2869.0341961979866
+              },
+              "main_road_entry": {
+                "mode": "vehicle",
+                "threshold_minutes": 15,
+                "baseline_access_residents": 4919.861739993095,
+                "newly_lost_residents": 1559.656468808651
+              }
+            }
+          },
+          "services": [
+            {
+              "service": "hospital",
+              "mode": "vehicle",
+              "threshold_minutes": 30,
+              "baseline_access_residents": 6529.838788986206,
+              "newly_lost_residents": 2869.0341961979866,
+              "newly_lost_share": 0.43937289861384465
+            },
+            {
+              "service": "main_road_entry",
+              "mode": "vehicle",
+              "threshold_minutes": 15,
+              "baseline_access_residents": 4919.861739993095,
+              "newly_lost_residents": 1559.656468808651,
+              "newly_lost_share": 0.3170122558791337
+            }
+          ],
+          "baseline_access_residents_all_services": 11449.700528979301,
+          "publication_level": "public"
+        },
+        "road_criticality_0_100": {
+          "component": "road_criticality_0_100",
+          "value_0_100": 44.180545586281056,
+          "normalisation_version": "planning_frame_v1",
+          "protocol_sha256": {
+            "v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+            "v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+          },
+          "definition": "100 x residents with a baseline route to any hospital or main road who lose all routes / those residents",
+          "inputs": {
+            "residents_losing_all_routes": 2897.4905952215195,
+            "residents_with_baseline_route": 6558.295188009739
+          },
+          "share_losing_all_routes": 0.44180545586281056
+        },
+        "vulnerability_context_0_100": {
+          "component": "vulnerability_context_0_100",
+          "value_0_100": 42.882951738047446,
+          "normalisation_version": "planning_frame_v1",
+          "protocol_sha256": {
+            "v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+            "v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+          },
+          "definition": "100 x clip((dependent share - lower anchor) / (upper anchor - lower anchor), 0, 1), where dependent share is residents aged 0-14 plus residents aged 60 and over, divided by all residents",
+          "inputs": {
+            "children_0_14": 787.0284799937979,
+            "older_60_plus": 1060.1913508744328,
+            "residents": 4554.733726107885
+          },
+          "dependent_share": 0.4055604436939761,
+          "anchors": {
+            "lower": "P10",
+            "lower_value": 0.351416,
+            "upper": "P90",
+            "upper_value": 0.477677
+          },
+          "anchor_sensitivity": {
+            "lower": "P5",
+            "lower_value": 0.313095,
+            "upper": "P95",
+            "upper_value": 0.494407,
+            "value_0_100": 50.99797238681173
+          },
+          "anchor_version": "national_vulnerability_anchors_v1",
+          "anchor_receipt_sha256": "2ad161d4c67cbe1567fbb853fe951da3ffb257f06088fbc80e8e297938c73a59",
+          "caveat": "Modelled 1 km age composition applied to 2020 100 m counts; not observed; within-cell composition assumed uniform."
+        }
+      },
+      "fpps_0_100": 59.3,
+      "confidence": {
+        "unit_id": "TH570905",
+        "lane": "SCN-ENV",
+        "tier": "T1",
+        "flood_input": "UNOSAT/GISTDA product 4009, accumulated layer",
+        "scenario_base": "agency_product_as_provided",
+        "confidence_rule_version": "confidence_rule_v1",
+        "confidence_class": "medium",
+        "confidence_kind": "scenario",
+        "basis": {
+          "C1_tier": "by_scenario_declaration",
+          "C2_recency": "by_scenario_declaration",
+          "C3_coverage": "by_construction",
+          "C4_input_uncertainty": "pass",
+          "C5_components": "pass",
+          "C6_residents": "pass",
+          "C7_baseline_no_route": "pass",
+          "C8_hospital": "pass"
+        },
+        "failed_conditions": [],
+        "reason_code": null,
+        "guardrail_gr1": {
+          "id": "GR1_minimum_denominators",
+          "applies": false,
+          "unit_residents_min_for_class": 100.0,
+          "no_binding_class": false,
+          "no_would_be_class": false,
+          "no_v2_class": false
+        },
+        "t2_skill_condition": null,
+        "measurements": {
+          "recency_days": null,
+          "acquisition_date": null,
+          "case_reference_date": null,
+          "unit_valid_coverage": null,
+          "coverage_by_construction": true,
+          "exposure_plus_one_pixel_0_100": 46.76842037830102,
+          "exposure_minus_one_pixel_0_100": 39.04145553479273,
+          "exposure_plus_minus_one_pixel_points": 7.726964843508291,
+          "t2_abstention_fraction": null,
+          "component_status": {
+            "flood_likelihood_0_100": "computed",
+            "exposure_0_100": "computed",
+            "access_gap_0_100": "computed",
+            "road_criticality_0_100": "computed",
+            "vulnerability_context_0_100": "computed"
+          },
+          "unit_residents": 7157.560930967331,
+          "baseline_vehicle_no_route_share": 0.0010635178142205499,
+          "hospitals_reachable_at_baseline": 6.0
+        },
+        "thresholds": {
+          "recency_window_days": 3.0,
+          "unit_valid_coverage_min": 0.8,
+          "exposure_plus_minus_one_pixel_max_points": 15.0,
+          "exposure_plus_minus_one_pixel_float_guard_points": 1e-09,
+          "t2_abstention_fraction_max": 0.2,
+          "unit_residents_min": 100.0,
+          "baseline_vehicle_no_route_share_max": 0.1,
+          "hospitals_reachable_at_baseline_min": 1.0
+        },
+        "uses_ensemble_output": false,
+        "rights_are_an_input": false,
+        "protocol_v1a_sha256": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+        "assumptions": [
+          "Derived from the listed measurements only. No ensemble output and no rights level is read.",
+          "A condition whose measurement is missing is recorded as fail: medium needs every condition shown.",
+          "High requires tier T4, which is locked in this release, so high is never assigned.",
+          "C4 compares the difference of two exposures with a float guard of 1e-09 points, so two exposures exactly the limit apart are not failed by binary rounding.",
+          "Scenario confidence (drafter reading DR-A07, confirmed at signing): C1 is judged on the base flood input and C2 is replaced by the scenario declaration. It is never shown or counted as observed confidence."
+        ]
+      },
+      "action_class": "D",
+      "action_reason_code": "resilience",
+      "would_be_class": null,
+      "class_v2": {
+        "class_rule_version": "class_rule_v2",
+        "label": "secondary",
+        "binding": false,
+        "result": "not_evaluated",
+        "trigger_evidence": [
+          {
+            "trigger": "E",
+            "met": false,
+            "evidence": "Confidence medium; exposure 42.58 against a floor of 10; FPPS 59.30 against a minimum of 35."
+          },
+          {
+            "trigger": "A",
+            "met": false,
+            "evidence": "v1 class D; dependent share 0.405560 against the national P75 of 0.454083."
+          },
+          {
+            "trigger": "B",
+            "met": null,
+            "evidence": "Not evaluated: A top-20 critical link inside the flood extent, closed on its own, takes every route from at least 500 residents of the unit: no stage has closed the top-20 links one at a time. No earlier trigger in the order E, A, B, C, D is met, so the v2 result depends on a trigger that was not evaluated and is not stated."
+          },
+          {
+            "trigger": "C",
+            "met": null,
+            "evidence": "Not evaluated: FPPS 59.30 against a minimum of 35, confidence medium, and a serving hospital or uniquely located shelter inside the extent or without a vehicle route: no stage has run the serving-facility test. No earlier trigger in the order E, A, B, C, D is met, so the v2 result depends on a trigger that was not evaluated and is not stated."
+          },
+          {
+            "trigger": "D",
+            "met": null,
+            "evidence": "Not evaluated: FPPS 59.30 against a minimum of 35, and the recurrence flag: no stage has computed the recurrence flag. No earlier trigger in the order E, A, B, C, D is met, so the v2 result depends on a trigger that was not evaluated and is not stated."
+          }
+        ]
+      },
+      "leave_one_component_out": {
+        "flood_likelihood_0_100": {
+          "fpps_0_100": 41.85,
+          "action_class": "D"
+        },
+        "exposure_0_100": {
+          "fpps_0_100": 64.87,
+          "action_class": "D"
+        },
+        "access_gap_0_100": {
+          "fpps_0_100": 64.45,
+          "action_class": "D"
+        },
+        "road_criticality_0_100": {
+          "fpps_0_100": 61.96,
+          "action_class": "D"
+        },
+        "vulnerability_context_0_100": {
+          "fpps_0_100": 61.12,
+          "action_class": "D"
+        }
+      },
+      "headline_stability": {
+        "guardrail": "GR8_headline_stability",
+        "status": "not_evaluated",
+        "class_retention": null,
+        "class_retention_min": 0.6
+      },
+      "accepted_fpps": null,
+      "accepted_action_class": null,
+      "source_timestamp": "2024-10-12T00:00:00Z",
+      "assumptions": [
+        "Road closure is modelled from the flood input (closure_rule_v1, central level): a flood intersection does not prove a road closure.",
+        "Residents are modelled counts. A population cell counts for the unit whose polygon holds its centre, and a resident is inside the flood extent when the cell centre is.",
+        "A v2 trigger written as 'Not evaluated' with met false was not shown to be met and was not shown to be unmet. The v2 result stands without it, because an earlier trigger in the order is met."
+      ]
+    },
+    {
+      "row_id": "SE1:TH570906:SCN-ENV",
+      "unit_id": "TH570906",
+      "unit_name_en": "Wiang Phang Kham",
+      "unit_name_th": "\u0e40\u0e27\u0e35\u0e22\u0e07\u0e1e\u0e32\u0e07\u0e04\u0e33",
+      "tier": "T1",
+      "lane": "SCN-ENV",
+      "temporal_relation": "season_window",
+      "flood_input": "UNOSAT/GISTDA product 4009, accumulated layer",
+      "scenario": {
+        "id": "SCN-ENV",
+        "declaration": "The UNOSAT/GISTDA product 4009 accumulated layer treated as if every area ever mapped flooded in the season were flooded at once. A scenario, part of the SCN column. Shown as: 2024 season envelope scenario: all roads ever mapped flooded treated as closed at once."
+      },
+      "lineage": {
+        "flood_input_id": "unosat_4009.chiangrai_20240801_20241012_accumulatedflood",
+        "routing_context_id": "e4_planning_context_vehicle",
+        "closure_rule": {
+          "version": "closure_rule_v1",
+          "level": "central",
+          "closure_basis": "modelled_from_unosat_4009.chiangrai_20240801_20241012_accumulatedflood"
+        }
+      },
+      "normalisation_version": "planning_frame_v1",
+      "components": {
+        "flood_likelihood_0_100": {
+          "component": "flood_likelihood_0_100",
+          "value_0_100": 2.4029268914461133,
+          "normalisation_version": "planning_frame_v1",
+          "protocol_sha256": {
+            "v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+            "v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+          },
+          "definition": "100 x min(1, flooded share of the unit's non-permanent-water land / anchor)",
+          "inputs": {
+            "flooded_non_permanent_water_land_area": 145635.76583311465,
+            "non_permanent_water_land_area": 30303827.87581796
+          },
+          "flooded_share": 0.004805853782892227,
+          "anchor": 0.2,
+          "anchor_sensitivity_one_at_a_time": [
+            {
+              "anchor": 0.1,
+              "value_0_100": 4.8058537828922265
+            },
+            {
+              "anchor": 0.3,
+              "value_0_100": 1.6019512609640758
+            }
+          ],
+          "anchor_disclosure": "The 0.20 anchor was declared after the 0.05 anchor was seen to saturate in 6 of the 8 Mae Sai tambons. It was chosen after seeing the data. Plan 3.4 says 5 of 8; the per-tambon envelope shares kept from that analysis show 6 above 0.05, and the owners corrected the count at signing on 2026-10-02.",
+          "permanent_water": {
+            "source": "ESA WorldCover 2021 v200",
+            "class": 80
+          }
+        },
+        "exposure_0_100": {
+          "component": "exposure_0_100",
+          "value_0_100": 0.39867383702914805,
+          "normalisation_version": "planning_frame_v1",
+          "protocol_sha256": {
+            "v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+            "v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+          },
+          "definition": "100 x residents whose population cell centre is inside the flood extent / unit residents",
+          "inputs": {
+            "residents_inside_flood_extent": 77.86929321289062,
+            "unit_residents": 19532.080106675625
+          },
+          "exposed_share": 0.003986738370291481,
+          "kind": "share_only"
+        },
+        "access_gap_0_100": {
+          "component": "access_gap_0_100",
+          "value_0_100": 0.39409027000602237,
+          "normalisation_version": "planning_frame_v1",
+          "protocol_sha256": {
+            "v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+            "v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+          },
+          "definition": "Baseline-access-weighted mean of newly-lost access shares, counted only for people who had access at baseline",
+          "inputs": {
+            "services": {
+              "hospital": {
+                "mode": "vehicle",
+                "threshold_minutes": 30,
+                "baseline_access_residents": 19164.54236626625,
+                "newly_lost_residents": 75.47516632080078
+              },
+              "main_road_entry": {
+                "mode": "vehicle",
+                "threshold_minutes": 15,
+                "baseline_access_residents": 19138.949023991823,
+                "newly_lost_residents": 75.47516632080078
+              }
+            }
+          },
+          "services": [
+            {
+              "service": "hospital",
+              "mode": "vehicle",
+              "threshold_minutes": 30,
+              "baseline_access_residents": 19164.54236626625,
+              "newly_lost_residents": 75.47516632080078,
+              "newly_lost_share": 0.0039382712552350554
+            },
+            {
+              "service": "main_road_entry",
+              "mode": "vehicle",
+              "threshold_minutes": 15,
+              "baseline_access_residents": 19138.949023991823,
+              "newly_lost_residents": 75.47516632080078,
+              "newly_lost_share": 0.003943537663755106
+            }
+          ],
+          "baseline_access_residents_all_services": 38303.491390258074,
+          "publication_level": "public"
+        },
+        "road_criticality_0_100": {
+          "component": "road_criticality_0_100",
+          "value_0_100": 0.3938271255235055,
+          "normalisation_version": "planning_frame_v1",
+          "protocol_sha256": {
+            "v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+            "v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+          },
+          "definition": "100 x residents with a baseline route to any hospital or main road who lose all routes / those residents",
+          "inputs": {
+            "residents_losing_all_routes": 75.47516632080078,
+            "residents_with_baseline_route": 19164.54236626625
+          },
+          "share_losing_all_routes": 0.0039382712552350554
+        },
+        "vulnerability_context_0_100": {
+          "component": "vulnerability_context_0_100",
+          "value_0_100": 42.844174772959335,
+          "normalisation_version": "planning_frame_v1",
+          "protocol_sha256": {
+            "v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+            "v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+          },
+          "definition": "100 x clip((dependent share - lower anchor) / (upper anchor - lower anchor), 0, 1), where dependent share is residents aged 0-14 plus residents aged 60 and over, divided by all residents",
+          "inputs": {
+            "children_0_14": 3695.4325248678224,
+            "older_60_plus": 4967.401533713017,
+            "residents": 21362.734252543974
+          },
+          "dependent_share": 0.4055114835100862,
+          "anchors": {
+            "lower": "P10",
+            "lower_value": 0.351416,
+            "upper": "P90",
+            "upper_value": 0.477677
+          },
+          "anchor_sensitivity": {
+            "lower": "P5",
+            "lower_value": 0.313095,
+            "upper": "P95",
+            "upper_value": 0.494407,
+            "value_0_100": 50.9709691085456
+          },
+          "anchor_version": "national_vulnerability_anchors_v1",
+          "anchor_receipt_sha256": "2ad161d4c67cbe1567fbb853fe951da3ffb257f06088fbc80e8e297938c73a59",
+          "caveat": "Modelled 1 km age composition applied to 2020 100 m counts; not observed; within-cell composition assumed uniform."
+        }
+      },
+      "fpps_0_100": 5.24,
+      "confidence": {
+        "unit_id": "TH570906",
+        "lane": "SCN-ENV",
+        "tier": "T1",
+        "flood_input": "UNOSAT/GISTDA product 4009, accumulated layer",
+        "scenario_base": "agency_product_as_provided",
+        "confidence_rule_version": "confidence_rule_v1",
+        "confidence_class": "medium",
+        "confidence_kind": "scenario",
+        "basis": {
+          "C1_tier": "by_scenario_declaration",
+          "C2_recency": "by_scenario_declaration",
+          "C3_coverage": "by_construction",
+          "C4_input_uncertainty": "pass",
+          "C5_components": "pass",
+          "C6_residents": "pass",
+          "C7_baseline_no_route": "pass",
+          "C8_hospital": "pass"
+        },
+        "failed_conditions": [],
+        "reason_code": null,
+        "guardrail_gr1": {
+          "id": "GR1_minimum_denominators",
+          "applies": false,
+          "unit_residents_min_for_class": 100.0,
+          "no_binding_class": false,
+          "no_would_be_class": false,
+          "no_v2_class": false
+        },
+        "t2_skill_condition": null,
+        "measurements": {
+          "recency_days": null,
+          "acquisition_date": null,
+          "case_reference_date": null,
+          "unit_valid_coverage": null,
+          "coverage_by_construction": true,
+          "exposure_plus_one_pixel_0_100": 0.39867383702914805,
+          "exposure_minus_one_pixel_0_100": 0.0,
+          "exposure_plus_minus_one_pixel_points": 0.39867383702914805,
+          "t2_abstention_fraction": null,
+          "component_status": {
+            "flood_likelihood_0_100": "computed",
+            "exposure_0_100": "computed",
+            "access_gap_0_100": "computed",
+            "road_criticality_0_100": "computed",
+            "vulnerability_context_0_100": "computed"
+          },
+          "unit_residents": 19532.080106675625,
+          "baseline_vehicle_no_route_share": 0.0,
+          "hospitals_reachable_at_baseline": 6.0
+        },
+        "thresholds": {
+          "recency_window_days": 3.0,
+          "unit_valid_coverage_min": 0.8,
+          "exposure_plus_minus_one_pixel_max_points": 15.0,
+          "exposure_plus_minus_one_pixel_float_guard_points": 1e-09,
+          "t2_abstention_fraction_max": 0.2,
+          "unit_residents_min": 100.0,
+          "baseline_vehicle_no_route_share_max": 0.1,
+          "hospitals_reachable_at_baseline_min": 1.0
+        },
+        "uses_ensemble_output": false,
+        "rights_are_an_input": false,
+        "protocol_v1a_sha256": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+        "assumptions": [
+          "Derived from the listed measurements only. No ensemble output and no rights level is read.",
+          "A condition whose measurement is missing is recorded as fail: medium needs every condition shown.",
+          "High requires tier T4, which is locked in this release, so high is never assigned.",
+          "C4 compares the difference of two exposures with a float guard of 1e-09 points, so two exposures exactly the limit apart are not failed by binary rounding.",
+          "Scenario confidence (drafter reading DR-A07, confirmed at signing): C1 is judged on the base flood input and C2 is replaced by the scenario declaration. It is never shown or counted as observed confidence."
+        ]
+      },
+      "action_class": "E",
+      "action_reason_code": "low_priority_score",
+      "would_be_class": null,
+      "class_v2": {
+        "class_rule_version": "class_rule_v2",
+        "label": "secondary",
+        "binding": false,
+        "result": "E",
+        "trigger_evidence": [
+          {
+            "trigger": "E",
+            "met": true,
+            "evidence": "Confidence medium; exposure 0.40 against a floor of 10; FPPS 5.24 against a minimum of 35."
+          },
+          {
+            "trigger": "A",
+            "met": false,
+            "evidence": "v1 class E; dependent share 0.405511 against the national P75 of 0.454083."
+          },
+          {
+            "trigger": "B",
+            "met": null,
+            "evidence": "Not evaluated: A top-20 critical link inside the flood extent, closed on its own, takes every route from at least 500 residents of the unit: no stage has closed the top-20 links one at a time. The result does not depend on it: trigger E stands before it in the order E, A, B, C, D."
+          },
+          {
+            "trigger": "C",
+            "met": false,
+            "evidence": "FPPS 5.24 against a minimum of 35, confidence medium, and a serving hospital or uniquely located shelter inside the extent or without a vehicle route: no stage has run the serving-facility test."
+          },
+          {
+            "trigger": "D",
+            "met": false,
+            "evidence": "FPPS 5.24 against a minimum of 35, and the recurrence flag: no stage has computed the recurrence flag."
+          }
+        ]
+      },
+      "leave_one_component_out": {
+        "flood_likelihood_0_100": {
+          "fpps_0_100": 6.46,
+          "action_class": "E"
+        },
+        "exposure_0_100": {
+          "fpps_0_100": 6.86,
+          "action_class": "E"
+        },
+        "access_gap_0_100": {
+          "fpps_0_100": 6.46,
+          "action_class": "E"
+        },
+        "road_criticality_0_100": {
+          "fpps_0_100": 6.1,
+          "action_class": "E"
+        },
+        "vulnerability_context_0_100": {
+          "fpps_0_100": 1.06,
+          "action_class": "E"
+        }
+      },
+      "headline_stability": {
+        "guardrail": "GR8_headline_stability",
+        "status": "not_evaluated",
+        "class_retention": null,
+        "class_retention_min": 0.6
+      },
+      "accepted_fpps": null,
+      "accepted_action_class": null,
+      "source_timestamp": "2024-10-12T00:00:00Z",
+      "assumptions": [
+        "Road closure is modelled from the flood input (closure_rule_v1, central level): a flood intersection does not prove a road closure.",
+        "Residents are modelled counts. A population cell counts for the unit whose polygon holds its centre, and a resident is inside the flood extent when the cell centre is.",
+        "A v2 trigger written as 'Not evaluated' with met false was not shown to be met and was not shown to be unmet. The v2 result stands without it, because an earlier trigger in the order is met."
+      ]
+    },
+    {
+      "row_id": "SE1:TH570908:SCN-ENV",
+      "unit_id": "TH570908",
+      "unit_name_en": "Ban Dai",
+      "unit_name_th": "\u0e1a\u0e49\u0e32\u0e19\u0e14\u0e49\u0e32\u0e22",
+      "tier": "T1",
+      "lane": "SCN-ENV",
+      "temporal_relation": "season_window",
+      "flood_input": "UNOSAT/GISTDA product 4009, accumulated layer",
+      "scenario": {
+        "id": "SCN-ENV",
+        "declaration": "The UNOSAT/GISTDA product 4009 accumulated layer treated as if every area ever mapped flooded in the season were flooded at once. A scenario, part of the SCN column. Shown as: 2024 season envelope scenario: all roads ever mapped flooded treated as closed at once."
+      },
+      "lineage": {
+        "flood_input_id": "unosat_4009.chiangrai_20240801_20241012_accumulatedflood",
+        "routing_context_id": "e4_planning_context_vehicle",
+        "closure_rule": {
+          "version": "closure_rule_v1",
+          "level": "central",
+          "closure_basis": "modelled_from_unosat_4009.chiangrai_20240801_20241012_accumulatedflood"
+        }
+      },
+      "normalisation_version": "planning_frame_v1",
+      "components": {
+        "flood_likelihood_0_100": {
+          "component": "flood_likelihood_0_100",
+          "value_0_100": 100.0,
+          "normalisation_version": "planning_frame_v1",
+          "protocol_sha256": {
+            "v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+            "v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+          },
+          "definition": "100 x min(1, flooded share of the unit's non-permanent-water land / anchor)",
+          "inputs": {
+            "flooded_non_permanent_water_land_area": 10339076.35054848,
+            "non_permanent_water_land_area": 33677051.60818164
+          },
+          "flooded_share": 0.3070065773821085,
+          "anchor": 0.2,
+          "anchor_sensitivity_one_at_a_time": [
+            {
+              "anchor": 0.1,
+              "value_0_100": 100.0
+            },
+            {
+              "anchor": 0.3,
+              "value_0_100": 100.0
+            }
+          ],
+          "anchor_disclosure": "The 0.20 anchor was declared after the 0.05 anchor was seen to saturate in 6 of the 8 Mae Sai tambons. It was chosen after seeing the data. Plan 3.4 says 5 of 8; the per-tambon envelope shares kept from that analysis show 6 above 0.05, and the owners corrected the count at signing on 2026-10-02.",
+          "permanent_water": {
+            "source": "ESA WorldCover 2021 v200",
+            "class": 80
+          }
+        },
+        "exposure_0_100": {
+          "component": "exposure_0_100",
+          "value_0_100": 19.010433124835863,
+          "normalisation_version": "planning_frame_v1",
+          "protocol_sha256": {
+            "v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+            "v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+          },
+          "definition": "100 x residents whose population cell centre is inside the flood extent / unit residents",
+          "inputs": {
+            "residents_inside_flood_extent": 957.3924807906151,
+            "unit_residents": 5036.142388254404
+          },
+          "exposed_share": 0.19010433124835863,
+          "kind": "share_only"
+        },
+        "access_gap_0_100": {
+          "component": "access_gap_0_100",
+          "value_0_100": 49.174472600147375,
+          "normalisation_version": "planning_frame_v1",
+          "protocol_sha256": {
+            "v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+            "v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+          },
+          "definition": "Baseline-access-weighted mean of newly-lost access shares, counted only for people who had access at baseline",
+          "inputs": {
+            "services": {
+              "hospital": {
+                "mode": "vehicle",
+                "threshold_minutes": 30,
+                "baseline_access_residents": 3787.849869519472,
+                "newly_lost_residents": 2649.559929817915
+              },
+              "main_road_entry": {
+                "mode": "vehicle",
+                "threshold_minutes": 15,
+                "baseline_access_residents": 2702.4764673113823,
+                "newly_lost_residents": 542.0238163471222
+              }
+            }
+          },
+          "services": [
+            {
+              "service": "hospital",
+              "mode": "vehicle",
+              "threshold_minutes": 30,
+              "baseline_access_residents": 3787.849869519472,
+              "newly_lost_residents": 2649.559929817915,
+              "newly_lost_share": 0.6994891616847632
+            },
+            {
+              "service": "main_road_entry",
+              "mode": "vehicle",
+              "threshold_minutes": 15,
+              "baseline_access_residents": 2702.4764673113823,
+              "newly_lost_residents": 542.0238163471222,
+              "newly_lost_share": 0.2005656008121937
+            }
+          ],
+          "baseline_access_residents_all_services": 6490.326336830854,
+          "publication_level": "public"
+        },
+        "road_criticality_0_100": {
+          "component": "road_criticality_0_100",
+          "value_0_100": 8.968666030760472,
+          "normalisation_version": "planning_frame_v1",
+          "protocol_sha256": {
+            "v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+            "v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+          },
+          "definition": "100 x residents with a baseline route to any hospital or main road who lose all routes / those residents",
+          "inputs": {
+            "residents_losing_all_routes": 359.20759719610214,
+            "residents_with_baseline_route": 4005.1396268308163
+          },
+          "share_losing_all_routes": 0.08968666030760472
+        },
+        "vulnerability_context_0_100": {
+          "component": "vulnerability_context_0_100",
+          "value_0_100": 42.87735038368476,
+          "normalisation_version": "planning_frame_v1",
+          "protocol_sha256": {
+            "v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+            "v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+          },
+          "definition": "100 x clip((dependent share - lower anchor) / (upper anchor - lower anchor), 0, 1), where dependent share is residents aged 0-14 plus residents aged 60 and over, divided by all residents",
+          "inputs": {
+            "children_0_14": 551.2333467173371,
+            "older_60_plus": 745.2881165782244,
+            "residents": 3196.9194558101044
+          },
+          "dependent_share": 0.4055533713679442,
+          "anchors": {
+            "lower": "P10",
+            "lower_value": 0.351416,
+            "upper": "P90",
+            "upper_value": 0.477677
+          },
+          "anchor_sensitivity": {
+            "lower": "P5",
+            "lower_value": 0.313095,
+            "upper": "P95",
+            "upper_value": 0.494407,
+            "value_0_100": 50.99407174811608
+          },
+          "anchor_version": "national_vulnerability_anchors_v1",
+          "anchor_receipt_sha256": "2ad161d4c67cbe1567fbb853fe951da3ffb257f06088fbc80e8e297938c73a59",
+          "caveat": "Modelled 1 km age composition applied to 2020 100 m counts; not observed; within-cell composition assumed uniform."
+        }
+      },
+      "fpps_0_100": 50.22,
+      "confidence": {
+        "unit_id": "TH570908",
+        "lane": "SCN-ENV",
+        "tier": "T1",
+        "flood_input": "UNOSAT/GISTDA product 4009, accumulated layer",
+        "scenario_base": "agency_product_as_provided",
+        "confidence_rule_version": "confidence_rule_v1",
+        "confidence_class": "medium",
+        "confidence_kind": "scenario",
+        "basis": {
+          "C1_tier": "by_scenario_declaration",
+          "C2_recency": "by_scenario_declaration",
+          "C3_coverage": "by_construction",
+          "C4_input_uncertainty": "pass",
+          "C5_components": "pass",
+          "C6_residents": "pass",
+          "C7_baseline_no_route": "pass",
+          "C8_hospital": "pass"
+        },
+        "failed_conditions": [],
+        "reason_code": null,
+        "guardrail_gr1": {
+          "id": "GR1_minimum_denominators",
+          "applies": false,
+          "unit_residents_min_for_class": 100.0,
+          "no_binding_class": false,
+          "no_would_be_class": false,
+          "no_v2_class": false
+        },
+        "t2_skill_condition": null,
+        "measurements": {
+          "recency_days": null,
+          "acquisition_date": null,
+          "case_reference_date": null,
+          "unit_valid_coverage": null,
+          "coverage_by_construction": true,
+          "exposure_plus_one_pixel_0_100": 20.066591220867647,
+          "exposure_minus_one_pixel_0_100": 18.134906855589076,
+          "exposure_plus_minus_one_pixel_points": 1.9316843652785707,
+          "t2_abstention_fraction": null,
+          "component_status": {
+            "flood_likelihood_0_100": "computed",
+            "exposure_0_100": "computed",
+            "access_gap_0_100": "computed",
+            "road_criticality_0_100": "computed",
+            "vulnerability_context_0_100": "computed"
+          },
+          "unit_residents": 5036.142388254404,
+          "baseline_vehicle_no_route_share": 0.0,
+          "hospitals_reachable_at_baseline": 6.0
+        },
+        "thresholds": {
+          "recency_window_days": 3.0,
+          "unit_valid_coverage_min": 0.8,
+          "exposure_plus_minus_one_pixel_max_points": 15.0,
+          "exposure_plus_minus_one_pixel_float_guard_points": 1e-09,
+          "t2_abstention_fraction_max": 0.2,
+          "unit_residents_min": 100.0,
+          "baseline_vehicle_no_route_share_max": 0.1,
+          "hospitals_reachable_at_baseline_min": 1.0
+        },
+        "uses_ensemble_output": false,
+        "rights_are_an_input": false,
+        "protocol_v1a_sha256": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+        "assumptions": [
+          "Derived from the listed measurements only. No ensemble output and no rights level is read.",
+          "A condition whose measurement is missing is recorded as fail: medium needs every condition shown.",
+          "High requires tier T4, which is locked in this release, so high is never assigned.",
+          "C4 compares the difference of two exposures with a float guard of 1e-09 points, so two exposures exactly the limit apart are not failed by binary rounding.",
+          "Scenario confidence (drafter reading DR-A07, confirmed at signing): C1 is judged on the base flood input and C2 is replaced by the scenario declaration. It is never shown or counted as observed confidence."
+        ]
+      },
+      "action_class": "D",
+      "action_reason_code": "resilience",
+      "would_be_class": null,
+      "class_v2": {
+        "class_rule_version": "class_rule_v2",
+        "label": "secondary",
+        "binding": false,
+        "result": "not_evaluated",
+        "trigger_evidence": [
+          {
+            "trigger": "E",
+            "met": false,
+            "evidence": "Confidence medium; exposure 19.01 against a floor of 10; FPPS 50.22 against a minimum of 35."
+          },
+          {
+            "trigger": "A",
+            "met": false,
+            "evidence": "v1 class D; dependent share 0.405553 against the national P75 of 0.454083."
+          },
+          {
+            "trigger": "B",
+            "met": null,
+            "evidence": "Not evaluated: A top-20 critical link inside the flood extent, closed on its own, takes every route from at least 500 residents of the unit: no stage has closed the top-20 links one at a time. No earlier trigger in the order E, A, B, C, D is met, so the v2 result depends on a trigger that was not evaluated and is not stated."
+          },
+          {
+            "trigger": "C",
+            "met": null,
+            "evidence": "Not evaluated: FPPS 50.22 against a minimum of 35, confidence medium, and a serving hospital or uniquely located shelter inside the extent or without a vehicle route: no stage has run the serving-facility test. No earlier trigger in the order E, A, B, C, D is met, so the v2 result depends on a trigger that was not evaluated and is not stated."
+          },
+          {
+            "trigger": "D",
+            "met": null,
+            "evidence": "Not evaluated: FPPS 50.22 against a minimum of 35, and the recurrence flag: no stage has computed the recurrence flag. No earlier trigger in the order E, A, B, C, D is met, so the v2 result depends on a trigger that was not evaluated and is not stated."
+          }
+        ]
+      },
+      "leave_one_component_out": {
+        "flood_likelihood_0_100": {
+          "fpps_0_100": 28.89,
+          "action_class": "E"
+        },
+        "exposure_0_100": {
+          "fpps_0_100": 60.62,
+          "action_class": "D"
+        },
+        "access_gap_0_100": {
+          "fpps_0_100": 50.48,
+          "action_class": "D"
+        },
+        "road_criticality_0_100": {
+          "fpps_0_100": 57.5,
+          "action_class": "D"
+        },
+        "vulnerability_context_0_100": {
+          "fpps_0_100": 51.04,
+          "action_class": "D"
+        }
+      },
+      "headline_stability": {
+        "guardrail": "GR8_headline_stability",
+        "status": "not_evaluated",
+        "class_retention": null,
+        "class_retention_min": 0.6
+      },
+      "accepted_fpps": null,
+      "accepted_action_class": null,
+      "source_timestamp": "2024-10-12T00:00:00Z",
+      "assumptions": [
+        "Road closure is modelled from the flood input (closure_rule_v1, central level): a flood intersection does not prove a road closure.",
+        "Residents are modelled counts. A population cell counts for the unit whose polygon holds its centre, and a resident is inside the flood extent when the cell centre is.",
+        "A v2 trigger written as 'Not evaluated' with met false was not shown to be met and was not shown to be unmet. The v2 result stands without it, because an earlier trigger in the order is met."
+      ]
+    },
+    {
+      "row_id": "SE1:TH570909:SCN-ENV",
+      "unit_id": "TH570909",
+      "unit_name_en": "Pong Ngam",
+      "unit_name_th": "\u0e42\u0e1b\u0e48\u0e07\u0e07\u0e32\u0e21",
+      "tier": "T1",
+      "lane": "SCN-ENV",
+      "temporal_relation": "season_window",
+      "flood_input": "UNOSAT/GISTDA product 4009, accumulated layer",
+      "scenario": {
+        "id": "SCN-ENV",
+        "declaration": "The UNOSAT/GISTDA product 4009 accumulated layer treated as if every area ever mapped flooded in the season were flooded at once. A scenario, part of the SCN column. Shown as: 2024 season envelope scenario: all roads ever mapped flooded treated as closed at once."
+      },
+      "lineage": {
+        "flood_input_id": "unosat_4009.chiangrai_20240801_20241012_accumulatedflood",
+        "routing_context_id": "e4_planning_context_vehicle",
+        "closure_rule": {
+          "version": "closure_rule_v1",
+          "level": "central",
+          "closure_basis": "modelled_from_unosat_4009.chiangrai_20240801_20241012_accumulatedflood"
+        }
+      },
+      "normalisation_version": "planning_frame_v1",
+      "components": {
+        "flood_likelihood_0_100": {
+          "component": "flood_likelihood_0_100",
+          "value_0_100": 51.23612854723527,
+          "normalisation_version": "planning_frame_v1",
+          "protocol_sha256": {
+            "v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+            "v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+          },
+          "definition": "100 x min(1, flooded share of the unit's non-permanent-water land / anchor)",
+          "inputs": {
+            "flooded_non_permanent_water_land_area": 4355935.630672641,
+            "non_permanent_water_land_area": 42508438.4220877
+          },
+          "flooded_share": 0.10247225709447055,
+          "anchor": 0.2,
+          "anchor_sensitivity_one_at_a_time": [
+            {
+              "anchor": 0.1,
+              "value_0_100": 100.0
+            },
+            {
+              "anchor": 0.3,
+              "value_0_100": 34.157419031490186
+            }
+          ],
+          "anchor_disclosure": "The 0.20 anchor was declared after the 0.05 anchor was seen to saturate in 6 of the 8 Mae Sai tambons. It was chosen after seeing the data. Plan 3.4 says 5 of 8; the per-tambon envelope shares kept from that analysis show 6 above 0.05, and the owners corrected the count at signing on 2026-10-02.",
+          "permanent_water": {
+            "source": "ESA WorldCover 2021 v200",
+            "class": 80
+          }
+        },
+        "exposure_0_100": {
+          "component": "exposure_0_100",
+          "value_0_100": 5.2375608509946785,
+          "normalisation_version": "planning_frame_v1",
+          "protocol_sha256": {
+            "v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+            "v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+          },
+          "definition": "100 x residents whose population cell centre is inside the flood extent / unit residents",
+          "inputs": {
+            "residents_inside_flood_extent": 379.65710812807083,
+            "unit_residents": 7248.738848656416
+          },
+          "exposed_share": 0.05237560850994678,
+          "kind": "share_only"
+        },
+        "access_gap_0_100": {
+          "component": "access_gap_0_100",
+          "value_0_100": 2.826471277893317,
+          "normalisation_version": "planning_frame_v1",
+          "protocol_sha256": {
+            "v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+            "v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+          },
+          "definition": "Baseline-access-weighted mean of newly-lost access shares, counted only for people who had access at baseline",
+          "inputs": {
+            "services": {
+              "hospital": {
+                "mode": "vehicle",
+                "threshold_minutes": 30,
+                "baseline_access_residents": 6193.561620861292,
+                "newly_lost_residents": 185.75261065363884
+              },
+              "main_road_entry": {
+                "mode": "vehicle",
+                "threshold_minutes": 15,
+                "baseline_access_residents": 6142.379286378622,
+                "newly_lost_residents": 162.9192159473896
+              }
+            }
+          },
+          "services": [
+            {
+              "service": "hospital",
+              "mode": "vehicle",
+              "threshold_minutes": 30,
+              "baseline_access_residents": 6193.561620861292,
+              "newly_lost_residents": 185.75261065363884,
+              "newly_lost_share": 0.029991242846116647
+            },
+            {
+              "service": "main_road_entry",
+              "mode": "vehicle",
+              "threshold_minutes": 15,
+              "baseline_access_residents": 6142.379286378622,
+              "newly_lost_residents": 162.9192159473896,
+              "newly_lost_share": 0.026523796130382287
+            }
+          ],
+          "baseline_access_residents_all_services": 12335.940907239914,
+          "publication_level": "public"
+        },
+        "road_criticality_0_100": {
+          "component": "road_criticality_0_100",
+          "value_0_100": 2.410802999381331,
+          "normalisation_version": "planning_frame_v1",
+          "protocol_sha256": {
+            "v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+            "v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+          },
+          "definition": "100 x residents with a baseline route to any hospital or main road who lose all routes / those residents",
+          "inputs": {
+            "residents_losing_all_routes": 149.314569324255,
+            "residents_with_baseline_route": 6193.561620861292
+          },
+          "share_losing_all_routes": 0.02410802999381331
+        },
+        "vulnerability_context_0_100": {
+          "component": "vulnerability_context_0_100",
+          "value_0_100": 42.90321593626168,
+          "normalisation_version": "planning_frame_v1",
+          "protocol_sha256": {
+            "v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+            "v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+          },
+          "definition": "100 x clip((dependent share - lower anchor) / (upper anchor - lower anchor), 0, 1), where dependent share is residents aged 0-14 plus residents aged 60 and over, divided by all residents",
+          "inputs": {
+            "children_0_14": 1172.7639169686622,
+            "older_60_plus": 1574.6039981539448,
+            "residents": 6773.822852553605
+          },
+          "dependent_share": 0.40558602947328337,
+          "anchors": {
+            "lower": "P10",
+            "lower_value": 0.351416,
+            "upper": "P90",
+            "upper_value": 0.477677
+          },
+          "anchor_sensitivity": {
+            "lower": "P5",
+            "lower_value": 0.313095,
+            "upper": "P95",
+            "upper_value": 0.494407,
+            "value_0_100": 51.012083851749125
+          },
+          "anchor_version": "national_vulnerability_anchors_v1",
+          "anchor_receipt_sha256": "2ad161d4c67cbe1567fbb853fe951da3ffb257f06088fbc80e8e297938c73a59",
+          "caveat": "Modelled 1 km age composition applied to 2020 100 m counts; not observed; within-cell composition assumed uniform."
+        }
+      },
+      "fpps_0_100": 21.9,
+      "confidence": {
+        "unit_id": "TH570909",
+        "lane": "SCN-ENV",
+        "tier": "T1",
+        "flood_input": "UNOSAT/GISTDA product 4009, accumulated layer",
+        "scenario_base": "agency_product_as_provided",
+        "confidence_rule_version": "confidence_rule_v1",
+        "confidence_class": "medium",
+        "confidence_kind": "scenario",
+        "basis": {
+          "C1_tier": "by_scenario_declaration",
+          "C2_recency": "by_scenario_declaration",
+          "C3_coverage": "by_construction",
+          "C4_input_uncertainty": "pass",
+          "C5_components": "pass",
+          "C6_residents": "pass",
+          "C7_baseline_no_route": "pass",
+          "C8_hospital": "pass"
+        },
+        "failed_conditions": [],
+        "reason_code": null,
+        "guardrail_gr1": {
+          "id": "GR1_minimum_denominators",
+          "applies": false,
+          "unit_residents_min_for_class": 100.0,
+          "no_binding_class": false,
+          "no_would_be_class": false,
+          "no_v2_class": false
+        },
+        "t2_skill_condition": null,
+        "measurements": {
+          "recency_days": null,
+          "acquisition_date": null,
+          "case_reference_date": null,
+          "unit_valid_coverage": null,
+          "coverage_by_construction": true,
+          "exposure_plus_one_pixel_0_100": 5.405585499609746,
+          "exposure_minus_one_pixel_0_100": 5.075368189223957,
+          "exposure_plus_minus_one_pixel_points": 0.3302173103857893,
+          "t2_abstention_fraction": null,
+          "component_status": {
+            "flood_likelihood_0_100": "computed",
+            "exposure_0_100": "computed",
+            "access_gap_0_100": "computed",
+            "road_criticality_0_100": "computed",
+            "vulnerability_context_0_100": "computed"
+          },
+          "unit_residents": 7248.738848656416,
+          "baseline_vehicle_no_route_share": 0.0,
+          "hospitals_reachable_at_baseline": 6.0
+        },
+        "thresholds": {
+          "recency_window_days": 3.0,
+          "unit_valid_coverage_min": 0.8,
+          "exposure_plus_minus_one_pixel_max_points": 15.0,
+          "exposure_plus_minus_one_pixel_float_guard_points": 1e-09,
+          "t2_abstention_fraction_max": 0.2,
+          "unit_residents_min": 100.0,
+          "baseline_vehicle_no_route_share_max": 0.1,
+          "hospitals_reachable_at_baseline_min": 1.0
+        },
+        "uses_ensemble_output": false,
+        "rights_are_an_input": false,
+        "protocol_v1a_sha256": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+        "assumptions": [
+          "Derived from the listed measurements only. No ensemble output and no rights level is read.",
+          "A condition whose measurement is missing is recorded as fail: medium needs every condition shown.",
+          "High requires tier T4, which is locked in this release, so high is never assigned.",
+          "C4 compares the difference of two exposures with a float guard of 1e-09 points, so two exposures exactly the limit apart are not failed by binary rounding.",
+          "Scenario confidence (drafter reading DR-A07, confirmed at signing): C1 is judged on the base flood input and C2 is replaced by the scenario declaration. It is never shown or counted as observed confidence."
+        ]
+      },
+      "action_class": "E",
+      "action_reason_code": "low_priority_score",
+      "would_be_class": null,
+      "class_v2": {
+        "class_rule_version": "class_rule_v2",
+        "label": "secondary",
+        "binding": false,
+        "result": "E",
+        "trigger_evidence": [
+          {
+            "trigger": "E",
+            "met": true,
+            "evidence": "Confidence medium; exposure 5.24 against a floor of 10; FPPS 21.90 against a minimum of 35."
+          },
+          {
+            "trigger": "A",
+            "met": false,
+            "evidence": "v1 class E; dependent share 0.405586 against the national P75 of 0.454083."
+          },
+          {
+            "trigger": "B",
+            "met": null,
+            "evidence": "Not evaluated: A top-20 critical link inside the flood extent, closed on its own, takes every route from at least 500 residents of the unit: no stage has closed the top-20 links one at a time. The result does not depend on it: trigger E stands before it in the order E, A, B, C, D."
+          },
+          {
+            "trigger": "C",
+            "met": false,
+            "evidence": "FPPS 21.90 against a minimum of 35, confidence medium, and a serving hospital or uniquely located shelter inside the extent or without a vehicle route: no stage has run the serving-facility test."
+          },
+          {
+            "trigger": "D",
+            "met": false,
+            "evidence": "FPPS 21.90 against a minimum of 35, and the recurrence flag: no stage has computed the recurrence flag."
+          }
+        ]
+      },
+      "leave_one_component_out": {
+        "flood_likelihood_0_100": {
+          "fpps_0_100": 9.32,
+          "action_class": "E"
+        },
+        "exposure_0_100": {
+          "fpps_0_100": 27.45,
+          "action_class": "E"
+        },
+        "access_gap_0_100": {
+          "fpps_0_100": 26.67,
+          "action_class": "E"
+        },
+        "road_criticality_0_100": {
+          "fpps_0_100": 25.34,
+          "action_class": "E"
+        },
+        "vulnerability_context_0_100": {
+          "fpps_0_100": 19.56,
+          "action_class": "E"
+        }
+      },
+      "headline_stability": {
+        "guardrail": "GR8_headline_stability",
+        "status": "not_evaluated",
+        "class_retention": null,
+        "class_retention_min": 0.6
+      },
+      "accepted_fpps": null,
+      "accepted_action_class": null,
+      "source_timestamp": "2024-10-12T00:00:00Z",
+      "assumptions": [
+        "Road closure is modelled from the flood input (closure_rule_v1, central level): a flood intersection does not prove a road closure.",
+        "Residents are modelled counts. A population cell counts for the unit whose polygon holds its centre, and a resident is inside the flood extent when the cell centre is.",
+        "A v2 trigger written as 'Not evaluated' with met false was not shown to be met and was not shown to be unmet. The v2 result stands without it, because an earlier trigger in the order is met."
+      ]
+    }
+  ]
+}

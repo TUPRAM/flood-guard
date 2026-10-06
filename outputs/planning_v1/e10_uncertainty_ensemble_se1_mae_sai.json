@@ -1,6 +1,6 @@
 {
   "schema_version": "floodguard.uncertainty_ensemble_run_receipt.v2",
-  "generated_at_utc": "2026-10-06T12:57:54Z",
+  "generated_at_utc": "2026-10-06T13:44:46Z",
   "run_kind": "superseding_run",
   "plan_task": "E10: uncertainty_ensemble.py + LOCO + headline rule; 540 cells per lane reported",
   "status": "run_receipt",
@@ -46,7 +46,7 @@
     },
     "flood_input_rights_level": "public",
     "flood_input_rights_level_basis": "The confirmed record rights_basis_4009_v1 names this layer as its layer in scope. Layers derived from it may be published under CC BY-SA 4.0 with the credit and a change notice, as a season envelope only (decisions D2, D3 and R6).",
-    "publication_level": "local",
+    "publication_level": "public",
     "publication_level_rule": "Protocol v1a guardrail GR6: the rights level of an output is the minimum across its lineage. Nothing here is written under apps/web/public/.",
     "licence_notice_file": "docs/proposal_execution/rights_basis_4009_v1_NOTICE.txt",
     "other_inputs": [
@@ -81,7 +81,7 @@
       {
         "id": "worldpop-2024-age-counts",
         "name": "Age counts per unit (plan task E7): WorldPop Global2 R2025A v1, 2024, 1 km constrained age counts",
-        "licence": "CC BY 4.0 (public catalogue); public derivatives need a purpose-specific review that is not recorded",
+        "licence": "CC BY 4.0 (WorldPop's statement for its datasets; the ODbL for datasets derived from OpenStreetMap or Microsoft building data, and the product page does not say which applies to this product)",
         "attribution": "WorldPop (www.worldpop.org), University of Southampton",
         "used_for": "The dependent share of each unit, for the vulnerability component."
       }
@@ -430,16 +430,16 @@
     "e8_run": {
       "receipt": {
         "path": "outputs/planning_v1/e8_planning_assessment_se1_mae_sai.json",
-        "sha256": "e58f22ec9ed4fcbb7b92c53898880d6fea3b62f945e7748d4b8c0753bc49b912",
+        "sha256": "c01b9bae5473a2be59801058057353892dc5dc40f43b158e283e5413fa5837f0",
         "registered_in": "outputs/planning_v1/run_register/e8_planning_assessment_se1_mae_sai.json"
       },
       "rows_sha256": "362d1563eb21bdf0229c6d1dc522e425ad06f64fd7d613614987f6951a519dbc",
       "rows_file": {
-        "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e8_planning_assessment/planning_assessment_overlay_se1_mae_sai.json",
-        "sha256": "6f2371d69f70846160ce1eebbd98e692312d357e47a11b5ea011eef8c2d2808f"
+        "path": "outputs/planning_v1/overlays/planning_assessment_overlay_se1_mae_sai.json",
+        "sha256": "bb101e8021cffedc94044572c98863bd46bd38ed314e38435b436dfc8b552205"
       },
       "overlay_written": true,
-      "generated_at_utc": "2026-10-06T12:55:57Z",
+      "generated_at_utc": "2026-10-06T13:43:19Z",
       "note": "The rows are read for one comparison: the default cell of this run must be these rows. Every cell is computed by this run from the inputs."
     },
     "flood_input": {
@@ -593,14 +593,14 @@
   "rights": {
     "registry": "floodguard.rights.REGISTERED_RECORDS",
     "rule": "Protocol v1a guardrail GR6: the rights level of an output is the minimum across its lineage. The lineage is that of the task E8 run of the case, with the minus and plus extents of the same flood layer. This task writes the per-unit results outside Git at every level and binds them here by SHA-256; whether a copy goes into Git once the lineage is public is for the owners (open points E8-OP5 and E10-OP8). Nothing is written under apps/web/public/.",
-    "publication_eligibility": "local",
+    "publication_eligibility": "public",
     "lineage_levels": {
       "unosat_4009.chiangrai_20240801_20241012_accumulatedflood": "public",
       "e4_planning_context_vehicle": "public",
       "worldpop_2020_100m": "public",
       "unit_boundaries": "public",
       "e1_permanent_water": "public",
-      "e7_age_exposure_table": "local",
+      "e7_age_exposure_table": "public",
       "e5_access_table": "public",
       "national_vulnerability_anchors": "public"
     },
@@ -616,14 +616,7 @@
     "levels_and_git": "Protocol v1a guardrail GR6 says that only a public output may be written under apps/web/public/. Plan 3.1 keeps pitch variants outside Git and puts committed outputs (small tables and GeoJSON) in outputs/planning_v1/. Neither says whether a figure derived from a local-level input may be committed. Until the owners decide (open point E1-OP1), tasks E1 and E5 keep every layer and every per-unit table whose lineage is below public outside Git, and their run receipts in Git hold whole-frame figures of local-level inputs and say so.",
     "figures_of_local_level_layers_in_this_receipt": {
       "what": "This receipt is committed. It holds the closure counts and whole-frame resident counts of the access runs, and counts of units and cells for the whole case. It names no unit beside a value. Some of its counts state a value of a single unit all the same (counts_that_state_a_value_of_a_single_unit). When the lineage is below the public level those counts come from a lineage below the public level; the file that holds the values of each unit is outside Git.",
-      "figures": [
-        {
-          "where": "access_runs and result.summary",
-          "publication_eligibility": "local",
-          "flood_layer_rights_level": "public",
-          "figures": "The closure counts and whole-frame resident counts of nine access runs; the number of units by class in each cell, by retention and by headline status."
-        }
-      ],
+      "figures": [],
       "counts_that_state_a_value_of_a_single_unit": {
         "states_a_value_of_a_single_unit": true,
         "cells_in_which_every_unit_has_one_class": 0,
@@ -2591,7 +2584,7 @@
   "development_reads": {
     "what": "Reads of the same inputs made while the code was written, before this run. They are listed because every run is reported.",
     "reads": [
-      "Before this run the agent and the owners knew the result of the ensemble of 4 October 2026 for this case (decision log R18; docs/owner_decision_sheet_2026-10-05.md), and the rows of plan task E8 of 6 October 2026."
+      "Before this run the agent and the owners knew the result of the ensembles of 4 and 6 October 2026 for this case (decision log R18 and R20) and the E8 rows of 6 October 2026."
     ]
   },
   "open_points": [
@@ -2709,10 +2702,10 @@
     "The equity figures (EED and EER) that protocol v1b lists among the per-unit outputs are plan task E9."
   ],
   "implementation": {
-    "base_commit": "487d29aa64afa3568860a9b9f9c6320a0f351eed",
+    "base_commit": "3381b2a3b2ac15c029add0f94dc5d90c57a90a19",
     "base_commit_note": "The commit the working tree was on. The files below are the ones this run loaded, identified by their own SHA-256, committed or not.",
     "builder_sha256": "0919d8ba0bf7d4dee99913c75c6a6a05bfd81429b9609c55f70a10c6a2d47430",
-    "e8_builder_sha256": "5e36ccf986497540f8d221b85a0a55d0c65188579dca63ab5ac7cd9c8753161a",
+    "e8_builder_sha256": "245e66f44c27ef4fe7023028d9f4db2367365908c8f44e661073bcbba0528077",
     "e5_builder_sha256": "61b93fbfe48f36fc5ba46475828d3d7abeb5188813b7c923d01d7467d98e89f8",
     "uncertainty_ensemble_module_sha256": "a85247125245476a803e3198676574811a9e0eee3f497b0bef1efcc3fdbfc617",
     "planning_assessment_module_sha256": "488a94ce39f6c03c10279f883c9eafb6d3aecacb225b2f89e50755864bae9204",
@@ -2735,37 +2728,37 @@
     }
   },
   "timing_seconds": {
-    "inputs_checked": 12.7,
-    "stages_compared_unit_by_unit": 3.5,
+    "inputs_checked": 10.4,
+    "stages_compared_unit_by_unit": 2.4,
     "units_read_and_lineage": 0.0,
-    "access_runs": 1958.9,
+    "access_runs": 2251.9,
     "access": {
-      "minus_edge_intersections_vehicle": 625.0,
-      "minus_strict_runs_and_tables": 2.6,
-      "minus_central_runs_and_tables": 2.0,
-      "minus_permissive_runs_and_tables": 5.5,
-      "as_provided_edge_intersections_vehicle": 570.7,
-      "as_provided_strict_runs_and_tables": 1.7,
-      "as_provided_central_runs_and_tables": 1.6,
-      "as_provided_permissive_runs_and_tables": 4.4,
-      "plus_edge_intersections_vehicle": 735.8,
-      "plus_strict_runs_and_tables": 1.7,
-      "plus_central_runs_and_tables": 1.6,
-      "plus_permissive_runs_and_tables": 4.3
+      "minus_edge_intersections_vehicle": 539.8,
+      "minus_strict_runs_and_tables": 1.8,
+      "minus_central_runs_and_tables": 1.8,
+      "minus_permissive_runs_and_tables": 4.6,
+      "as_provided_edge_intersections_vehicle": 652.7,
+      "as_provided_strict_runs_and_tables": 1.9,
+      "as_provided_central_runs_and_tables": 2.4,
+      "as_provided_permissive_runs_and_tables": 5.8,
+      "plus_edge_intersections_vehicle": 1030.4,
+      "plus_strict_runs_and_tables": 1.9,
+      "plus_central_runs_and_tables": 1.8,
+      "plus_permissive_runs_and_tables": 5.1
     },
-    "units_measured_at_three_flood_levels": 5.2,
-    "cells_scored": 15.1
+    "units_measured_at_three_flood_levels": 5.7,
+    "cells_scored": 16.2
   },
   "outputs": {
     "ensemble": {
       "files": [
         {
           "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/uncertainty_ensemble_se1_mae_sai.json",
-          "sha256": "5c2d5974df030be6d037ff6dc52d956655b7ee29a85a9114303bdb33ff8d9ec2",
-          "bytes": 1602849,
+          "sha256": "fab80fbe9ba15ed6fd373e09a70cc9276a7431ec7b09fee2918d4bf1e950ed02",
+          "bytes": 1602942,
           "what": "uncertainty_ensemble_units",
           "in_git": false,
-          "publication_eligibility": "local",
+          "publication_eligibility": "public",
           "units": 8,
           "cells_run": 90
         },
@@ -2780,15 +2773,15 @@
     }
   },
   "timestamps": {
-    "run_started_at_utc": "2026-10-06T12:57:54Z",
-    "run_finished_at_utc": "2026-10-06T13:31:17Z",
-    "wall_time_minutes": 33.38,
+    "run_started_at_utc": "2026-10-06T13:44:46Z",
+    "run_finished_at_utc": "2026-10-06T14:22:59Z",
+    "wall_time_minutes": 38.21,
     "note": "generated_at_utc is the start of the run; the file of per-unit results carries the same time."
   },
   "supersedes": {
-    "receipt_sha256": "5d432b0b71b6f90e2b65d9d322e95dec2f7b32775aad5a117b1cd5e64217089e",
-    "generated_at_utc": "2026-10-04T22:59:13Z",
-    "reason": "The run of plan task E8 this table rests on was replaced on 6 October 2026 under overlay schema 1.1 (decision log R20; sheet Q1, option 3): its rows differ from those of 4 October 2026 in the class_v2 block only, so the default cell is compared with the new rows. No input, no axis, no level and no rule of the binding class was changed; the same cells are run.",
+    "receipt_sha256": "a9495f29ecebcaa8db6caad7f8a3abd8934a8e2a4514c593254ae9f9a20b33a3",
+    "generated_at_utc": "2026-10-06T12:57:54Z",
+    "reason": "The run of plan task E8 this table rests on was replaced on 6 October 2026 after the purpose review of the 2024 age counts was answered (decision log R21; sheet Q2): the age table is at the public level. No input, no axis, no level and no rule was changed; the same cells are run and the same results are expected.",
     "result_same": true,
     "summary_same": true,
     "summary_fields_that_differ": [],
@@ -2802,24 +2795,24 @@
     "access_unit_rows_same": true,
     "lineage_inputs_same": true,
     "outputs_of_the_superseded_run": {
-      "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/uncertainty_ensemble_se1_mae_sai.json": "78c8317eb026eeb2ceabc4a93285f45291795544fbc6ede97bbf137e98d0107f",
+      "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/uncertainty_ensemble_se1_mae_sai.json": "5c2d5974df030be6d037ff6dc52d956655b7ee29a85a9114303bdb33ff8d9ec2",
       "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/LICENSE_NOTICE.txt": "acaafc1b83a5fe5d72a9f50e0e0efe476517328f581c5c487fb2e0a1290de1df"
     },
     "copies_kept_outside_git": [
       {
-        "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/superseded_runs/20261004T225913Z/e10_uncertainty_ensemble_se1_mae_sai.json",
-        "sha256": "5d432b0b71b6f90e2b65d9d322e95dec2f7b32775aad5a117b1cd5e64217089e",
+        "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/superseded_runs/20261006T125754Z/e10_uncertainty_ensemble_se1_mae_sai.json",
+        "sha256": "a9495f29ecebcaa8db6caad7f8a3abd8934a8e2a4514c593254ae9f9a20b33a3",
         "what": "receipt",
         "copied": true
       },
       {
-        "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/superseded_runs/20261004T225913Z/uncertainty_ensemble_se1_mae_sai.json",
-        "sha256": "78c8317eb026eeb2ceabc4a93285f45291795544fbc6ede97bbf137e98d0107f",
+        "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/superseded_runs/20261006T125754Z/uncertainty_ensemble_se1_mae_sai.json",
+        "sha256": "5c2d5974df030be6d037ff6dc52d956655b7ee29a85a9114303bdb33ff8d9ec2",
         "what": "file the receipt bound",
         "copied": true
       },
       {
-        "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/superseded_runs/20261004T225913Z/LICENSE_NOTICE.txt",
+        "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/superseded_runs/20261006T125754Z/LICENSE_NOTICE.txt",
         "sha256": "acaafc1b83a5fe5d72a9f50e0e0efe476517328f581c5c487fb2e0a1290de1df",
         "what": "file the receipt bound",
         "copied": true
@@ -2886,6 +2879,38 @@
         },
         {
           "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/superseded_runs/20261004T225913Z/LICENSE_NOTICE.txt",
+          "sha256": "acaafc1b83a5fe5d72a9f50e0e0efe476517328f581c5c487fb2e0a1290de1df",
+          "what": "file the receipt bound",
+          "copied": true
+        }
+      ]
+    },
+    {
+      "generated_at_utc": "2026-10-06T12:57:54Z",
+      "receipt_sha256": "a9495f29ecebcaa8db6caad7f8a3abd8934a8e2a4514c593254ae9f9a20b33a3",
+      "superseded_because": "The run of plan task E8 this table rests on was replaced on 6 October 2026 after the purpose review of the 2024 age counts was answered (decision log R21; sheet Q2): the age table is at the public level. No input, no axis, no level and no rule was changed; the same cells are run and the same results are expected.",
+      "result_same_as_the_run_that_replaced_it": true,
+      "unit_cells_same_as_the_run_that_replaced_it": true,
+      "units_sha256": "eb13676a27c8f0c084d3fedb7e25097c7024c63bf0cbab4e28eb1d013b8838e7",
+      "outputs_sha256": {
+        "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/uncertainty_ensemble_se1_mae_sai.json": "5c2d5974df030be6d037ff6dc52d956655b7ee29a85a9114303bdb33ff8d9ec2",
+        "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/LICENSE_NOTICE.txt": "acaafc1b83a5fe5d72a9f50e0e0efe476517328f581c5c487fb2e0a1290de1df"
+      },
+      "copies_kept_outside_git": [
+        {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/superseded_runs/20261006T125754Z/e10_uncertainty_ensemble_se1_mae_sai.json",
+          "sha256": "a9495f29ecebcaa8db6caad7f8a3abd8934a8e2a4514c593254ae9f9a20b33a3",
+          "what": "receipt",
+          "copied": true
+        },
+        {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/superseded_runs/20261006T125754Z/uncertainty_ensemble_se1_mae_sai.json",
+          "sha256": "5c2d5974df030be6d037ff6dc52d956655b7ee29a85a9114303bdb33ff8d9ec2",
+          "what": "file the receipt bound",
+          "copied": true
+        },
+        {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/superseded_runs/20261006T125754Z/LICENSE_NOTICE.txt",
           "sha256": "acaafc1b83a5fe5d72a9f50e0e0efe476517328f581c5c487fb2e0a1290de1df",
           "what": "file the receipt bound",
           "copied": true

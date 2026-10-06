@@ -1,0 +1,12 @@
+{
+  "schema": "floodguard.published_planning_overlays.v1",
+  "official_warning": false,
+  "note": "Planning guidance for preparedness only. A file listed here is a scenario or a dated case of the signed protocols, never an observation of a flood in progress. Class E never means safe.",
+  "cases": [
+    {
+      "case_id": "SE1",
+      "file": "se1.json",
+      "sha256": "bb101e8021cffedc94044572c98863bd46bd38ed314e38435b436dfc8b552205"
+    }
+  ]
+}

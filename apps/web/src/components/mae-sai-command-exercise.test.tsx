@@ -95,12 +95,14 @@ describe("Command exercise page shell", () => {
     expect(lintOf(markup, "Command shell")).toBe("");
   });
 
-  it("lives at the temporary route and starts where it is told to", () => {
-    expect(COMMAND_EXERCISE_ROUTE).toBe("/command/exercise/");
+  it("lives at /command/, the default Planning page, and starts where it is told to", () => {
+    expect(COMMAND_EXERCISE_ROUTE).toBe("/command/");
     const markup = html(<MaeSaiCommandExercise initial={{ hour: 84 }} />);
     expect(markup).toContain('data-hour="84"');
     expect(text(markup)).toContain("12 Sep 2024 · 12:00 ICT");
-    expect(markup).toContain('href="/command/exercise/" aria-current="page"');
+    expect(markup).toContain('href="/command/" aria-current="page"');
+    // No case is named in the address of a plain visit, so the page shows no case line.
+    expect(markup).not.toContain("data-command-case-notice");
   });
 
   it("collapses the clock card, the table card and the time dock in focus mode", () => {

@@ -51,6 +51,10 @@ def test_the_published_copy_of_case_se1_is_the_overlay_of_record_with_its_licenc
     assert "CC BY-SA 4.0" in notice and "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009" in notice
     assert "It is not an official warning" in notice and "Class E never means safe" in notice
     assert "A scenario result is not an observation" in notice and summary["sha256"] in notice
+    # The index lists what is published, so a page asks for no file that is not there.
+    index = json.loads((PUBLISHED / "index.json").read_text(encoding="ascii"))
+    assert index["schema"] == publisher.INDEX_SCHEMA and index["official_warning"] is False
+    assert index["cases"] == [{"case_id": "SE1", "file": "se1.json", "sha256": summary["sha256"]}]
     rules = load_rules(ROOT / "apps" / "web" / "src" / "lib" / "replay-wording-rules.json")
     assert find_violations(notice, rules, "licence notice of the published overlay") == []
 

@@ -70,9 +70,9 @@ const captures = [
   { route: "/public/", selector: "main.public-page", width: 1280, height: 800, file: "public-shelter-1280x800.png", publicTab: "shelter", readySelector: ".public-shelter-page", selectArea: true },
   { route: "/public/", selector: "main.public-page", width: 1280, height: 800, file: "public-prepare-1280x800.png", publicTab: "prepare", readySelector: "#household-plan-builder", selectArea: true },
   { route: "/public/", selector: "main.public-page", width: 1280, height: 800, file: "public-sos-1280x800.png", publicTab: "sos", readySelector: ".public-sos-page", selectArea: true },
-  { route: "/command/", selector: "main.command-page", width: 1024, height: 768, file: "command-1024x768.png", basemap: "street", cycleBasemaps: true },
-  { route: "/command/", selector: "main.command-page", width: 1440, height: 900, file: "command-1440x900.png", basemap: "street" },
-  { route: "/command/", selector: "main.command-page", width: 1536, height: 1024, file: "command-1536x1024.png", basemap: "satellite" },
+  { route: "/studio/archive/command-workspace/", selector: "main.command-page", width: 1024, height: 768, file: "command-1024x768.png", basemap: "street", cycleBasemaps: true },
+  { route: "/studio/archive/command-workspace/", selector: "main.command-page", width: 1440, height: 900, file: "command-1440x900.png", basemap: "street" },
+  { route: "/studio/archive/command-workspace/", selector: "main.command-page", width: 1536, height: 1024, file: "command-1536x1024.png", basemap: "satellite" },
   { route: "/studio/planning-evidence/", selector: "main.studio-page", width: 2048, height: 1152, file: "studio-2048x1152.png" },
 ];
 const approvedBasemapOrigins = new Set([
@@ -139,7 +139,7 @@ try {
       }
       await page.locator(capture.readySelector).waitFor({ state: "visible" });
       await page.waitForFunction(() => document.querySelector(".public-app-content")?.scrollTop === 0);
-    } else if (capture.route === "/command/") {
+    } else if (capture.route === "/studio/archive/command-workspace/") {
       await page.locator(".map-workspace .leaflet-container").waitFor({ state: "visible" });
     }
 
@@ -158,7 +158,7 @@ try {
       await page.locator('.language-toggle button[lang="en"]').click();
     }
 
-    if (capture.route === "/command/") {
+    if (capture.route === "/studio/archive/command-workspace/") {
       await page.waitForFunction(() => (
         document.querySelector(".map-workspace .geo-map-shell")?.getAttribute("data-road-feature-count") === "4458"
         && document.querySelector(".map-workspace .geo-map-shell")?.getAttribute("data-facility-feature-count") === "42"
@@ -169,7 +169,7 @@ try {
       }
     }
 
-    const mapScope = capture.route === "/command/"
+    const mapScope = capture.route === "/studio/archive/command-workspace/"
       ? ".map-workspace"
       : capture.route === "/public/" && capture.publicTab === "home"
         ? ".public-home-page"
@@ -179,7 +179,7 @@ try {
         page,
         mapScope,
         capture.file,
-        capture.route === "/command/",
+        capture.route === "/studio/archive/command-workspace/",
         capture.route !== "/public/",
         capture.route !== "/public/",
       );
@@ -189,7 +189,7 @@ try {
       await selectOnlineBasemap(page, mapScope, capture.basemap ?? "street", capture.file, true);
     }
 
-    if (capture.route === "/command/" && await page.locator(".ranked-areas button").count() === 0) {
+    if (capture.route === "/studio/archive/command-workspace/" && await page.locator(".ranked-areas button").count() === 0) {
       throw new Error(`${capture.file} is missing the FPPS ranked list.`);
     }
     if (capture.route === "/studio/planning-evidence/" && await page.locator("#evidence-context-title").count() !== 1) {
@@ -357,7 +357,7 @@ try {
       );
     }
     if (
-      capture.route === "/command/"
+      capture.route === "/studio/archive/command-workspace/"
       && capture.width === 1024
       && pageAudit.commandColumnCount !== 2
     ) {
@@ -456,13 +456,13 @@ try {
         throw new Error(`${capture.file} is missing the three direct emergency call actions.`);
       }
     }
-    if (capture.route === "/command/" && capture.width === 1024) {
+    if (capture.route === "/studio/archive/command-workspace/" && capture.width === 1024) {
       const drawer = pageAudit.tabletEvidenceDrawer;
       if (!drawer || drawer.left < 0 || drawer.right > capture.width || drawer.top < 0 || drawer.bottom > capture.height) {
         throw new Error(`${capture.file} has a missing or clipped persistent evidence drawer: ${JSON.stringify(drawer)}.`);
       }
     }
-    if (capture.route === "/command/") {
+    if (capture.route === "/studio/archive/command-workspace/") {
       const mapScenario = await page.locator(".map-workspace .geo-map-shell").getAttribute("data-scenario-id");
       const panelScenario = await page.locator(".decision-panel").getAttribute("data-scenario-id");
       if (mapScenario !== "baseline" || panelScenario !== mapScenario) {
@@ -687,7 +687,7 @@ function assertPolishedRouteCopy(body, route, file) {
         /FloodGuard/iu,
         /SOS/iu,
       ]
-    : route === "/command/"
+    : route === "/studio/archive/command-workspace/"
       ? [
           /Planning intelligence|ข้อมูลเพื่อการวางแผน/iu,
           /Source time|เวลาข้อมูล/iu,

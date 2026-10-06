@@ -2,30 +2,49 @@
 
 import { useEffect } from "react";
 
-import { PLANNING_WORKSPACE_ROUTE } from "@/lib/case-selection";
+import { PLANNING_OVERVIEW_ROUTE, PLANNING_WORKSPACE_ROUTE, RESEARCH_WORKSPACE_ROUTE } from "@/lib/case-selection";
 
 import styles from "./command-archive-forward.module.css";
 
-/** Where the old address sends a reader: the map workspace, with the query and fragment the old link carried. */
+/** Where an old address sends a reader: the new address, with the query and fragment the old link carried. */
+export function forwardTarget(to: string, search: string, hash: string): string {
+  return `${to}${search}${hash}`;
+}
+
+/** Where /command/archive/ sends a reader: the older map workspace in Studio's archive. */
 export function commandArchiveForwardTarget(search: string, hash: string): string {
-  return `${PLANNING_WORKSPACE_ROUTE}${search}${hash}`;
+  return forwardTarget(RESEARCH_WORKSPACE_ROUTE, search, hash);
 }
 
 /**
- * What /command/archive/ serves since the owner's request of 5 Oct 2026 (decision log R19). The map workspace it
- * showed is now the default Planning page at /command/. This page has no content of its own: it sends the browser
- * on and keeps the query of the old link, so that links, bookmarks and saved offline copies keep working. The
- * sentence and its link are for a reader whose browser has not run the script. It shows no score and no class.
+ * What an address that has moved serves (decision log R19 and R24). The page has no content of its own: it sends the
+ * browser on and keeps the query of the old link, so that links, bookmarks and saved offline copies keep working.
+ * The sentence and its link are for a reader whose browser has not run the script. It shows no score and no class.
  */
-export function CommandArchiveForward() {
+export function AddressForward({ to, en, th }: { to: string; /** What moved, as the subject of the sentence. */ en: string; th: string }) {
   useEffect(() => {
-    window.location.replace(commandArchiveForwardTarget(window.location.search, window.location.hash));
-  }, []);
+    window.location.replace(forwardTarget(to, window.location.search, window.location.hash));
+  }, [to]);
 
   return (
-    <main id="main-content" tabIndex={-1} className={styles.forward} data-command-forward={PLANNING_WORKSPACE_ROUTE}>
-      <p lang="en">This page has moved. The Planning map workspace is now at <a href={PLANNING_WORKSPACE_ROUTE}>{PLANNING_WORKSPACE_ROUTE}</a>.</p>
-      <p lang="th">หน้านี้ย้ายแล้ว พื้นที่ทำงานแผนที่สำหรับการวางแผนอยู่ที่ <a href={PLANNING_WORKSPACE_ROUTE}>{PLANNING_WORKSPACE_ROUTE}</a></p>
+    <main id="main-content" tabIndex={-1} className={styles.forward} data-command-forward={to}>
+      <p lang="en">{`This page has moved. ${en} is now at `}<a href={to}>{to}</a>.</p>
+      <p lang="th">{`หน้านี้ย้ายแล้ว ${th}อยู่ที่ `}<a href={to}>{to}</a></p>
     </main>
   );
+}
+
+/** /command/archive/: the older map workspace, now historical research in Studio's archive. */
+export function CommandArchiveForward() {
+  return <AddressForward to={RESEARCH_WORKSPACE_ROUTE} en="The older Planning map workspace, kept as historical research," th="พื้นที่ทำงานแผนที่เดิมซึ่งเก็บไว้เป็นงานวิจัยย้อนหลัง" />;
+}
+
+/** /command/ver2/: the planning overview. */
+export function PlanningOverviewForward() {
+  return <AddressForward to={PLANNING_OVERVIEW_ROUTE} en="The planning overview" th="ภาพรวมเพื่อการวางแผน" />;
+}
+
+/** /command/exercise/: the Command exercise replay, now the default Planning page. */
+export function CommandExerciseForward() {
+  return <AddressForward to={PLANNING_WORKSPACE_ROUTE} en="The Command exercise replay" th="หน้าฝึกซ้อมสั่งการ" />;
 }

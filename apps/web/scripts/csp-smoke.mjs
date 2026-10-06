@@ -29,7 +29,8 @@ const OUT_DIR = resolve(HERE, "..", "out");
 const VERCEL_JSON = resolve(HERE, "..", "..", "..", "vercel.json");
 
 const ROUTES = [
-  "/", "/policy/", "/public/", "/public-cases/", "/command/", "/command/ver2/", "/command/cases/", "/command/archive/",
+  "/", "/policy/", "/public/", "/public-cases/", "/command/", "/studio/archive/command-workspace/", "/command/planning/", "/command/cases/",
+  "/command/archive/", "/command/ver2/", "/command/exercise/",
   "/studio/", "/studio/planning-evidence/", "/studio/candidate-report/", "/studio/library/", "/studio/brief/", "/studio/archive/",
   "/studio/archive/mae-sai-geoai/", "/studio/cases/mae-sai-2024/", "/studio/studies/c2s-ms-20260915/",
   ...["data", "models", "results", "rtc", "explorer", "files", "mae-sai"].map((section) => `/studio/studies/c2s-ms-20260915/${section}/`),
@@ -390,11 +391,18 @@ async function main() {
       });
 
       await page.goto(`${base}${route}`, { waitUntil: "networkidle" });
-      // The old workspace address forwards to the default Planning page. Under the policy the script that sends the
-      // reader on must have run, and the page that is measured below is the one the reader lands on.
-      if (route === "/command/archive/") {
-        await page.waitForURL(`${base}/command/`, { timeout: 15_000 }).catch(() => problems.push("the forward to /command/ did not run"));
-        await page.locator("main.command-page").waitFor({ state: "visible", timeout: 15_000 }).catch(() => problems.push("the forward did not open the map workspace"));
+      // Three earlier addresses only forward (decision log R24). Under the policy the script that sends the reader on
+      // must have run, and the page that is measured below is the one the reader lands on.
+      const forwards = {
+        "/command/archive/": ["/studio/archive/command-workspace/", "main.command-page"],
+        "/command/ver2/": ["/command/planning/", "main[data-planning-candidate]"],
+        "/command/exercise/": ["/command/", "main.command-page[data-command-exercise]"],
+      };
+      if (forwards[route]) {
+        const [to, landed] = forwards[route];
+        // The exercise page writes its replay hour into its address at once, so the forward is known by its path.
+        await page.waitForURL((url) => url.pathname === to, { timeout: 15_000 }).catch(() => problems.push(`the forward to ${to} did not run`));
+        await page.locator(landed).waitFor({ state: "visible", timeout: 15_000 }).catch(() => problems.push(`the forward did not open ${to}`));
       }
       // Hydration is the thing 'unsafe-inline' protects; if it were blocked the
       // React root would stay empty.
@@ -405,7 +413,7 @@ async function main() {
 
       try {
         // The map checks run on the map workspace, the default Planning page.
-        if (route === "/command/") await verifyMapRecovery(page, context, mock, base);
+        if (route === "/studio/archive/command-workspace/") await verifyMapRecovery(page, context, mock, base);
         if (route === "/public/") await verifyPublicLocation(page, context, mock, base);
       } catch (error) {
         problems.push(error.message);

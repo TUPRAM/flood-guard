@@ -67,9 +67,16 @@ const coreAssets = appProfile === "public-production"
   : [
       ...publicCoreAssets,
       "/policy/",
-      // The three Planning addresses: the map workspace (default), the planning overview, and the old workspace
-      // address, which forwards to the default. All three open without a connection.
+      // The Planning addresses since 7 Oct 2026 (decision log R24): the Command exercise replay (default) with its
+      // file of invented exercise items, the planning overview, the older map workspace in Studio's archive, and
+      // the three earlier addresses, which only forward. All open without a connection.
       "/command/",
+      "/exercises/mae-sai-2024/injects.v1.json",
+      "/planning-overlays/mae-sai-2024/index.json",
+      "/planning-overlays/mae-sai-2024/se1.json",
+      "/command/planning/",
+      "/studio/archive/command-workspace/",
+      "/command/exercise/",
       "/command/ver2/",
       "/command/archive/",
       "/studio/",
@@ -247,7 +254,7 @@ function collectOptionalLandingAssets() {
   }
   // A shared dependency referenced by a route remains mandatory even if the
   // optional canvas also appears in its dynamic-import dependency manifest.
-  for (const route of ["index.html", "public/index.html", "command/index.html", "command/ver2/index.html", "studio/index.html", "studio/library/index.html", "studio/brief/index.html"]) {
+  for (const route of ["index.html", "public/index.html", "command/index.html", "command/planning/index.html", "studio/archive/command-workspace/index.html", "studio/index.html", "studio/library/index.html", "studio/brief/index.html"]) {
     const path = resolve(out, route);
     if (!existsSync(path)) continue;
     const html = readFileSync(path, "utf8");

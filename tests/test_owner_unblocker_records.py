@@ -68,6 +68,9 @@ REGISTER_CELLS_ON_THE_AGE_COUNTS = (
 # folder (review pairs, satellite rasters, the run register, model weights, GEOID tiles, the public web folder).
 CODE_THAT_LISTS_A_FOLDER = [
     "scripts/build_landing_gate_status.py", "scripts/build_mae_sai_flood_timeline.py", "scripts/build_planning_assessment.py",
+    # Lists the published overlay files of one folder under apps/web/public/ to write their index; it reads the two
+    # protocol files and the receipts of docs/proposal_execution by name, and no draft.
+    "scripts/publish_planning_overlay.py",
     "src/floodguard/ait_mbrsc_guard.py", "src/floodguard/automated_optical_v2.py", "src/floodguard/automated_reference.py",
     "src/floodguard/geoid_m1_benchmark.py", "src/floodguard/rights_basis.py",
 ]
@@ -709,7 +712,10 @@ def test_the_builders_give_the_age_counts_the_public_level_and_cite_the_recorded
     public = ROOT / rights.PUBLIC_WEB_ROOT
     assert not [path.name for path in public.rglob("*planning_assessment*")] and not [path.name for path in public.rglob("*age_exposure*")]
     published = sorted(path.relative_to(public).as_posix() for path in public.rglob("planning-overlays/**/*") if path.is_file())
-    assert published == ["planning-overlays/mae-sai-2024/LICENSE", "planning-overlays/mae-sai-2024/se1.json"]
+    assert published == ["planning-overlays/mae-sai-2024/LICENSE", "planning-overlays/mae-sai-2024/index.json",
+                         "planning-overlays/mae-sai-2024/se1.json"]
+    index = read_json(public / "planning-overlays" / "mae-sai-2024" / "index.json")
+    assert [item["case_id"] for item in index["cases"]] == ["SE1"] and index["official_warning"] is False
     assert not [path.relative_to(public).as_posix() for path in public.rglob("planning-assessments*")]
     marker = planning_overlay.SCHEMA_ID.rsplit("/", 1)[-1].removesuffix(".schema.json").encode("ascii")
     assert marker == b"planning-assessment-overlay"

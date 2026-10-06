@@ -349,7 +349,7 @@ export function CommandWorkspace() {
   return (
     <main className={`command-page ${styles.page}`} lang={language}>
       {/* This workspace is served at /command/, the address of the header's Planning link: the link names the current page. */}
-      <WorkspaceHeader activeSurface="planning" language={language} onLanguageChange={setLanguage} hrefFor={withPageQuery} />
+      <WorkspaceHeader activeSurface="studio" surfaceRoot={false} language={language} onLanguageChange={setLanguage} hrefFor={withPageQuery} />
       <div data-app-availability-slot />
       <section id="main-content" tabIndex={-1} className="command-context-bar" aria-label={th ? "บริบทข้อมูลการวางแผน" : "Planning data context"}>
         <strong className="command-context-label">{th ? "ข้อมูลเพื่อการวางแผน" : "Planning intelligence"}</strong>

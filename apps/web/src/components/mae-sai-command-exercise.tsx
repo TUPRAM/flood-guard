@@ -162,6 +162,7 @@ import { CommandLogSheet, CommandSetupSheet, downloadCommandLog, type CommandSta
 import { MaeSaiCommandSituation } from "./mae-sai-command-situation";
 import { MaeSaiCommandTimebar, type CommandPhaseBandItem } from "./mae-sai-command-timebar";
 import styles from "./mae-sai-command-exercise.module.css";
+import { CommandCaseNotice } from "./command-case-notice";
 import { WorkspaceHeader } from "./workspace-header";
 
 /** The address bar is rewritten at most this often while the replay hour changes. */
@@ -263,6 +264,7 @@ export function MaeSaiCommandExercise({ initial }: {
   const [peaks, setPeaks] = useState<{ status: CommandPeakStatus; records: ReadonlyMap<string, CommandPeakRecord> }>({ status: "loading", records: new Map() });
   const [replay, dispatch] = useReducer(commandReplayReducer, initial, (start) => ({ ...initialCommandReplay(start?.hour), focus: start?.focus ?? false }));
   const [linkReady, setLinkReady] = useState(false);
+  const [caseSearch, setCaseSearch] = useState<string | null>(null);
   const [openPanel, setOpenPanel] = useState<OpenPanel>(null);
   const [dialog, setDialog] = useState<CommandDialog | null>(null);
   const [basemap, setBasemap] = useState<CommandBasemap>("street");
@@ -329,6 +331,9 @@ export function MaeSaiCommandExercise({ initial }: {
       // The language the address names wins over the one this browser has stored. It is set even when it equals the
       // language of the first render: that render knows only the default, not what the browser has stored.
       if (link.language) setLanguage(link.language);
+      // A "Planning" link of a brief or of a case page carries its case here (?aoi=...). This page does not read
+      // it: one line says so and leads to the planning overview of that case.
+      setCaseSearch(window.location.search);
       setLinkReady(true);
       try {
         // The invented items of the exercise are a file of their own: without it the replay still runs.
@@ -946,6 +951,18 @@ export function MaeSaiCommandExercise({ initial }: {
     setOpenPanel("card");
   };
 
+  // Offline copy: once the replay has rendered online, ask the service worker to keep its data, with the message the
+  // Studio replay sends. Without it this page would open offline with its banner and no map.
+  const replayRendered = mapReady && ready && (hand !== null || handFailed);
+  useEffect(() => {
+    if (!replayRendered || process.env.NODE_ENV !== "production" || !("serviceWorker" in navigator)) return;
+    let active = true;
+    navigator.serviceWorker.ready.then((registration) => {
+      if (active) registration.active?.postMessage({ type: "FLOODGUARD_CACHE_CASE_REPLAY" });
+    }).catch(() => undefined);
+    return () => { active = false; };
+  }, [replayRendered]);
+
   // The shared site header leads to the three sections as on every other page. "Planning" is this page, and
   // "Studio" opens the Studio replay at the same replay hour, as the page's own pill did before.
   const siteHref = (path: string): string | undefined =>
@@ -955,6 +972,7 @@ export function MaeSaiCommandExercise({ initial }: {
     <div className={styles.shell} data-command-shell lang={language}>
     <div className={styles.siteHeader} data-command-site-header>
       <WorkspaceHeader activeSurface="planning" language={language} onLanguageChange={setLanguage} hrefFor={siteHref} />
+      <CommandCaseNotice search={caseSearch} language={language} page="exercise" />
     </div>
     <main id="main-content" className={`command-page ${styles.page}`} data-command-exercise data-focus={focus ? "on" : "off"} data-hour={hour} data-mode={mode} data-selected={selected ?? undefined}
       data-selected-report={selectedItem?.id ?? selectedDevice?.id ?? undefined} data-picking={picking ? "true" : undefined}

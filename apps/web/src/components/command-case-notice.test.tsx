@@ -31,12 +31,12 @@ describe("CommandCaseNotice", () => {
     const english = renderToStaticMarkup(<CommandCaseNoticeLine search={hatYai} language="en" catalog={catalog} />);
     expect(english).toContain('aria-label="Selected case" data-command-case-notice="aoi-03_hat_yai_core_hat_yai_2025"');
     expect(english).toContain("<strong>Selected case: Hat Yai core — Hat Yai · November 2025.</strong> This map does not show the results of that case. It shows the retained Mae Sai research comparison only.");
-    expect(english).toContain(`<a href="/command/ver2/${escaped(hatYai)}" data-command-case-overview-link="true">Planning overview of Hat Yai core — Hat Yai · November 2025</a>`);
+    expect(english).toContain(`<a href="/command/planning/${escaped(hatYai)}" data-command-case-overview-link="true">Planning overview of Hat Yai core — Hat Yai · November 2025</a>`);
 
     const thai = renderToStaticMarkup(<CommandCaseNoticeLine search={hatYai} language="th" catalog={catalog} />);
     expect(thai).toContain('aria-label="กรณีศึกษาที่เลือก"');
     expect(thai).toContain("<strong>กรณีศึกษาที่เลือก: หาดใหญ่ พื้นที่หลัก — หาดใหญ่ · พฤศจิกายน 2568</strong> แผนที่นี้ไม่ได้แสดงผลของกรณีศึกษานั้น แสดงเฉพาะผลเปรียบเทียบงานวิจัยแม่สายที่เก็บไว้เท่านั้น");
-    expect(thai).toContain(`<a href="/command/ver2/${escaped(hatYai)}" data-command-case-overview-link="true">ภาพรวมเพื่อการวางแผนของ หาดใหญ่ พื้นที่หลัก — หาดใหญ่ · พฤศจิกายน 2568</a>`);
+    expect(thai).toContain(`<a href="/command/planning/${escaped(hatYai)}" data-command-case-overview-link="true">ภาพรวมเพื่อการวางแผนของ หาดใหญ่ พื้นที่หลัก — หาดใหญ่ · พฤศจิกายน 2568</a>`);
   });
 
   it("says the same of the Mae Sai case: the workspace shows the retained comparison, not that case's results", () => {
@@ -44,7 +44,7 @@ describe("CommandCaseNotice", () => {
     expect(html).toContain("Selected case: Mae Sai core — Mae Sai · September 2024.");
     expect(html).toContain("This map does not show the results of that case.");
     // Every part of the selection goes on to the overview.
-    expect(html).toContain('href="/command/ver2/?aoi=aoi-01_mae_sai_core&amp;event=mae_sai_2024&amp;service=pharmacy"');
+    expect(html).toContain('href="/command/planning/?aoi=aoi-01_mae_sai_core&amp;event=mae_sai_2024&amp;service=pharmacy"');
   });
 
   it("gives no name to a case the catalogue does not hold under this address, and still carries the address on", () => {
@@ -57,7 +57,7 @@ describe("CommandCaseNotice", () => {
       const html = renderToStaticMarkup(<CommandCaseNoticeLine search={search} language="en" catalog={loaded} />);
       expect(html).toContain('data-command-case-notice="unnamed"');
       expect(html).toContain("<strong>The link that opened this page names a study case.</strong> This map does not show the results of that case.");
-      expect(html).toContain(`<a href="/command/ver2/${escaped(search)}" data-command-case-overview-link="true">Planning overview of that case</a>`);
+      expect(html).toContain(`<a href="/command/planning/${escaped(search)}" data-command-case-overview-link="true">Planning overview of that case</a>`);
       expect(html).not.toContain("Selected case:");
     }
     const thai = renderToStaticMarkup(<CommandCaseNoticeLine search="?aoi=unknown&event=unknown" language="th" catalog={catalog} />);

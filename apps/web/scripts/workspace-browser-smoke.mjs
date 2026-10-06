@@ -75,7 +75,7 @@ try {
   checks.push("English default; Thai switch, reload and cross-page preference; centered desktop header with no underline on hover; Planning search and tabs");
   for (const width of [1024, 768, 700, 641, 390, 320]) {
     await page.setViewportSize({ width, height: 900 });
-    for (const path of ["/studio/", "/command/"]) {
+    for (const path of ["/studio/", "/studio/archive/command-workspace/"]) {
       await visit(path);
       for (const language of ["en", "th"]) {
         await page.getByRole("button", { name: language === "en" ? "Use English" : "ใช้ภาษาไทย" }).click();

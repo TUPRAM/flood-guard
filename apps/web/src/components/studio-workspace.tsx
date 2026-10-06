@@ -6,7 +6,7 @@ import { WorkspaceHeader } from "@/components/workspace-header";
 import { ModelRegistryPanel } from "@/components/model-registry-panel";
 import { QualifiedEvidenceFoundationPanel } from "@/components/qualified-evidence-foundation-panel";
 import { StatusBar } from "@/components/status-bar";
-import { STUDIO_CANDIDATE_REPORT_ROUTE } from "@/lib/case-selection";
+import { RESEARCH_WORKSPACE_ROUTE, STUDIO_CANDIDATE_REPORT_ROUTE } from "@/lib/case-selection";
 import { downloadText } from "@/lib/download";
 import { formatConfidence, formatSourceTime } from "@/lib/format";
 import {
@@ -384,7 +384,7 @@ export function StudioWorkspace({ evidenceContextId, archive = false }: StudioWo
           </>
         )}
 
-        <footer className="studio-footer"><span>{th ? "รายงานนี้ไม่ใช่คำเตือนภัยหรือการอนุญาตใช้งาน" : "This report is not a warning or operational authorization."}</span><a href={archiveHref("/command/")}>{th ? "เปิดพื้นที่วางแผน →" : "Open planning workspace →"}</a></footer>
+        <footer className="studio-footer"><span>{th ? "รายงานนี้ไม่ใช่คำเตือนภัยหรือการอนุญาตใช้งาน" : "This report is not a warning or operational authorization."}</span><a href={archiveHref(RESEARCH_WORKSPACE_ROUTE)} data-research-workspace-link="true">{th ? "เปิดพื้นที่ทำงานแผนที่เดิม (งานวิจัยย้อนหลัง) →" : "Open the historical map workspace →"}</a></footer>
       </div>
     </main>
   );

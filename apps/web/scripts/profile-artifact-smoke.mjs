@@ -132,6 +132,7 @@ function validatePublicProduction() {
     // No address of a Command page in any shipped file: the list of pages the competition build keeps offline is
     // compiled out of this profile (requiredOfflinePaths in pwa-register.tsx).
     "/command/",
+    "/studio/archive/command-workspace/",
     "/api/v1/scenario-runs",
     "/evidence-library/catalog.json",
     "/public-case-projections/catalog.json",
@@ -145,7 +146,7 @@ function validatePublicProduction() {
     if (hit) throw new Error(`Public profile contains staff-only sentinel ${JSON.stringify(forbidden)} in ${hit}`);
     if (serviceWorker.includes(forbidden)) throw new Error(`Public service-worker cache inventory contains ${forbidden}`);
   }
-  for (const route of ["/command/", "/command/ver2/", "/command/cases/", "/command/archive/", "/studio/", "/studio/candidate-report/", "/studio/library/", "/studio/brief/", "/studio/archive/", "/policy/"]) {
+  for (const route of ["/command/", "/studio/archive/command-workspace/", "/command/planning/", "/command/cases/", "/command/archive/", "/command/ver2/", "/command/exercise/", "/studio/", "/studio/candidate-report/", "/studio/library/", "/studio/brief/", "/studio/archive/", "/policy/"]) {
     if (serviceWorker.includes(`"${route}"`)) throw new Error(`Public cache list contains staff route ${route}`);
   }
   // Also no page below those routes (e.g. the /studio/ case replay) in the built precache list.
@@ -188,7 +189,10 @@ function validateCompetition() {
   for (const required of [
     "policy/index.html",
     "command/index.html",
+    "studio/archive/command-workspace/index.html",
+    "command/planning/index.html",
     "command/ver2/index.html",
+    "command/exercise/index.html",
     "command/cases/index.html",
     "command/archive/index.html",
     "public-cases/index.html",
@@ -256,7 +260,7 @@ function validateCompetition() {
       throw new Error(`Competition profile published an unapproved aerial reference: ${name}`);
     }
   }
-  for (const route of ["/", "/public/", "/public-cases/", "/command/", "/command/ver2/", "/command/cases/", "/command/archive/", "/studio/", "/studio/planning-evidence/", "/studio/candidate-report/", "/studio/library/", "/studio/brief/", "/studio/archive/", "/policy/", EVIDENCE_CATALOG_ASSET, ...collectPublicCaseAssets(out), ...collectCaseBriefAssets(out)]) {
+  for (const route of ["/", "/public/", "/public-cases/", "/command/", "/studio/archive/command-workspace/", "/command/planning/", "/command/cases/", "/command/archive/", "/command/ver2/", "/command/exercise/", "/studio/", "/studio/planning-evidence/", "/studio/candidate-report/", "/studio/library/", "/studio/brief/", "/studio/archive/", "/policy/", EVIDENCE_CATALOG_ASSET, ...collectPublicCaseAssets(out), ...collectCaseBriefAssets(out)]) {
     if (!coreUrls.includes(route)) throw new Error(`Competition cache list omits ${route}`);
   }
   // The evidence library: its catalogue is precached; each study area is a deferred bucket saved when opened or on request, and

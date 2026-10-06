@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
-import { PwaRegister, mapAvailabilityCopy, pwaAvailabilityCopy, requiredOfflinePaths } from "./pwa-register";
+import { autoHidesOn, PwaRegister, mapAvailabilityCopy, pwaAvailabilityCopy, requiredOfflinePaths } from "./pwa-register";
 
 describe("PwaRegister", () => {
   it("keeps map availability distinct from online and saved-app readiness", () => {
@@ -50,9 +50,22 @@ describe("PwaRegister", () => {
 
   it("requires every role route before calling the competition app saved offline", () => {
     expect(requiredOfflinePaths("competition")).toEqual(expect.arrayContaining([
-      "/public-cases/", "/command/", "/command/ver2/", "/command/cases/", "/command/archive/",
+      "/public-cases/", "/command/", "/command/planning/", "/command/cases/", "/studio/archive/command-workspace/",
+      // The three earlier addresses only forward; they are saved too, so that an old link opens without a connection.
+      "/command/exercise/", "/command/ver2/", "/command/archive/",
       "/studio/", "/studio/brief/", "/studio/library/", "/studio/archive/",
     ]));
+  });
+
+  it("hides the app-status pill on the exercise page and not on the Planning pages below it", () => {
+    const paths = ["/studio/cases/", "/command/$"];
+    expect(autoHidesOn("/command/", paths)).toBe(true);
+    expect(autoHidesOn("/command/planning/", paths)).toBe(false);
+    expect(autoHidesOn("/command/cases/", paths)).toBe(false);
+    expect(autoHidesOn("/studio/cases/mae-sai-2024/", paths)).toBe(true);
+    expect(autoHidesOn("/studio/", paths)).toBe(false);
+    expect(autoHidesOn(null, paths)).toBe(false);
+    expect(autoHidesOn("/command/", ["$", ""])).toBe(false);
   });
 
   it("is compiled without the staff addresses when the site is built for the public profile", async () => {

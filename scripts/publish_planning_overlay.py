@@ -52,6 +52,9 @@ PUBLIC_FOLDER = "planning-overlays"
 STUDY_FOLDERS: dict[str, str] = {"mae_sai": "mae-sai-2024"}
 """The study folder of each frame set, as the pages name it."""
 LICENCE_FILE = "LICENSE"
+INDEX_FILE = "index.json"
+INDEX_SCHEMA = "floodguard.published_planning_overlays.v1"
+"""The list of the cases published in a study folder. A page reads it first and asks for no file it does not list."""
 DOCS = Path("docs") / "proposal_execution"
 EXIT_PUBLISHED, EXIT_REFUSED = 0, 2
 
@@ -121,6 +124,23 @@ def licence_text(overlay: dict[str, Any], *, published_name: str, source_label: 
         lines.append("   Where an input is under the ODbL, its terms for a derived database apply as well.")
     lines.append("")
     return "\n".join(lines)
+
+
+def index_bytes(folder: Path) -> bytes:
+    """Return the index of a study folder: every published case file in it, by name and SHA-256."""
+
+    cases = [
+        {"case_id": path.stem.upper(), "file": path.name, "sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
+        for path in sorted(folder.glob("*.json")) if path.name != INDEX_FILE
+    ]
+    document = {
+        "schema": INDEX_SCHEMA,
+        "official_warning": False,
+        "note": "Planning guidance for preparedness only. A file listed here is a scenario or a dated case of the signed "
+                "protocols, never an observation of a flood in progress. Class E never means safe.",
+        "cases": cases,
+    }
+    return (json.dumps(document, indent=2, ensure_ascii=True) + "\n").encode("ascii")
 
 
 def check_overlay_of_record(case_id: str, frame: str, root: Path, registry: rights.RightsRegistry | None = None) -> tuple[Path, bytes, dict[str, Any]]:
@@ -203,15 +223,19 @@ def publish(case_id: str, frame: str, *, root: Path = ROOT, verify: bool = False
         "licence_sha256": hashlib.sha256(notice).hexdigest(), "publication_eligibility": overlay["publication_eligibility"],
         "official_warning": overlay["official_warning"], "source_timestamp": overlay["source_timestamp"],
     }
+    index_path = target.with_name(INDEX_FILE)
     if verify:
         same = target.is_file() and target.read_bytes() == data and licence_path.is_file() and licence_path.read_bytes() == notice
         if not same:
             raise PublishError(f"{summary['published']} or its {LICENCE_FILE} is not the published form of {source_label}")
+        if not index_path.is_file() or index_path.read_bytes() != index_bytes(target.parent):
+            raise PublishError(f"{index_path.relative_to(root).as_posix()} does not list the published files of its folder as they are")
         return {**summary, "verified": True}
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_bytes(data)
     licence_path.write_bytes(notice)
-    return {**summary, "written": True}
+    index_path.write_bytes(index_bytes(target.parent))
+    return {**summary, "index": index_path.relative_to(root).as_posix(), "written": True}
 
 
 def main(arguments: Sequence[str] | None = None) -> int:

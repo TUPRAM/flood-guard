@@ -285,7 +285,7 @@ function replaySourceFiles(): string[] {
     ...list("src/lib", /^flood-timeline.*\.ts$/),
     "src/app/studio/cases/mae-sai-2024/page.tsx",
     // The route of the Command exercise replay: its title and description are replay text too.
-    "src/app/command/exercise/page.tsx",
+    "src/app/command/page.tsx",
   ].sort();
 }
 
@@ -988,7 +988,7 @@ describe("Replay wording lint: current text", () => {
       "src/components/mae-sai-map-kit.tsx", "src/lib/flood-timeline-command.ts", "src/lib/flood-timeline-command-copy.ts",
       // Its page: the route, the shell, the map, the clock card, the time dock and the panels around the map, and
       // the replay controls, the map arithmetic and the loader behind them.
-      "src/app/command/exercise/page.tsx", "src/components/mae-sai-command-exercise.tsx", "src/components/mae-sai-command-map.tsx",
+      "src/app/command/page.tsx", "src/components/mae-sai-command-exercise.tsx", "src/components/mae-sai-command-map.tsx",
       "src/components/mae-sai-command-situation.tsx", "src/components/mae-sai-command-timebar.tsx", "src/components/mae-sai-command-chrome.tsx",
       "src/lib/flood-timeline-command-replay.ts", "src/lib/flood-timeline-command-map.ts", "src/lib/flood-timeline-command-data.ts",
       // The subdistrict table, the inspector and the find-place box, and the pure functions behind them.
@@ -1130,7 +1130,7 @@ describe("Replay wording lint: current text", () => {
     const commandBuilt = items.find((item) => item.source === "Command exercise copy (th)")!;
     // Its page: a component file, the route's page and two rendered panels.
     const commandComponent = items.find((item) => item.source === "src/components/mae-sai-command-chrome.tsx")!;
-    const commandRoute = items.find((item) => item.source === "src/app/command/exercise/page.tsx")!;
+    const commandRoute = items.find((item) => item.source === "src/app/command/page.tsx")!;
     const commandDock = items.find((item) => item.source === "Command time dock (th)")!;
     const commandDrawer = items.find((item) => item.source === "Command information drawer (en)")!;
     // The table and the inspector: a component file, the pure functions, and three rendered panels.

@@ -51,7 +51,7 @@ import { ClusterGlyph, exerciseMarkerNodes, MarkerGlyph, NoReportsGlyph, placeRe
 import styles from "./mae-sai-command-exercise.module.css";
 
 /** The address of this page while it is tried out; it moves to the Command root in a later change. */
-export const COMMAND_EXERCISE_ROUTE = "/command/exercise/";
+export const COMMAND_EXERCISE_ROUTE = "/command/";
 
 const pick = commandText;
 

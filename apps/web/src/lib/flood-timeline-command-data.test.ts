@@ -11,7 +11,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import fixture from "./__fixtures__/planning-assessment-overlay.fixture.json";
 import { loadCommandExercise, loadCommandOverlays } from "./flood-timeline-command-data";
 import { EXERCISE_FILE_URL } from "./flood-timeline-command-incidents";
-import { COMMAND_OVERLAY_HREFS, NO_COMMAND_OVERLAYS } from "./flood-timeline-command-table";
+import { COMMAND_OVERLAY_HREFS, COMMAND_OVERLAY_INDEX_HREF, NO_COMMAND_OVERLAYS, publishedOverlayCases } from "./flood-timeline-command-table";
 
 const publicRoot = resolve(import.meta.dirname, "../../public");
 const exerciseFile = () => JSON.parse(readFileSync(resolve(publicRoot, EXERCISE_FILE_URL.replace(/^\//, "")), "utf8")) as { items: Record<string, unknown>[] } & Record<string, unknown>;
@@ -68,21 +68,38 @@ describe("Loading the file of invented exercise items", () => {
 });
 
 describe("Loading the planning overlays of the table", () => {
-  it("keeps the empty state when neither file exists", async () => {
+  const index = (cases: string[]) => ({ schema: "floodguard.published_planning_overlays.v1", official_warning: false, cases: cases.map((id) => ({ case_id: id, file: `${id.toLowerCase()}.json` })) });
+
+  it("asks for the index only, and keeps the empty state, when no case is published", async () => {
     const asked = serve({});
     expect(await loadCommandOverlays(signal)).toEqual(NO_COMMAND_OVERLAYS);
-    expect([...asked].sort()).toEqual([COMMAND_OVERLAY_HREFS.O1, COMMAND_OVERLAY_HREFS.SE1].sort());
+    expect([...asked]).toEqual([COMMAND_OVERLAY_INDEX_HREF]);
+    // An index that lists nothing, or that is not such an index, asks for no file either.
+    for (const served of [index([]), { schema: "something else", cases: [{ case_id: "SE1" }] }, new SyntaxError("Unexpected token")]) {
+      const again = serve({ [COMMAND_OVERLAY_INDEX_HREF]: served });
+      expect(await loadCommandOverlays(signal)).toEqual(NO_COMMAND_OVERLAYS);
+      expect([...again]).toEqual([COMMAND_OVERLAY_INDEX_HREF]);
+    }
+  });
+
+  it("asks only for the cases the index lists, so a case that is not published costs no failed request", async () => {
+    const asked = serve({ [COMMAND_OVERLAY_INDEX_HREF]: index(["SE1"]) });
+    expect(await loadCommandOverlays(signal)).toEqual(NO_COMMAND_OVERLAYS);
+    expect([...asked].sort()).toEqual([COMMAND_OVERLAY_INDEX_HREF, COMMAND_OVERLAY_HREFS.SE1].sort());
+    // A case the page does not know is not asked for.
+    expect(publishedOverlayCases(index(["SE1", "O2", "ZZ"]))).toEqual(["SE1"]);
+    expect(publishedOverlayCases(index(["O1", "SE1"]))).toEqual(["O1", "SE1"]);
   });
 
   it("never puts the E11 fixture on the page, although the parser accepts it", async () => {
     // The fixture is a valid overlay of invented units: the reader of the page refuses it (a fixture, not a public
     // portfolio case), so serving it at the address of a case still leaves the table empty.
-    serve({ [COMMAND_OVERLAY_HREFS.O1]: fixture, [COMMAND_OVERLAY_HREFS.SE1]: fixture });
+    serve({ [COMMAND_OVERLAY_INDEX_HREF]: index(["O1", "SE1"]), [COMMAND_OVERLAY_HREFS.O1]: fixture, [COMMAND_OVERLAY_HREFS.SE1]: fixture });
     expect(await loadCommandOverlays(signal)).toEqual({ O1: null, SE1: null });
   });
 
   it("keeps the empty state for a file the parser refuses or that is not JSON", async () => {
-    serve({ [COMMAND_OVERLAY_HREFS.O1]: { schema: "something else" }, [COMMAND_OVERLAY_HREFS.SE1]: new SyntaxError("Unexpected end of JSON input") });
+    serve({ [COMMAND_OVERLAY_INDEX_HREF]: index(["O1", "SE1"]), [COMMAND_OVERLAY_HREFS.O1]: { schema: "something else" }, [COMMAND_OVERLAY_HREFS.SE1]: new SyntaxError("Unexpected end of JSON input") });
     expect(await loadCommandOverlays(signal)).toEqual({ O1: null, SE1: null });
   });
 });

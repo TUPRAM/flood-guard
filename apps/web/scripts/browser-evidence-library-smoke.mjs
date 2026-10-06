@@ -160,7 +160,7 @@ try {
       throw new Error(`Incomplete offline route coverage: ${JSON.stringify(routeCoverageCounts)}, total ${routeCasesChecked}`);
     }
   }
-  console.log(sharedOnly ? `Shared views browser: ${sharedViewsChecked} case/language/network selections; links for service-result cases passed.` : offlineOnly ? `Offline decision brief browser: ${briefCasesChecked} case/language/viewport/network selections, ${routeCasesChecked} exact route comparisons (${JSON.stringify(routeCoverageCounts)}), and ${workspaceViewportsChecked} workspace language/viewport combinations passed.` : workspaceOnly ? `Route workspace browser: ${workspaceViewportsChecked} language/viewport combinations; visible controls, map, results, accessible detail dialogs and no API requests passed.` : `Evidence browser: ${briefCasesChecked} brief case/language/viewport/network selections, ${sharedViewsChecked} shared-view selections (role links for service-result cases), and ${routeCasesChecked} bounded exact route checks (${JSON.stringify(routeCoverageCounts)}); ${workspaceViewportsChecked} workspace language/viewport combinations, keyboard/details, report download, invalid links, the Planning link of a published brief of another place (the map workspace names the case and leads to its planning overview, online and offline), and no unexpected requests passed; ${studyAreasSaved} study areas saved (by opening them, or with the list's buttons) before the offline part.`);
+  console.log(sharedOnly ? `Shared views browser: ${sharedViewsChecked} case/language/network selections; links for service-result cases passed.` : offlineOnly ? `Offline decision brief browser: ${briefCasesChecked} case/language/viewport/network selections, ${routeCasesChecked} exact route comparisons (${JSON.stringify(routeCoverageCounts)}), and ${workspaceViewportsChecked} workspace language/viewport combinations passed.` : workspaceOnly ? `Route workspace browser: ${workspaceViewportsChecked} language/viewport combinations; visible controls, map, results, accessible detail dialogs and no API requests passed.` : `Evidence browser: ${briefCasesChecked} brief case/language/viewport/network selections, ${sharedViewsChecked} shared-view selections (role links for service-result cases), and ${routeCasesChecked} bounded exact route checks (${JSON.stringify(routeCoverageCounts)}); ${workspaceViewportsChecked} workspace language/viewport combinations, keyboard/details, report download, invalid links, the Planning link of a published brief of another place (the exercise page names the case and leads to its planning overview, online and offline), and no unexpected requests passed; ${studyAreasSaved} study areas saved (by opening them, or with the list's buttons) before the offline part.`);
   await context.close();
 } finally {
   await browser.close();
@@ -337,7 +337,7 @@ async function verifyMainSurfaces(page, offline) {
   await page.locator("main[data-evidence-library]").getByRole("alert").filter({ hasText: "Another area's data will not be substituted" }).waitFor();
   if (await page.locator("[data-public-case-summary]").count()) throw new Error("Unknown Public case displayed another case");
   for (const [path, role, lowerSelector] of [
-    ["/command/ver2/", "planning", "[data-planning-candidate]"],
+    ["/command/planning/", "planning", "[data-planning-candidate]"],
     ["/studio/candidate-report/", "studio", "[data-evidence-case-id]"],
   ]) {
     await page.goto(origin + path + "?aoi=unknown&event=unknown", { waitUntil: "domcontentloaded" });
@@ -352,32 +352,31 @@ async function verifyMainSurfaces(page, offline) {
 }
 
 /**
- * "Planning" in a header opens the map workspace, the default Planning page (owner request of 5 Oct 2026, decision
- * log R19). The workspace shows the Mae Sai planning bundle whatever case the address names, and carries that case
- * on: its link to the planning overview must hold every part of the selection. Follow it to the overview.
+ * "Planning" in a header opens the Command exercise replay, the default Planning page since 7 Oct 2026 (decision log
+ * R24). That page replays Mae Sai whatever case the address names, and carries that case on: its one-line notice
+ * links to the planning overview and must hold every part of the selection. Follow it to the overview.
  */
 async function openPlanningOverviewFromWorkspace(page, th, carried) {
-  await page.locator("main.command-page").waitFor();
+  await page.locator("main.command-page[data-command-exercise]").waitFor();
   if (new URL(page.url()).pathname !== "/command/") throw new Error("The header's Planning link does not open the default Planning page");
-  const link = page.locator('main.command-page a[data-planning-overview-link="true"]').filter({ hasText: th ? "ภาพรวมปัจจุบัน" : "Current planning overview" });
+  const link = page.locator('[data-command-shell] [data-command-case-notice] a[data-command-case-overview-link="true"]');
   await link.waitFor();
-  await page.waitForFunction(() => document.querySelector('main.command-page a[data-planning-overview-link="true"]')?.getAttribute("href")?.includes("?"));
   const href = await link.getAttribute("href");
   const target = new URL(href ?? "", origin);
-  if (target.pathname !== "/command/ver2/" || Object.entries(carried).some(([key, value]) => target.searchParams.get(key) !== value)) {
-    throw new Error("The map workspace lost part of the selected case on its link to the planning overview: " + href);
+  if (target.pathname !== "/command/planning/" || Object.entries(carried).some(([key, value]) => target.searchParams.get(key) !== value)) {
+    throw new Error("The exercise page lost part of the selected case on its link to the planning overview: " + href + (th ? " (th)" : ""));
   }
   await link.click();
   await page.locator('[data-shared-case="planning"]').waitFor();
-  if (new URL(page.url()).pathname !== "/command/ver2/") throw new Error("The workspace's overview link does not open the planning overview");
+  if (new URL(page.url()).pathname !== "/command/planning/") throw new Error("The exercise page's case line does not open the planning overview");
 }
 
 /**
- * The "Planning" link of a published case brief opens the map workspace with the case in the address: the eight
- * briefs were not built again after the swap of 5 Oct 2026, because their hashes are pinned (decision log R19).
- * The workspace shows the retained Mae Sai comparison whatever the case, and six of the eight briefs are of other
- * places. So it has to say which case the link named and that the map does not show it, and lead on to the
- * planning overview of that case. Starts from the Hat Yai brief.
+ * The "Planning" link of a published case brief opens /command/ with the case in the address: the eight briefs were
+ * not built again after the swaps of 5 and 7 Oct 2026, because their hashes are pinned (decision log R19 and R24).
+ * /command/ is the Command exercise replay of Mae Sai whatever the case, and six of the eight briefs are of other
+ * places. So the page has to say which case the link named and that it does not show it, and lead on to the planning
+ * overview of that case. Starts from the Hat Yai brief.
  */
 async function verifyBriefPlanningLink(page, offline) {
   const reference = catalog.packages.find((item) => item.id === ROUTE_CASES.hatYai);
@@ -393,43 +392,48 @@ async function verifyBriefPlanningLink(page, offline) {
     throw new Error(`The published brief's Planning link is not the one this check was written for: ${published.pathname}${published.search}`);
   }
   await planning.click();
-  await page.locator("main.command-page").waitFor();
-  const notice = page.locator(`main.command-page [data-command-case-notice="${reference.id}"]`);
+  await page.locator("main.command-page[data-command-exercise]").waitFor();
+  const notice = page.locator(`[data-command-shell] [data-command-case-notice="${reference.id}"]`);
   for (const [language, name, selected, boundary, overview] of [
-    ["th", `${aoi.name_th} — ${event.name_th}`, "กรณีศึกษาที่เลือก: ", "แผนที่นี้ไม่ได้แสดงผลของกรณีศึกษานั้น แสดงเฉพาะผลเปรียบเทียบงานวิจัยแม่สายที่เก็บไว้เท่านั้น", "ภาพรวมเพื่อการวางแผนของ "],
-    ["en", `${aoi.name} — ${event.name}`, "Selected case: ", "This map does not show the results of that case. It shows the retained Mae Sai research comparison only.", "Planning overview of "],
+    ["th", `${aoi.name_th} — ${event.name_th}`, "กรณีศึกษาที่เลือก: ", "หน้านี้เป็นการฝึกซ้อมย้อนเหตุการณ์น้ำท่วมแม่สาย เดือนกันยายน 2567 (2024) และไม่ได้แสดงผลของกรณีศึกษานั้น", "ภาพรวมเพื่อการวางแผนของ "],
+    ["en", `${aoi.name} — ${event.name}`, "Selected case: ", "This page replays the Mae Sai flood of September 2024 as an exercise. It does not show the results of that case.", "Planning overview of "],
   ]) {
-    await page.locator(`main.command-page .language-toggle button[lang="${language}"]`).click();
+    await page.locator(`[data-command-site-header] .language-toggle button[lang="${language}"]`).click();
     await page.waitForFunction((expected) => document.querySelector("main.command-page")?.getAttribute("lang") === expected, language);
     await notice.waitFor({ state: "visible" });
     const text = (await notice.innerText()).replace(/\s+/g, " ");
     const link = notice.locator('a[data-command-case-overview-link="true"]');
     const target = new URL(await link.getAttribute("href"), origin);
     if (!text.includes(`${selected}${name}`) || !text.includes(boundary) || (await link.innerText()).trim() !== `${overview}${name}`
-      || target.pathname !== "/command/ver2/" || target.search !== published.search) {
-      throw new Error(`Opened from the ${reference.id} brief, the map workspace does not name the case and lead to its planning overview (${language}, offline=${offline}): ${text}`);
+      || target.pathname !== "/command/planning/" || target.search !== published.search) {
+      throw new Error(`Opened from the ${reference.id} brief, the exercise page does not name the case and lead to its planning overview (${language}, offline=${offline}): ${text}`);
     }
-    // The line stands above the banner and the ranking, within the page's width, on a desktop and on a phone, and its
-    // link is large enough to tap.
+    // The line stands above the exercise banner and the map, within the page's width, on a desktop and on a phone,
+    // and its link is large enough to tap.
     for (const viewport of [{ width: 390, height: 844 }, { width: 1440, height: 1000 }]) {
       await page.setViewportSize(viewport);
       await notice.scrollIntoViewIfNeeded();
       const box = await notice.boundingBox();
-      const banner = await page.locator("main.command-page .command-research-notice").boundingBox();
+      const banner = await page.locator('main.command-page [data-region="A"]').boundingBox();
       const tap = await link.boundingBox();
       if (!box || !banner || !tap || box.x < 0 || box.x + box.width > viewport.width + 1 || box.y + box.height > banner.y + 1 || tap.height < 44) {
-        throw new Error(`The selected-case line of the map workspace is misplaced at ${viewport.width} px (${language}): ${JSON.stringify({ box, banner, tap })}`);
+        throw new Error(`The selected-case line of the exercise page is misplaced at ${viewport.width} px (${language}): ${JSON.stringify({ box, banner, tap })}`);
       }
     }
   }
   await notice.locator('a[data-command-case-overview-link="true"]').click();
   await page.locator(`[data-shared-case="planning"][data-case-id="${reference.id}"]`).waitFor();
   await page.locator(`[data-planning-candidate="${reference.id}"]`).waitFor();
-  if (new URL(page.url()).pathname !== "/command/ver2/" || !(await page.locator('[data-shared-case="planning"]').innerText()).includes(`${aoi.name} — ${event.name}`)) {
-    throw new Error(`The selected-case line of the map workspace does not open the planning overview of ${reference.id}`);
+  if (new URL(page.url()).pathname !== "/command/planning/" || !(await page.locator('[data-shared-case="planning"]').innerText()).includes(`${aoi.name} — ${event.name}`)) {
+    throw new Error(`The selected-case line of the exercise page does not open the planning overview of ${reference.id}`);
   }
-  // The workspace opened with no case in its address has no such line.
+  // The exercise page opened with no case in its address has no such line. Neither has the older map workspace in
+  // Studio's archive, which still carries its own line when a link names a case.
   await page.goto(`${origin}/command/`, { waitUntil: "domcontentloaded" });
+  await page.locator("main.command-page[data-command-exercise]").waitFor();
+  await page.locator('[data-command-site-header] .language-toggle').waitFor();
+  if (await page.locator("[data-command-case-notice]").count() !== 0) throw new Error("The exercise page shows a selected-case line although its address names no case");
+  await page.goto(`${origin}/studio/archive/command-workspace/`, { waitUntil: "domcontentloaded" });
   await page.locator("main.command-page .ranked-areas button").first().waitFor();
   if (await page.locator("[data-command-case-notice]").count() !== 0) throw new Error("The map workspace shows a selected-case line although its address names no case");
   if (viewportBefore) await page.setViewportSize(viewportBefore);
@@ -460,7 +464,7 @@ async function verifyRoleUrlSynchronization(page) {
   const first = catalog.packages[0];
   const alternative = catalog.packages.find((item) => item.aoi_id.startsWith("aoi-03")) ?? catalog.packages[1];
   for (const [path, role, lowerSelector, detailPath] of [
-    ["/command/ver2/", "planning", "[data-planning-candidate]", "/command/cases/"],
+    ["/command/planning/", "planning", "[data-planning-candidate]", "/command/cases/"],
     ["/studio/candidate-report/", "studio", "[data-evidence-case-id]", "/studio/library/"],
   ]) {
     await page.goto(origin + path + "?aoi=" + first.aoi_id + "&event=" + first.event_id + "&version=" + catalog.package_version, { waitUntil: "domcontentloaded" });
@@ -496,19 +500,20 @@ async function verifyRoleUrlSynchronization(page) {
     if (role === "planning") {
       // The comparison page names the two other Planning pages: the overview of this case and the map workspace.
       const overviewTarget = new URL(await areaPages.getByRole("link", { name: "Overview", exact: true }).getAttribute("href"), origin);
-      if (overviewTarget.pathname !== "/command/ver2/" || overviewTarget.searchParams.get("aoi") !== alternative.aoi_id || overviewTarget.searchParams.get("event") !== alternative.event_id) {
+      if (overviewTarget.pathname !== "/command/planning/" || overviewTarget.searchParams.get("aoi") !== alternative.aoi_id || overviewTarget.searchParams.get("event") !== alternative.event_id) {
         throw new Error("The comparison page's Overview link does not open the planning overview of the selected case");
       }
     }
-    const archiveLink = areaPages.getByRole("link", { name: role === "planning" ? "Map workspace" : "Historical report" });
+    const archiveLink = areaPages.getByRole("link", { name: role === "planning" ? "Command exercise" : "Historical report" });
     await archiveLink.click();
-    await page.locator(role === "planning" ? "main.command-page" : "main.studio-page").waitFor();
+    await page.locator(role === "planning" ? "main.command-page[data-command-exercise]" : "main.studio-page").waitFor();
     const archived = new URL(page.url());
     if (archived.searchParams.get("aoi") !== alternative.aoi_id || archived.searchParams.get("event") !== alternative.event_id) {
       throw new Error(role + " archive link dropped the selected case");
     }
-    if (role === "planning" && archived.pathname !== "/command/") throw new Error("The Map workspace link does not open the default Planning page");
-    await page.getByRole("link", { name: role === "planning" ? "Current planning overview" : "Open the current study-case report" }).click();
+    if (role === "planning" && archived.pathname !== "/command/") throw new Error("The Command exercise link does not open the default Planning page");
+    if (role === "planning") await page.locator('[data-command-shell] [data-command-case-notice] a[data-command-case-overview-link="true"]').click();
+    else await page.getByRole("link", { name: "Open the current study-case report" }).click();
     await page.locator('[data-shared-case="' + role + '"][data-case-id="' + alternative.id + '"]').waitFor();
   }
 }

@@ -30,11 +30,13 @@ import {
 import { EXERCISE_FILE_URL, parseExerciseFile, type ExerciseFile } from "./flood-timeline-command-incidents";
 import {
   COMMAND_OVERLAY_HREFS,
-  COMMAND_PLANNING_CASES,
+  COMMAND_OVERLAY_INDEX_HREF,
   NO_COMMAND_OVERLAYS,
   parsePeakSummary,
+  publishedOverlayCases,
   readCommandOverlay,
   type CommandOverlays,
+  type CommandPlanningCase,
   type CommandPeakRecord,
 } from "./flood-timeline-command-table";
 import { envelopeCells, shippableEnvelope } from "./flood-timeline-envelope";
@@ -118,7 +120,15 @@ export async function loadCommandReplay(signal: AbortSignal): Promise<CommandRep
  */
 export async function loadCommandOverlays(signal: AbortSignal): Promise<CommandOverlays> {
   const overlays: CommandOverlays = { ...NO_COMMAND_OVERLAYS };
-  await Promise.all(COMMAND_PLANNING_CASES.map(async (planningCase) => {
+  // The index says which cases are published; without it, or for a case it does not list, nothing is asked for.
+  let published: CommandPlanningCase[] = [];
+  try {
+    const index = await fetch(COMMAND_OVERLAY_INDEX_HREF, { signal });
+    if (index.ok) published = publishedOverlayCases(await index.json());
+  } catch {
+    // No index, or not JSON: no case is published.
+  }
+  await Promise.all(published.map(async (planningCase) => {
     try {
       const response = await fetch(COMMAND_OVERLAY_HREFS[planningCase], { signal });
       if (!response.ok) return;

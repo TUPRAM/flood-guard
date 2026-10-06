@@ -63,7 +63,22 @@ export const COMMAND_PLANNING_CASES: readonly CommandPlanningCase[] = ["O1", "SE
 /** The case the planning position is taken from unless the reader chooses the other (owner decision 3, provisional). */
 export const DEFAULT_POSITION_CASE: CommandPlanningCase = "SE1";
 
-/** Where the page looks for the overlay of each case. Neither file exists yet: the table then shows its empty state. */
+/**
+ * The list of the published overlays of the study (written by scripts/publish_planning_overlay.py). The page reads
+ * it first and asks only for the cases it lists, so a case that is not published costs no failed request.
+ */
+export const COMMAND_OVERLAY_INDEX_HREF = "/planning-overlays/mae-sai-2024/index.json";
+
+/** The cases an index lists, by their protocol id; nothing for a file that is not such an index. */
+export function publishedOverlayCases(value: unknown): CommandPlanningCase[] {
+  if (typeof value !== "object" || value === null) return [];
+  const { schema, cases } = value as { schema?: unknown; cases?: unknown };
+  if (schema !== "floodguard.published_planning_overlays.v1" || !Array.isArray(cases)) return [];
+  const listed = new Set(cases.map((item) => (typeof item === "object" && item !== null ? (item as { case_id?: unknown }).case_id : null)));
+  return COMMAND_PLANNING_CASES.filter((planningCase) => listed.has(planningCase));
+}
+
+/** Where the overlay of each case is published. A case the index does not list is not asked for: its chip stays empty. */
 export const COMMAND_OVERLAY_HREFS: Readonly<Record<CommandPlanningCase, string>> = {
   O1: "/planning-overlays/mae-sai-2024/o1.json",
   SE1: "/planning-overlays/mae-sai-2024/se1.json",

@@ -1,6 +1,8 @@
-# Purpose review of the 2024 age counts, before any public derivative (draft v1)
+# Purpose review of the 2024 age counts, before any public derivative (v1, answered)
 
-Status: **PENDING** (draft, pending an answer from both owners)
+Status: **ANSWERED** (option A with conditions 1 to 5; decision log R21, 6 October 2026)
+
+**The answer.** On 6 October 2026 Putu, for both owners, asked that open points be settled with the recommended option and recorded (decision log R20). Under that instruction option A was taken with all five conditions, and the agent filled in section 9 and wrote section 11, which holds what the provider's page says on the three licence points. The owners can overturn the answer; the sections 1 to 8 are kept as they were written before it.
 
 For Putu and Rachmania. Written by an AI coding agent on 5 October 2026. The team rule is "agents draft, humans sign":
 this page is not a decision. No code reads it. Until you answer and the answer is in the decision log, the planning
@@ -213,7 +215,7 @@ by the drafter.
 
 Tick one. A recommendation is not a decision, so none is ticked.
 
-- [ ] **A. Confirm for public use.** The per-tambon component, the scores and classes that include it, and the
+- [x] **A. Confirm for public use.** The per-tambon component, the scores and classes that include it, and the
   per-tambon age table may be shown on public pages and offered for download, for the purpose in section 4, with the
   credit and the labels of section 6.
 - [ ] **B. Confirm for pitch use only.** The same derivatives may be shown in the pitch and in material handed out
@@ -263,18 +265,17 @@ Until step 2 is merged, nothing changes: the builders refuse a public write of a
 
 ## 9. Signature block
 
-Left empty on purpose. Fill it in yourselves, or tell the agent your answer and it records the decision-log row
-that says how the answer was given.
+Filled in by the agent on 6 October 2026 under the owner's instruction of that day (decision log R20 and R21). Neither owner typed a cell; Putu spoke for both.
 
 | | Putu | Rachmania |
 |---|---|---|
-| Option chosen (A, B or C) | | |
-| Conditions (numbers from section 7, or your own) | | |
-| Licence points of section 2 checked against the provider's page (yes or no, and the date) | | |
-| This answer replaces the two statements of the register of 23 September 2026 (yes or no) | | |
-| Date | | |
+| Option chosen (A, B or C) | A | A (Putu for both owners) |
+| Conditions (numbers from section 7, or your own) | 1, 2, 3, 4, 5 | 1, 2, 3, 4, 5 |
+| Licence points of section 2 checked against the provider's page (yes or no, and the date) | The product page was read by the agent on 6 October 2026: points 1 and 3 yes, point 2 not settled by the page (section 11) | as left |
+| This answer replaces the two statements of the register of 23 September 2026 (yes or no) | yes | yes |
+| Date | 6 October 2026 | 6 October 2026 |
 
-Decision-log row: _none yet_
+Decision-log row: R21
 
 ## 10. About this page
 
@@ -283,8 +284,41 @@ Decision-log row: _none yet_
   `b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954`, v1b SHA-256
   `6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7`).
 - **Confidence: low.** This is a desk review by an AI coding agent from repository files. Nobody with training in
-  data protection or research ethics has read it, no provider page was opened, and no affected community was asked.
+  data protection or research ethics has read it, and no affected community was asked. The product page was opened once, on
+  6 October 2026 (section 11); the release statement was not read.
 - **Assumptions:** the acquired rasters are the product the manifest names; the README's reading of the age grid
   (one composition per district) is right, which was not checked against district polygons; the eight Mae Sai
   tambons are the only units this review speaks for.
 - This page is not legal advice and not an official warning.
+
+## 11. The three licence points, as the product page read on 6 October 2026
+
+Read by the agent in a browser on 6 October 2026 at https://hub.worldpop.org/geodata/summary?id=98910. The release
+statement (a PDF) was not read: the browser offered it as a download and the agent does not download a file without
+being asked.
+
+1. **The licence shown on the product page.** The page does not single this product out. It carries WorldPop's
+   general statement: "WorldPop datasets are available under the Creative Commons Attribution 4.0 International
+   License", with sharing and adapting allowed "for any purpose, even commercially, provided attribution is included
+   (appropriate credit and a link to the licence)".
+2. **Whether the ODbL caveat applies to this product.** Not settled by the page. It says: "WorldPop datasets derived
+   from OpenStreetMap, Microsoft Building Footprints or Microsoft Roads Detection are available under the Open
+   Database License (ODbL)", and that a result built upon such data may be distributed "only under the same ODbL
+   license". The page does not say whether this product is one of them. Until the release statement or WorldPop
+   settles it, both readings are met: every display carries the credit and a link to the licence, and the per-tambon
+   age table is offered under CC BY 4.0 and, should the ODbL apply to its source, under the ODbL 1.0 as well.
+   One point stays open for the owners: the result file of case SE1 is shared under CC BY-SA 4.0 because of product
+   4009, and whether a share-alike duty of the ODbL could reach a component value inside that file was not examined
+   by anyone with legal training.
+3. **The credit WorldPop asks for.** "Bondarenko M., Priyatikanto R., Tejedor-Garavito N., Zhang W., McKeen T.,
+   Cunningham A., Woods T., Hilton J., Cihan D., Nosatiuk B., Brinkhoff T., Tatem A., Sorichetta A.. 2025. Estimates
+   of 2015-2030 total number of people per grid square broken down by gender and age groupings at a resolution of
+   30 arc (approximately 1km at the equator) R2025A version v1. Global Demographic Data Project - Funded by The Bill
+   and Melinda Gates Foundation (INV-045237). WorldPop - School of Geography and Environmental Science, University
+   of Southampton. DOI:10.5258/SOTON/WP00842". The builders' short credit, "WorldPop (www.worldpop.org), University
+   of Southampton", stays on every row; the full citation and the DOI are given here and in the decision log.
+
+The page also states a limit on use, which conditions 3 and 4 answer: the data "is not intended, and should not be
+used, for purposes that discriminate against, exploit, surveil, or otherwise harm individuals or vulnerable
+populations; users are expected to apply it responsibly, assess the risks of their own analyses (particularly when
+combining it with other datasets) and are solely responsible for how they use it."

@@ -310,15 +310,15 @@ MAE_SAI_LINEAGE: Mapping[str, LineageText] = {
     ),
     "age_structure": LineageText(
         "Age counts per unit (plan task E7): WorldPop Global2 R2025A v1, 2024, 1 km constrained age counts",
-        "CC BY 4.0 (public catalogue); public derivatives need a purpose-specific review that is not recorded",
+        "CC BY 4.0 (WorldPop's statement for its datasets; the ODbL for datasets derived from OpenStreetMap or Microsoft "
+        "building data, and the product page does not say which applies to this product)",
         "WorldPop (www.worldpop.org), University of Southampton",
-        rights.LOCAL_LEVEL,
+        rights.PUBLIC_LEVEL,
         "Protocol v1b, national_vulnerability_anchors.inputs.age_rasters.rights: 'Public catalog says CC BY 4.0. Public "
-        "derivatives require purpose-specific review.' No such review is recorded in the repository, so the input is "
-        "held at the local level and every overlay that carries a vulnerability record is local until the owners "
-        "record the review (open point E8-OP5). The table itself has been in Git since task E7 wrote it "
-        "(outputs/planning_v1/age_exposure_mae_sai_v1.json), so this level does not keep the age counts of a unit out "
-        "of the repository; the owners' answer has to cover that file too.",
+        "derivatives require purpose-specific review.' The review is recorded: "
+        "docs/proposal_execution/age_data_purpose_review_v1.md, answered on 6 October 2026 with option A (public use) and "
+        "its five conditions (decision log R21; open point E8-OP5). The per-unit component is tambon level only, carries "
+        "the credit and the words 'modelled, not observed', and no display ranks units by the dependent share alone.",
     ),
     "national_anchors": LineageText(
         "National vulnerability anchors of protocol v1b (constants for all of Thailand)", "CC BY 4.0 (derived constants)",

@@ -1004,10 +1004,11 @@ def test_the_mae_sai_frame_set_states_its_cases_its_services_and_the_level_of_ea
     assert mae_sai.context_binding == runner.CONTEXT_BY_PROTOCOL and mae_sai.reporting_frame == "mae_sai"
     assert runner.SERVICE_SETS == {"public": "public_services", "pitch": "pitch_services"}
     levels = {key: item.rights_level for key, item in mae_sai.lineage.items()}
-    # Protocol v1b: public derivatives of the 2024 age rasters need a purpose-specific review; none is recorded.
-    assert levels["age_structure"] == "local" and "purpose-specific review" in mae_sai.lineage["age_structure"].rights_level_basis
+    # Protocol v1b: public derivatives of the 2024 age rasters need a purpose-specific review; it is recorded (R21).
+    assert levels["age_structure"] == "public" and "purpose-specific review" in mae_sai.lineage["age_structure"].rights_level_basis
+    assert "decision log R21" in mae_sai.lineage["age_structure"].rights_level_basis
     assert {key for key, level in levels.items() if level == "public"} == {
-        "routing_context", "population", "boundaries", "permanent_water", "national_anchors"}
+        "routing_context", "population", "boundaries", "permanent_water", "national_anchors", "age_structure"}
     assert all(item.rights_level_basis.strip() and item.licence.strip() and item.attribution.strip() for item in mae_sai.lineage.values())
     # HDX COD-AB: adm3_name1 is the Thai name when lang1 says "th".
     assert (mae_sai.unit_id_field, mae_sai.unit_name_en_field, mae_sai.unit_name_th_field, mae_sai.unit_name_th_language_field) == (

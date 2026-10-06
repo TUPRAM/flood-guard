@@ -562,17 +562,25 @@ def test_the_loader_and_the_assessment_builder_still_refuse_case_o1(tmp_path: Pa
 # --- 2. The purpose review of the 2024 age counts (open point E8-OP5) --------------------------------------------
 
 
-def test_the_age_review_is_pending_with_no_option_ticked_and_an_empty_signature_block() -> None:
+def test_the_age_review_is_answered_with_option_a_and_says_who_filled_it_in() -> None:
+    """Sheet Q2 was answered on 6 October 2026 (decision log R21), by the agent under the owner's instruction (R20)."""
+
     review = text_of(AGE_REVIEW_PATH)
-    assert re.search(r"^Status: \*\*PENDING\*\* \(draft, pending an answer from both owners\)$", review, flags=re.MULTILINE)
-    assert unticked_options(review) == [(" ", "A"), (" ", "B"), (" ", "C")]
+    assert re.search(r"^Status: \*\*ANSWERED\*\* \(option A with conditions 1 to 5; decision log R21, 6 October 2026\)$",
+                     review, flags=re.MULTILINE)
+    assert unticked_options(review) == [("x", "A"), (" ", "B"), (" ", "C")]
     for option in ("**A. Confirm for public use.**", "**B. Confirm for pitch use only.**", "**C. Decline.**"):
         assert option in review
     rows = signature_rows(review, "## 9. Signature block")
     assert [row[0] for row in rows][0] == "Option chosen (A, B or C)" and len(rows) == 5
     assert rows[3][0] == "This answer replaces the two statements of the register of 23 September 2026 (yes or no)"
-    assert all(row[1:] == ["", ""] for row in rows), "the signature block is left empty"
-    assert "Decision-log row: _none yet_" in review
+    assert rows[0][1:] == ["A", "A (Putu for both owners)"] and rows[1][1:] == ["1, 2, 3, 4, 5", "1, 2, 3, 4, 5"]
+    assert "point 2 not settled by the page (section 11)" in rows[2][1] and rows[3][1:] == ["yes", "yes"]
+    assert "Decision-log row: R21" in review and "Neither owner typed a cell; Putu spoke for both." in review
+    # What the provider's page says on the three licence points is recorded with the answer (condition 5).
+    points = markdown_section(review, "## 11. The three licence points, as the product page read on 6 October 2026")
+    assert "Creative Commons Attribution 4.0 International" in points and "Not settled by the page" in points
+    assert "DOI:10.5258/SOTON/WP00842" in points and "The release\nstatement (a PDF) was not read" in points
     # Source timestamp, confidence and assumptions (AGENTS.md, technical principle 3).
     about = markdown_section(review, "## 10. About this page")
     assert "**Source timestamp:**" in about and "**Confidence: low.**" in about and "**Assumptions:**" in about
@@ -583,8 +591,10 @@ def test_the_age_review_is_pending_with_no_option_ticked_and_an_empty_signature_
     mitigations = markdown_section(review, "## 6. Mitigations")
     for words in ("**Tambon aggregates only.**", "**GR1: no class under 100 residents.**", "**Labels on the data.**", "**Not in the design today.**"):
         assert words in mitigations
-    # The decision log records no answer, and the review attributes none.
-    assert "age_data_purpose_review" not in text_of(ROOT / "docs" / "decision-log-d1-d16.md")
+    # The decision log records the answer and how it was given.
+    log = text_of(ROOT / "docs" / "decision-log-d1-d16.md")
+    row = next(line for line in log.splitlines() if line.startswith("| R21 |"))
+    assert "age_data_purpose_review_v1.md" in row and "option A" in row and "taken by the agent under R20" in row
 
 
 def test_the_age_review_quotes_the_signed_files_and_the_committed_tables_exactly() -> None:
@@ -677,26 +687,23 @@ def test_the_age_review_says_what_each_option_costs_and_what_it_means_for_the_an
     assert "The five national anchors are derived from the same rasters and are already in Git" in review
 
 
-def test_the_builders_still_hold_the_age_counts_at_the_local_level() -> None:
-    """Open point E8-OP5 is not closed by a draft: the level is in the code and the code has not changed."""
+def test_the_builders_give_the_age_counts_the_public_level_and_cite_the_recorded_review() -> None:
+    """Open point E8-OP5 is closed by the recorded answer (decision log R21), and the code names it."""
 
     runner = script("build_planning_assessment")
     lineage = runner.FRAME_SETS["mae_sai"].lineage
     age = lineage["age_structure"]
-    assert age.rights_level == rights.LOCAL_LEVEL
-    assert "purpose-specific review" in age.rights_level_basis and "No such review is recorded in the repository" in age.rights_level_basis
-    assert rights.minimum_level(item.rights_level for item in lineage.values()) == rights.LOCAL_LEVEL
-    assert {key for key, item in lineage.items() if item.rights_level != rights.PUBLIC_LEVEL} == {"age_structure"}
-    # No code names the review, so no answer can be read from it.
-    assert code_that_names("age_data_purpose_review") == []
-    # The committed runs say the same: the age table is the one input that keeps case SE1 below the public level.
-    for name, below_public in (("e8_planning_assessment_se1_mae_sai.json", {"e7_age_exposure_table"}),
-                               ("e10_uncertainty_ensemble_se1_mae_sai.json", {"e7_age_exposure_table"})):
-        run_rights = read_json(OUTPUTS / name)["rights"]
-        assert run_rights["publication_eligibility"] == rights.LOCAL_LEVEL and run_rights["written_under_apps_web_public"] is False
-        assert {key for key, level in run_rights["lineage_levels"].items() if level != rights.PUBLIC_LEVEL} == below_public
+    assert age.rights_level == rights.PUBLIC_LEVEL
+    assert "purpose-specific review" in age.rights_level_basis and "decision log R21" in age.rights_level_basis
+    assert "age_data_purpose_review_v1.md" in age.rights_level_basis and "modelled, not observed" in age.rights_level_basis
+    assert rights.minimum_level(item.rights_level for item in lineage.values()) == rights.PUBLIC_LEVEL
+    # The one code file that names the review is the builder, which cites it as the basis of the level.
+    assert code_that_names("age_data_purpose_review") == ["scripts/build_planning_assessment.py"]
+    # Case O2 stays below the public level whatever the age counts are: its flood layer is local.
     o2 = read_json(OUTPUTS / "e8_planning_assessment_o2_mae_sai.json")["rights"]
-    assert o2["publication_eligibility"] == rights.LOCAL_LEVEL and o2["lineage_levels"]["e7_age_exposure_table"] == rights.LOCAL_LEVEL
+    assert o2["publication_eligibility"] == rights.LOCAL_LEVEL and o2["written_under_apps_web_public"] is False
+    assert {key for key, level in o2["lineage_levels"].items() if level == rights.LOCAL_LEVEL} >= {"unosat4009.accumulated_22oct"} or \
+        any(level == rights.LOCAL_LEVEL for key, level in o2["lineage_levels"].items() if key != "e7_age_exposure_table")
     # Nothing of the planning assessment is under the public web folder: not by name, and not by content. The new
     # Command page reads planning-overlays/mae-sai-2024/se1.json and o1.json, which no file name above would catch.
     public = ROOT / rights.PUBLIC_WEB_ROOT

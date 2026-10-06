@@ -28,7 +28,7 @@ from shapely.ops import transform
 from floodguard import access_diff, flood_inputs, planning_assessment, rights
 from floodguard.evidence_context import _context_content_hash
 from floodguard.normalisation import NormalisationError
-from floodguard.planning_overlay import SCHEMA_RELATIVE_PATH, PlanningOverlayError, load_overlay, load_overlay_schema
+from floodguard.planning_overlay import SCHEMA_RELATIVE_PATH, load_overlay, load_overlay_schema
 
 ROOT = Path(__file__).resolve().parents[1]
 DOCS = ROOT / "docs" / "proposal_execution"
@@ -540,83 +540,59 @@ def test_a_second_run_with_another_value_and_the_same_class_counts_is_not_the_sa
     assert receipt["run_history"][0]["result_same_as_the_run_that_replaced_it"] is False
 
 
-def test_a_run_whose_v2_result_nobody_can_state_writes_no_overlay_and_still_reports(tmp_path: Path) -> None:
-    """With 1,000 residents in cell c1 the exposure of unit 1 is above 10, so v2 trigger E is not met and B decides."""
+def test_a_run_whose_v2_result_nobody_can_state_writes_an_overlay_that_says_not_evaluated(tmp_path: Path) -> None:
+    """With 1,000 residents in cell c1 the exposure of unit 1 is above 10, so v2 trigger E is not met and B decides.
+
+    Nobody evaluated trigger B. Since overlay schema 1.1 (decision log R20) the overlay is written, and the v2 axis
+    of that row says ``not_evaluated``; before, the run wrote no overlay and reported its rows beside the reason.
+    """
 
     world = build_world(tmp_path, {**RESIDENTS, "c1": 1000.0})
     summary = run(world)
-    assert summary["overlay_written"] is False and summary["not_written_because"] == "v2_result_not_evaluable"
-    stage = world["external"] / PROCESSED / "fx_case" / runner.STAGE_FOLDER
-    assert sorted(path.name for path in stage.iterdir()) == [runner.NOT_WRITTEN_REPORT_NAME]
-    receipt_path = runner.receipt_path_for(CASE, world["frame_set"], world["output_dir"])
-    receipt = json.loads(receipt_path.read_text(encoding="ascii"))
-    refusal = receipt["result"]["not_written_because"]
-    assert receipt["result"]["overlay_written"] is False and receipt["result"]["summary"] is None
-    assert refusal["open_point"] == "E8-OP1" and refusal["rows"] == 1 and refusal["triggers_not_evaluated"] == ["B", "C", "D"]
-    assert "FX-E8-U1" not in json.dumps(receipt["result"]), "the receipt in Git names no unit; the report outside Git does"
-    report = stage / runner.NOT_WRITTEN_REPORT_NAME
-    stated = json.loads(report.read_text(encoding="ascii"))
-    assert stated["not_written_because"]["rows"] == [{"unit_id": "FX-E8-U1", "triggers_not_evaluated": ["B", "C", "D"]}]
-    assert stated["official_warning"] is False and stated["protocol_sha256"] == HASHES
-    assert runner.bound_outputs(receipt["outputs"]) == {
-        f"{LABEL}/{PROCESSED}/fx_case/{runner.STAGE_FOLDER}/{report.name}": hashlib.sha256(report.read_bytes()).hexdigest()}
-    assert (world["register_dir"] / receipt_path.name).is_file(), "every run is reported, also one that writes no overlay"
-
-    # The run computed an FPPS and a class for each unit. They are reported: the report outside Git holds every row
-    # as computed, and the receipt in Git holds the counts for the whole case and names no unit.
-    assert summary["rows_reported_as_computed"] is True and summary["files"] == list(runner.bound_outputs(receipt["outputs"]))
-    assert stated["schema_version"] == runner.REPORT_SCHEMA and stated["publication_eligibility"] == "local"
-    assert stated["source_timestamp"] == "2030-01-11" and stated["confidence_class"] == "low" and stated["assumptions"]
-    assert stated["generated_at_utc"] == summary["generated_at_utc"] and stated["can_feed_decision_layer"] is False
-    as_computed = stated["rows_as_computed"]
-    assert as_computed["schema_version"] == planning_assessment.ROWS_AS_COMPUTED_SCHEMA and as_computed["schema_id"] is None
-    assert as_computed["not_an_overlay"] == planning_assessment.NOT_AN_OVERLAY
-    first, second = as_computed["rows"]
+    assert summary["overlay_written"] is True and summary["not_written_because"] is None
+    assert summary["rows_reported_as_computed"] is False
+    overlay_path = world["external"] / PROCESSED / "fx_case" / runner.STAGE_FOLDER / "planning_assessment_overlay_fx-e8_fx_frame.json"
+    rules = planning_assessment.load_assessment_rules(DOCS / "planning_protocol_v1a.json", DOCS / "planning_protocol_v1b.json",
+                                                      DOCS / "RECEIPTS.jsonl")
+    overlay = load_overlay(overlay_path, load_overlay_schema(ROOT / SCHEMA_RELATIVE_PATH), binding=rules.binding)
+    assert overlay["schema_version"] == "1.1" and overlay["official_warning"] is False
+    first, second = overlay["rows"]
     # Unit 1: 1,000 of 6,100 residents inside the extent, every connected resident cut off; class rule v1 gives B.
     assert first["components"]["exposure_0_100"]["value_0_100"] == pytest.approx(100 * 1000 / 6100)
     assert (first["action_class"], first["action_reason_code"], first["would_be_class"]) == ("B", "critical_route_access", None)
     assert first["fpps_0_100"] is not None and set(first["leave_one_component_out"]) == set(first["components"])
     v2 = first["class_v2"]
-    assert "result" not in v2 and v2["status"] == "not_evaluated" and v2["triggers_not_evaluated"] == ["B", "C", "D"]
-    assert (v2["label"], v2["binding"]) == ("secondary", False)
+    assert v2["result"] == "not_evaluated" and (v2["label"], v2["binding"]) == ("secondary", False)
     assert {item["trigger"]: item["met"] for item in v2["trigger_evidence"]} == {"E": False, "A": False, "B": None, "C": None, "D": None}
-    assert any("The v2 result of this row is not stated" in line for line in first["assumptions"])
-    # Unit 2 is under 100 residents: guardrail GR1 gives it no class, and its v2 axis is the one of an overlay row.
+    assert all(item["evidence"].startswith("Not evaluated") for item in v2["trigger_evidence"] if item["met"] is None)
+    # Unit 2 is under 100 residents: guardrail GR1 gives it no class and no v2 class.
     assert second["action_class"] is None and second["class_v2"] == {
         "class_rule_version": "class_rule_v2", "label": "secondary", "binding": False, "result": None, "trigger_evidence": []}
-    # The overlay parser refuses the document: it is not an overlay and cannot pass for one.
-    document = tmp_path / "as_computed.json"
-    document.write_text(json.dumps(as_computed), encoding="ascii")
-    rules = planning_assessment.load_assessment_rules(DOCS / "planning_protocol_v1a.json", DOCS / "planning_protocol_v1b.json",
-                                                      DOCS / "RECEIPTS.jsonl")
-    with pytest.raises(PlanningOverlayError):
-        load_overlay(document, load_overlay_schema(ROOT / SCHEMA_RELATIVE_PATH), binding=rules.binding)
-    reported = receipt["result"]["rows_as_computed"]
-    assert reported["schema_version"] == planning_assessment.ROWS_AS_COMPUTED_SCHEMA
-    assert reported["checked_by_the_overlay_parser"] == {**reported["checked_by_the_overlay_parser"], "result": "PASS", "rows": 2,
-                                                         "rows_without_a_v2_result": 1}
-    counts = reported["summary"]
-    assert counts["row_count"] == 2 and counts["rows_without_a_v2_result"] == 1 and "content_sha256" not in counts
+
+    receipt_path = runner.receipt_path_for(CASE, world["frame_set"], world["output_dir"])
+    receipt = json.loads(receipt_path.read_text(encoding="ascii"))
+    assert receipt["result"]["overlay_written"] is True and receipt["result"]["not_written_because"] is None
+    assert receipt["result"]["rows_as_computed"] is None, "the overlay holds every row, so nothing is reported beside it"
+    assert "FX-E8-U1" not in json.dumps(receipt["result"]), "the receipt in Git names no unit"
+    counts = receipt["result"]["summary"]
+    assert counts["row_count"] == 2 and counts["rows_under_gr1"] == 1
     assert counts["binding_class_by_lane_column"]["OBS"]["B"] == 1 and counts["binding_class_by_lane_column"]["OBS"]["none"] == 1
     assert counts["v2_result_by_lane_column"]["OBS"] == {"A": 0, "B": 0, "C": 0, "D": 0, "E": 0, "no_v2_trigger": 0,
-                                                         "none": 1, "not_evaluated": 1}
+                                                         "not_evaluated": 1, "none": 1}
     assert all(entry["result"] == "PASS" for entry in receipt["guardrails"].values())
     assert receipt["whole_case_checks"]["result"] == "PASS" and receipt["whole_case_checks"]["rows"] == 2
     assert {point["id"] for point in receipt["open_points"]} >= {"E8-OP1", "E8-OP6", "E8-OP7"}
+    assert receipt["result"]["rows_sha256"] == runner.rows_sha256(overlay["rows"])
+    assert (world["register_dir"] / receipt_path.name).is_file(), "every run is reported"
 
     checked = runner.verify(CASE, world["frame_set"], world["external"], world["boundaries"], root=world["root"],
                             output_dir=world["output_dir"], register_dir=world["register_dir"], registry=world["registry"])
-    assert checked == {"verified": True, "overlay_written": False, "receipt_result_same": True,
-                       "report_bytes_same_as_recomputed": True, "rows_reported_as_computed": True,
-                       "not_written_because": "v2_result_not_evaluable", "receipt_body_same": True,
-                       "receipt_fields_that_differ": [], "outputs_block_same": True, "code_changed_since_the_run": []}
-    # The rows as computed have their own SHA-256 in the receipt, and the report names no licence for an invented input.
-    assert receipt["result"]["rows_sha256"] == runner.rows_sha256(as_computed["rows"]) and stated["licence"] is None
-    # A report that was changed after the run is found.
-    report.write_bytes(report.read_bytes().replace(b'"action_class": "B"', b'"action_class": "A"', 1))
+    assert checked["verified"] is True and checked["overlay_written"] is True
+    # An overlay that was changed after the run is found.
+    overlay_path.write_bytes(overlay_path.read_bytes().replace(b'"action_class": "B"', b'"action_class": "A"', 1))
     changed = runner.verify(CASE, world["frame_set"], world["external"], world["boundaries"], root=world["root"],
                             output_dir=world["output_dir"], register_dir=world["register_dir"], registry=world["registry"])
-    assert changed["verified"] is False and changed["report_bytes_same_as_recomputed"] is False
+    assert changed["verified"] is False
 
 
 def test_the_command_line_returns_3_for_a_run_that_writes_no_overlay_and_0_for_one_that_does(
@@ -625,9 +601,15 @@ def test_the_command_line_returns_3_for_a_run_that_writes_no_overlay_and_0_for_o
 
     monkeypatch.delenv(runner.EXTERNAL_DATA_VARIABLE, raising=False)
     codes = {}
-    for name, residents in (("no_overlay", {**RESIDENTS, "c1": 1000.0}), ("overlay", RESIDENTS)):
-        world = build_world(tmp_path / name, residents)
+    def fail(*_positional: Any, **_named: Any) -> dict[str, Any]:
+        raise planning_assessment.PlanningAssessmentError("an invented failure of guardrail_report")
+
+    report_of_the_guardrails = planning_assessment.guardrail_report
+    for name in ("no_overlay", "overlay"):
+        world = build_world(tmp_path / name, RESIDENTS)
         through_main = runner.run
+        # A check that fails after the units were measured is one way a run writes no overlay.
+        monkeypatch.setattr(planning_assessment, "guardrail_report", fail if name == "no_overlay" else report_of_the_guardrails)
 
         def run_in_the_world(*positional: Any, world: dict[str, Any] = world, **named: Any) -> dict[str, Any]:
             return through_main(*positional, **named, root=world["root"], output_dir=world["output_dir"],

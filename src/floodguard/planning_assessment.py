@@ -16,11 +16,9 @@ and its reporting units this module assembles what the overlay schema asks of ea
   guardrail GR1. It is the scorer rerun with confidence medium and is never binding;
 * class rule v2 as the labelled secondary axis (:func:`class_v2`), in the order E, A, B, C, D of drafter reading
   DR-A08. Triggers E and A are computed from the row. The outcomes of B, C and D are inputs
-  (:class:`V2TriggerInputs`): no stage computes them yet. A row whose v2 result depends on a trigger that was
-  not evaluated has no v2 result the protocols state, so the overlay is not written (:class:`V2NotEvaluableError`).
-  The rows the run computed are then handed back as they are (``V2NotEvaluableError.as_computed``), with the v2
-  axis of such a row marked ``not_evaluated`` and no v2 result, so that the run can report them outside the
-  overlay (:func:`check_rows_as_computed`; open point E8-OP6);
+  (:class:`V2TriggerInputs`): no stage computes them yet. A trigger that was not evaluated is written with
+  ``met`` null, and a row whose v2 result depends on one carries the result ``not_evaluated`` (overlay schema
+  1.1, decision R20): the protocols state no v2 class for that case, and the binding class does not depend on it;
 * leave-one-component-out (drafter reading DR-A02) and the headline slot, which stays ``not_evaluated``: the
   ensemble is task E10 (guardrail GR8);
 * guardrails GR1 (fewer than 100 residents: no class), GR3 (one flood input, one routing context, one closure
@@ -79,16 +77,15 @@ from floodguard.planning_overlay import (
     ROUTING_CONTEXT_ROLE,
     SCHEMA_ID,
     SCHEMA_VERSION,
+    V2_NOT_EVALUATED,
     V2_TRIGGER_ORDER,
     OverlayProblem,
     PlanningOverlayError,
     ProtocolBinding,
     expected_temporal_relation,
-    lane_column,
     load_overlay,
     load_protocol_binding,
     summarise_overlay,
-    validate_overlay,
     write_overlay,
 )
 from floodguard.scoring import SCORE_COMPONENTS, score_subdistricts
@@ -109,15 +106,6 @@ HOSPITAL = "hospital"
 REFERENCE_CELL_WORDS: tuple[str, ...] = ("as-provided flood state", "public facilities", "WorldPop 2020", "default weights")
 """What protocol v1b says of the default cell, beside its passability level (``ensemble_grid.headline_rule``)."""
 CLASS_E_WORDING = "Planning guidance only. Not an official warning. Class E never means safe."
-V2_NOT_EVALUATED = "not_evaluated"
-"""The status of the v2 axis of a row whose v2 result depends on a trigger nobody evaluated. Never in an overlay."""
-ROWS_AS_COMPUTED_SCHEMA = "floodguard.planning_assessment_rows_as_computed.v1"
-"""What a document of rows as computed calls itself. It is not an overlay, and the overlay parser refuses it."""
-NOT_AN_OVERLAY = (
-    "This document is not a planning assessment overlay. It holds the rows a run computed when its overlay could "
-    "not be written, so that the run is reported. The v2 axis of a row marked not_evaluated has no result. No page "
-    "and no later task reads this document as an overlay."
-)
 ROUNDING_TOLERANCE_POINTS = 0.011
 """Two values rounded to 2 decimals and recombined may differ by one unit of the last place, and no more."""
 
@@ -131,15 +119,14 @@ OPEN_POINTS: tuple[Mapping[str, str], ...] = (
                             "cannot be computed where the JRC tile is not on disk. Neither says what the v2 result is "
                             "when a trigger cannot be evaluated.",
         "what_this_task_does": "Triggers E and A are computed from the row. The outcomes of B, C and D are inputs, and no "
-                               "stage computes them yet. Where an earlier trigger in the order is met, the result is "
-                               "stated and a trigger that was not evaluated is written with met false and the words "
-                               "'Not evaluated'. Where the result depends on such a trigger, the overlay is not written.",
-        "for_the_owners": "Whether an overlay may say 'not evaluated' for the v2 axis of a row (a schema change), or "
-                          "whether the inputs of B, C and D are built first: the single-link closures of the top-20 "
-                          "links, the serving-facility test and the recurrence flag. Also whether a trigger nobody "
-                          "evaluated may be written with met false on a row whose result an earlier trigger gives: "
-                          "schema 1.0 takes true or false only, so a reader of 'met' alone cannot tell it from a "
-                          "measured false and has to read the evidence text (point 11 of the overlay page).",
+                               "stage computes them yet. A trigger that was not evaluated is written with met null and "
+                               "the words 'Not evaluated', never with met false. Where the result depends on such a "
+                               "trigger, the v2 result is written 'not_evaluated' (overlay schema 1.1).",
+        "for_the_owners": "Answered on 6 October 2026 (decision log R20; sheet Q1, option 3): the overlay may say "
+                          "'not evaluated' for the v2 axis of a row, and a trigger nobody evaluated is never written "
+                          "false. Still open: building the inputs of B, C and D (the single-link closures of the "
+                          "top-20 links, the serving-facility test and the recurrence flag), each filled in when a "
+                          "stage can evaluate it.",
     },
     {
         "id": "E8-OP2",
@@ -201,20 +188,16 @@ OPEN_POINTS: tuple[Mapping[str, str], ...] = (
         "point": "What a run reports when its overlay cannot be written.",
         "signed_files_say": "Protocol v1a case_portfolio: 'Every cell of every case is reported whatever it shows.' "
                             "Protocol v1b change_control: 'Every run is reported.' Class rule v1 is binding and class "
-                            "rule v2 is a secondary axis that is never binding. Overlay schema 1.0 has no row without "
-                            "a v2 result, except under guardrail GR1. None of them says where the rows of a run go "
-                            "when the overlay cannot hold them.",
-        "what_this_task_does": "The run writes the rows it computed into its report outside Git, beside the reason: "
-                               "every row with its components, its confidence record, its FPPS, its binding class of "
-                               "class rule v1, its would-be class and leave-one-component-out. A row whose v2 result "
-                               "depends on a trigger nobody evaluated carries no v2 result there and says "
-                               "'not_evaluated'. The report is not an overlay: it names another schema and the overlay "
-                               "parser refuses it. The receipt in Git holds the counts for the whole case. A run whose "
-                               "rows fail a guardrail, a check of the whole case or the overlay parser after its units "
-                               "were measured writes and registers its receipt too, with the reason and no row: a row "
-                               "that fails a check is not reported as a result.",
-        "for_the_owners": "Whether the rows of such a run may be shown or used before the overlay exists, and under "
-                          "which label. Also whether a run whose rows fail a check should report those rows.",
+                            "rule v2 is a secondary axis that is never binding. None of them says where the rows "
+                            "of a run go when the overlay cannot hold them.",
+        "what_this_task_does": "Since overlay schema 1.1 (decision log R20) a row whose v2 result depends on a trigger "
+                               "nobody evaluated is written into the overlay with the v2 result 'not_evaluated', so no "
+                               "run reports its rows outside an overlay for that reason any more; the receipts of the "
+                               "earlier runs that did so are kept. A run whose rows fail a guardrail, a check of the "
+                               "whole case or the overlay parser after its units were measured writes and registers its "
+                               "receipt, with the reason and no row: a row that fails a check is not reported as a "
+                               "result. The receipt field rows_as_computed is kept and is null.",
+        "for_the_owners": "Whether a run whose rows fail a check should report those rows.",
     },
     {
         "id": "E8-OP7",
@@ -271,24 +254,6 @@ class PlanningAssessmentError(ValueError):
 
 class LanePurityError(PlanningAssessmentError):
     """Raised when the components of a row would come from two flood inputs, contexts or closure rules (GR3)."""
-
-
-class V2NotEvaluableError(PlanningAssessmentError):
-    """Raised when the v2 result of a row depends on a trigger that was not evaluated.
-
-    ``rows`` lists each such row: its unit and the triggers that were not evaluated. ``as_computed`` is the
-    document of every row the run computed (:data:`ROWS_AS_COMPUTED_SCHEMA`), when the overlay of a whole case
-    was being assembled; it is ``None`` when one row alone was assessed.
-    """
-
-    def __init__(self, rows: Sequence[Mapping[str, Any]], as_computed: Mapping[str, Any] | None = None) -> None:
-        self.rows: tuple[dict[str, Any], ...] = tuple(dict(row) for row in rows)
-        self.as_computed: dict[str, Any] | None = None if as_computed is None else dict(as_computed)
-        units = ", ".join(str(row["unit_id"]) for row in self.rows)
-        super().__init__(
-            "the v2 result depends on a trigger that was not evaluated, and the protocols state no result for that "
-            f"case (open point E8-OP1); units: {units}"
-        )
 
 
 # ---------------------------------------------------------------------------
@@ -830,7 +795,6 @@ def class_v2(
     action_class: str | None,
     dependent_share: float | None,
     triggers: V2TriggerInputs,
-    not_evaluated_ok: bool = False,
 ) -> dict[str, Any]:
     """Class rule v2 of one row: a labelled secondary axis, never binding (protocol v1a ``class_rules.v2``).
 
@@ -840,16 +804,13 @@ def class_v2(
     the national percentile protocol v1a names. Trigger B, the facility part of C and the flag of D are inputs.
     C also needs an FPPS at or above the minimum and medium (or scenario) confidence; D an FPPS at or above it.
 
-    A unit under guardrail GR1 has no v2 class. A trigger that was not evaluated and stands after the first
-    trigger met is written with ``met`` false and evidence that starts with "Not evaluated".
+    A unit under guardrail GR1 has no v2 class.
 
-    With ``not_evaluated_ok`` a row whose result would depend on a trigger nobody evaluated gets no result: the
-    block then carries ``status`` :data:`V2_NOT_EVALUATED`, the triggers concerned and ``met: None`` for each
-    of them. Such a block is not a v2 block of overlay schema 1.0 and is never written into an overlay.
-
-    Raises:
-        V2NotEvaluableError: when no trigger before it is met and a trigger was not evaluated: the result would
-            depend on it, and the protocols state no result for that case (unless ``not_evaluated_ok``).
+    Overlay schema 1.1 (decision R20, sheet Q1): a trigger no stage evaluated is written with ``met`` null and
+    evidence that starts with "Not evaluated", never with ``met`` false. Where such a trigger stands before the
+    first trigger met, or no trigger is met and one was not evaluated, the result depends on it and is
+    :data:`floodguard.planning_overlay.V2_NOT_EVALUATED`: the protocols state no v2 class for that case. Trigger
+    A is not evaluated where the v1 class is A and the dependent share was not computed.
     """
 
     block = {"class_rule_version": rules.binding.class_rule_v2["version"], "label": "secondary", "binding": False}
@@ -863,7 +824,7 @@ def class_v2(
     share_text = "not computed" if dependent_share is None else f"{dependent_share:.6f}"
     met: dict[str, bool | None] = {
         "E": low or not scored_enough or (exposure is not None and exposure < exposure_floor),
-        "A": action_class == "A" and dependent_share is not None and dependent_share >= share_min,
+        "A": (None if dependent_share is None else dependent_share >= share_min) if action_class == "A" else False,
         "B": triggers.link_isolation,
         "C": False if (not scored_enough or low) else triggers.serving_facility,
         "D": False if not scored_enough else triggers.recurrence_flag,
@@ -881,39 +842,28 @@ def class_v2(
         "D": f"FPPS {_shown(fpps)} against a minimum of {fpps_min:g}, and the recurrence flag: "
              f"{triggers.recurrence_evidence}.",
     }
-    first = None
+    result: str = NO_V2_TRIGGER
     for trigger in V2_TRIGGER_ORDER:
         if met[trigger] is None:
-            not_evaluated = [name for name in V2_TRIGGER_ORDER if met[name] is None]
-            if not not_evaluated_ok:
-                raise V2NotEvaluableError([{"unit_id": unit_id, "triggers_not_evaluated": not_evaluated}])
-            return {
-                **block,
-                "status": V2_NOT_EVALUATED,
-                "triggers_not_evaluated": not_evaluated,
-                "trigger_evidence": [
-                    {"trigger": name, "met": met[name],
-                     "evidence": evidence[name] if met[name] is not None else
-                     f"Not evaluated: {evidence[name]} No earlier trigger in the order E, A, B, C, D is met, so the "
-                     "v2 result depends on it and is not stated."}
-                    for name in V2_TRIGGER_ORDER
-                ],
-            }
-        if met[trigger]:
-            first = trigger
+            result = V2_NOT_EVALUATED
             break
-    rows = []
-    for trigger in V2_TRIGGER_ORDER:
-        if met[trigger] is None:
-            rows.append({
-                "trigger": trigger,
-                "met": False,
-                "evidence": f"Not evaluated: {evidence[trigger]} The result does not depend on it: trigger {first} "
-                            "stands before it in the order E, A, B, C, D.",
-            })
-        else:
-            rows.append({"trigger": trigger, "met": bool(met[trigger]), "evidence": evidence[trigger]})
-    return {**block, "result": first or NO_V2_TRIGGER, "trigger_evidence": rows}
+        if met[trigger]:
+            result = trigger
+            break
+    if result == V2_NOT_EVALUATED:
+        why = ("No earlier trigger in the order E, A, B, C, D is met, so the v2 result depends on a trigger that was "
+               "not evaluated and is not stated.")
+    elif result == NO_V2_TRIGGER:
+        why = "The result does not depend on it."
+    else:
+        why = f"The result does not depend on it: trigger {result} stands before it in the order E, A, B, C, D."
+    rows = [
+        {"trigger": trigger, "met": None, "evidence": f"Not evaluated: {evidence[trigger]} {why}"}
+        if met[trigger] is None else
+        {"trigger": trigger, "met": bool(met[trigger]), "evidence": evidence[trigger]}
+        for trigger in V2_TRIGGER_ORDER
+    ]
+    return {**block, "result": result, "trigger_evidence": rows}
 
 
 def headline_slot(rules: AssessmentRules) -> dict[str, Any]:
@@ -936,19 +886,13 @@ def assess_unit(
     *,
     routing_context_id: str,
     frame_header: Mapping[str, Any] | None = None,
-    v2_not_evaluated_ok: bool = False,
 ) -> dict[str, Any]:
     """Assemble the overlay row of one unit: components, confidence, FPPS, classes, leave-one-out, headline slot.
-
-    With ``v2_not_evaluated_ok`` a row whose v2 result depends on a trigger nobody evaluated is returned as it
-    was computed, with its v2 axis marked :data:`V2_NOT_EVALUATED` (see :func:`class_v2`). Such a row is not a
-    row of overlay schema 1.0.
 
     Raises:
         PlanningAssessmentError: when the measurements break the contract of the confidence rule (coverage
             declared by construction outside the case protocol v1a grants, a lane and tier that do not belong
             together) or a guardrail.
-        V2NotEvaluableError: see :func:`class_v2`.
     """
 
     frame, rule = rules.binding.frame, rules.binding.rule
@@ -1011,7 +955,6 @@ def assess_unit(
         action_class=scoring["action_class"],
         dependent_share=None if vulnerability is None else float(vulnerability["dependent_share"]),
         triggers=unit.v2,
-        not_evaluated_ok=v2_not_evaluated_ok,
     )
     relation = expected_temporal_relation(confidence["measurements"], rule.recency_window_days)
     if case.lane == "OBS" and relation != EVENT_ALIGNED and scoring["action_class"] in CLASSES_ABOVE_E:
@@ -1099,7 +1042,7 @@ def assemble_overlay(
     """Assemble the overlay of one case: the header, the lineage inputs and one row for each unit.
 
     The rights level of the overlay is the minimum across the rights levels of ``inputs`` (guardrail GR6). The
-    result is a plain mapping in the shape of overlay schema 1.0; :func:`write_assessment` validates and writes it.
+    result is a plain mapping in the shape of the overlay schema; :func:`write_assessment` validates and writes it.
 
     Args:
         rules: The rules of the protocol files in force (:func:`load_assessment_rules`).
@@ -1116,8 +1059,6 @@ def assemble_overlay(
         PlanningAssessmentError: for no unit or a repeated one, a lineage that does not name the flood input
             and the routing context, a closure level the closure rule does not have, or a pitch-level access
             gap in a public overlay.
-        V2NotEvaluableError: when the v2 result of one or more rows depends on a trigger that was not evaluated.
-            The error carries every row as it was computed (``as_computed``), which is not an overlay.
     """
 
     identifiers = [unit.unit_id for unit in units]
@@ -1135,15 +1076,10 @@ def assemble_overlay(
     if by_id.get(routing_context_id, {}).get("role") != ROUTING_CONTEXT_ROLE:
         raise PlanningAssessmentError("the lineage does not hold the routing context of the rows")
     header = frame_record(rules.binding.frame)
-    rows: list[dict[str, Any]] = []
-    undetermined: list[dict[str, Any]] = []
-    for unit in units:
-        try:
-            rows.append(assess_unit(rules, case, flood, closure, unit, routing_context_id=routing_context_id, frame_header=header))
-        except V2NotEvaluableError as error:
-            undetermined.extend(error.rows)
-            rows.append(assess_unit(rules, case, flood, closure, unit, routing_context_id=routing_context_id,
-                                    frame_header=header, v2_not_evaluated_ok=True))
+    rows = [
+        assess_unit(rules, case, flood, closure, unit, routing_context_id=routing_context_id, frame_header=header)
+        for unit in units
+    ]
     eligibility = rights.minimum_level(str(item["rights_level"]) for item in inputs)
     for row in rows:
         record = row["components"]["access_gap_0_100"]
@@ -1200,106 +1136,7 @@ def assemble_overlay(
         "assumptions": list(dict.fromkeys(listed)),
         "rows": rows,
     }
-    if undetermined:
-        as_computed = {**document, "schema_version": ROWS_AS_COMPUTED_SCHEMA, "schema_id": None, "not_an_overlay": NOT_AN_OVERLAY}
-        raise V2NotEvaluableError(undetermined, as_computed=as_computed)
     return document
-
-
-def rows_without_a_v2_result(document: Mapping[str, Any]) -> list[str]:
-    """Return the units of a document of rows as computed whose v2 axis is marked :data:`V2_NOT_EVALUATED`."""
-
-    return [str(row["unit_id"]) for row in document["rows"]
-            if row["class_v2"] is not None and row["class_v2"].get("status") == V2_NOT_EVALUATED]
-
-
-def _probe_for_the_overlay_parser(document: Mapping[str, Any]) -> dict[str, Any]:
-    """Return a copy of rows as computed in the shape of an overlay, for the checks of the overlay parser only.
-
-    The v2 axis of a row marked not evaluated is filled with the one shape schema 1.0 accepts for it (no trigger
-    met), so that the parser can check everything else of every row: the component records against the inputs
-    they echo, the confidence record, FPPS, the binding class, the would-be class and leave-one-component-out.
-    The copy states a v2 result the protocols do not state. It lives in memory only and is never returned to a
-    caller or written.
-    """
-
-    probe = {key: value for key, value in document.items() if key != "not_an_overlay"}
-    probe["schema_version"], probe["schema_id"] = SCHEMA_VERSION, SCHEMA_ID
-    rows = []
-    for row in document["rows"]:
-        v2 = row["class_v2"]
-        if v2 is not None and v2.get("status") == V2_NOT_EVALUATED:
-            v2 = {"class_rule_version": v2["class_rule_version"], "label": v2["label"], "binding": v2["binding"],
-                  "result": NO_V2_TRIGGER,
-                  "trigger_evidence": [{"trigger": item["trigger"], "met": False, "evidence": item["evidence"]}
-                                       for item in v2["trigger_evidence"]]}
-        rows.append({**row, "class_v2": v2})
-    probe["rows"] = rows
-    return probe
-
-
-def summarise_rows_as_computed(document: Mapping[str, Any]) -> dict[str, Any]:
-    """Count what a document of rows as computed holds, per lane column; no value of a single unit.
-
-    The counts are those of :func:`floodguard.planning_overlay.summarise_overlay`. In the v2 counts a row
-    marked not evaluated is counted under ``not_evaluated`` and under nothing else, and the summary carries no
-    content hash of an overlay, because the document is not one.
-    """
-
-    marked = set(rows_without_a_v2_result(document))
-    counted = {**document, "rows": [{**row, "class_v2": None} if row["unit_id"] in marked else row for row in document["rows"]]}
-    summary = summarise_overlay(counted)
-    summary.pop("content_sha256", None)
-    for column, counts in summary["v2_result_by_lane_column"].items():
-        not_evaluated = sum(1 for row in document["rows"] if row["unit_id"] in marked and lane_column(row["lane"]) == column)
-        counts["none"] -= not_evaluated
-        counts[V2_NOT_EVALUATED] = not_evaluated
-    summary["schema_version"] = ROWS_AS_COMPUTED_SCHEMA
-    summary["rows_without_a_v2_result"] = len(marked)
-    return summary
-
-
-def check_rows_as_computed(
-    document: Mapping[str, Any],
-    schema: Mapping[str, Any],
-    rules: AssessmentRules,
-    *,
-    reporting_units: Sequence[str],
-    lane: str,
-) -> dict[str, Any]:
-    """Check the rows a run computed when its overlay could not be written, and count them.
-
-    Everything of every row except the v2 axis of a row marked not evaluated is checked as the row of an
-    overlay would be: by the overlay parser bound to the two protocol files, on a copy held in memory
-    (:func:`_probe_for_the_overlay_parser`), and by :func:`guardrail_report`.
-
-    Returns:
-        The guardrail report, what the overlay parser checked, and the counts for the whole case.
-
-    Raises:
-        floodguard.planning_overlay.PlanningOverlayError: when the overlay parser refuses a row.
-        PlanningAssessmentError: for a document that is not one of rows as computed, or a guardrail that does not hold.
-    """
-
-    if document.get("schema_version") != ROWS_AS_COMPUTED_SCHEMA or "not_an_overlay" not in document:
-        raise PlanningAssessmentError(f"this is not a document of rows as computed ({ROWS_AS_COMPUTED_SCHEMA})")
-    marked = rows_without_a_v2_result(document)
-    if not marked:
-        raise PlanningAssessmentError("rows as computed are reported only when a row has no v2 result; these all have one")
-    validate_overlay(_probe_for_the_overlay_parser(document), schema, binding=rules.binding)
-    return {
-        "guardrails": guardrail_report(document, rules, reporting_units=reporting_units, lane=lane),
-        "checked_by_the_overlay_parser": {
-            "result": "PASS",
-            "rows": len(document["rows"]),
-            "rows_without_a_v2_result": len(marked),
-            "what": "Every row was checked by floodguard.planning_overlay against the two protocol files, on a copy "
-                    "held in memory: the component records against the inputs they echo, the confidence record, FPPS, "
-                    "the binding class, the would-be class and leave-one-component-out. The v2 axis of a row marked "
-                    "not_evaluated was not checked, because it states no result.",
-        },
-        "summary": summarise_rows_as_computed(document),
-    }
 
 
 def whole_case_checks(

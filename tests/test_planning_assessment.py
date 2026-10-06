@@ -23,8 +23,10 @@ from floodguard import planning_assessment as pa
 from floodguard.normalisation import NormalisationError
 from floodguard.planning_overlay import (
     SCHEMA_RELATIVE_PATH,
+    V2_NOT_EVALUATED,
     load_overlay_schema,
     overlay_problems,
+    summarise_overlay,
 )
 from floodguard.scoring import SCORE_COMPONENTS
 from floodguard.wording_lint import lint_texts, load_rules, python_strings
@@ -460,98 +462,69 @@ def test_the_v2_fpps_gate_stands_at_35_exactly_and_closes_triggers_c_and_d_below
 
 
 def test_v2_states_no_result_that_depends_on_a_trigger_nobody_evaluated(rules: pa.AssessmentRules) -> None:
+    """Overlay schema 1.1 (decision R20): a trigger nobody evaluated is null, never false; a result that depends on one is not_evaluated."""
+
     unknown = pa.V2TriggerInputs()
     # Trigger E stands first: the result is E whatever the others are, and they are written as not evaluated.
     low = v2_of(rules, confidence_class="low", action_class="E", triggers=unknown)
     assert low["result"] == "E"
     not_evaluated = {item["trigger"]: item for item in low["trigger_evidence"] if item["evidence"].startswith("Not evaluated")}
     assert set(not_evaluated) == {"B", "D"}, "C needs medium confidence, so it is not met on a low row; B and D were not evaluated"
-    assert not_evaluated["B"]["met"] is False and "trigger E stands before it" in not_evaluated["B"]["evidence"]
-    assert {item["trigger"]: item["met"] for item in low["trigger_evidence"]} == {"E": True, "A": False, "B": False, "C": False, "D": False}
+    assert not_evaluated["B"]["met"] is None and "trigger E stands before it" in not_evaluated["B"]["evidence"]
+    assert {item["trigger"]: item["met"] for item in low["trigger_evidence"]} == {"E": True, "A": False, "B": None, "C": False, "D": None}
     by_exposure = v2_of(rules, exposure=5.0, triggers=unknown)
     assert by_exposure["result"] == "E"
     assert {item["trigger"] for item in by_exposure["trigger_evidence"] if item["evidence"].startswith("Not evaluated")} == {"B", "C", "D"}
+    assert all(item["met"] is None for item in by_exposure["trigger_evidence"] if item["evidence"].startswith("Not evaluated"))
     assert v2_of(rules, action_class="A", dependent_share=0.5, triggers=unknown)["result"] == "A"
     # A medium row with an FPPS of 35 or more, an exposure of 10 or more and no trigger A: B decides, and nobody evaluated it.
-    with pytest.raises(pa.V2NotEvaluableError) as refused:
-        v2_of(rules, triggers=unknown)
-    assert refused.value.rows == ({"unit_id": "FX-U01", "triggers_not_evaluated": ["B", "C", "D"]},)
-    with pytest.raises(pa.V2NotEvaluableError) as refused:
-        v2_of(rules, triggers=pa.V2TriggerInputs(link_isolation=False, serving_facility=False))
-    assert refused.value.rows[0]["triggers_not_evaluated"] == ["D"]
-    assert v2_of(rules, triggers=pa.V2TriggerInputs(link_isolation=True))["result"] == "B"
-    # An overlay with such a row is not written, and the error names every unit concerned.
-    with pytest.raises(pa.V2NotEvaluableError) as refused:
-        overlay_of(rules, [unit(1), unit(2, v2=unknown), unit(3, v2=unknown)])
-    assert [row["unit_id"] for row in refused.value.rows] == ["FX-U02", "FX-U03"]
-
-
-def test_rows_whose_v2_result_nobody_can_state_are_handed_back_as_computed_and_are_not_an_overlay(
-        rules: pa.AssessmentRules, schema: dict[str, Any]) -> None:
-    """Every run is reported: the rows keep what class rule v1 gives them, and the v2 axis states no result."""
-
-    unknown = pa.V2TriggerInputs()
-    block = v2_of(rules, triggers=unknown, not_evaluated_ok=True)
-    assert "result" not in block and block["status"] == pa.V2_NOT_EVALUATED == "not_evaluated"
-    assert block["triggers_not_evaluated"] == ["B", "C", "D"] and (block["label"], block["binding"]) == ("secondary", False)
+    block = v2_of(rules, triggers=unknown)
+    assert block["result"] == V2_NOT_EVALUATED == "not_evaluated" and (block["label"], block["binding"]) == ("secondary", False)
+    assert set(block) == {"class_rule_version", "label", "binding", "result", "trigger_evidence"}
     assert [(item["trigger"], item["met"]) for item in block["trigger_evidence"]] == [
         ("E", False), ("A", False), ("B", None), ("C", None), ("D", None)]
     assert all(item["evidence"].startswith("Not evaluated") and "is not stated" in item["evidence"]
                for item in block["trigger_evidence"] if item["met"] is None)
-    # A trigger that was evaluated keeps its outcome; the flag changes nothing where the result can be stated.
-    partly = v2_of(rules, triggers=pa.V2TriggerInputs(link_isolation=False, serving_facility=False), not_evaluated_ok=True)
-    assert partly["triggers_not_evaluated"] == ["D"] and [item["met"] for item in partly["trigger_evidence"]] == [False] * 4 + [None]
-    assert v2_of(rules, exposure=5.0, triggers=unknown, not_evaluated_ok=True) == v2_of(rules, exposure=5.0, triggers=unknown)
+    # A trigger that was evaluated keeps its outcome.
+    partly = v2_of(rules, triggers=pa.V2TriggerInputs(link_isolation=False, serving_facility=False))
+    assert partly["result"] == V2_NOT_EVALUATED and [item["met"] for item in partly["trigger_evidence"]] == [False] * 4 + [None]
+    assert v2_of(rules, triggers=pa.V2TriggerInputs(link_isolation=True))["result"] == "B"
+    # The v1 class A with no dependent share: trigger A was not evaluated, and the result depends on it.
+    no_share = v2_of(rules, action_class="A", dependent_share=None, triggers=unknown)
+    assert no_share["result"] == V2_NOT_EVALUATED and no_share["trigger_evidence"][1]["met"] is None
 
+
+def test_rows_whose_v2_result_nobody_can_state_are_written_into_the_overlay_as_not_evaluated(
+        rules: pa.AssessmentRules, schema: dict[str, Any]) -> None:
+    """Every run is reported: the rows keep what class rule v1 gives them, and the v2 axis says not_evaluated."""
+
+    unknown = pa.V2TriggerInputs()
     small_unit = {"minus": 40.0, "as_provided": 44.0, "plus": 48.0}
     units = [unit(1), unit(2, v2=unknown), unit(3, unit_residents=99.0, v2=unknown, residents_inside_flood_extent=small_unit)]
-    with pytest.raises(pa.V2NotEvaluableError) as refused:
-        overlay_of(rules, units)
-    document = refused.value.as_computed
-    assert document is not None and [row["unit_id"] for row in refused.value.rows] == ["FX-U02"]
-    assert document["schema_version"] == pa.ROWS_AS_COMPUTED_SCHEMA and document["schema_id"] is None
-    assert document["not_an_overlay"] == pa.NOT_AN_OVERLAY and pa.rows_without_a_v2_result(document) == ["FX-U02"]
-    assert [row["unit_id"] for row in document["rows"]] == ["FX-U01", "FX-U02", "FX-U03"]
+    document = overlay_of(rules, units)
+    assert document["schema_version"] == "1.1" and [row["unit_id"] for row in document["rows"]] == ["FX-U01", "FX-U02", "FX-U03"]
+    assert not overlay_problems(document, schema, binding=rules.binding), "the overlay parser accepts the document"
     whole, marked, small = document["rows"]
     # The row with no v2 result is, in everything else, the row the same unit gets when its triggers are evaluated.
     same_unit = row_of(rules, unit(2))
     for key in ("components", "fpps_0_100", "confidence", "action_class", "action_reason_code", "would_be_class",
                 "leave_one_component_out", "headline_stability", "lineage"):
         assert marked[key] == same_unit[key], key
-    assert (marked["action_class"], marked["fpps_0_100"]) == ("D", 36.78) and "result" not in marked["class_v2"]
+    assert (marked["action_class"], marked["fpps_0_100"]) == ("D", 36.78) and marked["class_v2"]["result"] == V2_NOT_EVALUATED
     assert whole["class_v2"]["result"] == "no_v2_trigger" and small["class_v2"]["result"] is None
-    assert overlay_problems(document, schema, binding=rules.binding), "the overlay parser refuses the document"
 
-    units_of_the_case = ["FX-U01", "FX-U02", "FX-U03"]
-    before = json.dumps(document, sort_keys=True)
-    checked = pa.check_rows_as_computed(document, schema, rules, reporting_units=units_of_the_case, lane="OBS")
-    assert json.dumps(document, sort_keys=True) == before, "the checks changed nothing in the document"
-    assert all(entry["result"] == "PASS" for entry in checked["guardrails"].values())
-    assert checked["checked_by_the_overlay_parser"]["result"] == "PASS"
-    assert checked["checked_by_the_overlay_parser"]["rows_without_a_v2_result"] == 1
-    summary = checked["summary"]
-    assert summary["schema_version"] == pa.ROWS_AS_COMPUTED_SCHEMA and "content_sha256" not in summary
-    assert summary["row_count"] == 3 and summary["rows_without_a_v2_result"] == 1 and summary["rows_under_gr1"] == 1
+    report = pa.guardrail_report(document, rules, reporting_units=["FX-U01", "FX-U02", "FX-U03"], lane="OBS")
+    assert all(entry["result"] == "PASS" for entry in report.values())
+    summary = summarise_overlay(document)
+    assert summary["row_count"] == 3 and summary["rows_under_gr1"] == 1
     assert summary["binding_class_by_lane_column"]["OBS"] == {"A": 0, "B": 0, "C": 0, "D": 2, "E": 0, "none": 1}
     assert summary["v2_result_by_lane_column"]["OBS"] == {"A": 0, "B": 0, "C": 0, "D": 0, "E": 0, "no_v2_trigger": 1,
-                                                          "none": 1, "not_evaluated": 1}
-    assert "FX-U0" not in json.dumps(summary), "counts for the whole case, no unit"
+                                                          "not_evaluated": 1, "none": 1}
 
-    # What the checks refuse: a changed value, a missing unit, an overlay, and rows that all have a v2 result.
-    from floodguard.planning_overlay import PlanningOverlayError
-
+    # What the parser refuses: a class written where the result depends on a trigger nobody evaluated.
     changed = json.loads(json.dumps(document))
-    changed["rows"][1]["action_class"] = "A"
-    with pytest.raises(PlanningOverlayError):
-        pa.check_rows_as_computed(changed, schema, rules, reporting_units=units_of_the_case, lane="OBS")
-    with pytest.raises(pa.PlanningAssessmentError, match="exactly one row"):
-        pa.check_rows_as_computed(document, schema, rules, reporting_units=["FX-U01", "FX-U02"], lane="OBS")
-    with pytest.raises(pa.PlanningAssessmentError, match="not a document of rows as computed"):
-        pa.check_rows_as_computed(overlay_of(rules, [unit(1)]), schema, rules, reporting_units=["FX-U01"], lane="OBS")
-    stated = json.loads(json.dumps(document))
-    stated["rows"][1]["class_v2"] = whole["class_v2"]
-    with pytest.raises(pa.PlanningAssessmentError, match="these all have one"):
-        pa.check_rows_as_computed(stated, schema, rules, reporting_units=units_of_the_case, lane="OBS")
+    changed["rows"][1]["class_v2"]["result"] = "no_v2_trigger"
+    assert "v2_result_inconsistent" in {item.code for item in overlay_problems(changed, schema, binding=rules.binding)}
 
 
 def test_the_checks_over_a_whole_case_hold_for_assessed_rows_and_find_a_changed_one(rules: pa.AssessmentRules) -> None:
@@ -734,7 +707,7 @@ def test_the_open_points_are_listed_and_the_module_wording_passes_the_shared_lin
                for point in pa.OPEN_POINTS)
     by_id = {point["id"]: point for point in pa.OPEN_POINTS}
     # What the code does without a protocol sentence behind it is said where the owners will read it.
-    assert "met false" in by_id["E8-OP1"]["for_the_owners"] and "cannot tell it from a measured false" in by_id["E8-OP1"]["for_the_owners"]
+    assert "never with met false" in by_id["E8-OP1"]["what_this_task_does"] and "decision log R20" in by_id["E8-OP1"]["for_the_owners"]
     assert "No travel time limits it" in by_id["E8-OP3"]["what_this_task_does"]
     assert "in Git since task E7 wrote it" in by_id["E8-OP5"]["what_this_task_does"]
     assert "a row that fails a check is not reported" in by_id["E8-OP6"]["what_this_task_does"]

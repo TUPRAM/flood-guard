@@ -100,6 +100,7 @@ import {
   type CommandKeyTarget,
   type CommandReplayState,
   type CommandSpeedId,
+  studioReplayHref,
 } from "@/lib/flood-timeline-command-replay";
 import {
   buildCommandFindIndex,
@@ -129,6 +130,7 @@ import { useLanguage } from "@/lib/use-language";
 import { useStoredPublicReports } from "@/lib/use-public-reports";
 
 import {
+  COMMAND_EXERCISE_ROUTE,
   CommandBanner,
   CommandCredits,
   CommandHelpSheet,
@@ -160,6 +162,7 @@ import { CommandLogSheet, CommandSetupSheet, downloadCommandLog, type CommandSta
 import { MaeSaiCommandSituation } from "./mae-sai-command-situation";
 import { MaeSaiCommandTimebar, type CommandPhaseBandItem } from "./mae-sai-command-timebar";
 import styles from "./mae-sai-command-exercise.module.css";
+import { WorkspaceHeader } from "./workspace-header";
 
 /** The address bar is rewritten at most this often while the replay hour changes. */
 const LINK_WRITE_MS = 300;
@@ -943,7 +946,16 @@ export function MaeSaiCommandExercise({ initial }: {
     setOpenPanel("card");
   };
 
+  // The shared site header leads to the three sections as on every other page. "Planning" is this page, and
+  // "Studio" opens the Studio replay at the same replay hour, as the page's own pill did before.
+  const siteHref = (path: string): string | undefined =>
+    path === "/command/" ? COMMAND_EXERCISE_ROUTE : path === "/studio/" ? studioReplayHref(hour, language) : undefined;
+
   return (
+    <div className={styles.shell} data-command-shell lang={language}>
+    <div className={styles.siteHeader} data-command-site-header>
+      <WorkspaceHeader activeSurface="planning" language={language} onLanguageChange={setLanguage} hrefFor={siteHref} />
+    </div>
     <main id="main-content" className={`command-page ${styles.page}`} data-command-exercise data-focus={focus ? "on" : "off"} data-hour={hour} data-mode={mode} data-selected={selected ?? undefined}
       data-selected-report={selectedItem?.id ?? selectedDevice?.id ?? undefined} data-picking={picking ? "true" : undefined}
       data-command-ready={mapReady && ready && (hand !== null || handFailed) ? "true" : "false"} lang={language}>
@@ -969,8 +981,8 @@ export function MaeSaiCommandExercise({ initial }: {
             detail={detailPanel ?? <CommandDetailEmpty language={language} />} detailFooter={detailFooter} known={knownPanel} knownCount={knownCount} />
         </div>
         <CommandNotice message={notice} language={language} onSelect={!handFailed && !picking && !undoNotice && arrivalNotice ? openArrival : undefined} action={noticeAction} />
-        <CommandNav language={language} hour={hour} menuOpen={openPanel === "menu"} onMenu={(open) => setOpenPanel(open ? "menu" : null)}
-          onLanguage={setLanguage} onHelp={() => setDialog("help")} basemap={basemap} onBasemap={switchBasemap}
+        <CommandNav language={language} menuOpen={openPanel === "menu"} onMenu={(open) => setOpenPanel(open ? "menu" : null)}
+          onHelp={() => setDialog("help")} basemap={basemap} onBasemap={switchBasemap}
           exercise={{ open: exerciseMenu, onToggle: setExerciseMenu, onSetup: () => openSheet("setup"), onLog: () => openSheet("log"), onSituation: openSituation }} />
         {!tablet && (cardOpen
           ? <MaeSaiCommandInspector language={language} tab={cardTab} onTab={setCardTab} onClose={deselect} detail={detailPanel} footer={detailFooter} known={knownPanel} knownCount={knownCount} />
@@ -1001,5 +1013,6 @@ export function MaeSaiCommandExercise({ initial }: {
         onExport={() => { downloadCommandLog(device.log); logAction("log_exported", "facilitator", null, null); }} />
       <CommandBriefSheet open={dialog === "brief" || dialog === "situation"} onClose={() => closeSheet(dialog === "situation" ? "situation" : "brief")} language={language} content={briefContent} onEvent={onBriefEvent} />
     </main>
+    </div>
   );
 }

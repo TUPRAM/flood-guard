@@ -132,7 +132,7 @@ describe("Subdistrict table (region B2): the rows", () => {
     expect([...markup.matchAll(/data-tambon="(TH\d+)"/g)].map((match) => match[1])).toHaveLength(8);
     // Column captions of the two groups.
     expect(groupText(markup, "hour")).toMatch(/# subdistrict (?:This hour · model )?lost access in water/);
-    expect(groupText(markup, "plan")).toMatch(/O1 SE1 #/);
+    expect(groupText(markup, "plan")).toMatch(/O1 SE1 score/);
     // A narrow card has no line of group titles: there the left group is named in the captions row, by a dashed tag
     // that a screen reader skips (it has the group title already), and every row's plan cells wear the lock.
     expect(markup).toMatch(/<span class="[^"]*laneTag[^"]*headTag[^"]*" title="Model · low confidence" aria-hidden="true">This hour · model<\/span>/);
@@ -226,8 +226,9 @@ describe("Subdistrict table: the honest empty state of the plan group", () => {
     // Every chip says it twice: once for a screen reader, once on hover.
     expect(count(plan, "O1: Not issued yet")).toBe(2 * 8);
     expect(count(plan, "Planning position from SE1: Not issued yet")).toBe(8);
-    // The SE1 chip says it twice too; the eight positions above end in the same words.
-    expect(count(plan, "SE1: Not issued yet")).toBe(2 * 8 + 8);
+    // The SE1 chip says it twice too; the eight scores and the eight positions end in the same words.
+    expect(count(plan, "Planning score (FPPS, 0 to 100) from SE1: Not issued yet")).toBe(8);
+    expect(count(plan, "SE1: Not issued yet")).toBe(2 * 8 + 8 + 8);
     // The footer is one short line; the full sentence is its title, and a screen reader hears it with the table.
     const note = (source: string) => /<p[^>]*data-command-plan-note[^>]*>(.*?)<\/p>/.exec(source)![0];
     expect(note(markup)).toContain('title="Planning class from the signed protocol. Fixed in time. Not computed from this replay hour."');
@@ -283,8 +284,16 @@ describe("Subdistrict table: the plan group with classes (fixture units on both 
     expect(plain).not.toMatch(/would[- ]be/i);
   });
 
-  it("puts one planning position beside the two chips, from the chosen case", () => {
-    const position = (markup: string) => [...markup.matchAll(/data-tambon="(FX-U\d+)".*?<span aria-hidden="true">([–\d]+)<\/span><span[^>]*>Planning position from (O1|SE1)/gs)].map((match) => `${match[1]}:${match[2]}:${match[3]}`);
+  it("puts the planning score and the position beside the two chips, from the chosen case", () => {
+    // What is printed is the score, rounded; the position is said to a screen reader and on hover. A class is
+    // never read alone: a high score in class D is not a low priority.
+    const position = (markup: string) => [...markup.matchAll(/data-tambon="(FX-U\d+)".*?<span aria-hidden="true">[–\d]+<\/span><span[^>]*>Planning score \(FPPS, 0 to 100\) from (?:O1|SE1): [^<]*? Planning position from (O1|SE1): ([^<.]+)\.?</gs)].map((match) => `${match[1]}:${match[3] === "Not issued yet" ? "–" : match[3]}:${match[2]}`);
+    const printed = (markup: string) => [...markup.matchAll(/data-tambon="(FX-U\d+)".*?<span aria-hidden="true">([–\d]+)<\/span><span[^>]*>Planning score \(FPPS, 0 to 100\) from (?:O1|SE1): ([^<]*?)\. Planning position/gs)].map((match) => `${match[1]}:${match[2]}:${match[3]}`);
+    for (const item of printed(fixtureTable("en", "hour", "SE1"))) {
+      const [, shown, exact] = item.split(":");
+      expect(shown === "–" ? exact : String(Math.round(Number(exact))), item).toBe(shown === "–" ? "Not issued yet" : shown);
+    }
+    expect(printed(fixtureTable("en", "hour", "SE1")).filter((item) => !item.includes(":–:"))).toHaveLength(2);
     expect(position(fixtureTable("en", "hour", "SE1"))).toEqual(["FX-U03:2:SE1", "FX-U13:1:SE1", "FX-U14:–:SE1", "FX-U15:–:SE1", "FX-U01:–:SE1"]);
     expect(position(fixtureTable("en", "hour", "O1"))).toEqual(["FX-U03:–:O1", "FX-U13:–:O1", "FX-U14:2:O1", "FX-U15:1:O1", "FX-U01:–:O1"]);
     // Ordered by planning, the rows follow that position; this hour's place of each row stays in the left group.

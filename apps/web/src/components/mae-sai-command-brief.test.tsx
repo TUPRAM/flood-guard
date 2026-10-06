@@ -383,7 +383,7 @@ describe("The notice with its undo, the exercise menu and the help steps", () =>
 
   it("opens the setup, the log and the situation brief from the exercise menu, on a desktop and on a tablet", () => {
     const nav = (open: boolean, menuOpen = false) => html(
-      <CommandNav language="en" hour={84} menuOpen={menuOpen} onMenu={noop} onLanguage={noop} onHelp={noop} basemap="street" onBasemap={noop} exercise={{ open, onToggle: noop, onSetup: noop, onLog: noop, onSituation: noop }} />,
+      <CommandNav language="en" menuOpen={menuOpen} onMenu={noop} onHelp={noop} basemap="street" onBasemap={noop} exercise={{ open, onToggle: noop, onSetup: noop, onLog: noop, onSituation: noop }} />,
     );
     expect(nav(false)).toMatch(/aria-expanded="false" title="Exercise: setup, log and situation brief" data-command-exercise-menu="true"/);
     expect(nav(false)).not.toContain("data-command-exercise-panel");
@@ -395,7 +395,7 @@ describe("The notice with its undo, the exercise menu and the help steps", () =>
     expect([...tablet.matchAll(/data-command-exercise-item="([a-z]+)"/g)].map((match) => match[1])).toEqual(["setup", "log", "situation"]);
     expect(text(tablet)).toContain("Exercise setup Exercise log Situation brief");
     // Without the exercise the navigation is as before.
-    expect(html(<CommandNav language="en" hour={84} menuOpen onMenu={noop} onLanguage={noop} onHelp={noop} basemap="street" onBasemap={noop} />)).not.toContain("data-command-exercise");
+    expect(html(<CommandNav language="en" menuOpen onMenu={noop} onHelp={noop} basemap="street" onBasemap={noop} />)).not.toContain("data-command-exercise");
   });
 
   it("explains the path from seeing to acting in the help sheet", () => {

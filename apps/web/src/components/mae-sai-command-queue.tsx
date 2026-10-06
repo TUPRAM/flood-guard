@@ -28,6 +28,8 @@ import {
   commandChipLabel,
   commandNoReachNote,
   commandPlanPositionLabel,
+  commandPlanScoreLabel,
+  COMMAND_PLAN_SCORE,
   commandRecordCount,
   commandRowChange,
   commandSentences,
@@ -149,6 +151,8 @@ export function CommandQueueTable({ language, rows, selected, onSelect, set, pos
   const issued = rows.some((row) => COMMAND_PLANNING_CASES.some((id) => row.cells[id] !== null));
   const showsE = rows.some((row) => COMMAND_PLANNING_CASES.some((id) => row.cells[id]?.letter === "E"));
   const positionLabel = commandPlanPositionLabel(positionFrom, language);
+  const scoreLabel = commandPlanScoreLabel(positionFrom, language);
+  const scoreMeaning = `${scoreLabel}. ${t(COMMAND_PLAN_SCORE.meaning)}`;
   // Only keyboard focus holds the order: a row keeps the focus after a click, and that must not freeze the table.
   const focusIn = (event: FocusEvent<HTMLDivElement>) => { if (event.target.matches(":focus-visible")) onHold?.("focus", true); };
   const focusOut = (event: FocusEvent<HTMLDivElement>) => { if (!event.currentTarget.contains(event.relatedTarget)) onHold?.("focus", false); };
@@ -217,12 +221,15 @@ export function CommandQueueTable({ language, rows, selected, onSelect, set, pos
           </span>
           <span className={styles.gPlan} role="presentation" data-group="plan">
             {COMMAND_PLANNING_CASES.map((id) => <span key={id} role="columnheader" title={commandCaseLane(id, language)}>{id}</span>)}
-            <span role="columnheader" aria-label={positionLabel} title={positionLabel}>#</span>
+            <span role="columnheader" aria-label={scoreLabel} title={scoreMeaning}>{t(COMMAND_PLAN_SCORE.short)}</span>
           </span>
         </div>
       </div>
       <div className={styles.body} role="rowgroup" onPointerEnter={() => onHold?.("pointer", true)} onPointerLeave={() => onHold?.("pointer", false)} onFocus={focusIn} onBlur={focusOut}>
         {rows.map(({ row, position, lost, water, change, bar, cells, planningPosition }) => {
+          // The planning score of the case the position comes from: shown beside the class, so that a class is never
+          // read alone (a score of 70 in class D is not a low priority).
+          const score = cells[positionFrom]?.fpps ?? null;
           const isSelected = row.id === selected;
           return (
             <div key={row.id} className={styles.row} role="row" data-tambon={row.id} data-selected={isSelected ? "true" : "false"} data-quiet={lost.kind === "zero" && water.kind === "zero" ? "true" : "false"} onClick={() => onSelect(row.id)}>
@@ -262,10 +269,11 @@ export function CommandQueueTable({ language, rows, selected, onSelect, set, pos
                     <CommandPlanChip planningCase={id} cell={cells[id]} language={language} />
                   </span>
                 ))}
-                <span className={styles.cPos} role="cell" title={positionLabel}>
-                  <span className={styles.inlineCaption} aria-hidden="true">#</span>
-                  <span aria-hidden="true">{planningPosition ?? "–"}</span>
-                  <span className={exercise.srOnly}>{positionLabel}: {planningPosition ?? t(COMMAND_TABLE.notIssued)}</span>
+                <span className={styles.cPos} role="cell" data-command-score={score ?? undefined}
+                  title={score === null ? scoreLabel : `${scoreLabel}: ${score.toFixed(1)} · ${positionLabel}: ${planningPosition ?? "–"}`}>
+                  <span className={styles.inlineCaption} aria-hidden="true">{t(COMMAND_PLAN_SCORE.short)}</span>
+                  <span aria-hidden="true">{score === null ? "–" : Math.round(score)}</span>
+                  <span className={exercise.srOnly}>{commandSentences([`${scoreLabel}: ${score === null ? t(COMMAND_TABLE.notIssued) : score.toFixed(1)}`, `${positionLabel}: ${planningPosition ?? t(COMMAND_TABLE.notIssued)}`], language)}</span>
                 </span>
               </span>
             </div>

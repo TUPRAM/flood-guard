@@ -519,3 +519,32 @@ describe("Command Thai wording beside its English twin", () => {
     expect(commandSiteGroupTitle(2, true, "en")).toBe("2 shelters reported in use in 2024 and the district command centre stand close together here.");
   });
 });
+
+describe("Command copy: the draft checklist of a class and the score beside it", () => {
+  it("gives every class three checks in both languages, and says who wrote them", async () => {
+    const copy = await import("./flood-timeline-command-copy");
+    expect(Object.keys(copy.COMMAND_CLASS_CHECKLIST)).toEqual(["A", "B", "C", "D", "E"]);
+    for (const items of Object.values(copy.COMMAND_CLASS_CHECKLIST)) {
+      expect(items).toHaveLength(3);
+      for (const item of items) {
+        expect(item.en.trim().length).toBeGreaterThan(20);
+        expect(item.th.trim().length).toBeGreaterThan(15);
+        // A check or an agreement, never an instruction to the public: no site to open, no road to take, no time to leave.
+        expect(item.en).not.toMatch(/(evacuate now|open the shelter|leave by|safe (route|road|time))/i);
+      }
+    }
+    // Class E is never read as an all-clear.
+    expect(copy.COMMAND_CLASS_CHECKLIST.E[0].en).toMatch(/not .*all-clear/i);
+    const note = copy.COMMAND_CLASS_CHECKLIST_COPY.note;
+    expect(note.en).toContain("No practitioner or agency has reviewed it");
+    expect(note.en).toContain("DDPM");
+    expect(note.th).toContain("ยังไม่ผ่านการทบทวน");
+  });
+
+  it("names the score of the case beside the class and says that a high score in class D is not a low priority", async () => {
+    const copy = await import("./flood-timeline-command-copy");
+    expect(copy.commandPlanScoreLabel("SE1", "en")).toBe("Planning score (FPPS, 0 to 100) from SE1");
+    expect(copy.commandPlanScoreLabel("SE1", "th")).toBe("คะแนนการวางแผน (FPPS, 0 ถึง 100) จาก SE1");
+    expect(copy.COMMAND_PLAN_SCORE.meaning.en).toContain("A high score in class D is not a low priority");
+  });
+});

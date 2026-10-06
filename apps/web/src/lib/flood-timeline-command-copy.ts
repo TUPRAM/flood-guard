@@ -1147,3 +1147,59 @@ export function commandFindCount(count: number, language: Language): string {
 export function commandToleranceText(metres: number, language: Language): string {
   return language === "th" ? `ตำแหน่งคลาดเคลื่อนได้ ±${metres} ม.` : `placed to within ±${metres} m`;
 }
+
+/** The third column of the plan group: the planning score of the chosen case, so that a class is never read alone. */
+export const COMMAND_PLAN_SCORE = {
+  short: { en: "score", th: "คะแนน" },
+  label: { en: "Planning score (FPPS, 0 to 100) from", th: "คะแนนการวางแผน (FPPS, 0 ถึง 100) จาก" },
+  meaning: {
+    en: "The class says what kind of preparation fits. The score says how much the scenario weighs on the subdistrict. A high score in class D is not a low priority.",
+    th: "ระดับบอกว่าการเตรียมการแบบใดเหมาะสม คะแนนบอกว่าสถานการณ์จำลองกระทบตำบลมากเพียงใด คะแนนสูงในระดับ D ไม่ได้แปลว่าความสำคัญต่ำ",
+  },
+} as const satisfies Record<string, Localized>;
+
+/** "Planning score (FPPS, 0 to 100) from SE1". */
+export function commandPlanScoreLabel(planningCase: string, language: Language): string {
+  return `${pick(COMMAND_PLAN_SCORE.label, language)} ${planningCase}`;
+}
+
+/**
+ * Three things a combined team (planners before the season, coordinators at the start of an event) could check for
+ * a class. A draft written by the project team: no practitioner and no agency has reviewed it, and the card says so.
+ * The items name checks and agreements. None names a site to open, a road to take or a time to leave.
+ */
+export const COMMAND_CLASS_CHECKLIST: Readonly<Record<"A" | "B" | "C" | "D" | "E", readonly [Localized, Localized, Localized]>> = {
+  A: [
+    { en: "List the households that would need help to move (older adults, small children, bedridden people) and who visits them.", th: "ทำรายชื่อครัวเรือนที่ต้องมีคนช่วยเคลื่อนย้าย (ผู้สูงอายุ เด็กเล็ก ผู้ป่วยติดเตียง) และผู้ที่จะไปดูแล" },
+    { en: "Agree where boats, life jackets and a medical team would wait, and who calls them out.", th: "ตกลงจุดที่เรือ เสื้อชูชีพ และทีมแพทย์จะรอ และผู้ที่มีหน้าที่เรียกออกปฏิบัติงาน" },
+    { en: "Check on the ground that the sites in the local plan can take people, and how residents would be told.", th: "ตรวจในพื้นที่จริงว่าสถานที่ตามแผนของท้องถิ่นรับคนได้ และจะแจ้งประชาชนอย่างไร" },
+  ],
+  B: [
+    { en: "Inspect the few road links and bridges that connect the area, and note the water level at which each one closes.", th: "ตรวจถนนและสะพานไม่กี่จุดที่เชื่อมพื้นที่ และจดระดับน้ำที่ทำให้แต่ละจุดผ่านไม่ได้" },
+    { en: "Agree a second way in (another road, a boat landing) and who decides to switch to it.", th: "ตกลงเส้นทางสำรอง (ถนนอีกสาย ท่าเรือ) และผู้ตัดสินใจเปลี่ยนเส้นทาง" },
+    { en: "Place food, drinking water, medicine and a radio inside the area before it can be cut off.", th: "เตรียมอาหาร น้ำดื่ม ยา และวิทยุสื่อสารไว้ในพื้นที่ก่อนที่เส้นทางจะถูกตัดขาด" },
+  ],
+  C: [
+    { en: "Check that the hospital, the health centre and the sites that serve the area can still be reached, and by which road.", th: "ตรวจว่าโรงพยาบาล สถานีอนามัย และสถานที่ที่ให้บริการพื้นที่ยังเข้าถึงได้ และใช้ถนนสายใด" },
+    { en: "Check backup power, fuel and water at those sites.", th: "ตรวจไฟฟ้าสำรอง เชื้อเพลิง และน้ำ ณ สถานที่เหล่านั้น" },
+    { en: "Agree where patients go if the usual route is cut, and who is told.", th: "ตกลงว่าจะส่งผู้ป่วยไปที่ใดหากเส้นทางปกติถูกตัดขาด และต้องแจ้งใคร" },
+  ],
+  D: [
+    { en: "Record where water stood, and for how long, after each flood, with dates.", th: "บันทึกจุดที่น้ำท่วมขังและระยะเวลาหลังน้ำท่วมแต่ละครั้ง พร้อมวันที่" },
+    { en: "Put drainage, raised road sections and shelter sites into the next annual plan and budget.", th: "บรรจุงานระบายน้ำ การยกระดับถนน และที่ตั้งศูนย์พักพิงไว้ในแผนและงบประมาณประจำปีถัดไป" },
+    { en: "Run an exercise for the area once a year and write down what was slow.", th: "ฝึกซ้อมสำหรับพื้นที่ปีละครั้ง และจดสิ่งที่ล่าช้า" },
+  ],
+  E: [
+    { en: "Do not take this class as an all-clear: the evidence is weak or the score is low.", th: "อย่าถือว่าระดับนี้แปลว่าไม่มีความเสี่ยง: หลักฐานยังอ่อนหรือคะแนนต่ำ" },
+    { en: "Visit the area or obtain a dated flood map before committing resources.", th: "ลงพื้นที่หรือหาแผนที่น้ำท่วมที่ระบุวันที่ก่อนจัดสรรทรัพยากร" },
+    { en: "Keep a contact in each village who reports water levels.", th: "มีผู้ประสานงานในแต่ละหมู่บ้านที่รายงานระดับน้ำ" },
+  ],
+};
+
+export const COMMAND_CLASS_CHECKLIST_COPY = {
+  title: { en: "What a team could check", th: "สิ่งที่ทีมอาจตรวจ" },
+  note: {
+    en: "A draft by the project team for planners and coordinators. No practitioner or agency has reviewed it. Follow the instructions of DDPM and the local authorities.",
+    th: "ฉบับร่างโดยทีมโครงการสำหรับผู้วางแผนและผู้ประสานงาน ยังไม่ผ่านการทบทวนโดยผู้ปฏิบัติงานหรือหน่วยงานใด โปรดปฏิบัติตามคำสั่งของ ปภ. และหน่วยงานท้องถิ่น",
+  },
+} as const satisfies Record<string, Localized>;

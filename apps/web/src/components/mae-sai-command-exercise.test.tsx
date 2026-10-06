@@ -67,7 +67,16 @@ const timebar = (hour: number, language: Language, more: { collapsed?: boolean; 
 describe("Command exercise page shell", () => {
   it("is the full-screen exercise root, with the banner and every region, before any data loads", () => {
     const markup = html(<MaeSaiCommandExercise />);
-    expect(markup).toMatch(/^<main id="main-content" class="command-page [^"]*" data-command-exercise="true" data-focus="off" data-hour="36"/);
+    // The shared site header stands above the page, as on every other page of the site; the page takes the rest.
+    expect(markup).toMatch(/<div class="[^"]*" data-command-shell="true" lang="en"><div class="[^"]*" data-command-site-header="true"><header /);
+    expect(markup).toMatch(/<\/header><\/div><main id="main-content" class="command-page [^"]*" data-command-exercise="true" data-focus="off" data-hour="36"/);
+    const siteHeader = /<header .*?<\/header>/s.exec(markup)![0];
+    expect(text(siteHeader)).toContain("FloodGuard");
+    for (const label of ["Public", "Planning", "Studio", "English", "ไทย"]) expect(text(siteHeader), label).toContain(label);
+    expect(siteHeader).toContain('href="/public/"');
+    // "Planning" is this page; "Studio" opens the Studio replay at the same replay hour, counting all residents.
+    expect(siteHeader).toContain(`href="${COMMAND_EXERCISE_ROUTE}" aria-current="page"`);
+    expect(siteHeader).toContain('href="/studio/cases/mae-sai-2024/?t=36&amp;pop=all&amp;lang=en"');
     expect(markup).toContain('data-command-ready="false"');
     for (const region of ["A", "B1", "B2", "C", "D", "E", "F", "G", "H", "I"]) expect(markup, region).toContain(`data-region="${region}"`);
     // Region D (the right card) is its chip until something is selected or the chip is pressed.
@@ -361,21 +370,18 @@ describe("Command keys", () => {
 });
 
 describe("Command navigation, tools and legend (regions C, E, G)", () => {
-  const nav = (language: Language, hour = 84) =>
-    html(<CommandNav language={language} hour={hour} menuOpen={false} onMenu={noop} onLanguage={noop} onHelp={noop} basemap="street" onBasemap={noop} />);
+  const nav = (language: Language) =>
+    html(<CommandNav language={language} menuOpen={false} onMenu={noop} onHelp={noop} basemap="street" onBasemap={noop} />);
 
-  it("links Public, this page and the Studio replay at the same replay hour", () => {
+  it("holds what only this page has, and leaves the site's sections and the language to the shared header", () => {
     const markup = nav("en");
-    expect(markup).toContain('href="/public/"');
-    expect(markup).toContain(`href="${COMMAND_EXERCISE_ROUTE}" aria-current="page"`);
-    // The hour travels with the same t parameter; the Studio page is asked to count all residents, as this page does.
-    expect(markup).toContain('href="/studio/cases/mae-sai-2024/?t=84&amp;pop=all&amp;lang=en"');
-    expect(nav("th", 130)).toContain('href="/studio/cases/mae-sai-2024/?t=130&amp;pop=all&amp;lang=th"');
-    for (const label of ["Public", "Command (exercise)", "Studio"]) expect(text(markup)).toContain(label);
-    // The language button is named in the language it switches to.
-    expect(markup).toMatch(/aria-label="Switch to Thai" data-command-language="th"><span lang="th">ไทย<\/span>/);
-    expect(nav("th")).toMatch(/aria-label="เปลี่ยนเป็นภาษาอังกฤษ" data-command-language="en"><span lang="en">EN<\/span>/);
+    expect(markup).toContain('data-region="C"');
     expect(markup).toContain('aria-label="Help and keys"');
+    expect(nav("th")).toContain("data-command-help");
+    // Public, Planning, Studio and the language are in the site header above the page (see the shell test).
+    expect(markup).not.toContain('href="/public/"');
+    expect(markup).not.toContain("/studio/");
+    expect(markup).not.toContain("data-command-language");
   });
 
   it("has seven round tools, the find-place box among them", () => {
@@ -468,7 +474,7 @@ describe("Command panels: wording", () => {
       const panels: [string, ReactElement][] = [
         ["drawer", <CommandInfoBody key="a" language={language} manifest={manifest} />],
         ["help", <CommandHelpSheet key="b" open={false} onClose={noop} onAbout={noop} language={language} />],
-        ["nav", <CommandNav key="c" language={language} hour={84} menuOpen onMenu={noop} onLanguage={noop} onHelp={noop} basemap="street" onBasemap={noop} />],
+        ["nav", <CommandNav key="c" language={language} menuOpen onMenu={noop} onHelp={noop} basemap="street" onBasemap={noop} />],
         ["rail", <CommandToolRail key="d" language={language} focus={false} basemap="street" nextFit="town" viewOpen={false} disabled={false} onView={noop} onBasemap={noop} onZoom={noop} onFit={noop} onFocus={noop} />],
         ["view", <CommandViewPopover key="e" language={language} facilities facilityCount={42} onFacilities={noop} onClose={noop} />],
         ["legend", <CommandLegend key="f" language={language} open onToggle={noop} facilities unmodelledRoads wetSites />],

@@ -3,7 +3,7 @@
    Colour: neutral ink and greys; the bar is the one blue of the water. The amber and the hatch are the protocol's own
    chips for an own-candidate class and a scenario class; they appear only once a class has been issued.
    The tokens (--c-*) are set on the page root in mae-sai-command-exercise.module.css. */
-.queue { --row-min: 33px; --plan-w: 104px; flex: 0 1 auto; display: flex; flex-direction: column; min-height: 44px; overflow: hidden; }
+.queue { --row-min: 33px; --plan-w: 116px; flex: 0 1 auto; display: flex; flex-direction: column; min-height: 44px; overflow: hidden; }
 /* On a touch screen a row is never under 44 px: the table then scrolls inside the card. */
 @media (pointer: coarse) { .queue { --row-min: 44px; } }
 .queue[data-state="waiting"] { flex: 1 1 auto; }
@@ -41,7 +41,7 @@
 .tableWrap[data-order-held="true"] .head { box-shadow: inset 0 -2px 0 var(--c-accent); }
 .headRow, .row { display: grid; grid-template-columns: minmax(0, 1fr) var(--plan-w); }
 .gHour { display: grid; grid-template-columns: 16px minmax(0, 1fr) 96px 56px; align-items: center; column-gap: 6px; min-width: 0; padding: 0 8px 0 var(--c-inset); }
-.gPlan { display: grid; grid-template-columns: 26px 26px 20px; align-items: center; justify-items: center; column-gap: 6px; padding: 0 10px; border-left: 1px solid var(--c-line); background: var(--c-tint); }
+.gPlan { display: grid; grid-template-columns: 26px 26px 32px; align-items: center; justify-items: center; column-gap: 6px; padding: 0 10px; border-left: 1px solid var(--c-line); background: var(--c-tint); }
 .groupTitle { display: flex; align-items: center; justify-items: start; gap: 6px; height: 22px; padding-top: 1px; }
 .gPlan.groupTitle { justify-content: flex-start; gap: 4px; color: var(--c-muted); }
 .groupName { color: var(--c-ink); font-size: 12px; font-weight: 700; line-height: 1.5; white-space: nowrap; }
@@ -109,7 +109,7 @@
 .planNote b, .never { color: var(--c-ink); font-weight: 600; }
 
 /* On a short desktop screen the footer gives the rows a few pixels, so the eight rows are 44 px in Thai too. */
-@media (min-width: 1181px) and (max-height: 840px) {
+@media (min-width: 1181px) and (max-height: 900px) {
   .foot { padding: 3px var(--c-inset) 4px; }
   .captions .gHour, .captions .gPlan { padding-bottom: 1px; }
 }

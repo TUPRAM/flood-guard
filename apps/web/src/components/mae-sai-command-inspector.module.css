@@ -68,6 +68,10 @@
 .classRow span { color: var(--c-muted); font-size: 11px; }
 .action { display: grid; gap: 1px; font-size: 12px; }
 .never { font-weight: 600; }
+.checklist { display: grid; gap: 3px; font-size: 12px; }
+.checklist ol { display: grid; gap: 3px; margin: 0; padding-left: 18px; line-height: 1.45; }
+.checklist ol:lang(th) { line-height: 1.55; }
+.checklistNote { margin: 2px 0 0; color: var(--c-muted); font-size: 11px; line-height: 1.45; }
 .facts { display: grid; gap: 2px; margin: 0; padding: 8px 0 0; border-top: 1px solid var(--c-line); color: var(--c-muted); font-size: 11px; line-height: 1.45; list-style: none; overflow-wrap: anywhere; }
 .facts:lang(th) { line-height: 1.5; }
 .placeholder { display: grid; place-content: center; justify-items: center; gap: 4px; min-height: 148px; padding: 24px 20px; color: var(--c-muted); text-align: center; }

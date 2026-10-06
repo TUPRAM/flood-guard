@@ -712,7 +712,7 @@ function commandActPanels(language: Language): { name: string; node: React.React
     { name: "log sheet", node: logSheet(actLog()) },
     { name: "log sheet, nothing done", node: logSheet([]) },
     { name: "notice with its undo", node: <CommandNotice language={language} message={commandActionNotice(actUndos()[1], "urgent", language)} action={{ id: "a", label: COMMAND_ACT.undo[language], onPress: noop, timed: true }} /> },
-    { name: "navigation with the exercise menu", node: <CommandNav language={language} hour={84} menuOpen onMenu={noop} onLanguage={noop} onHelp={noop} basemap="street" onBasemap={noop}
+    { name: "navigation with the exercise menu", node: <CommandNav language={language} menuOpen onMenu={noop} onHelp={noop} basemap="street" onBasemap={noop}
       exercise={{ open: true, onToggle: noop, onSetup: noop, onLog: noop, onSituation: noop }} /> },
   ];
   if (panels.length !== COMMAND_ACT_PANEL_COUNT) throw new Error(`Expected ${COMMAND_ACT_PANEL_COUNT} act panels, got ${panels.length}`);
@@ -746,7 +746,7 @@ function commandPanels(language: Language): { name: string; html: string }[] {
       stops={commandEventStops(manifest, model.stages)} rainfall={manifest.rainfall ?? null} onTogglePlay={noop} onStep={noop} onSeek={noop} onEvent={noop} onSpeed={noop} />),
     panel("information drawer", <CommandInfoBody language={language} manifest={manifest} />),
     panel("help sheet", <CommandHelpSheet open={false} onClose={noop} onAbout={noop} language={language} />),
-    panel("navigation and menu", <CommandNav language={language} hour={84} menuOpen onMenu={noop} onLanguage={noop} onHelp={noop} basemap="terrain" onBasemap={noop} />),
+    panel("navigation and menu", <CommandNav language={language} menuOpen onMenu={noop} onHelp={noop} basemap="terrain" onBasemap={noop} />),
     panel("tool rail", <CommandToolRail language={language} focus basemap="street" nextFit="district" viewOpen={false} disabled={false} onView={noop} onBasemap={noop} onZoom={noop} onFit={noop} onFocus={noop} />),
     panel("view popover", <CommandViewPopover language={language} facilities facilityCount={manifest.facilities_count.total} onFacilities={noop} onClose={noop} />),
     panel("legend", <CommandLegend language={language} open onToggle={noop} facilities unmodelledRoads wetSites />),

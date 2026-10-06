@@ -8,6 +8,12 @@
    Depth: two levels. Panels at rest carry a hairline and a quiet shadow (--c-shadow); what opens over the map (legend,
    popovers, the right card, popups) carries the deeper one (--c-shadow-over). The left column is one sheet: the clock
    card and the table share one shadow and a hairline between them. */
+/* The shell: the shared site header, then the page, which takes the rest of the window. */
+.shell { position: fixed; inset: 0; display: flex; flex-direction: column; overflow: hidden; background: #ffffff; }
+/* The site header in a shorter form than on the text pages, so the map keeps its height. */
+.siteHeader { flex: none; border-bottom: 1px solid #dfe7f0; }
+.siteHeader > header { min-height: 56px; padding-top: 6px; padding-bottom: 6px; }
+@media (max-width: 900px) { .siteHeader > header { min-height: 48px; padding-top: 2px; padding-bottom: 2px; } }
 .page {
   --c-ink: var(--ink, #0c2740);
   --c-muted: var(--muted, #526a82);
@@ -38,12 +44,13 @@
   --c-dock: 88px;
   --c-rail: 44px;
   /* Room kept for the navigation pill at the top right (its widest form, in English with the exercise menu). */
-  --c-nav: 530px;
+  --c-nav: 210px;
   --c-font: "Inter Variable", "Noto Sans Thai Variable", "Segoe UI", "Leelawadee UI", Tahoma, sans-serif;
   --c-font-head: "Manrope Variable", "Noto Sans Thai Variable", "Segoe UI", "Leelawadee UI", Tahoma, sans-serif;
   --c-font-mono: "JetBrains Mono Variable", "Noto Sans Thai Variable", ui-monospace, SFMono-Regular, Menlo, monospace;
-  position: fixed;
-  inset: 0;
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -248,7 +255,7 @@
 /* B2, the subdistrict table, is in mae-sai-command-queue.module.css; D, the right card, in mae-sai-command-inspector.module.css. */
 /* On a short desktop screen the clock card gives the table under it a few pixels: at 1440 x 800 the eight rows of the
    table are then at least 44 px tall in both languages. The notes keep their height, so nothing moves while playing. */
-@media (min-width: 1181px) and (max-height: 840px) {
+@media (min-width: 1181px) and (max-height: 900px) {
   .situation { padding: 6px var(--c-inset) 5px; }
   .situation:lang(th) { padding: 5px var(--c-inset) 4px; }
   .figuresHead { margin: 3px 0 2px; }

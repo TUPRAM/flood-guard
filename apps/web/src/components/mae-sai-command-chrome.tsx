@@ -43,7 +43,6 @@ import type { CommandMode } from "@/lib/flood-timeline-command-feed";
 import { EXERCISE_URGENCIES, exerciseMarkerSpec, type ExerciseUrgency } from "@/lib/flood-timeline-command-incidents";
 import { COMMAND_EXERCISE, COMMAND_LEGEND_REPORTS, COMMAND_MARKERS, COMMAND_MODE, COMMAND_URGENCY, commandDeviceSign, commandWaitingShort } from "@/lib/flood-timeline-command-reports-copy";
 import { COMMAND_ENVELOPE_RGBA, COMMAND_WATER_RGBA, COMMAND_WET_ROAD, commandScaleBar } from "@/lib/flood-timeline-command-map";
-import { studioReplayHref } from "@/lib/flood-timeline-command-replay";
 import { localizedText } from "@/lib/flood-timeline-copy";
 
 import act from "./mae-sai-command-act.module.css";
@@ -255,23 +254,19 @@ function ExerciseEntries({ language, exercise, layout }: { language: Language; e
   );
 }
 
-function NavItems({ language, hour, onLanguage, onHelp, exercise }: { language: Language; hour: number; onLanguage: (language: Language) => void; onHelp: () => void; exercise?: CommandExerciseMenu }) {
+/**
+ * The entries of the pill. The site's sections and the language are in the shared site header above the page
+ * (`WorkspaceHeader`, as on every other page), so the pill holds what only this page has: the exercise menu and help.
+ */
+function NavItems({ language, onHelp, exercise }: { language: Language; onHelp: () => void; exercise?: CommandExerciseMenu }) {
   const t = (entry: Localized) => pick(entry, language);
-  const other: Language = language === "th" ? "en" : "th";
   return (
     <>
-      <a className={styles.navItem} href="/public/"><span>{t(COMMAND_NAV.public)}</span></a>
-      <a className={styles.navItem} href={COMMAND_EXERCISE_ROUTE} aria-current="page"><span>{t(COMMAND_NAV.command)}</span></a>
-      <a className={styles.navItem} href={studioReplayHref(hour, language)} title={t(COMMAND_NAV.studioHint)}><span>{t(COMMAND_NAV.studio)}</span></a>
-      <span className={styles.navDivider} aria-hidden="true" />
       {exercise && (
         <button type="button" className={styles.navItem} onClick={() => exercise.onToggle(!exercise.open)} aria-expanded={exercise.open} title={t(COMMAND_EXERCISE_MENU.menu)} data-command-exercise-menu>
           <span className={act.navExercise}><ClipboardList size={16} aria-hidden="true" />{t(COMMAND_EXERCISE_MENU.label)}<ChevronDown size={14} aria-hidden="true" /></span>
         </button>
       )}
-      <button type="button" className={styles.navItem} onClick={() => onLanguage(other)} aria-label={t(COMMAND_NAV.switchLanguage)} data-command-language={other}>
-        <span lang={other}>{other === "th" ? "ไทย" : "EN"}</span>
-      </button>
       <button type="button" className={`${styles.navItem} ${styles.navRound}`} onClick={onHelp} aria-haspopup="dialog" aria-label={t(COMMAND_NAV.help)} title={`${t(COMMAND_NAV.help)} ( ? )`} data-command-help>
         <span><CircleHelp size={20} aria-hidden="true" /><span className={styles.navLabel}>{t(COMMAND_NAV.help)}</span></span>
       </button>
@@ -280,12 +275,10 @@ function NavItems({ language, hour, onLanguage, onHelp, exercise }: { language: 
 }
 
 /** The navigation pill of a desktop, and on a tablet one menu button that opens the same entries. */
-export function CommandNav({ language, hour, menuOpen, onMenu, onLanguage, onHelp, basemap, onBasemap, exercise, navRef }: {
+export function CommandNav({ language, menuOpen, onMenu, onHelp, basemap, onBasemap, exercise, navRef }: {
   language: Language;
-  hour: number;
   menuOpen: boolean;
   onMenu: (open: boolean) => void;
-  onLanguage: (language: Language) => void;
   onHelp: () => void;
   basemap: CommandBasemap;
   onBasemap: () => void;
@@ -303,7 +296,7 @@ export function CommandNav({ language, hour, menuOpen, onMenu, onLanguage, onHel
   return (
     <>
       <nav ref={navRef} className={styles.nav} data-region="C" data-clear-panel aria-label={t(COMMAND_NAV.label)} lang={language}>
-        <NavItems language={language} hour={hour} onLanguage={onLanguage} onHelp={onHelp} exercise={exercise} />
+        <NavItems language={language} onHelp={onHelp} exercise={exercise} />
       </nav>
       {exercise?.open && (
         <div ref={exercisePanel} className={`${styles.panel} ${act.exerciseMenu}`} role="group" aria-label={t(COMMAND_EXERCISE_MENU.menu)} lang={language} data-command-exercise-panel>
@@ -315,7 +308,7 @@ export function CommandNav({ language, hour, menuOpen, onMenu, onLanguage, onHel
       </button>
       {menuOpen && (
         <nav className={`${styles.panel} ${styles.menu}`} aria-label={t(COMMAND_NAV.label)} lang={language} data-command-menu-panel data-clear-panel>
-          <NavItems language={language} hour={hour} onLanguage={onLanguage} onHelp={() => { onMenu(false); onHelp(); }} />
+          <NavItems language={language} onHelp={() => { onMenu(false); onHelp(); }} />
           {exercise && (
             <>
               <hr />

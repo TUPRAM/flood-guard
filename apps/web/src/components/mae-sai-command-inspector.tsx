@@ -40,6 +40,7 @@ import {
   commandText,
   commandUnlocatedRecords,
 } from "@/lib/flood-timeline-command-copy";
+import { COMMAND_CLASS_CHECKLIST, COMMAND_CLASS_CHECKLIST_COPY } from "@/lib/flood-timeline-command-copy";
 import type { CommandMode } from "@/lib/flood-timeline-command-feed";
 import { commandKnownCount } from "@/lib/flood-timeline-command-reports-copy";
 import {
@@ -97,6 +98,13 @@ export function CommandCaseCard({ planningCase, cell, facts, language }: {
             </p>
           )}
           {cell.letter === "E" && <p className={styles.never} data-command-e-never-safe>{commandSentences([t(COMMAND_TABLE.eNeverSafe)], language)}</p>}
+          {cell.letter && (
+            <section className={styles.checklist} data-command-checklist={cell.letter} aria-label={t(COMMAND_CLASS_CHECKLIST_COPY.title)}>
+              <span className={exercise.eyebrow}>{t(COMMAND_CLASS_CHECKLIST_COPY.title)}</span>
+              <ol>{COMMAND_CLASS_CHECKLIST[cell.letter].map((item) => <li key={item.en}>{t(item)}</li>)}</ol>
+              <p className={styles.checklistNote} data-command-checklist-note>{t(COMMAND_CLASS_CHECKLIST_COPY.note)}</p>
+            </section>
+          )}
           <ul className={styles.facts}>{commandPlanningFactLines(cell, facts, language).map((line) => <li key={line}>{line}</li>)}</ul>
         </>
       ) : (

@@ -1,0 +1,30 @@
+{
+  "schema": "floodguard.automated_rights_basis.v1",
+  "source": "Copernicus Sentinel-2 Level-2A data, distributed as Element 84 Earth Search COGs",
+  "source_edition": "element84_cog_of_l2a",
+  "legal_notice_title": "Legal notice on the use of Copernicus Sentinel Data and Service Information",
+  "legal_notice_url": "https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice",
+  "permitted_lawful_uses": {
+    "a": "reproduction",
+    "b": "distribution",
+    "c": "communication to the public",
+    "d": "adaptation, modification and combination with other data and information"
+  },
+  "use_in_this_track": [
+    "download and reproduce the two Sentinel-2 scenes",
+    "resample and classify optical data into an automated reference",
+    "compare predeclared Sentinel-1 candidate masks with that automated reference",
+    "display small derived indicators and quicklooks on the Preview"
+  ],
+  "required_attribution_text": "Contains modified Copernicus Sentinel data 2024",
+  "signed_by_human": false,
+  "rights_basis_kind": "automated_legal_notice_record",
+  "human_rights_clearance": false,
+  "limitations": [
+    "The legal notice grants lawful data uses but does not establish scientific validity or fitness for emergency decisions.",
+    "The original SAFE archives were not acquired in this fallback; the Element 84 COG asset hashes bind the source edition used."
+  ],
+  "official_warning": false,
+  "operational_status": "non_operational",
+  "can_feed_decision_layer": false
+}

@@ -37,26 +37,16 @@ export function writeStoredDisplayName(storage: Storage | null, value: string): 
 }
 
 /**
- * Assigns a throwaway handle so the greeting has a name to use on first launch.
- * It is generated on the device, stored beside the chosen name, and carries no
- * personal information — the reader can replace it from the profile drawer.
- */
-export function generateGuestDisplayName(): string {
-  const suffix = Math.floor(Math.random() * 900) + 100;
-  return `Username${suffix}`;
-}
-
-/**
- * Returns the name to greet with, assigning and storing a guest handle the
- * first time. Storing it on assignment is what keeps the greeting stable
- * between visits instead of renaming the reader on every load.
+ * Returns only a name the reader chose. First visits use a generic greeting
+ * and create no identifier in local storage.
  */
 export function resolveInitialDisplayName(storage: Storage | null): string {
   const stored = readStoredDisplayName(storage);
-  if (stored) return stored;
-  const guest = generateGuestDisplayName();
-  writeStoredDisplayName(storage, guest);
-  return guest;
+  if (/^Username\d{3}$/.test(stored)) {
+    writeStoredDisplayName(storage, "");
+    return "";
+  }
+  return stored;
 }
 
 export function greetingText(displayName: string, language: Language): string {

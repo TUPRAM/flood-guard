@@ -3,6 +3,10 @@ import { createHash } from "node:crypto";
 import { relative, resolve, sep } from "node:path";
 import { readCaseReplay, timelineManifestUrl } from "./case-replay-inventory.mjs";
 import { fallbackArtworkUrls, readLandingArtwork, sceneArtworkUrls } from "./landing-artwork-inventory.mjs";
+import { auditEvidenceLibrary, EVIDENCE_CATALOG_ASSET, readWorkerEvidenceAreas } from "./evidence-library-assets.mjs";
+import { megabytes, verifyOfflineInstall } from "./offline-install-budget.mjs";
+import { collectPublicCaseAssets } from "./public-case-assets.mjs";
+import { collectCaseBriefAssets } from "./case-brief-assets.mjs";
 
 const requested = process.argv[2]?.trim().toLowerCase();
 const profile = requested === "public" || requested === "public-production"
@@ -21,7 +25,7 @@ if (JSON.stringify(deployment.included_surfaces) !== JSON.stringify(expectedSurf
 }
 
 const serviceWorker = readText("sw.js");
-for (const token of ["__BUILD__", "__APP_PROFILE__", "__CACHE_CREATED_AT__", "__PROFILE_CORE_ASSETS__", "__OPTIONAL_LANDING_ARTWORK__", "__OPTIONAL_CASE_REPLAY__", "__OPTIONAL_CASE_REPLAY_EXPORTS__"]) {
+for (const token of ["__BUILD__", "__APP_PROFILE__", "__CACHE_CREATED_AT__", "__PROFILE_CORE_ASSETS__", "__OPTIONAL_LANDING_ARTWORK__", "__OPTIONAL_CASE_REPLAY__", "__OPTIONAL_CASE_REPLAY_EXPORTS__", "__OPTIONAL_EVIDENCE_AREAS__"]) {
   if (serviceWorker.includes(token)) throw new Error(`Finalized service worker retains ${token}`);
 }
 if (!serviceWorker.includes(`const APP_PROFILE = "${profile}"`)) throw new Error("Service worker profile is incorrect.");
@@ -51,6 +55,8 @@ for (const required of [
 
 validatePublicProjection();
 validatePublicShell();
+// Hard budget of the blocking installation (12 MB), for both profiles: the artifact is refused above it.
+const install = verifyOfflineInstall(out);
 
 if (profile === "public-production") {
   validatePublicProduction();
@@ -58,7 +64,7 @@ if (profile === "public-production") {
   validateCompetition();
 }
 
-console.log(`deployment profile smoke: ${profile} artifact, routes, evidence payloads, cache inventory, and shipped-text boundary verified`);
+console.log(`deployment profile smoke: ${profile} artifact, routes, evidence payloads, cache inventory, and shipped-text boundary verified; blocking installation ${install.files} files, ${megabytes(install.bytes)} of ${megabytes(install.budget_bytes)} MB budget`);
 
 function validatePublicProduction() {
   if (deployment.staff_access !== "not_deployed" || deployment.cache_policy !== "public_projection_only") {
@@ -70,6 +76,10 @@ function validatePublicProduction() {
     "command",
     "studio",
     "studies",
+    "evidence-library",
+    "public-case-projections",
+    "briefs",
+    "public-cases",
     "offline-demo/bundle.json",
     "offline-demo/areas.geojson",
     "offline-demo/roads.geojson",
@@ -90,6 +100,7 @@ function validatePublicProduction() {
   if (!serviceWorker.includes("const OPTIONAL_CASE_REPLAY = [];") || !serviceWorker.includes("const OPTIONAL_CASE_REPLAY_EXPORTS = [];")) {
     throw new Error("Public service worker carries case-replay files.");
   }
+  if (!serviceWorker.includes("const OPTIONAL_EVIDENCE_AREAS = [];")) throw new Error("Public service worker carries study-area files.");
 
   const rootHtml = readText("index.html");
   if (!/class="[^"]*\bpublic-page\b[^"]*"/i.test(rootHtml)) throw new Error("Public root does not render the Public experience.");
@@ -101,6 +112,12 @@ function validatePublicProduction() {
   if (/data-fg-landing|href="\/command\/?"|href="\/studio\/?"|href="\/policy\/?"/i.test(rootHtml)) {
     throw new Error("Public root retains competition or staff navigation.");
   }
+  for (const asset of offlineAssets.filter((url) => url.endsWith(".js"))) {
+    const source = readFileSync(resolve(out, asset.slice(1)), "utf8");
+    if (source.includes("floodguard:landing-motion:v1") || source.includes("data-narrative-canvas")) {
+      throw new Error(`Public mandatory offline cache includes optional landing code: ${asset}`);
+    }
+  }
   for (const forbidden of [
     "data-fg-landing",
     "/landing/floodguard-v1/",
@@ -110,7 +127,12 @@ function validatePublicProduction() {
     "/offline-demo/mae-sai/facilities.json",
     "/offline-demo/mae-sai/access-hotspots.json",
     "/offline-demo/bundle.json",
+    // No address of a Command page in any shipped file: the list of pages the competition build keeps offline is
+    // compiled out of this profile (requiredOfflinePaths in pwa-register.tsx).
+    "/command/",
     "/api/v1/scenario-runs",
+    "/evidence-library/catalog.json",
+    "/public-case-projections/catalog.json",
     "OSM-11566575669",
     "synthetic-sar-baseline-v1",
     "mae-sai-2024-model-evaluation-blocked",
@@ -121,7 +143,7 @@ function validatePublicProduction() {
     if (hit) throw new Error(`Public profile contains staff-only sentinel ${JSON.stringify(forbidden)} in ${hit}`);
     if (serviceWorker.includes(forbidden)) throw new Error(`Public service-worker cache inventory contains ${forbidden}`);
   }
-  for (const route of ["/command/", "/studio/", "/policy/"]) {
+  for (const route of ["/command/", "/command/ver2/", "/command/cases/", "/command/archive/", "/studio/", "/studio/candidate-report/", "/studio/library/", "/studio/brief/", "/studio/archive/", "/policy/"]) {
     if (serviceWorker.includes(`"${route}"`)) throw new Error(`Public cache list contains staff route ${route}`);
   }
   // Also no page below those routes (e.g. the /studio/ case replay) in the built precache list.
@@ -164,6 +186,10 @@ function validateCompetition() {
   for (const required of [
     "policy/index.html",
     "command/index.html",
+    "command/ver2/index.html",
+    "command/cases/index.html",
+    "command/archive/index.html",
+    "public-cases/index.html",
     "studio/index.html",
     "studio/planning-evidence/index.html",
     "studio/archive/mae-sai-geoai/index.html",
@@ -172,6 +198,13 @@ function validateCompetition() {
     "studio/studies/c2s-ms-20260915/mae-sai/index.html",
     "studies/c2s-ms-20260915/r1/manifest.json",
     timelineManifestUrl().slice(1),
+    "studio/candidate-report/index.html",
+    "studio/library/index.html",
+    "studio/brief/index.html",
+    "studio/archive/index.html",
+    "evidence-library/catalog.json",
+    "public-case-projections/catalog.json",
+    "briefs/catalog.json",
     "offline-demo/bundle.json",
     "offline-demo/mae-sai/bundle.json",
     "offline-demo/mae-sai/roads.json",
@@ -216,8 +249,24 @@ function validateCompetition() {
     const actualHash = createHash("sha256").update(readFileSync(resolve(out, asset.url.slice(1)))).digest("hex");
     if (actualHash !== asset.sha256 || statSync(resolve(out, asset.url.slice(1))).size !== asset.bytes) throw new Error(`Landing art lacks versioned integrity: ${asset.url}`);
   }
-  for (const route of ["/", "/public/", "/command/", "/studio/", "/policy/"]) {
-    if (!serviceWorker.includes(`"${route}"`)) throw new Error(`Competition cache list omits ${route}`);
+  for (const name of ["hero-desktop.webp", "hero-mobile.webp"]) {
+    if (existsSync(resolve(out, "landing", name)) || rootHtml.includes(`/landing/${name}`)) {
+      throw new Error(`Competition profile published an unapproved aerial reference: ${name}`);
+    }
+  }
+  for (const route of ["/", "/public/", "/public-cases/", "/command/", "/command/ver2/", "/command/cases/", "/command/archive/", "/studio/", "/studio/planning-evidence/", "/studio/candidate-report/", "/studio/library/", "/studio/brief/", "/studio/archive/", "/policy/", EVIDENCE_CATALOG_ASSET, ...collectPublicCaseAssets(out), ...collectCaseBriefAssets(out)]) {
+    if (!coreUrls.includes(route)) throw new Error(`Competition cache list omits ${route}`);
+  }
+  // The evidence library: its catalogue is precached; each study area is a deferred bucket saved when opened or on request, and
+  // its database archives are never kept by the worker.
+  const evidenceLibrary = auditEvidenceLibrary(out);
+  if (evidenceLibrary.areas.length === 0 || JSON.stringify(readWorkerEvidenceAreas(serviceWorker)) !== JSON.stringify(evidenceLibrary.areas)) {
+    throw new Error("The worker's study-area lists do not match the published evidence library.");
+  }
+  const libraryInCore = coreUrls.filter((url) => url.startsWith("/evidence-library/") && url !== EVIDENCE_CATALOG_ASSET);
+  if (libraryInCore.length > 0) throw new Error(`Evidence-library files were added to blocking installation: ${libraryInCore.join(", ")}`);
+  for (const archive of evidenceLibrary.onlineOnly) {
+    if (serviceWorker.includes(`"${archive.url}"`)) throw new Error(`A database archive is named in the service worker: ${archive.url}`);
   }
   const bundle = readJson("offline-demo/mae-sai/bundle.json");
   if (

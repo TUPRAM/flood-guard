@@ -1,0 +1,215 @@
+{
+  "schema": "floodguard.automated_preregistration.v1",
+  "plan_id": "mae_sai_automated_observation_v1",
+  "status": "preregistered",
+  "preregistered_at_utc": "2026-09-24T09:51:31Z",
+  "preregistered_by": "automated agent (Codex)",
+  "event_id": "TH-MAESAI-2024-09",
+  "study_area_id": "aoi-01_mae_sai_core",
+  "observation_target": "New inundation visible at the Sentinel-1 post acquisition 2024-09-15T23:16:01Z relative to 2024-09-03T23:16:00Z, inside AOI-01; not the full September flood peak.",
+  "source": {
+    "edition": "element84_cog_of_l2a",
+    "original_safe_sha256": "not_recorded",
+    "asset_manifest": "outputs/earth_search_mae_sai_sentinel2_reference_assets.csv",
+    "assets": [
+      "blue",
+      "green",
+      "red",
+      "nir",
+      "nir08",
+      "swir16",
+      "swir22",
+      "scl"
+    ],
+    "event_item_id": "S2B_47QNC_20240915_0_L2A",
+    "event_product_uri": "S2B_MSIL2A_20240915T034529_N0511_R104_T47QNC_20240915T065143.SAFE",
+    "event_sensing_utc": "2024-09-15T03:45:29Z",
+    "dry_context_item_id": "S2B_47QNC_20240905_0_L2A",
+    "dry_context_product_uri": "S2B_MSIL2A_20240905T034539_N0511_R104_T47QNC_20240905T080012.SAFE",
+    "dry_context_sensing_utc": "2024-09-05T03:45:39Z"
+  },
+  "grid": {
+    "crs": "EPSG:32647",
+    "pixel_size_m": 10,
+    "origin": "T47QNC event blue 10 m COG affine origin",
+    "aoi_path": "resources/aoi/aoi-01_mae_sai_core.geojson",
+    "aoi_rasterization": "pixel_center_all_touched_false",
+    "ten_m_band_resampling": "nearest",
+    "twenty_m_reflectance_resampling": "bilinear",
+    "scl_resampling": "nearest"
+  },
+  "reflectance": {
+    "valid_dn_rule": "DN > 0",
+    "conversion": "clip(DN * 0.0001 - 0.1, 0, 1)",
+    "denominator_epsilon": 1e-06,
+    "invalid_band_rule": "unobservable for event; uncertain if dry context is needed for a water cell"
+  },
+  "methods": {
+    "A": {
+      "id": "omniwatermask_optical_v1",
+      "method_family": "pretrained_optical_water_model",
+      "geoai_py_version": "0.41.1",
+      "omniwatermask_version": "0.5.0",
+      "model_version": "OmniWaterMask_0.5.0",
+      "input_stack": [
+        "blue",
+        "green",
+        "red",
+        "nir",
+        "swir16",
+        "swir22"
+      ],
+      "band_order_red_green_blue_nir": [
+        3,
+        2,
+        1,
+        4
+      ],
+      "max_input_dimension_pixels": 512,
+      "downsample": "nearest_numpy_linspace_integer_indices",
+      "upsample_to_grid": "nearest",
+      "batch_size": 1,
+      "device": "cpu",
+      "dtype": "float32",
+      "no_data_value": -9999,
+      "patch_size": 512,
+      "overlap_size": 0,
+      "use_osm_water": false,
+      "use_osm_building": false,
+      "use_osm_roads": false,
+      "use_cache": false,
+      "model_download_source": "hugging_face",
+      "output_water_rule": "output raster band 1 > 0",
+      "threshold_policy": "The pinned pretrained package selects its internal model and NDWI thresholds; no agent-selected or SAR-tuned threshold is permitted."
+    },
+    "B": {
+      "id": "fixed_multi_index_spectral_v1",
+      "method_family": "fixed_physical_spectral_rule",
+      "mndwi": "(green - swir16) / (green + swir16)",
+      "mndwi_gt": 0.1,
+      "awei_sh": "blue + 2.5*green - 1.5*(nir + swir16) - 0.25*swir22",
+      "awei_sh_gt": 0.0,
+      "ndvi": "(nir - red) / (nir + red)",
+      "ndvi_lt": 0.2,
+      "combination": "mndwi_gt AND awei_sh_gt AND ndvi_lt",
+      "invalid_denominator_rule": "unobservable for event; uncertain if dry context is needed for a water cell"
+    }
+  },
+  "unobservable": {
+    "scl_codes": [
+      0,
+      3,
+      8,
+      9,
+      10
+    ],
+    "buffer_m": 20,
+    "buffer_distance": "Euclidean distance between 10 m pixel centers, inclusive",
+    "apply_to": [
+      "event",
+      "dry_context"
+    ]
+  },
+  "permanent_water_rule": "For event water agreed by A and B, code 2 only if both A and B also say water on observable 5 September cells; code 1 only if both say dry there; otherwise code 3 uncertain.",
+  "label_assignment": {
+    "outside_aoi": 255,
+    "event_unobservable_or_missing_band": 4,
+    "both_event_methods_dry": 0,
+    "both_event_methods_water_and_both_dry_methods_dry": 1,
+    "both_event_methods_water_and_both_dry_methods_water": 2,
+    "event_methods_disagree_or_dry_context_indeterminate_for_event_water": 3
+  },
+  "cross_review_metrics": [
+    "water_dice",
+    "cohen_kappa"
+  ],
+  "cross_review_limits": {
+    "min_water_dice": 0.6,
+    "min_cohen_kappa": 0.5
+  },
+  "cross_review_limit_justifications": {
+    "min_water_dice": "A Dice of at least 0.60 requires substantial overlap of the two automated water maps before their consensus is highlighted.",
+    "min_cohen_kappa": "Kappa of at least 0.50 requires chance-adjusted agreement beyond the large dry background."
+  },
+  "candidate_products": [
+    {
+      "product_id": "mae_sai_m2_gamma0_10m_otsu_candidate",
+      "processing_variant": "radiometrically_calibrated_gamma0",
+      "native_pixel_size_m": 10,
+      "raster_sha256": "a6482a70fbf959d47d612a94e4250942e831efe4bf32ae90cd7920509c293593",
+      "source_receipt_sha256": "7814cfb5f936952a581ab72c40bde7ab14f638715834f39974dddfa81c5394fe",
+      "source_receipt_kind": "candidate_receipt.json",
+      "method": "M2 Gamma0 abstaining Otsu",
+      "threshold_policy": "Use the existing frozen candidate mask; no re-thresholding."
+    },
+    {
+      "product_id": "mae_sai_20m_amplitude_comparator",
+      "processing_variant": "raw_uncalibrated_amplitude",
+      "native_pixel_size_m": 20,
+      "raster_sha256": "11449c9696e06517f3b2cc8a1ef47cd240b4be9277b90b2d4d44f6b11fc80402",
+      "source_receipt_sha256": "7100794606d14a0bb48083a0e9c9b4677521555e72d49ea7a059f38276cd3dd1",
+      "source_receipt_kind": "candidate manifest",
+      "method": "gcp_order_2_warp_uncalibrated_amplitude_change_v1",
+      "existing_threshold_db": 2.25,
+      "threshold_policy": "Use the existing frozen candidate mask; no re-thresholding."
+    }
+  ],
+  "candidate_alignment": {
+    "resampling": "nearest",
+    "outside_footprint_or_nodata": 255,
+    "allowed_codes": [
+      0,
+      1,
+      255
+    ]
+  },
+  "partition": {
+    "block_size_m": 1000,
+    "halo_m": 200,
+    "seed": "mae-sai-2024-observation-eval-v1",
+    "development_fraction": 0.5
+  },
+  "roles_in_order": [
+    "development",
+    "final_holdout"
+  ],
+  "final_holdout_rule": "One exclusive automated_holdout_consumption marker for one result containing both predeclared candidates; never reopen or rerun final_holdout.",
+  "scored_reference_codes": [
+    0,
+    1
+  ],
+  "boundary_tolerance_m": 20,
+  "evaluation_metrics": [
+    "confusion",
+    "iou",
+    "dice",
+    "precision",
+    "recall",
+    "signed_area_error_fraction",
+    "abs_area_error_fraction",
+    "evaluated_coverage",
+    "boundary_f1_20m",
+    "possible_recession_candidate_cells"
+  ],
+  "acceptance_limits": {
+    "min_iou": 0.3,
+    "min_precision": 0.5,
+    "min_recall": 0.5,
+    "max_abs_area_error_fraction": 0.5,
+    "min_evaluated_coverage": 0.5
+  },
+  "acceptance_limit_justifications": {
+    "min_iou": "IoU of at least 0.30 rejects a severely mismatched flood footprint while allowing the known same-day timing gap.",
+    "min_precision": "Precision of at least 0.50 requires at least half of predicted flooded cells to agree with the automated optical map.",
+    "min_recall": "Recall of at least 0.50 rejects a candidate that misses most optically mapped temporary water.",
+    "max_abs_area_error_fraction": "Area error no greater than 0.50 rejects candidates whose predicted flooded area differs from the optical map by more than half.",
+    "min_evaluated_coverage": "Coverage of at least 0.50 prevents a mostly abstaining or out-of-footprint candidate from passing on a tiny scored subset."
+  },
+  "possible_recession_rule": "Count reference code 1 with candidate code 0 separately as a time-gap diagnostic; this is not proof of recession and does not change the confusion matrix.",
+  "metric_interpretation": "Agreement with an automated optical map, not accuracy.",
+  "human_reviewed": false,
+  "official_warning": false,
+  "operational_status": "non_operational",
+  "can_feed_decision_layer": false,
+  "preregistration_sha256": "bc5c6e9d2237a6423655e44790d0455131990ba954819265101f722d518cf543"
+}

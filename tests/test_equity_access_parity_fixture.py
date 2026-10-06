@@ -3,7 +3,7 @@
 The web tests check ``flood-timeline-evacuation.ts`` against
 ``apps/web/src/lib/__fixtures__/mae-sai-equity-access-parity.json``. That only proves parity with Python if
 the fixture is current, so this test regenerates it in memory and compares. When it fails, a rule changed in
-``floodguard.replay_equity``, ``floodguard.shelter_set_comparison``, ``floodguard.equity`` or
+``floodguard.replay_equity``, ``floodguard.shelter_set_comparison``, ``floodguard.equity_v1`` or
 ``scripts/mae_sai_timeline_evacuation.py`` (or the served manifest changed): run
 ``python apps/web/scripts/equity-access-parity-fixture.py`` and let the web tests judge the TypeScript side.
 """
@@ -67,7 +67,7 @@ def test_edge_cases_cover_both_null_reasons_of_the_replay_rule(generator) -> Non
     rows = edge_rows(generator)
     no_loss = [None, None, "Equity gap not computed: neither group has lost access.", "no_loss"]
     too_small = [None, None, TOO_SMALL, "insufficient_group_denominator"]
-    # Nobody has lost access: no ratio (never the 1.0 that floodguard.equity states), with the reason.
+    # Nobody has lost access: no ratio (never the 1.0 that floodguard.equity_v1 states), with the reason.
     for name in ("no loss in either group", "no loss, both groups large", "no loss, groups of exactly 50"):
         assert rows[name][4:] == [0.0, 0.0, *no_loss], name
         assert (rows[name][0], rows[name][2]) == (0.0, 0.0), name

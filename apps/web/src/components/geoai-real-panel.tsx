@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { EvidenceNotice } from "@/components/evidence-notice";
 import { StatePill } from "@/components/state-pill";
 import { formatConfidence } from "@/lib/format";
+import { ResearchReportNotice } from "@/components/research-report-notice";
+import { parseGeoaiResearchBundle } from "@/lib/geoai-research-bundle";
 import type { Language } from "@/lib/types";
 
 import styles from "./geoai-real-panel.module.css";
@@ -77,15 +79,30 @@ const ACTION_LABEL: Record<string, { en: string; th: string }> = {
   E: { en: "Monitor & verify", th: "เฝ้าระวัง" },
 };
 
+/**
+ * The research report is shown in Studio only. On Command its place is taken by a short notice (owner decision of
+ * 4 Oct 2026, R17): a caller that asks for the Command variant never gets the score table.
+ */
 export function GeoaiRealPanel({
   language = "en",
   variant = "studio",
-  planningDataVersion,
   archiveRecord,
 }: {
   language?: Language;
   variant?: "studio" | "command" | "archive";
-  planningDataVersion?: string;
+  archiveRecord?: { href: string; sha256: string };
+}) {
+  if (variant === "command") return <ResearchReportNotice language={language} />;
+  return <GeoaiResearchReport language={language} variant={variant} archiveRecord={archiveRecord} />;
+}
+
+function GeoaiResearchReport({
+  language,
+  variant,
+  archiveRecord,
+}: {
+  language: Language;
+  variant: "studio" | "archive";
   archiveRecord?: { href: string; sha256: string };
 }) {
   const th = language === "th";
@@ -104,7 +121,10 @@ export function GeoaiRealPanel({
           const actual = Array.from(new Uint8Array(hash), (byte) => byte.toString(16).padStart(2, "0")).join("");
           if (actual !== archiveRecord.sha256) throw new Error("Historical report checksum mismatch");
         }
-        return JSON.parse(new TextDecoder().decode(bytes)) as GeoaiRealBundle;
+        // Nothing is shown unless the report states its own limits (not an official warning, candidate tier,
+        // report only, cannot feed the decision layer) and its display fields are well formed.
+        const checked: GeoaiRealBundle = parseGeoaiResearchBundle(JSON.parse(new TextDecoder().decode(bytes)));
+        return checked;
       })
       .then((data: GeoaiRealBundle) => {
         if (active) setBundle(data);
@@ -133,13 +153,7 @@ export function GeoaiRealPanel({
       <div className="section-heading">
         <div>
           <p className="eyebrow">
-            {variant === "command"
-              ? th
-                ? "รายงานวิจัย GeoAI · แยกจากการจัดลำดับเพื่อวางแผน"
-                : "GEOAI RESEARCH · SEPARATE FROM PLANNING RANKING"
-              : th
-                ? "รายงานวิจัย GeoAI · ข้อมูลย้อนหลัง"
-                : "GEOAI RESEARCH · HISTORICAL EVIDENCE"}
+            {th ? "รายงานวิจัย GeoAI · ข้อมูลย้อนหลัง" : "GEOAI RESEARCH · HISTORICAL EVIDENCE"}
           </p>
           <h2 id="geoai-real-title">
             {th
@@ -163,12 +177,6 @@ export function GeoaiRealPanel({
           ? "รายงานวิจัยจากข้อมูลย้อนหลังนี้ใช้ข้อมูลนำเข้าและสมมติฐานต่างจากมุมมองการวางแผน คะแนน FPPS ชั้น A–E และความเชื่อมั่นของแบบจำลองในรายงานนี้ไม่ใช้กำหนดลำดับ สีแผนที่ หรือข้อเสนอการดำเนินการในมุมมองการวางแผน ไม่ใช่คำเตือนภัยอย่างเป็นทางการ"
           : "This historical research report uses different inputs and assumptions from the planning view. Its FPPS, A–E classes and model confidence do not set the planning workspace ranking, map colors or recommended actions. Not an official warning."}
       </EvidenceNotice>
-
-      {variant === "command" && planningDataVersion && (
-        <p className={styles.detail}>
-          {th ? "รุ่นข้อมูลที่ใช้ในลำดับและหลักฐานพื้นที่ด้านบน" : "Data version used by the ranking and area evidence above"}: {planningDataVersion}
-        </p>
-      )}
 
       {h && (
         <div className={styles.chips}>

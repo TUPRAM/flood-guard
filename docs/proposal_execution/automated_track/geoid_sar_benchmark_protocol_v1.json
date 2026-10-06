@@ -1,0 +1,64 @@
+{
+  "schema": "floodguard.geoid_sar_benchmark_protocol.v1",
+  "purpose": "Diagnostic test of the frozen Mae Sai adaptive-Otsu radar decision rule on a separate mapped flood event.",
+  "dataset": {
+    "repository": "links-ads/geoid-flood",
+    "revision": "868407460bf3db492f50730a57585916baa71dc6",
+    "selection": "All 29 tiles of sample AOI EMSR712-3; no tile selection by labels or scores.",
+    "event_id": "EMSR712",
+    "aoi_id": "EMSR712-3",
+    "split_name_in_dataset": "test",
+    "source_layer": "s1grd",
+    "source_radiometry": "linear_sigma0_VV_VH_pre_and_post",
+    "reference_layers": ["label", "validity"],
+    "reference_semantics": {
+      "0": "mapped background, not independently confirmed dry",
+      "1": "permanent water",
+      "2": "mapped flood",
+      "255": "outside mapped area or invalid"
+    },
+    "source_overlap": "CEMS AOI03 MONIT04 uses the 2024-01-03 05:34 Sentinel-1 acquisition also supplied as the sample post-event S1GRD. Agreement with this CEMS-derived map is not independent accuracy. CEMS monitoring extent may accumulate earlier mapped flood; the packaged label's exact vector lineage must be checked and any unresolved ambiguity reported.",
+    "sources": [
+      "https://huggingface.co/datasets/links-ads/geoid-flood",
+      "https://arxiv.org/html/2608.02315v1",
+      "https://rapidmapping.emergency.copernicus.eu/backend/dashboard-api/public-activations/?code=EMSR712"
+    ]
+  },
+  "prediction": {
+    "uses_only": ["s1grd_pre", "s1grd_post"],
+    "forbidden_inputs": ["label", "validity", "floodmask", "permwater", "s2l2a"],
+    "valid_radiometry": "All four VV/VH source values must be finite and strictly positive linear sigma0; otherwise abstain.",
+    "conversion": "10 * log10(linear_sigma0)",
+    "change_db": "0.4 * (pre_VV_db - post_VV_db) + 0.6 * (pre_VH_db - post_VH_db)",
+    "otsu_parameters": {
+      "window_pixels": 256,
+      "stride_pixels": 128,
+      "min_valid_samples": 4096,
+      "histogram_bins": 64,
+      "min_class_fraction": 0.08,
+      "min_mean_separation_db": 1.5,
+      "min_between_variance_fraction": 0.72
+    },
+    "threshold_surface": "Arithmetic mean of qualified overlapping-window thresholds on each tile.",
+    "positive_rule": "change_db >= threshold_db AND change_db > 0 AND VV_drop_db > 0 AND VH_drop_db > 0",
+    "abstain_rule": "Invalid source radiometry or no qualified overlapping window.",
+    "adaptation_limits": "This is a separate S1GRD Sigma0 research adapter. It does not run the Mae Sai Gamma0 SNAP preprocessing contract; it omits the M2 permanent-water and terrain-slope input masks rather than deriving them from benchmark labels."
+  },
+  "evaluation": {
+    "primary_comparison": "label 2 versus labels 0 and 1 in mapped validity=1 cells; label 255 and validity=0 excluded",
+    "secondary_comparison": "label 2 versus label 0, with permanent-water label 1 excluded and its count disclosed",
+    "metrics": ["true_positive", "false_positive", "false_negative", "true_negative", "iou", "dice", "precision", "recall", "evaluated_coverage", "reference_flood_cells", "predicted_flood_cells"],
+    "aggregation": "Sum confusion counts across all 29 tiles before computing aggregate ratios; report per-tile counts and scores too.",
+    "zero_denominator": "Report null; never replace an undefined score with zero.",
+    "acceptance_limits": null,
+    "reason_no_limits": "One source-correlated sample activation is a diagnostic, not a confirmatory holdout or independent accuracy study."
+  },
+  "safety": {
+    "evidence_tier": "research_benchmark_diagnostic",
+    "human_reviewed_by_floodguard": false,
+    "accepted_observation": false,
+    "official_warning": false,
+    "can_feed_decision_layer": false,
+    "score_description": "Agreement with CEMS-derived benchmark labels, not independent flood accuracy or Mae Sai validation."
+  }
+}

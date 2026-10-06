@@ -1,0 +1,586 @@
+{
+  "schema_version": "floodguard.critical_links_e6.v1",
+  "generated_at_utc": "2026-10-04T09:14:47Z",
+  "protocol_item": "Plan task E6 (plan 8.1, row E6): protocol v1b critical_link_selection (open item OI-07; owner choices 9 and 10; drafter readings DR-B03 and DR-B06)",
+  "case": "se1_mae_sai",
+  "travel_mode": "legacy_vehicle",
+  "run_kind": "superseding_run",
+  "status": "superseding_run_unreviewed_candidates",
+  "status_note": "A run of plan task E6 on the E4 planning context of record that supersedes the run generated 2026-10-04T09:10:45Z (2 earlier runs; the first run was generated 2026-10-04T08:24:35Z). The links are unreviewed candidates: the desk check of the top 20 (plan task V1) has not been done, and no link is an observed closure. Protocol v1b critical_link_selection.ranking_output (owner choice 10) says: \"v1b is signed with the rule alone; the ranking's SHA-256 is recorded in the receipt of the first run, before any scoring.\" The receipt of the first run recorded the SHA-256 dad48c4993c1545ce0142f2dfe98d7b6af8858fda1dc2364914207e14115307c for the whole ranking table. This run computed the same table, so that record stands and the receipt of this run repeats it. The owners' answers to open points E6-OP1 (grade-join connectors) and E6-OP5 (what the graph bridges are added to) can change the ranking; they are needed before a later task uses that SHA-256.",
+  "run_history": {
+    "earlier_runs": [
+      {
+        "run_kind": "first_run",
+        "generated_at_utc": "2026-10-04T08:24:35Z",
+        "evidence_sha256": "bcebbb953807507fb14564c1ab5d513d982f0edd0231d01d2368a93f83b61474",
+        "top_20_sha256": "18f1b9f39d09cf4f5bb98d412003de64a301f45a1cdf369f217e3c0da94dc0f1",
+        "ranking_table_sha256": "dad48c4993c1545ce0142f2dfe98d7b6af8858fda1dc2364914207e14115307c",
+        "replaced_because": "A review on 4 October 2026 found that the receipt of the first run left out open points (what 'Add graph bridges' adds the bridges to; a connector among the highest-ranked links of a unit; a zero-minute edge between two destination nodes), said the ranking's SHA-256 is recorded by the first scoring run where protocol v1b says the first run, and that a superseding run would have called itself the first run. This run adds those points and their counts. The ranking rule and the ranking table are the same."
+      },
+      {
+        "run_kind": "superseding_run",
+        "generated_at_utc": "2026-10-04T09:10:45Z",
+        "evidence_sha256": "1d5fe5180b91399f2f85a0115c9d085ad2908ab238588ae6202f502405b8f657",
+        "top_20_sha256": "0b94382a14b7a590c34ea7512d688c57ac08ac98f5bb6fc4a956a15768a36b9a",
+        "ranking_table_sha256": "dad48c4993c1545ce0142f2dfe98d7b6af8858fda1dc2364914207e14115307c",
+        "replaced_because": "The receipt of the run generated 2026-10-04T09:10:45Z said under open point E6-OP1 that a connector is ranked directly ahead of one road edge, which holds for 90 of the 168 ranked connectors, and under open point E6-OP7 it counted the residents standing at a destination node that is routed onward, not those whose route reaches it. This run corrects both texts and both counts and adds the count of connectors that share their flow with a road edge. The ranking rule and the ranking table are the same."
+      }
+    ],
+    "first_run_generated_at_utc": "2026-10-04T08:24:35Z",
+    "ranking_table_sha256_recorded_by_the_first_run": "dad48c4993c1545ce0142f2dfe98d7b6af8858fda1dc2364914207e14115307c",
+    "this_run_computed_that_ranking_table": true,
+    "note": "The earlier runs, oldest first. Each was replaced by the run after it; evidence_sha256 is the SHA-256 of the receipt that was replaced. A replaced file is in the Git history if its run was committed."
+  },
+  "official_warning": false,
+  "operational_status": "non_operational",
+  "computes": "One baseline ranking of road links by the residents whose baseline route uses them, the graph bridges of the baseline graph, and the unit of each ranked link. No flood layer, no closure, no reroute, no access loss, no FPPS, no A-E class, no ensemble, and no figure for a single tambon.",
+  "source_timestamp": "2026-07-10T02:46:49Z",
+  "source_timestamps": {
+    "osm_retrieved_at_utc": "2026-07-10T02:46:49Z",
+    "population_year_represented": 2020,
+    "boundaries_valid_on": "2022-01-22",
+    "context_generated_at": "2026-10-03T05:28:59.223644+00:00"
+  },
+  "confidence_class": "low",
+  "confidence_basis": "OSM roads and hospitals are unverified map records, and WorldPop 2020 is a modelled resident count. Routes are modelled class speeds on an undirected graph, and the grade joins are coordinate coincidences whose passability is unknown. No link was checked against imagery, on the ground or by a reviewer.",
+  "protocols_in_force": {
+    "v1a": {
+      "path": "docs/proposal_execution/planning_protocol_v1a.json",
+      "sha256": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954"
+    },
+    "v1b": {
+      "path": "docs/proposal_execution/planning_protocol_v1b.json",
+      "sha256": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+    },
+    "receipts_file": "docs/proposal_execution/RECEIPTS.jsonl",
+    "checked": true
+  },
+  "rule": {
+    "rule": [
+      "Rank baseline vehicle edges by demand-weighted shortest-path-tree flow.",
+      "Add graph bridges (Tarjan) to cover the all-routes-lost case.",
+      "Fully reroute only the top 200 ranked edges.",
+      "Output the top 20 per case, each with a bridge flag and an in-extent flag."
+    ],
+    "parameters": {
+      "full_reroute_top_n": 200,
+      "output_top_n": 20,
+      "tie_break": "stable edge ID"
+    },
+    "demand_weight": "WorldPop 2020 residents at each origin node.",
+    "destination_set_for_ranking": "The public facility set (OSM hospitals and main-road entry), vehicle mode, so the ranking does not depend on DDPM data.",
+    "main_road_entry_definition": "The destination is the nearest node on a trunk or primary edge (including links) inside the routing context.",
+    "unit_rule": "The three highest-ranked links of the baseline critical-link ranking whose edge lies in the tambon. An edge that crosses a tambon boundary belongs to the tambon that holds its midpoint. Ties break on stable edge ID.",
+    "links_per_unit": 3,
+    "uses_flood_input": false,
+    "ranking_output_binding": "bound_in_first_run_receipt",
+    "ranking_output_binding_wording": "v1b is signed with the rule alone; the ranking's SHA-256 is recorded in the receipt of the first run, before any scoring.",
+    "readings_and_choices": "Drafter readings DR-B03 (demand weight, tie-break), DR-B06 (unit of a link) and DR-B07 (the ranking may run without a flood input); owner choices 9 (destinations) and 10 (binding), decision log R12."
+  },
+  "rule_as_applied": {
+    "ranking_rule_version": "critical_link_ranking_v1",
+    "module": "src/floodguard/critical_links.py",
+    "tree": "One multi-source shortest-path tree from every destination, with the comparisons of floodguard.evidence_interventions.select_interventions: smallest (minutes, destination ID), then smallest (parent node ID, edge ID).",
+    "ranked": "Edges with a positive flow, by flow (largest first) and then by edge ID.",
+    "graph_bridges": "Flagged on every ranked link (Tarjan). Nothing is added to the ranked set, to the 200 edges of the full reroute or to the 20 of the output: the protocol does not say what the bridges are added to (open point E6-OP5).",
+    "population_snap_limit_m": 250.0,
+    "facility_snap_limit_m": 100.0,
+    "connector_speed_kmh": 5.0,
+    "unit_assignment_epsg": 32647
+  },
+  "inputs": {
+    "e4_receipt": {
+      "path": "outputs/planning_v1/e4_planning_context_se1_vehicle.json",
+      "sha256": "690add44186d02cb501dccb152678fbf03cf109acc041a5c782af705993f2ad2",
+      "is_the_receipt_protocol_v1b_records": true
+    },
+    "context": {
+      "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e4_vehicle/context_inputs.json",
+      "canonical_sha256": "0b2672b6d4d1d94da3a4c39d819d980a9e5bf7845bb22fea1284a2893a6351a6",
+      "file_sha256": "37e47f2e4cede433aa709e0154e9d39e921d1359d69b10642e3385267ca01385",
+      "context_generated_at": "2026-10-03T05:28:59.223644+00:00",
+      "canonical_sha256_is_the_one_in_the_e4_receipt": true,
+      "note": "The context of record, kept outside Git by the E4 build. Its canonical SHA-256 was recomputed from the file before the ranking; nothing was rebuilt."
+    },
+    "source_files_of_the_context": {
+      "aoi_geometry": "7ce3ee8f4eabd3390a5fb04ca9a3f449322ca047c5c49ab5fa6b3fa43d9538de",
+      "extracted_osm_points": "10d5c78e786fc40b340ef144835bec6d80f1509a114fce3fed1edd8f91a7bcd7",
+      "extracted_osm_roads": "bd781d472ee223e4c3a2a910c035b6ebe5617f8de67dcf5b91ca3c33df42e333",
+      "osm": "b7f46018249638413b1d318bc86519f140c27af20cac7c00d42fe03775b7add1",
+      "public_origin_records": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "reporting_geometry": "609801855b25bc5298eeb7b1dc6a36b36573249372aa38110cae7b2da3ca71c2",
+      "reviewed_junctions": "d6748d29953d4b3af3f980e3006a589cb81dd2492a382a080567e61b93abe9eb",
+      "routing_geometry": "4b271a6619db2a78442476895c58f93e6ba1079ff6b7bb52f63cabefa796353b",
+      "supplied_facilities": "a43bb3e5f4d0419aba7b09a8e4f8138600971785523669675ebda01c9e197865",
+      "worldpop": "fb39d85dd150c45c7b25771f29bcd548e611afa0967224ac6d8ca05727230e20"
+    },
+    "boundaries": {
+      "path": "<external_data_workspace>/open_context/hdx_cod_ab/tha_admin_boundaries.gdb.zip",
+      "sha256": "09e62345481bb80030ff6779e074bfb2c16629b70ae1e373ebd31945f1c6e0d8",
+      "layer": "tha_admin3"
+    },
+    "routing_geometry": {
+      "path": "outputs/planning_v1/corridor_of_record.geojson",
+      "sha256": "4e49d5eca2f7522e2de10cf81cc68b4ebcbea036225d1b862f4a80cb1affbac2"
+    }
+  },
+  "graph": {
+    "context_edges": 65328,
+    "grade_join_connectors": 345,
+    "joins_sha256": "d289f728feafef649687b39f7da71228c79427bf377f7e63bc1c0eed4f2ee357",
+    "join_log": {
+      "path": "outputs/planning_v1/grade_join_log_e4_se1_vehicle.json",
+      "sha256": "a337fee5c17d81b1b61fc64114c09e59103174282702aa01e33905d051fb636e"
+    },
+    "edges": 65673,
+    "nodes": 62378,
+    "nodes_reached_by_the_tree": 61930,
+    "graph_bridge_edges": 23311
+  },
+  "destinations": {
+    "set": "public",
+    "hospitals": 6,
+    "hospital_facility_ids": [
+      "OSM-node-7856667792",
+      "OSM-way-1010348419",
+      "OSM-way-371233866",
+      "OSM-way-447735125",
+      "OSM-way-527539157",
+      "OSM-way-549948901"
+    ],
+    "main_road_entries": 1939,
+    "main_road_entry_node_ids_sha256": "10d17aa72a96150ffbbfc2d2fddd53bc921ede042fdebe66540b8a43092da15d",
+    "ddpm_shelters_used": 0,
+    "same_as_the_e4_receipt": true,
+    "supplied_to_the_tree": 1945,
+    "that_are_a_nearest_destination": {
+      "hospital": 1,
+      "main_road_entry": 446
+    }
+  },
+  "units": {
+    "rule": "The COD-AB tha_admin3 polygons that intersect the routing geometry: the reporting units of the E4 context. A link belongs to the unit that holds the midpoint of its edge (drafter reading DR-B06).",
+    "units": 26,
+    "union_canonical_sha256": "609801855b25bc5298eeb7b1dc6a36b36573249372aa38110cae7b2da3ca71c2",
+    "union_is_the_reporting_geometry_of_the_context": true
+  },
+  "demand": {
+    "source": "WorldPop 2020 cells of the context (the demand area of the case), summed at the road node each cell snaps to.",
+    "population_cells": 36765,
+    "residents": 81836.889439,
+    "residents_connected_to_the_graph": 75226.97719,
+    "residents_not_connected_to_the_graph": 6609.912249,
+    "connected_residents_with_a_baseline_route": 75170.530353,
+    "connected_residents_without_a_baseline_route": 56.446837,
+    "origin_nodes": 13378,
+    "origin_nodes_with_a_baseline_route": 13372,
+    "residents_by_nearest_destination_service": {
+      "hospital": 292.652781,
+      "main_road_entry": 74877.877573
+    },
+    "share_of_routed_residents_by_nearest_destination_service": {
+      "hospital": 0.003893,
+      "main_road_entry": 0.996107
+    },
+    "destination_nodes_routed_onward_at_an_equal_time": {
+      "nodes": 40,
+      "nodes_carrying_residents_onward": 0,
+      "residents_carried_onward": 0.0,
+      "note": "Destination nodes that another destination with a smaller ID reaches in exactly the node's own entry time, as across a zero-minute grade join between two main-road entries. Every resident whose route reaches such a node counts on the edge that leaves it (open point E6-OP7)."
+    },
+    "scope": "Whole frame only. No figure is written for a single tambon."
+  },
+  "ranking": {
+    "ranked_links": 26130,
+    "ranked_links_that_are_graph_bridges": 8317,
+    "ranked_links_with_osm_bridge_yes": 89,
+    "ranked_links_by_road_class": {
+      "grade_join": 168,
+      "local": 6791,
+      "residential": 12767,
+      "secondary": 1773,
+      "tertiary": 1394,
+      "unclassified": 3237
+    },
+    "top_20": {
+      "links": 20,
+      "largest_flow_residents": 9261.088,
+      "smallest_flow_residents": 8721.656,
+      "links_that_share_their_flow_with_another": 16,
+      "tie_at_the_cut_broken_by_edge_id": false,
+      "distinct_osm_ways": 1,
+      "by_road_class": {
+        "tertiary": 20
+      },
+      "graph_bridges": 0,
+      "osm_bridge_yes": 0,
+      "grade_join_connectors": 0
+    },
+    "top_200": {
+      "links": 200,
+      "largest_flow_residents": 9261.088,
+      "smallest_flow_residents": 3569.067,
+      "links_that_share_their_flow_with_another": 98,
+      "tie_at_the_cut_broken_by_edge_id": true,
+      "distinct_osm_ways": 5,
+      "by_road_class": {
+        "local": 2,
+        "secondary": 83,
+        "tertiary": 115
+      },
+      "graph_bridges": 0,
+      "osm_bridge_yes": 1,
+      "grade_join_connectors": 2
+    },
+    "graph_bridges": {
+      "in_the_baseline_graph": 23311,
+      "ranked": 8317,
+      "among_the_top_20": 0,
+      "among_the_top_200": 0,
+      "best_rank": 1473,
+      "flow_residents_at_the_best_rank": 370.666,
+      "added_to_the_ranking": 0,
+      "reading": "Flagged only. The protocol's line 'Add graph bridges (Tarjan) to cover the all-routes-lost case.' is not applied as an addition, because it does not say what the bridges are added to (open point E6-OP5).",
+      "closing_one_top_20_link_on_its_own": "No link among the top 20 is a graph bridge, and none among the top 200. Removing an edge that is not a graph bridge leaves every node connected to the nodes it was connected to, so closing any single top-20 link on its own isolates nobody: every resident with a baseline route keeps one. This follows from the graph alone; no reroute was run."
+    },
+    "grade_join_connectors": {
+      "ranked": 168,
+      "best_rank": 163,
+      "among_the_top_20": 0,
+      "among_the_top_200": 2,
+      "sharing_their_flow_with_a_road_edge": 163,
+      "ranked_directly_ahead_of_a_road_edge_with_the_same_flow": 90,
+      "links_per_unit_read_by_scenario_s3": 3,
+      "units_where_one_is_among_the_highest_ranked_links_of_the_unit": 1,
+      "note": "Counts only; no unit is named. The run stops for a connector among the top 20 and does not stop for one among the highest-ranked links of a unit (open point E6-OP1)."
+    },
+    "unit_assignment": {
+      "units_that_hold_a_ranked_link": 13,
+      "ranked_links": {
+        "midpoint_in_one_unit": 26130
+      },
+      "top_20": {
+        "midpoint_in_one_unit": 20
+      },
+      "note": "Counts only. The unit of each link is in the ranking table, which is not written into Git."
+    },
+    "full_reroute_set": {
+      "rule": "Fully reroute only the top 200 ranked edges. No reroute is run here; these are the edges the rule names.",
+      "edge_ids_in_rank_order": [
+        "osm-way-1114870832-segment-0",
+        "osm-way-1114870832-segment-1",
+        "osm-way-1114870832-segment-2",
+        "osm-way-1114870832-segment-3",
+        "osm-way-1114870832-segment-4",
+        "osm-way-1114870832-segment-5",
+        "osm-way-1114870832-segment-10",
+        "osm-way-1114870832-segment-6",
+        "osm-way-1114870832-segment-7",
+        "osm-way-1114870832-segment-8",
+        "osm-way-1114870832-segment-9",
+        "osm-way-1114870832-segment-11",
+        "osm-way-1114870832-segment-12",
+        "osm-way-1114870832-segment-13",
+        "osm-way-1114870832-segment-14",
+        "osm-way-1114870832-segment-15",
+        "osm-way-1114870832-segment-16",
+        "osm-way-1114870832-segment-17",
+        "osm-way-1114870832-segment-18",
+        "osm-way-1114870832-segment-19",
+        "osm-way-1114870832-segment-20",
+        "osm-way-1114870832-segment-21",
+        "osm-way-1114870832-segment-22",
+        "osm-way-1114870832-segment-23",
+        "osm-way-1114870832-segment-24",
+        "osm-way-1114870832-segment-25",
+        "osm-way-1114870832-segment-26",
+        "osm-way-1114870832-segment-27",
+        "osm-way-1114870832-segment-28",
+        "osm-way-1114870832-segment-29",
+        "osm-way-1114870832-segment-30",
+        "osm-way-1114870832-segment-31",
+        "osm-way-1114870832-segment-32",
+        "osm-way-1114870832-segment-33",
+        "osm-way-1114870832-segment-34",
+        "osm-way-210666523-segment-21",
+        "osm-way-210666523-segment-22",
+        "osm-way-210666523-segment-20",
+        "osm-way-210666523-segment-18",
+        "osm-way-210666523-segment-19",
+        "osm-way-1114870832-segment-35",
+        "osm-way-1114870832-segment-36",
+        "osm-way-1114870832-segment-37",
+        "osm-way-1114870832-segment-38",
+        "osm-way-1114870832-segment-39",
+        "osm-way-210666523-segment-17",
+        "osm-way-210666523-segment-13",
+        "osm-way-210666523-segment-14",
+        "osm-way-210666523-segment-15",
+        "osm-way-210666523-segment-16",
+        "osm-way-210666523-segment-10",
+        "osm-way-210666523-segment-11",
+        "osm-way-210666523-segment-12",
+        "osm-way-210666523-segment-8",
+        "osm-way-210666523-segment-9",
+        "osm-way-210666523-segment-7",
+        "osm-way-210666523-segment-3",
+        "osm-way-210666523-segment-4",
+        "osm-way-210666523-segment-5",
+        "osm-way-210666523-segment-6",
+        "osm-way-210666523-segment-0",
+        "osm-way-210666523-segment-1",
+        "osm-way-210666523-segment-2",
+        "osm-way-210666524-segment-0",
+        "osm-way-210666524-segment-1",
+        "osm-way-210666524-segment-2",
+        "osm-way-210666524-segment-3",
+        "osm-way-210666524-segment-4",
+        "osm-way-210666524-segment-5",
+        "osm-way-210666524-segment-6",
+        "osm-way-210666524-segment-7",
+        "osm-way-210666524-segment-8",
+        "osm-way-210666524-segment-9",
+        "osm-way-210666524-segment-10",
+        "osm-way-210666524-segment-11",
+        "osm-way-1114870832-segment-40",
+        "osm-way-1114870832-segment-41",
+        "osm-way-1114870832-segment-42",
+        "osm-way-1114870832-segment-43",
+        "osm-way-1114870832-segment-44",
+        "osm-way-1114870832-segment-45",
+        "osm-way-1114870832-segment-46",
+        "osm-way-1114870832-segment-47",
+        "osm-way-1114870832-segment-48",
+        "osm-way-1114870832-segment-49",
+        "osm-way-1114870832-segment-50",
+        "osm-way-1114870832-segment-51",
+        "osm-way-210666524-segment-12",
+        "osm-way-210666524-segment-13",
+        "osm-way-210666524-segment-14",
+        "osm-way-210666524-segment-15",
+        "osm-way-210666524-segment-16",
+        "osm-way-210666524-segment-17",
+        "osm-way-210666524-segment-18",
+        "osm-way-210666524-segment-19",
+        "osm-way-210666524-segment-20",
+        "osm-way-210666524-segment-21",
+        "osm-way-210666524-segment-22",
+        "osm-way-210666524-segment-23",
+        "osm-way-210666524-segment-24",
+        "osm-way-210666524-segment-25",
+        "osm-way-210666524-segment-26",
+        "osm-way-210666524-segment-27",
+        "osm-way-210666524-segment-28",
+        "osm-way-210666524-segment-29",
+        "osm-way-1114870832-segment-52",
+        "osm-way-1114870832-segment-53",
+        "osm-way-1114870832-segment-54",
+        "osm-way-210666524-segment-30",
+        "osm-way-210666524-segment-31",
+        "osm-way-210666524-segment-32",
+        "osm-way-1114870832-segment-55",
+        "osm-way-1114870832-segment-56",
+        "osm-way-210666524-segment-33",
+        "osm-way-210666524-segment-34",
+        "osm-way-210666524-segment-35",
+        "osm-way-210666524-segment-36",
+        "osm-way-210666524-segment-37",
+        "osm-way-210666524-segment-38",
+        "osm-way-1114870832-segment-57",
+        "osm-way-1114870832-segment-58",
+        "osm-way-210666524-segment-39",
+        "osm-way-210666524-segment-40",
+        "osm-way-210666524-segment-41",
+        "osm-way-210666524-segment-42",
+        "osm-way-210666524-segment-43",
+        "osm-way-1114870832-segment-59",
+        "osm-way-1114870832-segment-60",
+        "osm-way-1114870832-segment-61",
+        "osm-way-210666524-segment-44",
+        "osm-way-210666524-segment-45",
+        "osm-way-210666524-segment-46",
+        "osm-way-1114870832-segment-62",
+        "osm-way-1114870832-segment-63",
+        "osm-way-1114870832-segment-64",
+        "osm-way-1114870832-segment-65",
+        "osm-way-1114870832-segment-66",
+        "osm-way-1114870832-segment-67",
+        "osm-way-1114870832-segment-68",
+        "osm-way-210666524-segment-47",
+        "osm-way-210666524-segment-48",
+        "osm-way-210666524-segment-49",
+        "osm-way-1114870832-segment-69",
+        "osm-way-1114870832-segment-70",
+        "osm-way-210666524-segment-50",
+        "osm-way-1114870832-segment-71",
+        "osm-way-1114870832-segment-72",
+        "osm-way-1114870832-segment-73",
+        "osm-way-210666524-segment-51",
+        "osm-way-210666524-segment-52",
+        "osm-way-210666524-segment-53",
+        "osm-way-210666524-segment-54",
+        "osm-way-210666524-segment-55",
+        "osm-way-1114870832-segment-74",
+        "osm-way-1114870832-segment-75",
+        "osm-way-1114870832-segment-76",
+        "osm-way-1114870832-segment-77",
+        "osm-way-1114870832-segment-78",
+        "osm-way-210666524-segment-56",
+        "osm-way-1114870832-segment-79",
+        "osm-way-1114870832-segment-80",
+        "osm-way-210666524-segment-57",
+        "grade-join-3e5e5d35ecc17bbb",
+        "grade-join-743c2207c9902bd2",
+        "osm-way-1114870832-segment-81",
+        "osm-way-935666324-segment-0",
+        "osm-way-93041890-segment-1",
+        "osm-way-93041890-segment-2",
+        "osm-way-93041890-segment-3",
+        "osm-way-93041890-segment-4",
+        "osm-way-93041890-segment-5",
+        "osm-way-93041890-segment-6",
+        "osm-way-93041890-segment-7",
+        "osm-way-93041890-segment-8",
+        "osm-way-93041890-segment-9",
+        "osm-way-93041890-segment-10",
+        "osm-way-93041890-segment-11",
+        "osm-way-93041890-segment-12",
+        "osm-way-93041890-segment-13",
+        "osm-way-93041890-segment-14",
+        "osm-way-93041890-segment-15",
+        "osm-way-93041890-segment-16",
+        "osm-way-93041890-segment-17",
+        "osm-way-93041890-segment-18",
+        "osm-way-93041890-segment-19",
+        "osm-way-93041890-segment-20",
+        "osm-way-93041890-segment-21",
+        "osm-way-93041890-segment-22",
+        "osm-way-93041890-segment-23",
+        "osm-way-93041890-segment-24",
+        "osm-way-93041890-segment-25",
+        "osm-way-93041890-segment-26",
+        "osm-way-93041890-segment-27",
+        "osm-way-93041890-segment-28",
+        "osm-way-93041890-segment-29",
+        "osm-way-93041890-segment-30",
+        "osm-way-93041890-segment-31",
+        "osm-way-93041890-segment-32",
+        "osm-way-210666524-segment-58",
+        "osm-way-210666524-segment-59"
+      ],
+      "grade_join_connectors_among_them": [
+        "grade-join-3e5e5d35ecc17bbb",
+        "grade-join-743c2207c9902bd2"
+      ],
+      "edge_ids_sha256": "9522d9c45c2a509c08bda5ef4c20d933c24d193b22aabd211c21dcc301b8b541"
+    }
+  },
+  "outputs": {
+    "top_20": {
+      "path": "outputs/planning_v1/critical_links_top20_se1_vehicle.geojson",
+      "sha256": "9606cf0a8bb803b84c553084e11cab693fd28f60c64cc052e9b79200e3e69eed",
+      "features": 20
+    },
+    "ranking_table": {
+      "sha256": "dad48c4993c1545ce0142f2dfe98d7b6af8858fda1dc2364914207e14115307c",
+      "schema_version": "floodguard.critical_link_ranking.v1",
+      "links": 26130,
+      "bytes": 10909988,
+      "binding": "bound_in_first_run_receipt",
+      "binding_note": "Protocol v1b critical_link_selection.ranking_output (owner choice 10) says: \"v1b is signed with the rule alone; the ranking's SHA-256 is recorded in the receipt of the first run, before any scoring.\" The receipt of the first run (generated 2026-10-04T08:24:35Z) is that record. This run computed the same table, so this SHA-256 repeats the record and replaces nothing. A superseding run whose table differs stops and writes nothing (open point E6-OP6). The top 20, the S3 links of each tambon and the S3b bridge edges are read from this table. The script computes no score and cannot see what other tasks have run: the generation time of the first run is what places the record before any scoring.",
+      "retained_in_git": false,
+      "retained_note": "The table names the tambon of every ranked link, so it is not written into Git. It is a function of the inputs: --write-ranking writes these bytes to a path outside the repository, and --verify recomputes this SHA-256."
+    }
+  },
+  "open_points": [
+    {
+      "id": "E6-OP1",
+      "point": "Whether a grade-join connector can be a critical link.",
+      "protocol_says": "Rank baseline vehicle edges. A join is a zero-length connector edge between two nodes at the same coordinate (grade_join_policy).",
+      "what_this_run_does": "The connectors are edges of the baseline graph and are ranked like any other, marked edge_kind grade_join. A connector between two nodes without residents carries the same flow as the road edges on either side of it, and its ID (grade-join-...) sorts before a road edge ID (osm-way-...), so the tie-break on the stable edge ID ranks it ahead of every road edge with that flow. The run stops if a connector is among the top 20. It does not stop for the highest-ranked links of a unit, which scenario S3 reads from the same table: ranking.grade_join_connectors counts the connectors that share their flow with a road edge and the units where a connector is among the highest-ranked links, and names no unit.",
+      "needed_from_the_owners": "Whether connectors are ranked at all, and what happens to the ranks if they are not. The answer can change the ranking table (see E6-OP6). Until then a task that selects the S3 links of a unit meets the same undecided case."
+    },
+    {
+      "id": "E6-OP2",
+      "point": "What the full reroute of the top 200 writes, and whether it changes the output.",
+      "protocol_says": "Fully reroute only the top 200 ranked edges. Output the top 20.",
+      "what_this_run_does": "No reroute is run. The receipt lists the 200 highest-ranked edge IDs (ranking.full_reroute_set); floodguard.critical_links.reroute_after_closure closes edges and counts the residents who lose every route."
+    },
+    {
+      "id": "E6-OP3",
+      "point": "Whether the bridge flag of the output is the graph bridge (Tarjan) or the OSM tag bridge=yes.",
+      "protocol_says": "Add graph bridges (Tarjan). Output the top 20, each with a bridge flag. Scenario S3b uses OSM bridge=yes.",
+      "what_this_run_does": "Both are written: graph_bridge and osm_bridge."
+    },
+    {
+      "id": "E6-OP4",
+      "point": "The tambon of a link whose midpoint lies in no reporting unit or in more than one.",
+      "protocol_says": "A link belongs to the tambon where its edge lies; an edge that crosses a boundary goes by its midpoint (drafter reading DR-B06).",
+      "what_this_run_does": "Such a link gets no unit (ranking.unit_assignment counts them)."
+    },
+    {
+      "id": "E6-OP5",
+      "point": "What 'Add graph bridges' adds the bridges to (the ranked set, the 200 edges of the full reroute or the 20 of the output), and where a graph bridge stands against a link ranked by flow.",
+      "protocol_says": "'Add graph bridges (Tarjan) to cover the all-routes-lost case.' (critical_link_selection.rule, second line). The fourth line already asks for a bridge flag on each of the top 20.",
+      "what_this_run_does": "Nothing is added. The ranked set is the edges with a positive flow, in the order of their flow, and each carries graph_bridge as a flag; a graph bridge enters the 200 or the 20 only by its flow. This is not a decided reading: under it the second line of the rule adds nothing to the fourth, and the all-routes-lost case reaches an output only where a bridge is ranked high enough (ranking.graph_bridges gives the counts and the best rank of a graph bridge).",
+      "why_it_matters": "Closing an edge that is not a graph bridge takes every route from nobody. Class rule v2 trigger B (class_rule_v2_inputs.trigger_B_isolation) closes on its own each top-20 link that intersects the flood extent and counts the residents who lose every route, so it can only fire through a top-20 link that is a graph bridge.",
+      "needed_from_the_owners": "What the bridges are added to and how a bridge is ordered against a flow-ranked link. The answer can change the ranking table (see E6-OP6), so it is needed before a later task records or uses the SHA-256 of the table."
+    },
+    {
+      "id": "E6-OP6",
+      "point": "Whether a run that supersedes the first run may change the ranking the first run recorded.",
+      "protocol_says": "The ranking's SHA-256 is recorded in the receipt of the first run, before any scoring (critical_link_selection.ranking_output). Every run is reported (change_control). Nothing is said about a later run of the ranking.",
+      "what_this_run_does": "A superseding run lists every earlier run under run_history and must recompute the ranking table the first run recorded. If its table differs it stops and writes nothing.",
+      "needed_from_the_owners": "If an answer to E6-OP1 or E6-OP5 changes the table: how the new ranking is bound."
+    },
+    {
+      "id": "E6-OP7",
+      "point": "Where a route ends when a zero-minute edge joins two destination nodes.",
+      "protocol_says": "The ranking follows the pattern of select_interventions in src/floodguard/evidence_interventions.py (critical_link_selection.reuse), and a grade join is a zero-length connector edge (grade_join_policy). Neither says where a route ends when two destinations are reached in the same time.",
+      "what_this_run_does": "The comparison of select_interventions is kept: a node takes the smallest (minutes, destination ID). A destination node joined to another destination node by a zero-minute edge is therefore routed across that edge to the destination with the smaller ID, and every resident whose route reaches that node counts on the edge. demand.destination_nodes_routed_onward_at_an_equal_time counts such nodes and those residents."
+    }
+  ],
+  "assumptions": [
+    "A resident's baseline route is the fastest modelled vehicle route from the road node their WorldPop 2020 cell snaps to (within 250 m) to the nearest destination: an OSM hospital in the routing context or a main-road entry (a node of a trunk or primary edge, links included). One shortest-path tree serves both kinds of destination (owner choice 9), so a route ends at the first destination it meets. The one exception is a zero-minute edge between two destination nodes, which is crossed towards the destination with the smaller ID (open point E6-OP7).",
+    "The flow of a link is the number of residents whose baseline route uses it (WorldPop 2020 residents at each origin node; drafter reading DR-B03). It measures use. Another route may exist, and the flow does not say what closing the link would cost.",
+    "Links are ranked by flow, and equal flows by edge ID. Equal routes go to the smaller destination ID, then to the smaller parent node ID and edge ID, as in floodguard.evidence_interventions.select_interventions.",
+    "An edge is the straight segment between two road nodes, so one street is many edges. Edges of a street with no resident between them carry the same flow and take neighbouring ranks.",
+    "graph_bridge is true when removing the edge disconnects the modelled graph (Tarjan). osm_bridge repeats the OSM tag bridge=yes. Neither shows that a structure exists or what state it is in. A graph bridge is flagged and ranked by its flow like any other edge: nothing is added to the ranking for it (open point E6-OP5).",
+    "in_flood_extent is null because no flood layer is read. The flag is added for each flood input when a case is assessed.",
+    "Road times are fixed class speeds on an undirected graph. One-way rules, turn restrictions and road condition are not represented. A grade join shows that two ways end at the same OSM coordinate; it does not show that the transition can be driven.",
+    "Routes stay inside the routing context of the case. Roads and destinations outside it are not seen."
+  ],
+  "limitations": [
+    "Computed on one machine. The ranking depends on the OSM extract, on WorldPop 2020 and on the corridor of record.",
+    "Every node of a trunk or primary edge is a main-road entry, so an edge between two such nodes that takes time carries no flow: trunk and primary roads themselves are not ranked, and the ranking finds the roads that lead to them and to the hospitals. The share of residents whose nearest destination is a main-road entry is under demand.",
+    "No reroute was run: the flow is not the number of residents a closure would cut off.",
+    "No link among the top 20 is a graph bridge, and none among the top 200. Removing an edge that is not a graph bridge leaves every node connected to the nodes it was connected to, so closing any single top-20 link on its own isolates nobody: every resident with a baseline route keeps one. This follows from the graph alone; no reroute was run."
+  ],
+  "run": {
+    "run_started_at_utc": "2026-10-04T09:14:47Z",
+    "run_finished_at_utc": "2026-10-04T09:14:53Z",
+    "wall_time_seconds": 6.6,
+    "implementation": {
+      "base_commit": "5bdee2fdd84bf127e1d1e30875b4d03dbe777da7",
+      "working_tree_differs_from_the_base_commit": true,
+      "script_sha256": "32683570094f2faba5d62ec068e312875558e02eff699072213208e48f4919a0",
+      "critical_links_sha256": "39f223226c32d500a92fffafc09dbc3d42f7c9611385fbc6972f16f9c5eb640e",
+      "planning_context_sha256": "f2f56151fd20527b8a0aa159fc76a68a5339b6179cef26fbf7c63ad9deb819a8",
+      "grade_join_sha256": "87247e54da2acbdbbf5e00f5353b0aedf68e471eb463df99b46d9163aec7d634",
+      "evidence_context_sha256": "3e85955494e0bf2d4592ea772322afcb20a7a5cdf00036e52a4e33d1263c2994",
+      "evidence_scenarios_sha256": "941bfd930583b97b65353b14aabcff98c02f7888b852378152aa44361d3f5c36",
+      "python": "3.11.8",
+      "numpy": "2.2.6",
+      "shapely": "2.1.2",
+      "geos": "3.13.1",
+      "pyproj": "3.7.2"
+    },
+    "machine": {
+      "system": "Windows",
+      "release": "10",
+      "logical_processors": 16
+    },
+    "ranking_table_written_to": null,
+    "note": "Everything outside this section is a function of the inputs, the generation time and the earlier runs listed under run_history: --verify takes the last two from this receipt and recomputes the rest byte for byte. This section records the run itself and is not compared."
+  }
+}

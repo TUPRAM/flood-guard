@@ -1,8 +1,49 @@
-# FloodGuard Demo Walkthrough
+# FloodGuard current demonstration walkthrough
 
-This walkthrough is for the static fixture-backed dashboard at `outputs/dashboard.html`. It is not an official warning, not real flood validation, and not real-data ML output.
+Start the Mae Sai finals presentation at
+`/studio/brief/?aoi=aoi-01_mae_sai_core&event=mae_sai_2024`.
+Use [the finals guide and claim register](mae_sai_finals_guide.md) for the current
+three-minute script, source boundaries and readiness checklist.
 
-The Mae Sai replay beat (60-90 seconds, on the web app's case replay) is the last section: [Mae Sai Replay Beat](#mae-sai-replay-beat-60-90-s).
+1. Start from a prepared public-place pin. Name the service, mode, geographic
+   scope, observation question and source years.
+2. Compare the baseline path with an explicit road-link closure or destination
+   removal. Show the two paths, nearest eligible destinations, times, distances
+   and assumed connectors. These are not observed before/after flood conditions.
+3. Distinguish modelled residential population, route coverage and unavailable
+   observed flood impact. Do not call these residents flood victims.
+4. Compare one declared intervention with its matching baseline. Explain both
+   threshold changes and travel-time effects, including an honest zero result.
+5. Show which assumptions alter the conclusion and which facility/route fact
+   still needs review.
+6. Open `/studio/library/` for source, rights and quality detail; return to the
+   concise brief for the decision story.
+
+The research archives at `/studio/archive/` and `/studio/archive/mae-sai-geoai/`
+and the older map workspace at `/command/` do not provide accepted event
+FPPS/action classes. Their retained scores are report-only comparators. Do not
+combine them with current brief numbers. The release handoff identifies the
+tested preview, package hashes and local reproduction commands.
+
+Since 5 October 2026 the map workspace is the default Planning page at
+`/command/`, which is where the "Planning" link of every header leads; its
+earlier address, `/command/archive/`, forwards to it. The page says above its
+ranking that its scores and classes are retained research comparisons, not
+accepted event-response priorities. The planning overview of a selected study
+case, which shows no research score, is at `/command/ver2/`.
+
+The Mae Sai replay beat (60-90 seconds, on the web app's case replay at
+`/studio/cases/mae-sai-2024/`) is current and is the last part of this file:
+[Mae Sai Replay Beat](#mae-sai-replay-beat-60-90-s).
+
+## Archived synthetic-dashboard walkthrough
+
+The sections from here up to the Mae Sai Replay Beat (Setup, the archived 3-5 minute
+and 10 minute paths, Exact Phrases To Use and Avoid Saying) describe the older static
+fixture-backed dashboard at `outputs/dashboard.html`. These numerical examples remain
+for software rehearsal; they are not the current Mae Sai case or a finals-ready
+evidence claim. This is not an official warning, real flood validation, or real-data
+ML output.
 
 ## Setup
 
@@ -26,7 +67,7 @@ Open:
 http://localhost:8000/dashboard.html
 ```
 
-## 3-5 Minute Judge Path
+### Archived 3-5 Minute Judge Path (synthetic example)
 
 1. Start on `FG-TB-001 / River Market`.
    - Point to FPPS `81.60`, action class `A`, confidence `high`, baseline 30-minute access loss, and equity gap.
@@ -61,7 +102,7 @@ http://localhost:8000/dashboard.html
    - State that this is weak-reference candidate evidence, not official validation or field validation.
    - Use the English/Thai (`EN / TH`) toggle once to show bilingual readiness, then return to the presentation language.
 
-## 10 Minute Expanded Path
+### Archived 10 Minute Expanded Path (synthetic example)
 
 1. Start with the status chips:
    - `Fixture demo`

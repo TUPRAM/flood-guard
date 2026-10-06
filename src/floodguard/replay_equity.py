@@ -11,22 +11,24 @@ before the flood are not in the rate: they could not lose what they did not have
 separately as "already out of reach". This is how the signed scoring frame counts access loss (D4: counted
 only for people with access before the flood).
 
-``floodguard.equity`` (unchanged, plan section 5.6) divides by whatever group totals its caller passes,
-returns a ratio of 1.0 when nobody loses access and has no minimum group size. For the replay that reads as
-a finding where there is none, so this module is the replay's own rule set:
+``floodguard.equity_v1`` divides by whatever group totals its caller passes, returns a ratio of 1.0 when
+nobody loses access and has no minimum group size. It is metric version 1, the code plan section 5.6 left
+unchanged; ``floodguard.equity`` itself is metric version 2.0 since the scoring line was merged, and is not
+this module's reference. For the replay a ratio of 1.0 reads as a finding where there is none, so this
+module is the replay's own rule set:
 
 * no ratio, reason ``insufficient_group_denominator``, when either group has fewer than
   :data:`MINIMUM_GROUP_SIZE` residents within reach before the flood (plan section 2.3-1: a ratio needs at
   least 50 people in each denominator);
 * no ratio, reason ``no_loss``, when nobody in either group has lost access;
 * no ratio, reason ``undefined_ratio``, when only the proxy-vulnerable group loses access;
-* otherwise the same rates, ratio, band limits and rounding as ``floodguard.equity`` gives for the same
+* otherwise the same rates, ratio, band limits and rounding as ``floodguard.equity_v1`` gives for the same
   numerators and denominators.
 
 "Nobody" and "only" are decided on the residents who lost access, not on the rounded rates: three residents
 lost in a group of 74,647 is a rate that rounds to 0.0000, and it is still a loss. Where a rounded rate hides
 such a loss the ratio is taken from the unrounded rates, because the rounded ones cannot be divided
-(``floodguard.equity`` reports "zero loss" or "undefined" there).
+(``floodguard.equity_v1`` reports "zero loss" or "undefined" there).
 
 It mirrors ``evacuationEquityGap`` in ``apps/web/src/lib/flood-timeline-evacuation.ts``; the parity fixture
 written by ``apps/web/scripts/equity-access-parity-fixture.py`` holds the two together.
@@ -121,7 +123,7 @@ def replay_equity_gap(
 
     Each rate is the share of a group's residents with a shelter within reach before the flood who have
     lost it: ``lost / within reach``, rounded to four decimals. The ratio is ``vulnerable rate / other rate``
-    rounded to three, as in ``floodguard.equity``. The ratio is withheld (``None``) with a reason when a
+    rounded to three, as in ``floodguard.equity_v1``. The ratio is withheld (``None``) with a reason when a
     group has fewer than ``minimum_group_size`` residents within reach before the flood (or none at all),
     when neither group has lost access, or when only the proxy-vulnerable group has. The group-size rule is
     applied first because it does not depend on the hour. Loss is judged on the lost counts; when a rounded

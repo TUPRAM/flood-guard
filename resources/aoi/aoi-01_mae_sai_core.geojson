@@ -1,0 +1,126 @@
+{
+  "type": "FeatureCollection",
+  "name": "aoi-01_mae_sai_core",
+  "crs": {
+    "type": "name",
+    "properties": {
+      "name": "urn:ogc:def:crs:OGC:1.3:CRS84"
+    }
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "aoi_id": "AOI-01",
+        "slug": "mae_sai_core",
+        "name": "Mae Sai core - town, border crossing and Sai River strip",
+        "name_th": "แม่สาย (เขตเมืองและแนวแม่น้ำสาย)",
+        "priority": "P1",
+        "event_id": "mae_sai_2024",
+        "event_name": "Chiang Rai / Mae Sai flood, September 2024",
+        "province": "Chiang Rai",
+        "district": "Mae Sai",
+        "adm3_covered": "Full: TH570901 Mae Sai, TH570906 Wiang Phang Kham. Partial: TH570904 Pong Pha (~43%), TH570905 Si Mueang Chum (~27%), TH570903 Ko Chang (~9%).",
+        "derivation": "Union of the committed HDX COD-AB ADM3 boundaries for Mae Sai and Wiang Phang Kham in outputs/mae_sai_admin_context.geojson, the two subdistricts on the Sai River border strip that took the worst September 2024 inundation.",
+        "purpose": "Primary study area. Verify 42 OSM-derived candidate facilities and the bridge/road segments that drive the access-loss model, and give the Sentinel-1 SAR change detector an optical false-positive screen.",
+        "bbox_wgs84": [
+          99.8384,
+          20.3705,
+          99.9441,
+          20.4563
+        ],
+        "approx_width_km": 11.0,
+        "approx_height_km": 9.5,
+        "approx_area_sq_km": 104.5,
+        "approx_theos2_pms_scenes": 2,
+        "requested_windows": [
+          {
+            "window_id": "W1-pre-immediate",
+            "label": "Immediate pre-event baseline",
+            "start": "2024-09-01",
+            "end": "2024-09-08",
+            "max_cloud_pct": 40,
+            "portal_scene_cloud_filter_pct": 40,
+            "expectation": "high",
+            "revision": "added after cloud scout",
+            "measured_evidence": "2024-09-05 measured at 12.5% AOI cloud (AOI-01) and 14.7% (AOI-02), at 100% AOI coverage.",
+            "note": "Five days before the flood peak. Seasonally matched to the event, so it pairs far better for change detection than a January baseline. Highest-value single date for this event."
+          },
+          {
+            "window_id": "W2-event",
+            "label": "Flood event window",
+            "start": "2024-09-09",
+            "end": "2024-09-30",
+            "max_cloud_pct": 95,
+            "portal_scene_cloud_filter_pct": 95,
+            "expectation": "very_low",
+            "revision": "cloud limit raised, window widened",
+            "measured_evidence": "Every Sentinel-2 date in this window is heavily obscured. Flood peak 2024-09-10 at 100% AOI cloud; best in window 2024-09-30 at 89.2% (AOI-02). No date below 80%.",
+            "note": "Requested only in case THEOS-2 caught a break that Sentinel-2 missed. A null result here is expected and is not a problem."
+          },
+          {
+            "window_id": "W3-post",
+            "label": "Post-event clear baseline",
+            "start": "2025-01-05",
+            "end": "2025-01-31",
+            "max_cloud_pct": 10,
+            "portal_scene_cloud_filter_pct": 45,
+            "expectation": "very_high",
+            "revision": "narrowed from 2024-11-01 to 2025-01-31",
+            "measured_evidence": "2025-01-13, 2025-01-18 and 2025-01-23 all measured at 0.0% AOI cloud; 2025-01-28 at 0.3%.",
+            "note": "Best window for facility and road verification. Post-monsoon and before the northern biomass-burning haze season."
+          },
+          {
+            "window_id": "W4-post-early",
+            "label": "Early post-event baseline",
+            "start": "2024-11-01",
+            "end": "2024-11-20",
+            "max_cloud_pct": 10,
+            "portal_scene_cloud_filter_pct": 40,
+            "expectation": "high",
+            "revision": "split out of the original W3",
+            "measured_evidence": "2024-11-04 at 0.2%, 2024-11-14 at 0.2%, 2024-11-19 at 0.7% AOI cloud.",
+            "note": "Closer to the event than W3. Preferred if post-flood recovery state matters more than maximum clarity."
+          }
+        ],
+        "project": "FloodGuard Thailand",
+        "request_id": "FG-THEOS2-REQ-001",
+        "request_version": "v2-cloud-scouted",
+        "requested_on": "2026-09-17",
+        "crs": "EPSG:4326 (WGS84)",
+        "preferred_product": "ORTHO PMS, 4-band (B/G/R/NIR)",
+        "cloud_metric": "max_cloud_pct is the AOI-clipped Sentinel-2 SCL measurement from scripts/scout_theos2_aoi_cloud.py and is what determines whether an acquisition is usable. portal_scene_cloud_filter_pct is the scene-level value to enter in the GISTDA ordering portal, which filters over the whole satellite footprint rather than the AOI; entering the AOI value there would discard usable dates. See outputs/theos2_aoi_cloud_scout.csv and outputs/theos2_portal_cloud_thresholds.csv.",
+        "operational_status": "non_operational_research_prototype",
+        "official_warning": false,
+        "redistribution_intent": "None. Imagery stays in a controlled workspace outside version control. Only derived, checksum-tracked evidence is committed."
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              99.8384,
+              20.3705
+            ],
+            [
+              99.9441,
+              20.3705
+            ],
+            [
+              99.9441,
+              20.4563
+            ],
+            [
+              99.8384,
+              20.4563
+            ],
+            [
+              99.8384,
+              20.3705
+            ]
+          ]
+        ]
+      }
+    }
+  ]
+}

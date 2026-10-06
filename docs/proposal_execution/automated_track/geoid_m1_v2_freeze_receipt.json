@@ -1,0 +1,15 @@
+{
+  "code_sha256": {
+    "src/floodguard/geoid_m1_benchmark.py": "26d98f5cbdbcdcb1eeafe0b83a6e44b0ff4c9c7fb245078469952d95829e409f",
+    "src/floodguard/sar_change_v2.py": "3127b370303b08902dc545442f7aa5a2aa54d283b471c0d65f5899c9c19e1134"
+  },
+  "declared_benchmark_protocol_sha256": "7478d424c5ebb5ac316a384b9ea17ac0cc65a08847c94fb290388613732f2741",
+  "frozen_at_utc": "2026-10-02T16:24:03Z",
+  "frozen_config_sha256": "2bfcb0c6ebf4b79402afa63c56209f2c5cda26491f08883d67908195b6c64a68",
+  "planning_protocol_v1a_sha256": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+  "schema": "floodguard.geoid_m1_v2_freeze_receipt.v1",
+  "selected_run_id": "2026-10-02T16:14:07Z-run-01",
+  "statement": "Chosen on the 15 development tiles only. No test tile label, prediction or score was opened before this receipt was committed.",
+  "test_tiles_opened_before_freeze": false,
+  "tuning_log_sha256": "8a682abd142c29707f3c78f7e25cb92810e931a3585383fe0cf26ceeb0a73813"
+}

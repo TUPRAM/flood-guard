@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 210" role="img" aria-label="Radar pulse scatters back from rough dry ground but reflects away from smooth water, so flooded ground appears dark">
+            <style>text{font-family:"Manrope Variable",system-ui,sans-serif;fill:#3D4E57}.lbl{font-size:12px}.sml{font-size:10.5px;fill:#64767E}.mono-t{font-family:ui-monospace,"IBM Plex Mono",monospace;font-size:11px}.hi{fill:#0C6A74}.warnt{fill:#8A4A44}</style><defs>
+              <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <polygon points="0,0 10,5 0,10" fill="currentColor"/>
+              </marker>
+            </defs>
+            <text class="lbl" x="20" y="22">Dry ground — rough surface</text>
+            <text class="lbl" x="350" y="22">Flooded — smooth surface</text>
+
+            <line x1="40" y1="45" x2="120" y2="135" stroke="currentColor" stroke-width="1.6" marker-end="url(#ar)"/>
+            <text class="sml" x="26" y="42">pulse in</text>
+            <line x1="122" y1="135" x2="95" y2="55" stroke="#0C6A74" stroke-width="1.6" marker-end="url(#ar)"/>
+            <line x1="124" y1="135" x2="150" y2="58" stroke="#0C6A74" stroke-width="1.6" marker-end="url(#ar)"/>
+            <line x1="126" y1="136" x2="200" y2="80" stroke="#0C6A74" stroke-width="1.2" marker-end="url(#ar)"/>
+            <text class="sml hi" x="158" y="48">scatters back</text>
+            <path d="M40 150 l14 -10 l12 12 l16 -14 l14 11 l15 -12 l13 13 l16 -11 l14 12 l16 -10 l14 11"
+                  fill="none" stroke="currentColor" stroke-width="1.8"/>
+            <rect x="40" y="168" width="176" height="24" fill="none" stroke="currentColor" stroke-width="1"/>
+            <text class="mono-t" x="128" y="184" text-anchor="middle">BRIGHT return</text>
+
+            <line x1="370" y1="45" x2="450" y2="135" stroke="currentColor" stroke-width="1.6" marker-end="url(#ar)"/>
+            <text class="sml" x="356" y="42">pulse in</text>
+            <line x1="452" y1="135" x2="592" y2="58" stroke="#8A4A44" stroke-width="1.8" marker-end="url(#ar)"/>
+            <text class="sml warnt" x="462" y="108">bounces away, nothing returns</text>
+            <line x1="370" y1="150" x2="546" y2="150" stroke="currentColor" stroke-width="2.4"/>
+            <rect x="370" y="168" width="176" height="24" fill="#F4E5E3" stroke="#8A4A44" stroke-width="1"/>
+            <text class="mono-t warnt" x="458" y="184" text-anchor="middle">DARK return</text>
+          </svg>

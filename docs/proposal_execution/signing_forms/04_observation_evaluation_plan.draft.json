@@ -1,0 +1,46 @@
+{
+  "schema": "floodguard.observation_evaluation_plan.v1",
+  "plan_id": "mae_sai_observation_eval_v1",
+  "status": "draft",
+  "event_id": "TH-MAESAI-2024-09",
+  "study_area_id": "aoi-01_mae_sai_core",
+  "observation_target": "New inundation visible at the Sentinel-1 post acquisition 2024-09-15T23:16:01Z relative to 2024-09-03T23:16:00Z, inside AOI-01. Not the full September flood peak.",
+  "candidate_products": [
+    {
+      "product_id": "mae_sai_m2_gamma0_10m_otsu_candidate",
+      "description": "10 m EPSG:32647 Gamma0 abstaining Otsu run (M2); abstained in 81/81 windows, so its coverage is expected to be 0. The sha256 below is the M2 run receipt; bind the exact candidate raster hash before freezing.",
+      "sha256": "7814cfb5f936952a581ab72c40bde7ab14f638715834f39974dddfa81c5394fe"
+    },
+    {
+      "product_id": "mae_sai_20m_amplitude_comparator",
+      "description": "Existing 20 m amplitude change comparator; resample to the 10 m reference grid by nearest neighbour before scoring.",
+      "sha256": null
+    }
+  ],
+  "reference": {
+    "imagery_product_id": "S2B_MSIL2A_20240915T034529_N0511_R104_T47QNC_20240915T065143",
+    "label_release_id": null
+  },
+  "partition": {
+    "block_size_m": 1000,
+    "halo_m": 200,
+    "seed": "mae-sai-2024-observation-eval-v1",
+    "development_fraction": 0.5
+  },
+  "pixel_size_m": 10,
+  "boundary_tolerance_m": 20,
+  "strata": ["possible_recession"],
+  "acceptance_limits": {
+    "min_iou": null,
+    "min_precision": null,
+    "min_recall": null,
+    "max_abs_area_error_fraction": null,
+    "min_evaluated_coverage": null
+  },
+  "frozen": {
+    "frozen_at_utc": null,
+    "evaluation_lead_person_id": null,
+    "decision_evidence_sha256": null
+  },
+  "assumptions": "DRAFT prepared from GATE_RESEARCH_DOSSIER.md Step 4. Acceptance limits are deliberately null: only the evaluation lead sets them, before any reference or holdout is opened. To freeze, fill every limit (0..1), the lead's FG-HUM id, the SHA-256 of their signed decision and a UTC time, set status to frozen, and never edit the file afterwards."
+}

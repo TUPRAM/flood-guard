@@ -1,0 +1,195 @@
+{
+  "accepted_observation": false,
+  "assumptions": [
+    "Only reference codes 0 and 1 are scored; codes 2, 3, 4 and 255 remain excluded.",
+    "Out-of-footprint and source nodata candidate cells remain code 255 abstentions.",
+    "Possible recession is a time-gap diagnostic, not an established cause of disagreement.",
+    "Meeting limits does not authorize an accepted observation, FPPS component or warning."
+  ],
+  "automated_holdout_consumption_sha256": "8fc790bc255a69eebed6780f28c0df12bdf7b10bf06e29978bb8d00790a26706",
+  "automated_reference_receipt_sha256": "4c27509001ca097b4da631b9026eabfae66789789ade324e59dcc97e50415d93",
+  "can_feed_decision_layer": false,
+  "candidate_results": {
+    "mae_sai_20m_amplitude_comparator": {
+      "acceptance": {
+        "checks": {
+          "max_abs_area_error_fraction": {
+            "limit": 0.5,
+            "observed": 2134.0,
+            "passed": false
+          },
+          "min_evaluated_coverage": {
+            "limit": 0.5,
+            "observed": 0.9993803888714351,
+            "passed": true
+          },
+          "min_iou": {
+            "limit": 0.3,
+            "observed": 0.0,
+            "passed": false
+          },
+          "min_precision": {
+            "limit": 0.5,
+            "observed": 0.0,
+            "passed": false
+          },
+          "min_recall": {
+            "limit": 0.5,
+            "observed": 0.0,
+            "passed": false
+          }
+        },
+        "meets_predeclared_limits": false
+      },
+      "aligned_cells_sha256": "6872e242d20c2767569ec1b78ff7d51c39b23391071e6fb53d7940be78b3f1b1",
+      "metrics": {
+        "abs_area_error_fraction": 2134.0,
+        "boundary": {
+          "f1": 0.00041416442327604064,
+          "precision": 0.00020716801325875285,
+          "recall": 0.5,
+          "tolerance_m": 20.0
+        },
+        "candidate_flood_area_m2": 640500,
+        "confusion": {
+          "false_negative": 3,
+          "false_positive": 6405,
+          "true_negative": 108109,
+          "true_positive": 0
+        },
+        "covered_cells": 114517,
+        "dice": 0.0,
+        "evaluable_cells": 114588,
+        "evaluated_coverage": 0.9993803888714351,
+        "iou": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "reference_flood_area_m2": 300,
+        "signed_area_error_fraction": 2134.0
+      },
+      "possible_recession_candidate_cells": 3,
+      "processing_variant": "raw_uncalibrated_amplitude",
+      "source_bounds": [
+        587440.0,
+        2252700.0,
+        598540.0,
+        2262280.0
+      ],
+      "source_grid": {
+        "crs": "EPSG:32647",
+        "height": 479,
+        "nodata": 255.0,
+        "transform": [
+          20.0,
+          0.0,
+          587440.0,
+          0.0,
+          -20.0,
+          2262280.0
+        ],
+        "width": 555
+      },
+      "source_raster_sha256": "11449c9696e06517f3b2cc8a1ef47cd240b4be9277b90b2d4d44f6b11fc80402",
+      "source_receipt_sha256": "7100794606d14a0bb48083a0e9c9b4677521555e72d49ea7a059f38276cd3dd1",
+      "source_timestamp": "2024-09-15T23:16:01.675690Z"
+    },
+    "mae_sai_m2_gamma0_10m_otsu_candidate": {
+      "acceptance": {
+        "checks": {
+          "max_abs_area_error_fraction": {
+            "limit": 0.5,
+            "observed": null,
+            "passed": false
+          },
+          "min_evaluated_coverage": {
+            "limit": 0.5,
+            "observed": 0.0,
+            "passed": false
+          },
+          "min_iou": {
+            "limit": 0.3,
+            "observed": null,
+            "passed": false
+          },
+          "min_precision": {
+            "limit": 0.5,
+            "observed": null,
+            "passed": false
+          },
+          "min_recall": {
+            "limit": 0.5,
+            "observed": null,
+            "passed": false
+          }
+        },
+        "meets_predeclared_limits": false
+      },
+      "aligned_cells_sha256": "e982959509beffe770acaa8506b6122a253bfa882cfc6a63f99523258016f324",
+      "metrics": {
+        "abs_area_error_fraction": null,
+        "boundary": null,
+        "candidate_flood_area_m2": 0,
+        "confusion": {
+          "false_negative": 0,
+          "false_positive": 0,
+          "true_negative": 0,
+          "true_positive": 0
+        },
+        "covered_cells": 0,
+        "dice": null,
+        "evaluable_cells": 114588,
+        "evaluated_coverage": 0.0,
+        "iou": null,
+        "precision": null,
+        "recall": null,
+        "reference_flood_area_m2": 0,
+        "signed_area_error_fraction": null
+      },
+      "possible_recession_candidate_cells": 0,
+      "processing_variant": "radiometrically_calibrated_gamma0",
+      "source_bounds": [
+        581120.0,
+        2255360.0,
+        593920.0,
+        2268160.0
+      ],
+      "source_grid": {
+        "crs": "EPSG:32647",
+        "height": 1280,
+        "nodata": 255.0,
+        "transform": [
+          10.0,
+          0.0,
+          581120.0,
+          0.0,
+          -10.0,
+          2268160.0
+        ],
+        "width": 1280
+      },
+      "source_raster_sha256": "a6482a70fbf959d47d612a94e4250942e831efe4bf32ae90cd7920509c293593",
+      "source_receipt_sha256": "7814cfb5f936952a581ab72c40bde7ab14f638715834f39974dddfa81c5394fe",
+      "source_timestamp": "2024-09-15T23:16:01.675690Z"
+    }
+  },
+  "confidence": "Single-event agreement with an automated optical map; 19h31m sensor timing gap and spectral limits apply.",
+  "development_result_sha256": "6bcf0b301963a0a53409b8dca0da46b71b650d47b48e80c8c660fb7c0036e1c2",
+  "event_id": "TH-MAESAI-2024-09",
+  "evidence_tier": "preregistered_automated_evaluation",
+  "final_holdout_partition_sha256": "e0755afa7953ea4ce3acb8cca52d6b6107ff97e879bc6f5238c3f1fd6af4b452",
+  "human_reviewed": false,
+  "metric_interpretation": "Agreement with an automated optical map, not accuracy.",
+  "official_warning": false,
+  "operational_status": "non_operational",
+  "plan_id": "mae_sai_automated_observation_v1",
+  "preregistration_commit_sha": "77833df9d595429c1cf903c9a841e86aa8668b79",
+  "preregistration_sha256": "bc5c6e9d2237a6423655e44790d0455131990ba954819265101f722d518cf543",
+  "processed_utc": "2026-09-24T10:14:05Z",
+  "reference_kind": "automated_optical_reference",
+  "reference_raster_sha256": "759b8cfab1496ef9d64750777217ac1ec7bf9b353c20ef0285443ce9397eaebc",
+  "result_sha256": "51b8af0fdfc83555ae6d73cb3d379802d5b17de69c04c3f60d49c3087bfe1a1d",
+  "role": "final_holdout",
+  "schema": "floodguard.automated_observation_evaluation_result.v1",
+  "source_timestamp": "2024-09-15T03:45:29Z",
+  "study_area_id": "aoi-01_mae_sai_core"
+}

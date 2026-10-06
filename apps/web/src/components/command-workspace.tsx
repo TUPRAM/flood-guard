@@ -2,11 +2,13 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { GeoaiRealPanel } from "@/components/geoai-real-panel";
+import { CommandCaseNotice } from "@/components/command-case-notice";
+import { ResearchReportNotice } from "@/components/research-report-notice";
 import { GeoMap } from "@/components/geo-map";
 import { WorkspaceHeader } from "@/components/workspace-header";
 import { ScoreBar } from "@/components/score-bar";
 import { StatePill } from "@/components/state-pill";
+import { PLANNING_OVERVIEW_ROUTE } from "@/lib/case-selection";
 import { commandRankPositions, resolveCommandSelection, searchRankedAreas, toggleCommandClass } from "@/lib/command-filter";
 import { downloadText } from "@/lib/download";
 import { formatConfidence, formatNumber, formatSourceTime, formatTopReason } from "@/lib/format";
@@ -16,6 +18,7 @@ import { formatServerDelta, scenarioMapPresentation } from "@/lib/scenario-prese
 import type { AreaRecord, FeatureCollection, FloodGuardData, ScenarioId } from "@/lib/types";
 import { useFloodGuardData } from "@/lib/use-floodguard-data";
 import { useLanguage } from "@/lib/use-language";
+import archiveStyles from "./command-archive.module.css";
 
 import styles from "./command-workspace.module.css";
 
@@ -36,10 +39,10 @@ export function offlineBrief(area: AreaRecord, status: FloodGuardData["status"])
   const action = ACTION_TEXT[area.action_class as keyof typeof ACTION_TEXT] ?? ACTION_TEXT.E;
   const disclosure = status.dataset_mode === "official_input"
     ? "Agency data input / ข้อมูลนำเข้าจากหน่วยงาน"
-    : "Mae Sai planning data / ข้อมูลเพื่อการวางแผนแม่สาย";
+    : "Retained Mae Sai research comparison / ผลเปรียบเทียบงานวิจัยแม่สายที่เก็บไว้";
   return `# FloodGuard bilingual action brief / เอกสารสรุปการดำเนินการสองภาษา
 
-${disclosure} — Confirm current conditions and instructions with DDPM and local authorities before action. / ก่อนดำเนินการ โปรดยืนยันสถานการณ์และคำแนะนำปัจจุบันกับ ปภ. และหน่วยงานท้องถิ่น
+${disclosure} — These scores and classes are not accepted event-response priorities. Confirm current conditions and instructions with DDPM and local authorities before action. / คะแนนและชั้นเหล่านี้ไม่ใช่ลำดับรับมือเหตุการณ์ที่ได้รับการยอมรับ ก่อนดำเนินการ โปรดยืนยันสถานการณ์และคำแนะนำปัจจุบันกับ ปภ. และหน่วยงานท้องถิ่น
 
 ## Area / พื้นที่
 
@@ -47,7 +50,7 @@ ${disclosure} — Confirm current conditions and instructions with DDPM and loca
 - ${area.area_name_th}
 - ID: ${area.area_id}
 
-## Priority / ลำดับความสำคัญ
+## Retained research priority comparison / การเปรียบเทียบลำดับความสำคัญงานวิจัยเดิม
 
 - FPPS: ${area.fpps_0_100.toFixed(2)}
 - Action class / ชั้นการดำเนินการ: ${area.action_class}
@@ -159,6 +162,17 @@ function planningAssumptions(area: AreaRecord, language: "en" | "th" = "en"): st
 export function CommandWorkspace() {
   const data = useFloodGuardData({ studyArea: "mae_sai_candidate_v1", role: "command" });
   const [language, setLanguage] = useLanguage("en");
+  // The query this page was opened with (a selected case) is carried on every link to another page. The workspace
+  // itself does not read it: it always shows the Mae Sai planning bundle. When the query names a case, one line
+  // under the context bar says so and leads to the planning overview of that case (CommandCaseNotice).
+  const [pageQuery, setPageQuery] = useState<string | null>(null);
+  const withPageQuery = (path: string) => pageQuery === null ? undefined : `${path}${pageQuery}`;
+  useEffect(() => {
+    const syncQuery = () => setPageQuery(window.location.search);
+    syncQuery();
+    window.addEventListener("popstate", syncQuery);
+    return () => window.removeEventListener("popstate", syncQuery);
+  }, []);
   const [selectedId, setSelectedId] = useState("");
   const [areaQuery, setAreaQuery] = useState("");
   const [activeTab, setActiveTab] = useState<CommandTab>("summary");
@@ -334,8 +348,10 @@ export function CommandWorkspace() {
 
   return (
     <main className={`command-page ${styles.page}`} lang={language}>
-      <WorkspaceHeader activeSurface="planning" language={language} onLanguageChange={setLanguage} />
-      <section className="command-context-bar" aria-label={th ? "บริบทข้อมูลการวางแผน" : "Planning data context"}>
+      {/* This workspace is served at /command/, the address of the header's Planning link: the link names the current page. */}
+      <WorkspaceHeader activeSurface="planning" language={language} onLanguageChange={setLanguage} hrefFor={withPageQuery} />
+      <div data-app-availability-slot />
+      <section id="main-content" tabIndex={-1} className="command-context-bar" aria-label={th ? "บริบทข้อมูลการวางแผน" : "Planning data context"}>
         <strong className="command-context-label">{th ? "ข้อมูลเพื่อการวางแผน" : "Planning intelligence"}</strong>
         <dl className="command-context-metadata">
           <div><dt>{th ? "เวลาข้อมูล" : "Source time"}</dt><dd>{formatSourceTime(selected.source_timestamp, language)} ICT</dd></div>
@@ -344,10 +360,22 @@ export function CommandWorkspace() {
         <p className="command-context-advisory">{th ? "ยืนยันสภาพถนน สถานที่ และคำแนะนำปัจจุบันกับ ปภ. และหน่วยงานท้องถิ่นก่อนดำเนินการ" : "Confirm current road and facility conditions, and follow DDPM and local-authority instructions before action."}</p>
       </section>
 
+      <CommandCaseNotice search={pageQuery} language={language} />
+
+      {data.status.dataset_mode !== "official_input" ? <section className={`command-context-bar command-research-notice ${archiveStyles.notice}`} aria-label={th ? "ขอบเขตการวิจัย" : "Research scope"}>
+        <div><strong>{th ? "พื้นที่ทำงานวิจัยเดิม" : "Historical research workspace"}</strong><h1>{th ? "คลังเปรียบเทียบงานวิจัยแม่สาย" : "Historical Mae Sai research archive"}</h1>
+          <p>{th ? "คะแนนและชั้นของตำบลในแม่สายด้านล่างเป็นผลวิจัยที่เก็บไว้เพื่อเปรียบเทียบ ไม่ใช่การจัดอันดับรับมือเหตุการณ์ที่ยอมรับแล้ว บทสรุปปัจจุบันแสดงคะแนนที่ยังไม่พร้อมและข้อจำกัดของหลักฐานอย่างชัดเจน" : "Subdistrict scores and classes below are retained research comparisons, not accepted event-response priorities. The current brief keeps unavailable scores and evidence limits explicit."}</p>
+          <small>{th ? "บริบทประชากรปี 2020 · ชุดข้อมูล: " : "2020 population context · Data version: "}{data.status.data_version} · {th ? "เวลาของแหล่งข้อมูล: " : "Source time: "}{formatSourceTime(selected.source_timestamp, language)} ICT</small>
+        </div>
+        {/* The link to the other Planning page, the candidate overview, is a link before the page has read its own address too. */}
+        <nav aria-label={th ? "มุมมองที่เกี่ยวข้อง" : "Related planning views"}><a href={withPageQuery(PLANNING_OVERVIEW_ROUTE) ?? PLANNING_OVERVIEW_ROUTE} data-planning-overview-link="true">{th ? "ภาพรวมปัจจุบัน" : "Current planning overview"}</a><a href={withPageQuery("/command/cases/")}>{th ? "เปิดการเปรียบเทียบพื้นที่ศึกษา" : "Open shared case comparisons"}</a></nav>
+      </section> : null}
+
       <div className="small-screen-command-note command-summary-card card">
-        <h1>{th ? "สรุปพื้นที่ทำงานวางแผน" : "Planning workspace summary"}</h1>
-        <p>{th ? "ใช้หน้าจอแท็บเล็ตหรือเดสก์ท็อปเพื่อดูแผนที่และแผงควบคุมทั้งหมด" : "Use a tablet or desktop for the full map and control workspace."}</p>
-        <dl><div><dt>{th ? "พื้นที่" : "Area"}</dt><dd>{th ? selected.area_name_th : selected.area_name_en}</dd></div><div><dt>FPPS</dt><dd>{selected.fpps_0_100.toFixed(1)} / {selected.action_class}</dd></div></dl>
+        <h2>{th ? "สรุปคลังงานวิจัยเดิม" : "Historical research archive summary"}</h2>
+        <p>{th ? "คะแนน FPPS และชั้นด้านล่างเป็นการเปรียบเทียบงานวิจัยเดิม ไม่ใช่ลำดับรับมือเหตุการณ์ที่ยอมรับแล้ว ใช้หน้าจอแท็บเล็ตหรือเดสก์ท็อปเพื่อดูแผนที่และแผงควบคุมทั้งหมด" : "The FPPS and class below are retained research comparisons, not accepted event-response priorities. Use a tablet or desktop for the full map and controls."}</p>
+        <dl><div><dt>{th ? "ตำบล" : "Subdistrict"}</dt><dd>{th ? selected.area_name_th : selected.area_name_en}</dd></div><div><dt>FPPS</dt><dd>{selected.fpps_0_100.toFixed(1)} / {selected.action_class}</dd></div></dl>
+        <p><a href={withPageQuery(PLANNING_OVERVIEW_ROUTE) ?? PLANNING_OVERVIEW_ROUTE}>{th ? "เปิดภาพรวมกรณีศึกษาปัจจุบัน" : "Open the current candidate overview"}</a></p>
       </div>
 
       <div className="command-workspace command-dashboard-grid">
@@ -526,9 +554,19 @@ export function CommandWorkspace() {
 
       </div>
 
+      {/*
+        The GeoAI research report's score table is not shown on Command (R17): this notice says where the report is
+        kept. The ranking, FPPS and classes above are this workspace's own retained comparison, and the notice says
+        that too. Since the owner's request of 5 Oct 2026 (R19) they stand on the default Planning page again, under
+        the label above the ranking. Whether they stay once Command is replaced is open (R17, point g).
+      */}
       <div className="command-geoai-layer">
-        <GeoaiRealPanel language={language} variant="command" planningDataVersion={data.status.data_version} />
+        <ResearchReportNotice language={language} retainedRanking />
       </div>
+      <footer className={archiveStyles.footer}>
+        <p>{th ? "ผลคะแนนนี้เป็นการเปรียบเทียบงานวิจัยเดิม ชั้น E หมายถึงติดตามและตรวจสอบ ไม่ได้หมายถึงปลอดภัย" : "These retained research scores are not accepted event priorities. Class E means Monitor and Verify; it does not mean safe."}</p>
+        <a href={withPageQuery("/studio/archive/")}>{th ? "เปิดรายงานเทคนิคย้อนหลัง" : "Open the historical technical report"} →</a>
+      </footer>
     </main>
   );
 }

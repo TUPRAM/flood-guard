@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 230" role="img" aria-label="Four differently gridded source rasters are read through one window into a single aligned stack, then speckle-filtered">
+            <style>text{font-family:"Manrope Variable",system-ui,sans-serif;fill:#3D4E57}.lbl{font-size:12px}.sml{font-size:10.5px;fill:#64767E}.mono-t{font-family:ui-monospace,"IBM Plex Mono",monospace;font-size:11px}.hi{fill:#0C6A74}.warnt{fill:#8A4A44}</style><defs>
+              <marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <polygon points="0,0 10,5 0,10" fill="currentColor"/>
+              </marker>
+            </defs>
+            <text class="lbl" x="24" y="22">Source scenes — different grids, different extents</text>
+            <rect x="24" y="36" width="96" height="70" fill="none" stroke="currentColor" stroke-width="1.1"/>
+            <rect x="34" y="50" width="96" height="70" fill="none" stroke="currentColor" stroke-width="1.1" opacity="0.7"/>
+            <rect x="44" y="64" width="96" height="70" fill="none" stroke="currentColor" stroke-width="1.1" opacity="0.5"/>
+            <rect x="54" y="78" width="96" height="70" fill="none" stroke="currentColor" stroke-width="1.1" opacity="0.35"/>
+            <rect x="66" y="66" width="46" height="34" fill="#0C6A74" opacity="0.28" stroke="#0C6A74" stroke-width="1.4"/>
+            <text class="sml hi" x="89" y="164" text-anchor="middle">shared window</text>
+
+            <line x1="180" y1="92" x2="248" y2="92" stroke="currentColor" stroke-width="1.4" marker-end="url(#ar2)"/>
+            <text class="sml" x="182" y="82">read window only</text>
+
+            <text class="lbl" x="266" y="22">One aligned stack, fixed shape</text>
+            <rect x="266" y="36" width="110" height="78" fill="none" stroke="#0C6A74" stroke-width="1.6"/>
+            <rect x="272" y="44" width="110" height="78" fill="none" stroke="#0C6A74" stroke-width="1.6"/>
+            <rect x="278" y="52" width="110" height="78" fill="none" stroke="#0C6A74" stroke-width="1.6"/>
+            <rect x="284" y="60" width="110" height="78" fill="none" stroke="#0C6A74" stroke-width="1.6"/>
+            <text class="mono-t hi" x="266" y="158">out_shape = (1024, 1024)</text>
+            <text class="sml" x="266" y="176">every band identical, pixel for pixel</text>
+
+            <line x1="412" y1="92" x2="470" y2="92" stroke="currentColor" stroke-width="1.4" marker-end="url(#ar2)"/>
+            <text class="sml" x="410" y="82">speckle filter</text>
+
+            <text class="lbl" x="488" y="22">3×3 boxcar</text>
+            <g stroke="currentColor" stroke-width="1" fill="none">
+              <rect x="488" y="36" width="24" height="24"/><rect x="512" y="36" width="24" height="24"/><rect x="536" y="36" width="24" height="24"/>
+              <rect x="488" y="60" width="24" height="24"/><rect x="536" y="60" width="24" height="24"/>
+              <rect x="488" y="84" width="24" height="24"/><rect x="512" y="84" width="24" height="24"/><rect x="536" y="84" width="24" height="24"/>
+            </g>
+            <rect x="512" y="60" width="24" height="24" fill="#0C6A74" opacity="0.35" stroke="#0C6A74" stroke-width="1.4"/>
+            <text class="sml" x="488" y="130">mean of 9 → centre</text>
+            <text class="sml" x="488" y="148">applied BEFORE</text>
+            <text class="sml" x="488" y="164">any differencing</text>
+          </svg>

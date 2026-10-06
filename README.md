@@ -27,7 +27,7 @@ src/floodguard          preserved, tested decision engine
 The responsive competition application has three deliberately different routes:
 
 - `/public` is Thai-first, mobile-first preparedness guidance using a reduced Mae Sai public projection, verified official contact links, and no evacuation commands or unverified facility locations.
-- `/command` is a map-first planning workspace with fixed A-E/FPPS policy, evidence panels, verification tasks, and canonical planning exports.
+- `/command` is a map-first planning workspace with fixed A-E/FPPS policy, evidence panels, verification tasks, and canonical planning exports. Its ranking, scores and classes are retained research comparisons, not accepted event-response priorities, and the page says so above them. The planning overview of a selected study case, which shows no research score, is at `/command/ver2`; `/command/archive`, the workspace's address until 5 October 2026, forwards to `/command`.
 - `/studio` is a read-only validation and evidence report. It preserves exact evidence identities, blockers, and authorization state without implying an approval workflow.
 
 The competition release is scoped to Mae Sai district, Chiang Rai, using historical September 2024 flood context. It does not claim current conditions or nationwide coverage. `role_visibility` is enforced as an evidence-presentation and safety-governance boundary in the unauthenticated competition build; it is not an authentication or confidentiality boundary.

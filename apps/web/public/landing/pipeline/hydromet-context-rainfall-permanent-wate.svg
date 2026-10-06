@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 190" role="img" aria-label="Detected dark pixels minus the permanent water mask equals new flooding only"><style>text{font-family:"Manrope Variable",system-ui,sans-serif;fill:#3D4E57}.lbl{font-size:12px}.sml{font-size:10.5px;fill:#64767E}.mono-t{font-family:ui-monospace,"IBM Plex Mono",monospace;font-size:11px}.hi{fill:#0C6A74}.warnt{fill:#8A4A44}</style>
+            <text class="lbl" x="30" y="24">Everything dark</text>
+            <rect x="30" y="34" width="150" height="110" fill="none" stroke="currentColor" stroke-width="1.2"/>
+            <path d="M92 34 q14 40 4 110" fill="none" stroke="#0C6A74" stroke-width="7" opacity="0.7"/>
+            <ellipse cx="128" cy="78" rx="30" ry="20" fill="#0C6A74" opacity="0.35"/>
+            <ellipse cx="62" cy="116" rx="22" ry="14" fill="#0C6A74" opacity="0.35"/>
+
+            <text class="lbl" x="216" y="96">−</text>
+
+            <text class="lbl" x="250" y="24">Permanent water</text>
+            <rect x="250" y="34" width="150" height="110" fill="none" stroke="currentColor" stroke-width="1.2"/>
+            <path d="M312 34 q14 40 4 110" fill="none" stroke="currentColor" stroke-width="7" opacity="0.55"/>
+            <text class="sml" x="325" y="160">JRC surface water</text>
+
+            <text class="lbl" x="436" y="96">=</text>
+
+            <text class="lbl" x="470" y="24">New flooding</text>
+            <rect x="470" y="34" width="150" height="110" fill="none" stroke="currentColor" stroke-width="1.2"/>
+            <ellipse cx="568" cy="78" rx="30" ry="20" fill="#0C6A74" opacity="0.5"/>
+            <ellipse cx="502" cy="116" rx="22" ry="14" fill="#0C6A74" opacity="0.5"/>
+            <text class="sml hi" x="470" y="160">the river is gone — only new water remains</text>
+          </svg>

@@ -1,0 +1,1161 @@
+{
+  "schema_version": "floodguard.access_diff_run_receipt.v1",
+  "generated_at_utc": "2026-10-04T15:38:45Z",
+  "run_kind": "superseding_run",
+  "plan_task": "E5: access diff (two runs) x services x thresholds; per-tambon table; EQ-04 test; diff-logic test",
+  "run": "Access difference of cases SE1 and O2 over the Mae Sai frame",
+  "status": "run_receipt",
+  "status_note": "Receipt of one run on real units, made with protocol v1a and v1b in force. Every run is reported: a second run writes a new receipt that names this one. The tables are inputs of the access-gap and road-criticality components for plan task E8; they are not the components and not an FPPS.",
+  "official_warning": false,
+  "operational_status": "non_operational",
+  "can_feed_decision_layer": false,
+  "computes": "For cases SE1 and O2 over the Mae Sai frame, at the flood level as provided and under the strict, central and permissive levels of closure rule v1: a baseline run and a flooded run of modelled access, and per tambon the residents with baseline access, the residents among them newly losing it, the residents with a baseline route to any hospital or main-road entry and those among them who lose all routes. Counts of residents only: no ratio of them is written. These are inputs of the access-gap and road-criticality components. No component value, no FPPS, no A-E class and no ensemble.",
+  "source_timestamp": "2026-07-10T02:46:49Z",
+  "source_timestamps": {
+    "SE1": "2024-08-01/2024-10-12",
+    "O2": "2024-10-22",
+    "osm_retrieved_at_utc": "2026-07-10T02:46:49Z",
+    "population_year_represented": 2020,
+    "tambon_boundaries_valid_on": [
+      "2022-01-22"
+    ],
+    "ddpm_list_file_dated": "2026-09-21 (open-data folder date)"
+  },
+  "confidence_class": "low",
+  "confidence_basis": "Modelled access on OpenStreetMap roads at fixed class speeds, with WorldPop 2020 modelled residents, under closures assumed from an unvalidated preliminary agency extent (UNOSAT product 4009 with GISTDA; Field_Validation=0) that FloodGuard did not validate. No closure, route, facility or count was checked on the ground or against an independent source.",
+  "protocol_sha256": {
+    "planning_protocol_v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+    "planning_protocol_v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+  },
+  "protocol_state": {
+    "v1a": "in_force",
+    "v1b": "in_force"
+  },
+  "licence": {
+    "applies_to": "Every figure of this run that is derived from UNOSAT/GISTDA product 4009: the closure counts and the resident counts of cases SE1 and O2, here and in the tables.",
+    "name": "CC BY-SA 4.0",
+    "full_name": "Creative Commons Attribution-ShareAlike 4.0 International",
+    "spdx_id": "CC-BY-SA-4.0",
+    "url": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "legal_code_url": "https://creativecommons.org/licenses/by-sa/4.0/legalcode",
+    "credit": "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009",
+    "share_alike": "Every layer or table derived from product 4009 is shared under CC BY-SA 4.0, in its own file, with the attribution and a change notice. Keeping product 4009 derivatives in their own files is a caution, not legal advice.",
+    "standard_sentence": "unvalidated preliminary agency extent (UNOSAT product 4009 with GISTDA; Field_Validation=0), used as provided under CC BY-SA 4.0. FloodGuard did not validate it.",
+    "change_notice": "Changed by FloodGuard: each product 4009 layer was repaired, projected to EPSG:32647 and clipped to the routing corridor (plan task E1); road segments were measured against it, closure rule v1 was applied and modelled access was compared with and without the closures. Each table states its own licence, credit and change notice. Source: UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009, CC BY-SA 4.0.",
+    "other_inputs": [
+      {
+        "id": "osm",
+        "name": "OpenStreetMap Thailand extract (Geofabrik), roads and hospitals of the planning context",
+        "licence": "ODbL 1.0",
+        "attribution": "(c) OpenStreetMap contributors",
+        "used_for": "The road graph, the hospitals and the main-road entries."
+      },
+      {
+        "id": "worldpop-2020",
+        "name": "WorldPop Thailand 100 m population 2020 (tha_ppp_2020.tif)",
+        "licence": "CC BY 4.0",
+        "attribution": "WorldPop (www.worldpop.org), University of Southampton",
+        "used_for": "The residents of each demand cell."
+      },
+      {
+        "id": "cod-ab",
+        "name": "HDX Thailand COD-AB subdistrict boundaries (tha_admin3)",
+        "licence": "CC BY-IGO",
+        "attribution": "OCHA / HDX Thailand COD-AB",
+        "used_for": "The tambon each demand cell counts for."
+      },
+      {
+        "id": "ddpm-shelters",
+        "name": "DDPM listed shelters, dpm-gd002_final2.csv (open-data 2026-09-21)",
+        "licence": "Listed, operating status unverified; pitch level only (decision D8b); no publication scope is recorded for it in this repository",
+        "attribution": "Department of Disaster Prevention and Mitigation (DDPM), Thailand",
+        "used_for": "The located shelters that are the destinations of the walking service. No shelter is named."
+      }
+    ],
+    "not_legal_advice": true
+  },
+  "parameters": {
+    "frame_set": "mae_sai",
+    "cases": [
+      "SE1",
+      "O2"
+    ],
+    "unit_ids": [
+      "TH570901",
+      "TH570902",
+      "TH570903",
+      "TH570904",
+      "TH570905",
+      "TH570906",
+      "TH570908",
+      "TH570909"
+    ],
+    "flood_levels_run": [
+      "as_provided"
+    ],
+    "flood_levels_not_run": [
+      "minus",
+      "plus"
+    ],
+    "closure_frame": "routing_context",
+    "closure_rule": {
+      "version": "closure_rule_v1",
+      "levels": [
+        "strict",
+        "central",
+        "permissive"
+      ],
+      "closed_fraction_min": 0.5,
+      "bridge_culvert_closed_fraction_min": 0.25,
+      "delay_min_intersected_length_m": 20.0,
+      "min_intersection_m": 1e-06,
+      "length_thresholds_m": {
+        "trunk": 50.0,
+        "primary": 50.0,
+        "secondary": 50.0,
+        "tertiary": 30.0,
+        "local": 30.0,
+        "motorway": 50.0,
+        "residential": 30.0,
+        "unclassified": 30.0
+      },
+      "delay_factor_k": {
+        "strict": 2,
+        "central": 4,
+        "permissive": 6
+      },
+      "strict_delays": true,
+      "strict_delay_rule": "Under strict, an edge intersected for at least 20 m with f < 0.5 is delayed with k = 2: travel time x (1 + 2 x f). Under central the plan's wording applies with k = 4.",
+      "culvert_tag_handling": "culvert=* is not read: the central level applies the 0.25 fraction to edges tagged bridge=yes or tunnel=culvert only, and every closure output says so. parameters.bridge_culvert_tags keeps the plan's three tags beside this statement.",
+      "source": "planning_protocol_v1b.json /closure_rule_v1 (parameters, unassigned_road_classes, delay_under_strict, culvert_tag_handling; owner choices 4, 5 and 23)"
+    },
+    "services": [
+      {
+        "service": "hospital",
+        "mode": "vehicle",
+        "thresholds_minutes": [
+          15,
+          30,
+          60
+        ],
+        "access_gap_threshold_minutes": 30,
+        "publication_level": "public"
+      },
+      {
+        "service": "main_road_entry",
+        "mode": "vehicle",
+        "thresholds_minutes": [
+          15,
+          30,
+          60
+        ],
+        "access_gap_threshold_minutes": 15,
+        "publication_level": "public"
+      },
+      {
+        "service": "ddpm_located_shelter",
+        "mode": "walking",
+        "thresholds_minutes": [
+          15,
+          30,
+          60
+        ],
+        "access_gap_threshold_minutes": 30,
+        "publication_level": "pitch"
+      }
+    ],
+    "services_source": "planning_protocol_v1a.json /scoring_frame/components/access_gap_0_100 and planning_protocol_v1b.json /facility_sets/services",
+    "route_services": [
+      "hospital",
+      "main_road_entry"
+    ],
+    "population_snap_limit_m": 250.0,
+    "facility_snap_limit_m": 100.0,
+    "connector_speed_kmh": 5.0,
+    "modelled_road_speeds_kmh": {
+      "motorway": 80.0,
+      "trunk": 70.0,
+      "primary": 60.0,
+      "secondary": 50.0,
+      "tertiary": 40.0,
+      "residential": 25.0,
+      "unclassified": 25.0,
+      "local": 20.0
+    },
+    "walking_speed_kmh": 5.0,
+    "unit_rule": "A demand cell counts for the tambon whose polygon holds its centre (open point E5-OP1).",
+    "baseline_runs": "One baseline run per service and mode serves both cases and all three closure levels: it reads no flood input."
+  },
+  "inputs": {
+    "planning_protocol_v1a": {
+      "path": "docs/proposal_execution/planning_protocol_v1a.json",
+      "sha256": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954"
+    },
+    "planning_protocol_v1b": {
+      "path": "docs/proposal_execution/planning_protocol_v1b.json",
+      "sha256": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+    },
+    "protocol_receipts": {
+      "path": "docs/proposal_execution/RECEIPTS.jsonl",
+      "sha256": "06b0721ecba63467cc0e4f614cb5463ce480bf9bfb596653f5189f869795c59a",
+      "bytes": 107182
+    },
+    "planning_context_vehicle": {
+      "status": "of_record",
+      "run_kind": "build_of_record",
+      "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e4_vehicle/context_inputs.json",
+      "file_sha256": "37e47f2e4cede433aa709e0154e9d39e921d1359d69b10642e3385267ca01385",
+      "canonical_sha256": "0b2672b6d4d1d94da3a4c39d819d980a9e5bf7845bb22fea1284a2893a6351a6",
+      "canonical_sha256_recomputed": true,
+      "context_generated_at": "2026-10-03T05:28:59.223644+00:00",
+      "receipt": {
+        "path": "outputs/planning_v1/e4_planning_context_se1_vehicle.json",
+        "sha256": "690add44186d02cb501dccb152678fbf03cf109acc041a5c782af705993f2ad2"
+      },
+      "named_in": "planning_protocol_v1b.json /corridor_polygon/e4_build_of_record",
+      "input_hashes": {
+        "aoi_02_sha256": "d49de53e86264c06218fd9a03cc2b5da1549085a49fae2f3cd288bf6334f5a56",
+        "boundaries_sha256": "09e62345481bb80030ff6779e074bfb2c16629b70ae1e373ebd31945f1c6e0d8",
+        "ddpm_file_sha256": "91a8f26a5dd2446b68b562dcda13024d1bd4981720f985722a6467d4edeef9d7",
+        "dga_file_sha256": "15d208b7c269562c9444f5f034f5e16c3a33a2e069a19637264b2ddc2f1ee58d",
+        "osm_pbf_sha256": "b7f46018249638413b1d318bc86519f140c27af20cac7c00d42fe03775b7add1",
+        "reviewed_junctions_sha256": "43de4cc50efc790af1aa502e820e178856389041b568ff61bf2c463cfe240f07",
+        "routing_file_sha256": "4e49d5eca2f7522e2de10cf81cc68b4ebcbea036225d1b862f4a80cb1affbac2",
+        "worldpop_2020_sha256": "fb39d85dd150c45c7b25771f29bcd548e611afa0967224ac6d8ca05727230e20"
+      },
+      "osm_retrieved_at_utc": "2026-07-10T02:46:49Z",
+      "ddpm_list_file_dated": "2026-09-21 (open-data folder date)",
+      "hospital_facility_ids": [
+        "OSM-node-7856667792",
+        "OSM-way-1010348419",
+        "OSM-way-371233866",
+        "OSM-way-447735125",
+        "OSM-way-527539157",
+        "OSM-way-549948901"
+      ],
+      "main_road_entry_node_ids_sha256": "10d17aa72a96150ffbbfc2d2fddd53bc921ede042fdebe66540b8a43092da15d",
+      "baseline_no_route": {
+        "residents": 81836.889439,
+        "graph_connected_residents": 75226.97719,
+        "connected_residents_without_a_route": 56.446837,
+        "share": 0.00075,
+        "residents_not_connected_to_the_graph": 6609.912249
+      }
+    },
+    "planning_context_walking": {
+      "status": "candidate",
+      "run_kind": "candidate",
+      "status_note": "Candidate: a walking build of the unchanged E4 builder without a declared compute window. The E4 build of record is a vehicle context, and decision R13 accepted a compute window for that build only. The shelter tables that rest on this context are candidate inputs and are not usable by task E8 until the owners accept a walking build of record (open point E5-OP5).",
+      "usable_by_task_e8": false,
+      "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e4_walking_candidate/context_inputs.json",
+      "file_sha256": "f750f268576f98c15d9f3cd9c8ac1ebc1a29f5ae1fbb056ade59c40d473aca64",
+      "canonical_sha256": "1c317916610567672507ba3a436591c6835ffa58934b8ce1e9c4f9310ae3586e",
+      "canonical_sha256_recomputed": true,
+      "context_generated_at": "2026-10-04T13:09:25.772207+00:00",
+      "receipt": {
+        "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e4_walking_candidate/receipt.json",
+        "sha256": "c951277dcc1238765df9e0a84bdc17e99c75c770ff866ca85af053527a118735",
+        "bytes": 18369
+      },
+      "receipt_in_git": false,
+      "receipt_generated_at_utc": "2026-10-04T13:09:29Z",
+      "builder_sha256": "32115d7e71203f97f8b03fb84028dfac3f2884d423405f84e6dd45d0c2e13ec5",
+      "same_input_files_as_the_context_of_record": true,
+      "same_demand_cells_and_supplied_shelters_as_the_context_of_record": true,
+      "compute_window_declared": false,
+      "run_report": "outputs/planning_v1/e5_walking_context_build_report_se1_mae_sai.json"
+    },
+    "e1_receipt": {
+      "path": "outputs/planning_v1/e1_flood_inputs_mae_sai.json",
+      "sha256": "341280ff2ef1275842a3a4498eeb11f3e7d549394f724d469492cfae42517fbd",
+      "registered_in": "outputs/planning_v1/run_register/e1_flood_inputs_mae_sai.json"
+    },
+    "flood_inputs": {
+      "O2": {
+        "input_id": "unosat_4009:CHIANGRAI_20241022_FloodExtent",
+        "input_record": {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e1_flood_input/input_record.json",
+          "sha256": "b35c9f4a0734b6d57b77c570c9aead118422c00cf2dcb89e62d9878bc04350bb"
+        },
+        "extents": {
+          "as_provided": {
+            "path": "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e1_flood_input/flood_extent__as_provided__routing_context.geojson",
+            "sha256": "acd06381a562af128c14657bb2f205d4a7e508aa0dda311d697e229f5f6ded73",
+            "bytes": 354197,
+            "rights_level": "local"
+          }
+        },
+        "frame": "routing_context",
+        "rights_level": "local",
+        "layer": "CHIANGRAI_20241022_FloodExtent",
+        "lane": "OBS",
+        "tier": "T3",
+        "temporal_relation": "event_aligned",
+        "source_timestamp": "2024-10-22"
+      },
+      "SE1": {
+        "input_id": "unosat_4009:CHIANGRAI_20240801_20241012_AccumulatedFlood",
+        "input_record": {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e1_flood_input/input_record.json",
+          "sha256": "f88120a436bdaf86e5b1f7a98d6424a8f554ccf15f126b5e09222fab0ae1b4f2"
+        },
+        "extents": {
+          "as_provided": {
+            "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e1_flood_input/flood_extent__as_provided__routing_context.geojson",
+            "sha256": "5d7c1c0ca7909284317a66d2a3611452de3f91d729dfb4cc31b96840e147b794",
+            "bytes": 18110603,
+            "rights_level": "public"
+          }
+        },
+        "frame": "routing_context",
+        "rights_level": "public",
+        "layer": "CHIANGRAI_20240801_20241012_AccumulatedFlood",
+        "lane": "SCN-ENV",
+        "tier": "T1",
+        "temporal_relation": "season_window",
+        "source_timestamp": "2024-08-01/2024-10-12"
+      }
+    },
+    "rights_record_4009": {
+      "path": "docs/proposal_execution/rights_basis_4009_v1.json",
+      "sha256": "531ab40beb2b3e80a02d6de0d4d7d791b299176af0b192bfe105ca23c7e50cb3",
+      "record_status": "confirmed"
+    },
+    "licence_notice_4009": {
+      "path": "docs/proposal_execution/rights_basis_4009_v1_NOTICE.txt",
+      "sha256": "acaafc1b83a5fe5d72a9f50e0e0efe476517328f581c5c487fb2e0a1290de1df",
+      "bytes": 8230
+    },
+    "tambon_boundaries": {
+      "path": "<external_data_workspace>/open_context/hdx_cod_ab/tha_admin_boundaries.gdb.zip",
+      "sha256": "09e62345481bb80030ff6779e074bfb2c16629b70ae1e373ebd31945f1c6e0d8",
+      "bytes": 174679979,
+      "layer": "tha_admin3",
+      "unit_id_field": "adm3_pcode",
+      "units": 8,
+      "valid_on": [
+        "2022-01-22"
+      ]
+    }
+  },
+  "rights": {
+    "registry": "floodguard.rights.REGISTERED_RECORDS",
+    "rule": "The rights registry is asked for each product 4009 layer before its extent is read, and the record must be the confirmed record the flood input names. The lineage of a table is the extent it reads and, for the shelter service, the DDPM rows; the footprint layer of a flood input enters no table. A table goes into Git only when the minimum rights level across its lineage is public; any other table stays outside Git. Nothing is written under apps/web/public/.",
+    "ddpm_shelters": "pitch",
+    "publication_level": {
+      "O2": {
+        "flood_input": "local",
+        "public_services": "local",
+        "pitch_services": "local"
+      },
+      "SE1": {
+        "flood_input": "public",
+        "public_services": "public",
+        "pitch_services": "pitch"
+      }
+    },
+    "levels_and_git": "Protocol v1a guardrail GR6 says that only a public output may be written under apps/web/public/. Plan 3.1 keeps pitch variants outside Git and puts committed outputs (small tables and GeoJSON) in outputs/planning_v1/. Neither says whether a figure derived from a local-level input may be committed. Until the owners decide (open point E1-OP1), tasks E1 and E5 keep every layer and every per-unit table whose lineage is below public outside Git, and their run receipts in Git hold whole-frame figures of local-level inputs and say so.",
+    "figures_of_local_level_layers_in_this_receipt": {
+      "what": "This receipt is committed. It holds whole-frame figures, and no table, of every case that was run. The figures listed here come from a flood layer the rights registry holds below the public level; the per-tambon tables of those cases are outside Git.",
+      "figures": [
+        {
+          "case_id": "O2",
+          "layer": "CHIANGRAI_20241022_FloodExtent",
+          "rights_level": "local",
+          "figures": "The closure counts of each level, and the whole-frame residents with baseline access, newly losing access and losing all routes.",
+          "where": "results.O2"
+        }
+      ],
+      "for_the_owners": "Open point E1-OP1: whether a local level allows these figures in Git. They have been in the receipt since the first commit of this task."
+    },
+    "written_under_apps_web_public": false
+  },
+  "graphs": {
+    "vehicle": {
+      "travel_mode": "legacy_vehicle",
+      "context_edges": 65328,
+      "grade_join_connectors": 345,
+      "joins_sha256": "d289f728feafef649687b39f7da71228c79427bf377f7e63bc1c0eed4f2ee357",
+      "road_nodes": 62378,
+      "demand_cells": 36765,
+      "destinations": {
+        "hospital": 6,
+        "main_road_entry": 1939,
+        "ddpm_located_shelter": 82
+      },
+      "destinations_snapped_to_the_graph": {
+        "hospital": 6,
+        "main_road_entry": 1939,
+        "ddpm_located_shelter": 81
+      }
+    },
+    "walking": {
+      "travel_mode": "walking",
+      "context_edges": 69095,
+      "grade_join_connectors": 359,
+      "joins_sha256": "238864d3f616ce4ae343402f0c65e07d66b16ddb77eaa523d19c265bb16bbaea",
+      "road_nodes": 66537,
+      "demand_cells": 36765,
+      "destinations": {
+        "hospital": 6,
+        "main_road_entry": 973,
+        "ddpm_located_shelter": 82
+      },
+      "destinations_snapped_to_the_graph": {
+        "hospital": 6,
+        "main_road_entry": 973,
+        "ddpm_located_shelter": 81
+      }
+    }
+  },
+  "demand": {
+    "demand_cells": 36765,
+    "residents": 81836.8894393444,
+    "cells_in_one_unit": 36765,
+    "cells_in_no_unit": 0,
+    "cells_in_more_than_one_unit": 0
+  },
+  "results": {
+    "O2": {
+      "whole_frame_note": "Whole-frame figures of the public services (hospital and main-road entry, vehicle). They are inputs of two components, not component values. The per-tambon figures are in the tables; the figures of the shelter service are pitch level and stay outside Git.",
+      "runs": [
+        {
+          "flood_level": "as_provided",
+          "closure_level": "strict",
+          "closure_basis": "modelled_from_unosat_4009:CHIANGRAI_20241022_FloodExtent",
+          "closure": {
+            "vehicle": {
+              "closure_rule_version": "closure_rule_v1",
+              "level": "strict",
+              "closure_basis": "modelled_from_unosat_4009:CHIANGRAI_20241022_FloodExtent",
+              "edges": 65673,
+              "intersected_edges": 49,
+              "closed_edges": 20,
+              "delayed_edges": 11,
+              "intersected_edges_left_open": 18,
+              "closed_edges_by_road_class": {
+                "local": 20
+              },
+              "delayed_edges_by_road_class": {
+                "local": 8,
+                "residential": 2,
+                "unclassified": 1
+              },
+              "closed_bridge_tagged_edges": 0,
+              "largest_travel_time_factor": 1.9692414648718608,
+              "closure_result_sha256": "2ff1a7f8ba872b774da479be377431e5b42ca6ac1c2402969b104e77429fe2e8",
+              "grade_join_connectors": 345,
+              "connectors_with_their_coordinate_inside_the_extent": 0,
+              "main_road_entries": 1939,
+              "entries_with_every_main_road_edge_closed": 0,
+              "entries_with_every_edge_closed": 0
+            }
+          },
+          "residents": 81836.8894393444,
+          "access_gap_inputs": {
+            "hospital": {
+              "mode": "vehicle",
+              "threshold_minutes": 30,
+              "baseline_access_residents": 74596.84646940231,
+              "newly_lost_residents": 62.165141105651855
+            },
+            "main_road_entry": {
+              "mode": "vehicle",
+              "threshold_minutes": 15,
+              "baseline_access_residents": 68887.94476729631,
+              "newly_lost_residents": 49.01597499847412
+            }
+          },
+          "road_criticality_inputs": {
+            "residents_losing_all_routes": 61.40290868282318,
+            "residents_with_baseline_route": 75170.53035321832
+          },
+          "residents_not_connected_to_the_graph": {
+            "hospital": 6609.912249416113,
+            "main_road_entry": 6609.912249416113
+          },
+          "cells_in_no_unit": {
+            "demand_cells": 0,
+            "residents": 0.0,
+            "note": "Cells whose centre lies in no unit of the frame, or in more than one. They are in the whole frame and in no unit row."
+          }
+        },
+        {
+          "flood_level": "as_provided",
+          "closure_level": "central",
+          "closure_basis": "modelled_from_unosat_4009:CHIANGRAI_20241022_FloodExtent",
+          "closure": {
+            "vehicle": {
+              "closure_rule_version": "closure_rule_v1",
+              "level": "central",
+              "closure_basis": "modelled_from_unosat_4009:CHIANGRAI_20241022_FloodExtent",
+              "edges": 65673,
+              "intersected_edges": 49,
+              "closed_edges": 31,
+              "delayed_edges": 0,
+              "intersected_edges_left_open": 18,
+              "closed_edges_by_road_class": {
+                "local": 28,
+                "residential": 2,
+                "unclassified": 1
+              },
+              "delayed_edges_by_road_class": {},
+              "closed_bridge_tagged_edges": 0,
+              "largest_travel_time_factor": null,
+              "closure_result_sha256": "5fda54849057d7c5d74beaa80cd6213db9e2cc046b2931157f87e4e1191bfb3a",
+              "grade_join_connectors": 345,
+              "connectors_with_their_coordinate_inside_the_extent": 0,
+              "main_road_entries": 1939,
+              "entries_with_every_main_road_edge_closed": 0,
+              "entries_with_every_edge_closed": 0
+            }
+          },
+          "residents": 81836.8894393444,
+          "access_gap_inputs": {
+            "hospital": {
+              "mode": "vehicle",
+              "threshold_minutes": 30,
+              "baseline_access_residents": 74596.84646940231,
+              "newly_lost_residents": 108.90009069442749
+            },
+            "main_road_entry": {
+              "mode": "vehicle",
+              "threshold_minutes": 15,
+              "baseline_access_residents": 68887.94476729631,
+              "newly_lost_residents": 77.61900615692139
+            }
+          },
+          "road_criticality_inputs": {
+            "residents_losing_all_routes": 108.90009069442749,
+            "residents_with_baseline_route": 75170.53035321832
+          },
+          "residents_not_connected_to_the_graph": {
+            "hospital": 6609.912249416113,
+            "main_road_entry": 6609.912249416113
+          },
+          "cells_in_no_unit": {
+            "demand_cells": 0,
+            "residents": 0.0,
+            "note": "Cells whose centre lies in no unit of the frame, or in more than one. They are in the whole frame and in no unit row."
+          }
+        },
+        {
+          "flood_level": "as_provided",
+          "closure_level": "permissive",
+          "closure_basis": "modelled_from_unosat_4009:CHIANGRAI_20241022_FloodExtent",
+          "closure": {
+            "vehicle": {
+              "closure_rule_version": "closure_rule_v1",
+              "level": "permissive",
+              "closure_basis": "modelled_from_unosat_4009:CHIANGRAI_20241022_FloodExtent",
+              "edges": 65673,
+              "intersected_edges": 49,
+              "closed_edges": 49,
+              "delayed_edges": 0,
+              "intersected_edges_left_open": 0,
+              "closed_edges_by_road_class": {
+                "local": 44,
+                "residential": 2,
+                "unclassified": 3
+              },
+              "delayed_edges_by_road_class": {},
+              "closed_bridge_tagged_edges": 0,
+              "largest_travel_time_factor": null,
+              "closure_result_sha256": "499a5cb1d69454c2da7cba11b6f36fbf65c6592d09b3c19dc6ce10c5f13c9512",
+              "grade_join_connectors": 345,
+              "connectors_with_their_coordinate_inside_the_extent": 0,
+              "main_road_entries": 1939,
+              "entries_with_every_main_road_edge_closed": 0,
+              "entries_with_every_edge_closed": 0
+            }
+          },
+          "residents": 81836.8894393444,
+          "access_gap_inputs": {
+            "hospital": {
+              "mode": "vehicle",
+              "threshold_minutes": 30,
+              "baseline_access_residents": 74596.84646940231,
+              "newly_lost_residents": 145.52100956439972
+            },
+            "main_road_entry": {
+              "mode": "vehicle",
+              "threshold_minutes": 15,
+              "baseline_access_residents": 68887.94476729631,
+              "newly_lost_residents": 80.05457186698914
+            }
+          },
+          "road_criticality_inputs": {
+            "residents_losing_all_routes": 144.2504026889801,
+            "residents_with_baseline_route": 75170.53035321832
+          },
+          "residents_not_connected_to_the_graph": {
+            "hospital": 6609.912249416113,
+            "main_road_entry": 6609.912249416113
+          },
+          "cells_in_no_unit": {
+            "demand_cells": 0,
+            "residents": 0.0,
+            "note": "Cells whose centre lies in no unit of the frame, or in more than one. They are in the whole frame and in no unit row."
+          }
+        }
+      ]
+    },
+    "SE1": {
+      "whole_frame_note": "Whole-frame figures of the public services (hospital and main-road entry, vehicle). They are inputs of two components, not component values. The per-tambon figures are in the tables; the figures of the shelter service are pitch level and stay outside Git.",
+      "runs": [
+        {
+          "flood_level": "as_provided",
+          "closure_level": "strict",
+          "closure_basis": "modelled_from_unosat_4009:CHIANGRAI_20240801_20241012_AccumulatedFlood",
+          "closure": {
+            "vehicle": {
+              "closure_rule_version": "closure_rule_v1",
+              "level": "strict",
+              "closure_basis": "modelled_from_unosat_4009:CHIANGRAI_20240801_20241012_AccumulatedFlood",
+              "edges": 65673,
+              "intersected_edges": 8288,
+              "closed_edges": 7842,
+              "delayed_edges": 137,
+              "intersected_edges_left_open": 309,
+              "closed_edges_by_road_class": {
+                "local": 3450,
+                "primary": 32,
+                "residential": 2728,
+                "secondary": 82,
+                "tertiary": 326,
+                "trunk": 129,
+                "unclassified": 1095
+              },
+              "delayed_edges_by_road_class": {
+                "local": 38,
+                "primary": 6,
+                "residential": 47,
+                "secondary": 1,
+                "tertiary": 17,
+                "trunk": 2,
+                "unclassified": 26
+              },
+              "closed_bridge_tagged_edges": 59,
+              "largest_travel_time_factor": 1.9987043303609324,
+              "closure_result_sha256": "288a9584eac37d415448e6f769b1c303eb4184c490f8c68b4a082d0783809e7a",
+              "grade_join_connectors": 345,
+              "connectors_with_their_coordinate_inside_the_extent": 108,
+              "main_road_entries": 1939,
+              "entries_with_every_main_road_edge_closed": 163,
+              "entries_with_every_edge_closed": 127
+            }
+          },
+          "residents": 81836.8894393444,
+          "access_gap_inputs": {
+            "hospital": {
+              "mode": "vehicle",
+              "threshold_minutes": 30,
+              "baseline_access_residents": 74596.84646940231,
+              "newly_lost_residents": 22643.255083084106
+            },
+            "main_road_entry": {
+              "mode": "vehicle",
+              "threshold_minutes": 15,
+              "baseline_access_residents": 68887.94476729631,
+              "newly_lost_residents": 17460.348263829947
+            }
+          },
+          "road_criticality_inputs": {
+            "residents_losing_all_routes": 21332.772853940725,
+            "residents_with_baseline_route": 75170.53035321832
+          },
+          "residents_not_connected_to_the_graph": {
+            "hospital": 6609.912249416113,
+            "main_road_entry": 6609.912249416113
+          },
+          "cells_in_no_unit": {
+            "demand_cells": 0,
+            "residents": 0.0,
+            "note": "Cells whose centre lies in no unit of the frame, or in more than one. They are in the whole frame and in no unit row."
+          }
+        },
+        {
+          "flood_level": "as_provided",
+          "closure_level": "central",
+          "closure_basis": "modelled_from_unosat_4009:CHIANGRAI_20240801_20241012_AccumulatedFlood",
+          "closure": {
+            "vehicle": {
+              "closure_rule_version": "closure_rule_v1",
+              "level": "central",
+              "closure_basis": "modelled_from_unosat_4009:CHIANGRAI_20240801_20241012_AccumulatedFlood",
+              "edges": 65673,
+              "intersected_edges": 8288,
+              "closed_edges": 7926,
+              "delayed_edges": 55,
+              "intersected_edges_left_open": 307,
+              "closed_edges_by_road_class": {
+                "local": 3472,
+                "primary": 34,
+                "residential": 2754,
+                "secondary": 83,
+                "tertiary": 338,
+                "trunk": 131,
+                "unclassified": 1114
+              },
+              "delayed_edges_by_road_class": {
+                "local": 16,
+                "primary": 4,
+                "residential": 23,
+                "tertiary": 5,
+                "unclassified": 7
+              },
+              "closed_bridge_tagged_edges": 61,
+              "largest_travel_time_factor": 2.982560838481897,
+              "closure_result_sha256": "7c1e9bd288d4fe8f285a7d499d3826b5da7b30a617b44e7f8d3cb1daf581f766",
+              "grade_join_connectors": 345,
+              "connectors_with_their_coordinate_inside_the_extent": 108,
+              "main_road_entries": 1939,
+              "entries_with_every_main_road_edge_closed": 165,
+              "entries_with_every_edge_closed": 129
+            }
+          },
+          "residents": 81836.8894393444,
+          "access_gap_inputs": {
+            "hospital": {
+              "mode": "vehicle",
+              "threshold_minutes": 30,
+              "baseline_access_residents": 74596.84646940231,
+              "newly_lost_residents": 24505.18687567115
+            },
+            "main_road_entry": {
+              "mode": "vehicle",
+              "threshold_minutes": 15,
+              "baseline_access_residents": 68887.94476729631,
+              "newly_lost_residents": 17595.278018265963
+            }
+          },
+          "road_criticality_inputs": {
+            "residents_losing_all_routes": 21797.694873660803,
+            "residents_with_baseline_route": 75170.53035321832
+          },
+          "residents_not_connected_to_the_graph": {
+            "hospital": 6609.912249416113,
+            "main_road_entry": 6609.912249416113
+          },
+          "cells_in_no_unit": {
+            "demand_cells": 0,
+            "residents": 0.0,
+            "note": "Cells whose centre lies in no unit of the frame, or in more than one. They are in the whole frame and in no unit row."
+          }
+        },
+        {
+          "flood_level": "as_provided",
+          "closure_level": "permissive",
+          "closure_basis": "modelled_from_unosat_4009:CHIANGRAI_20240801_20241012_AccumulatedFlood",
+          "closure": {
+            "vehicle": {
+              "closure_rule_version": "closure_rule_v1",
+              "level": "permissive",
+              "closure_basis": "modelled_from_unosat_4009:CHIANGRAI_20240801_20241012_AccumulatedFlood",
+              "edges": 65673,
+              "intersected_edges": 8288,
+              "closed_edges": 8288,
+              "delayed_edges": 0,
+              "intersected_edges_left_open": 0,
+              "closed_edges_by_road_class": {
+                "local": 3564,
+                "primary": 49,
+                "residential": 2926,
+                "secondary": 87,
+                "tertiary": 368,
+                "trunk": 133,
+                "unclassified": 1161
+              },
+              "delayed_edges_by_road_class": {},
+              "closed_bridge_tagged_edges": 61,
+              "largest_travel_time_factor": null,
+              "closure_result_sha256": "fe1973ac7a9af8dd117cfcb1f3c1ee6af8a24c9af392c1db20696bcc355553c2",
+              "grade_join_connectors": 345,
+              "connectors_with_their_coordinate_inside_the_extent": 108,
+              "main_road_entries": 1939,
+              "entries_with_every_main_road_edge_closed": 177,
+              "entries_with_every_edge_closed": 141
+            }
+          },
+          "residents": 81836.8894393444,
+          "access_gap_inputs": {
+            "hospital": {
+              "mode": "vehicle",
+              "threshold_minutes": 30,
+              "baseline_access_residents": 74596.84646940231,
+              "newly_lost_residents": 24824.44628700614
+            },
+            "main_road_entry": {
+              "mode": "vehicle",
+              "threshold_minutes": 15,
+              "baseline_access_residents": 68887.94476729631,
+              "newly_lost_residents": 17854.67269447446
+            }
+          },
+          "road_criticality_inputs": {
+            "residents_losing_all_routes": 22109.558058589697,
+            "residents_with_baseline_route": 75170.53035321832
+          },
+          "residents_not_connected_to_the_graph": {
+            "hospital": 6609.912249416113,
+            "main_road_entry": 6609.912249416113
+          },
+          "cells_in_no_unit": {
+            "demand_cells": 0,
+            "residents": 0.0,
+            "note": "Cells whose centre lies in no unit of the frame, or in more than one. They are in the whole frame and in no unit row."
+          }
+        }
+      ]
+    }
+  },
+  "shelter_service": {
+    "computed": true,
+    "mode": "walking",
+    "context_status": "candidate",
+    "usable_by_task_e8": false,
+    "context_run_report": "outputs/planning_v1/e5_walking_context_build_report_se1_mae_sai.json",
+    "note": "The figures of the shelter service are pitch level and are in the pitch-services tables outside Git only. None is in this receipt. They rest on a candidate walking context, built by this task's lane without a declared compute window, so the pitch-services tables are not usable by task E8 until the owners accept a walking build of record (open point E5-OP5). The build is reported in context_run_report."
+  },
+  "checks": {
+    "e4_baseline": {
+      "what": "The baseline vehicle run of the hospital service against the whole-frame figures of the E4 receipt.",
+      "connected_residents_without_a_route": {
+        "e4_receipt": 56.446837,
+        "this_run": 56.446837
+      },
+      "graph_connected_residents": {
+        "e4_receipt": 75226.97719,
+        "this_run": 75226.97719
+      },
+      "same": true
+    },
+    "against_calculate_total_access": [
+      {
+        "case_id": "O2",
+        "flood_level": "as_provided",
+        "closure_level": "permissive",
+        "service": "hospital",
+        "mode": "vehicle",
+        "closed_edges": 49,
+        "baseline_run": {
+          "cells_compared": 27487,
+          "cells_that_differ": 0,
+          "largest_difference_minutes": 1.4210854715202004e-14
+        },
+        "flooded_run": {
+          "cells_compared": 27487,
+          "cells_that_differ": 0,
+          "largest_difference_minutes": 1.4210854715202004e-14
+        },
+        "same": true
+      },
+      {
+        "case_id": "SE1",
+        "flood_level": "as_provided",
+        "closure_level": "permissive",
+        "service": "hospital",
+        "mode": "vehicle",
+        "closed_edges": 8288,
+        "baseline_run": {
+          "cells_compared": 27487,
+          "cells_that_differ": 0,
+          "largest_difference_minutes": 1.4210854715202004e-14
+        },
+        "flooded_run": {
+          "cells_compared": 27487,
+          "cells_that_differ": 0,
+          "largest_difference_minutes": 1.4210854715202004e-14
+        },
+        "same": true
+      }
+    ],
+    "shorter_routes_in_a_flooded_run": 0,
+    "residents_gaining_access": 0.0,
+    "against_calculate_total_access_all_same": true
+  },
+  "outputs": {
+    "walking_context": {
+      "files": [
+        {
+          "path": "outputs/planning_v1/e5_walking_context_build_report_se1_mae_sai.json",
+          "sha256": "5c1845a7024eb8f4dbf9d535006380ed5f1b5869117c17b506405a32b26674e2",
+          "bytes": 9838,
+          "what": "context_run_report",
+          "in_git": true
+        }
+      ]
+    },
+    "O2": {
+      "files": [
+        {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e5_access_diff/access_diff_units__public_services.json",
+          "sha256": "6f7226da371703c5013c0488e28009a17c93e1bad0ee3d893effdd61c8cf6e8c",
+          "bytes": 144003,
+          "what": "unit_table",
+          "service_set": "public_services",
+          "publication_level": "local",
+          "in_git": false,
+          "unit_count": 8,
+          "runs": 3
+        },
+        {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e5_access_diff/access_diff_units__pitch_services.json",
+          "sha256": "3217cdd49f448ec92fc253298d30d6df6f15b2bd7786eafacfc0c0d0d686814a",
+          "bytes": 195518,
+          "what": "unit_table",
+          "service_set": "pitch_services",
+          "publication_level": "local",
+          "in_git": false,
+          "unit_count": 8,
+          "runs": 3
+        },
+        {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e5_access_diff/LICENSE_NOTICE.txt",
+          "sha256": "acaafc1b83a5fe5d72a9f50e0e0efe476517328f581c5c487fb2e0a1290de1df",
+          "bytes": 8230,
+          "what": "licence_notice"
+        }
+      ]
+    },
+    "SE1": {
+      "files": [
+        {
+          "path": "outputs/planning_v1/e5_access_diff_se1_mae_sai_public_services.json",
+          "sha256": "d4a618fad7fb3df12666ab1eba353b84aa80c6ebe3c370fd9e11096f7dbe116b",
+          "bytes": 145520,
+          "what": "unit_table",
+          "service_set": "public_services",
+          "publication_level": "public",
+          "in_git": true,
+          "unit_count": 8,
+          "runs": 3
+        },
+        {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e5_access_diff/access_diff_units__pitch_services.json",
+          "sha256": "68320f869230ed738fbaba039cad322966062e7f352632752bb5051068f50060",
+          "bytes": 198281,
+          "what": "unit_table",
+          "service_set": "pitch_services",
+          "publication_level": "pitch",
+          "in_git": false,
+          "unit_count": 8,
+          "runs": 3
+        },
+        {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e5_access_diff/LICENSE_NOTICE.txt",
+          "sha256": "acaafc1b83a5fe5d72a9f50e0e0efe476517328f581c5c487fb2e0a1290de1df",
+          "bytes": 8230,
+          "what": "licence_notice"
+        }
+      ]
+    }
+  },
+  "development_reads": {
+    "what": "Reads of the same inputs made while the code was written, before this run. They wrote no table and no value for a single tambon. They are listed because every run is reported.",
+    "reads": [
+      "Read 1 (4 October 2026, before 13:07Z): the retained E4 vehicle context was loaded, its canonical SHA-256 was recomputed, and its keys and counts were listed (edges, demand cells, facilities). No access was computed.",
+      "Read 2 (4 October 2026, before 13:07Z): on the same context the baseline trees of the hospital and main-road services were timed for the whole frame (0.3 s and 0.5 s); the whole-frame count of connected residents without a hospital route was compared with the E4 receipt (56.446837, the same); and closure_rules.edge_intersections was timed on the as-provided extents of O2 (0.4 s, 49 edges) and of SE1 (592 s, 8,288 edges). No closure level was applied, and no access difference and no value for a single tambon was computed.",
+      "Context build (4 October 2026, 13:07:07Z to 13:09:33Z): the unchanged E4 builder (scripts/build_planning_context.py) was run once for case se1 in travel mode walking, without a compute window, so the build is a candidate. It wrote its context, facility table, join log and receipt outside Git (se1_mae_sai/e4_walking_candidate) and nothing in Git. It reads no flood layer. This run uses that context for the shelter service.",
+      "After the first run (4 October 2026, 13:45:15Z to 14:06:27Z): --verify computed every table again with the generation time of that receipt and found the same bytes, as outputs/planning_v1/README.md recorded.",
+      "During the review fixes (4 October 2026, 15:04:18Z to 15:04:44Z): the changed builder was run once in memory for case O2 only, to check the new code path (the report of the walking build, the rights block and the row layout). It wrote nothing. It computed the O2 tables this run computes again, and its whole-frame counts were those of the first run.",
+      "After the second run (4 October 2026): a --verify of that run was started at 15:26:05Z and stopped at 15:36:47Z, before it finished, when the full test suite showed that the name of the walking-build report broke a naming rule of this folder. It reported nothing and wrote nothing."
+    ]
+  },
+  "open_points": [
+    {
+      "id": "E5-OP1",
+      "point": "Which unit a demand cell counts for.",
+      "signed_files_say": "Protocol v1b corridor_polygon.context_call.tambon_attribution: 'Done downstream of the context build.' Protocol v1a states the cell-centre rule for exposure, and v1b for the SE2-blind district total; neither states it for the access tables.",
+      "what_this_task_does": "A WorldPop 2020 cell counts for the unit whose polygon holds its centre. A cell whose centre lies in no unit, or in more than one, is counted in no unit and reported.",
+      "for_the_owners": "Whether the cell-centre rule is the rule for the access tables too."
+    },
+    {
+      "id": "E5-OP2",
+      "point": "A unit where nobody had baseline access to a service, or nobody had a baseline route.",
+      "signed_files_say": "The access gap is counted 'only for people who had access at baseline' and road criticality divides by the residents with a baseline route. Nothing on a zero denominator.",
+      "what_this_task_does": "Writes the counts and a reason code. No value is put in the place of the missing ratio. floodguard.normalisation refuses such a unit in the same way.",
+      "for_the_owners": "What such a unit gets in task E8: no component, or a stated value."
+    },
+    {
+      "id": "E5-OP3",
+      "point": "Residents whose cell does not snap to the road graph within 250 m.",
+      "signed_files_say": "Nothing. The context builder leaves such a cell without a node, and calculate_total_access reports it as missing graph coverage.",
+      "what_this_task_does": "Reports them per unit as not connected. They have no modelled access in either run, so they are in no numerator and no denominator.",
+      "for_the_owners": "Whether they stay outside both, as residents with no baseline access do."
+    },
+    {
+      "id": "E5-OP4",
+      "point": "A destination inside the flood extent.",
+      "signed_files_say": "The main-road entry is 'the nearest node on a trunk or primary edge (including links) inside the routing context'. Nothing on an entry whose main-road edges are closed in the flooded run, or on a hospital or shelter inside the extent (class rule v2 trigger C reads the latter, in task E8).",
+      "what_this_task_does": "Keeps the same destinations in both runs. A resident whose cell snaps to a main-road entry keeps that entry at zero road distance even when every main-road edge at it is closed. The receipt counts the entries in that state.",
+      "for_the_owners": "Whether a main-road entry whose trunk or primary edges are all closed is still an entry."
+    },
+    {
+      "id": "E5-OP5",
+      "point": "Which planning context the walking service uses.",
+      "signed_files_say": "The DDPM located shelter service is walking, 30 minutes (v1a pitch_level_adds, v1b facility_sets, owner choice 7). The E4 build of record is a vehicle context, and decision R13 accepted a compute window for that build only.",
+      "what_this_task_does": "Uses a walking context built by the unchanged E4 builder (travel mode walking: 5 km/h on OSM roads and paths where walking is not prohibited) when one is supplied, and says whether it is a build of record or a candidate. The vehicle context is never walked. A candidate was built by this task's lane without a declared compute window, which is outside what plan row E5 names; the builder keeps a candidate's receipt outside Git, so the run that uses it writes a report of that build into outputs/planning_v1 and registers it. Tables that rest on a candidate are marked as not usable by task E8.",
+      "for_the_owners": "A walking build of record in a declared compute window they accept (plan 5 item 1; decision R13 covers the vehicle build only), with its receipt in outputs/planning_v1; then a new run of this task. Until then the shelter tables are not inputs of task E8."
+    },
+    {
+      "id": "E5-OP6",
+      "point": "A grade-join connector inside the flood extent.",
+      "signed_files_say": "Closure rule v1 measures the length of an edge inside the extent. A grade join (decision D13) has no length.",
+      "what_this_task_does": "A connector is never intersected, so it stays open under every level. The receipt counts the connectors whose coordinate lies inside the extent.",
+      "for_the_owners": "Whether a join inside the extent closes with the edges it links."
+    },
+    {
+      "id": "E5-OP7",
+      "point": "Which runs the difference is taken between when an edge is delayed.",
+      "signed_files_say": "Plan 3.1 P4: calculate_total_access unchanged, run twice, on the original and the modified edges. The protocols name no function.",
+      "what_this_task_does": "Both runs use one multi-source tree per service (floodguard.critical_links), which gives the travel times of calculate_total_access; tests and a check on the hospital service of the real context compare the two.",
+      "for_the_owners": "Nothing, unless the per-destination runs of calculate_total_access are wanted as the record."
+    },
+    {
+      "id": "E5-OP8",
+      "point": "Ratios of the counts.",
+      "signed_files_say": "Protocol v1a: road criticality is '100 x residents with a baseline route to any hospital or main road who lose all routes / those residents'; the access gap is the 'baseline-access-weighted mean of newly-lost access shares'. Plan row E5 names the access difference and a per-tambon table; the components belong to task E8.",
+      "what_this_task_does": "Writes counts of residents and no ratio of them. The ratio of the two route counts is the road-criticality component divided by 100. A service's newly-lost share is one step from the access gap: it equals that component divided by 100 wherever the services have the same share, and at a long threshold it can equal the route ratio. The first run of this task wrote both ratios for each tambon; the run that replaced it writes neither, and its receipt says so.",
+      "for_the_owners": "Whether the per-service newly-lost share is wanted from this task as a descriptive figure, or comes from task E8 with the components; and whether the first table, which is in the Git history, needs more than the note in the receipt that replaced it."
+    }
+  ],
+  "not_computed": [
+    "access-gap component (0-100)",
+    "the newly-lost share of a service (newly lost / baseline access) and the weighted mean of those shares",
+    "road-criticality component (0-100)",
+    "the share of residents with a baseline route who lose all routes (it is the road-criticality component divided by 100)",
+    "any other component",
+    "FPPS",
+    "A-E class",
+    "would-be class",
+    "ensemble cell",
+    "class rule v2 triggers (top-20 link closed on its own; serving facility)",
+    "equity difference and ratio by age group",
+    "2SFCA shelter supply",
+    "travel-time summaries per tambon",
+    "the minus and plus flood levels",
+    "the corroborated shelter set",
+    "2024-rescaled demand",
+    "case O1 (no radar candidate has been delivered to this lane)"
+  ],
+  "assumptions": [
+    "A closure is a modelled assumption of closure rule v1 (closure_basis), not an observed closure. A flood intersection does not prove that a road was closed, and an edge outside the extent is unchanged by assumption, not because it was seen dry.",
+    "The product 4009 layers are used as provided: preliminary agency extents that were not checked in the field (Field_Validation=0). FloodGuard did not validate them.",
+    "SE1 is the 2024 season envelope scenario: every area ever mapped as water in the season is treated as flooded at once, and every road it meets is treated under the closure rule at once. It is not an observation of any day and not the water of September 2024.",
+    "O2 is the layer of 22 October 2024, its own dated case: late-season residual water. It does not describe the September event.",
+    "Each edge is the straight segment between its two nodes in EPSG:32647, and the length inside the extent is measured on that segment (protocol v1b closure_rule_v1.geometry). The central level applies the 0.25 fraction to edges tagged bridge=yes or tunnel=culvert only; culvert=* is not read (owner choice 23).",
+    "Travel time is the fastest modelled route on an undirected graph from the road node a WorldPop 2020 cell snaps to (within 250 m) to the nearest destination, plus the connectors of the cell and the destination at 5 km/h. Vehicle edges use fixed class speeds; walking edges use 5 km/h. One-way rules, turn restrictions, road condition and the time of day are not represented.",
+    "A resident has access within a threshold when the modelled time is at most the threshold. A resident is newly lost when they had access in the baseline run and do not have it in the flooded run. A resident with no baseline access is never counted as losing it (requirement EQ-04).",
+    "A resident loses all routes when they had a baseline route, of any length, to a hospital or a main-road entry and have none to any of them in the flooded run. A longer route is not a lost route.",
+    "A WorldPop 2020 cell counts for the tambon whose 2022 COD-AB polygon holds its centre (open point E5-OP1). Residents are modelled 2020 counts, roads are OpenStreetMap as retrieved in July 2026, boundaries are of 2022 and the flood layers of 2024.",
+    "Destinations are the same in both runs. A hospital, a shelter or a main-road entry inside the flood extent stays a destination (open point E5-OP4)."
+  ],
+  "limitations": [
+    "One flood level is run: the layer as provided. The minus and plus levels, the corroborated shelter set and the population vintage are axes of the ensemble (plan task E10) and are not run here.",
+    "A resident whose cell does not snap to the graph within 250 m has no modelled access in either run and is in no numerator and no denominator; the tables give their number per tambon.",
+    "A unit where nobody had baseline access, or nobody had a baseline route, has its counts and a reason code. The protocols state no value for it (open point E5-OP2).",
+    "The permissive level closes every intersected edge, however short the stretch inside the extent; the strict level closes an edge only when half of it is inside. The three levels are reported side by side and none is a central estimate of what was passable.",
+    "Routes stay inside the routing context of the case. Roads and destinations outside it are not seen.",
+    "The third-party satellite imagery UNOSAT and GISTDA used to make the product is not relicensed by these files, and UNOSAT and GISTDA do not endorse FloodGuard or its use of the product."
+  ],
+  "implementation": {
+    "base_commit": "233385e3e006e6b77965f3488c9766bd2e89b163",
+    "base_commit_note": "The commit the working tree was on. The files below are the ones this run loaded, identified by their own SHA-256, committed or not.",
+    "builder_sha256": "61b93fbfe48f36fc5ba46475828d3d7abeb5188813b7c923d01d7467d98e89f8",
+    "access_diff_module_sha256": "c6178a93fb8f92c17cf1038366cc76f8184112f9b4a6115f26c567ee73209f1c",
+    "closure_rules_module_sha256": "204b591c69cccf39d69131e1fe950dac9d01bd129c0b628b87531f4479aef921",
+    "critical_links_module_sha256": "39f223226c32d500a92fffafc09dbc3d42f7c9611385fbc6972f16f9c5eb640e",
+    "flood_inputs_module_sha256": "1d3b3d6328ad50eb7f26455ea576748a546f82f391a83aeb01da46da8d643e5d",
+    "grade_join_module_sha256": "87247e54da2acbdbbf5e00f5353b0aedf68e471eb463df99b46d9163aec7d634",
+    "planning_context_module_sha256": "f2f56151fd20527b8a0aa159fc76a68a5339b6179cef26fbf7c63ad9deb819a8",
+    "evidence_scenarios_module_sha256": "941bfd930583b97b65353b14aabcff98c02f7888b852378152aa44361d3f5c36",
+    "rights_module_sha256": "9c2d29f610764e647b9bd0426e2d808c0ca3c125cd26aa30fce2ca588f10819c",
+    "rights_basis_module_sha256": "32419611a9d71b429c25a714ebecb7152f6d8bc9f654d0ca5af00e41d38c0c23",
+    "access_diff_version": "access_diff_v1",
+    "software": {
+      "python": "3.11.8",
+      "numpy": "2.2.6",
+      "shapely": "2.1.2",
+      "geos": "3.13.1",
+      "pyproj": "3.7.2",
+      "proj": "9.5.1",
+      "pyogrio": "0.13.0"
+    }
+  },
+  "timing_seconds": {
+    "contexts_and_units": 7.0,
+    "baseline_runs": 1.3,
+    "cases": {
+      "O2": {
+        "as_provided_edge_intersections_vehicle": 0.4,
+        "as_provided_edge_intersections_walking": 0.4,
+        "as_provided_strict_runs_and_tables": 3.8,
+        "as_provided_central_runs_and_tables": 3.7,
+        "as_provided_permissive_runs_and_tables": 7.2,
+        "case_total": 15.9
+      },
+      "SE1": {
+        "as_provided_edge_intersections_vehicle": 569.7,
+        "as_provided_edge_intersections_walking": 555.4,
+        "as_provided_strict_runs_and_tables": 3.5,
+        "as_provided_central_runs_and_tables": 3.5,
+        "as_provided_permissive_runs_and_tables": 6.5,
+        "case_total": 1147.4
+      }
+    }
+  },
+  "timestamps": {
+    "run_started_at_utc": "2026-10-04T15:38:45Z",
+    "run_finished_at_utc": "2026-10-04T15:58:17Z",
+    "wall_time_minutes": 19.53,
+    "note": "generated_at_utc is the start of the run; the tables carry the same time."
+  },
+  "supersedes": {
+    "receipt_sha256": "5fa221ed2631c6bb73f708dad6674c45dd60077a930785403ab8d52f3271b523",
+    "generated_at_utc": "2026-10-04T15:05:40Z",
+    "reason": "The second run (2026-10-04T15:05:40Z) named its report of the walking build e5_walking_context_candidate_se1_mae_sai.json. A test of this folder keeps the word candidate in a file name for the corridor candidates of protocol v1b open item OI-02, so the report is now e5_walking_context_build_report_se1_mae_sai.json, and run_history now carries the files each earlier run bound. The second receipt was not committed. Nothing else changed: the rows hold counts only, as in the second run, and the counts are computed again from the same inputs. Why the second run replaced the first is in run_history.",
+    "figures_same": true,
+    "outputs_of_the_superseded_run": {
+      "outputs/planning_v1/e5_walking_context_candidate_se1_mae_sai.json": "fd85133e8b7942d293852eb001458ab0c031fda98fdbfa79639d99ac87564967",
+      "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e5_access_diff/access_diff_units__public_services.json": "0a3c92267130e3e28b42a051c77571d2748e2f171798142f3fbabe0176b2b3bc",
+      "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e5_access_diff/access_diff_units__pitch_services.json": "bde9ccaa7da1ab0f02155350c1cfa7cdaa9da4cb296d64e5a54283cd378ca1f5",
+      "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e5_access_diff/LICENSE_NOTICE.txt": "acaafc1b83a5fe5d72a9f50e0e0efe476517328f581c5c487fb2e0a1290de1df",
+      "outputs/planning_v1/e5_access_diff_se1_mae_sai_public_services.json": "d68c9934e743d72d352899492c44080de62e05f7e5f407b55772174eeca7de19",
+      "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e5_access_diff/access_diff_units__pitch_services.json": "fe1acb9bb7730b307d24fba816e7acf8232a5459f8fd9bad6f7bc345d8cff095",
+      "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e5_access_diff/LICENSE_NOTICE.txt": "acaafc1b83a5fe5d72a9f50e0e0efe476517328f581c5c487fb2e0a1290de1df"
+    },
+    "note": "The superseded receipt is named here by its SHA-256, and run_history lists every earlier run. A receipt that was replaced before it was committed is not in the Git history: only its SHA-256 remains. figures_same compares the whole-frame results and the closure counts of the two receipts; a table carries its generation time, so its bytes differ between runs. outputs_of_the_superseded_run names every file the superseded receipt bound, by SHA-256, and run_history carries the same for every earlier run that recorded it."
+  },
+  "run_history": [
+    {
+      "generated_at_utc": "2026-10-04T13:24:17Z",
+      "receipt_sha256": "c5d41d17acd8cbb5b2ae1e2d749f60670c7fe6c6d5e0d37413bc114c236a8df6",
+      "superseded_because": "A review found that every row of the first table held share_losing_all_routes, which is the road-criticality component of protocol v1a divided by 100 (for the eight tambons at three closure levels), and a newly-lost share per service and threshold that equals a component divided by 100 in some units, while the receipt and the table said that no component value was computed. The rows now hold counts of residents only and no ratio of them. This run also reads the flood inputs of the fourth E1 run (2026-10-04T15:02:02Z), reports the candidate walking build in outputs/planning_v1 and registers it, marks the shelter tables as not usable by task E8, and lists the figures this receipt holds of a local-level layer. The counts are computed again from the same extents and contexts.",
+      "figures_same_as_the_run_that_replaced_it": true,
+      "outputs_sha256": {
+        "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e5_access_diff/access_diff_units__public_services.json": "074d6f9560c90aa7253b63255fd9adef14abeea749394187f04aea4a072e74ce",
+        "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e5_access_diff/access_diff_units__pitch_services.json": "94447024ee509f2a6df51a729b9acba716aedcff983d3ddc5468f41bb1496b50",
+        "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e5_access_diff/LICENSE_NOTICE.txt": "acaafc1b83a5fe5d72a9f50e0e0efe476517328f581c5c487fb2e0a1290de1df",
+        "outputs/planning_v1/e5_access_diff_se1_mae_sai_public_services.json": "e8d0166dc6f5a33be98661c42483ae80f6e8e347d7e5e88bbfa7c25786f46b3d",
+        "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e5_access_diff/access_diff_units__pitch_services.json": "46153e3282f6e8e99271f8795a2486b8943a9f6ac513c3a7b93e0a05b8fb78a3",
+        "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e5_access_diff/LICENSE_NOTICE.txt": "acaafc1b83a5fe5d72a9f50e0e0efe476517328f581c5c487fb2e0a1290de1df"
+      }
+    },
+    {
+      "generated_at_utc": "2026-10-04T15:05:40Z",
+      "receipt_sha256": "5fa221ed2631c6bb73f708dad6674c45dd60077a930785403ab8d52f3271b523",
+      "superseded_because": "The second run (2026-10-04T15:05:40Z) named its report of the walking build e5_walking_context_candidate_se1_mae_sai.json. A test of this folder keeps the word candidate in a file name for the corridor candidates of protocol v1b open item OI-02, so the report is now e5_walking_context_build_report_se1_mae_sai.json, and run_history now carries the files each earlier run bound. The second receipt was not committed. Nothing else changed: the rows hold counts only, as in the second run, and the counts are computed again from the same inputs. Why the second run replaced the first is in run_history.",
+      "figures_same_as_the_run_that_replaced_it": true,
+      "outputs_sha256": {
+        "outputs/planning_v1/e5_walking_context_candidate_se1_mae_sai.json": "fd85133e8b7942d293852eb001458ab0c031fda98fdbfa79639d99ac87564967",
+        "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e5_access_diff/access_diff_units__public_services.json": "0a3c92267130e3e28b42a051c77571d2748e2f171798142f3fbabe0176b2b3bc",
+        "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e5_access_diff/access_diff_units__pitch_services.json": "bde9ccaa7da1ab0f02155350c1cfa7cdaa9da4cb296d64e5a54283cd378ca1f5",
+        "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e5_access_diff/LICENSE_NOTICE.txt": "acaafc1b83a5fe5d72a9f50e0e0efe476517328f581c5c487fb2e0a1290de1df",
+        "outputs/planning_v1/e5_access_diff_se1_mae_sai_public_services.json": "d68c9934e743d72d352899492c44080de62e05f7e5f407b55772174eeca7de19",
+        "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e5_access_diff/access_diff_units__pitch_services.json": "fe1acb9bb7730b307d24fba816e7acf8232a5459f8fd9bad6f7bc345d8cff095",
+        "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e5_access_diff/LICENSE_NOTICE.txt": "acaafc1b83a5fe5d72a9f50e0e0efe476517328f581c5c487fb2e0a1290de1df"
+      }
+    }
+  ]
+}

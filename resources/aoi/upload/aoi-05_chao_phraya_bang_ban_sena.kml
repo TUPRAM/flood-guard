@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>AOI-05 chao phraya bang ban sena</name>
+    <Placemark>
+      <name>AOI-05 chao phraya bang ban sena</name>
+      <Polygon>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>100.4,14.25,0 100.52,14.25,0 100.52,14.37,0 100.4,14.37,0 100.4,14.25,0</coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+      </Polygon>
+    </Placemark>
+  </Document>
+</kml>

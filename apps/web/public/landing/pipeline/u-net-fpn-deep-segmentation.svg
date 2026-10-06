@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 250" role="img" aria-label="Area-proportional diagram: the MNDWI training label covers 8.7 times the reference water area while overlapping only half of it"><style>text{font-family:"Manrope Variable",system-ui,sans-serif;fill:#3D4E57}.lbl{font-size:12px}.sml{font-size:10.5px;fill:#64767E}.mono-t{font-family:ui-monospace,"IBM Plex Mono",monospace;font-size:11px}.hi{fill:#0C6A74}.warnt{fill:#8A4A44}</style>
+            <text class="lbl" x="24" y="22">The training label vs the reference — drawn to area</text>
+            <circle cx="180" cy="130" r="80" fill="#8A4A44" opacity="0.16" stroke="#8A4A44" stroke-width="1.8"/>
+            <circle cx="260" cy="130" r="27" fill="#0C6A74" opacity="0.3" stroke="#0C6A74" stroke-width="1.8"/>
+            <text class="sml warnt" x="96" y="72">MNDWI &gt; 0 label</text>
+            <text class="mono-t warnt" x="96" y="88">3.240% of scene</text>
+            <text class="sml hi" x="300" y="122">real water (JRC)</text>
+            <text class="mono-t hi" x="300" y="138">0.373%</text>
+            <text class="sml" x="248" y="186">only ~half</text>
+            <text class="sml" x="248" y="200">overlaps</text>
+            <line x1="262" y1="158" x2="258" y2="176" stroke="currentColor" stroke-width="1"/>
+
+            <text class="lbl" x="392" y="66">Over-detects <tspan class="warnt">8.7×</tspan></text>
+            <text class="sml" x="392" y="84">flags nearly nine times</text>
+            <text class="sml" x="392" y="98">too much area</text>
+            <text class="lbl" x="392" y="130">…and <tspan class="warnt">misses half</tspan></text>
+            <text class="sml" x="392" y="148">recall 0.502 — half the real</text>
+            <text class="sml" x="392" y="162">water never marked at all</text>
+            <text class="sml" x="392" y="192">Both faults at once, so no</text>
+            <text class="sml" x="392" y="206">threshold fixes it: the best</text>
+            <text class="sml" x="392" y="220">still has precision 0.100</text>
+
+            <text class="lbl" x="24" y="240">A smoke alarm that screams at toast and stays silent in a fire.</text>
+          </svg>

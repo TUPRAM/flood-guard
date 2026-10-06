@@ -1,0 +1,38 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "AOI-04 hat yai basin"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              100.38,
+              6.9
+            ],
+            [
+              100.58,
+              6.9
+            ],
+            [
+              100.58,
+              7.12
+            ],
+            [
+              100.38,
+              7.12
+            ],
+            [
+              100.38,
+              6.9
+            ]
+          ]
+        ]
+      }
+    }
+  ]
+}

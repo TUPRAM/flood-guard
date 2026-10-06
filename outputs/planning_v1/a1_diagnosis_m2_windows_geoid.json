@@ -1,0 +1,150 @@
+{
+  "schema_version": "floodguard.a1_diagnosis_run_receipt.v1",
+  "generated_at_utc": "2026-10-04T22:15:03Z",
+  "plan_task": "A1 (abstention diagnosis: why threshold-only change detection failed at the 16 Sep pass)",
+  "figure_id": "m2_windows_geoid",
+  "title": "The M2 decision rule on the 29 GEOID-Flood tiles of EMSR712-3: windows against the 0.72 gate",
+  "official_warning": false,
+  "operational_status": "non_operational",
+  "source_timestamp": "20240103T053406",
+  "confidence_class": "low",
+  "confidence_basis": "Window counts of the team's own decision rule on a public benchmark sample. The rule accepted no window, so no layer exists to compare, and no label was read.",
+  "assumptions": [
+    "The tiles are the Sentinel-1 GRD layer of the GEOID-Flood sample, linear sigma0, 1,024 by 1,024 cells of 10 m. Each tile is cut into windows of 256 cells at a stride of 128 cells: 49 windows a tile.",
+    "The decision rule is the frozen M2 kernel as the committed benchmark adapted it to sigma0. It was not changed."
+  ],
+  "protocol_sha256": {
+    "planning_protocol_v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+    "planning_protocol_v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+  },
+  "run": "The M2 decision rule on the 29 GEOID-Flood tiles of EMSR712-3: windows against the 0.72 gate",
+  "status": "run_receipt",
+  "status_note": "Receipt of one diagnosis run, made with protocol v1a and v1b in force. Every run is reported: a second run of this figure writes a new receipt that names this one.",
+  "run_kind": "superseding_run",
+  "computes": "The frozen M2 decision rule on the 29 before-and-after tile pairs of the GEOID-Flood sample, with the counts and the between-class variance fractions of its windows. No label is read and no raster is written.",
+  "measured_against": null,
+  "licence": null,
+  "attributions": [
+    "Modified Copernicus Sentinel-1 data (2016-2026); GEOID-Flood sample, links-ads/geoid-flood, revision 868407460bf3db492f50730a57585916baa71dc6",
+    "Copernicus Emergency Management Service Rapid Mapping products, (c) European Union (the sample's labels, not read here)"
+  ],
+  "protocol_state": {
+    "v1a": "in_force",
+    "v1b": "in_force"
+  },
+  "script": {
+    "path": "scripts/diagnostics/m2_windows_geoid.py",
+    "sha256": "ee167749b21e6dced7d78a5ca2f6100d2ad476acc685aaf48ee45e048bbce9dc"
+  },
+  "implementation": {
+    "base_commit": "b26e5d2c641d1ee0319fcf39a595a097ffecf3cd",
+    "base_commit_note": "The commit the working tree was on. The files below are the ones this run loaded, identified by their own SHA-256, committed or not.",
+    "files_sha256": {
+      "scripts/diagnostics/m2_windows_geoid.py": "ee167749b21e6dced7d78a5ca2f6100d2ad476acc685aaf48ee45e048bbce9dc",
+      "src/floodguard/abstention_diagnosis.py": "95707c004f72c931153583fc6360bb102a6e9cf3e2bb155608010b02bcc1b4d5",
+      "src/floodguard/diagnosis_run.py": "d8a145887c9da9a26f8f3016f9af8d3a538fa4fd3f8f11a8f4d63585a5bdd978",
+      "src/floodguard/diagnosis_layers.py": "373c62ba1e4e7cd19e5ca89ad7167ccaaf14ad4c7198434285c27cb4749bcaae"
+    },
+    "software": {
+      "python": "3.11.8",
+      "numpy": "2.2.6",
+      "rasterio": "1.4.4",
+      "gdal": "3.10.3",
+      "pandas": "3.0.6"
+    },
+    "software_note": "The libraries the run had loaded when it finished. A figure can move in its last decimals under another version of GDAL, PROJ, GEOS or numpy; --verify reports the versions beside the comparison."
+  },
+  "parameters": {
+    "aoi_id": "EMSR712-3",
+    "kernel": {
+      "window_pixels": 256,
+      "stride_pixels": 128,
+      "min_between_variance_fraction": 0.72
+    },
+    "change": "0.4 x VV fall + 0.6 x VH fall, in dB, from linear sigma0",
+    "marks": [
+      0.7,
+      0.71
+    ]
+  },
+  "inputs": {
+    "published_sha256sums": {
+      "path": "<external_data_workspace>/geoid_flood/metadata/SHA256SUMS",
+      "sha256": "f6af34dbd56743d3f6faf6807207763fc51460167d62b1c2005bfa3df44f62f1",
+      "bytes": 113049
+    },
+    "geoid_flood_sample_assets": {
+      "folder": "<external_data_workspace>/geoid_flood/sample/sample/geoid-flood/EMSR712-3",
+      "files_checked_against_the_published_sums": 116,
+      "bytes": 572940276,
+      "inventory_sha256": "d36901396cbae4d8512f9b2a1575ec9365ac9b65edb076a69807aa8a8d7cfa57",
+      "inventory_note": "SHA-256 of the list of every file with its own SHA-256 and size, as compact sorted JSON. 58 of the files are the radar tiles this run opens; the 58 label and validity rasters are hashed and not opened."
+    },
+    "committed_summary": {
+      "path": "outputs/geoid_s1grd_sigma0_benchmark_summary_v1.json",
+      "sha256": "b5b46521d568b9aab43cbd3f2f811f6da28c71764a09781b773e7394607b98ff",
+      "bytes": 2656
+    },
+    "benchmark_protocol": {
+      "path": "docs/proposal_execution/automated_track/geoid_sar_benchmark_protocol_v1.json",
+      "sha256": "26c55475fa7e5fb9bffa1f27eef6637a4c340a43cce1f99e6e2e8085e512667f",
+      "bytes": 3851
+    },
+    "decision_rule_adapter": {
+      "path": "src/floodguard/geoid_radar_benchmark.py",
+      "sha256": "1407a0e196c5ed5e6e796e2f802d218afc7e120465d3781ca8c5c40d52e20b83",
+      "bytes": 6114
+    },
+    "source_check": {
+      "path": "scripts/benchmark_geoid_flood_sar.py",
+      "sha256": "11f17264da8914998f7e0aebd27f1eed69367752f03177a0502202e8fb4e5291",
+      "bytes": 19155,
+      "function": "discover_tiles"
+    }
+  },
+  "rights": null,
+  "timestamps": {
+    "run_started_at_utc": "2026-10-04T22:14:51Z",
+    "run_finished_at_utc": "2026-10-04T22:15:03Z"
+  },
+  "outputs": {
+    "figures": {
+      "path": "outputs/a1_diagnosis/m2_windows_geoid.json",
+      "sha256": "6f31a8869767cba5e0cbda4abe98bf69f377eb7f74426768a8774d4a01defe6f",
+      "bytes": 4745
+    }
+  },
+  "supersedes": {
+    "receipt_sha256": "d91f1025b82ae2080680cc89412e660af4f806bede8d03dd4a4251489cce54cc",
+    "figures_sha256": "a7f48b8537e84f195c9bd9d2977d74b031fb51b539a1057a09ef9cae78ef32a9",
+    "generated_at_utc": "2026-10-04T20:28:24Z",
+    "reason": "Review of 4 October 2026 (UTC): the shared modules changed, so the earlier receipt names code that is no longer in the checkout. The receipt gains the library versions. No rule of this figure changed.",
+    "figures_same": true,
+    "copies_kept": [
+      "<external_data_workspace>/proposal_execution/planning_v1/a1_diagnosis/superseded_runs/20261004T202824Z_m2_windows_geoid/a1_diagnosis_m2_windows_geoid.json",
+      "<external_data_workspace>/proposal_execution/planning_v1/a1_diagnosis/superseded_runs/20261004T202824Z_m2_windows_geoid/m2_windows_geoid.json"
+    ]
+  },
+  "run_history": {
+    "rule": "Protocol v1b, change_control: every run is reported. Each earlier run of this figure is listed with the SHA-256 of its receipt and of its figures file.",
+    "earlier_runs": [
+      {
+        "generated_at_utc": "2026-10-04T20:28:24Z",
+        "run_started_at_utc": "2026-10-04T20:28:12Z",
+        "run_finished_at_utc": "2026-10-04T20:28:24Z",
+        "receipt_sha256": "d91f1025b82ae2080680cc89412e660af4f806bede8d03dd4a4251489cce54cc",
+        "figures_sha256": "a7f48b8537e84f195c9bd9d2977d74b031fb51b539a1057a09ef9cae78ef32a9",
+        "run_kind": "first_run",
+        "superseded_because": "Review of 4 October 2026 (UTC): the shared modules changed, so the earlier receipt names code that is no longer in the checkout. The receipt gains the library versions. No rule of this figure changed."
+      }
+    ]
+  },
+  "development_reads": [],
+  "open_points": [],
+  "not_computed": [
+    "any comparison with the CEMS map",
+    "FPPS",
+    "A-E class",
+    "flood candidate"
+  ]
+}

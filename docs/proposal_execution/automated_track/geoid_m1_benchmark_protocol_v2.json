@@ -1,0 +1,411 @@
+{
+  "schema": "floodguard.geoid_m1_benchmark_protocol.v2",
+  "title": "GEOID radar benchmark for M1-literal and M1-v2 (plan task A3)",
+  "wording": "Declared protocol after exploratory analysis. Not preregistered and not confirmatory.",
+  "declared_on": "2026-10-02",
+  "declared_by": "AI coding agent (Claude Code), on the owners' assignment R11 in docs/decision-log-d1-d16.md",
+  "declared_before": "Any M1-v2 tuning run and any scoring of M1-literal. This file is committed alone with the code and tests, before the first tuning run.",
+  "basis": [
+    "Restructuring plan v2, section 4.2 row A3 and task row A3",
+    "Planning protocol v1a, geoid_split and t2_skill_bar",
+    "Proposal, section 3.2.2, Method 1: Sentinel-1 temporal change detection (pages 9-10 of the proposal text)"
+  ],
+  "planning_protocol_v1a_sha256": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+  "dataset": {
+    "repository": "links-ads/geoid-flood",
+    "revision": "868407460bf3db492f50730a57585916baa71dc6",
+    "event_id": "EMSR712",
+    "aoi_id": "EMSR712-3",
+    "tiles": 29,
+    "tile_size": "1024 by 1024 cells of 10 m, UTM zone 32N",
+    "source_layer": "s1grd: Sentinel-1 GRD, linear sigma0, VV then VH",
+    "pre_event_pass": "2023-09-08, about 17:09 UTC",
+    "post_event_pass": "2024-01-03, about 05:34 UTC",
+    "reference_layers": [
+      "label",
+      "validity"
+    ],
+    "reference_meaning": {
+      "0": "mapped background, not confirmed dry",
+      "1": "permanent water (modelled)",
+      "2": "mapped flood (CEMS Rapid Mapping delineation)",
+      "255": "outside the mapped area"
+    },
+    "reference_lineage": "The CEMS delineation was drawn from the same 3 January 2024 Sentinel-1 pass that supplies the post-event input. Every score is agreement with a same-pass CEMS map, not independent accuracy."
+  },
+  "split": {
+    "source": "planning protocol v1a, geoid_split, drafter reading DR-A01, confirmed by the owners at signing",
+    "rule": "Sort the 29 tile numbers in ascending order. The first 15 are development tiles and the remaining 14 are test tiles.",
+    "development_tile_ids": [
+      9,
+      10,
+      12,
+      13,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      30,
+      31,
+      32,
+      33
+    ],
+    "test_tile_ids": [
+      35,
+      36,
+      37,
+      38,
+      39,
+      40,
+      41,
+      42,
+      45,
+      46,
+      47,
+      48,
+      49,
+      50
+    ]
+  },
+  "blinding": {
+    "tuning": "The tuning script opens tiles only through a loader in the phase 'tuning'. That loader refuses every test tile: inputs, label and validity.",
+    "freeze": "The chosen configuration is written to geoid_m1_v2_frozen_config.json. Its SHA-256, the SHA-256 of planning protocol v1a, of this file, of the tuning log and of the two code modules are written to geoid_m1_v2_freeze_receipt.json. Both are committed before any test tile is opened.",
+    "held_out_scoring": "The scoring script refuses to run unless the frozen configuration, the receipt, the tuning log, this file and the two code modules are identical to the committed versions at HEAD, and it refuses to run a second time.",
+    "no_decision_outputs": "No FPPS, no A-E class and no ensemble is computed (guardrail GR5: protocol v1b is not signed). Nothing is run on Mae Sai (that is plan task A4)."
+  },
+  "m1_literal": {
+    "what_it_is": "The proposal's Method 1 as written, applied to tiles that are already calibrated to sigma0.",
+    "runs": "Once, on all 29 tiles, after the M1-v2 freeze is committed. Each tile is treated as one image. No parameter is tuned and no tile is used to choose anything.",
+    "steps": [
+      "Valid cells: pre VV, pre VH, post VV and post VH are all finite and above zero.",
+      "Speckle control: Lee (1980) local-statistics filter on linear power, 5 by 5 window, 4.4 equivalent looks.",
+      "Conversion to dB.",
+      "delta-VV and delta-VH as post minus pre in dB; the VV/VH ratio in dB for both dates. The ratio is derived and summarised; the proposal does not use it in the threshold.",
+      "Otsu threshold on all valid delta-VH cells of the tile (histogram from -25 to +25 dB in 0.1 dB bins).",
+      "Candidate: delta-VH below the threshold and below zero (strong negative change).",
+      "Isolated speckle: a candidate cell is kept only if at least 5 of the 9 cells of its 3 by 3 neighbourhood are candidates."
+    ],
+    "drafter_readings": [
+      "The proposal says 'speckle control' and names no filter. Plan 1.4 and plan 4.2 A4 name the Lee filter. The 5 by 5 window and the 4.4 looks (the nominal value for Sentinel-1 IW GRD high resolution) are the agent's reading, fixed here before any run.",
+      "The proposal says 'adaptive Otsu' in the role line and 'the Otsu threshold on valid delta-VH pixels' in step 4. Plan 1.4 reads it as a global Otsu threshold. Here the threshold is global within each 10 km tile.",
+      "The proposal says 'strong negative change becomes candidate temporary water'. Read as: below the Otsu threshold and below zero.",
+      "The proposal says 'clean isolated speckle' and gives no rule. Read as the 3 by 3 majority rule above."
+    ],
+    "steps_not_run_and_why": [
+      "Orbit correction, thermal-noise removal, calibration to sigma0 and terrain correction: done by the dataset publisher; they cannot be rerun from the tiles.",
+      "Removal of permanent water: no independent permanent-water layer for this site is on disk. The label's permanent-water class is reference information and is never given to the method. The secondary comparison leaves permanent water out of the score instead.",
+      "Removal of steep terrain, and radar shadow and layover flags: no DEM and no incidence-angle layer for these tiles is on disk.",
+      "Vectorising, tambon aggregation and calibration of the change score: not applicable to a foreign benchmark."
+    ],
+    "abstention": "M1-literal has no abstention rule beyond invalid radiometry."
+  },
+  "m1_v2": {
+    "what_it_is": "The plan's revision of Method 1: refined-Lee filter; split-based selection of bimodal blocks (Ashman D above 2); a global Kittler-Illingworth threshold; an Otsu comparator; one-sided or bidirectional change. Slope-free, because no DEM for these tiles is on disk.",
+    "fixed_parameters": {
+      "speckle_filter": "refined Lee (Lee 1981), 7 by 7 window with eight edge-aligned half windows",
+      "equivalent_looks": 4.4,
+      "change_db": "post minus pre in dB, after filtering",
+      "histogram": "from -25 to +25 dB in 0.1 dB bins; values outside are left out of the histogram",
+      "block_selection": "Non-overlapping square blocks. A block needs at least half of its cells valid. A two-component Gaussian mixture is fitted to the block's change histogram by EM, started from the Otsu split.",
+      "ashman_d_min": 2.0,
+      "min_component_weight": 0.1,
+      "direction_conditions": "The upper component must be a change in the direction of interest (mean above zero) and the lower component must be the one closer to no change.",
+      "threshold_method": "Kittler-Illingworth minimum-error threshold on the pooled histogram of the selected blocks; each class must hold at least 1 percent of the pooled samples. Since amendment 1 the threshold must also be an interior minimum of the criterion, between the means of the two Gaussian components fitted to the pooled histogram; when there is none, the method declines.",
+      "threshold_must_be_positive": "A threshold at or below 0 dB of change is refused.",
+      "isolated_speckle_cleaning": "3 by 3 majority, at least 5 of 9",
+      "sources_of_fixed_values": "Ashman D above 2 is the plan's value. The 0.1 component weight follows the surface-ratio rule of the split-based approach of Chini et al. (2017). The 4.4 looks is the nominal Sentinel-1 IW GRD high-resolution value. None of these is tuned."
+    },
+    "search_space": {
+      "dimensions": {
+        "channel": [
+          "vh",
+          "vv",
+          "mean_vv_vh"
+        ],
+        "direction": [
+          "darkening",
+          "bidirectional"
+        ],
+        "block_pixels": [
+          64,
+          128,
+          256
+        ],
+        "threshold_scope": [
+          "per_tile",
+          "pooled_run"
+        ]
+      },
+      "runs": 36,
+      "order": "Cartesian product in the order the dimensions are listed, the last dimension varying fastest.",
+      "meaning": {
+        "channel": "Which change is thresholded: delta-VH (the proposal's choice), delta-VV, or their mean.",
+        "direction": "darkening: only a drop in backscatter is a candidate. bidirectional: a drop or a rise is a candidate, each side with its own threshold (the plan's bidirectional absolute change).",
+        "block_pixels": "Side of the blocks tested for bimodality: 0.64, 1.28 or 2.56 km.",
+        "threshold_scope": "per_tile: each tile sets its own threshold from its own bimodal blocks and abstains when it has none. pooled_run: the bimodal blocks of all tiles of the split being processed share one threshold; a tile abstains only when no tile of the split has a bimodal block."
+      },
+      "why_these_dimensions": [
+        "channel: the proposal thresholds delta-VH. Over short grass in winter VH sits close to the instrument noise floor, so VV may separate open water better. The development tiles decide.",
+        "direction: the plan asks for bidirectional change stratified by land cover. No land-cover layer for these tiles is on disk (the WorldCover tiles on disk cover Thailand only, and the dataset has no land-cover layer), so the stratification is left out. Without it, a rise in backscatter may flag seasonal change, so the darkening-only variant is offered beside the plan's bidirectional one.",
+        "block_pixels: the split-based approach depends on blocks small enough to hold both flooded and dry land. Three sizes are tried.",
+        "threshold_scope: on Mae Sai the method will be applied to one scene. Both readings of 'global' are tried: the tile and the set of tiles processed together."
+      ],
+      "not_in_the_search_space": "No dB threshold, no offset to the Kittler-Illingworth threshold, no filter size, no number of looks, no Ashman D value and no cleaning rule is tuned."
+    },
+    "selection_rule": {
+      "score": "Pooled development IoU on the primary comparison, with every abstained cell counted as 'not a candidate' (strict reading), for the Kittler-Illingworth threshold.",
+      "ties": "Higher development coverage, then the earlier run.",
+      "note": "The Otsu comparator is logged for every run and never selects a configuration."
+    },
+    "otsu_comparator": "The same pipeline with Otsu's threshold on the same pooled histogram, reported beside Kittler-Illingworth on both splits. It is a comparator, not a candidate for the headline.",
+    "tuning_log": "Every tuning run is appended to geoid_m1_v2_tuning_log.jsonl with its parameters and development scores, including any run that is repeated or abandoned, with the reason.",
+    "prior_tuning": "Whether any M1-v2 tuning existed before this run is unknown to the agent: the owners answered 'not sure' when they signed v1a. This is the first tuning recorded in the repository."
+  },
+  "evaluation": {
+    "wording": "agreement with a same-pass CEMS map, not independent accuracy",
+    "primary_comparison": "Mapped flood (label 2) against mapped background and permanent water (labels 0 and 1), in cells with validity 1. Label 255 and validity 0 are left out.",
+    "secondary_comparison": "Mapped flood against mapped background only; permanent water is left out.",
+    "pooling": "Confusion counts are summed over the tiles of a split before any ratio. Per-tile scores are reported too. An undefined ratio is reported as null, never as zero.",
+    "metrics": [
+      "IoU",
+      "Dice",
+      "precision",
+      "recall",
+      "coverage",
+      "abstained cell share",
+      "abstained tiles",
+      "predicted-to-reference area ratio"
+    ],
+    "two_readings": {
+      "covered": "Only cells where the method gave an answer.",
+      "strict": "Abstained cells are counted as 'not a candidate', so abstaining over mapped flood costs recall."
+    },
+    "coverage": "Share of evaluable cells where the method gave an answer.",
+    "abstention": "A tile where the method declined to set a threshold, and the share of evaluable cells without an answer. Blocks that were not selected are counted too.",
+    "failure_strata": [
+      "by tile",
+      "by the tile's reference flooded share: none; above 0 to 1%; above 1% to 5%; above 5% to 20%; above 20%",
+      "by distance to a reference flood edge: within 2 cells; further than 2 cells",
+      "by pre-event VH backscatter after refined-Lee filtering: below -22 dB; -22 to -18 dB; -18 to -14 dB; -14 dB or above (the only surface description the data supports without a land-cover layer)",
+      "by the post-event acquisition slice in the file name"
+    ],
+    "t2_skill_bar": {
+      "source": "planning protocol v1a, t2_skill_bar",
+      "condition_assessed_here": "GEOID held-out test IoU of at least 0.40.",
+      "reading": "v1a does not say how abstained cells count. Here the pooled test IoU on the primary comparison must reach 0.40 on both readings (covered and strict).",
+      "conditions_not_assessable_here": "Mae Sai abstention at most 0.20, Mae Sai unit coverage at least 0.80 and the 3-day recency window.",
+      "declared_unable_to_meet": "v1a declares M1-literal unable to meet the bar whatever it scores.",
+      "wording": "Clearing or missing the bar is stated as a number against a rule. Nothing is called validated."
+    }
+  },
+  "required_statements": [
+    "v2 thresholds were tuned on GEOID development tiles and scored on held-out GEOID test tiles against a same-pass CEMS map (agreement, not independent accuracy). Design choices were informed by the Mae Sai diagnosis. Test tiles had been included in an earlier exploratory all-tile diagnostic (0.161 to 0.455), which is labelled exploratory.",
+    "One foreign event. The split is spatial, by tile.",
+    "The earlier all-tile diagnostic on this branch saw the test tiles.",
+    "Whether any M1-v2 tuning existed before this run is unknown to the agent (the owners answered 'not sure' when they signed v1a). This run is the first tuning recorded in the repository."
+  ],
+  "known_limits": [
+    "The pre-event and post-event passes are almost four months apart and come from different orbit directions (evening and morning), so part of the change is seasonal or geometric.",
+    "The label is drawn from the post-event pass itself.",
+    "Tiles of one activation share an event, a sensor pass and a mapping team; neighbouring tiles are not independent.",
+    "The method is frozen without a slope mask; on Mae Sai the HAND and slope mask is a disclosed difference (plan A3)."
+  ],
+  "safety": {
+    "evidence_tier": "research_benchmark_diagnostic",
+    "official_warning": false,
+    "accepted_observation": false,
+    "can_feed_decision_layer": false,
+    "human_reviewed_by_floodguard": false
+  },
+  "amendments": [
+    {
+      "id": "amendment_1",
+      "amended_on": "2026-10-02",
+      "committed_before": "the second tuning session and any test-tile access",
+      "original_declaration": {
+        "commit": "7666536",
+        "sha256": "b4a20b6cae82d2b60134bab0bea7373a4fe3aadc75a05ea9a9cd6afde3a9242e"
+      },
+      "what_happened": {
+        "first_session": "2026-10-02T15:59:33Z, all 36 declared runs on the 15 development tiles, logged in geoid_m1_v2_tuning_log.jsonl.",
+        "first_session_choice": {
+          "run": 29,
+          "parameters": {
+            "channel": "mean_vv_vh",
+            "direction": "darkening",
+            "block_pixels": 256,
+            "threshold_scope": "per_tile"
+          },
+          "development_iou_strict": 0.433208,
+          "development_iou_covered": 0.438852,
+          "development_coverage": 0.414283,
+          "development_tiles_declined": "9 of 15",
+          "otsu_comparator_development_iou_strict": 0.47523
+        },
+        "first_session_freeze": "The script wrote a frozen configuration (SHA-256 81509505fb7ba2e50c0eec5d0500a5d5b3ee547be052b376bf8d555c8fb3875a) and a receipt (SHA-256 9140198c386407d13f5069b3b1e91b3218ca2a6d840d8167d959d9c077930668). Neither was committed and both are withdrawn. No test tile was opened."
+      },
+      "defect_found_on_development_tiles": "In 30 of the 36 runs the Kittler-Illingworth development IoU (strict) was below 0.1 (0.007 to 0.075), with thresholds of 8 to 16 dB of change on at least one tile; the median threshold over all tiles and runs was 10.1 dB. The Otsu comparator on the same histograms gave 0.066 to 0.318. A development-only check of the chosen configuration showed why: where the two classes overlap, the criterion has no minimum between the modes and keeps falling to the edge of its search range, which is set by the 1 percent class floor and not by the data. The code returned that edge as if it were a threshold.",
+      "development_only_check": {
+        "configuration": "mean_vv_vh, darkening, 256-cell blocks, per tile",
+        "tiles": [
+          {
+            "tile": 22,
+            "selected_blocks": 4,
+            "pooled_fit": {
+              "weight_low": 0.624,
+              "mean_low": -1.604,
+              "std_low": 2.053,
+              "weight_high": 0.376,
+              "mean_high": 4.971,
+              "std_high": 2.389
+            },
+            "pooled_fit_ashman_d": 2.952,
+            "ki_threshold_db": 2.5,
+            "otsu_threshold_db": 1.7,
+            "admissible_range_db": [
+              -6.0,
+              9.5
+            ],
+            "interior_local_minima_db": [
+              2.5
+            ],
+            "j_at_local_minima": [
+              3.6732
+            ],
+            "j_at_ki": 3.6732
+          },
+          {
+            "tile": 25,
+            "selected_blocks": 1,
+            "pooled_fit": {
+              "weight_low": 0.698,
+              "mean_low": -2.575,
+              "std_low": 2.512,
+              "weight_high": 0.302,
+              "mean_high": 3.225,
+              "std_high": 2.617
+            },
+            "pooled_fit_ashman_d": 2.261,
+            "ki_threshold_db": 8.1,
+            "otsu_threshold_db": -0.1,
+            "admissible_range_db": [
+              -8.2,
+              8.1
+            ],
+            "interior_local_minima_db": [],
+            "j_at_local_minima": [],
+            "j_at_ki": 3.6248
+          },
+          {
+            "tile": 30,
+            "selected_blocks": 2,
+            "pooled_fit": {
+              "weight_low": 0.861,
+              "mean_low": -1.656,
+              "std_low": 3.13,
+              "weight_high": 0.139,
+              "mean_high": 6.274,
+              "std_high": 2.35
+            },
+            "pooled_fit_ashman_d": 2.865,
+            "ki_threshold_db": 9.7,
+            "otsu_threshold_db": 0.4,
+            "admissible_range_db": [
+              -8.5,
+              9.7
+            ],
+            "interior_local_minima_db": [
+              6.2
+            ],
+            "j_at_local_minima": [
+              3.8356
+            ],
+            "j_at_ki": 3.8288
+          },
+          {
+            "tile": 31,
+            "selected_blocks": 4,
+            "pooled_fit": {
+              "weight_low": 0.842,
+              "mean_low": -0.606,
+              "std_low": 2.592,
+              "weight_high": 0.158,
+              "mean_high": 5.177,
+              "std_high": 2.291
+            },
+            "pooled_fit_ashman_d": 2.364,
+            "ki_threshold_db": 8.7,
+            "otsu_threshold_db": 1.1,
+            "admissible_range_db": [
+              -6.6,
+              8.7
+            ],
+            "interior_local_minima_db": [],
+            "j_at_local_minima": [],
+            "j_at_ki": 3.4014
+          },
+          {
+            "tile": 32,
+            "selected_blocks": 7,
+            "pooled_fit": {
+              "weight_low": 0.586,
+              "mean_low": -1.066,
+              "std_low": 2.411,
+              "weight_high": 0.414,
+              "mean_high": 6.098,
+              "std_high": 2.294
+            },
+            "pooled_fit_ashman_d": 3.045,
+            "ki_threshold_db": 2.9,
+            "otsu_threshold_db": 2.3,
+            "admissible_range_db": [
+              -6.4,
+              10.7
+            ],
+            "interior_local_minima_db": [
+              2.9
+            ],
+            "j_at_local_minima": [
+              3.8902
+            ],
+            "j_at_ki": 3.8902
+          },
+          {
+            "tile": 33,
+            "selected_blocks": 3,
+            "pooled_fit": {
+              "weight_low": 0.757,
+              "mean_low": -1.228,
+              "std_low": 2.387,
+              "weight_high": 0.243,
+              "mean_high": 6.111,
+              "std_high": 2.491
+            },
+            "pooled_fit_ashman_d": 3.008,
+            "ki_threshold_db": 4.0,
+            "otsu_threshold_db": 2.0,
+            "admissible_range_db": [
+              -6.8,
+              10.3
+            ],
+            "interior_local_minima_db": [
+              4.0
+            ],
+            "j_at_local_minima": [
+              3.6989
+            ],
+            "j_at_ki": 3.6989
+          }
+        ],
+        "reading": "Tiles 25 and 31 have no interior minimum; the returned 8.1 and 8.7 dB are the upper end of the admissible range. Tile 30 has an interior minimum at 6.2 dB but the edge value at 9.7 dB scored lower and was returned. Tiles 22, 32 and 33 have one interior minimum each, and it is the value returned."
+      },
+      "change": "A Kittler-Illingworth threshold is accepted only at an interior minimum of the criterion, strictly between the means of the two Gaussian components fitted to the pooled histogram. When there is none, the method declines for that image (per_tile) or for the split (pooled_run). No fallback threshold is introduced.",
+      "unchanged": "The 36-run search space, the selection rule, the Otsu comparator, the metrics, the strata, M1-literal and every other fixed parameter.",
+      "what_this_is": "A change made after development scores were seen. That is tuning, done on development tiles only, and it is disclosed as such. The second session reruns the same 36 runs; the first session stays in the log.",
+      "limit": "No further amendment is made before the freeze. A later change is a new method version with its own record."
+    }
+  ]
+}

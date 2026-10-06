@@ -62,6 +62,10 @@ let phase = "initial competition page";
 let offlineMode = false;
 let expectedDeniedNavigation = false;
 const pendingRequests = new Map();
+// Requests for the landing's own artwork: those still on their way, and the paths that have arrived.
+const landingArtworkInFlight = new Set();
+const landingArtworkArrived = new Set();
+const landingCameraFrames = expectedArtworkUrls.filter((url) => url.includes("/camera/"));
 
 try {
   const context = await browser.newContext({ serviceWorkers: "allow" });
@@ -88,11 +92,16 @@ try {
   page.on("request", (request) => {
     const url = new URL(request.url());
     pendingRequests.set(request, request.url());
+    if (url.origin === baseUrl && url.pathname.startsWith("/landing/")) landingArtworkInFlight.add(request);
     if (!approvedOrigins.has(url.origin)) unexpectedRequests.push(request.url());
   });
-  page.on("requestfinished", (request) => pendingRequests.delete(request));
+  page.on("requestfinished", (request) => {
+    pendingRequests.delete(request);
+    if (landingArtworkInFlight.delete(request)) landingArtworkArrived.add(new URL(request.url()).pathname);
+  });
   page.on("requestfailed", (request) => {
     pendingRequests.delete(request);
+    landingArtworkInFlight.delete(request);
     const reason = request.failure()?.errorText ?? "failed";
     if (reason === "net::ERR_ABORTED" || expectedResourceFailure(request.url())) return;
     resourceErrors.push(`${phase}: ${request.url()}: ${reason}`);
@@ -124,7 +133,20 @@ try {
     const cache = await caches.open(key);
     return { key, paths: (await cache.keys()).map((request) => new URL(request.url).pathname) };
   });
-  if (!competitionCache?.paths.includes("/command/")) throw new Error("Competition profile did not cache Command before transition.");
+  // The three Planning addresses: the map workspace (default), the planning overview and the forward from the old address.
+  for (const commandPath of ["/command/", "/command/ver2/", "/command/archive/"]) {
+    if (!competitionCache?.paths.includes(commandPath)) throw new Error(`Competition profile did not cache ${commandPath} before transition.`);
+  }
+  // A saved study area lives outside the build cache. The public profile must not keep it either.
+  phase = "save a study area before the downgrade";
+  await saveDefaultStudyArea(page);
+  landingArtworkArrived.clear();
+  await page.goto(`${baseUrl}/`, { waitUntil: "domcontentloaded" });
+  await page.locator("main[data-fg-landing]").waitFor({ state: "visible" });
+  // The landing goes on loading its scene artwork after it is visible. The next step swaps the
+  // build behind the server; a frame still on its way would reach the public build, which does
+  // not ship it, and the 404 would belong to this test's own swap and not to the product.
+  await waitForLandingArtworkToSettle(page, "the landing to finish loading its artwork before the profile downgrade");
 
   phase = "competition to public downgrade";
   activeOut = publicOut;
@@ -142,7 +164,7 @@ try {
       worker.postMessage({ type: "FLOODGUARD_STATUS_REQUEST" }, [channel.port2]);
     });
     return status?.profile === "public-production";
-  }, undefined, "public worker to control the page");
+  }, undefined, "public worker to control the page", 90_000);
   await waitForEvaluated(page, async (oldKey) => {
     const keys = (await caches.keys()).filter((key) => /^floodguard-offline-[0-9a-f]{12}$/.test(key));
     if (keys.length !== 1 || keys[0] === oldKey) return false;
@@ -186,13 +208,14 @@ try {
       waiting: await readWorker(registration?.waiting),
       installing: await readWorker(registration?.installing),
     };
-    return { keys, paths: (await cache.keys()).map((request) => new URL(request.url).pathname), profiles, workers };
+    return { keys, paths: (await cache.keys()).map((request) => new URL(request.url).pathname), profiles, workers, savedAreas: (await caches.keys()).includes("floodguard-saved-areas-v1") };
   });
+  if (publicCacheAudit.savedAreas) throw new Error("A study area saved under the competition profile survived the public-profile transition.");
   if (publicCacheAudit.keys.includes(competitionCache.key)) {
     throw new Error(`Competition cache survived the public-profile transition: ${JSON.stringify(publicCacheAudit)}`);
   }
   if (publicCacheAudit.paths.some((path) => path.startsWith("/landing/"))) throw new Error("Public cache retained competition artwork after downgrade.");
-  for (const forbidden of ["/policy/", "/command/", "/studio/", "/offline-demo/mae-sai/roads.json", "/offline-demo/mae-sai/facilities.json"]) {
+  for (const forbidden of ["/policy/", "/command/", "/command/ver2/", "/command/cases/", "/command/archive/", "/studio/", "/studio/candidate-report/", "/studio/library/", "/studio/brief/", "/evidence-library/catalog.json", "/offline-demo/mae-sai/roads.json", "/offline-demo/mae-sai/facilities.json"]) {
     if (publicCacheAudit.paths.includes(forbidden)) throw new Error(`Public cache retained ${forbidden} after transition.`);
   }
   await performSuccessfulUpdateCheck(page);
@@ -202,17 +225,20 @@ try {
   offlineMode = true;
   await context.setOffline(true);
   await page.waitForFunction(() => document.querySelector('[data-pwa-availability="true"]')?.textContent?.includes("Offline"));
-  let commandRecovered = false;
-  expectedDeniedNavigation = true;
-  try {
-    await page.goto(`${baseUrl}/command/`, { waitUntil: "domcontentloaded", timeout: 5000 });
-    commandRecovered = await page.locator("main.command-page").count() > 0;
-  } catch {
-    commandRecovered = false;
-  } finally {
-    expectedDeniedNavigation = false;
+  // None of the Planning pages is left: not the map workspace, not the planning overview, not the forward.
+  for (const commandPath of ["/command/", "/command/ver2/", "/command/archive/"]) {
+    let commandRecovered = false;
+    expectedDeniedNavigation = true;
+    try {
+      await page.goto(`${baseUrl}${commandPath}`, { waitUntil: "domcontentloaded", timeout: 5000 });
+      commandRecovered = await page.locator("main[data-planning-candidate], main.command-page, main[data-command-forward]").count() > 0;
+    } catch {
+      commandRecovered = false;
+    } finally {
+      expectedDeniedNavigation = false;
+    }
+    if (commandRecovered) throw new Error(`${commandPath} remained available offline after the public-profile downgrade.`);
   }
-  if (commandRecovered) throw new Error("Command remained available offline after the public-profile downgrade.");
 
   // Reconnect the Public profile before switching the same origin back to the
   // broader competition build. This proves the online/offline indicator and
@@ -235,6 +261,7 @@ try {
     async () => Boolean((await navigator.serviceWorker.getRegistration())?.waiting),
     undefined,
     "competition update to reach the waiting state",
+    90_000,
   );
   await page.goto(`${baseUrl}/`, { waitUntil: "domcontentloaded" });
   await page.locator("main[data-fg-landing]").waitFor({ state: "visible" });
@@ -243,7 +270,7 @@ try {
   await page.locator("main.public-page").waitFor({ state: "visible" });
   await page.waitForFunction(() => (
     document.querySelector('[data-pwa-availability="true"]')?.textContent?.includes("Install available update")
-    && !document.querySelector('[data-pwa-availability="true"]')?.textContent?.includes("saved app ready")
+    && !document.querySelector('[data-pwa-availability="true"]')?.textContent?.includes("app pages saved offline")
   ));
   const pendingRows = await readAvailabilityRows(page);
   if (pendingRows["Saved planning view"] !== "Open once online to save") {
@@ -265,18 +292,32 @@ try {
 
   // The activated competition worker must now serve both staff routes offline,
   // and the availability panel must report the cached snapshot and map limits.
+  // The staff pages below open the default study case. Its study area is not part of the installation: it is
+  // saved when the library page opens it while connected.
+  phase = "save a study area by opening it";
+  await saveDefaultStudyArea(page);
   phase = "competition offline staff-route recovery";
   offlineMode = true;
   await context.setOffline(true);
-  for (const [path, selector] of [["/command/", "main.command-page"], ["/studio/", "main.studio-page"]]) {
+  // The map-bearing planning page is the map workspace, the default Planning page at /command/; the planning
+  // overview at /command/ver2/ and the Studio pages have no map.
+  const mapRoute = "/command/";
+  for (const [path, selector] of [
+    ["/studio/brief/", "main[data-evidence-library]"],
+    ["/studio/library/", "main[data-evidence-library]"],
+    ["/command/ver2/", "main[data-planning-candidate]"],
+    [mapRoute, "main.command-page"],
+    ["/studio/candidate-report/", "main[data-evidence-case-id]"],
+    ["/studio/", "main.studio-page"],
+  ]) {
     await page.goto(`${baseUrl}${path}`, { waitUntil: "domcontentloaded" });
     await page.locator(selector).waitFor({ state: "visible" });
     await assertAvailabilityPanel(page, { online: false, ready: true });
     await page.waitForFunction((state) => (
       document.querySelector("[data-map-availability]")?.getAttribute("data-map-availability") === state
-    ), path === "/command/" ? "offline" : "none");
+    ), path === mapRoute ? "offline" : "none");
     const rows = await readAvailabilityRows(page);
-    const expectedBackground = path === "/command/" ? "Map background offline" : "No map background active";
+    const expectedBackground = path === mapRoute ? "Map background offline" : "No map background active";
     if (rows["Map backgrounds"] !== expectedBackground) {
       throw new Error(`${path} offline map-background status is misleading: ${JSON.stringify(rows)}`);
     }
@@ -348,11 +389,22 @@ function expectedResourceFailure(resource) {
   const url = new URL(resource, baseUrl);
   return basemapOrigins.has(url.origin)
     || (offlineMode && url.origin === baseUrl && (
-      (expectedDeniedNavigation && url.pathname === "/command/")
+      (expectedDeniedNavigation && url.pathname.startsWith("/command/"))
       || url.searchParams.has("_rsc")
-      // The optional research report is outside the planning-view cache.
-      || url.pathname === "/geoai/mae-sai-real.json"
     ));
+}
+
+/**
+ * Open the default case on the library page while connected and wait until the worker has saved its study area:
+ * an area of this size is saved by opening it, with no button pressed.
+ */
+async function saveDefaultStudyArea(page) {
+  await page.goto(`${baseUrl}/studio/library/`, { waitUntil: "domcontentloaded" });
+  const row = page.locator('[data-evidence-offline-control="true"] [data-evidence-offline-area]').first();
+  await row.waitFor({ state: "visible" });
+  await waitForEvaluated(page, () => (
+    document.querySelector('[data-evidence-offline-control="true"] [data-evidence-offline-area]')?.getAttribute("data-state") === "saved"
+  ), undefined, "the default study area to be saved by opening it", 120_000);
 }
 
 async function readAvailabilityRows(page) {
@@ -388,6 +440,24 @@ async function performSuccessfulUpdateCheck(page) {
   }, undefined, "a successful saved-app update check timestamp");
 }
 
+async function waitForLandingArtworkToSettle(page, description, quietMs = 1_500, timeoutMs = 45_000) {
+  const deadline = Date.now() + timeoutMs;
+  let quietSince = null;
+  while (Date.now() < deadline) {
+    const framesArrived = landingCameraFrames.every((url) => landingArtworkArrived.has(url));
+    if (framesArrived && landingArtworkInFlight.size === 0) {
+      quietSince ??= Date.now();
+      if (Date.now() - quietSince >= quietMs) return;
+    } else {
+      quietSince = null;
+    }
+    await page.waitForTimeout(100);
+  }
+  const missing = landingCameraFrames.filter((url) => !landingArtworkArrived.has(url));
+  const inFlight = [...landingArtworkInFlight].map((request) => request.url());
+  throw new Error(`Timed out waiting for ${description}; camera frames not yet loaded: ${missing.slice(0, 4).join(", ") || "none"}; still in flight: ${inFlight.slice(0, 4).join(", ") || "none"}`);
+}
+
 async function waitForEvaluated(page, predicate, argument, description, timeoutMs = 30_000) {
   const deadline = Date.now() + timeoutMs;
   let lastError = null;
@@ -401,5 +471,22 @@ async function waitForEvaluated(page, predicate, argument, description, timeoutM
     await page.waitForTimeout(100);
   }
   const detail = lastError instanceof Error ? ` Last evaluation error: ${lastError.message}` : "";
-  throw new Error(`Timed out waiting for ${description}.${detail}`);
+  const workerState = await page.evaluate(async () => {
+    const registration = await navigator.serviceWorker.getRegistration();
+    const state = (worker) => worker?.state ?? null;
+    const cacheProfiles = await Promise.all((await caches.keys())
+      .filter((key) => /^floodguard-offline-/.test(key))
+      .map(async (key) => {
+        const response = await caches.open(key).then((cache) => cache.match("/deployment-profile.json"));
+        return { key, profile: response ? (await response.json()).profile : null };
+      }));
+    return {
+      controller: state(navigator.serviceWorker.controller),
+      active: state(registration?.active),
+      installing: state(registration?.installing),
+      waiting: state(registration?.waiting),
+      cacheProfiles,
+    };
+  }).catch((error) => ({ error: error.message }));
+  throw new Error(`Timed out waiting for ${description}.${detail} Worker state: ${JSON.stringify(workerState)}`);
 }

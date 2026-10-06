@@ -1,0 +1,38 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "AOI-06 chao phraya rangsit"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              100.6,
+              13.98
+            ],
+            [
+              100.72,
+              13.98
+            ],
+            [
+              100.72,
+              14.08
+            ],
+            [
+              100.6,
+              14.08
+            ],
+            [
+              100.6,
+              13.98
+            ]
+          ]
+        ]
+      }
+    }
+  ]
+}

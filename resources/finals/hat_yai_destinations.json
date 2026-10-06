@@ -1,0 +1,12 @@
+{
+  "osm_sha256": "b7f46018249638413b1d318bc86519f140c27af20cac7c00d42fe03775b7add1",
+  "service_definition": "Mapped general hospital candidates; dental-only, unresolved clinic roles and military-access sites excluded from this civilian hospital comparison. This does not certify service capability, affordability or event operation.",
+  "exclusions": [
+    {"facility_id":"OSM-node-1743126086","duplicate_of":"OSM-way-1536054084","reason":"Reviewed duplicate: same named Hat Yai Hospital point inside its hospital-site polygon; retain the site representative, without merging connectors.","source_url":"https://hcode.moph.go.th/code/19435/"},
+    {"facility_id":"OSM-node-7856632136","duplicate_of":"OSM-way-1454160216","reason":"Reviewed Bang Klam Hospital point inside mapped hospital-site polygon; retain the site representative, without summing capacity or adding connectors.","source_url":"https://hcode.moph.go.th/code/19445/"},
+    {"facility_id":"OSM-node-13108444682","reason":"Hospital tag conflicts with mapped clinic name; general-hospital capability unresolved. Excluded pending role verification; not automatically reclassified.","source_url":"https://www.openstreetmap.org/node/13108444682"},
+    {"facility_id":"OSM-node-767631778","reason":"Mapped dental hospital is not a general-hospital substitute for this service comparison.","source_url":"https://www.openstreetmap.org/node/767631778"},
+    {"facility_id":"OSM-node-1743126091","reason":"Mapped military hospital: civilian access and entrance suitability unresolved; excluded from this civilian service comparison.","source_url":"https://www.openstreetmap.org/node/1743126091"},
+    {"facility_id":"OSM-way-1510609032","reason":"Mapped air-wing hospital: civilian access and entrance suitability unresolved; excluded from this civilian service comparison.","source_url":"https://www.openstreetmap.org/way/1510609032"}
+  ]
+}

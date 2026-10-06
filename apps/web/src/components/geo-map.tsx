@@ -1,6 +1,6 @@
 "use client";
 
-import type { GeoJSON as LeafletGeoJson, Layer, LayerGroup, Map as LeafletMap, Path, TileLayer as LeafletTileLayer } from "leaflet";
+import type { Canvas as LeafletCanvas, GeoJSON as LeafletGeoJson, Layer, LayerGroup, Map as LeafletMap, Path, TileLayer as LeafletTileLayer } from "leaflet";
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 
 import type { ActionReasonCode, DatasetMode, PublicPreparednessArea } from "@floodguard/contracts";
@@ -29,6 +29,29 @@ const ACTION_CLASS_LABELS = {
 } as const;
 
 type LeafletModule = typeof import("leaflet");
+
+/** Keep queued draws scoped to this map's Canvas lifecycle. */
+export function createGeoMapRenderer(leaflet: Pick<LeafletModule, "Canvas">): LeafletCanvas {
+  let active = false;
+  const base = leaflet.Canvas.prototype as LeafletCanvas & { _redraw: () => void };
+  const Renderer = leaflet.Canvas.extend({
+    onAdd(this: LeafletCanvas, map: LeafletMap) {
+      active = true;
+      base.onAdd.call(this, map);
+    },
+    onRemove(this: LeafletCanvas, map: LeafletMap) {
+      active = false;
+      base.onRemove.call(this, map);
+    },
+    _redraw(this: LeafletCanvas) {
+      // Leaflet 1.9.4 can lose a queued RAF handle when _updatePaths redraws
+      // synchronously. That orphan must not access a removed Canvas context.
+      if (active) base._redraw.call(this);
+    },
+  });
+  return new Renderer();
+}
+
 type FeatureLayer = Layer & {
   feature?: { properties?: Record<string, unknown> };
   getBounds?: () => import("leaflet").LatLngBounds;
@@ -60,6 +83,11 @@ interface GeoMapProps {
   visualPalette?: "default" | "public-blue" | "public-risk";
   enableBasemaps?: boolean;
   basemapControlVariant?: "segmented" | "menu";
+  /**
+   * Show the map-background notice in its compact form (a short line and one button) at every width, not only on
+   * phones. For a map that gives the notice one row of a column, as the Public home map does.
+   */
+  compactBasemapNotice?: boolean;
   showLegend?: boolean;
   showProvenanceBadge?: boolean;
   showTextAlternative?: boolean;
@@ -153,6 +181,7 @@ export function GeoMap({
   visualPalette = "default",
   enableBasemaps = false,
   basemapControlVariant = "segmented",
+  compactBasemapNotice = false,
   showLegend = true,
   showProvenanceBadge = true,
   showTextAlternative = true,
@@ -180,6 +209,9 @@ export function GeoMap({
   const previousSelectedId = useRef(selectedId);
   const selectionSheetId = useId();
   const basemapHealthId = useId();
+  const basemapNoticeId = useId();
+  // The compact map-background notice is a short line and one button; this opens the sentence and the actions.
+  const [basemapNoticeOpen, setBasemapNoticeOpen] = useState(false);
   const [mapReady, setMapReady] = useState(false);
   const [basemapId, setBasemapId] = useState<BasemapId>("street");
   const [basemapState, setBasemapState] = useState<BasemapState>("loading");
@@ -187,6 +219,12 @@ export function GeoMap({
   const [basemapAttempt, setBasemapAttempt] = useState(0);
   const [isOnline, setIsOnline] = useState(true);
   const effectiveBasemapState = basemapHidden ? "hidden" : !isOnline ? "offline" : basemapState;
+  // While the background loads for the first time, or again after it was ready, the notice is not yet due: the
+  // Public home map keeps it out of sight then, so an ordinary load or pan does not move the page. Once a problem is
+  // known it is due, and stays due through the next loading until the background is ready.
+  const [basemapNoticeDue, setBasemapNoticeDue] = useState(false);
+  const basemapNoticeDueNow = effectiveBasemapState === "ready" ? false : effectiveBasemapState === "loading" ? basemapNoticeDue : true;
+  if (basemapNoticeDueNow !== basemapNoticeDue) setBasemapNoticeDue(basemapNoticeDueNow);
   const [selectionSheetOpen, setSelectionSheetOpen] = useState(true);
   const [visibleRoadCount, setVisibleRoadCount] = useState(0);
   const [visibleRoadRiskCount, setVisibleRoadRiskCount] = useState(0);
@@ -229,6 +267,11 @@ export function GeoMap({
     setBasemapHidden(false);
     setBasemapAttempt((attempt) => attempt + 1);
   };
+  /** An action of the map-background notice: the compact notice folds back to its short line afterwards. */
+  const noticeAction = (action: () => void) => () => {
+    setBasemapNoticeOpen(false);
+    action();
+  };
 
   useEffect(() => {
     const updateOnline = () => {
@@ -255,6 +298,7 @@ export function GeoMap({
     let disposed = false;
     let mountedMap: LeafletMap | null = null;
     let resizeTimer: number | undefined;
+    let sizeObserver: ResizeObserver | undefined;
 
     async function mountMap() {
       const L = await import("leaflet");
@@ -267,18 +311,26 @@ export function GeoMap({
         maxZoom: 19,
         keyboard: true,
         preferCanvas: true,
+        renderer: L.Browser.canvas ? createGeoMapRenderer(L) : undefined,
       });
       mountedMap.setView([20.36, 99.89], 10);
       mapRef.current = mountedMap;
       leafletRef.current = L;
       setMapReady(true);
       resizeTimer = window.setTimeout(() => mountedMap?.invalidateSize(), 60);
+      // Leaflet follows the window's size only. The map's box can change without it (the Public home map is one
+      // row taller while the map-background notice is shown), so the map is told of every change of its box.
+      if (typeof ResizeObserver !== "undefined") {
+        sizeObserver = new ResizeObserver(() => mountedMap?.invalidateSize());
+        sizeObserver.observe(mapElement.current);
+      }
     }
 
     void mountMap();
     return () => {
       disposed = true;
       if (resizeTimer !== undefined) window.clearTimeout(resizeTimer);
+      sizeObserver?.disconnect();
       setMapReady(false);
       areaLayerRef.current = null;
       basemapLayerRef.current = null;
@@ -880,7 +932,7 @@ export function GeoMap({
         <details className="map-basemap-menu">
           <summary aria-label={language === "th" ? "เปิดตัวเลือกชั้นแผนที่" : "Open map layer choices"}>
             <PublicAppIcon name="layers" />
-            <span>{BASEMAPS[basemapId].labels[language]}</span>
+            <span>{!basemapHidden ? BASEMAPS[basemapId].labels[language] : (language === "th" ? "ไม่มีพื้นหลัง" : "No background")}</span>
           </summary>
           <div role="group" aria-label={language === "th" ? "เลือกพื้นหลังแผนที่" : "Choose map background"}>
             {(Object.keys(BASEMAPS) as BasemapId[]).map((id) => (
@@ -903,28 +955,6 @@ export function GeoMap({
             </button>
           </div>
         </details>
-      )}
-      {enableBasemaps && effectiveBasemapState !== "ready" && (
-        <div className={`map-basemap-notice ${styles.notice}`}>
-          <p role="status" aria-live="polite">{basemapStatusLabel(effectiveBasemapState, language)}</p>
-          <div className={styles.actions}>
-            {effectiveBasemapState === "hidden" ? (
-              <button type="button" onClick={retryBasemap}>{language === "th" ? "แสดงพื้นหลัง" : "Show background"}</button>
-            ) : (
-              <>
-                {(effectiveBasemapState === "partial" || effectiveBasemapState === "unavailable") && (
-                  <button type="button" onClick={retryBasemap}>{language === "th" ? "ลองอีกครั้ง" : "Retry"}</button>
-                )}
-                {effectiveBasemapState !== "offline" && (
-                  <button type="button" onClick={() => selectBasemap(basemapId === "satellite" ? "street" : "satellite")}>
-                    {language === "th" ? "เปลี่ยนเป็น" : "Switch to"} {BASEMAPS[basemapId === "satellite" ? "street" : "satellite"].labels[language]}
-                  </button>
-                )}
-                <button type="button" onClick={() => setBasemapHidden(true)}>{language === "th" ? "ซ่อนพื้นหลัง" : "Hide background"}</button>
-              </>
-            )}
-          </div>
-        </div>
       )}
       {(roadDetailState === "loading" || roadDetailState === "unavailable") && (
         <p className={`map-detail-notice ${roadDetailState}`} role="status" aria-live="polite">
@@ -1002,6 +1032,12 @@ export function GeoMap({
         </p>
       )}
       {showProvenanceBadge && <span className={`map-provenance-badge ${datasetMode}`}>{mapGeometryDisclosure(language, datasetMode)}</span>}
+      {/*
+        The list button and the map-background notice share one stack. By default the stack has no box of its own
+        (globals.css), so each is placed as before; on the Public home map it is a column under the search field,
+        and the notice sits directly below the list button whatever the height of the map.
+      */}
+      <div className="map-top-stack">
       {showTextAlternative && <details className="map-text-alternative">
         <summary>{language === "th" ? "ดูผลลัพธ์แผนที่เป็นรายการ" : "View map results as a list"}</summary>
         <div className="map-results-list" aria-live="polite">
@@ -1076,11 +1112,59 @@ export function GeoMap({
           </section>
         </div>
       </details>}
+        {enableBasemaps && effectiveBasemapState !== "ready" && (
+          <div
+            className={`map-basemap-notice ${styles.notice}`}
+            data-expanded={basemapNoticeOpen ? "true" : "false"}
+            data-state={effectiveBasemapState}
+            data-pending={basemapNoticeDue ? undefined : "true"}
+            data-compact={compactBasemapNotice ? "always" : "phone"}
+          >
+            <p role="status" aria-live="polite">
+              <span className={styles.noticeFull}>{basemapStatusLabel(effectiveBasemapState, language)}</span>
+              <span className={styles.noticeShort}>{basemapStatusShortLabel(effectiveBasemapState, language)}</span>
+            </p>
+            {/* Shown in the compact form only (geo-map.module.css): the sentence and the actions stay behind this button. */}
+            <button type="button" className={styles.noticeToggle} aria-expanded={basemapNoticeOpen} aria-controls={basemapNoticeId} onClick={() => setBasemapNoticeOpen((open) => !open)}>
+              {basemapNoticeOpen ? (language === "th" ? "ปิด" : "Close") : (language === "th" ? "ตัวเลือก" : "Options")}
+            </button>
+            <div id={basemapNoticeId} className={styles.actions}>
+              {effectiveBasemapState === "hidden" ? (
+                <button type="button" onClick={noticeAction(retryBasemap)}>{language === "th" ? "แสดงพื้นหลัง" : "Show background"}</button>
+              ) : (
+                <>
+                  {(effectiveBasemapState === "partial" || effectiveBasemapState === "unavailable") && (
+                    <button type="button" onClick={noticeAction(retryBasemap)}>{language === "th" ? "ลองอีกครั้ง" : "Retry"}</button>
+                  )}
+                  {effectiveBasemapState !== "offline" && (
+                    <button type="button" onClick={noticeAction(() => selectBasemap(basemapId === "satellite" ? "street" : "satellite"))}>
+                      {language === "th" ? "เปลี่ยนเป็น" : "Switch to"} {BASEMAPS[basemapId === "satellite" ? "street" : "satellite"].labels[language]}
+                    </button>
+                  )}
+                  <button type="button" onClick={noticeAction(() => setBasemapHidden(true))}>{language === "th" ? "ซ่อนพื้นหลัง" : "Hide background"}</button>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
 
 const EMPTY_FEATURE_COLLECTION: FeatureCollection = { type: "FeatureCollection", name: "empty", features: [] };
+
+/** The short line of the compact notice; the full sentence of `basemapStatusLabel` opens behind its button. */
+export function basemapStatusShortLabel(state: Exclude<BasemapState, "ready">, language: Language): string {
+  const labels = {
+    loading: { en: "Loading map background…", th: "กำลังโหลดพื้นหลังแผนที่…" },
+    partial: { en: "Map background incomplete", th: "พื้นหลังแผนที่ไม่ครบ" },
+    unavailable: { en: "Map background unavailable", th: "พื้นหลังแผนที่ไม่พร้อมใช้" },
+    offline: { en: "Offline: no map background", th: "ออฟไลน์: ไม่มีพื้นหลังแผนที่" },
+    hidden: { en: "Map background hidden", th: "ซ่อนพื้นหลังแผนที่แล้ว" },
+  };
+  return labels[state][language];
+}
 
 export function basemapStatusLabel(state: Exclude<BasemapState, "ready">, language: Language): string {
   const labels = {

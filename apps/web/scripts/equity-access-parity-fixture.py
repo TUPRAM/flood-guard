@@ -18,9 +18,9 @@ same level indices, the same lost residents, the same within-reach denominators,
 reason and wording and the same set figures, so a changed threshold, rounding rule or denominator on either
 side fails a test.
 
-Where the replay's equity rule gives a ratio, the script also checks it against the unchanged
-``floodguard.equity.compute_equity_gap`` fed the same numerators and denominators; the two differ only where
-the replay withholds a ratio.
+Where the replay's equity rule gives a ratio, the script also checks it against
+``floodguard.equity_v1.compute_equity_gap`` (metric version 1, kept unchanged) fed the same numerators and
+denominators; the two differ only where the replay withholds a ratio.
 
 Everything in the fixture is a T1 scenario on a modelled flood: not observed evacuation outcomes, not a
 score and not an action class. "Vulnerable" is the terrain and remoteness proxy, not age, disability or
@@ -47,7 +47,8 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / "src"))
 
-from floodguard.equity import compute_equity_gap  # noqa: E402
+# Metric version 1, the code the replay's rule was written beside; floodguard.equity itself is version 2.0.
+from floodguard.equity_v1 import compute_equity_gap  # noqa: E402
 from floodguard.replay_equity import (  # noqa: E402
     DENOMINATOR,
     MINIMUM_GROUP_SIZE,
@@ -168,10 +169,10 @@ def equity_rows(inputs: list[tuple[float, float, float, float]]) -> list[list]:
     """Run ``floodguard.replay_equity.replay_equity_gap`` on (vulnerable lost, vulnerable within reach, other lost, other within reach).
 
     The denominators are the residents of each group with a shelter within reach before the flood. Each row is
-    also checked against the unchanged ``floodguard.equity.compute_equity_gap`` fed the same four numbers (its
+    also checked against the unchanged ``floodguard.equity_v1.compute_equity_gap`` fed the same four numbers (its
     "total" columns take the within-reach residents): the rates always agree, and the ratio and wording agree
     wherever the replay gives a ratio or calls it undefined. The replay differs by withholding the ratio for
-    small groups and when nobody has lost access (there ``floodguard.equity`` says 1.0), and where a rounded
+    small groups and when nobody has lost access (there ``floodguard.equity_v1`` says 1.0), and where a rounded
     rate of zero hides residents who did lose access: the replay judges loss on the lost counts and divides the
     unrounded rates there.
     """
@@ -194,17 +195,17 @@ def equity_rows(inputs: list[tuple[float, float, float, float]]) -> list[list]:
         base_rates = [number(base["vulnerable_access_loss_rate"]), number(base["non_vulnerable_access_loss_rate"])]
         base_ratio, base_text = number(base["equity_gap_ratio"]), str(base["interpretation_text"])
         if [gap.vulnerable_rate, gap.non_vulnerable_rate] != base_rates:
-            raise SystemExit(f"{given}: the replay's loss rates differ from floodguard.equity")
-        # A rate of 0.0000 with residents lost: floodguard.equity reads it as no loss, the replay does not.
+            raise SystemExit(f"{given}: the replay's loss rates differ from floodguard.equity_v1")
+        # A rate of 0.0000 with residents lost: floodguard.equity_v1 reads it as no loss, the replay does not.
         hidden = (given[0] > 0 and gap.vulnerable_rate == 0) or (given[2] > 0 and gap.non_vulnerable_rate == 0)
         if hidden and gap.reason == REASON_NO_LOSS:
             raise SystemExit(f"{given}: residents lost access, but the replay reports no loss")
         if gap.reason is None and not hidden and (gap.ratio != base_ratio or gap.interpretation != base_text):
-            raise SystemExit(f"{given}: the replay's ratio or wording differs from floodguard.equity")
+            raise SystemExit(f"{given}: the replay's ratio or wording differs from floodguard.equity_v1")
         if gap.reason == REASON_UNDEFINED_RATIO and (given[2] != 0 or base_ratio is not None or gap.interpretation != base_text):
-            raise SystemExit(f"{given}: the replay's undefined ratio differs from floodguard.equity")
+            raise SystemExit(f"{given}: the replay's undefined ratio differs from floodguard.equity_v1")
         if gap.reason == REASON_NO_LOSS and (base_ratio != 1.0 or given[0] != 0 or given[2] != 0):
-            raise SystemExit(f"{given}: no loss is reported although residents lost access, or floodguard.equity no longer states 1.0")
+            raise SystemExit(f"{given}: no loss is reported although residents lost access, or floodguard.equity_v1 no longer states 1.0")
         if (gap.reason == REASON_INSUFFICIENT_GROUP) != (min(given[1], given[3]) < MINIMUM_GROUP_SIZE):
             raise SystemExit(f"{given}: the group-size rule was not applied as documented")
         rows.append([*(float(value) for value in given), gap.vulnerable_rate, gap.non_vulnerable_rate, gap.ratio, gap.band,

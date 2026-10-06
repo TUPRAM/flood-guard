@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { createPortal } from "react-dom";
 
 import { getBasemapHealth, subscribeBasemapHealth, type BasemapState } from "@/lib/basemap-health";
 import { resolveDeploymentProfile } from "@/lib/deployment-profile";
@@ -12,6 +13,8 @@ import { useLanguage } from "@/lib/use-language";
 import styles from "./pwa-register.module.css";
 
 const OFFLINE_CACHE_PATTERN = /^floodguard-offline-[0-9a-f]{12}$/;
+/** Study areas a reader saved (by opening them, or on request): public/sw.js keeps them apart from the build cache. */
+const SAVED_AREAS_CACHE = "floodguard-saved-areas-v1";
 const LAST_REFRESH_KEY = "floodguard:last-saved-app-refresh";
 const EXPECTED_PROFILE = resolveDeploymentProfile(process.env.NEXT_PUBLIC_FLOODGUARD_APP_PROFILE);
 
@@ -96,7 +99,7 @@ const PWA_AVAILABILITY_COPY = {
     appOffline: "App offline",
     mapUnavailable: "Map unavailable",
     mapIncomplete: "Map incomplete",
-    savedAppReady: "saved app ready",
+    savedAppReady: "app pages saved offline",
     heading: "App availability",
     subtitle: "Mae Sai planning support",
     savedPlanningView: "Saved planning view",
@@ -111,7 +114,7 @@ const PWA_AVAILABILITY_COPY = {
     cachedSnapshot: "Cached planning snapshot",
     lastUpdateCheck: "Last successful update check",
     mapBackgrounds: "Map backgrounds",
-    disclosure: "Saved planning overlays and this device’s household plan remain available offline. Current conditions still require official local information.",
+    disclosure: "Saved app pages and this device’s household plan can remain available offline. Map backgrounds and routes are separate external services. Current conditions still require official local information.",
     installUpdate: "Install available update",
     installing: "Installing…",
     checkUpdate: "Check for app update",
@@ -128,7 +131,7 @@ const PWA_AVAILABILITY_COPY = {
     appOffline: "แอปออฟไลน์",
     mapUnavailable: "แผนที่ไม่พร้อมใช้งาน",
     mapIncomplete: "แผนที่ไม่ครบถ้วน",
-    savedAppReady: "แอปที่บันทึกไว้พร้อมใช้งาน",
+    savedAppReady: "บันทึกหน้าแอปไว้ใช้ออฟไลน์",
     heading: "สถานะแอป",
     subtitle: "เครื่องมือสนับสนุนการวางแผนแม่สาย",
     savedPlanningView: "มุมมองการวางแผนที่บันทึกไว้",
@@ -143,7 +146,7 @@ const PWA_AVAILABILITY_COPY = {
     cachedSnapshot: "ข้อมูลการวางแผนที่แคชไว้",
     lastUpdateCheck: "ตรวจสอบการอัปเดตสำเร็จล่าสุด",
     mapBackgrounds: "พื้นหลังแผนที่",
-    disclosure: "ชั้นข้อมูลการวางแผนที่บันทึกไว้และแผนครัวเรือนในอุปกรณ์นี้ยังใช้งานออฟไลน์ได้ สภาพปัจจุบันยังต้องยืนยันกับแหล่งข้อมูลท้องถิ่นที่เป็นทางการ",
+    disclosure: "หน้าแอปที่บันทึกไว้และแผนครัวเรือนในอุปกรณ์นี้อาจใช้งานออฟไลน์ได้ พื้นหลังแผนที่และเส้นทางเป็นบริการภายนอกแยกกัน สภาพปัจจุบันยังต้องยืนยันกับแหล่งข้อมูลท้องถิ่นที่เป็นทางการ",
     installUpdate: "ติดตั้งการอัปเดตที่พร้อมใช้",
     installing: "กำลังติดตั้ง…",
     checkUpdate: "ตรวจสอบการอัปเดตแอป",
@@ -182,6 +185,15 @@ function readableTime(value: string | null, language: Language): string {
   }).format(timestamp);
 }
 
+/**
+ * What the competition build must hold, beside the public files, before it calls the app saved offline. The profile
+ * is fixed when the site is built, so the public-production bundle is compiled without this list and carries none of
+ * these addresses here (scripts/profile-artifact-smoke.mjs fails on a Command address anywhere in the public build).
+ */
+const STAFF_OFFLINE_PATHS: readonly string[] = process.env.NEXT_PUBLIC_FLOODGUARD_APP_PROFILE === "public-production"
+  ? []
+  : ["/public-cases/", "/command/", "/command/ver2/", "/command/cases/", "/command/archive/", "/studio/", "/studio/planning-evidence/", "/studio/candidate-report/", "/studio/brief/", "/studio/library/", "/studio/archive/", "/offline-demo/mae-sai/bundle.json"];
+
 export function requiredOfflinePaths(profile: AppProfile): string[] {
   const publicPaths = [
     "/",
@@ -190,9 +202,7 @@ export function requiredOfflinePaths(profile: AppProfile): string[] {
     "/offline-demo/mae-sai/public-bundle.json",
     "/offline-demo/mae-sai/public-areas.json",
   ];
-  return profile === "public-production"
-    ? publicPaths
-    : [...publicPaths, "/command/", "/studio/", "/studio/planning-evidence/", "/offline-demo/mae-sai/bundle.json"];
+  return profile === "public-production" ? publicPaths : [...publicPaths, ...STAFF_OFFLINE_PATHS];
 }
 
 async function inspectOfflineCache(status: WorkerCacheStatus | null): Promise<CacheState> {
@@ -246,7 +256,7 @@ async function removeDevelopmentWorker(): Promise<boolean> {
     .map((registration) => registration.unregister()));
   if ("caches" in window) {
     const keys = await caches.keys();
-    await Promise.all(keys.filter((key) => OFFLINE_CACHE_PATTERN.test(key)).map((key) => caches.delete(key)));
+    await Promise.all(keys.filter((key) => OFFLINE_CACHE_PATTERN.test(key) || key === SAVED_AREAS_CACHE).map((key) => caches.delete(key)));
   }
   return wasControlled;
 }
@@ -261,6 +271,25 @@ export function PwaRegister({
   /** Where the pill was hidden (auto or by the reader) and its status then; see `pillStaysHidden`. */
   const [hidden, setHidden] = useState<HiddenPill | null>(null);
   const [engaged, setEngaged] = useState(false);
+  const [availabilitySlot, setAvailabilitySlot] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    let active = true;
+    const observer = new MutationObserver(() => {
+      const nextSlot = document.querySelector<HTMLElement>("[data-app-availability-slot]");
+      if (nextSlot) {
+        setAvailabilitySlot(nextSlot);
+        observer.disconnect();
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+    queueMicrotask(() => {
+      if (!active) return;
+      const slot = document.querySelector<HTMLElement>("[data-app-availability-slot]");
+      setAvailabilitySlot(slot);
+      if (slot) observer.disconnect();
+    });
+    return () => { active = false; observer.disconnect(); };
+  }, [pathname]);
   const defaultLanguage = EXPECTED_PROFILE === "public-production" || pathname?.startsWith("/public") ? "th" : "en";
   const [language] = useLanguage(defaultLanguage);
   const basemapHealth = useSyncExternalStore(subscribeBasemapHealth, getBasemapHealth, () => null);
@@ -516,7 +545,7 @@ export function PwaRegister({
 
   const panel = (
     <details
-      className={autoHide ? `${styles.panel} ${styles.docked}` : styles.panel}
+      className={[styles.panel, autoHide ? styles.docked : "", availabilitySlot ? styles.inlinePanel : ""].filter(Boolean).join(" ")}
       data-pwa-availability="true"
       onToggle={(event) => {
         if (autoHide) setEngaged(event.currentTarget.open);
@@ -581,7 +610,7 @@ export function PwaRegister({
       </div>
     </details>
   );
-  if (!autoHide) return panel;
+  if (!autoHide) return availabilitySlot ? createPortal(panel, availabilitySlot) : panel;
   // Auto-hide pages: the pill hides after a few seconds and can be dismissed at once; hover or focus keeps it. It
   // returns when its status changes (connection, saved for offline use, update waiting).
   return (

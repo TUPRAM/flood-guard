@@ -1,0 +1,16 @@
+.control { margin: 0; padding: 10px 12px; border: 1px solid #cfdee3; border-radius: 8px; background: #f7fafb; color: #17384b; font-size: 12px; line-height: 1.5; }
+.row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; }
+.row + .row { margin-top: 8px; padding-top: 8px; border-top: 1px solid #dbe5ea; }
+.state { flex: 1 1 260px; min-width: 0; margin: 0; overflow-wrap: anywhere; }
+.state strong { display: block; }
+.state span { display: block; color: #48636f; }
+.state .failed { color: #813c31; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.actions button { min-height: 44px; padding: 8px 12px; border: 1px solid #125e6c; border-radius: 6px; background: #125e6c; color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
+.actions button.secondary { background: #fff; color: #125e6c; }
+.actions button:disabled { border-color: #b4c5ce; background: #e9eff3; color: #536f7e; cursor: default; }
+.actions button:focus-visible, .list summary:focus-visible { outline: 3px solid #e3a52a; outline-offset: 2px; }
+.note { margin: 6px 0 0; color: #536f7e; font-size: 11px; }
+.list { margin-top: 8px; padding-top: 6px; border-top: 1px solid #dbe5ea; }
+.list summary { min-height: 32px; cursor: pointer; font-weight: 700; }
+.list .row { margin-top: 8px; padding-top: 8px; border-top: 1px solid #dbe5ea; }

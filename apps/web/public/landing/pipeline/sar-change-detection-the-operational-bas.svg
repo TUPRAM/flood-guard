@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 270" role="img" aria-label="Flood probability as a function of decibel drop: flat at zero below 1 dB, rising linearly to 1 at 5 dB, with the binary cut at 0.5 falling at 3 dB"><style>text{font-family:"Manrope Variable",system-ui,sans-serif;fill:#3D4E57}.lbl{font-size:12px}.sml{font-size:10.5px;fill:#64767E}.mono-t{font-family:ui-monospace,"IBM Plex Mono",monospace;font-size:11px}.hi{fill:#0C6A74}.warnt{fill:#8A4A44}</style>
+            <line x1="60" y1="30" x2="60" y2="200" stroke="currentColor" stroke-width="1.2"/>
+            <line x1="60" y1="200" x2="612" y2="200" stroke="currentColor" stroke-width="1.2"/>
+
+            <line x1="60" y1="30" x2="612" y2="30" stroke="currentColor" stroke-width="0.6" opacity="0.3"/>
+            <line x1="60" y1="115" x2="612" y2="115" stroke="currentColor" stroke-width="0.6" opacity="0.3"/>
+            <text class="sml" x="52" y="34" text-anchor="end">1.0</text>
+            <text class="sml" x="52" y="119" text-anchor="end">0.5</text>
+            <text class="sml" x="52" y="204" text-anchor="end">0.0</text>
+            <text class="sml" x="18" y="118" transform="rotate(-90 18 118)" text-anchor="middle">flood probability</text>
+
+            <text class="sml" x="60" y="218" text-anchor="middle">0</text>
+            <text class="sml" x="137" y="218" text-anchor="middle">1</text>
+            <text class="sml" x="214" y="218" text-anchor="middle">2</text>
+            <text class="sml" x="291" y="218" text-anchor="middle">3</text>
+            <text class="sml" x="369" y="218" text-anchor="middle">4</text>
+            <text class="sml" x="446" y="218" text-anchor="middle">5</text>
+            <text class="sml" x="523" y="218" text-anchor="middle">6</text>
+            <text class="sml" x="600" y="218" text-anchor="middle">7</text>
+            <text class="sml" x="336" y="238" text-anchor="middle">backscatter drop, dB  (pre − post, VH-weighted)</text>
+
+            <polyline points="60,200 137,200 446,30 612,30" fill="none" stroke="#0C6A74" stroke-width="2.6"/>
+
+            <line x1="291" y1="115" x2="291" y2="200" stroke="#9C6414" stroke-width="1.4" stroke-dasharray="4 3"/>
+            <circle cx="291" cy="115" r="4" fill="#9C6414"/>
+            <text class="sml" x="299" y="104" fill="#9C6414">cut at 0.5 → 3 dB</text>
+
+            <line x1="137" y1="200" x2="137" y2="182" stroke="currentColor" stroke-width="1"/>
+            <text class="sml" x="132" y="176" text-anchor="end">dry_change_db</text>
+            <line x1="446" y1="30" x2="446" y2="52" stroke="currentColor" stroke-width="1"/>
+            <text class="sml" x="452" y="52">flood_change_db</text>
+
+            <text class="lbl" x="60" y="262">Below 1 dB: unchanged.  Above 5 dB: certainly water.  Between: linear.</text>
+          </svg>

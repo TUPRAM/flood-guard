@@ -1,0 +1,5 @@
+.notice { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 20px; width: calc(100% - 4rem); max-width: 1800px; margin: .9rem auto 0; padding: 10px 16px; border-left: 4px solid #2454b8; border-radius: 0 .5rem .5rem 0; background: #edf3ff; color: #17253b; font-size: .8rem; line-height: 1.55; }
+.notice p { margin: 0; max-width: 90ch; }
+.notice a { display: inline-flex; align-items: center; min-height: 44px; color: #0c5b6c; font-weight: 750; }
+.notice a:focus-visible { outline: 3px solid #e8a526; outline-offset: 3px; }
+@media (max-width: 900px) { .notice { width: calc(100% - 2rem); } }

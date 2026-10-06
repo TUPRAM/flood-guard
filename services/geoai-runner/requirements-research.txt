@@ -9,7 +9,7 @@
 #   override a base pin, so any extra containing omniwatermask is by
 #   construction unsatisfiable:
 #
-#       omniwatermask==0.5.0 requires numpy>=2.0,<2.4
+#       omniwatermask==0.6.2 requires numpy>=2.0,<2.4
 #       base requires          numpy==2.4.2
 #
 #   Declaring it as an extra anyway is what broke `uv sync --extra
@@ -44,6 +44,6 @@ numpy>=2.3,<2.4
 jsonschema==4.25.1
 rasterio==1.4.4
 geoai-py==0.41.1
-omniwatermask==0.5.0
+omniwatermask==0.6.2
 # Its patch-size adjustment is recorded in automated optical v2 receipts.
 omnicloudmask==1.7.1

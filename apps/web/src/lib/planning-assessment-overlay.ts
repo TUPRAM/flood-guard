@@ -31,7 +31,7 @@
 import protocolBinding from "./planning-protocol-binding.json";
 
 export const PLANNING_OVERLAY_SCHEMA_ID = "https://floodguard.th/contracts/planning-assessment-overlay.schema.json" as const;
-export const PLANNING_OVERLAY_SCHEMA_VERSION = "1.0" as const;
+export const PLANNING_OVERLAY_SCHEMA_VERSION = "1.1" as const;
 
 export const EVIDENCE_TIERS = ["T0", "T1", "T2", "T3", "T4"] as const;
 export type EvidenceTier = (typeof EVIDENCE_TIERS)[number];
@@ -105,7 +105,9 @@ export type PublicationLevel = (typeof PUBLICATION_LEVELS)[number];
 /** Class rule v2 is evaluated in this order; the first trigger met gives the v2 class (protocol v1a, DR-A08). */
 export const V2_TRIGGER_ORDER = ["E", "A", "B", "C", "D"] as const;
 export const NO_V2_TRIGGER = "no_v2_trigger" as const;
-export type ClassV2Result = PlanningActionClass | typeof NO_V2_TRIGGER;
+/** The v2 result of a row whose result depends on a trigger no stage evaluated (schema 1.1, decision R20). */
+export const V2_NOT_EVALUATED = "not_evaluated" as const;
+export type ClassV2Result = PlanningActionClass | typeof NO_V2_TRIGGER | typeof V2_NOT_EVALUATED;
 
 export const HEADLINE_STATUSES = ["not_evaluated", "headline_eligible", "unstable_verify"] as const;
 export type HeadlineStatus = (typeof HEADLINE_STATUSES)[number];
@@ -388,7 +390,8 @@ export interface RowLineage {
 
 export interface TriggerEvidence {
   trigger: PlanningActionClass;
-  met: boolean;
+  /** `null` says that no stage evaluated the trigger. A trigger that was not evaluated is never written `false`. */
+  met: boolean | null;
   evidence: string;
 }
 
@@ -397,7 +400,10 @@ export interface ClassV2 {
   class_rule_version: "class_rule_v2";
   label: "secondary";
   binding: false;
-  /** `no_v2_trigger` is shown as "no v2 trigger met"; `null` says the unit gets no v2 class (guardrail GR1). */
+  /**
+   * `no_v2_trigger` is shown as "no v2 trigger met"; `not_evaluated` says the result depends on a trigger no stage
+   * evaluated, so no v2 class is stated; `null` says the unit gets no v2 class (guardrail GR1).
+   */
   result: ClassV2Result | null;
   trigger_evidence: TriggerEvidence[];
 }
@@ -803,8 +809,8 @@ const ROW = object({
     class_rule_version: constant("class_rule_v2"),
     label: constant("secondary"),
     binding: constant(false),
-    result: oneOfValues([...PLANNING_ACTION_CLASSES, NO_V2_TRIGGER, null]),
-    trigger_evidence: list(object({ trigger: ACTION_CLASS, met: BOOLEAN, evidence: TEXT }, "triggerEvidence"), { maxItems: 5 }),
+    result: oneOfValues([...PLANNING_ACTION_CLASSES, NO_V2_TRIGGER, V2_NOT_EVALUATED, null]),
+    trigger_evidence: list(object({ trigger: ACTION_CLASS, met: nullable(BOOLEAN), evidence: TEXT }, "triggerEvidence"), { maxItems: 5 }),
   }, "classV2")),
   leave_one_component_out: nullable(object(perComponent(() => object({ fpps_0_100: SCORE, action_class: nullable(ACTION_CLASS) })), "leaveOneComponentOut")),
   headline_stability: object({
@@ -1426,16 +1432,21 @@ function expectedFrameRecord(record: FrameComponentRecord): Record<string, unkno
 function classV2Problems(row: PlanningOverlayRow, v2: ClassV2, low: boolean, exposure: number | null): string[] {
   const rule = BINDING.class_rule_v2;
   const order = v2.trigger_evidence.map((item) => item.trigger);
-  const isMet = (trigger: PlanningActionClass): boolean => v2.trigger_evidence.some((item) => item.trigger === trigger && item.met);
+  const isMet = (trigger: PlanningActionClass): boolean => v2.trigger_evidence.some((item) => item.trigger === trigger && item.met === true);
   const wrong: string[] = [];
   if (order.join() !== rule.order.join()) {
     wrong.push(`trigger_evidence lists ${show(order)}, not ${show(rule.order)}`);
   } else {
-    const firstMet = v2.trigger_evidence.find((item) => item.met)?.trigger ?? rule.otherwise;
-    if (v2.result !== firstMet) wrong.push(`result is ${show(v2.result)}; the first trigger met gives ${show(firstMet)}`);
+    // Schema 1.1: a trigger nobody evaluated has `met` null. Where one stands before the first trigger met, or no
+    // trigger is met and one was not evaluated, the result depends on it and is `not_evaluated`.
+    const decisive = v2.trigger_evidence.find((item) => item.met !== false);
+    const expected: ClassV2Result = decisive === undefined ? rule.otherwise : decisive.met === null ? V2_NOT_EVALUATED : decisive.trigger;
+    if (v2.result !== expected) wrong.push(`result is ${show(v2.result)}; the first trigger met, or not evaluated, in the order ${show(rule.order)} gives ${show(expected)}`);
+    const evaluatedE = v2.trigger_evidence[0]?.met !== null;
+    if (!evaluatedE) wrong.push("trigger E is recomputed from the row, so it is true or false, never not evaluated");
     const scoredEnough = row.fpps_0_100 !== null && row.fpps_0_100 >= rule.fpps_min;
     const triggerE = low || !scoredEnough || (exposure !== null && exposure < rule.exposure_floor_for_non_e);
-    if (isMet("E") !== triggerE) wrong.push(`trigger E is ${triggerE ? "met" : "not met"} for this row: low confidence, exposure below ${rule.exposure_floor_for_non_e} or FPPS below ${rule.fpps_min}`);
+    if (evaluatedE && isMet("E") !== triggerE) wrong.push(`trigger E is ${triggerE ? "met" : "not met"} for this row: low confidence, exposure below ${rule.exposure_floor_for_non_e} or FPPS below ${rule.fpps_min}`);
     if (isMet("A") && row.action_class !== "A") wrong.push("trigger A needs the v1 class A");
     if (isMet("C") && (!scoredEnough || low)) wrong.push(`trigger C needs an FPPS of at least ${rule.fpps_min} and medium confidence`);
     if (isMet("D") && !scoredEnough) wrong.push(`trigger D needs an FPPS of at least ${rule.fpps_min}`);
@@ -1519,7 +1530,7 @@ function rowProblems(overlay: PlanningAssessmentOverlay, row: PlanningOverlayRow
       add("gr1_no_class", "action_class", "guardrail GR1: no binding class, no would-be class and no v2 class; reason insufficient_denominator");
     }
   } else {
-    if (row.action_class === null || reason === "insufficient_denominator") add("gr1_no_class", "action_class", "in schema 1.0 every row below tier T4 carries a class, and only a unit under guardrail GR1 has none");
+    if (row.action_class === null || reason === "insufficient_denominator") add("gr1_no_class", "action_class", `in schema ${PLANNING_OVERLAY_SCHEMA_VERSION} every row below tier T4 carries a class, and only a unit under guardrail GR1 has none`);
     if (low) {
       if (row.action_class !== "E" || reason !== "low_confidence") add("low_confidence_forces_e", "action_class", "low confidence gives binding class E, reason low_confidence");
     } else if (row.action_class !== null) {
@@ -1753,7 +1764,7 @@ export function summarisePlanningAssessmentOverlay(overlay: PlanningAssessmentOv
     binding_class_by_lane_column: countByColumn(rows, PLANNING_ACTION_CLASSES, (row) => row.action_class),
     reason_code_by_lane_column: countByColumn(rows, PLANNING_REASON_CODES, (row) => row.action_reason_code),
     would_be_class_by_lane_column: countByColumn(rows, PLANNING_ACTION_CLASSES, (row) => row.would_be_class),
-    v2_result_by_lane_column: countByColumn(rows, [...PLANNING_ACTION_CLASSES, NO_V2_TRIGGER], (row) => row.class_v2?.result ?? null),
+    v2_result_by_lane_column: countByColumn(rows, [...PLANNING_ACTION_CLASSES, NO_V2_TRIGGER, V2_NOT_EVALUATED], (row) => row.class_v2?.result ?? null),
     headline_status_by_lane_column: countByColumn(rows, HEADLINE_STATUSES, (row) => row.headline_stability.status),
     failed_conditions_by_lane_column: failed,
     basis_values_by_lane_column: basis,

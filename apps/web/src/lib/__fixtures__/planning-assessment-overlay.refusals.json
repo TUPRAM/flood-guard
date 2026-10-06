@@ -2877,6 +2877,132 @@
           "set": "4624f8d\n"
         }
       ]
+    },
+    {
+      "id": "v2-class-with-a-not-evaluated-trigger-before-it",
+      "refuses": "v2_result_inconsistent",
+      "basis": "v1a class_rules.v2.evaluation.order (DR-A08); overlay schema 1.1: a trigger no stage evaluated has met null and a result that depends on it is not_evaluated (decision R20)",
+      "checked_by": [
+        "python",
+        "typescript"
+      ],
+      "patch": [
+        {
+          "row": "FX-CASE-01:obs-t3-class-c",
+          "path": [
+            "class_v2",
+            "trigger_evidence",
+            2,
+            "met"
+          ],
+          "set": null
+        }
+      ]
+    },
+    {
+      "id": "v2-no-trigger-met-with-a-trigger-not-evaluated",
+      "refuses": "v2_result_inconsistent",
+      "basis": "v1a class_rules.v2.evaluation.order (DR-A08); overlay schema 1.1: a trigger no stage evaluated has met null and a result that depends on it is not_evaluated (decision R20)",
+      "checked_by": [
+        "python",
+        "typescript"
+      ],
+      "patch": [
+        {
+          "row": "FX-CASE-01:obs-t3-no-v2-trigger",
+          "path": [
+            "class_v2",
+            "trigger_evidence",
+            4,
+            "met"
+          ],
+          "set": null
+        }
+      ]
+    },
+    {
+      "id": "v2-not-evaluated-with-every-trigger-evaluated",
+      "refuses": "v2_result_inconsistent",
+      "basis": "v1a class_rules.v2.evaluation.order (DR-A08); overlay schema 1.1: a trigger no stage evaluated has met null and a result that depends on it is not_evaluated (decision R20)",
+      "checked_by": [
+        "python",
+        "typescript"
+      ],
+      "patch": [
+        {
+          "row": "FX-CASE-01:scn-env-t1-class-c",
+          "path": [
+            "class_v2",
+            "trigger_evidence",
+            2,
+            "met"
+          ],
+          "set": false
+        },
+        {
+          "row": "FX-CASE-01:scn-env-t1-class-c",
+          "path": [
+            "class_v2",
+            "trigger_evidence",
+            3,
+            "met"
+          ],
+          "set": false
+        },
+        {
+          "row": "FX-CASE-01:scn-env-t1-class-c",
+          "path": [
+            "class_v2",
+            "trigger_evidence",
+            4,
+            "met"
+          ],
+          "set": false
+        }
+      ]
+    },
+    {
+      "id": "v2-trigger-e-not-evaluated",
+      "refuses": "v2_result_inconsistent",
+      "basis": "v1a class_rules.v2.triggers E is recomputed from the row (confidence, exposure, FPPS), so it is always true or false; overlay schema 1.1 (decision R20)",
+      "checked_by": [
+        "python",
+        "typescript"
+      ],
+      "patch": [
+        {
+          "row": "FX-CASE-01:obs-t3-class-b",
+          "path": [
+            "class_v2",
+            "trigger_evidence",
+            0,
+            "met"
+          ],
+          "set": null
+        }
+      ]
+    },
+    {
+      "id": "v2-trigger-not-evaluated-written-as-a-word",
+      "refuses": "structure",
+      "basis": "overlay schema 1.1: met is true, false or null (decision R20)",
+      "checked_by": [
+        "schema",
+        "python",
+        "typescript"
+      ],
+      "patch": [
+        {
+          "row": "FX-CASE-01:scn-env-t1-class-c",
+          "path": [
+            "class_v2",
+            "trigger_evidence",
+            2,
+            "met"
+          ],
+          "set": "not_evaluated"
+        }
+      ]
     }
   ]
 }

@@ -1,7 +1,7 @@
 {
   "fixture": "planning-assessment-overlay.fixture.json",
   "written_by": "apps/web/scripts/planning-overlay-fixture.py",
-  "file_sha256": "6a15f6d63d7a37e2fbccd2ad09b79c1e4ad6b8c2f7784fe080b7f6491e181959",
+  "file_sha256": "9730fb0dbe9d2e798eae2846a5b5a4902e7dbdb3941aa5edff243ae214580f7e",
   "summary": {
     "case_id": "FX-CASE-01",
     "dataset_mode": "fixture_demo",
@@ -179,6 +179,7 @@
         "D": 1,
         "E": 9,
         "no_v2_trigger": 1,
+        "not_evaluated": 0,
         "none": 1
       },
       "SCN": {
@@ -187,7 +188,8 @@
         "C": 0,
         "D": 0,
         "E": 2,
-        "no_v2_trigger": 1,
+        "no_v2_trigger": 0,
+        "not_evaluated": 1,
         "none": 0
       },
       "ENG": {
@@ -197,6 +199,7 @@
         "D": 0,
         "E": 0,
         "no_v2_trigger": 0,
+        "not_evaluated": 0,
         "none": 6
       },
       "no_lane": {
@@ -206,6 +209,7 @@
         "D": 0,
         "E": 0,
         "no_v2_trigger": 0,
+        "not_evaluated": 0,
         "none": 1
       }
     },
@@ -280,6 +284,6 @@
       "public": 8,
       "none": 0
     },
-    "content_sha256": "bde75fa3902540acab2c876ff9911aad70a6c40fedc975749d87e1803dc18051"
+    "content_sha256": "4b71964481fe31b7ef8564ce20e8c7b9ea58c3f1ca92e2d5fb2ab66fc35aa074"
   }
 }

@@ -12,7 +12,8 @@ name:
   rows, and one T4 row, which is locked and carries no value;
 * every reason code: the six of class rule v1 and ``insufficient_denominator`` (guardrail GR1, no class);
 * every failed condition C1 to C8 of confidence rule v1, with the would-be class of each low-confidence row;
-* the v2 class as a secondary axis, including "no v2 trigger met";
+* the v2 class as a secondary axis, including "no v2 trigger met", a result that is not evaluated because it
+  depends on a trigger no stage evaluated, and a trigger that was not evaluated but stands after the first one met;
 * an OBS row that is not event_aligned (guardrail GR7), and the three states of the headline slot (guardrail GR8);
 * the three rights levels local, pitch and public among the inputs (guardrail GR6).
 
@@ -54,6 +55,7 @@ from floodguard.planning_overlay import (  # noqa: E402
     SCHEMA_ID,
     SCHEMA_RELATIVE_PATH,
     SCHEMA_VERSION,
+    V2_NOT_EVALUATED,
     V2_TRIGGER_ORDER,
     ProtocolBinding,
     expected_temporal_relation,
@@ -120,14 +122,14 @@ def _unit(number: int, kind: str = "unit") -> dict[str, str]:
 # One entry per derived row (tiers T1 to T3). Every number is invented.
 #   areas: flooded and total non-permanent-water land; people: residents inside the extent and unit residents;
 #   access: service -> (residents with baseline access, residents newly losing it); routes: (losing all, with a route);
-#   ages: (children 0-14, adults 60 and over); v2: invented inputs of the B, C and D triggers.
+#   ages: (children 0-14, adults 60 and over); v2: invented inputs of the B, C and D triggers (None: not evaluated).
 DERIVED_ROWS: list[dict[str, Any]] = [
     dict(key="obs-t3-class-a", unit=1, lane="OBS", tier="T3", flood=AGENCY_DATED, areas=(12, 40), people=(1600, 2000),
          access={"hospital": (1800, 1440), "main_road_entry": (1900, 1330)}, routes=(900, 1900), ages=(400, 520),
          v2=(False, False, False), retention=0.83),
     dict(key="obs-t3-class-b", unit=2, lane="OBS", tier="T3", flood=AGENCY_DATED, areas=(6, 40), people=(900, 1800),
          access={"hospital": (1600, 1000), "main_road_entry": (1700, 1050)}, routes=(1400, 1700), ages=(300, 420),
-         v2=(True, False, False), retention=0.41),
+         v2=(True, None, None), retention=0.41),
     dict(key="obs-t3-class-c", unit=3, lane="OBS", tier="T3", flood=AGENCY_DATED, areas=(8, 40), people=(1020, 1500),
          access={"hospital": (1350, 720), "main_road_entry": (1400, 760)}, routes=(500, 1400), ages=(270, 390),
          v2=(False, True, False)),
@@ -178,7 +180,7 @@ DERIVED_ROWS: list[dict[str, Any]] = [
     dict(key="scn-env-t1-class-c", unit=3, lane="SCN-ENV", tier="T1", flood=SEASON_LAYER, base="agency_product_as_provided",
          scenario=("FX-ENV", "Fixture season-envelope scenario: every area the invented season layer maps is treated as flooded at once."),
          areas=(10, 40), people=(1050, 1500), access={"hospital": (1350, 740), "main_road_entry": (1400, 780)},
-         routes=(520, 1400), ages=(270, 390), v2=(False, False, False), retention=0.66),
+         routes=(520, 1400), ages=(270, 390), v2=(None, None, None), retention=0.66),
     dict(key="scn-env-t1-c8-no-hospital", unit=13, lane="SCN-ENV", tier="T1", flood=SEASON_LAYER, base="agency_product_as_provided",
          scenario=("FX-ENV", "Fixture season-envelope scenario: every area the invented season layer maps is treated as flooded at once."),
          areas=(10, 50), people=(720, 1000), access={"hospital": (0, 0), "main_road_entry": (950, 700)},
@@ -291,28 +293,41 @@ def _class_v2(
     exposure = values["exposure_0_100"]
     link, facility, recurrence = spec["v2"]
     scored_enough = fpps is not None and fpps >= fpps_min
-    met = {
+    met: dict[str, bool | None] = {
         "E": confidence_class == "low" or (exposure is not None and exposure < exposure_floor) or not scored_enough,
         "A": scoring["action_class"] == "A" and dependent_share >= threshold,
         "B": link,
-        "C": scored_enough and confidence_class == "medium" and facility,
-        "D": scored_enough and recurrence,
+        "C": facility if scored_enough and confidence_class == "medium" else False,
+        "D": recurrence if scored_enough else False,
     }
     shown = lambda value: "not computed" if value is None else f"{value:.2f}"  # noqa: E731
     evidence = {
         "E": f"Confidence {confidence_class}; exposure {shown(exposure)} against a floor of {exposure_floor}; "
              f"FPPS {shown(fpps)} against a minimum of {fpps_min}.",
         "A": f"v1 class {scoring['action_class']}; dependent share {dependent_share:.4f} against the national {percentile} of {threshold}.",
-        "B": f"Fixture: invented outcome of the critical-link isolation test ({str(link).lower()}).",
-        "C": f"Fixture: invented outcome of the serving-facility test ({str(facility).lower()}).",
-        "D": f"Fixture: invented recurrence flag ({str(recurrence).lower()}).",
+        "B": "Fixture: the critical-link isolation test was not evaluated." if link is None else
+             f"Fixture: invented outcome of the critical-link isolation test ({str(link).lower()}).",
+        "C": "Fixture: the serving-facility test was not evaluated." if facility is None else
+             f"Fixture: invented outcome of the serving-facility test ({str(facility).lower()}).",
+        "D": "Fixture: the recurrence flag was not evaluated." if recurrence is None else
+             f"Fixture: invented recurrence flag ({str(recurrence).lower()}).",
     }
-    first = next((trigger for trigger in V2_TRIGGER_ORDER if met[trigger]), None)
+    # Schema 1.1: the first trigger in the order that is met gives the class; a trigger nobody evaluated that
+    # stands before it, or with no trigger met, leaves the result not evaluated.
+    result = v1a["class_rules"]["v2"]["evaluation"]["otherwise"]
+    for trigger in V2_TRIGGER_ORDER:
+        if met[trigger] is None:
+            result = V2_NOT_EVALUATED
+            break
+        if met[trigger]:
+            result = trigger
+            break
     return {
         **block,
-        "result": first or v1a["class_rules"]["v2"]["evaluation"]["otherwise"],
+        "result": result,
         "trigger_evidence": [
-            {"trigger": trigger, "met": bool(met[trigger]), "evidence": evidence[trigger]} for trigger in V2_TRIGGER_ORDER
+            {"trigger": trigger, "met": None if met[trigger] is None else bool(met[trigger]), "evidence": evidence[trigger]}
+            for trigger in V2_TRIGGER_ORDER
         ],
     }
 

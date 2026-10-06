@@ -704,7 +704,7 @@ def test_case_header_is_the_case_protocol_v1a_describes(
     # Another reference date than the one v1a gives case O2.
     moved = problems(lambda item: item["case"].update(case_reference_date="2030-01-10"))
     assert paths(moved) == {"$.case.case_reference_date"}
-    # A case v1a cut, a name it never had, and the case schema 1.0 cannot carry (no FPPS and no class).
+    # A case v1a cut, a name it never had, and the case the schema cannot carry (no FPPS and no class).
     for case_id in ("Phayao", "NOT-A-CASE", "SE2-dist"):
         found = problems(lambda item, case_id=case_id: item["case"].update(case_id=case_id))
         assert paths(found) == {"$.case.case_id"}, case_id
@@ -751,7 +751,7 @@ def test_the_22_oct_layer_cannot_be_redated_to_be_event_aligned_in_september(
     assert paths == {"$.inputs[].acquisition_date", "$.rows[].lane"}
 
 
-def test_schema_1_0_does_not_carry_a_row_with_two_components_and_no_class(
+def test_the_schema_does_not_carry_a_row_with_two_components_and_no_class(
     overlay: dict[str, Any], schema: dict[str, Any], binding: po.ProtocolBinding
 ) -> None:
     """v1a case SE2-dist: flood likelihood and exposure only, no routing, no FPPS and no class.
@@ -775,7 +775,7 @@ def test_schema_1_0_does_not_carry_a_row_with_two_components_and_no_class(
     renamed["case"]["case_id"] = "SE2-dist"
     found = [item for item in po.overlay_problems(renamed, schema, binding=binding) if item.path == "$.case.case_id"]
     assert [item.code for item in found] == [po.CASE_NOT_PROTOCOL_CASE]
-    assert "schema 1.0 does not carry it" in found[0].message
+    assert f"schema {po.SCHEMA_VERSION} does not carry it" in found[0].message
 
 
 # ---------------------------------------------------------------------------

@@ -34,7 +34,7 @@
   ],
   "properties": {
     "schema_version": {
-      "const": "1.0"
+      "const": "1.1"
     },
     "schema_id": {
       "const": "https://floodguard.th/contracts/planning-assessment-overlay.schema.json"
@@ -2252,7 +2252,15 @@
           "$ref": "#/$defs/actionClass"
         },
         "met": {
-          "type": "boolean"
+          "description": "true or false for a trigger that was evaluated; null for a trigger that no stage evaluated. A trigger that was not evaluated is never written false.",
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "evidence": {
           "$ref": "#/$defs/text"
@@ -2260,7 +2268,7 @@
       }
     },
     "classV2": {
-      "description": "Class rule v2: a predeclared secondary axis, never binding (decision D6). no_v2_trigger is reported as 'no v2 trigger met'; null says the unit gets no v2 class under guardrail GR1.",
+      "description": "Class rule v2: a predeclared secondary axis, never binding (decision D6). no_v2_trigger is reported as 'no v2 trigger met'; not_evaluated says that the result depends on a trigger no stage evaluated, so no v2 class is stated; null says the unit gets no v2 class under guardrail GR1.",
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -2288,6 +2296,7 @@
             "D",
             "E",
             "no_v2_trigger",
+            "not_evaluated",
             null
           ]
         },

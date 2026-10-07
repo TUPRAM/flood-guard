@@ -3,8 +3,10 @@
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
   gap: 1rem;
-  min-height: 80px;
-  padding: 1rem max(5vw, 1rem);
+  /* One height on every page that carries this header (Public's own header matches it from 720 px up): 56 px of
+     minimum, which the language switch makes 64 px, plus the line below. */
+  min-height: 56px;
+  padding: 6px max(5vw, 1rem);
   background: #fff;
   border-bottom: 1px solid #dce3ee;
   color: #17253b;
@@ -23,8 +25,9 @@
 .language button { padding-inline: .7rem; border-radius: .45rem; color: #54647c; font-weight: 600; }
 .language button[aria-pressed="true"] { color: #174ecb; background: #fff; box-shadow: 0 1px 4px #17253b12; }
 .header a:focus-visible, .header button:focus-visible { outline: 3px solid #d79b20; outline-offset: 3px; }
+@media (max-width: 900px) { .header { min-height: 48px; padding-top: 2px; padding-bottom: 2px; } }
 @media (max-width: 760px) {
-  .header { grid-template-columns: minmax(0, 1fr) auto; gap: .65rem; padding: .75rem 1rem; }
+  .header { grid-template-columns: minmax(0, 1fr) auto; gap: .65rem; padding: 2px 1rem; }
   .brand { gap: .5rem; font-size: 1rem; }
   .brand img { width: 32px; height: 32px; }
   .brand small { font-size: .56rem; letter-spacing: .08em; }

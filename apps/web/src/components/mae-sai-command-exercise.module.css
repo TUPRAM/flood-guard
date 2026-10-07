@@ -10,10 +10,8 @@
    card and the table share one shadow and a hairline between them. */
 /* The shell: the shared site header, then the page, which takes the rest of the window. */
 .shell { position: fixed; inset: 0; display: flex; flex-direction: column; overflow: hidden; background: #ffffff; }
-/* The site header in a shorter form than on the text pages, so the map keeps its height. */
-.siteHeader { flex: none; border-bottom: 1px solid #dfe7f0; }
-.siteHeader > header { min-height: 56px; padding-top: 6px; padding-bottom: 6px; }
-@media (max-width: 900px) { .siteHeader > header { min-height: 48px; padding-top: 2px; padding-bottom: 2px; } }
+/* The site header, at the one height it has on every page (workspace-header.module.css). */
+.siteHeader { flex: none; }
 .page {
   --c-ink: var(--ink, #0c2740);
   --c-muted: var(--muted, #526a82);

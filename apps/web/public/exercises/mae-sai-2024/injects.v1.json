@@ -1,0 +1,291 @@
+{
+  "schema": "floodguard.exercise_injects.v1",
+  "exercise_id": "mae-sai-2024",
+  "simulated": true,
+  "authored": "2026-10-05",
+  "label": {
+    "en": "Exercise items (invented)",
+    "th": "รายการฝึกซ้อม (สมมุติขึ้น)"
+  },
+  "notice": {
+    "en": "Every item in this file was invented by the FloodGuard team for practice. None is a real call, report, person or address, and none copies a plea made in 2024. The items are placed near communities that news named in 2024, each with a stated tolerance. They are never counted with real reports.",
+    "th": "ทุกรายการในไฟล์นี้ทีมงาน FloodGuard สมมุติขึ้นเพื่อการฝึกซ้อม ไม่ใช่การขอความช่วยเหลือ รายงาน บุคคล หรือที่อยู่จริง และไม่ได้คัดลอกคำขอความช่วยเหลือในปี 2567 (2024) ตำแหน่งของแต่ละรายการวางไว้ใกล้ชุมชนที่ข่าวปี 2567 (2024) ระบุชื่อ พร้อมระยะคลาดเคลื่อนที่ระบุไว้ และไม่นับรวมกับรายงานจริง"
+  },
+  "thai_text": "Written by an AI assistant in the plain register of public notices. Not reviewed by a native speaker.",
+  "urgency_rule": {
+    "life_at_risk": ["on_roof", "chest_or_above_with_people"],
+    "urgent": ["infant_or_bedridden", "no_food_for_a_day"],
+    "text": {
+      "en": "Urgency is set by the author of an item from the facts it states, never by the model. Life at risk: people on a roof, or people standing in water at chest height or above. Urgent: an infant or a bedridden person, or no food for a day. Anything else is information.",
+      "th": "ผู้เขียนรายการกำหนดระดับความเร่งด่วนจากข้อเท็จจริงที่รายการระบุ แบบจำลองไม่ได้เป็นผู้กำหนด เสี่ยงต่อชีวิต: มีคนอยู่บนหลังคา หรือมีคนยืนอยู่ในน้ำที่ลึกระดับอกขึ้นไป เร่งด่วน: มีเด็กทารกหรือผู้ป่วยติดเตียง หรือขาดอาหารมาแล้ว 1 วัน นอกจากนั้นเป็นข้อมูลทั่วไป"
+    }
+  },
+  "items": [
+    {
+      "id": "EX-01",
+      "hour": 32,
+      "kind": "report",
+      "subject": "depth",
+      "urgency": "information",
+      "facts": [],
+      "place": { "en": "Sai Lom Joy border market", "th": "ตลาดสายลมจอย" },
+      "tambon_id": "TH570906",
+      "point": { "lat": 20.4435, "lon": 99.878 },
+      "tolerance_m": 150,
+      "depth_band": "waist",
+      "people_band": "none_stated",
+      "needs": [],
+      "text": {
+        "en": "Waist-deep water at the market entrance. Shops are shut. No one here is asking for help.",
+        "th": "น้ำลึกระดับเอวบริเวณทางเข้าตลาด ร้านค้าปิดหมดแล้ว ไม่มีผู้ขอความช่วยเหลือในจุดนี้"
+      }
+    },
+    {
+      "id": "EX-02",
+      "hour": 34,
+      "kind": "call",
+      "subject": "help",
+      "urgency": "urgent",
+      "facts": ["infant_or_bedridden"],
+      "place": { "en": "Ko Sai community", "th": "ชุมชนเกาะทราย" },
+      "tambon_id": "TH570901",
+      "point": { "lat": 20.4422, "lon": 99.8829 },
+      "tolerance_m": 150,
+      "depth_band": "knee",
+      "people_band": "3-5",
+      "needs": ["evacuation"],
+      "text": {
+        "en": "A family with an infant is on an upper floor. The water below is knee-deep and rising. They ask to be moved out.",
+        "th": "ครอบครัวหนึ่งซึ่งมีเด็กทารกอยู่ด้วย ขณะนี้อยู่บนชั้นบน น้ำด้านล่างลึกระดับเข่าและกำลังสูงขึ้น ขอให้ช่วยพาออกจากพื้นที่"
+      }
+    },
+    {
+      "id": "EX-03",
+      "hour": 37,
+      "kind": "report",
+      "subject": "road",
+      "urgency": "information",
+      "facts": [],
+      "place": { "en": "Mueang Daeng Road", "th": "ถนนเหมืองแดง" },
+      "tambon_id": "TH570901",
+      "point": { "lat": 20.4415, "lon": 99.8892 },
+      "tolerance_m": 150,
+      "depth_band": "knee",
+      "people_band": "none_stated",
+      "needs": [],
+      "text": {
+        "en": "Moving water about knee-deep across the road. Small vehicles are turning back.",
+        "th": "น้ำไหลข้ามถนน ลึกประมาณระดับเข่า รถขนาดเล็กผ่านไม่ได้และต้องกลับรถ"
+      }
+    },
+    {
+      "id": "EX-04",
+      "hour": 41,
+      "kind": "call",
+      "subject": "help",
+      "urgency": "urgent",
+      "facts": ["infant_or_bedridden"],
+      "place": { "en": "Mai Lung Khon community", "th": "ชุมชนไม้ลุงขน" },
+      "tambon_id": "TH570901",
+      "point": { "lat": 20.4417, "lon": 99.8868 },
+      "tolerance_m": 200,
+      "depth_band": "waist",
+      "people_band": "3-5",
+      "needs": ["evacuation", "medical"],
+      "text": {
+        "en": "A bedridden elderly person and two carers are on an upper floor. The water outside is waist-deep. They need help to carry the patient out.",
+        "th": "ผู้สูงอายุติดเตียง 1 คน และผู้ดูแล 2 คน อยู่บนชั้นบน น้ำด้านนอกลึกระดับเอว ต้องการกำลังคนช่วยเคลื่อนย้ายผู้ป่วยออกมา"
+      }
+    },
+    {
+      "id": "EX-05",
+      "hour": 46,
+      "kind": "call",
+      "subject": "help",
+      "urgency": "life_at_risk",
+      "facts": ["on_roof"],
+      "place": { "en": "Piyaphon village", "th": "หมู่บ้านปิยะพร" },
+      "tambon_id": "TH570901",
+      "point": { "lat": 20.4345, "lon": 99.8955 },
+      "tolerance_m": 400,
+      "depth_band": "over_head",
+      "people_band": "1-2",
+      "needs": ["evacuation"],
+      "text": {
+        "en": "Two adults are on a roof. The water is close to the eaves and the current is fast. It is dark and the power is out.",
+        "th": "ผู้ใหญ่ 2 คนอยู่บนหลังคา น้ำสูงเกือบถึงชายคาและไหลเชี่ยว บริเวณนี้มืดและไฟฟ้าดับ"
+      }
+    },
+    {
+      "id": "EX-06",
+      "hour": 52,
+      "kind": "report",
+      "subject": "depth",
+      "urgency": "information",
+      "facts": [],
+      "place": { "en": "Ban Tham Pha Chom", "th": "บ้านถ้ำผาจม" },
+      "tambon_id": "TH570906",
+      "point": { "lat": 20.4406, "lon": 99.8755 },
+      "tolerance_m": 300,
+      "depth_band": "waist",
+      "people_band": "none_stated",
+      "needs": [],
+      "text": {
+        "en": "Waist-deep water in the low part of the village. Residents are walking to higher ground on their own. No one is asking for help.",
+        "th": "น้ำลึกระดับเอวในส่วนที่ต่ำของหมู่บ้าน ชาวบ้านเดินขึ้นที่สูงได้เอง ไม่มีผู้ขอความช่วยเหลือ"
+      }
+    },
+    {
+      "id": "EX-07",
+      "hour": 57,
+      "kind": "call",
+      "subject": "help",
+      "urgency": "urgent",
+      "facts": ["no_food_for_a_day"],
+      "place": { "en": "Mueang Daeng community", "th": "ชุมชนเหมืองแดง" },
+      "tambon_id": "TH570901",
+      "point": { "lat": 20.4397, "lon": 99.8925 },
+      "tolerance_m": 300,
+      "depth_band": "over_head",
+      "people_band": "6-10",
+      "needs": ["food_water"],
+      "text": {
+        "en": "Eight people on an upper floor have had no food or drinking water for a day. The ground floor is under water.",
+        "th": "ประชาชน 8 คนอยู่บนชั้นบน ไม่มีอาหารและน้ำดื่มมาแล้ว 1 วัน ชั้นล่างจมน้ำทั้งชั้น"
+      }
+    },
+    {
+      "id": "EX-08",
+      "hour": 59,
+      "kind": "report",
+      "subject": "road",
+      "urgency": "information",
+      "facts": [],
+      "place": { "en": "Ko Sai community", "th": "ชุมชนเกาะทราย" },
+      "tambon_id": "TH570901",
+      "point": { "lat": 20.4436, "lon": 99.8844 },
+      "tolerance_m": 150,
+      "depth_band": "over_head",
+      "people_band": "none_stated",
+      "needs": [],
+      "text": {
+        "en": "A volunteer boat crew turned back: the current in the community is too fast for a small boat. The water is above head height.",
+        "th": "เรืออาสาสมัครต้องถอยกลับ กระแสน้ำในชุมชนแรงเกินกว่าเรือเล็กจะเข้าได้ น้ำสูงเกินศีรษะ"
+      }
+    },
+    {
+      "id": "EX-09",
+      "hour": 62,
+      "kind": "call",
+      "subject": "help",
+      "urgency": "life_at_risk",
+      "facts": ["chest_or_above_with_people"],
+      "place": { "en": "Sai Lom Joy border market", "th": "ตลาดสายลมจอย" },
+      "tambon_id": "TH570906",
+      "point": { "lat": 20.4443, "lon": 99.8804 },
+      "tolerance_m": 150,
+      "depth_band": "chest",
+      "people_band": "3-5",
+      "needs": ["evacuation"],
+      "text": {
+        "en": "Four adults are standing in chest-deep water on a ground floor. The building has no upper floor.",
+        "th": "ผู้ใหญ่ 4 คนยืนอยู่ในน้ำลึกระดับอกที่ชั้นล่าง อาคารไม่มีชั้นบนให้หนีขึ้นไป"
+      }
+    },
+    {
+      "id": "EX-10",
+      "hour": 70,
+      "kind": "call",
+      "subject": "help",
+      "urgency": "urgent",
+      "facts": ["no_food_for_a_day"],
+      "place": { "en": "Piyaphon village", "th": "หมู่บ้านปิยะพร" },
+      "tambon_id": "TH570901",
+      "point": { "lat": 20.4312, "lon": 99.8998 },
+      "tolerance_m": 400,
+      "depth_band": "waist",
+      "people_band": "11-20",
+      "needs": ["food_water"],
+      "text": {
+        "en": "About fifteen people in neighbouring buildings are dry on upper floors but have had no food since the morning of the day before.",
+        "th": "ประชาชนประมาณ 15 คนในอาคารที่อยู่ติดกัน อยู่บนชั้นบนที่น้ำท่วมไม่ถึง แต่ไม่มีอาหารตั้งแต่เช้าวานนี้"
+      }
+    },
+    {
+      "id": "EX-11",
+      "hour": 75,
+      "kind": "report",
+      "subject": "depth",
+      "urgency": "information",
+      "facts": [],
+      "place": { "en": "Mai Lung Khon community", "th": "ชุมชนไม้ลุงขน" },
+      "tambon_id": "TH570901",
+      "point": { "lat": 20.4385, "lon": 99.8876 },
+      "tolerance_m": 200,
+      "depth_band": "over_head",
+      "people_band": "none_stated",
+      "needs": [],
+      "text": {
+        "en": "The water is falling slowly but is still above head height. No call for help from here.",
+        "th": "ระดับน้ำลดลงช้า ๆ แต่ยังสูงเกินศีรษะ ไม่มีผู้ขอความช่วยเหลือจากจุดนี้"
+      }
+    },
+    {
+      "id": "EX-12",
+      "hour": 86,
+      "kind": "call",
+      "subject": "help",
+      "urgency": "information",
+      "facts": [],
+      "place": { "en": "Ban Tham Pha Chom", "th": "บ้านถ้ำผาจม" },
+      "tambon_id": "TH570906",
+      "point": { "lat": 20.442, "lon": 99.871 },
+      "tolerance_m": 300,
+      "depth_band": "not_stated",
+      "people_band": "3-5",
+      "needs": ["information"],
+      "text": {
+        "en": "A household that is dry and safe asks where drinking water is being handed out.",
+        "th": "ครัวเรือนหนึ่งซึ่งน้ำท่วมไม่ถึงและปลอดภัยดี สอบถามจุดแจกน้ำดื่ม"
+      }
+    },
+    {
+      "id": "EX-13",
+      "hour": 100,
+      "kind": "report",
+      "subject": "road",
+      "urgency": "information",
+      "facts": [],
+      "place": { "en": "Mueang Daeng Road", "th": "ถนนเหมืองแดง" },
+      "tambon_id": "TH570901",
+      "point": { "lat": 20.4392, "lon": 99.8889 },
+      "tolerance_m": 150,
+      "depth_band": "ankle",
+      "people_band": "none_stated",
+      "needs": ["road_clearing"],
+      "text": {
+        "en": "Ankle-deep mud along the road and two abandoned motorcycles. Heavy equipment could clear it.",
+        "th": "ถนนมีโคลนลึกระดับข้อเท้า มีรถจักรยานยนต์ถูกทิ้งไว้ 2 คัน ใช้เครื่องจักรกลเปิดเส้นทางได้"
+      }
+    },
+    {
+      "id": "EX-14",
+      "hour": 108,
+      "kind": "call",
+      "subject": "help",
+      "urgency": "information",
+      "facts": [],
+      "place": { "en": "Mueang Daeng community", "th": "ชุมชนเหมืองแดง" },
+      "tambon_id": "TH570901",
+      "point": { "lat": 20.4379, "lon": 99.8912 },
+      "tolerance_m": 300,
+      "depth_band": "not_stated",
+      "people_band": "3-5",
+      "needs": ["power"],
+      "text": {
+        "en": "Residents who have returned home ask for someone to check the wiring before the power comes back on.",
+        "th": "ชาวบ้านที่กลับเข้าบ้านแล้ว ขอให้ช่วยตรวจระบบไฟฟ้าก่อนจะจ่ายไฟอีกครั้ง"
+      }
+    }
+  ]
+}

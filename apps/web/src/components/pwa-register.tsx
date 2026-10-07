@@ -86,8 +86,13 @@ export function keepHidden(hidden: HiddenPill | null, pathname: string | null, s
 }
 
 /** True when `pathname` starts with one of the auto-hide path prefixes. */
+/**
+ * True on a page where the pill hides itself. An entry is the start of an address ("/studio/cases/"), or, with a "$"
+ * at its end, one address exactly ("/command/$" is the exercise page and not the pages below it).
+ */
 export function autoHidesOn(pathname: string | null | undefined, paths: readonly string[]): boolean {
-  return Boolean(pathname) && paths.some((prefix) => prefix.length > 0 && pathname!.startsWith(prefix));
+  if (!pathname) return false;
+  return paths.some((entry) => (entry.endsWith("$") ? entry.length > 1 && pathname === entry.slice(0, -1) : entry.length > 0 && pathname.startsWith(entry)));
 }
 
 const PWA_AVAILABILITY_COPY = {
@@ -192,7 +197,7 @@ function readableTime(value: string | null, language: Language): string {
  */
 const STAFF_OFFLINE_PATHS: readonly string[] = process.env.NEXT_PUBLIC_FLOODGUARD_APP_PROFILE === "public-production"
   ? []
-  : ["/public-cases/", "/command/", "/command/ver2/", "/command/cases/", "/command/archive/", "/studio/", "/studio/planning-evidence/", "/studio/candidate-report/", "/studio/brief/", "/studio/library/", "/studio/archive/", "/offline-demo/mae-sai/bundle.json"];
+  : ["/public-cases/", "/command/", "/command/planning/", "/command/cases/", "/command/exercise/", "/command/ver2/", "/command/archive/", "/studio/archive/command-workspace/", "/studio/", "/studio/planning-evidence/", "/studio/candidate-report/", "/studio/brief/", "/studio/library/", "/studio/archive/", "/offline-demo/mae-sai/bundle.json"];
 
 export function requiredOfflinePaths(profile: AppProfile): string[] {
   const publicPaths = [

@@ -328,9 +328,12 @@ const pack = ([r, g, b, a]: Rgba, littleEndian: boolean) => (littleEndian
   ? ((a << 24) | (b << 16) | (g << 8) | r) >>> 0
   : ((r << 24) | (g << 16) | (b << 8) | a) >>> 0);
 
-/** Paint the envelope's hatch on its own canvas pixels: every cell of the envelope gets a stripe or the wash. */
-export function paintEnvelope(cells: Uint32Array, width: number, pixels: Uint32Array, hatch: EnvelopeHatch, littleEndian = true): void {
-  const colours = [pack(ENVELOPE_RGBA.dark, littleEndian), pack(ENVELOPE_RGBA.light, littleEndian), pack(ENVELOPE_RGBA.wash, littleEndian)];
+/**
+ * Paint the envelope's hatch on its own canvas pixels: every cell of the envelope gets a stripe or the wash. `palette`
+ * is the three colours of the hatch; without it the layer has the colours of the Studio replay (`ENVELOPE_RGBA`).
+ */
+export function paintEnvelope(cells: Uint32Array, width: number, pixels: Uint32Array, hatch: EnvelopeHatch, littleEndian = true, palette: Readonly<Record<"dark" | "light" | "wash", Rgba>> = ENVELOPE_RGBA): void {
+  const colours = [pack(palette.dark, littleEndian), pack(palette.light, littleEndian), pack(palette.wash, littleEndian)];
   for (let index = 0; index < cells.length; index += 1) {
     const cell = cells[index];
     const x = cell % width;

@@ -1,0 +1,209 @@
+/* The act flow of the Command exercise replay: the fixed action bar of an invented item with its trays, the facts
+   under it (how to get near, where people go), the exercise menu, the brief sheet, the setup sheet and the log.
+   Colour stays neutral: a primary action is the dark accent, everything else is ink on white. Amber is the exercise
+   tag only (the two tag lines of a brief); urgency colours stay on the markers. Every control is at least 44 px to
+   the finger. The tokens (--c-*) are set on the page root. */
+
+/* --- The action bar: Assign, Brief, Done ------------------------------------------------------------------- */
+.bar { flex: none; display: grid; gap: 8px; padding: 8px var(--c-inset) 10px; border-top: 1px solid var(--c-line); background: var(--c-panel); }
+.buttons { display: grid; grid-template-columns: minmax(max-content, 1.2fr) minmax(max-content, 1.1fr) minmax(max-content, 1fr) 44px; gap: 6px; }
+.act.act { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 0; height: 44px; padding: 0 6px; border: 1px solid var(--c-ink); border-radius: var(--c-radius-control); background: var(--c-panel); color: var(--c-ink); font-size: 13px; font-weight: 600; line-height: 1.2; white-space: nowrap; }
+.act:hover:not(:disabled) { background: var(--c-tint); }
+.act[data-primary="true"] { border-color: var(--c-accent); background: var(--c-accent); color: #ffffff; }
+.act[data-primary="true"]:hover:not(:disabled) { background: #1a3f63; }
+.act[aria-expanded="true"]:not([data-primary="true"]) { background: var(--c-tint); }
+.act:disabled { border-color: var(--c-line); background: var(--c-tint); color: #8496aa; }
+.act svg { flex: none; }
+.tray { display: grid; gap: 6px; }
+.trayTitle { margin: 0; color: var(--c-muted); font-size: 11px; font-weight: 700; line-height: 1.5; letter-spacing: .07em; text-transform: uppercase; }
+.trayTitle:lang(th) { letter-spacing: 0; }
+.roster { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; max-height: 148px; margin: 0; padding: 1px; overflow-y: auto; list-style: none; scrollbar-width: thin; }
+.team.team { display: grid; grid-template-columns: 18px minmax(0, 1fr); align-items: center; gap: 0 8px; width: 100%; min-height: 44px; padding: 3px 10px; border: 1px solid var(--c-line); border-radius: var(--c-radius-control); background: var(--c-panel); color: var(--c-ink); text-align: left; }
+.team:hover { border-color: #9fb0c2; background: var(--c-tint); }
+.team[aria-pressed="true"] { border-color: var(--c-accent); box-shadow: inset 0 0 0 1px var(--c-accent); }
+.team svg { grid-row: 1 / span 2; color: var(--c-muted); }
+.team strong { overflow: hidden; font-family: var(--c-font-mono); font-size: 12px; font-weight: 600; line-height: 1.4; text-overflow: ellipsis; white-space: nowrap; }
+.team small { grid-column: 2; color: var(--c-muted); font-size: 11px; line-height: 1.4; }
+.trayNote { color: var(--c-muted); font-size: 11px; line-height: 1.45; }
+.trayNote:lang(th) { line-height: 1.5; }
+.trayFoot { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.textButton.textButton { position: relative; flex: none; padding: 0; border: 0; background: none; color: var(--c-focus); font-size: 12px; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; white-space: nowrap; }
+.textButton::after { content: ""; position: absolute; inset: -14px -6px; }
+.textButton:hover { color: var(--c-ink); }
+.moreRow { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.moreRow .act { flex-direction: column; gap: 0; height: auto; min-height: 44px; padding: 4px 6px; font-size: 12px; line-height: 1.35; white-space: normal; text-align: center; }
+.moreRow .act small { color: var(--c-muted); font-size: 11px; font-weight: 500; }
+.moreRow .act span { white-space: nowrap; }
+.moreRow .act:disabled small { color: inherit; }
+
+/* --- The urgency of an item, moved one step with one tap ------------------------------------------------- */
+.urgencyRow { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid var(--c-line); border-radius: 8px; }
+.urgencyRow > div:nth-child(2) { display: grid; min-width: 0; }
+.urgencyRow strong { font-size: 14px; font-weight: 700; line-height: 1.4; }
+/* The urgency, the state and the callsign each stay whole: the line breaks between them, never inside one. */
+.urgencyRow strong span { color: inherit; font-size: inherit; white-space: nowrap; }
+.urgencyRow[data-urgency="life_at_risk"][data-open="true"] strong { color: #a84400; }
+.urgencyRow span { color: var(--c-muted); font-size: 12px; }
+.urgencyRow b { color: var(--c-ink); font-family: var(--c-font-mono); font-size: 12px; font-weight: 600; }
+.steps { display: flex; gap: 8px; }
+.step.step { position: relative; display: grid; place-items: center; width: 36px; height: 36px; padding: 0; border: 1px solid var(--c-line); border-radius: var(--c-radius-control); background: var(--c-panel); color: var(--c-ink); }
+.step::after { content: ""; position: absolute; inset: -5px; }
+.step:hover:not(:disabled) { background: var(--c-tint); border-color: #9fb0c2; }
+.step:disabled { color: #a9b6c4; }
+
+/* --- Facts: how to get near, and where people go --------------------------------------------------------- */
+.factTag { padding: 0 6px; border: 1px solid #8fa1b4; border-radius: 4px; color: var(--c-muted); font-size: 11px; font-weight: 600; line-height: 1.5; white-space: nowrap; }
+.facts { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.facts > li { display: grid; gap: 1px; padding-left: 12px; border-left: 2px solid var(--c-line); color: #33495f; font-size: 12px; }
+.facts > li b { color: var(--c-ink); font-weight: 600; }
+.facts > li small { color: var(--c-muted); font-size: 11px; line-height: 1.45; }
+.facts:lang(th) > li small { line-height: 1.5; }
+.sites { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.site { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 0 8px; padding: 8px 10px 9px; border: 1px solid var(--c-line); border-radius: 8px; }
+.site > svg { margin-top: 3px; }
+.site > div { display: grid; gap: 2px; min-width: 0; }
+.siteName { display: grid; }
+.siteName strong { font-size: 13px; font-weight: 600; line-height: 1.5; }
+.siteName small { color: var(--c-muted); font-size: 11px; }
+.siteWhere { display: flex; flex-wrap: wrap; align-items: center; gap: 3px 8px; color: var(--c-ink); font-size: 12px; font-weight: 600; }
+.siteState { padding: 0 5px; border: 1px dashed #8fa1b4; border-radius: 4px; color: var(--c-muted); font-size: 11px; font-weight: 500; line-height: 1.5; }
+.siteState[data-state="wet"] { border-color: var(--c-ink); color: var(--c-ink); }
+.siteLine { color: var(--c-muted); font-size: 11px; line-height: 1.45; overflow-wrap: anywhere; }
+.siteLine:lang(th) { line-height: 1.5; }
+.sitePending { color: var(--c-ink); font-size: 11px; font-weight: 600; }
+
+/* --- The exercise menu of the navigation ------------------------------------------------------------------ */
+.exerciseMenu { position: absolute; z-index: 21; top: calc(var(--c-margin) + 44px + var(--c-gap)); right: var(--c-margin); display: grid; gap: 2px; min-width: 248px; padding: 6px; box-shadow: var(--c-shadow-over); }
+.menuItem.menuItem { display: grid; grid-template-columns: 18px minmax(0, 1fr); align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 0 12px; border: 0; border-radius: 8px; background: none; color: var(--c-ink); font-size: 13px; text-align: left; }
+.menuItem:hover { background: var(--c-tint); }
+.menuItem svg { color: var(--c-muted); }
+.menuChip { margin: 4px 6px 4px; }
+.navExercise.navExercise { gap: 6px; }
+.navExercise svg:last-child { margin-right: -4px; color: var(--c-muted); }
+.helpSteps { display: grid; gap: 5px; margin: 0; padding-left: 20px; }
+/* The button of the situation brief: the round icon button of the page, on the tint. */
+.briefButton.briefButton { position: relative; display: grid; flex: none; place-items: center; width: 28px; height: 28px; margin: -5px -4px -5px 0; padding: 0; border: 0; border-radius: 50%; background: var(--c-tint); color: var(--c-ink); }
+.briefButton::after { content: ""; position: absolute; inset: -8px; }
+.briefButton:hover { background: #e3e9f0; }
+
+/* --- The notice with an action: undo, or leaving the choice of a staging point --------------------------- */
+.noticeAction.noticeAction { position: relative; flex: none; margin: 0 -6px 0 12px; padding: 0 10px; border: 1px solid rgb(255 255 255 / 60%); border-radius: 10px; background: none; color: #ffffff; font-size: 12px; font-weight: 600; line-height: 20px; overflow: hidden; }
+.noticeAction::after { content: ""; position: absolute; inset: -12px -8px; }
+.noticeAction:hover { background: rgb(255 255 255 / 16%); }
+.noticeAction i { position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: rgb(255 255 255 / 75%); transform-origin: left center; }
+/* A staging point the facilitator set, and the straight line from it to the selected item. */
+.stagingIcon { pointer-events: none; }
+.stagingBadge { display: grid; place-items: center; width: 22px; height: 22px; border: 2px solid #ffffff; border-radius: 50%; background: #12262d; color: #ffffff; box-shadow: 0 1px 3px rgb(18 38 45 / 35%); }
+
+.lineLabel.lineLabel.lineLabel { padding: 1px 8px; border-radius: 10px; background: rgb(255 255 255 / 94%); color: var(--c-ink); font-size: 11px; font-weight: 500; line-height: 1.6; white-space: nowrap; box-shadow: 0 0 0 1px rgb(12 39 64 / 10%); pointer-events: none; }
+.mapPicking, .mapPicking :global(.leaflet-grab), .mapPicking :global(.leaflet-interactive) { cursor: crosshair; }
+
+/* --- Sheets: the brief, the setup and the log ---------------------------------------------------------- */
+.sheetWide.sheetWide { width: min(560px, calc(100vw - 24px)); }
+.sheetBody { display: grid; gap: 16px; padding: 14px var(--c-inset) 18px; overflow-y: auto; }
+.sheetBody p { margin: 0; }
+.lead { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; color: #33495f; }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 1px 9px; border: 1px solid var(--c-line); border-radius: 11px; background: var(--c-tint); color: #33495f; font-size: 11px; font-weight: 600; line-height: 20px; white-space: nowrap; }
+.chip svg { color: var(--c-muted); }
+.field { display: grid; gap: 8px; min-width: 0; margin: 0; padding: 0; border: 0; }
+/* A group of the setup is a fieldset: its title stands on a hairline, so the groups read as a list of sections. */
+fieldset.field { padding-top: 6px; border-top: 1px solid var(--c-line); }
+.fieldTitle { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0; padding: 0; color: var(--c-muted); font-size: 11px; font-weight: 700; line-height: 1.5; letter-spacing: .07em; text-transform: uppercase; }
+legend.fieldTitle { padding-right: 10px; }
+.fieldTitle:lang(th) { font-size: 12px; letter-spacing: 0; }
+.hint { color: var(--c-muted); font-size: 12px; }
+.rosterList { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.rosterRow { display: grid; grid-template-columns: 18px minmax(0, 1fr) minmax(112px, 148px) 44px; align-items: center; gap: 8px; min-height: 46px; padding-left: 12px; border: 1px solid var(--c-line); border-radius: 8px; }
+.rosterRow > svg { color: var(--c-muted); }
+.rosterRow strong { overflow: hidden; font-family: var(--c-font-mono); font-size: 13px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.addRow { display: grid; grid-template-columns: minmax(0, 1fr) minmax(112px, 148px) auto; gap: 8px; }
+.input, .select { width: 100%; min-width: 0; height: 44px; padding: 0 10px; border: 1px solid #9fb0c2; border-radius: 8px; background: #ffffff; color: var(--c-ink); font: inherit; font-size: 14px; }
+.rosterRow .select { height: 44px; border-color: var(--c-line); font-size: 13px; }
+.input:lang(th), .select:lang(th) { line-height: 1.5; }
+.problem { padding: 6px 10px; border-left: 3px solid var(--c-ink); border-radius: 0 6px 6px 0; background: var(--c-tint); color: var(--c-ink); font-size: 12px; font-weight: 600; }
+.removeButton.removeButton { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--c-muted); }
+.removeButton:hover { background: var(--c-tint); color: var(--c-ink); }
+.primaryButton.primaryButton, .secondaryButton.secondaryButton { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 16px; border: 1px solid var(--c-accent); border-radius: var(--c-radius-control); font: inherit; font-size: 13px; font-weight: 600; text-decoration: none; cursor: pointer; }
+.primaryButton.primaryButton { background: var(--c-accent); color: #ffffff; }
+.primaryButton:hover:not(:disabled) { background: #1a3f63; }
+.secondaryButton.secondaryButton { border-color: var(--c-ink); background: #ffffff; color: var(--c-ink); }
+.secondaryButton:hover:not(:disabled) { background: var(--c-tint); }
+.primaryButton:disabled, .secondaryButton:disabled { border-color: var(--c-line); background: var(--c-tint); color: #8496aa; cursor: not-allowed; }
+.buttonRow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.option { display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; align-items: center; gap: 2px 10px; min-height: 44px; padding: 4px 0; font-size: 13px; }
+.option input { width: 18px; height: 18px; margin: 0; accent-color: var(--c-accent); }
+.option small { grid-column: 2 / -1; color: var(--c-muted); font-size: 11px; line-height: 1.45; }
+.option:lang(th) small { line-height: 1.5; }
+.optionText { display: grid; gap: 1px; min-width: 0; }
+/* The label of an option that has a line under it: 21 px to the eye, 44 px to the finger. */
+.optionText > label { position: relative; }
+.optionText > label::after { content: ""; position: absolute; inset: -12px 0 -11px; }
+.optionText small { grid-column: auto; }
+.startRow { display: grid; gap: 4px; }
+.startMoment { font-family: var(--c-font-head); font-size: 19px; font-weight: 600; line-height: 1.4; letter-spacing: -.01em; }
+.startMoment small { margin-left: 8px; color: var(--c-muted); font-family: var(--c-font); font-size: 12px; font-weight: 400; letter-spacing: 0; }
+.range { width: 100%; height: 44px; margin: 0; accent-color: var(--c-accent); }
+.segments { display: inline-flex; flex-wrap: wrap; }
+.segments.segments button { min-height: 44px; padding: 0 14px; border: 1px solid var(--c-line); border-right-width: 0; background: #ffffff; color: var(--c-ink); font: inherit; font-size: 13px; font-weight: 500; white-space: nowrap; cursor: pointer; }
+.segments button:first-child { border-radius: var(--c-radius-control) 0 0 var(--c-radius-control); }
+.segments button:last-child { border-right-width: 1px; border-radius: 0 var(--c-radius-control) var(--c-radius-control) 0; }
+.segments button[aria-pressed="true"] { border-color: var(--c-accent); background: var(--c-accent); color: #ffffff; font-weight: 600; }
+.segments button:hover:not([aria-pressed="true"]) { background: var(--c-tint); }
+.segments button:focus-visible { position: relative; z-index: 1; }
+.resetBox { display: grid; gap: 8px; padding: 12px; border: 1px dashed #9fb0c2; border-radius: 8px; }
+
+/* The brief: plain text a reader can select, with the exercise tag as its first and its last line. */
+.briefText { max-height: 44vh; margin: 0; padding: 10px 14px; overflow: auto; border: 1px solid var(--c-line); border-radius: 8px; background: var(--c-tint); color: var(--c-ink); font-family: var(--c-font); font-size: 13px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+.briefText:lang(th) { line-height: 1.7; }
+.briefText:focus-visible { outline-offset: 1px; }
+.briefTag { padding: 1px 5px; border-radius: 3px; background: var(--c-exercise); color: #1c2733; font-weight: 700; }
+.briefMeta { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 4px 14px; color: var(--c-muted); font-size: 12px; }
+.briefMeta > div { display: grid; gap: 1px; min-width: 0; }
+.briefMeta strong { color: var(--c-ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+.briefSheet { gap: 12px; }
+.briefSheet .field { gap: 6px; }
+.briefNotes { display: grid; gap: 2px; color: var(--c-muted); font-size: 11px; line-height: 1.45; }
+.briefNotes:lang(th) { line-height: 1.5; }
+.status { color: var(--c-ink); font-size: 12px; font-weight: 600; }
+
+/* The log: a short table that scrolls inside its sheet. */
+.logScroll { max-height: min(46vh, 340px); overflow: auto; border: 1px solid var(--c-line); border-radius: 8px; scrollbar-width: thin; }
+.logTable { width: 100%; border-collapse: collapse; font-size: 12px; font-variant-numeric: tabular-nums; }
+.logTable th { position: sticky; top: 0; padding: 7px 10px; border-bottom: 1px solid var(--c-line); background: var(--c-tint); color: var(--c-muted); font-size: 11px; font-weight: 700; line-height: 1.5; text-align: left; white-space: nowrap; }
+.logTable td { padding: 7px 10px; border-bottom: 1px solid #e6edf4; line-height: 1.45; vertical-align: top; }
+.logTable tr:last-child td { border-bottom: 0; }
+.logTable td:nth-child(-n+4) { white-space: nowrap; }
+.logTable td code { font-family: var(--c-font-mono); font-size: 12px; }
+.empty { padding: 18px 12px; color: var(--c-muted); text-align: center; }
+
+@media (max-width: 1180px) {
+  .bar { padding: 6px var(--c-inset) 8px; }
+  .exerciseMenu { display: none; }
+  /* The first line of a narrow clock card is full (the replay time, the replay hour and the tag): the button of the
+     situation brief stands at the end of the phase line under it. */
+  .briefButton.briefButton { position: absolute; top: 28px; right: calc(var(--c-inset) - 4px); width: 24px; height: 24px; margin: 0; }
+  .briefButton.briefButton::after { inset: -10px; }
+  .briefButton.briefButton:lang(th) { top: 30px; }
+}
+@media (max-width: 899px) {
+  .briefButton.briefButton { display: none; }
+}
+@media (max-width: 520px) {
+  .rosterRow { grid-template-columns: 18px minmax(0, 1fr) 104px 44px; }
+  .addRow { grid-template-columns: minmax(0, 1fr) 104px; }
+  .addRow > button { grid-column: 1 / -1; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .act, .team, .step, .menuItem { transition: background-color .12s ease, border-color .12s ease; }
+  .exerciseMenu { animation: commandActRise .16s ease-out both; }
+  /* The line under "Undo" runs out with the ten seconds; it moves once and does not loop. */
+  .noticeAction i { animation: commandUndoRun 10s linear both; }
+}
+@keyframes commandActRise {
+  from { opacity: 0; translate: 0 8px; }
+  to { opacity: 1; translate: 0 0; }
+}
+@keyframes commandUndoRun {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
+}

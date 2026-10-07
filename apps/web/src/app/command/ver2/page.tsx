@@ -1,16 +1,14 @@
 import type { Metadata } from "next";
 
-import { CandidateCaseContext } from "@/components/candidate-case-context";
-import { PlanningCandidateOverview } from "@/components/planning-candidate-overview";
+import { PlanningOverviewForward } from "@/components/command-archive-forward";
 
-// The candidate planning overview, served at /command/ until the owner's request of 5 Oct 2026 (decision log R19)
-// made the map workspace the default Planning page. Its address is PLANNING_OVERVIEW_ROUTE in @/lib/case-selection.
-// It shows no research score and no research class.
+// The planning overview was served here from 5 to 7 Oct 2026 (decision log R19). It is at /command/planning/ since
+// decision log R24, and this address only forwards to it.
 export const metadata: Metadata = {
-  title: "Planning overview | FloodGuard",
-  description: "Candidate case access, services, road assumptions, equity limits, and verification priorities for non-operational planning.",
+  title: "Moved to the planning overview · ย้ายไปที่ภาพรวมเพื่อการวางแผนแล้ว | FloodGuard",
+  description: "This address forwards to the planning overview at /command/planning/. · ที่อยู่นี้ส่งต่อไปยังภาพรวมเพื่อการวางแผนที่ /command/planning/",
 };
 
-export default function CommandOverviewPage() {
-  return <><CandidateCaseContext role="planning" /><PlanningCandidateOverview /></>;
+export default function PlanningOverviewForwardPage() {
+  return <PlanningOverviewForward />;
 }

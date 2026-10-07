@@ -104,12 +104,16 @@ const routes = [
   { path: "/", selector: "main[data-fg-landing]" },
   { path: "/public/", selector: "main.public-page" },
   { path: "/public-cases/", selector: "main[data-evidence-library]" },
-  // The three Planning addresses since the owner's request of 5 Oct 2026 (decision log R19): the map workspace is the
-  // default page, the planning overview is at /command/ver2/, and /command/archive/ forwards to the default page.
-  { path: "/command/", selector: "main.command-page" },
-  { path: "/command/ver2/", selector: "main[data-planning-candidate]" },
+  // The Planning addresses since the owner's decision of 7 Oct 2026 (decision log R24): the Command exercise replay is
+  // the default page, the planning overview is at /command/planning/, the older map workspace is in Studio's archive,
+  // and three earlier addresses forward.
+  { path: "/command/", selector: "main.command-page[data-command-exercise]" },
+  { path: "/studio/archive/command-workspace/", selector: "main.command-page" },
+  { path: "/command/planning/", selector: "main[data-planning-candidate]" },
   { path: "/command/cases/", selector: "main[data-evidence-library]" },
-  { path: "/command/archive/", selector: "main.command-page", forwardsTo: "/command/" },
+  { path: "/command/archive/", selector: "main.command-page", forwardsTo: "/studio/archive/command-workspace/" },
+  { path: "/command/ver2/", selector: "main[data-planning-candidate]", forwardsTo: "/command/planning/" },
+  { path: "/command/exercise/", selector: "main.command-page[data-command-exercise]", forwardsTo: "/command/" },
   { path: "/studio/", selector: "main.studio-page" },
   { path: "/studio/planning-evidence/", selector: "main.studio-page" },
   { path: "/studio/candidate-report/", selector: "main[data-evidence-case-id]" },
@@ -188,7 +192,7 @@ try {
 
   for (const route of routes) {
     await page.goto(`${baseUrl}${route.path}`, { waitUntil: "networkidle" });
-    if (route.forwardsTo) await page.waitForURL(`${baseUrl}${route.forwardsTo}`);
+    if (route.forwardsTo) await page.waitForURL((url) => url.pathname === route.forwardsTo);
     await page.locator(route.selector).waitFor({ state: "visible" });
   }
 
@@ -356,7 +360,7 @@ try {
   // Command: the real-coordinate Mae Sai planning bundle renders at tablet
   // size with its evidence drawer and verification boundary visible.
   await page.setViewportSize({ width: 1024, height: 768 });
-  await page.goto(`${baseUrl}/command/ver2/`, { waitUntil: "networkidle" });
+  await page.goto(`${baseUrl}/command/planning/`, { waitUntil: "networkidle" });
   await page.locator('main[data-planning-candidate="aoi-01_mae_sai_core_mae_sai_2024"]').waitFor({ state: "visible" });
   if (!(await page.locator('main[data-planning-candidate]').innerText()).includes("Accepted FPPS and action class remain unavailable")) {
     throw new Error("Current Planning overview lost its candidate scoring boundary.");
@@ -366,7 +370,7 @@ try {
   if (!(await page.locator('main[data-evidence-case-id]').innerText()).includes("Accepted FPPS / action class")) {
     throw new Error("Current Studio report lost its downstream acceptance boundary.");
   }
-  await page.goto(`${baseUrl}/command/`, { waitUntil: "networkidle" });
+  await page.goto(`${baseUrl}/studio/archive/command-workspace/`, { waitUntil: "networkidle" });
   await page.locator(".map-workspace .leaflet-container").waitFor({ state: "visible" });
   await page.waitForFunction(() => (
     document.querySelector(".map-workspace .geo-map-shell")?.getAttribute("data-road-feature-count") === "4458"
@@ -534,7 +538,7 @@ try {
     throw new Error("Language switch did not expose its selected state.");
   }
   await waitForFinalVisibleCopy(page, "/public/");
-  await page.goto(`${baseUrl}/command/`, { waitUntil: "networkidle" });
+  await page.goto(`${baseUrl}/studio/archive/command-workspace/`, { waitUntil: "networkidle" });
   if (await page.locator("html").getAttribute("lang") !== "en" || await page.locator('.language-toggle button[lang="en"]').getAttribute("aria-pressed") !== "true") {
     throw new Error("Language preference did not persist between product surfaces.");
   }
@@ -544,10 +548,10 @@ try {
   // Command does not show the GeoAI research report (owner decision of 4 Oct 2026, R17): on the map workspace, where
   // the panel was, and on the overview a short notice says that the earlier scores are not accepted event-response
   // priorities and where the report is kept. The table itself is in Studio's archive, labelled historical.
-  // Since the owner's request of 5 Oct 2026 (R19) the map workspace is the default Planning page at /command/ and
-  // the overview is at /command/ver2/.
-  for (const commandRoute of ["/command/", "/command/ver2/"]) {
-    if (commandRoute !== "/command/") await page.goto(`${baseUrl}${commandRoute}`, { waitUntil: "networkidle" });
+  // Since 7 Oct 2026 (R24) the map workspace is historical research at /studio/archive/command-workspace/ and the overview is
+  // at /command/planning/.
+  for (const commandRoute of ["/studio/archive/command-workspace/", "/command/planning/"]) {
+    if (commandRoute !== "/studio/archive/command-workspace/") await page.goto(`${baseUrl}${commandRoute}`, { waitUntil: "networkidle" });
     const researchNotice = page.locator('[data-research-report-notice="true"]');
     await researchNotice.waitFor({ state: "visible" });
     const noticeCopy = await researchNotice.innerText();
@@ -563,7 +567,7 @@ try {
       throw new Error(`${commandRoute} still shows the GeoAI research report or its score table.`);
     }
     const shownScores = commandBody.match(/FPPS\s*\d+(?:\.\d+)?|\b[Cc]lass\s+[A-E]\b/g) ?? [];
-    if (commandRoute === "/command/ver2/") {
+    if (commandRoute === "/command/planning/") {
       // The Planning overview shows none of the written forms of a research score or class (research-score-guard.mjs),
       // once its case has loaded and in both languages: no ranking markup, no "FPPS <number>", no class with a letter
       // A to E, and none of the retained or the report's values as a number of its own. The built file, which the
@@ -573,22 +577,22 @@ try {
         await page.locator(`[data-shared-case="planning"] .language-toggle button[lang="${language}"]`).click();
         await page.locator("main[data-planning-candidate] h1").filter({ hasText: heading }).waitFor({ state: "visible" });
         const traces = await renderedScoreTraces(page);
-        if (traces.length > 0) throw new Error(`/command/ver2/ shows a written form of a research score or class (${language}): ${traces.join(", ")}`);
+        if (traces.length > 0) throw new Error(`/command/planning/ shows a written form of a research score or class (${language}): ${traces.join(", ")}`);
       }
       if (await researchNotice.locator('[data-research-retained-ranking="true"]').count() !== 0) {
-        throw new Error("/command/ver2/ describes a retained ranking it does not show.");
+        throw new Error("/command/planning/ describes a retained ranking it does not show.");
       }
-      // Its header's Planning link leads to the map workspace, another page, and it offers a link back to it.
+      // Its header's Planning link leads to the exercise replay, another page, and it offers a link to it.
       const sharedHeader = page.locator('[data-shared-case="planning"] header');
       if (await sharedHeader.locator('nav a[href^="/command/"][aria-current="true"]').count() !== 1
         || await sharedHeader.locator('nav a[aria-current="page"]').count() !== 0
         || new URL(await sharedHeader.locator('nav a[aria-current="true"]').getAttribute("href"), baseUrl).pathname !== "/command/") {
-        throw new Error("/command/ver2/ does not mark Planning as its section with a link to the map workspace.");
+        throw new Error("/command/planning/ does not mark Planning as its section with a link to the default Planning page.");
       }
       const back = page.locator('main[data-planning-candidate] a[data-planning-workspace-link="true"]');
       await back.waitFor({ state: "visible" });
-      if (!(await back.innerText()).includes("Back to the map workspace") || new URL(await back.getAttribute("href"), baseUrl).pathname !== "/command/") {
-        throw new Error("/command/ver2/ lacks its link back to the map workspace.");
+      if (!(await back.innerText()).includes("To the Command exercise replay") || new URL(await back.getAttribute("href"), baseUrl).pathname !== "/command/") {
+        throw new Error("/command/planning/ lacks its link to the Command exercise replay.");
       }
     } else {
       if (shownScores.length === 0
@@ -596,7 +600,7 @@ try {
         || !noticeCopy.includes("Their values differ from the report's, and they are not accepted priorities either.")) {
         // The map workspace keeps its own retained ranking (the stated exception): its notice must say so, so that it
         // does not read as if no per-subdistrict research score were shown on the page.
-        throw new Error("/command/ shows its retained ranking without the notice saying what it is, or the ranking is gone and the notice still describes it.");
+        throw new Error("/studio/archive/command-workspace/ shows its retained ranking without the notice saying what it is, or the ranking is gone and the notice still describes it.");
       }
       // The ranking is the planning bundle's, row by row, in both languages: each row of the rail and of the map's
       // text list has the bundle's value and class (the badge too), and no number with one decimal on the page, as
@@ -607,7 +611,7 @@ try {
         const ranking = await page.evaluate(collectWorkspaceRanking);
         const rendered = await page.evaluate(collectRenderedPage, { selector: RESEARCH_SCORE_SELECTOR, exclude: null });
         const problems = workspaceRankingProblems({ ...ranking, text: rendered.text }, retainedRanking);
-        if (problems.length > 0) throw new Error(`/command/ does not show its retained ranking as the planning bundle holds it (${language}): ${problems.join("; ")}`);
+        if (problems.length > 0) throw new Error(`/studio/archive/command-workspace/ does not show its retained ranking as the planning bundle holds it (${language}): ${problems.join("; ")}`);
       }
       // The default Planning page shows the retained ranking again (R19): its label stands on the screen above the
       // first score of the ranking, and it says "retained research comparisons, not accepted event-response priorities".
@@ -616,17 +620,19 @@ try {
       const labelBox = await label.boundingBox();
       const firstScoreBox = await page.locator(".ranked-areas .rank-score").first().boundingBox();
       if (!labelBox || !firstScoreBox || labelBox.y + labelBox.height > firstScoreBox.y) {
-        throw new Error(`/command/ shows its retained scores before the label that says what they are: ${JSON.stringify({ labelBox, firstScoreBox })}`);
+        throw new Error(`/studio/archive/command-workspace/ shows its retained scores before the label that says what they are: ${JSON.stringify({ labelBox, firstScoreBox })}`);
       }
-      // Its header names Planning as the current page, and it offers a link to the other Planning page.
-      if (await page.locator('main.command-page header nav a[aria-current="page"]').count() !== 1
-        || new URL(await page.locator('main.command-page header nav a[aria-current="page"]').getAttribute("href"), baseUrl).pathname !== "/command/") {
-        throw new Error("/command/ does not name Planning as the current page in its header.");
+      // It is a page of Studio's archive: its header marks the Studio section and names no Planning page as current.
+      // It still offers a link to the planning overview.
+      if (await page.locator('main.command-page header nav a[aria-current="page"]').count() !== 0
+        || await page.locator('main.command-page header nav a[aria-current="true"]').count() !== 1
+        || new URL(await page.locator('main.command-page header nav a[aria-current="true"]').getAttribute("href"), baseUrl).pathname !== "/studio/") {
+        throw new Error("/studio/archive/command-workspace/ does not mark Studio as its section in its header.");
       }
       const overviewLink = page.locator('main.command-page a[data-planning-overview-link="true"]');
       await overviewLink.waitFor({ state: "visible" });
-      if (!(await overviewLink.innerText()).includes("Current planning overview") || new URL(await overviewLink.getAttribute("href"), baseUrl).pathname !== "/command/ver2/") {
-        throw new Error("/command/ lacks its link to the planning overview.");
+      if (!(await overviewLink.innerText()).includes("Current planning overview") || new URL(await overviewLink.getAttribute("href"), baseUrl).pathname !== "/command/planning/") {
+        throw new Error("/studio/archive/command-workspace/ lacks its link to the planning overview.");
       }
       // On a phone the map and the ranking give way to a short summary of the selected subdistrict. There too the
       // label stands above the one score shown, under the banner, with the link to the planning overview.
@@ -638,37 +644,45 @@ try {
       const bannerBox = await label.boundingBox();
       if (await page.locator(".command-workspace").isVisible() || !summaryLabelBox || !summaryScoreBox || !bannerBox
         || summaryLabelBox.y + summaryLabelBox.height > summaryScoreBox.y || bannerBox.y + bannerBox.height > summaryScoreBox.y
-        || new URL(await summary.locator("a").getAttribute("href"), baseUrl).pathname !== "/command/ver2/") {
-        throw new Error(`/command/ on a phone shows its retained score before its label, or lacks the link to the planning overview: ${JSON.stringify({ bannerBox, summaryLabelBox, summaryScoreBox })}`);
+        || new URL(await summary.locator("a").getAttribute("href"), baseUrl).pathname !== "/command/planning/") {
+        throw new Error(`/studio/archive/command-workspace/ on a phone shows its retained score before its label, or lacks the link to the planning overview: ${JSON.stringify({ bannerBox, summaryLabelBox, summaryScoreBox })}`);
       }
       await page.setViewportSize({ width: 1280, height: 720 });
     }
   }
-  // The two Planning pages lead to each other, in Thai too, and a selected case goes with the reader.
+  // The older workspace leads to the overview and the overview to the default Planning page, in Thai too, and a
+  // selected case goes with the reader.
   const caseQuery = `?aoi=${savedCase.aoi_id}&event=${savedCase.event_id}`;
-  await page.goto(`${baseUrl}/command/${caseQuery}`, { waitUntil: "networkidle" });
+  await page.goto(`${baseUrl}/studio/archive/command-workspace/${caseQuery}`, { waitUntil: "networkidle" });
   await page.locator('.language-toggle button[lang="th"]').click();
   const thaiOverviewLink = page.locator('main.command-page a[data-planning-overview-link="true"]');
-  if ((await thaiOverviewLink.innerText()).trim() !== "ภาพรวมปัจจุบัน" || await thaiOverviewLink.getAttribute("href") !== `/command/ver2/${caseQuery}`) {
+  if ((await thaiOverviewLink.innerText()).trim() !== "ภาพรวมปัจจุบัน" || await thaiOverviewLink.getAttribute("href") !== `/command/planning/${caseQuery}`) {
     throw new Error("The map workspace's Thai link to the planning overview is missing or drops the selected case.");
   }
   await thaiOverviewLink.click();
-  await page.waitForURL(`${baseUrl}/command/ver2/${caseQuery}`);
+  await page.waitForURL(`${baseUrl}/command/planning/${caseQuery}`);
   const thaiBack = page.locator('main[data-planning-candidate] a[data-planning-workspace-link="true"]');
   await page.locator(`main[data-planning-candidate="${savedCase.id}"]`).waitFor({ state: "visible" });
-  if ((await thaiBack.innerText()).trim() !== "← กลับไปที่พื้นที่ทำงานแผนที่") {
-    throw new Error("The planning overview's Thai link back to the map workspace is missing.");
+  if ((await thaiBack.innerText()).trim() !== "← ไปที่หน้าฝึกซ้อมสั่งการ") {
+    throw new Error("The planning overview's Thai link to the Command exercise replay is missing.");
   }
   const thaiBackTarget = new URL(await thaiBack.getAttribute("href"), baseUrl);
   if (thaiBackTarget.pathname !== "/command/" || thaiBackTarget.searchParams.get("aoi") !== savedCase.aoi_id || thaiBackTarget.searchParams.get("event") !== savedCase.event_id) {
-    throw new Error("The planning overview's link back to the map workspace drops the selected case.");
+    throw new Error("The planning overview's link to the Command exercise replay drops the selected case.");
   }
   await thaiBack.click();
-  await page.locator("main.command-page").waitFor({ state: "visible" });
-  if (new URL(page.url()).pathname !== "/command/") throw new Error("The link back from the planning overview does not open the map workspace.");
-  await page.locator('.language-toggle button[lang="en"]').click();
+  await page.locator("main.command-page[data-command-exercise]").waitFor({ state: "visible" });
+  // The exercise page names the case its address carries and leads back to that case's overview.
+  const exerciseCaseLink = page.locator('[data-command-shell] [data-command-case-notice] a[data-command-case-overview-link="true"]');
+  await exerciseCaseLink.waitFor({ state: "visible" });
+  const exerciseCaseTarget = new URL(await exerciseCaseLink.getAttribute("href"), baseUrl);
+  if (exerciseCaseTarget.pathname !== "/command/planning/" || exerciseCaseTarget.searchParams.get("aoi") !== savedCase.aoi_id || exerciseCaseTarget.searchParams.get("event") !== savedCase.event_id) {
+    throw new Error("The exercise page does not lead to the planning overview of the case its address names.");
+  }
+  if (new URL(page.url()).pathname !== "/command/") throw new Error("The link from the planning overview does not open the default Planning page.");
+  await page.locator('[data-command-site-header] .language-toggle button[lang="en"]').click();
   // The comparison page, the third Planning page, names one current page: itself, in its row of pages. Its header's
-  // Planning link leads to the map workspace, another page, so there it marks the section only.
+  // Planning link leads to the exercise replay, another page, so there it marks the section only.
   await page.goto(`${baseUrl}/command/cases/${caseQuery}`, { waitUntil: "networkidle" });
   await page.locator("main[data-evidence-library] footer").filter({ hasText: savedCase.id }).waitFor();
   const comparisonMarks = await page.locator("main[data-evidence-library] > header nav a[aria-current], main[data-evidence-library] > nav a[aria-current]")
@@ -676,28 +690,34 @@ try {
   if (JSON.stringify(comparisonMarks) !== JSON.stringify(["/command/ true", "/command/cases/ page"])) {
     throw new Error(`/command/cases/ must mark Planning as its section and itself as the current page: ${JSON.stringify(comparisonMarks)}`);
   }
-  // The old workspace address forwards to the default Planning page and keeps the query of the old link. With no
-  // script it is one sentence in each language with a link, and nothing of its own beside it.
+  // The three earlier addresses forward and keep the query of the old link. With no script the old workspace address
+  // is one sentence in each language with a link, and nothing of its own beside it.
+  await page.goto(`${baseUrl}/command/ver2/${caseQuery}`, { waitUntil: "domcontentloaded" });
+  await page.waitForURL(`${baseUrl}/command/planning/${caseQuery}`);
+  await page.locator("main[data-planning-candidate]").waitFor({ state: "visible" });
+  await page.goto(`${baseUrl}/command/exercise/?t=84&lang=en`, { waitUntil: "domcontentloaded" });
+  await page.waitForURL(`${baseUrl}/command/?t=84&lang=en`);
+  await page.locator('main.command-page[data-command-exercise][data-hour="84"]').waitFor({ state: "visible" });
   await page.goto(`${baseUrl}/command/archive/${caseQuery}`, { waitUntil: "domcontentloaded" });
-  await page.waitForURL(`${baseUrl}/command/${caseQuery}`);
+  await page.waitForURL(`${baseUrl}/studio/archive/command-workspace/${caseQuery}`);
   await page.locator("main.command-page").waitFor({ state: "visible" });
   const plainContext = await browser.newContext({ javaScriptEnabled: false, serviceWorkers: "block" });
   const plainPage = await plainContext.newPage();
   await plainPage.goto(`${baseUrl}/command/archive/`, { waitUntil: "domcontentloaded" });
-  const forward = plainPage.locator('main[data-command-forward="/command/"]');
+  const forward = plainPage.locator('main[data-command-forward="/studio/archive/command-workspace/"]');
   const forwardCopy = await forward.innerText();
   if (new URL(plainPage.url()).pathname !== "/command/archive/"
-    || !forwardCopy.includes("This page has moved. The Planning map workspace is now at /command/.")
-    || !forwardCopy.includes("หน้านี้ย้ายแล้ว พื้นที่ทำงานแผนที่สำหรับการวางแผนอยู่ที่ /command/")
-    || await forward.locator('a[href="/command/"]').count() !== 2
+    || !forwardCopy.includes("This page has moved. The older Planning map workspace, kept as historical research, is now at /studio/archive/command-workspace/.")
+    || !forwardCopy.includes("หน้านี้ย้ายแล้ว พื้นที่ทำงานแผนที่เดิมซึ่งเก็บไว้เป็นงานวิจัยย้อนหลังอยู่ที่ /studio/archive/command-workspace/")
+    || await forward.locator('a[href="/studio/archive/command-workspace/"]').count() !== 2
     || await plainPage.locator("main").count() !== 1
     || researchScoreTraces((await plainPage.locator("body").innerText()).replace(/\s+/g, " "), forbiddenScores).length !== 0
     || await plainPage.locator(RESEARCH_SCORE_SELECTOR).count() !== 0
     || await plainPage.locator('[data-research-report-notice], .ranked-areas, table, h1, h2').count() !== 0) {
-    throw new Error("/command/archive/ is not a plain forward to /command/: it lacks its sentence and link, or has content of its own.");
+    throw new Error("/command/archive/ is not a plain forward to /studio/archive/command-workspace/: it lacks its sentence and link, or has content of its own.");
   }
   await plainContext.close();
-  await page.goto(`${baseUrl}/command/ver2/`, { waitUntil: "networkidle" });
+  await page.goto(`${baseUrl}/command/planning/`, { waitUntil: "networkidle" });
   await page.locator('[data-research-report-notice="true"] a[href="/studio/archive/mae-sai-geoai/"]').click();
   await page.waitForURL(`${baseUrl}/studio/archive/mae-sai-geoai/`);
   const researchPanel = page.locator('section[aria-labelledby="geoai-real-title"]');
@@ -745,7 +765,7 @@ try {
   // default case, and with no button pressed its study area is saved, each file checked against its SHA-256. A
   // reader who opens the case before going offline finds it again without a connection (checked further down).
   await page.setViewportSize({ width: 1280, height: 900 });
-  await page.goto(`${baseUrl}/command/ver2/`, { waitUntil: "networkidle" });
+  await page.goto(`${baseUrl}/command/planning/`, { waitUntil: "networkidle" });
   await page.locator(`main[data-planning-candidate="${savedCase.id}"]`).waitFor({ state: "visible" });
   const openedRow = page.locator(`[data-evidence-offline-control="true"] [data-evidence-offline-area="${savedArea.aoi_id}"]`).first();
   await page.waitForFunction((id) => (
@@ -938,10 +958,10 @@ try {
   for (const route of routes) {
     await page.goto(`${baseUrl}${route.path}`, { waitUntil: "domcontentloaded" });
     // The old workspace address forwards without a connection too: both pages are in the installation.
-    if (route.forwardsTo) await page.waitForURL(`${baseUrl}${route.forwardsTo}`);
+    if (route.forwardsTo) await page.waitForURL((url) => url.pathname === route.forwardsTo);
     await page.locator(route.selector).waitFor({ state: "visible" });
     await waitForFinalVisibleCopy(page, route.forwardsTo ?? route.path);
-    if (route.path === "/command/" || route.path === "/command/ver2/" || route.path === "/command/archive/") {
+    if (route.path === "/studio/archive/command-workspace/" || route.path === "/command/planning/" || route.path === "/command/archive/" || route.path === "/command/ver2/") {
       // The historical report's page is not part of the installation. Without a connection the notice does not
       // offer a link that would end on the browser's error page: it says that the report needs a connection. The
       // current brief, which is saved, stays a link.
@@ -1026,7 +1046,7 @@ try {
   };
   page.on("request", watchLibraryRequests);
   const unsavedQuery = `aoi=${unsavedCase.aoi_id}&event=${unsavedCase.event_id}`;
-  for (const path of ["/studio/library/", "/studio/brief/", "/command/cases/", "/public-cases/", "/command/ver2/", "/studio/candidate-report/"]) {
+  for (const path of ["/studio/library/", "/studio/brief/", "/command/cases/", "/public-cases/", "/command/planning/", "/studio/candidate-report/"]) {
     await page.goto(`${baseUrl}${path}?${unsavedQuery}`, { waitUntil: "domcontentloaded" });
     const unavailable = page.locator('[data-evidence-unavailable="offline_not_saved"]');
     await unavailable.first().waitFor({ state: "visible" });
@@ -1048,7 +1068,7 @@ try {
     if (!(await unsavedRow.innerText()).includes("Connect to the internet to save this area.") || !await unsavedRow.locator('button[data-action="save"]').isDisabled()) {
       throw new Error(`${path} offers to save a study area without a connection.`);
     }
-    if (path === "/command/ver2/" && await page.locator('main[data-planning-candidate="unavailable"]').count() !== 1) {
+    if (path === "/command/planning/" && await page.locator('main[data-planning-candidate="unavailable"]').count() !== 1) {
       throw new Error("The planning overview does not mark an unsaved study area as unavailable.");
     }
   }
@@ -1289,7 +1309,7 @@ try {
   }
   await legacyContext.close();
   console.log(
-    `browser offline smoke: ${routes.length} routes rendered from a content-versioned service-worker cache; a fresh installation is ${install.files} files, ${megabytes(installed.bytes)} of ${megabytes(install.budget_bytes)} MB budget (${installed.bytes} bytes) with no study area in its build cache; the study area ${savedArea.aoi_id} (${savedArea.assets.length} files, ${megabytes(savedArea.bytes)} MB) was saved by opening it on the Planning overview, kept through a new deployment without a download, opened offline with every file matching its SHA-256, and was removed; the area ${largeArea.aoi_id} (${megabytes(largeArea.bytes)} MB) was not saved by opening it, its first save was reported as interrupted ${(interruptedAfterMs / 1000).toFixed(0)} s after the worker was stopped, and it was saved with its button on the second request and removed again; the area ${removedArea.aoi_id} was saved by opening it, removed, and stayed unsaved when opened again; the unsaved area ${unsavedCase.aoi_id} said so on six pages without a request; the compact map notice stays a short line and one button directly below the list button, clear of the map controls (${compactNotice.join("; ")}); Command shows the research-report notice (offline: as text, without a dead link), /command/ver2/, with its case loaded, none of the written forms of a research score or class in English or Thai, /command/ its retained ranking row by row as the planning bundle holds it in both languages, under its label (above the first score at 1280 px and on a phone), the two pages link to each other in both languages, /command/cases/ marks Planning as its section, /command/archive/ forwards to /command/ online, offline and with the case query, and Studio's archive shows the table; the case replay and its ${caseReplay.assets.length} opt-in data files replayed offline, the season envelope's raster, statistics and licence notice among them (toggle on, hatched and credited: ${envelopeOffline.join("; ")}), the reported depths' markers (all 12 located place records) and counts table from the saved manifest, and its ${caseReplay.exports.assets.length} export files downloaded offline (${caseReplay.exports.bytes} of ${caseReplay.exports.budget_bytes} export-budget bytes); approved basemaps failed gracefully and no unapproved external requests occurred`,
+    `browser offline smoke: ${routes.length} routes rendered from a content-versioned service-worker cache; a fresh installation is ${install.files} files, ${megabytes(installed.bytes)} of ${megabytes(install.budget_bytes)} MB budget (${installed.bytes} bytes) with no study area in its build cache; the study area ${savedArea.aoi_id} (${savedArea.assets.length} files, ${megabytes(savedArea.bytes)} MB) was saved by opening it on the Planning overview, kept through a new deployment without a download, opened offline with every file matching its SHA-256, and was removed; the area ${largeArea.aoi_id} (${megabytes(largeArea.bytes)} MB) was not saved by opening it, its first save was reported as interrupted ${(interruptedAfterMs / 1000).toFixed(0)} s after the worker was stopped, and it was saved with its button on the second request and removed again; the area ${removedArea.aoi_id} was saved by opening it, removed, and stayed unsaved when opened again; the unsaved area ${unsavedCase.aoi_id} said so on six pages without a request; the compact map notice stays a short line and one button directly below the list button, clear of the map controls (${compactNotice.join("; ")}); Command shows the research-report notice (offline: as text, without a dead link), /command/planning/, with its case loaded, none of the written forms of a research score or class in English or Thai, /studio/archive/command-workspace/ its retained ranking row by row as the planning bundle holds it in both languages, under its label (above the first score at 1280 px and on a phone), the two pages link to each other in both languages, /command/cases/ marks Planning as its section, /command/archive/ forwards to /studio/archive/command-workspace/ online, offline and with the case query, and Studio's archive shows the table; the case replay and its ${caseReplay.assets.length} opt-in data files replayed offline, the season envelope's raster, statistics and licence notice among them (toggle on, hatched and credited: ${envelopeOffline.join("; ")}), the reported depths' markers (all 12 located place records) and counts table from the saved manifest, and its ${caseReplay.exports.assets.length} export files downloaded offline (${caseReplay.exports.bytes} of ${caseReplay.exports.budget_bytes} export-budget bytes); approved basemaps failed gracefully and no unapproved external requests occurred`,
   );
   console.log("legacy dashboard offline smoke: embedded Leaflet vectors, text equivalent, and dataset control verified");
 } finally {
@@ -1817,8 +1837,11 @@ async function assertMaeSaiMap(page, scopeSelector, {
 function requiredFinalCopy(routePath) {
   if (routePath === "/public-cases/") return ["understand the study cases", "non-operational", "candidate research evidence"];
   if (routePath === "/command/cases/") return ["compare before & after routes", "research prototype", "imposed scenarios", "not observed flood conditions or safe-route guidance"];
-  // The map workspace, the default Planning page: its label is part of the copy it must show.
-  if (routePath === "/command/") return ["historical mae sai research archive", "planning intelligence", "source time", "confidence", "retained research comparisons, not accepted event-response priorities"];
+  // The Command exercise replay, the default Planning page: the shared header and the exercise banner are there
+  // before any data, and without a connection too.
+  if (routePath === "/command/") return ["planning", "exercise replay", "not real-time", "not an official warning"];
+  // The older map workspace in Studio's archive: its label is part of the copy it must show.
+  if (routePath === "/studio/archive/command-workspace/") return ["historical mae sai research archive", "planning intelligence", "source time", "confidence", "retained research comparisons, not accepted event-response priorities"];
   if (routePath === "/studio/archive/") return ["historical mae sai technical report", "separate evidence context", "technical verification", "observed-data validation", "operational authorization"];
   if (routePath === "/studio/candidate-report/") return ["evidence status and decision boundary", "candidate", "accepted fpps / action class"];
   if (routePath === "/studio/library/") return ["study-area evidence library", "non-operational", "candidate research evidence"];
@@ -1830,7 +1853,7 @@ function requiredFinalCopy(routePath) {
       // wordmark, so the brand is no longer body text here. The nav labels and
       // Hazard Info still prove the finished Public UI rendered.
       ? ["hazard info", "report", "shelter", "prepare", "sos", "candidate", "non-operational", "lower priority", "higher priority"]
-      : routePath === "/command/ver2/"
+      : routePath === "/command/planning/"
         ? ["planning overview", "candidate", "accepted fpps and action class remain unavailable"]
         : routePath === "/studio/"
           ? ["every result has a context", "research studies", "planning evidence", "historical studies"]

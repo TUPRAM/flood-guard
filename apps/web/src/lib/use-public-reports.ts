@@ -1,10 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import {
   PUBLIC_REPORT_LIMIT,
+  PUBLIC_REPORT_STORAGE_KEY,
   createPublicReport,
+  parseStoredPublicReports,
   readStoredPublicReports,
   writeStoredPublicReports,
   type CreatePublicReportInput,
@@ -43,6 +45,42 @@ export function usePublicReports() {
   }, []);
 
   return { reports, addReport } as const;
+}
+
+const NO_REPORTS: PublicReport[] = [];
+let storedSnapshot: { raw: string | null; reports: PublicReport[] } = { raw: null, reports: NO_REPORTS };
+
+/** The stored reports as one list that stays the same object until the stored text changes. */
+function storedReportsSnapshot(): PublicReport[] {
+  let raw: string | null = null;
+  try {
+    raw = browserStorage()?.getItem(PUBLIC_REPORT_STORAGE_KEY) ?? null;
+  } catch {
+    raw = null;
+  }
+  if (raw !== storedSnapshot.raw) storedSnapshot = { raw, reports: raw ? parseStoredPublicReports(raw) : NO_REPORTS };
+  return storedSnapshot.reports;
+}
+
+function subscribeToStoredReports(notify: () => void): () => void {
+  // A report saved in another tab of this browser arrives as a `storage` event; coming back to this tab re-reads too.
+  const onStorage = (event: StorageEvent) => {
+    if (event.key === null || event.key === PUBLIC_REPORT_STORAGE_KEY) notify();
+  };
+  window.addEventListener("storage", onStorage);
+  window.addEventListener("focus", notify);
+  return () => {
+    window.removeEventListener("storage", onStorage);
+    window.removeEventListener("focus", notify);
+  };
+}
+
+/**
+ * The reports the Public page has saved in this browser, read only, and kept up to date: a report saved in another
+ * tab shows without a reload. Nothing is sent anywhere; the reports never leave this device.
+ */
+export function useStoredPublicReports(): PublicReport[] {
+  return useSyncExternalStore(subscribeToStoredReports, storedReportsSnapshot, () => NO_REPORTS);
 }
 
 function createReportId(timestamp: string): string {

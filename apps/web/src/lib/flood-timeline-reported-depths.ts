@@ -254,10 +254,17 @@ export function reportedDepthSharedText(block: Pick<ReportedDepths, "reports" | 
 }
 
 /**
- * What the model has at the report's point over the report's window, in words (T1 scenario values; not part of the
- * report). A report without a point or without a window says why it is not compared.
+ * A replay moment after which nothing may be told: the trainee mode of the Command exercise replay hides later facts.
+ * `atMs` is the moment itself; `peakReached` says whether the replay has reached the hour of the modelled peak.
  */
-export function reportedDepthModelText(report: ReportedDepthReport, block: Pick<ReportedDepths, "peak_stage_m">, language: Language): string[] {
+export interface ReportedDepthHorizon { atMs: number; peakReached: boolean }
+
+/**
+ * What the model has at the report's point over the report's window, in words (T1 scenario values; not part of the
+ * report). A report without a point or without a window says why it is not compared. With a `horizon` whose peak is
+ * still to come, the depth at the modelled peak and a first-wet time after the moment are left out.
+ */
+export function reportedDepthModelText(report: ReportedDepthReport, block: Pick<ReportedDepths, "peak_stage_m">, language: Language, horizon?: ReportedDepthHorizon): string[] {
   const th = language === "th";
   const model = report.model;
   if (!model) {
@@ -281,9 +288,18 @@ export function reportedDepthModelText(report: ReportedDepthReport, block: Pick<
   const firstWet = model.first_wet
     ? th ? `มีน้ำครั้งแรก ${formatLocalStamp(model.first_wet, language)}` : `first wet ${formatLocalStamp(model.first_wet, language)}`
     : th ? "ไม่มีน้ำเลยในแบบจำลอง" : "never wet in the model";
-  lines.push(th
-    ? `ที่ระดับสูงสุดของแบบจำลอง (ระดับน้ำสมมุติ ${block.peak_stage_m} ม.): ${twoDecimals(model.peak_depth_m, language)} · ${firstWet} · จุดนี้${height}`
-    : `At the modelled peak (assumed river level ${block.peak_stage_m} m): ${twoDecimals(model.peak_depth_m, language)}; ${firstWet}; the point is ${height}.`);
+  if (horizon && !horizon.peakReached) {
+    // Before the replay reaches the modelled peak, the depth at the peak and a first-wet time still to come are later
+    // facts: the line keeps what is already so (a first-wet time that has passed, and the height of the ground).
+    const wetByNow = model.first_wet !== null && Date.parse(model.first_wet) <= horizon.atMs;
+    lines.push(th
+      ? `${wetByNow ? `${firstWet} · ` : ""}จุดนี้${height}`
+      : `${wetByNow ? `${firstWet[0].toUpperCase()}${firstWet.slice(1)}; the` : "The"} point is ${height}.`);
+  } else {
+    lines.push(th
+      ? `ที่ระดับสูงสุดของแบบจำลอง (ระดับน้ำสมมุติ ${block.peak_stage_m} ม.): ${twoDecimals(model.peak_depth_m, language)} · ${firstWet} · จุดนี้${height}`
+      : `At the modelled peak (assumed river level ${block.peak_stage_m} m): ${twoDecimals(model.peak_depth_m, language)}; ${firstWet}; the point is ${height}.`);
+  }
   if (model.cell === "nearest_out_of_channel") {
     lines.push(th
       ? `อ่านค่าห่างจากจุด ${Math.round(model.moved_m)} ม. นอกร่องน้ำของแม่น้ำในแผนที่`
@@ -304,7 +320,7 @@ export interface ReportedDepthLine { text: string; tone?: "title" | "muted"; lan
  * The popup section of one report: its lines and the link to its source. The link reads "publisher, date: title"; the
  * title is the article's own (cited as published, in the article's language).
  */
-export function reportedDepthPopup(report: ReportedDepthReport, block: Pick<ReportedDepths, "depth_classes" | "peak_stage_m">, language: Language): {
+export function reportedDepthPopup(report: ReportedDepthReport, block: Pick<ReportedDepths, "depth_classes" | "peak_stage_m">, language: Language, horizon?: ReportedDepthHorizon): {
   lines: ReportedDepthLine[];
   link: { href: string; text: string; title: string; titleLang: string };
 } {
@@ -318,7 +334,7 @@ export function reportedDepthPopup(report: ReportedDepthReport, block: Pick<Repo
     { text: `${th ? "เวลา" : "When"}: ${pick(report.time.text, language)}` },
     { text: `${th ? "ตำแหน่ง" : "Location"}: ${th ? "ความเชื่อมั่น" : "confidence"} ${locationConfidenceText(report.location_confidence, language)}${report.location_tolerance_m !== null
       ? th ? ` (จุดที่รายงานอาจห่างได้ถึงราว ${report.location_tolerance_m} ม.)` : ` (the reported spot may lie up to about ${report.location_tolerance_m} m away)` : ""} · ${th ? "ตำบล" : "Subdistrict"} ${pick(report.tambon, language)}`, tone: "muted" },
-    ...reportedDepthModelText(report, block as Pick<ReportedDepths, "peak_stage_m">, language).map((text) => ({ text, tone: "muted" as const })),
+    ...reportedDepthModelText(report, block as Pick<ReportedDepths, "peak_stage_m">, language, horizon).map((text) => ({ text, tone: "muted" as const })),
     { text: `${th ? "ผลการเทียบกับแบบจำลอง" : "Comparison with the model"}: ${reportedDepthStatusText(report, language)}` },
   ];
   return {

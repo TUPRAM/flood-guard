@@ -27,3 +27,18 @@ The presentation cleanup began from HEAD `97978146827335e61495af8cdc8853bdcebfbe
 External basemap tiles are online services and are not part of the offline package. The UI now hides failed tile imagery and presents a clean local geometry/overlay background; local CSP checks exercised text and PNG 403 responses. That fallback preserves orientation to the displayed study boundary but cannot supply missing flood observations, road passability, entrance surveys or a safe route. The earlier repeated OpenStreetMap 403 imagery and deployed referrer header support a request-policy diagnosis, but the exact cause and remediation still need a fresh browser network check on the new Preview.
 
 The saved-app status reports page/cache availability only. It does not certify current maps, geocoding, routes, emergency communications or source freshness. Local ten-route offline browser/cache and bounded evidence-browser checks passed at the precommit cleanup state; neither checks an exact deployed Preview or grants permission to cache third-party tiles. The cleanup does not add restricted source bytes, detailed WorldPop age derivatives or unverified shelter capacity to Public. Exact competition/public-production export inspection and per-purpose rights review remain required before final hosted/download claims.
+
+## Note of 6 October 2026: the WorldPop 2024 age series (decision log R21)
+
+The row for the WorldPop Global2 R2025A v1 2024 `1km_ua` age series above is kept as it was written on 23 September
+2026. Two of its cells are replaced by the owners' answer to the purpose review
+(`age_data_purpose_review_v1.md`, option A with five conditions, decision log R21):
+
+- "Hosted/download derivative": tambon-level derivatives may be shown publicly, with the credit and a link to the
+  licence. The age rasters themselves stay in the external root.
+- "Downstream decision": the share of children and older adults is one of the five components of the planning score
+  under the signed protocols v1a and v1b and may be shown with its labels (modelled, not observed). Accepted group
+  access is still unavailable.
+
+The provider's page states CC BY 4.0 for WorldPop datasets and the ODbL for datasets derived from OpenStreetMap or
+Microsoft building data; it does not say which applies to this product (the review, section 11).

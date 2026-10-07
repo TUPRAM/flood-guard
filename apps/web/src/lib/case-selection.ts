@@ -20,14 +20,23 @@ const CASE_KEYS = ["aoi", "event", "version", "service", "mode", "scenario", "or
 export const STUDIO_CANDIDATE_REPORT_ROUTE = "/studio/candidate-report/";
 
 /**
- * The two Planning pages (owner request of 5 Oct 2026, decision log R19). `/command/` is the map workspace: the
- * default Planning page and the address of every "Planning" link in a header. The candidate planning overview
- * (shared case header plus `PlanningCandidateOverview`) keeps its own address below it, and pages link there when
- * they mean "the planning overview of this case". `/command/archive/`, the workspace's address before the swap,
- * only forwards to `/command/`.
+ * The Planning pages since the owner's decision of 7 Oct 2026 (decision log R24). `/command/` is the Command
+ * exercise replay of Mae Sai: the default Planning page and the address of every "Planning" link in a header. The
+ * candidate planning overview (shared case header plus `PlanningCandidateOverview`) is at `/command/planning/`, and
+ * pages link there when they mean "the planning overview of this case". The older map workspace, with its retained
+ * research ranking, is kept in Studio's archive. The earlier addresses (`/command/exercise/`, `/command/ver2/` and
+ * `/command/archive/`) only forward, with the query of the old link.
  */
 export const PLANNING_WORKSPACE_ROUTE = "/command/";
-export const PLANNING_OVERVIEW_ROUTE = "/command/ver2/";
+export const PLANNING_OVERVIEW_ROUTE = "/command/planning/";
+/** The older map workspace: historical research, shown in Studio's archive only. */
+export const RESEARCH_WORKSPACE_ROUTE = "/studio/archive/command-workspace/";
+/** Addresses that only forward, and where each one leads. */
+export const FORWARDED_ROUTES: Readonly<Record<string, string>> = {
+  "/command/exercise/": PLANNING_WORKSPACE_ROUTE,
+  "/command/ver2/": PLANNING_OVERVIEW_ROUTE,
+  "/command/archive/": RESEARCH_WORKSPACE_ROUTE,
+};
 
 export function readCaseSelection(search: string): CaseSelection {
   const query = new URLSearchParams(search);

@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "1.1",
   "schema_id": "https://floodguard.th/contracts/planning-assessment-overlay.schema.json",
   "dataset_mode": "fixture_demo",
   "operational_status": "non_operational",
@@ -841,13 +841,13 @@
           },
           {
             "trigger": "C",
-            "met": false,
-            "evidence": "Fixture: invented outcome of the serving-facility test (false)."
+            "met": null,
+            "evidence": "Fixture: the serving-facility test was not evaluated."
           },
           {
             "trigger": "D",
-            "met": false,
-            "evidence": "Fixture: invented recurrence flag (false)."
+            "met": null,
+            "evidence": "Fixture: the recurrence flag was not evaluated."
           }
         ]
       },
@@ -5742,7 +5742,7 @@
         "class_rule_version": "class_rule_v2",
         "label": "secondary",
         "binding": false,
-        "result": "no_v2_trigger",
+        "result": "not_evaluated",
         "trigger_evidence": [
           {
             "trigger": "E",
@@ -5756,18 +5756,18 @@
           },
           {
             "trigger": "B",
-            "met": false,
-            "evidence": "Fixture: invented outcome of the critical-link isolation test (false)."
+            "met": null,
+            "evidence": "Fixture: the critical-link isolation test was not evaluated."
           },
           {
             "trigger": "C",
-            "met": false,
-            "evidence": "Fixture: invented outcome of the serving-facility test (false)."
+            "met": null,
+            "evidence": "Fixture: the serving-facility test was not evaluated."
           },
           {
             "trigger": "D",
-            "met": false,
-            "evidence": "Fixture: invented recurrence flag (false)."
+            "met": null,
+            "evidence": "Fixture: the recurrence flag was not evaluated."
           }
         ]
       },

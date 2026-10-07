@@ -18,6 +18,7 @@ import {
   reportsForPlanningArea,
   type PublicReportArea,
 } from "@/lib/public-report";
+import { competitionPagesAvailable } from "@/lib/policy-links";
 import type { Language } from "@/lib/types";
 import { usePublicReports } from "@/lib/use-public-reports";
 
@@ -127,7 +128,13 @@ export function PublicReportPage({
     <section className="public-report-page" aria-labelledby="public-report-title">
       <div className="public-report-heading">
         <h1 id="public-report-title">{th ? "บันทึกสิ่งที่พบในอุปกรณ์นี้" : "Save what you observed on this device"}</h1>
-        <p>{th ? "บันทึกนี้ไม่ถูกส่งไปยังหน่วยงานหรือเผยแพร่ให้ผู้อื่น" : "This note is not sent to an agency or shared with others."}</p>
+        <p>
+          {th ? "บันทึกนี้ไม่ถูกส่งไปยังหน่วยงานหรือเผยแพร่ให้ผู้อื่น" : "This note is not sent to an agency or shared with others."}
+          {/* The competition build has the Command exercise page, which reads the same device storage; nothing is sent. */}
+          {competitionPagesAvailable() && (
+            <span data-command-exercise-note>{th ? " บันทึกนี้จะแสดงบนแผนที่ฝึกซ้อมสั่งการในอุปกรณ์นี้ด้วย" : " It also appears on this device's Command exercise map."}</span>
+          )}
+        </p>
       </div>
 
       <form className="public-report-form" onSubmit={submitReport}>

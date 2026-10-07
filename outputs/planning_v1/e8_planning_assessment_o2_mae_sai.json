@@ -1,6 +1,6 @@
 {
   "schema_version": "floodguard.planning_assessment_run_receipt.v1",
-  "generated_at_utc": "2026-10-04T19:36:40Z",
+  "generated_at_utc": "2026-10-06T13:43:38Z",
   "run_kind": "superseding_run",
   "plan_task": "E8: planning_assessment.py + writer + verifier; O1/O2/SE1 overlays; verifier passes",
   "status": "run_receipt",
@@ -82,7 +82,7 @@
       {
         "id": "worldpop-2024-age-counts",
         "name": "Age counts per unit (plan task E7): WorldPop Global2 R2025A v1, 2024, 1 km constrained age counts",
-        "licence": "CC BY 4.0 (public catalogue); public derivatives need a purpose-specific review that is not recorded",
+        "licence": "CC BY 4.0 (WorldPop's statement for its datasets; the ODbL for datasets derived from OpenStreetMap or Microsoft building data, and the product page does not say which applies to this product)",
         "attribution": "WorldPop (www.worldpop.org), University of Southampton",
         "used_for": "The dependent share of each unit, for the vulnerability component."
       }
@@ -301,7 +301,7 @@
       "worldpop_2020_100m": "public",
       "unit_boundaries": "public",
       "e1_permanent_water": "public",
-      "e7_age_exposure_table": "local",
+      "e7_age_exposure_table": "public",
       "e5_access_table": "local",
       "national_vulnerability_anchors": "public"
     },
@@ -323,8 +323,8 @@
         "basis": "No rights record exists for this input. The layer is an open-licence land-cover class; task E1 wrote it with its licence, credit and change notice (open point E8-OP5)."
       },
       "age_structure": {
-        "rights_level": "local",
-        "basis": "Protocol v1b, national_vulnerability_anchors.inputs.age_rasters.rights: 'Public catalog says CC BY 4.0. Public derivatives require purpose-specific review.' No such review is recorded in the repository, so the input is held at the local level and every overlay that carries a vulnerability record is local until the owners record the review (open point E8-OP5). The table itself has been in Git since task E7 wrote it (outputs/planning_v1/age_exposure_mae_sai_v1.json), so this level does not keep the age counts of a unit out of the repository; the owners' answer has to cover that file too."
+        "rights_level": "public",
+        "basis": "Protocol v1b, national_vulnerability_anchors.inputs.age_rasters.rights: 'Public catalog says CC BY 4.0. Public derivatives require purpose-specific review.' The review is recorded: docs/proposal_execution/age_data_purpose_review_v1.md, answered on 6 October 2026 with option A (public use) and its five conditions (decision log R21; open point E8-OP5). The per-unit component is tambon level only, carries the credit and the words 'modelled, not observed', and no display ranks units by the dependent share alone."
       },
       "national_anchors": {
         "rights_level": "public",
@@ -491,7 +491,7 @@
         "worldpop_2020_100m": "public",
         "unit_boundaries": "public",
         "e1_permanent_water": "public",
-        "e7_age_exposure_table": "local",
+        "e7_age_exposure_table": "public",
         "e5_access_table": "local",
         "national_vulnerability_anchors": "public"
       }
@@ -686,6 +686,7 @@
           "D": 0,
           "E": 8,
           "no_v2_trigger": 0,
+          "not_evaluated": 0,
           "none": 0
         },
         "SCN": {
@@ -695,6 +696,7 @@
           "D": 0,
           "E": 0,
           "no_v2_trigger": 0,
+          "not_evaluated": 0,
           "none": 0
         },
         "ENG": {
@@ -704,6 +706,7 @@
           "D": 0,
           "E": 0,
           "no_v2_trigger": 0,
+          "not_evaluated": 0,
           "none": 0
         },
         "no_lane": {
@@ -713,6 +716,7 @@
           "D": 0,
           "E": 0,
           "no_v2_trigger": 0,
+          "not_evaluated": 0,
           "none": 0
         }
       },
@@ -782,16 +786,16 @@
       "rows_without_fpps": 0,
       "obs_rows_not_event_aligned": 0,
       "inputs_by_rights_level": {
-        "local": 3,
+        "local": 2,
         "pitch": 0,
-        "public": 5,
+        "public": 6,
         "none": 0
       },
-      "content_sha256": "261bcf358a0a923d15ddee7921ae95a556d44b73c530ef3d0cf39d6c5a393dae"
+      "content_sha256": "a6d97a41e6c5659b3ea57c99c9165df7b4288c0191c8fd43a4299a8c38691e32"
     },
     "not_written_because": null,
     "rows_as_computed": null,
-    "rows_sha256": "03c3ddcf3c4740a2da6144463cc5c142251d7a3ffed523fa04cd4a99ac28d09e",
+    "rows_sha256": "9c2d7fc777cc975f66249190f6bbf5c67e420b6b899bac681963416b7d63e97d",
     "rows_sha256_note": "The SHA-256 of the rows alone, in a canonical form: every value of every unit, without the generation time, the commit and the header text of the file that holds them. Two runs that computed the same rows have the same value here. Null when no row is reported."
   },
   "whole_case_checks": {
@@ -812,12 +816,7 @@
   "development_reads": {
     "what": "Reads of the same inputs made while the code was written, before this run. They are listed because every run is reported.",
     "reads": [
-      "4 October 2026 (UTC), while the code was written: the shape of the E7 table and receipt, of the E1 receipt, of the two E1 input records, of the properties of the permanent-water layer and of the E4 receipt was read with every number masked, and the field names of the boundary layer were listed. No unit was measured, and no table of case O2 was read.",
-      "4 October 2026, 17:06:55Z to 17:07:01Z: --check-inputs for case O2. Every input was the file its receipt binds and the lane-purity comparison passed. No unit was measured.",
-      "4 October 2026, after the first run of 17:53:46Z and its --verify: the overlay that run wrote outside Git was read once, to check its rows and to write the README of the output folder. Nothing was computed from it.",
-      "4 October 2026, 17:59:25Z to 18:22:31Z: --verify of the second run of this case twice. The overlay had the same bytes each time and the verifier accepted it. Nothing was written.",
-      "4 October 2026, about 18:24Z to 18:51Z, during the review of this task: the reviewer recomputed all eight rows of this case in memory from the registered inputs with a script of their own (0 differences; no value was printed); ran --verify once (the same bytes); tried the command-line refusals (all returned 2); ran the input checks alone on a temporary copy of the inputs with 38 tamper attempts; and rebuilt the overlay of the first run once in memory to compare its SHA-256 with run_history (the same). Nothing was written.",
-      "4 October 2026, 19:17:01Z to 19:17:10Z, with the changed builder, before this run: --check-inputs for case O2. Every input was the file its receipt binds, the lane-purity comparison passed, and each unit had the same residents in the planning context and in the access table. No unit was measured against a flood layer."
+      "Before this run the agent and the owners knew the FPPS and the class of every tambon of this case from the runs of 4 and 6 October 2026 (decision log R18 and R20; docs/owner_decision_sheet_2026-10-05.md)."
     ]
   },
   "open_points": [
@@ -825,8 +824,8 @@
       "id": "E8-OP1",
       "point": "A v2 result that depends on a trigger nobody evaluated.",
       "signed_files_say": "Protocol v1a class_rules.v2: five triggers, evaluated in the order E, A, B, C, D; the first one met gives the class, and a unit that meets none gets 'no_v2_trigger'. Protocol v1b class_rule_v2_inputs defines the inputs of B, C and D, and says that the recurrence flag cannot be computed where the JRC tile is not on disk. Neither says what the v2 result is when a trigger cannot be evaluated.",
-      "what_this_task_does": "Triggers E and A are computed from the row. The outcomes of B, C and D are inputs, and no stage computes them yet. Where an earlier trigger in the order is met, the result is stated and a trigger that was not evaluated is written with met false and the words 'Not evaluated'. Where the result depends on such a trigger, the overlay is not written.",
-      "for_the_owners": "Whether an overlay may say 'not evaluated' for the v2 axis of a row (a schema change), or whether the inputs of B, C and D are built first: the single-link closures of the top-20 links, the serving-facility test and the recurrence flag. Also whether a trigger nobody evaluated may be written with met false on a row whose result an earlier trigger gives: schema 1.0 takes true or false only, so a reader of 'met' alone cannot tell it from a measured false and has to read the evidence text (point 11 of the overlay page)."
+      "what_this_task_does": "Triggers E and A are computed from the row. The outcomes of B, C and D are inputs, and no stage computes them yet. A trigger that was not evaluated is written with met null and the words 'Not evaluated', never with met false. Where the result depends on such a trigger, the v2 result is written 'not_evaluated' (overlay schema 1.1).",
+      "for_the_owners": "Answered on 6 October 2026 (decision log R20; sheet Q1, option 3): the overlay may say 'not evaluated' for the v2 axis of a row, and a trigger nobody evaluated is never written false. Still open: building the inputs of B, C and D (the single-link closures of the top-20 links, the serving-facility test and the recurrence flag), each filled in when a stage can evaluate it."
     },
     {
       "id": "E8-OP2",
@@ -859,9 +858,9 @@
     {
       "id": "E8-OP6",
       "point": "What a run reports when its overlay cannot be written.",
-      "signed_files_say": "Protocol v1a case_portfolio: 'Every cell of every case is reported whatever it shows.' Protocol v1b change_control: 'Every run is reported.' Class rule v1 is binding and class rule v2 is a secondary axis that is never binding. Overlay schema 1.0 has no row without a v2 result, except under guardrail GR1. None of them says where the rows of a run go when the overlay cannot hold them.",
-      "what_this_task_does": "The run writes the rows it computed into its report outside Git, beside the reason: every row with its components, its confidence record, its FPPS, its binding class of class rule v1, its would-be class and leave-one-component-out. A row whose v2 result depends on a trigger nobody evaluated carries no v2 result there and says 'not_evaluated'. The report is not an overlay: it names another schema and the overlay parser refuses it. The receipt in Git holds the counts for the whole case. A run whose rows fail a guardrail, a check of the whole case or the overlay parser after its units were measured writes and registers its receipt too, with the reason and no row: a row that fails a check is not reported as a result.",
-      "for_the_owners": "Whether the rows of such a run may be shown or used before the overlay exists, and under which label. Also whether a run whose rows fail a check should report those rows."
+      "signed_files_say": "Protocol v1a case_portfolio: 'Every cell of every case is reported whatever it shows.' Protocol v1b change_control: 'Every run is reported.' Class rule v1 is binding and class rule v2 is a secondary axis that is never binding. None of them says where the rows of a run go when the overlay cannot hold them.",
+      "what_this_task_does": "Since overlay schema 1.1 (decision log R20) a row whose v2 result depends on a trigger nobody evaluated is written into the overlay with the v2 result 'not_evaluated', so no run reports its rows outside an overlay for that reason any more; the receipts of the earlier runs that did so are kept. A run whose rows fail a guardrail, a check of the whole case or the overlay parser after its units were measured writes and registers its receipt, with the reason and no row: a row that fails a check is not reported as a result. The receipt field rows_as_computed is kept and is null.",
+      "for_the_owners": "Whether a run whose rows fail a check should report those rows."
     },
     {
       "id": "E8-OP7",
@@ -911,16 +910,16 @@
   ],
   "limitations": [
     "One row per unit. The minus and plus flood levels, the strict and permissive closure levels, the facility sets, the population vintage, the P5 / P95 anchors and the weight presets are axes of the ensemble (plan task E10).",
-    "Triggers B, C and D of class rule v2 are not evaluated by any stage yet. A row whose v2 result depends on one of them cannot be written, and then the overlay is not written (open point E8-OP1). The rows are then reported as computed, with no v2 result for such a row, in a report outside Git that is not an overlay (open point E8-OP6).",
+    "Triggers B, C and D of class rule v2 are not evaluated by any stage yet. Such a trigger is written 'not evaluated' (met null), and a row whose v2 result depends on one carries the v2 result 'not_evaluated' (overlay schema 1.1, decision log R20). The binding class of class rule v1 does not depend on it.",
     "A resident whose cell does not snap to the vehicle graph within 250 m is in no access count.",
-    "The equity figures, the shelter supply and the travel-time summaries of plan 7.1 are plan task E9 and are not in schema 1.0 of the overlay."
+    "The equity figures, the shelter supply and the travel-time summaries of plan 7.1 are plan task E9 and are not in this schema of the overlay."
   ],
   "implementation": {
-    "base_commit": "8056d744daf6f5932cc9d97a99cd2c0dc64d2370",
+    "base_commit": "3381b2a3b2ac15c029add0f94dc5d90c57a90a19",
     "base_commit_note": "The commit the working tree was on. The files below are the ones this run loaded, identified by their own SHA-256, committed or not.",
-    "builder_sha256": "fb7e11a444ee761aa2982581fc96a5e5b68b8a58b6c4e0e24f99c7c3955243d9",
-    "planning_assessment_module_sha256": "db226c3be13905fc164ddadd8024057f34f3f83cdf999db6fcc0391c094343bd",
-    "planning_overlay_module_sha256": "a507441b6d8991297a6460a5d5578c78942f9ea6b204362f8ac7ad5814f9e742",
+    "builder_sha256": "245e66f44c27ef4fe7023028d9f4db2367365908c8f44e661073bcbba0528077",
+    "planning_assessment_module_sha256": "488a94ce39f6c03c10279f883c9eafb6d3aecacb225b2f89e50755864bae9204",
+    "planning_overlay_module_sha256": "f3075fa1539db1287a7fc700707e25648ba62feadc61efc75bd32824ab2f91cb",
     "normalisation_module_sha256": "731e50596822cd5798fa2298d957c17bf44b3771536f3ed8c50930c43f545cfb",
     "confidence_module_sha256": "acb762cf56e41c86b4af40a5ce8108072b87e2dd7d35e86f56487bfa59eb54f0",
     "scoring_module_sha256": "b42439ca3b4b84202f422456a1d7b075dccbdc71e8dfc20aa4ecff494389a307",
@@ -930,15 +929,15 @@
     "rights_basis_module_sha256": "32419611a9d71b429c25a714ebecb7152f6d8bc9f654d0ca5af00e41d38c0c23",
     "assessment_version": "planning_assessment_v1",
     "software": {
-      "python": "3.11.8",
-      "numpy": "2.2.6",
-      "pandas": "3.0.6",
+      "python": "3.12.13",
+      "numpy": "2.5.0",
+      "pandas": "3.0.4",
       "shapely": "2.1.2"
     }
   },
   "timing_seconds": {
-    "inputs_checked": 7.3,
-    "stages_compared_unit_by_unit": 2.7,
+    "inputs_checked": 2.8,
+    "stages_compared_unit_by_unit": 2.5,
     "units_read_and_lineage": 0.0,
     "units_measured_and_assessed": 0.9
   },
@@ -947,8 +946,8 @@
       "files": [
         {
           "path": "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e8_planning_assessment/planning_assessment_overlay_o2_mae_sai.json",
-          "sha256": "5796982aad7576a89029f641b432cf2830950cf47bbcc245cf5b84fc34bf0bd8",
-          "bytes": 120565,
+          "sha256": "d5a2e3836a53180ecf4c8c148f5899b3ffa3a6e0b0359f53aecec29217b5e4d0",
+          "bytes": 120649,
           "what": "planning_assessment_overlay",
           "in_git": false,
           "publication_eligibility": "local",
@@ -965,40 +964,40 @@
     }
   },
   "timestamps": {
-    "run_started_at_utc": "2026-10-04T19:36:40Z",
-    "run_finished_at_utc": "2026-10-04T19:36:51Z",
-    "wall_time_minutes": 0.18,
+    "run_started_at_utc": "2026-10-06T13:43:38Z",
+    "run_finished_at_utc": "2026-10-06T13:43:45Z",
+    "wall_time_minutes": 0.1,
     "note": "generated_at_utc is the start of the run; the overlay carries the same time."
   },
   "supersedes": {
-    "receipt_sha256": "2ea03b0cf950ce7378dd7a6e169c31233bc6398f64fa6742e311d7a66ac02e6f",
-    "generated_at_utc": "2026-10-04T17:59:18Z",
-    "reason": "After a review: the receipt gains the licence, the credit and a change notice for UNOSAT/GISTDA product 4009; the change notice of the flood input in the overlay names the step of task E8; the receipt records the SHA-256 of the rows alone and of each lineage input; and the open points are extended. No rule and no input was changed; supersedes.rows_same compares the rows of the two runs.",
-    "result_same": true,
-    "counts_same": true,
+    "receipt_sha256": "e47f0146a79e997e54ab734a6fb0d4eaad2a930a413a16de47c3f4c8abe210be",
+    "generated_at_utc": "2026-10-06T12:56:21Z",
+    "reason": "The age counts are now at the public level: the purpose review of the 2024 age counts was answered with option A and five conditions (decision log R21; sheet Q2; open point E8-OP5). No input, no rule and no value of a row is expected to change; the rights level of the age table in the lineage changes, and with it where the overlay of a case whose other inputs are public is kept.",
+    "result_same": false,
+    "counts_same": false,
     "rows_same": true,
-    "rows_sha256_of_the_superseded_run": "03c3ddcf3c4740a2da6144463cc5c142251d7a3ffed523fa04cd4a99ac28d09e",
-    "rows_sha256_of_this_run": "03c3ddcf3c4740a2da6144463cc5c142251d7a3ffed523fa04cd4a99ac28d09e",
+    "rows_sha256_of_the_superseded_run": "9c2d7fc777cc975f66249190f6bbf5c67e420b6b899bac681963416b7d63e97d",
+    "rows_sha256_of_this_run": "9c2d7fc777cc975f66249190f6bbf5c67e420b6b899bac681963416b7d63e97d",
     "rows_of_the_superseded_run_read_from": "the file the superseded receipt binds, read back with the SHA-256 that receipt names",
     "lineage_inputs_same": true,
     "lineage_inputs_that_differ": [],
     "outputs_of_the_superseded_run": {
-      "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e8_planning_assessment/planning_assessment_overlay_o2_mae_sai.json": "fe9055eb0667367532003331302e96b3e6b02ad58c6f87178f4068dc19e853a3",
+      "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e8_planning_assessment/planning_assessment_overlay_o2_mae_sai.json": "af6e4561e9416c5d2a9067818e5ae60cb20d50463535316d064e0b5bb43b5268",
       "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e8_planning_assessment/LICENSE_NOTICE.txt": "acaafc1b83a5fe5d72a9f50e0e0efe476517328f581c5c487fb2e0a1290de1df"
     },
     "copies_kept_outside_git": [
       {
-        "path": "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e8_planning_assessment/superseded_runs/20261004T175918Z/e8_planning_assessment_o2_mae_sai.json",
-        "sha256": "2ea03b0cf950ce7378dd7a6e169c31233bc6398f64fa6742e311d7a66ac02e6f",
+        "path": "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e8_planning_assessment/superseded_runs/20261006T125621Z/e8_planning_assessment_o2_mae_sai.json",
+        "sha256": "e47f0146a79e997e54ab734a6fb0d4eaad2a930a413a16de47c3f4c8abe210be",
         "what": "receipt"
       },
       {
-        "path": "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e8_planning_assessment/superseded_runs/20261004T175918Z/planning_assessment_overlay_o2_mae_sai.json",
-        "sha256": "fe9055eb0667367532003331302e96b3e6b02ad58c6f87178f4068dc19e853a3",
+        "path": "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e8_planning_assessment/superseded_runs/20261006T125621Z/planning_assessment_overlay_o2_mae_sai.json",
+        "sha256": "af6e4561e9416c5d2a9067818e5ae60cb20d50463535316d064e0b5bb43b5268",
         "what": "file the receipt bound"
       },
       {
-        "path": "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e8_planning_assessment/superseded_runs/20261004T175918Z/LICENSE_NOTICE.txt",
+        "path": "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e8_planning_assessment/superseded_runs/20261006T125621Z/LICENSE_NOTICE.txt",
         "sha256": "acaafc1b83a5fe5d72a9f50e0e0efe476517328f581c5c487fb2e0a1290de1df",
         "what": "file the receipt bound"
       }
@@ -1039,6 +1038,90 @@
         },
         {
           "path": "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e8_planning_assessment/superseded_runs/20261004T175918Z/LICENSE_NOTICE.txt",
+          "sha256": "acaafc1b83a5fe5d72a9f50e0e0efe476517328f581c5c487fb2e0a1290de1df",
+          "what": "file the receipt bound"
+        }
+      ]
+    },
+    {
+      "generated_at_utc": "2026-10-04T19:36:40Z",
+      "receipt_sha256": "d7cdf6b5596c868f8540700fc033418721eee836393a37e88e4f8d32301d4230",
+      "superseded_because": "Overlay schema 1.1 (decision log R20, sheet Q1 option 3): a class-rule-v2 result that depends on a trigger nobody evaluated is written not_evaluated, and such a trigger is written met null. No input and no rule of the binding class changed; the same rows are expected.",
+      "result_same_as_the_run_that_replaced_it": false,
+      "rows_sha256": "03c3ddcf3c4740a2da6144463cc5c142251d7a3ffed523fa04cd4a99ac28d09e",
+      "outputs_sha256": {
+        "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e8_planning_assessment/planning_assessment_overlay_o2_mae_sai.json": "5796982aad7576a89029f641b432cf2830950cf47bbcc245cf5b84fc34bf0bd8",
+        "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e8_planning_assessment/LICENSE_NOTICE.txt": "acaafc1b83a5fe5d72a9f50e0e0efe476517328f581c5c487fb2e0a1290de1df"
+      },
+      "copies_kept_outside_git": [
+        {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e8_planning_assessment/superseded_runs/20261004T193640Z/e8_planning_assessment_o2_mae_sai.json",
+          "sha256": "d7cdf6b5596c868f8540700fc033418721eee836393a37e88e4f8d32301d4230",
+          "what": "receipt"
+        },
+        {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e8_planning_assessment/superseded_runs/20261004T193640Z/planning_assessment_overlay_o2_mae_sai.json",
+          "sha256": "5796982aad7576a89029f641b432cf2830950cf47bbcc245cf5b84fc34bf0bd8",
+          "what": "file the receipt bound"
+        },
+        {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e8_planning_assessment/superseded_runs/20261004T193640Z/LICENSE_NOTICE.txt",
+          "sha256": "acaafc1b83a5fe5d72a9f50e0e0efe476517328f581c5c487fb2e0a1290de1df",
+          "what": "file the receipt bound"
+        }
+      ]
+    },
+    {
+      "generated_at_utc": "2026-10-06T12:54:27Z",
+      "receipt_sha256": "9f649457b013d852276654e7cd4b337c7a0873bce23b72209a490a76fb993ef5",
+      "superseded_because": "Overlay schema 1.1 (decision log R20; sheet Q1, option 3): a class-rule-v2 result that depends on a trigger nobody evaluated is written not_evaluated, and such a trigger is written met null, never false. No input and no rule of the binding class was changed. This run replaces the run of 2026-10-06T12:54:27Z, which listed no reads made before it and whose reason said that the same rows were expected: the rows of this format differ from those of 4 October 2026 in the class_v2 block. supersedes.rows_same compares the rows with those of the run it replaces.",
+      "result_same_as_the_run_that_replaced_it": true,
+      "rows_sha256": "9c2d7fc777cc975f66249190f6bbf5c67e420b6b899bac681963416b7d63e97d",
+      "outputs_sha256": {
+        "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e8_planning_assessment/planning_assessment_overlay_o2_mae_sai.json": "686a94dc92d69b3bbe3a4f623309d2fb2345e2e13874edc1925a4e6f99ab160c",
+        "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e8_planning_assessment/LICENSE_NOTICE.txt": "acaafc1b83a5fe5d72a9f50e0e0efe476517328f581c5c487fb2e0a1290de1df"
+      },
+      "copies_kept_outside_git": [
+        {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e8_planning_assessment/superseded_runs/20261006T125427Z/e8_planning_assessment_o2_mae_sai.json",
+          "sha256": "9f649457b013d852276654e7cd4b337c7a0873bce23b72209a490a76fb993ef5",
+          "what": "receipt"
+        },
+        {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e8_planning_assessment/superseded_runs/20261006T125427Z/planning_assessment_overlay_o2_mae_sai.json",
+          "sha256": "686a94dc92d69b3bbe3a4f623309d2fb2345e2e13874edc1925a4e6f99ab160c",
+          "what": "file the receipt bound"
+        },
+        {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e8_planning_assessment/superseded_runs/20261006T125427Z/LICENSE_NOTICE.txt",
+          "sha256": "acaafc1b83a5fe5d72a9f50e0e0efe476517328f581c5c487fb2e0a1290de1df",
+          "what": "file the receipt bound"
+        }
+      ]
+    },
+    {
+      "generated_at_utc": "2026-10-06T12:56:21Z",
+      "receipt_sha256": "e47f0146a79e997e54ab734a6fb0d4eaad2a930a413a16de47c3f4c8abe210be",
+      "superseded_because": "The age counts are now at the public level: the purpose review of the 2024 age counts was answered with option A and five conditions (decision log R21; sheet Q2; open point E8-OP5). No input, no rule and no value of a row is expected to change; the rights level of the age table in the lineage changes, and with it where the overlay of a case whose other inputs are public is kept.",
+      "result_same_as_the_run_that_replaced_it": false,
+      "rows_sha256": "9c2d7fc777cc975f66249190f6bbf5c67e420b6b899bac681963416b7d63e97d",
+      "outputs_sha256": {
+        "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e8_planning_assessment/planning_assessment_overlay_o2_mae_sai.json": "af6e4561e9416c5d2a9067818e5ae60cb20d50463535316d064e0b5bb43b5268",
+        "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e8_planning_assessment/LICENSE_NOTICE.txt": "acaafc1b83a5fe5d72a9f50e0e0efe476517328f581c5c487fb2e0a1290de1df"
+      },
+      "copies_kept_outside_git": [
+        {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e8_planning_assessment/superseded_runs/20261006T125621Z/e8_planning_assessment_o2_mae_sai.json",
+          "sha256": "e47f0146a79e997e54ab734a6fb0d4eaad2a930a413a16de47c3f4c8abe210be",
+          "what": "receipt"
+        },
+        {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e8_planning_assessment/superseded_runs/20261006T125621Z/planning_assessment_overlay_o2_mae_sai.json",
+          "sha256": "af6e4561e9416c5d2a9067818e5ae60cb20d50463535316d064e0b5bb43b5268",
+          "what": "file the receipt bound"
+        },
+        {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/o2_mae_sai/e8_planning_assessment/superseded_runs/20261006T125621Z/LICENSE_NOTICE.txt",
           "sha256": "acaafc1b83a5fe5d72a9f50e0e0efe476517328f581c5c487fb2e0a1290de1df",
           "what": "file the receipt bound"
         }

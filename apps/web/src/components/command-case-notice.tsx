@@ -38,7 +38,13 @@ export function readCaseCatalogue(value: unknown): CaseCatalogue | null {
  * Mae Sai comparison. This line says which case the link named and that the map does not show it, and leads to the
  * planning overview of that case. It shows no score and no class.
  */
-export function CommandCaseNoticeLine({ search, language, catalog }: { search: string; language: Language; catalog: CaseCatalogue | null }) {
+export function CommandCaseNoticeLine({ search, language, catalog, page = "workspace" }: {
+  search: string;
+  language: Language;
+  catalog: CaseCatalogue | null;
+  /** Which page shows the line: the older map workspace, or the Command exercise replay at /command/. */
+  page?: "workspace" | "exercise";
+}) {
   const selection = readCaseSelection(search);
   if (!selection.aoi && !selection.event) return null;
   const th = language === "th";
@@ -56,7 +62,9 @@ export function CommandCaseNoticeLine({ search, language, catalog }: { search: s
             ? (th ? `กรณีศึกษาที่เลือก: ${name}` : `Selected case: ${name}.`)
             : (th ? "ลิงก์ที่เปิดหน้านี้ระบุกรณีศึกษาไว้" : "The link that opened this page names a study case.")}
         </strong>{" "}
-        {th
+        {page === "exercise" ? (th
+          ? "หน้านี้เป็นการฝึกซ้อมย้อนเหตุการณ์น้ำท่วมแม่สาย เดือนกันยายน 2567 (2024) และไม่ได้แสดงผลของกรณีศึกษานั้น"
+          : "This page replays the Mae Sai flood of September 2024 as an exercise. It does not show the results of that case.") : th
           ? "แผนที่นี้ไม่ได้แสดงผลของกรณีศึกษานั้น แสดงเฉพาะผลเปรียบเทียบงานวิจัยแม่สายที่เก็บไว้เท่านั้น"
           : "This map does not show the results of that case. It shows the retained Mae Sai research comparison only."}
       </p>
@@ -70,7 +78,7 @@ export function CommandCaseNoticeLine({ search, language, catalog }: { search: s
 }
 
 /** The line above, with the published catalogue of cases. Nothing is requested when the address names no case. */
-export function CommandCaseNotice({ search, language }: { search: string | null; language: Language }) {
+export function CommandCaseNotice({ search, language, page = "workspace" }: { search: string | null; language: Language; page?: "workspace" | "exercise" }) {
   const [catalog, setCatalog] = useState<CaseCatalogue | null>(null);
   const selection = readCaseSelection(search ?? "");
   const named = Boolean(selection.aoi || selection.event);
@@ -86,5 +94,5 @@ export function CommandCaseNotice({ search, language }: { search: string | null;
     return () => controller.abort();
   }, [named]);
 
-  return search === null ? null : <CommandCaseNoticeLine search={search} language={language} catalog={catalog} />;
+  return search === null ? null : <CommandCaseNoticeLine search={search} language={language} catalog={catalog} page={page} />;
 }

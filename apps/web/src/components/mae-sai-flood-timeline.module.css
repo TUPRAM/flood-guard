@@ -130,10 +130,6 @@
 .envelopeCaption a { color: inherit; font-weight: 650; }
 .mapStatus { position: absolute; z-index: 900; top: .75rem; left: 50%; transform: translateX(-50%); margin: 0; padding: .45rem .8rem; border-radius: 999px; background: #fff; color: #17253b; font-size: .78rem; font-weight: 600; box-shadow: 0 4px 16px rgb(15 23 42 / 16%); white-space: nowrap; }
 .mapWarning { background: #fff4dd; color: #815313; white-space: normal; max-width: calc(100% - 2rem); text-align: center; }
-.tooltip { display: grid; gap: .15rem; min-width: 180px; max-width: 260px; white-space: normal; line-height: 1.45; }
-.tooltip strong { font-size: .76rem; }
-.tooltip [data-tone="alert"] { color: #b3261e; font-weight: 650; }
-.tooltip [data-tone="muted"] { color: #5a6a80; }
 
 .dock { min-height: 150px; padding: .55rem 1rem .8rem; border-top: 1px solid #e5eaf2; }
 .play, .button { display: inline-flex; align-items: center; gap: .5rem; min-height: 44px; padding: 0 1.1rem; border: 0; border-radius: .6rem; background: #0c2740; color: #fff; font-weight: 700; font-size: .86rem; cursor: pointer; }
@@ -461,7 +457,6 @@ details.card summary { cursor: pointer; font-weight: 700; color: #17253b; min-he
 .gaugeIcon:focus-visible { outline: 3px solid #e8a526; outline-offset: 2px; border-radius: 50%; }
 :is(.legend, .toggleSwatch) i.legendGauge { display: inline-grid; place-items: center; width: 16px; height: 16px; background: none; }
 :is(.legend, .toggleSwatch) i.legendGauge svg { fill: #1f7a8c; stroke: #fff; stroke-width: 1.6; }
-.popupFrame :global(.leaflet-popup-content) { margin: .7rem .8rem; }
 /* Reported depths (news, not surveyed): a speech bubble with two wave lines, so it never reads as a shelter, a gauge or a facility. */
 /* The box is 28 px around the 22 px bubble: a hit target of at least 24 px. A marker holding several place records shows how many. */
 .reportedDepthIcon { display: grid; place-items: center; background: none; border: 0; filter: drop-shadow(0 1px 2px rgb(15 23 42 / 45%)); }
@@ -470,8 +465,9 @@ details.card summary { cursor: pointer; font-weight: 700; color: #17253b; min-he
 .reportedDepthIcon:focus-visible { outline: 3px solid #e8a526; outline-offset: 2px; border-radius: 4px; }
 :is(.legend, .toggleSwatch) i.legendReportedDepth { display: inline-grid; place-items: center; width: 16px; height: 16px; background: none; }
 :is(.legend, .toggleSwatch) i.legendReportedDepth svg { fill: #9a3412; stroke: #fff; stroke-width: 1.5; }
-.popup .reportedDepthReport + .reportedDepthReport { margin-top: .45rem; padding-top: .45rem; border-top: 1px solid #e3e8f1; }
-.popup .reportedDepthReport { display: grid; gap: .2rem; }
+/* One section per place record inside a map popup (the popup's own styles are in mae-sai-map-kit.module.css). */
+.reportedDepthReport + .reportedDepthReport { margin-top: .45rem; padding-top: .45rem; border-top: 1px solid #e3e8f1; }
+.reportedDepthReport { display: grid; gap: .2rem; }
 .reportedDepthList li { overflow-wrap: anywhere; }
 
 /* --- Observed evidence: VIIRS daily maps and hourly rain ---------------------------------------- */
@@ -500,13 +496,6 @@ details.card summary { cursor: pointer; font-weight: 700; color: #17253b; min-he
 .rainMissing { fill: #b8c2d0; }
 .obsList i.rainSwatch { width: 10px; height: 10px; border: 0; border-radius: 2px; background: #1f7a8c; }
 .rainNow { font-weight: 650; color: #1c4f59; font-variant-numeric: tabular-nums; }
-.popup { display: grid; gap: .2rem; font-size: .76rem; line-height: 1.45; color: #223650; }
-.popup strong { font-size: .84rem; color: #17253b; }
-.popup p { margin: 0 !important; }
-.popup [data-tone="muted"] { color: #5a6a80; }
-.popup [data-tone="alert"] { color: #b3261e; font-weight: 650; }
-.popup ul { display: grid; gap: .2rem; margin: .3rem 0 0; padding-left: 1rem; }
-.popup a { color: #2454b8; overflow-wrap: anywhere; }
 
 .errorBox { margin: 1rem 0 3rem; padding: 1.4rem 1.5rem; border: 1px solid #f0c9c4; border-radius: 1rem; background: #fff; }
 .errorBox h2 { margin: 0 0 .4rem; font-size: 1.1rem; }

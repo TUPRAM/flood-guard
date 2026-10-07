@@ -1,0 +1,15 @@
+/* Popup and tooltip content of the Mae Sai replay maps (Studio and the Command exercise replay). The elements are
+   built from text nodes by mae-sai-map-kit.tsx; a page may add its own rules on top through the classes it exports. */
+.tooltip { display: grid; gap: .15rem; min-width: 180px; max-width: 260px; white-space: normal; line-height: 1.45; }
+.tooltip strong { font-size: .76rem; }
+.tooltip [data-tone="alert"] { color: #b3261e; font-weight: 650; }
+.tooltip [data-tone="muted"] { color: #5a6a80; }
+
+.popupFrame :global(.leaflet-popup-content) { margin: .7rem .8rem; }
+.popup { display: grid; gap: .2rem; font-size: .76rem; line-height: 1.45; color: #223650; }
+.popup strong { font-size: .84rem; color: #17253b; }
+.popup p { margin: 0 !important; }
+.popup [data-tone="muted"] { color: #5a6a80; }
+.popup [data-tone="alert"] { color: #b3261e; font-weight: 650; }
+.popup ul { display: grid; gap: .2rem; margin: .3rem 0 0; padding-left: 1rem; }
+.popup a { color: #2454b8; overflow-wrap: anywhere; }

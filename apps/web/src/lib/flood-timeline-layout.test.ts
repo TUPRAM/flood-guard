@@ -1,20 +1,28 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  CLEAR_GAP_PX,
+  CLEAR_MARGIN_PX,
+  CLEAR_MIN_PX,
+  clearRect,
+  clearRectPadding,
   COMPARE_LABEL_GAP_PX,
   COMPARE_LABEL_MIN_PX,
   compareLabelRoom,
+  panIntoRect,
   POPUP_CHROME_PX,
   POPUP_MAX_HEIGHT_PX,
   POPUP_MIN_HEIGHT_PX,
   POPUP_MIN_WIDTH_PX,
   POPUP_NARROW_MAP_PX,
   popupFit,
+  popupFitInRect,
   ZOOM_CLEARANCE_PX,
   TIP_CLOSED,
   tipOpen,
   tipReducer,
   tooltipShift,
+  type ScreenRect,
   type TipEvent,
 } from "./flood-timeline-layout";
 
@@ -150,5 +158,129 @@ describe("imagery swipe side labels", () => {
     expect(compareLabelRoom(0, 50)).toEqual({ left: 0, right: 0 });
     expect(compareLabelRoom(326, -20)).toEqual({ left: 0, right: 300 });
     expect(compareLabelRoom(326, 140)).toEqual({ left: 246, right: 0 });
+  });
+});
+
+// The Command exercise replay at its two design sizes. The map fills the screen under the banner, so the boxes below
+// are in the map's own coordinates: the screen's less the banner (36 px on the desktop, 44 px on the tablet).
+const DESKTOP = { width: 1440, height: 764 };
+const desktop = {
+  clock: { left: 12, top: 12, right: 432, bottom: 176 },
+  table: { left: 12, top: 184, right: 432, bottom: 656 },
+  nav: { left: 1028, top: 12, right: 1428, bottom: 56 },
+  rail: { left: 1384, top: 194, right: 1428, bottom: 522 },
+  dock: { left: 12, top: 664, right: 1428, bottom: 752 },
+} satisfies Record<string, ScreenRect>;
+const TABLET = { width: 1024, height: 656 };
+const tablet = {
+  clock: { left: 12, top: 12, right: 332, bottom: 128 },
+  table: { left: 12, top: 136, right: 332, bottom: 552 },
+  menu: { left: 968, top: 12, right: 1012, bottom: 56 },
+  rail: { left: 968, top: 186, right: 1012, bottom: 470 },
+  dock: { left: 12, top: 572, right: 1012, bottom: 644 },
+} satisfies Record<string, ScreenRect>;
+const width = (rect: ScreenRect) => rect.right - rect.left;
+const height = (rect: ScreenRect) => rect.bottom - rect.top;
+const inside = (inner: ScreenRect, outer: ScreenRect) => inner.left >= outer.left && inner.top >= outer.top && inner.right <= outer.right && inner.bottom <= outer.bottom;
+const overlaps = (a: ScreenRect, b: ScreenRect) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+
+describe("clear rectangle of a map under floating panels", () => {
+  it("is the map less its margin when nothing covers it", () => {
+    expect(clearRect(DESKTOP, [])).toEqual({ left: CLEAR_MARGIN_PX, top: CLEAR_MARGIN_PX, right: 1440 - CLEAR_MARGIN_PX, bottom: 764 - CLEAR_MARGIN_PX });
+    // A hidden panel has no area and takes nothing away.
+    expect(clearRect(DESKTOP, [{ left: 0, top: 0, right: 0, bottom: 0 }])).toEqual(clearRect(DESKTOP, []));
+  });
+
+  it("leaves the plan's 928 px of clear map between the left column and the tool rail on the desktop", () => {
+    const rect = clearRect(DESKTOP, Object.values(desktop));
+    expect(rect).toEqual({ left: 432 + CLEAR_GAP_PX, top: 56 + CLEAR_GAP_PX, right: 1384 - CLEAR_GAP_PX, bottom: 664 - CLEAR_GAP_PX });
+    expect(width(rect)).toBe(928);
+    expect(height(rect)).toBe(584);
+    for (const panel of Object.values(desktop)) expect(overlaps(rect, panel)).toBe(false);
+    // The order of the panels does not change the result.
+    expect(clearRect(DESKTOP, Object.values(desktop).reverse())).toEqual(rect);
+  });
+
+  it("gives up width, not height, for a card or an open legend beside the tool rail", () => {
+    const rest = clearRect(DESKTOP, Object.values(desktop));
+    // The right card of a later stage: 340 px wide, left of the rail, under the navigation.
+    const card = { left: 1036, top: 64, right: 1376, bottom: 584 };
+    const withCard = clearRect(DESKTOP, [...Object.values(desktop), card]);
+    // With the card open the rectangle ends left of the navigation too, so it keeps the height under the banner.
+    expect(withCard).toEqual({ ...rest, top: CLEAR_MARGIN_PX, right: desktop.nav.left - CLEAR_GAP_PX });
+    expect(width(withCard)).toBe(572);
+    for (const panel of [...Object.values(desktop), card]) expect(overlaps(withCard, panel)).toBe(false);
+    // The open legend: 280 x 240 at the bottom right, left of the rail.
+    const legend = { left: 1096, top: 416, right: 1376, bottom: 656 };
+    const withLegend = clearRect(DESKTOP, [...Object.values(desktop), legend]);
+    expect(withLegend).toEqual({ ...rest, right: legend.left - CLEAR_GAP_PX });
+    expect(overlaps(withLegend, legend)).toBe(false);
+  });
+
+  it("opens up in focus mode, where the left column and the time dock are one line each", () => {
+    const focus = [
+      { left: 12, top: 12, right: 432, bottom: 56 }, { left: 12, top: 64, right: 432, bottom: 108 },
+      desktop.nav, desktop.rail, { left: 12, top: 708, right: 1428, bottom: 752 },
+    ];
+    const rect = clearRect(DESKTOP, focus);
+    expect(rect).toEqual({ left: CLEAR_MARGIN_PX, top: 108 + CLEAR_GAP_PX, right: 1384 - CLEAR_GAP_PX, bottom: 708 - CLEAR_GAP_PX });
+    expect(width(rect) * height(rect)).toBeGreaterThan(1.4 * 928 * 584);
+    for (const panel of focus) expect(overlaps(rect, panel)).toBe(false);
+  });
+
+  it("leaves the plan's 612 px on the tablet, with the menu button above the rail", () => {
+    const rect = clearRect(TABLET, Object.values(tablet));
+    expect(rect).toEqual({ left: 332 + CLEAR_GAP_PX, top: CLEAR_MARGIN_PX, right: 968 - CLEAR_GAP_PX, bottom: 572 - CLEAR_GAP_PX });
+    expect(width(rect)).toBe(612);
+    for (const panel of Object.values(tablet)) expect(overlaps(rect, panel)).toBe(false);
+  });
+
+  it("falls back to the map less its margin when the panels leave too little", () => {
+    const small = { width: 400, height: 300 };
+    const covered = [{ left: 0, top: 0, right: 300, bottom: 300 }, { left: 300, top: 0, right: 400, bottom: 250 }];
+    const rect = clearRect(small, covered);
+    expect(rect).toEqual({ left: CLEAR_MARGIN_PX, top: CLEAR_MARGIN_PX, right: 400 - CLEAR_MARGIN_PX, bottom: 300 - CLEAR_MARGIN_PX });
+    expect(width(rect)).toBeGreaterThanOrEqual(CLEAR_MIN_PX.width);
+    // A map smaller than twice the margin never gives a rectangle turned inside out.
+    const tiny = clearRect({ width: 10, height: 10 }, []);
+    expect(tiny.right).toBeGreaterThanOrEqual(tiny.left);
+    expect(tiny.bottom).toBeGreaterThanOrEqual(tiny.top);
+  });
+
+  it("turns into Leaflet paddings for a fit or a pan", () => {
+    const rect = clearRect(DESKTOP, Object.values(desktop));
+    expect(clearRectPadding(rect, DESKTOP)).toEqual({ paddingTopLeft: [444, 68], paddingBottomRight: [1440 - 1372, 764 - 652] });
+    expect(clearRectPadding({ left: -4, top: 2.4, right: 2000, bottom: 700.6 }, DESKTOP)).toEqual({ paddingTopLeft: [0, 2], paddingBottomRight: [0, 63] });
+  });
+
+  it("pans a point under a panel into the clear rectangle, and leaves a point inside it alone", () => {
+    const rect = clearRect(DESKTOP, Object.values(desktop));
+    expect(panIntoRect({ x: 700, y: 300 }, rect)).toEqual({ x: 0, y: 0 });
+    // Under the table (left of the rectangle): the map content must move right, a negative pan.
+    expect(panIntoRect({ x: 200, y: 300 }, rect, 24)).toEqual({ x: 200 - (444 + 24), y: 0 });
+    // Under the dock and the rail at once.
+    expect(panIntoRect({ x: 1400, y: 700 }, rect, 24)).toEqual({ x: 1400 - (1372 - 24), y: 700 - (652 - 24) });
+    // After the pan the point lies inside the rectangle.
+    for (const point of [{ x: 0, y: 0 }, { x: 1439, y: 763 }, { x: 200, y: 700 }]) {
+      const pan = panIntoRect(point, rect, 24);
+      const moved = { left: point.x - pan.x, top: point.y - pan.y, right: point.x - pan.x, bottom: point.y - pan.y };
+      expect(inside(moved, rect)).toBe(true);
+    }
+    // A rectangle narrower than twice the inset brings the point to its middle.
+    expect(panIntoRect({ x: 0, y: 0 }, { left: 100, top: 100, right: 120, bottom: 300 }, 24)).toEqual({ x: -110, y: -124 });
+  });
+
+  it("sizes a popup and its pan paddings for the clear rectangle", () => {
+    const rect = clearRect(DESKTOP, Object.values(desktop));
+    const fit = popupFitInRect(rect, DESKTOP, 300);
+    expect(fit.maxWidth).toBe(300);
+    expect(fit.maxHeight).toBe(POPUP_MAX_HEIGHT_PX);
+    expect(fit.autoPanPaddingTopLeft).toEqual([444, 68]);
+    expect(fit.autoPanPaddingBottomRight).toEqual([68, 112]);
+    // A small rectangle caps the popup so that popup, chrome and tip fit inside it.
+    const tight = popupFitInRect({ left: 20, top: 20, right: 260, bottom: 240 }, { width: 280, height: 260 }, 300);
+    expect(tight.maxWidth).toBe(240 - POPUP_CHROME_PX.x);
+    expect(tight.maxHeight).toBe(220 - POPUP_CHROME_PX.y);
+    expect(popupFitInRect({ left: 0, top: 0, right: 100, bottom: 60 }, { width: 100, height: 60 }, 300)).toMatchObject({ maxWidth: POPUP_MIN_WIDTH_PX, maxHeight: POPUP_MIN_HEIGHT_PX });
   });
 });

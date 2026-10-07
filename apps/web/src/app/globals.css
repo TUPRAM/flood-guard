@@ -2763,7 +2763,8 @@ button.model-card { cursor: pointer; }
 }
 
 @media (min-width: 720px) {
-  .public-app-header { min-height: 56px; }
+  /* The same height as the header of the Planning and Studio pages (workspace-header.module.css): 65 px with its line. */
+  .public-app-header { min-height: 65px; }
   /* Match the capped bottom nav so the map overlays share its column. */
   .public-map-rail,
   .public-map-dock {

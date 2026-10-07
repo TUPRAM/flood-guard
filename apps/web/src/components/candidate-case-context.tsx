@@ -66,7 +66,7 @@ export function CandidateCaseContext({ role }: { role: "planning" | "studio" }) 
       <nav aria-label={th ? "พื้นที่หลัก" : "Main areas"}>
         <a href={caseHref("/public/", query)}>{th ? "ประชาชน" : "Public"}</a>
         {/* The Planning link is the map workspace at /command/. The planning overview that carries this header is below it, at
-            /command/ver2/, so there the link marks the current section and does not name the current page. */}
+            /command/planning/, so there the link marks the current section and does not name the current page. */}
         <a href={caseHref(PLANNING_WORKSPACE_ROUTE, query)} aria-current={role === "planning" ? "true" : undefined}>{th ? "การวางแผน" : "Planning"}</a>
         <a href={caseHref(STUDIO_CANDIDATE_REPORT_ROUTE, query)} aria-current={role === "studio" ? "page" : undefined}>{th ? "หลักฐาน" : "Studio"}</a>
       </nav>

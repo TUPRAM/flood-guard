@@ -621,3 +621,30 @@ describe("Planning assessment overlay: the TypeScript shape against the JSON sch
     expect(planningOverlayProblems(withExtra)).toEqual([{ code: "structure", path: "$.rows[0].priority_rank", message: "is not a field of the overlay schema" }]);
   });
 });
+
+describe("Planning assessment overlay: a bundler prints the signed numbers again", () => {
+  // A production bundle shipped the frame weight 0.39999999999999997 (0.30 / 0.75) as `.4`, one unit in the last
+  // place away, and the parser, which compared with ===, refused every real overlay in the browser. The tests read
+  // the JSON module itself, so they passed. These cases state the weight both ways and expect the same answer.
+  const path = ["scoring_frame", "leave_one_component_out_weights", "exposure_0_100", "flood_likelihood_0_100"];
+
+  it("holds the weight in the form Python wrote, and it is not the float 0.4", () => {
+    const written = (readFixture() as unknown as PlanningAssessmentOverlay).scoring_frame.leave_one_component_out_weights.exposure_0_100.flood_likelihood_0_100;
+    expect(written).toBe(0.39999999999999997);
+    expect(written).not.toBe(0.4);
+  });
+
+  it("accepts an overlay whose weight is one unit in the last place from the signed constant", () => {
+    const overlay = patched([{ path, set: 0.4 }]);
+    expect(planningOverlayProblems(overlay)).toEqual([]);
+    expect(parsePlanningAssessmentOverlay(overlay).rows.length).toBeGreaterThan(0);
+  });
+
+  it("still refuses a weight that is another signed value, or any value a reader could tell apart", () => {
+    for (const other of [0.4000001, 0.39, 0.3]) {
+      const codes = planningOverlayProblems(patched([{ path, set: other }])).map((problem) => problem.code);
+      expect(codes, String(other)).toContain("structure");
+      expect(codes, String(other)).toContain("frame_not_protocol_frame");
+    }
+  });
+});

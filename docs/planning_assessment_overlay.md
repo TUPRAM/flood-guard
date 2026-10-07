@@ -1,4 +1,4 @@
-# Planning assessment overlay (schema 1.0)
+# Planning assessment overlay (schema 1.1)
 
 The planning assessment overlay is the file the planning engine writes for one case and every screen reads
 (restructuring plan v2, section 7.1, task E11). This page says what is in it, who refuses what, and where each rule
@@ -52,7 +52,7 @@ One row is one unit in one lane with one flood input and one scenario.
 | `confidence` | The record `confidence.derive_confidence` returns: class, kind, basis of C1 to C8, failed conditions, reason code, the GR1 record, measurements and thresholds | v1a `confidence_rule_v1` |
 | `action_class`, `action_reason_code` | The binding class (rule v1) and its reason code | v1a `class_rules.v1` |
 | `would_be_class` | The scorer rerun with confidence medium, for low-confidence rows. Never binding | v1a `class_rules.v1.would_be_class` |
-| `class_v2` | The v2 result, labelled `secondary`, with `binding: false` and the evidence of the five triggers | v1a `class_rules.v2`, decision D6 |
+| `class_v2` | The v2 result, labelled `secondary`, with `binding: false` and the evidence of the five triggers. A trigger no stage evaluated has `met: null`, never `false`; a result that depends on such a trigger is `not_evaluated` (schema 1.1) | v1a `class_rules.v2`, decisions D6 and R20 |
 | `leave_one_component_out` | For each component, the FPPS and the v1 class without it | v1a `scoring_frame.leave_one_component_out` |
 | `headline_stability` | `not_evaluated`, `headline_eligible` or `unstable_verify`, with the class retention | v1a guardrail GR8 |
 | `source_timestamp`, `assumptions` | Per row, as AGENTS.md asks of every output | AGENTS.md |
@@ -92,7 +92,7 @@ records.
 
 ## What is refused
 
-Both parsers give the same code for the same refusal. The 113 refusal cases in the shared file are run by both
+Both parsers give the same code for the same refusal. The 118 refusal cases in the shared file are run by both
 test suites, except the one case only Python can see (a candidate without the protocol files). Every `if` / `then` /
 `else` of the schema is tripped by at least one of them.
 
@@ -114,7 +114,7 @@ test suites, except the one case only Python can see (a candidate without the pr
 | A class that class rule v1 does not give | `class_rule_mismatch` | v1a `class_rules.v1.rules` |
 | A reason code that does not belong to the class | `reason_code_mismatch` | v1a `class_rules.v1.reason_codes` |
 | A would-be class on a row that is not low, none on one that is, or one the rule does not give | `would_be_class_mismatch` | v1a `class_rules.v1.would_be_class` |
-| A v2 result that is not the first trigger met in the order E, A, B, C, D, or a trigger the row contradicts | `v2_result_inconsistent` | v1a `class_rules.v2`, reading DR-A08 |
+| A v2 result that is not the first trigger met in the order E, A, B, C, D; a class or "no v2 trigger met" where a trigger that was not evaluated stands before the first one met; `not_evaluated` where every trigger was evaluated; trigger E not evaluated; or a trigger the row contradicts | `v2_result_inconsistent` | v1a `class_rules.v2`, reading DR-A08, decision R20 |
 | An assumed component in a row | `assumed_component_in_a_row` | v1a reading DR-A05 |
 | A component present but recorded as not computed, or a synthetic value outside an engine row | `component_mismatch` | v1a `confidence_rule_v1` C5, lane ENG |
 | An FPPS that is not the weighted sum; a leave-one-out value or class that is not either | `fpps_mismatch`, `leave_one_component_out_mismatch` | v1a `scoring_frame` |
@@ -194,7 +194,11 @@ before task E8 writes a real overlay.
     cells S1 to S9 built on a base case), engine rows and the T4 placeholder are not compared with the case: the
     protocols do not say which overlay carries them, and a scenario cell has no case id of its own.
 11. **v2 when a trigger cannot be evaluated.** v1b notes that the recurrence flag cannot be computed where the JRC
-    tile is not on disk. The schema requires all five triggers with a true or false outcome.
+    tile is not on disk. Schema 1.0 required all five triggers with a true or false outcome. **Answered on
+    6 October 2026 (decision R20, sheet Q1, option 3):** schema 1.1 writes `met: null` for a trigger no stage
+    evaluated, and `result: "not_evaluated"` where the result depends on it. This changes the file format, not a
+    rule of the protocols: the binding class does not depend on the secondary one, and the protocols state no v2
+    result for a trigger nobody tested. Each trigger is filled in when a stage can evaluate it.
 12. **v2 triggers the overlay cannot check.** Trigger E is recomputed from the row. For A, C and D the overlay
     holds only part of the inputs (no P75 comparison, no facility, link or recurrence data), so the validators
     check only that a trigger is not met where the row rules it out. Whether the overlay should carry those inputs

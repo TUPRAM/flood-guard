@@ -55,7 +55,13 @@ from typing import Any
 
 from floodguard import closure_rules, flood_inputs, planning_assessment, sensitivity
 from floodguard.normalisation import frame_record, leave_one_component_out_weights, read_protocol_in_force
-from floodguard.planning_overlay import GUARDRAIL_GR8, HEADLINE_ELIGIBLE, HEADLINE_NOT_EVALUATED, HEADLINE_UNSTABLE
+from floodguard.planning_overlay import (
+    GUARDRAIL_GR8,
+    HEADLINE_ELIGIBLE,
+    HEADLINE_NOT_EVALUATED,
+    HEADLINE_UNSTABLE,
+    V2_NOT_EVALUATED,
+)
 from floodguard.scoring import SCORE_COMPONENTS, validate_weights
 
 ENSEMBLE_VERSION = "uncertainty_ensemble_v1"
@@ -1000,13 +1006,16 @@ def _one_at_a_time(row: Mapping[str, Any] | None, header: Mapping[str, Any], gri
                             "fpps_0_100": scored["fpps_0_100"], "action_class": scored["action_class"],
                             "action_reason_code": scored["action_reason_code"]})
     v2 = row["class_v2"]
+    # Overlay schema 1.1 writes a v2 result that depends on a trigger nobody evaluated as "not_evaluated". Here it
+    # stays what this table has always said for such a row: no result, with the status beside it.
+    v2_stated = v2 is not None and v2["result"] != V2_NOT_EVALUATED
     return {
         **block,
         "flood_likelihood_anchor": anchors,
         "class_rule_v1_and_v2": {
             "v1_class": row["action_class"],
-            "v2_result": None if v2 is None else v2.get("result"),
-            "v2_status": None if v2 is None else v2.get("status", "evaluated"),
+            "v2_result": v2["result"] if v2_stated else None,
+            "v2_status": None if v2 is None else ("evaluated" if v2_stated else V2_NOT_EVALUATED),
             "note": "Class rule v2 is a secondary axis and is never binding. Its result is that of the row of task E8; "
                     "a result that depends on a trigger nobody evaluated is not stated (open point E8-OP1).",
         },
@@ -1090,8 +1099,7 @@ def run_ensemble(
         for unit in entry:
             try:
                 rows[key][unit.unit_id] = planning_assessment.assess_unit(
-                    rules, case, flood, closure, unit, routing_context_id=routing_context_id, frame_header=header,
-                    v2_not_evaluated_ok=True)
+                    rules, case, flood, closure, unit, routing_context_id=routing_context_id, frame_header=header)
             except ValueError as error:
                 rows[key][unit.unit_id] = MeasurementFailure("row_assembly", type(error).__name__, str(error))
     if unit_order is None:

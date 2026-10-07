@@ -51,9 +51,6 @@ files of another. Nothing is written under ``apps/web/public/``::
 Every run is reported. Once a unit has been measured against the flood input, the run writes and registers a
 receipt whatever happens next, and returns 3 when it wrote no overlay:
 
-* the v2 result of a row depends on a trigger nobody evaluated (open point E8-OP1): the receipt says so, and a
-  report outside Git names the units and holds every row as the run computed it, with no v2 result for the rows
-  concerned (open point E8-OP6). That report is not an overlay;
 * a guardrail, a check of the whole case, the overlay parser or a measurement refuses the rows: the receipt
   gives the stage and a code, the report outside Git gives the message, and no row is reported.
 
@@ -200,12 +197,12 @@ ASSUMPTIONS = [
 LIMITATIONS = [
     "One row per unit. The minus and plus flood levels, the strict and permissive closure levels, the facility sets, "
     "the population vintage, the P5 / P95 anchors and the weight presets are axes of the ensemble (plan task E10).",
-    "Triggers B, C and D of class rule v2 are not evaluated by any stage yet. A row whose v2 result depends on one "
-    "of them cannot be written, and then the overlay is not written (open point E8-OP1). The rows are then reported "
-    "as computed, with no v2 result for such a row, in a report outside Git that is not an overlay (open point E8-OP6).",
+    "Triggers B, C and D of class rule v2 are not evaluated by any stage yet. Such a trigger is written 'not "
+    "evaluated' (met null), and a row whose v2 result depends on one carries the v2 result 'not_evaluated' (overlay "
+    "schema 1.1, decision log R20). The binding class of class rule v1 does not depend on it.",
     "A resident whose cell does not snap to the vehicle graph within 250 m is in no access count.",
     "The equity figures, the shelter supply and the travel-time summaries of plan 7.1 are plan task E9 and are not "
-    "in schema 1.0 of the overlay.",
+    "in this schema of the overlay.",
 ]
 NOT_COMPUTED = [
     "ensemble cell", "class retention and headline eligibility", "the outcomes of class rule v2 triggers B, C and D",
@@ -313,15 +310,15 @@ MAE_SAI_LINEAGE: Mapping[str, LineageText] = {
     ),
     "age_structure": LineageText(
         "Age counts per unit (plan task E7): WorldPop Global2 R2025A v1, 2024, 1 km constrained age counts",
-        "CC BY 4.0 (public catalogue); public derivatives need a purpose-specific review that is not recorded",
+        "CC BY 4.0 (WorldPop's statement for its datasets; the ODbL for datasets derived from OpenStreetMap or Microsoft "
+        "building data, and the product page does not say which applies to this product)",
         "WorldPop (www.worldpop.org), University of Southampton",
-        rights.LOCAL_LEVEL,
+        rights.PUBLIC_LEVEL,
         "Protocol v1b, national_vulnerability_anchors.inputs.age_rasters.rights: 'Public catalog says CC BY 4.0. Public "
-        "derivatives require purpose-specific review.' No such review is recorded in the repository, so the input is "
-        "held at the local level and every overlay that carries a vulnerability record is local until the owners "
-        "record the review (open point E8-OP5). The table itself has been in Git since task E7 wrote it "
-        "(outputs/planning_v1/age_exposure_mae_sai_v1.json), so this level does not keep the age counts of a unit out "
-        "of the repository; the owners' answer has to cover that file too.",
+        "derivatives require purpose-specific review.' The review is recorded: "
+        "docs/proposal_execution/age_data_purpose_review_v1.md, answered on 6 October 2026 with option A (public use) and "
+        "its five conditions (decision log R21; open point E8-OP5). The per-unit component is tambon level only, carries "
+        "the credit and the words 'modelled, not observed', and no display ranks units by the dependent share alone.",
     ),
     "national_anchors": LineageText(
         "National vulnerability anchors of protocol v1b (constants for all of Thailand)", "CC BY 4.0 (derived constants)",
@@ -1301,52 +1298,20 @@ def build(case_id: str, frame_set: FrameSet, external: Path, boundaries: Path, *
     try:
         measured, measurement_checks = unit_measurements(rules, flood_spec.name, found.units, found.names, flood, found.counted)
         stage = STAGE_ASSEMBLY
-        try:
-            overlay = planning_assessment.assemble_overlay(
-                rules, case, flood_spec, closure, measured, inputs, routing_context_id=context_id, generated_at=generated_at_utc,
-                git_commit=commit, source_name=f"FloodGuard planning assessment overlay: case {case_id}, {frame_set.title}",
-                assumptions=overlay_assumptions)
-        except planning_assessment.V2NotEvaluableError as error:
-            if error.as_computed is None:
-                raise
-            # The overlay cannot hold these rows. They are checked as far as they go and reported as computed.
-            rows_scored = len(error.as_computed["rows"])
-            stage = STAGE_GUARDRAILS
-            checked = planning_assessment.check_rows_as_computed(error.as_computed, schema, rules, reporting_units=unit_ids,
-                                                                 lane=case.lane)
-            stage = STAGE_WHOLE_CASE
-            whole_case = planning_assessment.whole_case_checks(
-                error.as_computed["rows"], error.as_computed["scoring_frame"], residents_counted_by_the_access_table=counted_by_the_table,
-                resident_tolerance=RESIDENT_TOLERANCE)
-            as_computed, guardrails = error.as_computed, checked["guardrails"]
-            rows_digest = rows_sha256(as_computed["rows"])
-            as_computed_record = {
-                "schema_version": planning_assessment.ROWS_AS_COMPUTED_SCHEMA,
-                "where": "In the report outside Git that this receipt binds (outputs), under rows_as_computed. The report "
-                         "is not an overlay.",
-                "checked_by_the_overlay_parser": checked["checked_by_the_overlay_parser"],
-                "summary": checked["summary"],
-            }
-            refusal = {"code": "v2_result_not_evaluable", "message": str(error), "open_point": "E8-OP1",
-                       "rows": [dict(row) for row in error.rows]}
-            refusal_for_the_receipt = {
-                "code": refusal["code"], "open_point": "E8-OP1", "rows": len(error.rows),
-                "triggers_not_evaluated": sorted({name for row in error.rows for name in row["triggers_not_evaluated"]}),
-                "message": "The v2 result of one or more rows depends on a trigger that was not evaluated, and the protocols "
-                           "state no result for that case. The units are named in the report outside Git, which also holds "
-                           "every row as the run computed it (open point E8-OP6).",
-            }
-        else:
-            rows_scored = len(overlay["rows"])
-            stage = STAGE_GUARDRAILS
-            guardrails = planning_assessment.guardrail_report(overlay, rules, reporting_units=unit_ids, lane=case.lane)
-            overlay_string = overlay_text(overlay, schema, binding=rules.binding)
-            summary = summarise_overlay(overlay)
-            stage = STAGE_WHOLE_CASE
-            whole_case = planning_assessment.whole_case_checks(
-                overlay["rows"], overlay["scoring_frame"], residents_counted_by_the_access_table=counted_by_the_table,
-                resident_tolerance=RESIDENT_TOLERANCE)
-            rows_digest = rows_sha256(overlay["rows"])
+        overlay = planning_assessment.assemble_overlay(
+            rules, case, flood_spec, closure, measured, inputs, routing_context_id=context_id, generated_at=generated_at_utc,
+            git_commit=commit, source_name=f"FloodGuard planning assessment overlay: case {case_id}, {frame_set.title}",
+            assumptions=overlay_assumptions)
+        rows_scored = len(overlay["rows"])
+        stage = STAGE_GUARDRAILS
+        guardrails = planning_assessment.guardrail_report(overlay, rules, reporting_units=unit_ids, lane=case.lane)
+        overlay_string = overlay_text(overlay, schema, binding=rules.binding)
+        summary = summarise_overlay(overlay)
+        stage = STAGE_WHOLE_CASE
+        whole_case = planning_assessment.whole_case_checks(
+            overlay["rows"], overlay["scoring_frame"], residents_counted_by_the_access_table=counted_by_the_table,
+            resident_tolerance=RESIDENT_TOLERANCE)
+        rows_digest = rows_sha256(overlay["rows"])
     except PlanningOverlayError as error:
         overlay_string, summary, as_computed, as_computed_record, guardrails, whole_case = None, None, None, None, None, None
         rows_digest = None

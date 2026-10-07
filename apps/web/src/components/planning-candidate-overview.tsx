@@ -82,10 +82,10 @@ export function PlanningCandidateOverview() {
   const mapAttributions = [...new Set(mapLayers.flatMap((layer) => layer.attribution ? [layer.attribution] : []))];
 
   return <main id="main-content" tabIndex={-1} className={styles.page} data-planning-candidate={evidence?.id ?? (failure ? "unavailable" : "loading")}>
-    {/* The other Planning page: the map workspace at /command/, the default page since 5 Oct 2026 (R19). This link is shown
-        whatever the state of the case below, and carries the selected case. */}
+    {/* The default Planning page: the Command exercise replay at /command/ since 7 Oct 2026 (R24). This link is shown
+        whatever the state of the case below, and carries the selected case, which that page names in one line. */}
     <nav className={styles.switch} aria-label={th ? "หน้าการวางแผนอีกหน้าหนึ่ง" : "The other Planning page"}>
-      <a href={caseHref(PLANNING_WORKSPACE_ROUTE, query)} data-planning-workspace-link="true">{th ? "← กลับไปที่พื้นที่ทำงานแผนที่" : "← Back to the map workspace"}</a>
+      <a href={caseHref(PLANNING_WORKSPACE_ROUTE, query)} data-planning-workspace-link="true">{th ? "← ไปที่หน้าฝึกซ้อมสั่งการ" : "← To the Command exercise replay"}</a>
     </nav>
     {catalogError ? <p className={styles.error} role="alert">{th ? "โหลดรายการกรณีศึกษาไม่ได้" : "Case catalog unavailable"}: {catalogError}</p> : null}
     {catalog && !reference ? <p className={styles.loading}>{th ? "เลือกกรณีศึกษาที่เผยแพร่ด้านบนเพื่อดูผลเฉพาะกรณีนั้น" : "Choose a published case above to inspect its own results."}</p> : null}
@@ -156,7 +156,7 @@ export function PlanningCandidateOverview() {
       </> : null}
     </> : null}
     {/* The research score table is not shown on Command (R17): this notice says where the report is kept. This page, at
-        /command/ver2/ since 5 Oct 2026 (R19), shows no research score and no research class. */}
+        /command/planning/ since 7 Oct 2026 (R24), shows no research score and no research class. */}
     <ResearchReportNotice language={language} />
   </main>;
 }

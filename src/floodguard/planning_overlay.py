@@ -93,7 +93,7 @@ from floodguard.normalisation import (
 from floodguard.rights_basis import PRODUCT_4009_CITATION, RightsBasisError, require_owner_confirmation
 from floodguard.scoring import ACTION_REASON_CODES, SCORE_COMPONENTS, score_subdistricts
 
-SCHEMA_VERSION = "1.0"
+SCHEMA_VERSION = "1.1"
 SCHEMA_ID = "https://floodguard.th/contracts/planning-assessment-overlay.schema.json"
 SCHEMA_RELATIVE_PATH = Path("packages/contracts/schemas/planning-assessment-overlay.schema.json")
 """Repository-relative path of the overlay schema."""
@@ -141,6 +141,8 @@ REASON_BY_CLASS: dict[str, str] = {
     "D": "resilience",
 }
 NO_V2_TRIGGER = "no_v2_trigger"
+V2_NOT_EVALUATED = "not_evaluated"
+"""The v2 result of a row whose result depends on a trigger no stage evaluated (schema 1.1, decision R20)."""
 V2_TRIGGER_ORDER: tuple[str, ...] = ("E", "A", "B", "C", "D")
 """Protocol v1a class_rules.v2.evaluation.order (drafter reading DR-A08)."""
 V2_FPPS_MIN = 35.0
@@ -1042,7 +1044,7 @@ def _row_problems(overlay: Mapping[str, Any], row: Mapping[str, Any], where: str
             add(
                 GR1_NO_CLASS,
                 "action_class",
-                "in schema 1.0 every row below tier T4 carries a class, and only a unit under guardrail GR1 has none",
+                f"in schema {SCHEMA_VERSION} every row below tier T4 carries a class, and only a unit under guardrail GR1 has none",
             )
         if confidence_class == "low":
             if action_class != "E" or reason_code != REASON_LOW_CONFIDENCE:
@@ -1409,6 +1411,12 @@ def _v2_problems(
     needs an FPPS of at least 35. The other inputs of A to D (the national P75,
     critical links, facilities, recurrence) are not in the overlay, so those
     triggers are checked one way only.
+
+    Schema 1.1: a trigger no stage evaluated has ``met`` null, never false.
+    Trigger E is recomputed from the row, so it is always true or false. Where
+    a trigger that was not evaluated stands before the first trigger met, or no
+    trigger is met and one was not evaluated, the result depends on it and is
+    ``not_evaluated``: the protocols state no v2 class for that case.
     """
 
     v2 = row["class_v2"]
@@ -1417,8 +1425,15 @@ def _v2_problems(
     result = v2["result"]
     evidence = v2["trigger_evidence"]
     order = [item["trigger"] for item in evidence]
-    met = [item["trigger"] for item in evidence if item["met"]]
-    expected = met[0] if met else NO_V2_TRIGGER
+    met = [item["trigger"] for item in evidence if item["met"] is True]
+    expected = NO_V2_TRIGGER
+    for item in evidence:
+        if item["met"] is None:
+            expected = V2_NOT_EVALUATED
+            break
+        if item["met"]:
+            expected = item["trigger"]
+            break
     low = confidence_class == "low"
     fpps = row["fpps_0_100"]
     scored_enough = fpps is not None and fpps >= V2_FPPS_MIN
@@ -1427,9 +1442,14 @@ def _v2_problems(
         wrong.append(f"trigger_evidence lists {order}, not {list(V2_TRIGGER_ORDER)}")
     else:
         if result != expected:
-            wrong.append(f"result is {result!r}; the first trigger met gives {expected!r}")
+            wrong.append(
+                f"result is {result!r}; the first trigger met, or not evaluated, in the order "
+                f"{list(V2_TRIGGER_ORDER)} gives {expected!r}"
+            )
+        if evidence[0]["met"] is None:
+            wrong.append("trigger E is recomputed from the row, so it is true or false, never not evaluated")
         trigger_e = low or not scored_enough or (exposure is not None and exposure < V2_EXPOSURE_FLOOR_FOR_NON_E)
-        if ("E" in met) != trigger_e:
+        if evidence[0]["met"] is not None and ("E" in met) != trigger_e:
             wrong.append(
                 f"trigger E is {'met' if trigger_e else 'not met'} for this row: low confidence, exposure below "
                 f"{V2_EXPOSURE_FLOOR_FOR_NON_E:g} or FPPS below {V2_FPPS_MIN:g}"
@@ -1938,7 +1958,7 @@ def summarise_overlay(overlay: Mapping[str, Any]) -> dict[str, Any]:
         "would_be_class_by_lane_column": _counts_by_column(rows, ACTION_CLASSES, lambda row: row["would_be_class"]),
         "v2_result_by_lane_column": _counts_by_column(
             rows,
-            (*ACTION_CLASSES, NO_V2_TRIGGER),
+            (*ACTION_CLASSES, NO_V2_TRIGGER, V2_NOT_EVALUATED),
             lambda row: None if row["class_v2"] is None else row["class_v2"]["result"],
         ),
         "headline_status_by_lane_column": _counts_by_column(

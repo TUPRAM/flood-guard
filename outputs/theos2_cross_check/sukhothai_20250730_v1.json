@@ -1,0 +1,1260 @@
+{
+ "schema": "floodguard.theos2_cross_check.result.v1",
+ "generated_at_utc": "2026-10-07T06:29:56Z",
+ "source_timestamp": "2025-07-30T03:33:31Z",
+ "confidence_class": "low",
+ "confidence_basis": "One optical scene and one radar pair, 43.6 hours apart; no ground check.",
+ "operational_status": "non_operational",
+ "official_warning": false,
+ "can_feed_decision_layer": false,
+ "plan": {
+  "path": "docs/proposal_execution/theos2_cross_check_plan_v1.md",
+  "sha256": "bb4bf03dfd2181b4d9f90f85857123b1cf27fb7ca1436060b16d82623050e2c6"
+ },
+ "what_this_is": "Agreement between three radar flood candidates and THEOS-2 optical water on one 9 square kilometre chip at Sukhothai. A validation tile, not a study area: no FPPS, no A-E class, no exposure and no access figure.",
+ "label": "agreement with THEOS-2 optical water acquired 43.6 hours before the radar pass; not accuracy",
+ "times": {
+  "theos2_utc": "2025-07-30T03:33:31Z",
+  "radar_before_utc": "2025-07-19T23:08:44.832051Z",
+  "radar_after_utc": "2025-07-31T23:08:41.477445Z",
+  "radar_after_minus_theos2_hours": 43.59
+ },
+ "reference": {
+  "record": "outputs/theos2_cross_check/sukhothai_20250730_reference_v1.json",
+  "sha256": "a470423f4a572a6d4e4a39acf26592d1c20b3a58740489b0daef5a2ed51314a6",
+  "cells": {
+   "rule": "compared at an observable share of 0.9 or more; wet at a water share of 0.5 or more",
+   "compared": 82298,
+   "wet": 30353,
+   "dry": 51945,
+   "mixed_water_share_between_0.1_and_0.9": 10426,
+   "compared_km2": 8.2298,
+   "wet_km2": 3.0353
+  }
+ },
+ "compared_cells": {
+  "rule": "observable THEOS-2 cells outside permanent water (ESA WorldCover 2021 v200, class 80)",
+  "cells": 80988,
+  "km2": 8.0988,
+  "optical_wet_cells": 29298,
+  "optical_wet_km2": 2.9298,
+  "permanent_water_cells_left_out": 1310,
+  "mixed_cells": 10167
+ },
+ "radar_input": {
+  "product": "Sentinel-1 IW GRD, radiometrically terrain-corrected gamma0, 10 m (Microsoft Planetary Computer)",
+  "deviation_from_mae_sai": "gamma0 in place of sigma0 (plan section 3)",
+  "valid_share_of_compared_cells": {
+   "pre": 1.0,
+   "post": 1.0
+  },
+  "median_vh_db_on_compared_cells": {
+   "pre": -14.989,
+   "post": -16.13
+  }
+ },
+ "methods": {
+  "un_spider": {
+   "flood_input_name": "UN-SPIDER reproduction",
+   "all_compared_cells": {
+    "compared_cells": 80988,
+    "answered_cells": 80988,
+    "answered_share": 1.0,
+    "on_answered_cells": {
+     "cells": 80988,
+     "tp": 8476,
+     "fp": 3347,
+     "fn": 20822,
+     "tn": 48343,
+     "candidate_km2": 1.1823,
+     "optical_wet_km2": 2.9298,
+     "iou": 0.259642,
+     "precision": 0.716908,
+     "recall": 0.289303,
+     "f1": 0.412247
+    },
+    "strict_no_answer_counts_as_not_a_candidate": {
+     "cells": 80988,
+     "tp": 8476,
+     "fp": 3347,
+     "fn": 20822,
+     "tn": 48343,
+     "candidate_km2": 1.1823,
+     "optical_wet_km2": 2.9298,
+     "iou": 0.259642,
+     "precision": 0.716908,
+     "recall": 0.289303,
+     "f1": 0.412247
+    }
+   },
+   "without_mixed_cells": {
+    "compared_cells": 70821,
+    "answered_cells": 70821,
+    "answered_share": 1.0,
+    "on_answered_cells": {
+     "cells": 70821,
+     "tp": 7279,
+     "fp": 2480,
+     "fn": 16754,
+     "tn": 44308,
+     "candidate_km2": 0.9759,
+     "optical_wet_km2": 2.4033,
+     "iou": 0.274545,
+     "precision": 0.745876,
+     "recall": 0.302875,
+     "f1": 0.430812
+    },
+    "strict_no_answer_counts_as_not_a_candidate": {
+     "cells": 70821,
+     "tp": 7279,
+     "fp": 2480,
+     "fn": 16754,
+     "tn": 44308,
+     "candidate_km2": 0.9759,
+     "optical_wet_km2": 2.4033,
+     "iou": 0.274545,
+     "precision": 0.745876,
+     "recall": 0.302875,
+     "f1": 0.430812
+    }
+   },
+   "by_land_cover_worldcover_2021": {
+    "built_up": {
+     "compared_cells": 7962,
+     "answered_cells": 7962,
+     "answered_share": 1.0,
+     "on_answered_cells": {
+      "cells": 7962,
+      "tp": 29,
+      "fp": 154,
+      "fn": 205,
+      "tn": 7574,
+      "candidate_km2": 0.0183,
+      "optical_wet_km2": 0.0234,
+      "iou": 0.074742,
+      "precision": 0.15847,
+      "recall": 0.123932,
+      "f1": 0.139089
+     },
+     "strict_no_answer_counts_as_not_a_candidate": {
+      "cells": 7962,
+      "tp": 29,
+      "fp": 154,
+      "fn": 205,
+      "tn": 7574,
+      "candidate_km2": 0.0183,
+      "optical_wet_km2": 0.0234,
+      "iou": 0.074742,
+      "precision": 0.15847,
+      "recall": 0.123932,
+      "f1": 0.139089
+     }
+    },
+    "cropland": {
+     "compared_cells": 43745,
+     "answered_cells": 43745,
+     "answered_share": 1.0,
+     "on_answered_cells": {
+      "cells": 43745,
+      "tp": 7807,
+      "fp": 2049,
+      "fn": 17809,
+      "tn": 16080,
+      "candidate_km2": 0.9856,
+      "optical_wet_km2": 2.5616,
+      "iou": 0.282198,
+      "precision": 0.792106,
+      "recall": 0.30477,
+      "f1": 0.440178
+     },
+     "strict_no_answer_counts_as_not_a_candidate": {
+      "cells": 43745,
+      "tp": 7807,
+      "fp": 2049,
+      "fn": 17809,
+      "tn": 16080,
+      "candidate_km2": 0.9856,
+      "optical_wet_km2": 2.5616,
+      "iou": 0.282198,
+      "precision": 0.792106,
+      "recall": 0.30477,
+      "f1": 0.440178
+     }
+    },
+    "tree_cover": {
+     "compared_cells": 23557,
+     "answered_cells": 23557,
+     "answered_share": 1.0,
+     "on_answered_cells": {
+      "cells": 23557,
+      "tp": 510,
+      "fp": 1043,
+      "fn": 2015,
+      "tn": 19989,
+      "candidate_km2": 0.1553,
+      "optical_wet_km2": 0.2525,
+      "iou": 0.142937,
+      "precision": 0.328397,
+      "recall": 0.20198,
+      "f1": 0.250123
+     },
+     "strict_no_answer_counts_as_not_a_candidate": {
+      "cells": 23557,
+      "tp": 510,
+      "fp": 1043,
+      "fn": 2015,
+      "tn": 19989,
+      "candidate_km2": 0.1553,
+      "optical_wet_km2": 0.2525,
+      "iou": 0.142937,
+      "precision": 0.328397,
+      "recall": 0.20198,
+      "f1": 0.250123
+     }
+    },
+    "other": {
+     "compared_cells": 5724,
+     "answered_cells": 5724,
+     "answered_share": 1.0,
+     "on_answered_cells": {
+      "cells": 5724,
+      "tp": 130,
+      "fp": 101,
+      "fn": 793,
+      "tn": 4700,
+      "candidate_km2": 0.0231,
+      "optical_wet_km2": 0.0923,
+      "iou": 0.126953,
+      "precision": 0.562771,
+      "recall": 0.140845,
+      "f1": 0.225303
+     },
+     "strict_no_answer_counts_as_not_a_candidate": {
+      "cells": 5724,
+      "tp": 130,
+      "fp": 101,
+      "fn": 793,
+      "tn": 4700,
+      "candidate_km2": 0.0231,
+      "optical_wet_km2": 0.0923,
+      "iou": 0.126953,
+      "precision": 0.562771,
+      "recall": 0.140845,
+      "f1": 0.225303
+     }
+    }
+   },
+   "notes": {
+    "summary": {
+     "method": "un_spider",
+     "configuration": {
+      "polarisation": "vh",
+      "smoothing": "focal_mean_circle_on_db",
+      "smoothing_radius_m": 50.0,
+      "difference": "after_db_divided_by_before_db",
+      "difference_threshold": 1.25,
+      "perennial_water": "removed_before_the_connected_pixel_rule",
+      "min_connected_cells": 8,
+      "connectivity": "eight_connected",
+      "max_slope": 5.0,
+      "slope_unit": "degrees",
+      "slope_rule": "cells_with_slope_at_or_above_max_slope_are_removed_last"
+     },
+     "smoothing_radius_cells": 5.0,
+     "smoothing_kernel_cells": 81,
+     "frame_cells": 2097152,
+     "valid_cells": 1802186,
+     "cells_with_zero_before_mean": 0,
+     "cells_with_positive_before_mean_db": 0,
+     "cells_above_threshold": 157412,
+     "cells_above_threshold_with_positive_before_mean_db": 0,
+     "cells_removed_as_perennial_water": 2022,
+     "cells_removed_by_connected_pixel_rule": 646,
+     "cells_removed_by_slope_rule": 3204,
+     "cells_without_a_slope_value_among_the_removed": 662,
+     "candidate_cells": 151540,
+     "median_before_db": -15.3886,
+     "median_after_db": -15.9114
+    },
+    "frame": "the two lattice tiles; no clip to the chip"
+   }
+  },
+  "m1_literal": {
+   "flood_input_name": "M1-literal",
+   "all_compared_cells": {
+    "compared_cells": 80988,
+    "answered_cells": 80988,
+    "answered_share": 1.0,
+    "on_answered_cells": {
+     "cells": 80988,
+     "tp": 14627,
+     "fp": 9389,
+     "fn": 14671,
+     "tn": 42301,
+     "candidate_km2": 2.4016,
+     "optical_wet_km2": 2.9298,
+     "iou": 0.378086,
+     "precision": 0.609052,
+     "recall": 0.499249,
+     "f1": 0.548711
+    },
+    "strict_no_answer_counts_as_not_a_candidate": {
+     "cells": 80988,
+     "tp": 14627,
+     "fp": 9389,
+     "fn": 14671,
+     "tn": 42301,
+     "candidate_km2": 2.4016,
+     "optical_wet_km2": 2.9298,
+     "iou": 0.378086,
+     "precision": 0.609052,
+     "recall": 0.499249,
+     "f1": 0.548711
+    }
+   },
+   "without_mixed_cells": {
+    "compared_cells": 70821,
+    "answered_cells": 70821,
+    "answered_share": 1.0,
+    "on_answered_cells": {
+     "cells": 70821,
+     "tp": 12540,
+     "fp": 7697,
+     "fn": 11493,
+     "tn": 39091,
+     "candidate_km2": 2.0237,
+     "optical_wet_km2": 2.4033,
+     "iou": 0.39521,
+     "precision": 0.619657,
+     "recall": 0.521783,
+     "f1": 0.566524
+    },
+    "strict_no_answer_counts_as_not_a_candidate": {
+     "cells": 70821,
+     "tp": 12540,
+     "fp": 7697,
+     "fn": 11493,
+     "tn": 39091,
+     "candidate_km2": 2.0237,
+     "optical_wet_km2": 2.4033,
+     "iou": 0.39521,
+     "precision": 0.619657,
+     "recall": 0.521783,
+     "f1": 0.566524
+    }
+   },
+   "by_land_cover_worldcover_2021": {
+    "built_up": {
+     "compared_cells": 7962,
+     "answered_cells": 7962,
+     "answered_share": 1.0,
+     "on_answered_cells": {
+      "cells": 7962,
+      "tp": 51,
+      "fp": 774,
+      "fn": 183,
+      "tn": 6954,
+      "candidate_km2": 0.0825,
+      "optical_wet_km2": 0.0234,
+      "iou": 0.050595,
+      "precision": 0.061818,
+      "recall": 0.217949,
+      "f1": 0.096317
+     },
+     "strict_no_answer_counts_as_not_a_candidate": {
+      "cells": 7962,
+      "tp": 51,
+      "fp": 774,
+      "fn": 183,
+      "tn": 6954,
+      "candidate_km2": 0.0825,
+      "optical_wet_km2": 0.0234,
+      "iou": 0.050595,
+      "precision": 0.061818,
+      "recall": 0.217949,
+      "f1": 0.096317
+     }
+    },
+    "cropland": {
+     "compared_cells": 43745,
+     "answered_cells": 43745,
+     "answered_share": 1.0,
+     "on_answered_cells": {
+      "cells": 43745,
+      "tp": 13398,
+      "fp": 4727,
+      "fn": 12218,
+      "tn": 13402,
+      "candidate_km2": 1.8125,
+      "optical_wet_km2": 2.5616,
+      "iou": 0.441552,
+      "precision": 0.7392,
+      "recall": 0.523032,
+      "f1": 0.612606
+     },
+     "strict_no_answer_counts_as_not_a_candidate": {
+      "cells": 43745,
+      "tp": 13398,
+      "fp": 4727,
+      "fn": 12218,
+      "tn": 13402,
+      "candidate_km2": 1.8125,
+      "optical_wet_km2": 2.5616,
+      "iou": 0.441552,
+      "precision": 0.7392,
+      "recall": 0.523032,
+      "f1": 0.612606
+     }
+    },
+    "tree_cover": {
+     "compared_cells": 23557,
+     "answered_cells": 23557,
+     "answered_share": 1.0,
+     "on_answered_cells": {
+      "cells": 23557,
+      "tp": 867,
+      "fp": 3221,
+      "fn": 1658,
+      "tn": 17811,
+      "candidate_km2": 0.4088,
+      "optical_wet_km2": 0.2525,
+      "iou": 0.150888,
+      "precision": 0.212084,
+      "recall": 0.343366,
+      "f1": 0.262211
+     },
+     "strict_no_answer_counts_as_not_a_candidate": {
+      "cells": 23557,
+      "tp": 867,
+      "fp": 3221,
+      "fn": 1658,
+      "tn": 17811,
+      "candidate_km2": 0.4088,
+      "optical_wet_km2": 0.2525,
+      "iou": 0.150888,
+      "precision": 0.212084,
+      "recall": 0.343366,
+      "f1": 0.262211
+     }
+    },
+    "other": {
+     "compared_cells": 5724,
+     "answered_cells": 5724,
+     "answered_share": 1.0,
+     "on_answered_cells": {
+      "cells": 5724,
+      "tp": 311,
+      "fp": 667,
+      "fn": 612,
+      "tn": 4134,
+      "candidate_km2": 0.0978,
+      "optical_wet_km2": 0.0923,
+      "iou": 0.195597,
+      "precision": 0.317996,
+      "recall": 0.336945,
+      "f1": 0.327196
+     },
+     "strict_no_answer_counts_as_not_a_candidate": {
+      "cells": 5724,
+      "tp": 311,
+      "fp": 667,
+      "fn": 612,
+      "tn": 4134,
+      "candidate_km2": 0.0978,
+      "optical_wet_km2": 0.0923,
+      "iou": 0.195597,
+      "precision": 0.317996,
+      "recall": 0.336945,
+      "f1": 0.327196
+     }
+    }
+   },
+   "notes": {
+    "tiles": {
+     "E056N183": {
+      "method": "m1_literal",
+      "total_cells": 1048576,
+      "valid_cells": 753614,
+      "invalid_cells": 294962,
+      "otsu_threshold_delta_vh_db": -0.5,
+      "abstained": false,
+      "abstention_reason": null,
+      "candidate_cells": 260959,
+      "cells_removed_by_cleaning": 15776,
+      "median_delta_vv_db": 0.0176,
+      "median_delta_vh_db": 0.0681,
+      "median_vv_vh_ratio_db_pre": 7.1868,
+      "median_vv_vh_ratio_db_post": 7.2305,
+      "threshold_levels": {
+       "shifts_db": [
+        -1.0,
+        0.0,
+        1.0
+       ],
+       "applied_to": "the Otsu threshold on delta-VH; a lower threshold is stricter",
+       "candidate_cells": {
+        "-1_db": 130367,
+        "0_db": 260959,
+        "+1_db": 350329
+       },
+       "below_zero_clause": "M1-literal flags a cell only where delta-VH is below the threshold and below 0 dB; the second clause is kept at every level, so a moved threshold above 0 dB is cut at 0 dB.",
+       "effective_threshold_db": {
+        "-1_db": -1.5,
+        "0_db": -0.5,
+        "+1_db": 0.0
+       },
+       "cut_at_0_db": {
+        "-1_db": false,
+        "0_db": false,
+        "+1_db": true
+       },
+       "plus_level": "cut_at_0_db",
+       "plus_level_shift_that_took_effect_db": 0.5
+      }
+     },
+     "E057N183": {
+      "method": "m1_literal",
+      "total_cells": 1048576,
+      "valid_cells": 1048572,
+      "invalid_cells": 4,
+      "otsu_threshold_delta_vh_db": -2.4,
+      "abstained": false,
+      "abstention_reason": null,
+      "candidate_cells": 245185,
+      "cells_removed_by_cleaning": 15174,
+      "median_delta_vv_db": -0.4651,
+      "median_delta_vh_db": -0.6345,
+      "median_vv_vh_ratio_db_pre": 6.007,
+      "median_vv_vh_ratio_db_post": 6.1307,
+      "threshold_levels": {
+       "shifts_db": [
+        -1.0,
+        0.0,
+        1.0
+       ],
+       "applied_to": "the Otsu threshold on delta-VH; a lower threshold is stricter",
+       "candidate_cells": {
+        "-1_db": 172094,
+        "0_db": 245185,
+        "+1_db": 368818
+       },
+       "below_zero_clause": "M1-literal flags a cell only where delta-VH is below the threshold and below 0 dB; the second clause is kept at every level, so a moved threshold above 0 dB is cut at 0 dB.",
+       "effective_threshold_db": {
+        "-1_db": -3.4,
+        "0_db": -2.4,
+        "+1_db": -1.4
+       },
+       "cut_at_0_db": {
+        "-1_db": false,
+        "0_db": false,
+        "+1_db": false
+       },
+       "plus_level": "full_shift",
+       "plus_level_shift_that_took_effect_db": 1.0
+      }
+     }
+    },
+    "cells_without_an_answer_by_reason": {
+     "no_valid_radar_input": 0,
+     "method_declined_for_the_tile": 0
+    }
+   }
+  },
+  "m1_v2": {
+   "flood_input_name": "M1-v2",
+   "all_compared_cells": {
+    "compared_cells": 80988,
+    "answered_cells": 80425,
+    "answered_share": 0.993048,
+    "on_answered_cells": {
+     "cells": 80425,
+     "tp": 6538,
+     "fp": 2072,
+     "fn": 22473,
+     "tn": 49342,
+     "candidate_km2": 0.861,
+     "optical_wet_km2": 2.9011,
+     "iou": 0.21034,
+     "precision": 0.75935,
+     "recall": 0.225363,
+     "f1": 0.347572
+    },
+    "strict_no_answer_counts_as_not_a_candidate": {
+     "cells": 80988,
+     "tp": 6538,
+     "fp": 2072,
+     "fn": 22760,
+     "tn": 49618,
+     "candidate_km2": 0.861,
+     "optical_wet_km2": 2.9298,
+     "iou": 0.208416,
+     "precision": 0.75935,
+     "recall": 0.223155,
+     "f1": 0.34494
+    }
+   },
+   "without_mixed_cells": {
+    "compared_cells": 70821,
+    "answered_cells": 70314,
+    "answered_share": 0.992841,
+    "on_answered_cells": {
+     "cells": 70314,
+     "tp": 5763,
+     "fp": 1523,
+     "fn": 18012,
+     "tn": 45016,
+     "candidate_km2": 0.7286,
+     "optical_wet_km2": 2.3775,
+     "iou": 0.227805,
+     "precision": 0.790969,
+     "recall": 0.242397,
+     "f1": 0.371076
+    },
+    "strict_no_answer_counts_as_not_a_candidate": {
+     "cells": 70821,
+     "tp": 5763,
+     "fp": 1523,
+     "fn": 18270,
+     "tn": 45265,
+     "candidate_km2": 0.7286,
+     "optical_wet_km2": 2.4033,
+     "iou": 0.225505,
+     "precision": 0.790969,
+     "recall": 0.239795,
+     "f1": 0.368019
+    }
+   },
+   "by_land_cover_worldcover_2021": {
+    "built_up": {
+     "compared_cells": 7962,
+     "answered_cells": 7929,
+     "answered_share": 0.995855,
+     "on_answered_cells": {
+      "cells": 7929,
+      "tp": 19,
+      "fp": 88,
+      "fn": 215,
+      "tn": 7607,
+      "candidate_km2": 0.0107,
+      "optical_wet_km2": 0.0234,
+      "iou": 0.059006,
+      "precision": 0.17757,
+      "recall": 0.081197,
+      "f1": 0.111437
+     },
+     "strict_no_answer_counts_as_not_a_candidate": {
+      "cells": 7962,
+      "tp": 19,
+      "fp": 88,
+      "fn": 215,
+      "tn": 7640,
+      "candidate_km2": 0.0107,
+      "optical_wet_km2": 0.0234,
+      "iou": 0.059006,
+      "precision": 0.17757,
+      "recall": 0.081197,
+      "f1": 0.111437
+     }
+    },
+    "cropland": {
+     "compared_cells": 43745,
+     "answered_cells": 43352,
+     "answered_share": 0.991016,
+     "on_answered_cells": {
+      "cells": 43352,
+      "tp": 6103,
+      "fp": 1237,
+      "fn": 19234,
+      "tn": 16778,
+      "candidate_km2": 0.734,
+      "optical_wet_km2": 2.5337,
+      "iou": 0.229661,
+      "precision": 0.831471,
+      "recall": 0.240873,
+      "f1": 0.373535
+     },
+     "strict_no_answer_counts_as_not_a_candidate": {
+      "cells": 43745,
+      "tp": 6103,
+      "fp": 1237,
+      "fn": 19513,
+      "tn": 16892,
+      "candidate_km2": 0.734,
+      "optical_wet_km2": 2.5616,
+      "iou": 0.227274,
+      "precision": 0.831471,
+      "recall": 0.23825,
+      "f1": 0.370373
+     }
+    },
+    "tree_cover": {
+     "compared_cells": 23557,
+     "answered_cells": 23422,
+     "answered_share": 0.994269,
+     "on_answered_cells": {
+      "cells": 23422,
+      "tp": 326,
+      "fp": 679,
+      "fn": 2191,
+      "tn": 20226,
+      "candidate_km2": 0.1005,
+      "optical_wet_km2": 0.2517,
+      "iou": 0.102003,
+      "precision": 0.324378,
+      "recall": 0.129519,
+      "f1": 0.185122
+     },
+     "strict_no_answer_counts_as_not_a_candidate": {
+      "cells": 23557,
+      "tp": 326,
+      "fp": 679,
+      "fn": 2199,
+      "tn": 20353,
+      "candidate_km2": 0.1005,
+      "optical_wet_km2": 0.2525,
+      "iou": 0.101748,
+      "precision": 0.324378,
+      "recall": 0.129109,
+      "f1": 0.184703
+     }
+    },
+    "other": {
+     "compared_cells": 5724,
+     "answered_cells": 5722,
+     "answered_share": 0.999651,
+     "on_answered_cells": {
+      "cells": 5722,
+      "tp": 90,
+      "fp": 68,
+      "fn": 833,
+      "tn": 4731,
+      "candidate_km2": 0.0158,
+      "optical_wet_km2": 0.0923,
+      "iou": 0.090817,
+      "precision": 0.56962,
+      "recall": 0.097508,
+      "f1": 0.166512
+     },
+     "strict_no_answer_counts_as_not_a_candidate": {
+      "cells": 5724,
+      "tp": 90,
+      "fp": 68,
+      "fn": 833,
+      "tn": 4733,
+      "candidate_km2": 0.0158,
+      "optical_wet_km2": 0.0923,
+      "iou": 0.090817,
+      "precision": 0.56962,
+      "recall": 0.097508,
+      "f1": 0.166512
+     }
+    }
+   },
+   "notes": {
+    "tiles": {
+     "E056N183": {
+      "method": "m1_v2",
+      "total_cells": 1048576,
+      "valid_cells": 753614,
+      "invalid_cells": 294962,
+      "abstained": true,
+      "abstention_reason": "no_bimodal_block_or_no_threshold",
+      "sides": {
+       "darkening": {
+        "blocks": 256,
+        "selected_blocks": 9,
+        "rejection_reasons": {
+         "ashman_d_not_above_minimum": 164,
+         "component_weight_below_minimum": 10,
+         "too_few_valid_cells": 72,
+         "upper_component_is_not_a_change_in_this_direction": 1
+        },
+        "threshold_db": null
+       }
+      },
+      "candidate_cells": 0,
+      "cells_removed_by_cleaning": 0,
+      "threshold_levels": {
+       "shifts_db": [
+        -1.0,
+        0.0,
+        1.0
+       ],
+       "applied_to": "the Kittler-Illingworth threshold on the darkening; a higher threshold is stricter",
+       "candidate_cells": {
+        "+1_db": null,
+        "0_db": null,
+        "-1_db": null
+       },
+       "lowest_level_threshold_is_positive": null
+      }
+     },
+     "E057N183": {
+      "method": "m1_v2",
+      "total_cells": 1048576,
+      "valid_cells": 1048572,
+      "invalid_cells": 4,
+      "abstained": false,
+      "abstention_reason": null,
+      "sides": {
+       "darkening": {
+        "blocks": 256,
+        "selected_blocks": 74,
+        "rejection_reasons": {
+         "ashman_d_not_above_minimum": 169,
+         "component_weight_below_minimum": 11,
+         "lower_component_is_not_the_unchanged_one": 2
+        },
+        "threshold_db": 5.7
+       }
+      },
+      "candidate_cells": 89180,
+      "cells_removed_by_cleaning": 12836,
+      "threshold_levels": {
+       "shifts_db": [
+        -1.0,
+        0.0,
+        1.0
+       ],
+       "applied_to": "the Kittler-Illingworth threshold on the darkening; a higher threshold is stricter",
+       "candidate_cells": {
+        "+1_db": 60657,
+        "0_db": 89180,
+        "-1_db": 121237
+       },
+       "lowest_level_threshold_is_positive": true
+      }
+     }
+    },
+    "cells_without_an_answer_by_reason": {
+     "no_valid_radar_input": 0,
+     "method_declined_for_the_tile": 563
+    }
+   }
+  }
+ },
+ "road_check": {
+  "source": "OpenStreetMap ways (Geofabrik Thailand extract); one edge per pair of consecutive vertices",
+  "edges_read": 1507,
+  "edges_compared": 857,
+  "rule_for_compared": "at least 90% of the centreline on observable THEOS-2 pixels",
+  "seen_under_water_rule": "20 m of centreline on optical water or more; an edge shorter than 40 m also at half its length or more",
+  "seen_under_water_edges": 52,
+  "seen_under_water_km": 3.305,
+  "centreline_on_water_km": 2.481,
+  "compared_km": 43.872,
+  "by_road_class": {
+   "local": {
+    "edges": 599,
+    "km": 28.355,
+    "seen_under_water_edges": 45,
+    "centreline_on_water_km": 2.188
+   },
+   "primary": {
+    "edges": 37,
+    "km": 3.013,
+    "seen_under_water_edges": 1,
+    "centreline_on_water_km": 0.033
+   },
+   "residential": {
+    "edges": 148,
+    "km": 8.159,
+    "seen_under_water_edges": 0,
+    "centreline_on_water_km": 0.0
+   },
+   "unclassified": {
+    "edges": 73,
+    "km": 4.345,
+    "seen_under_water_edges": 6,
+    "centreline_on_water_km": 0.26
+   }
+  },
+  "raster_polygons": "candidate cells polygonised with 4-neighbour connectivity; polygons under 5 cells dropped",
+  "closure_parameters": {
+   "length_thresholds_m": {
+    "trunk": 50.0,
+    "primary": 50.0,
+    "secondary": 50.0,
+    "tertiary": 30.0,
+    "local": 30.0,
+    "motorway": 50.0,
+    "residential": 30.0,
+    "unclassified": 30.0
+   },
+   "strict_delays": true
+  },
+  "modelled_against_seen": {
+   "theos2_optical_wet_cells_10m": {
+    "closure_basis": "modelled_from_theos2_optical_wet_cells_10m",
+    "by_level": {
+     "strict": {
+      "edges": 857,
+      "km": 43.872,
+      "closed_by_rule_and_seen_under_water": {
+       "edges": 37,
+       "km": 2.087
+      },
+      "closed_by_rule_not_seen_under_water": {
+       "edges": 5,
+       "km": 0.124
+      },
+      "open_by_rule_seen_under_water": {
+       "edges": 15,
+       "km": 1.219
+      },
+      "open_by_rule_not_seen_under_water": {
+       "edges": 800,
+       "km": 40.442
+      },
+      "share_of_rule_closed_that_is_seen_under_water": {
+       "by_edges": 0.880952,
+       "by_km": 0.944009
+      },
+      "share_of_seen_under_water_that_the_rule_closes": {
+       "by_edges": 0.711538,
+       "by_km": 0.631264
+      }
+     },
+     "central": {
+      "edges": 857,
+      "km": 43.872,
+      "closed_by_rule_and_seen_under_water": {
+       "edges": 41,
+       "km": 2.697
+      },
+      "closed_by_rule_not_seen_under_water": {
+       "edges": 9,
+       "km": 0.721
+      },
+      "open_by_rule_seen_under_water": {
+       "edges": 11,
+       "km": 0.608
+      },
+      "open_by_rule_not_seen_under_water": {
+       "edges": 796,
+       "km": 39.845
+      },
+      "share_of_rule_closed_that_is_seen_under_water": {
+       "by_edges": 0.82,
+       "by_km": 0.7891
+      },
+      "share_of_seen_under_water_that_the_rule_closes": {
+       "by_edges": 0.788462,
+       "by_km": 0.816056
+      }
+     },
+     "permissive": {
+      "edges": 857,
+      "km": 43.872,
+      "closed_by_rule_and_seen_under_water": {
+       "edges": 49,
+       "km": 3.229
+      },
+      "closed_by_rule_not_seen_under_water": {
+       "edges": 53,
+       "km": 3.398
+      },
+      "open_by_rule_seen_under_water": {
+       "edges": 3,
+       "km": 0.077
+      },
+      "open_by_rule_not_seen_under_water": {
+       "edges": 752,
+       "km": 37.168
+      },
+      "share_of_rule_closed_that_is_seen_under_water": {
+       "by_edges": 0.480392,
+       "by_km": 0.487182
+      },
+      "share_of_seen_under_water_that_the_rule_closes": {
+       "by_edges": 0.942308,
+       "by_km": 0.976722
+      }
+     }
+    }
+   },
+   "un_spider": {
+    "closure_basis": "modelled_from_un_spider",
+    "by_level": {
+     "strict": {
+      "edges": 857,
+      "km": 43.872,
+      "closed_by_rule_and_seen_under_water": {
+       "edges": 4,
+       "km": 0.119
+      },
+      "closed_by_rule_not_seen_under_water": {
+       "edges": 37,
+       "km": 1.501
+      },
+      "open_by_rule_seen_under_water": {
+       "edges": 48,
+       "km": 3.187
+      },
+      "open_by_rule_not_seen_under_water": {
+       "edges": 768,
+       "km": 39.066
+      },
+      "share_of_rule_closed_that_is_seen_under_water": {
+       "by_edges": 0.097561,
+       "by_km": 0.07324
+      },
+      "share_of_seen_under_water_that_the_rule_closes": {
+       "by_edges": 0.076923,
+       "by_km": 0.035874
+      }
+     },
+     "central": {
+      "edges": 857,
+      "km": 43.872,
+      "closed_by_rule_and_seen_under_water": {
+       "edges": 4,
+       "km": 0.119
+      },
+      "closed_by_rule_not_seen_under_water": {
+       "edges": 46,
+       "km": 2.716
+      },
+      "open_by_rule_seen_under_water": {
+       "edges": 48,
+       "km": 3.187
+      },
+      "open_by_rule_not_seen_under_water": {
+       "edges": 759,
+       "km": 37.85
+      },
+      "share_of_rule_closed_that_is_seen_under_water": {
+       "by_edges": 0.08,
+       "by_km": 0.041828
+      },
+      "share_of_seen_under_water_that_the_rule_closes": {
+       "by_edges": 0.076923,
+       "by_km": 0.035874
+      }
+     },
+     "permissive": {
+      "edges": 857,
+      "km": 43.872,
+      "closed_by_rule_and_seen_under_water": {
+       "edges": 9,
+       "km": 0.515
+      },
+      "closed_by_rule_not_seen_under_water": {
+       "edges": 65,
+       "km": 4.019
+      },
+      "open_by_rule_seen_under_water": {
+       "edges": 43,
+       "km": 2.79
+      },
+      "open_by_rule_not_seen_under_water": {
+       "edges": 740,
+       "km": 36.547
+      },
+      "share_of_rule_closed_that_is_seen_under_water": {
+       "by_edges": 0.121622,
+       "by_km": 0.113667
+      },
+      "share_of_seen_under_water_that_the_rule_closes": {
+       "by_edges": 0.173077,
+       "by_km": 0.155921
+      }
+     }
+    }
+   },
+   "m1_literal": {
+    "closure_basis": "modelled_from_m1_literal",
+    "by_level": {
+     "strict": {
+      "edges": 857,
+      "km": 43.872,
+      "closed_by_rule_and_seen_under_water": {
+       "edges": 22,
+       "km": 0.813
+      },
+      "closed_by_rule_not_seen_under_water": {
+       "edges": 114,
+       "km": 5.781
+      },
+      "open_by_rule_seen_under_water": {
+       "edges": 30,
+       "km": 2.493
+      },
+      "open_by_rule_not_seen_under_water": {
+       "edges": 691,
+       "km": 34.785
+      },
+      "share_of_rule_closed_that_is_seen_under_water": {
+       "by_edges": 0.161765,
+       "by_km": 0.123265
+      },
+      "share_of_seen_under_water_that_the_rule_closes": {
+       "by_edges": 0.423077,
+       "by_km": 0.245883
+      }
+     },
+     "central": {
+      "edges": 857,
+      "km": 43.872,
+      "closed_by_rule_and_seen_under_water": {
+       "edges": 25,
+       "km": 1.193
+      },
+      "closed_by_rule_not_seen_under_water": {
+       "edges": 132,
+       "km": 8.004
+      },
+      "open_by_rule_seen_under_water": {
+       "edges": 27,
+       "km": 2.113
+      },
+      "open_by_rule_not_seen_under_water": {
+       "edges": 673,
+       "km": 32.562
+      },
+      "share_of_rule_closed_that_is_seen_under_water": {
+       "by_edges": 0.159236,
+       "by_km": 0.129712
+      },
+      "share_of_seen_under_water_that_the_rule_closes": {
+       "by_edges": 0.480769,
+       "by_km": 0.360889
+      }
+     },
+     "permissive": {
+      "edges": 857,
+      "km": 43.872,
+      "closed_by_rule_and_seen_under_water": {
+       "edges": 34,
+       "km": 2.024
+      },
+      "closed_by_rule_not_seen_under_water": {
+       "edges": 202,
+       "km": 13.096
+      },
+      "open_by_rule_seen_under_water": {
+       "edges": 18,
+       "km": 1.282
+      },
+      "open_by_rule_not_seen_under_water": {
+       "edges": 603,
+       "km": 27.47
+      },
+      "share_of_rule_closed_that_is_seen_under_water": {
+       "by_edges": 0.144068,
+       "by_km": 0.133848
+      },
+      "share_of_seen_under_water_that_the_rule_closes": {
+       "by_edges": 0.653846,
+       "by_km": 0.612254
+      }
+     }
+    }
+   },
+   "m1_v2": {
+    "closure_basis": "modelled_from_m1_v2",
+    "by_level": {
+     "strict": {
+      "edges": 857,
+      "km": 43.872,
+      "closed_by_rule_and_seen_under_water": {
+       "edges": 2,
+       "km": 0.11
+      },
+      "closed_by_rule_not_seen_under_water": {
+       "edges": 30,
+       "km": 1.429
+      },
+      "open_by_rule_seen_under_water": {
+       "edges": 50,
+       "km": 3.196
+      },
+      "open_by_rule_not_seen_under_water": {
+       "edges": 775,
+       "km": 39.137
+      },
+      "share_of_rule_closed_that_is_seen_under_water": {
+       "by_edges": 0.0625,
+       "by_km": 0.071284
+      },
+      "share_of_seen_under_water_that_the_rule_closes": {
+       "by_edges": 0.038462,
+       "by_km": 0.033186
+      }
+     },
+     "central": {
+      "edges": 857,
+      "km": 43.872,
+      "closed_by_rule_and_seen_under_water": {
+       "edges": 2,
+       "km": 0.11
+      },
+      "closed_by_rule_not_seen_under_water": {
+       "edges": 35,
+       "km": 2.417
+      },
+      "open_by_rule_seen_under_water": {
+       "edges": 50,
+       "km": 3.196
+      },
+      "open_by_rule_not_seen_under_water": {
+       "edges": 770,
+       "km": 38.149
+      },
+      "share_of_rule_closed_that_is_seen_under_water": {
+       "by_edges": 0.054054,
+       "by_km": 0.043408
+      },
+      "share_of_seen_under_water_that_the_rule_closes": {
+       "by_edges": 0.038462,
+       "by_km": 0.033186
+      }
+     },
+     "permissive": {
+      "edges": 857,
+      "km": 43.872,
+      "closed_by_rule_and_seen_under_water": {
+       "edges": 6,
+       "km": 0.21
+      },
+      "closed_by_rule_not_seen_under_water": {
+       "edges": 66,
+       "km": 5.099
+      },
+      "open_by_rule_seen_under_water": {
+       "edges": 46,
+       "km": 3.096
+      },
+      "open_by_rule_not_seen_under_water": {
+       "edges": 739,
+       "km": 35.467
+      },
+      "share_of_rule_closed_that_is_seen_under_water": {
+       "by_edges": 0.083333,
+       "by_km": 0.039526
+      },
+      "share_of_seen_under_water_that_the_rule_closes": {
+       "by_edges": 0.115385,
+       "by_km": 0.063486
+      }
+     }
+    }
+   }
+  }
+ },
+ "figure": "outputs/theos2_cross_check/sukhothai_20250730_v1_overview.png",
+ "assumptions": [
+  "The THEOS-2 water raster is a rule on four uncalibrated bands at 2 m, checked by eye; it was not validated on the ground.",
+  "The radar after-image was acquired 43.6 hours after the THEOS-2 scene; water may have risen or fallen in between.",
+  "The radar before-image of 19 July 2025 is assumed free of flood water; that was not verified.",
+  "Terrain-corrected gamma0 is used where the Mae Sai runs used sigma0 (plan section 3, declared deviation).",
+  "A road closure is modelled from a flood extent with closure rule v1; a flood intersection does not prove a closure."
+ ],
+ "limits": [
+  "One scene of 9 square kilometres from one event: no method is selected, tuned or promoted on it.",
+  "Every figure is agreement between two sensors at two times, never accuracy.",
+  "It qualifies no candidate for Mae Sai; the T2 skill bar of protocol v1a is unchanged.",
+  "Tree crowns and roofs hide a road surface and an OpenStreetMap centreline can lie metres off the road, so 'seen under water' is an under-count.",
+  "Large roofs that pass the object rule can still be read as water in built-up cells."
+ ]
+}

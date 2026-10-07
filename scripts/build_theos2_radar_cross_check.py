@@ -401,10 +401,10 @@ def read_roads(pbf: Path, bounds_lonlat: tuple[float, float, float, float]) -> l
     frame = pyogrio.read_dataframe(pbf, layer="lines", bbox=bounds_lonlat, columns=["osm_id", "highway", "other_tags"])
     edges: list[dict[str, Any]] = []
     for osm_id, highway, tags, geometry in zip(frame["osm_id"], frame["highway"], frame["other_tags"], frame.geometry):
-        road_class = evidence_context.ROAD_CLASSES.get(highway or "")
+        road_class = evidence_context.ROAD_CLASSES.get(highway) if isinstance(highway, str) else None
         if road_class is None or geometry is None or geometry.geom_type != "LineString":
             continue
-        tags = tags or ""
+        tags = tags if isinstance(tags, str) else ""
         coordinates = list(geometry.coords)
         for index in range(len(coordinates) - 1):
             edges.append({

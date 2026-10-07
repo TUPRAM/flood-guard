@@ -1,0 +1,200 @@
+{
+ "schema": "floodguard.theos2_cross_check.receipt.v1",
+ "generated_at_utc": "2026-10-07T06:29:56Z",
+ "source_timestamp": "2025-07-30T03:33:31Z",
+ "confidence_class": "low",
+ "confidence_basis": "One optical scene and one radar pair, 43.6 hours apart; no ground check.",
+ "operational_status": "non_operational",
+ "official_warning": false,
+ "can_feed_decision_layer": false,
+ "plan": {
+  "path": "docs/proposal_execution/theos2_cross_check_plan_v1.md",
+  "sha256": "bb4bf03dfd2181b4d9f90f85857123b1cf27fb7ca1436060b16d82623050e2c6"
+ },
+ "run_kind": "first_and_only_comparison_run",
+ "inputs": {
+  "theos2_scene": {
+   "file_name": "IMG_T2V_20250730033331_ORTHO_PMS_32-004.tif",
+   "sha256": "1d18c3091f57c784be34216585a1ba22d055471ef5c1ec434c57971c55112134"
+  },
+  "reference_record": {
+   "path": "outputs/theos2_cross_check/sukhothai_20250730_reference_v1.json",
+   "sha256": "a470423f4a572a6d4e4a39acf26592d1c20b3a58740489b0daef5a2ed51314a6"
+  },
+  "sentinel1": {
+   "pre": {
+    "fetched_at_utc": "2026-10-07T06:26:43Z",
+    "sources": [
+     {
+      "item": "S1A_IW_GRDH_1SDV_20250719T230832_20250719T230857_060159_rtc",
+      "datetime": "2025-07-19T23:08:44.832051Z",
+      "platform": "sentinel-1a",
+      "relative_orbit": 62,
+      "orbit_state": "descending",
+      "assets": {
+       "vv": "https://sentinel1euwestrtc.blob.core.windows.net/sentinel1-grd-rtc/GRD/2025/7/19/IW/DV/S1A_IW_GRDH_1SDV_20250719T230832_20250719T230857_060159_0779AA_49D4/measurement/iw-vv.rtc.tiff",
+       "vh": "https://sentinel1euwestrtc.blob.core.windows.net/sentinel1-grd-rtc/GRD/2025/7/19/IW/DV/S1A_IW_GRDH_1SDV_20250719T230832_20250719T230857_060159_0779AA_49D4/measurement/iw-vh.rtc.tiff"
+      }
+     }
+    ],
+    "mosaic_rule": "first valid value in the listed order",
+    "window_file": "s1_pre_gamma0.tif",
+    "window_sha256": "a0b04981e40545171d3f6fdf8331b5c929edf4447d61dd7e9e96f9def3fde909"
+   },
+   "post": {
+    "fetched_at_utc": "2026-10-07T06:27:11Z",
+    "sources": [
+     {
+      "item": "S1A_IW_GRDH_1SDV_20250731T230828_20250731T230853_060334_rtc",
+      "datetime": "2025-07-31T23:08:41.477445Z",
+      "platform": "sentinel-1a",
+      "relative_orbit": 62,
+      "orbit_state": "descending",
+      "assets": {
+       "vv": "https://sentinel1euwestrtc.blob.core.windows.net/sentinel1-grd-rtc/GRD/2025/7/31/IW/DV/S1A_IW_GRDH_1SDV_20250731T230828_20250731T230853_060334_077FAD_57B8/measurement/iw-vv.rtc.tiff",
+       "vh": "https://sentinel1euwestrtc.blob.core.windows.net/sentinel1-grd-rtc/GRD/2025/7/31/IW/DV/S1A_IW_GRDH_1SDV_20250731T230828_20250731T230853_060334_077FAD_57B8/measurement/iw-vh.rtc.tiff"
+      }
+     },
+     {
+      "item": "S1A_IW_GRDH_1SDV_20250731T230853_20250731T230918_060334_rtc",
+      "datetime": "2025-07-31T23:09:06.477545Z",
+      "platform": "sentinel-1a",
+      "relative_orbit": 62,
+      "orbit_state": "descending",
+      "assets": {
+       "vv": "https://sentinel1euwestrtc.blob.core.windows.net/sentinel1-grd-rtc/GRD/2025/7/31/IW/DV/S1A_IW_GRDH_1SDV_20250731T230853_20250731T230918_060334_077FAD_34F4/measurement/iw-vv.rtc.tiff",
+       "vh": "https://sentinel1euwestrtc.blob.core.windows.net/sentinel1-grd-rtc/GRD/2025/7/31/IW/DV/S1A_IW_GRDH_1SDV_20250731T230853_20250731T230918_060334_077FAD_34F4/measurement/iw-vh.rtc.tiff"
+      }
+     }
+    ],
+    "mosaic_rule": "first valid value in the listed order",
+    "window_file": "s1_post_gamma0.tif",
+    "window_sha256": "34c182f3a7dc6a0163446e80e0825017d83058367f80414eec9e7d9710f17d46"
+   }
+  },
+  "worldcover": {
+   "url": "https://esa-worldcover.s3.eu-central-1.amazonaws.com/v200/2021/map/ESA_WorldCover_10m_2021_v200_N15E099_Map.tif",
+   "window_sha256": "db5335a9374dd34a0d13fb0526454975262de4c781c1e90ab8596ba3bbbbafd0",
+   "credit": "© ESA WorldCover project 2021 / Contains modified Copernicus Sentinel data (2021) processed by ESA WorldCover consortium (CC BY 4.0)"
+  },
+  "copernicus_dem": {
+   "urls": [
+    "https://copernicus-dem-30m.s3.amazonaws.com/Copernicus_DSM_COG_10_N16_00_E099_00_DEM/Copernicus_DSM_COG_10_N16_00_E099_00_DEM.tif",
+    "https://copernicus-dem-30m.s3.amazonaws.com/Copernicus_DSM_COG_10_N17_00_E099_00_DEM/Copernicus_DSM_COG_10_N17_00_E099_00_DEM.tif"
+   ],
+   "window_sha256": [
+    "db05bc31def0488ed502765af1cb04e8756f0f6924c3d56972eebbf99fd36c73",
+    "0db95f8b5b05b11cb7c6edcba575d42900aafd55ed2d0eda400dfd2f513f6ea3"
+   ]
+  },
+  "openstreetmap": {
+   "file_name": "thailand-latest.osm.pbf",
+   "sha256": "b7f46018249638413b1d318bc86519f140c27af20cac7c00d42fe03775b7add1",
+   "credit": "© OpenStreetMap contributors (ODbL 1.0)"
+  },
+  "m1_v2_frozen_config": {
+   "path": "docs/proposal_execution/automated_track/geoid_m1_v2_frozen_config.json",
+   "sha256": "2bfcb0c6ebf4b79402afa63c56209f2c5cda26491f08883d67908195b6c64a68"
+  },
+  "planning_protocol_v1b": {
+   "sha256": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7",
+   "used_for": "the closure parameters only"
+  }
+ },
+ "parameters": {
+  "un_spider": {
+   "polarisation": "vh",
+   "smoothing": "focal_mean_circle_on_db",
+   "smoothing_radius_m": 50.0,
+   "difference": "after_db_divided_by_before_db",
+   "difference_threshold": 1.25,
+   "perennial_water": "removed_before_the_connected_pixel_rule",
+   "min_connected_cells": 8,
+   "connectivity": "eight_connected",
+   "max_slope": 5.0,
+   "slope_unit": "degrees",
+   "slope_rule": "cells_with_slope_at_or_above_max_slope_are_removed_last"
+  },
+  "m1_literal": {
+   "speckle_filter": "lee_local_statistics",
+   "speckle_window_pixels": 5,
+   "equivalent_looks": 4.4,
+   "threshold_feature": "delta_vh_db_post_minus_pre",
+   "threshold_method": "otsu_on_all_valid_pixels_of_the_image",
+   "candidate_rule": "delta_vh_below_threshold_and_below_zero",
+   "isolated_speckle_cleaning": "majority_3x3_at_least_5_of_9",
+   "histogram": {
+    "lower_db": -25.0,
+    "upper_db": 25.0,
+    "bin_width_db": 0.1
+   }
+  },
+  "m1_v2": {
+   "channel": "vh",
+   "direction": "darkening",
+   "block_pixels": 64,
+   "threshold_scope": "per_tile",
+   "threshold_method": "kittler_illingworth",
+   "speckle_filter": "refined_lee_7x7",
+   "equivalent_looks": 4.4,
+   "ashman_d_min": 2.0,
+   "min_component_weight": 0.1,
+   "min_block_valid_fraction": 0.5,
+   "min_threshold_class_fraction": 0.01,
+   "kittler_illingworth_rule": "interior_minimum_between_fitted_modes",
+   "isolated_speckle_cleaning": "majority_3x3_at_least_5_of_9",
+   "histogram": {
+    "lower_db": -25.0,
+    "upper_db": 25.0,
+    "bin_width_db": 0.1
+   }
+  },
+  "optical": {
+   "ndwi_threshold": null,
+   "histogram_low": -0.6,
+   "histogram_high": 0.4,
+   "histogram_bins": 200,
+   "bright_brightness_min": 520.0,
+   "bright_nir_min": 560.0,
+   "bright_min_width_px": 11,
+   "bright_margin_px": 10,
+   "min_object_px": 250,
+   "unobservable_boxes": [
+    [
+     0,
+     300,
+     1230,
+     1501
+    ]
+   ]
+  }
+ },
+ "outputs": {
+  "outputs/theos2_cross_check/sukhothai_20250730_v1.json": {
+   "sha256": "1f6e633b688b0bbe1c0488dd36427e36347cb4decbf5d496f7192cc3be9b24b0"
+  },
+  "outputs/theos2_cross_check/sukhothai_20250730_v1_overview.png": {
+   "sha256": "b3e4c37e86ed1987a358295908f78cc868df3689383275320abf8ccef638fb5e"
+  },
+  "rasters_outside_git": {
+   "candidate_un_spider.tif": {
+    "sha256": "08a6857a5c316a2bcf5b1da23e702c12af32f730bafe8a6dca71e7ba7d4460cb"
+   },
+   "candidate_m1_literal.tif": {
+    "sha256": "70c1909aaaa8fbfba0a0bf1f09cdd1b0d51458b40abadc051f500efa9a0670ec"
+   },
+   "candidate_m1_v2.tif": {
+    "sha256": "906f93a69393cde7b61fb55bfb9c36c099cda2b018933ff154d3fce28545415d"
+   }
+  }
+ },
+ "credits": [
+  "Contains modified Copernicus Sentinel data 2025.",
+  "THEOS-2 imagery © GISTDA, sample provided for GeoHackathon 2026."
+ ],
+ "libraries": {
+  "python": "3.12.13",
+  "numpy": "2.5.0",
+  "rasterio": "1.5.0"
+ }
+}

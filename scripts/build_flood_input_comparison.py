@@ -208,7 +208,6 @@ def main() -> None:
     e1_text = (ROOT / E1_RECEIPT).read_text(encoding="utf-8")
     radar_receipt_text = (ROOT / RADAR_RECEIPT).read_text(encoding="utf-8")
     water, water_record = bound_layer(external / WATER_FILE, e1_text, "permanent water of the reporting frame")
-    frame_metres = shapely.union_all(list(units_metres.values()))
 
     extents: dict[str, Any] = {}
     inputs: dict[str, Any] = {}
@@ -222,6 +221,14 @@ def main() -> None:
     extents[SEASON_FRAME] = in_frame
     inputs[SEASON_FRAME] = {"kind": "agency_season_layer", "layer": record,
                             "label": "2024 season layer of UNOSAT and GISTDA, inside the eight tambons only"}
+    import rasterio
+
+    frame_units_path = external / RADAR_FOLDER / "frame_units.tif"
+    if sha256_file(frame_units_path) not in radar_receipt_text:
+        raise BuildError("frame_units.tif is not a raster the committed radar receipt binds")
+    with rasterio.open(frame_units_path) as source:
+        in_frame_cells = source.read(1) > 0
+    frame_cell_count = int(in_frame_cells.sum())
     for name, label in RADAR_METHODS.items():
         path = external / RADAR_FOLDER / f"{name}_candidate.tif"
         digest = sha256_file(path)
@@ -231,13 +238,13 @@ def main() -> None:
         extent, dropped = flood_inputs.drop_small_polygons(
             grid["flood"], grid["transform"], minimum_px=rules.raster_minimum_polygon_px, connectivity=RASTER_POLYGON_CONNECTIVITY)
         extents[name] = extent
-        answered = int((~grid["no_answer"]).sum())
+        answered = int((~grid["no_answer"] & in_frame_cells).sum())
         inputs[name] = {
             "kind": "own_radar_candidate_tier_t2", "label": f"{label}, height-aware run of 4 October 2026",
             "raster": {"file": path.name, "sha256": digest}, "cell_m": grid["cell_m"],
             "flood_cells": int(grid["flood"].sum()), "polygons": dropped,
-            "cells_with_an_answer": answered,
-            "answered_share_of_frame": round(answered * grid["cell_m"] ** 2 / float(frame_metres.area), 6),
+            "frame_cells": frame_cell_count, "cells_with_an_answer": answered,
+            "answered_share_of_frame": round(answered / frame_cell_count, 6),
             "attribution": "Contains modified Copernicus Sentinel data 2024",
         }
 
@@ -323,7 +330,7 @@ def main() -> None:
         "raster_polygon_rule": {"minimum_cells": rules.raster_minimum_polygon_px, "connectivity": RASTER_POLYGON_CONNECTIVITY},
         "what_the_confidence_rule_says_of_a_radar_input": {
             "source": RADAR_TABLE,
-            "outcome_of_record": radar_table["t2_skill_bar"].get("outcome_of_record"),
+            "outcome_of_record": {name: radar_table["t2_skill_bar"]["methods"][name]["outcome_of_record"] for name in RADAR_METHODS},
             "meaning": "An own radar candidate that does not meet the skill bar of protocol v1a has low confidence, and "
                        "low confidence gives class E (monitor and verify). Class E never means safe.",
         },

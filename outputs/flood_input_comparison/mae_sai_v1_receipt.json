@@ -1,0 +1,155 @@
+{
+ "schema": "floodguard.flood_input_comparison.receipt.v1",
+ "generated_at_utc": "2026-10-07T09:40:31Z",
+ "source_timestamp": "2024-08-01/2024-10-12 (season layer); 2024-09-15T23:16:01Z (radar pass)",
+ "confidence_class": "low",
+ "confidence_basis": "Modelled closures on an unvalidated agency layer and on unqualified own radar candidates; nothing was checked on the ground.",
+ "operational_status": "non_operational",
+ "official_warning": false,
+ "can_feed_decision_layer": false,
+ "plan": {
+  "path": "docs/proposal_execution/flood_input_comparison_plan_v1.md",
+  "sha256": "5ef7103a6ea0172d81f1a28ada1afcefe4bf6908e528f9c4043d388a724f01a5"
+ },
+ "protocol_sha256": {
+  "planning_protocol_v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+  "planning_protocol_v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+ },
+ "inputs": {
+  "context_of_record": {
+   "status": "of_record",
+   "run_kind": "build_of_record",
+   "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e4_vehicle/context_inputs.json",
+   "file_sha256": "37e47f2e4cede433aa709e0154e9d39e921d1359d69b10642e3385267ca01385",
+   "canonical_sha256": "0b2672b6d4d1d94da3a4c39d819d980a9e5bf7845bb22fea1284a2893a6351a6",
+   "canonical_sha256_recomputed": true,
+   "context_generated_at": "2026-10-03T05:28:59.223644+00:00",
+   "receipt": {
+    "path": "outputs/planning_v1/e4_planning_context_se1_vehicle.json",
+    "sha256": "690add44186d02cb501dccb152678fbf03cf109acc041a5c782af705993f2ad2"
+   },
+   "named_in": "planning_protocol_v1b.json /corridor_polygon/e4_build_of_record",
+   "input_hashes": {
+    "aoi_02_sha256": "d49de53e86264c06218fd9a03cc2b5da1549085a49fae2f3cd288bf6334f5a56",
+    "boundaries_sha256": "09e62345481bb80030ff6779e074bfb2c16629b70ae1e373ebd31945f1c6e0d8",
+    "ddpm_file_sha256": "91a8f26a5dd2446b68b562dcda13024d1bd4981720f985722a6467d4edeef9d7",
+    "dga_file_sha256": "15d208b7c269562c9444f5f034f5e16c3a33a2e069a19637264b2ddc2f1ee58d",
+    "osm_pbf_sha256": "b7f46018249638413b1d318bc86519f140c27af20cac7c00d42fe03775b7add1",
+    "reviewed_junctions_sha256": "43de4cc50efc790af1aa502e820e178856389041b568ff61bf2c463cfe240f07",
+    "routing_file_sha256": "4e49d5eca2f7522e2de10cf81cc68b4ebcbea036225d1b862f4a80cb1affbac2",
+    "worldpop_2020_sha256": "fb39d85dd150c45c7b25771f29bcd548e611afa0967224ac6d8ca05727230e20"
+   },
+   "osm_retrieved_at_utc": "2026-07-10T02:46:49Z",
+   "ddpm_list_file_dated": "2026-09-21 (open-data folder date)",
+   "hospital_facility_ids": [
+    "OSM-node-7856667792",
+    "OSM-way-1010348419",
+    "OSM-way-371233866",
+    "OSM-way-447735125",
+    "OSM-way-527539157",
+    "OSM-way-549948901"
+   ],
+   "main_road_entry_node_ids_sha256": "10d17aa72a96150ffbbfc2d2fddd53bc921ede042fdebe66540b8a43092da15d",
+   "baseline_no_route": {
+    "residents": 81836.889439,
+    "graph_connected_residents": 75226.97719,
+    "connected_residents_without_a_route": 56.446837,
+    "share": 0.00075,
+    "residents_not_connected_to_the_graph": 6609.912249
+   }
+  },
+  "boundaries": {
+   "file": "tha_admin_boundaries.gdb.zip",
+   "sha256": "09e62345481bb80030ff6779e074bfb2c16629b70ae1e373ebd31945f1c6e0d8"
+  },
+  "permanent_water": {
+   "file": "permanent_water__reporting_frame.geojson",
+   "sha256": "a92e168c56b1fddbabf772171ba140a303e2b48f1007d7da1223b5d7c4d150ee",
+   "what": "permanent water of the reporting frame"
+  },
+  "e1_receipt": {
+   "path": "outputs/planning_v1/e1_flood_inputs_mae_sai.json",
+   "sha256": "341280ff2ef1275842a3a4498eeb11f3e7d549394f724d469492cfae42517fbd"
+  },
+  "radar_receipt": {
+   "path": "outputs/planning_v1/radar_o1_mae_sai_v1_height_aware_sensitivity_receipt.json",
+   "sha256": "5f5e1795bb2e7968fc40f1a982eee11b047240f2092fd6527f5ea3c2c6769401"
+  },
+  "radar_table": {
+   "path": "outputs/planning_v1/radar_o1_mae_sai_v1.json",
+   "sha256": "f60d0c68fb831a3f67307603ff450f16fb9f94ad1880fb4c222c951c2ca3e819"
+  },
+  "flood_inputs": {
+   "season_layer_whole_corridor": {
+    "file": "flood_extent__as_provided__routing_context.geojson",
+    "sha256": "5d7c1c0ca7909284317a66d2a3611452de3f91d729dfb4cc31b96840e147b794",
+    "what": "season layer, as provided, routing context"
+   },
+   "season_layer_in_frame": {
+    "file": "flood_extent__as_provided__reporting_frame.geojson",
+    "sha256": "405918085b2cf9ce38b46143de0a27efb02ce919a5d8e146b4954f47d10f8368",
+    "what": "season layer, as provided, reporting frame"
+   },
+   "un_spider": {
+    "file": "un_spider_candidate.tif",
+    "sha256": "781f1d8045bfa55291633b08a30b0808ec6d503dcb3bbd9014063f6e7b72916e"
+   },
+   "m1_literal": {
+    "file": "m1_literal_candidate.tif",
+    "sha256": "caaa83a180e1e4e6f63436a5cda503e5193884052e25ae3238b0fb43082cb9b9"
+   },
+   "m1_v2": {
+    "file": "m1_v2_candidate.tif",
+    "sha256": "9db42771d886a4e5e291363b76dc0ceda33934335dd451b1698344262bf66587"
+   }
+  }
+ },
+ "parameters": {
+  "closure": {
+   "length_thresholds_m": {
+    "trunk": 50.0,
+    "primary": 50.0,
+    "secondary": 50.0,
+    "tertiary": 30.0,
+    "local": 30.0,
+    "motorway": 50.0,
+    "residential": 30.0,
+    "unclassified": 30.0
+   },
+   "strict_delays": true
+  },
+  "services": [
+   {
+    "service": "hospital",
+    "mode": "vehicle",
+    "thresholds_minutes": [
+     15,
+     30,
+     60
+    ],
+    "access_gap_threshold_minutes": 30,
+    "publication_level": "public"
+   },
+   {
+    "service": "main_road_entry",
+    "mode": "vehicle",
+    "thresholds_minutes": [
+     15,
+     30,
+     60
+    ],
+    "access_gap_threshold_minutes": 15,
+    "publication_level": "public"
+   }
+  ]
+ },
+ "outputs": {
+  "outputs/flood_input_comparison/mae_sai_v1.json": {
+   "sha256": "22b7b30fd07058cce33b10e041bc2537ca7ace1a276b34801bed07b0859e6479"
+  }
+ },
+ "libraries": {
+  "python": "3.12.13",
+  "shapely": "2.1.2"
+ }
+}

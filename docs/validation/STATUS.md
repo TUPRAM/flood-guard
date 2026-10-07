@@ -1,6 +1,6 @@
 # Validation check: state of the team's acceptance
 
-Written by `scripts/import_validation_records.py` on 2026-10-07T07:54:33Z from 0 record(s). Do not edit by hand.
+Written by `scripts/import_validation_records.py` on 2026-10-07T09:00:45Z from 0 record(s). Do not edit by hand.
 
 This is the word of the three team members on the project's own work. It is not a review by an independent expert, it qualifies no flood map, and it is not an official approval.
 
@@ -13,7 +13,8 @@ This is the word of the three team members on the project's own work. It is not 
 | V-05 | Request to GISTDA: THEOS-2 of 16 September 2024 and the Pléiades question | Waiting |  |  |  |
 | V-06 | Note to UNOSAT: GIS data of product 3991 | Waiting |  |  |  |
 | V-07 | Rights record for the Sentinel-1 data | Waiting |  |  |  |
-| V-08 | Which radar layers case O1 uses | Waiting |  |  |  |
+| V-08 | Which radar layers are read | Waiting |  |  |  |
+| V-21 | Is the comparison enough, or is case O1 to be issued? | Waiting |  |  |  |
 | V-09 | The table of case SE1 is what the team presents | Waiting |  |  |  |
 | V-10 | The Ko Chang roads, looked at on a map | Evidence not ready |  |  |  |
 | V-11 | The five-minute pitch draft | Waiting |  |  |  |
@@ -21,7 +22,7 @@ This is the word of the three team members on the project's own work. It is not 
 | V-13 | The table of who decides what | Waiting |  |  |  |
 | V-14 | The answers to the questions of Session I | Waiting |  |  |  |
 | V-15 | The order of work on the trained models | Waiting |  |  |  |
-| V-16 | How the result changes with the flood input | Evidence not ready |  |  |  |
+| V-16 | How the result changes with the flood input | Waiting |  |  |  |
 | V-17 | Radar set against the dated layer of 22 October 2024 at Mae Sai | Evidence not ready |  |  |  |
 | V-18 | The flood-susceptibility model | Evidence not ready |  |  |  |
 | V-19 | The supervised flood classifier | Evidence not ready |  |  |  |

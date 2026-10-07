@@ -1,0 +1,206 @@
+{
+ "schema": "floodguard.validation_check.state.v1",
+ "generated_at_utc": "2026-10-07T07:54:33Z",
+ "source_timestamp": null,
+ "confidence_class": "not_applicable",
+ "what_this_is": "The word of the three team members on the project's own work, as handed over.",
+ "assumptions": [
+  "A record from a GitHub issue counts when its author is the account listed for the reviewer it names.",
+  "A record from a file counts as stated; a team member handed the file over.",
+  "For each item and reviewer the record received last counts."
+ ],
+ "limits": [
+  "It is not a review by an independent expert and qualifies no flood map.",
+  "It is not an official approval and not an official warning."
+ ],
+ "official_warning": false,
+ "operational_status": "non_operational",
+ "rule": "An item is accepted when at least one of the three reviewers accepts it and none asks for a change or rejects it. One 'change' or 'reject' holds it until that reviewer accepts. All three are asked to read; one acceptance is enough to go on (owner decision of 7 October 2026).",
+ "records_counted": 0,
+ "status_counts": {
+  "evidence_not_ready": 6,
+  "waiting": 14
+ },
+ "items": {
+  "V-01": {
+   "status": "waiting",
+   "accepted_by": [],
+   "by_reviewer": {
+    "Rachmania": null,
+    "Putu": null,
+    "Callixta": null
+   }
+  },
+  "V-02": {
+   "status": "waiting",
+   "accepted_by": [],
+   "by_reviewer": {
+    "Rachmania": null,
+    "Putu": null,
+    "Callixta": null
+   }
+  },
+  "V-03": {
+   "status": "waiting",
+   "accepted_by": [],
+   "by_reviewer": {
+    "Rachmania": null,
+    "Putu": null,
+    "Callixta": null
+   }
+  },
+  "V-04": {
+   "status": "waiting",
+   "accepted_by": [],
+   "by_reviewer": {
+    "Rachmania": null,
+    "Putu": null,
+    "Callixta": null
+   }
+  },
+  "V-05": {
+   "status": "waiting",
+   "accepted_by": [],
+   "by_reviewer": {
+    "Rachmania": null,
+    "Putu": null,
+    "Callixta": null
+   }
+  },
+  "V-06": {
+   "status": "waiting",
+   "accepted_by": [],
+   "by_reviewer": {
+    "Rachmania": null,
+    "Putu": null,
+    "Callixta": null
+   }
+  },
+  "V-07": {
+   "status": "waiting",
+   "accepted_by": [],
+   "by_reviewer": {
+    "Rachmania": null,
+    "Putu": null,
+    "Callixta": null
+   }
+  },
+  "V-08": {
+   "status": "waiting",
+   "accepted_by": [],
+   "by_reviewer": {
+    "Rachmania": null,
+    "Putu": null,
+    "Callixta": null
+   }
+  },
+  "V-09": {
+   "status": "waiting",
+   "accepted_by": [],
+   "by_reviewer": {
+    "Rachmania": null,
+    "Putu": null,
+    "Callixta": null
+   }
+  },
+  "V-10": {
+   "status": "evidence_not_ready",
+   "accepted_by": [],
+   "by_reviewer": {
+    "Rachmania": null,
+    "Putu": null,
+    "Callixta": null
+   }
+  },
+  "V-11": {
+   "status": "waiting",
+   "accepted_by": [],
+   "by_reviewer": {
+    "Rachmania": null,
+    "Putu": null,
+    "Callixta": null
+   }
+  },
+  "V-12": {
+   "status": "waiting",
+   "accepted_by": [],
+   "by_reviewer": {
+    "Rachmania": null,
+    "Putu": null,
+    "Callixta": null
+   }
+  },
+  "V-13": {
+   "status": "waiting",
+   "accepted_by": [],
+   "by_reviewer": {
+    "Rachmania": null,
+    "Putu": null,
+    "Callixta": null
+   }
+  },
+  "V-14": {
+   "status": "waiting",
+   "accepted_by": [],
+   "by_reviewer": {
+    "Rachmania": null,
+    "Putu": null,
+    "Callixta": null
+   }
+  },
+  "V-15": {
+   "status": "waiting",
+   "accepted_by": [],
+   "by_reviewer": {
+    "Rachmania": null,
+    "Putu": null,
+    "Callixta": null
+   }
+  },
+  "V-16": {
+   "status": "evidence_not_ready",
+   "accepted_by": [],
+   "by_reviewer": {
+    "Rachmania": null,
+    "Putu": null,
+    "Callixta": null
+   }
+  },
+  "V-17": {
+   "status": "evidence_not_ready",
+   "accepted_by": [],
+   "by_reviewer": {
+    "Rachmania": null,
+    "Putu": null,
+    "Callixta": null
+   }
+  },
+  "V-18": {
+   "status": "evidence_not_ready",
+   "accepted_by": [],
+   "by_reviewer": {
+    "Rachmania": null,
+    "Putu": null,
+    "Callixta": null
+   }
+  },
+  "V-19": {
+   "status": "evidence_not_ready",
+   "accepted_by": [],
+   "by_reviewer": {
+    "Rachmania": null,
+    "Putu": null,
+    "Callixta": null
+   }
+  },
+  "V-20": {
+   "status": "evidence_not_ready",
+   "accepted_by": [],
+   "by_reviewer": {
+    "Rachmania": null,
+    "Putu": null,
+    "Callixta": null
+   }
+  }
+ }
+}

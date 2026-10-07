@@ -1,0 +1,8 @@
+{
+  "what_this_is": "The GitHub account whose issues count as the word of each reviewer. A reviewer without an account hands the record over as a file.",
+  "reviewers": {
+    "Rachmania": { "github": null },
+    "Putu": { "github": "TUPRAM" },
+    "Callixta": { "github": "callixtafidelia" }
+  }
+}

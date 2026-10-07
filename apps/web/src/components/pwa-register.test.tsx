@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
-import { autoHidesOn, PwaRegister, mapAvailabilityCopy, pwaAvailabilityCopy, requiredOfflinePaths } from "./pwa-register";
+import { autoHidesOn, PwaRegister, mapAvailabilityCopy, pwaAvailabilityCopy, requiredOfflinePaths, quietInSlot } from "./pwa-register";
 
 describe("PwaRegister", () => {
   it("keeps map availability distinct from online and saved-app readiness", () => {
@@ -55,6 +55,21 @@ describe("PwaRegister", () => {
       "/command/exercise/", "/command/ver2/", "/command/archive/",
       "/studio/", "/studio/brief/", "/studio/library/", "/studio/archive/",
     ]));
+  });
+
+  it("shows nothing in a page's own slot while everything is in order, and comes back when something needs attention", () => {
+    // Online, or still finding out, with no update waiting: nothing to say.
+    expect(quietInSlot(true, "current", false, false)).toBe(true);
+    expect(quietInSlot(null, "current", false, false)).toBe(true);
+    expect(quietInSlot(true, "installing", false, false)).toBe(true);
+    expect(quietInSlot(true, "checking", false, false)).toBe(true);
+    // Without a connection, with an update waiting or failed, or with the map background in trouble: the bar is shown.
+    expect(quietInSlot(false, "current", false, false)).toBe(false);
+    expect(quietInSlot(true, "available", false, false)).toBe(false);
+    expect(quietInSlot(true, "error", false, false)).toBe(false);
+    expect(quietInSlot(true, "current", true, false)).toBe(false);
+    // An open panel stays open.
+    expect(quietInSlot(true, "current", false, true)).toBe(false);
   });
 
   it("hides the app-status pill on the exercise page and not on the Planning pages below it", () => {

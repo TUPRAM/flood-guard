@@ -504,3 +504,55 @@
   .public-greeting-location { display: none; }
   .public-app-header .language-toggle button { min-width: 30px; padding-inline: 4px; }
 }
+
+/* --- Public home, cleaned up on the owner's request of 7 Oct 2026 ----------------------------------------------- */
+
+/* No block above the map: the map takes the whole page under the header. */
+.public-home-page { grid-template-rows: minmax(360px, 1fr); }
+.public-home-page:has(.map-basemap-notice:not([data-pending="true"])) { grid-template-rows: minmax(448px, 1fr); }
+
+/* The research link stands in the Hazard Info panel, under the link to the official updates. */
+.public-hazard-panel .public-home-research-link { display: inline-flex; align-items: center; min-height: 44px; margin-top: 4px; }
+
+/*
+   The list of the map's results is the map's text alternative. It is not shown to a reader who points or taps; it
+   appears when the keyboard reaches it, and stays while it is open. It keeps its place in the column, so the
+   map-background notice below it does not move.
+*/
+.public-home-map .map-text-alternative:not([open]):not(:focus-within) { opacity: 0; pointer-events: none; }
+
+/* Hazard Info: at the top right, just under the search field, where the list button's row is. */
+.public-home-map > .public-hazard-button {
+  position: absolute;
+  z-index: 700;
+  top: 76px;
+  right: calc(var(--public-map-tool-inset) + 12px);
+}
+/* With the button gone from the foot of the map, the card keeps clear of the tool column on the right... */
+.public-map-dock > .public-risk-indicator { max-width: min(360px, calc(100% - 60px)); }
+/* ...and the tools stand where the button was: locate, then zoom, then the layer menu. */
+.public-locate-button { bottom: calc(12px + var(--public-nav-clear, 0px)); }
+.public-home-map .leaflet-top.leaflet-left { bottom: calc(68px + var(--public-nav-clear, 0px)); }
+.public-home-map .map-basemap-menu { bottom: calc(166px + var(--public-nav-clear, 0px)); }
+.public-map-dock { bottom: var(--public-nav-clear, 0px); }
+/* The credit stays above the card, as before. */
+.public-home-map .leaflet-control-attribution { margin-bottom: calc(224px + var(--public-nav-clear, 0px)) !important; }
+@media (max-width: 680px) {
+  .public-locate-button { bottom: 8px; }
+  .public-home-map .leaflet-top.leaflet-left { bottom: 64px; }
+  .public-home-map .map-basemap-menu { bottom: 162px; }
+}
+
+/*
+   From 720 px up the tabs are a card with room around it. On the home page that room was the page's grey canvas;
+   now the map runs to the foot of the window and the card floats over it. Everything that stands at the foot of the
+   map keeps clear of the card by --public-nav-clear (the card, its margin and a gap).
+*/
+@media (min-width: 720px) {
+  .public-app-shell:has(> .public-app-content.is-home) > .public-app-content.is-home { grid-row: 3 / 5; grid-column: 1; }
+  .public-app-shell:has(> .public-app-content.is-home) > .public-bottom-nav { grid-row: 4; grid-column: 1; }
+  .public-app-shell:has(> .public-app-content.is-home) .public-home-map { --public-nav-clear: 88px; }
+  .public-app-shell:has(> .public-app-content.is-home) .public-hazard-overlay { padding-bottom: calc(16px + 88px); }
+}
+/* One line, in Thai too. */
+.public-home-map > .public-hazard-button { white-space: nowrap; }

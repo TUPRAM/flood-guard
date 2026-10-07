@@ -202,8 +202,6 @@ export function PublicExperience() {
             onSelectArea={selectPlanningArea}
             location={homeLocation}
             onLocationChange={setHomeLocation}
-            onNavigatePrepare={() => navigate("prepare")}
-            onNavigateSos={() => navigate("sos")}
             researchHref={process.env.NEXT_PUBLIC_FLOODGUARD_APP_PROFILE === "public-production" ? undefined : researchHref}
           />
         )}

@@ -1,6 +1,6 @@
 {
  "schema": "floodguard.theos2_cross_check.receipt.v1",
- "generated_at_utc": "2026-10-07T06:29:56Z",
+ "generated_at_utc": "2026-10-07T06:42:58Z",
  "source_timestamp": "2025-07-30T03:33:31Z",
  "confidence_class": "low",
  "confidence_basis": "One optical scene and one radar pair, 43.6 hours apart; no ground check.",
@@ -9,9 +9,9 @@
  "can_feed_decision_layer": false,
  "plan": {
   "path": "docs/proposal_execution/theos2_cross_check_plan_v1.md",
-  "sha256": "bb4bf03dfd2181b4d9f90f85857123b1cf27fb7ca1436060b16d82623050e2c6"
+  "sha256": "b440450fa5d5e129e371e5f1aa07f797fb57459ce97a1431260f43477ed188f3"
  },
- "run_kind": "first_and_only_comparison_run",
+ "run_kind": "superseding_run",
  "inputs": {
   "theos2_scene": {
    "file_name": "IMG_T2V_20250730033331_ORTHO_PMS_32-004.tif",
@@ -19,7 +19,7 @@
   },
   "reference_record": {
    "path": "outputs/theos2_cross_check/sukhothai_20250730_reference_v1.json",
-   "sha256": "a470423f4a572a6d4e4a39acf26592d1c20b3a58740489b0daef5a2ed51314a6"
+   "sha256": "e2fc5f0c479458be5036928e300b433adb83fd93f19a6ffcbe95f327bb5f0d78"
   },
   "sentinel1": {
    "pre": {
@@ -171,7 +171,7 @@
  },
  "outputs": {
   "outputs/theos2_cross_check/sukhothai_20250730_v1.json": {
-   "sha256": "1f6e633b688b0bbe1c0488dd36427e36347cb4decbf5d496f7192cc3be9b24b0"
+   "sha256": "5ac24f30472c985b4edd8d0eaaffe6d96abf011be19135cde192e3d56ba93a66"
   },
   "outputs/theos2_cross_check/sukhothai_20250730_v1_overview.png": {
    "sha256": "b3e4c37e86ed1987a358295908f78cc868df3689383275320abf8ccef638fb5e"

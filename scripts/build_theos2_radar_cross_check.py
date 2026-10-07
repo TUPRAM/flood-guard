@@ -119,7 +119,26 @@ def now_utc() -> str:
 
 def write_json(path: Path, value: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(value, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+    # Bytes with LF line ends on every platform: receipts bind these files by SHA-256 (.gitattributes, D-41).
+    path.write_bytes((json.dumps(value, indent=1, ensure_ascii=False) + "\n").encode("utf-8"))
+
+
+def superseded(path: Path, arguments: argparse.Namespace, same_keys: tuple[str, ...],
+               new: dict[str, Any]) -> dict[str, Any] | None:
+    """Describe the record a ``--replace`` run supersedes, and say whether its figures are the same."""
+
+    if not path.exists():
+        return None
+    if not arguments.reason:
+        raise BuildError("--replace needs --reason")
+    old = json.loads(path.read_text(encoding="utf-8"))
+    canonical = hashlib.sha256(json.dumps(old, sort_keys=True, ensure_ascii=False).encode("utf-8")).hexdigest()
+    return {
+        "reason": arguments.reason,
+        "generated_at_utc": old.get("generated_at_utc"),
+        "canonical_json_sha256": canonical,
+        "figures_same": {key: old.get(key) == new.get(key) for key in same_keys},
+    }
 
 
 def envelope(source_timestamp: str) -> dict[str, Any]:
@@ -294,8 +313,11 @@ def stage_reference(arguments: argparse.Namespace) -> None:
         "assumptions": ASSUMPTIONS[:1],
         "limits": LIMITS[3:],
     }
+    previous = superseded(output, arguments, ("optical_water_rule", "cells_10m", "rasters_outside_git"), record)
+    if previous is not None:
+        record["supersedes"] = previous
     write_json(output, record)
-    print(json.dumps({key: record[key] for key in ("optical_water_rule", "cells_10m")}, indent=1))
+    print(json.dumps({key: record.get(key) for key in ("optical_water_rule", "cells_10m", "supersedes")}, indent=1))
 
 
 # ---------------------------------------------------------------------------
@@ -685,6 +707,9 @@ def stage_compare(arguments: argparse.Namespace) -> None:
         "assumptions": ASSUMPTIONS,
         "limits": LIMITS,
     }
+    previous = superseded(result_path, arguments, ("compared_cells", "methods", "road_check"), result)
+    if previous is not None:
+        result["supersedes"] = previous
     write_json(result_path, result)
     receipt = {
         "schema": "floodguard.theos2_cross_check.receipt.v1",
@@ -723,7 +748,7 @@ def stage_compare(arguments: argparse.Namespace) -> None:
     brief = {name: {reading: {key: block[reading][key] for key in ("cells", "tp", "fp", "fn", "iou", "precision", "recall")}
                     for reading in ("on_answered_cells", "strict_no_answer_counts_as_not_a_candidate")}
              for name, block in ((name, methods[name]["all_compared_cells"]) for name in methods)}
-    print(json.dumps({"compared_cells": result["compared_cells"], "methods": brief}, indent=1))
+    print(json.dumps({"compared_cells": result["compared_cells"], "methods": brief, "supersedes": previous}, indent=1))
 
 
 def main() -> None:
@@ -733,10 +758,12 @@ def main() -> None:
     first.add_argument("--theos2", required=True)
     first.add_argument("--work-dir", required=True)
     first.add_argument("--replace", action="store_true")
+    first.add_argument("--reason", default="")
     second = stages.add_parser("compare", help="apply the radar candidates and count the agreement")
     second.add_argument("--work-dir", required=True)
     second.add_argument("--osm-pbf", required=True)
     second.add_argument("--replace", action="store_true")
+    second.add_argument("--reason", default="")
     second.add_argument("--plan-amended-before-comparison", action="store_true",
                         help="the plan was amended after the reference record and before any comparison")
     arguments = parser.parse_args()

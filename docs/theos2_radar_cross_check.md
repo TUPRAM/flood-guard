@@ -161,4 +161,7 @@ python scripts/build_theos2_radar_cross_check.py compare --work-dir <external-da
 ```
 
 The comparison is run once (plan, section 6). A second run needs `--replace`
-and a written reason.
+and `--reason`. Both stages were run twice on 7 October 2026: the first records
+were written with CRLF line ends, so their SHA-256 values did not hold for the
+bytes Git stores. The second run writes LF bytes; every figure is the same
+(`supersedes` in each record).

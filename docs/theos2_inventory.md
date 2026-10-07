@@ -222,3 +222,9 @@ These fields can support FPPS explanation text and action-brief context, but the
 3. Expand land-cover/exposure feature experiments from selected THEOS-2 samples.
 4. Keep optical context layers in the dashboard clearly separate from flood-reference validation.
 5. Later, add optional optical feature extraction for land-cover/exposure support, separate from the Sentinel-1 SAR flood-validation lane.
+
+## First use in a result (7 October 2026)
+
+One sample is now used in a result: `IMG_T2V_20250730033331_ORTHO_PMS_32-004.tif` (Sukhothai, 30 July 2025) checks the three radar flood candidates and closure rule v1 against optical water at 0.5 m. The plan, the record and the result are in `docs/proposal_execution/theos2_cross_check_plan_v1.md`, `outputs/theos2_cross_check/` and `docs/theos2_radar_cross_check.md` (decision log R26). It is a check tile, not a study area, and it is not a flood reference for Mae Sai.
+
+**Correction to the footprints above.** Each sample file is a large canvas of no-data around a small chip of imagery. For the file above the canvas is 15.9 km wide and the chip is 3 km by 3 km (about 9 km²). The bounding boxes and areas in `outputs/theos2_local_metadata_manifest.csv` and `outputs/theos2_landcover_exposure_features.csv` describe the canvas. The other samples were not measured.

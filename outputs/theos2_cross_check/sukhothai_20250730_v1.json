@@ -1,6 +1,6 @@
 {
  "schema": "floodguard.theos2_cross_check.result.v1",
- "generated_at_utc": "2026-10-07T06:29:56Z",
+ "generated_at_utc": "2026-10-07T06:42:58Z",
  "source_timestamp": "2025-07-30T03:33:31Z",
  "confidence_class": "low",
  "confidence_basis": "One optical scene and one radar pair, 43.6 hours apart; no ground check.",
@@ -9,7 +9,7 @@
  "can_feed_decision_layer": false,
  "plan": {
   "path": "docs/proposal_execution/theos2_cross_check_plan_v1.md",
-  "sha256": "bb4bf03dfd2181b4d9f90f85857123b1cf27fb7ca1436060b16d82623050e2c6"
+  "sha256": "b440450fa5d5e129e371e5f1aa07f797fb57459ce97a1431260f43477ed188f3"
  },
  "what_this_is": "Agreement between three radar flood candidates and THEOS-2 optical water on one 9 square kilometre chip at Sukhothai. A validation tile, not a study area: no FPPS, no A-E class, no exposure and no access figure.",
  "label": "agreement with THEOS-2 optical water acquired 43.6 hours before the radar pass; not accuracy",
@@ -21,7 +21,7 @@
  },
  "reference": {
   "record": "outputs/theos2_cross_check/sukhothai_20250730_reference_v1.json",
-  "sha256": "a470423f4a572a6d4e4a39acf26592d1c20b3a58740489b0daef5a2ed51314a6",
+  "sha256": "e2fc5f0c479458be5036928e300b433adb83fd93f19a6ffcbe95f327bb5f0d78",
   "cells": {
    "rule": "compared at an observable share of 0.9 or more; wet at a water share of 0.5 or more",
    "compared": 82298,
@@ -1256,5 +1256,15 @@
   "It qualifies no candidate for Mae Sai; the T2 skill bar of protocol v1a is unchanged.",
   "Tree crowns and roofs hide a road surface and an OpenStreetMap centreline can lie metres off the road, so 'seen under water' is an under-count.",
   "Large roofs that pass the object rule can still be read as water in built-up cells."
- ]
+ ],
+ "supersedes": {
+  "reason": "The first records were written with CRLF line ends on Windows, so the SHA-256 values in them did not hold for the bytes Git stores. This run writes LF bytes. No rule, input or figure is changed.",
+  "generated_at_utc": "2026-10-07T06:29:56Z",
+  "canonical_json_sha256": "8fdc6082704799438282f37b54ae465864f1dda6bf6178815d86afc9a9a14ee9",
+  "figures_same": {
+   "compared_cells": true,
+   "methods": true,
+   "road_check": true
+  }
+ }
 }

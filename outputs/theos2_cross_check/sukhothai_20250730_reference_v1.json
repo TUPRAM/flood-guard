@@ -1,6 +1,6 @@
 {
  "schema": "floodguard.theos2_cross_check.reference.v1",
- "generated_at_utc": "2026-10-07T06:25:59Z",
+ "generated_at_utc": "2026-10-07T06:42:03Z",
  "source_timestamp": "2025-07-30T03:33:31Z",
  "confidence_class": "low",
  "confidence_basis": "One optical scene and one radar pair, 43.6 hours apart; no ground check.",
@@ -9,7 +9,7 @@
  "can_feed_decision_layer": false,
  "plan": {
   "path": "docs/proposal_execution/theos2_cross_check_plan_v1.md",
-  "sha256": "bb4bf03dfd2181b4d9f90f85857123b1cf27fb7ca1436060b16d82623050e2c6"
+  "sha256": "b440450fa5d5e129e371e5f1aa07f797fb57459ce97a1431260f43477ed188f3"
  },
  "stage": "reference: built from the THEOS-2 image alone, before any radar candidate or change image of this tile was computed",
  "radar_reads_before_this_stage": "One coverage check read the VH windows of five Sentinel-1 passes over the chip and its lattice tiles and printed, per pass, the share of valid cells and the median backscatter. No candidate, no change image and no comparison was computed.",
@@ -119,5 +119,15 @@
  "limits": [
   "Tree crowns and roofs hide a road surface and an OpenStreetMap centreline can lie metres off the road, so 'seen under water' is an under-count.",
   "Large roofs that pass the object rule can still be read as water in built-up cells."
- ]
+ ],
+ "supersedes": {
+  "reason": "The first records were written with CRLF line ends on Windows, so the SHA-256 values in them did not hold for the bytes Git stores. This run writes LF bytes. No rule, input or figure is changed.",
+  "generated_at_utc": "2026-10-07T06:25:59Z",
+  "canonical_json_sha256": "f9cd9d06f0f3223dff6bcfc5afb0ee9aa5555711d33066cc7b5245d0d0b4ab43",
+  "figures_same": {
+   "optical_water_rule": true,
+   "cells_10m": true,
+   "rasters_outside_git": true
+  }
+ }
 }

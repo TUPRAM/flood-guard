@@ -7,8 +7,9 @@ asked to look at before a result goes on a page or into the pitch, and lets each
 note. It is not a review by an independent expert, it qualifies no flood map, and it is not an official approval or
 an official warning. The gates of the signed protocols are untouched by it.
 
-**The rule.** An item is accepted when all three reviewers accept it. One `change` or `reject` holds it until that
-reviewer accepts. For each item and reviewer the record received last counts.
+**The rule.** An item is accepted when at least one of the three reviewers accepts it and none asks for a change or
+rejects it (owner decision of 7 October 2026, decision log R28). One `change` or `reject` holds it until that reviewer
+accepts. All three are asked to read every item. For each item and reviewer the record received last counts.
 
 ## How a record travels
 

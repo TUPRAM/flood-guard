@@ -72,21 +72,27 @@ def test_check_record_names_every_problem() -> None:
     assert vr.check_record(vr.Record("Putu", "2026-10-07T09:00:00Z", (vr.Decision("V-01", "accept"),)), ITEMS) == []
 
 
-def test_fold_needs_all_three_and_the_last_word_counts() -> None:
-    records = [
-        _stored("Putu", "2026-10-07T09:00:00Z", ("V-01", "accept", ""), ("V-02", "accept", "")),
+def test_fold_one_acceptance_is_enough_a_change_holds_and_the_last_word_counts() -> None:
+    assert vr.fold([], ITEMS)["V-01"]["status"] == vr.STATUS_WAITING
+    records = [_stored("Putu", "2026-10-07T09:00:00Z", ("V-01", "accept", ""), ("V-02", "accept", ""))]
+    state = vr.fold(records, ITEMS)
+    # One acceptance is enough (decision log R28).
+    assert state["V-01"]["status"] == vr.STATUS_ACCEPTED
+    assert state["V-01"]["accepted_by"] == ["Putu"]
+    records += [
         _stored("Callixta", "2026-10-07T10:00:00Z", ("V-01", "accept", ""), ("V-02", "change", "reword")),
         _stored("Rachmania", "2026-10-07T11:00:00Z", ("V-01", "accept", "")),
     ]
     state = vr.fold(records, ITEMS)
-    assert state["V-01"]["status"] == vr.STATUS_ACCEPTED
     assert state["V-01"]["accepted_by"] == ["Callixta", "Putu", "Rachmania"]
+    # One change holds the item, whatever the others said.
     assert state["V-02"]["status"] == vr.STATUS_CHANGES
+    assert state["V-02"]["accepted_by"] == ["Putu"]
     assert state["V-03"]["status"] == vr.STATUS_NOT_READY
-    # A later record of the same reviewer replaces the earlier word; two of three still waits.
+    # A later record of the same reviewer replaces the earlier word.
     records.append(_stored("Callixta", "2026-10-07T12:00:00Z", ("V-02", "accept", "")))
     state = vr.fold(records, ITEMS)
-    assert state["V-02"]["status"] == vr.STATUS_WAITING
+    assert state["V-02"]["status"] == vr.STATUS_ACCEPTED
     assert state["V-02"]["by_reviewer"]["Rachmania"] is None
     # The order of the list does not matter: only the time received does.
     assert vr.fold(list(reversed(records)), ITEMS) == state
@@ -111,9 +117,9 @@ def test_state_document_carries_the_required_fields_and_says_what_it_is_not() ->
     assert document["operational_status"] == "non_operational"
     assert document["source_timestamp"] == "2026-10-07T09:00:00Z"
     assert document["assumptions"] and document["limits"]
-    assert document["status_counts"] == {vr.STATUS_NOT_READY: 1, vr.STATUS_WAITING: 2}
+    assert document["status_counts"] == {vr.STATUS_ACCEPTED: 1, vr.STATUS_NOT_READY: 1, vr.STATUS_WAITING: 1}
     table = vr.status_markdown(document, ITEMS)
-    assert "| V-01 | One | Waiting |  | accept |  |" in table
+    assert "| V-01 | One | Accepted |  | accept |  |" in table
     assert "not a review by an independent expert" in table
 
 

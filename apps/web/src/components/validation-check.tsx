@@ -16,7 +16,7 @@ const REVIEWERS = itemsFile.reviewers;
 const STATES = stateFile.items as unknown as Record<string, ItemState>;
 
 const STATUS_LABEL: Record<ItemStatus, string> = {
-  accepted_by_all_reviewers: "Accepted by all three",
+  accepted: "Accepted",
   changes_asked: "Changes asked",
   waiting: "Waiting",
   evidence_not_ready: "Evidence not ready",
@@ -143,7 +143,7 @@ export function ValidationCheck() {
                   <div className={styles.itemHead}>
                     <span className={styles.itemId}>{item.id}</span>
                     <h3 id={`title-${item.id}`}>{item.title}</h3>
-                    <span className={styles.status} data-status={state.status}>{STATUS_LABEL[state.status]}</span>
+                    <span className={styles.status} data-status={state.status}>{STATUS_LABEL[state.status]}{state.status === "accepted" ? ` by ${state.accepted_by.join(", ")}` : ""}</span>
                   </div>
                   <p>{item.check}</p>
                   {item.evidence.length ? (

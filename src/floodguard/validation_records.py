@@ -27,7 +27,7 @@ ITEMS_SCHEMA = "floodguard.validation_check.items.v1"
 STATE_SCHEMA = "floodguard.validation_check.state.v1"
 NOTE_MAX_CHARS = 300
 
-STATUS_ACCEPTED = "accepted_by_all_reviewers"
+STATUS_ACCEPTED = "accepted"
 STATUS_CHANGES = "changes_asked"
 STATUS_WAITING = "waiting"
 STATUS_NOT_READY = "evidence_not_ready"
@@ -199,9 +199,11 @@ def fold(records: Iterable[Mapping[str, Any]], items: Mapping[str, Any]) -> dict
     """Fold every stored record into the state of each item.
 
     For each item and reviewer the record received last counts. An item whose
-    evidence is not ready has no status but that. Otherwise it is accepted
-    when all three reviewers accept it, has changes asked when any reviewer's
-    current word is ``change`` or ``reject``, and waits in every other case.
+    evidence is not ready has no status but that. Otherwise it has changes
+    asked when any reviewer's current word is ``change`` or ``reject``, is
+    accepted when at least one reviewer accepts it and none asks for a change
+    or rejects it (owner decision of 7 October 2026, decision log R28), and
+    waits while nobody has spoken.
     """
 
     reviewers = list(items["reviewers"])
@@ -222,7 +224,7 @@ def fold(records: Iterable[Mapping[str, Any]], items: Mapping[str, Any]) -> dict
             status = STATUS_NOT_READY
         elif any(word["decision"] != "accept" for word in words.values()):
             status = STATUS_CHANGES
-        elif all(reviewer in words for reviewer in reviewers):
+        elif words:
             status = STATUS_ACCEPTED
         else:
             status = STATUS_WAITING
@@ -270,7 +272,7 @@ def status_markdown(document: Mapping[str, Any], items: Mapping[str, Any]) -> st
     """A table of the state, for the repository."""
 
     labels = {
-        STATUS_ACCEPTED: "Accepted by all three", STATUS_CHANGES: "Changes asked",
+        STATUS_ACCEPTED: "Accepted", STATUS_CHANGES: "Changes asked",
         STATUS_WAITING: "Waiting", STATUS_NOT_READY: "Evidence not ready",
     }
     reviewers = list(items["reviewers"])

@@ -26,7 +26,7 @@ export type CheckItem = {
 };
 
 export type ReviewerWord = { decision: Choice; note: string; received_at: string; record_id: string } | null;
-export type ItemStatus = "accepted_by_all_reviewers" | "changes_asked" | "waiting" | "evidence_not_ready";
+export type ItemStatus = "accepted" | "changes_asked" | "waiting" | "evidence_not_ready";
 export type ItemState = { status: ItemStatus; accepted_by: string[]; by_reviewer: Record<string, ReviewerWord> };
 
 /** One line, no column separator, at most the length the importer keeps. */

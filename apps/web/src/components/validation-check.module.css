@@ -24,14 +24,14 @@
 .choice[data-checked="true"][data-choice="reject"] { border-color: var(--danger, #b42318); background: var(--red-soft, #fee4e2); font-weight: 700; }
 
 .item { margin-top: 14px; padding: 16px; border: 1px solid var(--line, #d6e2df); border-left-width: 5px; border-radius: 12px; background: var(--card, #fff); }
-.item[data-status="accepted_by_all_reviewers"] { border-left-color: #1f7a4d; }
+.item[data-status="accepted"] { border-left-color: #1f7a4d; }
 .item[data-status="changes_asked"] { border-left-color: var(--danger, #b42318); }
 .item[data-status="waiting"] { border-left-color: #8a6900; }
 .item[data-status="evidence_not_ready"] { border-left-color: #9aa9ae; background: #f7f9f9; }
 .itemHead { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: baseline; margin-bottom: 8px; }
 .itemId { font: 700 14px/1 var(--font-mono), Consolas, monospace; color: var(--muted, #5b6d74); }
 .status { padding: 3px 9px; border-radius: 999px; background: #eef2f3; font-size: 13px; font-weight: 700; white-space: nowrap; }
-.status[data-status="accepted_by_all_reviewers"] { background: #e3f4ea; color: #175c3a; }
+.status[data-status="accepted"] { background: #e3f4ea; color: #175c3a; }
 .status[data-status="changes_asked"] { background: var(--red-soft, #fee4e2); color: #8f1c13; }
 .status[data-status="waiting"] { background: var(--amber-soft, #fff3cd); color: #5c4600; }
 .evidence, .words { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 0 0 10px; padding: 0; list-style: none; }

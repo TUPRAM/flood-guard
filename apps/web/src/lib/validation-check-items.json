@@ -3,7 +3,7 @@
   "updated": "2026-10-07",
   "repository": "https://github.com/TUPRAM/flood-guard",
   "reviewers": ["Rachmania", "Putu", "Callixta"],
-  "rule": "An item is accepted when all three reviewers accept it. One 'change' or 'reject' holds it until that reviewer accepts.",
+  "rule": "An item is accepted when at least one of the three reviewers accepts it and none asks for a change or rejects it. One 'change' or 'reject' holds it until that reviewer accepts. All three are asked to read; one acceptance is enough to go on (owner decision of 7 October 2026).",
   "groups": [
     { "id": "theos2", "title": "THEOS-2 check at Sukhothai", "note": "Pull request 47, decision log R26." },
     { "id": "requests", "title": "Requests to send", "note": "Drafts. Putu sends them; nothing was sent by the agent." },

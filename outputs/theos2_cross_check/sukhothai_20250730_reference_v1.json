@@ -1,0 +1,123 @@
+{
+ "schema": "floodguard.theos2_cross_check.reference.v1",
+ "generated_at_utc": "2026-10-07T06:25:59Z",
+ "source_timestamp": "2025-07-30T03:33:31Z",
+ "confidence_class": "low",
+ "confidence_basis": "One optical scene and one radar pair, 43.6 hours apart; no ground check.",
+ "operational_status": "non_operational",
+ "official_warning": false,
+ "can_feed_decision_layer": false,
+ "plan": {
+  "path": "docs/proposal_execution/theos2_cross_check_plan_v1.md",
+  "sha256": "bb4bf03dfd2181b4d9f90f85857123b1cf27fb7ca1436060b16d82623050e2c6"
+ },
+ "stage": "reference: built from the THEOS-2 image alone, before any radar candidate or change image of this tile was computed",
+ "radar_reads_before_this_stage": "One coverage check read the VH windows of five Sentinel-1 passes over the chip and its lattice tiles and printed, per pass, the share of valid cells and the median backscatter. No candidate, no change image and no comparison was computed.",
+ "theos2_scene": {
+  "file_name": "IMG_T2V_20250730033331_ORTHO_PMS_32-004.tif",
+  "sha256": "1d18c3091f57c784be34216585a1ba22d055471ef5c1ec434c57971c55112134",
+  "acquired_utc": "2025-07-30T03:33:31Z",
+  "band_order": {
+   "red": 1,
+   "green": 2,
+   "blue": 3,
+   "nir": 4
+  },
+  "native_pixel_m": 0.5,
+  "read_at_m": 2.0,
+  "read_rule": "mean of 4 by 4 native pixels",
+  "valid_rectangle_epsg32647": {
+   "west": 583664.0,
+   "south": 1880816.0,
+   "east": 586666.0,
+   "north": 1883818.0
+  },
+  "valid_area_km2": 9.012,
+  "note": "The file is a 15.9 km canvas of no-data around a 3 km chip. The footprint and the area in outputs/theos2_local_metadata_manifest.csv describe the canvas, not the imagery.",
+  "licence": "THEOS-2 sample imagery provided by GISTDA for GeoHackathon 2026 (docs/theos2_usage_terms_log.md). The imagery stays outside Git; derived figures are shared."
+ },
+ "optical_water_rule": {
+  "configuration": {
+   "ndwi_threshold": null,
+   "histogram_low": -0.6,
+   "histogram_high": 0.4,
+   "histogram_bins": 200,
+   "bright_brightness_min": 520.0,
+   "bright_nir_min": 560.0,
+   "bright_min_width_px": 11,
+   "bright_margin_px": 10,
+   "min_object_px": 250,
+   "unobservable_boxes": [
+    [
+     0,
+     300,
+     1230,
+     1501
+    ]
+   ]
+  },
+  "ndwi_threshold_applied": -0.045,
+  "ndwi_threshold_source": "three_class_otsu_upper",
+  "ndwi_two_class_otsu": -0.14,
+  "ndwi_three_class_otsu": [
+   -0.26,
+   -0.045
+  ],
+  "pixels": 2253001,
+  "valid_pixels": 2253001,
+  "unobservable_bright_object_pixels": 111436,
+  "unobservable_boxed_pixels": 78942,
+  "observable_pixels": 2062623,
+  "flagged_pixels_before_object_rule": 787785,
+  "pixels_dropped_by_object_rule": 31840,
+  "water_pixels": 755945
+ },
+ "rule_replaced_once_at_this_stage": {
+  "plan_rule": "two-class Otsu on NDWI",
+  "applied_rule": "upper threshold of a three-class Otsu split on NDWI",
+  "why": "The NDWI histogram has three populations (vegetation; roads, roofs and bare ground; water). The two-class threshold splits vegetation from everything else and marks roads, roofs and bare ground as water, which is visibly wrong on the image.",
+  "two_class_value": -0.14,
+  "three_class_values": [
+   -0.26,
+   -0.045
+  ]
+ },
+ "additions_set_by_eye_on_the_image": [
+  "Bright objects at least 22 m wide are unobservable, with a 20 m margin: cloud, large bright roofs, bare bright ground.",
+  "One rectangle in the north-east corner is unobservable: thin cloud the brightness rule does not catch.",
+  "Connected water objects smaller than 250 pixels of 2 m (1,000 square metres) are dropped: mostly roofs."
+ ],
+ "grid_10m": {
+  "epsg": 32647,
+  "west": 573440.0,
+  "north": 1884160.0,
+  "rows": 1024,
+  "columns": 2048,
+  "cell_m": 10.0,
+  "lattice": "GEOID tile lattice of 10.24 km, as at Mae Sai"
+ },
+ "cells_10m": {
+  "rule": "compared at an observable share of 0.9 or more; wet at a water share of 0.5 or more",
+  "compared": 82298,
+  "wet": 30353,
+  "dry": 51945,
+  "mixed_water_share_between_0.1_and_0.9": 10426,
+  "compared_km2": 8.2298,
+  "wet_km2": 3.0353
+ },
+ "rasters_outside_git": {
+  "theos2_water_2m.tif": {
+   "sha256": "181420b3235aa057b1b988110b98b38cb49eb5c98b83fd999698d5522a76d4b1"
+  },
+  "theos2_reference_10m.tif": {
+   "sha256": "d4053e41e853b1d16c7fdf4012a5960b6055fa1403c33b1bab930838ec2bd149"
+  }
+ },
+ "assumptions": [
+  "The THEOS-2 water raster is a rule on four uncalibrated bands at 2 m, checked by eye; it was not validated on the ground."
+ ],
+ "limits": [
+  "Tree crowns and roofs hide a road surface and an OpenStreetMap centreline can lie metres off the road, so 'seen under water' is an under-count.",
+  "Large roofs that pass the object rule can still be read as water in built-up cells."
+ ]
+}

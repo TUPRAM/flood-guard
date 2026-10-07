@@ -176,10 +176,21 @@ try {
   if (policyResponse.status() !== 404) throw new Error(`Public profile competition-only route did not return 404: /policy/: ${policyResponse.status()}`);
 
   await page.waitForFunction(() => Boolean(navigator.serviceWorker?.controller));
+  // With a connection and nothing to report, a Public page shows no status bar (7 Oct 2026). The panel is one entry
+  // of the profile menu away, and it says whether the app is saved for use without a connection.
+  if (await page.locator('[data-pwa-availability="true"]').count() !== 0) {
+    throw new Error("The Public page shows its status bar although the app is online and in order.");
+  }
+  await page.locator(".public-profile-trigger").click();
+  await page.locator("[data-public-app-status]").click();
+  await page.locator('[data-app-availability-slot] [data-pwa-availability="true"][open]').waitFor({ state: "visible" });
   await page.waitForFunction(() => (
     [...document.querySelectorAll('[data-pwa-availability="true"] dd')]
       .some((value) => value.textContent === "Available offline")
   ));
+  // Closed again, the panel leaves the page.
+  await page.locator('[data-pwa-availability="true"] > summary').click();
+  await page.locator('[data-pwa-availability="true"]').waitFor({ state: "detached" });
   const cacheAudit = await page.evaluate(async () => {
     const keys = (await caches.keys()).filter((key) => /^floodguard-offline-[0-9a-f]{12}$/.test(key));
     const urls = [];
@@ -460,8 +471,10 @@ async function assertStreetAddressSearch(page, geocoderRequests) {
 }
 
 async function assertLocalAreaSelection(page) {
+  // The list of the map's results is not shown to a pointer until the keyboard reaches it (7 Oct 2026).
   const list = page.locator(".public-home-page .map-text-alternative");
-  await list.locator("summary").click();
+  await list.locator("summary").focus();
+  await page.keyboard.press("Enter");
   await list.locator(".map-area-results button").filter({ hasText: /^Ko Chang/ }).click();
   await page.waitForFunction(() => {
     const shell = document.querySelector(".public-home-page .geo-map-shell");

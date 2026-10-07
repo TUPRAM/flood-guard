@@ -31,7 +31,11 @@ describe("PublicExperience", () => {
     expect(html).not.toContain('href="/studio/"');
     expect(visibleText).toMatch(/ตัวอย่าง/u);
     expect(visibleText).toMatch(/ไม่ใช่คำเตือนทางการ/u);
-    expect(html).toContain('href="/public-cases/"');
+    // The research link moved into the Hazard Info panel (owner request of 7 Oct 2026), which is closed at first, and
+    // nothing stands between the header and the map: no intro block, and no status bar while everything is in order.
+    expect(html).not.toContain('href="/public-cases/"');
+    expect(html).not.toContain("public-home-intro");
+    expect(html).toContain('<div data-app-availability-slot="true" class="public-availability-slot"></div>');
     expect(html).not.toContain("public-research-details");
   });
 

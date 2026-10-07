@@ -326,7 +326,9 @@ try {
   phase = "competition reconnect";
   await context.setOffline(false);
   offlineMode = false;
-  await page.waitForFunction(() => navigator.onLine && document.querySelector('[data-pwa-availability="true"]')?.textContent?.includes("Online"));
+  await page.waitForFunction(() => navigator.onLine);
+  await showAppStatus(page);
+  await page.waitForFunction(() => document.querySelector('[data-pwa-availability="true"]')?.textContent?.includes("Online"));
   await assertAvailabilityPanel(page, { online: true, ready: true });
 
   if (unexpectedRequests.length) {
@@ -364,7 +366,20 @@ try {
   await new Promise((resolveClose, rejectClose) => server.close((error) => error ? rejectClose(error) : resolveClose()));
 }
 
+/**
+ * On a Public page the status bar is not shown while the app is online and in order (7 Oct 2026). This asks for its
+ * panel as the profile menu's entry does; where the bar is shown already it changes nothing.
+ */
+async function showAppStatus(page) {
+  await page.waitForFunction(() => {
+    if (document.querySelector('[data-pwa-availability="true"]')) return true;
+    window.dispatchEvent(new Event("floodguard:show-app-status"));
+    return false;
+  }, undefined, { polling: 250, timeout: 30_000 });
+}
+
 async function assertAvailabilityPanel(page, { online, ready }) {
+  await showAppStatus(page);
   const panel = page.locator('[data-pwa-availability="true"]');
   await panel.waitFor({ state: "visible" });
   await page.waitForFunction(
@@ -408,6 +423,7 @@ async function saveDefaultStudyArea(page) {
 }
 
 async function readAvailabilityRows(page) {
+  await showAppStatus(page);
   return page.locator('[data-pwa-availability="true"] dl').evaluate((list) => Object.fromEntries(
     [...list.querySelectorAll(":scope > div")].map((row) => [
       row.querySelector("dt")?.textContent?.trim() ?? "",
@@ -425,6 +441,7 @@ async function requestRegistrationUpdate(page) {
 }
 
 async function performSuccessfulUpdateCheck(page) {
+  await showAppStatus(page);
   const panel = page.locator('[data-pwa-availability="true"]');
   if (await panel.getAttribute("open") === null) await panel.locator("summary").click();
   await page.getByRole("button", { name: "Check for app update" }).click();

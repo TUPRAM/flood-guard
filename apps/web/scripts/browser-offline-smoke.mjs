@@ -254,7 +254,7 @@ try {
       await page.waitForFunction((lang) => document.documentElement.lang === lang, language);
       await assertPublicHomeLayout(page, publicMapScope);
       const list = page.locator(`${publicMapScope} .map-text-alternative`);
-      await list.locator("summary").click();
+      await toggleMapListFromKeyboard(page, list);
       const listLayout = await list.evaluate((element) => ({
         open: element.open,
         width: element.getBoundingClientRect().width,
@@ -265,7 +265,7 @@ try {
       if (!listLayout.open || listLayout.width < listLayout.viewport - 28 || listLayout.contentWidth > listLayout.clientWidth + 1) {
         throw new Error(`Public map list is cramped or overflows: ${JSON.stringify(listLayout)}.`);
       }
-      await list.locator("summary").click();
+      await toggleMapListFromKeyboard(page, list);
     }
   }
   // The map background cannot load here (its tiles are blocked). The notice is a short line and one button in the
@@ -1443,6 +1443,15 @@ async function selectPublicPlanningArea(page, areaId, areaName) {
   );
 }
 
+/**
+ * Open or close the list of the map's results as a keyboard reader does: move the focus to its button and press
+ * Enter. On the Public home map the button is not shown to a pointer until it has the focus (7 Oct 2026).
+ */
+async function toggleMapListFromKeyboard(page, list) {
+  await list.locator("summary").focus();
+  await page.keyboard.press("Enter");
+}
+
 async function firstVisibleSelector(page, selectors) {
   for (const selector of selectors) {
     const locator = page.locator(selector).first();
@@ -1470,10 +1479,22 @@ async function assertPublicHomeLayout(page, mapScope) {
     const actions = document.querySelector(".public-home-actions")?.getBoundingClientRect();
     const listSummary = document.querySelector(".map-text-alternative > summary");
     const listBounds = listSummary?.getBoundingClientRect();
+    // The list is the map's text alternative. Since 7 Oct 2026 it is not shown to a reader who points or taps: it
+    // is transparent and takes no pointer until the keyboard reaches it, and it keeps its place meanwhile.
+    const listBox = listSummary?.closest(".map-text-alternative");
+    const focusedBefore = document.activeElement;
+    if (listSummary && focusedBefore === listSummary) listSummary.blur();
+    const listHiddenAtRest = Boolean(listBox) && !listBox.open
+      ? getComputedStyle(listBox).opacity === "0" && getComputedStyle(listBox).pointerEvents === "none"
+      : Boolean(listBox?.open);
+    listSummary?.focus({ preventScroll: true });
+    const listShownWithFocus = Boolean(listBox) && getComputedStyle(listBox).opacity === "1";
     const listPointerTarget = listBounds && document.elementFromPoint(
       listBounds.left + listBounds.width / 2,
       listBounds.top + listBounds.height / 2,
     );
+    listSummary?.blur();
+    if (focusedBefore instanceof HTMLElement && focusedBefore !== listSummary) focusedBefore.focus({ preventScroll: true });
     const mapControls = [...document.querySelectorAll(
       ".leaflet-control-zoom a, .public-locate-button, .map-basemap-menu > summary, .map-text-alternative > summary, .public-signal-banner",
     )].map((element) => element.getBoundingClientRect());
@@ -1511,6 +1532,9 @@ async function assertPublicHomeLayout(page, mapScope) {
         availabilityActionsOverlap: overlaps(availability, actions),
         closedAvailabilityListOverlap: overlaps(closedAvailability, listBounds),
         listReceivesPointer: Boolean(listSummary && listPointerTarget && listSummary.contains(listPointerTarget)),
+        listHiddenAtRest,
+        listShownWithFocus,
+        availabilityShown: Boolean(document.querySelector('[data-pwa-availability="true"]')),
       },
     };
   }, mapScope);
@@ -1547,11 +1571,13 @@ async function assertPublicHomeLayout(page, mapScope) {
     || audit.lowerControls.availabilityHazardOverlap
     || audit.lowerControls.availabilityAttributionOverlap
     || audit.lowerControls.availabilityMapControlOverlap
-    || !audit.lowerControls.availabilityInSlot
-    || !audit.lowerControls.availabilityInsideSlotBox
+    // The status bar is shown only when something needs attention; when it is shown, it is in its slot.
+    || (audit.lowerControls.availabilityShown && (!audit.lowerControls.availabilityInSlot || !audit.lowerControls.availabilityInsideSlotBox))
     || audit.lowerControls.availabilityActionsOverlap
     || audit.lowerControls.closedAvailabilityListOverlap
     || !audit.lowerControls.listReceivesPointer
+    || !audit.lowerControls.listHiddenAtRest
+    || !audit.lowerControls.listShownWithFocus
   ) {
     throw new Error(`Public Home controls overlap, crowd the navigation, or the status pill left its slot: ${JSON.stringify(audit.lowerControls)}.`);
   }
@@ -1668,7 +1694,10 @@ async function assertCompactMapNotice(page, mapScope, language, label, alsoRequi
   // The list button, which the long notice used to reach, takes the tap at its own centre.
   const listTakesTap = await page.locator(`${mapScope} .map-text-alternative > summary`).evaluate((summary) => {
     const box = summary.getBoundingClientRect();
-    return [0.1, 0.5, 0.9].every((share) => summary.contains(document.elementFromPoint(box.left + box.width * share, box.top + box.height / 2)));
+    summary.focus({ preventScroll: true });
+    const taken = [0.1, 0.5, 0.9].every((share) => summary.contains(document.elementFromPoint(box.left + box.width * share, box.top + box.height / 2)));
+    summary.blur();
+    return taken;
   });
   if (!listTakesTap) throw new Error(`The list button is covered at ${label} (${language}).`);
 
@@ -1712,12 +1741,12 @@ async function assertPublicPlanningFallback(page, mapScope) {
   await page.locator("#public-area-search").fill("Mae Sai Hospital");
   await page.locator(".public-location-status").filter({ hasText: "Online address search is unavailable" }).waitFor({ state: "visible" });
   const list = page.locator(`${mapScope} .map-text-alternative`);
-  await list.locator("summary").click();
+  await toggleMapListFromKeyboard(page, list);
   await list.locator(".map-area-results button").filter({ hasText: /^Mae Sai/ }).click();
   await page.waitForFunction(() => (
     document.querySelector(".geo-map-shell")?.getAttribute("data-selected-area") === "TH570901"
   ));
-  await list.locator("summary").click();
+  await toggleMapListFromKeyboard(page, list);
   if (await page.locator("#public-area-search").inputValue() !== "") {
     throw new Error("Choosing a local planning area did not clear the failed online search.");
   }

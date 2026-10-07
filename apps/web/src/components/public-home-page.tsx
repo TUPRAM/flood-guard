@@ -35,8 +35,6 @@ interface PublicHomePageProps {
   onSelectArea: (areaId: string) => void;
   location?: PublicMapLocation;
   onLocationChange: (location: PublicMapLocation | undefined) => void;
-  onNavigatePrepare: () => void;
-  onNavigateSos: () => void;
   researchHref?: string;
 }
 
@@ -147,8 +145,6 @@ export function PublicHomePage({
   onSelectArea,
   location,
   onLocationChange,
-  onNavigatePrepare,
-  onNavigateSos,
   researchHref,
 }: PublicHomePageProps) {
   const th = language === "th";
@@ -467,24 +463,13 @@ export function PublicHomePage({
 
   return (
     <section className="public-home-page" aria-label={th ? "หน้าแรกเพื่อการเตรียมพร้อม" : "Preparedness home"}>
-      <div className="public-home-intro">
-        <div className="public-home-intro-copy">
-          <p className="public-home-context">{th ? "ข้อมูลเพื่อการเตรียมพร้อม · ไม่ใช่คำเตือนทางการ" : "Preparedness research · not an official warning"}</p>
-          <h1>{chosenArea
-            ? (th ? chosenArea.area_name_th : chosenArea.area_name_en)
-            : (th ? "เลือกพื้นที่วางแผนของคุณ" : "Choose your planning area")}</h1>
-          <p>{chosenArea
-            ? (th ? `แหล่งข้อมูล ${formatSourceTime(chosenArea.source_timestamp, language)} ICT · ความเชื่อมั่น ${formatConfidence(chosenArea.evidence_sufficiency, language)}` : `Source ${formatSourceTime(chosenArea.source_timestamp, language)} ICT · confidence ${formatConfidence(chosenArea.evidence_sufficiency, language)}`)
-            : selectedArea
-              ? (th ? "แผนที่เริ่มที่พื้นที่ตัวอย่าง เลือกพื้นที่หรือค้นหาที่อยู่ก่อนดูข้อมูลสำหรับพื้นที่ของคุณ" : "The map starts at an example area. Choose an area or search an address before viewing local planning information.")
-              : (th ? "ข้อมูลพื้นที่วางแผนไม่พร้อมใช้งาน โปรดตรวจสอบประกาศจากหน่วยงานทางการ" : "Planning-area data is unavailable. Check current official updates.")}</p>
-        </div>
-        <div className="public-home-actions">
-          <button type="button" onClick={onNavigatePrepare}>{th ? "จัดทำแผนของฉัน" : "Make my plan"}</button>
-          <button type="button" onClick={onNavigateSos}>{th ? "หมายเลขช่วยเหลือ" : "Help and contacts"}</button>
-        </div>
-        {researchHref ? <a className="public-home-research-link" href={researchHref}>{th ? "สำรวจกรณีศึกษาวิจัย →" : "Explore research cases →"}</a> : null}
-      </div>
+      {/* The block that stood above the map (heading, two buttons, the research link) was removed on the owner's
+          request of 7 Oct 2026, so the search field stands directly under the header. The heading stays for a screen
+          reader; "Make my plan" and "Help and contacts" are the Prepare and SOS tabs; the research link is in the
+          Hazard Info panel; the words "not an official warning" are on the priority card and in that panel. */}
+      <h1 className="sr-only">{chosenArea
+        ? (th ? chosenArea.area_name_th : chosenArea.area_name_en)
+        : (th ? "เลือกพื้นที่วางแผนของคุณ" : "Choose your planning area")}</h1>
       <div className="public-home-map">
         <GeoMap
           areas={data.publicAreas}
@@ -704,22 +689,23 @@ export function PublicHomePage({
               </p>
             )}
             <p className="public-risk-status">{chosenArea
-              ? (th ? "ข้อมูลผู้สมัคร · ไม่ใช้ปฏิบัติการ" : "Candidate · non-operational")
-              : (th ? "พื้นที่ตัวอย่าง · ข้อมูลผู้สมัคร ไม่ใช้ปฏิบัติการ" : "Example area · candidate, non-operational")}</p>
+              ? (th ? "ข้อมูลผู้สมัคร · ไม่ใช้ปฏิบัติการ · ไม่ใช่คำเตือนทางการ" : "Candidate · non-operational · not an official warning")
+              : (th ? "พื้นที่ตัวอย่าง · ข้อมูลผู้สมัคร ไม่ใช้ปฏิบัติการ · ไม่ใช่คำเตือนทางการ" : "Example area · candidate, non-operational · not an official warning")}</p>
           </aside>
-
-          <button
-            ref={hazardButtonRef}
-            type="button"
-            className="public-hazard-button"
-            aria-expanded={hazardOpen}
-            aria-controls="public-hazard-panel"
-            onClick={() => setHazardOpen(true)}
-          >
-            <PublicAppIcon name="hazard" />
-            <span>{th ? "ข้อมูลอันตราย" : "Hazard Info"}</span>
-          </button>
         </div>
+
+        {/* At the top right, just under the search field (owner request of 7 Oct 2026); it stood in the dock before. */}
+        <button
+          ref={hazardButtonRef}
+          type="button"
+          className="public-hazard-button"
+          aria-expanded={hazardOpen}
+          aria-controls="public-hazard-panel"
+          onClick={() => setHazardOpen(true)}
+        >
+          <PublicAppIcon name="hazard" />
+          <span>{th ? "ข้อมูลอันตราย" : "Hazard Info"}</span>
+        </button>
 
         {/*
           Sits with zoom and layers in the map-tool column. GPS is only ever
@@ -779,6 +765,8 @@ export function PublicHomePage({
                   <PublicAppIcon name="close" />
                 </button>
               </div>
+              {/* The line that stood above the map until 7 Oct 2026: it is said here, whatever area is chosen. */}
+              <p className="public-home-context" data-public-not-a-warning>{th ? "ข้อมูลเพื่อการเตรียมพร้อม · ไม่ใช่คำเตือนทางการ" : "Preparedness research · not an official warning"}</p>
 
               {selectedArea ? (
                 <>
@@ -834,6 +822,7 @@ export function PublicHomePage({
                 {th ? "ตรวจสอบประกาศปัจจุบันจาก ปภ." : "Check current DDPM updates"}
                 <span aria-hidden="true">↗</span>
               </a>
+              {researchHref ? <a className="public-home-research-link" href={researchHref}>{th ? "สำรวจกรณีศึกษาวิจัย →" : "Explore research cases →"}</a> : null}
             </aside>
           </div>
         )}

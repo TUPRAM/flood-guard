@@ -1,5 +1,6 @@
 "use client";
 
+import { APP_STATUS_EVENT } from "./pwa-register";
 import { useEffect, useRef, useState } from "react";
 
 import { LanguageToggle } from "@/components/language-toggle";
@@ -219,6 +220,13 @@ export function PublicAppHeader({
               <button type="button" className="danger" onClick={() => closeAndNavigate(onNavigateSos)}>
                 <PublicAppIcon name="sos" />
                 <span>{th ? "หมายเลขฉุกเฉิน" : "Emergency numbers"}</span>
+                <PublicAppIcon name="chevron" />
+              </button>
+              {/* The status bar is not shown while the app is online and in order; this entry opens its panel
+                  (connection, saved for offline use, updates) under the header. */}
+              <button type="button" data-public-app-status onClick={() => closeAndNavigate(() => window.dispatchEvent(new Event(APP_STATUS_EVENT)))}>
+                <PublicAppIcon name="shield" />
+                <span>{th ? "สถานะแอปและการใช้งานออฟไลน์" : "App status and offline use"}</span>
                 <PublicAppIcon name="chevron" />
               </button>
             </div>

@@ -69,6 +69,20 @@ export function pillStatus(online: boolean | null, appSaved: boolean, updateWait
 }
 
 /**
+ * The event that asks for the app-status panel. On a Public page the bar is not shown while everything is in order,
+ * so the profile menu has an entry that sends this: the panel then opens in its slot and stays until it is closed.
+ */
+export const APP_STATUS_EVENT = "floodguard:show-app-status";
+
+/**
+ * True while the bar of a page's own slot has nothing to say: the app is online (or still finding out), no update
+ * waits or has failed, the map background is in order, and the reader has not opened the panel.
+ */
+export function quietInSlot(online: boolean | null, updateState: string, mapNeedsAttention: boolean, panelOpen: boolean): boolean {
+  return online !== false && !mapNeedsAttention && !panelOpen && updateState !== "available" && updateState !== "error";
+}
+
+/**
  * True while a hidden pill stays hidden: the reader is still on the page it was hidden on and the pill would say what
  * it said when it was hidden. Any change of status brings it back, as does navigating elsewhere.
  */
@@ -276,6 +290,19 @@ export function PwaRegister({
   /** Where the pill was hidden (auto or by the reader) and its status then; see `pillStaysHidden`. */
   const [hidden, setHidden] = useState<HiddenPill | null>(null);
   const [engaged, setEngaged] = useState(false);
+  /** The reader has the panel open: it then stays, whatever the status. */
+  const [panelOpen, setPanelOpen] = useState(false);
+  /** The reader asked for the panel (the profile menu of a Public page): it is shown, open, until it is closed. */
+  const [revealed, setRevealed] = useState(false);
+  const panelRef = useRef<HTMLDetailsElement | null>(null);
+  useEffect(() => {
+    const reveal = () => setRevealed(true);
+    window.addEventListener(APP_STATUS_EVENT, reveal);
+    return () => window.removeEventListener(APP_STATUS_EVENT, reveal);
+  }, []);
+  useEffect(() => {
+    if (revealed && panelRef.current && !panelRef.current.open) panelRef.current.open = true;
+  }, [revealed]);
   const [availabilitySlot, setAvailabilitySlot] = useState<HTMLElement | null>(null);
   useEffect(() => {
     let active = true;
@@ -552,7 +579,10 @@ export function PwaRegister({
     <details
       className={[styles.panel, autoHide ? styles.docked : "", availabilitySlot ? styles.inlinePanel : ""].filter(Boolean).join(" ")}
       data-pwa-availability="true"
+      ref={panelRef}
       onToggle={(event) => {
+        setPanelOpen(event.currentTarget.open);
+        if (!event.currentTarget.open) setRevealed(false);
         if (autoHide) setEngaged(event.currentTarget.open);
         if (!event.currentTarget.open) return;
         refreshHouseholdPlanAvailability();
@@ -615,6 +645,10 @@ export function PwaRegister({
       </div>
     </details>
   );
+  // In a page's own slot (the Public pages) the bar is not shown while everything is in order (owner request of
+  // 7 Oct 2026): it appears when the app is without a connection, when an update waits or has failed, or when the
+  // map background needs attention, and it stays while the reader has it open.
+  if (!autoHide && availabilitySlot && !revealed && quietInSlot(online, updateState, mapNeedsAttention, panelOpen)) return null;
   if (!autoHide) return availabilitySlot ? createPortal(panel, availabilitySlot) : panel;
   // Auto-hide pages: the pill hides after a few seconds and can be dismissed at once; hover or focus keeps it. It
   // returns when its status changes (connection, saved for offline use, update waiting).

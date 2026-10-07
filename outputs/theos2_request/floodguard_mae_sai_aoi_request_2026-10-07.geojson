@@ -1,0 +1,74 @@
+{
+  "type": "FeatureCollection",
+  "name": "floodguard_mae_sai_aoi_request_2026-10-07",
+  "crs": {
+    "type": "name",
+    "properties": {
+      "name": "urn:ogc:def:crs:OGC:1.3:CRS84"
+    }
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "aoi_id": "AOI-02",
+        "priority": 1,
+        "name": "Mae Sai district - all 8 subdistricts",
+        "name_th": "อำเภอแม่สาย (ครบ 8 ตำบล)",
+        "province": "Chiang Rai",
+        "event": "Chiang Rai / Mae Sai flood, September 2024",
+        "bbox_wgs84": [99.8107, 20.2577, 100.0368, 20.4651],
+        "approx_size_km": "23.6 x 22.9",
+        "why": "Covers Ko Chang subdistrict and the roads that connect it, which the main result of the project depends on.",
+        "project": "FloodGuard Thailand (TeamBits, GeoHackathon 2026)",
+        "request_id": "FG-THEOS2-REQ-002",
+        "requested_on": "2026-10-07",
+        "crs": "EPSG:4326 (WGS84)",
+        "redistribution_intent": "None. Imagery stays outside version control; only derived figures are published."
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [99.8107, 20.2577],
+            [100.0368, 20.2577],
+            [100.0368, 20.4651],
+            [99.8107, 20.4651],
+            [99.8107, 20.2577]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "aoi_id": "AOI-01",
+        "priority": 2,
+        "name": "Mae Sai core - town, border crossing and Sai River strip",
+        "name_th": "แม่สาย (เขตเมืองและแนวแม่น้ำสาย)",
+        "province": "Chiang Rai",
+        "event": "Chiang Rai / Mae Sai flood, September 2024",
+        "bbox_wgs84": [99.8384, 20.3705, 99.9441, 20.4563],
+        "approx_size_km": "11.0 x 9.5",
+        "why": "The smaller box, if only one scene or a clip can be provided.",
+        "project": "FloodGuard Thailand (TeamBits, GeoHackathon 2026)",
+        "request_id": "FG-THEOS2-REQ-002",
+        "requested_on": "2026-10-07",
+        "crs": "EPSG:4326 (WGS84)",
+        "redistribution_intent": "None. Imagery stays outside version control; only derived figures are published."
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [99.8384, 20.3705],
+            [99.9441, 20.3705],
+            [99.9441, 20.4563],
+            [99.8384, 20.4563],
+            [99.8384, 20.3705]
+          ]
+        ]
+      }
+    }
+  ]
+}

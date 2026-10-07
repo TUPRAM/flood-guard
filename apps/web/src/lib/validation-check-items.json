@@ -1,0 +1,255 @@
+{
+  "schema": "floodguard.validation_check.items.v1",
+  "updated": "2026-10-07",
+  "repository": "https://github.com/TUPRAM/flood-guard",
+  "reviewers": ["Rachmania", "Putu", "Callixta"],
+  "rule": "An item is accepted when all three reviewers accept it. One 'change' or 'reject' holds it until that reviewer accepts.",
+  "groups": [
+    { "id": "theos2", "title": "THEOS-2 check at Sukhothai", "note": "Pull request 47, decision log R26." },
+    { "id": "requests", "title": "Requests to send", "note": "Drafts. Putu sends them; nothing was sent by the agent." },
+    { "id": "radar", "title": "Our own radar in the decision chain", "note": "Work package 1." },
+    { "id": "result", "title": "The lead result (case SE1)", "note": "The scenario from the 2024 season layer of UNOSAT and GISTDA." },
+    { "id": "pitch", "title": "Mentoring Session II, 16 October", "note": "The preparation pack." },
+    { "id": "models", "title": "Trained models and later packages", "note": "Report-only. None of them changes a class." }
+  ],
+  "items": [
+    {
+      "id": "V-01",
+      "group": "theos2",
+      "title": "The water map read from the THEOS-2 image",
+      "check": "Open the overview picture. The second panel shows the water read from THEOS-2 in blue and what could not be read in purple. Accept if the blue areas are water on the image and no large water area is missing. The planned two-class threshold was replaced once by a three-class one; the record says why.",
+      "evidence": [
+        { "label": "Overview picture", "path": "outputs/theos2_cross_check/sukhothai_20250730_v1_overview.png" },
+        { "label": "Reference record", "path": "outputs/theos2_cross_check/sukhothai_20250730_reference_v1.json" },
+        { "label": "Result in plain words", "path": "docs/theos2_radar_cross_check.md" }
+      ],
+      "gates": "Every figure of the THEOS-2 check rests on this map.",
+      "ready": true,
+      "added": "2026-10-07"
+    },
+    {
+      "id": "V-02",
+      "group": "theos2",
+      "title": "The wording of the THEOS-2 result",
+      "check": "Read 'Result 1', 'Result 2' and 'What follows for the project'. Accept if each sentence says no more than the table beside it and the 44-hour gap between the two satellites is clear.",
+      "evidence": [
+        { "label": "Result in plain words", "path": "docs/theos2_radar_cross_check.md" },
+        { "label": "Result file", "path": "outputs/theos2_cross_check/sukhothai_20250730_v1.json" }
+      ],
+      "gates": "Quoting the result in the pitch, on a page or to GISTDA.",
+      "ready": true,
+      "added": "2026-10-07"
+    },
+    {
+      "id": "V-03",
+      "group": "theos2",
+      "title": "Show the Sukhothai check in the final pitch",
+      "check": "Accept if the team wants this result and its overview picture at 6 m in the final pitch. The picture is a reduced view of sample imagery from GISTDA. Written terms from the organisers were not seen; the request to GISTDA asks for them.",
+      "evidence": [
+        { "label": "Overview picture", "path": "outputs/theos2_cross_check/sukhothai_20250730_v1_overview.png" },
+        { "label": "Usage terms log", "path": "docs/theos2_usage_terms_log.md" }
+      ],
+      "gates": "A slide and one spoken line in the pitch.",
+      "ready": true,
+      "added": "2026-10-07"
+    },
+    {
+      "id": "V-04",
+      "group": "theos2",
+      "title": "Sukhothai is a check tile, not a study area",
+      "check": "The chip is used to check methods only. No score, class, exposure or access figure is computed for Sukhothai. Accept if you agree that this stays inside the proposal, as decision log row R26 records it.",
+      "evidence": [
+        { "label": "Plan of the check", "path": "docs/proposal_execution/theos2_cross_check_plan_v1.md" },
+        { "label": "Decision log", "path": "docs/decision-log-d1-d16.md" }
+      ],
+      "gates": "Row R26 stands as written.",
+      "ready": true,
+      "added": "2026-10-07"
+    },
+    {
+      "id": "V-05",
+      "group": "requests",
+      "title": "Request to GISTDA: THEOS-2 of 16 September 2024 and the Pléiades question",
+      "check": "Read the draft. Accept if it may be sent as written, with the area file attached. Say in the note what to change otherwise.",
+      "evidence": [
+        { "label": "Draft", "path": "outputs/theos2_request/gistda_request_2026-10-07.md" },
+        { "label": "Area file (GeoJSON)", "path": "outputs/theos2_request/floodguard_mae_sai_aoi_request_2026-10-07.geojson" }
+      ],
+      "gates": "Putu sends the request.",
+      "ready": true,
+      "added": "2026-10-07"
+    },
+    {
+      "id": "V-06",
+      "group": "requests",
+      "title": "Note to UNOSAT: GIS data of product 3991",
+      "check": "Read the draft. Accept if it may be sent as written to the UNOSAT contact who approved product 4009.",
+      "evidence": [
+        { "label": "Draft", "path": "outputs/theos2_request/unosat_request_2026-10-07.md" }
+      ],
+      "gates": "Putu sends the note.",
+      "ready": true,
+      "added": "2026-10-07"
+    },
+    {
+      "id": "V-07",
+      "group": "radar",
+      "title": "Rights record for the Sentinel-1 data",
+      "check": "Read the record. Sentinel data are open under the Copernicus legal notice, with the credit 'Contains modified Copernicus Sentinel data'. Accept to confirm the record.",
+      "evidence": [
+        { "label": "Rights record (draft)", "path": "docs/proposal_execution/rights_basis_sentinel1_v1.json" },
+        { "label": "Notice", "path": "docs/proposal_execution/rights_basis_sentinel1_v1_NOTICE.txt" }
+      ],
+      "gates": "The case of our own radar (case O1) can be issued.",
+      "ready": true,
+      "added": "2026-10-07"
+    },
+    {
+      "id": "V-08",
+      "group": "radar",
+      "title": "Which radar layers case O1 uses",
+      "check": "The radar layers of the run of record lie about 680 m from their true place. The second run, which uses a terrain height for every cell, leaves about 10 m. Accept to use the layers of the second run for case O1.",
+      "evidence": [
+        { "label": "Radar result", "path": "docs/proposal_execution/automated_track/MAE_SAI_RADAR_CANDIDATES_RESULT.md" },
+        { "label": "Outputs note (radar section)", "path": "outputs/planning_v1/README.md" }
+      ],
+      "gates": "Radar layers placed well enough to be set against roads.",
+      "ready": true,
+      "added": "2026-10-07"
+    },
+    {
+      "id": "V-09",
+      "group": "result",
+      "title": "The table of case SE1 is what the team presents",
+      "check": "Open Planning. Accept if these are the classes and scores the team presents, as a scenario from the 2024 season layer: Ko Chang B 78, Mae Sai D 71, Si Mueang Chum D 59, Ban Dai D 50, and four tambons in class E.",
+      "evidence": [
+        { "label": "Planning page", "href": "/command/" },
+        { "label": "Result file", "path": "apps/web/public/planning-overlays/mae-sai-2024/se1.json" },
+        { "label": "Preparation pack, section 4.1", "path": "docs/mentoring/mentoring_session_2_prep.md" }
+      ],
+      "gates": "The lead sentence of the pitch.",
+      "ready": true,
+      "added": "2026-10-07"
+    },
+    {
+      "id": "V-10",
+      "group": "result",
+      "title": "The Ko Chang roads, looked at on a map",
+      "check": "A one-page map sheet of the road pieces that cut Ko Chang off in the scenario, with bridges and raised roads marked (plan task V1). It is not prepared yet.",
+      "evidence": [],
+      "gates": "Saying 'keep routes open' for Ko Chang without a caveat on the roads.",
+      "ready": false,
+      "added": "2026-10-07"
+    },
+    {
+      "id": "V-11",
+      "group": "pitch",
+      "title": "The five-minute pitch draft",
+      "check": "Read section 4.2 aloud once. Accept if this is the pitch the team rehearses for the session. Put changes in the note.",
+      "evidence": [
+        { "label": "Preparation pack, section 4.2", "path": "docs/mentoring/mentoring_session_2_prep.md" }
+      ],
+      "gates": "Rehearsal with the screens.",
+      "ready": true,
+      "added": "2026-10-07"
+    },
+    {
+      "id": "V-12",
+      "group": "pitch",
+      "title": "The call to action",
+      "check": "Three asks close the pitch: an afternoon with the DDPM office in Chiang Rai on the Ko Chang roads, the THEOS-2 scene of 16 September 2024 from GISTDA, and an offer to run the tool for any district. Accept if these are the three.",
+      "evidence": [
+        { "label": "Preparation pack, section 4.2", "path": "docs/mentoring/mentoring_session_2_prep.md" }
+      ],
+      "gates": "The last slide.",
+      "ready": true,
+      "added": "2026-10-07"
+    },
+    {
+      "id": "V-13",
+      "group": "pitch",
+      "title": "The table of who decides what",
+      "check": "Read section 5. Accept if each row names an office that would take that decision and a result FloodGuard has today.",
+      "evidence": [
+        { "label": "Preparation pack, section 5", "path": "docs/mentoring/mentoring_session_2_prep.md" }
+      ],
+      "gates": "The policy workshop of the session.",
+      "ready": true,
+      "added": "2026-10-07"
+    },
+    {
+      "id": "V-14",
+      "group": "pitch",
+      "title": "The answers to the questions of Session I",
+      "check": "Read the table of section 2. Accept if each answer is what the team would say to the mentor. Check it against the mentor's written summary if you have it.",
+      "evidence": [
+        { "label": "Preparation pack, section 2", "path": "docs/mentoring/mentoring_session_2_prep.md" }
+      ],
+      "gates": "The technical follow-up of the session.",
+      "ready": true,
+      "added": "2026-10-07"
+    },
+    {
+      "id": "V-15",
+      "group": "models",
+      "title": "The order of work on the trained models",
+      "check": "A flood-susceptibility model (random forest or gradient boosting, tested on a district it has not seen) is built first. A supervised flood classifier is tried after it for at most two working days and dropped if its labelled data are not in place by 13 October. Both are report-only. Accept the order.",
+      "evidence": [
+        { "label": "Decision log", "path": "docs/decision-log-d1-d16.md" }
+      ],
+      "gates": "The work order until the freeze of 18 October.",
+      "ready": true,
+      "added": "2026-10-07"
+    },
+    {
+      "id": "V-16",
+      "group": "models",
+      "title": "How the result changes with the flood input",
+      "check": "A table of exposure, access loss and class for each flood input: the season layer and each radar method (work package 2). Not computed yet.",
+      "evidence": [],
+      "gates": "Showing our own radar beside the season layer on a page.",
+      "ready": false,
+      "added": "2026-10-07"
+    },
+    {
+      "id": "V-17",
+      "group": "models",
+      "title": "Radar set against the dated layer of 22 October 2024 at Mae Sai",
+      "check": "The three radar methods on the Sentinel-1 pass of 21 October 2024, set against the layer UNOSAT and GISTDA dated 22 October (work package 3). Not computed yet.",
+      "evidence": [],
+      "gates": "A first comparison of our radar on the study area itself.",
+      "ready": false,
+      "added": "2026-10-07"
+    },
+    {
+      "id": "V-18",
+      "group": "models",
+      "title": "The flood-susceptibility model",
+      "check": "Features, the hold-out by district, the calibration curve and what each feature contributes (work package 4). Not computed yet.",
+      "evidence": [],
+      "gates": "Naming a trained model in the pitch.",
+      "ready": false,
+      "added": "2026-10-07"
+    },
+    {
+      "id": "V-19",
+      "group": "models",
+      "title": "The supervised flood classifier",
+      "check": "A classifier trained on labelled flood events and set against the THEOS-2 chip and the layer of 22 October (work package 7). Not started; it may be dropped.",
+      "evidence": [],
+      "gates": "Naming a second trained model in the pitch.",
+      "ready": false,
+      "added": "2026-10-07"
+    },
+    {
+      "id": "V-20",
+      "group": "models",
+      "title": "THEOS-2 on Mae Sai itself",
+      "check": "The check of the radar and of the road rule on the September 2024 event (work package 6). It waits for the scene from GISTDA.",
+      "evidence": [],
+      "gates": "Saying that THEOS-2 was used on the study event.",
+      "ready": false,
+      "added": "2026-10-07"
+    }
+  ]
+}

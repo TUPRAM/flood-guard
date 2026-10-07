@@ -13,6 +13,10 @@
 The guide asks each team to arrive with **the latest output, draft visuals and
 a five-minute draft pitch**. Sections 3 to 5 are those three things.
 
+**The session is on 16 October 2026** (decision log R27). What the team has to
+check before then is listed on the team page `/studio/validation-check/`, where
+each member records accept, change or reject (`docs/validation/README.md`).
+
 ## 1. Where the project stands, against the three judging criteria
 
 | Criterion | What we can show today | What is thin |

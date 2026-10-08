@@ -1,0 +1,2110 @@
+{
+ "schema": "floodguard.flood_susceptibility.result.v1",
+ "generated_at_utc": "2026-10-08T07:03:57Z",
+ "source_timestamp": "2024-08-01/2024-10-12 (season layer of product 4009)",
+ "confidence_class": "low",
+ "confidence_basis": "A model of an unvalidated agency season layer; nothing was checked on the ground.",
+ "operational_status": "non_operational",
+ "official_warning": false,
+ "can_feed_decision_layer": false,
+ "plan": {
+  "path": "docs/proposal_execution/flood_susceptibility_model_plan_v1.md",
+  "sha256": "bc9202c6345d7a0a4dfb8b8a33fda7a3a580a79447bdad53163bf3ef722bcb39"
+ },
+ "what_this_is": "A model of how likely a 30 m cell is to lie inside the area mapped as water in the 2024 season, fitted on Mae Sai district and tested once on the three districts that border it.",
+ "label": "agreement with the 2024 season layer on districts the model never saw; not accuracy against the ground",
+ "freeze_record": {
+  "path": "outputs/flood_susceptibility/mae_sai_model_v1_freeze.json",
+  "sha256": "6ebd1662cd563b5ed219e5d430c36531eef46967072a0b3101d2cc8bb0fe665d"
+ },
+ "training_district": {
+  "code": "TH5709",
+  "name": "Mae Sai",
+  "mae_sai": 338421,
+  "flooded": 85817,
+  "flooded_share": 0.253581
+ },
+ "test_districts": {
+  "TH5707": "Mae Chan",
+  "TH5708": "Chiang Saen",
+  "TH5715": "Mae Fa Luang"
+ },
+ "test_cells": {
+  "cells": 2043031,
+  "flooded": 118302,
+  "flooded_share": 0.057905
+ },
+ "models": {
+  "baseline_logistic_hand": {
+   "settings": {},
+   "features": [
+    "hand_main_stream_m"
+   ],
+   "out_of_fold_on_mae_sai": {
+    "roc_auc": 0.795031,
+    "average_precision": 0.479585,
+    "brier": 0.149667,
+    "expected_calibration_error": 0.0
+   },
+   "test": {
+    "three_districts_together": {
+     "cells": 2043031,
+     "flooded_cells": 118302,
+     "flooded_share": 0.057905,
+     "roc_auc": 0.922998,
+     "average_precision": 0.298077,
+     "brier": 0.049002,
+     "brier_of_always_answering_the_training_share": 0.092841,
+     "brier_skill": 0.4722,
+     "expected_calibration_error": 0.04555,
+     "reliability": [
+      {
+       "from": 0.0,
+       "to": 0.1,
+       "cells": 1292491,
+       "mean_value": 0.002717,
+       "flooded_share": 0.000378
+      },
+      {
+       "from": 0.1,
+       "to": 0.2,
+       "cells": 396121,
+       "mean_value": 0.126666,
+       "flooded_share": 0.038029
+      },
+      {
+       "from": 0.2,
+       "to": 0.3,
+       "cells": 43404,
+       "mean_value": 0.239926,
+       "flooded_share": 0.187909
+      },
+      {
+       "from": 0.3,
+       "to": 0.4,
+       "cells": 60779,
+       "mean_value": 0.342312,
+       "flooded_share": 0.267066
+      },
+      {
+       "from": 0.4,
+       "to": 0.5,
+       "cells": 24365,
+       "mean_value": 0.418021,
+       "flooded_share": 0.308393
+      },
+      {
+       "from": 0.5,
+       "to": 0.6,
+       "cells": 225871,
+       "mean_value": 0.514773,
+       "flooded_share": 0.313666
+      },
+      {
+       "from": 0.6,
+       "to": 0.7,
+       "cells": 0,
+       "mean_value": null,
+       "flooded_share": null
+      },
+      {
+       "from": 0.7,
+       "to": 0.8,
+       "cells": 0,
+       "mean_value": null,
+       "flooded_share": null
+      },
+      {
+       "from": 0.8,
+       "to": 0.9,
+       "cells": 0,
+       "mean_value": null,
+       "flooded_share": null
+      },
+      {
+       "from": 0.9,
+       "to": 1.0,
+       "cells": 0,
+       "mean_value": null,
+       "flooded_share": null
+      }
+     ],
+     "abstention": {
+      "no_answer_from": 0.3,
+      "no_answer_to": 0.7,
+      "cells": 2043031,
+      "cells_with_an_answer": 1732016,
+      "share_with_an_answer": 0.847768,
+      "agreement_on_answered_cells": 0.986312,
+      "agreement_if_every_cell_is_answered_at_0.5": 0.900901
+     },
+     "risk_coverage": [
+      {
+       "share_of_cells_answered": 0.1,
+       "cells": 204303,
+       "agreement": 1.0
+      },
+      {
+       "share_of_cells_answered": 0.2,
+       "cells": 408606,
+       "agreement": 0.999993
+      },
+      {
+       "share_of_cells_answered": 0.3,
+       "cells": 612909,
+       "agreement": 0.999995
+      },
+      {
+       "share_of_cells_answered": 0.4,
+       "cells": 817212,
+       "agreement": 0.999821
+      },
+      {
+       "share_of_cells_answered": 0.5,
+       "cells": 1021516,
+       "agreement": 0.999678
+      },
+      {
+       "share_of_cells_answered": 0.6,
+       "cells": 1225819,
+       "agreement": 0.999713
+      },
+      {
+       "share_of_cells_answered": 0.7,
+       "cells": 1430122,
+       "agreement": 0.99955
+      },
+      {
+       "share_of_cells_answered": 0.8,
+       "cells": 1634425,
+       "agreement": 0.9911
+      },
+      {
+       "share_of_cells_answered": 0.9,
+       "cells": 1838728,
+       "agreement": 0.971885
+      },
+      {
+       "share_of_cells_answered": 1.0,
+       "cells": 2043031,
+       "agreement": 0.900901
+      }
+     ]
+    },
+    "by_district": {
+     "TH5707": {
+      "name": "Mae Chan",
+      "cells": 817615,
+      "flooded_cells": 56217,
+      "flooded_share": 0.068757,
+      "roc_auc": 0.867587,
+      "average_precision": 0.224441,
+      "brier": 0.069069,
+      "brier_of_always_answering_the_training_share": 0.09819,
+      "brier_skill": 0.296576,
+      "expected_calibration_error": 0.073292,
+      "reliability": [
+       {
+        "from": 0.0,
+        "to": 0.1,
+        "cells": 397417,
+        "mean_value": 0.004385,
+        "flooded_share": 0.001183
+       },
+       {
+        "from": 0.1,
+        "to": 0.2,
+        "cells": 227141,
+        "mean_value": 0.127299,
+        "flooded_share": 0.04477
+       },
+       {
+        "from": 0.2,
+        "to": 0.3,
+        "cells": 25735,
+        "mean_value": 0.240362,
+        "flooded_share": 0.186788
+       },
+       {
+        "from": 0.3,
+        "to": 0.4,
+        "cells": 32413,
+        "mean_value": 0.341845,
+        "flooded_share": 0.278654
+       },
+       {
+        "from": 0.4,
+        "to": 0.5,
+        "cells": 12761,
+        "mean_value": 0.418339,
+        "flooded_share": 0.247943
+       },
+       {
+        "from": 0.5,
+        "to": 0.6,
+        "cells": 122148,
+        "mean_value": 0.514789,
+        "flooded_share": 0.233938
+       },
+       {
+        "from": 0.6,
+        "to": 0.7,
+        "cells": 0,
+        "mean_value": null,
+        "flooded_share": null
+       },
+       {
+        "from": 0.7,
+        "to": 0.8,
+        "cells": 0,
+        "mean_value": null,
+        "flooded_share": null
+       },
+       {
+        "from": 0.8,
+        "to": 0.9,
+        "cells": 0,
+        "mean_value": null,
+        "flooded_share": null
+       },
+       {
+        "from": 0.9,
+        "to": 1.0,
+        "cells": 0,
+        "mean_value": null,
+        "flooded_share": null
+       }
+      ],
+      "abstention": {
+       "no_answer_from": 0.3,
+       "no_answer_to": 0.7,
+       "cells": 817615,
+       "cells_with_an_answer": 650293,
+       "share_with_an_answer": 0.795354,
+       "agreement_on_answered_cells": 0.976248,
+       "agreement_if_every_cell_is_answered_at_0.5": 0.85176
+      },
+      "risk_coverage": [
+       {
+        "share_of_cells_answered": 0.1,
+        "cells": 81762,
+        "agreement": 0.998251
+       },
+       {
+        "share_of_cells_answered": 0.2,
+        "cells": 163523,
+        "agreement": 0.998006
+       },
+       {
+        "share_of_cells_answered": 0.3,
+        "cells": 245284,
+        "agreement": 0.998671
+       },
+       {
+        "share_of_cells_answered": 0.4,
+        "cells": 327046,
+        "agreement": 0.999003
+       },
+       {
+        "share_of_cells_answered": 0.5,
+        "cells": 408808,
+        "agreement": 0.998816
+       },
+       {
+        "share_of_cells_answered": 0.6,
+        "cells": 490569,
+        "agreement": 0.99864
+       },
+       {
+        "share_of_cells_answered": 0.7,
+        "cells": 572330,
+        "agreement": 0.982597
+       },
+       {
+        "share_of_cells_answered": 0.8,
+        "cells": 654092,
+        "agreement": 0.97482
+       },
+       {
+        "share_of_cells_answered": 0.9,
+        "cells": 735854,
+        "agreement": 0.928268
+       },
+       {
+        "share_of_cells_answered": 1.0,
+        "cells": 817615,
+        "agreement": 0.85176
+       }
+      ]
+     },
+     "TH5708": {
+      "name": "Chiang Saen",
+      "cells": 492785,
+      "flooded_cells": 62085,
+      "flooded_share": 0.125988,
+      "roc_auc": 0.895546,
+      "average_precision": 0.422844,
+      "brier": 0.082738,
+      "brier_of_always_answering_the_training_share": 0.126395,
+      "brier_skill": 0.345401,
+      "expected_calibration_error": 0.048371,
+      "reliability": [
+       {
+        "from": 0.0,
+        "to": 0.1,
+        "cells": 204117,
+        "mean_value": 0.005462,
+        "flooded_share": 8.8e-05
+       },
+       {
+        "from": 0.1,
+        "to": 0.2,
+        "cells": 138187,
+        "mean_value": 0.127341,
+        "flooded_share": 0.035423
+       },
+       {
+        "from": 0.2,
+        "to": 0.3,
+        "cells": 16479,
+        "mean_value": 0.239286,
+        "flooded_share": 0.203228
+       },
+       {
+        "from": 0.3,
+        "to": 0.4,
+        "cells": 26956,
+        "mean_value": 0.342901,
+        "flooded_share": 0.267102
+       },
+       {
+        "from": 0.4,
+        "to": 0.5,
+        "cells": 11104,
+        "mean_value": 0.417624,
+        "flooded_share": 0.391751
+       },
+       {
+        "from": 0.5,
+        "to": 0.6,
+        "cells": 95942,
+        "mean_value": 0.514746,
+        "flooded_share": 0.44061
+       },
+       {
+        "from": 0.6,
+        "to": 0.7,
+        "cells": 0,
+        "mean_value": null,
+        "flooded_share": null
+       },
+       {
+        "from": 0.7,
+        "to": 0.8,
+        "cells": 0,
+        "mean_value": null,
+        "flooded_share": null
+       },
+       {
+        "from": 0.8,
+        "to": 0.9,
+        "cells": 0,
+        "mean_value": null,
+        "flooded_share": null
+       },
+       {
+        "from": 0.9,
+        "to": 1.0,
+        "cells": 0,
+        "mean_value": null,
+        "flooded_share": null
+       }
+      ],
+      "abstention": {
+       "no_answer_from": 0.3,
+       "no_answer_to": 0.7,
+       "cells": 492785,
+       "cells_with_an_answer": 358783,
+       "share_with_an_answer": 0.728072,
+       "agreement_on_answered_cells": 0.976972,
+       "agreement_if_every_cell_is_answered_at_0.5": 0.85089
+      },
+      "risk_coverage": [
+       {
+        "share_of_cells_answered": 0.1,
+        "cells": 49278,
+        "agreement": 1.0
+       },
+       {
+        "share_of_cells_answered": 0.2,
+        "cells": 98557,
+        "agreement": 0.99997
+       },
+       {
+        "share_of_cells_answered": 0.3,
+        "cells": 147836,
+        "agreement": 0.99998
+       },
+       {
+        "share_of_cells_answered": 0.4,
+        "cells": 197114,
+        "agreement": 0.999919
+       },
+       {
+        "share_of_cells_answered": 0.5,
+        "cells": 246392,
+        "agreement": 0.999765
+       },
+       {
+        "share_of_cells_answered": 0.6,
+        "cells": 295671,
+        "agreement": 0.998092
+       },
+       {
+        "share_of_cells_answered": 0.7,
+        "cells": 344950,
+        "agreement": 0.984983
+       },
+       {
+        "share_of_cells_answered": 0.8,
+        "cells": 394228,
+        "agreement": 0.953113
+       },
+       {
+        "share_of_cells_answered": 0.9,
+        "cells": 443506,
+        "agreement": 0.907728
+       },
+       {
+        "share_of_cells_answered": 1.0,
+        "cells": 492785,
+        "agreement": 0.85089
+       }
+      ]
+     },
+     "TH5715": {
+      "name": "Mae Fa Luang",
+      "cells": 732631,
+      "flooded_cells": 0,
+      "note": "one class only: no ranking figure"
+     }
+    }
+   }
+  },
+  "random_forest": {
+   "settings": {
+    "min_samples_leaf": 100
+   },
+   "features": [
+    "elevation_m",
+    "slope_degrees",
+    "hand_main_stream_m",
+    "hand_small_stream_m",
+    "distance_main_stream_m",
+    "distance_small_stream_m",
+    "log10_upstream_area_km2",
+    "distance_permanent_water_m",
+    "land_cover_tree_cover",
+    "land_cover_shrubland",
+    "land_cover_grassland",
+    "land_cover_cropland",
+    "land_cover_built_up",
+    "land_cover_bare",
+    "land_cover_wetland",
+    "land_cover_other"
+   ],
+   "out_of_fold_on_mae_sai": {
+    "roc_auc": 0.895712,
+    "average_precision": 0.777555,
+    "brier": 0.103838,
+    "expected_calibration_error": 0.0
+   },
+   "test": {
+    "three_districts_together": {
+     "cells": 2043031,
+     "flooded_cells": 118302,
+     "flooded_share": 0.057905,
+     "roc_auc": 0.920975,
+     "average_precision": 0.357808,
+     "brier": 0.075423,
+     "brier_of_always_answering_the_training_share": 0.092841,
+     "brier_skill": 0.187617,
+     "expected_calibration_error": 0.076636,
+     "reliability": [
+      {
+       "from": 0.0,
+       "to": 0.1,
+       "cells": 1545925,
+       "mean_value": 0.009453,
+       "flooded_share": 0.007838
+      },
+      {
+       "from": 0.1,
+       "to": 0.2,
+       "cells": 116087,
+       "mean_value": 0.124134,
+       "flooded_share": 0.109797
+      },
+      {
+       "from": 0.2,
+       "to": 0.3,
+       "cells": 68139,
+       "mean_value": 0.261683,
+       "flooded_share": 0.12112
+      },
+      {
+       "from": 0.3,
+       "to": 0.4,
+       "cells": 43244,
+       "mean_value": 0.35613,
+       "flooded_share": 0.087642
+      },
+      {
+       "from": 0.4,
+       "to": 0.5,
+       "cells": 43017,
+       "mean_value": 0.442326,
+       "flooded_share": 0.096985
+      },
+      {
+       "from": 0.5,
+       "to": 0.6,
+       "cells": 21840,
+       "mean_value": 0.55351,
+       "flooded_share": 0.099496
+      },
+      {
+       "from": 0.6,
+       "to": 0.7,
+       "cells": 18877,
+       "mean_value": 0.63741,
+       "flooded_share": 0.143667
+      },
+      {
+       "from": 0.7,
+       "to": 0.8,
+       "cells": 21618,
+       "mean_value": 0.749608,
+       "flooded_share": 0.186928
+      },
+      {
+       "from": 0.8,
+       "to": 0.9,
+       "cells": 20962,
+       "mean_value": 0.854375,
+       "flooded_share": 0.254938
+      },
+      {
+       "from": 0.9,
+       "to": 1.0,
+       "cells": 143322,
+       "mean_value": 0.944398,
+       "flooded_share": 0.439249
+      }
+     ],
+     "abstention": {
+      "no_answer_from": 0.3,
+      "no_answer_to": 0.7,
+      "cells": 2043031,
+      "cells_with_an_answer": 1916053,
+      "share_with_an_answer": 0.937848,
+      "agreement_on_answered_cells": 0.923447,
+      "agreement_if_every_cell_is_answered_at_0.5": 0.906769
+     },
+     "risk_coverage": [
+      {
+       "share_of_cells_answered": 0.1,
+       "cells": 204303,
+       "agreement": 0.999971
+      },
+      {
+       "share_of_cells_answered": 0.2,
+       "cells": 408606,
+       "agreement": 0.999902
+      },
+      {
+       "share_of_cells_answered": 0.3,
+       "cells": 612909,
+       "agreement": 0.999742
+      },
+      {
+       "share_of_cells_answered": 0.4,
+       "cells": 817212,
+       "agreement": 0.999268
+      },
+      {
+       "share_of_cells_answered": 0.5,
+       "cells": 1021516,
+       "agreement": 0.999196
+      },
+      {
+       "share_of_cells_answered": 0.6,
+       "cells": 1225819,
+       "agreement": 0.99926
+      },
+      {
+       "share_of_cells_answered": 0.7,
+       "cells": 1430122,
+       "agreement": 0.979181
+      },
+      {
+       "share_of_cells_answered": 0.8,
+       "cells": 1634425,
+       "agreement": 0.948854
+      },
+      {
+       "share_of_cells_answered": 0.9,
+       "cells": 1838728,
+       "agreement": 0.932905
+      },
+      {
+       "share_of_cells_answered": 1.0,
+       "cells": 2043031,
+       "agreement": 0.906769
+      }
+     ]
+    },
+    "by_district": {
+     "TH5707": {
+      "name": "Mae Chan",
+      "cells": 817615,
+      "flooded_cells": 56217,
+      "flooded_share": 0.068757,
+      "roc_auc": 0.841045,
+      "average_precision": 0.231632,
+      "brier": 0.094947,
+      "brier_of_always_answering_the_training_share": 0.09819,
+      "brier_skill": 0.033019,
+      "expected_calibration_error": 0.089246,
+      "reliability": [
+       {
+        "from": 0.0,
+        "to": 0.1,
+        "cells": 553064,
+        "mean_value": 0.01492,
+        "flooded_share": 0.019289
+       },
+       {
+        "from": 0.1,
+        "to": 0.2,
+        "cells": 80140,
+        "mean_value": 0.125594,
+        "flooded_share": 0.145371
+       },
+       {
+        "from": 0.2,
+        "to": 0.3,
+        "cells": 52519,
+        "mean_value": 0.262289,
+        "flooded_share": 0.118414
+       },
+       {
+        "from": 0.3,
+        "to": 0.4,
+        "cells": 28302,
+        "mean_value": 0.355379,
+        "flooded_share": 0.089181
+       },
+       {
+        "from": 0.4,
+        "to": 0.5,
+        "cells": 23272,
+        "mean_value": 0.44058,
+        "flooded_share": 0.098874
+       },
+       {
+        "from": 0.5,
+        "to": 0.6,
+        "cells": 9685,
+        "mean_value": 0.549451,
+        "flooded_share": 0.091998
+       },
+       {
+        "from": 0.6,
+        "to": 0.7,
+        "cells": 5900,
+        "mean_value": 0.636803,
+        "flooded_share": 0.09339
+       },
+       {
+        "from": 0.7,
+        "to": 0.8,
+        "cells": 5555,
+        "mean_value": 0.748336,
+        "flooded_share": 0.135734
+       },
+       {
+        "from": 0.8,
+        "to": 0.9,
+        "cells": 4942,
+        "mean_value": 0.854774,
+        "flooded_share": 0.268312
+       },
+       {
+        "from": 0.9,
+        "to": 1.0,
+        "cells": 54236,
+        "mean_value": 0.946241,
+        "flooded_share": 0.356461
+       }
+      ],
+      "abstention": {
+       "no_answer_from": 0.3,
+       "no_answer_to": 0.7,
+       "cells": 817615,
+       "cells_with_an_answer": 750456,
+       "share_with_an_answer": 0.91786,
+       "agreement_on_answered_cells": 0.904249,
+       "agreement_if_every_cell_is_answered_at_0.5": 0.888915
+      },
+      "risk_coverage": [
+       {
+        "share_of_cells_answered": 0.1,
+        "cells": 81762,
+        "agreement": 0.994129
+       },
+       {
+        "share_of_cells_answered": 0.2,
+        "cells": 163523,
+        "agreement": 0.996404
+       },
+       {
+        "share_of_cells_answered": 0.3,
+        "cells": 245284,
+        "agreement": 0.997126
+       },
+       {
+        "share_of_cells_answered": 0.4,
+        "cells": 327046,
+        "agreement": 0.997844
+       },
+       {
+        "share_of_cells_answered": 0.5,
+        "cells": 408808,
+        "agreement": 0.998097
+       },
+       {
+        "share_of_cells_answered": 0.6,
+        "cells": 490569,
+        "agreement": 0.952761
+       },
+       {
+        "share_of_cells_answered": 0.7,
+        "cells": 572330,
+        "agreement": 0.932754
+       },
+       {
+        "share_of_cells_answered": 0.8,
+        "cells": 654092,
+        "agreement": 0.917981
+       },
+       {
+        "share_of_cells_answered": 0.9,
+        "cells": 735854,
+        "agreement": 0.903732
+       },
+       {
+        "share_of_cells_answered": 1.0,
+        "cells": 817615,
+        "agreement": 0.888915
+       }
+      ]
+     },
+     "TH5708": {
+      "name": "Chiang Saen",
+      "cells": 492785,
+      "flooded_cells": 62085,
+      "flooded_share": 0.125988,
+      "roc_auc": 0.904814,
+      "average_precision": 0.485148,
+      "brier": 0.15178,
+      "brier_of_always_answering_the_training_share": 0.126395,
+      "brier_skill": -0.200837,
+      "expected_calibration_error": 0.172622,
+      "reliability": [
+       {
+        "from": 0.0,
+        "to": 0.1,
+        "cells": 275291,
+        "mean_value": 0.015664,
+        "flooded_share": 0.005264
+       },
+       {
+        "from": 0.1,
+        "to": 0.2,
+        "cells": 31890,
+        "mean_value": 0.12014,
+        "flooded_share": 0.034368
+       },
+       {
+        "from": 0.2,
+        "to": 0.3,
+        "cells": 13606,
+        "mean_value": 0.259933,
+        "flooded_share": 0.149493
+       },
+       {
+        "from": 0.3,
+        "to": 0.4,
+        "cells": 8782,
+        "mean_value": 0.35945,
+        "flooded_share": 0.144159
+       },
+       {
+        "from": 0.4,
+        "to": 0.5,
+        "cells": 17258,
+        "mean_value": 0.44664,
+        "flooded_share": 0.108413
+       },
+       {
+        "from": 0.5,
+        "to": 0.6,
+        "cells": 11955,
+        "mean_value": 0.556871,
+        "flooded_share": 0.107235
+       },
+       {
+        "from": 0.6,
+        "to": 0.7,
+        "cells": 12860,
+        "mean_value": 0.637758,
+        "flooded_share": 0.16804
+       },
+       {
+        "from": 0.7,
+        "to": 0.8,
+        "cells": 16037,
+        "mean_value": 0.750071,
+        "flooded_share": 0.204964
+       },
+       {
+        "from": 0.8,
+        "to": 0.9,
+        "cells": 16020,
+        "mean_value": 0.854253,
+        "flooded_share": 0.250811
+       },
+       {
+        "from": 0.9,
+        "to": 1.0,
+        "cells": 89086,
+        "mean_value": 0.943276,
+        "flooded_share": 0.48965
+       }
+      ],
+      "abstention": {
+       "no_answer_from": 0.3,
+       "no_answer_to": 0.7,
+       "cells": 492785,
+       "cells_with_an_answer": 441930,
+       "share_with_an_answer": 0.896801,
+       "agreement_on_answered_cells": 0.830751,
+       "agreement_if_every_cell_is_answered_at_0.5": 0.798482
+      },
+      "risk_coverage": [
+       {
+        "share_of_cells_answered": 0.1,
+        "cells": 49278,
+        "agreement": 1.0
+       },
+       {
+        "share_of_cells_answered": 0.2,
+        "cells": 98557,
+        "agreement": 0.999594
+       },
+       {
+        "share_of_cells_answered": 0.3,
+        "cells": 147836,
+        "agreement": 0.999689
+       },
+       {
+        "share_of_cells_answered": 0.4,
+        "cells": 197114,
+        "agreement": 0.998975
+       },
+       {
+        "share_of_cells_answered": 0.5,
+        "cells": 246392,
+        "agreement": 0.951946
+       },
+       {
+        "share_of_cells_answered": 0.6,
+        "cells": 295671,
+        "agreement": 0.926222
+       },
+       {
+        "share_of_cells_answered": 0.7,
+        "cells": 344950,
+        "agreement": 0.869926
+       },
+       {
+        "share_of_cells_answered": 0.8,
+        "cells": 394228,
+        "agreement": 0.868327
+       },
+       {
+        "share_of_cells_answered": 0.9,
+        "cells": 443506,
+        "agreement": 0.829614
+       },
+       {
+        "share_of_cells_answered": 1.0,
+        "cells": 492785,
+        "agreement": 0.798482
+       }
+      ]
+     },
+     "TH5715": {
+      "name": "Mae Fa Luang",
+      "cells": 732631,
+      "flooded_cells": 0,
+      "note": "one class only: no ranking figure"
+     }
+    }
+   }
+  },
+  "gradient_boosted_trees": {
+   "settings": {
+    "learning_rate": 0.05,
+    "max_leaf_nodes": 15
+   },
+   "features": [
+    "elevation_m",
+    "slope_degrees",
+    "hand_main_stream_m",
+    "hand_small_stream_m",
+    "distance_main_stream_m",
+    "distance_small_stream_m",
+    "log10_upstream_area_km2",
+    "distance_permanent_water_m",
+    "land_cover_tree_cover",
+    "land_cover_shrubland",
+    "land_cover_grassland",
+    "land_cover_cropland",
+    "land_cover_built_up",
+    "land_cover_bare",
+    "land_cover_wetland",
+    "land_cover_other"
+   ],
+   "out_of_fold_on_mae_sai": {
+    "roc_auc": 0.892477,
+    "average_precision": 0.775467,
+    "brier": 0.105621,
+    "expected_calibration_error": 0.0
+   },
+   "test": {
+    "three_districts_together": {
+     "cells": 2043031,
+     "flooded_cells": 118302,
+     "flooded_share": 0.057905,
+     "roc_auc": 0.924508,
+     "average_precision": 0.317197,
+     "brier": 0.086137,
+     "brier_of_always_answering_the_training_share": 0.092841,
+     "brier_skill": 0.072207,
+     "expected_calibration_error": 0.077536,
+     "reliability": [
+      {
+       "from": 0.0,
+       "to": 0.1,
+       "cells": 1660082,
+       "mean_value": 0.008878,
+       "flooded_share": 0.007779
+      },
+      {
+       "from": 0.1,
+       "to": 0.2,
+       "cells": 50871,
+       "mean_value": 0.131174,
+       "flooded_share": 0.188831
+      },
+      {
+       "from": 0.2,
+       "to": 0.3,
+       "cells": 46470,
+       "mean_value": 0.251103,
+       "flooded_share": 0.234603
+      },
+      {
+       "from": 0.3,
+       "to": 0.4,
+       "cells": 36305,
+       "mean_value": 0.342199,
+       "flooded_share": 0.17981
+      },
+      {
+       "from": 0.4,
+       "to": 0.5,
+       "cells": 11680,
+       "mean_value": 0.453327,
+       "flooded_share": 0.151541
+      },
+      {
+       "from": 0.5,
+       "to": 0.6,
+       "cells": 12947,
+       "mean_value": 0.544513,
+       "flooded_share": 0.125743
+      },
+      {
+       "from": 0.6,
+       "to": 0.7,
+       "cells": 6281,
+       "mean_value": 0.641309,
+       "flooded_share": 0.140901
+      },
+      {
+       "from": 0.7,
+       "to": 0.8,
+       "cells": 10033,
+       "mean_value": 0.747284,
+       "flooded_share": 0.160769
+      },
+      {
+       "from": 0.8,
+       "to": 0.9,
+       "cells": 28905,
+       "mean_value": 0.872663,
+       "flooded_share": 0.313717
+      },
+      {
+       "from": 0.9,
+       "to": 1.0,
+       "cells": 179457,
+       "mean_value": 0.982109,
+       "flooded_share": 0.353227
+      }
+     ],
+     "abstention": {
+      "no_answer_from": 0.3,
+      "no_answer_to": 0.7,
+      "cells": 2043031,
+      "cells_with_an_answer": 1975818,
+      "share_with_an_answer": 0.967101,
+      "agreement_on_answered_cells": 0.910039,
+      "agreement_if_every_cell_is_answered_at_0.5": 0.900756
+     },
+     "risk_coverage": [
+      {
+       "share_of_cells_answered": 0.1,
+       "cells": 204303,
+       "agreement": 1.0
+      },
+      {
+       "share_of_cells_answered": 0.2,
+       "cells": 408606,
+       "agreement": 0.999993
+      },
+      {
+       "share_of_cells_answered": 0.3,
+       "cells": 612909,
+       "agreement": 0.999995
+      },
+      {
+       "share_of_cells_answered": 0.4,
+       "cells": 817212,
+       "agreement": 0.999819
+      },
+      {
+       "share_of_cells_answered": 0.5,
+       "cells": 1021516,
+       "agreement": 0.999738
+      },
+      {
+       "share_of_cells_answered": 0.6,
+       "cells": 1225819,
+       "agreement": 0.999781
+      },
+      {
+       "share_of_cells_answered": 0.7,
+       "cells": 1430122,
+       "agreement": 0.972721
+      },
+      {
+       "share_of_cells_answered": 0.8,
+       "cells": 1634425,
+       "agreement": 0.932934
+      },
+      {
+       "share_of_cells_answered": 0.9,
+       "cells": 1838728,
+       "agreement": 0.929891
+      },
+      {
+       "share_of_cells_answered": 1.0,
+       "cells": 2043031,
+       "agreement": 0.900756
+      }
+     ]
+    },
+    "by_district": {
+     "TH5707": {
+      "name": "Mae Chan",
+      "cells": 817615,
+      "flooded_cells": 56217,
+      "flooded_share": 0.068757,
+      "roc_auc": 0.871717,
+      "average_precision": 0.252126,
+      "brier": 0.098485,
+      "brier_of_always_answering_the_training_share": 0.09819,
+      "brier_skill": -0.003014,
+      "expected_calibration_error": 0.08085,
+      "reliability": [
+       {
+        "from": 0.0,
+        "to": 0.1,
+        "cells": 626452,
+        "mean_value": 0.014181,
+        "flooded_share": 0.017934
+       },
+       {
+        "from": 0.1,
+        "to": 0.2,
+        "cells": 39117,
+        "mean_value": 0.13137,
+        "flooded_share": 0.212005
+       },
+       {
+        "from": 0.2,
+        "to": 0.3,
+        "cells": 35332,
+        "mean_value": 0.25072,
+        "flooded_share": 0.241905
+       },
+       {
+        "from": 0.3,
+        "to": 0.4,
+        "cells": 25248,
+        "mean_value": 0.34101,
+        "flooded_share": 0.159498
+       },
+       {
+        "from": 0.4,
+        "to": 0.5,
+        "cells": 7499,
+        "mean_value": 0.452767,
+        "flooded_share": 0.159888
+       },
+       {
+        "from": 0.5,
+        "to": 0.6,
+        "cells": 7307,
+        "mean_value": 0.543704,
+        "flooded_share": 0.116737
+       },
+       {
+        "from": 0.6,
+        "to": 0.7,
+        "cells": 3225,
+        "mean_value": 0.641401,
+        "flooded_share": 0.11845
+       },
+       {
+        "from": 0.7,
+        "to": 0.8,
+        "cells": 4690,
+        "mean_value": 0.746963,
+        "flooded_share": 0.135608
+       },
+       {
+        "from": 0.8,
+        "to": 0.9,
+        "cells": 8909,
+        "mean_value": 0.863578,
+        "flooded_share": 0.169379
+       },
+       {
+        "from": 0.9,
+        "to": 1.0,
+        "cells": 59836,
+        "mean_value": 0.989138,
+        "flooded_share": 0.326492
+       }
+      ],
+      "abstention": {
+       "no_answer_from": 0.3,
+       "no_answer_to": 0.7,
+       "cells": 817615,
+       "cells_with_an_answer": 774336,
+       "share_with_an_answer": 0.947067,
+       "agreement_on_answered_cells": 0.896907,
+       "agreement_if_every_cell_is_answered_at_0.5": 0.884601
+      },
+      "risk_coverage": [
+       {
+        "share_of_cells_answered": 0.1,
+        "cells": 81762,
+        "agreement": 0.998202
+       },
+       {
+        "share_of_cells_answered": 0.2,
+        "cells": 163523,
+        "agreement": 0.998667
+       },
+       {
+        "share_of_cells_answered": 0.3,
+        "cells": 245284,
+        "agreement": 0.99892
+       },
+       {
+        "share_of_cells_answered": 0.4,
+        "cells": 327046,
+        "agreement": 0.99919
+       },
+       {
+        "share_of_cells_answered": 0.5,
+        "cells": 408808,
+        "agreement": 0.999151
+       },
+       {
+        "share_of_cells_answered": 0.6,
+        "cells": 490569,
+        "agreement": 0.95704
+       },
+       {
+        "share_of_cells_answered": 0.7,
+        "cells": 572330,
+        "agreement": 0.925241
+       },
+       {
+        "share_of_cells_answered": 0.8,
+        "cells": 654092,
+        "agreement": 0.925972
+       },
+       {
+        "share_of_cells_answered": 0.9,
+        "cells": 735854,
+        "agreement": 0.907435
+       },
+       {
+        "share_of_cells_answered": 1.0,
+        "cells": 817615,
+        "agreement": 0.884601
+       }
+      ]
+     },
+     "TH5708": {
+      "name": "Chiang Saen",
+      "cells": 492785,
+      "flooded_cells": 62085,
+      "flooded_share": 0.125988,
+      "roc_auc": 0.870342,
+      "average_precision": 0.369895,
+      "brier": 0.193611,
+      "brier_of_always_answering_the_training_share": 0.126395,
+      "brier_skill": -0.531792,
+      "expected_calibration_error": 0.195832,
+      "reliability": [
+       {
+        "from": 0.0,
+        "to": 0.1,
+        "cells": 300999,
+        "mean_value": 0.016308,
+        "flooded_share": 0.005575
+       },
+       {
+        "from": 0.1,
+        "to": 0.2,
+        "cells": 11754,
+        "mean_value": 0.130523,
+        "flooded_share": 0.111707
+       },
+       {
+        "from": 0.2,
+        "to": 0.3,
+        "cells": 11138,
+        "mean_value": 0.252317,
+        "flooded_share": 0.211438
+       },
+       {
+        "from": 0.3,
+        "to": 0.4,
+        "cells": 11057,
+        "mean_value": 0.344915,
+        "flooded_share": 0.226192
+       },
+       {
+        "from": 0.4,
+        "to": 0.5,
+        "cells": 4181,
+        "mean_value": 0.454331,
+        "flooded_share": 0.13657
+       },
+       {
+        "from": 0.5,
+        "to": 0.6,
+        "cells": 5640,
+        "mean_value": 0.545562,
+        "flooded_share": 0.137411
+       },
+       {
+        "from": 0.6,
+        "to": 0.7,
+        "cells": 3056,
+        "mean_value": 0.641212,
+        "flooded_share": 0.164594
+       },
+       {
+        "from": 0.7,
+        "to": 0.8,
+        "cells": 5343,
+        "mean_value": 0.747565,
+        "flooded_share": 0.182856
+       },
+       {
+        "from": 0.8,
+        "to": 0.9,
+        "cells": 19996,
+        "mean_value": 0.87671,
+        "flooded_share": 0.378026
+       },
+       {
+        "from": 0.9,
+        "to": 1.0,
+        "cells": 119621,
+        "mean_value": 0.978593,
+        "flooded_share": 0.3666
+       }
+      ],
+      "abstention": {
+       "no_answer_from": 0.3,
+       "no_answer_to": 0.7,
+       "cells": 492785,
+       "cells_with_an_answer": 468851,
+       "share_with_an_answer": 0.951431,
+       "agreement_on_answered_cells": 0.791155,
+       "agreement_if_every_cell_is_answered_at_0.5": 0.780012
+      },
+      "risk_coverage": [
+       {
+        "share_of_cells_answered": 0.1,
+        "cells": 49278,
+        "agreement": 1.0
+       },
+       {
+        "share_of_cells_answered": 0.2,
+        "cells": 98557,
+        "agreement": 0.99997
+       },
+       {
+        "share_of_cells_answered": 0.3,
+        "cells": 147836,
+        "agreement": 0.99998
+       },
+       {
+        "share_of_cells_answered": 0.4,
+        "cells": 197114,
+        "agreement": 0.99998
+       },
+       {
+        "share_of_cells_answered": 0.5,
+        "cells": 246392,
+        "agreement": 0.927128
+       },
+       {
+        "share_of_cells_answered": 0.6,
+        "cells": 295671,
+        "agreement": 0.849393
+       },
+       {
+        "share_of_cells_answered": 0.7,
+        "cells": 344950,
+        "agreement": 0.806355
+       },
+       {
+        "share_of_cells_answered": 0.8,
+        "cells": 394228,
+        "agreement": 0.815947
+       },
+       {
+        "share_of_cells_answered": 0.9,
+        "cells": 443506,
+        "agreement": 0.803595
+       },
+       {
+        "share_of_cells_answered": 1.0,
+        "cells": 492785,
+        "agreement": 0.780012
+       }
+      ]
+     },
+     "TH5715": {
+      "name": "Mae Fa Luang",
+      "cells": 732631,
+      "flooded_cells": 0,
+      "note": "one class only: no ranking figure"
+     }
+    }
+   }
+  },
+  "sensitivity_without_land_cover": {
+   "settings": {
+    "min_samples_leaf": 100
+   },
+   "features": [
+    "elevation_m",
+    "slope_degrees",
+    "hand_main_stream_m",
+    "hand_small_stream_m",
+    "distance_main_stream_m",
+    "distance_small_stream_m",
+    "log10_upstream_area_km2",
+    "distance_permanent_water_m"
+   ],
+   "out_of_fold_on_mae_sai": {
+    "roc_auc": 0.895323,
+    "average_precision": 0.776069,
+    "brier": 0.104238,
+    "expected_calibration_error": 0.0
+   },
+   "test": {
+    "three_districts_together": {
+     "cells": 2043031,
+     "flooded_cells": 118302,
+     "flooded_share": 0.057905,
+     "roc_auc": 0.919465,
+     "average_precision": 0.352964,
+     "brier": 0.07703,
+     "brier_of_always_answering_the_training_share": 0.092841,
+     "brier_skill": 0.170299,
+     "expected_calibration_error": 0.079017,
+     "reliability": [
+      {
+       "from": 0.0,
+       "to": 0.1,
+       "cells": 1563487,
+       "mean_value": 0.011449,
+       "flooded_share": 0.009165
+      },
+      {
+       "from": 0.1,
+       "to": 0.2,
+       "cells": 92417,
+       "mean_value": 0.129255,
+       "flooded_share": 0.112068
+      },
+      {
+       "from": 0.2,
+       "to": 0.3,
+       "cells": 73390,
+       "mean_value": 0.264823,
+       "flooded_share": 0.123654
+      },
+      {
+       "from": 0.3,
+       "to": 0.4,
+       "cells": 43956,
+       "mean_value": 0.356377,
+       "flooded_share": 0.097848
+      },
+      {
+       "from": 0.4,
+       "to": 0.5,
+       "cells": 36070,
+       "mean_value": 0.437343,
+       "flooded_share": 0.083477
+      },
+      {
+       "from": 0.5,
+       "to": 0.6,
+       "cells": 27758,
+       "mean_value": 0.555724,
+       "flooded_share": 0.080806
+      },
+      {
+       "from": 0.6,
+       "to": 0.7,
+       "cells": 13379,
+       "mean_value": 0.640056,
+       "flooded_share": 0.144929
+      },
+      {
+       "from": 0.7,
+       "to": 0.8,
+       "cells": 21508,
+       "mean_value": 0.735273,
+       "flooded_share": 0.167566
+      },
+      {
+       "from": 0.8,
+       "to": 0.9,
+       "cells": 24351,
+       "mean_value": 0.842144,
+       "flooded_share": 0.241551
+      },
+      {
+       "from": 0.9,
+       "to": 1.0,
+       "cells": 146715,
+       "mean_value": 0.9454,
+       "flooded_share": 0.433221
+      }
+     ],
+     "abstention": {
+      "no_answer_from": 0.3,
+      "no_answer_to": 0.7,
+      "cells": 2043031,
+      "cells_with_an_answer": 1921868,
+      "share_with_an_answer": 0.940694,
+      "agreement_on_answered_cells": 0.920239,
+      "agreement_if_every_cell_is_answered_at_0.5": 0.903314
+     },
+     "risk_coverage": [
+      {
+       "share_of_cells_answered": 0.1,
+       "cells": 204303,
+       "agreement": 1.0
+      },
+      {
+       "share_of_cells_answered": 0.2,
+       "cells": 408606,
+       "agreement": 0.99998
+      },
+      {
+       "share_of_cells_answered": 0.3,
+       "cells": 612909,
+       "agreement": 0.999936
+      },
+      {
+       "share_of_cells_answered": 0.4,
+       "cells": 817212,
+       "agreement": 0.999737
+      },
+      {
+       "share_of_cells_answered": 0.5,
+       "cells": 1021516,
+       "agreement": 0.999613
+      },
+      {
+       "share_of_cells_answered": 0.6,
+       "cells": 1225819,
+       "agreement": 0.999622
+      },
+      {
+       "share_of_cells_answered": 0.7,
+       "cells": 1430122,
+       "agreement": 0.969533
+      },
+      {
+       "share_of_cells_answered": 0.8,
+       "cells": 1634425,
+       "agreement": 0.948215
+      },
+      {
+       "share_of_cells_answered": 0.9,
+       "cells": 1838728,
+       "agreement": 0.929729
+      },
+      {
+       "share_of_cells_answered": 1.0,
+       "cells": 2043031,
+       "agreement": 0.903314
+      }
+     ]
+    },
+    "by_district": {
+     "TH5707": {
+      "name": "Mae Chan",
+      "cells": 817615,
+      "flooded_cells": 56217,
+      "flooded_share": 0.068757,
+      "roc_auc": 0.838214,
+      "average_precision": 0.225994,
+      "brier": 0.096482,
+      "brier_of_always_answering_the_training_share": 0.09819,
+      "brier_skill": 0.017395,
+      "expected_calibration_error": 0.091817,
+      "reliability": [
+       {
+        "from": 0.0,
+        "to": 0.1,
+        "cells": 565576,
+        "mean_value": 0.017758,
+        "flooded_share": 0.022623
+       },
+       {
+        "from": 0.1,
+        "to": 0.2,
+        "cells": 61862,
+        "mean_value": 0.13099,
+        "flooded_share": 0.151094
+       },
+       {
+        "from": 0.2,
+        "to": 0.3,
+        "cells": 57401,
+        "mean_value": 0.264889,
+        "flooded_share": 0.120521
+       },
+       {
+        "from": 0.3,
+        "to": 0.4,
+        "cells": 29110,
+        "mean_value": 0.354516,
+        "flooded_share": 0.097389
+       },
+       {
+        "from": 0.4,
+        "to": 0.5,
+        "cells": 19972,
+        "mean_value": 0.43634,
+        "flooded_share": 0.080212
+       },
+       {
+        "from": 0.5,
+        "to": 0.6,
+        "cells": 13620,
+        "mean_value": 0.555018,
+        "flooded_share": 0.055286
+       },
+       {
+        "from": 0.6,
+        "to": 0.7,
+        "cells": 4461,
+        "mean_value": 0.635382,
+        "flooded_share": 0.087424
+       },
+       {
+        "from": 0.7,
+        "to": 0.8,
+        "cells": 4931,
+        "mean_value": 0.734706,
+        "flooded_share": 0.124113
+       },
+       {
+        "from": 0.8,
+        "to": 0.9,
+        "cells": 5612,
+        "mean_value": 0.843503,
+        "flooded_share": 0.261939
+       },
+       {
+        "from": 0.9,
+        "to": 1.0,
+        "cells": 55070,
+        "mean_value": 0.947176,
+        "flooded_share": 0.354004
+       }
+      ],
+      "abstention": {
+       "no_answer_from": 0.3,
+       "no_answer_to": 0.7,
+       "cells": 817615,
+       "cells_with_an_answer": 750452,
+       "share_with_an_answer": 0.917855,
+       "agreement_on_answered_cells": 0.902597,
+       "agreement_if_every_cell_is_answered_at_0.5": 0.884468
+      },
+      "risk_coverage": [
+       {
+        "share_of_cells_answered": 0.1,
+        "cells": 81762,
+        "agreement": 0.997701
+       },
+       {
+        "share_of_cells_answered": 0.2,
+        "cells": 163523,
+        "agreement": 0.998013
+       },
+       {
+        "share_of_cells_answered": 0.3,
+        "cells": 245284,
+        "agreement": 0.9985
+       },
+       {
+        "share_of_cells_answered": 0.4,
+        "cells": 327046,
+        "agreement": 0.998875
+       },
+       {
+        "share_of_cells_answered": 0.5,
+        "cells": 408808,
+        "agreement": 0.998777
+       },
+       {
+        "share_of_cells_answered": 0.6,
+        "cells": 490569,
+        "agreement": 0.948727
+       },
+       {
+        "share_of_cells_answered": 0.7,
+        "cells": 572330,
+        "agreement": 0.933643
+       },
+       {
+        "share_of_cells_answered": 0.8,
+        "cells": 654092,
+        "agreement": 0.916825
+       },
+       {
+        "share_of_cells_answered": 0.9,
+        "cells": 735854,
+        "agreement": 0.90558
+       },
+       {
+        "share_of_cells_answered": 1.0,
+        "cells": 817615,
+        "agreement": 0.884468
+       }
+      ]
+     },
+     "TH5708": {
+      "name": "Chiang Saen",
+      "cells": 492785,
+      "flooded_cells": 62085,
+      "flooded_share": 0.125988,
+      "roc_auc": 0.902542,
+      "average_precision": 0.479138,
+      "brier": 0.155604,
+      "brier_of_always_answering_the_training_share": 0.126395,
+      "brier_skill": -0.231091,
+      "expected_calibration_error": 0.17633,
+      "reliability": [
+       {
+        "from": 0.0,
+        "to": 0.1,
+        "cells": 280062,
+        "mean_value": 0.018041,
+        "flooded_share": 0.005481
+       },
+       {
+        "from": 0.1,
+        "to": 0.2,
+        "cells": 27308,
+        "mean_value": 0.125473,
+        "flooded_share": 0.036985
+       },
+       {
+        "from": 0.2,
+        "to": 0.3,
+        "cells": 13804,
+        "mean_value": 0.264597,
+        "flooded_share": 0.156259
+       },
+       {
+        "from": 0.3,
+        "to": 0.4,
+        "cells": 8982,
+        "mean_value": 0.357094,
+        "flooded_share": 0.163215
+       },
+       {
+        "from": 0.4,
+        "to": 0.5,
+        "cells": 12923,
+        "mean_value": 0.441825,
+        "flooded_share": 0.10903
+       },
+       {
+        "from": 0.5,
+        "to": 0.6,
+        "cells": 13859,
+        "mean_value": 0.55644,
+        "flooded_share": 0.107511
+       },
+       {
+        "from": 0.6,
+        "to": 0.7,
+        "cells": 8886,
+        "mean_value": 0.642483,
+        "flooded_share": 0.174319
+       },
+       {
+        "from": 0.7,
+        "to": 0.8,
+        "cells": 16577,
+        "mean_value": 0.735442,
+        "flooded_share": 0.180491
+       },
+       {
+        "from": 0.8,
+        "to": 0.9,
+        "cells": 18739,
+        "mean_value": 0.841736,
+        "flooded_share": 0.235445
+       },
+       {
+        "from": 0.9,
+        "to": 1.0,
+        "cells": 91645,
+        "mean_value": 0.944333,
+        "flooded_share": 0.480823
+       }
+      ],
+      "abstention": {
+       "no_answer_from": 0.3,
+       "no_answer_to": 0.7,
+       "cells": 492785,
+       "cells_with_an_answer": 448135,
+       "share_with_an_answer": 0.909393,
+       "agreement_on_answered_cells": 0.821049,
+       "agreement_if_every_cell_is_answered_at_0.5": 0.791469
+      },
+      "risk_coverage": [
+       {
+        "share_of_cells_answered": 0.1,
+        "cells": 49278,
+        "agreement": 1.0
+       },
+       {
+        "share_of_cells_answered": 0.2,
+        "cells": 98557,
+        "agreement": 0.999919
+       },
+       {
+        "share_of_cells_answered": 0.3,
+        "cells": 147836,
+        "agreement": 0.999912
+       },
+       {
+        "share_of_cells_answered": 0.4,
+        "cells": 197114,
+        "agreement": 0.999853
+       },
+       {
+        "share_of_cells_answered": 0.5,
+        "cells": 246392,
+        "agreement": 0.936743
+       },
+       {
+        "share_of_cells_answered": 0.6,
+        "cells": 295671,
+        "agreement": 0.915849
+       },
+       {
+        "share_of_cells_answered": 0.7,
+        "cells": 344950,
+        "agreement": 0.868282
+       },
+       {
+        "share_of_cells_answered": 0.8,
+        "cells": 394228,
+        "agreement": 0.866737
+       },
+       {
+        "share_of_cells_answered": 0.9,
+        "cells": 443506,
+        "agreement": 0.826162
+       },
+       {
+        "share_of_cells_answered": 1.0,
+        "cells": 492785,
+        "agreement": 0.791469
+       }
+      ]
+     },
+     "TH5715": {
+      "name": "Mae Fa Luang",
+      "cells": 732631,
+      "flooded_cells": 0,
+      "note": "one class only: no ranking figure"
+     }
+    }
+   }
+  }
+ },
+ "which_model_is_cited": {
+  "margin": 0.02,
+  "against_the_baseline": {
+   "random_forest": {
+    "roc_auc_gain": -0.002023,
+    "average_precision_gain": 0.059731,
+    "meets_the_margin": false
+   },
+   "gradient_boosted_trees": {
+    "roc_auc_gain": 0.00151,
+    "average_precision_gain": 0.01912,
+    "meets_the_margin": false
+   }
+  },
+  "model_to_cite": "baseline_logistic_hand",
+  "rule": "A tree model is cited ahead of the baseline only if, on the three test districts together, it is at least the margin higher in ROC AUC and in average precision."
+ },
+ "feature_contributions": {
+  "model": "random_forest",
+  "method": "permutation importance on 200,000 test cells, 5 repeats, drop in ROC AUC",
+  "in_place_of": "SHAP, which the proposal names and which is not installed",
+  "features": [
+   {
+    "feature": "elevation_m",
+    "drop_in_roc_auc": 0.041692,
+    "spread": 0.000459
+   },
+   {
+    "feature": "hand_main_stream_m",
+    "drop_in_roc_auc": 0.009441,
+    "spread": 0.000205
+   },
+   {
+    "feature": "hand_small_stream_m",
+    "drop_in_roc_auc": 0.004659,
+    "spread": 0.000135
+   },
+   {
+    "feature": "distance_permanent_water_m",
+    "drop_in_roc_auc": 0.002279,
+    "spread": 0.00023
+   },
+   {
+    "feature": "log10_upstream_area_km2",
+    "drop_in_roc_auc": 0.000726,
+    "spread": 4.8e-05
+   },
+   {
+    "feature": "distance_small_stream_m",
+    "drop_in_roc_auc": 0.000628,
+    "spread": 8.8e-05
+   },
+   {
+    "feature": "land_cover_grassland",
+    "drop_in_roc_auc": 0.000101,
+    "spread": 1.2e-05
+   },
+   {
+    "feature": "land_cover_bare",
+    "drop_in_roc_auc": 3.4e-05,
+    "spread": 1e-06
+   },
+   {
+    "feature": "land_cover_shrubland",
+    "drop_in_roc_auc": 0.0,
+    "spread": 0.0
+   },
+   {
+    "feature": "land_cover_wetland",
+    "drop_in_roc_auc": 0.0,
+    "spread": 0.0
+   },
+   {
+    "feature": "land_cover_other",
+    "drop_in_roc_auc": 0.0,
+    "spread": 0.0
+   },
+   {
+    "feature": "land_cover_built_up",
+    "drop_in_roc_auc": -0.000147,
+    "spread": 8e-06
+   },
+   {
+    "feature": "land_cover_cropland",
+    "drop_in_roc_auc": -0.001249,
+    "spread": 6e-05
+   },
+   {
+    "feature": "land_cover_tree_cover",
+    "drop_in_roc_auc": -0.002861,
+    "spread": 6.9e-05
+   },
+   {
+    "feature": "distance_main_stream_m",
+    "drop_in_roc_auc": -0.003449,
+    "spread": 8e-05
+   },
+   {
+    "feature": "slope_degrees",
+    "drop_in_roc_auc": -0.00486,
+    "spread": 0.000149
+   }
+  ]
+ },
+ "mae_sai_tambons": [
+  {
+   "unit_id": "TH570901",
+   "cells": 23819,
+   "flooded_share_in_the_season_layer": 0.578194,
+   "mean_out_of_fold_value": {
+    "baseline_logistic_hand": 0.197959,
+    "random_forest": 0.262604,
+    "gradient_boosted_trees": 0.28223
+   }
+  },
+  {
+   "unit_id": "TH570902",
+   "cells": 49178,
+   "flooded_share_in_the_season_layer": 0.0,
+   "mean_out_of_fold_value": {
+    "baseline_logistic_hand": 0.14869,
+    "random_forest": 0.075535,
+    "gradient_boosted_trees": 0.074389
+   }
+  },
+  {
+   "unit_id": "TH570903",
+   "cells": 52465,
+   "flooded_share_in_the_season_layer": 0.468083,
+   "mean_out_of_fold_value": {
+    "baseline_logistic_hand": 0.33281,
+    "random_forest": 0.388825,
+    "gradient_boosted_trees": 0.391754
+   }
+  },
+  {
+   "unit_id": "TH570904",
+   "cells": 48263,
+   "flooded_share_in_the_season_layer": 0.146344,
+   "mean_out_of_fold_value": {
+    "baseline_logistic_hand": 0.269534,
+    "random_forest": 0.21953,
+    "gradient_boosted_trees": 0.211138
+   }
+  },
+  {
+   "unit_id": "TH570905",
+   "cells": 46366,
+   "flooded_share_in_the_season_layer": 0.516154,
+   "mean_out_of_fold_value": {
+    "baseline_logistic_hand": 0.38533,
+    "random_forest": 0.483826,
+    "gradient_boosted_trees": 0.477576
+   }
+  },
+  {
+   "unit_id": "TH570906",
+   "cells": 33687,
+   "flooded_share_in_the_season_layer": 0.00472,
+   "mean_out_of_fold_value": {
+    "baseline_logistic_hand": 0.101797,
+    "random_forest": 0.071746,
+    "gradient_boosted_trees": 0.068544
+   }
+  },
+  {
+   "unit_id": "TH570908",
+   "cells": 37407,
+   "flooded_share_in_the_season_layer": 0.307001,
+   "mean_out_of_fold_value": {
+    "baseline_logistic_hand": 0.408493,
+    "random_forest": 0.376725,
+    "gradient_boosted_trees": 0.375617
+   }
+  },
+  {
+   "unit_id": "TH570909",
+   "cells": 47236,
+   "flooded_share_in_the_season_layer": 0.102655,
+   "mean_out_of_fold_value": {
+    "baseline_logistic_hand": 0.142775,
+    "random_forest": 0.125124,
+    "gradient_boosted_trees": 0.131036
+   }
+  }
+ ],
+ "figure": "outputs/flood_susceptibility/mae_sai_model_v1_map.png",
+ "credits": [
+  "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009 (CC BY-SA 4.0). Changed by FloodGuard: repaired, projected, cut to four districts and put on a 30 m grid; figures derived from it are shared under CC BY-SA 4.0.",
+  "Copernicus DEM GLO-30. ESA WorldCover 2021 v200 (CC BY 4.0). Boundaries: HDX Thailand COD-AB."
+ ],
+ "assumptions": [
+  "The label is the accumulated layer of UNOSAT/GISTDA product 4009, as provided: an unvalidated preliminary agency extent made mostly from radar, which sees open water on fields better than water under trees or between buildings.",
+  "A cell counts for a district when its centre is inside it; a cell is labelled flooded when its centre is inside the layer.",
+  "Upstream area is cut at the edge of the hydrology window, so permanent water counts as a stream.",
+  "Land cover is resampled from 10 m to 30 m by nearest cell."
+ ],
+ "limits": [
+  "Susceptibility for one season, not a flood map of any day and not a forecast.",
+  "Every figure is agreement with the season layer on districts the model never saw, never accuracy against the ground.",
+  "It feeds no component, no planning score and no action class. A use in a planning score would need a new protocol version.",
+  "One season of one province: the model is not shown to hold elsewhere or in another year."
+ ]
+}

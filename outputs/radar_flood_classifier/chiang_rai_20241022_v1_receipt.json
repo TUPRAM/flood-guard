@@ -1,0 +1,43 @@
+{
+ "schema": "floodguard.radar_flood_classifier_receipt.v1",
+ "generated_at_utc": "2026-10-08T17:33:22Z",
+ "source_timestamp": "2024-10-22 (training labels); THEOS-2 2025-07-30T03:33Z (independent test)",
+ "confidence_class": "low",
+ "confidence_basis": "A classifier fitted to one agency layer that was not checked in the field; one independent tile.",
+ "operational_status": "non_operational",
+ "official_warning": false,
+ "can_feed_decision_layer": false,
+ "plan": {
+  "path": "docs/proposal_execution/radar_flood_classifier_plan_v1.md",
+  "sha256": "6a43a9c6c0884e0931dc8d58331cbbecb98e1d9ecc8600d8030cb5859fd89cb5"
+ },
+ "inputs": {
+  "freeze_record": {
+   "path": "outputs/radar_flood_classifier/chiang_rai_20241022_freeze_v1.json",
+   "sha256": "3e1fc43dd4727669143d0010dbd52edd1f621d810e203bec621775628ff72339"
+  },
+  "mae_sai_reference_record": {
+   "path": "outputs/dated_radar_check/mae_sai_20241022_reference_v1.json",
+   "sha256": "94618125c1a2291d04e66e4e4e5c8b90ce72c87fc806197b8f230aa3b68969e9"
+  },
+  "theos2_reference_record": {
+   "path": "outputs/theos2_cross_check/sukhothai_20250730_reference_v1.json",
+   "sha256": "e2fc5f0c479458be5036928e300b433adb83fd93f19a6ffcbe95f327bb5f0d78"
+  }
+ },
+ "outputs": {
+  "outputs/radar_flood_classifier/chiang_rai_20241022_v1.json": {
+   "sha256": "7d47f8bcb594ca46dc22f6e59e53e84620aba6e4eca825790a53875d2c9229dd"
+  },
+  "outside_git": {
+   "mae_sai_primary_model_value.tif": {
+    "sha256": "6ac439856bb1e2373e7334fb0cef3cab3950f138917e4d63b8259c4f2243ca33"
+   }
+  }
+ },
+ "code": {
+  "scripts/build_radar_flood_classifier.py": "109bfad962cfa4347066ceda31d20b73d22d01bae22a87941254cf6db44f9d6a",
+  "src/floodguard/radar_flood_classifier.py": "c02710e7adb45c7ac40a9b39149ea91ec34aa1788bb84588155542e82323e49e",
+  "src/floodguard/flood_susceptibility_ml.py": "798664d882a78ae370fb4b1a229beb7eab25ab05572741d7cba2db3f7d3a99bd"
+ }
+}

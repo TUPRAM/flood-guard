@@ -410,10 +410,27 @@
       "id": "V-19",
       "group": "models",
       "title": "The supervised flood classifier",
-      "check": "A radar classifier trained on the agency layer of 22 October 2024 in eight districts and tested once on Mae Sai and on the THEOS-2 tile at Sukhothai (work package 7). Its plan is committed; the models are being fitted. Not ready to read yet.",
-      "evidence": [],
+      "check": "Read the three results. A radar classifier was trained on the agency layer of 22 October 2024 in eight districts and tested once on Mae Sai and on the THEOS-2 tile at Sukhothai. The plan fixed beforehand that it is named as an improvement only if its primary model beats all three radar rules on the THEOS-2 tile; it did not. A one-feature model, a single backscatter threshold, did better there than the rules. Accept if the text says no more than the figures, if the team will say that the trained classifier did not carry over, and if the threshold is spoken of as a candidate to test and not as a result.",
+      "evidence": [
+        {
+          "label": "Result in plain words",
+          "path": "docs/radar_flood_classifier.md"
+        },
+        {
+          "label": "Result file",
+          "path": "outputs/radar_flood_classifier/chiang_rai_20241022_v1.json"
+        },
+        {
+          "label": "Freeze record, committed before any test label was read",
+          "path": "outputs/radar_flood_classifier/chiang_rai_20241022_freeze_v1.json"
+        },
+        {
+          "label": "Plan, committed before any model was fitted",
+          "path": "docs/proposal_execution/radar_flood_classifier_plan_v1.md"
+        }
+      ],
       "gates": "Naming a second trained model in the pitch.",
-      "ready": false,
+      "ready": true,
       "added": "2026-10-07"
     },
     {

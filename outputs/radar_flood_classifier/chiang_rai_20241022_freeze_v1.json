@@ -1,0 +1,1931 @@
+{
+ "schema": "floodguard.radar_flood_classifier_freeze.v1",
+ "generated_at_utc": "2026-10-08T17:29:55Z",
+ "source_timestamp": "2024-10-22 (training labels); THEOS-2 2025-07-30T03:33Z (independent test)",
+ "confidence_class": "low",
+ "confidence_basis": "A classifier fitted to one agency layer that was not checked in the field; one independent tile.",
+ "operational_status": "non_operational",
+ "official_warning": false,
+ "can_feed_decision_layer": false,
+ "plan": {
+  "path": "docs/proposal_execution/radar_flood_classifier_plan_v1.md",
+  "sha256": "6a43a9c6c0884e0931dc8d58331cbbecb98e1d9ecc8600d8030cb5859fd89cb5"
+ },
+ "what_this_is": "The four models of the plan, tuned, fitted, calibrated and frozen on the eight training districts. No test label has been read.",
+ "rights_note": "The training labels come from a layer held at the local level (decision log R33). The sample, the models and every raster stay outside Git; this record holds counts by district.",
+ "training": {
+  "districts": [
+   {
+    "adm2_pcode": "TH5708",
+    "name": "Chiang Saen",
+    "usable_cells": 4435253,
+    "water_cells": 38617,
+    "water_share": 0.008707,
+    "sample_cells": 76685,
+    "sample_water_cells": 21490
+   },
+   {
+    "adm2_pcode": "TH5707",
+    "name": "Mae Chan",
+    "usable_cells": 7357982,
+    "water_cells": 27475,
+    "water_share": 0.003734,
+    "sample_cells": 107880,
+    "sample_water_cells": 15187
+   },
+   {
+    "adm2_pcode": "TH5714",
+    "name": "Khun Tan",
+    "usable_cells": 2551009,
+    "water_cells": 92061,
+    "water_share": 0.036088,
+    "sample_cells": 82080,
+    "sample_water_cells": 50904
+   },
+   {
+    "adm2_pcode": "TH5712",
+    "name": "Phaya Mengrai",
+    "usable_cells": 4721159,
+    "water_cells": 45272,
+    "water_share": 0.009589,
+    "sample_cells": 84351,
+    "sample_water_cells": 25061
+   },
+   {
+    "adm2_pcode": "TH5703",
+    "name": "Chiang Khong",
+    "usable_cells": 7522946,
+    "water_cells": 44706,
+    "water_share": 0.005943,
+    "sample_cells": 119308,
+    "sample_water_cells": 24860
+   },
+   {
+    "adm2_pcode": "TH5718",
+    "name": "Doi Luang",
+    "usable_cells": 3143286,
+    "water_cells": 11423,
+    "water_share": 0.003634,
+    "sample_cells": 46243,
+    "sample_water_cells": 6335
+   },
+   {
+    "adm2_pcode": "TH5717",
+    "name": "Wiang Chiang Rung",
+    "usable_cells": 2719892,
+    "water_cells": 7793,
+    "water_share": 0.002865,
+    "sample_cells": 38229,
+    "sample_water_cells": 4399
+   },
+   {
+    "adm2_pcode": "TH5702",
+    "name": "Wiang Chai",
+    "usable_cells": 3446030,
+    "water_cells": 3263,
+    "water_share": 0.000947,
+    "sample_cells": 45224,
+    "sample_water_cells": 1764
+   }
+  ],
+  "cells": 35897557,
+  "water_cells": 270610,
+  "water_share": 0.007538,
+  "sample": {
+   "cells": 600000,
+   "water_cells": 150000,
+   "seed": 20261009,
+   "sha256": "c40fa1b9b7a4a5254dd485020ae376c5faca245c288f8a23c5999531df587ad6"
+  },
+  "sentinel1": {
+   "before": [
+    "S1A_IW_GRDH_1SDV_20240822T231600_20240822T231625_055332_06BF48_rtc",
+    "S1A_IW_GRDH_1SDV_20240822T231625_20240822T231650_055332_06BF48_rtc"
+   ],
+   "after": [
+    "S1A_IW_GRDH_1SDV_20241021T231602_20241021T231627_056207_06E178_rtc",
+    "S1A_IW_GRDH_1SDV_20241021T231627_20241021T231652_056207_06E178_rtc"
+   ]
+  }
+ },
+ "tuning": {
+  "folds": 5,
+  "block_m": 3000.0,
+  "picked_by": "weighted average precision, out of fold",
+  "seed": 20261009
+ },
+ "models": {
+  "baseline_logistic_vh_after": {
+   "kind": "baseline_logistic_hand",
+   "features": [
+    "vh_after_db"
+   ],
+   "settings": null,
+   "trials": [
+    {
+     "settings": null,
+     "roc_auc": 0.989414,
+     "average_precision": 0.294284,
+     "brier": 0.020906
+    }
+   ],
+   "out_of_fold_weighted": {
+    "roc_auc": 0.989696,
+    "average_precision": 0.31961,
+    "brier": 0.005498,
+    "at_the_frozen_cut": {
+     "flagged_cells": 608870.0,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.326058,
+     "reference_water_flagged": 0.733627,
+     "iou": 0.291542
+    }
+   },
+   "frozen_cut": 0.22,
+   "cut_trials": [
+    {
+     "cut": 0.02,
+     "flagged_cells": 1325681.2,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.196574,
+     "reference_water_flagged": 0.962987,
+     "iou": 0.195099
+    },
+    {
+     "cut": 0.04,
+     "flagged_cells": 1088096.2,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.233172,
+     "reference_water_flagged": 0.93756,
+     "iou": 0.229606
+    },
+    {
+     "cut": 0.06,
+     "flagged_cells": 1022262.5,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.245048,
+     "reference_water_flagged": 0.9257,
+     "iou": 0.240322
+    },
+    {
+     "cut": 0.08,
+     "flagged_cells": 948354.6,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.259093,
+     "reference_water_flagged": 0.907993,
+     "iou": 0.252465
+    },
+    {
+     "cut": 0.1,
+     "flagged_cells": 845959.0,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.279659,
+     "reference_water_flagged": 0.874247,
+     "iou": 0.268844
+    },
+    {
+     "cut": 0.12,
+     "flagged_cells": 815744.2,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.285685,
+     "reference_water_flagged": 0.861187,
+     "iou": 0.273108
+    },
+    {
+     "cut": 0.14,
+     "flagged_cells": 757769.3,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.297483,
+     "reference_water_flagged": 0.83302,
+     "iou": 0.280742
+    },
+    {
+     "cut": 0.16,
+     "flagged_cells": 705740.6,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.308289,
+     "reference_water_flagged": 0.804007,
+     "iou": 0.28674
+    },
+    {
+     "cut": 0.18,
+     "flagged_cells": 672348.9,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.314678,
+     "reference_water_flagged": 0.78184,
+     "iou": 0.289278
+    },
+    {
+     "cut": 0.2,
+     "flagged_cells": 641181.0,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.320507,
+     "reference_water_flagged": 0.759407,
+     "iou": 0.290962
+    },
+    {
+     "cut": 0.22,
+     "flagged_cells": 608870.0,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.326058,
+     "reference_water_flagged": 0.733627,
+     "iou": 0.291542
+    },
+    {
+     "cut": 0.24,
+     "flagged_cells": 604187.0,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.326731,
+     "reference_water_flagged": 0.729487,
+     "iou": 0.291422
+    },
+    {
+     "cut": 0.26,
+     "flagged_cells": 531007.3,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.336523,
+     "reference_water_flagged": 0.660347,
+     "iou": 0.286869
+    },
+    {
+     "cut": 0.28,
+     "flagged_cells": 529394.0,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.336745,
+     "reference_water_flagged": 0.658773,
+     "iou": 0.286732
+    },
+    {
+     "cut": 0.3,
+     "flagged_cells": 499971.8,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.339202,
+     "reference_water_flagged": 0.6267,
+     "iou": 0.282186
+    },
+    {
+     "cut": 0.32,
+     "flagged_cells": 453541.4,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.341902,
+     "reference_water_flagged": 0.573027,
+     "iou": 0.272485
+    },
+    {
+     "cut": 0.34,
+     "flagged_cells": 390707.7,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.343463,
+     "reference_water_flagged": 0.495893,
+     "iou": 0.254577
+    },
+    {
+     "cut": 0.36,
+     "flagged_cells": 0.0,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": null,
+     "reference_water_flagged": 0.0,
+     "iou": 0.0
+    },
+    {
+     "cut": 0.38,
+     "flagged_cells": 0.0,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": null,
+     "reference_water_flagged": 0.0,
+     "iou": 0.0
+    },
+    {
+     "cut": 0.4,
+     "flagged_cells": 0.0,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": null,
+     "reference_water_flagged": 0.0,
+     "iou": 0.0
+    },
+    {
+     "cut": 0.42,
+     "flagged_cells": 0.0,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": null,
+     "reference_water_flagged": 0.0,
+     "iou": 0.0
+    },
+    {
+     "cut": 0.44,
+     "flagged_cells": 0.0,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": null,
+     "reference_water_flagged": 0.0,
+     "iou": 0.0
+    },
+    {
+     "cut": 0.46,
+     "flagged_cells": 0.0,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": null,
+     "reference_water_flagged": 0.0,
+     "iou": 0.0
+    },
+    {
+     "cut": 0.48,
+     "flagged_cells": 0.0,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": null,
+     "reference_water_flagged": 0.0,
+     "iou": 0.0
+    },
+    {
+     "cut": 0.5,
+     "flagged_cells": 0.0,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": null,
+     "reference_water_flagged": 0.0,
+     "iou": 0.0
+    },
+    {
+     "cut": 0.52,
+     "flagged_cells": 0.0,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": null,
+     "reference_water_flagged": 0.0,
+     "iou": 0.0
+    },
+    {
+     "cut": 0.54,
+     "flagged_cells": 0.0,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": null,
+     "reference_water_flagged": 0.0,
+     "iou": 0.0
+    },
+    {
+     "cut": 0.56,
+     "flagged_cells": 0.0,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": null,
+     "reference_water_flagged": 0.0,
+     "iou": 0.0
+    },
+    {
+     "cut": 0.58,
+     "flagged_cells": 0.0,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": null,
+     "reference_water_flagged": 0.0,
+     "iou": 0.0
+    },
+    {
+     "cut": 0.6,
+     "flagged_cells": 0.0,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": null,
+     "reference_water_flagged": 0.0,
+     "iou": 0.0
+    },
+    {
+     "cut": 0.62,
+     "flagged_cells": 0.0,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": null,
+     "reference_water_flagged": 0.0,
+     "iou": 0.0
+    },
+    {
+     "cut": 0.64,
+     "flagged_cells": 0.0,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": null,
+     "reference_water_flagged": 0.0,
+     "iou": 0.0
+    },
+    {
+     "cut": 0.66,
+     "flagged_cells": 0.0,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": null,
+     "reference_water_flagged": 0.0,
+     "iou": 0.0
+    },
+    {
+     "cut": 0.68,
+     "flagged_cells": 0.0,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": null,
+     "reference_water_flagged": 0.0,
+     "iou": 0.0
+    },
+    {
+     "cut": 0.7,
+     "flagged_cells": 0.0,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": null,
+     "reference_water_flagged": 0.0,
+     "iou": 0.0
+    },
+    {
+     "cut": 0.72,
+     "flagged_cells": 0.0,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": null,
+     "reference_water_flagged": 0.0,
+     "iou": 0.0
+    },
+    {
+     "cut": 0.74,
+     "flagged_cells": 0.0,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": null,
+     "reference_water_flagged": 0.0,
+     "iou": 0.0
+    },
+    {
+     "cut": 0.76,
+     "flagged_cells": 0.0,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": null,
+     "reference_water_flagged": 0.0,
+     "iou": 0.0
+    },
+    {
+     "cut": 0.78,
+     "flagged_cells": 0.0,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": null,
+     "reference_water_flagged": 0.0,
+     "iou": 0.0
+    },
+    {
+     "cut": 0.8,
+     "flagged_cells": 0.0,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": null,
+     "reference_water_flagged": 0.0,
+     "iou": 0.0
+    },
+    {
+     "cut": 0.82,
+     "flagged_cells": 0.0,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": null,
+     "reference_water_flagged": 0.0,
+     "iou": 0.0
+    },
+    {
+     "cut": 0.84,
+     "flagged_cells": 0.0,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": null,
+     "reference_water_flagged": 0.0,
+     "iou": 0.0
+    },
+    {
+     "cut": 0.86,
+     "flagged_cells": 0.0,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": null,
+     "reference_water_flagged": 0.0,
+     "iou": 0.0
+    },
+    {
+     "cut": 0.88,
+     "flagged_cells": 0.0,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": null,
+     "reference_water_flagged": 0.0,
+     "iou": 0.0
+    },
+    {
+     "cut": 0.9,
+     "flagged_cells": 0.0,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": null,
+     "reference_water_flagged": 0.0,
+     "iou": 0.0
+    },
+    {
+     "cut": 0.92,
+     "flagged_cells": 0.0,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": null,
+     "reference_water_flagged": 0.0,
+     "iou": 0.0
+    },
+    {
+     "cut": 0.94,
+     "flagged_cells": 0.0,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": null,
+     "reference_water_flagged": 0.0,
+     "iou": 0.0
+    },
+    {
+     "cut": 0.96,
+     "flagged_cells": 0.0,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": null,
+     "reference_water_flagged": 0.0,
+     "iou": 0.0
+    },
+    {
+     "cut": 0.98,
+     "flagged_cells": 0.0,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": null,
+     "reference_water_flagged": 0.0,
+     "iou": 0.0
+    }
+   ],
+   "model_file_outside_git": {
+    "name": "model_baseline_logistic_vh_after.joblib",
+    "sha256": "58cc2220a5f97c8a1321cca5d5c37bcc667921b97b92d5da23cd7e56b92d2e3c"
+   }
+  },
+  "gradient_boosted_trees_all_features": {
+   "kind": "gradient_boosted_trees",
+   "features": [
+    "vv_after_db",
+    "vh_after_db",
+    "vv_before_db",
+    "vh_before_db",
+    "vv_change_db",
+    "vh_change_db",
+    "vh_minus_vv_after_db",
+    "vh_after_spread_db",
+    "slope_deg",
+    "land_cover"
+   ],
+   "settings": {
+    "learning_rate": 0.1,
+    "max_leaf_nodes": 15
+   },
+   "trials": [
+    {
+     "settings": {
+      "learning_rate": 0.05,
+      "max_leaf_nodes": 15
+     },
+     "roc_auc": 0.996754,
+     "average_precision": 0.725685,
+     "brier": 0.013457
+    },
+    {
+     "settings": {
+      "learning_rate": 0.05,
+      "max_leaf_nodes": 31
+     },
+     "roc_auc": 0.996761,
+     "average_precision": 0.728302,
+     "brier": 0.013375
+    },
+    {
+     "settings": {
+      "learning_rate": 0.1,
+      "max_leaf_nodes": 15
+     },
+     "roc_auc": 0.996768,
+     "average_precision": 0.728814,
+     "brier": 0.013306
+    },
+    {
+     "settings": {
+      "learning_rate": 0.1,
+      "max_leaf_nodes": 31
+     },
+     "roc_auc": 0.996743,
+     "average_precision": 0.727549,
+     "brier": 0.013267
+    }
+   ],
+   "out_of_fold_weighted": {
+    "roc_auc": 0.996783,
+    "average_precision": 0.723578,
+    "brier": 0.003432,
+    "at_the_frozen_cut": {
+     "flagged_cells": 290659.8,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.651894,
+     "reference_water_flagged": 0.700193,
+     "iou": 0.50964
+    }
+   },
+   "frozen_cut": 0.34,
+   "cut_trials": [
+    {
+     "cut": 0.02,
+     "flagged_cells": 1026975.8,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.25892,
+     "reference_water_flagged": 0.982613,
+     "iou": 0.25774
+    },
+    {
+     "cut": 0.04,
+     "flagged_cells": 784494.8,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.330196,
+     "reference_water_flagged": 0.957233,
+     "iou": 0.325396
+    },
+    {
+     "cut": 0.06,
+     "flagged_cells": 691742.8,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.36777,
+     "reference_water_flagged": 0.940107,
+     "iou": 0.35935
+    },
+    {
+     "cut": 0.08,
+     "flagged_cells": 621444.6,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.401737,
+     "reference_water_flagged": 0.922573,
+     "iou": 0.388634
+    },
+    {
+     "cut": 0.1,
+     "flagged_cells": 579571.6,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.424493,
+     "reference_water_flagged": 0.909147,
+     "iou": 0.407219
+    },
+    {
+     "cut": 0.12,
+     "flagged_cells": 555651.5,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.438046,
+     "reference_water_flagged": 0.899453,
+     "iou": 0.417598
+    },
+    {
+     "cut": 0.14,
+     "flagged_cells": 532518.8,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.451695,
+     "reference_water_flagged": 0.888867,
+     "iou": 0.42755
+    },
+    {
+     "cut": 0.16,
+     "flagged_cells": 465675.9,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.495061,
+     "reference_water_flagged": 0.85192,
+     "iou": 0.455836
+    },
+    {
+     "cut": 0.18,
+     "flagged_cells": 432709.8,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.519715,
+     "reference_water_flagged": 0.831033,
+     "iou": 0.470046
+    },
+    {
+     "cut": 0.2,
+     "flagged_cells": 427184.8,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.523882,
+     "reference_water_flagged": 0.827,
+     "iou": 0.47214
+    },
+    {
+     "cut": 0.22,
+     "flagged_cells": 412056.4,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.535222,
+     "reference_water_flagged": 0.81498,
+     "iou": 0.477234
+    },
+    {
+     "cut": 0.24,
+     "flagged_cells": 374038.2,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.565874,
+     "reference_water_flagged": 0.782153,
+     "iou": 0.48883
+    },
+    {
+     "cut": 0.26,
+     "flagged_cells": 315062.0,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.624829,
+     "reference_water_flagged": 0.727467,
+     "iou": 0.506311
+    },
+    {
+     "cut": 0.28,
+     "flagged_cells": 314523.7,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.625445,
+     "reference_water_flagged": 0.72694,
+     "iou": 0.50646
+    },
+    {
+     "cut": 0.3,
+     "flagged_cells": 303530.4,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.637702,
+     "reference_water_flagged": 0.71528,
+     "iou": 0.508599
+    },
+    {
+     "cut": 0.32,
+     "flagged_cells": 300224.2,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.64136,
+     "reference_water_flagged": 0.711547,
+     "iou": 0.509015
+    },
+    {
+     "cut": 0.34,
+     "flagged_cells": 290659.8,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.651894,
+     "reference_water_flagged": 0.700193,
+     "iou": 0.50964
+    },
+    {
+     "cut": 0.36,
+     "flagged_cells": 282836.3,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.660179,
+     "reference_water_flagged": 0.690007,
+     "iou": 0.509165
+    },
+    {
+     "cut": 0.38,
+     "flagged_cells": 255546.8,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.692049,
+     "reference_water_flagged": 0.653527,
+     "iou": 0.506292
+    },
+    {
+     "cut": 0.4,
+     "flagged_cells": 248226.9,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.701148,
+     "reference_water_flagged": 0.643153,
+     "iou": 0.504777
+    },
+    {
+     "cut": 0.42,
+     "flagged_cells": 248226.9,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.701148,
+     "reference_water_flagged": 0.643153,
+     "iou": 0.504777
+    },
+    {
+     "cut": 0.44,
+     "flagged_cells": 229960.7,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.722166,
+     "reference_water_flagged": 0.613687,
+     "iou": 0.49647
+    },
+    {
+     "cut": 0.46,
+     "flagged_cells": 229960.7,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.722166,
+     "reference_water_flagged": 0.613687,
+     "iou": 0.49647
+    },
+    {
+     "cut": 0.48,
+     "flagged_cells": 229960.7,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.722166,
+     "reference_water_flagged": 0.613687,
+     "iou": 0.49647
+    },
+    {
+     "cut": 0.5,
+     "flagged_cells": 217788.7,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.734992,
+     "reference_water_flagged": 0.591527,
+     "iou": 0.487543
+    },
+    {
+     "cut": 0.52,
+     "flagged_cells": 194700.9,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.761309,
+     "reference_water_flagged": 0.547753,
+     "iou": 0.467472
+    },
+    {
+     "cut": 0.54,
+     "flagged_cells": 168503.6,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.796556,
+     "reference_water_flagged": 0.496,
+     "iou": 0.440231
+    },
+    {
+     "cut": 0.56,
+     "flagged_cells": 166766.6,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.799184,
+     "reference_water_flagged": 0.492507,
+     "iou": 0.438269
+    },
+    {
+     "cut": 0.58,
+     "flagged_cells": 166766.6,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.799184,
+     "reference_water_flagged": 0.492507,
+     "iou": 0.438269
+    },
+    {
+     "cut": 0.6,
+     "flagged_cells": 166766.6,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.799184,
+     "reference_water_flagged": 0.492507,
+     "iou": 0.438269
+    },
+    {
+     "cut": 0.62,
+     "flagged_cells": 166766.6,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.799184,
+     "reference_water_flagged": 0.492507,
+     "iou": 0.438269
+    },
+    {
+     "cut": 0.64,
+     "flagged_cells": 148096.7,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.821447,
+     "reference_water_flagged": 0.449553,
+     "iou": 0.409535
+    },
+    {
+     "cut": 0.66,
+     "flagged_cells": 148096.7,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.821447,
+     "reference_water_flagged": 0.449553,
+     "iou": 0.409535
+    },
+    {
+     "cut": 0.68,
+     "flagged_cells": 140385.6,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.829686,
+     "reference_water_flagged": 0.43042,
+     "iou": 0.395478
+    },
+    {
+     "cut": 0.7,
+     "flagged_cells": 140385.6,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.829686,
+     "reference_water_flagged": 0.43042,
+     "iou": 0.395478
+    },
+    {
+     "cut": 0.72,
+     "flagged_cells": 140385.6,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.829686,
+     "reference_water_flagged": 0.43042,
+     "iou": 0.395478
+    },
+    {
+     "cut": 0.74,
+     "flagged_cells": 124816.5,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.841425,
+     "reference_water_flagged": 0.3881,
+     "iou": 0.361649
+    },
+    {
+     "cut": 0.76,
+     "flagged_cells": 124816.5,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.841425,
+     "reference_water_flagged": 0.3881,
+     "iou": 0.361649
+    },
+    {
+     "cut": 0.78,
+     "flagged_cells": 73424.8,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.893252,
+     "reference_water_flagged": 0.242367,
+     "iou": 0.235544
+    },
+    {
+     "cut": 0.8,
+     "flagged_cells": 73424.8,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.893252,
+     "reference_water_flagged": 0.242367,
+     "iou": 0.235544
+    },
+    {
+     "cut": 0.82,
+     "flagged_cells": 73424.8,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.893252,
+     "reference_water_flagged": 0.242367,
+     "iou": 0.235544
+    },
+    {
+     "cut": 0.84,
+     "flagged_cells": 73424.8,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.893252,
+     "reference_water_flagged": 0.242367,
+     "iou": 0.235544
+    },
+    {
+     "cut": 0.86,
+     "flagged_cells": 48085.8,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.916031,
+     "reference_water_flagged": 0.162773,
+     "iou": 0.16038
+    },
+    {
+     "cut": 0.88,
+     "flagged_cells": 41294.0,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.92331,
+     "reference_water_flagged": 0.140893,
+     "iou": 0.139264
+    },
+    {
+     "cut": 0.9,
+     "flagged_cells": 29581.5,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.933091,
+     "reference_water_flagged": 0.102,
+     "iou": 0.101259
+    },
+    {
+     "cut": 0.92,
+     "flagged_cells": 11316.1,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.972015,
+     "reference_water_flagged": 0.040647,
+     "iou": 0.040599
+    },
+    {
+     "cut": 0.94,
+     "flagged_cells": 11316.1,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.972015,
+     "reference_water_flagged": 0.040647,
+     "iou": 0.040599
+    },
+    {
+     "cut": 0.96,
+     "flagged_cells": 11316.1,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.972015,
+     "reference_water_flagged": 0.040647,
+     "iou": 0.040599
+    },
+    {
+     "cut": 0.98,
+     "flagged_cells": 245.4,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 1.0,
+     "reference_water_flagged": 0.000907,
+     "iou": 0.000907
+    }
+   ],
+   "model_file_outside_git": {
+    "name": "model_gradient_boosted_trees_all_features.joblib",
+    "sha256": "d16dffe36fa6272878c580c0ba4721109e01803cf9e73265042f9a696d75421f"
+   }
+  },
+  "random_forest_all_features": {
+   "kind": "random_forest",
+   "features": [
+    "vv_after_db",
+    "vh_after_db",
+    "vv_before_db",
+    "vh_before_db",
+    "vv_change_db",
+    "vh_change_db",
+    "vh_minus_vv_after_db",
+    "vh_after_spread_db",
+    "slope_deg",
+    "land_cover"
+   ],
+   "settings": {
+    "min_samples_leaf": 20
+   },
+   "trials": [
+    {
+     "settings": {
+      "min_samples_leaf": 20
+     },
+     "roc_auc": 0.996702,
+     "average_precision": 0.71342,
+     "brier": 0.012929
+    }
+   ],
+   "out_of_fold_weighted": {
+    "roc_auc": 0.996719,
+    "average_precision": 0.708529,
+    "brier": 0.0035,
+    "at_the_frozen_cut": {
+     "flagged_cells": 292906.6,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.643752,
+     "reference_water_flagged": 0.696793,
+     "iou": 0.502882
+    }
+   },
+   "frozen_cut": 0.34,
+   "cut_trials": [
+    {
+     "cut": 0.02,
+     "flagged_cells": 990799.5,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.2675,
+     "reference_water_flagged": 0.979413,
+     "iou": 0.266005
+    },
+    {
+     "cut": 0.04,
+     "flagged_cells": 784625.7,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.329904,
+     "reference_water_flagged": 0.956547,
+     "iou": 0.325033
+    },
+    {
+     "cut": 0.06,
+     "flagged_cells": 677641.3,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.374358,
+     "reference_water_flagged": 0.93744,
+     "iou": 0.365234
+    },
+    {
+     "cut": 0.08,
+     "flagged_cells": 617789.9,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.403965,
+     "reference_water_flagged": 0.922233,
+     "iou": 0.390658
+    },
+    {
+     "cut": 0.1,
+     "flagged_cells": 583695.5,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.422591,
+     "reference_water_flagged": 0.911513,
+     "iou": 0.405938
+    },
+    {
+     "cut": 0.12,
+     "flagged_cells": 540880.4,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.447291,
+     "reference_water_flagged": 0.89402,
+     "iou": 0.424768
+    },
+    {
+     "cut": 0.14,
+     "flagged_cells": 525791.5,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.456425,
+     "reference_water_flagged": 0.886827,
+     "iou": 0.431302
+    },
+    {
+     "cut": 0.16,
+     "flagged_cells": 473762.9,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.490144,
+     "reference_water_flagged": 0.858107,
+     "iou": 0.453397
+    },
+    {
+     "cut": 0.18,
+     "flagged_cells": 447038.2,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.50943,
+     "reference_water_flagged": 0.84156,
+     "iou": 0.464846
+    },
+    {
+     "cut": 0.2,
+     "flagged_cells": 433252.2,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.519768,
+     "reference_water_flagged": 0.83216,
+     "iou": 0.47045
+    },
+    {
+     "cut": 0.22,
+     "flagged_cells": 405688.9,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.540612,
+     "reference_water_flagged": 0.810467,
+     "iou": 0.479936
+    },
+    {
+     "cut": 0.24,
+     "flagged_cells": 391271.0,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.552012,
+     "reference_water_flagged": 0.798147,
+     "iou": 0.484389
+    },
+    {
+     "cut": 0.26,
+     "flagged_cells": 362388.8,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.57595,
+     "reference_water_flagged": 0.771287,
+     "iou": 0.491933
+    },
+    {
+     "cut": 0.28,
+     "flagged_cells": 340195.9,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.59553,
+     "reference_water_flagged": 0.748667,
+     "iou": 0.496306
+    },
+    {
+     "cut": 0.3,
+     "flagged_cells": 299296.2,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.637073,
+     "reference_water_flagged": 0.704607,
+     "iou": 0.502788
+    },
+    {
+     "cut": 0.32,
+     "flagged_cells": 299296.2,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.637073,
+     "reference_water_flagged": 0.704607,
+     "iou": 0.502788
+    },
+    {
+     "cut": 0.34,
+     "flagged_cells": 292906.6,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.643752,
+     "reference_water_flagged": 0.696793,
+     "iou": 0.502882
+    },
+    {
+     "cut": 0.36,
+     "flagged_cells": 278239.7,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.659687,
+     "reference_water_flagged": 0.678287,
+     "iou": 0.502469
+    },
+    {
+     "cut": 0.38,
+     "flagged_cells": 278239.7,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.659687,
+     "reference_water_flagged": 0.678287,
+     "iou": 0.502469
+    },
+    {
+     "cut": 0.4,
+     "flagged_cells": 262783.7,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.675523,
+     "reference_water_flagged": 0.655987,
+     "iou": 0.498814
+    },
+    {
+     "cut": 0.42,
+     "flagged_cells": 249103.0,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.690121,
+     "reference_water_flagged": 0.635273,
+     "iou": 0.49428
+    },
+    {
+     "cut": 0.44,
+     "flagged_cells": 239924.8,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.699716,
+     "reference_water_flagged": 0.620373,
+     "iou": 0.489936
+    },
+    {
+     "cut": 0.46,
+     "flagged_cells": 239924.8,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.699716,
+     "reference_water_flagged": 0.620373,
+     "iou": 0.489936
+    },
+    {
+     "cut": 0.48,
+     "flagged_cells": 235469.6,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.704121,
+     "reference_water_flagged": 0.612687,
+     "iou": 0.487243
+    },
+    {
+     "cut": 0.5,
+     "flagged_cells": 187781.6,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.758416,
+     "reference_water_flagged": 0.52628,
+     "iou": 0.450721
+    },
+    {
+     "cut": 0.52,
+     "flagged_cells": 187781.6,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.758416,
+     "reference_water_flagged": 0.52628,
+     "iou": 0.450721
+    },
+    {
+     "cut": 0.54,
+     "flagged_cells": 174747.0,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.775282,
+     "reference_water_flagged": 0.50064,
+     "iou": 0.437197
+    },
+    {
+     "cut": 0.56,
+     "flagged_cells": 172310.8,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.778537,
+     "reference_water_flagged": 0.495733,
+     "iou": 0.434466
+    },
+    {
+     "cut": 0.58,
+     "flagged_cells": 172310.8,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.778537,
+     "reference_water_flagged": 0.495733,
+     "iou": 0.434466
+    },
+    {
+     "cut": 0.6,
+     "flagged_cells": 172310.8,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.778537,
+     "reference_water_flagged": 0.495733,
+     "iou": 0.434466
+    },
+    {
+     "cut": 0.62,
+     "flagged_cells": 172310.8,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.778537,
+     "reference_water_flagged": 0.495733,
+     "iou": 0.434466
+    },
+    {
+     "cut": 0.64,
+     "flagged_cells": 137481.3,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.816874,
+     "reference_water_flagged": 0.415007,
+     "iou": 0.379683
+    },
+    {
+     "cut": 0.66,
+     "flagged_cells": 137481.3,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.816874,
+     "reference_water_flagged": 0.415007,
+     "iou": 0.379683
+    },
+    {
+     "cut": 0.68,
+     "flagged_cells": 137481.3,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.816874,
+     "reference_water_flagged": 0.415007,
+     "iou": 0.379683
+    },
+    {
+     "cut": 0.7,
+     "flagged_cells": 137481.3,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.816874,
+     "reference_water_flagged": 0.415007,
+     "iou": 0.379683
+    },
+    {
+     "cut": 0.72,
+     "flagged_cells": 132994.5,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.820816,
+     "reference_water_flagged": 0.4034,
+     "iou": 0.370751
+    },
+    {
+     "cut": 0.74,
+     "flagged_cells": 92101.2,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.858165,
+     "reference_water_flagged": 0.292073,
+     "iou": 0.278623
+    },
+    {
+     "cut": 0.76,
+     "flagged_cells": 92101.2,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.858165,
+     "reference_water_flagged": 0.292073,
+     "iou": 0.278623
+    },
+    {
+     "cut": 0.78,
+     "flagged_cells": 92101.2,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.858165,
+     "reference_water_flagged": 0.292073,
+     "iou": 0.278623
+    },
+    {
+     "cut": 0.8,
+     "flagged_cells": 67506.8,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.880376,
+     "reference_water_flagged": 0.21962,
+     "iou": 0.213256
+    },
+    {
+     "cut": 0.82,
+     "flagged_cells": 67506.8,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.880376,
+     "reference_water_flagged": 0.21962,
+     "iou": 0.213256
+    },
+    {
+     "cut": 0.84,
+     "flagged_cells": 67506.8,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.880376,
+     "reference_water_flagged": 0.21962,
+     "iou": 0.213256
+    },
+    {
+     "cut": 0.86,
+     "flagged_cells": 58344.1,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.886015,
+     "reference_water_flagged": 0.191027,
+     "iou": 0.186445
+    },
+    {
+     "cut": 0.88,
+     "flagged_cells": 30046.5,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.905142,
+     "reference_water_flagged": 0.1005,
+     "iou": 0.099453
+    },
+    {
+     "cut": 0.9,
+     "flagged_cells": 12221.9,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.922266,
+     "reference_water_flagged": 0.041653,
+     "iou": 0.041508
+    },
+    {
+     "cut": 0.92,
+     "flagged_cells": 3807.8,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.937624,
+     "reference_water_flagged": 0.013193,
+     "iou": 0.013182
+    },
+    {
+     "cut": 0.94,
+     "flagged_cells": 1587.4,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.950124,
+     "reference_water_flagged": 0.005573,
+     "iou": 0.005572
+    },
+    {
+     "cut": 0.96,
+     "flagged_cells": 0.0,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": null,
+     "reference_water_flagged": 0.0,
+     "iou": 0.0
+    },
+    {
+     "cut": 0.98,
+     "flagged_cells": 0.0,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": null,
+     "reference_water_flagged": 0.0,
+     "iou": 0.0
+    }
+   ],
+   "model_file_outside_git": {
+    "name": "model_random_forest_all_features.joblib",
+    "sha256": "842e277e73e4f9182cfc0a0be8518cf6f8a142ca7dbe560acfd95f46352e8908"
+   }
+  },
+  "gradient_boosted_trees_after_only": {
+   "kind": "gradient_boosted_trees",
+   "features": [
+    "vv_after_db",
+    "vh_after_db",
+    "vh_minus_vv_after_db",
+    "vh_after_spread_db",
+    "slope_deg",
+    "land_cover"
+   ],
+   "settings": {
+    "learning_rate": 0.05,
+    "max_leaf_nodes": 31
+   },
+   "trials": [
+    {
+     "settings": {
+      "learning_rate": 0.05,
+      "max_leaf_nodes": 15
+     },
+     "roc_auc": 0.995914,
+     "average_precision": 0.612809,
+     "brier": 0.014722
+    },
+    {
+     "settings": {
+      "learning_rate": 0.05,
+      "max_leaf_nodes": 31
+     },
+     "roc_auc": 0.995929,
+     "average_precision": 0.617767,
+     "brier": 0.014629
+    },
+    {
+     "settings": {
+      "learning_rate": 0.1,
+      "max_leaf_nodes": 15
+     },
+     "roc_auc": 0.995921,
+     "average_precision": 0.616898,
+     "brier": 0.014639
+    },
+    {
+     "settings": {
+      "learning_rate": 0.1,
+      "max_leaf_nodes": 31
+     },
+     "roc_auc": 0.995918,
+     "average_precision": 0.616661,
+     "brier": 0.014602
+    }
+   ],
+   "out_of_fold_weighted": {
+    "roc_auc": 0.995949,
+    "average_precision": 0.611742,
+    "brier": 0.004014,
+    "at_the_frozen_cut": {
+     "flagged_cells": 360263.4,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.550374,
+     "reference_water_flagged": 0.732713,
+     "iou": 0.45835
+    }
+   },
+   "frozen_cut": 0.32,
+   "cut_trials": [
+    {
+     "cut": 0.02,
+     "flagged_cells": 1028736.1,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.258034,
+     "reference_water_flagged": 0.980927,
+     "iou": 0.256746
+    },
+    {
+     "cut": 0.04,
+     "flagged_cells": 889218.4,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.294492,
+     "reference_water_flagged": 0.967693,
+     "iou": 0.291625
+    },
+    {
+     "cut": 0.06,
+     "flagged_cells": 754946.3,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.338692,
+     "reference_water_flagged": 0.94488,
+     "iou": 0.33213
+    },
+    {
+     "cut": 0.08,
+     "flagged_cells": 698169.3,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.361002,
+     "reference_water_flagged": 0.93138,
+     "iou": 0.351649
+    },
+    {
+     "cut": 0.1,
+     "flagged_cells": 638313.1,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.386664,
+     "reference_water_flagged": 0.91206,
+     "iou": 0.372766
+    },
+    {
+     "cut": 0.12,
+     "flagged_cells": 572722.6,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.418302,
+     "reference_water_flagged": 0.8853,
+     "iou": 0.396797
+    },
+    {
+     "cut": 0.14,
+     "flagged_cells": 509320.6,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.453924,
+     "reference_water_flagged": 0.85434,
+     "iou": 0.421318
+    },
+    {
+     "cut": 0.16,
+     "flagged_cells": 486555.4,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.468077,
+     "reference_water_flagged": 0.8416,
+     "iou": 0.430179
+    },
+    {
+     "cut": 0.18,
+     "flagged_cells": 478535.7,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.47306,
+     "reference_water_flagged": 0.83654,
+     "iou": 0.433032
+    },
+    {
+     "cut": 0.2,
+     "flagged_cells": 457624.2,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.486004,
+     "reference_water_flagged": 0.821873,
+     "iou": 0.43969
+    },
+    {
+     "cut": 0.22,
+     "flagged_cells": 426852.3,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.505335,
+     "reference_water_flagged": 0.7971,
+     "iou": 0.447741
+    },
+    {
+     "cut": 0.24,
+     "flagged_cells": 416995.0,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.511868,
+     "reference_water_flagged": 0.78876,
+     "iou": 0.450158
+    },
+    {
+     "cut": 0.26,
+     "flagged_cells": 411874.4,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.515218,
+     "reference_water_flagged": 0.784173,
+     "iou": 0.451232
+    },
+    {
+     "cut": 0.28,
+     "flagged_cells": 374183.1,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.540864,
+     "reference_water_flagged": 0.747873,
+     "iou": 0.457452
+    },
+    {
+     "cut": 0.3,
+     "flagged_cells": 365962.9,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.546559,
+     "reference_water_flagged": 0.739147,
+     "iou": 0.458182
+    },
+    {
+     "cut": 0.32,
+     "flagged_cells": 360263.4,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.550374,
+     "reference_water_flagged": 0.732713,
+     "iou": 0.45835
+    },
+    {
+     "cut": 0.34,
+     "flagged_cells": 334141.0,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.567113,
+     "reference_water_flagged": 0.700253,
+     "iou": 0.456335
+    },
+    {
+     "cut": 0.36,
+     "flagged_cells": 307245.0,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.586165,
+     "reference_water_flagged": 0.66552,
+     "iou": 0.452778
+    },
+    {
+     "cut": 0.38,
+     "flagged_cells": 307245.0,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.586165,
+     "reference_water_flagged": 0.66552,
+     "iou": 0.452778
+    },
+    {
+     "cut": 0.4,
+     "flagged_cells": 307245.0,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.586165,
+     "reference_water_flagged": 0.66552,
+     "iou": 0.452778
+    },
+    {
+     "cut": 0.42,
+     "flagged_cells": 284709.0,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.599847,
+     "reference_water_flagged": 0.6311,
+     "iou": 0.444124
+    },
+    {
+     "cut": 0.44,
+     "flagged_cells": 250316.9,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.622674,
+     "reference_water_flagged": 0.57598,
+     "iou": 0.426959
+    },
+    {
+     "cut": 0.46,
+     "flagged_cells": 246703.2,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.62517,
+     "reference_water_flagged": 0.56994,
+     "iou": 0.424784
+    },
+    {
+     "cut": 0.48,
+     "flagged_cells": 246703.2,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.62517,
+     "reference_water_flagged": 0.56994,
+     "iou": 0.424784
+    },
+    {
+     "cut": 0.5,
+     "flagged_cells": 219726.7,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.641125,
+     "reference_water_flagged": 0.520573,
+     "iou": 0.403109
+    },
+    {
+     "cut": 0.52,
+     "flagged_cells": 217924.9,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.642155,
+     "reference_water_flagged": 0.517133,
+     "iou": 0.401446
+    },
+    {
+     "cut": 0.54,
+     "flagged_cells": 195569.7,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.655496,
+     "reference_water_flagged": 0.473727,
+     "iou": 0.379293
+    },
+    {
+     "cut": 0.56,
+     "flagged_cells": 177286.8,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.665519,
+     "reference_water_flagged": 0.436007,
+     "iou": 0.357637
+    },
+    {
+     "cut": 0.58,
+     "flagged_cells": 166604.4,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.671634,
+     "reference_water_flagged": 0.4135,
+     "iou": 0.343964
+    },
+    {
+     "cut": 0.6,
+     "flagged_cells": 142491.6,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.684408,
+     "reference_water_flagged": 0.36038,
+     "iou": 0.309027
+    },
+    {
+     "cut": 0.62,
+     "flagged_cells": 130022.1,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.691895,
+     "reference_water_flagged": 0.33244,
+     "iou": 0.289572
+    },
+    {
+     "cut": 0.64,
+     "flagged_cells": 53954.3,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.77109,
+     "reference_water_flagged": 0.15374,
+     "iou": 0.14703
+    },
+    {
+     "cut": 0.66,
+     "flagged_cells": 53954.3,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.77109,
+     "reference_water_flagged": 0.15374,
+     "iou": 0.14703
+    },
+    {
+     "cut": 0.68,
+     "flagged_cells": 53954.3,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.77109,
+     "reference_water_flagged": 0.15374,
+     "iou": 0.14703
+    },
+    {
+     "cut": 0.7,
+     "flagged_cells": 53954.3,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.77109,
+     "reference_water_flagged": 0.15374,
+     "iou": 0.14703
+    },
+    {
+     "cut": 0.72,
+     "flagged_cells": 40816.2,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.790513,
+     "reference_water_flagged": 0.119233,
+     "iou": 0.115581
+    },
+    {
+     "cut": 0.74,
+     "flagged_cells": 35429.4,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.798885,
+     "reference_water_flagged": 0.104593,
+     "iou": 0.10191
+    },
+    {
+     "cut": 0.76,
+     "flagged_cells": 16045.0,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.861839,
+     "reference_water_flagged": 0.0511,
+     "iou": 0.050685
+    },
+    {
+     "cut": 0.78,
+     "flagged_cells": 16045.0,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.861839,
+     "reference_water_flagged": 0.0511,
+     "iou": 0.050685
+    },
+    {
+     "cut": 0.8,
+     "flagged_cells": 16045.0,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.861839,
+     "reference_water_flagged": 0.0511,
+     "iou": 0.050685
+    },
+    {
+     "cut": 0.82,
+     "flagged_cells": 16045.0,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.861839,
+     "reference_water_flagged": 0.0511,
+     "iou": 0.050685
+    },
+    {
+     "cut": 0.84,
+     "flagged_cells": 16045.0,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.861839,
+     "reference_water_flagged": 0.0511,
+     "iou": 0.050685
+    },
+    {
+     "cut": 0.86,
+     "flagged_cells": 1515.2,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.947749,
+     "reference_water_flagged": 0.005307,
+     "iou": 0.005305
+    },
+    {
+     "cut": 0.88,
+     "flagged_cells": 1515.2,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.947749,
+     "reference_water_flagged": 0.005307,
+     "iou": 0.005305
+    },
+    {
+     "cut": 0.9,
+     "flagged_cells": 1515.2,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.947749,
+     "reference_water_flagged": 0.005307,
+     "iou": 0.005305
+    },
+    {
+     "cut": 0.92,
+     "flagged_cells": 1515.2,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.947749,
+     "reference_water_flagged": 0.005307,
+     "iou": 0.005305
+    },
+    {
+     "cut": 0.94,
+     "flagged_cells": 1515.2,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 0.947749,
+     "reference_water_flagged": 0.005307,
+     "iou": 0.005305
+    },
+    {
+     "cut": 0.96,
+     "flagged_cells": 99.2,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 1.0,
+     "reference_water_flagged": 0.000367,
+     "iou": 0.000367
+    },
+    {
+     "cut": 0.98,
+     "flagged_cells": 99.2,
+     "reference_water_cells": 270610.0,
+     "flagged_that_is_reference_water": 1.0,
+     "reference_water_flagged": 0.000367,
+     "iou": 0.000367
+    }
+   ],
+   "model_file_outside_git": {
+    "name": "model_gradient_boosted_trees_after_only.joblib",
+    "sha256": "89e03d731668e8dad8e5cc9c72dc3339e586611358fe724bbef1ffaacd30f81d"
+   }
+  }
+ },
+ "primary_model": "gradient_boosted_trees_all_features",
+ "test_labels_read": false,
+ "assumptions": [
+  "Training labels are the layer UNOSAT and GISTDA dated 22 October 2024, as provided: a cell is water when its centre lies inside it.",
+  "Where the agency mapped no water the cell counts as dry; the layer has no 'not observed' class.",
+  "Every feature comes from the Sentinel-1 pair, or is slope or land cover. No feature says where water usually stands.",
+  "Weights put the true share of water of the training districts back for calibration and for the out-of-fold figures."
+ ],
+ "limits": [
+  "One date of training labels, late in the season: shallow residual water on fields, not the September flood.",
+  "The agency layer was not checked in the field and may come from the same Sentinel-1 pass as the features.",
+  "At Sukhothai the radar came 44 hours after the THEOS-2 image; no classifier can flag water the radar did not record.",
+  "Every figure is agreement with a reference layer, not accuracy. The model feeds no component, no score and no class."
+ ],
+ "supersedes": null
+}

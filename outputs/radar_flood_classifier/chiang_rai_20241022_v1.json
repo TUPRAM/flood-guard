@@ -1,0 +1,586 @@
+{
+ "schema": "floodguard.radar_flood_classifier.v1",
+ "generated_at_utc": "2026-10-08T17:33:22Z",
+ "source_timestamp": "2024-10-22 (training labels); THEOS-2 2025-07-30T03:33Z (independent test)",
+ "confidence_class": "low",
+ "confidence_basis": "A classifier fitted to one agency layer that was not checked in the field; one independent tile.",
+ "operational_status": "non_operational",
+ "official_warning": false,
+ "can_feed_decision_layer": false,
+ "plan": {
+  "path": "docs/proposal_execution/radar_flood_classifier_plan_v1.md",
+  "sha256": "6a43a9c6c0884e0931dc8d58331cbbecb98e1d9ecc8600d8030cb5859fd89cb5"
+ },
+ "what_this_is": "A supervised radar flood classifier trained on the agency layer of 22 October 2024 in eight districts, tested once on Mae Sai district (the same layer) and on the THEOS-2 tile at Sukhothai.",
+ "label": "Agreement with a reference layer; not accuracy.",
+ "rights_note": "The dated layer is held at the local level (decision log R33): rasters, feature tables and models stay outside Git; this record holds figures for whole frames.",
+ "freeze_record": {
+  "path": "outputs/radar_flood_classifier/chiang_rai_20241022_freeze_v1.json",
+  "sha256": "3e1fc43dd4727669143d0010dbd52edd1f621d810e203bec621775628ff72339"
+ },
+ "primary_model": "gradient_boosted_trees_all_features",
+ "test_a_mae_sai_agency_layer": {
+  "reference": "UNOSAT and GISTDA layer dated 22 October 2024; may come from the same radar pass",
+  "radar_pair": {
+   "before": "S1A_IW_GRDH_1SDV_20240822T231600_20240822T231625_055332_06BF48_rtc",
+   "after": "S1A_IW_GRDH_1SDV_20241021T231602_20241021T231627_056207_06E178_rtc"
+  },
+  "compared_cells": 3045629,
+  "reference_water_cells": 36189,
+  "reference_water_share": 0.011882,
+  "models": {
+   "baseline_logistic_vh_after": {
+    "roc_auc": 0.977683,
+    "average_precision": 0.271674,
+    "frozen_cut": 0.22,
+    "at_the_frozen_cut": {
+     "flagged_cells": 71887.0,
+     "reference_water_cells": 36189.0,
+     "flagged_that_is_reference_water": 0.295158,
+     "reference_water_flagged": 0.586311,
+     "iou": 0.244284
+    },
+    "brier": 0.009294,
+    "expected_calibration_error": 0.002303,
+    "by_land_cover_worldcover_2021": {
+     "built_up": {
+      "cells": 237020,
+      "flagged_cells": 183.0,
+      "reference_water_cells": 35.0,
+      "flagged_that_is_reference_water": 0.098361,
+      "reference_water_flagged": 0.514286,
+      "iou": 0.09
+     },
+     "cropland": {
+      "cells": 1713380,
+      "flagged_cells": 37334.0,
+      "reference_water_cells": 35585.0,
+      "flagged_that_is_reference_water": 0.55882,
+      "reference_water_flagged": 0.586286,
+      "iou": 0.40078
+     },
+     "tree_cover": {
+      "cells": 987081,
+      "flagged_cells": 32436.0,
+      "reference_water_cells": 386.0,
+      "flagged_that_is_reference_water": 0.006844,
+      "reference_water_flagged": 0.57513,
+      "iou": 0.00681
+     },
+     "other": {
+      "cells": 108148,
+      "flagged_cells": 1934.0,
+      "reference_water_cells": 183.0,
+      "flagged_that_is_reference_water": 0.059462,
+      "reference_water_flagged": 0.628415,
+      "iou": 0.057443
+     }
+    }
+   },
+   "gradient_boosted_trees_all_features": {
+    "roc_auc": 0.993245,
+    "average_precision": 0.626821,
+    "frozen_cut": 0.34,
+    "at_the_frozen_cut": {
+     "flagged_cells": 32466.0,
+     "reference_water_cells": 36189.0,
+     "flagged_that_is_reference_water": 0.621604,
+     "reference_water_flagged": 0.557656,
+     "iou": 0.416326
+    },
+    "brier": 0.0065,
+    "expected_calibration_error": 0.002027,
+    "by_land_cover_worldcover_2021": {
+     "built_up": {
+      "cells": 237020,
+      "flagged_cells": 4.0,
+      "reference_water_cells": 35.0,
+      "flagged_that_is_reference_water": 0.75,
+      "reference_water_flagged": 0.085714,
+      "iou": 0.083333
+     },
+     "cropland": {
+      "cells": 1713380,
+      "flagged_cells": 32284.0,
+      "reference_water_cells": 35585.0,
+      "flagged_that_is_reference_water": 0.622104,
+      "reference_water_flagged": 0.564395,
+      "iou": 0.420299
+     },
+     "tree_cover": {
+      "cells": 987081,
+      "flagged_cells": 137.0,
+      "reference_water_cells": 386.0,
+      "flagged_that_is_reference_water": 0.583942,
+      "reference_water_flagged": 0.207254,
+      "iou": 0.180587
+     },
+     "other": {
+      "cells": 108148,
+      "flagged_cells": 41.0,
+      "reference_water_cells": 183.0,
+      "flagged_that_is_reference_water": 0.341463,
+      "reference_water_flagged": 0.076503,
+      "iou": 0.066667
+     }
+    },
+    "values_between_0.3_and_0.7_withheld": {
+     "withheld_between": [
+      0.3,
+      0.7
+     ],
+     "cells": 3045629,
+     "cells_with_an_answer": 3023384,
+     "share_with_an_answer": 0.992696,
+     "on_answered_cells": {
+      "flagged_cells": 12100.0,
+      "reference_water_cells": 24623.0,
+      "flagged_that_is_reference_water": 0.779752,
+      "reference_water_flagged": 0.383178,
+      "iou": 0.345756
+     }
+    }
+   },
+   "random_forest_all_features": {
+    "roc_auc": 0.992983,
+    "average_precision": 0.609752,
+    "frozen_cut": 0.34,
+    "at_the_frozen_cut": {
+     "flagged_cells": 33817.0,
+     "reference_water_cells": 36189.0,
+     "flagged_that_is_reference_water": 0.606381,
+     "reference_water_flagged": 0.566636,
+     "iou": 0.414263
+    },
+    "brier": 0.006589,
+    "expected_calibration_error": 0.001954,
+    "by_land_cover_worldcover_2021": {
+     "built_up": {
+      "cells": 237020,
+      "flagged_cells": 10.0,
+      "reference_water_cells": 35.0,
+      "flagged_that_is_reference_water": 0.5,
+      "reference_water_flagged": 0.142857,
+      "iou": 0.125
+     },
+     "cropland": {
+      "cells": 1713380,
+      "flagged_cells": 33642.0,
+      "reference_water_cells": 35585.0,
+      "flagged_that_is_reference_water": 0.607306,
+      "reference_water_flagged": 0.574146,
+      "iou": 0.418702
+     },
+     "tree_cover": {
+      "cells": 987081,
+      "flagged_cells": 129.0,
+      "reference_water_cells": 386.0,
+      "flagged_that_is_reference_water": 0.457364,
+      "reference_water_flagged": 0.15285,
+      "iou": 0.129386
+     },
+     "other": {
+      "cells": 108148,
+      "flagged_cells": 36.0,
+      "reference_water_cells": 183.0,
+      "flagged_that_is_reference_water": 0.305556,
+      "reference_water_flagged": 0.060109,
+      "iou": 0.052885
+     }
+    }
+   },
+   "gradient_boosted_trees_after_only": {
+    "roc_auc": 0.992184,
+    "average_precision": 0.576338,
+    "frozen_cut": 0.32,
+    "at_the_frozen_cut": {
+     "flagged_cells": 41994.0,
+     "reference_water_cells": 36189.0,
+     "flagged_that_is_reference_water": 0.546697,
+     "reference_water_flagged": 0.634392,
+     "iou": 0.415718
+    },
+    "brier": 0.006842,
+    "expected_calibration_error": 0.00159,
+    "by_land_cover_worldcover_2021": {
+     "built_up": {
+      "cells": 237020,
+      "flagged_cells": 1.0,
+      "reference_water_cells": 35.0,
+      "flagged_that_is_reference_water": 0.0,
+      "reference_water_flagged": 0.0,
+      "iou": 0.0
+     },
+     "cropland": {
+      "cells": 1713380,
+      "flagged_cells": 41952.0,
+      "reference_water_cells": 35585.0,
+      "flagged_that_is_reference_water": 0.546935,
+      "reference_water_flagged": 0.644794,
+      "iou": 0.4203
+     },
+     "tree_cover": {
+      "cells": 987081,
+      "flagged_cells": 12.0,
+      "reference_water_cells": 386.0,
+      "flagged_that_is_reference_water": 0.333333,
+      "reference_water_flagged": 0.010363,
+      "iou": 0.010152
+     },
+     "other": {
+      "cells": 108148,
+      "flagged_cells": 29.0,
+      "reference_water_cells": 183.0,
+      "flagged_that_is_reference_water": 0.310345,
+      "reference_water_flagged": 0.04918,
+      "iou": 0.044335
+     }
+    }
+   }
+  },
+  "fixed_rules": {
+   "un_spider": {
+    "at_its_own_rule": {
+     "flagged_cells": 5652.0,
+     "reference_water_cells": 36189.0,
+     "flagged_that_is_reference_water": 0.008846,
+     "reference_water_flagged": 0.001382,
+     "iou": 0.001196
+    },
+    "cells_without_an_answer": 0
+   },
+   "m1_literal": {
+    "at_its_own_rule": {
+     "flagged_cells": 1057970.0,
+     "reference_water_cells": 36189.0,
+     "flagged_that_is_reference_water": 0.004786,
+     "reference_water_flagged": 0.139904,
+     "iou": 0.004649
+    },
+    "cells_without_an_answer": 0
+   },
+   "m1_v2": {
+    "at_its_own_rule": {
+     "flagged_cells": 35.0,
+     "reference_water_cells": 36189.0,
+     "flagged_that_is_reference_water": 0.0,
+     "reference_water_flagged": 0.0,
+     "iou": 0.0
+    },
+    "cells_without_an_answer": 3032534
+   }
+  }
+ },
+ "test_b_sukhothai_theos2": {
+  "reference": "water read from the THEOS-2 image of 30 July 2025 03:33 UTC (committed reference of the cross-check)",
+  "radar_pair": {
+   "before": [
+    "S1A_IW_GRDH_1SDV_20250719T230832_20250719T230857_060159_rtc"
+   ],
+   "after": [
+    "S1A_IW_GRDH_1SDV_20250731T230828_20250731T230853_060334_rtc",
+    "S1A_IW_GRDH_1SDV_20250731T230853_20250731T230918_060334_rtc"
+   ]
+  },
+  "compared_cells": 80988,
+  "reference_water_cells": 29298,
+  "reference_water_share": 0.361757,
+  "models": {
+   "baseline_logistic_vh_after": {
+    "roc_auc": 0.864249,
+    "average_precision": 0.779075,
+    "frozen_cut": 0.22,
+    "at_the_frozen_cut": {
+     "flagged_cells": 22611.0,
+     "reference_water_cells": 29298.0,
+     "flagged_that_is_reference_water": 0.831631,
+     "reference_water_flagged": 0.641819,
+     "iou": 0.568011
+    },
+    "by_land_cover_worldcover_2021": {
+     "built_up": {
+      "cells": 7962,
+      "flagged_cells": 38.0,
+      "reference_water_cells": 234.0,
+      "flagged_that_is_reference_water": 0.0,
+      "reference_water_flagged": 0.0,
+      "iou": 0.0
+     },
+     "cropland": {
+      "cells": 43745,
+      "flagged_cells": 21186.0,
+      "reference_water_cells": 25616.0,
+      "flagged_that_is_reference_water": 0.852403,
+      "reference_water_flagged": 0.704989,
+      "iou": 0.628292
+     },
+     "tree_cover": {
+      "cells": 23557,
+      "flagged_cells": 1118.0,
+      "reference_water_cells": 2525.0,
+      "flagged_that_is_reference_water": 0.483005,
+      "reference_water_flagged": 0.213861,
+      "iou": 0.174025
+     },
+     "other": {
+      "cells": 5724,
+      "flagged_cells": 269.0,
+      "reference_water_cells": 923.0,
+      "flagged_that_is_reference_water": 0.762082,
+      "reference_water_flagged": 0.222102,
+      "iou": 0.2077
+     }
+    }
+   },
+   "gradient_boosted_trees_all_features": {
+    "roc_auc": 0.885945,
+    "average_precision": 0.80687,
+    "frozen_cut": 0.34,
+    "at_the_frozen_cut": {
+     "flagged_cells": 3393.0,
+     "reference_water_cells": 29298.0,
+     "flagged_that_is_reference_water": 0.918361,
+     "reference_water_flagged": 0.106355,
+     "iou": 0.105359
+    },
+    "by_land_cover_worldcover_2021": {
+     "built_up": {
+      "cells": 7962,
+      "flagged_cells": 0.0,
+      "reference_water_cells": 234.0,
+      "flagged_that_is_reference_water": null,
+      "reference_water_flagged": 0.0,
+      "iou": 0.0
+     },
+     "cropland": {
+      "cells": 43745,
+      "flagged_cells": 3377.0,
+      "reference_water_cells": 25616.0,
+      "flagged_that_is_reference_water": 0.921232,
+      "reference_water_flagged": 0.121448,
+      "iou": 0.120199
+     },
+     "tree_cover": {
+      "cells": 23557,
+      "flagged_cells": 12.0,
+      "reference_water_cells": 2525.0,
+      "flagged_that_is_reference_water": 0.25,
+      "reference_water_flagged": 0.001188,
+      "iou": 0.001184
+     },
+     "other": {
+      "cells": 5724,
+      "flagged_cells": 4.0,
+      "reference_water_cells": 923.0,
+      "flagged_that_is_reference_water": 0.5,
+      "reference_water_flagged": 0.002167,
+      "iou": 0.002162
+     }
+    },
+    "values_between_0.3_and_0.7_withheld": {
+     "withheld_between": [
+      0.3,
+      0.7
+     ],
+     "cells": 80988,
+     "cells_with_an_answer": 77128,
+     "share_with_an_answer": 0.952339,
+     "on_answered_cells": {
+      "flagged_cells": 268.0,
+      "reference_water_cells": 25768.0,
+      "flagged_that_is_reference_water": 0.940299,
+      "reference_water_flagged": 0.00978,
+      "iou": 0.009774
+     }
+    },
+    "average_precision_lost_when_a_feature_is_shuffled": {
+     "vh_after_db": 0.332115,
+     "land_cover": 0.024639,
+     "vh_after_spread_db": 0.016716,
+     "vv_before_db": 0.014103,
+     "vh_change_db": 0.005332,
+     "vh_before_db": 0.003229,
+     "vv_change_db": 0.002709,
+     "vv_after_db": 0.00235,
+     "slope_deg": -0.000778,
+     "vh_minus_vv_after_db": -0.000991
+    }
+   },
+   "random_forest_all_features": {
+    "roc_auc": 0.884382,
+    "average_precision": 0.799089,
+    "frozen_cut": 0.34,
+    "at_the_frozen_cut": {
+     "flagged_cells": 3753.0,
+     "reference_water_cells": 29298.0,
+     "flagged_that_is_reference_water": 0.892619,
+     "reference_water_flagged": 0.114342,
+     "iou": 0.112791
+    },
+    "by_land_cover_worldcover_2021": {
+     "built_up": {
+      "cells": 7962,
+      "flagged_cells": 1.0,
+      "reference_water_cells": 234.0,
+      "flagged_that_is_reference_water": 0.0,
+      "reference_water_flagged": 0.0,
+      "iou": 0.0
+     },
+     "cropland": {
+      "cells": 43745,
+      "flagged_cells": 3744.0,
+      "reference_water_cells": 25616.0,
+      "flagged_that_is_reference_water": 0.893964,
+      "reference_water_flagged": 0.130661,
+      "iou": 0.128666
+     },
+     "tree_cover": {
+      "cells": 23557,
+      "flagged_cells": 8.0,
+      "reference_water_cells": 2525.0,
+      "flagged_that_is_reference_water": 0.375,
+      "reference_water_flagged": 0.001188,
+      "iou": 0.001186
+     },
+     "other": {
+      "cells": 5724,
+      "flagged_cells": 0.0,
+      "reference_water_cells": 923.0,
+      "flagged_that_is_reference_water": null,
+      "reference_water_flagged": 0.0,
+      "iou": 0.0
+     }
+    }
+   },
+   "gradient_boosted_trees_after_only": {
+    "roc_auc": 0.882456,
+    "average_precision": 0.788588,
+    "frozen_cut": 0.32,
+    "at_the_frozen_cut": {
+     "flagged_cells": 15312.0,
+     "reference_water_cells": 29298.0,
+     "flagged_that_is_reference_water": 0.854036,
+     "reference_water_flagged": 0.446344,
+     "iou": 0.414708
+    },
+    "by_land_cover_worldcover_2021": {
+     "built_up": {
+      "cells": 7962,
+      "flagged_cells": 0.0,
+      "reference_water_cells": 234.0,
+      "flagged_that_is_reference_water": null,
+      "reference_water_flagged": 0.0,
+      "iou": 0.0
+     },
+     "cropland": {
+      "cells": 43745,
+      "flagged_cells": 15302.0,
+      "reference_water_cells": 25616.0,
+      "flagged_that_is_reference_water": 0.854137,
+      "reference_water_flagged": 0.510228,
+      "iou": 0.469334
+     },
+     "tree_cover": {
+      "cells": 23557,
+      "flagged_cells": 6.0,
+      "reference_water_cells": 2525.0,
+      "flagged_that_is_reference_water": 0.5,
+      "reference_water_flagged": 0.001188,
+      "iou": 0.001187
+     },
+     "other": {
+      "cells": 5724,
+      "flagged_cells": 4.0,
+      "reference_water_cells": 923.0,
+      "flagged_that_is_reference_water": 1.0,
+      "reference_water_flagged": 0.004334,
+      "iou": 0.004334
+     }
+    }
+   }
+  },
+  "fixed_rules": {
+   "un_spider": {
+    "at_its_own_rule": {
+     "flagged_cells": 11823.0,
+     "reference_water_cells": 29298.0,
+     "flagged_that_is_reference_water": 0.716908,
+     "reference_water_flagged": 0.289303,
+     "iou": 0.259642
+    },
+    "cells_without_an_answer": 0
+   },
+   "m1_literal": {
+    "at_its_own_rule": {
+     "flagged_cells": 24016.0,
+     "reference_water_cells": 29298.0,
+     "flagged_that_is_reference_water": 0.609052,
+     "reference_water_flagged": 0.499249,
+     "iou": 0.378086
+    },
+    "cells_without_an_answer": 0
+   },
+   "m1_v2": {
+    "at_its_own_rule": {
+     "flagged_cells": 8610.0,
+     "reference_water_cells": 29298.0,
+     "flagged_that_is_reference_water": 0.75935,
+     "reference_water_flagged": 0.223155,
+     "iou": 0.208416
+    },
+    "cells_without_an_answer": 563
+   }
+  },
+  "cells_compared_in_the_cross_check_and_left_out_here": 0
+ },
+ "what_the_plan_fixed": {
+  "margin_in_iou": 0.03,
+  "better_than_each_fixed_rule": {
+   "baseline_logistic_vh_after": {
+    "un_spider": true,
+    "m1_literal": true,
+    "m1_v2": true
+   },
+   "gradient_boosted_trees_all_features": {
+    "un_spider": false,
+    "m1_literal": false,
+    "m1_v2": false
+   },
+   "random_forest_all_features": {
+    "un_spider": false,
+    "m1_literal": false,
+    "m1_v2": false
+   },
+   "gradient_boosted_trees_after_only": {
+    "un_spider": true,
+    "m1_literal": true,
+    "m1_v2": true
+   }
+  },
+  "better_than_all_fixed_rules": {
+   "baseline_logistic_vh_after": true,
+   "gradient_boosted_trees_all_features": false,
+   "random_forest_all_features": false,
+   "gradient_boosted_trees_after_only": true
+  },
+  "classifier_named_as_an_improvement": false,
+  "comparison_models_better_than_all_fixed_rules": [
+   "baseline_logistic_vh_after",
+   "gradient_boosted_trees_after_only"
+  ],
+  "what_is_said": "The primary model is not better than all three fixed rules on the independent test. A comparison model is, and it is not renamed as the result."
+ },
+ "assumptions": [
+  "Training labels are the layer UNOSAT and GISTDA dated 22 October 2024, as provided: a cell is water when its centre lies inside it.",
+  "Where the agency mapped no water the cell counts as dry; the layer has no 'not observed' class.",
+  "Every feature comes from the Sentinel-1 pair, or is slope or land cover. No feature says where water usually stands.",
+  "Weights put the true share of water of the training districts back for calibration and for the out-of-fold figures."
+ ],
+ "limits": [
+  "One date of training labels, late in the season: shallow residual water on fields, not the September flood.",
+  "The agency layer was not checked in the field and may come from the same Sentinel-1 pass as the features.",
+  "At Sukhothai the radar came 44 hours after the THEOS-2 image; no classifier can flag water the radar did not record.",
+  "Every figure is agreement with a reference layer, not accuracy. The model feeds no component, no score and no class."
+ ],
+ "supersedes": null
+}

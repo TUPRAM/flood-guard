@@ -1,7 +1,7 @@
 {
  "schema": "floodguard.validation_check.state.v1",
- "generated_at_utc": "2026-10-08T07:27:54Z",
- "source_timestamp": "2026-10-08T06:45:37Z",
+ "generated_at_utc": "2026-10-08T16:36:47Z",
+ "source_timestamp": "2026-10-08T16:09:13Z",
  "confidence_class": "not_applicable",
  "what_this_is": "The word of the three team members on the project's own work, as handed over.",
  "assumptions": [
@@ -16,11 +16,11 @@
  "official_warning": false,
  "operational_status": "non_operational",
  "rule": "An item is accepted when at least one of the three reviewers accepts it and none asks for a change or rejects it. One 'change' or 'reject' holds it until that reviewer accepts. All three are asked to read; one acceptance is enough to go on (owner decision of 7 October 2026).",
- "records_counted": 3,
+ "records_counted": 6,
  "status_counts": {
-  "accepted": 14,
-  "evidence_not_ready": 3,
-  "waiting": 4
+  "accepted": 18,
+  "evidence_not_ready": 2,
+  "waiting": 1
  },
  "items": {
   "V-01": {
@@ -34,20 +34,20 @@
     "Rachmania": {
      "decision": "accept",
      "note": "",
-     "received_at": "2026-10-08T06:45:37Z",
-     "record_id": "c6f2f50fe922d500"
+     "received_at": "2026-10-08T16:09:13Z",
+     "record_id": "3d6728e7a6405a17"
     },
     "Putu": {
      "decision": "accept",
      "note": "",
-     "received_at": "2026-10-08T06:45:37Z",
-     "record_id": "3664145252706ab2"
+     "received_at": "2026-10-08T16:09:10Z",
+     "record_id": "b2f895c349bb5ecb"
     },
     "Callixta": {
      "decision": "accept",
      "note": "",
-     "received_at": "2026-10-08T06:45:37Z",
-     "record_id": "11ae8598b087da0b"
+     "received_at": "2026-10-08T16:09:12Z",
+     "record_id": "f6f839c5bf084152"
     }
    }
   },
@@ -62,20 +62,20 @@
     "Rachmania": {
      "decision": "accept",
      "note": "",
-     "received_at": "2026-10-08T06:45:37Z",
-     "record_id": "c6f2f50fe922d500"
+     "received_at": "2026-10-08T16:09:13Z",
+     "record_id": "3d6728e7a6405a17"
     },
     "Putu": {
      "decision": "accept",
      "note": "",
-     "received_at": "2026-10-08T06:45:37Z",
-     "record_id": "3664145252706ab2"
+     "received_at": "2026-10-08T16:09:10Z",
+     "record_id": "b2f895c349bb5ecb"
     },
     "Callixta": {
      "decision": "accept",
      "note": "",
-     "received_at": "2026-10-08T06:45:37Z",
-     "record_id": "11ae8598b087da0b"
+     "received_at": "2026-10-08T16:09:12Z",
+     "record_id": "f6f839c5bf084152"
     }
    }
   },
@@ -90,20 +90,20 @@
     "Rachmania": {
      "decision": "accept",
      "note": "",
-     "received_at": "2026-10-08T06:45:37Z",
-     "record_id": "c6f2f50fe922d500"
+     "received_at": "2026-10-08T16:09:13Z",
+     "record_id": "3d6728e7a6405a17"
     },
     "Putu": {
      "decision": "accept",
      "note": "",
-     "received_at": "2026-10-08T06:45:37Z",
-     "record_id": "3664145252706ab2"
+     "received_at": "2026-10-08T16:09:10Z",
+     "record_id": "b2f895c349bb5ecb"
     },
     "Callixta": {
      "decision": "accept",
      "note": "",
-     "received_at": "2026-10-08T06:45:37Z",
-     "record_id": "11ae8598b087da0b"
+     "received_at": "2026-10-08T16:09:12Z",
+     "record_id": "f6f839c5bf084152"
     }
    }
   },
@@ -118,20 +118,20 @@
     "Rachmania": {
      "decision": "accept",
      "note": "",
-     "received_at": "2026-10-08T06:45:37Z",
-     "record_id": "c6f2f50fe922d500"
+     "received_at": "2026-10-08T16:09:13Z",
+     "record_id": "3d6728e7a6405a17"
     },
     "Putu": {
      "decision": "accept",
      "note": "",
-     "received_at": "2026-10-08T06:45:37Z",
-     "record_id": "3664145252706ab2"
+     "received_at": "2026-10-08T16:09:10Z",
+     "record_id": "b2f895c349bb5ecb"
     },
     "Callixta": {
      "decision": "accept",
      "note": "",
-     "received_at": "2026-10-08T06:45:37Z",
-     "record_id": "11ae8598b087da0b"
+     "received_at": "2026-10-08T16:09:12Z",
+     "record_id": "f6f839c5bf084152"
     }
    }
   },
@@ -146,20 +146,20 @@
     "Rachmania": {
      "decision": "accept",
      "note": "",
-     "received_at": "2026-10-08T06:45:37Z",
-     "record_id": "c6f2f50fe922d500"
+     "received_at": "2026-10-08T16:09:13Z",
+     "record_id": "3d6728e7a6405a17"
     },
     "Putu": {
      "decision": "accept",
      "note": "",
-     "received_at": "2026-10-08T06:45:37Z",
-     "record_id": "3664145252706ab2"
+     "received_at": "2026-10-08T16:09:10Z",
+     "record_id": "b2f895c349bb5ecb"
     },
     "Callixta": {
      "decision": "accept",
      "note": "",
-     "received_at": "2026-10-08T06:45:37Z",
-     "record_id": "11ae8598b087da0b"
+     "received_at": "2026-10-08T16:09:12Z",
+     "record_id": "f6f839c5bf084152"
     }
    }
   },
@@ -174,20 +174,20 @@
     "Rachmania": {
      "decision": "accept",
      "note": "",
-     "received_at": "2026-10-08T06:45:37Z",
-     "record_id": "c6f2f50fe922d500"
+     "received_at": "2026-10-08T16:09:13Z",
+     "record_id": "3d6728e7a6405a17"
     },
     "Putu": {
      "decision": "accept",
      "note": "",
-     "received_at": "2026-10-08T06:45:37Z",
-     "record_id": "3664145252706ab2"
+     "received_at": "2026-10-08T16:09:10Z",
+     "record_id": "b2f895c349bb5ecb"
     },
     "Callixta": {
      "decision": "accept",
      "note": "",
-     "received_at": "2026-10-08T06:45:37Z",
-     "record_id": "11ae8598b087da0b"
+     "received_at": "2026-10-08T16:09:12Z",
+     "record_id": "f6f839c5bf084152"
     }
    }
   },
@@ -202,20 +202,20 @@
     "Rachmania": {
      "decision": "accept",
      "note": "",
-     "received_at": "2026-10-08T06:45:37Z",
-     "record_id": "c6f2f50fe922d500"
+     "received_at": "2026-10-08T16:09:13Z",
+     "record_id": "3d6728e7a6405a17"
     },
     "Putu": {
      "decision": "accept",
      "note": "",
-     "received_at": "2026-10-08T06:45:37Z",
-     "record_id": "3664145252706ab2"
+     "received_at": "2026-10-08T16:09:10Z",
+     "record_id": "b2f895c349bb5ecb"
     },
     "Callixta": {
      "decision": "accept",
      "note": "",
-     "received_at": "2026-10-08T06:45:37Z",
-     "record_id": "11ae8598b087da0b"
+     "received_at": "2026-10-08T16:09:12Z",
+     "record_id": "f6f839c5bf084152"
     }
    }
   },
@@ -230,30 +230,49 @@
     "Rachmania": {
      "decision": "accept",
      "note": "",
-     "received_at": "2026-10-08T06:45:37Z",
-     "record_id": "c6f2f50fe922d500"
+     "received_at": "2026-10-08T16:09:13Z",
+     "record_id": "3d6728e7a6405a17"
     },
     "Putu": {
      "decision": "accept",
      "note": "",
-     "received_at": "2026-10-08T06:45:37Z",
-     "record_id": "3664145252706ab2"
+     "received_at": "2026-10-08T16:09:10Z",
+     "record_id": "b2f895c349bb5ecb"
     },
     "Callixta": {
      "decision": "accept",
      "note": "",
-     "received_at": "2026-10-08T06:45:37Z",
-     "record_id": "11ae8598b087da0b"
+     "received_at": "2026-10-08T16:09:12Z",
+     "record_id": "f6f839c5bf084152"
     }
    }
   },
   "V-21": {
-   "status": "waiting",
-   "accepted_by": [],
+   "status": "accepted",
+   "accepted_by": [
+    "Callixta",
+    "Putu",
+    "Rachmania"
+   ],
    "by_reviewer": {
-    "Rachmania": null,
-    "Putu": null,
-    "Callixta": null
+    "Rachmania": {
+     "decision": "accept",
+     "note": "",
+     "received_at": "2026-10-08T16:09:13Z",
+     "record_id": "3d6728e7a6405a17"
+    },
+    "Putu": {
+     "decision": "accept",
+     "note": "",
+     "received_at": "2026-10-08T16:09:10Z",
+     "record_id": "b2f895c349bb5ecb"
+    },
+    "Callixta": {
+     "decision": "accept",
+     "note": "",
+     "received_at": "2026-10-08T16:09:12Z",
+     "record_id": "f6f839c5bf084152"
+    }
    }
   },
   "V-09": {
@@ -267,30 +286,49 @@
     "Rachmania": {
      "decision": "accept",
      "note": "",
-     "received_at": "2026-10-08T06:45:37Z",
-     "record_id": "c6f2f50fe922d500"
+     "received_at": "2026-10-08T16:09:13Z",
+     "record_id": "3d6728e7a6405a17"
     },
     "Putu": {
      "decision": "accept",
      "note": "",
-     "received_at": "2026-10-08T06:45:37Z",
-     "record_id": "3664145252706ab2"
+     "received_at": "2026-10-08T16:09:10Z",
+     "record_id": "b2f895c349bb5ecb"
     },
     "Callixta": {
      "decision": "accept",
      "note": "",
-     "received_at": "2026-10-08T06:45:37Z",
-     "record_id": "11ae8598b087da0b"
+     "received_at": "2026-10-08T16:09:12Z",
+     "record_id": "f6f839c5bf084152"
     }
    }
   },
   "V-10": {
-   "status": "waiting",
-   "accepted_by": [],
+   "status": "accepted",
+   "accepted_by": [
+    "Callixta",
+    "Putu",
+    "Rachmania"
+   ],
    "by_reviewer": {
-    "Rachmania": null,
-    "Putu": null,
-    "Callixta": null
+    "Rachmania": {
+     "decision": "accept",
+     "note": "",
+     "received_at": "2026-10-08T16:09:13Z",
+     "record_id": "3d6728e7a6405a17"
+    },
+    "Putu": {
+     "decision": "accept",
+     "note": "",
+     "received_at": "2026-10-08T16:09:10Z",
+     "record_id": "b2f895c349bb5ecb"
+    },
+    "Callixta": {
+     "decision": "accept",
+     "note": "",
+     "received_at": "2026-10-08T16:09:12Z",
+     "record_id": "f6f839c5bf084152"
+    }
    }
   },
   "V-11": {
@@ -304,20 +342,20 @@
     "Rachmania": {
      "decision": "accept",
      "note": "",
-     "received_at": "2026-10-08T06:45:37Z",
-     "record_id": "c6f2f50fe922d500"
+     "received_at": "2026-10-08T16:09:13Z",
+     "record_id": "3d6728e7a6405a17"
     },
     "Putu": {
      "decision": "accept",
      "note": "",
-     "received_at": "2026-10-08T06:45:37Z",
-     "record_id": "3664145252706ab2"
+     "received_at": "2026-10-08T16:09:10Z",
+     "record_id": "b2f895c349bb5ecb"
     },
     "Callixta": {
      "decision": "accept",
      "note": "",
-     "received_at": "2026-10-08T06:45:37Z",
-     "record_id": "11ae8598b087da0b"
+     "received_at": "2026-10-08T16:09:12Z",
+     "record_id": "f6f839c5bf084152"
     }
    }
   },
@@ -332,20 +370,20 @@
     "Rachmania": {
      "decision": "accept",
      "note": "",
-     "received_at": "2026-10-08T06:45:37Z",
-     "record_id": "c6f2f50fe922d500"
+     "received_at": "2026-10-08T16:09:13Z",
+     "record_id": "3d6728e7a6405a17"
     },
     "Putu": {
      "decision": "accept",
      "note": "",
-     "received_at": "2026-10-08T06:45:37Z",
-     "record_id": "3664145252706ab2"
+     "received_at": "2026-10-08T16:09:10Z",
+     "record_id": "b2f895c349bb5ecb"
     },
     "Callixta": {
      "decision": "accept",
      "note": "",
-     "received_at": "2026-10-08T06:45:37Z",
-     "record_id": "11ae8598b087da0b"
+     "received_at": "2026-10-08T16:09:12Z",
+     "record_id": "f6f839c5bf084152"
     }
    }
   },
@@ -360,20 +398,20 @@
     "Rachmania": {
      "decision": "accept",
      "note": "",
-     "received_at": "2026-10-08T06:45:37Z",
-     "record_id": "c6f2f50fe922d500"
+     "received_at": "2026-10-08T16:09:13Z",
+     "record_id": "3d6728e7a6405a17"
     },
     "Putu": {
      "decision": "accept",
      "note": "",
-     "received_at": "2026-10-08T06:45:37Z",
-     "record_id": "3664145252706ab2"
+     "received_at": "2026-10-08T16:09:10Z",
+     "record_id": "b2f895c349bb5ecb"
     },
     "Callixta": {
      "decision": "accept",
      "note": "",
-     "received_at": "2026-10-08T06:45:37Z",
-     "record_id": "11ae8598b087da0b"
+     "received_at": "2026-10-08T16:09:12Z",
+     "record_id": "f6f839c5bf084152"
     }
    }
   },
@@ -388,20 +426,20 @@
     "Rachmania": {
      "decision": "accept",
      "note": "",
-     "received_at": "2026-10-08T06:45:37Z",
-     "record_id": "c6f2f50fe922d500"
+     "received_at": "2026-10-08T16:09:13Z",
+     "record_id": "3d6728e7a6405a17"
     },
     "Putu": {
      "decision": "accept",
      "note": "",
-     "received_at": "2026-10-08T06:45:37Z",
-     "record_id": "3664145252706ab2"
+     "received_at": "2026-10-08T16:09:10Z",
+     "record_id": "b2f895c349bb5ecb"
     },
     "Callixta": {
      "decision": "accept",
      "note": "",
-     "received_at": "2026-10-08T06:45:37Z",
-     "record_id": "11ae8598b087da0b"
+     "received_at": "2026-10-08T16:09:12Z",
+     "record_id": "f6f839c5bf084152"
     }
    }
   },
@@ -416,34 +454,53 @@
     "Rachmania": {
      "decision": "accept",
      "note": "",
-     "received_at": "2026-10-08T06:45:37Z",
-     "record_id": "c6f2f50fe922d500"
+     "received_at": "2026-10-08T16:09:13Z",
+     "record_id": "3d6728e7a6405a17"
     },
     "Putu": {
      "decision": "accept",
      "note": "",
-     "received_at": "2026-10-08T06:45:37Z",
-     "record_id": "3664145252706ab2"
+     "received_at": "2026-10-08T16:09:10Z",
+     "record_id": "b2f895c349bb5ecb"
     },
     "Callixta": {
      "decision": "accept",
      "note": "",
-     "received_at": "2026-10-08T06:45:37Z",
-     "record_id": "11ae8598b087da0b"
+     "received_at": "2026-10-08T16:09:12Z",
+     "record_id": "f6f839c5bf084152"
     }
    }
   },
   "V-16": {
-   "status": "waiting",
-   "accepted_by": [],
+   "status": "accepted",
+   "accepted_by": [
+    "Callixta",
+    "Putu",
+    "Rachmania"
+   ],
    "by_reviewer": {
-    "Rachmania": null,
-    "Putu": null,
-    "Callixta": null
+    "Rachmania": {
+     "decision": "accept",
+     "note": "",
+     "received_at": "2026-10-08T16:09:13Z",
+     "record_id": "3d6728e7a6405a17"
+    },
+    "Putu": {
+     "decision": "accept",
+     "note": "",
+     "received_at": "2026-10-08T16:09:10Z",
+     "record_id": "b2f895c349bb5ecb"
+    },
+    "Callixta": {
+     "decision": "accept",
+     "note": "",
+     "received_at": "2026-10-08T16:09:12Z",
+     "record_id": "f6f839c5bf084152"
+    }
    }
   },
   "V-17": {
-   "status": "evidence_not_ready",
+   "status": "waiting",
    "accepted_by": [],
    "by_reviewer": {
     "Rachmania": null,
@@ -452,12 +509,31 @@
    }
   },
   "V-18": {
-   "status": "waiting",
-   "accepted_by": [],
+   "status": "accepted",
+   "accepted_by": [
+    "Callixta",
+    "Putu",
+    "Rachmania"
+   ],
    "by_reviewer": {
-    "Rachmania": null,
-    "Putu": null,
-    "Callixta": null
+    "Rachmania": {
+     "decision": "accept",
+     "note": "",
+     "received_at": "2026-10-08T16:09:13Z",
+     "record_id": "3d6728e7a6405a17"
+    },
+    "Putu": {
+     "decision": "accept",
+     "note": "",
+     "received_at": "2026-10-08T16:09:10Z",
+     "record_id": "b2f895c349bb5ecb"
+    },
+    "Callixta": {
+     "decision": "accept",
+     "note": "",
+     "received_at": "2026-10-08T16:09:12Z",
+     "record_id": "f6f839c5bf084152"
+    }
    }
   },
   "V-19": {

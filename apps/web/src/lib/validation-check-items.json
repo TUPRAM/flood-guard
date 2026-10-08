@@ -1,6 +1,6 @@
 {
   "schema": "floodguard.validation_check.items.v1",
-  "updated": "2026-10-08",
+  "updated": "2026-10-09",
   "repository": "https://github.com/TUPRAM/flood-guard",
   "reviewers": [
     "Rachmania",
@@ -360,10 +360,23 @@
       "id": "V-17",
       "group": "models",
       "title": "Radar set against the dated layer of 22 October 2024 at Mae Sai",
-      "check": "The three radar methods on the Sentinel-1 pass of 21 October 2024, set against the layer UNOSAT and GISTDA dated 22 October (work package 3). Not computed yet.",
-      "evidence": [],
+      "check": "Read the result. The three radar methods ran unchanged on the Sentinel-1 pass of 21 October 2024 at Mae Sai, against the layer UNOSAT and GISTDA dated 22 October, with two images before that the plan named beforehand. With a wet-season image before, the methods see almost none of the agency water; with a dry-season image, the UN-SPIDER practice flags 70% of it. Accept if the tables and the sentences under them say no more than the counts, and if the team will say that the agency layer may come from the same radar pass whenever it quotes the 70%.",
+      "evidence": [
+        {
+          "label": "Result in plain words",
+          "path": "docs/dated_radar_check.md"
+        },
+        {
+          "label": "Result file",
+          "path": "outputs/dated_radar_check/mae_sai_20241022_v1.json"
+        },
+        {
+          "label": "Plan, committed before any radar of that date was read",
+          "path": "docs/proposal_execution/dated_radar_check_plan_v1.md"
+        }
+      ],
       "gates": "A first comparison of our radar on the study area itself.",
-      "ready": false,
+      "ready": true,
       "added": "2026-10-07"
     },
     {
@@ -397,7 +410,7 @@
       "id": "V-19",
       "group": "models",
       "title": "The supervised flood classifier",
-      "check": "A classifier trained on labelled flood events and set against the THEOS-2 chip and the layer of 22 October (work package 7). Not started; it may be dropped.",
+      "check": "A radar classifier trained on the agency layer of 22 October 2024 in eight districts and tested once on Mae Sai and on the THEOS-2 tile at Sukhothai (work package 7). Its plan is committed; the models are being fitted. Not ready to read yet.",
       "evidence": [],
       "gates": "Naming a second trained model in the pitch.",
       "ready": false,

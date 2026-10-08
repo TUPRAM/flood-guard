@@ -1,6 +1,6 @@
 # Validation check: state of the team's acceptance
 
-Written by `scripts/import_validation_records.py` on 2026-10-08T07:27:54Z from 3 record(s). Do not edit by hand.
+Written by `scripts/import_validation_records.py` on 2026-10-08T16:36:47Z from 6 record(s). Do not edit by hand.
 
 This is the word of the three team members on the project's own work. It is not a review by an independent expert, it qualifies no flood map, and it is not an official approval.
 
@@ -14,16 +14,16 @@ This is the word of the three team members on the project's own work. It is not 
 | V-06 | Note to UNOSAT: GIS data of product 3991 | Accepted | accept | accept | accept |
 | V-07 | Rights record for the Sentinel-1 data | Accepted | accept | accept | accept |
 | V-08 | Which radar layers are read | Accepted | accept | accept | accept |
-| V-21 | Is the comparison enough, or is case O1 to be issued? | Waiting |  |  |  |
+| V-21 | Is the comparison enough, or is case O1 to be issued? | Accepted | accept | accept | accept |
 | V-09 | The table of case SE1 is what the team presents | Accepted | accept | accept | accept |
-| V-10 | The Ko Chang roads, looked at on a map | Waiting |  |  |  |
+| V-10 | The Ko Chang roads, looked at on a map | Accepted | accept | accept | accept |
 | V-11 | The five-minute pitch draft | Accepted | accept | accept | accept |
 | V-12 | The call to action | Accepted | accept | accept | accept |
 | V-13 | The table of who decides what | Accepted | accept | accept | accept |
 | V-14 | The answers to the questions of Session I | Accepted | accept | accept | accept |
 | V-15 | The order of work on the trained models | Accepted | accept | accept | accept |
-| V-16 | How the result changes with the flood input | Waiting |  |  |  |
-| V-17 | Radar set against the dated layer of 22 October 2024 at Mae Sai | Evidence not ready |  |  |  |
-| V-18 | The trained flood-susceptibility model | Waiting |  |  |  |
+| V-16 | How the result changes with the flood input | Accepted | accept | accept | accept |
+| V-17 | Radar set against the dated layer of 22 October 2024 at Mae Sai | Waiting |  |  |  |
+| V-18 | The trained flood-susceptibility model | Accepted | accept | accept | accept |
 | V-19 | The supervised flood classifier | Evidence not ready |  |  |  |
 | V-20 | THEOS-2 on Mae Sai itself | Evidence not ready |  |  |  |

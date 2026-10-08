@@ -1,6 +1,6 @@
 # Validation check: state of the team's acceptance
 
-Written by `scripts/import_validation_records.py` on 2026-10-08T07:06:31Z from 3 record(s). Do not edit by hand.
+Written by `scripts/import_validation_records.py` on 2026-10-08T07:27:54Z from 3 record(s). Do not edit by hand.
 
 This is the word of the three team members on the project's own work. It is not a review by an independent expert, it qualifies no flood map, and it is not an official approval.
 
@@ -16,7 +16,7 @@ This is the word of the three team members on the project's own work. It is not 
 | V-08 | Which radar layers are read | Accepted | accept | accept | accept |
 | V-21 | Is the comparison enough, or is case O1 to be issued? | Waiting |  |  |  |
 | V-09 | The table of case SE1 is what the team presents | Accepted | accept | accept | accept |
-| V-10 | The Ko Chang roads, looked at on a map | Evidence not ready |  |  |  |
+| V-10 | The Ko Chang roads, looked at on a map | Waiting |  |  |  |
 | V-11 | The five-minute pitch draft | Accepted | accept | accept | accept |
 | V-12 | The call to action | Accepted | accept | accept | accept |
 | V-13 | The table of who decides what | Accepted | accept | accept | accept |

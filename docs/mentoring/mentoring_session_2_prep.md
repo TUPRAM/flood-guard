@@ -21,7 +21,7 @@ each member records accept, change or reject (`docs/validation/README.md`).
 
 | Criterion | What we can show today | What is thin |
 |---|---|---|
-| Geo-intelligence quality (40%) | A scored case on eight real tambons (case SE1, the 2024 season-envelope scenario). It gives a result a flood map alone does not: **Ko Chang ranks above Mae Sai town because of lost road access, not flooded area.** An hour-by-hour replay of September 2024 with shelters, access and reported depths. A shelter-capacity gap. | The Ko Chang result has no map check of the roads that cut it off. The equity gap is not computed by age. No practitioner has read the result. |
+| Geo-intelligence quality (40%) | A scored case on eight real tambons (case SE1, the 2024 season-envelope scenario). It gives a result a flood map alone does not: **Ko Chang ranks above Mae Sai town because of lost road access, not flooded area.** An hour-by-hour replay of September 2024 with shelters, access and reported depths. A shelter-capacity gap. | The roads that cut Ko Chang off are now listed with a map (`docs/ko_chang_road_check.md`, 8 October), but nobody who knows the place has looked at them. The equity gap is not computed by age. No practitioner has read the result. |
 | GeoAI methodology (35%) | A documented pipeline with receipts and hashes; three radar methods tested and reported as they came out, including failures; a diagnosis of why they failed at Mae Sai; a 90-run uncertainty ensemble; a first check against THEOS-2. | No trained model is in the result. The radar candidates feed nothing. The proposal named a Random Forest or XGBoost refinement and it was not run. |
 | Communication and impact (25%) | Three views of one evidence base, bilingual, offline; a policy page; an exercise replay for coordinators; a demo video. | No five-minute pitch. The policy page still leads with an old example. Pages carry more caveats than findings. No stated call to action. |
 
@@ -153,8 +153,11 @@ judge who knows 2024 will ask. The answer: the class names a type of action,
 not a size of harm; the score beside it is 71, the second highest; and the
 proposal's own class wording (section 5.2) is run as a second reading that is
 not finished. Decide before the final whether to finish it (section 7).
-(2) Ko Chang's class rests on modelled closures. The roads have not been
-looked at on a map.
+(2) Ko Chang's class rests on modelled closures. The roads are listed on a
+desk sheet (`docs/ko_chang_road_check.md`): one unnamed road of 1.24 km in the
+next tambon, Si Mueang Chum, carries 56% of the result, and only five road
+pieces in Ko Chang carry a bridge tag. Nobody has looked at them on the ground
+or on an image.
 
 **A second finding, from the replay.** At the modelled peak the homes of about
 14,200 residents are in water. The eight shelter sites of the default plan
@@ -302,9 +305,11 @@ Agreement between two sensors 44 hours apart; not accuracy.
 2. Put the SE1 result at the top of the policy page; move the old example
    down or out.
 3. Draw the four-box pipeline and one slide of the THEOS-2 result.
-4. Look at Ko Chang on a map: which closed road pieces cut it off, and is any
-   of them a bridge or a raised road (plan task V1, Rachmania). One page with
-   a picture. Without it the lead result is open to the first question.
+4. Ko Chang on a map (plan task V1). **The desk sheet is done (8 October):**
+   `docs/ko_chang_road_check.md`, item V-10 of the team page. It lists the
+   closed road pieces that cut Ko Chang off and the eight roads to look at
+   first. Still open: someone who knows the place, or an image of September
+   2024, to say whether road 1 is raised or stayed passable (Rachmania).
 5. Find the mentor's written summary of Session I and tick it off.
 6. Decide the three questions of section 3 to put to the mentor.
 

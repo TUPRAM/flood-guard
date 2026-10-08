@@ -1,0 +1,76 @@
+{
+ "schema": "floodguard.dated_radar_check_receipt.v1",
+ "generated_at_utc": "2026-10-08T16:35:22Z",
+ "source_timestamp": "2024-10-22 (agency layer); Sentinel-1 2024-10-21T23:16:14Z",
+ "confidence_class": "low",
+ "confidence_basis": "One agency layer that was not checked in the field and one radar pass; no ground check.",
+ "operational_status": "non_operational",
+ "official_warning": false,
+ "can_feed_decision_layer": false,
+ "plan": {
+  "path": "docs/proposal_execution/dated_radar_check_plan_v1.md",
+  "sha256": "bb20a4976d5c934db14ffd1538c6163e8c5b8bdf496c31d397ef9fa6f96aaad4"
+ },
+ "inputs": {
+  "reference_record": {
+   "path": "outputs/dated_radar_check/mae_sai_20241022_reference_v1.json",
+   "sha256": "94618125c1a2291d04e66e4e4e5c8b90ce72c87fc806197b8f230aa3b68969e9"
+  },
+  "reference_archive_sha256": "1fe3243c2bc986d4111bb3d82aff292abccf7fb1bb1dd722747e994618b66e85",
+  "sentinel1": {
+   "post": {
+    "fetched_at_utc": "2026-10-08T16:22:34Z",
+    "item": "S1A_IW_GRDH_1SDV_20241021T231602_20241021T231627_056207_06E178_rtc",
+    "datetime": "2024-10-21T23:16:14.597912Z",
+    "platform": "SENTINEL-1A",
+    "relative_orbit": 135,
+    "orbit_state": "descending",
+    "window_file": "s1_post_gamma0.tif",
+    "window_sha256": "4b1c91efb65479ad1349102052e57c4ebbde9dc30dd9dee1e1060a8e2417e064"
+   },
+   "before_primary": {
+    "fetched_at_utc": "2026-10-08T16:26:28Z",
+    "item": "S1A_IW_GRDH_1SDV_20240822T231600_20240822T231625_055332_06BF48_rtc",
+    "datetime": "2024-08-22T23:16:13.221460Z",
+    "platform": "SENTINEL-1A",
+    "relative_orbit": 135,
+    "orbit_state": "descending",
+    "window_file": "s1_before_primary_gamma0.tif",
+    "window_sha256": "27e13efc39fbe25720864792599a2abf915277b68d8e1560cbe9fc2130f4ccac"
+   },
+   "before_second": {
+    "fetched_at_utc": "2026-10-08T16:30:24Z",
+    "item": "S1A_IW_GRDH_1SDV_20240412T231601_20240412T231626_053407_067A69_rtc",
+    "datetime": "2024-04-12T23:16:13.657537Z",
+    "platform": "SENTINEL-1A",
+    "relative_orbit": 135,
+    "orbit_state": "descending",
+    "window_file": "s1_before_second_gamma0.tif",
+    "window_sha256": "45d28ce592443938d4781f502610e6248705dfbdfdd6742c12786ba2111e12f4"
+   }
+  },
+  "worldcover": "https://esa-worldcover.s3.eu-central-1.amazonaws.com/v200/2021/map/ESA_WorldCover_10m_2021_v200_N18E099_Map.tif",
+  "dem": [
+   "https://copernicus-dem-30m.s3.amazonaws.com/Copernicus_DSM_COG_10_N20_00_E099_00_DEM/Copernicus_DSM_COG_10_N20_00_E099_00_DEM.tif",
+   "https://copernicus-dem-30m.s3.amazonaws.com/Copernicus_DSM_COG_10_N20_00_E100_00_DEM/Copernicus_DSM_COG_10_N20_00_E100_00_DEM.tif",
+   "https://copernicus-dem-30m.s3.amazonaws.com/Copernicus_DSM_COG_10_N19_00_E099_00_DEM/Copernicus_DSM_COG_10_N19_00_E099_00_DEM.tif",
+   "https://copernicus-dem-30m.s3.amazonaws.com/Copernicus_DSM_COG_10_N19_00_E100_00_DEM/Copernicus_DSM_COG_10_N19_00_E100_00_DEM.tif"
+  ]
+ },
+ "outputs": {
+  "outputs/dated_radar_check/mae_sai_20241022_v1.json": {
+   "sha256": "06954c1613803e1831b7a6ccb6a4b6626f6689d65a1e392bf91f2492b4df8fe1"
+  },
+  "outside_git": {
+   "mae_sai_20241022_v1_overview.png": {
+    "sha256": "ff7a15b5043f76d78a87f0a88a17e0544ccef92b0979e77ab5ca9227523e042b"
+   }
+  }
+ },
+ "code": {
+  "scripts/build_dated_radar_check.py": "40507e136f0740d0cb61372cdb06a5fb1b35cf1eb019d297eed9607e1aace5fd",
+  "src/floodguard/dated_radar_check.py": "75f542e4f7534b80489e5b50603a230d77e639b9a4aba619d9cab0e53cd1ce8a",
+  "src/floodguard/radar_candidates.py": "0d6fdbd8ce4bcd22ce4628208f2af47055cceb1e1ae9e4dd15ab5e22dcf5ece0",
+  "src/floodguard/sar_change_v2.py": "3127b370303b08902dc545442f7aa5a2aa54d283b471c0d65f5899c9c19e1134"
+ }
+}

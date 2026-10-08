@@ -1,6 +1,6 @@
 # Validation check: state of the team's acceptance
 
-Written by `scripts/import_validation_records.py` on 2026-10-08T16:09:13Z from 6 record(s). Do not edit by hand.
+Written by `scripts/import_validation_records.py` on 2026-10-08T16:36:47Z from 6 record(s). Do not edit by hand.
 
 This is the word of the three team members on the project's own work. It is not a review by an independent expert, it qualifies no flood map, and it is not an official approval.
 
@@ -23,7 +23,7 @@ This is the word of the three team members on the project's own work. It is not 
 | V-14 | The answers to the questions of Session I | Accepted | accept | accept | accept |
 | V-15 | The order of work on the trained models | Accepted | accept | accept | accept |
 | V-16 | How the result changes with the flood input | Accepted | accept | accept | accept |
-| V-17 | Radar set against the dated layer of 22 October 2024 at Mae Sai | Evidence not ready |  |  |  |
+| V-17 | Radar set against the dated layer of 22 October 2024 at Mae Sai | Waiting |  |  |  |
 | V-18 | The trained flood-susceptibility model | Accepted | accept | accept | accept |
 | V-19 | The supervised flood classifier | Evidence not ready |  |  |  |
 | V-20 | THEOS-2 on Mae Sai itself | Evidence not ready |  |  |  |

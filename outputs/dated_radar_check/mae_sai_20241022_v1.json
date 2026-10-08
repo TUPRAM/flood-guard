@@ -1,0 +1,1262 @@
+{
+ "schema": "floodguard.dated_radar_check.v1",
+ "generated_at_utc": "2026-10-08T16:35:22Z",
+ "source_timestamp": "2024-10-22 (agency layer); Sentinel-1 2024-10-21T23:16:14Z",
+ "confidence_class": "low",
+ "confidence_basis": "One agency layer that was not checked in the field and one radar pass; no ground check.",
+ "operational_status": "non_operational",
+ "official_warning": false,
+ "can_feed_decision_layer": false,
+ "plan": {
+  "path": "docs/proposal_execution/dated_radar_check_plan_v1.md",
+  "sha256": "bb20a4976d5c934db14ffd1538c6163e8c5b8bdf496c31d397ef9fa6f96aaad4"
+ },
+ "what_this_is": "Agreement of the three radar flood candidates with the layer UNOSAT and GISTDA dated 22 October 2024, in Mae Sai district. Whole-district counts and shares.",
+ "label": "Agreement with an agency layer that was not checked in the field; not accuracy.",
+ "rights_note": "The dated layer is held at the local level (decision log R33): the rasters and the figure stay outside Git, and no table by tambon is written.",
+ "reference_record": {
+  "path": "outputs/dated_radar_check/mae_sai_20241022_reference_v1.json",
+  "sha256": "94618125c1a2291d04e66e4e4e5c8b90ce72c87fc806197b8f230aa3b68969e9"
+ },
+ "times": {
+  "agency_layer_date": "2024-10-22",
+  "radar_after_utc": "2024-10-21T23:16:14.597912Z",
+  "radar_after_local_time": "22 October 2024, 06:16 (UTC+7)",
+  "radar_before_primary_utc": "2024-08-22T23:16:13.221460Z",
+  "radar_before_second_utc": "2024-04-12T23:16:13.657537Z"
+ },
+ "compared_cells": {
+  "cells": 3045629,
+  "km2": 304.5629,
+  "frame_cells_without_radar_after": 0,
+  "reference_wet_cells": 36189,
+  "reference_wet_km2": 3.6189
+ },
+ "frame_counts": {
+  "district_cells": 3055567,
+  "district_km2": 305.5567,
+  "permanent_water_cells_left_out": 9938,
+  "frame_cells": 3045629,
+  "reference_cells_in_the_district": 36781,
+  "reference_km2_in_the_district": 3.6781,
+  "reference_cells_on_permanent_water_left_out": 592,
+  "reference_cells_in_the_frame": 36189,
+  "reference_km2_in_the_frame": 3.6189,
+  "reference_share_of_the_frame": 0.011882,
+  "reference_cells_inside_the_season_layer": 36478,
+  "reference_share_inside_the_season_layer": 0.991762
+ },
+ "readings": {
+  "primary": {
+   "un_spider": {
+    "flood_input_name": "UN-SPIDER reproduction",
+    "all_compared_cells": {
+     "compared_cells": 3045629,
+     "answered_cells": 3045629,
+     "answered_share": 1.0,
+     "on_answered_cells": {
+      "cells": 3045629,
+      "tp": 50,
+      "fp": 5602,
+      "fn": 36139,
+      "tn": 3003838,
+      "candidate_km2": 0.5652,
+      "reference_wet_km2": 3.6189,
+      "iou": 0.001196,
+      "precision": 0.008846,
+      "recall": 0.001382,
+      "f1": 0.00239
+     },
+     "strict_no_answer_counts_as_not_a_candidate": {
+      "cells": 3045629,
+      "tp": 50,
+      "fp": 5602,
+      "fn": 36139,
+      "tn": 3003838,
+      "candidate_km2": 0.5652,
+      "reference_wet_km2": 3.6189,
+      "iou": 0.001196,
+      "precision": 0.008846,
+      "recall": 0.001382,
+      "f1": 0.00239
+     }
+    },
+    "without_cells_at_the_edge_of_the_layer": {
+     "compared_cells": 3005877,
+     "answered_cells": 3005877,
+     "answered_share": 1.0,
+     "on_answered_cells": {
+      "cells": 3005877,
+      "tp": 16,
+      "fp": 5490,
+      "fn": 23698,
+      "tn": 2976673,
+      "candidate_km2": 0.5506,
+      "reference_wet_km2": 2.3714,
+      "iou": 0.000548,
+      "precision": 0.002906,
+      "recall": 0.000675,
+      "f1": 0.001095
+     },
+     "strict_no_answer_counts_as_not_a_candidate": {
+      "cells": 3005877,
+      "tp": 16,
+      "fp": 5490,
+      "fn": 23698,
+      "tn": 2976673,
+      "candidate_km2": 0.5506,
+      "reference_wet_km2": 2.3714,
+      "iou": 0.000548,
+      "precision": 0.002906,
+      "recall": 0.000675,
+      "f1": 0.001095
+     }
+    },
+    "by_land_cover_worldcover_2021": {
+     "built_up": {
+      "compared_cells": 237020,
+      "answered_cells": 237020,
+      "answered_share": 1.0,
+      "on_answered_cells": {
+       "cells": 237020,
+       "tp": 0,
+       "fp": 293,
+       "fn": 35,
+       "tn": 236692,
+       "candidate_km2": 0.0293,
+       "reference_wet_km2": 0.0035,
+       "iou": 0.0,
+       "precision": 0.0,
+       "recall": 0.0,
+       "f1": 0.0
+      },
+      "strict_no_answer_counts_as_not_a_candidate": {
+       "cells": 237020,
+       "tp": 0,
+       "fp": 293,
+       "fn": 35,
+       "tn": 236692,
+       "candidate_km2": 0.0293,
+       "reference_wet_km2": 0.0035,
+       "iou": 0.0,
+       "precision": 0.0,
+       "recall": 0.0,
+       "f1": 0.0
+      }
+     },
+     "cropland": {
+      "compared_cells": 1713380,
+      "answered_cells": 1713380,
+      "answered_share": 1.0,
+      "on_answered_cells": {
+       "cells": 1713380,
+       "tp": 40,
+       "fp": 4063,
+       "fn": 35545,
+       "tn": 1673732,
+       "candidate_km2": 0.4103,
+       "reference_wet_km2": 3.5585,
+       "iou": 0.001009,
+       "precision": 0.009749,
+       "recall": 0.001124,
+       "f1": 0.002016
+      },
+      "strict_no_answer_counts_as_not_a_candidate": {
+       "cells": 1713380,
+       "tp": 40,
+       "fp": 4063,
+       "fn": 35545,
+       "tn": 1673732,
+       "candidate_km2": 0.4103,
+       "reference_wet_km2": 3.5585,
+       "iou": 0.001009,
+       "precision": 0.009749,
+       "recall": 0.001124,
+       "f1": 0.002016
+      }
+     },
+     "tree_cover": {
+      "compared_cells": 987081,
+      "answered_cells": 987081,
+      "answered_share": 1.0,
+      "on_answered_cells": {
+       "cells": 987081,
+       "tp": 8,
+       "fp": 901,
+       "fn": 378,
+       "tn": 985794,
+       "candidate_km2": 0.0909,
+       "reference_wet_km2": 0.0386,
+       "iou": 0.006216,
+       "precision": 0.008801,
+       "recall": 0.020725,
+       "f1": 0.012355
+      },
+      "strict_no_answer_counts_as_not_a_candidate": {
+       "cells": 987081,
+       "tp": 8,
+       "fp": 901,
+       "fn": 378,
+       "tn": 985794,
+       "candidate_km2": 0.0909,
+       "reference_wet_km2": 0.0386,
+       "iou": 0.006216,
+       "precision": 0.008801,
+       "recall": 0.020725,
+       "f1": 0.012355
+      }
+     },
+     "other": {
+      "compared_cells": 108148,
+      "answered_cells": 108148,
+      "answered_share": 1.0,
+      "on_answered_cells": {
+       "cells": 108148,
+       "tp": 2,
+       "fp": 345,
+       "fn": 181,
+       "tn": 107620,
+       "candidate_km2": 0.0347,
+       "reference_wet_km2": 0.0183,
+       "iou": 0.003788,
+       "precision": 0.005764,
+       "recall": 0.010929,
+       "f1": 0.007547
+      },
+      "strict_no_answer_counts_as_not_a_candidate": {
+       "cells": 108148,
+       "tp": 2,
+       "fp": 345,
+       "fn": 181,
+       "tn": 107620,
+       "candidate_km2": 0.0347,
+       "reference_wet_km2": 0.0183,
+       "iou": 0.003788,
+       "precision": 0.005764,
+       "recall": 0.010929,
+       "f1": 0.007547
+      }
+     }
+    }
+   },
+   "m1_literal": {
+    "flood_input_name": "M1-literal",
+    "all_compared_cells": {
+     "compared_cells": 3045629,
+     "answered_cells": 3045629,
+     "answered_share": 1.0,
+     "on_answered_cells": {
+      "cells": 3045629,
+      "tp": 5063,
+      "fp": 1052907,
+      "fn": 31126,
+      "tn": 1956533,
+      "candidate_km2": 105.797,
+      "reference_wet_km2": 3.6189,
+      "iou": 0.004649,
+      "precision": 0.004786,
+      "recall": 0.139904,
+      "f1": 0.009255
+     },
+     "strict_no_answer_counts_as_not_a_candidate": {
+      "cells": 3045629,
+      "tp": 5063,
+      "fp": 1052907,
+      "fn": 31126,
+      "tn": 1956533,
+      "candidate_km2": 105.797,
+      "reference_wet_km2": 3.6189,
+      "iou": 0.004649,
+      "precision": 0.004786,
+      "recall": 0.139904,
+      "f1": 0.009255
+     }
+    },
+    "without_cells_at_the_edge_of_the_layer": {
+     "compared_cells": 3005877,
+     "answered_cells": 3005877,
+     "answered_share": 1.0,
+     "on_answered_cells": {
+      "cells": 3005877,
+      "tp": 3358,
+      "fp": 1044581,
+      "fn": 20356,
+      "tn": 1937582,
+      "candidate_km2": 104.7939,
+      "reference_wet_km2": 2.3714,
+      "iou": 0.003143,
+      "precision": 0.003204,
+      "recall": 0.141604,
+      "f1": 0.006267
+     },
+     "strict_no_answer_counts_as_not_a_candidate": {
+      "cells": 3005877,
+      "tp": 3358,
+      "fp": 1044581,
+      "fn": 20356,
+      "tn": 1937582,
+      "candidate_km2": 104.7939,
+      "reference_wet_km2": 2.3714,
+      "iou": 0.003143,
+      "precision": 0.003204,
+      "recall": 0.141604,
+      "f1": 0.006267
+     }
+    },
+    "by_land_cover_worldcover_2021": {
+     "built_up": {
+      "compared_cells": 237020,
+      "answered_cells": 237020,
+      "answered_share": 1.0,
+      "on_answered_cells": {
+       "cells": 237020,
+       "tp": 11,
+       "fp": 121643,
+       "fn": 24,
+       "tn": 115342,
+       "candidate_km2": 12.1654,
+       "reference_wet_km2": 0.0035,
+       "iou": 9e-05,
+       "precision": 9e-05,
+       "recall": 0.314286,
+       "f1": 0.000181
+      },
+      "strict_no_answer_counts_as_not_a_candidate": {
+       "cells": 237020,
+       "tp": 11,
+       "fp": 121643,
+       "fn": 24,
+       "tn": 115342,
+       "candidate_km2": 12.1654,
+       "reference_wet_km2": 0.0035,
+       "iou": 9e-05,
+       "precision": 9e-05,
+       "recall": 0.314286,
+       "f1": 0.000181
+      }
+     },
+     "cropland": {
+      "compared_cells": 1713380,
+      "answered_cells": 1713380,
+      "answered_share": 1.0,
+      "on_answered_cells": {
+       "cells": 1713380,
+       "tp": 4808,
+       "fp": 324938,
+       "fn": 30777,
+       "tn": 1352857,
+       "candidate_km2": 32.9746,
+       "reference_wet_km2": 3.5585,
+       "iou": 0.013336,
+       "precision": 0.014581,
+       "recall": 0.135113,
+       "f1": 0.026321
+      },
+      "strict_no_answer_counts_as_not_a_candidate": {
+       "cells": 1713380,
+       "tp": 4808,
+       "fp": 324938,
+       "fn": 30777,
+       "tn": 1352857,
+       "candidate_km2": 32.9746,
+       "reference_wet_km2": 3.5585,
+       "iou": 0.013336,
+       "precision": 0.014581,
+       "recall": 0.135113,
+       "f1": 0.026321
+      }
+     },
+     "tree_cover": {
+      "compared_cells": 987081,
+      "answered_cells": 987081,
+      "answered_share": 1.0,
+      "on_answered_cells": {
+       "cells": 987081,
+       "tp": 130,
+       "fp": 553366,
+       "fn": 256,
+       "tn": 433329,
+       "candidate_km2": 55.3496,
+       "reference_wet_km2": 0.0386,
+       "iou": 0.000235,
+       "precision": 0.000235,
+       "recall": 0.336788,
+       "f1": 0.000469
+      },
+      "strict_no_answer_counts_as_not_a_candidate": {
+       "cells": 987081,
+       "tp": 130,
+       "fp": 553366,
+       "fn": 256,
+       "tn": 433329,
+       "candidate_km2": 55.3496,
+       "reference_wet_km2": 0.0386,
+       "iou": 0.000235,
+       "precision": 0.000235,
+       "recall": 0.336788,
+       "f1": 0.000469
+      }
+     },
+     "other": {
+      "compared_cells": 108148,
+      "answered_cells": 108148,
+      "answered_share": 1.0,
+      "on_answered_cells": {
+       "cells": 108148,
+       "tp": 114,
+       "fp": 52960,
+       "fn": 69,
+       "tn": 55005,
+       "candidate_km2": 5.3074,
+       "reference_wet_km2": 0.0183,
+       "iou": 0.002145,
+       "precision": 0.002148,
+       "recall": 0.622951,
+       "f1": 0.004281
+      },
+      "strict_no_answer_counts_as_not_a_candidate": {
+       "cells": 108148,
+       "tp": 114,
+       "fp": 52960,
+       "fn": 69,
+       "tn": 55005,
+       "candidate_km2": 5.3074,
+       "reference_wet_km2": 0.0183,
+       "iou": 0.002145,
+       "precision": 0.002148,
+       "recall": 0.622951,
+       "f1": 0.004281
+      }
+     }
+    }
+   },
+   "m1_v2": {
+    "flood_input_name": "M1-v2",
+    "all_compared_cells": {
+     "compared_cells": 3045629,
+     "answered_cells": 13095,
+     "answered_share": 0.0043,
+     "on_answered_cells": {
+      "cells": 13095,
+      "tp": 0,
+      "fp": 35,
+      "fn": 0,
+      "tn": 13060,
+      "candidate_km2": 0.0035,
+      "reference_wet_km2": 0.0,
+      "iou": 0.0,
+      "precision": 0.0,
+      "recall": null,
+      "f1": 0.0
+     },
+     "strict_no_answer_counts_as_not_a_candidate": {
+      "cells": 3045629,
+      "tp": 0,
+      "fp": 35,
+      "fn": 36189,
+      "tn": 3009405,
+      "candidate_km2": 0.0035,
+      "reference_wet_km2": 3.6189,
+      "iou": 0.0,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0
+     }
+    },
+    "without_cells_at_the_edge_of_the_layer": {
+     "compared_cells": 3005877,
+     "answered_cells": 12639,
+     "answered_share": 0.004205,
+     "on_answered_cells": {
+      "cells": 12639,
+      "tp": 0,
+      "fp": 22,
+      "fn": 0,
+      "tn": 12617,
+      "candidate_km2": 0.0022,
+      "reference_wet_km2": 0.0,
+      "iou": 0.0,
+      "precision": 0.0,
+      "recall": null,
+      "f1": 0.0
+     },
+     "strict_no_answer_counts_as_not_a_candidate": {
+      "cells": 3005877,
+      "tp": 0,
+      "fp": 22,
+      "fn": 23714,
+      "tn": 2982141,
+      "candidate_km2": 0.0022,
+      "reference_wet_km2": 2.3714,
+      "iou": 0.0,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0
+     }
+    },
+    "by_land_cover_worldcover_2021": {
+     "built_up": {
+      "compared_cells": 237020,
+      "answered_cells": 607,
+      "answered_share": 0.002561,
+      "on_answered_cells": {
+       "cells": 607,
+       "tp": 0,
+       "fp": 4,
+       "fn": 0,
+       "tn": 603,
+       "candidate_km2": 0.0004,
+       "reference_wet_km2": 0.0,
+       "iou": 0.0,
+       "precision": 0.0,
+       "recall": null,
+       "f1": 0.0
+      },
+      "strict_no_answer_counts_as_not_a_candidate": {
+       "cells": 237020,
+       "tp": 0,
+       "fp": 4,
+       "fn": 35,
+       "tn": 236981,
+       "candidate_km2": 0.0004,
+       "reference_wet_km2": 0.0035,
+       "iou": 0.0,
+       "precision": 0.0,
+       "recall": 0.0,
+       "f1": 0.0
+      }
+     },
+     "cropland": {
+      "compared_cells": 1713380,
+      "answered_cells": 10158,
+      "answered_share": 0.005929,
+      "on_answered_cells": {
+       "cells": 10158,
+       "tp": 0,
+       "fp": 4,
+       "fn": 0,
+       "tn": 10154,
+       "candidate_km2": 0.0004,
+       "reference_wet_km2": 0.0,
+       "iou": 0.0,
+       "precision": 0.0,
+       "recall": null,
+       "f1": 0.0
+      },
+      "strict_no_answer_counts_as_not_a_candidate": {
+       "cells": 1713380,
+       "tp": 0,
+       "fp": 4,
+       "fn": 35585,
+       "tn": 1677791,
+       "candidate_km2": 0.0004,
+       "reference_wet_km2": 3.5585,
+       "iou": 0.0,
+       "precision": 0.0,
+       "recall": 0.0,
+       "f1": 0.0
+      }
+     },
+     "tree_cover": {
+      "compared_cells": 987081,
+      "answered_cells": 2053,
+      "answered_share": 0.00208,
+      "on_answered_cells": {
+       "cells": 2053,
+       "tp": 0,
+       "fp": 27,
+       "fn": 0,
+       "tn": 2026,
+       "candidate_km2": 0.0027,
+       "reference_wet_km2": 0.0,
+       "iou": 0.0,
+       "precision": 0.0,
+       "recall": null,
+       "f1": 0.0
+      },
+      "strict_no_answer_counts_as_not_a_candidate": {
+       "cells": 987081,
+       "tp": 0,
+       "fp": 27,
+       "fn": 386,
+       "tn": 986668,
+       "candidate_km2": 0.0027,
+       "reference_wet_km2": 0.0386,
+       "iou": 0.0,
+       "precision": 0.0,
+       "recall": 0.0,
+       "f1": 0.0
+      }
+     },
+     "other": {
+      "compared_cells": 108148,
+      "answered_cells": 277,
+      "answered_share": 0.002561,
+      "on_answered_cells": {
+       "cells": 277,
+       "tp": 0,
+       "fp": 0,
+       "fn": 0,
+       "tn": 277,
+       "candidate_km2": 0.0,
+       "reference_wet_km2": 0.0,
+       "iou": null,
+       "precision": null,
+       "recall": null,
+       "f1": null
+      },
+      "strict_no_answer_counts_as_not_a_candidate": {
+       "cells": 108148,
+       "tp": 0,
+       "fp": 0,
+       "fn": 183,
+       "tn": 107965,
+       "candidate_km2": 0.0,
+       "reference_wet_km2": 0.0183,
+       "iou": 0.0,
+       "precision": null,
+       "recall": 0.0,
+       "f1": 0.0
+      }
+     }
+    }
+   }
+  },
+  "second": {
+   "un_spider": {
+    "flood_input_name": "UN-SPIDER reproduction",
+    "all_compared_cells": {
+     "compared_cells": 3045629,
+     "answered_cells": 3045629,
+     "answered_share": 1.0,
+     "on_answered_cells": {
+      "cells": 3045629,
+      "tp": 25254,
+      "fp": 40861,
+      "fn": 10935,
+      "tn": 2968579,
+      "candidate_km2": 6.6115,
+      "reference_wet_km2": 3.6189,
+      "iou": 0.327761,
+      "precision": 0.381971,
+      "recall": 0.697836,
+      "f1": 0.493705
+     },
+     "strict_no_answer_counts_as_not_a_candidate": {
+      "cells": 3045629,
+      "tp": 25254,
+      "fp": 40861,
+      "fn": 10935,
+      "tn": 2968579,
+      "candidate_km2": 6.6115,
+      "reference_wet_km2": 3.6189,
+      "iou": 0.327761,
+      "precision": 0.381971,
+      "recall": 0.697836,
+      "f1": 0.493705
+     }
+    },
+    "without_cells_at_the_edge_of_the_layer": {
+     "compared_cells": 3005877,
+     "answered_cells": 3005877,
+     "answered_share": 1.0,
+     "on_answered_cells": {
+      "cells": 3005877,
+      "tp": 18077,
+      "fp": 33625,
+      "fn": 5637,
+      "tn": 2948538,
+      "candidate_km2": 5.1702,
+      "reference_wet_km2": 2.3714,
+      "iou": 0.315265,
+      "precision": 0.349638,
+      "recall": 0.762292,
+      "f1": 0.479394
+     },
+     "strict_no_answer_counts_as_not_a_candidate": {
+      "cells": 3005877,
+      "tp": 18077,
+      "fp": 33625,
+      "fn": 5637,
+      "tn": 2948538,
+      "candidate_km2": 5.1702,
+      "reference_wet_km2": 2.3714,
+      "iou": 0.315265,
+      "precision": 0.349638,
+      "recall": 0.762292,
+      "f1": 0.479394
+     }
+    },
+    "by_land_cover_worldcover_2021": {
+     "built_up": {
+      "compared_cells": 237020,
+      "answered_cells": 237020,
+      "answered_share": 1.0,
+      "on_answered_cells": {
+       "cells": 237020,
+       "tp": 2,
+       "fp": 197,
+       "fn": 33,
+       "tn": 236788,
+       "candidate_km2": 0.0199,
+       "reference_wet_km2": 0.0035,
+       "iou": 0.008621,
+       "precision": 0.01005,
+       "recall": 0.057143,
+       "f1": 0.017094
+      },
+      "strict_no_answer_counts_as_not_a_candidate": {
+       "cells": 237020,
+       "tp": 2,
+       "fp": 197,
+       "fn": 33,
+       "tn": 236788,
+       "candidate_km2": 0.0199,
+       "reference_wet_km2": 0.0035,
+       "iou": 0.008621,
+       "precision": 0.01005,
+       "recall": 0.057143,
+       "f1": 0.017094
+      }
+     },
+     "cropland": {
+      "compared_cells": 1713380,
+      "answered_cells": 1713380,
+      "answered_share": 1.0,
+      "on_answered_cells": {
+       "cells": 1713380,
+       "tp": 24982,
+       "fp": 37717,
+       "fn": 10603,
+       "tn": 1640078,
+       "candidate_km2": 6.2699,
+       "reference_wet_km2": 3.5585,
+       "iou": 0.340809,
+       "precision": 0.398443,
+       "recall": 0.702037,
+       "f1": 0.508364
+      },
+      "strict_no_answer_counts_as_not_a_candidate": {
+       "cells": 1713380,
+       "tp": 24982,
+       "fp": 37717,
+       "fn": 10603,
+       "tn": 1640078,
+       "candidate_km2": 6.2699,
+       "reference_wet_km2": 3.5585,
+       "iou": 0.340809,
+       "precision": 0.398443,
+       "recall": 0.702037,
+       "f1": 0.508364
+      }
+     },
+     "tree_cover": {
+      "compared_cells": 987081,
+      "answered_cells": 987081,
+      "answered_share": 1.0,
+      "on_answered_cells": {
+       "cells": 987081,
+       "tp": 243,
+       "fp": 2324,
+       "fn": 143,
+       "tn": 984371,
+       "candidate_km2": 0.2567,
+       "reference_wet_km2": 0.0386,
+       "iou": 0.089668,
+       "precision": 0.094663,
+       "recall": 0.629534,
+       "f1": 0.164578
+      },
+      "strict_no_answer_counts_as_not_a_candidate": {
+       "cells": 987081,
+       "tp": 243,
+       "fp": 2324,
+       "fn": 143,
+       "tn": 984371,
+       "candidate_km2": 0.2567,
+       "reference_wet_km2": 0.0386,
+       "iou": 0.089668,
+       "precision": 0.094663,
+       "recall": 0.629534,
+       "f1": 0.164578
+      }
+     },
+     "other": {
+      "compared_cells": 108148,
+      "answered_cells": 108148,
+      "answered_share": 1.0,
+      "on_answered_cells": {
+       "cells": 108148,
+       "tp": 27,
+       "fp": 623,
+       "fn": 156,
+       "tn": 107342,
+       "candidate_km2": 0.065,
+       "reference_wet_km2": 0.0183,
+       "iou": 0.033499,
+       "precision": 0.041538,
+       "recall": 0.147541,
+       "f1": 0.064826
+      },
+      "strict_no_answer_counts_as_not_a_candidate": {
+       "cells": 108148,
+       "tp": 27,
+       "fp": 623,
+       "fn": 156,
+       "tn": 107342,
+       "candidate_km2": 0.065,
+       "reference_wet_km2": 0.0183,
+       "iou": 0.033499,
+       "precision": 0.041538,
+       "recall": 0.147541,
+       "f1": 0.064826
+      }
+     }
+    }
+   },
+   "m1_literal": {
+    "flood_input_name": "M1-literal",
+    "all_compared_cells": {
+     "compared_cells": 3045629,
+     "answered_cells": 3045629,
+     "answered_share": 1.0,
+     "on_answered_cells": {
+      "cells": 3045629,
+      "tp": 35647,
+      "fp": 984989,
+      "fn": 542,
+      "tn": 2024451,
+      "candidate_km2": 102.0636,
+      "reference_wet_km2": 3.6189,
+      "iou": 0.034908,
+      "precision": 0.034926,
+      "recall": 0.985023,
+      "f1": 0.067461
+     },
+     "strict_no_answer_counts_as_not_a_candidate": {
+      "cells": 3045629,
+      "tp": 35647,
+      "fp": 984989,
+      "fn": 542,
+      "tn": 2024451,
+      "candidate_km2": 102.0636,
+      "reference_wet_km2": 3.6189,
+      "iou": 0.034908,
+      "precision": 0.034926,
+      "recall": 0.985023,
+      "f1": 0.067461
+     }
+    },
+    "without_cells_at_the_edge_of_the_layer": {
+     "compared_cells": 3005877,
+     "answered_cells": 3005877,
+     "answered_share": 1.0,
+     "on_answered_cells": {
+      "cells": 3005877,
+      "tp": 23546,
+      "fp": 965985,
+      "fn": 168,
+      "tn": 2016178,
+      "candidate_km2": 98.9531,
+      "reference_wet_km2": 2.3714,
+      "iou": 0.023791,
+      "precision": 0.023795,
+      "recall": 0.992916,
+      "f1": 0.046476
+     },
+     "strict_no_answer_counts_as_not_a_candidate": {
+      "cells": 3005877,
+      "tp": 23546,
+      "fp": 965985,
+      "fn": 168,
+      "tn": 2016178,
+      "candidate_km2": 98.9531,
+      "reference_wet_km2": 2.3714,
+      "iou": 0.023791,
+      "precision": 0.023795,
+      "recall": 0.992916,
+      "f1": 0.046476
+     }
+    },
+    "by_land_cover_worldcover_2021": {
+     "built_up": {
+      "compared_cells": 237020,
+      "answered_cells": 237020,
+      "answered_share": 1.0,
+      "on_answered_cells": {
+       "cells": 237020,
+       "tp": 22,
+       "fp": 80595,
+       "fn": 13,
+       "tn": 156390,
+       "candidate_km2": 8.0617,
+       "reference_wet_km2": 0.0035,
+       "iou": 0.000273,
+       "precision": 0.000273,
+       "recall": 0.628571,
+       "f1": 0.000546
+      },
+      "strict_no_answer_counts_as_not_a_candidate": {
+       "cells": 237020,
+       "tp": 22,
+       "fp": 80595,
+       "fn": 13,
+       "tn": 156390,
+       "candidate_km2": 8.0617,
+       "reference_wet_km2": 0.0035,
+       "iou": 0.000273,
+       "precision": 0.000273,
+       "recall": 0.628571,
+       "f1": 0.000546
+      }
+     },
+     "cropland": {
+      "compared_cells": 1713380,
+      "answered_cells": 1713380,
+      "answered_share": 1.0,
+      "on_answered_cells": {
+       "cells": 1713380,
+       "tp": 35147,
+       "fp": 489755,
+       "fn": 438,
+       "tn": 1188040,
+       "candidate_km2": 52.4902,
+       "reference_wet_km2": 3.5585,
+       "iou": 0.066903,
+       "precision": 0.066959,
+       "recall": 0.987691,
+       "f1": 0.125416
+      },
+      "strict_no_answer_counts_as_not_a_candidate": {
+       "cells": 1713380,
+       "tp": 35147,
+       "fp": 489755,
+       "fn": 438,
+       "tn": 1188040,
+       "candidate_km2": 52.4902,
+       "reference_wet_km2": 3.5585,
+       "iou": 0.066903,
+       "precision": 0.066959,
+       "recall": 0.987691,
+       "f1": 0.125416
+      }
+     },
+     "tree_cover": {
+      "compared_cells": 987081,
+      "answered_cells": 987081,
+      "answered_share": 1.0,
+      "on_answered_cells": {
+       "cells": 987081,
+       "tp": 335,
+       "fp": 385916,
+       "fn": 51,
+       "tn": 600779,
+       "candidate_km2": 38.6251,
+       "reference_wet_km2": 0.0386,
+       "iou": 0.000867,
+       "precision": 0.000867,
+       "recall": 0.867876,
+       "f1": 0.001733
+      },
+      "strict_no_answer_counts_as_not_a_candidate": {
+       "cells": 987081,
+       "tp": 335,
+       "fp": 385916,
+       "fn": 51,
+       "tn": 600779,
+       "candidate_km2": 38.6251,
+       "reference_wet_km2": 0.0386,
+       "iou": 0.000867,
+       "precision": 0.000867,
+       "recall": 0.867876,
+       "f1": 0.001733
+      }
+     },
+     "other": {
+      "compared_cells": 108148,
+      "answered_cells": 108148,
+      "answered_share": 1.0,
+      "on_answered_cells": {
+       "cells": 108148,
+       "tp": 143,
+       "fp": 28723,
+       "fn": 40,
+       "tn": 79242,
+       "candidate_km2": 2.8866,
+       "reference_wet_km2": 0.0183,
+       "iou": 0.004947,
+       "precision": 0.004954,
+       "recall": 0.781421,
+       "f1": 0.009845
+      },
+      "strict_no_answer_counts_as_not_a_candidate": {
+       "cells": 108148,
+       "tp": 143,
+       "fp": 28723,
+       "fn": 40,
+       "tn": 79242,
+       "candidate_km2": 2.8866,
+       "reference_wet_km2": 0.0183,
+       "iou": 0.004947,
+       "precision": 0.004954,
+       "recall": 0.781421,
+       "f1": 0.009845
+      }
+     }
+    }
+   },
+   "m1_v2": {
+    "flood_input_name": "M1-v2",
+    "all_compared_cells": {
+     "compared_cells": 3045629,
+     "answered_cells": 0,
+     "answered_share": 0.0,
+     "on_answered_cells": {
+      "cells": 0,
+      "tp": 0,
+      "fp": 0,
+      "fn": 0,
+      "tn": 0,
+      "candidate_km2": 0.0,
+      "reference_wet_km2": 0.0,
+      "iou": null,
+      "precision": null,
+      "recall": null,
+      "f1": null
+     },
+     "strict_no_answer_counts_as_not_a_candidate": {
+      "cells": 3045629,
+      "tp": 0,
+      "fp": 0,
+      "fn": 36189,
+      "tn": 3009440,
+      "candidate_km2": 0.0,
+      "reference_wet_km2": 3.6189,
+      "iou": 0.0,
+      "precision": null,
+      "recall": 0.0,
+      "f1": 0.0
+     }
+    },
+    "without_cells_at_the_edge_of_the_layer": {
+     "compared_cells": 3005877,
+     "answered_cells": 0,
+     "answered_share": 0.0,
+     "on_answered_cells": {
+      "cells": 0,
+      "tp": 0,
+      "fp": 0,
+      "fn": 0,
+      "tn": 0,
+      "candidate_km2": 0.0,
+      "reference_wet_km2": 0.0,
+      "iou": null,
+      "precision": null,
+      "recall": null,
+      "f1": null
+     },
+     "strict_no_answer_counts_as_not_a_candidate": {
+      "cells": 3005877,
+      "tp": 0,
+      "fp": 0,
+      "fn": 23714,
+      "tn": 2982163,
+      "candidate_km2": 0.0,
+      "reference_wet_km2": 2.3714,
+      "iou": 0.0,
+      "precision": null,
+      "recall": 0.0,
+      "f1": 0.0
+     }
+    },
+    "by_land_cover_worldcover_2021": {
+     "built_up": {
+      "compared_cells": 237020,
+      "answered_cells": 0,
+      "answered_share": 0.0,
+      "on_answered_cells": {
+       "cells": 0,
+       "tp": 0,
+       "fp": 0,
+       "fn": 0,
+       "tn": 0,
+       "candidate_km2": 0.0,
+       "reference_wet_km2": 0.0,
+       "iou": null,
+       "precision": null,
+       "recall": null,
+       "f1": null
+      },
+      "strict_no_answer_counts_as_not_a_candidate": {
+       "cells": 237020,
+       "tp": 0,
+       "fp": 0,
+       "fn": 35,
+       "tn": 236985,
+       "candidate_km2": 0.0,
+       "reference_wet_km2": 0.0035,
+       "iou": 0.0,
+       "precision": null,
+       "recall": 0.0,
+       "f1": 0.0
+      }
+     },
+     "cropland": {
+      "compared_cells": 1713380,
+      "answered_cells": 0,
+      "answered_share": 0.0,
+      "on_answered_cells": {
+       "cells": 0,
+       "tp": 0,
+       "fp": 0,
+       "fn": 0,
+       "tn": 0,
+       "candidate_km2": 0.0,
+       "reference_wet_km2": 0.0,
+       "iou": null,
+       "precision": null,
+       "recall": null,
+       "f1": null
+      },
+      "strict_no_answer_counts_as_not_a_candidate": {
+       "cells": 1713380,
+       "tp": 0,
+       "fp": 0,
+       "fn": 35585,
+       "tn": 1677795,
+       "candidate_km2": 0.0,
+       "reference_wet_km2": 3.5585,
+       "iou": 0.0,
+       "precision": null,
+       "recall": 0.0,
+       "f1": 0.0
+      }
+     },
+     "tree_cover": {
+      "compared_cells": 987081,
+      "answered_cells": 0,
+      "answered_share": 0.0,
+      "on_answered_cells": {
+       "cells": 0,
+       "tp": 0,
+       "fp": 0,
+       "fn": 0,
+       "tn": 0,
+       "candidate_km2": 0.0,
+       "reference_wet_km2": 0.0,
+       "iou": null,
+       "precision": null,
+       "recall": null,
+       "f1": null
+      },
+      "strict_no_answer_counts_as_not_a_candidate": {
+       "cells": 987081,
+       "tp": 0,
+       "fp": 0,
+       "fn": 386,
+       "tn": 986695,
+       "candidate_km2": 0.0,
+       "reference_wet_km2": 0.0386,
+       "iou": 0.0,
+       "precision": null,
+       "recall": 0.0,
+       "f1": 0.0
+      }
+     },
+     "other": {
+      "compared_cells": 108148,
+      "answered_cells": 0,
+      "answered_share": 0.0,
+      "on_answered_cells": {
+       "cells": 0,
+       "tp": 0,
+       "fp": 0,
+       "fn": 0,
+       "tn": 0,
+       "candidate_km2": 0.0,
+       "reference_wet_km2": 0.0,
+       "iou": null,
+       "precision": null,
+       "recall": null,
+       "f1": null
+      },
+      "strict_no_answer_counts_as_not_a_candidate": {
+       "cells": 108148,
+       "tp": 0,
+       "fp": 0,
+       "fn": 183,
+       "tn": 107965,
+       "candidate_km2": 0.0,
+       "reference_wet_km2": 0.0183,
+       "iou": 0.0,
+       "precision": null,
+       "recall": 0.0,
+       "f1": 0.0
+      }
+     }
+    }
+   }
+  }
+ },
+ "fixed_sentences_of_the_plan": {
+  "rules": {
+   "does_not_see_the_water_of_that_date": "below 0.1 in both readings",
+   "the_image_before_decides_the_result": "the readings differ by more than a factor of 2.0"
+  },
+  "by_method": {
+   "m1_literal": {
+    "share_of_reference_water_flagged": {
+     "primary": 0.139904,
+     "second": 0.985023
+    },
+    "does_not_see_the_water_of_that_date": false,
+    "the_image_before_decides_the_result": true
+   },
+   "m1_v2": {
+    "share_of_reference_water_flagged": {
+     "primary": 0.0,
+     "second": 0.0
+    },
+    "does_not_see_the_water_of_that_date": true,
+    "the_image_before_decides_the_result": false
+   },
+   "un_spider": {
+    "share_of_reference_water_flagged": {
+     "primary": 0.001382,
+     "second": 0.697836
+    },
+    "does_not_see_the_water_of_that_date": false,
+    "the_image_before_decides_the_result": true
+   }
+  }
+ },
+ "methods": {
+  "un_spider": "UN-SPIDER recommended practice, quotient 1.25, as in the Mae Sai runs",
+  "m1_literal": "M1 as written, on each lattice tile",
+  "m1_v2": {
+   "frozen_binding": {
+    "frozen_config_sha256": "2bfcb0c6ebf4b79402afa63c56209f2c5cda26491f08883d67908195b6c64a68",
+    "code_sha256": {
+     "src/floodguard/geoid_m1_benchmark.py": "26d98f5cbdbcdcb1eeafe0b83a6e44b0ff4c9c7fb245078469952d95829e409f",
+     "src/floodguard/sar_change_v2.py": "3127b370303b08902dc545442f7aa5a2aa54d283b471c0d65f5899c9c19e1134"
+    },
+    "planning_protocol_v1a_sha256": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+    "freeze_receipt_sha256": "736d92887e0f536077a704af7f70270b81b7779a1f1b6dcbe36865cbf6edf3ee"
+   }
+  }
+ },
+ "figure_outside_git": "mae_sai_20241022_v1_overview.png",
+ "assumptions": [
+  "The reference is the layer UNOSAT and GISTDA dated 22 October 2024, as provided: a cell is agency water when its centre lies inside it.",
+  "Where the agency mapped no water the cell counts as dry; the layer has no 'not observed' class.",
+  "The three radar methods run with the parameters of the Mae Sai runs; nothing is tuned for this date.",
+  "The image before of the primary reading is the pass of 22 August 2024; the second reading uses 12 April 2024."
+ ],
+ "limits": [
+  "One district, one date, a few square kilometres of residual water late in the season. It says nothing of the September flood.",
+  "The agency layer was not checked in the field and may have been made from the same Sentinel-1 pass.",
+  "Every figure is agreement with the agency layer, not accuracy.",
+  "No planning score, no class and no exposure or access figure is computed."
+ ],
+ "supersedes": null
+}

@@ -1,0 +1,91 @@
+{
+ "schema": "floodguard.dated_radar_check_reference.v1",
+ "generated_at_utc": "2026-10-08T16:17:51Z",
+ "source_timestamp": "2024-10-22 (agency layer); Sentinel-1 2024-10-21T23:16:14Z",
+ "confidence_class": "low",
+ "confidence_basis": "One agency layer that was not checked in the field and one radar pass; no ground check.",
+ "operational_status": "non_operational",
+ "official_warning": false,
+ "can_feed_decision_layer": false,
+ "plan": {
+  "path": "docs/proposal_execution/dated_radar_check_plan_v1.md",
+  "sha256": "bb20a4976d5c934db14ffd1538c6163e8c5b8bdf496c31d397ef9fa6f96aaad4"
+ },
+ "what_this_is": "The frame and the reference cells of the radar check against the dated agency layer, before any radar is read.",
+ "rights_note": "The dated layer is held at the local level (decision log R33). This record holds whole-district counts only; the rasters stay outside Git.",
+ "district": {
+  "adm2_pcode": "TH5709",
+  "name": "Mae Sai",
+  "tambons": 8
+ },
+ "grid_10m": {
+  "epsg": 32647,
+  "cell_m": 10.0,
+  "west": 583680.0,
+  "north": 2273280.0,
+  "rows": 4096,
+  "columns": 3072,
+  "lattice_tiles": [
+   "E057N221",
+   "E058N221",
+   "E059N221",
+   "E057N220",
+   "E058N220",
+   "E059N220",
+   "E057N219",
+   "E058N219",
+   "E059N219",
+   "E057N218",
+   "E058N218",
+   "E059N218"
+  ]
+ },
+ "reference_layer": {
+  "product": "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009",
+  "layer": "CHIANGRAI_20241022_FloodExtent",
+  "archive_sha256": "1fe3243c2bc986d4111bb3d82aff292abccf7fb1bb1dd722747e994618b66e85",
+  "rule": "cell centre inside the layer; geometry repaired with make_valid"
+ },
+ "season_layer_for_context": "CHIANGRAI_20240801_20241012_AccumulatedFlood",
+ "counts": {
+  "district_cells": 3055567,
+  "district_km2": 305.5567,
+  "permanent_water_cells_left_out": 9938,
+  "frame_cells": 3045629,
+  "reference_cells_in_the_district": 36781,
+  "reference_km2_in_the_district": 3.6781,
+  "reference_cells_on_permanent_water_left_out": 592,
+  "reference_cells_in_the_frame": 36189,
+  "reference_km2_in_the_frame": 3.6189,
+  "reference_share_of_the_frame": 0.011882,
+  "reference_cells_inside_the_season_layer": 36478,
+  "reference_share_inside_the_season_layer": 0.991762
+ },
+ "cells_not_at_the_edge_of_the_layer": 3005877,
+ "rasters_outside_git": {
+  "dated_reference_10m.tif": {
+   "sha256": "7eeee4af8f339a35b92b5ffda839ebee425be54cb2055b2c4785ac7470ff25eb",
+   "bands": [
+    "agency water",
+    "in the district",
+    "permanent water",
+    "not at the edge of the layer",
+    "season layer"
+   ]
+  }
+ },
+ "radar_read": false,
+ "assumptions": [
+  "The reference is the layer UNOSAT and GISTDA dated 22 October 2024, as provided: a cell is agency water when its centre lies inside it.",
+  "Where the agency mapped no water the cell counts as dry; the layer has no 'not observed' class.",
+  "The three radar methods run with the parameters of the Mae Sai runs; nothing is tuned for this date.",
+  "The image before of the primary reading is the pass of 22 August 2024; the second reading uses 12 April 2024."
+ ],
+ "limits": [
+  "One district, one date, a few square kilometres of residual water late in the season. It says nothing of the September flood.",
+  "The agency layer was not checked in the field and may have been made from the same Sentinel-1 pass.",
+  "Every figure is agreement with the agency layer, not accuracy.",
+  "No planning score, no class and no exposure or access figure is computed."
+ ],
+ "supersedes": null
+}

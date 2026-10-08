@@ -294,7 +294,7 @@ Agreement between two sensors 44 hours apart; not accuracy.
 | Shelter room against need | replay, shelter panel | Live. |
 | THEOS-2 against radar, four panels | `outputs/theos2_cross_check/sukhothai_20250730_v1_overview.png` | New. Needs a clean slide version. |
 | Pipeline in four boxes | — | **To draw.** |
-| Policy page | `/policy/` | **Leads with a pre-protocol example; replace with case SE1.** |
+| Policy page | `/policy/` | Leads with case SE1 since 8 October: the eight tambons, the finding on Ko Chang and the four cautions. The earlier example is an appendix. |
 | Public view on a phone | `/public/` | Live. |
 
 ## 7. What is missing, in order
@@ -302,8 +302,8 @@ Agreement between two sensors 44 hours apart; not accuracy.
 ### Before Session II
 
 1. Rehearse the pitch of section 4.2 aloud, timed, with the screens.
-2. Put the SE1 result at the top of the policy page; move the old example
-   down or out.
+2. ~~Put the SE1 result at the top of the policy page; move the old example
+   down or out.~~ Done on 8 October (decision log R32).
 3. Draw the four-box pipeline and one slide of the THEOS-2 result.
 4. Ko Chang on a map (plan task V1). **The desk sheet is done (8 October):**
    `docs/ko_chang_road_check.md`, item V-10 of the team page. It lists the

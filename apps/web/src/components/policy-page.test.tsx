@@ -1,8 +1,11 @@
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { TIMELINE_MANIFEST_URL } from "@/lib/flood-timeline";
+import { COMMAND_OVERLAY_HREFS, COMMAND_OVERLAY_INDEX_HREF, planningCells, readCommandOverlay } from "@/lib/flood-timeline-command-table";
+import { POLICY_CASE, POLICY_CASE_REASONS, POLICY_CASE_ROUTE, POLICY_CASE_SCORE_LABEL } from "@/lib/policy-case";
 import { POLICY_EVIDENCE, SIGNED_SCORING_FRAME } from "@/lib/policy-evidence";
 import { MAE_SAI_REPLAY_ROUTE } from "@/lib/policy-links";
 import { PolicyPage } from "./policy-page";
@@ -24,7 +27,7 @@ describe("policy mentoring brief", () => {
   it("renders the full explanation and anchor destinations before JavaScript", () => {
     expect(html.match(/<h1\b/g)).toHaveLength(1);
     expect(html).toContain('id="main-content"');
-    for (const id of ["purpose", "evidence", "signed-frame", "priorities", "access", "thailand", "responsibility"]) {
+    for (const id of ["purpose", "case", "evidence", "signed-frame", "priorities", "access", "thailand", "responsibility"]) {
       expect(html).toContain(`id="${id}"`);
       expect(html).toContain(`href="#${id}"`);
     }
@@ -76,7 +79,7 @@ describe("policy mentoring brief", () => {
     expect(caveat).toContain("vulnerability is a terrain/remoteness proxy at 0.25 instead of national P10/P90 anchors of the dependent share");
     expect(caveat).toContain("before protocol v1b was hashed");
     expect(caveat).toContain("must not be cited as the Mae Sai case score");
-    expect(caveat).toContain("The D4/v1 scores will come from the planning assessment after v1b");
+    expect(caveat).toContain("The D4/v1 scores are those of case SE1 at the top of this page.");
     expect(cardText).toContain("Class E never means safe.");
     // The caveat comes before the first number, and each of the three headline tiles carries its own chip.
     expect(card.indexOf('data-testid="worked-example-caveat"')).toBeLessThan(card.indexOf(POLICY_EVIDENCE.rankings[0].score.toFixed(2)));
@@ -96,7 +99,8 @@ describe("policy mentoring brief", () => {
     expect(provenance).toContain(POLICY_EVIDENCE.tier);
     expect(provenance).toContain("replay-fpps.ts");
     expect(provenance).toContain("replay_fpps_anchor_v1 (pre-D4)");
-    // No score, and no other two-decimal figure, appears anywhere outside that card.
+    // No score of the example, and no other two-decimal figure, appears anywhere outside that card. The scored case
+    // prints its scores to one decimal inside its own card (tested below).
     const outside = html.replace(card, "");
     for (const row of POLICY_EVIDENCE.rankings) {
       expect(cardText).toContain(row.score.toFixed(2));
@@ -214,6 +218,109 @@ describe("policy mentoring brief", () => {
   });
 });
 
+describe("policy page: the scored case SE1", () => {
+  const html = renderToStaticMarkup(<PolicyPage />);
+  const cardStart = html.indexOf('data-testid="scored-case"');
+  const card = html.slice(html.lastIndexOf("<article", cardStart), html.indexOf("</article>", cardStart) + "</article>".length);
+  const cardText = plain(card);
+  const count = (value: number) => Math.round(value).toLocaleString("en-US");
+
+  it("leads the page: the case comes before the signed frame and the earlier example is last", () => {
+    expect(cardStart).toBeGreaterThan(0);
+    const order = ['id="purpose"', 'id="case"', 'id="signed-frame"', 'id="priorities"', 'id="access"', 'id="thailand"', 'id="responsibility"', 'id="evidence"'].map((id) => html.indexOf(id));
+    expect(order).toEqual([...order].sort((a, b) => a - b));
+    expect(html).toContain('href="#case"');
+    expect(plain(html)).toContain("Ko Chang comes first: lost roads, not flooded area.");
+    expect(plain(html)).toContain("It is a scenario for planning, not a flood of any day.");
+  });
+
+  it("prints only what the published overlay holds, read through the strict parser", () => {
+    const file = readFileSync(resolve("public", COMMAND_OVERLAY_HREFS.SE1.slice(1)));
+    const index = JSON.parse(readFileSync(resolve("public", COMMAND_OVERLAY_INDEX_HREF.slice(1)), "utf8")) as { cases: { case_id: string; sha256: string }[] };
+    const sha256 = createHash("sha256").update(file).digest("hex");
+    expect(POLICY_CASE.derived_from).toEqual({ file: COMMAND_OVERLAY_HREFS.SE1, sha256 });
+    expect(index.cases.find((item) => item.case_id === "SE1")?.sha256).toBe(sha256);
+    const { overlay, refusal } = readCommandOverlay(JSON.parse(file.toString("utf8")), "SE1");
+    expect(refusal).toBeNull();
+    if (!overlay) throw new Error("the published overlay of case SE1 was refused");
+    expect(POLICY_CASE).toMatchObject({
+      case_id: overlay.case.case_id, publication_eligibility: "public", official_warning: false, operational_status: "non_operational",
+      can_feed_decision_layer: false, accepted_fpps: null, accepted_action_class: null, generated_at: overlay.generated_at,
+      source_timestamp: overlay.source_timestamp, class_rule_version: overlay.class_rule_version, normalisation_version: overlay.normalisation_version,
+      protocol_sha256: overlay.protocol_sha256,
+    });
+    expect(file.toString("utf8")).toContain(`"source_timestamp": "${POLICY_CASE.source_period}"`);
+    const cells = planningCells(overlay, "SE1");
+    expect(POLICY_CASE.rows).toHaveLength(cells.size);
+    expect(POLICY_CASE.rows.map((row) => row.fpps_0_100)).toEqual([...POLICY_CASE.rows.map((row) => row.fpps_0_100)].sort((a, b) => b - a));
+    for (const row of POLICY_CASE.rows) {
+      const cell = cells.get(row.unit_id);
+      const source = overlay.rows.find((item) => item.row_id === cell?.rowId);
+      if (!cell || !source) throw new Error(`no overlay row for ${row.unit_id}`);
+      expect([row.fpps_0_100, row.action_class, row.action_reason_code, row.confidence_class, row.headline_stability]).toEqual([cell.fpps, cell.letter, cell.reasonCode, cell.confidenceClass, cell.headline]);
+      expect([row.name_en, row.name_th, POLICY_CASE.tier, POLICY_CASE.lane, POLICY_CASE.flood_input]).toEqual([source.unit_name_en, source.unit_name_th, cell.tier, cell.lane, cell.floodInput]);
+      // The counts behind the three count columns are the inputs of the row's own components.
+      const inputs = JSON.stringify(source.components);
+      const raw = (key: string) => Number(new RegExp(`"${key}":\\s*([0-9.eE+-]+)`).exec(inputs)?.[1]);
+      expect(row.residents_inside_the_layer).toBe(Math.round(raw("residents_inside_flood_extent")));
+      expect(row.residents).toBe(Math.round(raw("unit_residents")));
+      expect(row.residents_losing_every_route).toBe(Math.round(raw("residents_losing_all_routes")));
+      expect(row.residents_with_a_route_before).toBe(Math.round(raw("residents_with_baseline_route")));
+      expect(row.residents_with_hospital_access_before).toBe(Math.round(raw("baseline_access_residents")));
+      expect(row.residents_losing_hospital_access).toBe(Math.round(raw("newly_lost_residents")));
+      expect(POLICY_CASE_REASONS[row.action_reason_code]).toBeDefined();
+      // Every figure of the row is on the page, inside the card.
+      for (const figure of [row.fpps_0_100.toFixed(1), `${count(row.residents_inside_the_layer)} of ${count(row.residents)}`, `${count(row.residents_losing_every_route)} of ${count(row.residents_with_a_route_before)}`]) {
+        expect(cardText).toContain(figure);
+      }
+    }
+  });
+
+  it("keeps every score of the case inside its card, after the scenario caveat and under its label", () => {
+    const caveat = plain(card.slice(card.indexOf('data-testid="scored-case-caveat"'), card.indexOf("</ul>")));
+    expect(caveat).toContain("A scenario, not an observation.");
+    expect(caveat).toContain("No day of 2024 looked like this.");
+    expect(caveat).toContain("Water crossing a road does not prove the road was closed.");
+    expect(caveat).toContain("FloodGuard did not validate it");
+    expect(caveat).toContain("The roads have not been checked on the ground.");
+    expect(caveat).toContain("no class here is headline-eligible yet");
+    expect(caveat).toContain("The class names a kind of action, not a size of harm.");
+    expect(POLICY_CASE.rows.every((row) => row.headline_stability === "not_evaluated")).toBe(true);
+    const [first, second] = POLICY_CASE.rows;
+    expect([first.name_en, first.action_class, second.name_en]).toEqual(["Ko Chang", "B", "Mae Sai"]);
+    // What the heading and the caveat say of the two tambons holds in the figures.
+    expect(first.residents_inside_the_layer).toBeLessThan(second.residents_inside_the_layer);
+    expect(first.residents_losing_every_route).toBe(first.residents_with_a_route_before);
+    expect(Math.max(...POLICY_CASE.rows.map((row) => row.residents_losing_hospital_access))).toBe(second.residents_losing_hospital_access);
+    expect(card.indexOf('data-testid="scored-case-caveat"')).toBeLessThan(card.indexOf(first.fpps_0_100.toFixed(1)));
+    // The label is on each of the three tiles and above the table: four times.
+    expect(cardText.split(POLICY_CASE_SCORE_LABEL.en).length - 1).toBe(4);
+    const outside = plain(html.replace(card, ""));
+    for (const row of POLICY_CASE.rows) expect(outside).not.toMatch(new RegExp(`(?<![0-9.])${row.fpps_0_100.toFixed(1).replace(".", "[.]")}(?![0-9])`));
+    const provenance = plain(card.slice(card.indexOf('data-testid="scored-case-provenance"'), card.indexOf("</p>", card.indexOf('data-testid="scored-case-provenance"'))));
+    for (const part of ["T1", "SCN-ENV", "class_rule_v1", "planning_frame_v1", "closure_rule_v1", POLICY_CASE.protocol_sha256.v1b.slice(0, 8), "1 Aug – 12 Oct 2024", "medium, declared for a scenario"]) {
+      expect(provenance).toContain(part);
+    }
+    expect(card).toContain(`dateTime="${POLICY_CASE.source_period}"`);
+    expect(card).toContain(`dateTime="${POLICY_CASE.generated_at}"`);
+    const note = plain(card.slice(card.indexOf('data-testid="scored-case-note"')));
+    expect(note).toContain("Class E never means safe.");
+    expect(note).toContain("4 tambons are class E because their score is under 35");
+    expect(note).toContain("not an official warning");
+    expect(note).toContain("CC BY-SA 4.0");
+    expect(cardText).not.toMatch(/real-time|live |observed flood|accuracy|validated/i);
+  });
+
+  it("links to the case on the map only where the competition pages are deployed", () => {
+    expect(card).toContain(`href="${POLICY_CASE_ROUTE}"`);
+    vi.stubEnv("NEXT_PUBLIC_FLOODGUARD_APP_PROFILE", "public-production");
+    const publicHtml = renderToStaticMarkup(<PolicyPage />);
+    vi.unstubAllEnvs();
+    expect(publicHtml).not.toContain(`href="${POLICY_CASE_ROUTE}"`);
+    expect(publicHtml).toContain('data-testid="scored-case-caveat"');
+  });
+});
+
 describe("policy page in Thai", () => {
   afterEach(() => {
     vi.doUnmock("@/lib/use-language");
@@ -245,8 +352,13 @@ describe("policy page in Thai", () => {
     expect(link).toContain("จึงเป็นจุดอ้างอิงที่ใช้ปรับแบบจำลอง");
     expect(link).toContain("มีส่วนในการปรับแบบจำลอง ไม่ใช่การตรวจสอบอิสระ (R1)");
     expect(text).toContain("ตั้งแต่มติ R1 (30 ก.ย. 2569) ถือว่ามีส่วนในการปรับแบบจำลอง ไม่ใช่การตรวจสอบอิสระ");
+    // The scored case in Thai: its label on three tiles and above the table, its caveat and its count columns.
+    expect(text.split(POLICY_CASE_SCORE_LABEL.th).length - 1).toBe(4);
+    expect(text).toContain("สถานการณ์จำลอง ไม่ใช่การสังเกตการณ์");
+    expect(text).toContain("เกาะช้างมาก่อน: เพราะถนนที่ขาด ไม่ใช่พื้นที่น้ำท่วม");
+    expect(text).toContain("5,972 จาก 5,972");
     // No English sentence from those parts leaks into the Thai render.
-    for (const english of ["Read this before any number", "Historical example", "calibration anchor", "Superseded label", "Public level", "Class E never means safe."]) {
+    for (const english of ["Read this before any number", "Historical example", "calibration anchor", "Superseded label", "Public level", "Class E never means safe.", "A scenario, not an observation", "Lose every road route", "stability not evaluated", "Keep routes open"]) {
       expect(text).not.toContain(english);
     }
   });

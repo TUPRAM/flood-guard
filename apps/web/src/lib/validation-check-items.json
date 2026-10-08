@@ -1,6 +1,6 @@
 {
   "schema": "floodguard.validation_check.items.v1",
-  "updated": "2026-10-07",
+  "updated": "2026-10-08",
   "repository": "https://github.com/TUPRAM/flood-guard",
   "reviewers": [
     "Rachmania",
@@ -356,11 +356,28 @@
     {
       "id": "V-18",
       "group": "models",
-      "title": "The flood-susceptibility model",
-      "check": "Features, the hold-out by district, the calibration curve and what each feature contributes (work package 4). Not computed yet.",
-      "evidence": [],
+      "title": "The trained flood-susceptibility model",
+      "check": "Read the four results. Three models were fitted on Mae Sai and tested once on the three districts that border it. The plan fixed beforehand that the simplest model is cited unless a tree model is clearly better on the test districts; it was not. Accept if the tables and the sentences under them say no more than the figures, and if the team will name the model as a screening layer and not as a flood map.",
+      "evidence": [
+        {
+          "label": "Result in plain words",
+          "path": "docs/flood_susceptibility_model.md"
+        },
+        {
+          "label": "Map of the model beside the season layer",
+          "path": "outputs/flood_susceptibility/mae_sai_model_v1_map.png"
+        },
+        {
+          "label": "Result file",
+          "path": "outputs/flood_susceptibility/mae_sai_model_v1.json"
+        },
+        {
+          "label": "Plan, committed before any model was fitted",
+          "path": "docs/proposal_execution/flood_susceptibility_model_plan_v1.md"
+        }
+      ],
       "gates": "Naming a trained model in the pitch.",
-      "ready": false,
+      "ready": true,
       "added": "2026-10-07"
     },
     {

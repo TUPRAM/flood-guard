@@ -22,7 +22,7 @@ each member records accept, change or reject (`docs/validation/README.md`).
 | Criterion | What we can show today | What is thin |
 |---|---|---|
 | Geo-intelligence quality (40%) | A scored case on eight real tambons (case SE1, the 2024 season-envelope scenario). It gives a result a flood map alone does not: **Ko Chang ranks above Mae Sai town because of lost road access, not flooded area.** An hour-by-hour replay of September 2024 with shelters, access and reported depths. A shelter-capacity gap. | The roads that cut Ko Chang off are now listed with a map (`docs/ko_chang_road_check.md`, 8 October), but nobody who knows the place has looked at them. The equity gap is not computed by age. No practitioner has read the result. |
-| GeoAI methodology (35%) | A documented pipeline with receipts and hashes; three radar methods tested and reported as they came out, including failures; a diagnosis of why they failed at Mae Sai; a 90-run uncertainty ensemble; a first check against THEOS-2. | No trained model is in the result. The radar candidates feed nothing. The proposal named a Random Forest or XGBoost refinement and it was not run. |
+| GeoAI methodology (35%) | A documented pipeline with receipts and hashes; three radar methods tested and reported as they came out, including failures; a diagnosis of why they failed at Mae Sai; a 90-run uncertainty ensemble; a first check against THEOS-2. Since 8 October: a table of how the result changes with the flood input (`docs/flood_input_comparison.md`), and the proposal's method 2 run once, a Random Forest and boosted trees beside a one-feature baseline, fitted on Mae Sai and tested on three districts it never saw (`docs/flood_susceptibility_model.md`). Both wait for the team's word (items V-16, V-18). | The trained model is a screening layer and feeds no score: on unseen districts the simplest model held and the trees did not beat it. The radar candidates feed nothing. No model is fitted to a dated flood yet; that waits for the THEOS-2 scene or the UNOSAT data. |
 | Communication and impact (25%) | Three views of one evidence base, bilingual, offline; a policy page; an exercise replay for coordinators; a demo video. | No five-minute pitch. The policy page still leads with an old example. Pages carry more caveats than findings. No stated call to action. |
 
 ## 2. Session I follow-up: each question the mentor asked, and the answer today
@@ -292,9 +292,9 @@ Agreement between two sensors 44 hours apart; not accuracy.
 | Hour-by-hour replay | `/studio/cases/mae-sai-2024/` | Live. Demo video in `docs/demo/`. |
 | Ko Chang case card with its three checks | `/command/` | Live. The checklist is a team draft. |
 | Shelter room against need | replay, shelter panel | Live. |
-| THEOS-2 against radar, four panels | `outputs/theos2_cross_check/sukhothai_20250730_v1_overview.png` | New. Needs a clean slide version. |
-| Pipeline in four boxes | — | **To draw.** |
-| Policy page | `/policy/` | **Leads with a pre-protocol example; replace with case SE1.** |
+| THEOS-2 against radar | `docs/mentoring/visuals/theos2_check_slide.png` (made by `scripts/build_theos2_slide.py` from the committed figure and result) | Slide drawn on 8 October, 16:9: three panels and the three figures. It shows a reduced picture of the sample image; the question to GISTDA on the terms for showing it (section 6) is still open. |
+| Pipeline in four boxes | `docs/mentoring/visuals/pipeline_four_boxes.svg` | Drawn on 8 October, 16:9. Opens in a browser; drag it onto a slide. |
+| Policy page | `/policy/` | Leads with case SE1 since 8 October: the eight tambons, the finding on Ko Chang and the four cautions. The earlier example is an appendix. |
 | Public view on a phone | `/public/` | Live. |
 
 ## 7. What is missing, in order
@@ -302,9 +302,9 @@ Agreement between two sensors 44 hours apart; not accuracy.
 ### Before Session II
 
 1. Rehearse the pitch of section 4.2 aloud, timed, with the screens.
-2. Put the SE1 result at the top of the policy page; move the old example
-   down or out.
-3. Draw the four-box pipeline and one slide of the THEOS-2 result.
+2. ~~Put the SE1 result at the top of the policy page; move the old example
+   down or out.~~ Done on 8 October (decision log R32).
+3. ~~Draw the four-box pipeline and one slide of the THEOS-2 result.~~ Both are in `docs/mentoring/visuals/` since 8 October.
 4. Ko Chang on a map (plan task V1). **The desk sheet is done (8 October):**
    `docs/ko_chang_road_check.md`, item V-10 of the team page. It lists the
    closed road pieces that cut Ko Chang off and the eight roads to look at
@@ -330,13 +330,18 @@ Agreement between two sensors 44 hours apart; not accuracy.
     rights record (open data), issue the case, and show that low confidence
     gives class E for all eight tambons. This is the proposal's worked example
     and the plain demonstration of "fail closed". With it, a table of how the
-    result changes with the flood input.
+    result changes with the flood input. **The table is done (8 October,
+    `docs/flood_input_comparison.md`, item V-16).** Whether the formal case is
+    still issued is item V-21; the recommendation is no.
 11. **A decision on a trained model.** The proposal's method 2 is a calibrated
     Random Forest or XGBoost. Either run it as a report-only experiment on the
     labelled events that are on disk, with grouped hold-out, a calibration
     curve and feature contributions, or state in the pitch that it was not
     run and why. Leaving it unmentioned is the weakest choice under a 35%
-    criterion that asks whether the AI approach is credible.
+    criterion that asks whether the AI approach is credible. **Run on 8
+    October (`docs/flood_susceptibility_model.md`, item V-18):** three models,
+    spatial block folds, calibration, a test on three unseen districts. The
+    one-feature baseline is the model to cite; say so in the pitch.
 12. **The second class reading** (proposal section 5.2), if Mae Sai town as
     class D is to be answered with more than words.
 13. **One outside reader.** A planner, a DDPM contact, or the GISTDA

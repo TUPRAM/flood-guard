@@ -108,6 +108,16 @@
 .frameTable tbody th { width: 17%; font-weight: 600; overflow-wrap: break-word; }
 .frameTable .weight { width: 8%; font-family: "JetBrains Mono Variable", monospace; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .frameTable td:last-child { color: var(--muted); }
+.caseTable { margin: 22px 32px 0; }
+.caseTable caption .chip { margin-bottom: 8px; }
+.caseTable td { font-variant-numeric: tabular-nums; }
+.caseTable td:last-child { color: inherit; }
+.caseTable tbody th { width: 16%; }
+.caseReason { display: block; margin-top: 3px; font-size: 11px; color: var(--muted); }
+.caseNote { padding: 14px 32px 0; font-size: 11px; color: var(--muted); max-width: 980px; }
+.caseNote:last-child { padding-bottom: 22px; }
+.caseNote strong { color: #725124; font-weight: 650; }
+.caseNote a { color: var(--teal); font-weight: 600; text-underline-offset: 3px; white-space: nowrap; }
 .frameNote { font-size: 11px; color: var(--muted); margin-top: 14px !important; max-width: 880px; }
 .decisions { list-style: none; padding: 0; margin-top: 22px !important; display: grid; gap: 10px; }
 .decisions li { display: flex; align-items: baseline; gap: 14px; font-size: 12px; max-width: 880px; }
@@ -246,6 +256,9 @@
   .provenance { padding: 0 24px 20px; flex-direction: column; }
   .evidenceBottom { padding: 19px 24px; gap: 18px; font-size: 11px; }
   .caveat { padding: 18px 24px; }
+  .caseTable { margin: 18px 24px 0; }
+  .caseNote { padding: 12px 24px 0; }
+  .caseNote:last-child { padding-bottom: 20px; }
   .evidenceCard > .studyDetails { padding: 0 24px; }
   .replayLink { flex-direction: column; align-items: flex-start; gap: 6px; padding: 16px; }
   .replayLink a { white-space: normal; }

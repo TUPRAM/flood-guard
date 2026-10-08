@@ -4,6 +4,7 @@ import { Fragment, useState, type CSSProperties, type ReactNode } from "react";
 import Link from "next/link";
 import { LanguageToggle } from "./language-toggle";
 import { useLanguage } from "@/lib/use-language";
+import { POLICY_CASE, POLICY_CASE_REASONS, POLICY_CASE_ROUTE, POLICY_CASE_SCORE_LABEL, policyCaseCount, type PolicyCaseClass } from "@/lib/policy-case";
 import { POLICY_EVIDENCE, SIGNED_SCORING_FRAME } from "@/lib/policy-evidence";
 import { competitionPagesAvailable, MAE_SAI_REPLAY_ROUTE } from "@/lib/policy-links";
 import type { Language } from "@/lib/types";
@@ -37,10 +38,10 @@ export function PolicyPage() {
   const [action, setAction] = useState(4);
   const t: Translate = (en, th) => language === "th" ? th : en;
   const chapters = [
-    ["purpose", t("Purpose", "เป้าหมาย")], ["evidence", t("Worked example", "ตัวอย่างการคำนวณ")],
+    ["purpose", t("Purpose", "เป้าหมาย")], ["case", t("Case SE1", "กรณี SE1")],
     ["signed-frame", t("Signed frame (D4)", "กรอบที่ลงนาม (D4)")], ["priorities", t("FPPS & actions", "FPPS และการดำเนินการ")],
     ["access", t("Access & equity", "การเข้าถึงและความเป็นธรรม")], ["thailand", t("Thai policy", "นโยบายไทย")],
-    ["responsibility", t("Responsibility", "ความรับผิดชอบ")],
+    ["responsibility", t("Responsibility", "ความรับผิดชอบ")], ["evidence", t("Earlier example", "ตัวอย่างก่อนหน้า")],
   ];
   const roles = [
     { name: t("Public", "ประชาชน"), question: t("What should my household prepare?", "ครัวเรือนควรเตรียมอะไร?"), answer: t("Understand possible disruption, prepare a household plan, and find official guidance with its source and time.", "เข้าใจผลกระทบที่อาจเกิดขึ้น เตรียมแผนครัวเรือน และค้นหาคำแนะนำจากหน่วยงานทางการพร้อมแหล่งที่มาและเวลา"), output: t("Plain-language context + practical preparedness", "บริบทที่เข้าใจง่าย + การเตรียมพร้อมที่ทำได้จริง"), route: "/public/" },
@@ -75,7 +76,7 @@ export function PolicyPage() {
           <p className={styles.eyebrow}>{t("COMMUNICATION & POLICY · MENTORING BRIEF", "การสื่อสารและนโยบาย · เอกสารประกอบการให้คำปรึกษา")}</p>
           <h1 id="policy-title">{t("From flood evidence", "จากหลักฐานน้ำท่วม")}<br /><span>{t("to better preparedness.", "สู่การเตรียมพร้อมที่ดีขึ้น")}</span></h1>
           <p className={styles.lead}>{t("Understand who could lose access, which connections matter, and what local teams should check next.", "เข้าใจว่าใครอาจสูญเสียการเข้าถึง เส้นทางใดสำคัญ และทีมท้องถิ่นควรตรวจสอบอะไรต่อ")}</p>
-          <a className={styles.primary} href="#evidence">{t("Start with a worked example", "เริ่มจากตัวอย่างการคำนวณ")} <span aria-hidden="true">↓</span></a>
+          <a className={styles.primary} href="#case">{t("Start with the scored case", "เริ่มจากกรณีที่ให้คะแนน")} <span aria-hidden="true">↓</span></a>
           <p className={styles.heroNote}>{t("Preparedness and planning support. Not an official warning system.", "สนับสนุนการเตรียมพร้อมและวางแผน ไม่ใช่ระบบเตือนภัยอย่างเป็นทางการ")}</p>
         </div>
         <div className={styles.journey} role="group" aria-label={t("Evidence to decision", "จากหลักฐานสู่การตัดสินใจ")}>
@@ -101,10 +102,9 @@ export function PolicyPage() {
         </div>
       </section>
 
-      <section id="evidence" className={`${styles.section} ${styles.evidence}`} aria-labelledby="evidence-title">
-        <div className={styles.sectionHeading}><p className={styles.eyebrow}>{t("01 · HISTORICAL WORKED EXAMPLE", "01 · ตัวอย่างการคำนวณย้อนหลัง")}</p><h2 id="evidence-title">{t(POLICY_EVIDENCE.title, POLICY_EVIDENCE.titleTh)}</h2><p>{t("Kept so mentors can see the score and the classes on real places. It predates the signed decisions below and is not the Mae Sai case score.", "เก็บไว้เพื่อให้ผู้ให้คำปรึกษาเห็นคะแนนและระดับบนพื้นที่จริง ตัวอย่างนี้เกิดก่อนมติที่ลงนามด้านล่าง และไม่ใช่คะแนนของกรณีแม่สาย")}</p></div>
-        <PolicyEvidence language={language} />
-        {linksToCompetitionPages && <ReplayLink t={t} />}
+      <section id="case" className={`${styles.section} ${styles.evidence}`} aria-labelledby="case-title">
+        <div className={styles.sectionHeading}><p className={styles.eyebrow}>{t("01 · THE SCORED CASE · A SCENARIO", "01 · กรณีที่ให้คะแนน · สถานการณ์จำลอง")}</p><h2 id="case-title">{t("Ko Chang comes first: lost roads, not flooded area.", "เกาะช้างมาก่อน: เพราะถนนที่ขาด ไม่ใช่พื้นที่น้ำท่วม")}</h2><p>{t("Case SE1 is the scored case of the signed protocols. It asks: if every area mapped as flooded in the 2024 season were flooded at once, where would preparedness matter most? It is a scenario for planning, not a flood of any day.", "กรณี SE1 เป็นกรณีที่ให้คะแนนตามโปรโตคอลที่ลงนามแล้ว คำถามคือ หากทุกพื้นที่ที่เคยถูกทำแผนที่ว่าน้ำท่วมในฤดูปี 2567 ท่วมพร้อมกัน ควรเตรียมพร้อมที่ใดก่อน นี่คือสถานการณ์จำลองเพื่อการวางแผน ไม่ใช่น้ำท่วมของวันใดวันหนึ่ง")}</p></div>
+        <ScoredCase t={t} classTitle={(letter) => actions.find((item) => item.letter === letter)?.title ?? letter} linkToCase={linksToCompetitionPages} />
       </section>
 
       <SignedFrame t={t} />
@@ -139,6 +139,7 @@ export function PolicyPage() {
           <article><span className={styles.topicIcon} aria-hidden="true">≈</span><h3>{t("Equity", "ความเป็นธรรม")}</h3><p>{t("Evacuation Equity Gap: the rate at which the vulnerable proxy group loses access ÷ the rate for everyone else. Each rate counts only people who had a shelter within reach before the flood: of those, the share who lost it. Above 1.20 the group is more likely to lose access; below 0.80, less likely. No ratio is given when a group has fewer than 50 such people or when nobody has lost access. Show the counts beside the ratio: equal rates can still mean poor access for everyone.", "ช่องว่างความเท่าเทียมในการอพยพ: อัตราการสูญเสียการเข้าถึงของกลุ่มเปราะบางตามตัวแทน ÷ อัตราของกลุ่มอื่น แต่ละอัตรานับเฉพาะผู้ที่มีศูนย์พักพิงในระยะเดินก่อนน้ำท่วม คือสัดส่วนของคนเหล่านั้นที่สูญเสียการเข้าถึง มากกว่า 1.20 หมายถึงกลุ่มนี้มีโอกาสสูญเสียการเข้าถึงมากกว่า ต่ำกว่า 0.80 หมายถึงน้อยกว่า ไม่แสดงอัตราส่วนเมื่อกลุ่มใดมีคนเช่นนี้น้อยกว่า 50 คน หรือเมื่อไม่มีผู้ใดสูญเสียการเข้าถึง แสดงจำนวนคนควบคู่กับอัตราส่วน เพราะอัตราเท่ากันอาจหมายถึงทุกกลุ่มเข้าถึงได้ไม่ดี")}</p><small>{t("“Vulnerable” here is a terrain/remoteness proxy (slopes of 8° or more, or 750 m or more from a drivable road), not age, disability or income.", "“กลุ่มเปราะบาง” ในที่นี้เป็นตัวแทนจากภูมิประเทศและความห่างไกล (ความลาดชัน 8° ขึ้นไป หรือห่างถนนที่รถวิ่งได้ 750 ม. ขึ้นไป) ไม่ใช่อายุ ความพิการ หรือรายได้")}</small></article>
           <article><span className={styles.topicIcon} aria-hidden="true">⌂</span><h3>{t("Shelters", "ศูนย์พักพิง")}</h3><p>{t("Check usable capacity, accessibility, staffing, opening status, and how people would reach the site. Shelter sets answer different questions (the sites reported in 2024 versus a ranked plan for residents whose homes flood at the peak), so compare them on several counts; no single number makes one set better.", "ตรวจความจุที่ใช้ได้จริง การเข้าถึง บุคลากร สถานะเปิดใช้งาน และวิธีเดินทางไปยังสถานที่ ชุดศูนย์พักพิงแต่ละชุดตอบคำถามต่างกัน (สถานที่ที่มีรายงานการใช้ในปี 2567 กับแผนจัดอันดับสำหรับผู้ที่บ้านถูกน้ำท่วมที่ระดับสูงสุด) จึงควรเปรียบเทียบหลายตัวเลข ไม่มีตัวเลขเดียวที่บอกได้ว่าชุดใดดีกว่า")}</p><small>{t("A mapped building is a candidate, not a confirmed shelter.", "อาคารบนแผนที่เป็นสถานที่ที่ต้องตรวจ ไม่ใช่ศูนย์พักพิงที่ยืนยันแล้ว")}</small></article>
         </div>
+        {linksToCompetitionPages && <ReplayLink t={t} />}
       </section>
 
       <section id="thailand" className={`${styles.section} ${styles.thailand}`} aria-labelledby="thailand-title">
@@ -162,9 +163,92 @@ export function PolicyPage() {
         <div className={styles.mentorPrompt}><div><p className={styles.eyebrow}>{t("THE MENTORING QUESTION", "คำถามสำหรับการให้คำปรึกษา")}</p><h3>{t("Which local decision should we improve first?", "เราควรช่วยให้การตัดสินใจใดในพื้นที่ดีขึ้นก่อน?")}</h3><p>{t("Agree on the decision, test the assumptions, and define the evidence needed for a responsible pilot.", "ตกลงโจทย์การตัดสินใจ ทดสอบสมมติฐาน และกำหนดหลักฐานที่จำเป็นสำหรับโครงการนำร่องที่มีความรับผิดชอบ")}</p></div><span aria-hidden="true">↗</span></div>
         <details className={styles.details} id="sources"><summary>{t("Sources & reading notes", "แหล่งข้อมูลและหมายเหตุ")}<span aria-hidden="true">+</span></summary><div><p>{t("Reviewed 29 September 2026. Legal responsibilities and published policy are distinct from our proposed product rules. Local operating plans and agency acceptance still need review.", "ทบทวน 29 กันยายน 2569 หน้าที่ตามกฎหมายและนโยบายที่เผยแพร่แยกจากข้อเสนอกติกาของผลิตภัณฑ์ ยังต้องทบทวนแผนปฏิบัติงานในพื้นที่และการยอมรับจากหน่วยงาน")}</p><ul className={styles.sourceList}>{sources.map((s) => <li key={s.url}><a href={s.url}>{t(s.title, s.th)} <span aria-hidden="true">↗</span></a><small>{t(s.owner.en, s.owner.th)}</small></li>)}</ul><p>{t("The May 2026 source announces exercises; it does not establish FloodGuard participation. GISTDA’s LifeDee work is institutional context, not an integration. PDPA exceptions have conditions; a product role alone does not authorize access to personal data.", "แหล่งข้อมูลเดือนพฤษภาคม 2569 เป็นประกาศการฝึกซ้อม ไม่ได้ยืนยันการเข้าร่วมของ FloodGuard งาน LifeDee ของจิสด้าเป็นบริบทของหน่วยงาน ไม่ใช่การเชื่อมระบบ ข้อยกเว้น PDPA มีเงื่อนไข บทบาทในผลิตภัณฑ์เพียงอย่างเดียวไม่ให้อำนาจเข้าถึงข้อมูลส่วนบุคคล")}</p></div></details>
       </section>
+      <section id="evidence" className={`${styles.section} ${styles.evidence}`} aria-labelledby="evidence-title">
+        <div className={styles.sectionHeading}><p className={styles.eyebrow}>{t("APPENDIX · EARLIER WORKED EXAMPLE", "ภาคผนวก · ตัวอย่างการคำนวณก่อนหน้า")}</p><h2 id="evidence-title">{t(POLICY_EVIDENCE.title, POLICY_EVIDENCE.titleTh)}</h2><p>{t("Kept for the record: the first calculation on real places, made before the signed frame. It is not the Mae Sai case score; that is case SE1 at the top of this page.", "เก็บไว้เป็นบันทึก: การคำนวณครั้งแรกบนพื้นที่จริง ซึ่งทำก่อนกรอบที่ลงนาม ไม่ใช่คะแนนของกรณีแม่สาย คะแนนของกรณีแม่สายคือกรณี SE1 ที่ด้านบนของหน้านี้")}</p></div>
+        <PolicyEvidence language={language} />
+      </section>
       <footer className={styles.footer}><Link href="/" prefetch={false} className={styles.brand}>FloodGuard<span>.</span></Link><p>{t("Evidence for preparedness. Decisions with responsibility.", "หลักฐานเพื่อเตรียมพร้อม การตัดสินใจที่มีความรับผิดชอบ")}</p><a href="#main-content">{t("Back to top", "กลับด้านบน")} ↑</a></footer>
     </div>
   </main>;
+}
+
+/** One decimal, as the Command table prints a planning score. */
+function caseScore(value: number): string {
+  return value.toFixed(1);
+}
+
+/**
+ * The scored case the page leads with: case SE1 as the published planning overlay holds it. Every score sits inside
+ * this one card, after the lines that say it is a scenario, that its closures are modelled and that the stability of
+ * its classes has not been evaluated.
+ */
+function ScoredCase({ t, classTitle, linkToCase }: { t: Translate; classTitle: (letter: PolicyCaseClass) => string; linkToCase: boolean }) {
+  const rows = POLICY_CASE.rows;
+  const [first, second] = rows;
+  const chip = t(POLICY_CASE_SCORE_LABEL.en, POLICY_CASE_SCORE_LABEL.th);
+  const of = t("of", "จาก");
+  const name = (row: (typeof rows)[number]) => t(row.name_en, row.name_th);
+  const share = (lost: number, base: number) => `${policyCaseCount(lost)} ${of} ${policyCaseCount(base)}`;
+  const classE = rows.filter((row) => row.action_class === "E").length;
+  const header = {
+    tambon: t("Tambon", "ตำบล"), score: "FPPS", actionClass: t("Class (rule v1)", "ระดับ (กฎ v1)"),
+    inside: t("Residents inside the season layer", "ผู้อยู่อาศัยในขอบเขตน้ำตลอดฤดู"),
+    hospital: t("Lose hospital access", "สูญเสียการเข้าถึงโรงพยาบาล"),
+    routes: t("Lose every road route", "สูญเสียทุกเส้นทางถนน"),
+  };
+  return <article className={styles.evidenceCard} data-testid="scored-case" aria-labelledby="scored-case-title">
+    <div className={styles.evidenceTop}>
+      <div><p className={styles.smallLabel}>{t("CASE SE1 · 2024 SEASON ENVELOPE SCENARIO · PLANNING FRAME V1", "กรณี SE1 · สถานการณ์จำลองขอบเขตน้ำตลอดฤดูปี 2567 · กรอบการวางแผน v1")}</p><h3 id="scored-case-title">{t("Mae Sai district · eight tambons", "อำเภอแม่สาย · แปดตำบล")}</h3><p>{t("Flood input: the accumulated layer of UNOSAT and GISTDA (product 4009), 1 August to 12 October 2024. Road closures are modelled from it.", "ข้อมูลน้ำท่วม: ชั้นข้อมูลน้ำท่วมสะสมของ UNOSAT และจิสด้า (ผลิตภัณฑ์ 4009) 1 สิงหาคม ถึง 12 ตุลาคม 2567 การปิดถนนเป็นผลจากแบบจำลองที่ใช้ชั้นข้อมูลนี้")}</p></div>
+      <span className={styles.status}>{t("Scenario · confidence medium (declared)", "สถานการณ์จำลอง · ความเชื่อมั่นปานกลาง (ตามที่ประกาศ)")}</span>
+    </div>
+    <div className={styles.caveat} data-testid="scored-case-caveat">
+      <h4>{t("Read this before any number", "โปรดอ่านก่อนดูตัวเลข")}</h4>
+      <ul>
+        <li><strong>{t("A scenario, not an observation.", "สถานการณ์จำลอง ไม่ใช่การสังเกตการณ์")}</strong> {t("Every area ever mapped as flooded in the season is treated as flooded at once, and every road it crosses as closed under closure rule v1. No day of 2024 looked like this.", "ทุกพื้นที่ที่เคยถูกทำแผนที่ว่าน้ำท่วมในฤดูนี้ถือว่าท่วมพร้อมกัน และถนนทุกสายที่ชั้นข้อมูลตัดผ่านถือว่าปิดตามกฎการปิดถนน v1 ไม่มีวันใดในปี 2567 ที่เป็นเช่นนี้จริง")}</li>
+        <li><strong>{t("Modelled closures on a layer nobody checked in the field.", "การปิดถนนจากแบบจำลอง บนชั้นข้อมูลที่ยังไม่ได้ตรวจภาคสนาม")}</strong> {t("Water crossing a road does not prove the road was closed. The agency layer was not checked in the field and FloodGuard did not validate it. The roads have not been checked on the ground.", "น้ำที่ตัดผ่านถนนไม่ได้พิสูจน์ว่าถนนปิดจริง ชั้นข้อมูลของหน่วยงานยังไม่ได้ตรวจสอบภาคสนาม และ FloodGuard ไม่ได้ตรวจสอบความถูกต้องของชั้นข้อมูลนี้ ยังไม่มีการตรวจถนนในพื้นที่จริง")}</li>
+        <li><strong>{t("Stability not evaluated.", "ยังไม่ได้ประเมินความเสถียร")}</strong> {t("The check of how often each class holds when the declared choices are varied is not complete, so no class here is headline-eligible yet.", "การตรวจว่าระดับของแต่ละตำบลคงเดิมบ่อยเพียงใดเมื่อเปลี่ยนตัวเลือกที่ประกาศไว้ยังไม่เสร็จ จึงยังไม่มีระดับใดในหน้านี้ที่ใช้เป็นข้อสรุปหลักได้")}</li>
+        <li><strong>{t("The class names a kind of action, not a size of harm.", "ระดับบอกประเภทของการดำเนินการ ไม่ใช่ขนาดของความเสียหาย")}</strong> {t(`${second.name_en} town is class ${second.action_class} with the second-highest score, and more of its residents lose hospital access than in any other tambon.`, `ตำบล${second.name_th}อยู่ระดับ ${second.action_class} และมีคะแนนสูงเป็นอันดับสอง ทั้งยังมีผู้อยู่อาศัยที่สูญเสียการเข้าถึงโรงพยาบาลมากกว่าตำบลอื่น`)}</li>
+      </ul>
+    </div>
+    <dl className={styles.studyStats}>{rows.slice(0, 3).map((row) => <div key={row.unit_id}><dt>{name(row)}</dt><dd><span className={styles.chip}>{chip}</span><strong>{caseScore(row.fpps_0_100)}</strong><small>/ 100</small><p>{t("Class", "ระดับ")} {row.action_class} · {classTitle(row.action_class)}</p></dd></div>)}</dl>
+    <p className={styles.provenance} data-testid="scored-case-provenance">
+      <span>{t("Tier", "ระดับหลักฐาน")}: {POLICY_CASE.tier} · {t("scenario lane", "ช่องสถานการณ์จำลอง")} ({POLICY_CASE.lane})</span>
+      <span>{t("Rules", "กฎ")}: <code>{POLICY_CASE.class_rule_version}</code>, <code>{POLICY_CASE.normalisation_version}</code>, <code>{POLICY_CASE.closure_rule.version}</code> ({t("central level", "ระดับกลาง")})</span>
+      <span>{t("Protocol v1b", "โปรโตคอล v1b")}: <code>{POLICY_CASE.protocol_sha256.v1b.slice(0, 8)}</code></span>
+      <span>{t("Source period", "ช่วงเวลาของข้อมูลต้นทาง")}: <time dateTime={POLICY_CASE.source_period}>{t("1 Aug – 12 Oct 2024", "1 ส.ค. – 12 ต.ค. 2567")}</time></span>
+      <span>{t("Computed", "คำนวณเมื่อ")}: <time dateTime={POLICY_CASE.generated_at}>{t("6 Oct 2026", "6 ต.ค. 2569")}</time></span>
+      <span>{t("Confidence", "ความเชื่อมั่น")}: {t("medium, declared for a scenario", "ปานกลาง ตามที่ประกาศสำหรับสถานการณ์จำลอง")}</span>
+    </p>
+    <div className={styles.evidenceBottom}><b aria-hidden="true">{first.action_class}</b><p><strong>{t(
+      `${first.name_en} has ${policyCaseCount(first.residents_inside_the_layer)} residents inside the season layer; ${second.name_en} town has ${policyCaseCount(second.residents_inside_the_layer)}. ${first.name_en} still scores highest (${caseScore(first.fpps_0_100)} against ${caseScore(second.fpps_0_100)}).`,
+      `ตำบล${first.name_th}มีผู้อยู่อาศัยในขอบเขตน้ำตลอดฤดู ${policyCaseCount(first.residents_inside_the_layer)} คน ส่วนตำบล${second.name_th}มี ${policyCaseCount(second.residents_inside_the_layer)} คน แต่${first.name_th}ยังได้คะแนนสูงสุด (${caseScore(first.fpps_0_100)} เทียบกับ ${caseScore(second.fpps_0_100)})`,
+    )}</strong><br />{t(
+      `In the scenario, ${policyCaseCount(first.residents_losing_every_route)} of its ${policyCaseCount(first.residents_with_a_route_before)} residents with a road route lose every route to a hospital or a main road. In ${second.name_en} town ${share(second.residents_losing_every_route, second.residents_with_a_route_before)} do. A flood map alone would put ${second.name_en} town first; the class for ${first.name_en} says what to do there: ${classTitle(first.action_class).toLowerCase()}.`,
+      `ในสถานการณ์จำลองนี้ ผู้อยู่อาศัยที่มีเส้นทางถนน ${share(first.residents_losing_every_route, first.residents_with_a_route_before)} คนสูญเสียทุกเส้นทางไปโรงพยาบาลหรือถนนสายหลัก ส่วนตำบล${second.name_th}สูญเสีย ${share(second.residents_losing_every_route, second.residents_with_a_route_before)} คน หากดูเพียงแผนที่น้ำท่วม ตำบล${second.name_th}จะมาก่อน ระดับของ${first.name_th}บอกสิ่งที่ควรทำที่นั่น: ${classTitle(first.action_class)}`,
+    )}</p></div>
+    <div className={`${styles.frameTable} ${styles.caseTable}`}>
+      <table role="table" data-testid="scored-case-table">
+        <caption><span className={styles.chip}>{chip}</span>{t("The eight tambons by planning score. Residents are modelled counts; a count of lost access is taken only among residents who had it before.", "แปดตำบลเรียงตามคะแนนเพื่อการวางแผน จำนวนผู้อยู่อาศัยมาจากแบบจำลอง การสูญเสียการเข้าถึงนับเฉพาะผู้ที่เข้าถึงได้ก่อนน้ำท่วม")}</caption>
+        <thead role="rowgroup"><tr role="row"><th role="columnheader" scope="col">{header.tambon}</th><th role="columnheader" scope="col">{header.score}</th><th role="columnheader" scope="col">{header.actionClass}</th><th role="columnheader" scope="col">{header.inside}</th><th role="columnheader" scope="col">{header.hospital}</th><th role="columnheader" scope="col">{header.routes}</th></tr></thead>
+        <tbody role="rowgroup">{rows.map((row) => {
+          const reason = POLICY_CASE_REASONS[row.action_reason_code];
+          return <tr role="row" key={row.unit_id}>
+            <th role="rowheader" scope="row">{name(row)}</th>
+            <td role="cell" className={styles.weight} data-label={header.score}>{caseScore(row.fpps_0_100)}</td>
+            <td role="cell" data-label={header.actionClass}><b>{row.action_class}</b> · {classTitle(row.action_class)}{reason && <small className={styles.caseReason}>{t(reason.en, reason.th)}</small>}</td>
+            <td role="cell" data-label={header.inside}>{share(row.residents_inside_the_layer, row.residents)}</td>
+            <td role="cell" data-label={header.hospital}>{share(row.residents_losing_hospital_access, row.residents_with_hospital_access_before)}</td>
+            <td role="cell" data-label={header.routes}>{share(row.residents_losing_every_route, row.residents_with_a_route_before)}</td>
+          </tr>;
+        })}</tbody>
+      </table>
+    </div>
+    <p className={styles.caseNote} data-testid="scored-case-note"><strong>{t(E_NEVER_SAFE.en, E_NEVER_SAFE.th)}</strong> {t(
+      `${classE} tambons are class E because their score is under 35: a lower relative priority in this scenario, not a statement that they are safe. Planning guidance for preparedness only; not an official warning.`,
+      `${classE} ตำบลอยู่ระดับ E เพราะคะแนนต่ำกว่า 35 หมายถึงลำดับความสำคัญเชิงเปรียบเทียบที่ต่ำกว่าในสถานการณ์จำลองนี้ ไม่ใช่ข้อความว่าปลอดภัย ใช้เพื่อวางแผนเตรียมพร้อมเท่านั้น ไม่ใช่การเตือนภัยอย่างเป็นทางการ`,
+    )}</p>
+    <p className={styles.caseNote}>{t("Credit", "ที่มา")}: {t("UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009 (CC BY-SA 4.0). Changed by FloodGuard; the figures derived from it are shared under CC BY-SA 4.0. Roads © OpenStreetMap contributors. Residents: WorldPop 2020.", "UNOSAT และจิสด้า FL20240912THA ผลิตภัณฑ์ UNOSAT 4009 (CC BY-SA 4.0) ดัดแปลงโดย FloodGuard ตัวเลขที่ได้จากชั้นข้อมูลนี้เผยแพร่ภายใต้ CC BY-SA 4.0 ถนน © ผู้ร่วมจัดทำ OpenStreetMap ผู้อยู่อาศัย: WorldPop 2020")}{linkToCase && <> · <a href={POLICY_CASE_ROUTE} data-testid="scored-case-link">{t("Open the case on the map", "เปิดกรณีนี้บนแผนที่")} <span aria-hidden="true">↗</span></a></>}</p>
+  </article>;
 }
 
 /** Share as a one-decimal percentage, e.g. 0.963 → "96.3%". */
@@ -202,8 +286,8 @@ function PolicyEvidence({ language }: { language: Language }) {
           "จุดอ้างอิงของตัวอย่างนี้ (replay_fpps_anchor_v1) ต่างจากกรอบคะแนนที่ลงนามแล้ว (D4): น้ำท่วมเต็มคะแนนที่ 0.25 แทน 0.20 ความล่อแหลมผสมสัดส่วนกับจำนวนคน 5,000 คน แทนการใช้สัดส่วนอย่างเดียว ความเปราะบางใช้ตัวแทนจากภูมิประเทศและความห่างไกลที่ 0.25 แทนจุดอ้างอิง P10/P90 ระดับประเทศของสัดส่วนประชากรพึ่งพิง การเข้าถึงและความสำคัญของถนนก็นิยามต่างกัน (ดูตารางด้านล่าง)",
         )}</li>
         <li><strong>{t("Before protocol v1b.", "ก่อนโปรโตคอล v1b")}</strong> {t(
-          "Computed on 28–29 September 2026, before protocol v1b was hashed. It is not a protocol result and must not be cited as the Mae Sai case score. The D4/v1 scores will come from the planning assessment after v1b.",
-          "คำนวณเมื่อ 28–29 กันยายน 2569 ก่อนบันทึกค่าแฮชของโปรโตคอล v1b จึงไม่ใช่ผลตามโปรโตคอล และห้ามอ้างเป็นคะแนนของกรณีแม่สาย คะแนนตาม D4/v1 จะมาจากการประเมินเพื่อการวางแผนหลัง v1b",
+          "Computed on 28–29 September 2026, before protocol v1b was hashed. It is not a protocol result and must not be cited as the Mae Sai case score. The D4/v1 scores are those of case SE1 at the top of this page.",
+          "คำนวณเมื่อ 28–29 กันยายน 2569 ก่อนบันทึกค่าแฮชของโปรโตคอล v1b จึงไม่ใช่ผลตามโปรโตคอล และห้ามอ้างเป็นคะแนนของกรณีแม่สาย คะแนนตาม D4/v1 คือคะแนนของกรณี SE1 ที่ด้านบนของหน้านี้",
         )}</li>
       </ul>
     </div>
@@ -217,7 +301,7 @@ function PolicyEvidence({ language }: { language: Language }) {
     </p>
     <div className={styles.evidenceBottom}><b aria-hidden="true">E</b><p><strong>{t("All eight areas: Class E, monitor and verify.", "ทั้งแปดตำบล: ระดับ E ติดตามและตรวจสอบ")} {t(E_NEVER_SAFE.en, E_NEVER_SAFE.th)}</strong><br />{t("Low confidence forces E: monitor and obtain better evidence before action. These are illustrative planning estimates, not observed impacts or operational approval.", "ความเชื่อมั่นต่ำทำให้เป็นระดับ E: ติดตามและหาหลักฐานที่ดีขึ้นก่อนดำเนินการ ตัวเลขเหล่านี้เป็นค่าประมาณเพื่ออธิบายการวางแผน ไม่ใช่ผลกระทบที่ตรวจวัดหรือการอนุมัติปฏิบัติการ")}</p></div>
     <details className={`${styles.details} ${styles.studyDetails}`}><summary>{t("All eight areas, method & source", "ทั้งแปดตำบล วิธีการ และแหล่งข้อมูล")}<span aria-hidden="true">+</span></summary><div>
-      <p>{t(`Reproduced once, on 29 September 2026, from the committed 28 September method and its original r2 inputs. The current replay (${current}) computes no FPPS and assigns no class (D7), so these numbers are not refreshed from it; they will be replaced by D4/v1 planning-assessment results after protocol v1b is hashed.`, `คำนวณซ้ำครั้งเดียวเมื่อ 29 กันยายน 2569 จากวิธีที่บันทึกไว้เมื่อ 28 กันยายน และข้อมูล r2 เดิม การย้อนดูปัจจุบัน (${current}) ไม่คำนวณ FPPS และไม่กำหนดระดับ (D7) จึงไม่ได้ปรับตัวเลขเหล่านี้จาก ${current} และจะแทนที่ด้วยผลการประเมินเพื่อการวางแผนตาม D4/v1 หลังบันทึกค่าแฮชของโปรโตคอล v1b`)}</p>
+      <p>{t(`Reproduced once, on 29 September 2026, from the committed 28 September method and its original r2 inputs. The current replay (${current}) computes no FPPS and assigns no class (D7), so these numbers are not refreshed from it. The D4/v1 results are those of case SE1 at the top of this page.`, `คำนวณซ้ำครั้งเดียวเมื่อ 29 กันยายน 2569 จากวิธีที่บันทึกไว้เมื่อ 28 กันยายน และข้อมูล r2 เดิม การย้อนดูปัจจุบัน (${current}) ไม่คำนวณ FPPS และไม่กำหนดระดับ (D7) จึงไม่ได้ปรับตัวเลขเหล่านี้จาก ${current} ผลตาม D4/v1 คือผลของกรณี SE1 ที่ด้านบนของหน้านี้`)}</p>
       <p className={styles.rankingsCaption} data-testid="worked-example-rankings-caption"><span className={styles.chip}>{chip}</span>{t("All eight are Class E because confidence is low.", "ทั้งแปดตำบลเป็นระดับ E เพราะความเชื่อมั่นต่ำ")} {t(E_NEVER_SAFE.en, E_NEVER_SAFE.th)}</p>
       <ol className={styles.rankings} aria-label={t("Pre-D4 scenario FPPS for all eight subdistricts; all Class E", "FPPS ตามสถานการณ์ก่อน D4 ทั้งแปดตำบล ทุกตำบลระดับ E")}>{evidence.rankings.map((row) => <li key={row.id}><span>{t(row.name, row.nameTh)}</span><i aria-hidden="true"><span style={{ width: `${row.score}%` }} /></i><b>{row.score.toFixed(2)}</b><span>{row.actionClass}</span></li>)}</ol>
       <dl className={styles.metadata}>
@@ -253,7 +337,7 @@ function ReplayLink({ t }: { t: Translate }) {
 function SignedFrame({ t }: { t: Translate }) {
   const header = { component: t("Component", "องค์ประกอบ"), weight: t("Weight", "น้ำหนัก"), signed: t("D4 definition and anchor", "นิยามและจุดอ้างอิงตาม D4"), worked: t("The worked example used instead", "สิ่งที่ตัวอย่างใช้แทน") };
   return <section id="signed-frame" className={styles.section} aria-labelledby="signed-frame-title">
-    <div className={styles.sectionHeading}><p className={styles.eyebrow}>{t("02 · SIGNED 30 SEPTEMBER 2026", "02 · ลงนาม 30 กันยายน 2569")}</p><h2 id="signed-frame-title">{t("The signed scoring frame (D4)", "กรอบคะแนนที่ลงนามแล้ว (D4)")}</h2><p>{t("Recorded in the team’s decision log, docs/decision-log-d1-d16.md. Any FPPS shown after protocol v1b uses these fixed anchors and the AGENTS.md weights; the worked example above predates them.", "บันทึกไว้ในบันทึกมติของทีม docs/decision-log-d1-d16.md FPPS ที่แสดงหลังโปรโตคอล v1b จะใช้จุดอ้างอิงคงที่เหล่านี้และน้ำหนักตาม AGENTS.md ตัวอย่างด้านบนเกิดก่อนกรอบนี้")}</p></div>
+    <div className={styles.sectionHeading}><p className={styles.eyebrow}>{t("02 · SIGNED 30 SEPTEMBER 2026", "02 · ลงนาม 30 กันยายน 2569")}</p><h2 id="signed-frame-title">{t("The signed scoring frame (D4)", "กรอบคะแนนที่ลงนามแล้ว (D4)")}</h2><p>{t("Recorded in the team’s decision log, docs/decision-log-d1-d16.md. Any FPPS shown after protocol v1b uses these fixed anchors and the AGENTS.md weights. Case SE1 above uses them; the earlier worked example at the end of this page predates them.", "บันทึกไว้ในบันทึกมติของทีม docs/decision-log-d1-d16.md FPPS ที่แสดงหลังโปรโตคอล v1b จะใช้จุดอ้างอิงคงที่เหล่านี้และน้ำหนักตาม AGENTS.md กรณี SE1 ด้านบนใช้กรอบนี้ ส่วนตัวอย่างก่อนหน้าที่ท้ายหน้านี้เกิดก่อนกรอบนี้")}</p></div>
     <div className={styles.frameTable}>
       <table role="table" data-testid="signed-frame-table">
         <caption>{t("Five FPPS components: weight, D4 definition, and what the worked example used instead", "องค์ประกอบ FPPS ทั้งห้า: น้ำหนัก นิยามตาม D4 และสิ่งที่ตัวอย่างใช้แทน")}</caption>
@@ -270,7 +354,7 @@ function SignedFrame({ t }: { t: Translate }) {
     <ul className={styles.decisions}>
       <li><b>D6</b><span>{t("The v1 class rules (scoring.py) stay binding. The v2 triggers appear only as a labelled secondary axis.", "เกณฑ์การจัดระดับ v1 (scoring.py) ยังมีผลผูกพัน เกณฑ์ v2 แสดงได้เฉพาะเป็นแกนรองที่ระบุชัดเจน")}</span></li>
       <li><b>D7</b><span>{t("The Mae Sai replay is a narrative surface, not a scored case: it computes no FPPS and assigns no class.", "การย้อนดูแม่สายเป็นพื้นที่เล่าเรื่อง ไม่ใช่กรณีที่ให้คะแนน: ไม่คำนวณ FPPS และไม่กำหนดระดับ")}</span></li>
-      <li><b>v1b</b><span>{t("No FPPS, class or ensemble is computed until protocol v1b is hashed. This page computes none; it only shows the recorded example.", "ไม่มีการคำนวณ FPPS ระดับ หรือชุดการจำลองจนกว่าจะบันทึกค่าแฮชของโปรโตคอล v1b หน้านี้ไม่คำนวณสิ่งใด แสดงเพียงตัวอย่างที่บันทึกไว้")}</span></li>
+      <li><b>v1b</b><span>{t("Protocol v1b was signed on 3 October 2026 and its hash recorded. The scores and classes of case SE1 were computed under it. This page computes none: it prints the published case and the recorded example.", "โปรโตคอล v1b ลงนามเมื่อ 3 ตุลาคม 2569 และบันทึกค่าแฮชแล้ว คะแนนและระดับของกรณี SE1 คำนวณภายใต้โปรโตคอลนี้ หน้านี้ไม่คำนวณสิ่งใด แสดงเพียงกรณีที่เผยแพร่แล้วและตัวอย่างที่บันทึกไว้")}</span></li>
     </ul>
   </section>;
 }

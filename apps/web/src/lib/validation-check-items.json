@@ -239,10 +239,23 @@
       "id": "V-10",
       "group": "result",
       "title": "The Ko Chang roads, looked at on a map",
-      "check": "A one-page map sheet of the road pieces that cut Ko Chang off in the scenario, with bridges and raised roads marked (plan task V1). It is not prepared yet.",
-      "evidence": [],
+      "check": "Read the sheet and look at the map. It lists the closed road pieces that cut Ko Chang off in the scenario and the eight roads that, kept passable, give three residents in four a route back; one unnamed road in Si Mueang Chum alone carries more than half. Nothing was looked at on the ground: bridges and raised roads are known only where OpenStreetMap tags them, and that is five pieces. Accept if the team will say 'keep routes open' for Ko Chang with these roads named as where to look, and with the sentence that the closures are modelled. If you know one of the eight roads, write what you know in the note.",
+      "evidence": [
+        {
+          "label": "Sheet in plain words",
+          "path": "docs/ko_chang_road_check.md"
+        },
+        {
+          "label": "Map of the roads",
+          "path": "outputs/ko_chang_road_check/ko_chang_roads_se1_v1_map.png"
+        },
+        {
+          "label": "Result file",
+          "path": "outputs/ko_chang_road_check/ko_chang_roads_se1_v1.json"
+        }
+      ],
       "gates": "Saying 'keep routes open' for Ko Chang without a caveat on the roads.",
-      "ready": false,
+      "ready": true,
       "added": "2026-10-07"
     },
     {

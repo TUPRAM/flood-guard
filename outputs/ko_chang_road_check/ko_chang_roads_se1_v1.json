@@ -1,0 +1,859 @@
+{
+ "schema": "floodguard.ko_chang_road_sheet.v1",
+ "generated_at_utc": "2026-10-08T07:26:12Z",
+ "source_timestamp": "2024-08-01/2024-10-12 (season layer of product 4009)",
+ "confidence_class": "low",
+ "confidence_basis": "Modelled closures on an unvalidated agency season layer; nothing was looked at on the ground or on an image.",
+ "operational_status": "non_operational",
+ "official_warning": false,
+ "can_feed_decision_layer": false,
+ "what_this_is": "A desk sheet for plan task V1: the closed road pieces that cut Ko Chang off in the season-layer scenario of case SE1, and a what-if on which roads would have to stay passable.",
+ "unit": {
+  "unit_id": "TH570903",
+  "name_en": "Ko Chang",
+  "name_th": "เกาะช้าง"
+ },
+ "closure_level": "central",
+ "closure_basis": "modelled_from_the_season_layer_of_product_4009",
+ "reproduction_of_case_se1": {
+  "with_a_route_before": {
+   "this_sheet": 5972.366,
+   "case_se1": 5972.366
+  },
+  "losing_every_route": {
+   "this_sheet": 5972.366,
+   "case_se1": 5972.366
+  },
+  "same": true
+ },
+ "roads_in_the_tambon": {
+  "road_pieces": 3855,
+  "closed_road_pieces": 1364,
+  "bridge_tagged_pieces": 5,
+  "closed_bridge_tagged_pieces": 1
+ },
+ "cut_off_parts": {
+  "what": "Connected parts of the road graph, with the closed pieces taken out, that hold Ko Chang residents and no hospital or main-road entry.",
+  "parts": 801,
+  "residents_in_the_largest": [
+   3369.1,
+   243.4,
+   109.9,
+   69.8,
+   67.4,
+   58.1
+  ],
+  "closed_pieces_at_their_edge": 1155,
+  "roads_those_pieces_belong_to": 186
+ },
+ "roads_at_the_edge_of_the_cut_off_parts": [
+  {
+   "osm_way_id": "546447123",
+   "name": "",
+   "name_en": "",
+   "ref": "",
+   "highway": "unclassified",
+   "look_at": "https://www.openstreetmap.org/way/546447123",
+   "road_class": "unclassified",
+   "closed_pieces_at_the_edge": 68,
+   "closed_pieces_of_the_way": 82,
+   "bridge_tagged_pieces": 0,
+   "metres_of_the_edge_pieces_inside_the_layer": 2658.9
+  },
+  {
+   "osm_way_id": "1112593136",
+   "name": "",
+   "name_en": "",
+   "ref": "",
+   "highway": "track",
+   "look_at": "https://www.openstreetmap.org/way/1112593136",
+   "road_class": "local",
+   "closed_pieces_at_the_edge": 43,
+   "closed_pieces_of_the_way": 46,
+   "bridge_tagged_pieces": 0,
+   "metres_of_the_edge_pieces_inside_the_layer": 1010.9
+  },
+  {
+   "osm_way_id": "962867430",
+   "name": "",
+   "name_en": "",
+   "ref": "",
+   "highway": "residential",
+   "look_at": "https://www.openstreetmap.org/way/962867430",
+   "road_class": "residential",
+   "closed_pieces_at_the_edge": 42,
+   "closed_pieces_of_the_way": 70,
+   "bridge_tagged_pieces": 0,
+   "metres_of_the_edge_pieces_inside_the_layer": 889.0
+  },
+  {
+   "osm_way_id": "206803548",
+   "name": "",
+   "name_en": "",
+   "ref": "ชร.5054",
+   "highway": "tertiary",
+   "look_at": "https://www.openstreetmap.org/way/206803548",
+   "road_class": "tertiary",
+   "closed_pieces_at_the_edge": 41,
+   "closed_pieces_of_the_way": 46,
+   "bridge_tagged_pieces": 0,
+   "metres_of_the_edge_pieces_inside_the_layer": 2008.5
+  },
+  {
+   "osm_way_id": "546688122",
+   "name": "",
+   "name_en": "",
+   "ref": "",
+   "highway": "track",
+   "look_at": "https://www.openstreetmap.org/way/546688122",
+   "road_class": "local",
+   "closed_pieces_at_the_edge": 38,
+   "closed_pieces_of_the_way": 43,
+   "bridge_tagged_pieces": 0,
+   "metres_of_the_edge_pieces_inside_the_layer": 1287.9
+  },
+  {
+   "osm_way_id": "546688061",
+   "name": "",
+   "name_en": "",
+   "ref": "",
+   "highway": "track",
+   "look_at": "https://www.openstreetmap.org/way/546688061",
+   "road_class": "local",
+   "closed_pieces_at_the_edge": 35,
+   "closed_pieces_of_the_way": 36,
+   "bridge_tagged_pieces": 0,
+   "metres_of_the_edge_pieces_inside_the_layer": 1387.2
+  },
+  {
+   "osm_way_id": "546447060",
+   "name": "",
+   "name_en": "",
+   "ref": "",
+   "highway": "unclassified",
+   "look_at": "https://www.openstreetmap.org/way/546447060",
+   "road_class": "unclassified",
+   "closed_pieces_at_the_edge": 34,
+   "closed_pieces_of_the_way": 42,
+   "bridge_tagged_pieces": 0,
+   "metres_of_the_edge_pieces_inside_the_layer": 1141.1
+  },
+  {
+   "osm_way_id": "206803573",
+   "name": "",
+   "name_en": "",
+   "ref": "ชร.5055",
+   "highway": "tertiary",
+   "look_at": "https://www.openstreetmap.org/way/206803573",
+   "road_class": "tertiary",
+   "closed_pieces_at_the_edge": 32,
+   "closed_pieces_of_the_way": 34,
+   "bridge_tagged_pieces": 0,
+   "metres_of_the_edge_pieces_inside_the_layer": 2983.7
+  },
+  {
+   "osm_way_id": "546688072",
+   "name": "",
+   "name_en": "",
+   "ref": "",
+   "highway": "track",
+   "look_at": "https://www.openstreetmap.org/way/546688072",
+   "road_class": "local",
+   "closed_pieces_at_the_edge": 32,
+   "closed_pieces_of_the_way": 39,
+   "bridge_tagged_pieces": 0,
+   "metres_of_the_edge_pieces_inside_the_layer": 1516.2
+  },
+  {
+   "osm_way_id": "546690185",
+   "name": "",
+   "name_en": "",
+   "ref": "",
+   "highway": "track",
+   "look_at": "https://www.openstreetmap.org/way/546690185",
+   "road_class": "local",
+   "closed_pieces_at_the_edge": 30,
+   "closed_pieces_of_the_way": 32,
+   "bridge_tagged_pieces": 0,
+   "metres_of_the_edge_pieces_inside_the_layer": 1090.9
+  },
+  {
+   "osm_way_id": "546690170",
+   "name": "",
+   "name_en": "",
+   "ref": "",
+   "highway": "track",
+   "look_at": "https://www.openstreetmap.org/way/546690170",
+   "road_class": "local",
+   "closed_pieces_at_the_edge": 28,
+   "closed_pieces_of_the_way": 34,
+   "bridge_tagged_pieces": 0,
+   "metres_of_the_edge_pieces_inside_the_layer": 919.7
+  },
+  {
+   "osm_way_id": "1327506407",
+   "name": "",
+   "name_en": "",
+   "ref": "",
+   "highway": "track",
+   "look_at": "https://www.openstreetmap.org/way/1327506407",
+   "road_class": "local",
+   "closed_pieces_at_the_edge": 26,
+   "closed_pieces_of_the_way": 27,
+   "bridge_tagged_pieces": 0,
+   "metres_of_the_edge_pieces_inside_the_layer": 796.0
+  },
+  {
+   "osm_way_id": "206805340",
+   "name": "",
+   "name_en": "",
+   "ref": "",
+   "highway": "track",
+   "look_at": "https://www.openstreetmap.org/way/206805340",
+   "road_class": "local",
+   "closed_pieces_at_the_edge": 25,
+   "closed_pieces_of_the_way": 34,
+   "bridge_tagged_pieces": 0,
+   "metres_of_the_edge_pieces_inside_the_layer": 1055.1
+  },
+  {
+   "osm_way_id": "1112597115",
+   "name": "",
+   "name_en": "",
+   "ref": "",
+   "highway": "track",
+   "look_at": "https://www.openstreetmap.org/way/1112597115",
+   "road_class": "local",
+   "closed_pieces_at_the_edge": 24,
+   "closed_pieces_of_the_way": 24,
+   "bridge_tagged_pieces": 0,
+   "metres_of_the_edge_pieces_inside_the_layer": 2052.6
+  },
+  {
+   "osm_way_id": "546927138",
+   "name": "",
+   "name_en": "",
+   "ref": "",
+   "highway": "track",
+   "look_at": "https://www.openstreetmap.org/way/546927138",
+   "road_class": "local",
+   "closed_pieces_at_the_edge": 24,
+   "closed_pieces_of_the_way": 24,
+   "bridge_tagged_pieces": 0,
+   "metres_of_the_edge_pieces_inside_the_layer": 1325.2
+  },
+  {
+   "osm_way_id": "546447122",
+   "name": "",
+   "name_en": "",
+   "ref": "",
+   "highway": "track",
+   "look_at": "https://www.openstreetmap.org/way/546447122",
+   "road_class": "local",
+   "closed_pieces_at_the_edge": 21,
+   "closed_pieces_of_the_way": 23,
+   "bridge_tagged_pieces": 0,
+   "metres_of_the_edge_pieces_inside_the_layer": 476.3
+  },
+  {
+   "osm_way_id": "1112593140",
+   "name": "",
+   "name_en": "",
+   "ref": "",
+   "highway": "track",
+   "look_at": "https://www.openstreetmap.org/way/1112593140",
+   "road_class": "local",
+   "closed_pieces_at_the_edge": 20,
+   "closed_pieces_of_the_way": 28,
+   "bridge_tagged_pieces": 0,
+   "metres_of_the_edge_pieces_inside_the_layer": 1076.0
+  },
+  {
+   "osm_way_id": "546688135",
+   "name": "",
+   "name_en": "",
+   "ref": "",
+   "highway": "track",
+   "look_at": "https://www.openstreetmap.org/way/546688135",
+   "road_class": "local",
+   "closed_pieces_at_the_edge": 19,
+   "closed_pieces_of_the_way": 28,
+   "bridge_tagged_pieces": 0,
+   "metres_of_the_edge_pieces_inside_the_layer": 1024.2
+  },
+  {
+   "osm_way_id": "963521264",
+   "name": "",
+   "name_en": "",
+   "ref": "",
+   "highway": "track",
+   "look_at": "https://www.openstreetmap.org/way/963521264",
+   "road_class": "local",
+   "closed_pieces_at_the_edge": 19,
+   "closed_pieces_of_the_way": 22,
+   "bridge_tagged_pieces": 0,
+   "metres_of_the_edge_pieces_inside_the_layer": 512.2
+  },
+  {
+   "osm_way_id": "1206171614",
+   "name": "",
+   "name_en": "",
+   "ref": "",
+   "highway": "unclassified",
+   "look_at": "https://www.openstreetmap.org/way/1206171614",
+   "road_class": "unclassified",
+   "closed_pieces_at_the_edge": 17,
+   "closed_pieces_of_the_way": 64,
+   "bridge_tagged_pieces": 0,
+   "metres_of_the_edge_pieces_inside_the_layer": 1159.3
+  },
+  {
+   "osm_way_id": "1112593664",
+   "name": "ถนนเหมืองแดง",
+   "name_en": "Mueangdang Road",
+   "ref": "ชร.3059",
+   "highway": "tertiary",
+   "look_at": "https://www.openstreetmap.org/way/1112593664",
+   "road_class": "tertiary",
+   "closed_pieces_at_the_edge": 15,
+   "closed_pieces_of_the_way": 15,
+   "bridge_tagged_pieces": 0,
+   "metres_of_the_edge_pieces_inside_the_layer": 1238.4
+  },
+  {
+   "osm_way_id": "963532870",
+   "name": "",
+   "name_en": "",
+   "ref": "",
+   "highway": "track",
+   "look_at": "https://www.openstreetmap.org/way/963532870",
+   "road_class": "local",
+   "closed_pieces_at_the_edge": 15,
+   "closed_pieces_of_the_way": 15,
+   "bridge_tagged_pieces": 0,
+   "metres_of_the_edge_pieces_inside_the_layer": 639.3
+  },
+  {
+   "osm_way_id": "546699048",
+   "name": "",
+   "name_en": "",
+   "ref": "",
+   "highway": "track",
+   "look_at": "https://www.openstreetmap.org/way/546699048",
+   "road_class": "local",
+   "closed_pieces_at_the_edge": 14,
+   "closed_pieces_of_the_way": 30,
+   "bridge_tagged_pieces": 0,
+   "metres_of_the_edge_pieces_inside_the_layer": 599.2
+  },
+  {
+   "osm_way_id": "546927188",
+   "name": "",
+   "name_en": "",
+   "ref": "",
+   "highway": "track",
+   "look_at": "https://www.openstreetmap.org/way/546927188",
+   "road_class": "local",
+   "closed_pieces_at_the_edge": 14,
+   "closed_pieces_of_the_way": 16,
+   "bridge_tagged_pieces": 0,
+   "metres_of_the_edge_pieces_inside_the_layer": 1248.7
+  },
+  {
+   "osm_way_id": "206803567",
+   "name": "",
+   "name_en": "",
+   "ref": "ชร.5054",
+   "highway": "tertiary",
+   "look_at": "https://www.openstreetmap.org/way/206803567",
+   "road_class": "tertiary",
+   "closed_pieces_at_the_edge": 13,
+   "closed_pieces_of_the_way": 14,
+   "bridge_tagged_pieces": 0,
+   "metres_of_the_edge_pieces_inside_the_layer": 2236.5
+  },
+  {
+   "osm_way_id": "345929304",
+   "name": "",
+   "name_en": "",
+   "ref": "",
+   "highway": "unclassified",
+   "look_at": "https://www.openstreetmap.org/way/345929304",
+   "road_class": "unclassified",
+   "closed_pieces_at_the_edge": 13,
+   "closed_pieces_of_the_way": 70,
+   "bridge_tagged_pieces": 0,
+   "metres_of_the_edge_pieces_inside_the_layer": 914.6
+  },
+  {
+   "osm_way_id": "962869213",
+   "name": "",
+   "name_en": "",
+   "ref": "",
+   "highway": "residential",
+   "look_at": "https://www.openstreetmap.org/way/962869213",
+   "road_class": "residential",
+   "closed_pieces_at_the_edge": 13,
+   "closed_pieces_of_the_way": 21,
+   "bridge_tagged_pieces": 0,
+   "metres_of_the_edge_pieces_inside_the_layer": 503.0
+  },
+  {
+   "osm_way_id": "546447084",
+   "name": "",
+   "name_en": "",
+   "ref": "",
+   "highway": "residential",
+   "look_at": "https://www.openstreetmap.org/way/546447084",
+   "road_class": "residential",
+   "closed_pieces_at_the_edge": 12,
+   "closed_pieces_of_the_way": 16,
+   "bridge_tagged_pieces": 0,
+   "metres_of_the_edge_pieces_inside_the_layer": 461.1
+  },
+  {
+   "osm_way_id": "546688067",
+   "name": "",
+   "name_en": "",
+   "ref": "",
+   "highway": "track",
+   "look_at": "https://www.openstreetmap.org/way/546688067",
+   "road_class": "local",
+   "closed_pieces_at_the_edge": 12,
+   "closed_pieces_of_the_way": 15,
+   "bridge_tagged_pieces": 0,
+   "metres_of_the_edge_pieces_inside_the_layer": 416.4
+  },
+  {
+   "osm_way_id": "546690179",
+   "name": "",
+   "name_en": "",
+   "ref": "",
+   "highway": "track",
+   "look_at": "https://www.openstreetmap.org/way/546690179",
+   "road_class": "local",
+   "closed_pieces_at_the_edge": 12,
+   "closed_pieces_of_the_way": 12,
+   "bridge_tagged_pieces": 0,
+   "metres_of_the_edge_pieces_inside_the_layer": 791.3
+  },
+  {
+   "osm_way_id": "546699047",
+   "name": "",
+   "name_en": "",
+   "ref": "",
+   "highway": "track",
+   "look_at": "https://www.openstreetmap.org/way/546699047",
+   "road_class": "local",
+   "closed_pieces_at_the_edge": 12,
+   "closed_pieces_of_the_way": 16,
+   "bridge_tagged_pieces": 0,
+   "metres_of_the_edge_pieces_inside_the_layer": 711.6
+  },
+  {
+   "osm_way_id": "935662333",
+   "name": "",
+   "name_en": "",
+   "ref": "",
+   "highway": "residential",
+   "look_at": "https://www.openstreetmap.org/way/935662333",
+   "road_class": "residential",
+   "closed_pieces_at_the_edge": 12,
+   "closed_pieces_of_the_way": 20,
+   "bridge_tagged_pieces": 0,
+   "metres_of_the_edge_pieces_inside_the_layer": 223.7
+  },
+  {
+   "osm_way_id": "206805335",
+   "name": "",
+   "name_en": "",
+   "ref": "",
+   "highway": "residential",
+   "look_at": "https://www.openstreetmap.org/way/206805335",
+   "road_class": "residential",
+   "closed_pieces_at_the_edge": 11,
+   "closed_pieces_of_the_way": 11,
+   "bridge_tagged_pieces": 0,
+   "metres_of_the_edge_pieces_inside_the_layer": 548.1
+  },
+  {
+   "osm_way_id": "962867429",
+   "name": "",
+   "name_en": "",
+   "ref": "",
+   "highway": "service",
+   "look_at": "https://www.openstreetmap.org/way/962867429",
+   "road_class": "local",
+   "closed_pieces_at_the_edge": 10,
+   "closed_pieces_of_the_way": 12,
+   "bridge_tagged_pieces": 0,
+   "metres_of_the_edge_pieces_inside_the_layer": 300.6
+  },
+  {
+   "osm_way_id": "1114870826",
+   "name": "",
+   "name_en": "",
+   "ref": "",
+   "highway": "unclassified",
+   "look_at": "https://www.openstreetmap.org/way/1114870826",
+   "road_class": "unclassified",
+   "closed_pieces_at_the_edge": 9,
+   "closed_pieces_of_the_way": 14,
+   "bridge_tagged_pieces": 0,
+   "metres_of_the_edge_pieces_inside_the_layer": 545.1
+  },
+  {
+   "osm_way_id": "546447136",
+   "name": "",
+   "name_en": "",
+   "ref": "",
+   "highway": "service",
+   "look_at": "https://www.openstreetmap.org/way/546447136",
+   "road_class": "local",
+   "closed_pieces_at_the_edge": 8,
+   "closed_pieces_of_the_way": 13,
+   "bridge_tagged_pieces": 0,
+   "metres_of_the_edge_pieces_inside_the_layer": 291.5
+  },
+  {
+   "osm_way_id": "546688082",
+   "name": "",
+   "name_en": "",
+   "ref": "",
+   "highway": "residential",
+   "look_at": "https://www.openstreetmap.org/way/546688082",
+   "road_class": "residential",
+   "closed_pieces_at_the_edge": 8,
+   "closed_pieces_of_the_way": 9,
+   "bridge_tagged_pieces": 0,
+   "metres_of_the_edge_pieces_inside_the_layer": 308.3
+  },
+  {
+   "osm_way_id": "93419467",
+   "name": "",
+   "name_en": "",
+   "ref": "",
+   "highway": "",
+   "look_at": "https://www.openstreetmap.org/way/93419467",
+   "road_class": "residential",
+   "closed_pieces_at_the_edge": 8,
+   "closed_pieces_of_the_way": 19,
+   "bridge_tagged_pieces": 0,
+   "metres_of_the_edge_pieces_inside_the_layer": 246.4
+  },
+  {
+   "osm_way_id": "962890824",
+   "name": "",
+   "name_en": "",
+   "ref": "",
+   "highway": "residential",
+   "look_at": "https://www.openstreetmap.org/way/962890824",
+   "road_class": "residential",
+   "closed_pieces_at_the_edge": 8,
+   "closed_pieces_of_the_way": 15,
+   "bridge_tagged_pieces": 0,
+   "metres_of_the_edge_pieces_inside_the_layer": 118.9
+  },
+  {
+   "osm_way_id": "963538941",
+   "name": "",
+   "name_en": "",
+   "ref": "",
+   "highway": "track",
+   "look_at": "https://www.openstreetmap.org/way/963538941",
+   "road_class": "local",
+   "closed_pieces_at_the_edge": 8,
+   "closed_pieces_of_the_way": 17,
+   "bridge_tagged_pieces": 0,
+   "metres_of_the_edge_pieces_inside_the_layer": 207.7
+  }
+ ],
+ "what_if_one_road_stays_passable": {
+  "what": "Each road of the list above on its own, kept passable along its whole closed length: residents of Ko Chang who get a route back.",
+  "roads_that_help_on_their_own": 3,
+  "best": [
+   {
+    "osm_way_id": "206803562",
+    "name": "",
+    "name_en": "",
+    "ref": "",
+    "highway": "unclassified",
+    "look_at": "https://www.openstreetmap.org/way/206803562",
+    "centre_of_the_closed_pieces_lonlat": [
+     99.94824,
+     20.3969
+    ],
+    "centre_lies_in_unit": "TH570905",
+    "centre_lies_in_ko_chang": false,
+    "road_class": "unclassified",
+    "closed_pieces": 13,
+    "metres_inside_the_layer": 1236.3,
+    "residents_who_get_a_route_back": 3369.1
+   },
+   {
+    "osm_way_id": "93419443",
+    "name": "",
+    "name_en": "",
+    "ref": "",
+    "highway": "",
+    "look_at": "https://www.openstreetmap.org/way/93419443",
+    "centre_of_the_closed_pieces_lonlat": [
+     100.01141,
+     20.29174
+    ],
+    "centre_lies_in_unit": null,
+    "centre_lies_in_ko_chang": false,
+    "road_class": "unclassified",
+    "closed_pieces": 21,
+    "metres_inside_the_layer": 1801.0,
+    "residents_who_get_a_route_back": 17.3
+   },
+   {
+    "osm_way_id": "93181802",
+    "name": "",
+    "name_en": "",
+    "ref": "",
+    "highway": "",
+    "look_at": "https://www.openstreetmap.org/way/93181802",
+    "centre_of_the_closed_pieces_lonlat": [
+     100.05687,
+     20.28896
+    ],
+    "centre_lies_in_unit": null,
+    "centre_lies_in_ko_chang": false,
+    "road_class": "tertiary",
+    "closed_pieces": 6,
+    "metres_inside_the_layer": 124.2,
+    "residents_who_get_a_route_back": 17.3
+   }
+  ]
+ },
+ "what_if_roads_stay_passable_one_after_another": {
+  "what": "At each step the one road is added that gives the most residents a route back. A what-if on the model graph.",
+  "residents_with_a_route_before_the_flood": 5972.4,
+  "residents_with_a_route_in_the_scenario": 0.0,
+  "steps": [
+   {
+    "step": 1,
+    "osm_way_id": "206803562",
+    "name": "",
+    "name_en": "",
+    "ref": "",
+    "highway": "unclassified",
+    "look_at": "https://www.openstreetmap.org/way/206803562",
+    "centre_of_the_closed_pieces_lonlat": [
+     99.94824,
+     20.3969
+    ],
+    "centre_lies_in_unit": "TH570905",
+    "centre_lies_in_ko_chang": false,
+    "road_class": "unclassified",
+    "closed_pieces": 13,
+    "metres_inside_the_layer": 1236.3,
+    "bridge_tagged_pieces": 0,
+    "residents_who_get_a_route_back_at_this_step": 3369.1,
+    "residents_with_a_route_after_this_step": 3369.1,
+    "share_of_residents_with_a_route_before": 0.5641
+   },
+   {
+    "step": 2,
+    "osm_way_id": "1112593664",
+    "name": "ถนนเหมืองแดง",
+    "name_en": "Mueangdang Road",
+    "ref": "ชร.3059",
+    "highway": "tertiary",
+    "look_at": "https://www.openstreetmap.org/way/1112593664",
+    "centre_of_the_closed_pieces_lonlat": [
+     99.99944,
+     20.3975
+    ],
+    "centre_lies_in_unit": "TH570903",
+    "centre_lies_in_ko_chang": true,
+    "road_class": "tertiary",
+    "closed_pieces": 15,
+    "metres_inside_the_layer": 1238.4,
+    "bridge_tagged_pieces": 0,
+    "residents_who_get_a_route_back_at_this_step": 323.3,
+    "residents_with_a_route_after_this_step": 3692.4,
+    "share_of_residents_with_a_route_before": 0.6182
+   },
+   {
+    "step": 3,
+    "osm_way_id": "206803573",
+    "name": "",
+    "name_en": "",
+    "ref": "ชร.5055",
+    "highway": "tertiary",
+    "look_at": "https://www.openstreetmap.org/way/206803573",
+    "centre_of_the_closed_pieces_lonlat": [
+     99.95881,
+     20.42302
+    ],
+    "centre_lies_in_unit": "TH570903",
+    "centre_lies_in_ko_chang": true,
+    "road_class": "tertiary",
+    "closed_pieces": 34,
+    "metres_inside_the_layer": 3023.3,
+    "bridge_tagged_pieces": 0,
+    "residents_who_get_a_route_back_at_this_step": 260.4,
+    "residents_with_a_route_after_this_step": 3952.8,
+    "share_of_residents_with_a_route_before": 0.6618
+   },
+   {
+    "step": 4,
+    "osm_way_id": "345929304",
+    "name": "",
+    "name_en": "",
+    "ref": "",
+    "highway": "unclassified",
+    "look_at": "https://www.openstreetmap.org/way/345929304",
+    "centre_of_the_closed_pieces_lonlat": [
+     99.92237,
+     20.44684
+    ],
+    "centre_lies_in_unit": null,
+    "centre_lies_in_ko_chang": false,
+    "road_class": "unclassified",
+    "closed_pieces": 70,
+    "metres_inside_the_layer": 4038.2,
+    "bridge_tagged_pieces": 0,
+    "residents_who_get_a_route_back_at_this_step": 104.4,
+    "residents_with_a_route_after_this_step": 4057.2,
+    "share_of_residents_with_a_route_before": 0.6793
+   },
+   {
+    "step": 5,
+    "osm_way_id": "546447060",
+    "name": "",
+    "name_en": "",
+    "ref": "",
+    "highway": "unclassified",
+    "look_at": "https://www.openstreetmap.org/way/546447060",
+    "centre_of_the_closed_pieces_lonlat": [
+     99.95926,
+     20.45211
+    ],
+    "centre_lies_in_unit": "TH570903",
+    "centre_lies_in_ko_chang": true,
+    "road_class": "unclassified",
+    "closed_pieces": 42,
+    "metres_inside_the_layer": 1336.7,
+    "bridge_tagged_pieces": 0,
+    "residents_who_get_a_route_back_at_this_step": 156.8,
+    "residents_with_a_route_after_this_step": 4214.1,
+    "share_of_residents_with_a_route_before": 0.7056
+   },
+   {
+    "step": 6,
+    "osm_way_id": "206803548",
+    "name": "",
+    "name_en": "",
+    "ref": "ชร.5054",
+    "highway": "tertiary",
+    "look_at": "https://www.openstreetmap.org/way/206803548",
+    "centre_of_the_closed_pieces_lonlat": [
+     99.99616,
+     20.38902
+    ],
+    "centre_lies_in_unit": "TH570903",
+    "centre_lies_in_ko_chang": true,
+    "road_class": "tertiary",
+    "closed_pieces": 46,
+    "metres_inside_the_layer": 2090.7,
+    "bridge_tagged_pieces": 0,
+    "residents_who_get_a_route_back_at_this_step": 93.6,
+    "residents_with_a_route_after_this_step": 4307.7,
+    "share_of_residents_with_a_route_before": 0.7213
+   },
+   {
+    "step": 7,
+    "osm_way_id": "546447123",
+    "name": "",
+    "name_en": "",
+    "ref": "",
+    "highway": "unclassified",
+    "look_at": "https://www.openstreetmap.org/way/546447123",
+    "centre_of_the_closed_pieces_lonlat": [
+     99.96691,
+     20.45288
+    ],
+    "centre_lies_in_unit": "TH570903",
+    "centre_lies_in_ko_chang": true,
+    "road_class": "unclassified",
+    "closed_pieces": 82,
+    "metres_inside_the_layer": 3024.6,
+    "bridge_tagged_pieces": 0,
+    "residents_who_get_a_route_back_at_this_step": 78.8,
+    "residents_with_a_route_after_this_step": 4386.5,
+    "share_of_residents_with_a_route_before": 0.7345
+   },
+   {
+    "step": 8,
+    "osm_way_id": "546688135",
+    "name": "",
+    "name_en": "",
+    "ref": "",
+    "highway": "track",
+    "look_at": "https://www.openstreetmap.org/way/546688135",
+    "centre_of_the_closed_pieces_lonlat": [
+     99.99389,
+     20.40317
+    ],
+    "centre_lies_in_unit": "TH570903",
+    "centre_lies_in_ko_chang": true,
+    "road_class": "local",
+    "closed_pieces": 28,
+    "metres_inside_the_layer": 1173.5,
+    "bridge_tagged_pieces": 0,
+    "residents_who_get_a_route_back_at_this_step": 66.7,
+    "residents_with_a_route_after_this_step": 4453.1,
+    "share_of_residents_with_a_route_before": 0.7456
+   }
+  ]
+ },
+ "map": "outputs/ko_chang_road_check/ko_chang_roads_se1_v1_map.png",
+ "inputs": {
+  "context_of_record": {
+   "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e4_vehicle/context_inputs.json",
+   "canonical_sha256": "0b2672b6d4d1d94da3a4c39d819d980a9e5bf7845bb22fea1284a2893a6351a6",
+   "receipt": {
+    "path": "outputs/planning_v1/e4_planning_context_se1_vehicle.json",
+    "sha256": "690add44186d02cb501dccb152678fbf03cf109acc041a5c782af705993f2ad2"
+   }
+  },
+  "season_extent": {
+   "file": "flood_extent__as_provided__routing_context.geojson",
+   "sha256": "5d7c1c0ca7909284317a66d2a3611452de3f91d729dfb4cc31b96840e147b794",
+   "bound_by": "outputs/planning_v1/e1_flood_inputs_mae_sai.json"
+  },
+  "case_se1_table": {
+   "path": "outputs/planning_v1/e5_access_diff_se1_mae_sai_public_services.json",
+   "sha256": "d4a618fad7fb3df12666ab1eba353b84aa80c6ebe3c370fd9e11096f7dbe116b"
+  },
+  "openstreetmap_names": {
+   "file": "thailand-latest.osm.pbf",
+   "sha256": "b7f46018249638413b1d318bc86519f140c27af20cac7c00d42fe03775b7add1"
+  },
+  "protocol_sha256": {
+   "planning_protocol_v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+   "planning_protocol_v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+  }
+ },
+ "credits": [
+  "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009 (CC BY-SA 4.0). Changed by FloodGuard: repaired, projected, clipped and set against roads and residents; figures derived from it are shared under CC BY-SA 4.0.",
+  "Roads and road names © OpenStreetMap contributors (ODbL 1.0). Residents: WorldPop 2020 (CC BY 4.0)."
+ ],
+ "assumptions": [
+  "The flood input is the accumulated 2024 season layer of UNOSAT/GISTDA product 4009, treated as flooded at once: a scenario, not a day.",
+  "A road closure is modelled with closure rule v1 at the central level: a flood intersection does not prove a closure.",
+  "A road is an OpenStreetMap way. Its name and tags are as mapped; a bridge or a raised road that is not tagged is not known here.",
+  "Residents are modelled counts (WorldPop 2020) at the road node their cell snaps to, within 250 m."
+ ],
+ "limits": [
+  "Nothing was looked at on the ground or on an image. This sheet says where to look.",
+  "The season layer has no water depth, so a road counts as closed whatever the depth was.",
+  "'Stays passable' is a what-if on the model graph. It is not a statement that a road was or would be passable.",
+  "No component, no planning score and no action class is computed here."
+ ],
+ "map_sha256": "c9db33f4635b4b919aa959e65645da11f74d700126da96b46e6771edda7644fd"
+}

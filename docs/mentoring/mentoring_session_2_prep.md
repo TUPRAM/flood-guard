@@ -292,7 +292,7 @@ Agreement between two sensors 44 hours apart; not accuracy.
 | Hour-by-hour replay | `/studio/cases/mae-sai-2024/` | Live. Demo video in `docs/demo/`. |
 | Ko Chang case card with its three checks | `/command/` | Live. The checklist is a team draft. |
 | Shelter room against need | replay, shelter panel | Live. |
-| THEOS-2 against radar, four panels | `outputs/theos2_cross_check/sukhothai_20250730_v1_overview.png` | New. Needs a clean slide version. |
+| THEOS-2 against radar | `docs/mentoring/visuals/theos2_check_slide.png` (made by `scripts/build_theos2_slide.py` from the committed figure and result) | Slide drawn on 8 October, 16:9: three panels and the three figures. It shows a reduced picture of the sample image; the question to GISTDA on the terms for showing it (section 6) is still open. |
 | Pipeline in four boxes | `docs/mentoring/visuals/pipeline_four_boxes.svg` | Drawn on 8 October, 16:9. Opens in a browser; drag it onto a slide. |
 | Policy page | `/policy/` | Leads with case SE1 since 8 October: the eight tambons, the finding on Ko Chang and the four cautions. The earlier example is an appendix. |
 | Public view on a phone | `/public/` | Live. |
@@ -304,7 +304,7 @@ Agreement between two sensors 44 hours apart; not accuracy.
 1. Rehearse the pitch of section 4.2 aloud, timed, with the screens.
 2. ~~Put the SE1 result at the top of the policy page; move the old example
    down or out.~~ Done on 8 October (decision log R32).
-3. ~~Draw the four-box pipeline~~ (done, `docs/mentoring/visuals/`) and one slide of the THEOS-2 result (still to do).
+3. ~~Draw the four-box pipeline and one slide of the THEOS-2 result.~~ Both are in `docs/mentoring/visuals/` since 8 October.
 4. Ko Chang on a map (plan task V1). **The desk sheet is done (8 October):**
    `docs/ko_chang_road_check.md`, item V-10 of the team page. It lists the
    closed road pieces that cut Ko Chang off and the eight roads to look at

@@ -65,6 +65,8 @@ S1_BEFORE = ("S1A_IW_GRDH_1SDV_20240822T231600_20240822T231625_055332_06BF48_rtc
 S1_AFTER = ("S1A_IW_GRDH_1SDV_20241021T231602_20241021T231627_056207_06E178_rtc",
             "S1A_IW_GRDH_1SDV_20241021T231627_20241021T231652_056207_06E178_rtc")
 STRIP_ROWS = 1024
+READ_THREADS = 16
+READ_ROWS = 512
 HALO = rfc.WINDOW // 2
 RULES = ("un_spider", "m1_literal", "m1_v2")
 
@@ -113,11 +115,38 @@ def envelope() -> dict[str, Any]:
     }
 
 
-def fetch_mosaic(work: Path, grid: tuple[float, float, int, int], items: tuple[str, ...], name: str) -> dict[str, Any]:
-    """The lattice window of one Sentinel-1 pass from its frames, first valid value first (VV, VH; linear gamma0)."""
+def read_window_in_parallel(href: str, bounds: tuple[float, float, float, float], rows: int, columns: int, item_id: str) -> np.ndarray:
+    """Read one window of a remote raster in strips of rows, several at a time (the host is slow per connection)."""
+
+    from concurrent.futures import ThreadPoolExecutor
 
     import rasterio
-    from rasterio.windows import from_bounds
+    from rasterio.windows import Window, from_bounds
+
+    with rasterio.Env(GDAL_DISABLE_READDIR_ON_OPEN="EMPTY_DIR", GDAL_HTTP_MAX_RETRY="6", GDAL_HTTP_RETRY_DELAY="4"):
+        with rasterio.open(href) as source:
+            if source.crs.to_epsg() != EPSG or source.res != (CELL_M, CELL_M):
+                raise BuildError(f"{item_id} is not on the 10 m EPSG:{EPSG} grid")
+            whole = from_bounds(*bounds, transform=source.transform)
+    column, row = int(round(whole.col_off)), int(round(whole.row_off))
+    if abs(whole.col_off - column) > 1e-6 or abs(whole.row_off - row) > 1e-6:
+        raise BuildError(f"{item_id} is not aligned to the lattice")
+
+    def strip(start: int) -> np.ndarray:
+        with rasterio.Env(GDAL_DISABLE_READDIR_ON_OPEN="EMPTY_DIR", GDAL_HTTP_MAX_RETRY="6", GDAL_HTTP_RETRY_DELAY="4"):
+            with rasterio.open(href) as source:
+                return source.read(1, window=Window(column, row + start, columns, min(READ_ROWS, rows - start)), boundless=True,
+                                   fill_value=np.nan).astype("float32")
+
+    with ThreadPoolExecutor(READ_THREADS) as pool:
+        return np.vstack(list(pool.map(strip, range(0, rows, READ_ROWS))))
+
+
+def fetch_mosaic(work: Path, grid: tuple[float, float, int, int], items: tuple[str, ...], name: str) -> dict[str, Any]:
+    """The lattice window of one Sentinel-1 pass from its frames, first valid value first (VV, VH; linear gamma0).
+
+    A later frame is read only when the frames before it left cells without a value.
+    """
 
     west, north, rows, columns = grid
     bounds = (west, north - rows * CELL_M, west + columns * CELL_M, north)
@@ -127,15 +156,12 @@ def fetch_mosaic(work: Path, grid: tuple[float, float, int, int], items: tuple[s
         image = np.full((2, rows, columns), np.nan, dtype="float32")
         sources = []
         for item_id in items:
+            if sources and np.isfinite(image).all():
+                break
             item = t2.fetch_json(t2.STAC + item_id)
             sources.append({"item": item_id, "datetime": item["properties"]["datetime"]})
             for band, asset in enumerate(("vv", "vh")):
-                with rasterio.Env(GDAL_DISABLE_READDIR_ON_OPEN="EMPTY_DIR", GDAL_HTTP_MAX_RETRY="6", GDAL_HTTP_RETRY_DELAY="4"):
-                    with rasterio.open(f"{item['assets'][asset]['href']}?{token}") as source:
-                        if source.crs.to_epsg() != EPSG or source.res != (CELL_M, CELL_M):
-                            raise BuildError(f"{item_id} is not on the 10 m EPSG:{EPSG} grid")
-                        block = source.read(1, window=from_bounds(*bounds, transform=source.transform), boundless=True,
-                                            fill_value=np.nan).astype("float32")
+                block = read_window_in_parallel(f"{item['assets'][asset]['href']}?{token}", bounds, rows, columns, item_id)
                 block[~(np.isfinite(block) & (block > 0))] = np.nan
                 image[band] = np.where(np.isfinite(image[band]), image[band], block)
         dated.write_raster(path, [image[0], image[1]], grid, "float32", float("nan"))

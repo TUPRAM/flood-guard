@@ -2,15 +2,43 @@
   "schema": "floodguard.validation_check.items.v1",
   "updated": "2026-10-07",
   "repository": "https://github.com/TUPRAM/flood-guard",
-  "reviewers": ["Rachmania", "Putu", "Callixta"],
+  "reviewers": [
+    "Rachmania",
+    "Putu",
+    "Callixta"
+  ],
   "rule": "An item is accepted when at least one of the three reviewers accepts it and none asks for a change or rejects it. One 'change' or 'reject' holds it until that reviewer accepts. All three are asked to read; one acceptance is enough to go on (owner decision of 7 October 2026).",
   "groups": [
-    { "id": "theos2", "title": "THEOS-2 check at Sukhothai", "note": "Pull request 47, decision log R26." },
-    { "id": "requests", "title": "Requests to send", "note": "Drafts. Putu sends them; nothing was sent by the agent." },
-    { "id": "radar", "title": "Our own radar in the decision chain", "note": "Work package 1." },
-    { "id": "result", "title": "The lead result (case SE1)", "note": "The scenario from the 2024 season layer of UNOSAT and GISTDA." },
-    { "id": "pitch", "title": "Mentoring Session II, 16 October", "note": "The preparation pack." },
-    { "id": "models", "title": "Trained models and later packages", "note": "Report-only. None of them changes a class." }
+    {
+      "id": "theos2",
+      "title": "THEOS-2 check at Sukhothai",
+      "note": "Pull request 47, decision log R26."
+    },
+    {
+      "id": "requests",
+      "title": "Requests to send",
+      "note": "Drafts. Putu sends them; nothing was sent by the agent."
+    },
+    {
+      "id": "radar",
+      "title": "Our own radar in the decision chain",
+      "note": "Work package 1."
+    },
+    {
+      "id": "result",
+      "title": "The lead result (case SE1)",
+      "note": "The scenario from the 2024 season layer of UNOSAT and GISTDA."
+    },
+    {
+      "id": "pitch",
+      "title": "Mentoring Session II, 16 October",
+      "note": "The preparation pack."
+    },
+    {
+      "id": "models",
+      "title": "Trained models and later packages",
+      "note": "Report-only. None of them changes a class."
+    }
   ],
   "items": [
     {
@@ -19,9 +47,18 @@
       "title": "The water map read from the THEOS-2 image",
       "check": "Open the overview picture. The second panel shows the water read from THEOS-2 in blue and what could not be read in purple. Accept if the blue areas are water on the image and no large water area is missing. The planned two-class threshold was replaced once by a three-class one; the record says why.",
       "evidence": [
-        { "label": "Overview picture", "path": "outputs/theos2_cross_check/sukhothai_20250730_v1_overview.png" },
-        { "label": "Reference record", "path": "outputs/theos2_cross_check/sukhothai_20250730_reference_v1.json" },
-        { "label": "Result in plain words", "path": "docs/theos2_radar_cross_check.md" }
+        {
+          "label": "Overview picture",
+          "path": "outputs/theos2_cross_check/sukhothai_20250730_v1_overview.png"
+        },
+        {
+          "label": "Reference record",
+          "path": "outputs/theos2_cross_check/sukhothai_20250730_reference_v1.json"
+        },
+        {
+          "label": "Result in plain words",
+          "path": "docs/theos2_radar_cross_check.md"
+        }
       ],
       "gates": "Every figure of the THEOS-2 check rests on this map.",
       "ready": true,
@@ -33,8 +70,14 @@
       "title": "The wording of the THEOS-2 result",
       "check": "Read 'Result 1', 'Result 2' and 'What follows for the project'. Accept if each sentence says no more than the table beside it and the 44-hour gap between the two satellites is clear.",
       "evidence": [
-        { "label": "Result in plain words", "path": "docs/theos2_radar_cross_check.md" },
-        { "label": "Result file", "path": "outputs/theos2_cross_check/sukhothai_20250730_v1.json" }
+        {
+          "label": "Result in plain words",
+          "path": "docs/theos2_radar_cross_check.md"
+        },
+        {
+          "label": "Result file",
+          "path": "outputs/theos2_cross_check/sukhothai_20250730_v1.json"
+        }
       ],
       "gates": "Quoting the result in the pitch, on a page or to GISTDA.",
       "ready": true,
@@ -46,8 +89,14 @@
       "title": "Show the Sukhothai check in the final pitch",
       "check": "Accept if the team wants this result and its overview picture at 6 m in the final pitch. The picture is a reduced view of sample imagery from GISTDA. Written terms from the organisers were not seen; the request to GISTDA asks for them.",
       "evidence": [
-        { "label": "Overview picture", "path": "outputs/theos2_cross_check/sukhothai_20250730_v1_overview.png" },
-        { "label": "Usage terms log", "path": "docs/theos2_usage_terms_log.md" }
+        {
+          "label": "Overview picture",
+          "path": "outputs/theos2_cross_check/sukhothai_20250730_v1_overview.png"
+        },
+        {
+          "label": "Usage terms log",
+          "path": "docs/theos2_usage_terms_log.md"
+        }
       ],
       "gates": "A slide and one spoken line in the pitch.",
       "ready": true,
@@ -59,8 +108,14 @@
       "title": "Sukhothai is a check tile, not a study area",
       "check": "The chip is used to check methods only. No score, class, exposure or access figure is computed for Sukhothai. Accept if you agree that this stays inside the proposal, as decision log row R26 records it.",
       "evidence": [
-        { "label": "Plan of the check", "path": "docs/proposal_execution/theos2_cross_check_plan_v1.md" },
-        { "label": "Decision log", "path": "docs/decision-log-d1-d16.md" }
+        {
+          "label": "Plan of the check",
+          "path": "docs/proposal_execution/theos2_cross_check_plan_v1.md"
+        },
+        {
+          "label": "Decision log",
+          "path": "docs/decision-log-d1-d16.md"
+        }
       ],
       "gates": "Row R26 stands as written.",
       "ready": true,
@@ -72,8 +127,14 @@
       "title": "Request to GISTDA: THEOS-2 of 16 September 2024 and the Pléiades question",
       "check": "Read the draft. Accept if it may be sent as written, with the area file attached. Say in the note what to change otherwise.",
       "evidence": [
-        { "label": "Draft", "path": "outputs/theos2_request/gistda_request_2026-10-07.md" },
-        { "label": "Area file (GeoJSON)", "path": "outputs/theos2_request/floodguard_mae_sai_aoi_request_2026-10-07.geojson" }
+        {
+          "label": "Draft",
+          "path": "outputs/theos2_request/gistda_request_2026-10-07.md"
+        },
+        {
+          "label": "Area file (GeoJSON)",
+          "path": "outputs/theos2_request/floodguard_mae_sai_aoi_request_2026-10-07.geojson"
+        }
       ],
       "gates": "Putu sends the request.",
       "ready": true,
@@ -85,7 +146,10 @@
       "title": "Note to UNOSAT: GIS data of product 3991",
       "check": "Read the draft. Accept if it may be sent as written to the UNOSAT contact who approved product 4009.",
       "evidence": [
-        { "label": "Draft", "path": "outputs/theos2_request/unosat_request_2026-10-07.md" }
+        {
+          "label": "Draft",
+          "path": "outputs/theos2_request/unosat_request_2026-10-07.md"
+        }
       ],
       "gates": "Putu sends the note.",
       "ready": true,
@@ -97,8 +161,14 @@
       "title": "Rights record for the Sentinel-1 data",
       "check": "Read the record. Sentinel data are open under the Copernicus legal notice, with the credit 'Contains modified Copernicus Sentinel data'. Accept to confirm the record.",
       "evidence": [
-        { "label": "Rights record (draft)", "path": "docs/proposal_execution/rights_basis_sentinel1_v1.json" },
-        { "label": "Notice", "path": "docs/proposal_execution/rights_basis_sentinel1_v1_NOTICE.txt" }
+        {
+          "label": "Rights record (draft)",
+          "path": "docs/proposal_execution/rights_basis_sentinel1_v1.json"
+        },
+        {
+          "label": "Notice",
+          "path": "docs/proposal_execution/rights_basis_sentinel1_v1_NOTICE.txt"
+        }
       ],
       "gates": "The case of our own radar (case O1) can be issued.",
       "ready": true,
@@ -107,13 +177,38 @@
     {
       "id": "V-08",
       "group": "radar",
-      "title": "Which radar layers case O1 uses",
-      "check": "The radar layers of the run of record lie about 680 m from their true place. The second run, which uses a terrain height for every cell, leaves about 10 m. Accept to use the layers of the second run for case O1.",
+      "title": "Which radar layers are read",
+      "check": "The radar layers of the run of record lie about 680 m from their true place. The second run, which uses a terrain height for every cell, leaves about 10 m. The comparison of flood inputs reads the layers of the second run. Accept that choice, for the comparison and for case O1 if it is issued.",
       "evidence": [
-        { "label": "Radar result", "path": "docs/proposal_execution/automated_track/MAE_SAI_RADAR_CANDIDATES_RESULT.md" },
-        { "label": "Outputs note (radar section)", "path": "outputs/planning_v1/README.md" }
+        {
+          "label": "Radar result",
+          "path": "docs/proposal_execution/automated_track/MAE_SAI_RADAR_CANDIDATES_RESULT.md"
+        },
+        {
+          "label": "Outputs note (radar section)",
+          "path": "outputs/planning_v1/README.md"
+        }
       ],
       "gates": "Radar layers placed well enough to be set against roads.",
+      "ready": true,
+      "added": "2026-10-07"
+    },
+    {
+      "id": "V-21",
+      "group": "radar",
+      "title": "Is the comparison enough, or is case O1 to be issued?",
+      "check": "Issuing our own radar as a case of the protocol, with its column on the Planning page, would take two to three days: a confirmed rights record, a change to the rights code and new runs of three plan tasks. The comparison of flood inputs already shows what our radar would say. Accept if the comparison is enough for the final and case O1 is not issued. Ask for a change if you want case O1 issued.",
+      "evidence": [
+        {
+          "label": "Result of the comparison",
+          "path": "docs/flood_input_comparison.md"
+        },
+        {
+          "label": "Decision log, row R29",
+          "path": "docs/decision-log-d1-d16.md"
+        }
+      ],
+      "gates": "Where the days before the freeze of 18 October go.",
       "ready": true,
       "added": "2026-10-07"
     },
@@ -123,9 +218,18 @@
       "title": "The table of case SE1 is what the team presents",
       "check": "Open Planning. Accept if these are the classes and scores the team presents, as a scenario from the 2024 season layer: Ko Chang B 78, Mae Sai D 71, Si Mueang Chum D 59, Ban Dai D 50, and four tambons in class E.",
       "evidence": [
-        { "label": "Planning page", "href": "/command/" },
-        { "label": "Result file", "path": "apps/web/public/planning-overlays/mae-sai-2024/se1.json" },
-        { "label": "Preparation pack, section 4.1", "path": "docs/mentoring/mentoring_session_2_prep.md" }
+        {
+          "label": "Planning page",
+          "href": "/command/"
+        },
+        {
+          "label": "Result file",
+          "path": "apps/web/public/planning-overlays/mae-sai-2024/se1.json"
+        },
+        {
+          "label": "Preparation pack, section 4.1",
+          "path": "docs/mentoring/mentoring_session_2_prep.md"
+        }
       ],
       "gates": "The lead sentence of the pitch.",
       "ready": true,
@@ -147,7 +251,10 @@
       "title": "The five-minute pitch draft",
       "check": "Read section 4.2 aloud once. Accept if this is the pitch the team rehearses for the session. Put changes in the note.",
       "evidence": [
-        { "label": "Preparation pack, section 4.2", "path": "docs/mentoring/mentoring_session_2_prep.md" }
+        {
+          "label": "Preparation pack, section 4.2",
+          "path": "docs/mentoring/mentoring_session_2_prep.md"
+        }
       ],
       "gates": "Rehearsal with the screens.",
       "ready": true,
@@ -159,7 +266,10 @@
       "title": "The call to action",
       "check": "Three asks close the pitch: an afternoon with the DDPM office in Chiang Rai on the Ko Chang roads, the THEOS-2 scene of 16 September 2024 from GISTDA, and an offer to run the tool for any district. Accept if these are the three.",
       "evidence": [
-        { "label": "Preparation pack, section 4.2", "path": "docs/mentoring/mentoring_session_2_prep.md" }
+        {
+          "label": "Preparation pack, section 4.2",
+          "path": "docs/mentoring/mentoring_session_2_prep.md"
+        }
       ],
       "gates": "The last slide.",
       "ready": true,
@@ -171,7 +281,10 @@
       "title": "The table of who decides what",
       "check": "Read section 5. Accept if each row names an office that would take that decision and a result FloodGuard has today.",
       "evidence": [
-        { "label": "Preparation pack, section 5", "path": "docs/mentoring/mentoring_session_2_prep.md" }
+        {
+          "label": "Preparation pack, section 5",
+          "path": "docs/mentoring/mentoring_session_2_prep.md"
+        }
       ],
       "gates": "The policy workshop of the session.",
       "ready": true,
@@ -183,7 +296,10 @@
       "title": "The answers to the questions of Session I",
       "check": "Read the table of section 2. Accept if each answer is what the team would say to the mentor. Check it against the mentor's written summary if you have it.",
       "evidence": [
-        { "label": "Preparation pack, section 2", "path": "docs/mentoring/mentoring_session_2_prep.md" }
+        {
+          "label": "Preparation pack, section 2",
+          "path": "docs/mentoring/mentoring_session_2_prep.md"
+        }
       ],
       "gates": "The technical follow-up of the session.",
       "ready": true,
@@ -195,7 +311,10 @@
       "title": "The order of work on the trained models",
       "check": "A flood-susceptibility model (random forest or gradient boosting, tested on a district it has not seen) is built first. A supervised flood classifier is tried after it for at most two working days and dropped if its labelled data are not in place by 13 October. Both are report-only. Accept the order.",
       "evidence": [
-        { "label": "Decision log", "path": "docs/decision-log-d1-d16.md" }
+        {
+          "label": "Decision log",
+          "path": "docs/decision-log-d1-d16.md"
+        }
       ],
       "gates": "The work order until the freeze of 18 October.",
       "ready": true,
@@ -205,10 +324,23 @@
       "id": "V-16",
       "group": "models",
       "title": "How the result changes with the flood input",
-      "check": "A table of exposure, access loss and class for each flood input: the season layer and each radar method (work package 2). Not computed yet.",
-      "evidence": [],
-      "gates": "Showing our own radar beside the season layer on a page.",
-      "ready": false,
+      "check": "Read the three results and 'What follows for the project'. The same roads and residents are read under the season layer and under each of our three radar methods. Accept if the tables and the sentences under them say no more than the counts, and if the team will say 'scenario' with the Ko Chang result.",
+      "evidence": [
+        {
+          "label": "Result in plain words",
+          "path": "docs/flood_input_comparison.md"
+        },
+        {
+          "label": "Result file",
+          "path": "outputs/flood_input_comparison/mae_sai_v1.json"
+        },
+        {
+          "label": "Plan, committed before the run",
+          "path": "docs/proposal_execution/flood_input_comparison_plan_v1.md"
+        }
+      ],
+      "gates": "Showing our own radar beside the season layer in the pitch or on a page.",
+      "ready": true,
       "added": "2026-10-07"
     },
     {

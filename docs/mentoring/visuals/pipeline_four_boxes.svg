@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" width="1600" height="900" role="img" aria-labelledby="title desc" font-family="Manrope, 'Segoe UI', Arial, sans-serif">
+  <title id="title">FloodGuard in four steps</title>
+  <desc id="desc">A flood extent, open data on roads, hospitals and residents, a routing model that compares access before and after, and a published score with five parts and an action class. Every output carries its source time, confidence and assumptions.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#5d6b63"/>
+    </marker>
+  </defs>
+  <rect width="1600" height="900" fill="#f8f7f1"/>
+
+  <text x="80" y="92" font-size="20" letter-spacing="3" fill="#087f8c">FLOODGUARD THAILAND · HOW IT WORKS</text>
+  <text x="80" y="156" font-size="50" font-weight="600" fill="#17231d" letter-spacing="-1.5">From a flood map to a decision, in four steps</text>
+
+  <!-- Box 1 -->
+  <g>
+    <rect x="80" y="230" width="320" height="380" rx="14" fill="#ffffff" stroke="#087f8c" stroke-width="3"/>
+    <rect x="80" y="230" width="320" height="76" rx="14" fill="#087f8c"/>
+    <rect x="80" y="286" width="320" height="20" fill="#087f8c"/>
+    <text x="104" y="280" font-size="28" font-weight="700" fill="#ffffff">1 · Flood extent</text>
+    <text font-size="22" fill="#17231d">
+      <tspan x="104" y="356">Where could water reach?</tspan>
+    </text>
+    <text font-size="19" fill="#44524a">
+      <tspan x="104" y="402">An agency map, or our own</tspan>
+      <tspan x="104" y="430">radar detection.</tspan>
+      <tspan x="104" y="486" font-weight="600" fill="#17231d">In the Mae Sai case:</tspan>
+      <tspan x="104" y="514">the 2024 season layer of</tspan>
+      <tspan x="104" y="542">UNOSAT and GISTDA,</tspan>
+      <tspan x="104" y="570">read as a scenario.</tspan>
+    </text>
+  </g>
+  <line x1="408" y1="420" x2="452" y2="420" stroke="#5d6b63" stroke-width="4" marker-end="url(#arrow)"/>
+
+  <!-- Box 2 -->
+  <g>
+    <rect x="460" y="230" width="320" height="380" rx="14" fill="#ffffff" stroke="#376d89" stroke-width="3"/>
+    <rect x="460" y="230" width="320" height="76" rx="14" fill="#376d89"/>
+    <rect x="460" y="286" width="320" height="20" fill="#376d89"/>
+    <text x="484" y="280" font-size="28" font-weight="700" fill="#ffffff">2 · Roads and people</text>
+    <text font-size="22" fill="#17231d">
+      <tspan x="484" y="356">Who and what is there?</tspan>
+    </text>
+    <text font-size="19" fill="#44524a">
+      <tspan x="484" y="402">Open data only:</tspan>
+      <tspan x="484" y="430">roads (OpenStreetMap),</tspan>
+      <tspan x="484" y="458">residents (WorldPop),</tspan>
+      <tspan x="484" y="486">hospitals and shelters</tspan>
+      <tspan x="484" y="514">from public lists.</tspan>
+      <tspan x="484" y="570">No personal records.</tspan>
+    </text>
+  </g>
+  <line x1="788" y1="420" x2="832" y2="420" stroke="#5d6b63" stroke-width="4" marker-end="url(#arrow)"/>
+
+  <!-- Box 3 -->
+  <g>
+    <rect x="840" y="230" width="320" height="380" rx="14" fill="#ffffff" stroke="#537d5b" stroke-width="3"/>
+    <rect x="840" y="230" width="320" height="76" rx="14" fill="#537d5b"/>
+    <rect x="840" y="286" width="320" height="20" fill="#537d5b"/>
+    <text x="864" y="280" font-size="28" font-weight="700" fill="#ffffff">3 · Access loss</text>
+    <text font-size="22" fill="#17231d">
+      <tspan x="864" y="356">Who is cut off?</tspan>
+    </text>
+    <text font-size="19" fill="#44524a">
+      <tspan x="864" y="402">A routing model compares</tspan>
+      <tspan x="864" y="430">travel before and after:</tspan>
+      <tspan x="864" y="458">who loses the hospital,</tspan>
+      <tspan x="864" y="486">who loses every route.</tspan>
+      <tspan x="864" y="542">A closure is modelled,</tspan>
+      <tspan x="864" y="570">not observed.</tspan>
+    </text>
+  </g>
+  <line x1="1168" y1="420" x2="1212" y2="420" stroke="#5d6b63" stroke-width="4" marker-end="url(#arrow)"/>
+
+  <!-- Box 4 -->
+  <g>
+    <rect x="1220" y="230" width="320" height="380" rx="14" fill="#ffffff" stroke="#896829" stroke-width="3"/>
+    <rect x="1220" y="230" width="320" height="76" rx="14" fill="#896829"/>
+    <rect x="1220" y="286" width="320" height="20" fill="#896829"/>
+    <text x="1244" y="280" font-size="28" font-weight="700" fill="#ffffff">4 · Score and action</text>
+    <text font-size="22" fill="#17231d">
+      <tspan x="1244" y="356">What to prepare first?</tspan>
+    </text>
+    <text font-size="19" fill="#44524a">
+      <tspan x="1244" y="402">A published score in five</tspan>
+      <tspan x="1244" y="430">parts (30 · 25 · 20 · 15 · 10)</tspan>
+      <tspan x="1244" y="458">that anyone can re-weight.</tspan>
+      <tspan x="1244" y="514">A class A to E names the</tspan>
+      <tspan x="1244" y="542">kind of action, with</tspan>
+      <tspan x="1244" y="570">its reason.</tspan>
+    </text>
+  </g>
+
+  <!-- What travels with every output -->
+  <rect x="80" y="660" width="1460" height="76" rx="12" fill="#eff3ec" stroke="#aebeb0" stroke-width="2"/>
+  <text x="108" y="707" font-size="23" fill="#17231d"><tspan font-weight="700">With every output:</tspan> the time of its source · its confidence · its assumptions · a receipt with file hashes</text>
+
+  <text x="80" y="790" font-size="21" fill="#725124">Low confidence can never raise a class. Class E never means safe.</text>
+  <text x="80" y="826" font-size="21" fill="#725124">Planning guidance for preparedness and for prioritisation after an event. It does not watch a flood as it happens and is not an official warning.</text>
+</svg>

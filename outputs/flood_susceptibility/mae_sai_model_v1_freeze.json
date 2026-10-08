@@ -1,0 +1,941 @@
+{
+ "schema": "floodguard.flood_susceptibility.freeze.v1",
+ "generated_at_utc": "2026-10-08T07:01:02Z",
+ "source_timestamp": "2024-08-01/2024-10-12 (season layer of product 4009)",
+ "confidence_class": "low",
+ "confidence_basis": "A model of an unvalidated agency season layer; nothing was checked on the ground.",
+ "operational_status": "non_operational",
+ "official_warning": false,
+ "can_feed_decision_layer": false,
+ "plan": {
+  "path": "docs/proposal_execution/flood_susceptibility_model_plan_v1.md",
+  "sha256": "bc9202c6345d7a0a4dfb8b8a33fda7a3a580a79447bdad53163bf3ef722bcb39"
+ },
+ "stage": "fit: the season layer was read inside Mae Sai only; no cell of a test district has a label yet",
+ "training_district": "TH5709",
+ "test_districts": [
+  "TH5707",
+  "TH5708",
+  "TH5715"
+ ],
+ "cells": {
+  "mae_sai": 338421,
+  "flooded": 85817,
+  "flooded_share": 0.253581
+ },
+ "folds": {
+  "block_m": 3000.0,
+  "folds": 5,
+  "seed": 20261008,
+  "cells_by_fold": [
+   74286,
+   70007,
+   71459,
+   74852,
+   47817
+  ]
+ },
+ "features": [
+  "elevation_m",
+  "slope_degrees",
+  "hand_main_stream_m",
+  "hand_small_stream_m",
+  "distance_main_stream_m",
+  "distance_small_stream_m",
+  "log10_upstream_area_km2",
+  "distance_permanent_water_m",
+  "land_cover_tree_cover",
+  "land_cover_shrubland",
+  "land_cover_grassland",
+  "land_cover_cropland",
+  "land_cover_built_up",
+  "land_cover_bare",
+  "land_cover_wetland",
+  "land_cover_other"
+ ],
+ "baseline_feature": "hand_main_stream_m",
+ "models": {
+  "baseline_logistic_hand": {
+   "settings": {},
+   "trials": [
+    {
+     "settings": {},
+     "mean_average_precision": 0.553475,
+     "by_fold": [
+      0.687262,
+      0.809126,
+      0.52058,
+      0.326687,
+      0.423719
+     ]
+    }
+   ],
+   "features": [
+    "hand_main_stream_m"
+   ],
+   "out_of_fold_on_mae_sai": {
+    "cells": 338421,
+    "flooded_cells": 85817,
+    "flooded_share": 0.253581,
+    "roc_auc": 0.795031,
+    "average_precision": 0.479585,
+    "brier": 0.149667,
+    "brier_of_always_answering_the_training_share": 0.189277,
+    "brier_skill": 0.209271,
+    "expected_calibration_error": 0.0,
+    "reliability": [
+     {
+      "from": 0.0,
+      "to": 0.1,
+      "cells": 77037,
+      "mean_value": 0.003271,
+      "flooded_share": 0.003271
+     },
+     {
+      "from": 0.1,
+      "to": 0.2,
+      "cells": 93678,
+      "mean_value": 0.135293,
+      "flooded_share": 0.135293
+     },
+     {
+      "from": 0.2,
+      "to": 0.3,
+      "cells": 21637,
+      "mean_value": 0.241762,
+      "flooded_share": 0.241762
+     },
+     {
+      "from": 0.3,
+      "to": 0.4,
+      "cells": 35241,
+      "mean_value": 0.344372,
+      "flooded_share": 0.344372
+     },
+     {
+      "from": 0.4,
+      "to": 0.5,
+      "cells": 15501,
+      "mean_value": 0.417328,
+      "flooded_share": 0.417328
+     },
+     {
+      "from": 0.5,
+      "to": 0.6,
+      "cells": 95327,
+      "mean_value": 0.514597,
+      "flooded_share": 0.514597
+     },
+     {
+      "from": 0.6,
+      "to": 0.7,
+      "cells": 0,
+      "mean_value": null,
+      "flooded_share": null
+     },
+     {
+      "from": 0.7,
+      "to": 0.8,
+      "cells": 0,
+      "mean_value": null,
+      "flooded_share": null
+     },
+     {
+      "from": 0.8,
+      "to": 0.9,
+      "cells": 0,
+      "mean_value": null,
+      "flooded_share": null
+     },
+     {
+      "from": 0.9,
+      "to": 1.0,
+      "cells": 0,
+      "mean_value": null,
+      "flooded_share": null
+     }
+    ],
+    "abstention": {
+     "no_answer_from": 0.3,
+     "no_answer_to": 0.7,
+     "cells": 338421,
+     "cells_with_an_answer": 192352,
+     "share_with_an_answer": 0.568381,
+     "agreement_on_answered_cells": 0.905605,
+     "agreement_if_every_cell_is_answered_at_0.5": 0.754643
+    },
+    "risk_coverage": [
+     {
+      "share_of_cells_answered": 0.1,
+      "cells": 33842,
+      "agreement": 1.0
+     },
+     {
+      "share_of_cells_answered": 0.2,
+      "cells": 67684,
+      "agreement": 1.0
+     },
+     {
+      "share_of_cells_answered": 0.3,
+      "cells": 101526,
+      "agreement": 0.968481
+     },
+     {
+      "share_of_cells_answered": 0.4,
+      "cells": 135368,
+      "agreement": 0.910008
+     },
+     {
+      "share_of_cells_answered": 0.5,
+      "cells": 169210,
+      "agreement": 0.924254
+     },
+     {
+      "share_of_cells_answered": 0.6,
+      "cells": 203053,
+      "agreement": 0.889979
+     },
+     {
+      "share_of_cells_answered": 0.7,
+      "cells": 236895,
+      "agreement": 0.855924
+     },
+     {
+      "share_of_cells_answered": 0.8,
+      "cells": 270737,
+      "agreement": 0.820911
+     },
+     {
+      "share_of_cells_answered": 0.9,
+      "cells": 304579,
+      "agreement": 0.797616
+     },
+     {
+      "share_of_cells_answered": 1.0,
+      "cells": 338421,
+      "agreement": 0.754643
+     }
+    ]
+   }
+  },
+  "random_forest": {
+   "settings": {
+    "min_samples_leaf": 100
+   },
+   "trials": [
+    {
+     "settings": {
+      "min_samples_leaf": 20
+     },
+     "mean_average_precision": 0.777797,
+     "by_fold": [
+      0.873439,
+      0.890289,
+      0.730332,
+      0.692837,
+      0.702088
+     ]
+    },
+    {
+     "settings": {
+      "min_samples_leaf": 100
+     },
+     "mean_average_precision": 0.779467,
+     "by_fold": [
+      0.88005,
+      0.898555,
+      0.732346,
+      0.692207,
+      0.694175
+     ]
+    }
+   ],
+   "features": [
+    "elevation_m",
+    "slope_degrees",
+    "hand_main_stream_m",
+    "hand_small_stream_m",
+    "distance_main_stream_m",
+    "distance_small_stream_m",
+    "log10_upstream_area_km2",
+    "distance_permanent_water_m",
+    "land_cover_tree_cover",
+    "land_cover_shrubland",
+    "land_cover_grassland",
+    "land_cover_cropland",
+    "land_cover_built_up",
+    "land_cover_bare",
+    "land_cover_wetland",
+    "land_cover_other"
+   ],
+   "out_of_fold_on_mae_sai": {
+    "cells": 338421,
+    "flooded_cells": 85817,
+    "flooded_share": 0.253581,
+    "roc_auc": 0.895712,
+    "average_precision": 0.777555,
+    "brier": 0.103838,
+    "brier_of_always_answering_the_training_share": 0.189277,
+    "brier_skill": 0.4514,
+    "expected_calibration_error": 0.0,
+    "reliability": [
+     {
+      "from": 0.0,
+      "to": 0.1,
+      "cells": 134478,
+      "mean_value": 0.029291,
+      "flooded_share": 0.029291
+     },
+     {
+      "from": 0.1,
+      "to": 0.2,
+      "cells": 65677,
+      "mean_value": 0.128401,
+      "flooded_share": 0.128401
+     },
+     {
+      "from": 0.2,
+      "to": 0.3,
+      "cells": 44374,
+      "mean_value": 0.260152,
+      "flooded_share": 0.260152
+     },
+     {
+      "from": 0.3,
+      "to": 0.4,
+      "cells": 19427,
+      "mean_value": 0.355793,
+      "flooded_share": 0.355793
+     },
+     {
+      "from": 0.4,
+      "to": 0.5,
+      "cells": 16761,
+      "mean_value": 0.439473,
+      "flooded_share": 0.439473
+     },
+     {
+      "from": 0.5,
+      "to": 0.6,
+      "cells": 7130,
+      "mean_value": 0.553015,
+      "flooded_share": 0.553015
+     },
+     {
+      "from": 0.6,
+      "to": 0.7,
+      "cells": 5548,
+      "mean_value": 0.636806,
+      "flooded_share": 0.636806
+     },
+     {
+      "from": 0.7,
+      "to": 0.8,
+      "cells": 7416,
+      "mean_value": 0.750944,
+      "flooded_share": 0.750944
+     },
+     {
+      "from": 0.8,
+      "to": 0.9,
+      "cells": 9355,
+      "mean_value": 0.854303,
+      "flooded_share": 0.854303
+     },
+     {
+      "from": 0.9,
+      "to": 1.0,
+      "cells": 28255,
+      "mean_value": 0.940931,
+      "flooded_share": 0.940931
+     }
+    ],
+    "abstention": {
+     "no_answer_from": 0.3,
+     "no_answer_to": 0.7,
+     "cells": 338421,
+     "cells_with_an_answer": 289555,
+     "share_with_an_answer": 0.855606,
+     "agreement_on_answered_cells": 0.900554,
+     "agreement_if_every_cell_is_answered_at_0.5": 0.857352
+    },
+    "risk_coverage": [
+     {
+      "share_of_cells_answered": 0.1,
+      "cells": 33842,
+      "agreement": 1.0
+     },
+     {
+      "share_of_cells_answered": 0.2,
+      "cells": 67684,
+      "agreement": 1.0
+     },
+     {
+      "share_of_cells_answered": 0.3,
+      "cells": 101526,
+      "agreement": 0.987629
+     },
+     {
+      "share_of_cells_answered": 0.4,
+      "cells": 135368,
+      "agreement": 0.975903
+     },
+     {
+      "share_of_cells_answered": 0.5,
+      "cells": 169210,
+      "agreement": 0.957727
+     },
+     {
+      "share_of_cells_answered": 0.6,
+      "cells": 203053,
+      "agreement": 0.951146
+     },
+     {
+      "share_of_cells_answered": 0.7,
+      "cells": 236895,
+      "agreement": 0.934975
+     },
+     {
+      "share_of_cells_answered": 0.8,
+      "cells": 270737,
+      "agreement": 0.911017
+     },
+     {
+      "share_of_cells_answered": 0.9,
+      "cells": 304579,
+      "agreement": 0.888295
+     },
+     {
+      "share_of_cells_answered": 1.0,
+      "cells": 338421,
+      "agreement": 0.857352
+     }
+    ]
+   }
+  },
+  "gradient_boosted_trees": {
+   "settings": {
+    "learning_rate": 0.05,
+    "max_leaf_nodes": 15
+   },
+   "trials": [
+    {
+     "settings": {
+      "learning_rate": 0.05,
+      "max_leaf_nodes": 15
+     },
+     "mean_average_precision": 0.775892,
+     "by_fold": [
+      0.87309,
+      0.910206,
+      0.715927,
+      0.701993,
+      0.678244
+     ]
+    },
+    {
+     "settings": {
+      "learning_rate": 0.05,
+      "max_leaf_nodes": 31
+     },
+     "mean_average_precision": 0.774319,
+     "by_fold": [
+      0.859343,
+      0.903459,
+      0.723475,
+      0.69795,
+      0.687367
+     ]
+    },
+    {
+     "settings": {
+      "learning_rate": 0.1,
+      "max_leaf_nodes": 15
+     },
+     "mean_average_precision": 0.770199,
+     "by_fold": [
+      0.859381,
+      0.9086,
+      0.707717,
+      0.69513,
+      0.680168
+     ]
+    },
+    {
+     "settings": {
+      "learning_rate": 0.1,
+      "max_leaf_nodes": 31
+     },
+     "mean_average_precision": 0.772084,
+     "by_fold": [
+      0.852034,
+      0.902896,
+      0.713024,
+      0.69925,
+      0.693219
+     ]
+    }
+   ],
+   "features": [
+    "elevation_m",
+    "slope_degrees",
+    "hand_main_stream_m",
+    "hand_small_stream_m",
+    "distance_main_stream_m",
+    "distance_small_stream_m",
+    "log10_upstream_area_km2",
+    "distance_permanent_water_m",
+    "land_cover_tree_cover",
+    "land_cover_shrubland",
+    "land_cover_grassland",
+    "land_cover_cropland",
+    "land_cover_built_up",
+    "land_cover_bare",
+    "land_cover_wetland",
+    "land_cover_other"
+   ],
+   "out_of_fold_on_mae_sai": {
+    "cells": 338421,
+    "flooded_cells": 85817,
+    "flooded_share": 0.253581,
+    "roc_auc": 0.892477,
+    "average_precision": 0.775467,
+    "brier": 0.105621,
+    "brier_of_always_answering_the_training_share": 0.189277,
+    "brier_skill": 0.441977,
+    "expected_calibration_error": 0.0,
+    "reliability": [
+     {
+      "from": 0.0,
+      "to": 0.1,
+      "cells": 139102,
+      "mean_value": 0.031265,
+      "flooded_share": 0.031265
+     },
+     {
+      "from": 0.1,
+      "to": 0.2,
+      "cells": 53918,
+      "mean_value": 0.132868,
+      "flooded_share": 0.132868
+     },
+     {
+      "from": 0.2,
+      "to": 0.3,
+      "cells": 46234,
+      "mean_value": 0.249167,
+      "flooded_share": 0.249167
+     },
+     {
+      "from": 0.3,
+      "to": 0.4,
+      "cells": 29731,
+      "mean_value": 0.342975,
+      "flooded_share": 0.342975
+     },
+     {
+      "from": 0.4,
+      "to": 0.5,
+      "cells": 10296,
+      "mean_value": 0.453283,
+      "flooded_share": 0.453283
+     },
+     {
+      "from": 0.5,
+      "to": 0.6,
+      "cells": 9916,
+      "mean_value": 0.543566,
+      "flooded_share": 0.543566
+     },
+     {
+      "from": 0.6,
+      "to": 0.7,
+      "cells": 4368,
+      "mean_value": 0.641484,
+      "flooded_share": 0.641484
+     },
+     {
+      "from": 0.7,
+      "to": 0.8,
+      "cells": 7006,
+      "mean_value": 0.747645,
+      "flooded_share": 0.747645
+     },
+     {
+      "from": 0.8,
+      "to": 0.9,
+      "cells": 19475,
+      "mean_value": 0.867009,
+      "flooded_share": 0.867009
+     },
+     {
+      "from": 0.9,
+      "to": 1.0,
+      "cells": 18375,
+      "mean_value": 0.958095,
+      "flooded_share": 0.958095
+     }
+    ],
+    "abstention": {
+     "no_answer_from": 0.3,
+     "no_answer_to": 0.7,
+     "cells": 338421,
+     "cells_with_an_answer": 284110,
+     "share_with_an_answer": 0.839516,
+     "agreement_on_answered_cells": 0.90088,
+     "agreement_if_every_cell_is_answered_at_0.5": 0.854864
+    },
+    "risk_coverage": [
+     {
+      "share_of_cells_answered": 0.1,
+      "cells": 33842,
+      "agreement": 1.0
+     },
+     {
+      "share_of_cells_answered": 0.2,
+      "cells": 67684,
+      "agreement": 0.999705
+     },
+     {
+      "share_of_cells_answered": 0.3,
+      "cells": 101526,
+      "agreement": 0.994031
+     },
+     {
+      "share_of_cells_answered": 0.4,
+      "cells": 135368,
+      "agreement": 0.975814
+     },
+     {
+      "share_of_cells_answered": 0.5,
+      "cells": 169210,
+      "agreement": 0.962715
+     },
+     {
+      "share_of_cells_answered": 0.6,
+      "cells": 203053,
+      "agreement": 0.948762
+     },
+     {
+      "share_of_cells_answered": 0.7,
+      "cells": 236895,
+      "agreement": 0.930598
+     },
+     {
+      "share_of_cells_answered": 0.8,
+      "cells": 270737,
+      "agreement": 0.90896
+     },
+     {
+      "share_of_cells_answered": 0.9,
+      "cells": 304579,
+      "agreement": 0.885626
+     },
+     {
+      "share_of_cells_answered": 1.0,
+      "cells": 338421,
+      "agreement": 0.854864
+     }
+    ]
+   }
+  },
+  "sensitivity_without_land_cover": {
+   "kind": "random_forest",
+   "settings": {
+    "min_samples_leaf": 100
+   },
+   "features": [
+    "elevation_m",
+    "slope_degrees",
+    "hand_main_stream_m",
+    "hand_small_stream_m",
+    "distance_main_stream_m",
+    "distance_small_stream_m",
+    "log10_upstream_area_km2",
+    "distance_permanent_water_m"
+   ],
+   "out_of_fold_on_mae_sai": {
+    "cells": 338421,
+    "flooded_cells": 85817,
+    "flooded_share": 0.253581,
+    "roc_auc": 0.895323,
+    "average_precision": 0.776069,
+    "brier": 0.104238,
+    "brier_of_always_answering_the_training_share": 0.189277,
+    "brier_skill": 0.449285,
+    "expected_calibration_error": 0.0,
+    "reliability": [
+     {
+      "from": 0.0,
+      "to": 0.1,
+      "cells": 145804,
+      "mean_value": 0.034059,
+      "flooded_share": 0.034059
+     },
+     {
+      "from": 0.1,
+      "to": 0.2,
+      "cells": 53079,
+      "mean_value": 0.132519,
+      "flooded_share": 0.132519
+     },
+     {
+      "from": 0.2,
+      "to": 0.3,
+      "cells": 44443,
+      "mean_value": 0.264226,
+      "flooded_share": 0.264226
+     },
+     {
+      "from": 0.3,
+      "to": 0.4,
+      "cells": 22481,
+      "mean_value": 0.353632,
+      "flooded_share": 0.353632
+     },
+     {
+      "from": 0.4,
+      "to": 0.5,
+      "cells": 13789,
+      "mean_value": 0.436797,
+      "flooded_share": 0.436797
+     },
+     {
+      "from": 0.5,
+      "to": 0.6,
+      "cells": 9139,
+      "mean_value": 0.555531,
+      "flooded_share": 0.555531
+     },
+     {
+      "from": 0.6,
+      "to": 0.7,
+      "cells": 4219,
+      "mean_value": 0.638777,
+      "flooded_share": 0.638777
+     },
+     {
+      "from": 0.7,
+      "to": 0.8,
+      "cells": 6834,
+      "mean_value": 0.736611,
+      "flooded_share": 0.736611
+     },
+     {
+      "from": 0.8,
+      "to": 0.9,
+      "cells": 10580,
+      "mean_value": 0.843478,
+      "flooded_share": 0.843478
+     },
+     {
+      "from": 0.9,
+      "to": 1.0,
+      "cells": 28053,
+      "mean_value": 0.940042,
+      "flooded_share": 0.940042
+     }
+    ],
+    "abstention": {
+     "no_answer_from": 0.3,
+     "no_answer_to": 0.7,
+     "cells": 338421,
+     "cells_with_an_answer": 288793,
+     "share_with_an_answer": 0.853354,
+     "agreement_on_answered_cells": 0.899994,
+     "agreement_if_every_cell_is_answered_at_0.5": 0.856865
+    },
+    "risk_coverage": [
+     {
+      "share_of_cells_answered": 0.1,
+      "cells": 33842,
+      "agreement": 1.0
+     },
+     {
+      "share_of_cells_answered": 0.2,
+      "cells": 67684,
+      "agreement": 0.999985
+     },
+     {
+      "share_of_cells_answered": 0.3,
+      "cells": 101526,
+      "agreement": 0.989126
+     },
+     {
+      "share_of_cells_answered": 0.4,
+      "cells": 135368,
+      "agreement": 0.975216
+     },
+     {
+      "share_of_cells_answered": 0.5,
+      "cells": 169210,
+      "agreement": 0.961297
+     },
+     {
+      "share_of_cells_answered": 0.6,
+      "cells": 203053,
+      "agreement": 0.951269
+     },
+     {
+      "share_of_cells_answered": 0.7,
+      "cells": 236895,
+      "agreement": 0.935452
+     },
+     {
+      "share_of_cells_answered": 0.8,
+      "cells": 270737,
+      "agreement": 0.908239
+     },
+     {
+      "share_of_cells_answered": 0.9,
+      "cells": 304579,
+      "agreement": 0.887438
+     },
+     {
+      "share_of_cells_answered": 1.0,
+      "cells": 338421,
+      "agreement": 0.856865
+     }
+    ]
+   }
+  }
+ },
+ "tree_model_of_the_sensitivity_run": "random_forest",
+ "mae_sai_tambons": [
+  {
+   "unit_id": "TH570901",
+   "cells": 23819,
+   "flooded_share_in_the_season_layer": 0.578194,
+   "mean_out_of_fold_value": {
+    "baseline_logistic_hand": 0.197959,
+    "random_forest": 0.262604,
+    "gradient_boosted_trees": 0.28223
+   }
+  },
+  {
+   "unit_id": "TH570902",
+   "cells": 49178,
+   "flooded_share_in_the_season_layer": 0.0,
+   "mean_out_of_fold_value": {
+    "baseline_logistic_hand": 0.14869,
+    "random_forest": 0.075535,
+    "gradient_boosted_trees": 0.074389
+   }
+  },
+  {
+   "unit_id": "TH570903",
+   "cells": 52465,
+   "flooded_share_in_the_season_layer": 0.468083,
+   "mean_out_of_fold_value": {
+    "baseline_logistic_hand": 0.33281,
+    "random_forest": 0.388825,
+    "gradient_boosted_trees": 0.391754
+   }
+  },
+  {
+   "unit_id": "TH570904",
+   "cells": 48263,
+   "flooded_share_in_the_season_layer": 0.146344,
+   "mean_out_of_fold_value": {
+    "baseline_logistic_hand": 0.269534,
+    "random_forest": 0.21953,
+    "gradient_boosted_trees": 0.211138
+   }
+  },
+  {
+   "unit_id": "TH570905",
+   "cells": 46366,
+   "flooded_share_in_the_season_layer": 0.516154,
+   "mean_out_of_fold_value": {
+    "baseline_logistic_hand": 0.38533,
+    "random_forest": 0.483826,
+    "gradient_boosted_trees": 0.477576
+   }
+  },
+  {
+   "unit_id": "TH570906",
+   "cells": 33687,
+   "flooded_share_in_the_season_layer": 0.00472,
+   "mean_out_of_fold_value": {
+    "baseline_logistic_hand": 0.101797,
+    "random_forest": 0.071746,
+    "gradient_boosted_trees": 0.068544
+   }
+  },
+  {
+   "unit_id": "TH570908",
+   "cells": 37407,
+   "flooded_share_in_the_season_layer": 0.307001,
+   "mean_out_of_fold_value": {
+    "baseline_logistic_hand": 0.408493,
+    "random_forest": 0.376725,
+    "gradient_boosted_trees": 0.375617
+   }
+  },
+  {
+   "unit_id": "TH570909",
+   "cells": 47236,
+   "flooded_share_in_the_season_layer": 0.102655,
+   "mean_out_of_fold_value": {
+    "baseline_logistic_hand": 0.142775,
+    "random_forest": 0.125124,
+    "gradient_boosted_trees": 0.131036
+   }
+  }
+ ],
+ "label": {
+  "layer": "CHIANGRAI_20240801_20241012_AccumulatedFlood",
+  "archive_sha256": "1fe3243c2bc986d4111bb3d82aff292abccf7fb1bb1dd722747e994618b66e85",
+  "rights": {
+   "input_id": "unosat_4009",
+   "layer": "CHIANGRAI_20240801_20241012_AccumulatedFlood",
+   "record_id": "rights_basis_4009_v1",
+   "record_path": "docs/proposal_execution/rights_basis_4009_v1.json",
+   "record_sha256": "531ab40beb2b3e80a02d6de0d4d7d791b299176af0b192bfe105ca23c7e50cb3",
+   "record_schema": "floodguard.rights_basis_4009.v1",
+   "record_status": "confirmed",
+   "source": "unosat_gistda_product_4009",
+   "confirmed_by": [
+    "Putu",
+    "Rachmania"
+   ],
+   "confirmed_on": "2026-10-02",
+   "licence": {
+    "name": "CC BY-SA 4.0",
+    "full_name": "Creative Commons Attribution-ShareAlike 4.0 International",
+    "spdx_id": "CC-BY-SA-4.0",
+    "url": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "legal_code_url": "https://creativecommons.org/licenses/by-sa/4.0/legalcode"
+   },
+   "attribution": "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009",
+   "share_alike": "Every layer or table derived from product 4009 is shared under CC BY-SA 4.0, in its own file, with the attribution and a change notice. Keeping product 4009 derivatives in their own files is a caution, not legal advice.",
+   "rights_level": "public",
+   "rights_level_basis": "The confirmed record rights_basis_4009_v1 names this layer as its layer in scope. Layers derived from it may be published under CC BY-SA 4.0 with the credit and a change notice, as a season envelope only (decisions D2, D3 and R6).",
+   "not_legal_advice": true
+  },
+  "districts_read": [
+   "TH5709"
+  ]
+ },
+ "features_record_sha256": "9811dbda943e7fd70d98bf4bee6a3bd736360955adcc0d948c189d149903a64f",
+ "files_outside_git": {
+  "models_v1.joblib": "879d00fb444059668b0b8e9cc11d8714108bdb806a8c3bbc80f84fec051f4f2a"
+ },
+ "libraries": {
+  "python": "3.11.8",
+  "numpy": "2.2.6",
+  "scikit_learn": "1.9.1"
+ },
+ "assumptions": [
+  "The label is the accumulated layer of UNOSAT/GISTDA product 4009, as provided: an unvalidated preliminary agency extent made mostly from radar, which sees open water on fields better than water under trees or between buildings.",
+  "A cell counts for a district when its centre is inside it; a cell is labelled flooded when its centre is inside the layer.",
+  "Upstream area is cut at the edge of the hydrology window, so permanent water counts as a stream.",
+  "Land cover is resampled from 10 m to 30 m by nearest cell."
+ ],
+ "limits": [
+  "Susceptibility for one season, not a flood map of any day and not a forecast.",
+  "Every figure is agreement with the season layer on districts the model never saw, never accuracy against the ground.",
+  "It feeds no component, no planning score and no action class. A use in a planning score would need a new protocol version.",
+  "One season of one province: the model is not shown to hold elsewhere or in another year."
+ ]
+}

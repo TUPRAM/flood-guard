@@ -1,0 +1,94 @@
+{
+ "schema": "floodguard.theos2_study_event_radar_freeze.v1",
+ "generated_at_utc": "2026-10-09T11:28:06Z",
+ "source_timestamp": "Sentinel-1 2024-09-15T23:16:14Z; image before: the last pass of the same orbit the source holds; dry-season passes of 24 February, 7 March and 12 April 2024",
+ "confidence_class": "low",
+ "confidence_basis": "Sentinel-1 backscatter read by fixed rules and one frozen detector; no reading was checked on the ground.",
+ "operational_status": "non_operational",
+ "official_warning": false,
+ "can_feed_decision_layer": false,
+ "plan": {
+  "path": "docs/proposal_execution/theos2_study_event_check_plan_v1.md",
+  "sha256": "29ec9e1cfcf4a7f4ae09601bc6dfaa78139d6340e308e6cbcc54b958d19423fc"
+ },
+ "what_this_is": "The radar readings of the Sentinel-1 pass of 15 September 2024 over Mae Sai district, frozen before any THEOS-2 image of September 2024 was received.",
+ "no_image_of_the_event_was_read": true,
+ "readings": {
+  "frozen_detector": {
+   "band": 1,
+   "flagged_km2_in_the_district": 23.763,
+   "cells_without_an_answer_in_the_district": 0
+  },
+  "simple_threshold": {
+   "band": 2,
+   "flagged_km2_in_the_district": 20.424,
+   "cells_without_an_answer_in_the_district": 0
+  },
+  "un_spider_dry_baseline": {
+   "band": 3,
+   "flagged_km2_in_the_district": 11.461,
+   "cells_without_an_answer_in_the_district": 0
+  },
+  "un_spider_last_pass_before": {
+   "band": 4,
+   "flagged_km2_in_the_district": 1.666,
+   "cells_without_an_answer_in_the_district": 0
+  },
+  "m1_literal_last_pass_before": {
+   "band": 5,
+   "flagged_km2_in_the_district": 136.767,
+   "cells_without_an_answer_in_the_district": 0
+  },
+  "m1_v2_last_pass_before": {
+   "band": 6,
+   "flagged_km2_in_the_district": 0.0,
+   "cells_without_an_answer_in_the_district": 3045629
+  }
+ },
+ "what_each_reading_is": {
+  "frozen_detector": "the detector frozen in decision log R37: VH after at or below the frozen threshold, cleaned (slope, group size, growth)",
+  "simple_threshold": "VH after at or below the frozen threshold, not cleaned",
+  "un_spider_dry_baseline": "the UN-SPIDER quotient rule with the median of three dry-season passes as its image before",
+  "un_spider_last_pass_before": "the UN-SPIDER quotient rule with the last pass of the same orbit before the event as its image before",
+  "m1_literal_last_pass_before": "rule M1-literal with the same image before",
+  "m1_v2_last_pass_before": "the frozen rule M1-v2 with the same image before"
+ },
+ "sentinel1": {
+  "after": "2024-09-15T23:16:14Z",
+  "last_pass_before": [
+   {
+    "item": "S1A_IW_GRDH_1SDV_20240822T231600_20240822T231625_055332_06BF48_rtc",
+    "datetime": "2024-08-22T23:16:13.221460Z"
+   }
+  ],
+  "relative_orbit": 135
+ },
+ "frozen_detector": {
+  "freeze_record": "outputs/radar_detection_improvement/freeze_v1.json",
+  "sha256": "d40135c2c8d12dd68219b18e14d1d2e797ffa74bbbb7c8fed9d59062f8bc2ac6"
+ },
+ "grid_10m": {
+  "epsg": 32647,
+  "west": 583680.0,
+  "north": 2273280.0,
+  "rows": 4096,
+  "columns": 3072,
+  "cell_m": 10.0
+ },
+ "district_km2_outside_permanent_water": 304.563,
+ "raster_outside_git": {
+  "name": "radar_readings_mae_sai_20240915.tif",
+  "sha256": "c77d7f1aebb8ce71359bb98c333f860eb5f075a05b640ef6bc20bc383f0f3dcc",
+  "values": "1 flagged, 0 not flagged, 255 no answer"
+ },
+ "assumptions": [
+  "The radar readings are those of one Sentinel-1 pass, four to five days after the peak of the flood at Mae Sai.",
+  "The water of a THEOS-2 image is read by one rule (NDWI, three-class Otsu) with no setting made by eye; it is not a check on the ground.",
+  "Cells of permanent water and cells outside the district are left out of every count."
+ ],
+ "limits": [
+  "One optical image, hours after the radar pass: water that came or went in between counts against the radar.",
+  "Radar cannot see water under roofs and trees; the counts by stratum say how much of the compared ground that is.",
+  "Report-only. No published class changes and nothing enters a planning score."
+ ]
+}

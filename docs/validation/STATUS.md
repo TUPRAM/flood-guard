@@ -1,6 +1,6 @@
 # Validation check: state of the team's acceptance
 
-Written by `scripts/import_validation_records.py` on 2026-10-09T08:25:27Z from 6 record(s). Do not edit by hand.
+Written by `scripts/import_validation_records.py` on 2026-10-09T11:42:55Z from 9 record(s). Do not edit by hand.
 
 This is the word of the three team members on the project's own work. It is not a review by an independent expert, it qualifies no flood map, and it is not an official approval.
 
@@ -23,13 +23,17 @@ This is the word of the three team members on the project's own work. It is not 
 | V-14 | The answers to the questions of Session I | Accepted | accept | accept | accept |
 | V-15 | The order of work on the trained models | Accepted | accept | accept | accept |
 | V-16 | How the result changes with the flood input | Accepted | accept | accept | accept |
-| V-17 | Radar set against the dated layer of 22 October 2024 at Mae Sai | Waiting |  |  |  |
+| V-17 | Radar set against the dated layer of 22 October 2024 at Mae Sai | Accepted | accept | accept | accept |
 | V-18 | The trained flood-susceptibility model | Accepted | accept | accept | accept |
-| V-19 | The supervised flood classifier | Waiting |  |  |  |
+| V-19 | The supervised flood classifier | Accepted | accept | accept | accept |
 | V-20 | THEOS-2 on Mae Sai itself | Evidence not ready |  |  |  |
-| V-22 | The Ko Chang roads at the other closure levels | Waiting |  |  |  |
-| V-23 | Access loss by age group | Waiting |  |  |  |
-| V-24 | The second class reading (the proposal's own class wording) | Waiting |  |  |  |
-| V-25 | The work on the radar detection and its one test | Waiting |  |  |  |
-| V-26 | The September 2024 pass read again | Waiting |  |  |  |
-| V-27 | The stability of the SE1 classes over all 180 cells | Waiting |  |  |  |
+| V-22 | The Ko Chang roads at the other closure levels | Accepted | accept | accept | accept |
+| V-23 | Access loss by age group | Accepted | accept | accept | accept |
+| V-24 | The second class reading (the proposal's own class wording) | Accepted | accept | accept | accept |
+| V-25 | The work on the radar detection and its one test | Accepted | accept | accept | accept |
+| V-26 | The September 2024 pass read again | Accepted | accept | accept | accept |
+| V-27 | The stability of the SE1 classes over all 180 cells | Accepted | accept | accept | accept |
+| V-28 | Access loss by age over the 180 cells of the ensemble | Waiting |  |  |  |
+| V-29 | Shelters: access on foot and listed places against the residents in reach | Waiting |  |  |  |
+| V-30 | The printable brief of case SE1, Thai and English | Waiting |  |  |  |
+| V-31 | THEOS-2 on Mae Sai itself: the plan and the frozen radar readings | Waiting |  |  |  |

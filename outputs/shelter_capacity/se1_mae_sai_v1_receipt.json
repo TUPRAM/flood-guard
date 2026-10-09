@@ -1,0 +1,81 @@
+{
+ "schema": "floodguard.shelter_capacity_receipt.v1",
+ "generated_at_utc": "2026-10-09T11:34:39Z",
+ "source_timestamp": "2024-08-01/2024-10-12",
+ "confidence_class": "low",
+ "operational_status": "non_operational",
+ "official_warning": false,
+ "can_feed_decision_layer": false,
+ "fpps_input": false,
+ "what_this_is": "The receipt of a report-only run: shelter access on foot and listed shelter places against the residents in reach, for case SE1.",
+ "why_no_figure_is_here": "Shelter figures are pitch level (protocol v1b, facility_sets; decision D8b). This file is in a public repository, so it holds no figure of the shelter service: no count of residents, no capacity and no ratio. The result and the pitch note are outside Git and are bound here by SHA-256.",
+ "publication_level_of_the_result": "pitch",
+ "label_of_the_result": "listed planned capacity; scenario",
+ "case_id": "SE1",
+ "frame_set": "mae_sai",
+ "protocol_sha256": {
+  "planning_protocol_v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+  "planning_protocol_v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+ },
+ "method": {
+  "source": "planning_protocol_v1b.json /facility_sets/two_step_access",
+  "measure": "binary 2SFCA",
+  "thresholds_minutes": [
+   15,
+   30,
+   60
+  ],
+  "primary_threshold_minutes": 30,
+  "participation_percent": [
+   5,
+   10,
+   25
+  ],
+  "ratio": "listed places in reach of a resident, shared among everyone in reach of each shelter who would seek a place; under 1 means fewer places than people seeking them",
+  "allocation": false
+ },
+ "states": {
+  "baseline": "no flood",
+  "strict": "closure rule v1, strict level",
+  "central": "closure rule v1, central level",
+  "permissive": "closure rule v1, permissive level",
+  "central_with_shelters_inside_the_layer_left_out": "central level, and a shelter whose point lies inside the flood layer offers no place and is no destination"
+ },
+ "walking_context": {
+  "status": "candidate",
+  "canonical_sha256": "1c317916610567672507ba3a436591c6835ffa58934b8ce1e9c4f9310ae3586e",
+  "accepted_for": "report-only shelter figures, by the owner on 9 October 2026 (decision log R40); the registered task E5 receipt still calls it a candidate"
+ },
+ "checks": {
+  "minutes_to_the_nearest_shelter_are_those_of_the_engine": "PASS",
+  "counts_per_tambon_are_those_of_the_task_e5_shelter_table": {
+   "result": "PASS",
+   "values_compared": 144
+  }
+ },
+ "outputs_outside_git": [
+  {
+   "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/shelter_capacity/shelter_capacity_se1_v1.json",
+   "sha256": "17caeb470bc4e7e20a2eeda1e4c07553522f4b149cb9ebaa598b3045e3bd3148",
+   "bytes": 140919
+  },
+  {
+   "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/shelter_capacity/shelter_capacity_se1_v1_pitch_note.md",
+   "sha256": "bf5595db2eecd86edae0867a4009fccd4c62b9538c734083748291e692ad30ad",
+   "bytes": 2071
+  }
+ ],
+ "assumptions": [
+  "Everyone walks at the speeds of the walking context; nobody is driven or carried.",
+  "A closure is a modelled assumption of closure rule v1, not an observed closure.",
+  "A listed capacity is a planning figure. Whether a shelter was open, and for how many, was not verified.",
+  "The participation shares of 5, 10 and 25 percent are assumptions, not estimates of who would go.",
+  "A shelter is a destination wherever it stands; only the last state leaves out the shelters whose point the flood layer covers."
+ ],
+ "limits": [
+  "Pitch level: not for a public file (protocol v1b; decision D8b).",
+  "The walking context is a candidate build without a declared compute window (open point E5-OP5).",
+  "2SFCA is not promoted: it is no input of the planning score and changes no class.",
+  "A scenario of the 2024 season layer, not a flood of any day. Class E never means safe, and a shelter in reach is not a shelter that is open."
+ ]
+}

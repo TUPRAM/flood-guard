@@ -1,0 +1,57 @@
+{
+  "type": "FeatureCollection",
+  "name": "floodguard_priority2_mae_sai_town",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "aoi_id": "AOI-01",
+        "priority": 2,
+        "name": "Mae Sai core - town, border crossing and Sai River strip",
+        "name_th": "แม่สาย (เขตเมืองและแนวแม่น้ำสาย)",
+        "why": "The town that was flooded worst in September 2024. Unchanged from the request of 7 October.",
+        "province": "Chiang Rai",
+        "event": "Chiang Rai / Mae Sai flood, September 2024",
+        "project": "FloodGuard Thailand (TeamBits, GeoHackathon 2026)",
+        "request_id": "FG-THEOS2-REQ-003",
+        "requested_on": "2026-10-09",
+        "crs": "EPSG:4326 (WGS84)",
+        "redistribution_intent": "None. Imagery stays outside version control; only derived figures are published.",
+        "bbox_wgs84": [
+          99.8384,
+          20.3705,
+          99.9441,
+          20.4563
+        ],
+        "approx_size_km": "11.0 x 9.5"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              99.8384,
+              20.3705
+            ],
+            [
+              99.9441,
+              20.3705
+            ],
+            [
+              99.9441,
+              20.4563
+            ],
+            [
+              99.8384,
+              20.4563
+            ],
+            [
+              99.8384,
+              20.3705
+            ]
+          ]
+        ]
+      }
+    }
+  ]
+}

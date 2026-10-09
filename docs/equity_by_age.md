@@ -1,9 +1,12 @@
 # Access loss by age group in case SE1: result
 
 > **Update, 9 October 2026.** The comparison has since been run over the 180
-> cells of the ensemble; the protocol's rule is met for the district, with older
-> residents losing access slightly less often, not more. See the section added
-> below. The text before it is the first result, at three closure levels.
+> cells of the ensemble, the owners gave the rule a smallest size of one point,
+> and a check was made with registered age counts. In short: with the modelled
+> age grid no gap of a point or more is stated for the district; with the
+> registered age mix of each tambon, older residents lose access more often.
+> The direction depends on the age data. See the two sections added below; the
+> text before them is the first result, at three closure levels.
 
 **What this is.** The two age comparisons the protocol names, computed for the
 first time for case SE1: residents of 60 and over against those under 60, and
@@ -134,6 +137,59 @@ To run it again:
 ```bash
 python scripts/build_equity_ensemble.py --external-data <external-data-root> --age-dir <folder of the age rasters>
 ```
+
+## Added later on 9 October 2026: a smallest size for a gap, and a check with registered age counts
+
+**The owners gave the rule a smallest size (decision log R41).** A gap is
+stated only when the rule of the protocol is met and the difference nearest
+to zero, among the cells, is at least one percentage point. The signed
+protocol is not edited; the reading stands in the decision log
+(`outputs/equity_by_age/se1_mae_sai_ensemble_smallest_size_v1.json`).
+
+With it, over the 180 cells:
+
+- **For the district no age gap is stated.** The differences nearest to zero
+  are 0.7 points for residents of 60 and over and 0.4 points for children.
+  The sentence is: "no age-group gap of a point or more under the tested
+  assumptions".
+- **One gap is stated, in Mae Sai tambon:** residents of 60 and over lose a
+  hospital within 30 minutes at a rate 1.1 to 5.9 points lower than residents
+  under 60. Nothing is stated for the other seven tambons.
+
+**A check with registered age counts turns the direction round.** The
+Department of Provincial Administration publishes registered residents by
+single year of age for every tambon (December 2024). Giving each tambon its
+registered age mix in place of the modelled 1 km grid, at the three closure
+levels (`outputs/equity_by_age/se1_mae_sai_registration_check_v1.json`):
+
+| Loses a hospital within 30 minutes | Difference of loss rates | Ratio of loss rates |
+|---|---|---|
+| Residents of 60 and over, against residents under 60 | **3.1 to 4.1 points higher** | 1.10 to 1.13 |
+| Children of 0 to 14, against residents of 15 and over | **2.5 to 3.4 points lower** | 0.90 to 0.92 |
+
+The registered counts put more older residents in Ko Chang (27% of those
+with an age are 60 or over) and Si Mueang Chum (25%), which lose access
+heavily, than in Wiang Phang Kham (17%), which loses hardly any.
+
+How far this check carries:
+
+- Everyone in a tambon is given the loss rate of the tambon, so the gap comes
+  only from differences between the eight tambons.
+- **The ages cover Thai nationals named in a house register only.** Of
+  132,676 registered residents of the district, 53,072 (two in five) are not
+  Thai nationals and have no age in the source.
+- Registered is not resident: people are registered where their house
+  register is.
+- Three runs with the 2020 demand, not the ensemble.
+- The source pages state no licence; the extract stays outside Git and the
+  figures above are cited as a published official statistic.
+
+**What may be said now.** "Whether older residents lose access more or less
+often than others depends on the age data. With the modelled age grid there
+is no gap of a point or more for the district. With the registered age mix of
+each tambon, residents of 60 and over lose hospital access at 1.10 to 1.13
+times the rate of younger residents. Neither source counts everyone who lives
+in this border district." No tambon is ranked by its age mix.
 
 ## Limits
 

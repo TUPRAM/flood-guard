@@ -564,6 +564,82 @@
       "gates": "Saying how stable a class of case SE1 is, in the pitch or on a page.",
       "ready": true,
       "added": "2026-10-09"
+    },
+    {
+      "id": "V-28",
+      "group": "result",
+      "title": "Access loss by age over the 180 cells of the ensemble",
+      "check": "Read the section added on 9 October. Over the 180 cells the protocol's rule for a gap sentence is met for the district, and the direction is not the one the proposal expected: residents of 60 and over lose hospital access at 0.86 to 0.98 times the rate of younger residents, children at 1.01 to 1.08 times the rate of older ones. The gap comes from where the 1 km age model places the age groups, and its size depends on the population product. Accept if the team will state the result in these words, will not say that older residents are cut off more in this scenario, and will not lead the pitch with the equity gap.",
+      "evidence": [
+        {
+          "label": "Result in plain words, section added on 9 October",
+          "path": "docs/equity_by_age.md"
+        },
+        {
+          "label": "Result file",
+          "path": "outputs/equity_by_age/se1_mae_sai_ensemble_v1.json"
+        }
+      ],
+      "gates": "Any sentence about an age-group gap, in the pitch or on a page.",
+      "ready": true,
+      "added": "2026-10-09"
+    },
+    {
+      "id": "V-29",
+      "group": "result",
+      "title": "Shelters: access on foot and listed places against the residents in reach",
+      "check": "Read the method page, then the pitch note, which is outside the repository because shelter figures are pitch level: ask Putu for shelter_capacity_se1_v1_pitch_note.md from the external data folder. Check that every figure you would use carries the label 'listed planned capacity; scenario', that no figure goes on a public page, and that nobody says a shelter was open. Accept if the team agrees with using the candidate walking network for these report-only figures and with keeping them out of public files.",
+      "evidence": [
+        {
+          "label": "Method and what was checked (no figures)",
+          "path": "docs/shelter_capacity.md"
+        },
+        {
+          "label": "Receipt of the run",
+          "path": "outputs/shelter_capacity/se1_mae_sai_v1_receipt.json"
+        }
+      ],
+      "gates": "Using a shelter figure in the pitch.",
+      "ready": true,
+      "added": "2026-10-09"
+    },
+    {
+      "id": "V-30",
+      "group": "pitch",
+      "title": "The printable brief of case SE1, Thai and English",
+      "check": "Open the HTML file in a browser and print it (A4, landscape, one sheet). Check the eight rows against the Planning page, read the Thai, and read the note on Mae Sai's class, which is not part of the published result and says so. The Thai was written by the assistant and not reviewed by a native speaker. Accept if the brief may be handed out as it is; choose 'change' with a note for any wording, Thai or English, that should be different.",
+      "evidence": [
+        {
+          "label": "The brief, as a page to print",
+          "path": "outputs/planning_brief/se1_mae_sai_brief.html"
+        },
+        {
+          "label": "The brief, as text",
+          "path": "outputs/planning_brief/se1_mae_sai_brief.md"
+        }
+      ],
+      "gates": "Handing the brief to a mentor, a judge or anyone outside the team.",
+      "ready": true,
+      "added": "2026-10-09"
+    },
+    {
+      "id": "V-31",
+      "group": "radar",
+      "title": "THEOS-2 on Mae Sai itself: the plan and the frozen radar readings",
+      "check": "Read the plan. It fixes, before GISTDA delivers, which scenes play which role, that six radar readings of 15 September 2024 are frozen first, that the water of an image is read with no setting made by eye and looked at before any reading is opened, and which sentences will be written. For roads it fixes that an image can show a road under water and cannot show that a road stayed passable. One amendment was made before anything was frozen: the image before of the fixed rules is the pass of 22 August 2024, because the radar source holds none of 3 September. Accept if the team will let the comparison run once per scene under this plan and will report what it gives.",
+      "evidence": [
+        {
+          "label": "The plan",
+          "path": "docs/proposal_execution/theos2_study_event_check_plan_v1.md"
+        },
+        {
+          "label": "The frozen radar readings",
+          "path": "outputs/theos2_study_event_check/radar_freeze_v1.json"
+        }
+      ],
+      "gates": "Running the comparison when the THEOS-2 scenes arrive.",
+      "ready": true,
+      "added": "2026-10-09"
     }
   ]
 }

@@ -1,5 +1,10 @@
 # Access loss by age group in case SE1: result
 
+> **Update, 9 October 2026.** The comparison has since been run over the 180
+> cells of the ensemble; the protocol's rule is met for the district, with older
+> residents losing access slightly less often, not more. See the section added
+> below. The text before it is the first result, at three closure levels.
+
 **What this is.** The two age comparisons the protocol names, computed for the
 first time for case SE1: residents of 60 and over against those under 60, and
 children of 0 to 14 against residents of 15 and over. For each group: of the
@@ -67,6 +72,68 @@ For the pitch: the equity question is answered for age, and the answer is that
 the open age data cannot show a gap at this scale. A real answer needs
 household-level or village-level data, which is a question for a local
 partner, not for a model.
+
+## Added on 9 October 2026: the same comparison over the 180 cells of the ensemble
+
+The section "What may be said" above waited for the ensemble. It has now been
+run, report-only (decision log R38), and the two comparisons were computed in
+every one of its 180 cells: three flood levels, three closure levels and two
+population products, each count standing for ten cells
+(`outputs/equity_by_age/se1_mae_sai_ensemble_v1.json`,
+`scripts/build_equity_ensemble.py`).
+
+**The protocol's rule is met for the district as a whole, and the result is
+not the one the proposal expected.**
+
+| Loses a hospital within 30 minutes | Difference of loss rates over the 180 cells | Ratio of loss rates |
+|---|---|---|
+| Residents of 60 and over, against residents under 60 | **0.7 to 5.5 points lower** (median 3.0) | 0.86 to 0.98 |
+| Children of 0 to 14, against residents of 15 and over | **0.4 to 3.0 points higher** (median 1.6) | 1.01 to 1.08 |
+
+The loss of every road route gives the same picture (ratios 0.79 to 0.98 and
+1.01 to 1.12). In every cell the sign is the same, so both of the rule's
+conditions hold: the bounds exclude zero, and all 180 cells carry the sign of
+the median.
+
+What this says, and what it does not:
+
+1. **In this scenario older residents lose access slightly less often than
+   younger ones, and children slightly more often.** The proposal's premise,
+   that older adults are cut off disproportionately, is not what the open
+   data show for Mae Sai.
+2. **The reason is where the modelled age groups are, not how anybody moves.**
+   The cells that lose access, most of them in and around Mae Sai town, have
+   a younger age mix in the 1 km age model than the cells that keep it.
+   Inside a 1 km cell every age group has the same outcome by construction.
+3. **The size depends on the population product.** With the WorldPop 2020
+   counts the gap for older residents is 0.7 to 0.8 points; with the 2020
+   counts rescaled to 2024 totals it is 5.1 to 5.5 points. The direction is
+   the same in both.
+4. **"Bounds" here are the lowest and the highest of 18 different counts of a
+   scenario, not a statistical interval.** They say the sign does not change
+   under the assumptions tested. They say nothing about error in the age
+   model, which was not checked against a count on the ground.
+
+By tambon the rule is met in Mae Sai (older residents 1.1 to 5.9 points
+lower; children 0.6 to 2.7 points higher). In four other tambons it is met in
+form only: every difference there is under a fifth of a point, down to a
+millionth of a point. The rule sets no smallest size for a gap, which is a
+gap in the rule, and no sentence is written for those tambons. In Ko Chang and
+Pong Pha there is no difference at all: everyone in a group of cells shares
+one outcome.
+
+**What may be said now.** "Across the assumptions we tested, residents of 60
+and over lose hospital access at 0.86 to 0.98 times the rate of younger
+residents, and children at 1.01 to 1.08 times the rate of older ones. The
+scenario does not show older residents being cut off more than others. The
+age data are modelled on 1 km cells and cannot show differences inside a
+neighbourhood." No tambon is ranked by its age mix.
+
+To run it again:
+
+```bash
+python scripts/build_equity_ensemble.py --external-data <external-data-root> --age-dir <folder of the age rasters>
+```
 
 ## Limits
 

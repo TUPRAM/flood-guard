@@ -44,7 +44,7 @@ class S1RtcError(RuntimeError):
     """A scene cannot be read onto the grid."""
 
 
-def fetch_json(url: str, *, body: dict[str, Any] | None = None, tries: int = 6, timeout: float = 90.0) -> dict[str, Any]:
+def fetch_json(url: str, *, body: dict[str, Any] | None = None, tries: int = 12, timeout: float = 90.0) -> dict[str, Any]:
     """GET (or POST ``body``) a JSON document; the catalogue times out now and then, so it is retried."""
 
     for attempt in range(tries):
@@ -59,7 +59,7 @@ def fetch_json(url: str, *, body: dict[str, Any] | None = None, tries: int = 6, 
         except Exception:  # noqa: BLE001 - retried, then raised
             if attempt == tries - 1:
                 raise
-            time.sleep(5 * (attempt + 1))
+            time.sleep(min(60, 10 * (attempt + 1)))
     raise S1RtcError("unreachable")
 
 

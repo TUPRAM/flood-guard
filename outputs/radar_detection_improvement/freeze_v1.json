@@ -1,0 +1,396 @@
+{
+ "schema": "floodguard.radar_detection_freeze.v1",
+ "generated_at_utc": "2026-10-09T05:53:22Z",
+ "source_timestamp": "2024-10-22 (agency layer); THEOS-2 2025-07-30T03:33Z (development); THEOS-2 2025-07-31T03:51Z (held out)",
+ "confidence_class": "low",
+ "confidence_basis": "Detectors developed on an agency layer that was not checked in the field and on one optical tile; no ground check.",
+ "operational_status": "non_operational",
+ "official_warning": false,
+ "can_feed_decision_layer": false,
+ "plan": {
+  "path": "docs/proposal_execution/radar_detection_improvement_plan_v1.md",
+  "sha256": "38f2bfc8c14dded7c113a376bb02d174997f885111131c469b45e3da7bafe866"
+ },
+ "what_this_is": "The changes of the plan tried on the development data with areas held out, the rule for keeping a change applied, and the one detector frozen for the test.",
+ "rights_note": "The agency layer is held at the local level (decision log R33): rasters, tables and models stay outside Git; this record holds whole-frame figures.",
+ "held_out_chips_read": false,
+ "development": {
+  "training_cells": 600000,
+  "training_water_cells": 150000,
+  "sample_cells_left_out_for_a_missing_feature": 0,
+  "held_out_areas": {
+   "mae_sai": {
+    "compared_cells": 3045629,
+    "reference_water_cells": 36189
+   },
+   "sukhothai": {
+    "compared_cells": 80988,
+    "reference_water_cells": 29298
+   }
+  },
+  "dry_season_passes": {
+   "chiang_rai": [
+    "20240224",
+    "20240307",
+    "20240412"
+   ],
+   "sukhothai": [
+    "20250225",
+    "20250309",
+    "20250414"
+   ]
+  },
+  "trees": {
+   "kind": "HistGradientBoostingClassifier",
+   "settings": {
+    "learning_rate": 0.1,
+    "max_leaf_nodes": 15
+   },
+   "features": [
+    "vv_after_db",
+    "vh_after_db",
+    "vv_anomaly_db",
+    "vh_anomaly_db",
+    "vv_dry_db",
+    "vh_dry_db",
+    "vv_dry_spread_db",
+    "vh_dry_spread_db",
+    "vh_minus_vv_after_db",
+    "vh_after_spread_db",
+    "slope_deg",
+    "land_cover"
+   ],
+   "out_of_fold_weighted": {
+    "average_precision": 0.622831,
+    "frozen_cut": 0.32,
+    "iou_at_the_frozen_cut": 0.468953
+   }
+  },
+  "two_label_sources": {
+   "sukhothai_cells_added": 80988,
+   "frozen_cut": 0.3,
+   "how_sukhothai_is_scored": "the tile is cut into a western and an eastern half; each half is read by a model that saw the other half only"
+  }
+ },
+ "steps": {
+  "simple_threshold": {
+   "mae_sai": {
+    "flagged_cells": 71698.0,
+    "reference_water_cells": 36189.0,
+    "flagged_that_is_reference_water": 0.295266,
+    "reference_water_flagged": 0.584984,
+    "iou": 0.244127,
+    "cut": {
+     "cut": -18.46,
+     "source": "frozen in work package 7"
+    }
+   },
+   "sukhothai": {
+    "flagged_cells": 22599.0,
+    "reference_water_cells": 29298.0,
+    "flagged_that_is_reference_water": 0.831807,
+    "reference_water_flagged": 0.641614,
+    "iou": 0.567933,
+    "cut": {
+     "cut": -18.46,
+     "source": "frozen in work package 7"
+    }
+   }
+  },
+  "threshold_with_a_cut_per_scene": {
+   "mae_sai": {
+    "flagged_cells": 71698.0,
+    "reference_water_cells": 36189.0,
+    "flagged_that_is_reference_water": 0.295266,
+    "reference_water_flagged": 0.584984,
+    "iou": 0.244127,
+    "cut": {
+     "cut": -18.46,
+     "source": "the frozen cut: no tile of the scene holds two clear groups",
+     "tiles": 192,
+     "tiles_with_two_groups": 0
+    }
+   },
+   "sukhothai": {
+    "flagged_cells": 21277.0,
+    "reference_water_cells": 29298.0,
+    "flagged_that_is_reference_water": 0.845138,
+    "reference_water_flagged": 0.613762,
+    "iou": 0.551714,
+    "cut": {
+     "cut": -18.81485463678837,
+     "source": "the scene's own tiles",
+     "tiles": 32,
+     "tiles_with_two_groups": 1
+    }
+   }
+  },
+  "trees_without_the_image_before_with_a_cut_per_scene": {
+   "mae_sai": {
+    "flagged_cells": 739014.0,
+    "reference_water_cells": 36189.0,
+    "flagged_that_is_reference_water": 0.048956,
+    "reference_water_flagged": 0.999724,
+    "iou": 0.048955,
+    "cut": {
+     "cut": -7.125579233338832,
+     "source": "the scene's own tiles",
+     "tiles": 192,
+     "tiles_with_two_groups": 92
+    }
+   },
+   "sukhothai": {
+    "flagged_cells": 38361.0,
+    "reference_water_cells": 29298.0,
+    "flagged_that_is_reference_water": 0.66552,
+    "reference_water_flagged": 0.871391,
+    "iou": 0.605996,
+    "cut": {
+     "cut": -2.825449082476343,
+     "source": "the scene's own tiles",
+     "tiles": 32,
+     "tiles_with_two_groups": 15
+    }
+   }
+  },
+  "trees_against_the_dry_baseline_with_a_cut_per_scene": {
+   "mae_sai": {
+    "flagged_cells": 287457.0,
+    "reference_water_cells": 36189.0,
+    "flagged_that_is_reference_water": 0.125681,
+    "reference_water_flagged": 0.998314,
+    "iou": 0.125655,
+    "cut": {
+     "cut": -4.3233204606940925,
+     "source": "the scene's own tiles",
+     "tiles": 192,
+     "tiles_with_two_groups": 30
+    }
+   },
+   "sukhothai": {
+    "flagged_cells": 36448.0,
+    "reference_water_cells": 29298.0,
+    "flagged_that_is_reference_water": 0.6875,
+    "reference_water_flagged": 0.85528,
+    "iou": 0.615857,
+    "cut": {
+     "cut": -2.3130146026994964,
+     "source": "the scene's own tiles",
+     "tiles": 32,
+     "tiles_with_two_groups": 10
+    }
+   }
+  },
+  "trees_against_the_dry_baseline_two_label_sources": {
+   "mae_sai": {
+    "flagged_cells": 208190.0,
+    "reference_water_cells": 36189.0,
+    "flagged_that_is_reference_water": 0.172491,
+    "reference_water_flagged": 0.992318,
+    "iou": 0.172261,
+    "cut": {
+     "cut": -2.01662063780018,
+     "source": "the scene's own tiles",
+     "tiles": 192,
+     "tiles_with_two_groups": 20
+    }
+   },
+   "sukhothai": {
+    "flagged_cells": 33973.0,
+    "reference_water_cells": 29298.0,
+    "flagged_that_is_reference_water": 0.718806,
+    "reference_water_flagged": 0.833504,
+    "iou": 0.628555,
+    "cut": {
+     "cut": -0.8677604454710988,
+     "source": "the scene's own tiles",
+     "tiles": 32,
+     "tiles_with_two_groups": 5
+    }
+   }
+  },
+  "simple_threshold_cleaned": {
+   "mae_sai": {
+    "flagged_cells": 86205.0,
+    "reference_water_cells": 36189.0,
+    "flagged_that_is_reference_water": 0.379526,
+    "reference_water_flagged": 0.904059,
+    "iou": 0.364832,
+    "cut": {
+     "cut": -18.46,
+     "source": "frozen in work package 7"
+    }
+   },
+   "sukhothai": {
+    "flagged_cells": 27676.0,
+    "reference_water_cells": 29298.0,
+    "flagged_that_is_reference_water": 0.773414,
+    "reference_water_flagged": 0.730596,
+    "iou": 0.601788,
+    "cut": {
+     "cut": -18.46,
+     "source": "frozen in work package 7"
+    }
+   }
+  }
+ },
+ "ladder": {
+  "margin_in_iou": 0.02,
+  "held_out_areas": [
+   "mae_sai",
+   "sukhothai"
+  ],
+  "steps": [
+   {
+    "name": "simple_threshold",
+    "iou": {
+     "mae_sai": 0.244127,
+     "sukhothai": 0.567933
+    },
+    "kept": true,
+    "why": "the baseline to beat"
+   },
+   {
+    "name": "threshold_with_a_cut_per_scene",
+    "iou": {
+     "mae_sai": 0.244127,
+     "sukhothai": 0.551714
+    },
+    "gain_over_the_step_kept_before": {
+     "mae_sai": 0.0,
+     "sukhothai": -0.016219
+    },
+    "kept": false,
+    "why": "not better by 0.02 on every held-out area"
+   },
+   {
+    "name": "trees_without_the_image_before_with_a_cut_per_scene",
+    "iou": {
+     "mae_sai": 0.048955,
+     "sukhothai": 0.605996
+    },
+    "gain_over_the_step_kept_before": {
+     "mae_sai": -0.195172,
+     "sukhothai": 0.038063
+    },
+    "kept": false,
+    "why": "not better by 0.02 on every held-out area"
+   },
+   {
+    "name": "trees_against_the_dry_baseline_with_a_cut_per_scene",
+    "iou": {
+     "mae_sai": 0.125655,
+     "sukhothai": 0.615857
+    },
+    "gain_over_the_step_kept_before": {
+     "mae_sai": -0.118472,
+     "sukhothai": 0.047924
+    },
+    "kept": false,
+    "why": "not better by 0.02 on every held-out area"
+   },
+   {
+    "name": "trees_against_the_dry_baseline_two_label_sources",
+    "iou": {
+     "mae_sai": 0.172261,
+     "sukhothai": 0.628555
+    },
+    "gain_over_the_step_kept_before": {
+     "mae_sai": -0.071866,
+     "sukhothai": 0.060622
+    },
+    "kept": false,
+    "why": "not better by 0.02 on every held-out area"
+   },
+   {
+    "name": "simple_threshold_cleaned",
+    "iou": {
+     "mae_sai": 0.364832,
+     "sukhothai": 0.601788
+    },
+    "gain_over_the_step_kept_before": {
+     "mae_sai": 0.120705,
+     "sukhothai": 0.033855
+    },
+    "kept": true,
+    "why": "better by 0.02 or more on every held-out area"
+   }
+  ],
+  "kept": "simple_threshold_cleaned"
+ },
+ "change_A_fixed_rule_with_the_dry_baseline": {
+  "rule": "UN-SPIDER practice, image before = the dry-season median",
+  "mae_sai": {
+   "flagged_cells": 16336.0,
+   "reference_water_cells": 36189.0,
+   "flagged_that_is_reference_water": 0.526016,
+   "reference_water_flagged": 0.237448,
+   "iou": 0.195598
+  },
+  "sukhothai": {
+   "flagged_cells": 23440.0,
+   "reference_water_cells": 29298.0,
+   "flagged_that_is_reference_water": 0.781655,
+   "reference_water_flagged": 0.625367,
+   "iou": 0.532369
+  }
+ },
+ "change_F_not_observable": {
+  "classes": [
+   10,
+   50
+  ],
+  "mae_sai": {
+   "compared_cells": 3045629,
+   "cells_not_observable": 1224101,
+   "reference_water_cells_not_observable": 421,
+   "kept_detector_on_observable_cells_only": {
+    "flagged_cells": 82689.0,
+    "reference_water_cells": 35768.0,
+    "flagged_that_is_reference_water": 0.391564,
+    "reference_water_flagged": 0.905223,
+    "iou": 0.376143
+   }
+  },
+  "sukhothai": {
+   "compared_cells": 80988,
+   "cells_not_observable": 31519,
+   "reference_water_cells_not_observable": 2759,
+   "kept_detector_on_observable_cells_only": {
+    "flagged_cells": 25669.0,
+    "reference_water_cells": 26539.0,
+    "flagged_that_is_reference_water": 0.805485,
+    "reference_water_flagged": 0.77908,
+    "iou": 0.655715
+   }
+  }
+ },
+ "frozen_detector": {
+  "step": "simple_threshold_cleaned",
+  "base": "simple_threshold",
+  "cleaned": true,
+  "simple_threshold_db": -18.46,
+  "file_outside_git": {
+   "name": "frozen_detector.joblib",
+   "sha256": "cd5018668f2cd8bc6a6ae82e2bbe7454b7ad71c2f10602ee246cc1ea772d1945"
+  }
+ },
+ "not_done": [
+  "Change E without the height above the nearest stream: no drainage model exists for the tiles; slopes, group size and growth only.",
+  "Change F marks tree cover and built-up ground and counts them; the terrain model of work package 4 covers Mae Sai only and is not joined here.",
+  "The trees were fitted with one setting, the one work package 7 picked for the primary model; no new tuning."
+ ],
+ "assumptions": [
+  "Development labels are the layer UNOSAT and GISTDA dated 22 October 2024 (as provided) and the water read from the THEOS-2 image of Sukhothai.",
+  "The dry-season baseline is the median of three passes of the same orbit, in dB, named before any was read.",
+  "A scene sets its own cut from its tiles that hold two clear groups of values; a scene with no such tile takes the frozen cut.",
+  "Every feature comes from Sentinel-1, or is slope or land cover. No feature says where water usually stands."
+ ],
+ "limits": [
+  "Development data are one province in October 2024 and one tile in July 2025; both have been looked at before.",
+  "The agency layer was not checked in the field and may come from the same radar pass; the THEOS-2 image is 44 hours older than the radar.",
+  "C-band radar does not see water under rice, trees or between buildings, nor water that drained before the pass.",
+  "Every figure is agreement with a reference layer, not accuracy. No detector enters a planning score."
+ ],
+ "supersedes": null
+}

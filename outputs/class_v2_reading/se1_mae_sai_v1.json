@@ -58,17 +58,17 @@
      },
      {
       "kind": "located_ddpm_shelter",
-      "facility_id": "DDPM-gd002-row-4146",
-      "residents_of_the_unit_it_is_nearest_for": 8171.9,
+      "nearest_for_at_least_the_residents_the_trigger_asks": true,
       "point_inside_the_flood_extent": false,
-      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false,
+      "pitch_level": "Shelter figures are pitch level (protocol v1b; decision log R41): the row identifier of the shelter and the number of residents it is nearest for are in a file outside Git."
      },
      {
       "kind": "located_ddpm_shelter",
-      "facility_id": "DDPM-gd002-row-4162",
-      "residents_of_the_unit_it_is_nearest_for": 9281.3,
+      "nearest_for_at_least_the_residents_the_trigger_asks": true,
       "point_inside_the_flood_extent": false,
-      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": true
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": true,
+      "pitch_level": "Shelter figures are pitch level (protocol v1b; decision log R41): the row identifier of the shelter and the number of residents it is nearest for are in a file outside Git."
      }
     ]
    },
@@ -119,73 +119,73 @@
      },
      {
       "kind": "located_ddpm_shelter",
-      "facility_id": "DDPM-gd002-row-4097",
-      "residents_of_the_unit_it_is_nearest_for": 627.9,
+      "nearest_for_at_least_the_residents_the_trigger_asks": true,
       "point_inside_the_flood_extent": false,
-      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false,
+      "pitch_level": "Shelter figures are pitch level (protocol v1b; decision log R41): the row identifier of the shelter and the number of residents it is nearest for are in a file outside Git."
      },
      {
       "kind": "located_ddpm_shelter",
-      "facility_id": "DDPM-gd002-row-4100",
-      "residents_of_the_unit_it_is_nearest_for": 100.4,
+      "nearest_for_at_least_the_residents_the_trigger_asks": true,
       "point_inside_the_flood_extent": false,
-      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false,
+      "pitch_level": "Shelter figures are pitch level (protocol v1b; decision log R41): the row identifier of the shelter and the number of residents it is nearest for are in a file outside Git."
      },
      {
       "kind": "located_ddpm_shelter",
-      "facility_id": "DDPM-gd002-row-4147",
-      "residents_of_the_unit_it_is_nearest_for": 2754.1,
+      "nearest_for_at_least_the_residents_the_trigger_asks": true,
       "point_inside_the_flood_extent": false,
-      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false,
+      "pitch_level": "Shelter figures are pitch level (protocol v1b; decision log R41): the row identifier of the shelter and the number of residents it is nearest for are in a file outside Git."
      },
      {
       "kind": "located_ddpm_shelter",
-      "facility_id": "DDPM-gd002-row-4149",
-      "residents_of_the_unit_it_is_nearest_for": 487.2,
+      "nearest_for_at_least_the_residents_the_trigger_asks": true,
       "point_inside_the_flood_extent": false,
-      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false,
+      "pitch_level": "Shelter figures are pitch level (protocol v1b; decision log R41): the row identifier of the shelter and the number of residents it is nearest for are in a file outside Git."
      },
      {
       "kind": "located_ddpm_shelter",
-      "facility_id": "DDPM-gd002-row-4150",
-      "residents_of_the_unit_it_is_nearest_for": 163.8,
+      "nearest_for_at_least_the_residents_the_trigger_asks": true,
       "point_inside_the_flood_extent": false,
-      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false,
+      "pitch_level": "Shelter figures are pitch level (protocol v1b; decision log R41): the row identifier of the shelter and the number of residents it is nearest for are in a file outside Git."
      },
      {
       "kind": "located_ddpm_shelter",
-      "facility_id": "DDPM-gd002-row-4151",
-      "residents_of_the_unit_it_is_nearest_for": 1316.6,
+      "nearest_for_at_least_the_residents_the_trigger_asks": true,
       "point_inside_the_flood_extent": false,
-      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false,
+      "pitch_level": "Shelter figures are pitch level (protocol v1b; decision log R41): the row identifier of the shelter and the number of residents it is nearest for are in a file outside Git."
      },
      {
       "kind": "located_ddpm_shelter",
-      "facility_id": "DDPM-gd002-row-4170",
-      "residents_of_the_unit_it_is_nearest_for": 657.5,
+      "nearest_for_at_least_the_residents_the_trigger_asks": true,
       "point_inside_the_flood_extent": false,
-      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false,
+      "pitch_level": "Shelter figures are pitch level (protocol v1b; decision log R41): the row identifier of the shelter and the number of residents it is nearest for are in a file outside Git."
      },
      {
       "kind": "located_ddpm_shelter",
-      "facility_id": "DDPM-gd002-row-4171",
-      "residents_of_the_unit_it_is_nearest_for": 468.3,
+      "nearest_for_at_least_the_residents_the_trigger_asks": true,
       "point_inside_the_flood_extent": false,
-      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false,
+      "pitch_level": "Shelter figures are pitch level (protocol v1b; decision log R41): the row identifier of the shelter and the number of residents it is nearest for are in a file outside Git."
      },
      {
       "kind": "located_ddpm_shelter",
-      "facility_id": "DDPM-gd002-row-4172",
-      "residents_of_the_unit_it_is_nearest_for": 248.2,
+      "nearest_for_at_least_the_residents_the_trigger_asks": true,
       "point_inside_the_flood_extent": false,
-      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false,
+      "pitch_level": "Shelter figures are pitch level (protocol v1b; decision log R41): the row identifier of the shelter and the number of residents it is nearest for are in a file outside Git."
      },
      {
       "kind": "located_ddpm_shelter",
-      "facility_id": "DDPM-gd002-row-4364",
-      "residents_of_the_unit_it_is_nearest_for": 389.9,
+      "nearest_for_at_least_the_residents_the_trigger_asks": true,
       "point_inside_the_flood_extent": false,
-      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false,
+      "pitch_level": "Shelter figures are pitch level (protocol v1b; decision log R41): the row identifier of the shelter and the number of residents it is nearest for are in a file outside Git."
      }
     ]
    },
@@ -229,24 +229,24 @@
      },
      {
       "kind": "located_ddpm_shelter",
-      "facility_id": "DDPM-gd002-row-4162",
-      "residents_of_the_unit_it_is_nearest_for": 1534.5,
+      "nearest_for_at_least_the_residents_the_trigger_asks": true,
       "point_inside_the_flood_extent": false,
-      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": true
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": true,
+      "pitch_level": "Shelter figures are pitch level (protocol v1b; decision log R41): the row identifier of the shelter and the number of residents it is nearest for are in a file outside Git."
      },
      {
       "kind": "located_ddpm_shelter",
-      "facility_id": "DDPM-gd002-row-4163",
-      "residents_of_the_unit_it_is_nearest_for": 4095.1,
+      "nearest_for_at_least_the_residents_the_trigger_asks": true,
       "point_inside_the_flood_extent": false,
-      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": true
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": true,
+      "pitch_level": "Shelter figures are pitch level (protocol v1b; decision log R41): the row identifier of the shelter and the number of residents it is nearest for are in a file outside Git."
      },
      {
       "kind": "located_ddpm_shelter",
-      "facility_id": "DDPM-gd002-row-4164",
-      "residents_of_the_unit_it_is_nearest_for": 303.7,
+      "nearest_for_at_least_the_residents_the_trigger_asks": true,
       "point_inside_the_flood_extent": true,
-      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false,
+      "pitch_level": "Shelter figures are pitch level (protocol v1b; decision log R41): the row identifier of the shelter and the number of residents it is nearest for are in a file outside Git."
      }
     ]
    },
@@ -291,24 +291,24 @@
      },
      {
       "kind": "located_ddpm_shelter",
-      "facility_id": "DDPM-gd002-row-4146",
-      "residents_of_the_unit_it_is_nearest_for": 2090.4,
+      "nearest_for_at_least_the_residents_the_trigger_asks": true,
       "point_inside_the_flood_extent": false,
-      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false,
+      "pitch_level": "Shelter figures are pitch level (protocol v1b; decision log R41): the row identifier of the shelter and the number of residents it is nearest for are in a file outside Git."
      },
      {
       "kind": "located_ddpm_shelter",
-      "facility_id": "DDPM-gd002-row-4165",
-      "residents_of_the_unit_it_is_nearest_for": 5440.3,
+      "nearest_for_at_least_the_residents_the_trigger_asks": true,
       "point_inside_the_flood_extent": false,
-      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false,
+      "pitch_level": "Shelter figures are pitch level (protocol v1b; decision log R41): the row identifier of the shelter and the number of residents it is nearest for are in a file outside Git."
      },
      {
       "kind": "located_ddpm_shelter",
-      "facility_id": "DDPM-gd002-row-4168",
-      "residents_of_the_unit_it_is_nearest_for": 1065.7,
+      "nearest_for_at_least_the_residents_the_trigger_asks": true,
       "point_inside_the_flood_extent": false,
-      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false,
+      "pitch_level": "Shelter figures are pitch level (protocol v1b; decision log R41): the row identifier of the shelter and the number of residents it is nearest for are in a file outside Git."
      }
     ]
    },
@@ -352,38 +352,38 @@
      },
      {
       "kind": "located_ddpm_shelter",
-      "facility_id": "DDPM-gd002-row-4082",
-      "residents_of_the_unit_it_is_nearest_for": 185.2,
+      "nearest_for_at_least_the_residents_the_trigger_asks": true,
       "point_inside_the_flood_extent": false,
-      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": true
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": true,
+      "pitch_level": "Shelter figures are pitch level (protocol v1b; decision log R41): the row identifier of the shelter and the number of residents it is nearest for are in a file outside Git."
      },
      {
       "kind": "located_ddpm_shelter",
-      "facility_id": "DDPM-gd002-row-4087",
-      "residents_of_the_unit_it_is_nearest_for": 243.4,
+      "nearest_for_at_least_the_residents_the_trigger_asks": true,
       "point_inside_the_flood_extent": false,
-      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false,
+      "pitch_level": "Shelter figures are pitch level (protocol v1b; decision log R41): the row identifier of the shelter and the number of residents it is nearest for are in a file outside Git."
      },
      {
       "kind": "located_ddpm_shelter",
-      "facility_id": "DDPM-gd002-row-4162",
-      "residents_of_the_unit_it_is_nearest_for": 1032.3,
+      "nearest_for_at_least_the_residents_the_trigger_asks": true,
       "point_inside_the_flood_extent": false,
-      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": true
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": true,
+      "pitch_level": "Shelter figures are pitch level (protocol v1b; decision log R41): the row identifier of the shelter and the number of residents it is nearest for are in a file outside Git."
      },
      {
       "kind": "located_ddpm_shelter",
-      "facility_id": "DDPM-gd002-row-4164",
-      "residents_of_the_unit_it_is_nearest_for": 4620.1,
+      "nearest_for_at_least_the_residents_the_trigger_asks": true,
       "point_inside_the_flood_extent": true,
-      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false,
+      "pitch_level": "Shelter figures are pitch level (protocol v1b; decision log R41): the row identifier of the shelter and the number of residents it is nearest for are in a file outside Git."
      },
      {
       "kind": "located_ddpm_shelter",
-      "facility_id": "DDPM-gd002-row-4165",
-      "residents_of_the_unit_it_is_nearest_for": 430.9,
+      "nearest_for_at_least_the_residents_the_trigger_asks": true,
       "point_inside_the_flood_extent": false,
-      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false,
+      "pitch_level": "Shelter figures are pitch level (protocol v1b; decision log R41): the row identifier of the shelter and the number of residents it is nearest for are in a file outside Git."
      }
     ]
    },
@@ -428,17 +428,17 @@
      },
      {
       "kind": "located_ddpm_shelter",
-      "facility_id": "DDPM-gd002-row-4146",
-      "residents_of_the_unit_it_is_nearest_for": 18663.0,
+      "nearest_for_at_least_the_residents_the_trigger_asks": true,
       "point_inside_the_flood_extent": false,
-      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false,
+      "pitch_level": "Shelter figures are pitch level (protocol v1b; decision log R41): the row identifier of the shelter and the number of residents it is nearest for are in a file outside Git."
      },
      {
       "kind": "located_ddpm_shelter",
-      "facility_id": "DDPM-gd002-row-4162",
-      "residents_of_the_unit_it_is_nearest_for": 396.8,
+      "nearest_for_at_least_the_residents_the_trigger_asks": true,
       "point_inside_the_flood_extent": false,
-      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": true
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": true,
+      "pitch_level": "Shelter figures are pitch level (protocol v1b; decision log R41): the row identifier of the shelter and the number of residents it is nearest for are in a file outside Git."
      }
     ]
    },
@@ -489,52 +489,52 @@
      },
      {
       "kind": "located_ddpm_shelter",
-      "facility_id": "DDPM-gd002-row-4083",
-      "residents_of_the_unit_it_is_nearest_for": 334.5,
+      "nearest_for_at_least_the_residents_the_trigger_asks": true,
       "point_inside_the_flood_extent": false,
-      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false,
+      "pitch_level": "Shelter figures are pitch level (protocol v1b; decision log R41): the row identifier of the shelter and the number of residents it is nearest for are in a file outside Git."
      },
      {
       "kind": "located_ddpm_shelter",
-      "facility_id": "DDPM-gd002-row-4087",
-      "residents_of_the_unit_it_is_nearest_for": 572.9,
+      "nearest_for_at_least_the_residents_the_trigger_asks": true,
       "point_inside_the_flood_extent": false,
-      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false,
+      "pitch_level": "Shelter figures are pitch level (protocol v1b; decision log R41): the row identifier of the shelter and the number of residents it is nearest for are in a file outside Git."
      },
      {
       "kind": "located_ddpm_shelter",
-      "facility_id": "DDPM-gd002-row-4165",
-      "residents_of_the_unit_it_is_nearest_for": 149.4,
+      "nearest_for_at_least_the_residents_the_trigger_asks": true,
       "point_inside_the_flood_extent": false,
-      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false,
+      "pitch_level": "Shelter figures are pitch level (protocol v1b; decision log R41): the row identifier of the shelter and the number of residents it is nearest for are in a file outside Git."
      },
      {
       "kind": "located_ddpm_shelter",
-      "facility_id": "DDPM-gd002-row-4167",
-      "residents_of_the_unit_it_is_nearest_for": 1935.0,
+      "nearest_for_at_least_the_residents_the_trigger_asks": true,
       "point_inside_the_flood_extent": false,
-      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false,
+      "pitch_level": "Shelter figures are pitch level (protocol v1b; decision log R41): the row identifier of the shelter and the number of residents it is nearest for are in a file outside Git."
      },
      {
       "kind": "located_ddpm_shelter",
-      "facility_id": "DDPM-gd002-row-4170",
-      "residents_of_the_unit_it_is_nearest_for": 546.0,
+      "nearest_for_at_least_the_residents_the_trigger_asks": true,
       "point_inside_the_flood_extent": false,
-      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false,
+      "pitch_level": "Shelter figures are pitch level (protocol v1b; decision log R41): the row identifier of the shelter and the number of residents it is nearest for are in a file outside Git."
      },
      {
       "kind": "located_ddpm_shelter",
-      "facility_id": "DDPM-gd002-row-4381",
-      "residents_of_the_unit_it_is_nearest_for": 167.4,
+      "nearest_for_at_least_the_residents_the_trigger_asks": true,
       "point_inside_the_flood_extent": false,
-      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false,
+      "pitch_level": "Shelter figures are pitch level (protocol v1b; decision log R41): the row identifier of the shelter and the number of residents it is nearest for are in a file outside Git."
      },
      {
       "kind": "located_ddpm_shelter",
-      "facility_id": "DDPM-gd002-row-4382",
-      "residents_of_the_unit_it_is_nearest_for": 228.1,
+      "nearest_for_at_least_the_residents_the_trigger_asks": true,
       "point_inside_the_flood_extent": false,
-      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false,
+      "pitch_level": "Shelter figures are pitch level (protocol v1b; decision log R41): the row identifier of the shelter and the number of residents it is nearest for are in a file outside Git."
      }
     ]
    },
@@ -578,31 +578,31 @@
      },
      {
       "kind": "located_ddpm_shelter",
-      "facility_id": "DDPM-gd002-row-4147",
-      "residents_of_the_unit_it_is_nearest_for": 1995.0,
+      "nearest_for_at_least_the_residents_the_trigger_asks": true,
       "point_inside_the_flood_extent": false,
-      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false,
+      "pitch_level": "Shelter figures are pitch level (protocol v1b; decision log R41): the row identifier of the shelter and the number of residents it is nearest for are in a file outside Git."
      },
      {
       "kind": "located_ddpm_shelter",
-      "facility_id": "DDPM-gd002-row-4165",
-      "residents_of_the_unit_it_is_nearest_for": 148.0,
+      "nearest_for_at_least_the_residents_the_trigger_asks": true,
       "point_inside_the_flood_extent": false,
-      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false,
+      "pitch_level": "Shelter figures are pitch level (protocol v1b; decision log R41): the row identifier of the shelter and the number of residents it is nearest for are in a file outside Git."
      },
      {
       "kind": "located_ddpm_shelter",
-      "facility_id": "DDPM-gd002-row-4168",
-      "residents_of_the_unit_it_is_nearest_for": 3898.2,
+      "nearest_for_at_least_the_residents_the_trigger_asks": true,
       "point_inside_the_flood_extent": false,
-      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false,
+      "pitch_level": "Shelter figures are pitch level (protocol v1b; decision log R41): the row identifier of the shelter and the number of residents it is nearest for are in a file outside Git."
      },
      {
       "kind": "located_ddpm_shelter",
-      "facility_id": "DDPM-gd002-row-4170",
-      "residents_of_the_unit_it_is_nearest_for": 102.5,
+      "nearest_for_at_least_the_residents_the_trigger_asks": true,
       "point_inside_the_flood_extent": false,
-      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false,
+      "pitch_level": "Shelter figures are pitch level (protocol v1b; decision log R41): the row identifier of the shelter and the number of residents it is nearest for are in a file outside Git."
      }
     ]
    },
@@ -809,5 +809,11 @@
   "'Stays passable' is a what-if on the model graph. It is not a statement that a road was or would be passable.",
   "The top-20 links are unreviewed candidates (plan task V1): no link is an observed closure.",
   "The second reading is not binding and was not run through the uncertainty ensemble."
- ]
+ ],
+ "changed_after_the_run": {
+  "on": "2026-10-09",
+  "decision": "decision log R41",
+  "what": "The rows of located DDPM shelters under trigger_C lost their row identifier and the number of residents each is nearest for: shelter figures are pitch level. Nothing else changed, and no class of the reading changed.",
+  "sha256_before": "f2944a23c476d5958dcc2deb6dc5d8d2f0b8aac200e577e81f5d55ea0d585bb3"
+ }
 }

@@ -10,6 +10,7 @@ The second reading is never binding: class rule v1 gives the class of a unit (de
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from typing import Any
 
 ORDER: tuple[str, ...] = ("E", "A", "B", "C", "D")
@@ -71,3 +72,25 @@ def evaluate(*, met_e: bool | None, met_a: bool | None, fpps: float | None, conf
             result = trigger
             break
     return {"triggers": met, "result": result}
+
+
+SHELTER_KIND = "located_ddpm_shelter"
+PITCH_LEVEL_NOTE = ("Shelter figures are pitch level (protocol v1b; decision log R41): the row identifier of the shelter and the "
+                    "number of residents it is nearest for are in a file outside Git.")
+
+
+def public_facility_row(row: Mapping[str, Any]) -> dict[str, Any]:
+    """The form of a serving facility that may stand in a public file.
+
+    A hospital row is public as it is. A located DDPM shelter keeps what trigger C reads (whether its point lies
+    inside the flood extent, and whether it loses every vehicle route) and loses its row identifier and the number
+    of residents it is nearest for.
+    """
+
+    if row.get("kind") != SHELTER_KIND:
+        return dict(row)
+    return {"kind": SHELTER_KIND,
+            "nearest_for_at_least_the_residents_the_trigger_asks": True,
+            "point_inside_the_flood_extent": bool(row["point_inside_the_flood_extent"]),
+            "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": bool(row["no_vehicle_route_to_a_main_road_entry_in_the_flooded_run"]),
+            "pitch_level": PITCH_LEVEL_NOTE}

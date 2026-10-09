@@ -38,8 +38,8 @@ The two readings differ in four of the eight tambons.
 
 ## What this says
 
-1. **Mae Sai town reads C under the proposal's wording.** The shelter that is
-   nearest for about 9,300 of its residents has no vehicle route to a main
+1. **Mae Sai town reads C under the proposal's wording.** A shelter that is
+   the nearest one for many of its residents has no vehicle route to a main
    road in the scenario. This is the computed answer to "why is the worst-hit
    town only class D": under rule v1 the class names the kind of action the
    component values point to; under the proposal's own triggers the town is
@@ -48,7 +48,7 @@ The two readings differ in four of the eight tambons.
    asks whether **one** critical link, closed alone, cuts off 500 residents.
    Ko Chang is cut off by many closures at once, and the twenty top-ranked
    links are all pieces of one road. So v2's B does not fire, and C does,
-   through three shelters. The road sheet shows the same thing from the other
+   through shelters. The road sheet shows the same thing from the other
    side: one road would reconnect more than half of Ko Chang, but no single
    closure isolates it.
 3. **The recurrence trigger cannot fire here.** Outside permanent water,
@@ -66,6 +66,14 @@ The two readings differ in four of the eight tambons.
   question, about Mae Sai town.
 - The second reading was not run through the uncertainty ensemble. It is one
   run at the central closure level.
+
+## Shelter figures are not on this page
+
+Shelter figures are pitch level (protocol v1b; decision log R41). Since
+9 October 2026 this page and the result file say that a shelter is cut off
+and not for how many residents it is the nearest one, and the result file
+holds no row identifier of a shelter. Those are in a file outside Git, under
+the external data root. No class of the reading changed.
 
 ## Readings made here that the protocol leaves open
 

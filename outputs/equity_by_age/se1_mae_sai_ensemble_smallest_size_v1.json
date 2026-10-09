@@ -1,0 +1,627 @@
+{
+ "schema": "floodguard.equity_by_age_smallest_size.v1",
+ "generated_at_utc": "2026-10-09T13:44:14Z",
+ "source_timestamp": "2024-08-01/2024-10-12",
+ "confidence_class": "low",
+ "confidence_basis": "Modelled access on OpenStreetMap roads, modelled residents and modelled age shares at 1 km; closures assumed from an agency season layer that was not checked in the field.",
+ "operational_status": "non_operational",
+ "official_warning": false,
+ "can_feed_decision_layer": false,
+ "what_this_is": "The age comparison of case SE1 over the 180 cells of the ensemble, restated with a smallest size for a gap. Report-only; no access run was made for it.",
+ "label": "Modelled, not observed. A scenario, not a flood of any day.",
+ "rule": {
+  "of_the_protocol": "bounds that exclude zero and at least 60 percent sign retention across the ensemble",
+  "smallest_size": "the difference nearest to zero, among the cells, is at least one percentage point",
+  "smallest_size_share": 0.01,
+  "decided": "by the owners on 9 October 2026 (decision log R41); protocol v1a is not edited",
+  "sentence_when_the_protocol_rule_is_met_and_the_size_is_not": "no age-group gap of a point or more under the tested assumptions"
+ },
+ "made_from": {
+  "path": "outputs/equity_by_age/se1_mae_sai_ensemble_v1.json",
+  "sha256": "77853d84e4cc3b4f63ce097147106a15d01c49a2663042a2200c8e7cbff60ea5"
+ },
+ "whole_frame": {
+  "loses_a_hospital_within_30_minutes": {
+   "60_plus_vs_under_60": {
+    "runs": 180,
+    "runs_with_a_difference": 180,
+    "lowest": -0.054637,
+    "highest": -0.007185,
+    "median": -0.029518,
+    "range_excludes_zero": true,
+    "sign_retention": 1.0,
+    "may_state_a_gap": false,
+    "sentence": "no age-group gap of a point or more under the tested assumptions",
+    "rule_of_the_protocol_met": true,
+    "smallest_size_asked": 0.01,
+    "smallest_difference": 0.007185
+   },
+   "0_14_vs_15_plus": {
+    "runs": 180,
+    "runs_with_a_difference": 180,
+    "lowest": 0.004005,
+    "highest": 0.029566,
+    "median": 0.016041,
+    "range_excludes_zero": true,
+    "sign_retention": 1.0,
+    "may_state_a_gap": false,
+    "sentence": "no age-group gap of a point or more under the tested assumptions",
+    "rule_of_the_protocol_met": true,
+    "smallest_size_asked": 0.01,
+    "smallest_difference": 0.004005
+   }
+  },
+  "loses_every_road_route": {
+   "60_plus_vs_under_60": {
+    "runs": 180,
+    "runs_with_a_difference": 180,
+    "lowest": -0.054849,
+    "highest": -0.006818,
+    "median": -0.02967,
+    "range_excludes_zero": true,
+    "sign_retention": 1.0,
+    "may_state_a_gap": false,
+    "sentence": "no age-group gap of a point or more under the tested assumptions",
+    "rule_of_the_protocol_met": true,
+    "smallest_size_asked": 0.01,
+    "smallest_difference": 0.006818
+   },
+   "0_14_vs_15_plus": {
+    "runs": 180,
+    "runs_with_a_difference": 180,
+    "lowest": 0.003855,
+    "highest": 0.029706,
+    "median": 0.016178,
+    "range_excludes_zero": true,
+    "sign_retention": 1.0,
+    "may_state_a_gap": false,
+    "sentence": "no age-group gap of a point or more under the tested assumptions",
+    "rule_of_the_protocol_met": true,
+    "smallest_size_asked": 0.01,
+    "smallest_difference": 0.003855
+   }
+  }
+ },
+ "by_tambon": {
+  "TH570901": {
+   "unit_name_en": "Mae Sai",
+   "loses_a_hospital_within_30_minutes": {
+    "60_plus_vs_under_60": {
+     "runs": 180,
+     "runs_with_a_difference": 180,
+     "lowest": -0.059138,
+     "highest": -0.011436,
+     "median": -0.030908,
+     "range_excludes_zero": true,
+     "sign_retention": 1.0,
+     "may_state_a_gap": true,
+     "sentence": null,
+     "rule_of_the_protocol_met": true,
+     "smallest_size_asked": 0.01,
+     "smallest_difference": 0.011436
+    },
+    "0_14_vs_15_plus": {
+     "runs": 180,
+     "runs_with_a_difference": 180,
+     "lowest": 0.006475,
+     "highest": 0.027498,
+     "median": 0.015064,
+     "range_excludes_zero": true,
+     "sign_retention": 1.0,
+     "may_state_a_gap": false,
+     "sentence": "no age-group gap of a point or more under the tested assumptions",
+     "rule_of_the_protocol_met": true,
+     "smallest_size_asked": 0.01,
+     "smallest_difference": 0.006475
+    }
+   },
+   "loses_every_road_route": {
+    "60_plus_vs_under_60": {
+     "runs": 180,
+     "runs_with_a_difference": 180,
+     "lowest": -0.062684,
+     "highest": -0.009926,
+     "median": -0.032452,
+     "range_excludes_zero": true,
+     "sign_retention": 1.0,
+     "may_state_a_gap": false,
+     "sentence": "no age-group gap of a point or more under the tested assumptions",
+     "rule_of_the_protocol_met": true,
+     "smallest_size_asked": 0.01,
+     "smallest_difference": 0.009926
+    },
+    "0_14_vs_15_plus": {
+     "runs": 180,
+     "runs_with_a_difference": 180,
+     "lowest": 0.00562,
+     "highest": 0.029146,
+     "median": 0.015814,
+     "range_excludes_zero": true,
+     "sign_retention": 1.0,
+     "may_state_a_gap": false,
+     "sentence": "no age-group gap of a point or more under the tested assumptions",
+     "rule_of_the_protocol_met": true,
+     "smallest_size_asked": 0.01,
+     "smallest_difference": 0.00562
+    }
+   }
+  },
+  "TH570902": {
+   "unit_name_en": "Huai Khrai",
+   "loses_a_hospital_within_30_minutes": {
+    "60_plus_vs_under_60": {
+     "runs": 180,
+     "runs_with_a_difference": 180,
+     "lowest": -0.000202,
+     "highest": 0.0,
+     "median": -6.1e-05,
+     "range_excludes_zero": false,
+     "sign_retention": 0.6667,
+     "may_state_a_gap": false,
+     "sentence": "no age-group gap distinguishable from zero under the tested assumptions",
+     "rule_of_the_protocol_met": false,
+     "smallest_size_asked": 0.01,
+     "smallest_difference": null
+    },
+    "0_14_vs_15_plus": {
+     "runs": 180,
+     "runs_with_a_difference": 180,
+     "lowest": -8.2e-05,
+     "highest": 1e-05,
+     "median": 0.0,
+     "range_excludes_zero": false,
+     "sign_retention": 0.0,
+     "may_state_a_gap": false,
+     "sentence": "no age-group gap distinguishable from zero under the tested assumptions",
+     "rule_of_the_protocol_met": false,
+     "smallest_size_asked": 0.01,
+     "smallest_difference": null
+    }
+   },
+   "loses_every_road_route": {
+    "60_plus_vs_under_60": {
+     "runs": 180,
+     "runs_with_a_difference": 180,
+     "lowest": 0.0,
+     "highest": 0.0,
+     "median": 0.0,
+     "range_excludes_zero": false,
+     "sign_retention": 0.0,
+     "may_state_a_gap": false,
+     "sentence": "no age-group gap distinguishable from zero under the tested assumptions",
+     "rule_of_the_protocol_met": false,
+     "smallest_size_asked": 0.01,
+     "smallest_difference": null
+    },
+    "0_14_vs_15_plus": {
+     "runs": 180,
+     "runs_with_a_difference": 180,
+     "lowest": 0.0,
+     "highest": 0.0,
+     "median": 0.0,
+     "range_excludes_zero": false,
+     "sign_retention": 0.0,
+     "may_state_a_gap": false,
+     "sentence": "no age-group gap distinguishable from zero under the tested assumptions",
+     "rule_of_the_protocol_met": false,
+     "smallest_size_asked": 0.01,
+     "smallest_difference": null
+    }
+   }
+  },
+  "TH570903": {
+   "unit_name_en": "Ko Chang",
+   "loses_a_hospital_within_30_minutes": {
+    "60_plus_vs_under_60": {
+     "runs": 180,
+     "runs_with_a_difference": 180,
+     "lowest": 0.0,
+     "highest": 0.0,
+     "median": 0.0,
+     "range_excludes_zero": false,
+     "sign_retention": 0.0,
+     "may_state_a_gap": false,
+     "sentence": "no age-group gap distinguishable from zero under the tested assumptions",
+     "rule_of_the_protocol_met": false,
+     "smallest_size_asked": 0.01,
+     "smallest_difference": null
+    },
+    "0_14_vs_15_plus": {
+     "runs": 180,
+     "runs_with_a_difference": 180,
+     "lowest": 0.0,
+     "highest": 0.0,
+     "median": 0.0,
+     "range_excludes_zero": false,
+     "sign_retention": 0.0,
+     "may_state_a_gap": false,
+     "sentence": "no age-group gap distinguishable from zero under the tested assumptions",
+     "rule_of_the_protocol_met": false,
+     "smallest_size_asked": 0.01,
+     "smallest_difference": null
+    }
+   },
+   "loses_every_road_route": {
+    "60_plus_vs_under_60": {
+     "runs": 180,
+     "runs_with_a_difference": 180,
+     "lowest": -0.007003,
+     "highest": 0.0,
+     "median": 0.0,
+     "range_excludes_zero": false,
+     "sign_retention": 0.0,
+     "may_state_a_gap": false,
+     "sentence": "no age-group gap distinguishable from zero under the tested assumptions",
+     "rule_of_the_protocol_met": false,
+     "smallest_size_asked": 0.01,
+     "smallest_difference": null
+    },
+    "0_14_vs_15_plus": {
+     "runs": 180,
+     "runs_with_a_difference": 180,
+     "lowest": 0.0,
+     "highest": 0.003904,
+     "median": 0.0,
+     "range_excludes_zero": false,
+     "sign_retention": 0.0,
+     "may_state_a_gap": false,
+     "sentence": "no age-group gap distinguishable from zero under the tested assumptions",
+     "rule_of_the_protocol_met": false,
+     "smallest_size_asked": 0.01,
+     "smallest_difference": null
+    }
+   }
+  },
+  "TH570904": {
+   "unit_name_en": "Pong Pha",
+   "loses_a_hospital_within_30_minutes": {
+    "60_plus_vs_under_60": {
+     "runs": 180,
+     "runs_with_a_difference": 180,
+     "lowest": 0.0,
+     "highest": 0.0,
+     "median": 0.0,
+     "range_excludes_zero": false,
+     "sign_retention": 0.0,
+     "may_state_a_gap": false,
+     "sentence": "no age-group gap distinguishable from zero under the tested assumptions",
+     "rule_of_the_protocol_met": false,
+     "smallest_size_asked": 0.01,
+     "smallest_difference": null
+    },
+    "0_14_vs_15_plus": {
+     "runs": 180,
+     "runs_with_a_difference": 180,
+     "lowest": 0.0,
+     "highest": 0.0,
+     "median": 0.0,
+     "range_excludes_zero": false,
+     "sign_retention": 0.0,
+     "may_state_a_gap": false,
+     "sentence": "no age-group gap distinguishable from zero under the tested assumptions",
+     "rule_of_the_protocol_met": false,
+     "smallest_size_asked": 0.01,
+     "smallest_difference": null
+    }
+   },
+   "loses_every_road_route": {
+    "60_plus_vs_under_60": {
+     "runs": 180,
+     "runs_with_a_difference": 180,
+     "lowest": 0.0,
+     "highest": 0.0,
+     "median": 0.0,
+     "range_excludes_zero": false,
+     "sign_retention": 0.0,
+     "may_state_a_gap": false,
+     "sentence": "no age-group gap distinguishable from zero under the tested assumptions",
+     "rule_of_the_protocol_met": false,
+     "smallest_size_asked": 0.01,
+     "smallest_difference": null
+    },
+    "0_14_vs_15_plus": {
+     "runs": 180,
+     "runs_with_a_difference": 180,
+     "lowest": 0.0,
+     "highest": 0.0,
+     "median": 0.0,
+     "range_excludes_zero": false,
+     "sign_retention": 0.0,
+     "may_state_a_gap": false,
+     "sentence": "no age-group gap distinguishable from zero under the tested assumptions",
+     "rule_of_the_protocol_met": false,
+     "smallest_size_asked": 0.01,
+     "smallest_difference": null
+    }
+   }
+  },
+  "TH570905": {
+   "unit_name_en": "Si Mueang Chum",
+   "loses_a_hospital_within_30_minutes": {
+    "60_plus_vs_under_60": {
+     "runs": 180,
+     "runs_with_a_difference": 180,
+     "lowest": 0.000496,
+     "highest": 0.001084,
+     "median": 0.0007,
+     "range_excludes_zero": true,
+     "sign_retention": 1.0,
+     "may_state_a_gap": false,
+     "sentence": "no age-group gap of a point or more under the tested assumptions",
+     "rule_of_the_protocol_met": true,
+     "smallest_size_asked": 0.01,
+     "smallest_difference": 0.000496
+    },
+    "0_14_vs_15_plus": {
+     "runs": 180,
+     "runs_with_a_difference": 180,
+     "lowest": -0.001276,
+     "highest": -0.000584,
+     "median": -0.000825,
+     "range_excludes_zero": true,
+     "sign_retention": 1.0,
+     "may_state_a_gap": false,
+     "sentence": "no age-group gap of a point or more under the tested assumptions",
+     "rule_of_the_protocol_met": true,
+     "smallest_size_asked": 0.01,
+     "smallest_difference": 0.000584
+    }
+   },
+   "loses_every_road_route": {
+    "60_plus_vs_under_60": {
+     "runs": 180,
+     "runs_with_a_difference": 180,
+     "lowest": 0.000519,
+     "highest": 0.001227,
+     "median": 0.000771,
+     "range_excludes_zero": true,
+     "sign_retention": 1.0,
+     "may_state_a_gap": false,
+     "sentence": "no age-group gap of a point or more under the tested assumptions",
+     "rule_of_the_protocol_met": true,
+     "smallest_size_asked": 0.01,
+     "smallest_difference": 0.000519
+    },
+    "0_14_vs_15_plus": {
+     "runs": 180,
+     "runs_with_a_difference": 180,
+     "lowest": -0.001445,
+     "highest": -0.000611,
+     "median": -0.000907,
+     "range_excludes_zero": true,
+     "sign_retention": 1.0,
+     "may_state_a_gap": false,
+     "sentence": "no age-group gap of a point or more under the tested assumptions",
+     "rule_of_the_protocol_met": true,
+     "smallest_size_asked": 0.01,
+     "smallest_difference": 0.000611
+    }
+   }
+  },
+  "TH570906": {
+   "unit_name_en": "Wiang Phang Kham",
+   "loses_a_hospital_within_30_minutes": {
+    "60_plus_vs_under_60": {
+     "runs": 180,
+     "runs_with_a_difference": 180,
+     "lowest": 1e-06,
+     "highest": 2e-06,
+     "median": 1e-06,
+     "range_excludes_zero": true,
+     "sign_retention": 1.0,
+     "may_state_a_gap": false,
+     "sentence": "no age-group gap of a point or more under the tested assumptions",
+     "rule_of_the_protocol_met": true,
+     "smallest_size_asked": 0.01,
+     "smallest_difference": 1e-06
+    },
+    "0_14_vs_15_plus": {
+     "runs": 180,
+     "runs_with_a_difference": 180,
+     "lowest": -1e-06,
+     "highest": -0.0,
+     "median": -1e-06,
+     "range_excludes_zero": false,
+     "sign_retention": 0.8333,
+     "may_state_a_gap": false,
+     "sentence": "no age-group gap distinguishable from zero under the tested assumptions",
+     "rule_of_the_protocol_met": false,
+     "smallest_size_asked": 0.01,
+     "smallest_difference": null
+    }
+   },
+   "loses_every_road_route": {
+    "60_plus_vs_under_60": {
+     "runs": 180,
+     "runs_with_a_difference": 180,
+     "lowest": 1e-06,
+     "highest": 2e-06,
+     "median": 1e-06,
+     "range_excludes_zero": true,
+     "sign_retention": 1.0,
+     "may_state_a_gap": false,
+     "sentence": "no age-group gap of a point or more under the tested assumptions",
+     "rule_of_the_protocol_met": true,
+     "smallest_size_asked": 0.01,
+     "smallest_difference": 1e-06
+    },
+    "0_14_vs_15_plus": {
+     "runs": 180,
+     "runs_with_a_difference": 180,
+     "lowest": -1e-06,
+     "highest": -0.0,
+     "median": -1e-06,
+     "range_excludes_zero": false,
+     "sign_retention": 0.8333,
+     "may_state_a_gap": false,
+     "sentence": "no age-group gap distinguishable from zero under the tested assumptions",
+     "rule_of_the_protocol_met": false,
+     "smallest_size_asked": 0.01,
+     "smallest_difference": null
+    }
+   }
+  },
+  "TH570908": {
+   "unit_name_en": "Ban Dai",
+   "loses_a_hospital_within_30_minutes": {
+    "60_plus_vs_under_60": {
+     "runs": 180,
+     "runs_with_a_difference": 180,
+     "lowest": 0.000105,
+     "highest": 0.000354,
+     "median": 0.0003,
+     "range_excludes_zero": true,
+     "sign_retention": 1.0,
+     "may_state_a_gap": false,
+     "sentence": "no age-group gap of a point or more under the tested assumptions",
+     "rule_of_the_protocol_met": true,
+     "smallest_size_asked": 0.01,
+     "smallest_difference": 0.000105
+    },
+    "0_14_vs_15_plus": {
+     "runs": 180,
+     "runs_with_a_difference": 180,
+     "lowest": -0.000435,
+     "highest": -0.000116,
+     "median": -0.000366,
+     "range_excludes_zero": true,
+     "sign_retention": 1.0,
+     "may_state_a_gap": false,
+     "sentence": "no age-group gap of a point or more under the tested assumptions",
+     "rule_of_the_protocol_met": true,
+     "smallest_size_asked": 0.01,
+     "smallest_difference": 0.000116
+    }
+   },
+   "loses_every_road_route": {
+    "60_plus_vs_under_60": {
+     "runs": 180,
+     "runs_with_a_difference": 180,
+     "lowest": -0.00033,
+     "highest": -7e-05,
+     "median": -0.00018,
+     "range_excludes_zero": true,
+     "sign_retention": 1.0,
+     "may_state_a_gap": false,
+     "sentence": "no age-group gap of a point or more under the tested assumptions",
+     "rule_of_the_protocol_met": true,
+     "smallest_size_asked": 0.01,
+     "smallest_difference": 7e-05
+    },
+    "0_14_vs_15_plus": {
+     "runs": 180,
+     "runs_with_a_difference": 180,
+     "lowest": 8.6e-05,
+     "highest": 0.000412,
+     "median": 0.000224,
+     "range_excludes_zero": true,
+     "sign_retention": 1.0,
+     "may_state_a_gap": false,
+     "sentence": "no age-group gap of a point or more under the tested assumptions",
+     "rule_of_the_protocol_met": true,
+     "smallest_size_asked": 0.01,
+     "smallest_difference": 8.6e-05
+    }
+   }
+  },
+  "TH570909": {
+   "unit_name_en": "Pong Ngam",
+   "loses_a_hospital_within_30_minutes": {
+    "60_plus_vs_under_60": {
+     "runs": 180,
+     "runs_with_a_difference": 180,
+     "lowest": 3e-06,
+     "highest": 1.1e-05,
+     "median": 6e-06,
+     "range_excludes_zero": true,
+     "sign_retention": 1.0,
+     "may_state_a_gap": false,
+     "sentence": "no age-group gap of a point or more under the tested assumptions",
+     "rule_of_the_protocol_met": true,
+     "smallest_size_asked": 0.01,
+     "smallest_difference": 3e-06
+    },
+    "0_14_vs_15_plus": {
+     "runs": 180,
+     "runs_with_a_difference": 180,
+     "lowest": -1.9e-05,
+     "highest": -4e-06,
+     "median": -1e-05,
+     "range_excludes_zero": true,
+     "sign_retention": 1.0,
+     "may_state_a_gap": false,
+     "sentence": "no age-group gap of a point or more under the tested assumptions",
+     "rule_of_the_protocol_met": true,
+     "smallest_size_asked": 0.01,
+     "smallest_difference": 4e-06
+    }
+   },
+   "loses_every_road_route": {
+    "60_plus_vs_under_60": {
+     "runs": 180,
+     "runs_with_a_difference": 180,
+     "lowest": 2e-06,
+     "highest": 9e-06,
+     "median": 5e-06,
+     "range_excludes_zero": true,
+     "sign_retention": 1.0,
+     "may_state_a_gap": false,
+     "sentence": "no age-group gap of a point or more under the tested assumptions",
+     "rule_of_the_protocol_met": true,
+     "smallest_size_asked": 0.01,
+     "smallest_difference": 2e-06
+    },
+    "0_14_vs_15_plus": {
+     "runs": 180,
+     "runs_with_a_difference": 180,
+     "lowest": -1.5e-05,
+     "highest": -4e-06,
+     "median": -9e-06,
+     "range_excludes_zero": true,
+     "sign_retention": 1.0,
+     "may_state_a_gap": false,
+     "sentence": "no age-group gap of a point or more under the tested assumptions",
+     "rule_of_the_protocol_met": true,
+     "smallest_size_asked": 0.01,
+     "smallest_difference": 4e-06
+    }
+   }
+  }
+ },
+ "where_a_gap_may_be_stated": [
+  "TH570901:loses_a_hospital_within_30_minutes:60_plus_vs_under_60"
+ ],
+ "where_the_protocol_rule_alone_was_met": [
+  "TH570901:loses_a_hospital_within_30_minutes:0_14_vs_15_plus",
+  "TH570901:loses_a_hospital_within_30_minutes:60_plus_vs_under_60",
+  "TH570901:loses_every_road_route:0_14_vs_15_plus",
+  "TH570901:loses_every_road_route:60_plus_vs_under_60",
+  "TH570905:loses_a_hospital_within_30_minutes:0_14_vs_15_plus",
+  "TH570905:loses_a_hospital_within_30_minutes:60_plus_vs_under_60",
+  "TH570905:loses_every_road_route:0_14_vs_15_plus",
+  "TH570905:loses_every_road_route:60_plus_vs_under_60",
+  "TH570906:loses_a_hospital_within_30_minutes:60_plus_vs_under_60",
+  "TH570906:loses_every_road_route:60_plus_vs_under_60",
+  "TH570908:loses_a_hospital_within_30_minutes:0_14_vs_15_plus",
+  "TH570908:loses_a_hospital_within_30_minutes:60_plus_vs_under_60",
+  "TH570908:loses_every_road_route:0_14_vs_15_plus",
+  "TH570908:loses_every_road_route:60_plus_vs_under_60",
+  "TH570909:loses_a_hospital_within_30_minutes:0_14_vs_15_plus",
+  "TH570909:loses_a_hospital_within_30_minutes:60_plus_vs_under_60",
+  "TH570909:loses_every_road_route:0_14_vs_15_plus",
+  "TH570909:loses_every_road_route:60_plus_vs_under_60"
+ ],
+ "assumptions": [
+  "A closure is a modelled assumption of closure rule v1, not an observed closure.",
+  "Everyone in a 1 km cell is given that cell's age mix, and a cell's residents share one outcome: within a cell, age groups cannot differ in access.",
+  "A 100 m count belongs to the 1 km cell that holds the centre of its 100 m cell.",
+  "A positive 2020 count whose 1 km cell has no valid 2024 total keeps its 2020 value and is reported; it is neither set to zero nor rescaled."
+ ],
+ "limits": [
+  "The age mix varies only between 1 km cells. A gap can arise only where cells with different age mixes have different outcomes.",
+  "Four of the eight tambons take age counts from cells that straddle the national border (decision log R21).",
+  "Report-only: the ensemble behind it is the report-only run of decision log R38, not a registered run.",
+  "No tambon is ranked by its age mix. Figures are for a tambon or the whole frame; they say nothing of what the people of a place can or cannot do.",
+  "The smallest size is a reading of the owners, written in the decision log; the signed protocol states none."
+ ]
+}

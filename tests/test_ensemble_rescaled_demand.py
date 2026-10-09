@@ -39,10 +39,15 @@ def test_the_run_of_record_is_the_file_the_record_was_checked_against(record: di
         "as_provided_runs_against_the_e5_table"))
     bound = checks["cells_of_the_2020_demand_against_the_registered_run"]["registered_receipt"]
     assert ROOT / bound["path"] == REGISTERED
-    assert hashlib.sha256(REGISTERED.read_bytes()).hexdigest() == bound["sha256"], "the registered receipt is unchanged"
     registered = json.loads(REGISTERED.read_text(encoding="utf-8"))
+    # The receipt this report was checked against was the fourth run of record. It has since been replaced by a run of
+    # record with the rescaled demand (decision log R41), which names it among the runs it follows and gives the same result.
+    assert bound["sha256"] in [entry["receipt_sha256"] for entry in registered["run_history"]]
     assert checks["default_cell_against_the_e8_rows"]["rows_sha256"] == registered["result"]["default_cell_against_the_e8_rows"]["rows_sha256"]
-    assert checks["cells_of_the_2020_demand_against_the_registered_run"]["unit_cells_compared"] == registered["result"]["summary"]["unit_cells_run"]
+    assert checks["cells_of_the_2020_demand_against_the_registered_run"]["unit_cells_compared"] == 720
+    of_record = registered["result"]["summary"]
+    assert of_record["headline_status_counts"] == record["summary"]["headline_status_counts"]
+    assert of_record["class_counts_over_every_unit_cell"] == record["summary"]["class_counts_over_every_unit_cell"]
 
 
 def test_every_cell_of_the_public_set_is_run_and_only_the_shelter_sets_are_left(record: dict) -> None:

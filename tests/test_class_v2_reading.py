@@ -73,7 +73,24 @@ def test_committed_reading_is_bound_to_the_published_file_and_changes_no_binding
             facility_hit=any(item["point_inside_the_flood_extent"] or item["no_vehicle_route_to_a_main_road_entry_in_the_flooded_run"] for item in facilities),
             recurrence_share=row["trigger_D"]["share"])
         assert again["result"] == row["second_reading_v2"] and again["triggers"] == row["triggers"]
-        assert all(item["residents_of_the_unit_it_is_nearest_for"] >= v2.SERVED_RESIDENTS_MIN for item in facilities)
+        for item in facilities:
+            if item["kind"] == v2.SHELTER_KIND:  # pitch level: no row identifier and no count in a public file
+                assert "facility_id" not in item and "residents_of_the_unit_it_is_nearest_for" not in item and item["pitch_level"]
+            else:
+                assert item["residents_of_the_unit_it_is_nearest_for"] >= v2.SERVED_RESIDENTS_MIN
         differs += int(not row["same_as_v1"])
     assert record["counts"]["second_reading_differs_from_v1"] == differs
     assert len(record["top_20_links"]) == 20
+
+
+def test_a_shelter_row_in_a_public_file_carries_no_identifier_and_no_count() -> None:
+    shelter = {"kind": v2.SHELTER_KIND, "facility_id": "DDPM-invented-row-1", "residents_of_the_unit_it_is_nearest_for": 1234.5,
+               "point_inside_the_flood_extent": False, "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": True}
+    public = v2.public_facility_row(shelter)
+    assert "facility_id" not in public and "residents_of_the_unit_it_is_nearest_for" not in public
+    assert public["no_vehicle_route_to_a_main_road_entry_in_the_flooded_run"] is True and public["point_inside_the_flood_extent"] is False
+    hospital = {"kind": "hospital", "facility_id": "OSM-way-1", "residents_of_the_unit_it_is_nearest_for": 500.0,
+                "point_inside_the_flood_extent": False, "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": False}
+    assert v2.public_facility_row(hospital) == hospital
+    text = (ROOT / "docs" / "class_v2_reading.md").read_text(encoding="utf-8")
+    assert "9,300" not in text and "DDPM-gd002" not in RESULT.read_text(encoding="utf-8")

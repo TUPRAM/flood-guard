@@ -1,6 +1,6 @@
 {
  "schema": "floodguard.validation_check.state.v1",
- "generated_at_utc": "2026-10-09T11:42:55Z",
+ "generated_at_utc": "2026-10-09T15:02:04Z",
  "source_timestamp": "2026-10-09T10:02:57Z",
  "confidence_class": "not_applicable",
  "what_this_is": "The word of the three team members on the project's own work, as handed over.",
@@ -20,7 +20,7 @@
  "status_counts": {
   "accepted": 26,
   "evidence_not_ready": 1,
-  "waiting": 4
+  "waiting": 5
  },
  "items": {
   "V-01": {
@@ -788,6 +788,15 @@
    }
   },
   "V-31": {
+   "status": "waiting",
+   "accepted_by": [],
+   "by_reviewer": {
+    "Rachmania": null,
+    "Putu": null,
+    "Callixta": null
+   }
+  },
+  "V-32": {
    "status": "waiting",
    "accepted_by": [],
    "by_reviewer": {

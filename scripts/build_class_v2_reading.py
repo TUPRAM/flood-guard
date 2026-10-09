@@ -39,6 +39,8 @@ from floodguard import access_diff, flood_inputs  # noqa: E402
 from floodguard import class_v2_reading as v2  # noqa: E402
 
 OUTPUT = "outputs/class_v2_reading/se1_mae_sai_v1.json"
+PITCH_FOLDER = Path("proposal_execution") / "planning_v1" / "se1_mae_sai" / "class_v2_reading"
+PITCH_NAME = "shelter_rows_pitch_level.json"
 OVERLAY = "outputs/planning_v1/overlays/planning_assessment_overlay_se1_mae_sai.json"
 TOP_LINKS = "outputs/planning_v1/critical_links_top20_se1_vehicle.geojson"
 JRC_LOCAL = Path("open_context") / "jrc_global_surface_water" / "occurrence_90E_30Nv1_4_2021.tif"
@@ -222,7 +224,7 @@ def main() -> None:
             "triggers": triggers["triggers"],
             "trigger_B": {"largest_number_of_residents_one_link_isolates": round(isolated_most[unit_id], 1),
                           "needed": v2.ISOLATED_RESIDENTS_MIN},
-            "trigger_C": {"serving_facilities": facilities},
+            "trigger_C": {"serving_facilities": [v2.public_facility_row(item) for item in facilities]},
             "trigger_D": {**recurrence[unit_id], "flag_at_20_percent": bool(share is not None and share >= 0.20),
                           "flag_at_10_percent": bool(share is not None and share >= 0.10),
                           "flag_at_30_percent": bool(share is not None and share >= 0.30)},
@@ -269,6 +271,10 @@ def main() -> None:
                    "The second reading is not binding and was not run through the uncertainty ensemble."],
     }
     sheet.write_json(ROOT / OUTPUT, result)
+    pitch = external / PITCH_FOLDER
+    pitch.mkdir(parents=True, exist_ok=True)
+    sheet.write_json(pitch / PITCH_NAME, {"what": "The located DDPM shelters behind trigger C of the second class reading. Pitch level: not for a public file.",
+                                           "by_unit": {unit_id: [item for item in rows if item["kind"] == v2.SHELTER_KIND] for unit_id, rows in serving.items()}})
     print(json.dumps(result["counts"]))
 
 

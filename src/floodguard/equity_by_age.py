@@ -23,6 +23,10 @@ import numpy as np
 GROUP_MIN_FOR_RATIO = 50.0
 SIGN_RETENTION_MIN = 0.6
 FIXED_SENTENCE = "no age-group gap distinguishable from zero under the tested assumptions"
+MIN_GAP_SHARE = 0.01
+"""The smallest size of a gap that is stated: one percentage point (the owners' reading of 9 October 2026, decision
+log R41). Protocol v1a sets none, so a difference of a millionth of a point met its rule."""
+SMALL_GAP_SENTENCE = "no age-group gap of a point or more under the tested assumptions"
 RATIO_NULL_SMALL_GROUP = "fewer_than_50_residents_with_baseline_access_in_a_group"
 RATIO_NULL_NO_LOSS = "both_rates_are_zero"
 RATIO_NULL_ZERO_DENOMINATOR = "the_comparison_group_lost_nothing"
@@ -95,12 +99,35 @@ def outcome_by_age(groups: Mapping[str, np.ndarray], had: np.ndarray, lost: np.n
     return result
 
 
-def gap_statement(differences: Sequence[float | None], *, sign_retention_min: float = SIGN_RETENTION_MIN) -> dict[str, Any]:
+def with_smallest_size(statement: Mapping[str, Any], *, minimum: float = MIN_GAP_SHARE) -> dict[str, Any]:
+    """Apply the smallest size of decision log R41 to a statement of :func:`gap_statement`.
+
+    A gap is stated only when the rule of the protocol is met and the difference nearest to zero, among the runs,
+    is at least ``minimum`` (a share: 0.01 is one percentage point). The statement of the protocol is kept beside it.
+    """
+
+    if minimum <= 0:
+        raise EquityByAgeError("the smallest size of a gap must be above zero")
+    met = bool(statement.get("may_state_a_gap"))
+    smallest = min(abs(float(statement["lowest"])), abs(float(statement["highest"]))) if met else None
+    enough = bool(met and smallest is not None and smallest >= minimum - 1e-12)
+    return {**statement, "rule_of_the_protocol_met": met, "smallest_size_asked": minimum,
+            "smallest_difference": None if smallest is None else round(smallest, 6), "may_state_a_gap": enough,
+            "sentence": None if enough else SMALL_GAP_SENTENCE if met else statement.get("sentence", FIXED_SENTENCE)}
+
+
+def gap_statement(differences: Sequence[float | None], *, sign_retention_min: float = SIGN_RETENTION_MIN,
+                  min_abs_difference: float = 0.0) -> dict[str, Any]:
     """Apply the protocol's rule for a gap sentence to the differences of a set of runs.
 
     A gap may be stated when the smallest and the largest difference lie on one side of zero and at least
     ``sign_retention_min`` of the runs carry the sign of the median. A run without a difference counts against it.
+    With ``min_abs_difference`` above zero the smallest size of decision log R41 is applied as well
+    (:func:`with_smallest_size`); at zero the statement is that of the protocol alone.
     """
+
+    if min_abs_difference > 0:
+        return with_smallest_size(gap_statement(differences, sign_retention_min=sign_retention_min), minimum=min_abs_difference)
 
     runs = len(differences)
     if runs == 0:

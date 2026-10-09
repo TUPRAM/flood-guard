@@ -568,16 +568,20 @@
     {
       "id": "V-28",
       "group": "result",
-      "title": "Access loss by age over the 180 cells of the ensemble",
-      "check": "Read the section added on 9 October. Over the 180 cells the protocol's rule for a gap sentence is met for the district, and the direction is not the one the proposal expected: residents of 60 and over lose hospital access at 0.86 to 0.98 times the rate of younger residents, children at 1.01 to 1.08 times the rate of older ones. The gap comes from where the 1 km age model places the age groups, and its size depends on the population product. Accept if the team will state the result in these words, will not say that older residents are cut off more in this scenario, and will not lead the pitch with the equity gap.",
+      "title": "Access loss by age: over the 180 cells, with a smallest size, and with registered age counts",
+      "check": "Read the two sections added on 9 October. With the modelled age grid, over the 180 cells, the differences between age groups are small; the owners now state a gap only from one percentage point, so no gap is stated for the district. With the registered age mix of each tambon (DOPA, December 2024) the direction turns round: residents of 60 and over lose hospital access at 1.10 to 1.13 times the rate of younger residents. The registered ages leave out two registered residents in five, who are not Thai nationals. Accept if the team will say that the direction of the age gap depends on the age data, will give both readings with their limits, and will not lead the pitch with the equity gap.",
       "evidence": [
         {
-          "label": "Result in plain words, section added on 9 October",
+          "label": "Result in plain words, the two sections added on 9 October",
           "path": "docs/equity_by_age.md"
         },
         {
-          "label": "Result file",
-          "path": "outputs/equity_by_age/se1_mae_sai_ensemble_v1.json"
+          "label": "Over the 180 cells, with the smallest size",
+          "path": "outputs/equity_by_age/se1_mae_sai_ensemble_smallest_size_v1.json"
+        },
+        {
+          "label": "With the registered age mix of each tambon",
+          "path": "outputs/equity_by_age/se1_mae_sai_registration_check_v1.json"
         }
       ],
       "gates": "Any sentence about an age-group gap, in the pitch or on a page.",
@@ -638,6 +642,25 @@
         }
       ],
       "gates": "Running the comparison when the THEOS-2 scenes arrive.",
+      "ready": true,
+      "added": "2026-10-09"
+    },
+    {
+      "id": "V-32",
+      "group": "result",
+      "title": "The run of record of the SE1 ensemble: seven classes hold, Mae Sai is 'unstable: verify'",
+      "check": "Read the third update in the section on plan task E10. The registered builder now builds the rescaled demand, and case SE1 was run of record over the 180 cells of the public facility set: seven classes are headline-eligible and the class D of Mae Sai tambon is 'unstable: verify'. The published result file is not changed and still says that stability is not evaluated. Accept if the team agrees that the next publication of the SE1 result file carries these statuses, on a date when the policy page can be bound to the new file; choose 'change' if Mae Sai should be shown otherwise.",
+      "evidence": [
+        {
+          "label": "The section on plan task E10, third update",
+          "path": "outputs/planning_v1/README.md"
+        },
+        {
+          "label": "Receipt of the run of record",
+          "path": "outputs/planning_v1/e10_uncertainty_ensemble_se1_mae_sai.json"
+        }
+      ],
+      "gates": "Publishing the SE1 result file again with a status on each class.",
       "ready": true,
       "added": "2026-10-09"
     }

@@ -68,6 +68,9 @@ REGISTER_CELLS_ON_THE_AGE_COUNTS = (
 # folder (review pairs, satellite rasters, the run register, model weights, GEOID tiles, the public web folder).
 CODE_THAT_LISTS_A_FOLDER = [
     "scripts/build_landing_gate_status.py", "scripts/build_mae_sai_flood_timeline.py", "scripts/build_planning_assessment.py",
+    # Names its plan in docs/proposal_execution and lists its own output folder for the reference records of a scene
+    # (outputs/theos2_study_event_check); it lists nothing under docs/ and reads no draft.
+    "scripts/build_theos2_study_event_check.py",
     # Lists the published overlay files of one folder under apps/web/public/ to write their index; it reads the two
     # protocol files and the receipts of docs/proposal_execution by name, and no draft.
     "scripts/publish_planning_overlay.py",

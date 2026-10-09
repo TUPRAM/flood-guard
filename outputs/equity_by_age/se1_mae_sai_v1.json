@@ -1,0 +1,1480 @@
+{
+ "schema": "floodguard.equity_by_age.v1",
+ "generated_at_utc": "2026-10-09T05:03:15Z",
+ "source_timestamp": "2024-08-01/2024-10-12 (season layer of product 4009)",
+ "source_timestamps": {
+  "flood_input": "2024-08-01/2024-10-12",
+  "population_year_represented": 2020,
+  "age_counts_year_represented": 2024
+ },
+ "confidence_class": "low",
+ "confidence_basis": "Modelled access on OpenStreetMap roads, modelled residents and modelled age shares at 1 km; closures assumed from an agency season layer that was not checked in the field.",
+ "operational_status": "non_operational",
+ "official_warning": false,
+ "can_feed_decision_layer": false,
+ "what_this_is": "Access loss by age group for case SE1, at the three levels of closure rule v1 on the season layer as provided. Report-only.",
+ "label": "Modelled, not observed. A scenario, not a flood of any day.",
+ "not_the_ensemble_of_the_protocol": "The protocol allows a gap sentence only on the ensemble of plan task E10. These are three runs. The rule is applied to them for orientation; the protocol's sentence stays the fixed one until the ensemble is run.",
+ "comparisons": {
+  "60_plus_vs_under_60": "residents of 60 and over against residents under 60",
+  "0_14_vs_15_plus": "children of 0 to 14 against residents of 15 and over"
+ },
+ "definitions": {
+  "loss_rate": "of the residents of a group who had the access before the flood, the share who lose it",
+  "difference_of_rates": "group loss rate minus the others' loss rate, in share points",
+  "ratio_of_rates": "group loss rate divided by the others'; not given under 50 residents in a group or when both rates are zero"
+ },
+ "age_shares": {
+  "product": "Global2 R2025A v1, Thailand constrained total-sex age estimates",
+  "year_represented": 2024,
+  "manifest_sha256": "f7a169877177a374bc461724dcb93b6ec96d76451347cd2e98dc2fc7b0f8356c",
+  "rule": "every 100 m demand cell takes the age shares of the 1 km age cell its centre lies in",
+  "demand_cells": 27487,
+  "cells_whose_age_cell_holds_no_count": 158,
+  "residents_in_those_cells": 360.5,
+  "filled_with": "the resident-weighted shares of the tambon's other cells",
+  "distinct_child_shares_in_the_frame": 54,
+  "share_of_children_lowest_and_highest": [
+   0.1371,
+   0.2701
+  ],
+  "share_of_60_plus_lowest_and_highest": [
+   0.0924,
+   0.2685
+  ]
+ },
+ "closure_levels": {
+  "strict": {
+   "reproduces_case_se1_for_every_tambon": true,
+   "whole_frame": {
+    "loses_a_hospital_within_30_minutes": {
+     "60_plus_vs_under_60": {
+      "group_residents_with_baseline_access": 17220.0,
+      "group_residents_who_lose_it": 5125.4,
+      "others_with_baseline_access": 57376.9,
+      "others_who_lose_it": 17517.8,
+      "group_loss_rate": 0.297645,
+      "others_loss_rate": 0.305311,
+      "difference_of_rates": -0.007666,
+      "ratio_of_rates": 0.9749,
+      "ratio_not_given_because": null
+     },
+     "0_14_vs_15_plus": {
+      "group_residents_with_baseline_access": 12964.9,
+      "group_residents_who_lose_it": 3981.6,
+      "others_with_baseline_access": 61632.0,
+      "others_who_lose_it": 18661.7,
+      "group_loss_rate": 0.307107,
+      "others_loss_rate": 0.302792,
+      "difference_of_rates": 0.004315,
+      "ratio_of_rates": 1.0143,
+      "ratio_not_given_because": null
+     }
+    },
+    "loses_every_road_route": {
+     "60_plus_vs_under_60": {
+      "group_residents_with_baseline_access": 17352.4,
+      "group_residents_who_lose_it": 4825.2,
+      "others_with_baseline_access": 57818.2,
+      "others_who_lose_it": 16507.6,
+      "group_loss_rate": 0.278072,
+      "others_loss_rate": 0.285508,
+      "difference_of_rates": -0.007437,
+      "ratio_of_rates": 0.974,
+      "ratio_not_given_because": null
+     },
+     "0_14_vs_15_plus": {
+      "group_residents_with_baseline_access": 13063.3,
+      "group_residents_who_lose_it": 3752.7,
+      "others_with_baseline_access": 62107.2,
+      "others_who_lose_it": 17580.1,
+      "group_loss_rate": 0.287272,
+      "others_loss_rate": 0.28306,
+      "difference_of_rates": 0.004213,
+      "ratio_of_rates": 1.0149,
+      "ratio_not_given_because": null
+     }
+    }
+   },
+   "by_tambon": {
+    "TH570901": {
+     "loses_a_hospital_within_30_minutes": {
+      "60_plus_vs_under_60": {
+       "group_residents_with_baseline_access": 3930.7,
+       "group_residents_who_lose_it": 2669.9,
+       "others_with_baseline_access": 13522.5,
+       "others_who_lose_it": 9362.8,
+       "group_loss_rate": 0.679243,
+       "others_loss_rate": 0.692388,
+       "difference_of_rates": -0.013145,
+       "ratio_of_rates": 0.981,
+       "ratio_not_given_because": null
+      },
+      "0_14_vs_15_plus": {
+       "group_residents_with_baseline_access": 3079.3,
+       "group_residents_who_lose_it": 2141.8,
+       "others_with_baseline_access": 14373.9,
+       "others_who_lose_it": 9890.9,
+       "group_loss_rate": 0.695558,
+       "others_loss_rate": 0.688115,
+       "difference_of_rates": 0.007443,
+       "ratio_of_rates": 1.0108,
+       "ratio_not_given_because": null
+      }
+     },
+     "loses_every_road_route": {
+      "60_plus_vs_under_60": {
+       "group_residents_with_baseline_access": 3930.7,
+       "group_residents_who_lose_it": 2571.5,
+       "others_with_baseline_access": 13522.5,
+       "others_who_lose_it": 9002.1,
+       "group_loss_rate": 0.654201,
+       "others_loss_rate": 0.665713,
+       "difference_of_rates": -0.011511,
+       "ratio_of_rates": 0.9827,
+       "ratio_not_given_because": null
+      },
+      "0_14_vs_15_plus": {
+       "group_residents_with_baseline_access": 3079.3,
+       "group_residents_who_lose_it": 2058.5,
+       "others_with_baseline_access": 14373.9,
+       "others_who_lose_it": 9515.1,
+       "group_loss_rate": 0.668488,
+       "others_loss_rate": 0.66197,
+       "difference_of_rates": 0.006518,
+       "ratio_of_rates": 1.0098,
+       "ratio_not_given_because": null
+      }
+     }
+    },
+    "TH570902": {
+     "loses_a_hospital_within_30_minutes": {
+      "60_plus_vs_under_60": {
+       "group_residents_with_baseline_access": 1674.5,
+       "group_residents_who_lose_it": 1.9,
+       "others_with_baseline_access": 5474.3,
+       "others_who_lose_it": 6.3,
+       "group_loss_rate": 0.00115,
+       "others_loss_rate": 0.001157,
+       "difference_of_rates": -7e-06,
+       "ratio_of_rates": 0.994,
+       "ratio_not_given_because": null
+      },
+      "0_14_vs_15_plus": {
+       "group_residents_with_baseline_access": 1233.4,
+       "group_residents_who_lose_it": 1.4,
+       "others_with_baseline_access": 5915.4,
+       "others_who_lose_it": 6.8,
+       "group_loss_rate": 0.001155,
+       "others_loss_rate": 0.001156,
+       "difference_of_rates": -1e-06,
+       "ratio_of_rates": 0.999,
+       "ratio_not_given_because": null
+      }
+     },
+     "loses_every_road_route": {
+      "60_plus_vs_under_60": {
+       "group_residents_with_baseline_access": 1689.2,
+       "group_residents_who_lose_it": 0.0,
+       "others_with_baseline_access": 5524.7,
+       "others_who_lose_it": 0.0,
+       "group_loss_rate": 0.0,
+       "others_loss_rate": 0.0,
+       "difference_of_rates": 0.0,
+       "ratio_of_rates": null,
+       "ratio_not_given_because": "both_rates_are_zero"
+      },
+      "0_14_vs_15_plus": {
+       "group_residents_with_baseline_access": 1245.2,
+       "group_residents_who_lose_it": 0.0,
+       "others_with_baseline_access": 5968.7,
+       "others_who_lose_it": 0.0,
+       "group_loss_rate": 0.0,
+       "others_loss_rate": 0.0,
+       "difference_of_rates": 0.0,
+       "ratio_of_rates": null,
+       "ratio_not_given_because": "both_rates_are_zero"
+      }
+     }
+    },
+    "TH570903": {
+     "loses_a_hospital_within_30_minutes": {
+      "60_plus_vs_under_60": {
+       "group_residents_with_baseline_access": 1313.2,
+       "group_residents_who_lose_it": 1313.2,
+       "others_with_baseline_access": 4396.5,
+       "others_who_lose_it": 4396.5,
+       "group_loss_rate": 1.0,
+       "others_loss_rate": 1.0,
+       "difference_of_rates": 0.0,
+       "ratio_of_rates": 1.0,
+       "ratio_not_given_because": null
+      },
+      "0_14_vs_15_plus": {
+       "group_residents_with_baseline_access": 994.4,
+       "group_residents_who_lose_it": 994.4,
+       "others_with_baseline_access": 4715.2,
+       "others_who_lose_it": 4715.2,
+       "group_loss_rate": 1.0,
+       "others_loss_rate": 1.0,
+       "difference_of_rates": 0.0,
+       "ratio_of_rates": 1.0,
+       "ratio_not_given_because": null
+      }
+     },
+     "loses_every_road_route": {
+      "60_plus_vs_under_60": {
+       "group_residents_with_baseline_access": 1370.7,
+       "group_residents_who_lose_it": 1370.7,
+       "others_with_baseline_access": 4601.7,
+       "others_who_lose_it": 4601.7,
+       "group_loss_rate": 1.0,
+       "others_loss_rate": 1.0,
+       "difference_of_rates": 0.0,
+       "ratio_of_rates": 1.0,
+       "ratio_not_given_because": null
+      },
+      "0_14_vs_15_plus": {
+       "group_residents_with_baseline_access": 1041.4,
+       "group_residents_who_lose_it": 1041.4,
+       "others_with_baseline_access": 4931.0,
+       "others_who_lose_it": 4931.0,
+       "group_loss_rate": 1.0,
+       "others_loss_rate": 1.0,
+       "difference_of_rates": 0.0,
+       "ratio_of_rates": 1.0,
+       "ratio_not_given_because": null
+      }
+     }
+    },
+    "TH570904": {
+     "loses_a_hospital_within_30_minutes": {
+      "60_plus_vs_under_60": {
+       "group_residents_with_baseline_access": 2002.6,
+       "group_residents_who_lose_it": 165.7,
+       "others_with_baseline_access": 6606.9,
+       "others_who_lose_it": 546.6,
+       "group_loss_rate": 0.082729,
+       "others_loss_rate": 0.082729,
+       "difference_of_rates": 0.0,
+       "ratio_of_rates": 1.0,
+       "ratio_not_given_because": null
+      },
+      "0_14_vs_15_plus": {
+       "group_residents_with_baseline_access": 1489.0,
+       "group_residents_who_lose_it": 123.2,
+       "others_with_baseline_access": 7120.4,
+       "others_who_lose_it": 589.1,
+       "group_loss_rate": 0.082729,
+       "others_loss_rate": 0.082729,
+       "difference_of_rates": 0.0,
+       "ratio_of_rates": 1.0,
+       "ratio_not_given_because": null
+      }
+     },
+     "loses_every_road_route": {
+      "60_plus_vs_under_60": {
+       "group_residents_with_baseline_access": 2002.6,
+       "group_residents_who_lose_it": 165.7,
+       "others_with_baseline_access": 6606.9,
+       "others_who_lose_it": 546.6,
+       "group_loss_rate": 0.082729,
+       "others_loss_rate": 0.082729,
+       "difference_of_rates": 0.0,
+       "ratio_of_rates": 1.0,
+       "ratio_not_given_because": null
+      },
+      "0_14_vs_15_plus": {
+       "group_residents_with_baseline_access": 1489.0,
+       "group_residents_who_lose_it": 123.2,
+       "others_with_baseline_access": 7120.4,
+       "others_who_lose_it": 589.1,
+       "group_loss_rate": 0.082729,
+       "others_loss_rate": 0.082729,
+       "difference_of_rates": 0.0,
+       "ratio_of_rates": 1.0,
+       "ratio_not_given_because": null
+      }
+     }
+    },
+    "TH570905": {
+     "loses_a_hospital_within_30_minutes": {
+      "60_plus_vs_under_60": {
+       "group_residents_with_baseline_access": 1520.9,
+       "group_residents_who_lose_it": 575.6,
+       "others_with_baseline_access": 5009.0,
+       "others_who_lose_it": 1890.6,
+       "group_loss_rate": 0.378462,
+       "others_loss_rate": 0.377445,
+       "difference_of_rates": 0.001018,
+       "ratio_of_rates": 1.0027,
+       "ratio_not_given_because": null
+      },
+      "0_14_vs_15_plus": {
+       "group_residents_with_baseline_access": 1127.4,
+       "group_residents_who_lose_it": 424.7,
+       "others_with_baseline_access": 5402.4,
+       "others_who_lose_it": 2041.5,
+       "group_loss_rate": 0.37669,
+       "others_loss_rate": 0.377889,
+       "difference_of_rates": -0.001199,
+       "ratio_of_rates": 0.9968,
+       "ratio_not_given_because": null
+      }
+     },
+     "loses_every_road_route": {
+      "60_plus_vs_under_60": {
+       "group_residents_with_baseline_access": 1527.6,
+       "group_residents_who_lose_it": 582.4,
+       "others_with_baseline_access": 5030.7,
+       "others_who_lose_it": 1912.3,
+       "group_loss_rate": 0.381215,
+       "others_loss_rate": 0.380129,
+       "difference_of_rates": 0.001087,
+       "ratio_of_rates": 1.0029,
+       "ratio_not_given_because": null
+      },
+      "0_14_vs_15_plus": {
+       "group_residents_with_baseline_access": 1132.2,
+       "group_residents_who_lose_it": 429.5,
+       "others_with_baseline_access": 5426.1,
+       "others_who_lose_it": 2065.2,
+       "group_loss_rate": 0.379323,
+       "others_loss_rate": 0.380603,
+       "difference_of_rates": -0.00128,
+       "ratio_of_rates": 0.9966,
+       "ratio_not_given_because": null
+      }
+     }
+    },
+    "TH570906": {
+     "loses_a_hospital_within_30_minutes": {
+      "60_plus_vs_under_60": {
+       "group_residents_with_baseline_access": 4456.1,
+       "group_residents_who_lose_it": 17.6,
+       "others_with_baseline_access": 14708.4,
+       "others_who_lose_it": 57.9,
+       "group_loss_rate": 0.00394,
+       "others_loss_rate": 0.003938,
+       "difference_of_rates": 2e-06,
+       "ratio_of_rates": 1.0005,
+       "ratio_not_given_because": null
+      },
+      "0_14_vs_15_plus": {
+       "group_residents_with_baseline_access": 3315.3,
+       "group_residents_who_lose_it": 13.1,
+       "others_with_baseline_access": 15849.3,
+       "others_who_lose_it": 62.4,
+       "group_loss_rate": 0.003937,
+       "others_loss_rate": 0.003938,
+       "difference_of_rates": -1e-06,
+       "ratio_of_rates": 0.9997,
+       "ratio_not_given_because": null
+      }
+     },
+     "loses_every_road_route": {
+      "60_plus_vs_under_60": {
+       "group_residents_with_baseline_access": 4456.1,
+       "group_residents_who_lose_it": 17.6,
+       "others_with_baseline_access": 14708.4,
+       "others_who_lose_it": 57.9,
+       "group_loss_rate": 0.00394,
+       "others_loss_rate": 0.003938,
+       "difference_of_rates": 2e-06,
+       "ratio_of_rates": 1.0005,
+       "ratio_not_given_because": null
+      },
+      "0_14_vs_15_plus": {
+       "group_residents_with_baseline_access": 3315.3,
+       "group_residents_who_lose_it": 13.1,
+       "others_with_baseline_access": 15849.3,
+       "others_who_lose_it": 62.4,
+       "group_loss_rate": 0.003937,
+       "others_loss_rate": 0.003938,
+       "difference_of_rates": -1e-06,
+       "ratio_of_rates": 0.9997,
+       "ratio_not_given_because": null
+      }
+     }
+    },
+    "TH570908": {
+     "loses_a_hospital_within_30_minutes": {
+      "60_plus_vs_under_60": {
+       "group_residents_with_baseline_access": 881.9,
+       "group_residents_who_lose_it": 344.6,
+       "others_with_baseline_access": 2906.0,
+       "others_who_lose_it": 1134.8,
+       "group_loss_rate": 0.390717,
+       "others_loss_rate": 0.390516,
+       "difference_of_rates": 0.000202,
+       "ratio_of_rates": 1.0005,
+       "ratio_not_given_because": null
+      },
+      "0_14_vs_15_plus": {
+       "group_residents_with_baseline_access": 654.3,
+       "group_residents_who_lose_it": 255.4,
+       "others_with_baseline_access": 3133.5,
+       "others_who_lose_it": 1224.0,
+       "group_loss_rate": 0.390364,
+       "others_loss_rate": 0.390604,
+       "difference_of_rates": -0.00024,
+       "ratio_of_rates": 0.9994,
+       "ratio_not_given_because": null
+      }
+     },
+     "loses_every_road_route": {
+      "60_plus_vs_under_60": {
+       "group_residents_with_baseline_access": 935.2,
+       "group_residents_who_lose_it": 82.7,
+       "others_with_baseline_access": 3070.0,
+       "others_who_lose_it": 272.4,
+       "group_loss_rate": 0.088432,
+       "others_loss_rate": 0.088739,
+       "difference_of_rates": -0.000306,
+       "ratio_of_rates": 0.9965,
+       "ratio_not_given_because": null
+      },
+      "0_14_vs_15_plus": {
+       "group_residents_with_baseline_access": 689.1,
+       "group_residents_who_lose_it": 61.3,
+       "others_with_baseline_access": 3316.0,
+       "others_who_lose_it": 293.8,
+       "group_loss_rate": 0.088984,
+       "others_loss_rate": 0.088601,
+       "difference_of_rates": 0.000382,
+       "ratio_of_rates": 1.0043,
+       "ratio_not_given_because": null
+      }
+     }
+    },
+    "TH570909": {
+     "loses_a_hospital_within_30_minutes": {
+      "60_plus_vs_under_60": {
+       "group_residents_with_baseline_access": 1440.2,
+       "group_residents_who_lose_it": 37.1,
+       "others_with_baseline_access": 4753.3,
+       "others_who_lose_it": 122.3,
+       "group_loss_rate": 0.025729,
+       "others_loss_rate": 0.025721,
+       "difference_of_rates": 9e-06,
+       "ratio_of_rates": 1.0003,
+       "ratio_not_given_because": null
+      },
+      "0_14_vs_15_plus": {
+       "group_residents_with_baseline_access": 1071.7,
+       "group_residents_who_lose_it": 27.6,
+       "others_with_baseline_access": 5121.8,
+       "others_who_lose_it": 131.8,
+       "group_loss_rate": 0.02571,
+       "others_loss_rate": 0.025725,
+       "difference_of_rates": -1.6e-05,
+       "ratio_of_rates": 0.9994,
+       "ratio_not_given_because": null
+      }
+     },
+     "loses_every_road_route": {
+      "60_plus_vs_under_60": {
+       "group_residents_with_baseline_access": 1440.2,
+       "group_residents_who_lose_it": 34.7,
+       "others_with_baseline_access": 4753.3,
+       "others_who_lose_it": 114.6,
+       "group_loss_rate": 0.024114,
+       "others_loss_rate": 0.024106,
+       "difference_of_rates": 8e-06,
+       "ratio_of_rates": 1.0003,
+       "ratio_not_given_because": null
+      },
+      "0_14_vs_15_plus": {
+       "group_residents_with_baseline_access": 1071.7,
+       "group_residents_who_lose_it": 25.8,
+       "others_with_baseline_access": 5121.8,
+       "others_who_lose_it": 123.5,
+       "group_loss_rate": 0.024096,
+       "others_loss_rate": 0.024111,
+       "difference_of_rates": -1.5e-05,
+       "ratio_of_rates": 0.9994,
+       "ratio_not_given_because": null
+      }
+     }
+    }
+   }
+  },
+  "central": {
+   "reproduces_case_se1_for_every_tambon": true,
+   "whole_frame": {
+    "loses_a_hospital_within_30_minutes": {
+     "60_plus_vs_under_60": {
+      "group_residents_with_baseline_access": 17220.0,
+      "group_residents_who_lose_it": 5558.9,
+      "others_with_baseline_access": 57376.9,
+      "others_who_lose_it": 18946.2,
+      "group_loss_rate": 0.32282,
+      "others_loss_rate": 0.330207,
+      "difference_of_rates": -0.007387,
+      "ratio_of_rates": 0.9776,
+      "ratio_not_given_because": null
+     },
+     "0_14_vs_15_plus": {
+      "group_residents_with_baseline_access": 12964.9,
+      "group_residents_who_lose_it": 4303.2,
+      "others_with_baseline_access": 61632.0,
+      "others_who_lose_it": 20202.0,
+      "group_loss_rate": 0.331912,
+      "others_loss_rate": 0.327784,
+      "difference_of_rates": 0.004128,
+      "ratio_of_rates": 1.0126,
+      "ratio_not_given_because": null
+     }
+    },
+    "loses_every_road_route": {
+     "60_plus_vs_under_60": {
+      "group_residents_with_baseline_access": 17352.4,
+      "group_residents_who_lose_it": 4933.3,
+      "others_with_baseline_access": 57818.2,
+      "others_who_lose_it": 16864.4,
+      "group_loss_rate": 0.284304,
+      "others_loss_rate": 0.291679,
+      "difference_of_rates": -0.007376,
+      "ratio_of_rates": 0.9747,
+      "ratio_not_given_because": null
+     },
+     "0_14_vs_15_plus": {
+      "group_residents_with_baseline_access": 13063.3,
+      "group_residents_who_lose_it": 3833.1,
+      "others_with_baseline_access": 62107.2,
+      "others_who_lose_it": 17964.6,
+      "group_loss_rate": 0.293428,
+      "others_loss_rate": 0.289251,
+      "difference_of_rates": 0.004177,
+      "ratio_of_rates": 1.0144,
+      "ratio_not_given_because": null
+     }
+    }
+   },
+   "by_tambon": {
+    "TH570901": {
+     "loses_a_hospital_within_30_minutes": {
+      "60_plus_vs_under_60": {
+       "group_residents_with_baseline_access": 3930.7,
+       "group_residents_who_lose_it": 2679.4,
+       "others_with_baseline_access": 13522.5,
+       "others_who_lose_it": 9393.9,
+       "group_loss_rate": 0.681643,
+       "others_loss_rate": 0.69469,
+       "difference_of_rates": -0.013047,
+       "ratio_of_rates": 0.9812,
+       "ratio_not_given_because": null
+      },
+      "0_14_vs_15_plus": {
+       "group_residents_with_baseline_access": 3079.3,
+       "group_residents_who_lose_it": 2148.9,
+       "others_with_baseline_access": 14373.9,
+       "others_who_lose_it": 9924.4,
+       "group_loss_rate": 0.697836,
+       "others_loss_rate": 0.690448,
+       "difference_of_rates": 0.007387,
+       "ratio_of_rates": 1.0107,
+       "ratio_not_given_because": null
+      }
+     },
+     "loses_every_road_route": {
+      "60_plus_vs_under_60": {
+       "group_residents_with_baseline_access": 3930.7,
+       "group_residents_who_lose_it": 2580.9,
+       "others_with_baseline_access": 13522.5,
+       "others_who_lose_it": 9033.2,
+       "group_loss_rate": 0.656601,
+       "others_loss_rate": 0.668014,
+       "difference_of_rates": -0.011413,
+       "ratio_of_rates": 0.9829,
+       "ratio_not_given_because": null
+      },
+      "0_14_vs_15_plus": {
+       "group_residents_with_baseline_access": 3079.3,
+       "group_residents_who_lose_it": 2065.5,
+       "others_with_baseline_access": 14373.9,
+       "others_who_lose_it": 9548.6,
+       "group_loss_rate": 0.670766,
+       "others_loss_rate": 0.664304,
+       "difference_of_rates": 0.006462,
+       "ratio_of_rates": 1.0097,
+       "ratio_not_given_because": null
+      }
+     }
+    },
+    "TH570902": {
+     "loses_a_hospital_within_30_minutes": {
+      "60_plus_vs_under_60": {
+       "group_residents_with_baseline_access": 1674.5,
+       "group_residents_who_lose_it": 44.9,
+       "others_with_baseline_access": 5474.3,
+       "others_who_lose_it": 147.8,
+       "group_loss_rate": 0.026806,
+       "others_loss_rate": 0.026992,
+       "difference_of_rates": -0.000186,
+       "ratio_of_rates": 0.9931,
+       "ratio_not_given_because": null
+      },
+      "0_14_vs_15_plus": {
+       "group_residents_with_baseline_access": 1233.4,
+       "group_residents_who_lose_it": 33.2,
+       "others_with_baseline_access": 5915.4,
+       "others_who_lose_it": 159.4,
+       "group_loss_rate": 0.026952,
+       "others_loss_rate": 0.026948,
+       "difference_of_rates": 5e-06,
+       "ratio_of_rates": 1.0002,
+       "ratio_not_given_because": null
+      }
+     },
+     "loses_every_road_route": {
+      "60_plus_vs_under_60": {
+       "group_residents_with_baseline_access": 1689.2,
+       "group_residents_who_lose_it": 0.0,
+       "others_with_baseline_access": 5524.7,
+       "others_who_lose_it": 0.0,
+       "group_loss_rate": 0.0,
+       "others_loss_rate": 0.0,
+       "difference_of_rates": 0.0,
+       "ratio_of_rates": null,
+       "ratio_not_given_because": "both_rates_are_zero"
+      },
+      "0_14_vs_15_plus": {
+       "group_residents_with_baseline_access": 1245.2,
+       "group_residents_who_lose_it": 0.0,
+       "others_with_baseline_access": 5968.7,
+       "others_who_lose_it": 0.0,
+       "group_loss_rate": 0.0,
+       "others_loss_rate": 0.0,
+       "difference_of_rates": 0.0,
+       "ratio_of_rates": null,
+       "ratio_not_given_because": "both_rates_are_zero"
+      }
+     }
+    },
+    "TH570903": {
+     "loses_a_hospital_within_30_minutes": {
+      "60_plus_vs_under_60": {
+       "group_residents_with_baseline_access": 1313.2,
+       "group_residents_who_lose_it": 1313.2,
+       "others_with_baseline_access": 4396.5,
+       "others_who_lose_it": 4396.5,
+       "group_loss_rate": 1.0,
+       "others_loss_rate": 1.0,
+       "difference_of_rates": 0.0,
+       "ratio_of_rates": 1.0,
+       "ratio_not_given_because": null
+      },
+      "0_14_vs_15_plus": {
+       "group_residents_with_baseline_access": 994.4,
+       "group_residents_who_lose_it": 994.4,
+       "others_with_baseline_access": 4715.2,
+       "others_who_lose_it": 4715.2,
+       "group_loss_rate": 1.0,
+       "others_loss_rate": 1.0,
+       "difference_of_rates": 0.0,
+       "ratio_of_rates": 1.0,
+       "ratio_not_given_because": null
+      }
+     },
+     "loses_every_road_route": {
+      "60_plus_vs_under_60": {
+       "group_residents_with_baseline_access": 1370.7,
+       "group_residents_who_lose_it": 1370.7,
+       "others_with_baseline_access": 4601.7,
+       "others_who_lose_it": 4601.7,
+       "group_loss_rate": 1.0,
+       "others_loss_rate": 1.0,
+       "difference_of_rates": 0.0,
+       "ratio_of_rates": 1.0,
+       "ratio_not_given_because": null
+      },
+      "0_14_vs_15_plus": {
+       "group_residents_with_baseline_access": 1041.4,
+       "group_residents_who_lose_it": 1041.4,
+       "others_with_baseline_access": 4931.0,
+       "others_who_lose_it": 4931.0,
+       "group_loss_rate": 1.0,
+       "others_loss_rate": 1.0,
+       "difference_of_rates": 0.0,
+       "ratio_of_rates": 1.0,
+       "ratio_not_given_because": null
+      }
+     }
+    },
+    "TH570904": {
+     "loses_a_hospital_within_30_minutes": {
+      "60_plus_vs_under_60": {
+       "group_residents_with_baseline_access": 2002.6,
+       "group_residents_who_lose_it": 174.4,
+       "others_with_baseline_access": 6606.9,
+       "others_who_lose_it": 575.4,
+       "group_loss_rate": 0.08709,
+       "others_loss_rate": 0.08709,
+       "difference_of_rates": 0.0,
+       "ratio_of_rates": 1.0,
+       "ratio_not_given_because": null
+      },
+      "0_14_vs_15_plus": {
+       "group_residents_with_baseline_access": 1489.0,
+       "group_residents_who_lose_it": 129.7,
+       "others_with_baseline_access": 7120.4,
+       "others_who_lose_it": 620.1,
+       "group_loss_rate": 0.08709,
+       "others_loss_rate": 0.08709,
+       "difference_of_rates": 0.0,
+       "ratio_of_rates": 1.0,
+       "ratio_not_given_because": null
+      }
+     },
+     "loses_every_road_route": {
+      "60_plus_vs_under_60": {
+       "group_residents_with_baseline_access": 2002.6,
+       "group_residents_who_lose_it": 169.7,
+       "others_with_baseline_access": 6606.9,
+       "others_who_lose_it": 560.0,
+       "group_loss_rate": 0.084755,
+       "others_loss_rate": 0.084755,
+       "difference_of_rates": 0.0,
+       "ratio_of_rates": 1.0,
+       "ratio_not_given_because": null
+      },
+      "0_14_vs_15_plus": {
+       "group_residents_with_baseline_access": 1489.0,
+       "group_residents_who_lose_it": 126.2,
+       "others_with_baseline_access": 7120.4,
+       "others_who_lose_it": 603.5,
+       "group_loss_rate": 0.084755,
+       "others_loss_rate": 0.084755,
+       "difference_of_rates": 0.0,
+       "ratio_of_rates": 1.0,
+       "ratio_not_given_because": null
+      }
+     }
+    },
+    "TH570905": {
+     "loses_a_hospital_within_30_minutes": {
+      "60_plus_vs_under_60": {
+       "group_residents_with_baseline_access": 1520.9,
+       "group_residents_who_lose_it": 669.3,
+       "others_with_baseline_access": 5009.0,
+       "others_who_lose_it": 2199.7,
+       "group_loss_rate": 0.440072,
+       "others_loss_rate": 0.439161,
+       "difference_of_rates": 0.000911,
+       "ratio_of_rates": 1.0021,
+       "ratio_not_given_because": null
+      },
+      "0_14_vs_15_plus": {
+       "group_residents_with_baseline_access": 1127.4,
+       "group_residents_who_lose_it": 494.4,
+       "others_with_baseline_access": 5402.4,
+       "others_who_lose_it": 2374.7,
+       "group_loss_rate": 0.438485,
+       "others_loss_rate": 0.439558,
+       "difference_of_rates": -0.001073,
+       "ratio_of_rates": 0.9976,
+       "ratio_not_given_because": null
+      }
+     },
+     "loses_every_road_route": {
+      "60_plus_vs_under_60": {
+       "group_residents_with_baseline_access": 1527.6,
+       "group_residents_who_lose_it": 676.1,
+       "others_with_baseline_access": 5030.7,
+       "others_who_lose_it": 2221.4,
+       "group_loss_rate": 0.442552,
+       "others_loss_rate": 0.441579,
+       "difference_of_rates": 0.000973,
+       "ratio_of_rates": 1.0022,
+       "ratio_not_given_because": null
+      },
+      "0_14_vs_15_plus": {
+       "group_residents_with_baseline_access": 1132.2,
+       "group_residents_who_lose_it": 499.1,
+       "others_with_baseline_access": 5426.1,
+       "others_who_lose_it": 2398.3,
+       "group_loss_rate": 0.440857,
+       "others_loss_rate": 0.442003,
+       "difference_of_rates": -0.001146,
+       "ratio_of_rates": 0.9974,
+       "ratio_not_given_because": null
+      }
+     }
+    },
+    "TH570906": {
+     "loses_a_hospital_within_30_minutes": {
+      "60_plus_vs_under_60": {
+       "group_residents_with_baseline_access": 4456.1,
+       "group_residents_who_lose_it": 17.6,
+       "others_with_baseline_access": 14708.4,
+       "others_who_lose_it": 57.9,
+       "group_loss_rate": 0.00394,
+       "others_loss_rate": 0.003938,
+       "difference_of_rates": 2e-06,
+       "ratio_of_rates": 1.0005,
+       "ratio_not_given_because": null
+      },
+      "0_14_vs_15_plus": {
+       "group_residents_with_baseline_access": 3315.3,
+       "group_residents_who_lose_it": 13.1,
+       "others_with_baseline_access": 15849.3,
+       "others_who_lose_it": 62.4,
+       "group_loss_rate": 0.003937,
+       "others_loss_rate": 0.003938,
+       "difference_of_rates": -1e-06,
+       "ratio_of_rates": 0.9997,
+       "ratio_not_given_because": null
+      }
+     },
+     "loses_every_road_route": {
+      "60_plus_vs_under_60": {
+       "group_residents_with_baseline_access": 4456.1,
+       "group_residents_who_lose_it": 17.6,
+       "others_with_baseline_access": 14708.4,
+       "others_who_lose_it": 57.9,
+       "group_loss_rate": 0.00394,
+       "others_loss_rate": 0.003938,
+       "difference_of_rates": 2e-06,
+       "ratio_of_rates": 1.0005,
+       "ratio_not_given_because": null
+      },
+      "0_14_vs_15_plus": {
+       "group_residents_with_baseline_access": 3315.3,
+       "group_residents_who_lose_it": 13.1,
+       "others_with_baseline_access": 15849.3,
+       "others_who_lose_it": 62.4,
+       "group_loss_rate": 0.003937,
+       "others_loss_rate": 0.003938,
+       "difference_of_rates": -1e-06,
+       "ratio_of_rates": 0.9997,
+       "ratio_not_given_because": null
+      }
+     }
+    },
+    "TH570908": {
+     "loses_a_hospital_within_30_minutes": {
+      "60_plus_vs_under_60": {
+       "group_residents_with_baseline_access": 881.9,
+       "group_residents_who_lose_it": 617.1,
+       "others_with_baseline_access": 2906.0,
+       "others_who_lose_it": 2032.5,
+       "group_loss_rate": 0.699761,
+       "others_loss_rate": 0.699407,
+       "difference_of_rates": 0.000354,
+       "ratio_of_rates": 1.0005,
+       "ratio_not_given_because": null
+      },
+      "0_14_vs_15_plus": {
+       "group_residents_with_baseline_access": 654.3,
+       "group_residents_who_lose_it": 457.5,
+       "others_with_baseline_access": 3133.5,
+       "others_who_lose_it": 2192.1,
+       "group_loss_rate": 0.699129,
+       "others_loss_rate": 0.699564,
+       "difference_of_rates": -0.000435,
+       "ratio_of_rates": 0.9994,
+       "ratio_not_given_because": null
+      }
+     },
+     "loses_every_road_route": {
+      "60_plus_vs_under_60": {
+       "group_residents_with_baseline_access": 935.2,
+       "group_residents_who_lose_it": 83.6,
+       "others_with_baseline_access": 3070.0,
+       "others_who_lose_it": 275.6,
+       "group_loss_rate": 0.089448,
+       "others_loss_rate": 0.089759,
+       "difference_of_rates": -0.000311,
+       "ratio_of_rates": 0.9965,
+       "ratio_not_given_because": null
+      },
+      "0_14_vs_15_plus": {
+       "group_residents_with_baseline_access": 689.1,
+       "group_residents_who_lose_it": 62.0,
+       "others_with_baseline_access": 3316.0,
+       "others_who_lose_it": 297.2,
+       "group_loss_rate": 0.090009,
+       "others_loss_rate": 0.08962,
+       "difference_of_rates": 0.000389,
+       "ratio_of_rates": 1.0043,
+       "ratio_not_given_because": null
+      }
+     }
+    },
+    "TH570909": {
+     "loses_a_hospital_within_30_minutes": {
+      "60_plus_vs_under_60": {
+       "group_residents_with_baseline_access": 1440.2,
+       "group_residents_who_lose_it": 43.2,
+       "others_with_baseline_access": 4753.3,
+       "others_who_lose_it": 142.5,
+       "group_loss_rate": 0.029999,
+       "others_loss_rate": 0.029989,
+       "difference_of_rates": 1e-05,
+       "ratio_of_rates": 1.0003,
+       "ratio_not_given_because": null
+      },
+      "0_14_vs_15_plus": {
+       "group_residents_with_baseline_access": 1071.7,
+       "group_residents_who_lose_it": 32.1,
+       "others_with_baseline_access": 5121.8,
+       "others_who_lose_it": 153.6,
+       "group_loss_rate": 0.029976,
+       "others_loss_rate": 0.029994,
+       "difference_of_rates": -1.8e-05,
+       "ratio_of_rates": 0.9994,
+       "ratio_not_given_because": null
+      }
+     },
+     "loses_every_road_route": {
+      "60_plus_vs_under_60": {
+       "group_residents_with_baseline_access": 1440.2,
+       "group_residents_who_lose_it": 34.7,
+       "others_with_baseline_access": 4753.3,
+       "others_who_lose_it": 114.6,
+       "group_loss_rate": 0.024114,
+       "others_loss_rate": 0.024106,
+       "difference_of_rates": 8e-06,
+       "ratio_of_rates": 1.0003,
+       "ratio_not_given_because": null
+      },
+      "0_14_vs_15_plus": {
+       "group_residents_with_baseline_access": 1071.7,
+       "group_residents_who_lose_it": 25.8,
+       "others_with_baseline_access": 5121.8,
+       "others_who_lose_it": 123.5,
+       "group_loss_rate": 0.024096,
+       "others_loss_rate": 0.024111,
+       "difference_of_rates": -1.5e-05,
+       "ratio_of_rates": 0.9994,
+       "ratio_not_given_because": null
+      }
+     }
+    }
+   }
+  },
+  "permissive": {
+   "reproduces_case_se1_for_every_tambon": true,
+   "whole_frame": {
+    "loses_a_hospital_within_30_minutes": {
+     "60_plus_vs_under_60": {
+      "group_residents_with_baseline_access": 17220.0,
+      "group_residents_who_lose_it": 5633.2,
+      "others_with_baseline_access": 57376.9,
+      "others_who_lose_it": 19191.2,
+      "group_loss_rate": 0.327134,
+      "others_loss_rate": 0.334476,
+      "difference_of_rates": -0.007343,
+      "ratio_of_rates": 0.978,
+      "ratio_not_given_because": null
+     },
+     "0_14_vs_15_plus": {
+      "group_residents_with_baseline_access": 12964.9,
+      "group_residents_who_lose_it": 4358.4,
+      "others_with_baseline_access": 61632.0,
+      "others_who_lose_it": 20466.1,
+      "group_loss_rate": 0.33617,
+      "others_loss_rate": 0.332069,
+      "difference_of_rates": 0.004101,
+      "ratio_of_rates": 1.0123,
+      "ratio_not_given_because": null
+     }
+    },
+    "loses_every_road_route": {
+     "60_plus_vs_under_60": {
+      "group_residents_with_baseline_access": 17352.4,
+      "group_residents_who_lose_it": 5005.9,
+      "others_with_baseline_access": 57818.2,
+      "others_who_lose_it": 17103.6,
+      "group_loss_rate": 0.288486,
+      "others_loss_rate": 0.295818,
+      "difference_of_rates": -0.007332,
+      "ratio_of_rates": 0.9752,
+      "ratio_not_given_because": null
+     },
+     "0_14_vs_15_plus": {
+      "group_residents_with_baseline_access": 13063.3,
+      "group_residents_who_lose_it": 3887.0,
+      "others_with_baseline_access": 62107.2,
+      "others_who_lose_it": 18222.5,
+      "group_loss_rate": 0.297554,
+      "others_loss_rate": 0.293404,
+      "difference_of_rates": 0.00415,
+      "ratio_of_rates": 1.0141,
+      "ratio_not_given_because": null
+     }
+    }
+   },
+   "by_tambon": {
+    "TH570901": {
+     "loses_a_hospital_within_30_minutes": {
+      "60_plus_vs_under_60": {
+       "group_residents_with_baseline_access": 3930.7,
+       "group_residents_who_lose_it": 2729.0,
+       "others_with_baseline_access": 13522.5,
+       "others_who_lose_it": 9557.6,
+       "group_loss_rate": 0.69426,
+       "others_loss_rate": 0.70679,
+       "difference_of_rates": -0.01253,
+       "ratio_of_rates": 0.9823,
+       "ratio_not_given_because": null
+      },
+      "0_14_vs_15_plus": {
+       "group_residents_with_baseline_access": 3079.3,
+       "group_residents_who_lose_it": 2185.7,
+       "others_with_baseline_access": 14373.9,
+       "others_who_lose_it": 10100.8,
+       "group_loss_rate": 0.709811,
+       "others_loss_rate": 0.702717,
+       "difference_of_rates": 0.007095,
+       "ratio_of_rates": 1.0101,
+       "ratio_not_given_because": null
+      }
+     },
+     "loses_every_road_route": {
+      "60_plus_vs_under_60": {
+       "group_residents_with_baseline_access": 3930.7,
+       "group_residents_who_lose_it": 2627.9,
+       "others_with_baseline_access": 13522.5,
+       "others_who_lose_it": 9188.2,
+       "group_loss_rate": 0.668554,
+       "others_loss_rate": 0.679477,
+       "difference_of_rates": -0.010923,
+       "ratio_of_rates": 0.9839,
+       "ratio_not_given_because": null
+      },
+      "0_14_vs_15_plus": {
+       "group_residents_with_baseline_access": 3079.3,
+       "group_residents_who_lose_it": 2100.4,
+       "others_with_baseline_access": 14373.9,
+       "others_who_lose_it": 9715.7,
+       "group_loss_rate": 0.682111,
+       "others_loss_rate": 0.675926,
+       "difference_of_rates": 0.006185,
+       "ratio_of_rates": 1.0092,
+       "ratio_not_given_because": null
+      }
+     }
+    },
+    "TH570902": {
+     "loses_a_hospital_within_30_minutes": {
+      "60_plus_vs_under_60": {
+       "group_residents_with_baseline_access": 1674.5,
+       "group_residents_who_lose_it": 44.9,
+       "others_with_baseline_access": 5474.3,
+       "others_who_lose_it": 147.8,
+       "group_loss_rate": 0.026806,
+       "others_loss_rate": 0.026992,
+       "difference_of_rates": -0.000186,
+       "ratio_of_rates": 0.9931,
+       "ratio_not_given_because": null
+      },
+      "0_14_vs_15_plus": {
+       "group_residents_with_baseline_access": 1233.4,
+       "group_residents_who_lose_it": 33.2,
+       "others_with_baseline_access": 5915.4,
+       "others_who_lose_it": 159.4,
+       "group_loss_rate": 0.026952,
+       "others_loss_rate": 0.026948,
+       "difference_of_rates": 5e-06,
+       "ratio_of_rates": 1.0002,
+       "ratio_not_given_because": null
+      }
+     },
+     "loses_every_road_route": {
+      "60_plus_vs_under_60": {
+       "group_residents_with_baseline_access": 1689.2,
+       "group_residents_who_lose_it": 0.0,
+       "others_with_baseline_access": 5524.7,
+       "others_who_lose_it": 0.0,
+       "group_loss_rate": 0.0,
+       "others_loss_rate": 0.0,
+       "difference_of_rates": 0.0,
+       "ratio_of_rates": null,
+       "ratio_not_given_because": "both_rates_are_zero"
+      },
+      "0_14_vs_15_plus": {
+       "group_residents_with_baseline_access": 1245.2,
+       "group_residents_who_lose_it": 0.0,
+       "others_with_baseline_access": 5968.7,
+       "others_who_lose_it": 0.0,
+       "group_loss_rate": 0.0,
+       "others_loss_rate": 0.0,
+       "difference_of_rates": 0.0,
+       "ratio_of_rates": null,
+       "ratio_not_given_because": "both_rates_are_zero"
+      }
+     }
+    },
+    "TH570903": {
+     "loses_a_hospital_within_30_minutes": {
+      "60_plus_vs_under_60": {
+       "group_residents_with_baseline_access": 1313.2,
+       "group_residents_who_lose_it": 1313.2,
+       "others_with_baseline_access": 4396.5,
+       "others_who_lose_it": 4396.5,
+       "group_loss_rate": 1.0,
+       "others_loss_rate": 1.0,
+       "difference_of_rates": 0.0,
+       "ratio_of_rates": 1.0,
+       "ratio_not_given_because": null
+      },
+      "0_14_vs_15_plus": {
+       "group_residents_with_baseline_access": 994.4,
+       "group_residents_who_lose_it": 994.4,
+       "others_with_baseline_access": 4715.2,
+       "others_who_lose_it": 4715.2,
+       "group_loss_rate": 1.0,
+       "others_loss_rate": 1.0,
+       "difference_of_rates": 0.0,
+       "ratio_of_rates": 1.0,
+       "ratio_not_given_because": null
+      }
+     },
+     "loses_every_road_route": {
+      "60_plus_vs_under_60": {
+       "group_residents_with_baseline_access": 1370.7,
+       "group_residents_who_lose_it": 1370.7,
+       "others_with_baseline_access": 4601.7,
+       "others_who_lose_it": 4601.7,
+       "group_loss_rate": 1.0,
+       "others_loss_rate": 1.0,
+       "difference_of_rates": 0.0,
+       "ratio_of_rates": 1.0,
+       "ratio_not_given_because": null
+      },
+      "0_14_vs_15_plus": {
+       "group_residents_with_baseline_access": 1041.4,
+       "group_residents_who_lose_it": 1041.4,
+       "others_with_baseline_access": 4931.0,
+       "others_who_lose_it": 4931.0,
+       "group_loss_rate": 1.0,
+       "others_loss_rate": 1.0,
+       "difference_of_rates": 0.0,
+       "ratio_of_rates": 1.0,
+       "ratio_not_given_because": null
+      }
+     }
+    },
+    "TH570904": {
+     "loses_a_hospital_within_30_minutes": {
+      "60_plus_vs_under_60": {
+       "group_residents_with_baseline_access": 2002.6,
+       "group_residents_who_lose_it": 177.8,
+       "others_with_baseline_access": 6606.9,
+       "others_who_lose_it": 586.5,
+       "group_loss_rate": 0.088775,
+       "others_loss_rate": 0.088775,
+       "difference_of_rates": 0.0,
+       "ratio_of_rates": 1.0,
+       "ratio_not_given_because": null
+      },
+      "0_14_vs_15_plus": {
+       "group_residents_with_baseline_access": 1489.0,
+       "group_residents_who_lose_it": 132.2,
+       "others_with_baseline_access": 7120.4,
+       "others_who_lose_it": 632.1,
+       "group_loss_rate": 0.088775,
+       "others_loss_rate": 0.088775,
+       "difference_of_rates": 0.0,
+       "ratio_of_rates": 1.0,
+       "ratio_not_given_because": null
+      }
+     },
+     "loses_every_road_route": {
+      "60_plus_vs_under_60": {
+       "group_residents_with_baseline_access": 2002.6,
+       "group_residents_who_lose_it": 173.1,
+       "others_with_baseline_access": 6606.9,
+       "others_who_lose_it": 571.1,
+       "group_loss_rate": 0.08644,
+       "others_loss_rate": 0.08644,
+       "difference_of_rates": 0.0,
+       "ratio_of_rates": 1.0,
+       "ratio_not_given_because": null
+      },
+      "0_14_vs_15_plus": {
+       "group_residents_with_baseline_access": 1489.0,
+       "group_residents_who_lose_it": 128.7,
+       "others_with_baseline_access": 7120.4,
+       "others_who_lose_it": 615.5,
+       "group_loss_rate": 0.08644,
+       "others_loss_rate": 0.08644,
+       "difference_of_rates": 0.0,
+       "ratio_of_rates": 1.0,
+       "ratio_not_given_because": null
+      }
+     }
+    },
+    "TH570905": {
+     "loses_a_hospital_within_30_minutes": {
+      "60_plus_vs_under_60": {
+       "group_residents_with_baseline_access": 1520.9,
+       "group_residents_who_lose_it": 689.9,
+       "others_with_baseline_access": 5009.0,
+       "others_who_lose_it": 2267.5,
+       "group_loss_rate": 0.453593,
+       "others_loss_rate": 0.452685,
+       "difference_of_rates": 0.000908,
+       "ratio_of_rates": 1.002,
+       "ratio_not_given_because": null
+      },
+      "0_14_vs_15_plus": {
+       "group_residents_with_baseline_access": 1127.4,
+       "group_residents_who_lose_it": 509.6,
+       "others_with_baseline_access": 5402.4,
+       "others_who_lose_it": 2447.7,
+       "group_loss_rate": 0.452012,
+       "others_loss_rate": 0.453081,
+       "difference_of_rates": -0.001069,
+       "ratio_of_rates": 0.9976,
+       "ratio_not_given_because": null
+      }
+     },
+     "loses_every_road_route": {
+      "60_plus_vs_under_60": {
+       "group_residents_with_baseline_access": 1527.6,
+       "group_residents_who_lose_it": 696.6,
+       "others_with_baseline_access": 5030.7,
+       "others_who_lose_it": 2289.2,
+       "group_loss_rate": 0.456013,
+       "others_loss_rate": 0.455045,
+       "difference_of_rates": 0.000968,
+       "ratio_of_rates": 1.0021,
+       "ratio_not_given_because": null
+      },
+      "0_14_vs_15_plus": {
+       "group_residents_with_baseline_access": 1132.2,
+       "group_residents_who_lose_it": 514.4,
+       "others_with_baseline_access": 5426.1,
+       "others_who_lose_it": 2471.4,
+       "group_loss_rate": 0.454327,
+       "others_loss_rate": 0.455467,
+       "difference_of_rates": -0.001141,
+       "ratio_of_rates": 0.9975,
+       "ratio_not_given_because": null
+      }
+     }
+    },
+    "TH570906": {
+     "loses_a_hospital_within_30_minutes": {
+      "60_plus_vs_under_60": {
+       "group_residents_with_baseline_access": 4456.1,
+       "group_residents_who_lose_it": 17.6,
+       "others_with_baseline_access": 14708.4,
+       "others_who_lose_it": 57.9,
+       "group_loss_rate": 0.00394,
+       "others_loss_rate": 0.003938,
+       "difference_of_rates": 2e-06,
+       "ratio_of_rates": 1.0005,
+       "ratio_not_given_because": null
+      },
+      "0_14_vs_15_plus": {
+       "group_residents_with_baseline_access": 3315.3,
+       "group_residents_who_lose_it": 13.1,
+       "others_with_baseline_access": 15849.3,
+       "others_who_lose_it": 62.4,
+       "group_loss_rate": 0.003937,
+       "others_loss_rate": 0.003938,
+       "difference_of_rates": -1e-06,
+       "ratio_of_rates": 0.9997,
+       "ratio_not_given_because": null
+      }
+     },
+     "loses_every_road_route": {
+      "60_plus_vs_under_60": {
+       "group_residents_with_baseline_access": 4456.1,
+       "group_residents_who_lose_it": 17.6,
+       "others_with_baseline_access": 14708.4,
+       "others_who_lose_it": 57.9,
+       "group_loss_rate": 0.00394,
+       "others_loss_rate": 0.003938,
+       "difference_of_rates": 2e-06,
+       "ratio_of_rates": 1.0005,
+       "ratio_not_given_because": null
+      },
+      "0_14_vs_15_plus": {
+       "group_residents_with_baseline_access": 3315.3,
+       "group_residents_who_lose_it": 13.1,
+       "others_with_baseline_access": 15849.3,
+       "others_who_lose_it": 62.4,
+       "group_loss_rate": 0.003937,
+       "others_loss_rate": 0.003938,
+       "difference_of_rates": -1e-06,
+       "ratio_of_rates": 0.9997,
+       "ratio_not_given_because": null
+      }
+     }
+    },
+    "TH570908": {
+     "loses_a_hospital_within_30_minutes": {
+      "60_plus_vs_under_60": {
+       "group_residents_with_baseline_access": 881.9,
+       "group_residents_who_lose_it": 617.1,
+       "others_with_baseline_access": 2906.0,
+       "others_who_lose_it": 2032.5,
+       "group_loss_rate": 0.699761,
+       "others_loss_rate": 0.699407,
+       "difference_of_rates": 0.000354,
+       "ratio_of_rates": 1.0005,
+       "ratio_not_given_because": null
+      },
+      "0_14_vs_15_plus": {
+       "group_residents_with_baseline_access": 654.3,
+       "group_residents_who_lose_it": 457.5,
+       "others_with_baseline_access": 3133.5,
+       "others_who_lose_it": 2192.1,
+       "group_loss_rate": 0.699129,
+       "others_loss_rate": 0.699564,
+       "difference_of_rates": -0.000435,
+       "ratio_of_rates": 0.9994,
+       "ratio_not_given_because": null
+      }
+     },
+     "loses_every_road_route": {
+      "60_plus_vs_under_60": {
+       "group_residents_with_baseline_access": 935.2,
+       "group_residents_who_lose_it": 84.5,
+       "others_with_baseline_access": 3070.0,
+       "others_who_lose_it": 278.5,
+       "group_loss_rate": 0.090411,
+       "others_loss_rate": 0.090716,
+       "difference_of_rates": -0.000306,
+       "ratio_of_rates": 0.9966,
+       "ratio_not_given_because": null
+      },
+      "0_14_vs_15_plus": {
+       "group_residents_with_baseline_access": 689.1,
+       "group_residents_who_lose_it": 62.7,
+       "others_with_baseline_access": 3316.0,
+       "others_who_lose_it": 300.4,
+       "group_loss_rate": 0.090961,
+       "others_loss_rate": 0.090579,
+       "difference_of_rates": 0.000382,
+       "ratio_of_rates": 1.0042,
+       "ratio_not_given_because": null
+      }
+     }
+    },
+    "TH570909": {
+     "loses_a_hospital_within_30_minutes": {
+      "60_plus_vs_under_60": {
+       "group_residents_with_baseline_access": 1440.2,
+       "group_residents_who_lose_it": 44.0,
+       "others_with_baseline_access": 4753.3,
+       "others_who_lose_it": 145.0,
+       "group_loss_rate": 0.03052,
+       "others_loss_rate": 0.030509,
+       "difference_of_rates": 1e-05,
+       "ratio_of_rates": 1.0003,
+       "ratio_not_given_because": null
+      },
+      "0_14_vs_15_plus": {
+       "group_residents_with_baseline_access": 1071.7,
+       "group_residents_who_lose_it": 32.7,
+       "others_with_baseline_access": 5121.8,
+       "others_who_lose_it": 156.3,
+       "group_loss_rate": 0.030497,
+       "others_loss_rate": 0.030515,
+       "difference_of_rates": -1.8e-05,
+       "ratio_of_rates": 0.9994,
+       "ratio_not_given_because": null
+      }
+     },
+     "loses_every_road_route": {
+      "60_plus_vs_under_60": {
+       "group_residents_with_baseline_access": 1440.2,
+       "group_residents_who_lose_it": 35.5,
+       "others_with_baseline_access": 4753.3,
+       "others_who_lose_it": 117.1,
+       "group_loss_rate": 0.024635,
+       "others_loss_rate": 0.024627,
+       "difference_of_rates": 8e-06,
+       "ratio_of_rates": 1.0003,
+       "ratio_not_given_because": null
+      },
+      "0_14_vs_15_plus": {
+       "group_residents_with_baseline_access": 1071.7,
+       "group_residents_who_lose_it": 26.4,
+       "others_with_baseline_access": 5121.8,
+       "others_who_lose_it": 126.2,
+       "group_loss_rate": 0.024616,
+       "others_loss_rate": 0.024631,
+       "difference_of_rates": -1.5e-05,
+       "ratio_of_rates": 0.9994,
+       "ratio_not_given_because": null
+      }
+     }
+    }
+   }
+  }
+ },
+ "rule_applied_to_the_three_runs": {
+  "loses_a_hospital_within_30_minutes": {
+   "60_plus_vs_under_60": {
+    "runs": 3,
+    "runs_with_a_difference": 3,
+    "lowest": -0.007666,
+    "highest": -0.007343,
+    "median": -0.007387,
+    "range_excludes_zero": true,
+    "sign_retention": 1.0,
+    "may_state_a_gap": true,
+    "sentence": null
+   },
+   "0_14_vs_15_plus": {
+    "runs": 3,
+    "runs_with_a_difference": 3,
+    "lowest": 0.004101,
+    "highest": 0.004315,
+    "median": 0.004128,
+    "range_excludes_zero": true,
+    "sign_retention": 1.0,
+    "may_state_a_gap": true,
+    "sentence": null
+   }
+  },
+  "loses_every_road_route": {
+   "60_plus_vs_under_60": {
+    "runs": 3,
+    "runs_with_a_difference": 3,
+    "lowest": -0.007437,
+    "highest": -0.007332,
+    "median": -0.007376,
+    "range_excludes_zero": true,
+    "sign_retention": 1.0,
+    "may_state_a_gap": true,
+    "sentence": null
+   },
+   "0_14_vs_15_plus": {
+    "runs": 3,
+    "runs_with_a_difference": 3,
+    "lowest": 0.00415,
+    "highest": 0.004213,
+    "median": 0.004177,
+    "range_excludes_zero": true,
+    "sign_retention": 1.0,
+    "may_state_a_gap": true,
+    "sentence": null
+   }
+  }
+ },
+ "credits": [
+  "Age counts: WorldPop (www.worldpop.org), University of Southampton; DOI 10.5258/SOTON/WP00842 (CC BY 4.0). Modelled, not observed.",
+  "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009 (CC BY-SA 4.0). Changed by FloodGuard: repaired, projected, clipped and set against roads and residents; figures derived from it are shared under CC BY-SA 4.0.",
+  "Roads and road names © OpenStreetMap contributors (ODbL 1.0). Residents: WorldPop 2020 (CC BY 4.0)."
+ ],
+ "assumptions": [
+  "The flood input is the accumulated 2024 season layer of UNOSAT/GISTDA product 4009, treated as flooded at once: a scenario, not a day.",
+  "A road closure is modelled with closure rule v1 at the central level: a flood intersection does not prove a closure.",
+  "Residents are WorldPop 2020 counts on 100 m cells; the age shares are WorldPop 2024 on 1 km cells. Everyone in a 1 km cell is given that cell's age mix.",
+  "A cell's residents share one outcome: within a cell, age groups cannot differ in access."
+ ],
+ "limits": [
+  "The age mix varies only between 1 km cells. A gap can arise only where cells with different age mixes have different outcomes.",
+  "Four of the eight tambons take age counts from cells that straddle the national border (decision log R21).",
+  "Three runs at three closure levels, on the layer as provided. Not the ensemble of the protocol.",
+  "Figures are for a tambon or the whole frame. They say nothing of what the people of a place can or cannot do."
+ ]
+}

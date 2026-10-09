@@ -108,3 +108,33 @@ def test_the_what_if_adds_up_and_feeds_no_score() -> None:
         return set()
 
     assert not {key for key in keys(sheet) if "fpps" in key.lower() or "action_class" in key.lower()}
+
+
+LEVELS = OUTPUTS / "ko_chang_roads_se1_levels_v1.json"
+
+
+def test_the_levels_record_reproduces_the_case_at_each_level_and_keeps_its_labels() -> None:
+    if not LEVELS.exists():
+        pytest.skip("the levels have not been run")
+    record = json.loads(LEVELS.read_text(encoding="utf-8"))
+    assert record["official_warning"] is False and record["can_feed_decision_layer"] is False
+    assert record["confidence_class"] == "low" and record["source_timestamp"] and record["assumptions"] and record["limits"]
+    assert b"" not in LEVELS.read_bytes()
+    assert set(record["closure_levels"]) == {"strict", "central", "permissive"}
+    sheet = json.loads(RESULT.read_text(encoding="utf-8"))
+    assert record["inputs"]["road_sheet"]["sha256"] == hashlib.sha256(RESULT.read_bytes()).hexdigest()
+    for level, entry in record["closure_levels"].items():
+        assert entry["reproduction_of_case_se1"]["same"] is True
+        key = entry["key_road"]
+        assert 0 <= key["share_of_residents_with_a_route_before"] <= 1
+        assert key["residents_who_get_a_route_back_if_it_alone_stays_passable"] <= entry["residents_with_a_route_before"]
+        reached = entry["residents_with_a_route_in_the_scenario"]
+        for step in entry["roads_one_after_another"]:
+            reached += step["residents_who_get_a_route_back_at_this_step"]
+            assert step["residents_with_a_route_after_this_step"] == pytest.approx(reached, abs=0.2)
+    central = record["closure_levels"]["central"]
+    best_alone = sheet["what_if_one_road_stays_passable"]["best"][0]
+    assert central["key_road"]["osm_way_id"] == best_alone["osm_way_id"]
+    assert central["key_road"]["residents_who_get_a_route_back_if_it_alone_stays_passable"] == best_alone["residents_who_get_a_route_back"]
+    terrain = record["terrain_look_at_the_key_road"]
+    assert terrain["points"] > 0 and "cannot show" in terrain["elevation_model"]

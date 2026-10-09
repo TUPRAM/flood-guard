@@ -99,6 +99,31 @@ each step and is not proven to be the best order overall.
 
 ![Map of the sheet](../outputs/ko_chang_road_check/ko_chang_roads_se1_v1_map.png)
 
+## The other closure levels, and what the terrain model shows
+
+Added on 9 October 2026 (`outputs/ko_chang_road_check/ko_chang_roads_se1_levels_v1.json`,
+`scripts/build_ko_chang_road_levels.py`). The count of case SE1 is reproduced
+at each level before anything is written.
+
+| Closure level | Ko Chang residents who lose every route | Road 1 alone gives a route back to | First three roads, one after another |
+|---|---:|---:|---|
+| Strict | all 5,972 | 3,670 (61%) | road 1, then ชร.5055, then way 345929304 |
+| Central (the sheet above) | all 5,972 | 3,369 (56%) | road 1, then ชร.3059, then ชร.5055 |
+| Permissive | all 5,972 | 2,876 (48%) | road 1, then ชร.3059, then ชร.5055 |
+
+**The finding does not depend on the closure level.** At all three, every
+resident loses every route, and the same unnamed road in Si Mueang Chum is
+the first road to keep passable. It carries between a half and three-fifths
+of the result.
+
+**The terrain model does not settle whether road 1 is raised.** On the open
+elevation model (Copernicus DEM, 30 m) the road lies between 379 m and 384 m.
+At 26 points along it, the road is a median 0.8 m above the ground 60 to 150 m
+to either side, and more than 2 m above at 4 of them (at most 3.7 m). The
+model's stated accuracy is about 4 m and its cells are wider than a road, so
+this neither shows an embankment nor rules one out. It is no substitute for
+someone looking.
+
 ## What a person who knows the place is asked
 
 For each of the eight roads, and first of all for road 1:

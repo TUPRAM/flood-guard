@@ -1,0 +1,178 @@
+{
+ "schema": "floodguard.ko_chang_road_levels.v1",
+ "generated_at_utc": "2026-10-09T04:57:49Z",
+ "source_timestamp": "2024-08-01/2024-10-12 (season layer of product 4009)",
+ "confidence_class": "low",
+ "confidence_basis": "Modelled closures on an agency season layer that was not checked in the field; an elevation model too coarse to show a raised road.",
+ "operational_status": "non_operational",
+ "official_warning": false,
+ "can_feed_decision_layer": false,
+ "what_this_is": "The Ko Chang road sheet at the three levels of closure rule v1, and a terrain look at the road that carries most of the result.",
+ "unit": {
+  "unit_id": "TH570903",
+  "name_en": "Ko Chang"
+ },
+ "closure_levels": {
+  "strict": {
+   "reproduction_of_case_se1": {
+    "with_a_route_before": {
+     "this_sheet": 5972.366,
+     "case_se1": 5972.366
+    },
+    "losing_every_route": {
+     "this_sheet": 5972.366,
+     "case_se1": 5972.366
+    },
+    "same": true
+   },
+   "closed_road_pieces_in_the_graph": 7842,
+   "residents_with_a_route_before": 5972.4,
+   "residents_with_a_route_in_the_scenario": 0.0,
+   "share_losing_every_route": 1.0,
+   "key_road": {
+    "osm_way_id": "206803562",
+    "closed_pieces": 13,
+    "residents_who_get_a_route_back_if_it_alone_stays_passable": 3669.9,
+    "share_of_residents_with_a_route_before": 0.6145
+   },
+   "roads_one_after_another": [
+    {
+     "osm_way_id": "206803562",
+     "residents_who_get_a_route_back_at_this_step": 3669.9,
+     "residents_with_a_route_after_this_step": 3669.9
+    },
+    {
+     "osm_way_id": "206803573",
+     "residents_who_get_a_route_back_at_this_step": 258.4,
+     "residents_with_a_route_after_this_step": 3928.3
+    },
+    {
+     "osm_way_id": "345929304",
+     "residents_who_get_a_route_back_at_this_step": 104.4,
+     "residents_with_a_route_after_this_step": 4032.7
+    }
+   ],
+   "the_key_road_is_the_first_step": true
+  },
+  "central": {
+   "reproduction_of_case_se1": {
+    "with_a_route_before": {
+     "this_sheet": 5972.366,
+     "case_se1": 5972.366
+    },
+    "losing_every_route": {
+     "this_sheet": 5972.366,
+     "case_se1": 5972.366
+    },
+    "same": true
+   },
+   "closed_road_pieces_in_the_graph": 7926,
+   "residents_with_a_route_before": 5972.4,
+   "residents_with_a_route_in_the_scenario": 0.0,
+   "share_losing_every_route": 1.0,
+   "key_road": {
+    "osm_way_id": "206803562",
+    "closed_pieces": 13,
+    "residents_who_get_a_route_back_if_it_alone_stays_passable": 3369.1,
+    "share_of_residents_with_a_route_before": 0.5641
+   },
+   "roads_one_after_another": [
+    {
+     "osm_way_id": "206803562",
+     "residents_who_get_a_route_back_at_this_step": 3369.1,
+     "residents_with_a_route_after_this_step": 3369.1
+    },
+    {
+     "osm_way_id": "1112593664",
+     "residents_who_get_a_route_back_at_this_step": 323.3,
+     "residents_with_a_route_after_this_step": 3692.4
+    },
+    {
+     "osm_way_id": "206803573",
+     "residents_who_get_a_route_back_at_this_step": 260.4,
+     "residents_with_a_route_after_this_step": 3952.8
+    }
+   ],
+   "the_key_road_is_the_first_step": true
+  },
+  "permissive": {
+   "reproduction_of_case_se1": {
+    "with_a_route_before": {
+     "this_sheet": 5972.366,
+     "case_se1": 5972.366
+    },
+    "losing_every_route": {
+     "this_sheet": 5972.366,
+     "case_se1": 5972.366
+    },
+    "same": true
+   },
+   "closed_road_pieces_in_the_graph": 8288,
+   "residents_with_a_route_before": 5972.4,
+   "residents_with_a_route_in_the_scenario": 0.0,
+   "share_losing_every_route": 1.0,
+   "key_road": {
+    "osm_way_id": "206803562",
+    "closed_pieces": 14,
+    "residents_who_get_a_route_back_if_it_alone_stays_passable": 2876.2,
+    "share_of_residents_with_a_route_before": 0.4816
+   },
+   "roads_one_after_another": [
+    {
+     "osm_way_id": "206803562",
+     "residents_who_get_a_route_back_at_this_step": 2876.2,
+     "residents_with_a_route_after_this_step": 2876.2
+    },
+    {
+     "osm_way_id": "1112593664",
+     "residents_who_get_a_route_back_at_this_step": 692.8,
+     "residents_with_a_route_after_this_step": 3569.0
+    },
+    {
+     "osm_way_id": "206803573",
+     "residents_who_get_a_route_back_at_this_step": 115.8,
+     "residents_with_a_route_after_this_step": 3684.8
+    }
+   ],
+   "the_key_road_is_the_first_step": true
+  }
+ },
+ "terrain_look_at_the_key_road": {
+  "points": 26,
+  "road_elevation_m": {
+   "lowest": 378.7,
+   "highest": 383.8
+  },
+  "road_minus_ground_in_a_ring_of_60_to_150_m": {
+   "median_m": 0.77,
+   "lowest_m": -0.04,
+   "highest_m": 3.67,
+   "points_more_than_2_m_above": 4
+  },
+  "elevation_model": "Copernicus DEM GLO-30: a surface model with cells of about 30 m and a stated vertical accuracy of about 4 m. It cannot show an embankment a few metres high and a road's width across."
+ },
+ "inputs": {
+  "road_sheet": {
+   "path": "outputs/ko_chang_road_check/ko_chang_roads_se1_v1.json",
+   "sha256": "3c42b7436c72d12c7e13e1ce8f2e03d9fd96c477f6fcd38a84da3afc647884dc"
+  },
+  "case_se1_table": {
+   "path": "outputs/planning_v1/e5_access_diff_se1_mae_sai_public_services.json",
+   "sha256": "d4a618fad7fb3df12666ab1eba353b84aa80c6ebe3c370fd9e11096f7dbe116b"
+  },
+  "season_extent_sha256": "5d7c1c0ca7909284317a66d2a3611452de3f91d729dfb4cc31b96840e147b794"
+ },
+ "assumptions": [
+  "The flood input is the accumulated 2024 season layer of UNOSAT/GISTDA product 4009, treated as flooded at once: a scenario, not a day.",
+  "A road closure is modelled with closure rule v1 at the central level: a flood intersection does not prove a closure.",
+  "A road is an OpenStreetMap way. Its name and tags are as mapped; a bridge or a raised road that is not tagged is not known here.",
+  "Residents are modelled counts (WorldPop 2020) at the road node their cell snaps to, within 250 m."
+ ],
+ "limits": [
+  "Nothing was looked at on the ground or on an image. This sheet says where to look.",
+  "The season layer has no water depth, so a road counts as closed whatever the depth was.",
+  "'Stays passable' is a what-if on the model graph. It is not a statement that a road was or would be passable.",
+  "No component, no planning score and no action class is computed here.",
+  "The terrain look cannot confirm or rule out a raised road; it can only show a large difference, and it shows what it shows."
+ ]
+}

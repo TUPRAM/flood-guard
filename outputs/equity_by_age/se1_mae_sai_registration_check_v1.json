@@ -1,0 +1,198 @@
+{
+ "schema": "floodguard.equity_registration_check.v1",
+ "generated_at_utc": "2026-10-09T13:43:45Z",
+ "source_timestamp": "flood layer 2024-08-01/2024-10-12; registration counts of December 2024; residents of 2020",
+ "confidence_class": "low",
+ "confidence_basis": "Modelled access and modelled residents, with the age mix of each tambon taken from registration counts that leave out everyone who is not a Thai national in a house register.",
+ "operational_status": "non_operational",
+ "official_warning": false,
+ "can_feed_decision_layer": false,
+ "what_this_is": "A check of the age comparison of case SE1 with the registered age mix of each tambon in place of the modelled 1 km age grid. Report-only.",
+ "source": {
+  "publisher": "Department of Provincial Administration (DOPA), Bureau of Registration Administration",
+  "table": "registered population by single year of age, Chiang Rai province, December 2567 (2024)",
+  "url": "https://stat.bora.dopa.go.th/new_stat/file/6712/6712cc57.txt",
+  "source_file_sha256": "c17023ebe6067609e3bc3abe1cc2df8539873effb7e84d3828b3b5e8bd0277dd",
+  "extract_outside_git_sha256": "3ab26e85d45afc12f6e0c323363f0686a26cfebc0bcb7045e5c4576a21c5b89f",
+  "licence": "none stated on the source pages that were read; cited as a published official statistic",
+  "ages_cover": "Thai nationals named in a house register only (the source says so)"
+ },
+ "registered_in_the_district": {
+  "all_registered": 132676.0,
+  "not_thai_nationals_and_without_an_age": 53072.0,
+  "with_an_age": 78976.0,
+  "share_of_children_0_14": 0.1678,
+  "share_of_60_plus": 0.218
+ },
+ "age_mix_by_tambon": {
+  "TH570901": {
+   "registered": 31409.0,
+   "not_thai_nationals_and_without_an_age": 11307.0,
+   "share_of_children_0_14": 0.1699,
+   "share_of_60_plus": 0.2058
+  },
+  "TH570902": {
+   "registered": 8094.0,
+   "not_thai_nationals_and_without_an_age": 1631.0,
+   "share_of_children_0_14": 0.1256,
+   "share_of_60_plus": 0.2808
+  },
+  "TH570903": {
+   "registered": 13465.0,
+   "not_thai_nationals_and_without_an_age": 4267.0,
+   "share_of_children_0_14": 0.1443,
+   "share_of_60_plus": 0.2713
+  },
+  "TH570904": {
+   "registered": 21622.0,
+   "not_thai_nationals_and_without_an_age": 11340.0,
+   "share_of_children_0_14": 0.1985,
+   "share_of_60_plus": 0.1859
+  },
+  "TH570905": {
+   "registered": 6285.0,
+   "not_thai_nationals_and_without_an_age": 1579.0,
+   "share_of_children_0_14": 0.1364,
+   "share_of_60_plus": 0.2548
+  },
+  "TH570906": {
+   "registered": 35337.0,
+   "not_thai_nationals_and_without_an_age": 17832.0,
+   "share_of_children_0_14": 0.2014,
+   "share_of_60_plus": 0.1671
+  },
+  "TH570908": {
+   "registered": 3690.0,
+   "not_thai_nationals_and_without_an_age": 117.0,
+   "share_of_children_0_14": 0.1058,
+   "share_of_60_plus": 0.3104
+  },
+  "TH570909": {
+   "registered": 12774.0,
+   "not_thai_nationals_and_without_an_age": 4999.0,
+   "share_of_children_0_14": 0.1585,
+   "share_of_60_plus": 0.2228
+  }
+ },
+ "how_the_tambons_were_put_together": "A tambon is the row of the district office plus the rows of the municipal registration offices that name it (Mae Sai and Wiang Phang Kham municipalities, Huai Khrai municipality).",
+ "access_counts_from": {
+  "path": "outputs/planning_v1/e5_access_diff_se1_mae_sai_public_services.json",
+  "sha256": "d4a618fad7fb3df12666ab1eba353b84aa80c6ebe3c370fd9e11096f7dbe116b",
+  "what": "residents with a hospital within 30 minutes before the flood, and those who lose it, per tambon"
+ },
+ "loses_a_hospital_within_30_minutes": {
+  "strict": {
+   "60_plus_vs_under_60": {
+    "group_residents_with_baseline_access": 16171.5,
+    "group_residents_who_lose_it": 5296.0,
+    "others_with_baseline_access": 58425.3,
+    "others_who_lose_it": 17347.3,
+    "group_loss_rate": 0.327489,
+    "others_loss_rate": 0.296913,
+    "difference_of_rates": 0.030576,
+    "ratio_of_rates": 1.103,
+    "ratio_not_given_because": null
+   },
+   "0_14_vs_15_plus": {
+    "group_residents_with_baseline_access": 12530.4,
+    "group_residents_who_lose_it": 3544.1,
+    "others_with_baseline_access": 62066.4,
+    "others_who_lose_it": 19099.1,
+    "group_loss_rate": 0.282843,
+    "others_loss_rate": 0.307721,
+    "difference_of_rates": -0.024877,
+    "ratio_of_rates": 0.9192,
+    "ratio_not_given_because": null
+   }
+  },
+  "central": {
+   "60_plus_vs_under_60": {
+    "group_residents_with_baseline_access": 16171.5,
+    "group_residents_who_lose_it": 5834.8,
+    "others_with_baseline_access": 58425.3,
+    "others_who_lose_it": 18670.4,
+    "group_loss_rate": 0.360809,
+    "others_loss_rate": 0.319559,
+    "difference_of_rates": 0.04125,
+    "ratio_of_rates": 1.1291,
+    "ratio_not_given_because": null
+   },
+   "0_14_vs_15_plus": {
+    "group_residents_with_baseline_access": 12530.4,
+    "group_residents_who_lose_it": 3764.6,
+    "others_with_baseline_access": 62066.4,
+    "others_who_lose_it": 20740.6,
+    "group_loss_rate": 0.300437,
+    "others_loss_rate": 0.334168,
+    "difference_of_rates": -0.033731,
+    "ratio_of_rates": 0.8991,
+    "ratio_not_given_because": null
+   }
+  },
+  "permissive": {
+   "60_plus_vs_under_60": {
+    "group_residents_with_baseline_access": 16171.5,
+    "group_residents_who_lose_it": 5904.6,
+    "others_with_baseline_access": 58425.3,
+    "others_who_lose_it": 18919.8,
+    "group_loss_rate": 0.365125,
+    "others_loss_rate": 0.323829,
+    "difference_of_rates": 0.041296,
+    "ratio_of_rates": 1.1275,
+    "ratio_not_given_because": null
+   },
+   "0_14_vs_15_plus": {
+    "group_residents_with_baseline_access": 12530.4,
+    "group_residents_who_lose_it": 3816.3,
+    "others_with_baseline_access": 62066.4,
+    "others_who_lose_it": 21008.2,
+    "group_loss_rate": 0.30456,
+    "others_loss_rate": 0.338479,
+    "difference_of_rates": -0.033919,
+    "ratio_of_rates": 0.8998,
+    "ratio_not_given_because": null
+   }
+  }
+ },
+ "rule_with_the_smallest_size_of_decision_log_r41": {
+  "60_plus_vs_under_60": {
+   "runs": 3,
+   "runs_with_a_difference": 3,
+   "lowest": 0.030576,
+   "highest": 0.041296,
+   "median": 0.04125,
+   "range_excludes_zero": true,
+   "sign_retention": 1.0,
+   "may_state_a_gap": true,
+   "sentence": null,
+   "rule_of_the_protocol_met": true,
+   "smallest_size_asked": 0.01,
+   "smallest_difference": 0.030576
+  },
+  "0_14_vs_15_plus": {
+   "runs": 3,
+   "runs_with_a_difference": 3,
+   "lowest": -0.033919,
+   "highest": -0.024877,
+   "median": -0.033731,
+   "range_excludes_zero": true,
+   "sign_retention": 1.0,
+   "may_state_a_gap": true,
+   "sentence": null,
+   "rule_of_the_protocol_met": true,
+   "smallest_size_asked": 0.01,
+   "smallest_difference": 0.024877
+  }
+ },
+ "assumptions": [
+  "Everyone in a tambon is given the rate of losing access of the tambon: a gap can only come from differences between tambons.",
+  "The age mix of the registered Thai nationals of a tambon is taken for all its residents.",
+  "A closure is a modelled assumption of closure rule v1, not an observed closure."
+ ],
+ "limits": [
+  "Registered is not resident: people are registered where their house register is, not where they stay.",
+  "About two registered residents in five in this district are not Thai nationals and have no age in the source.",
+  "Three runs at the flood level as provided with the 2020 demand; not the ensemble.",
+  "No tambon is ranked by its age mix. Figures are for the district; they say nothing of what the people of a place can or cannot do."
+ ]
+}

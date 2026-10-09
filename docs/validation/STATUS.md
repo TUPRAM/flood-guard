@@ -1,6 +1,6 @@
 # Validation check: state of the team's acceptance
 
-Written by `scripts/import_validation_records.py` on 2026-10-08T17:35:20Z from 6 record(s). Do not edit by hand.
+Written by `scripts/import_validation_records.py` on 2026-10-09T05:20:50Z from 6 record(s). Do not edit by hand.
 
 This is the word of the three team members on the project's own work. It is not a review by an independent expert, it qualifies no flood map, and it is not an official approval.
 
@@ -27,3 +27,6 @@ This is the word of the three team members on the project's own work. It is not 
 | V-18 | The trained flood-susceptibility model | Accepted | accept | accept | accept |
 | V-19 | The supervised flood classifier | Waiting |  |  |  |
 | V-20 | THEOS-2 on Mae Sai itself | Evidence not ready |  |  |  |
+| V-22 | The Ko Chang roads at the other closure levels | Waiting |  |  |  |
+| V-23 | Access loss by age group | Waiting |  |  |  |
+| V-24 | The second class reading (the proposal's own class wording) | Waiting |  |  |  |

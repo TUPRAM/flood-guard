@@ -442,6 +442,63 @@
       "gates": "Saying that THEOS-2 was used on the study event.",
       "ready": false,
       "added": "2026-10-07"
+    },
+    {
+      "id": "V-22",
+      "group": "result",
+      "title": "The Ko Chang roads at the other closure levels",
+      "check": "Read the section 'The other closure levels, and what the terrain model shows'. At the strict, central and permissive level every resident of Ko Chang loses every route, and the same road in Si Mueang Chum is the first to keep passable (48% to 61%). The elevation model neither shows nor rules out that the road is raised. Accept if the table and the two sentences under it say no more than the counts.",
+      "evidence": [
+        {
+          "label": "Sheet in plain words, new section",
+          "path": "docs/ko_chang_road_check.md"
+        },
+        {
+          "label": "Result file",
+          "path": "outputs/ko_chang_road_check/ko_chang_roads_se1_levels_v1.json"
+        }
+      ],
+      "gates": "Saying that the Ko Chang finding does not depend on the closure level.",
+      "ready": true,
+      "added": "2026-10-09"
+    },
+    {
+      "id": "V-23",
+      "group": "result",
+      "title": "Access loss by age group",
+      "check": "Read the result. Residents of 60 and over and children lose hospital access and road routes at the same rate as everyone else, to within one share point; the open age data cannot show a gap inside a tambon. Accept if the team will say that the equity question was computed for age and that the answer is 'no gap that this data can show', and will not say what the people of a tambon can or cannot do.",
+      "evidence": [
+        {
+          "label": "Result in plain words",
+          "path": "docs/equity_by_age.md"
+        },
+        {
+          "label": "Result file",
+          "path": "outputs/equity_by_age/se1_mae_sai_v1.json"
+        }
+      ],
+      "gates": "Any sentence about equity by age in the pitch or on a page.",
+      "ready": true,
+      "added": "2026-10-09"
+    },
+    {
+      "id": "V-24",
+      "group": "result",
+      "title": "The second class reading (the proposal's own class wording)",
+      "check": "Read the result. Under the proposal's own triggers Mae Sai town, Ko Chang and Si Mueang Chum read 'protect essential services', because their nearest shelters are cut off in the scenario; Ban Dai meets no trigger. The binding classes do not change and nothing published changes. Accept if the team will use this as the answer to 'why is Mae Sai town only class D', always with the word 'secondary', and will keep 'keep routes open' for Ko Chang as the published class.",
+      "evidence": [
+        {
+          "label": "Result in plain words",
+          "path": "docs/class_v2_reading.md"
+        },
+        {
+          "label": "Result file",
+          "path": "outputs/class_v2_reading/se1_mae_sai_v1.json"
+        }
+      ],
+      "gates": "Showing the second reading in the pitch or on a page.",
+      "ready": true,
+      "added": "2026-10-09"
     }
   ]
 }

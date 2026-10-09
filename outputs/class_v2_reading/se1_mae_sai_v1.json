@@ -1,0 +1,813 @@
+{
+ "schema": "floodguard.class_v2_reading.v1",
+ "generated_at_utc": "2026-10-09T05:07:19Z",
+ "source_timestamp": "2024-08-01/2024-10-12 (season layer of product 4009)",
+ "confidence_class": "low",
+ "confidence_basis": "Modelled access and closures on an agency season layer that was not checked in the field; unreviewed critical-link candidates; unverified facility records.",
+ "operational_status": "non_operational",
+ "official_warning": false,
+ "can_feed_decision_layer": false,
+ "what_this_is": "Triggers B, C and D of class rule v2 for case SE1, evaluated as protocol v1b defines them, and the second reading they give. Report-only.",
+ "binding": "Class rule v1 stays binding (decision D6). The second reading is a labelled secondary axis and changes no published class. The published result file of case SE1 is not changed and still says 'not_evaluated'.",
+ "closure_level": "central",
+ "rule": {
+  "order": [
+   "E",
+   "A",
+   "B",
+   "C",
+   "D"
+  ],
+  "fpps_min": 35.0,
+  "isolated_residents_min": 500.0,
+  "served_residents_min": 100.0,
+  "jrc_occurrence_min_percent": 25,
+  "recurrence_land_share_min": 0.2
+ },
+ "readings_of_the_drafter": [
+  "'Loses all vehicle routes' for a facility is read as: in the flooded run at the central level, no vehicle route joins the facility to any main-road entry.",
+  "'Inside the extent' is tested on the facility point of the planning context.",
+  "A link 'crosses the flood extent' when the season layer covers any length of it."
+ ],
+ "units": {
+  "TH570901": {
+   "unit_name_en": "Mae Sai",
+   "binding_class_v1": "D",
+   "fpps_0_100": 70.71,
+   "second_reading_v2": "C",
+   "same_as_v1": false,
+   "triggers": {
+    "E": false,
+    "A": false,
+    "B": false,
+    "C": true,
+    "D": false
+   },
+   "trigger_B": {
+    "largest_number_of_residents_one_link_isolates": 0.0,
+    "needed": 500.0
+   },
+   "trigger_C": {
+    "serving_facilities": [
+     {
+      "kind": "hospital",
+      "facility_id": "OSM-way-371233866",
+      "residents_of_the_unit_it_is_nearest_for": 17453.2,
+      "point_inside_the_flood_extent": false,
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+     },
+     {
+      "kind": "located_ddpm_shelter",
+      "facility_id": "DDPM-gd002-row-4146",
+      "residents_of_the_unit_it_is_nearest_for": 8171.9,
+      "point_inside_the_flood_extent": false,
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+     },
+     {
+      "kind": "located_ddpm_shelter",
+      "facility_id": "DDPM-gd002-row-4162",
+      "residents_of_the_unit_it_is_nearest_for": 9281.3,
+      "point_inside_the_flood_extent": false,
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": true
+     }
+    ]
+   },
+   "trigger_D": {
+    "land_cells_outside_permanent_water": 29727,
+    "cells_with_occurrence_of_25_percent_or_more": 19,
+    "share": 0.000639,
+    "tiles": [
+     "on disk"
+    ],
+    "flag_at_20_percent": false,
+    "flag_at_10_percent": false,
+    "flag_at_30_percent": false
+   }
+  },
+  "TH570902": {
+   "unit_name_en": "Huai Khrai",
+   "binding_class_v1": "E",
+   "fpps_0_100": 4.72,
+   "second_reading_v2": "E",
+   "same_as_v1": true,
+   "triggers": {
+    "E": true,
+    "A": false,
+    "B": false,
+    "C": false,
+    "D": false
+   },
+   "trigger_B": {
+    "largest_number_of_residents_one_link_isolates": 0.0,
+    "needed": 500.0
+   },
+   "trigger_C": {
+    "serving_facilities": [
+     {
+      "kind": "hospital",
+      "facility_id": "OSM-way-371233866",
+      "residents_of_the_unit_it_is_nearest_for": 1349.8,
+      "point_inside_the_flood_extent": false,
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+     },
+     {
+      "kind": "hospital",
+      "facility_id": "OSM-way-447735125",
+      "residents_of_the_unit_it_is_nearest_for": 5864.1,
+      "point_inside_the_flood_extent": false,
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+     },
+     {
+      "kind": "located_ddpm_shelter",
+      "facility_id": "DDPM-gd002-row-4097",
+      "residents_of_the_unit_it_is_nearest_for": 627.9,
+      "point_inside_the_flood_extent": false,
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+     },
+     {
+      "kind": "located_ddpm_shelter",
+      "facility_id": "DDPM-gd002-row-4100",
+      "residents_of_the_unit_it_is_nearest_for": 100.4,
+      "point_inside_the_flood_extent": false,
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+     },
+     {
+      "kind": "located_ddpm_shelter",
+      "facility_id": "DDPM-gd002-row-4147",
+      "residents_of_the_unit_it_is_nearest_for": 2754.1,
+      "point_inside_the_flood_extent": false,
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+     },
+     {
+      "kind": "located_ddpm_shelter",
+      "facility_id": "DDPM-gd002-row-4149",
+      "residents_of_the_unit_it_is_nearest_for": 487.2,
+      "point_inside_the_flood_extent": false,
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+     },
+     {
+      "kind": "located_ddpm_shelter",
+      "facility_id": "DDPM-gd002-row-4150",
+      "residents_of_the_unit_it_is_nearest_for": 163.8,
+      "point_inside_the_flood_extent": false,
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+     },
+     {
+      "kind": "located_ddpm_shelter",
+      "facility_id": "DDPM-gd002-row-4151",
+      "residents_of_the_unit_it_is_nearest_for": 1316.6,
+      "point_inside_the_flood_extent": false,
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+     },
+     {
+      "kind": "located_ddpm_shelter",
+      "facility_id": "DDPM-gd002-row-4170",
+      "residents_of_the_unit_it_is_nearest_for": 657.5,
+      "point_inside_the_flood_extent": false,
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+     },
+     {
+      "kind": "located_ddpm_shelter",
+      "facility_id": "DDPM-gd002-row-4171",
+      "residents_of_the_unit_it_is_nearest_for": 468.3,
+      "point_inside_the_flood_extent": false,
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+     },
+     {
+      "kind": "located_ddpm_shelter",
+      "facility_id": "DDPM-gd002-row-4172",
+      "residents_of_the_unit_it_is_nearest_for": 248.2,
+      "point_inside_the_flood_extent": false,
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+     },
+     {
+      "kind": "located_ddpm_shelter",
+      "facility_id": "DDPM-gd002-row-4364",
+      "residents_of_the_unit_it_is_nearest_for": 389.9,
+      "point_inside_the_flood_extent": false,
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+     }
+    ]
+   },
+   "trigger_D": {
+    "land_cells_outside_permanent_water": 61276,
+    "cells_with_occurrence_of_25_percent_or_more": 15,
+    "share": 0.000245,
+    "tiles": [
+     "on disk"
+    ],
+    "flag_at_20_percent": false,
+    "flag_at_10_percent": false,
+    "flag_at_30_percent": false
+   }
+  },
+  "TH570903": {
+   "unit_name_en": "Ko Chang",
+   "binding_class_v1": "B",
+   "fpps_0_100": 78.48,
+   "second_reading_v2": "C",
+   "same_as_v1": false,
+   "triggers": {
+    "E": false,
+    "A": false,
+    "B": false,
+    "C": true,
+    "D": false
+   },
+   "trigger_B": {
+    "largest_number_of_residents_one_link_isolates": 0.0,
+    "needed": 500.0
+   },
+   "trigger_C": {
+    "serving_facilities": [
+     {
+      "kind": "hospital",
+      "facility_id": "OSM-way-371233866",
+      "residents_of_the_unit_it_is_nearest_for": 5972.4,
+      "point_inside_the_flood_extent": false,
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+     },
+     {
+      "kind": "located_ddpm_shelter",
+      "facility_id": "DDPM-gd002-row-4162",
+      "residents_of_the_unit_it_is_nearest_for": 1534.5,
+      "point_inside_the_flood_extent": false,
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": true
+     },
+     {
+      "kind": "located_ddpm_shelter",
+      "facility_id": "DDPM-gd002-row-4163",
+      "residents_of_the_unit_it_is_nearest_for": 4095.1,
+      "point_inside_the_flood_extent": false,
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": true
+     },
+     {
+      "kind": "located_ddpm_shelter",
+      "facility_id": "DDPM-gd002-row-4164",
+      "residents_of_the_unit_it_is_nearest_for": 303.7,
+      "point_inside_the_flood_extent": true,
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+     }
+    ]
+   },
+   "trigger_D": {
+    "land_cells_outside_permanent_water": 65409,
+    "cells_with_occurrence_of_25_percent_or_more": 57,
+    "share": 0.000871,
+    "tiles": [
+     "on disk",
+     "read from the provider"
+    ],
+    "flag_at_20_percent": false,
+    "flag_at_10_percent": false,
+    "flag_at_30_percent": false
+   }
+  },
+  "TH570904": {
+   "unit_name_en": "Pong Pha",
+   "binding_class_v1": "E",
+   "fpps_0_100": 31.61,
+   "second_reading_v2": "E",
+   "same_as_v1": true,
+   "triggers": {
+    "E": true,
+    "A": false,
+    "B": false,
+    "C": false,
+    "D": false
+   },
+   "trigger_B": {
+    "largest_number_of_residents_one_link_isolates": 0.0,
+    "needed": 500.0
+   },
+   "trigger_C": {
+    "serving_facilities": [
+     {
+      "kind": "hospital",
+      "facility_id": "OSM-way-371233866",
+      "residents_of_the_unit_it_is_nearest_for": 8609.4,
+      "point_inside_the_flood_extent": false,
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+     },
+     {
+      "kind": "located_ddpm_shelter",
+      "facility_id": "DDPM-gd002-row-4146",
+      "residents_of_the_unit_it_is_nearest_for": 2090.4,
+      "point_inside_the_flood_extent": false,
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+     },
+     {
+      "kind": "located_ddpm_shelter",
+      "facility_id": "DDPM-gd002-row-4165",
+      "residents_of_the_unit_it_is_nearest_for": 5440.3,
+      "point_inside_the_flood_extent": false,
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+     },
+     {
+      "kind": "located_ddpm_shelter",
+      "facility_id": "DDPM-gd002-row-4168",
+      "residents_of_the_unit_it_is_nearest_for": 1065.7,
+      "point_inside_the_flood_extent": false,
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+     }
+    ]
+   },
+   "trigger_D": {
+    "land_cells_outside_permanent_water": 60167,
+    "cells_with_occurrence_of_25_percent_or_more": 21,
+    "share": 0.000349,
+    "tiles": [
+     "on disk"
+    ],
+    "flag_at_20_percent": false,
+    "flag_at_10_percent": false,
+    "flag_at_30_percent": false
+   }
+  },
+  "TH570905": {
+   "unit_name_en": "Si Mueang Chum",
+   "binding_class_v1": "D",
+   "fpps_0_100": 59.3,
+   "second_reading_v2": "C",
+   "same_as_v1": false,
+   "triggers": {
+    "E": false,
+    "A": false,
+    "B": false,
+    "C": true,
+    "D": false
+   },
+   "trigger_B": {
+    "largest_number_of_residents_one_link_isolates": 0.0,
+    "needed": 500.0
+   },
+   "trigger_C": {
+    "serving_facilities": [
+     {
+      "kind": "hospital",
+      "facility_id": "OSM-way-371233866",
+      "residents_of_the_unit_it_is_nearest_for": 6533.4,
+      "point_inside_the_flood_extent": false,
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+     },
+     {
+      "kind": "located_ddpm_shelter",
+      "facility_id": "DDPM-gd002-row-4082",
+      "residents_of_the_unit_it_is_nearest_for": 185.2,
+      "point_inside_the_flood_extent": false,
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": true
+     },
+     {
+      "kind": "located_ddpm_shelter",
+      "facility_id": "DDPM-gd002-row-4087",
+      "residents_of_the_unit_it_is_nearest_for": 243.4,
+      "point_inside_the_flood_extent": false,
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+     },
+     {
+      "kind": "located_ddpm_shelter",
+      "facility_id": "DDPM-gd002-row-4162",
+      "residents_of_the_unit_it_is_nearest_for": 1032.3,
+      "point_inside_the_flood_extent": false,
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": true
+     },
+     {
+      "kind": "located_ddpm_shelter",
+      "facility_id": "DDPM-gd002-row-4164",
+      "residents_of_the_unit_it_is_nearest_for": 4620.1,
+      "point_inside_the_flood_extent": true,
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+     },
+     {
+      "kind": "located_ddpm_shelter",
+      "facility_id": "DDPM-gd002-row-4165",
+      "residents_of_the_unit_it_is_nearest_for": 430.9,
+      "point_inside_the_flood_extent": false,
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+     }
+    ]
+   },
+   "trigger_D": {
+    "land_cells_outside_permanent_water": 57772,
+    "cells_with_occurrence_of_25_percent_or_more": 23,
+    "share": 0.000398,
+    "tiles": [
+     "on disk",
+     "read from the provider"
+    ],
+    "flag_at_20_percent": false,
+    "flag_at_10_percent": false,
+    "flag_at_30_percent": false
+   }
+  },
+  "TH570906": {
+   "unit_name_en": "Wiang Phang Kham",
+   "binding_class_v1": "E",
+   "fpps_0_100": 5.24,
+   "second_reading_v2": "E",
+   "same_as_v1": true,
+   "triggers": {
+    "E": true,
+    "A": false,
+    "B": false,
+    "C": false,
+    "D": false
+   },
+   "trigger_B": {
+    "largest_number_of_residents_one_link_isolates": 0.0,
+    "needed": 500.0
+   },
+   "trigger_C": {
+    "serving_facilities": [
+     {
+      "kind": "hospital",
+      "facility_id": "OSM-way-371233866",
+      "residents_of_the_unit_it_is_nearest_for": 19164.5,
+      "point_inside_the_flood_extent": false,
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+     },
+     {
+      "kind": "located_ddpm_shelter",
+      "facility_id": "DDPM-gd002-row-4146",
+      "residents_of_the_unit_it_is_nearest_for": 18663.0,
+      "point_inside_the_flood_extent": false,
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+     },
+     {
+      "kind": "located_ddpm_shelter",
+      "facility_id": "DDPM-gd002-row-4162",
+      "residents_of_the_unit_it_is_nearest_for": 396.8,
+      "point_inside_the_flood_extent": false,
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": true
+     }
+    ]
+   },
+   "trigger_D": {
+    "land_cells_outside_permanent_water": 41991,
+    "cells_with_occurrence_of_25_percent_or_more": 14,
+    "share": 0.000333,
+    "tiles": [
+     "on disk"
+    ],
+    "flag_at_20_percent": false,
+    "flag_at_10_percent": false,
+    "flag_at_30_percent": false
+   }
+  },
+  "TH570908": {
+   "unit_name_en": "Ban Dai",
+   "binding_class_v1": "D",
+   "fpps_0_100": 50.22,
+   "second_reading_v2": "no_v2_trigger",
+   "same_as_v1": false,
+   "triggers": {
+    "E": false,
+    "A": false,
+    "B": false,
+    "C": false,
+    "D": false
+   },
+   "trigger_B": {
+    "largest_number_of_residents_one_link_isolates": 0.0,
+    "needed": 500.0
+   },
+   "trigger_C": {
+    "serving_facilities": [
+     {
+      "kind": "hospital",
+      "facility_id": "OSM-way-371233866",
+      "residents_of_the_unit_it_is_nearest_for": 3666.8,
+      "point_inside_the_flood_extent": false,
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+     },
+     {
+      "kind": "hospital",
+      "facility_id": "OSM-way-527539157",
+      "residents_of_the_unit_it_is_nearest_for": 338.3,
+      "point_inside_the_flood_extent": false,
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+     },
+     {
+      "kind": "located_ddpm_shelter",
+      "facility_id": "DDPM-gd002-row-4083",
+      "residents_of_the_unit_it_is_nearest_for": 334.5,
+      "point_inside_the_flood_extent": false,
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+     },
+     {
+      "kind": "located_ddpm_shelter",
+      "facility_id": "DDPM-gd002-row-4087",
+      "residents_of_the_unit_it_is_nearest_for": 572.9,
+      "point_inside_the_flood_extent": false,
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+     },
+     {
+      "kind": "located_ddpm_shelter",
+      "facility_id": "DDPM-gd002-row-4165",
+      "residents_of_the_unit_it_is_nearest_for": 149.4,
+      "point_inside_the_flood_extent": false,
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+     },
+     {
+      "kind": "located_ddpm_shelter",
+      "facility_id": "DDPM-gd002-row-4167",
+      "residents_of_the_unit_it_is_nearest_for": 1935.0,
+      "point_inside_the_flood_extent": false,
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+     },
+     {
+      "kind": "located_ddpm_shelter",
+      "facility_id": "DDPM-gd002-row-4170",
+      "residents_of_the_unit_it_is_nearest_for": 546.0,
+      "point_inside_the_flood_extent": false,
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+     },
+     {
+      "kind": "located_ddpm_shelter",
+      "facility_id": "DDPM-gd002-row-4381",
+      "residents_of_the_unit_it_is_nearest_for": 167.4,
+      "point_inside_the_flood_extent": false,
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+     },
+     {
+      "kind": "located_ddpm_shelter",
+      "facility_id": "DDPM-gd002-row-4382",
+      "residents_of_the_unit_it_is_nearest_for": 228.1,
+      "point_inside_the_flood_extent": false,
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+     }
+    ]
+   },
+   "trigger_D": {
+    "land_cells_outside_permanent_water": 46637,
+    "cells_with_occurrence_of_25_percent_or_more": 8,
+    "share": 0.000172,
+    "tiles": [
+     "on disk"
+    ],
+    "flag_at_20_percent": false,
+    "flag_at_10_percent": false,
+    "flag_at_30_percent": false
+   }
+  },
+  "TH570909": {
+   "unit_name_en": "Pong Ngam",
+   "binding_class_v1": "E",
+   "fpps_0_100": 21.9,
+   "second_reading_v2": "E",
+   "same_as_v1": true,
+   "triggers": {
+    "E": true,
+    "A": false,
+    "B": false,
+    "C": false,
+    "D": false
+   },
+   "trigger_B": {
+    "largest_number_of_residents_one_link_isolates": 0.0,
+    "needed": 500.0
+   },
+   "trigger_C": {
+    "serving_facilities": [
+     {
+      "kind": "hospital",
+      "facility_id": "OSM-way-371233866",
+      "residents_of_the_unit_it_is_nearest_for": 6193.6,
+      "point_inside_the_flood_extent": false,
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+     },
+     {
+      "kind": "located_ddpm_shelter",
+      "facility_id": "DDPM-gd002-row-4147",
+      "residents_of_the_unit_it_is_nearest_for": 1995.0,
+      "point_inside_the_flood_extent": false,
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+     },
+     {
+      "kind": "located_ddpm_shelter",
+      "facility_id": "DDPM-gd002-row-4165",
+      "residents_of_the_unit_it_is_nearest_for": 148.0,
+      "point_inside_the_flood_extent": false,
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+     },
+     {
+      "kind": "located_ddpm_shelter",
+      "facility_id": "DDPM-gd002-row-4168",
+      "residents_of_the_unit_it_is_nearest_for": 3898.2,
+      "point_inside_the_flood_extent": false,
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+     },
+     {
+      "kind": "located_ddpm_shelter",
+      "facility_id": "DDPM-gd002-row-4170",
+      "residents_of_the_unit_it_is_nearest_for": 102.5,
+      "point_inside_the_flood_extent": false,
+      "no_vehicle_route_to_a_main_road_entry_in_the_flooded_run": false
+     }
+    ]
+   },
+   "trigger_D": {
+    "land_cells_outside_permanent_water": 58848,
+    "cells_with_occurrence_of_25_percent_or_more": 5,
+    "share": 8.5e-05,
+    "tiles": [
+     "on disk"
+    ],
+    "flag_at_20_percent": false,
+    "flag_at_10_percent": false,
+    "flag_at_30_percent": false
+   }
+  }
+ },
+ "top_20_links": [
+  {
+   "rank": 1,
+   "edge_id": "osm-way-1114870832-segment-0",
+   "osm_way_id": "1114870832",
+   "road_class": "tertiary",
+   "crosses_the_flood_extent": true,
+   "residents_who_lose_every_route_by_unit": {}
+  },
+  {
+   "rank": 2,
+   "edge_id": "osm-way-1114870832-segment-1",
+   "osm_way_id": "1114870832",
+   "road_class": "tertiary",
+   "crosses_the_flood_extent": true,
+   "residents_who_lose_every_route_by_unit": {}
+  },
+  {
+   "rank": 3,
+   "edge_id": "osm-way-1114870832-segment-2",
+   "osm_way_id": "1114870832",
+   "road_class": "tertiary",
+   "crosses_the_flood_extent": false
+  },
+  {
+   "rank": 4,
+   "edge_id": "osm-way-1114870832-segment-3",
+   "osm_way_id": "1114870832",
+   "road_class": "tertiary",
+   "crosses_the_flood_extent": false
+  },
+  {
+   "rank": 5,
+   "edge_id": "osm-way-1114870832-segment-4",
+   "osm_way_id": "1114870832",
+   "road_class": "tertiary",
+   "crosses_the_flood_extent": false
+  },
+  {
+   "rank": 6,
+   "edge_id": "osm-way-1114870832-segment-5",
+   "osm_way_id": "1114870832",
+   "road_class": "tertiary",
+   "crosses_the_flood_extent": false
+  },
+  {
+   "rank": 7,
+   "edge_id": "osm-way-1114870832-segment-10",
+   "osm_way_id": "1114870832",
+   "road_class": "tertiary",
+   "crosses_the_flood_extent": false
+  },
+  {
+   "rank": 8,
+   "edge_id": "osm-way-1114870832-segment-6",
+   "osm_way_id": "1114870832",
+   "road_class": "tertiary",
+   "crosses_the_flood_extent": false
+  },
+  {
+   "rank": 9,
+   "edge_id": "osm-way-1114870832-segment-7",
+   "osm_way_id": "1114870832",
+   "road_class": "tertiary",
+   "crosses_the_flood_extent": false
+  },
+  {
+   "rank": 10,
+   "edge_id": "osm-way-1114870832-segment-8",
+   "osm_way_id": "1114870832",
+   "road_class": "tertiary",
+   "crosses_the_flood_extent": false
+  },
+  {
+   "rank": 11,
+   "edge_id": "osm-way-1114870832-segment-9",
+   "osm_way_id": "1114870832",
+   "road_class": "tertiary",
+   "crosses_the_flood_extent": false
+  },
+  {
+   "rank": 12,
+   "edge_id": "osm-way-1114870832-segment-11",
+   "osm_way_id": "1114870832",
+   "road_class": "tertiary",
+   "crosses_the_flood_extent": false
+  },
+  {
+   "rank": 13,
+   "edge_id": "osm-way-1114870832-segment-12",
+   "osm_way_id": "1114870832",
+   "road_class": "tertiary",
+   "crosses_the_flood_extent": false
+  },
+  {
+   "rank": 14,
+   "edge_id": "osm-way-1114870832-segment-13",
+   "osm_way_id": "1114870832",
+   "road_class": "tertiary",
+   "crosses_the_flood_extent": false
+  },
+  {
+   "rank": 15,
+   "edge_id": "osm-way-1114870832-segment-14",
+   "osm_way_id": "1114870832",
+   "road_class": "tertiary",
+   "crosses_the_flood_extent": false
+  },
+  {
+   "rank": 16,
+   "edge_id": "osm-way-1114870832-segment-15",
+   "osm_way_id": "1114870832",
+   "road_class": "tertiary",
+   "crosses_the_flood_extent": false
+  },
+  {
+   "rank": 17,
+   "edge_id": "osm-way-1114870832-segment-16",
+   "osm_way_id": "1114870832",
+   "road_class": "tertiary",
+   "crosses_the_flood_extent": false
+  },
+  {
+   "rank": 18,
+   "edge_id": "osm-way-1114870832-segment-17",
+   "osm_way_id": "1114870832",
+   "road_class": "tertiary",
+   "crosses_the_flood_extent": false
+  },
+  {
+   "rank": 19,
+   "edge_id": "osm-way-1114870832-segment-18",
+   "osm_way_id": "1114870832",
+   "road_class": "tertiary",
+   "crosses_the_flood_extent": false
+  },
+  {
+   "rank": 20,
+   "edge_id": "osm-way-1114870832-segment-19",
+   "osm_way_id": "1114870832",
+   "road_class": "tertiary",
+   "crosses_the_flood_extent": false
+  }
+ ],
+ "facilities_read": {
+  "hospital": 6,
+  "located_ddpm_shelter": 81
+ },
+ "counts": {
+  "units": 8,
+  "second_reading_differs_from_v1": 4,
+  "by_second_reading": {
+   "C": 3,
+   "E": 4,
+   "no_v2_trigger": 1
+  }
+ },
+ "inputs": {
+  "published_result_file": {
+   "path": "outputs/planning_v1/overlays/planning_assessment_overlay_se1_mae_sai.json",
+   "sha256": "bb101e8021cffedc94044572c98863bd46bd38ed314e38435b436dfc8b552205"
+  },
+  "top_20_links": {
+   "path": "outputs/planning_v1/critical_links_top20_se1_vehicle.geojson",
+   "sha256": "9606cf0a8bb803b84c553084e11cab693fd28f60c64cc052e9b79200e3e69eed"
+  },
+  "season_extent_sha256": "5d7c1c0ca7909284317a66d2a3611452de3f91d729dfb4cc31b96840e147b794",
+  "jrc_occurrence": {
+   "west_tile_on_disk": "open_context/jrc_global_surface_water/occurrence_90E_30Nv1_4_2021.tif",
+   "east_tile_read_from": "https://storage.googleapis.com/global-surface-water/downloads2021/occurrence/occurrence_100E_30Nv1_4_2021.tif"
+  }
+ },
+ "credits": [
+  "JRC Global Surface Water (Pekel et al. 2016), occurrence 1984 to 2021; Copernicus, European Commission.",
+  "ESA WorldCover 2021 v200 (CC BY 4.0).",
+  "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009 (CC BY-SA 4.0). Changed by FloodGuard: repaired, projected, clipped and set against roads and residents; figures derived from it are shared under CC BY-SA 4.0.",
+  "Roads and road names © OpenStreetMap contributors (ODbL 1.0). Residents: WorldPop 2020 (CC BY 4.0)."
+ ],
+ "assumptions": [
+  "The flood input is the accumulated 2024 season layer of UNOSAT/GISTDA product 4009, treated as flooded at once: a scenario, not a day.",
+  "A road closure is modelled with closure rule v1 at the central level: a flood intersection does not prove a closure.",
+  "A road is an OpenStreetMap way. Its name and tags are as mapped; a bridge or a raised road that is not tagged is not known here.",
+  "Residents are modelled counts (WorldPop 2020) at the road node their cell snaps to, within 250 m."
+ ],
+ "limits": [
+  "Nothing was looked at on the ground or on an image. This sheet says where to look.",
+  "The season layer has no water depth, so a road counts as closed whatever the depth was.",
+  "'Stays passable' is a what-if on the model graph. It is not a statement that a road was or would be passable.",
+  "The top-20 links are unreviewed candidates (plan task V1): no link is an observed closure.",
+  "The second reading is not binding and was not run through the uncertainty ensemble."
+ ]
+}

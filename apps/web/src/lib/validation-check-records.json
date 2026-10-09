@@ -1,6 +1,6 @@
 {
  "schema": "floodguard.validation_check.state.v1",
- "generated_at_utc": "2026-10-08T17:35:20Z",
+ "generated_at_utc": "2026-10-09T06:09:23Z",
  "source_timestamp": "2026-10-08T16:09:13Z",
  "confidence_class": "not_applicable",
  "what_this_is": "The word of the three team members on the project's own work, as handed over.",
@@ -20,7 +20,7 @@
  "status_counts": {
   "accepted": 18,
   "evidence_not_ready": 1,
-  "waiting": 2
+  "waiting": 7
  },
  "items": {
   "V-01": {
@@ -547,6 +547,51 @@
   },
   "V-20": {
    "status": "evidence_not_ready",
+   "accepted_by": [],
+   "by_reviewer": {
+    "Rachmania": null,
+    "Putu": null,
+    "Callixta": null
+   }
+  },
+  "V-22": {
+   "status": "waiting",
+   "accepted_by": [],
+   "by_reviewer": {
+    "Rachmania": null,
+    "Putu": null,
+    "Callixta": null
+   }
+  },
+  "V-23": {
+   "status": "waiting",
+   "accepted_by": [],
+   "by_reviewer": {
+    "Rachmania": null,
+    "Putu": null,
+    "Callixta": null
+   }
+  },
+  "V-24": {
+   "status": "waiting",
+   "accepted_by": [],
+   "by_reviewer": {
+    "Rachmania": null,
+    "Putu": null,
+    "Callixta": null
+   }
+  },
+  "V-25": {
+   "status": "waiting",
+   "accepted_by": [],
+   "by_reviewer": {
+    "Rachmania": null,
+    "Putu": null,
+    "Callixta": null
+   }
+  },
+  "V-26": {
+   "status": "waiting",
    "accepted_by": [],
    "by_reviewer": {
     "Rachmania": null,

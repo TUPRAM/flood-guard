@@ -1,0 +1,261 @@
+{
+ "schema": "floodguard.radar_detection_held_out_test.v1",
+ "generated_at_utc": "2026-10-09T06:06:48Z",
+ "source_timestamp": "2024-10-22 (agency layer); THEOS-2 2025-07-30T03:33Z (development); THEOS-2 2025-07-31T03:51Z (held out)",
+ "confidence_class": "low",
+ "confidence_basis": "Detectors developed on an agency layer that was not checked in the field and on one optical tile; no ground check.",
+ "operational_status": "non_operational",
+ "official_warning": false,
+ "can_feed_decision_layer": false,
+ "plan": {
+  "path": "docs/proposal_execution/radar_detection_improvement_plan_v1.md",
+  "sha256": "38f2bfc8c14dded7c113a376bb02d174997f885111131c469b45e3da7bafe866"
+ },
+ "what_this_is": "The one test of the frozen detector on the two held-out THEOS-2 chips, with the simple threshold and the three fixed rules on the same cells.",
+ "label": "Agreement with water read from a THEOS-2 image; not accuracy.",
+ "freeze_record": {
+  "path": "outputs/radar_detection_improvement/freeze_v1.json",
+  "sha256": "d40135c2c8d12dd68219b18e14d1d2e797ffa74bbbb7c8fed9d59062f8bc2ac6"
+ },
+ "reference_record": {
+  "path": "outputs/radar_detection_improvement/held_out_reference_v1.json",
+  "sha256": "f110a137b198ae4d1618b58ee44e95702f5370fdb2fc5989fe5fc82d9ec58c7d"
+ },
+ "frozen_detector": {
+  "step": "simple_threshold_cleaned",
+  "base": "simple_threshold",
+  "cleaned": true,
+  "simple_threshold_db": -18.46,
+  "file_outside_git": {
+   "name": "frozen_detector.joblib",
+   "sha256": "cd5018668f2cd8bc6a6ae82e2bbe7454b7ad71c2f10602ee246cc1ea772d1945"
+  }
+ },
+ "pass_rule": "After: the first Sentinel-1 pass after the image. Before, for the fixed rules: the pass of the same orbit 12 days earlier. Dry season: the passes of the same orbit nearest to 25 February, 9 March and 14 April 2025.",
+ "chips": {
+  "chip_001": {
+   "set_aside_from_the_test": "The image shows hill country with ploughed fields, forest and one river in a corner; it holds no flood. Its NDWI histogram has no water group, and the split of the rule marks bare soil as water. Seen on the image alone, before any radar of the chip was read. The chip is not used as a reference; it is used to count what each detector flags on ground with no flood.",
+   "sentinel1": {
+    "relative_orbit": 62,
+    "hours_after_the_image": 19.3
+   },
+   "cells_the_image_shows": 90409,
+   "km2": 9.0409,
+   "flagged_km2": {
+    "frozen_detector": 0.0239,
+    "simple_threshold": 0.0537,
+    "un_spider": 0.0,
+    "m1_literal": 2.6696,
+    "m1_v2": 0.0
+   }
+  },
+  "chip_003": {
+   "sentinel1": {
+    "relative_orbit": 62,
+    "hours_after_the_image": 19.3,
+    "after": {
+     "fetched_at_utc": "2026-10-09T06:00:40Z",
+     "sources": [
+      {
+       "datetime": "2025-07-31T23:08:16.477347Z",
+       "platform": "sentinel-1a",
+       "relative_orbit": 62,
+       "orbit_state": "descending",
+       "item": "S1A_IW_GRDH_1SDV_20250731T230803_20250731T230828_060334_rtc"
+      }
+     ],
+     "mosaic_rule": "first valid value in the listed order; a later scene is read only where earlier ones left gaps",
+     "valid_share": 1.0,
+     "window_file": "s1_chip_003_after.tif",
+     "window_sha256": "9f015fd7a0b6006e7a618afefd4ab978fbc2f59a485227a5ed3452e5af8387b1"
+    },
+    "before_for_the_fixed_rules": {
+     "fetched_at_utc": "2026-10-09T06:01:13Z",
+     "sources": [
+      {
+       "datetime": "2025-07-19T23:08:19.832265Z",
+       "platform": "sentinel-1a",
+       "relative_orbit": 62,
+       "orbit_state": "descending",
+       "item": "S1A_IW_GRDH_1SDV_20250719T230807_20250719T230832_060159_rtc"
+      }
+     ],
+     "mosaic_rule": "first valid value in the listed order; a later scene is read only where earlier ones left gaps",
+     "valid_share": 1.0,
+     "window_file": "s1_chip_003_before.tif",
+     "window_sha256": "f1316fdb1022efde5a8d7a2b728e04830b2690a0820e5972a58c8cfeff60eab7"
+    },
+    "dry_season": {
+     "2025-02-25": {
+      "fetched_at_utc": "2026-10-09T06:04:25Z",
+      "sources": [
+       {
+        "datetime": "2025-02-25T23:08:22.327270Z",
+        "platform": "SENTINEL-1A",
+        "relative_orbit": 62,
+        "orbit_state": "descending",
+        "item": "S1A_IW_GRDH_1SDV_20250225T230809_20250225T230834_058059_072B31_rtc"
+       }
+      ],
+      "mosaic_rule": "first valid value in the listed order; a later scene is read only where earlier ones left gaps",
+      "valid_share": 1.0,
+      "window_file": "s1_chip_003_dry_20250225.tif",
+      "window_sha256": "8ba6651af994c5325df8ba7fb5ff2b74f48d5528284cca6b06faeda8e05e99aa"
+     },
+     "2025-03-09": {
+      "fetched_at_utc": "2026-10-09T06:05:57Z",
+      "sources": [
+       {
+        "datetime": "2025-03-09T23:08:22.768949Z",
+        "platform": "SENTINEL-1A",
+        "relative_orbit": 62,
+        "orbit_state": "descending",
+        "item": "S1A_IW_GRDH_1SDV_20250309T230810_20250309T230835_058234_073251_rtc"
+       }
+      ],
+      "mosaic_rule": "first valid value in the listed order; a later scene is read only where earlier ones left gaps",
+      "valid_share": 1.0,
+      "window_file": "s1_chip_003_dry_20250309.tif",
+      "window_sha256": "6ec0200f9e8c9fd801e5cd5c13c72062ef9075781233d2133669aa805216b0ac"
+     },
+     "2025-04-14": {
+      "fetched_at_utc": "2026-10-09T06:06:18Z",
+      "sources": [
+       {
+        "datetime": "2025-04-14T23:08:23.001862Z",
+        "platform": "SENTINEL-1A",
+        "relative_orbit": 62,
+        "orbit_state": "descending",
+        "item": "S1A_IW_GRDH_1SDV_20250414T230810_20250414T230835_058759_074778_rtc"
+       }
+      ],
+      "mosaic_rule": "first valid value in the listed order; a later scene is read only where earlier ones left gaps",
+      "valid_share": 1.0,
+      "window_file": "s1_chip_003_dry_20250414.tif",
+      "window_sha256": "e47f45c4010f9ad463ea44cb4c765b12d64b677397e6d150941db686f3342961"
+     }
+    }
+   },
+   "compared_cells": 69897,
+   "reference_water_cells": 31906,
+   "cells_of_the_reference_left_out_for_a_missing_feature": 0,
+   "frozen_detector": {
+    "flagged_cells": 8346.0,
+    "reference_water_cells": 31906.0,
+    "flagged_that_is_reference_water": 0.910376,
+    "reference_water_flagged": 0.238137,
+    "iou": 0.232682,
+    "cut": {
+     "cut": -18.46,
+     "source": "frozen in work package 7"
+    }
+   },
+   "simple_threshold": {
+    "flagged_cells": 6895.0,
+    "reference_water_cells": 31906.0,
+    "flagged_that_is_reference_water": 0.930674,
+    "reference_water_flagged": 0.201122,
+    "iou": 0.198153
+   },
+   "fixed_rules": {
+    "un_spider": {
+     "flagged_cells": 7958.0,
+     "reference_water_cells": 31906.0,
+     "flagged_that_is_reference_water": 0.941317,
+     "reference_water_flagged": 0.234783,
+     "iou": 0.231397
+    },
+    "m1_literal": {
+     "flagged_cells": 31961.0,
+     "reference_water_cells": 31906.0,
+     "flagged_that_is_reference_water": 0.616564,
+     "reference_water_flagged": 0.617627,
+     "iou": 0.446231
+    },
+    "m1_v2": {
+     "flagged_cells": 6665.0,
+     "reference_water_cells": 31906.0,
+     "flagged_that_is_reference_water": 0.953488,
+     "reference_water_flagged": 0.199179,
+     "iou": 0.197262
+    }
+   },
+   "not_observable": {
+    "cells": 44898,
+    "reference_water_cells": 14710,
+    "frozen_detector_on_observable_cells_only": {
+     "flagged_cells": 7281.0,
+     "reference_water_cells": 17196.0,
+     "flagged_that_is_reference_water": 0.909902,
+     "reference_water_flagged": 0.385264,
+     "iou": 0.371107
+    }
+   }
+  }
+ },
+ "held_out_chips_together": {
+  "compared_cells": 69897,
+  "reference_water_cells": 31906,
+  "frozen_detector": {
+   "flagged_cells": 8346.0,
+   "reference_water_cells": 31906.0,
+   "flagged_that_is_reference_water": 0.910376,
+   "reference_water_flagged": 0.238137,
+   "iou": 0.232682
+  },
+  "simple_threshold": {
+   "flagged_cells": 6895.0,
+   "reference_water_cells": 31906.0,
+   "flagged_that_is_reference_water": 0.930674,
+   "reference_water_flagged": 0.201122,
+   "iou": 0.198153
+  },
+  "fixed_rules": {
+   "un_spider": {
+    "flagged_cells": 7958.0,
+    "reference_water_cells": 31906.0,
+    "flagged_that_is_reference_water": 0.941317,
+    "reference_water_flagged": 0.234783,
+    "iou": 0.231397
+   },
+   "m1_literal": {
+    "flagged_cells": 31961.0,
+    "reference_water_cells": 31906.0,
+    "flagged_that_is_reference_water": 0.616564,
+    "reference_water_flagged": 0.617627,
+    "iou": 0.446231
+   },
+   "m1_v2": {
+    "flagged_cells": 6665.0,
+    "reference_water_cells": 31906.0,
+    "flagged_that_is_reference_water": 0.953488,
+    "reference_water_flagged": 0.199179,
+    "iou": 0.197262
+   }
+  }
+ },
+ "what_the_plan_fixed": {
+  "best_fixed_rule": "m1_literal",
+  "best_fixed_rule_iou": 0.446231,
+  "margin_in_iou": 0.03,
+  "min_share_of_flags_on_water": 0.7,
+  "frozen_detector_improved": false,
+  "simple_threshold_improved": false,
+  "frozen_better_than_the_simple_threshold": true,
+  "detector_the_project_names": "fixed_rules",
+  "what_is_said": "Neither the frozen detector nor the simple threshold is better than the fixed rules; the fixed rules stay."
+ },
+ "assumptions": [
+  "Development labels are the layer UNOSAT and GISTDA dated 22 October 2024 (as provided) and the water read from the THEOS-2 image of Sukhothai.",
+  "The dry-season baseline is the median of three passes of the same orbit, in dB, named before any was read.",
+  "A scene sets its own cut from its tiles that hold two clear groups of values; a scene with no such tile takes the frozen cut.",
+  "Every feature comes from Sentinel-1, or is slope or land cover. No feature says where water usually stands."
+ ],
+ "limits": [
+  "The agency layer was not checked in the field and may come from the same radar pass; the THEOS-2 image is 44 hours older than the radar.",
+  "C-band radar does not see water under rice, trees or between buildings, nor water that drained before the pass.",
+  "Every figure is agreement with a reference layer, not accuracy. No detector enters a planning score.",
+  "One chip of about 7 square km is scored: a flooded town, where radar sees least. The other chip holds no flood and is not scored."
+ ],
+ "supersedes": null
+}

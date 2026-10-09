@@ -1158,6 +1158,27 @@ try {
     const map = await target.locator(".leaflet-container").boundingBox();
     await dragMapBy(target, map.x + map.width / 2 - x, map.y + map.height / 2 - y);
   };
+  /**
+   * Waits until the map has stopped moving: no pan or zoom animation is running and the map pane has been where it
+   * is for 150 ms. A drag released at speed glides on for a while (Leaflet's inertia), and how long depends on how
+   * fast the machine delivered the drag; a marker measured or tapped during the glide is not where it was measured.
+   */
+  const mapSettled = async (target) => {
+    await target.waitForFunction(() => {
+      const pane = document.querySelector(".leaflet-container .leaflet-map-pane");
+      if (!pane) return false;
+      const state = (window.__floodguardMapSettle ??= { value: "", since: 0 });
+      const moving = pane.classList.contains("leaflet-pan-anim") || pane.classList.contains("leaflet-zoom-anim");
+      const value = `${pane.style.transform}|${pane.querySelector(".leaflet-proxy")?.style.transform ?? ""}`;
+      const now = performance.now();
+      if (moving || value !== state.value) {
+        state.value = value;
+        state.since = now;
+        return false;
+      }
+      return now - state.since >= 150;
+    }, null, { polling: 50, timeout: 5000 });
+  };
   /** Drags the map by (dx, dy) px, from a spot of the map that is no marker or control. */
   const dragMapBy = async (target, dx, dy) => {
     const from = await target.locator(".leaflet-container").evaluate((element, [dx, dy]) => {
@@ -1179,7 +1200,7 @@ try {
     await target.mouse.down();
     await target.mouse.move(from.x + dx, from.y + dy, { steps: 8 });
     await target.mouse.up();
-    await target.waitForTimeout(350);
+    await mapSettled(target);
   };
   /**
    * Opens every reported-depth marker the way a reader does: the map scrolled into view and the town dragged to its
@@ -1203,6 +1224,7 @@ try {
       await target.mouse.move(around.x, around.y);
       await target.mouse.wheel(0, wheel);
       await target.waitForTimeout(900);
+      await mapSettled(target);
     }
     const count = await expectDepthRecordsOnMarkers(label, target);
     const popup = target.locator(".leaflet-popup-content [data-testid='reported-depth-popup']");

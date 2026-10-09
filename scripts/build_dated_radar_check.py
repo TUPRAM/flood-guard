@@ -38,6 +38,7 @@ sys.path.insert(0, str(ROOT / "src"))
 from floodguard import dated_radar_check as drc  # noqa: E402
 from floodguard import geoid_m1_review as review  # noqa: E402
 from floodguard import radar_candidates as rc  # noqa: E402
+from floodguard import s1_rtc  # noqa: E402
 from floodguard import sar_change_v2 as sar  # noqa: E402
 
 PLAN = "docs/proposal_execution/dated_radar_check_plan_v1.md"
@@ -210,25 +211,14 @@ def stage_reference(arguments: argparse.Namespace) -> None:
 def fetch_scene(work: Path, grid: tuple[float, float, int, int], item_id: str, name: str) -> dict[str, Any]:
     """Read the lattice window of one terrain-corrected Sentinel-1 scene and cache it (VV, VH; linear gamma0)."""
 
-    import rasterio
-    from rasterio.windows import from_bounds
-
     west, north, rows, columns = grid
-    bounds = (west, north - rows * CELL_M, west + columns * CELL_M, north)
     path, meta_path = work / f"s1_{name}_gamma0.tif", work / f"s1_{name}_gamma0.json"
     if not (path.exists() and meta_path.exists()):
         token = t2.fetch_json(t2.SAS)["token"]
         item = t2.fetch_json(t2.STAC + item_id)
         image = np.full((2, rows, columns), np.nan, dtype="float32")
         for band, asset in enumerate(("vv", "vh")):
-            with rasterio.Env(GDAL_DISABLE_READDIR_ON_OPEN="EMPTY_DIR", GDAL_HTTP_MAX_RETRY="6", GDAL_HTTP_RETRY_DELAY="4"):
-                with rasterio.open(f"{item['assets'][asset]['href']}?{token}") as source:
-                    if source.crs.to_epsg() != EPSG or source.res != (CELL_M, CELL_M):
-                        raise BuildError(f"{item_id} is not on the 10 m EPSG:{EPSG} grid")
-                    window = from_bounds(*bounds, transform=source.transform)
-                    if any(abs(value - round(value)) > 1e-6 for value in (window.col_off, window.row_off)):
-                        raise BuildError(f"{item_id} is not aligned to the lattice")
-                    block = source.read(1, window=window, boundless=True, fill_value=np.nan).astype("float32")
+            block = s1_rtc.read_window_parallel(f"{item['assets'][asset]['href']}?{token}", grid, epsg=EPSG, cell_m=CELL_M)
             block[~(np.isfinite(block) & (block > 0))] = np.nan
             image[band] = block
         write_raster(path, [image[0], image[1]], grid, "float32", float("nan"))

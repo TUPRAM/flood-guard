@@ -442,6 +442,109 @@
       "gates": "Saying that THEOS-2 was used on the study event.",
       "ready": false,
       "added": "2026-10-07"
+    },
+    {
+      "id": "V-22",
+      "group": "result",
+      "title": "The Ko Chang roads at the other closure levels",
+      "check": "Read the section 'The other closure levels, and what the terrain model shows'. At the strict, central and permissive level every resident of Ko Chang loses every route, and the same road in Si Mueang Chum is the first to keep passable (48% to 61%). The elevation model neither shows nor rules out that the road is raised. Accept if the table and the two sentences under it say no more than the counts.",
+      "evidence": [
+        {
+          "label": "Sheet in plain words, new section",
+          "path": "docs/ko_chang_road_check.md"
+        },
+        {
+          "label": "Result file",
+          "path": "outputs/ko_chang_road_check/ko_chang_roads_se1_levels_v1.json"
+        }
+      ],
+      "gates": "Saying that the Ko Chang finding does not depend on the closure level.",
+      "ready": true,
+      "added": "2026-10-09"
+    },
+    {
+      "id": "V-23",
+      "group": "result",
+      "title": "Access loss by age group",
+      "check": "Read the result. Residents of 60 and over and children lose hospital access and road routes at the same rate as everyone else, to within one share point; the open age data cannot show a gap inside a tambon. Accept if the team will say that the equity question was computed for age and that the answer is 'no gap that this data can show', and will not say what the people of a tambon can or cannot do.",
+      "evidence": [
+        {
+          "label": "Result in plain words",
+          "path": "docs/equity_by_age.md"
+        },
+        {
+          "label": "Result file",
+          "path": "outputs/equity_by_age/se1_mae_sai_v1.json"
+        }
+      ],
+      "gates": "Any sentence about equity by age in the pitch or on a page.",
+      "ready": true,
+      "added": "2026-10-09"
+    },
+    {
+      "id": "V-24",
+      "group": "result",
+      "title": "The second class reading (the proposal's own class wording)",
+      "check": "Read the result. Under the proposal's own triggers Mae Sai town, Ko Chang and Si Mueang Chum read 'protect essential services', because their nearest shelters are cut off in the scenario; Ban Dai meets no trigger. The binding classes do not change and nothing published changes. Accept if the team will use this as the answer to 'why is Mae Sai town only class D', always with the word 'secondary', and will keep 'keep routes open' for Ko Chang as the published class.",
+      "evidence": [
+        {
+          "label": "Result in plain words",
+          "path": "docs/class_v2_reading.md"
+        },
+        {
+          "label": "Result file",
+          "path": "outputs/class_v2_reading/se1_mae_sai_v1.json"
+        }
+      ],
+      "gates": "Showing the second reading in the pitch or on a page.",
+      "ready": true,
+      "added": "2026-10-09"
+    },
+    {
+      "id": "V-25",
+      "group": "models",
+      "title": "The work on the radar detection and its one test",
+      "check": "Read the short version and the two tables of the test. Six changes were tried on data already seen; a simple threshold with cleaning was frozen; on the held-out chip, a flooded town, nothing we built sees more than a quarter of the water, and by the rule fixed beforehand the fixed radar rules stay. Accept if the team will say that the detection improved on open land in development and was not confirmed on the held-out chip, and will not quote M1-literal's 0.45 as a good result.",
+      "evidence": [
+        {
+          "label": "Result in plain words",
+          "path": "docs/radar_detection_improvement.md"
+        },
+        {
+          "label": "The one test",
+          "path": "outputs/radar_detection_improvement/held_out_test_v1.json"
+        },
+        {
+          "label": "Freeze record, committed before the held-out chips were read",
+          "path": "outputs/radar_detection_improvement/freeze_v1.json"
+        },
+        {
+          "label": "Plan, committed before any change was tried",
+          "path": "docs/proposal_execution/radar_detection_improvement_plan_v1.md"
+        }
+      ],
+      "gates": "Any sentence about improved detection in the pitch.",
+      "ready": true,
+      "added": "2026-10-09"
+    },
+    {
+      "id": "V-26",
+      "group": "models",
+      "title": "The September 2024 pass read again",
+      "check": "Read section 3. Read with the frozen detector and a dry-season baseline, the pass of 15 September shows 23.8 square km of water in the district; 1,704 residents lose every route and 290 of them are in Ko Chang, against all 5,972 under the season layer. There is no dated reference for September, so the reading is unchecked. Accept if the team will keep calling the Ko Chang result a scenario and will not tell it as what the radar saw on a day.",
+      "evidence": [
+        {
+          "label": "Result in plain words, section 3",
+          "path": "docs/radar_detection_improvement.md"
+        },
+        {
+          "label": "Result file",
+          "path": "outputs/september_reread/mae_sai_20240915_v1.json"
+        }
+      ],
+      "gates": "How the Ko Chang result is told when someone asks what the satellite saw.",
+      "ready": true,
+      "added": "2026-10-09"
     }
   ]
 }

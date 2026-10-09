@@ -102,6 +102,8 @@ E1_STAGE_FOLDER = "e1_flood_input"
 STAGE_FOLDER = "e5_access_diff"
 LICENCE_NOTICE_NAME = "LICENSE_NOTICE.txt"
 PUBLIC_SERVICES, PITCH_SERVICES = "public_services", "pitch_services"
+ALTERNATE_DEMAND = "public_services_of_another_demand"
+"""Where ``case_runs`` puts the public-services table of the same runs counted on another demand (see its docstring)."""
 WALKING_CONTEXT_OUTPUTS = "walking_context"
 """The group of the receipt's outputs that holds the report of a candidate walking context build."""
 FLOOD_LEVELS_RUN: tuple[str, ...] = (flood_inputs.AS_PROVIDED,)
@@ -705,6 +707,7 @@ def case_runs(
     arguments: Mapping[str, Any],
     cells: Sequence[Mapping[str, Any]],
     unit_ids: Sequence[str],
+    alternate_cells: Mapping[str, Sequence[Mapping[str, Any]]] | None = None,
 ) -> dict[str, Any]:
     """Make the flooded runs of one case and compare each with the baseline: one entry per flood level and closure level.
 
@@ -718,6 +721,9 @@ def case_runs(
         arguments: ``access_diff.closure_arguments``.
         cells: ``access_diff.demand_cells``.
         unit_ids: The units of the case frame.
+        alternate_cells: ``name -> cells`` of the same demand cells with other resident counts (another
+            population vintage). Travel times do not depend on the counts, so each run then also carries the
+            public-services table of every such demand under ``ALTERNATE_DEMAND``. Task E5 passes none.
 
     Returns:
         ``runs``: per flood level and closure level, the closure summary of each mode, the public-services
@@ -774,6 +780,9 @@ def case_runs(
                 "closure": {access_diff.VEHICLE: closures[access_diff.VEHICLE]},
                 PUBLIC_SERVICES: access_diff.unit_rows(cells, unit_ids, public, before_all, flooded),
             }
+            if alternate_cells:
+                entry[ALTERNATE_DEMAND] = {name: access_diff.unit_rows(other, unit_ids, public, before_all, flooded)
+                                           for name, other in alternate_cells.items()}
             if with_shelter:
                 entry["closure_walking"] = closures[access_diff.WALKING]
                 entry[PITCH_SERVICES] = access_diff.unit_rows(cells, unit_ids, services, before_all, flooded)

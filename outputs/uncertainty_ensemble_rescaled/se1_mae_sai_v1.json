@@ -1,0 +1,1282 @@
+{
+ "schema": "floodguard.uncertainty_ensemble_rescaled_demand_report.v1",
+ "generated_at_utc": "2026-10-09T08:22:47Z",
+ "source_timestamp": "2024-08-01/2024-10-12",
+ "source_timestamps": {
+  "flood_input": "2024-08-01/2024-10-12",
+  "population_year_represented": 2020,
+  "population_rescaled_to_year": 2024,
+  "age_counts": "2025-09-01"
+ },
+ "confidence_class": "low",
+ "confidence_basis": "An ensemble of planning classes from modelled access on OpenStreetMap roads, modelled resident and age counts, and closures assumed from a flood input that FloodGuard did not check against the ground or against an independent source. Every cell is the same modelled chain with another declared choice; the spread across the cells says how far the result depends on those choices and nothing about its distance from what happened. This line is the confidence of the run as evidence; the confidence class of each unit under rule v1 is in the results.",
+ "operational_status": "non_operational",
+ "official_warning": false,
+ "can_feed_decision_layer": false,
+ "what_this_is": "The uncertainty ensemble of the case over the 180 cells of the public facility set: the 90 cells of the WorldPop 2020 demand and the 90 cells of the 2024-rescaled demand. Report-only.",
+ "not_of_record": "This is not the registered run of plan task E10. The registered receipt, the run register and the published result file are unchanged; the published file still says that the stability of its classes is not evaluated. Putting a status on a published class needs a registered run and a new publication.",
+ "case_id": "SE1",
+ "frame_set": "mae_sai",
+ "level": "public",
+ "protocol_sha256": {
+  "planning_protocol_v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+  "planning_protocol_v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+ },
+ "rescaled_demand": {
+  "rules": [
+   "A 100 m count belongs to the 1 km cell that holds the centre of its 100 m cell.",
+   "A positive 2020 count whose 1 km cell has no valid 2024 total keeps its 2020 value and is reported; it is neither set to zero nor rescaled."
+  ],
+  "counts_2020": 81571,
+  "positive_counts_2020": 62699,
+  "residents_2020": 120550.14895324409,
+  "residents_after": 126795.26671086781,
+  "cells_1km_with_a_ratio": 626,
+  "ratio_lowest_median_highest": [
+   0.003282,
+   0.382324,
+   60.080753
+  ],
+  "kept_at_2020_because_the_1km_cell_has_no_2024_total": {
+   "counts": 2173,
+   "residents_2020": 1299.7296432852745,
+   "cells_1km": 31
+  },
+  "residents_2024_in_1km_cells_with_no_2020_count": 22.791645295917988,
+  "scope_of_the_counts_above": "every 2020 100 m count of the 1 km cells that hold a demand cell of the planning context, and one ring of cells around them",
+  "demand_cells": 36765,
+  "demand_residents_2020": 81836.8894393444,
+  "demand_residents_rescaled": 95472.09743362064,
+  "demand_cells_kept_at_2020": 1952,
+  "demand_residents_kept_at_2020": 1153.2493594884872,
+  "sources": {
+   "worldpop_2020": {
+    "file": "open_context/worldpop_population/tha_ppp_2020.tif",
+    "sha256": "fb39d85dd150c45c7b25771f29bcd548e611afa0967224ac6d8ca05727230e20"
+   },
+   "worldpop_2024_age_counts": {
+    "product": "Global2 R2025A v1, Thailand constrained total-sex age estimates",
+    "year_represented": 2024,
+    "manifest_sha256": "f7a169877177a374bc461724dcb93b6ec96d76451347cd2e98dc2fc7b0f8356c",
+    "total": "the sum of the 20 age bands of a 1 km cell; no total where a band has no valid count"
+   }
+  },
+  "residents_by_unit": {
+   "TH570901": {
+    "worldpop_2020": 17893.069,
+    "rescaled_2024": 31648.04
+   },
+   "TH570902": {
+    "worldpop_2020": 8911.487,
+    "rescaled_2024": 8954.47
+   },
+   "TH570903": {
+    "worldpop_2020": 6708.403,
+    "rescaled_2024": 7881.094
+   },
+   "TH570904": {
+    "worldpop_2020": 9349.408,
+    "rescaled_2024": 10286.85
+   },
+   "TH570905": {
+    "worldpop_2020": 7157.561,
+    "rescaled_2024": 4605.16
+   },
+   "TH570906": {
+    "worldpop_2020": 19532.08,
+    "rescaled_2024": 21645.235
+   },
+   "TH570908": {
+    "worldpop_2020": 5036.142,
+    "rescaled_2024": 3408.671
+   },
+   "TH570909": {
+    "worldpop_2020": 7248.739,
+    "rescaled_2024": 7042.577
+   }
+  }
+ },
+ "levels_not_run": [
+  {
+   "axis": "facilities",
+   "level": "corroborated",
+   "code": "facility_set_needs_a_walking_context_of_record_and_the_pitch_level",
+   "reason": "This facility set adds DDPM located shelters, reached by walking within 30 minutes, at the pitch level (protocol v1b facility_sets, owner choice 7). The registered E5 receipt says the shelter tables rest on a candidate walking context and are not usable until the owners accept a walking build of record (open point E5-OP5). No access table exists for the subset of the shelters this set keeps. The set is not approximated from the candidate tables.",
+   "open_points": [
+    "E10-OP3",
+    "E5-OP5"
+   ]
+  },
+  {
+   "axis": "facilities",
+   "level": "all_listed",
+   "code": "facility_set_needs_a_walking_context_of_record_and_the_pitch_level",
+   "reason": "This facility set adds DDPM located shelters, reached by walking within 30 minutes, at the pitch level (protocol v1b facility_sets, owner choice 7). The registered E5 receipt says the shelter tables rest on a candidate walking context and are not usable until the owners accept a walking build of record (open point E5-OP5). The set is not approximated from the candidate tables.",
+   "open_points": [
+    "E10-OP3",
+    "E5-OP5"
+   ]
+  }
+ ],
+ "checks": {
+  "default_cell_against_the_e8_rows": {
+   "result": "PASS",
+   "rows_sha256": "362d1563eb21bdf0229c6d1dc522e425ad06f64fd7d613614987f6951a519dbc"
+  },
+  "cells_of_the_2020_demand_against_the_registered_run": {
+   "result": "PASS",
+   "unit_cells_compared": 720,
+   "what": "The planning score and the class of every unit in every cell of the 2020 demand are those of the registered run.",
+   "registered_receipt": {
+    "path": "outputs/planning_v1/e10_uncertainty_ensemble_se1_mae_sai.json",
+    "sha256": "026937b840c1c5d65838fcb0ea25ef29db48099174ea553d69c7f5777158d0ce"
+   }
+  },
+  "as_provided_runs_against_the_e5_table": {
+   "result": "PASS",
+   "compared": [
+    {
+     "closure_level": "strict",
+     "unit_rows_same": true,
+     "closure_result_same": true
+    },
+    {
+     "closure_level": "central",
+     "unit_rows_same": true,
+     "closure_result_same": true
+    },
+    {
+     "closure_level": "permissive",
+     "unit_rows_same": true,
+     "closure_result_same": true
+    }
+   ],
+   "what": "The three runs of this task at the flood level as provided against the unit rows and the closure result of the registered task E5 table: the same, value for value."
+  },
+  "measurements_2020": {
+   "demand_cells": 36765,
+   "cells_in_one_unit": 36765,
+   "residents_in_the_units": 81836.8894393444,
+   "unit_residents_same_in_the_context_and_the_access_table": true,
+   "hospital_routes_same_in_the_graph_and_the_access_table": true,
+   "no_unit_row_of_the_access_table_stores_a_ratio": true,
+   "compared_before_any_flood_layer_was_read_for_a_unit": true,
+   "combinations_measured": 9,
+   "residents_and_baseline_counts_same_in_every_access_run": true,
+   "default_combination_is_the_measurement_of_task_e8": true,
+   "each_combination_carries_the_flood_measurements_of_its_own_level": true,
+   "flooded_land_not_smaller_at_a_larger_flood_level_in_every_unit": true,
+   "residents_inside_not_fewer_at_a_larger_flood_level_in_every_unit": true
+  },
+  "measurements_rescaled": {
+   "combinations_measured": 9,
+   "unit_residents_same_in_the_demand_and_the_access_tables": true
+  }
+ },
+ "summary": {
+  "units": 8,
+  "core_cells_per_lane": 540,
+  "cells_run": 180,
+  "cells_not_run": 360,
+  "cells_not_run_by_reason": {
+   "facility_set_needs_a_walking_context_of_record_and_the_pitch_level": 360
+  },
+  "cells_of_the_protocol_set_for_retention": 180,
+  "unit_cells_run": 1440,
+  "unit_cells_with_a_result": 1440,
+  "unit_cells_failed": 0,
+  "reference_class_counts": {
+   "A": 0,
+   "B": 1,
+   "C": 0,
+   "D": 3,
+   "E": 4,
+   "no_class": 0
+  },
+  "class_counts_over_every_unit_cell": {
+   "A": 30,
+   "B": 180,
+   "C": 20,
+   "D": 493,
+   "E": 717,
+   "no_class": 0
+  },
+  "headline_status_counts": {
+   "not_evaluated": 0,
+   "headline_eligible": 7,
+   "unstable_verify": 1
+  }
+ },
+ "units": [
+  {
+   "unit_id": "TH570901",
+   "unit_name_en": "Mae Sai",
+   "reference_cell": {
+    "cell_id": "as_provided|central|public|worldpop_2020|P10_P90|default",
+    "fpps_0_100": 70.71,
+    "action_class": "D",
+    "action_reason_code": "resilience"
+   },
+   "cells_run": 180,
+   "fpps_0_100": {
+    "min": 59.93,
+    "median": 72.65,
+    "max": 80.99,
+    "count": 180
+   },
+   "class_counts": {
+    "A": 30,
+    "B": 40,
+    "C": 20,
+    "D": 90,
+    "E": 0,
+    "no_class": 0
+   },
+   "class_counts_by_demand": {
+    "worldpop_2020": {
+     "A": 0,
+     "B": 0,
+     "C": 0,
+     "D": 90,
+     "E": 0,
+     "no_class": 0
+    },
+    "rescaled_2024": {
+     "A": 30,
+     "B": 40,
+     "C": 20,
+     "D": 0,
+     "E": 0,
+     "no_class": 0
+    }
+   },
+   "headline_stability": {
+    "guardrail": "GR8_headline_stability",
+    "status": "unstable_verify",
+    "class_retention": 0.5,
+    "class_retention_min": 0.6,
+    "reference_class": "D",
+    "over": "the 180 cells of the public facility set (protocol v1b facility_sets.shelters_in_the_ensemble, which states them for a public overlay: open point E10-OP11)",
+    "cells_of_the_protocol_set": 180,
+    "cells_run": 180,
+    "cells_with_a_class": 180,
+    "cells_run_without_a_class": 0,
+    "cells_keeping_the_reference_class": 90,
+    "retention_over_the_cells_run": 0.5,
+    "bounds_over_the_protocol_set": null,
+    "outcome_fixed_by_the_bounds": null,
+    "not_evaluated_because": null,
+    "fallback_text": "no class met the stability rule; shown as unstable: verify",
+    "after_declared_cut_line_6": {
+     "levels_kept": {
+      "population_vintage": "worldpop_2020",
+      "vulnerability_anchors": "P10_P90"
+     },
+     "cells": 45,
+     "cells_with_a_class": 45,
+     "cells_keeping_the_reference_class": 45,
+     "retention": 1.0,
+     "at_or_above_the_minimum": true,
+     "levels_kept_are": "the levels of the default cell",
+     "other_levels_the_cut_could_keep": [
+      {
+       "levels_kept": {
+        "population_vintage": "worldpop_2020",
+        "vulnerability_anchors": "P5_P95"
+       },
+       "cells": 45,
+       "cells_with_a_class": 45,
+       "cells_keeping_the_reference_class": 45,
+       "retention": 1.0,
+       "at_or_above_the_minimum": true
+      },
+      {
+       "levels_kept": {
+        "population_vintage": "rescaled_2024",
+        "vulnerability_anchors": "P10_P90"
+       },
+       "cells": 45,
+       "cells_with_a_class": 45,
+       "cells_keeping_the_reference_class": 0,
+       "retention": 0.0,
+       "at_or_above_the_minimum": false
+      },
+      {
+       "levels_kept": {
+        "population_vintage": "rescaled_2024",
+        "vulnerability_anchors": "P5_P95"
+       },
+       "cells": 45,
+       "cells_with_a_class": 45,
+       "cells_keeping_the_reference_class": 0,
+       "retention": 0.0,
+       "at_or_above_the_minimum": false
+      }
+     ],
+     "note": "The share over the cells that declared cut line 6 of plan 8.4 would leave. It is not the headline: the cut is conditional and the owners have not invoked it (open point E10-OP1). The cut names the two axes it drops and not the level of each that stays: the figures here keep the levels of the default cell, and other_levels_the_cut_could_keep gives the same share for every other pair of levels. A pair whose cells do not all have a class has no share (open point E10-OP12)."
+    },
+    "other_reading_of_the_protocol_set": {
+     "over": "the 540 core cells (protocol v1b ensemble_grid.headline_rule)",
+     "cells": 540,
+     "cells_with_a_class": 180,
+     "cells_keeping_the_reference_class": 90,
+     "class_retention": null,
+     "at_or_above_the_minimum": null,
+     "bounds": {
+      "lower": 0.16666666666666666,
+      "upper": 0.8333333333333334,
+      "cells_without_a_class": 360
+     },
+     "outcome_fixed_by_the_bounds": null,
+     "note": "Protocol v1b states the cells of the public facility set 'for a public overlay'. Which set is the set of the rule for a result that is not a public overlay is open point E10-OP11. No status is set from this reading."
+    }
+   },
+   "rank": {
+    "best": 1,
+    "worst": 2,
+    "cells_ranked": 180,
+    "among_units": 8,
+    "rule": "FPPS, highest first; a tie goes to the lower unit identifier (open point E10-OP5)."
+   }
+  },
+  {
+   "unit_id": "TH570902",
+   "unit_name_en": "Huai Khrai",
+   "reference_cell": {
+    "cell_id": "as_provided|central|public|worldpop_2020|P10_P90|default",
+    "fpps_0_100": 4.72,
+    "action_class": "E",
+    "action_reason_code": "low_priority_score"
+   },
+   "cells_run": 180,
+   "fpps_0_100": {
+    "min": 3.87,
+    "median": 4.63,
+    "max": 11.58,
+    "count": 180
+   },
+   "class_counts": {
+    "A": 0,
+    "B": 0,
+    "C": 0,
+    "D": 0,
+    "E": 180,
+    "no_class": 0
+   },
+   "class_counts_by_demand": {
+    "worldpop_2020": {
+     "A": 0,
+     "B": 0,
+     "C": 0,
+     "D": 0,
+     "E": 90,
+     "no_class": 0
+    },
+    "rescaled_2024": {
+     "A": 0,
+     "B": 0,
+     "C": 0,
+     "D": 0,
+     "E": 90,
+     "no_class": 0
+    }
+   },
+   "headline_stability": {
+    "guardrail": "GR8_headline_stability",
+    "status": "headline_eligible",
+    "class_retention": 1.0,
+    "class_retention_min": 0.6,
+    "reference_class": "E",
+    "over": "the 180 cells of the public facility set (protocol v1b facility_sets.shelters_in_the_ensemble, which states them for a public overlay: open point E10-OP11)",
+    "cells_of_the_protocol_set": 180,
+    "cells_run": 180,
+    "cells_with_a_class": 180,
+    "cells_run_without_a_class": 0,
+    "cells_keeping_the_reference_class": 180,
+    "retention_over_the_cells_run": 1.0,
+    "bounds_over_the_protocol_set": null,
+    "outcome_fixed_by_the_bounds": null,
+    "not_evaluated_because": null,
+    "fallback_text": null,
+    "after_declared_cut_line_6": {
+     "levels_kept": {
+      "population_vintage": "worldpop_2020",
+      "vulnerability_anchors": "P10_P90"
+     },
+     "cells": 45,
+     "cells_with_a_class": 45,
+     "cells_keeping_the_reference_class": 45,
+     "retention": 1.0,
+     "at_or_above_the_minimum": true,
+     "levels_kept_are": "the levels of the default cell",
+     "other_levels_the_cut_could_keep": [
+      {
+       "levels_kept": {
+        "population_vintage": "worldpop_2020",
+        "vulnerability_anchors": "P5_P95"
+       },
+       "cells": 45,
+       "cells_with_a_class": 45,
+       "cells_keeping_the_reference_class": 45,
+       "retention": 1.0,
+       "at_or_above_the_minimum": true
+      },
+      {
+       "levels_kept": {
+        "population_vintage": "rescaled_2024",
+        "vulnerability_anchors": "P10_P90"
+       },
+       "cells": 45,
+       "cells_with_a_class": 45,
+       "cells_keeping_the_reference_class": 45,
+       "retention": 1.0,
+       "at_or_above_the_minimum": true
+      },
+      {
+       "levels_kept": {
+        "population_vintage": "rescaled_2024",
+        "vulnerability_anchors": "P5_P95"
+       },
+       "cells": 45,
+       "cells_with_a_class": 45,
+       "cells_keeping_the_reference_class": 45,
+       "retention": 1.0,
+       "at_or_above_the_minimum": true
+      }
+     ],
+     "note": "The share over the cells that declared cut line 6 of plan 8.4 would leave. It is not the headline: the cut is conditional and the owners have not invoked it (open point E10-OP1). The cut names the two axes it drops and not the level of each that stays: the figures here keep the levels of the default cell, and other_levels_the_cut_could_keep gives the same share for every other pair of levels. A pair whose cells do not all have a class has no share (open point E10-OP12)."
+    },
+    "other_reading_of_the_protocol_set": {
+     "over": "the 540 core cells (protocol v1b ensemble_grid.headline_rule)",
+     "cells": 540,
+     "cells_with_a_class": 180,
+     "cells_keeping_the_reference_class": 180,
+     "class_retention": null,
+     "at_or_above_the_minimum": null,
+     "bounds": {
+      "lower": 0.3333333333333333,
+      "upper": 1.0,
+      "cells_without_a_class": 360
+     },
+     "outcome_fixed_by_the_bounds": null,
+     "note": "Protocol v1b states the cells of the public facility set 'for a public overlay'. Which set is the set of the rule for a result that is not a public overlay is open point E10-OP11. No status is set from this reading."
+    }
+   },
+   "rank": {
+    "best": 7,
+    "worst": 8,
+    "cells_ranked": 180,
+    "among_units": 8,
+    "rule": "FPPS, highest first; a tie goes to the lower unit identifier (open point E10-OP5)."
+   }
+  },
+  {
+   "unit_id": "TH570903",
+   "unit_name_en": "Ko Chang",
+   "reference_cell": {
+    "cell_id": "as_provided|central|public|worldpop_2020|P10_P90|default",
+    "fpps_0_100": 78.48,
+    "action_class": "B",
+    "action_reason_code": "critical_route_access"
+   },
+   "cells_run": 180,
+   "fpps_0_100": {
+    "min": 52.29,
+    "median": 75.46,
+    "max": 83.03,
+    "count": 180
+   },
+   "class_counts": {
+    "A": 0,
+    "B": 140,
+    "C": 0,
+    "D": 40,
+    "E": 0,
+    "no_class": 0
+   },
+   "class_counts_by_demand": {
+    "worldpop_2020": {
+     "A": 0,
+     "B": 70,
+     "C": 0,
+     "D": 20,
+     "E": 0,
+     "no_class": 0
+    },
+    "rescaled_2024": {
+     "A": 0,
+     "B": 70,
+     "C": 0,
+     "D": 20,
+     "E": 0,
+     "no_class": 0
+    }
+   },
+   "headline_stability": {
+    "guardrail": "GR8_headline_stability",
+    "status": "headline_eligible",
+    "class_retention": 0.7777777777777778,
+    "class_retention_min": 0.6,
+    "reference_class": "B",
+    "over": "the 180 cells of the public facility set (protocol v1b facility_sets.shelters_in_the_ensemble, which states them for a public overlay: open point E10-OP11)",
+    "cells_of_the_protocol_set": 180,
+    "cells_run": 180,
+    "cells_with_a_class": 180,
+    "cells_run_without_a_class": 0,
+    "cells_keeping_the_reference_class": 140,
+    "retention_over_the_cells_run": 0.7777777777777778,
+    "bounds_over_the_protocol_set": null,
+    "outcome_fixed_by_the_bounds": null,
+    "not_evaluated_because": null,
+    "fallback_text": null,
+    "after_declared_cut_line_6": {
+     "levels_kept": {
+      "population_vintage": "worldpop_2020",
+      "vulnerability_anchors": "P10_P90"
+     },
+     "cells": 45,
+     "cells_with_a_class": 45,
+     "cells_keeping_the_reference_class": 35,
+     "retention": 0.7777777777777778,
+     "at_or_above_the_minimum": true,
+     "levels_kept_are": "the levels of the default cell",
+     "other_levels_the_cut_could_keep": [
+      {
+       "levels_kept": {
+        "population_vintage": "worldpop_2020",
+        "vulnerability_anchors": "P5_P95"
+       },
+       "cells": 45,
+       "cells_with_a_class": 45,
+       "cells_keeping_the_reference_class": 35,
+       "retention": 0.7777777777777778,
+       "at_or_above_the_minimum": true
+      },
+      {
+       "levels_kept": {
+        "population_vintage": "rescaled_2024",
+        "vulnerability_anchors": "P10_P90"
+       },
+       "cells": 45,
+       "cells_with_a_class": 45,
+       "cells_keeping_the_reference_class": 35,
+       "retention": 0.7777777777777778,
+       "at_or_above_the_minimum": true
+      },
+      {
+       "levels_kept": {
+        "population_vintage": "rescaled_2024",
+        "vulnerability_anchors": "P5_P95"
+       },
+       "cells": 45,
+       "cells_with_a_class": 45,
+       "cells_keeping_the_reference_class": 35,
+       "retention": 0.7777777777777778,
+       "at_or_above_the_minimum": true
+      }
+     ],
+     "note": "The share over the cells that declared cut line 6 of plan 8.4 would leave. It is not the headline: the cut is conditional and the owners have not invoked it (open point E10-OP1). The cut names the two axes it drops and not the level of each that stays: the figures here keep the levels of the default cell, and other_levels_the_cut_could_keep gives the same share for every other pair of levels. A pair whose cells do not all have a class has no share (open point E10-OP12)."
+    },
+    "other_reading_of_the_protocol_set": {
+     "over": "the 540 core cells (protocol v1b ensemble_grid.headline_rule)",
+     "cells": 540,
+     "cells_with_a_class": 180,
+     "cells_keeping_the_reference_class": 140,
+     "class_retention": null,
+     "at_or_above_the_minimum": null,
+     "bounds": {
+      "lower": 0.25925925925925924,
+      "upper": 0.9259259259259259,
+      "cells_without_a_class": 360
+     },
+     "outcome_fixed_by_the_bounds": null,
+     "note": "Protocol v1b states the cells of the public facility set 'for a public overlay'. Which set is the set of the rule for a result that is not a public overlay is open point E10-OP11. No status is set from this reading."
+    }
+   },
+   "rank": {
+    "best": 1,
+    "worst": 2,
+    "cells_ranked": 180,
+    "among_units": 8,
+    "rule": "FPPS, highest first; a tie goes to the lower unit identifier (open point E10-OP5)."
+   }
+  },
+  {
+   "unit_id": "TH570904",
+   "unit_name_en": "Pong Pha",
+   "reference_cell": {
+    "cell_id": "as_provided|central|public|worldpop_2020|P10_P90|default",
+    "fpps_0_100": 31.61,
+    "action_class": "E",
+    "action_reason_code": "low_priority_score"
+   },
+   "cells_run": 180,
+   "fpps_0_100": {
+    "min": 24.75,
+    "median": 29.29,
+    "max": 36.55,
+    "count": 180
+   },
+   "class_counts": {
+    "A": 0,
+    "B": 0,
+    "C": 0,
+    "D": 3,
+    "E": 177,
+    "no_class": 0
+   },
+   "class_counts_by_demand": {
+    "worldpop_2020": {
+     "A": 0,
+     "B": 0,
+     "C": 0,
+     "D": 3,
+     "E": 87,
+     "no_class": 0
+    },
+    "rescaled_2024": {
+     "A": 0,
+     "B": 0,
+     "C": 0,
+     "D": 0,
+     "E": 90,
+     "no_class": 0
+    }
+   },
+   "headline_stability": {
+    "guardrail": "GR8_headline_stability",
+    "status": "headline_eligible",
+    "class_retention": 0.9833333333333333,
+    "class_retention_min": 0.6,
+    "reference_class": "E",
+    "over": "the 180 cells of the public facility set (protocol v1b facility_sets.shelters_in_the_ensemble, which states them for a public overlay: open point E10-OP11)",
+    "cells_of_the_protocol_set": 180,
+    "cells_run": 180,
+    "cells_with_a_class": 180,
+    "cells_run_without_a_class": 0,
+    "cells_keeping_the_reference_class": 177,
+    "retention_over_the_cells_run": 0.9833333333333333,
+    "bounds_over_the_protocol_set": null,
+    "outcome_fixed_by_the_bounds": null,
+    "not_evaluated_because": null,
+    "fallback_text": null,
+    "after_declared_cut_line_6": {
+     "levels_kept": {
+      "population_vintage": "worldpop_2020",
+      "vulnerability_anchors": "P10_P90"
+     },
+     "cells": 45,
+     "cells_with_a_class": 45,
+     "cells_keeping_the_reference_class": 45,
+     "retention": 1.0,
+     "at_or_above_the_minimum": true,
+     "levels_kept_are": "the levels of the default cell",
+     "other_levels_the_cut_could_keep": [
+      {
+       "levels_kept": {
+        "population_vintage": "worldpop_2020",
+        "vulnerability_anchors": "P5_P95"
+       },
+       "cells": 45,
+       "cells_with_a_class": 45,
+       "cells_keeping_the_reference_class": 42,
+       "retention": 0.9333333333333333,
+       "at_or_above_the_minimum": true
+      },
+      {
+       "levels_kept": {
+        "population_vintage": "rescaled_2024",
+        "vulnerability_anchors": "P10_P90"
+       },
+       "cells": 45,
+       "cells_with_a_class": 45,
+       "cells_keeping_the_reference_class": 45,
+       "retention": 1.0,
+       "at_or_above_the_minimum": true
+      },
+      {
+       "levels_kept": {
+        "population_vintage": "rescaled_2024",
+        "vulnerability_anchors": "P5_P95"
+       },
+       "cells": 45,
+       "cells_with_a_class": 45,
+       "cells_keeping_the_reference_class": 45,
+       "retention": 1.0,
+       "at_or_above_the_minimum": true
+      }
+     ],
+     "note": "The share over the cells that declared cut line 6 of plan 8.4 would leave. It is not the headline: the cut is conditional and the owners have not invoked it (open point E10-OP1). The cut names the two axes it drops and not the level of each that stays: the figures here keep the levels of the default cell, and other_levels_the_cut_could_keep gives the same share for every other pair of levels. A pair whose cells do not all have a class has no share (open point E10-OP12)."
+    },
+    "other_reading_of_the_protocol_set": {
+     "over": "the 540 core cells (protocol v1b ensemble_grid.headline_rule)",
+     "cells": 540,
+     "cells_with_a_class": 180,
+     "cells_keeping_the_reference_class": 177,
+     "class_retention": null,
+     "at_or_above_the_minimum": null,
+     "bounds": {
+      "lower": 0.3277777777777778,
+      "upper": 0.9944444444444445,
+      "cells_without_a_class": 360
+     },
+     "outcome_fixed_by_the_bounds": null,
+     "note": "Protocol v1b states the cells of the public facility set 'for a public overlay'. Which set is the set of the rule for a result that is not a public overlay is open point E10-OP11. No status is set from this reading."
+    }
+   },
+   "rank": {
+    "best": 5,
+    "worst": 5,
+    "cells_ranked": 180,
+    "among_units": 8,
+    "rule": "FPPS, highest first; a tie goes to the lower unit identifier (open point E10-OP5)."
+   }
+  },
+  {
+   "unit_id": "TH570905",
+   "unit_name_en": "Si Mueang Chum",
+   "reference_cell": {
+    "cell_id": "as_provided|central|public|worldpop_2020|P10_P90|default",
+    "fpps_0_100": 59.3,
+    "action_class": "D",
+    "action_reason_code": "resilience"
+   },
+   "cells_run": 180,
+   "fpps_0_100": {
+    "min": 45.65,
+    "median": 55.22,
+    "max": 64.49,
+    "count": 180
+   },
+   "class_counts": {
+    "A": 0,
+    "B": 0,
+    "C": 0,
+    "D": 180,
+    "E": 0,
+    "no_class": 0
+   },
+   "class_counts_by_demand": {
+    "worldpop_2020": {
+     "A": 0,
+     "B": 0,
+     "C": 0,
+     "D": 90,
+     "E": 0,
+     "no_class": 0
+    },
+    "rescaled_2024": {
+     "A": 0,
+     "B": 0,
+     "C": 0,
+     "D": 90,
+     "E": 0,
+     "no_class": 0
+    }
+   },
+   "headline_stability": {
+    "guardrail": "GR8_headline_stability",
+    "status": "headline_eligible",
+    "class_retention": 1.0,
+    "class_retention_min": 0.6,
+    "reference_class": "D",
+    "over": "the 180 cells of the public facility set (protocol v1b facility_sets.shelters_in_the_ensemble, which states them for a public overlay: open point E10-OP11)",
+    "cells_of_the_protocol_set": 180,
+    "cells_run": 180,
+    "cells_with_a_class": 180,
+    "cells_run_without_a_class": 0,
+    "cells_keeping_the_reference_class": 180,
+    "retention_over_the_cells_run": 1.0,
+    "bounds_over_the_protocol_set": null,
+    "outcome_fixed_by_the_bounds": null,
+    "not_evaluated_because": null,
+    "fallback_text": null,
+    "after_declared_cut_line_6": {
+     "levels_kept": {
+      "population_vintage": "worldpop_2020",
+      "vulnerability_anchors": "P10_P90"
+     },
+     "cells": 45,
+     "cells_with_a_class": 45,
+     "cells_keeping_the_reference_class": 45,
+     "retention": 1.0,
+     "at_or_above_the_minimum": true,
+     "levels_kept_are": "the levels of the default cell",
+     "other_levels_the_cut_could_keep": [
+      {
+       "levels_kept": {
+        "population_vintage": "worldpop_2020",
+        "vulnerability_anchors": "P5_P95"
+       },
+       "cells": 45,
+       "cells_with_a_class": 45,
+       "cells_keeping_the_reference_class": 45,
+       "retention": 1.0,
+       "at_or_above_the_minimum": true
+      },
+      {
+       "levels_kept": {
+        "population_vintage": "rescaled_2024",
+        "vulnerability_anchors": "P10_P90"
+       },
+       "cells": 45,
+       "cells_with_a_class": 45,
+       "cells_keeping_the_reference_class": 45,
+       "retention": 1.0,
+       "at_or_above_the_minimum": true
+      },
+      {
+       "levels_kept": {
+        "population_vintage": "rescaled_2024",
+        "vulnerability_anchors": "P5_P95"
+       },
+       "cells": 45,
+       "cells_with_a_class": 45,
+       "cells_keeping_the_reference_class": 45,
+       "retention": 1.0,
+       "at_or_above_the_minimum": true
+      }
+     ],
+     "note": "The share over the cells that declared cut line 6 of plan 8.4 would leave. It is not the headline: the cut is conditional and the owners have not invoked it (open point E10-OP1). The cut names the two axes it drops and not the level of each that stays: the figures here keep the levels of the default cell, and other_levels_the_cut_could_keep gives the same share for every other pair of levels. A pair whose cells do not all have a class has no share (open point E10-OP12)."
+    },
+    "other_reading_of_the_protocol_set": {
+     "over": "the 540 core cells (protocol v1b ensemble_grid.headline_rule)",
+     "cells": 540,
+     "cells_with_a_class": 180,
+     "cells_keeping_the_reference_class": 180,
+     "class_retention": null,
+     "at_or_above_the_minimum": null,
+     "bounds": {
+      "lower": 0.3333333333333333,
+      "upper": 1.0,
+      "cells_without_a_class": 360
+     },
+     "outcome_fixed_by_the_bounds": null,
+     "note": "Protocol v1b states the cells of the public facility set 'for a public overlay'. Which set is the set of the rule for a result that is not a public overlay is open point E10-OP11. No status is set from this reading."
+    }
+   },
+   "rank": {
+    "best": 3,
+    "worst": 3,
+    "cells_ranked": 180,
+    "among_units": 8,
+    "rule": "FPPS, highest first; a tie goes to the lower unit identifier (open point E10-OP5)."
+   }
+  },
+  {
+   "unit_id": "TH570906",
+   "unit_name_en": "Wiang Phang Kham",
+   "reference_cell": {
+    "cell_id": "as_provided|central|public|worldpop_2020|P10_P90|default",
+    "fpps_0_100": 5.24,
+    "action_class": "E",
+    "action_reason_code": "low_priority_score"
+   },
+   "cells_run": 180,
+   "fpps_0_100": {
+    "min": 4.06,
+    "median": 5.32,
+    "max": 12.19,
+    "count": 180
+   },
+   "class_counts": {
+    "A": 0,
+    "B": 0,
+    "C": 0,
+    "D": 0,
+    "E": 180,
+    "no_class": 0
+   },
+   "class_counts_by_demand": {
+    "worldpop_2020": {
+     "A": 0,
+     "B": 0,
+     "C": 0,
+     "D": 0,
+     "E": 90,
+     "no_class": 0
+    },
+    "rescaled_2024": {
+     "A": 0,
+     "B": 0,
+     "C": 0,
+     "D": 0,
+     "E": 90,
+     "no_class": 0
+    }
+   },
+   "headline_stability": {
+    "guardrail": "GR8_headline_stability",
+    "status": "headline_eligible",
+    "class_retention": 1.0,
+    "class_retention_min": 0.6,
+    "reference_class": "E",
+    "over": "the 180 cells of the public facility set (protocol v1b facility_sets.shelters_in_the_ensemble, which states them for a public overlay: open point E10-OP11)",
+    "cells_of_the_protocol_set": 180,
+    "cells_run": 180,
+    "cells_with_a_class": 180,
+    "cells_run_without_a_class": 0,
+    "cells_keeping_the_reference_class": 180,
+    "retention_over_the_cells_run": 1.0,
+    "bounds_over_the_protocol_set": null,
+    "outcome_fixed_by_the_bounds": null,
+    "not_evaluated_because": null,
+    "fallback_text": null,
+    "after_declared_cut_line_6": {
+     "levels_kept": {
+      "population_vintage": "worldpop_2020",
+      "vulnerability_anchors": "P10_P90"
+     },
+     "cells": 45,
+     "cells_with_a_class": 45,
+     "cells_keeping_the_reference_class": 45,
+     "retention": 1.0,
+     "at_or_above_the_minimum": true,
+     "levels_kept_are": "the levels of the default cell",
+     "other_levels_the_cut_could_keep": [
+      {
+       "levels_kept": {
+        "population_vintage": "worldpop_2020",
+        "vulnerability_anchors": "P5_P95"
+       },
+       "cells": 45,
+       "cells_with_a_class": 45,
+       "cells_keeping_the_reference_class": 45,
+       "retention": 1.0,
+       "at_or_above_the_minimum": true
+      },
+      {
+       "levels_kept": {
+        "population_vintage": "rescaled_2024",
+        "vulnerability_anchors": "P10_P90"
+       },
+       "cells": 45,
+       "cells_with_a_class": 45,
+       "cells_keeping_the_reference_class": 45,
+       "retention": 1.0,
+       "at_or_above_the_minimum": true
+      },
+      {
+       "levels_kept": {
+        "population_vintage": "rescaled_2024",
+        "vulnerability_anchors": "P5_P95"
+       },
+       "cells": 45,
+       "cells_with_a_class": 45,
+       "cells_keeping_the_reference_class": 45,
+       "retention": 1.0,
+       "at_or_above_the_minimum": true
+      }
+     ],
+     "note": "The share over the cells that declared cut line 6 of plan 8.4 would leave. It is not the headline: the cut is conditional and the owners have not invoked it (open point E10-OP1). The cut names the two axes it drops and not the level of each that stays: the figures here keep the levels of the default cell, and other_levels_the_cut_could_keep gives the same share for every other pair of levels. A pair whose cells do not all have a class has no share (open point E10-OP12)."
+    },
+    "other_reading_of_the_protocol_set": {
+     "over": "the 540 core cells (protocol v1b ensemble_grid.headline_rule)",
+     "cells": 540,
+     "cells_with_a_class": 180,
+     "cells_keeping_the_reference_class": 180,
+     "class_retention": null,
+     "at_or_above_the_minimum": null,
+     "bounds": {
+      "lower": 0.3333333333333333,
+      "upper": 1.0,
+      "cells_without_a_class": 360
+     },
+     "outcome_fixed_by_the_bounds": null,
+     "note": "Protocol v1b states the cells of the public facility set 'for a public overlay'. Which set is the set of the rule for a result that is not a public overlay is open point E10-OP11. No status is set from this reading."
+    }
+   },
+   "rank": {
+    "best": 7,
+    "worst": 8,
+    "cells_ranked": 180,
+    "among_units": 8,
+    "rule": "FPPS, highest first; a tie goes to the lower unit identifier (open point E10-OP5)."
+   }
+  },
+  {
+   "unit_id": "TH570908",
+   "unit_name_en": "Ban Dai",
+   "reference_cell": {
+    "cell_id": "as_provided|central|public|worldpop_2020|P10_P90|default",
+    "fpps_0_100": 50.22,
+    "action_class": "D",
+    "action_reason_code": "resilience"
+   },
+   "cells_run": 180,
+   "fpps_0_100": {
+    "min": 38.06,
+    "median": 45.68,
+    "max": 52.19,
+    "count": 180
+   },
+   "class_counts": {
+    "A": 0,
+    "B": 0,
+    "C": 0,
+    "D": 180,
+    "E": 0,
+    "no_class": 0
+   },
+   "class_counts_by_demand": {
+    "worldpop_2020": {
+     "A": 0,
+     "B": 0,
+     "C": 0,
+     "D": 90,
+     "E": 0,
+     "no_class": 0
+    },
+    "rescaled_2024": {
+     "A": 0,
+     "B": 0,
+     "C": 0,
+     "D": 90,
+     "E": 0,
+     "no_class": 0
+    }
+   },
+   "headline_stability": {
+    "guardrail": "GR8_headline_stability",
+    "status": "headline_eligible",
+    "class_retention": 1.0,
+    "class_retention_min": 0.6,
+    "reference_class": "D",
+    "over": "the 180 cells of the public facility set (protocol v1b facility_sets.shelters_in_the_ensemble, which states them for a public overlay: open point E10-OP11)",
+    "cells_of_the_protocol_set": 180,
+    "cells_run": 180,
+    "cells_with_a_class": 180,
+    "cells_run_without_a_class": 0,
+    "cells_keeping_the_reference_class": 180,
+    "retention_over_the_cells_run": 1.0,
+    "bounds_over_the_protocol_set": null,
+    "outcome_fixed_by_the_bounds": null,
+    "not_evaluated_because": null,
+    "fallback_text": null,
+    "after_declared_cut_line_6": {
+     "levels_kept": {
+      "population_vintage": "worldpop_2020",
+      "vulnerability_anchors": "P10_P90"
+     },
+     "cells": 45,
+     "cells_with_a_class": 45,
+     "cells_keeping_the_reference_class": 45,
+     "retention": 1.0,
+     "at_or_above_the_minimum": true,
+     "levels_kept_are": "the levels of the default cell",
+     "other_levels_the_cut_could_keep": [
+      {
+       "levels_kept": {
+        "population_vintage": "worldpop_2020",
+        "vulnerability_anchors": "P5_P95"
+       },
+       "cells": 45,
+       "cells_with_a_class": 45,
+       "cells_keeping_the_reference_class": 45,
+       "retention": 1.0,
+       "at_or_above_the_minimum": true
+      },
+      {
+       "levels_kept": {
+        "population_vintage": "rescaled_2024",
+        "vulnerability_anchors": "P10_P90"
+       },
+       "cells": 45,
+       "cells_with_a_class": 45,
+       "cells_keeping_the_reference_class": 45,
+       "retention": 1.0,
+       "at_or_above_the_minimum": true
+      },
+      {
+       "levels_kept": {
+        "population_vintage": "rescaled_2024",
+        "vulnerability_anchors": "P5_P95"
+       },
+       "cells": 45,
+       "cells_with_a_class": 45,
+       "cells_keeping_the_reference_class": 45,
+       "retention": 1.0,
+       "at_or_above_the_minimum": true
+      }
+     ],
+     "note": "The share over the cells that declared cut line 6 of plan 8.4 would leave. It is not the headline: the cut is conditional and the owners have not invoked it (open point E10-OP1). The cut names the two axes it drops and not the level of each that stays: the figures here keep the levels of the default cell, and other_levels_the_cut_could_keep gives the same share for every other pair of levels. A pair whose cells do not all have a class has no share (open point E10-OP12)."
+    },
+    "other_reading_of_the_protocol_set": {
+     "over": "the 540 core cells (protocol v1b ensemble_grid.headline_rule)",
+     "cells": 540,
+     "cells_with_a_class": 180,
+     "cells_keeping_the_reference_class": 180,
+     "class_retention": null,
+     "at_or_above_the_minimum": null,
+     "bounds": {
+      "lower": 0.3333333333333333,
+      "upper": 1.0,
+      "cells_without_a_class": 360
+     },
+     "outcome_fixed_by_the_bounds": null,
+     "note": "Protocol v1b states the cells of the public facility set 'for a public overlay'. Which set is the set of the rule for a result that is not a public overlay is open point E10-OP11. No status is set from this reading."
+    }
+   },
+   "rank": {
+    "best": 4,
+    "worst": 4,
+    "cells_ranked": 180,
+    "among_units": 8,
+    "rule": "FPPS, highest first; a tie goes to the lower unit identifier (open point E10-OP5)."
+   }
+  },
+  {
+   "unit_id": "TH570909",
+   "unit_name_en": "Pong Ngam",
+   "reference_cell": {
+    "cell_id": "as_provided|central|public|worldpop_2020|P10_P90|default",
+    "fpps_0_100": 21.9,
+    "action_class": "E",
+    "action_reason_code": "low_priority_score"
+   },
+   "cells_run": 180,
+   "fpps_0_100": {
+    "min": 17.35,
+    "median": 19.965,
+    "max": 26.87,
+    "count": 180
+   },
+   "class_counts": {
+    "A": 0,
+    "B": 0,
+    "C": 0,
+    "D": 0,
+    "E": 180,
+    "no_class": 0
+   },
+   "class_counts_by_demand": {
+    "worldpop_2020": {
+     "A": 0,
+     "B": 0,
+     "C": 0,
+     "D": 0,
+     "E": 90,
+     "no_class": 0
+    },
+    "rescaled_2024": {
+     "A": 0,
+     "B": 0,
+     "C": 0,
+     "D": 0,
+     "E": 90,
+     "no_class": 0
+    }
+   },
+   "headline_stability": {
+    "guardrail": "GR8_headline_stability",
+    "status": "headline_eligible",
+    "class_retention": 1.0,
+    "class_retention_min": 0.6,
+    "reference_class": "E",
+    "over": "the 180 cells of the public facility set (protocol v1b facility_sets.shelters_in_the_ensemble, which states them for a public overlay: open point E10-OP11)",
+    "cells_of_the_protocol_set": 180,
+    "cells_run": 180,
+    "cells_with_a_class": 180,
+    "cells_run_without_a_class": 0,
+    "cells_keeping_the_reference_class": 180,
+    "retention_over_the_cells_run": 1.0,
+    "bounds_over_the_protocol_set": null,
+    "outcome_fixed_by_the_bounds": null,
+    "not_evaluated_because": null,
+    "fallback_text": null,
+    "after_declared_cut_line_6": {
+     "levels_kept": {
+      "population_vintage": "worldpop_2020",
+      "vulnerability_anchors": "P10_P90"
+     },
+     "cells": 45,
+     "cells_with_a_class": 45,
+     "cells_keeping_the_reference_class": 45,
+     "retention": 1.0,
+     "at_or_above_the_minimum": true,
+     "levels_kept_are": "the levels of the default cell",
+     "other_levels_the_cut_could_keep": [
+      {
+       "levels_kept": {
+        "population_vintage": "worldpop_2020",
+        "vulnerability_anchors": "P5_P95"
+       },
+       "cells": 45,
+       "cells_with_a_class": 45,
+       "cells_keeping_the_reference_class": 45,
+       "retention": 1.0,
+       "at_or_above_the_minimum": true
+      },
+      {
+       "levels_kept": {
+        "population_vintage": "rescaled_2024",
+        "vulnerability_anchors": "P10_P90"
+       },
+       "cells": 45,
+       "cells_with_a_class": 45,
+       "cells_keeping_the_reference_class": 45,
+       "retention": 1.0,
+       "at_or_above_the_minimum": true
+      },
+      {
+       "levels_kept": {
+        "population_vintage": "rescaled_2024",
+        "vulnerability_anchors": "P5_P95"
+       },
+       "cells": 45,
+       "cells_with_a_class": 45,
+       "cells_keeping_the_reference_class": 45,
+       "retention": 1.0,
+       "at_or_above_the_minimum": true
+      }
+     ],
+     "note": "The share over the cells that declared cut line 6 of plan 8.4 would leave. It is not the headline: the cut is conditional and the owners have not invoked it (open point E10-OP1). The cut names the two axes it drops and not the level of each that stays: the figures here keep the levels of the default cell, and other_levels_the_cut_could_keep gives the same share for every other pair of levels. A pair whose cells do not all have a class has no share (open point E10-OP12)."
+    },
+    "other_reading_of_the_protocol_set": {
+     "over": "the 540 core cells (protocol v1b ensemble_grid.headline_rule)",
+     "cells": 540,
+     "cells_with_a_class": 180,
+     "cells_keeping_the_reference_class": 180,
+     "class_retention": null,
+     "at_or_above_the_minimum": null,
+     "bounds": {
+      "lower": 0.3333333333333333,
+      "upper": 1.0,
+      "cells_without_a_class": 360
+     },
+     "outcome_fixed_by_the_bounds": null,
+     "note": "Protocol v1b states the cells of the public facility set 'for a public overlay'. Which set is the set of the rule for a result that is not a public overlay is open point E10-OP11. No status is set from this reading."
+    }
+   },
+   "rank": {
+    "best": 6,
+    "worst": 6,
+    "cells_ranked": 180,
+    "among_units": 8,
+    "rule": "FPPS, highest first; a tie goes to the lower unit identifier (open point E10-OP5)."
+   }
+  }
+ ],
+ "units_file_outside_git": {
+  "name": "se1_mae_sai_v1_units.json",
+  "sha256": "71b539f4abd737979a93c2df61cf5c8cf39dd6e559fabb370b6906d134505bfd"
+ },
+ "credits": [
+  "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009 (CC BY-SA 4.0). Changed by FloodGuard; the figures derived from it are shared under CC BY-SA 4.0.",
+  "Residents: WorldPop 2020 (CC BY 4.0), rescaled to WorldPop 2024 totals. Age counts: WorldPop, DOI 10.5258/SOTON/WP00842 (CC BY 4.0). Modelled, not observed.",
+  "Roads © OpenStreetMap contributors (ODbL 1.0)."
+ ],
+ "assumptions": [
+  "A 100 m count belongs to the 1 km cell that holds the centre of its 100 m cell.",
+  "A positive 2020 count whose 1 km cell has no valid 2024 total keeps its 2020 value and is reported; it is neither set to zero nor rescaled.",
+  "Travel times do not depend on the demand: the nine access runs are the same for both demands, and only the resident counts of the cells differ.",
+  "The age counts of a unit, and so its vulnerability component, are the same for both demands.",
+  "A closure is a modelled assumption of closure rule v1, not an observed closure."
+ ],
+ "limits": [
+  "Report-only: not a registered run of the protocol. Its rules for the rescale are the agent's reading of the owners' choice (decision log R38).",
+  "The two facility sets that add shelters are still not run; they are not part of the set a public result is judged on.",
+  "The confidence of a unit is that of the registered task E8 run and uses no ensemble output.",
+  "Planning guidance only. Class E never means safe."
+ ]
+}

@@ -119,7 +119,7 @@ def test_the_levels_record_reproduces_the_case_at_each_level_and_keeps_its_label
     record = json.loads(LEVELS.read_text(encoding="utf-8"))
     assert record["official_warning"] is False and record["can_feed_decision_layer"] is False
     assert record["confidence_class"] == "low" and record["source_timestamp"] and record["assumptions"] and record["limits"]
-    assert b"" not in LEVELS.read_bytes()
+    assert b"\r" not in LEVELS.read_bytes()
     assert set(record["closure_levels"]) == {"strict", "central", "permissive"}
     sheet = json.loads(RESULT.read_text(encoding="utf-8"))
     assert record["inputs"]["road_sheet"]["sha256"] == hashlib.sha256(RESULT.read_bytes()).hexdigest()

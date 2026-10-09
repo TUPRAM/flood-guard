@@ -1,0 +1,57 @@
+{
+  "type": "FeatureCollection",
+  "name": "floodguard_priority3_mae_sai_district",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "aoi_id": "AOI-02",
+        "priority": 3,
+        "name": "Mae Sai district - all 8 subdistricts",
+        "name_th": "อำเภอแม่สาย (ครบ 8 ตำบล)",
+        "why": "The whole study district, if the scenes cover it. Unchanged from the request of 7 October; it contains the other two boxes.",
+        "province": "Chiang Rai",
+        "event": "Chiang Rai / Mae Sai flood, September 2024",
+        "project": "FloodGuard Thailand (TeamBits, GeoHackathon 2026)",
+        "request_id": "FG-THEOS2-REQ-003",
+        "requested_on": "2026-10-09",
+        "crs": "EPSG:4326 (WGS84)",
+        "redistribution_intent": "None. Imagery stays outside version control; only derived figures are published.",
+        "bbox_wgs84": [
+          99.8107,
+          20.2577,
+          100.0368,
+          20.4651
+        ],
+        "approx_size_km": "23.6 x 22.9"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              99.8107,
+              20.2577
+            ],
+            [
+              100.0368,
+              20.2577
+            ],
+            [
+              100.0368,
+              20.4651
+            ],
+            [
+              99.8107,
+              20.4651
+            ],
+            [
+              99.8107,
+              20.2577
+            ]
+          ]
+        ]
+      }
+    }
+  ]
+}

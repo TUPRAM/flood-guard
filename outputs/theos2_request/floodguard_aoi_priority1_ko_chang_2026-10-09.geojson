@@ -1,0 +1,57 @@
+{
+  "type": "FeatureCollection",
+  "name": "floodguard_priority1_ko_chang",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "aoi_id": "AOI-03",
+        "priority": 1,
+        "name": "Ko Chang subdistrict and the roads that connect it",
+        "name_th": "ตำบลเกาะช้างและถนนที่เชื่อมต่อ",
+        "why": "The main result of the project is about the roads of Ko Chang. This box holds the subdistrict and the roads into it, including one in Si Mueang Chum.",
+        "province": "Chiang Rai",
+        "event": "Chiang Rai / Mae Sai flood, September 2024",
+        "project": "FloodGuard Thailand (TeamBits, GeoHackathon 2026)",
+        "request_id": "FG-THEOS2-REQ-003",
+        "requested_on": "2026-10-09",
+        "crs": "EPSG:4326 (WGS84)",
+        "redistribution_intent": "None. Imagery stays outside version control; only derived figures are published.",
+        "bbox_wgs84": [
+          99.925,
+          20.375,
+          100.04,
+          20.467
+        ],
+        "approx_size_km": "12.0 x 10.2"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              99.925,
+              20.375
+            ],
+            [
+              100.04,
+              20.375
+            ],
+            [
+              100.04,
+              20.467
+            ],
+            [
+              99.925,
+              20.467
+            ],
+            [
+              99.925,
+              20.375
+            ]
+          ]
+        ]
+      }
+    }
+  ]
+}

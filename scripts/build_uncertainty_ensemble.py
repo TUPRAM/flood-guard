@@ -95,7 +95,7 @@ def _load_e8_builder() -> Any:
 e8_builder = _load_e8_builder()
 e5_builder = e8_builder.e5_builder
 
-from floodguard import access_diff, closure_rules, flood_inputs, planning_assessment, rights  # noqa: E402
+from floodguard import access_diff, closure_rules, demand_rescale, flood_inputs, planning_assessment, rights  # noqa: E402
 from floodguard import uncertainty_ensemble as ensemble  # noqa: E402
 from floodguard.normalisation import PUBLIC_LEVEL  # noqa: E402
 from floodguard.planning_overlay import is_public_web_path  # noqa: E402
@@ -123,6 +123,11 @@ FRAME_SETS = e8_builder.FRAME_SETS
 LEVEL = PUBLIC_LEVEL
 """The level this builder runs: the public facility set. A pitch-level run is not built (open point E10-OP3)."""
 VINTAGE_RUN = "worldpop_2020"
+VINTAGE_RESCALED = demand_rescale.RESCALED_LEVEL
+"""The second level of the population axis. It is run only when the folder of the WorldPop 2024 age rasters is given
+(``--age-dir``): the demand is then built with the two readings of the formula that decision log R38 records and the
+team accepted (R39). Without the folder the level is reported as not run, as before."""
+POPULATION_2020 = Path("open_context") / "worldpop_population" / "tha_ppp_2020.tif"
 RESIDENT_TOLERANCE = e8_builder.RESIDENT_TOLERANCE
 EXIT_WRITTEN, EXIT_REFUSED, EXIT_NOT_COMPUTED = 0, 2, 3
 """0: the ensemble was computed and written. 2: refused before a unit was measured against a flood level; nothing
@@ -187,6 +192,18 @@ LIMITATIONS = [
     "A resident whose cell does not snap to the vehicle graph within 250 m is in no access count.",
     "One flood input drives 4 of 5 components (90% of weight), so the flood-level axis moves four components at once.",
     "The equity figures (EED and EER) that protocol v1b lists among the per-unit outputs are plan task E9.",
+]
+RESCALED_NOT_COMPUTED = "the cells of the 2024-rescaled demand"
+LIMITATIONS_WITH_THE_RESCALED_DEMAND = [
+    "Only a part of the predeclared grid can be run today: the public facility set, with both levels of the population "
+    "axis. The cells of the two facility sets that add shelters are reported as not run, with the reason (open point "
+    "E10-OP3).",
+    "The headline rule is evaluated on the cells of the public facility set, the set protocol v1b names for a public "
+    "overlay. No published file carries its result until a result file is published again.",
+    *LIMITATIONS[2:],
+    "The 2024-rescaled demand follows two readings of the formula of the protocol (decision log R38), which the team "
+    "accepted (R39). The two population products are two models of where residents are counted; neither was checked "
+    "on the ground.",
 ]
 NOT_COMPUTED = [
     "the cells of the two facility sets that add shelters", "the cells of the 2024-rescaled demand",
@@ -335,7 +352,8 @@ def load_closure_extents(case_id: str, frame_set: Any, external: Path, found: Si
     return {level: extents[level][flood_inputs.ROUTING_CONTEXT] for level in flood_inputs.LEVELS}, read
 
 
-def levels_not_run(grid: ensemble.EnsembleGrid, e5_receipt: Mapping[str, Any]) -> list[ensemble.LevelNotRun]:
+def levels_not_run(grid: ensemble.EnsembleGrid, e5_receipt: Mapping[str, Any], *,
+                   rescaled_demand_built: bool = False) -> list[ensemble.LevelNotRun]:
     """Say which levels of the grid cannot be run today, from what the earlier tasks have delivered.
 
     The shelter sets are read from the registered E5 receipt: whether the shelter service was computed and
@@ -360,6 +378,8 @@ def levels_not_run(grid: ensemble.EnsembleGrid, e5_receipt: Mapping[str, Any]) -
         + ("No access table exists for the subset of the shelters this set keeps. " if level != facilities[-1] else "")
         + "The set is not approximated from the candidate tables.",
         ("E10-OP3", "E5-OP5")) for level in facilities if level != PUBLIC_LEVEL]
+    if rescaled_demand_built:  # the demand of the second population level was built for this run (--age-dir)
+        return listed
     vintage = [level for level in grid.axis(ensemble.VINTAGE_AXIS).levels if level != VINTAGE_RUN]
     listed += [ensemble.LevelNotRun(
         ensemble.VINTAGE_AXIS, level, "rescale_rule_leaves_two_points_open_and_no_stage_builds_the_demand",
@@ -371,9 +391,122 @@ def levels_not_run(grid: ensemble.EnsembleGrid, e5_receipt: Mapping[str, Any]) -
     return listed
 
 
+def _load_script(name: str) -> Any:
+    if name in sys.modules:
+        return sys.modules[name]
+    spec = importlib.util.spec_from_file_location(name, ROOT / "scripts" / f"{name}.py")
+    if spec is None or spec.loader is None:
+        raise BuildError(f"scripts/{name}.py cannot be loaded")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+def rescaled_residents(found: SimpleNamespace, external: Path, age_dir: Path) -> tuple[dict[str, float], dict[str, Any]]:
+    """Return the 2024-rescaled resident count of every demand cell of the planning context, and the record of the rescale.
+
+    Protocol v1b, owner choice 12, with the two readings of ``floodguard.demand_rescale`` (decision log R38, accepted
+    by the team in R39). No flood layer is read: this is part of the input checks.
+
+    Raises:
+        BuildError: when the WorldPop 2020 raster is not the file of the lineage, a grid is not a north-up grid in
+            EPSG:4326, or a demand cell does not carry the count of the 2020 pixel it is looked up at.
+    """
+
+    import math
+
+    import numpy as np
+    import rasterio
+    from rasterio.windows import Window
+
+    from floodguard import age_exposure
+
+    v1b = json.loads(found.v1b_path.read_text(encoding="utf-8"))
+    population_path = external / POPULATION_2020
+    stated = {item["input_id"]: item["sha256"] for item in found.inputs}.get("worldpop_2020_100m")
+    population_sha = sha256_file(population_path)
+    if population_sha != stated:
+        raise BuildError("the WorldPop 2020 raster is not the file the lineage of the case names")
+    manifest_sha = v1b["national_vulnerability_anchors"]["inputs"]["age_rasters"]["manifest_sha256"]
+    manifest, paths, _hashes = _load_script("build_national_vulnerability_anchors").check_age_sources(age_dir, manifest_sha)
+
+    rows = list(found.graph.population)
+    lon = np.array([float(row["longitude"]) for row in rows])
+    lat = np.array([float(row["latitude"]) for row in rows])
+    residents = np.array([float(row["total_population"]) for row in rows])
+    rasters = {band: rasterio.open(paths[band]) for band in age_exposure.AGE_BANDS}
+    try:
+        first = rasters[age_exposure.AGE_BANDS[0]]
+        grid = first.transform
+        if grid.b != 0 or grid.d != 0 or first.crs.to_epsg() != 4326:
+            raise BuildError("the 2024 age grid is not a north-up grid in EPSG:4326")
+        geometry = {"west": grid.c, "north": grid.f, "cell_width": grid.a, "cell_height": -grid.e, "rows": first.height, "columns": first.width}
+        cells_of_demand = demand_rescale.cell_index(lon, lat, **geometry)
+        if (cells_of_demand < 0).any():
+            raise BuildError("a demand cell lies outside the 2024 age grid")
+        cell_rows, cell_columns = cells_of_demand // first.width, cells_of_demand % first.width
+        row0, row1 = max(0, int(cell_rows.min()) - 1), min(first.height, int(cell_rows.max()) + 2)
+        column0, column1 = max(0, int(cell_columns.min()) - 1), min(first.width, int(cell_columns.max()) + 2)
+        totals_grid, _dependants, valid = age_exposure.read_grid_counts(rasters, Window(column0, row0, column1 - column0, row1 - row0))
+    finally:
+        for source in rasters.values():
+            source.close()
+    totals: dict[int, float | None] = {}
+    for row in range(row0, row1):
+        for column in range(column0, column1):
+            total = float(totals_grid[row - row0, column - column0])
+            totals[row * geometry["columns"] + column] = total if bool(valid[row - row0, column - column0]) else None
+
+    west, north = geometry["west"] + column0 * geometry["cell_width"], geometry["north"] - row0 * geometry["cell_height"]
+    east, south = geometry["west"] + column1 * geometry["cell_width"], geometry["north"] - row1 * geometry["cell_height"]
+    with rasterio.open(population_path) as source:
+        fine = source.transform
+        if fine.b != 0 or fine.d != 0 or source.crs.to_epsg() != 4326:
+            raise BuildError("the WorldPop 2020 raster is not a north-up grid in EPSG:4326")
+        first_column, last_column = int(math.floor((west - fine.c) / fine.a)), int(math.ceil((east - fine.c) / fine.a))
+        first_row, last_row = int(math.floor((fine.f - north) / -fine.e)), int(math.ceil((fine.f - south) / -fine.e))
+        counts = source.read(1, window=Window(first_column, first_row, last_column - first_column, last_row - first_row),
+                             boundless=True, fill_value=0).astype("float64")
+        nodata = source.nodata
+    counts[~np.isfinite(counts) | (counts < 0) | ((counts == nodata) if nodata is not None else False)] = 0.0
+    fine_west, fine_north = fine.c + first_column * fine.a, fine.f + first_row * fine.e
+    grid_x, grid_y = np.meshgrid(fine_west + (np.arange(counts.shape[1]) + 0.5) * fine.a, fine_north + (np.arange(counts.shape[0]) + 0.5) * fine.e)
+    ids = demand_rescale.cell_index(grid_x, grid_y, **geometry)
+    in_window = np.isin(ids, np.fromiter(totals.keys(), dtype="int64"))
+    counts = np.where(in_window, counts, 0.0)  # pixels of 1 km cells that are not read whole are left out
+    try:
+        rescaled = demand_rescale.rescale_counts(counts, np.where(in_window, ids, -1), totals)
+        pixel_column = np.floor((lon - fine_west) / fine.a).astype("int64")
+        pixel_row = np.floor((fine_north - lat) / -fine.e).astype("int64")
+        values = demand_rescale.demand_values(counts, rescaled["counts"], pixel_row, pixel_column, residents)
+    except demand_rescale.DemandRescaleError as error:
+        raise BuildError(f"the 2024-rescaled demand cannot be built: {error}") from error
+    kept = rescaled["kept_at_2020"][pixel_row, pixel_column]
+    record = {
+        **rescaled["record"],
+        "decision": "The two rules are the readings of decision log R38, accepted by the team (R39, item V-27 of the team page).",
+        "scope_of_the_counts_above": "every 2020 100 m count of the 1 km cells that hold a demand cell of the planning context, and one ring of cells around them",
+        "demand_cells": int(residents.size), "demand_residents_2020": math.fsum(residents.tolist()),
+        "demand_residents_rescaled": math.fsum(values.tolist()),
+        "demand_cells_kept_at_2020": int(kept.sum()), "demand_residents_kept_at_2020": math.fsum(residents[kept].tolist()),
+        "sources": {"worldpop_2020": {"file": POPULATION_2020.as_posix(), "sha256": population_sha},
+                    "worldpop_2024_age_counts": {"product": manifest.get("product"), "year_represented": manifest.get("year_represented"),
+                                                 "manifest_sha256": manifest_sha, "rights_level": "public (decision log R21)",
+                                                 "total": "the sum of the 20 age bands of a 1 km cell; no total where a band has no valid count"}},
+    }
+    return {str(row["population_id"]): float(value) for row, value in zip(rows, values)}, record
+
+
+def vintages_of(found: SimpleNamespace) -> tuple[str, ...]:
+    """Return the levels of the population axis a run makes: the 2020 demand, and the rescaled one when it was built."""
+
+    return (VINTAGE_RUN, VINTAGE_RESCALED) if getattr(found, "rescaled", None) is not None else (VINTAGE_RUN,)
+
+
 def prepare(case_id: str, frame_set: Any, external: Path, boundaries: Path, *, docs: Path = DOCS, root: Path = ROOT,
             output_dir: Path = OUTPUT_DIR, register_dir: Path = REGISTER_DIR,
-            registry: rights.RightsRegistry | None = None) -> SimpleNamespace:
+            registry: rights.RightsRegistry | None = None, age_dir: Path | None = None) -> SimpleNamespace:
     """Make every input check of a run and return what was read. No unit is measured against a flood level.
 
     The checks of the task E8 builder come first, through its own function; then the registered E8 run, the
@@ -405,7 +538,13 @@ def prepare(case_id: str, frame_set: Any, external: Path, boundaries: Path, *, d
         raise BuildError(f"the input record of the flood input states the one-pixel distance {written_with!r}; protocol v1b "
                          f"states {grid.one_pixel_m:g} m for the minus and the plus level")
     found.grid, found.e8_run, found.closure_extents, found.closure_extents_read = grid, e8_run, extents, extents_read
-    found.not_run = levels_not_run(grid, e5_receipt)
+    found.rescaled = None
+    if age_dir is not None:
+        if VINTAGE_RESCALED not in grid.axis(ensemble.VINTAGE_AXIS).levels:
+            raise BuildError(f"the grid of the protocols has no population level named {VINTAGE_RESCALED}")
+        by_cell, rescale_record = rescaled_residents(found, external, age_dir)
+        found.rescaled = SimpleNamespace(by_cell=by_cell, record=rescale_record)
+    found.not_run = levels_not_run(grid, e5_receipt, rescaled_demand_built=found.rescaled is not None)
     found.results_target = target
     return found
 
@@ -415,7 +554,7 @@ def check_inputs(case_id: str, frame_set: Any, external: Path, boundaries: Path,
 
     found = prepare(case_id, frame_set, external, boundaries, **arguments)
     root = arguments.get("root", ROOT)
-    table = ensemble.cell_table(found.grid, run_keys(found.grid), found.not_run)
+    table = ensemble.cell_table(found.grid, run_keys(found.grid, vintages_of(found)), found.not_run)
     return {
         "inputs_checked": True, "case_id": case_id, "lane": found.case.lane, "tier": found.case.tier, "level": LEVEL,
         "units": len(found.unit_ids), "core_cells_per_lane": len(table),
@@ -429,11 +568,12 @@ def check_inputs(case_id: str, frame_set: Any, external: Path, boundaries: Path,
     }
 
 
-def run_keys(grid: ensemble.EnsembleGrid) -> list[ensemble.RoutingKey]:
-    """Return the measurement combinations this builder runs: every flood level and passability, public set, WorldPop 2020."""
+def run_keys(grid: ensemble.EnsembleGrid, vintages: Sequence[str] = (VINTAGE_RUN,)) -> list[ensemble.RoutingKey]:
+    """Return the measurement combinations this builder runs: every flood level and passability, public set, each demand run."""
 
-    return [(flood_level, passability, LEVEL, VINTAGE_RUN)
-            for flood_level in grid.axis(ensemble.FLOOD_AXIS).levels for passability in grid.axis(ensemble.PASSABILITY_AXIS).levels]
+    return [(flood_level, passability, LEVEL, vintage)
+            for flood_level in grid.axis(ensemble.FLOOD_AXIS).levels for passability in grid.axis(ensemble.PASSABILITY_AXIS).levels
+            for vintage in vintages]
 
 
 # ---------------------------------------------------------------------------
@@ -449,8 +589,12 @@ def access_runs(case_id: str, found: SimpleNamespace, services: Sequence[access_
     cells = [{"population_id": cell["population_id"], "unit_id": cell["unit_id"], "residents": cell["residents"]}
              for cell in found.counted.cells]
     baselines = {access_diff.VEHICLE: e5_builder.baseline_runs(graph, services)}
+    alternate = None
+    if getattr(found, "rescaled", None) is not None:
+        # Travel times do not depend on resident counts: the same runs are counted on the rescaled demand as well.
+        alternate = {VINTAGE_RESCALED: [{**cell, "residents": found.rescaled.by_cell[str(cell["population_id"])]} for cell in cells]}
     computed = e5_builder.case_runs(case_id, str(found.record["input_id"]), found.closure_extents, {access_diff.VEHICLE: graph},
-                                    baselines, services, arguments, cells, list(found.unit_ids))
+                                    baselines, services, arguments, cells, list(found.unit_ids), alternate_cells=alternate)
     return {"runs": computed["runs"], "checks": computed["checks"], "timing_seconds": computed["timing_seconds"]}
 
 
@@ -574,6 +718,62 @@ def measurements_of_the_cells(found: SimpleNamespace, runs: Sequence[Mapping[str
     }
 
 
+def rescaled_measurements(found: SimpleNamespace, runs: Sequence[Mapping[str, Any]], measurements: Mapping[Any, Any]
+                          ) -> tuple[dict[Any, Any], dict[Any, Any], dict[str, Any]]:
+    """Build the measurements of every unit for the combinations of the rescaled demand, from those of the 2020 demand.
+
+    The flooded land of a unit does not depend on the demand. Its residents, the residents inside each flood level
+    and its access counts are those of the rescaled demand; the access counts come from the same access runs,
+    counted on the rescaled cells. The age counts of a unit, and so its vulnerability component, are unchanged.
+
+    Raises:
+        StageError: when an access run counts other rescaled residents for a unit than the rescaled demand holds.
+    """
+
+    from dataclasses import replace
+
+    flood = found.flood
+    cells = [{**cell, "residents": found.rescaled.by_cell[str(cell["population_id"])]} for cell in found.counted.cells]
+    residents = planning_assessment.residents_by_unit(cells)
+    inside = {level: planning_assessment.residents_by_unit(cells, flood.extents[level]) for level in flood_inputs.LEVELS}
+    result: dict[Any, Any] = {}
+    losing: dict[Any, Any] = {}
+    differing: list[str] = []
+    for run in runs:
+        of_2020 = measurements[(run["flood_level"], run["closure_level"], LEVEL, VINTAGE_RUN)]
+        rows = {str(row["unit_id"]): row for row in run[e5_builder.ALTERNATE_DEMAND][VINTAGE_RESCALED]["units"]}
+        listed, lost = [], {}
+        for unit in of_2020:
+            counts = planning_assessment.access_counts_from_e5_row(rows[unit.unit_id], found.services)
+            total = residents.get(unit.unit_id, 0.0)
+            if abs(counts["residents"] - total) > RESIDENT_TOLERANCE:
+                differing.append(f"{unit.unit_id} at {run['flood_level']}/{run['closure_level']}")
+            base = replace(
+                unit, unit_residents=total,
+                residents_inside_flood_extent={level: inside[level].get(unit.unit_id, 0.0) for level in flood_inputs.LEVELS},
+                residents_connected_to_the_graph=counts["residents_connected_to_the_graph"],
+                connected_residents_without_a_hospital_route=counts["connected_residents_without_a_hospital_route"])
+            listed.append(ensemble.cell_measurements(
+                base, flooded_non_permanent_water_land_area=unit.flooded_non_permanent_water_land_area,
+                residents_inside_flood_extent=inside[run["flood_level"]].get(unit.unit_id, 0.0),
+                access_gap_inputs=counts["access_gap_inputs"],
+                residents_losing_all_routes=counts["residents_losing_all_routes"],
+                residents_with_baseline_route=counts["residents_with_baseline_route"]))
+            lost[unit.unit_id] = {
+                service: float(detail["thresholds_minutes"][str(ensemble.THIRTY_MINUTES)]["newly_lost_residents"])
+                for service, detail in rows[unit.unit_id]["access"].items()
+                if str(ensemble.THIRTY_MINUTES) in detail["thresholds_minutes"]}
+        key = (run["flood_level"], run["closure_level"], LEVEL, VINTAGE_RESCALED)
+        result[key], losing[key] = listed, lost
+    if differing:
+        raise StageError(STAGE_MEASUREMENT, "access_runs_count_other_rescaled_residents",
+                         "an access run counts other rescaled residents for a unit than the rescaled demand holds: "
+                         f"{differing}")
+    return result, losing, {"combinations_measured": len(result),
+                            "unit_residents_same_in_the_rescaled_demand_and_the_access_tables": True,
+                            "residents_by_unit": {unit_id: round(value, 3) for unit_id, value in sorted(residents.items())}}
+
+
 def whole_frame_access(runs: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
     """Return the closure counts and the whole-frame counts of every access run, as the task E5 receipt gives them."""
 
@@ -658,7 +858,7 @@ def licence_of_the_run(found: SimpleNamespace) -> dict[str, Any] | None:
 def build(case_id: str, frame_set: Any, external: Path, boundaries: Path, *, generated_at_utc: str, docs: Path = DOCS,
           root: Path = ROOT, output_dir: Path = OUTPUT_DIR, register_dir: Path = REGISTER_DIR,
           registry: rights.RightsRegistry | None = None, git_commit: str | None = None,
-          development_reads: Sequence[str] = ()) -> SimpleNamespace:
+          development_reads: Sequence[str] = (), age_dir: Path | None = None) -> SimpleNamespace:
     """Check every input, make the access runs, run the ensemble and assemble the receipt (nothing is written).
 
     The input checks of :func:`prepare` raise, and the caller then writes nothing. From the first access run on,
@@ -671,13 +871,13 @@ def build(case_id: str, frame_set: Any, external: Path, boundaries: Path, *, gen
     """
 
     found = prepare(case_id, frame_set, external, boundaries, docs=docs, root=root, output_dir=output_dir,
-                    register_dir=register_dir, registry=registry)
+                    register_dir=register_dir, registry=registry, age_dir=age_dir)
     rules, grid, case, record, flood = found.rules, found.grid, found.case, found.record, found.flood
     timings: dict[str, Any] = dict(found.timings)
     commit = git_commit or e8_builder.head_commit(root)
     v1a = json.loads(found.v1a_path.read_text(encoding="utf-8"))
     v1b = json.loads(found.v1b_path.read_text(encoding="utf-8"))
-    table = ensemble.cell_table(grid, run_keys(grid), found.not_run)
+    table = ensemble.cell_table(grid, run_keys(grid, vintages_of(found)), found.not_run)
     services = access_diff.service_rules(v1a, v1b)
     arguments = access_diff.closure_arguments(v1b)
 
@@ -700,6 +900,10 @@ def build(case_id: str, frame_set: Any, external: Path, boundaries: Path, *, gen
         stage = STAGE_MEASUREMENT
         clock = time.perf_counter()
         measurements, losing, measurement_checks = measurements_of_the_cells(found, access["runs"])
+        if found.rescaled is not None:
+            more, more_losing, more_checks = rescaled_measurements(found, access["runs"], measurements)
+            measurements, losing = {**measurements, **more}, {**losing, **more_losing}
+            measurement_checks = {**measurement_checks, "rescaled_demand": more_checks}
         timings["units_measured_at_three_flood_levels"] = round(time.perf_counter() - clock, 1)
         stage = STAGE_ENSEMBLE
         clock = time.perf_counter()
@@ -904,6 +1108,22 @@ def build(case_id: str, frame_set: Any, external: Path, boundaries: Path, *, gen
         },
         "timing_seconds": timings,
     }
+    if found.rescaled is not None:
+        # Everything a run with the rescaled demand adds to the receipt is added here, so that a run without it
+        # writes the receipt it wrote before and an earlier receipt still verifies.
+        receipt["source_timestamps"]["population_rescaled_to_year"] = 2024
+        receipt["parameters"]["rescaled_demand"] = dict(found.rescaled.record)
+        receipt["not_computed"] = [item for item in NOT_COMPUTED if item != RESCALED_NOT_COMPUTED]
+        receipt["limitations"] = LIMITATIONS_WITH_THE_RESCALED_DEMAND
+        receipt["assumptions"] = [
+            *receipt["assumptions"], *demand_rescale.RULES,
+            "In the cells of the rescaled demand the residents of a cell are its WorldPop 2020 count multiplied by the ratio of "
+            "its 1 km cell (WorldPop 2024 total over the 2020 sum). Travel times do not depend on the demand, so the nine "
+            "access runs serve both demands. The age counts of a unit, and so its vulnerability component, are the same "
+            "for both."]
+        receipt["open_points_answered_for_this_run"] = [{
+            "id": "E10-OP2", "answer": "The two points the formula leaves open were read as decision log R38 records, and the "
+            "team accepted the readings (R39, item V-27 of the team page)."}]
     document = results_document(case_id, frame_set, found, receipt, result, access, refusal, generated_at_utc=generated_at_utc,
                                 receipt_label=path_label(receipt_path_for(case_id, frame_set, output_dir), root, None))
     return SimpleNamespace(receipt=receipt, document=document, target=found.results_target,
@@ -1140,7 +1360,8 @@ def superseded_run(previous: Mapping[str, Any], receipt_sha256: str, bound: Mapp
 
 def run(case_id: str, frame_set: Any, external: Path, boundaries: Path, *, docs: Path = DOCS, root: Path = ROOT,
         output_dir: Path = OUTPUT_DIR, register_dir: Path = REGISTER_DIR, registry: rights.RightsRegistry | None = None,
-        git_commit: str | None = None, replace_reason: str | None = None, development_reads: Sequence[str] = ()) -> dict[str, Any]:
+        git_commit: str | None = None, replace_reason: str | None = None, development_reads: Sequence[str] = (),
+        age_dir: Path | None = None) -> dict[str, Any]:
     """Check the inputs, compute the ensemble, write its file and its receipt and register the receipt.
 
     Once a unit has been measured against a flood level, the receipt is written and registered whatever the run
@@ -1163,7 +1384,8 @@ def run(case_id: str, frame_set: Any, external: Path, boundaries: Path, *, docs:
     started = e5_builder.utc_now()
     clock = time.perf_counter()
     built = build(case_id, frame_set, external, boundaries, generated_at_utc=started, docs=docs, root=root, output_dir=output_dir,
-                  register_dir=register_dir, registry=registry, git_commit=git_commit, development_reads=development_reads)
+                  register_dir=register_dir, registry=registry, git_commit=git_commit, development_reads=development_reads,
+                  age_dir=age_dir)
     outputs, files = _outputs(built, root, external)
     supersedes, history = None, None
     if replaced is not None and replace_reason is not None:
@@ -1212,7 +1434,7 @@ def run(case_id: str, frame_set: Any, external: Path, boundaries: Path, *, docs:
 
 def verify(case_id: str, frame_set: Any, external: Path, boundaries: Path, *, docs: Path = DOCS, root: Path = ROOT,
            output_dir: Path = OUTPUT_DIR, register_dir: Path = REGISTER_DIR,
-           registry: rights.RightsRegistry | None = None) -> dict[str, Any]:
+           registry: rights.RightsRegistry | None = None, age_dir: Path | None = None) -> dict[str, Any]:
     """Compute everything again and compare it with the receipt and with the files the receipt binds; write nothing.
 
     Compared: the file of per-unit results byte for byte, the outputs block of the receipt, and the whole body of
@@ -1223,7 +1445,7 @@ def verify(case_id: str, frame_set: Any, external: Path, boundaries: Path, *, do
     receipt = json.loads(receipt_path_for(case_id, frame_set, output_dir).read_text(encoding="ascii"))
     built = build(case_id, frame_set, external, boundaries, generated_at_utc=receipt["generated_at_utc"], docs=docs, root=root,
                   output_dir=output_dir, register_dir=register_dir, registry=registry,
-                  git_commit=receipt["implementation"]["base_commit"])
+                  git_commit=receipt["implementation"]["base_commit"], age_dir=age_dir)
     block, files = _outputs(built, root, external)
     recomputed = json.loads(json.dumps(built.receipt))
     differing = sorted(key for key in {*recomputed, *receipt}
@@ -1255,6 +1477,9 @@ def main(argv: Sequence[str] | None = None) -> int:
                         help=f"external data root; default: the environment variable {EXTERNAL_DATA_VARIABLE}")
     parser.add_argument("--boundaries", type=Path, default=None,
                         help="the COD-AB boundary file; default: <external data root>/" + BOUNDARY_RELATIVE_PATH.as_posix())
+    parser.add_argument("--age-dir", type=Path, default=None,
+                        help="the folder of the WorldPop 2024 age rasters; with it the 2024-rescaled demand is built and the "
+                             "cells of the second population level are run (decision log R38 and R39)")
     parser.add_argument("--development-read", action="append", default=[],
                         help="one read of the inputs made before this run, in a sentence; repeat for each")
     parser.add_argument("--replace", action="store_true", help="make a second run; needs --reason, and the new receipt names the old")
@@ -1274,14 +1499,15 @@ def main(argv: Sequence[str] | None = None) -> int:
     frame_set = FRAME_SETS[args.frame]
     try:
         if args.check_inputs:
-            print(json.dumps(check_inputs(args.case, frame_set, external, boundaries)))
+            print(json.dumps(check_inputs(args.case, frame_set, external, boundaries, age_dir=args.age_dir)))
             return EXIT_WRITTEN
         if args.verify:
-            summary = verify(args.case, frame_set, external, boundaries)
+            summary = verify(args.case, frame_set, external, boundaries, age_dir=args.age_dir)
             print(json.dumps(summary))
             return EXIT_WRITTEN if summary["verified"] else 1
         summary = run(args.case, frame_set, external, boundaries,
-                      replace_reason=args.reason.strip() if args.replace else None, development_reads=args.development_read)
+                      replace_reason=args.reason.strip() if args.replace else None, development_reads=args.development_read,
+                      age_dir=args.age_dir)
     except (FileExistsError, FileNotFoundError, ValueError) as error:
         # Every refusal that reaches this line was raised before a unit was measured: the input checks, and the
         # reading of the receipt to replace. From the first access run on, build() reports whatever stops the run.

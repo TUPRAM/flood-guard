@@ -652,3 +652,19 @@ def test_the_committed_tables_are_inputs_with_a_licence_and_no_component_value()
         assert not {key for key in _keys(table["runs"]) if "share" in key or "ratio" in key}
         assert "No ratio of two counts is written" in table["definitions"]["counts_only"]
         assert "100 x their ratio" in table["definitions"]["road_criticality_inputs"]
+
+
+def test_a_second_demand_is_counted_on_the_same_runs_and_changes_nothing_else(world: dict[str, Any]) -> None:
+    doubled = [{**cell, "residents": 2 * cell["residents"]} for cell in world["cells"]]
+    computed = runner.case_runs("INVENTED", "invented_input", {"as_provided": FLOOD}, world["graphs"], world["baselines"],
+                                world["services"], access_diff.closure_arguments(V1B), world["cells"], UNIT_IDS,
+                                alternate_cells={"doubled": doubled})
+
+    for with_second, without in zip(computed["runs"], world["computed"]["runs"]):
+        assert runner.ALTERNATE_DEMAND not in without, "task E5 passes no second demand and its runs carry none"
+        second = with_second.pop(runner.ALTERNATE_DEMAND)["doubled"]
+        assert with_second == without, "the tables of the first demand are those of a run without a second demand"
+        for mine, theirs in zip(second["units"], without["public_services"]["units"]):
+            assert mine["unit_id"] == theirs["unit_id"] and mine["residents"] == pytest.approx(2 * theirs["residents"])
+            assert mine["road_criticality_inputs"]["residents_losing_all_routes"] == pytest.approx(
+                2 * theirs["road_criticality_inputs"]["residents_losing_all_routes"])

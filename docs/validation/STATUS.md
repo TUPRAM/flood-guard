@@ -1,6 +1,6 @@
 # Validation check: state of the team's acceptance
 
-Written by `scripts/import_validation_records.py` on 2026-10-09T06:09:23Z from 6 record(s). Do not edit by hand.
+Written by `scripts/import_validation_records.py` on 2026-10-09T08:25:27Z from 6 record(s). Do not edit by hand.
 
 This is the word of the three team members on the project's own work. It is not a review by an independent expert, it qualifies no flood map, and it is not an official approval.
 
@@ -32,3 +32,4 @@ This is the word of the three team members on the project's own work. It is not 
 | V-24 | The second class reading (the proposal's own class wording) | Waiting |  |  |  |
 | V-25 | The work on the radar detection and its one test | Waiting |  |  |  |
 | V-26 | The September 2024 pass read again | Waiting |  |  |  |
+| V-27 | The stability of the SE1 classes over all 180 cells | Waiting |  |  |  |

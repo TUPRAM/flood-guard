@@ -545,6 +545,25 @@
       "gates": "How the Ko Chang result is told when someone asks what the satellite saw.",
       "ready": true,
       "added": "2026-10-09"
+    },
+    {
+      "id": "V-27",
+      "group": "result",
+      "title": "The stability of the SE1 classes over all 180 cells",
+      "check": "Read the result. The other 90 cells of the uncertainty ensemble were run, report-only, with the 2020 resident counts rescaled to 2024 totals. Over the 180 cells seven of the eight tambons keep their class, Ko Chang in 78 percent. Mae Sai town keeps class D in 50 percent, under the 60 percent the protocol asks: it is D with the 2020 counts and A, B or C with the rescaled counts. Nothing published changes. Accept if the team agrees with the two readings of the rescale (a count belongs to the 1 km cell that holds its centre; a count with no 2024 total keeps its 2020 value) and will say in the pitch that the town's class depends on the population product. Whether the result file is published again with a status on each class is a separate decision of the owners.",
+      "evidence": [
+        {
+          "label": "Result in plain words",
+          "path": "docs/uncertainty_ensemble_rescaled_demand.md"
+        },
+        {
+          "label": "Result file",
+          "path": "outputs/uncertainty_ensemble_rescaled/se1_mae_sai_v1.json"
+        }
+      ],
+      "gates": "Saying how stable a class of case SE1 is, in the pitch or on a page.",
+      "ready": true,
+      "added": "2026-10-09"
     }
   ]
 }

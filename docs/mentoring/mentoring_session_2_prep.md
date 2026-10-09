@@ -378,6 +378,7 @@ Agreement between two sensors 44 hours apart; not accuracy.
 | Ko Chang roads at three closure levels | `docs/ko_chang_road_check.md` | The same road is the first to keep passable at every level. |
 | Access loss by age | `docs/equity_by_age.md` | Computed; the open age data cannot show a gap inside a tambon. |
 | The proposal's own class wording | `docs/class_v2_reading.md` | As a secondary reading, Mae Sai town is "protect essential services". The binding classes do not change. |
+| The stability of the classes over all 180 cells | `docs/uncertainty_ensemble_rescaled_demand.md` | Seven of eight classes hold, Ko Chang's in 78% of the cells. Mae Sai town's D holds in 50%: it is D with the 2020 population product and A, B or C with the 2024 totals. Report-only; the published file still says "not evaluated". |
 
 Each is on the team page for the team's word (items V-17, V-19 and V-22 to
-V-26). None changes a published class or enters a planning score.
+V-27). None changes a published class or enters a planning score.

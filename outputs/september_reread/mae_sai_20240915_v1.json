@@ -1,0 +1,1103 @@
+{
+ "schema": "floodguard.september_reread.v1",
+ "generated_at_utc": "2026-10-09T05:58:55Z",
+ "source_timestamp": "Sentinel-1 2024-09-15T23:16:14Z; dry-season passes of 24 February, 7 March and 12 April 2024",
+ "confidence_class": "low",
+ "confidence_basis": "Our own reading of one radar pass. There is no dated reference for September 2024: nothing here says whether a reading is right.",
+ "operational_status": "non_operational",
+ "official_warning": false,
+ "can_feed_decision_layer": false,
+ "what_this_is": "The Sentinel-1 pass of 15 September 2024 at Mae Sai read three ways against a dry-season baseline, each put through closure rule v1 and the access difference. Report-only and unchecked.",
+ "label": "Unchecked: no dated reference for September 2024. Modelled closures; not an observation of closed roads.",
+ "frozen_detector": {
+  "step": "simple_threshold_cleaned",
+  "base": "simple_threshold",
+  "cleaned": true,
+  "simple_threshold_db": -18.46,
+  "file_outside_git": {
+   "name": "frozen_detector.joblib",
+   "sha256": "cd5018668f2cd8bc6a6ae82e2bbe7454b7ad71c2f10602ee246cc1ea772d1945"
+  }
+ },
+ "freeze_record": {
+  "path": "outputs/radar_detection_improvement/freeze_v1.json",
+  "sha256": "d40135c2c8d12dd68219b18e14d1d2e797ffa74bbbb7c8fed9d59062f8bc2ac6"
+ },
+ "radar": {
+  "after": "S1A, relative orbit 135, 2024-09-15T23:16Z (16 September 06:16 in Thailand), terrain-corrected gamma0 at 10 m",
+  "dry_season_passes": [
+   "20240224",
+   "20240307",
+   "20240412"
+  ],
+  "frame": "cells inside the eight tambons of Mae Sai district"
+ },
+ "readings": {
+  "frozen_detector": {
+   "cut": {
+    "cut": -18.46,
+    "source": "frozen in work package 7"
+   },
+   "flagged_cells_in_the_district": 237632,
+   "flagged_km2_in_the_district": 23.7632,
+   "polygons": {
+    "polygons": 544,
+    "polygons_dropped": 104,
+    "cells_dropped": 167,
+    "minimum_px": 5,
+    "connectivity": 4
+   },
+   "frame": {
+    "flooded_land_km2": 23.6987,
+    "residents": 81836.889,
+    "residents_inside_extent": 2862.116
+   },
+   "units": {
+    "TH570901": {
+     "land_km2": 21.4471,
+     "flooded_land_km2": 0.7362,
+     "flooded_share_of_land": 0.034328,
+     "residents": 17893.069,
+     "residents_inside_extent": 259.383
+    },
+    "TH570902": {
+     "land_km2": 44.2586,
+     "flooded_land_km2": 0.1075,
+     "flooded_share_of_land": 0.00243,
+     "residents": 8911.487,
+     "residents_inside_extent": 21.312
+    },
+    "TH570903": {
+     "land_km2": 47.2052,
+     "flooded_land_km2": 7.2727,
+     "flooded_share_of_land": 0.154066,
+     "residents": 6708.403,
+     "residents_inside_extent": 675.793
+    },
+    "TH570904": {
+     "land_km2": 43.4475,
+     "flooded_land_km2": 2.1582,
+     "flooded_share_of_land": 0.049673,
+     "residents": 9349.408,
+     "residents_inside_extent": 289.009
+    },
+    "TH570905": {
+     "land_km2": 41.7175,
+     "flooded_land_km2": 7.2453,
+     "flooded_share_of_land": 0.173675,
+     "residents": 7157.561,
+     "residents_inside_extent": 993.456
+    },
+    "TH570906": {
+     "land_km2": 30.3038,
+     "flooded_land_km2": 0.0955,
+     "flooded_share_of_land": 0.003152,
+     "residents": 19532.08,
+     "residents_inside_extent": 76.297
+    },
+    "TH570908": {
+     "land_km2": 33.6771,
+     "flooded_land_km2": 4.6956,
+     "flooded_share_of_land": 0.139432,
+     "residents": 5036.142,
+     "residents_inside_extent": 413.391
+    },
+    "TH570909": {
+     "land_km2": 42.5084,
+     "flooded_land_km2": 1.3877,
+     "flooded_share_of_land": 0.032646,
+     "residents": 7248.739,
+     "residents_inside_extent": 133.475
+    }
+   },
+   "by_closure_level": {
+    "strict": {
+     "closure": {
+      "edges": 65673,
+      "intersected_edges": 579,
+      "closed_edges": 347,
+      "delayed_edges": 84,
+      "intersected_edges_left_open": 148,
+      "closed_bridge_tagged_edges": 0,
+      "largest_travel_time_factor": 1.9928827557947235,
+      "grade_join_connectors": 345,
+      "connectors_with_their_coordinate_inside_the_extent": 1,
+      "main_road_entries": 1939,
+      "entries_with_every_main_road_edge_closed": 9,
+      "entries_with_every_edge_closed": 6
+     },
+     "frame": {
+      "residents_with_hospital_within_30_min_before": 74596.846,
+      "residents_newly_losing_hospital_within_30_min": 1614.412,
+      "residents_with_main_road_within_15_min_before": 68887.945,
+      "residents_newly_losing_main_road_within_15_min": 1080.36,
+      "residents_with_a_route_before": 75170.53,
+      "residents_losing_every_route": 1290.546
+     },
+     "units": {
+      "TH570901": {
+       "residents_with_hospital_within_30_min_before": 17453.232,
+       "residents_newly_losing_hospital_within_30_min": 332.686,
+       "residents_with_main_road_within_15_min_before": 17453.232,
+       "residents_newly_losing_main_road_within_15_min": 233.418,
+       "residents_with_a_route_before": 17453.232,
+       "residents_losing_every_route": 233.418
+      },
+      "TH570902": {
+       "residents_with_hospital_within_30_min_before": 7148.753,
+       "residents_newly_losing_hospital_within_30_min": 3.57,
+       "residents_with_main_road_within_15_min_before": 7010.764,
+       "residents_newly_losing_main_road_within_15_min": 2.965,
+       "residents_with_a_route_before": 7213.945,
+       "residents_losing_every_route": 0.0
+      },
+      "TH570903": {
+       "residents_with_hospital_within_30_min_before": 5709.62,
+       "residents_newly_losing_hospital_within_30_min": 305.379,
+       "residents_with_main_road_within_15_min_before": 2963.157,
+       "residents_newly_losing_main_road_within_15_min": 26.892,
+       "residents_with_a_route_before": 5972.366,
+       "residents_losing_every_route": 268.098
+      },
+      "TH570904": {
+       "residents_with_hospital_within_30_min_before": 8609.449,
+       "residents_newly_losing_hospital_within_30_min": 179.255,
+       "residents_with_main_road_within_15_min_before": 8557.126,
+       "residents_newly_losing_main_road_within_15_min": 163.66,
+       "residents_with_a_route_before": 8609.449,
+       "residents_losing_every_route": 179.255
+      },
+      "TH570905": {
+       "residents_with_hospital_within_30_min_before": 6529.839,
+       "residents_newly_losing_hospital_within_30_min": 512.431,
+       "residents_with_main_road_within_15_min_before": 4919.862,
+       "residents_newly_losing_main_road_within_15_min": 306.11,
+       "residents_with_a_route_before": 6558.295,
+       "residents_losing_every_route": 466.254
+      },
+      "TH570906": {
+       "residents_with_hospital_within_30_min_before": 19164.542,
+       "residents_newly_losing_hospital_within_30_min": 18.893,
+       "residents_with_main_road_within_15_min_before": 19138.949,
+       "residents_newly_losing_main_road_within_15_min": 18.893,
+       "residents_with_a_route_before": 19164.542,
+       "residents_losing_every_route": 18.893
+      },
+      "TH570908": {
+       "residents_with_hospital_within_30_min_before": 3787.85,
+       "residents_newly_losing_hospital_within_30_min": 170.753,
+       "residents_with_main_road_within_15_min_before": 2702.476,
+       "residents_newly_losing_main_road_within_15_min": 232.025,
+       "residents_with_a_route_before": 4005.14,
+       "residents_losing_every_route": 56.85
+      },
+      "TH570909": {
+       "residents_with_hospital_within_30_min_before": 6193.562,
+       "residents_newly_losing_hospital_within_30_min": 91.444,
+       "residents_with_main_road_within_15_min_before": 6142.379,
+       "residents_newly_losing_main_road_within_15_min": 96.395,
+       "residents_with_a_route_before": 6193.562,
+       "residents_losing_every_route": 67.778
+      }
+     }
+    },
+    "central": {
+     "closure": {
+      "edges": 65673,
+      "intersected_edges": 579,
+      "closed_edges": 399,
+      "delayed_edges": 33,
+      "intersected_edges_left_open": 147,
+      "closed_bridge_tagged_edges": 2,
+      "largest_travel_time_factor": 2.923319119355413,
+      "grade_join_connectors": 345,
+      "connectors_with_their_coordinate_inside_the_extent": 1,
+      "main_road_entries": 1939,
+      "entries_with_every_main_road_edge_closed": 9,
+      "entries_with_every_edge_closed": 6
+     },
+     "frame": {
+      "residents_with_hospital_within_30_min_before": 74596.846,
+      "residents_newly_losing_hospital_within_30_min": 2418.445,
+      "residents_with_main_road_within_15_min_before": 68887.945,
+      "residents_newly_losing_main_road_within_15_min": 1485.467,
+      "residents_with_a_route_before": 75170.53,
+      "residents_losing_every_route": 1703.718
+     },
+     "units": {
+      "TH570901": {
+       "residents_with_hospital_within_30_min_before": 17453.232,
+       "residents_newly_losing_hospital_within_30_min": 423.078,
+       "residents_with_main_road_within_15_min_before": 17453.232,
+       "residents_newly_losing_main_road_within_15_min": 259.792,
+       "residents_with_a_route_before": 17453.232,
+       "residents_losing_every_route": 259.792
+      },
+      "TH570902": {
+       "residents_with_hospital_within_30_min_before": 7148.753,
+       "residents_newly_losing_hospital_within_30_min": 8.662,
+       "residents_with_main_road_within_15_min_before": 7010.764,
+       "residents_newly_losing_main_road_within_15_min": 5.452,
+       "residents_with_a_route_before": 7213.945,
+       "residents_losing_every_route": 0.0
+      },
+      "TH570903": {
+       "residents_with_hospital_within_30_min_before": 5709.62,
+       "residents_newly_losing_hospital_within_30_min": 310.516,
+       "residents_with_main_road_within_15_min_before": 2963.157,
+       "residents_newly_losing_main_road_within_15_min": 26.892,
+       "residents_with_a_route_before": 5972.366,
+       "residents_losing_every_route": 290.24
+      },
+      "TH570904": {
+       "residents_with_hospital_within_30_min_before": 8609.449,
+       "residents_newly_losing_hospital_within_30_min": 260.045,
+       "residents_with_main_road_within_15_min_before": 8557.126,
+       "residents_newly_losing_main_road_within_15_min": 244.451,
+       "residents_with_a_route_before": 8609.449,
+       "residents_losing_every_route": 260.045
+      },
+      "TH570905": {
+       "residents_with_hospital_within_30_min_before": 6529.839,
+       "residents_newly_losing_hospital_within_30_min": 612.738,
+       "residents_with_main_road_within_15_min_before": 4919.862,
+       "residents_newly_losing_main_road_within_15_min": 346.588,
+       "residents_with_a_route_before": 6558.295,
+       "residents_losing_every_route": 608.836
+      },
+      "TH570906": {
+       "residents_with_hospital_within_30_min_before": 19164.542,
+       "residents_newly_losing_hospital_within_30_min": 20.633,
+       "residents_with_main_road_within_15_min_before": 19138.949,
+       "residents_newly_losing_main_road_within_15_min": 20.633,
+       "residents_with_a_route_before": 19164.542,
+       "residents_losing_every_route": 20.633
+      },
+      "TH570908": {
+       "residents_with_hospital_within_30_min_before": 3787.85,
+       "residents_newly_losing_hospital_within_30_min": 655.157,
+       "residents_with_main_road_within_15_min_before": 2702.476,
+       "residents_newly_losing_main_road_within_15_min": 449.973,
+       "residents_with_a_route_before": 4005.14,
+       "residents_losing_every_route": 161.104
+      },
+      "TH570909": {
+       "residents_with_hospital_within_30_min_before": 6193.562,
+       "residents_newly_losing_hospital_within_30_min": 127.617,
+       "residents_with_main_road_within_15_min_before": 6142.379,
+       "residents_newly_losing_main_road_within_15_min": 131.686,
+       "residents_with_a_route_before": 6193.562,
+       "residents_losing_every_route": 103.069
+      }
+     }
+    },
+    "permissive": {
+     "closure": {
+      "edges": 65673,
+      "intersected_edges": 579,
+      "closed_edges": 579,
+      "delayed_edges": 0,
+      "intersected_edges_left_open": 0,
+      "closed_bridge_tagged_edges": 2,
+      "grade_join_connectors": 345,
+      "connectors_with_their_coordinate_inside_the_extent": 1,
+      "main_road_entries": 1939,
+      "entries_with_every_main_road_edge_closed": 18,
+      "entries_with_every_edge_closed": 17
+     },
+     "frame": {
+      "residents_with_hospital_within_30_min_before": 74596.846,
+      "residents_newly_losing_hospital_within_30_min": 3416.369,
+      "residents_with_main_road_within_15_min_before": 68887.945,
+      "residents_newly_losing_main_road_within_15_min": 2007.691,
+      "residents_with_a_route_before": 75170.53,
+      "residents_losing_every_route": 2492.789
+     },
+     "units": {
+      "TH570901": {
+       "residents_with_hospital_within_30_min_before": 17453.232,
+       "residents_newly_losing_hospital_within_30_min": 455.838,
+       "residents_with_main_road_within_15_min_before": 17453.232,
+       "residents_newly_losing_main_road_within_15_min": 408.716,
+       "residents_with_a_route_before": 17453.232,
+       "residents_losing_every_route": 408.716
+      },
+      "TH570902": {
+       "residents_with_hospital_within_30_min_before": 7148.753,
+       "residents_newly_losing_hospital_within_30_min": 112.1,
+       "residents_with_main_road_within_15_min_before": 7010.764,
+       "residents_newly_losing_main_road_within_15_min": 77.614,
+       "residents_with_a_route_before": 7213.945,
+       "residents_losing_every_route": 0.0
+      },
+      "TH570903": {
+       "residents_with_hospital_within_30_min_before": 5709.62,
+       "residents_newly_losing_hospital_within_30_min": 356.06,
+       "residents_with_main_road_within_15_min_before": 2963.157,
+       "residents_newly_losing_main_road_within_15_min": 26.892,
+       "residents_with_a_route_before": 5972.366,
+       "residents_losing_every_route": 474.325
+      },
+      "TH570904": {
+       "residents_with_hospital_within_30_min_before": 8609.449,
+       "residents_newly_losing_hospital_within_30_min": 353.943,
+       "residents_with_main_road_within_15_min_before": 8557.126,
+       "residents_newly_losing_main_road_within_15_min": 337.767,
+       "residents_with_a_route_before": 8609.449,
+       "residents_losing_every_route": 353.943
+      },
+      "TH570905": {
+       "residents_with_hospital_within_30_min_before": 6529.839,
+       "residents_newly_losing_hospital_within_30_min": 781.974,
+       "residents_with_main_road_within_15_min_before": 4919.862,
+       "residents_newly_losing_main_road_within_15_min": 381.4,
+       "residents_with_a_route_before": 6558.295,
+       "residents_losing_every_route": 781.274
+      },
+      "TH570906": {
+       "residents_with_hospital_within_30_min_before": 19164.542,
+       "residents_newly_losing_hospital_within_30_min": 126.619,
+       "residents_with_main_road_within_15_min_before": 19138.949,
+       "residents_newly_losing_main_road_within_15_min": 126.619,
+       "residents_with_a_route_before": 19164.542,
+       "residents_losing_every_route": 126.619
+      },
+      "TH570908": {
+       "residents_with_hospital_within_30_min_before": 3787.85,
+       "residents_newly_losing_hospital_within_30_min": 1056.307,
+       "residents_with_main_road_within_15_min_before": 2702.476,
+       "residents_newly_losing_main_road_within_15_min": 476.6,
+       "residents_with_a_route_before": 4005.14,
+       "residents_losing_every_route": 204.446
+      },
+      "TH570909": {
+       "residents_with_hospital_within_30_min_before": 6193.562,
+       "residents_newly_losing_hospital_within_30_min": 173.528,
+       "residents_with_main_road_within_15_min_before": 6142.379,
+       "residents_newly_losing_main_road_within_15_min": 172.083,
+       "residents_with_a_route_before": 6193.562,
+       "residents_losing_every_route": 143.466
+      }
+     }
+    }
+   }
+  },
+  "simple_threshold": {
+   "cut": {
+    "cut": -18.46,
+    "source": "frozen in work package 7"
+   },
+   "flagged_cells_in_the_district": 204237,
+   "flagged_km2_in_the_district": 20.4237,
+   "polygons": {
+    "polygons": 1680,
+    "polygons_dropped": 544,
+    "cells_dropped": 1088,
+    "minimum_px": 5,
+    "connectivity": 4
+   },
+   "frame": {
+    "flooded_land_km2": 20.2819,
+    "residents": 81836.889,
+    "residents_inside_extent": 2231.786
+   },
+   "units": {
+    "TH570901": {
+     "land_km2": 21.4471,
+     "flooded_land_km2": 0.4202,
+     "flooded_share_of_land": 0.019593,
+     "residents": 17893.069,
+     "residents_inside_extent": 150.812
+    },
+    "TH570902": {
+     "land_km2": 44.2586,
+     "flooded_land_km2": 0.9518,
+     "flooded_share_of_land": 0.021504,
+     "residents": 8911.487,
+     "residents_inside_extent": 76.929
+    },
+    "TH570903": {
+     "land_km2": 47.2052,
+     "flooded_land_km2": 5.5797,
+     "flooded_share_of_land": 0.118202,
+     "residents": 6708.403,
+     "residents_inside_extent": 501.705
+    },
+    "TH570904": {
+     "land_km2": 43.4475,
+     "flooded_land_km2": 1.9436,
+     "flooded_share_of_land": 0.044734,
+     "residents": 9349.408,
+     "residents_inside_extent": 226.651
+    },
+    "TH570905": {
+     "land_km2": 41.7175,
+     "flooded_land_km2": 5.2047,
+     "flooded_share_of_land": 0.12476,
+     "residents": 7157.561,
+     "residents_inside_extent": 729.941
+    },
+    "TH570906": {
+     "land_km2": 30.3038,
+     "flooded_land_km2": 0.4581,
+     "flooded_share_of_land": 0.015118,
+     "residents": 19532.08,
+     "residents_inside_extent": 76.851
+    },
+    "TH570908": {
+     "land_km2": 33.6771,
+     "flooded_land_km2": 3.3309,
+     "flooded_share_of_land": 0.098908,
+     "residents": 5036.142,
+     "residents_inside_extent": 279.481
+    },
+    "TH570909": {
+     "land_km2": 42.5084,
+     "flooded_land_km2": 2.3929,
+     "flooded_share_of_land": 0.056293,
+     "residents": 7248.739,
+     "residents_inside_extent": 189.416
+    }
+   },
+   "by_closure_level": {
+    "strict": {
+     "closure": {
+      "edges": 65673,
+      "intersected_edges": 356,
+      "closed_edges": 194,
+      "delayed_edges": 54,
+      "intersected_edges_left_open": 108,
+      "closed_bridge_tagged_edges": 0,
+      "largest_travel_time_factor": 1.9737119785496264,
+      "grade_join_connectors": 345,
+      "connectors_with_their_coordinate_inside_the_extent": 0,
+      "main_road_entries": 1939,
+      "entries_with_every_main_road_edge_closed": 0,
+      "entries_with_every_edge_closed": 0
+     },
+     "frame": {
+      "residents_with_hospital_within_30_min_before": 74596.846,
+      "residents_newly_losing_hospital_within_30_min": 828.289,
+      "residents_with_main_road_within_15_min_before": 68887.945,
+      "residents_newly_losing_main_road_within_15_min": 509.96,
+      "residents_with_a_route_before": 75170.53,
+      "residents_losing_every_route": 819.125
+     },
+     "units": {
+      "TH570901": {
+       "residents_with_hospital_within_30_min_before": 17453.232,
+       "residents_newly_losing_hospital_within_30_min": 43.325,
+       "residents_with_main_road_within_15_min_before": 17453.232,
+       "residents_newly_losing_main_road_within_15_min": 43.325,
+       "residents_with_a_route_before": 17453.232,
+       "residents_losing_every_route": 43.325
+      },
+      "TH570902": {
+       "residents_with_hospital_within_30_min_before": 7148.753,
+       "residents_newly_losing_hospital_within_30_min": 83.584,
+       "residents_with_main_road_within_15_min_before": 7010.764,
+       "residents_newly_losing_main_road_within_15_min": 0.0,
+       "residents_with_a_route_before": 7213.945,
+       "residents_losing_every_route": 0.0
+      },
+      "TH570903": {
+       "residents_with_hospital_within_30_min_before": 5709.62,
+       "residents_newly_losing_hospital_within_30_min": 43.337,
+       "residents_with_main_road_within_15_min_before": 2963.157,
+       "residents_newly_losing_main_road_within_15_min": 0.0,
+       "residents_with_a_route_before": 5972.366,
+       "residents_losing_every_route": 192.156
+      },
+      "TH570904": {
+       "residents_with_hospital_within_30_min_before": 8609.449,
+       "residents_newly_losing_hospital_within_30_min": 72.314,
+       "residents_with_main_road_within_15_min_before": 8557.126,
+       "residents_newly_losing_main_road_within_15_min": 63.757,
+       "residents_with_a_route_before": 8609.449,
+       "residents_losing_every_route": 72.314
+      },
+      "TH570905": {
+       "residents_with_hospital_within_30_min_before": 6529.839,
+       "residents_newly_losing_hospital_within_30_min": 325.249,
+       "residents_with_main_road_within_15_min_before": 4919.862,
+       "residents_newly_losing_main_road_within_15_min": 150.935,
+       "residents_with_a_route_before": 6558.295,
+       "residents_losing_every_route": 325.249
+      },
+      "TH570906": {
+       "residents_with_hospital_within_30_min_before": 19164.542,
+       "residents_newly_losing_hospital_within_30_min": 76.363,
+       "residents_with_main_road_within_15_min_before": 19138.949,
+       "residents_newly_losing_main_road_within_15_min": 85.247,
+       "residents_with_a_route_before": 19164.542,
+       "residents_losing_every_route": 76.363
+      },
+      "TH570908": {
+       "residents_with_hospital_within_30_min_before": 3787.85,
+       "residents_newly_losing_hospital_within_30_min": 106.9,
+       "residents_with_main_road_within_15_min_before": 2702.476,
+       "residents_newly_losing_main_road_within_15_min": 117.762,
+       "residents_with_a_route_before": 4005.14,
+       "residents_losing_every_route": 51.503
+      },
+      "TH570909": {
+       "residents_with_hospital_within_30_min_before": 6193.562,
+       "residents_newly_losing_hospital_within_30_min": 77.217,
+       "residents_with_main_road_within_15_min_before": 6142.379,
+       "residents_newly_losing_main_road_within_15_min": 48.934,
+       "residents_with_a_route_before": 6193.562,
+       "residents_losing_every_route": 58.215
+      }
+     }
+    },
+    "central": {
+     "closure": {
+      "edges": 65673,
+      "intersected_edges": 356,
+      "closed_edges": 227,
+      "delayed_edges": 21,
+      "intersected_edges_left_open": 108,
+      "closed_bridge_tagged_edges": 0,
+      "largest_travel_time_factor": 2.8601680467247594,
+      "grade_join_connectors": 345,
+      "connectors_with_their_coordinate_inside_the_extent": 0,
+      "main_road_entries": 1939,
+      "entries_with_every_main_road_edge_closed": 1,
+      "entries_with_every_edge_closed": 0
+     },
+     "frame": {
+      "residents_with_hospital_within_30_min_before": 74596.846,
+      "residents_newly_losing_hospital_within_30_min": 1494.026,
+      "residents_with_main_road_within_15_min_before": 68887.945,
+      "residents_newly_losing_main_road_within_15_min": 955.609,
+      "residents_with_a_route_before": 75170.53,
+      "residents_losing_every_route": 1017.761
+     },
+     "units": {
+      "TH570901": {
+       "residents_with_hospital_within_30_min_before": 17453.232,
+       "residents_newly_losing_hospital_within_30_min": 53.213,
+       "residents_with_main_road_within_15_min_before": 17453.232,
+       "residents_newly_losing_main_road_within_15_min": 53.213,
+       "residents_with_a_route_before": 17453.232,
+       "residents_losing_every_route": 53.213
+      },
+      "TH570902": {
+       "residents_with_hospital_within_30_min_before": 7148.753,
+       "residents_newly_losing_hospital_within_30_min": 83.584,
+       "residents_with_main_road_within_15_min_before": 7010.764,
+       "residents_newly_losing_main_road_within_15_min": 0.0,
+       "residents_with_a_route_before": 7213.945,
+       "residents_losing_every_route": 0.0
+      },
+      "TH570903": {
+       "residents_with_hospital_within_30_min_before": 5709.62,
+       "residents_newly_losing_hospital_within_30_min": 70.234,
+       "residents_with_main_road_within_15_min_before": 2963.157,
+       "residents_newly_losing_main_road_within_15_min": 0.0,
+       "residents_with_a_route_before": 5972.366,
+       "residents_losing_every_route": 220.427
+      },
+      "TH570904": {
+       "residents_with_hospital_within_30_min_before": 8609.449,
+       "residents_newly_losing_hospital_within_30_min": 163.49,
+       "residents_with_main_road_within_15_min_before": 8557.126,
+       "residents_newly_losing_main_road_within_15_min": 154.933,
+       "residents_with_a_route_before": 8609.449,
+       "residents_losing_every_route": 163.49
+      },
+      "TH570905": {
+       "residents_with_hospital_within_30_min_before": 6529.839,
+       "residents_newly_losing_hospital_within_30_min": 367.642,
+       "residents_with_main_road_within_15_min_before": 4919.862,
+       "residents_newly_losing_main_road_within_15_min": 180.393,
+       "residents_with_a_route_before": 6558.295,
+       "residents_losing_every_route": 367.642
+      },
+      "TH570906": {
+       "residents_with_hospital_within_30_min_before": 19164.542,
+       "residents_newly_losing_hospital_within_30_min": 84.016,
+       "residents_with_main_road_within_15_min_before": 19138.949,
+       "residents_newly_losing_main_road_within_15_min": 92.9,
+       "residents_with_a_route_before": 19164.542,
+       "residents_losing_every_route": 84.016
+      },
+      "TH570908": {
+       "residents_with_hospital_within_30_min_before": 3787.85,
+       "residents_newly_losing_hospital_within_30_min": 579.087,
+       "residents_with_main_road_within_15_min_before": 2702.476,
+       "residents_newly_losing_main_road_within_15_min": 409.693,
+       "residents_with_a_route_before": 4005.14,
+       "residents_losing_every_route": 55.215
+      },
+      "TH570909": {
+       "residents_with_hospital_within_30_min_before": 6193.562,
+       "residents_newly_losing_hospital_within_30_min": 92.76,
+       "residents_with_main_road_within_15_min_before": 6142.379,
+       "residents_newly_losing_main_road_within_15_min": 64.477,
+       "residents_with_a_route_before": 6193.562,
+       "residents_losing_every_route": 73.758
+      }
+     }
+    },
+    "permissive": {
+     "closure": {
+      "edges": 65673,
+      "intersected_edges": 356,
+      "closed_edges": 356,
+      "delayed_edges": 0,
+      "intersected_edges_left_open": 0,
+      "closed_bridge_tagged_edges": 0,
+      "grade_join_connectors": 345,
+      "connectors_with_their_coordinate_inside_the_extent": 0,
+      "main_road_entries": 1939,
+      "entries_with_every_main_road_edge_closed": 3,
+      "entries_with_every_edge_closed": 2
+     },
+     "frame": {
+      "residents_with_hospital_within_30_min_before": 74596.846,
+      "residents_newly_losing_hospital_within_30_min": 2635.068,
+      "residents_with_main_road_within_15_min_before": 68887.945,
+      "residents_newly_losing_main_road_within_15_min": 1559.249,
+      "residents_with_a_route_before": 75170.53,
+      "residents_losing_every_route": 1569.538
+     },
+     "units": {
+      "TH570901": {
+       "residents_with_hospital_within_30_min_before": 17453.232,
+       "residents_newly_losing_hospital_within_30_min": 112.103,
+       "residents_with_main_road_within_15_min_before": 17453.232,
+       "residents_newly_losing_main_road_within_15_min": 112.103,
+       "residents_with_a_route_before": 17453.232,
+       "residents_losing_every_route": 112.103
+      },
+      "TH570902": {
+       "residents_with_hospital_within_30_min_before": 7148.753,
+       "residents_newly_losing_hospital_within_30_min": 219.582,
+       "residents_with_main_road_within_15_min_before": 7010.764,
+       "residents_newly_losing_main_road_within_15_min": 98.867,
+       "residents_with_a_route_before": 7213.945,
+       "residents_losing_every_route": 98.867
+      },
+      "TH570903": {
+       "residents_with_hospital_within_30_min_before": 5709.62,
+       "residents_newly_losing_hospital_within_30_min": 218.381,
+       "residents_with_main_road_within_15_min_before": 2963.157,
+       "residents_newly_losing_main_road_within_15_min": 26.892,
+       "residents_with_a_route_before": 5972.366,
+       "residents_losing_every_route": 277.573
+      },
+      "TH570904": {
+       "residents_with_hospital_within_30_min_before": 8609.449,
+       "residents_newly_losing_hospital_within_30_min": 252.533,
+       "residents_with_main_road_within_15_min_before": 8557.126,
+       "residents_newly_losing_main_road_within_15_min": 243.975,
+       "residents_with_a_route_before": 8609.449,
+       "residents_losing_every_route": 252.533
+      },
+      "TH570905": {
+       "residents_with_hospital_within_30_min_before": 6529.839,
+       "residents_newly_losing_hospital_within_30_min": 486.821,
+       "residents_with_main_road_within_15_min_before": 4919.862,
+       "residents_newly_losing_main_road_within_15_min": 226.576,
+       "residents_with_a_route_before": 6558.295,
+       "residents_losing_every_route": 428.943
+      },
+      "TH570906": {
+       "residents_with_hospital_within_30_min_before": 19164.542,
+       "residents_newly_losing_hospital_within_30_min": 293.138,
+       "residents_with_main_road_within_15_min_before": 19138.949,
+       "residents_newly_losing_main_road_within_15_min": 267.545,
+       "residents_with_a_route_before": 19164.542,
+       "residents_losing_every_route": 188.563
+      },
+      "TH570908": {
+       "residents_with_hospital_within_30_min_before": 3787.85,
+       "residents_newly_losing_hospital_within_30_min": 867.918,
+       "residents_with_main_road_within_15_min_before": 2702.476,
+       "residents_newly_losing_main_road_within_15_min": 449.973,
+       "residents_with_a_route_before": 4005.14,
+       "residents_losing_every_route": 96.975
+      },
+      "TH570909": {
+       "residents_with_hospital_within_30_min_before": 6193.562,
+       "residents_newly_losing_hospital_within_30_min": 184.593,
+       "residents_with_main_road_within_15_min_before": 6142.379,
+       "residents_newly_losing_main_road_within_15_min": 133.318,
+       "residents_with_a_route_before": 6193.562,
+       "residents_losing_every_route": 113.982
+      }
+     }
+    }
+   }
+  },
+  "un_spider_with_the_dry_baseline": {
+   "cut": {
+    "rule": "quotient above 1.25, image before = the dry-season median"
+   },
+   "flagged_cells_in_the_district": 114610,
+   "flagged_km2_in_the_district": 11.461,
+   "polygons": {
+    "polygons": 444,
+    "polygons_dropped": 81,
+    "cells_dropped": 117,
+    "minimum_px": 5,
+    "connectivity": 4
+   },
+   "frame": {
+    "flooded_land_km2": 11.4305,
+    "residents": 81836.889,
+    "residents_inside_extent": 1223.266
+   },
+   "units": {
+    "TH570901": {
+     "land_km2": 21.4471,
+     "flooded_land_km2": 0.1211,
+     "flooded_share_of_land": 0.005646,
+     "residents": 17893.069,
+     "residents_inside_extent": 53.553
+    },
+    "TH570902": {
+     "land_km2": 44.2586,
+     "flooded_land_km2": 0.0064,
+     "flooded_share_of_land": 0.000145,
+     "residents": 8911.487,
+     "residents_inside_extent": 0.0
+    },
+    "TH570903": {
+     "land_km2": 47.2052,
+     "flooded_land_km2": 4.114,
+     "flooded_share_of_land": 0.087152,
+     "residents": 6708.403,
+     "residents_inside_extent": 366.724
+    },
+    "TH570904": {
+     "land_km2": 43.4475,
+     "flooded_land_km2": 1.0483,
+     "flooded_share_of_land": 0.024128,
+     "residents": 9349.408,
+     "residents_inside_extent": 128.982
+    },
+    "TH570905": {
+     "land_km2": 41.7175,
+     "flooded_land_km2": 2.821,
+     "flooded_share_of_land": 0.067621,
+     "residents": 7157.561,
+     "residents_inside_extent": 390.078
+    },
+    "TH570906": {
+     "land_km2": 30.3038,
+     "flooded_land_km2": 0.0006,
+     "flooded_share_of_land": 2.1e-05,
+     "residents": 19532.08,
+     "residents_inside_extent": 0.0
+    },
+    "TH570908": {
+     "land_km2": 33.6771,
+     "flooded_land_km2": 2.6143,
+     "flooded_share_of_land": 0.077629,
+     "residents": 5036.142,
+     "residents_inside_extent": 216.873
+    },
+    "TH570909": {
+     "land_km2": 42.5084,
+     "flooded_land_km2": 0.7048,
+     "flooded_share_of_land": 0.016581,
+     "residents": 7248.739,
+     "residents_inside_extent": 67.056
+    }
+   },
+   "by_closure_level": {
+    "strict": {
+     "closure": {
+      "edges": 65673,
+      "intersected_edges": 161,
+      "closed_edges": 96,
+      "delayed_edges": 25,
+      "intersected_edges_left_open": 40,
+      "closed_bridge_tagged_edges": 0,
+      "largest_travel_time_factor": 1.9877852640529876,
+      "grade_join_connectors": 345,
+      "connectors_with_their_coordinate_inside_the_extent": 0,
+      "main_road_entries": 1939,
+      "entries_with_every_main_road_edge_closed": 0,
+      "entries_with_every_edge_closed": 0
+     },
+     "frame": {
+      "residents_with_hospital_within_30_min_before": 74596.846,
+      "residents_newly_losing_hospital_within_30_min": 539.748,
+      "residents_with_main_road_within_15_min_before": 68887.945,
+      "residents_newly_losing_main_road_within_15_min": 192.285,
+      "residents_with_a_route_before": 75170.53,
+      "residents_losing_every_route": 461.558
+     },
+     "units": {
+      "TH570901": {
+       "residents_with_hospital_within_30_min_before": 17453.232,
+       "residents_newly_losing_hospital_within_30_min": 13.075,
+       "residents_with_main_road_within_15_min_before": 17453.232,
+       "residents_newly_losing_main_road_within_15_min": 13.075,
+       "residents_with_a_route_before": 17453.232,
+       "residents_losing_every_route": 13.075
+      },
+      "TH570902": {
+       "residents_with_hospital_within_30_min_before": 7148.753,
+       "residents_newly_losing_hospital_within_30_min": 0.0,
+       "residents_with_main_road_within_15_min_before": 7010.764,
+       "residents_newly_losing_main_road_within_15_min": 0.0,
+       "residents_with_a_route_before": 7213.945,
+       "residents_losing_every_route": 0.0
+      },
+      "TH570903": {
+       "residents_with_hospital_within_30_min_before": 5709.62,
+       "residents_newly_losing_hospital_within_30_min": 155.394,
+       "residents_with_main_road_within_15_min_before": 2963.157,
+       "residents_newly_losing_main_road_within_15_min": 0.0,
+       "residents_with_a_route_before": 5972.366,
+       "residents_losing_every_route": 133.849
+      },
+      "TH570904": {
+       "residents_with_hospital_within_30_min_before": 8609.449,
+       "residents_newly_losing_hospital_within_30_min": 77.77,
+       "residents_with_main_road_within_15_min_before": 8557.126,
+       "residents_newly_losing_main_road_within_15_min": 77.77,
+       "residents_with_a_route_before": 8609.449,
+       "residents_losing_every_route": 77.77
+      },
+      "TH570905": {
+       "residents_with_hospital_within_30_min_before": 6529.839,
+       "residents_newly_losing_hospital_within_30_min": 210.907,
+       "residents_with_main_road_within_15_min_before": 4919.862,
+       "residents_newly_losing_main_road_within_15_min": 22.567,
+       "residents_with_a_route_before": 6558.295,
+       "residents_losing_every_route": 210.907
+      },
+      "TH570906": {
+       "residents_with_hospital_within_30_min_before": 19164.542,
+       "residents_newly_losing_hospital_within_30_min": 0.0,
+       "residents_with_main_road_within_15_min_before": 19138.949,
+       "residents_newly_losing_main_road_within_15_min": 0.0,
+       "residents_with_a_route_before": 19164.542,
+       "residents_losing_every_route": 0.0
+      },
+      "TH570908": {
+       "residents_with_hospital_within_30_min_before": 3787.85,
+       "residents_newly_losing_hospital_within_30_min": 66.832,
+       "residents_with_main_road_within_15_min_before": 2702.476,
+       "residents_newly_losing_main_road_within_15_min": 63.104,
+       "residents_with_a_route_before": 4005.14,
+       "residents_losing_every_route": 10.188
+      },
+      "TH570909": {
+       "residents_with_hospital_within_30_min_before": 6193.562,
+       "residents_newly_losing_hospital_within_30_min": 15.769,
+       "residents_with_main_road_within_15_min_before": 6142.379,
+       "residents_newly_losing_main_road_within_15_min": 15.769,
+       "residents_with_a_route_before": 6193.562,
+       "residents_losing_every_route": 15.769
+      }
+     }
+    },
+    "central": {
+     "closure": {
+      "edges": 65673,
+      "intersected_edges": 161,
+      "closed_edges": 112,
+      "delayed_edges": 9,
+      "intersected_edges_left_open": 40,
+      "closed_bridge_tagged_edges": 0,
+      "largest_travel_time_factor": 2.7910750786099983,
+      "grade_join_connectors": 345,
+      "connectors_with_their_coordinate_inside_the_extent": 0,
+      "main_road_entries": 1939,
+      "entries_with_every_main_road_edge_closed": 0,
+      "entries_with_every_edge_closed": 0
+     },
+     "frame": {
+      "residents_with_hospital_within_30_min_before": 74596.846,
+      "residents_newly_losing_hospital_within_30_min": 1146.576,
+      "residents_with_main_road_within_15_min_before": 68887.945,
+      "residents_newly_losing_main_road_within_15_min": 536.275,
+      "residents_with_a_route_before": 75170.53,
+      "residents_losing_every_route": 598.803
+     },
+     "units": {
+      "TH570901": {
+       "residents_with_hospital_within_30_min_before": 17453.232,
+       "residents_newly_losing_hospital_within_30_min": 13.075,
+       "residents_with_main_road_within_15_min_before": 17453.232,
+       "residents_newly_losing_main_road_within_15_min": 13.075,
+       "residents_with_a_route_before": 17453.232,
+       "residents_losing_every_route": 13.075
+      },
+      "TH570902": {
+       "residents_with_hospital_within_30_min_before": 7148.753,
+       "residents_newly_losing_hospital_within_30_min": 0.0,
+       "residents_with_main_road_within_15_min_before": 7010.764,
+       "residents_newly_losing_main_road_within_15_min": 0.0,
+       "residents_with_a_route_before": 7213.945,
+       "residents_losing_every_route": 0.0
+      },
+      "TH570903": {
+       "residents_with_hospital_within_30_min_before": 5709.62,
+       "residents_newly_losing_hospital_within_30_min": 167.044,
+       "residents_with_main_road_within_15_min_before": 2963.157,
+       "residents_newly_losing_main_road_within_15_min": 0.0,
+       "residents_with_a_route_before": 5972.366,
+       "residents_losing_every_route": 144.15
+      },
+      "TH570904": {
+       "residents_with_hospital_within_30_min_before": 8609.449,
+       "residents_newly_losing_hospital_within_30_min": 106.084,
+       "residents_with_main_road_within_15_min_before": 8557.126,
+       "residents_newly_losing_main_road_within_15_min": 97.503,
+       "residents_with_a_route_before": 8609.449,
+       "residents_losing_every_route": 106.084
+      },
+      "TH570905": {
+       "residents_with_hospital_within_30_min_before": 6529.839,
+       "residents_newly_losing_hospital_within_30_min": 316.556,
+       "residents_with_main_road_within_15_min_before": 4919.862,
+       "residents_newly_losing_main_road_within_15_min": 36.422,
+       "residents_with_a_route_before": 6558.295,
+       "residents_losing_every_route": 300.698
+      },
+      "TH570906": {
+       "residents_with_hospital_within_30_min_before": 19164.542,
+       "residents_newly_losing_hospital_within_30_min": 0.0,
+       "residents_with_main_road_within_15_min_before": 19138.949,
+       "residents_newly_losing_main_road_within_15_min": 0.0,
+       "residents_with_a_route_before": 19164.542,
+       "residents_losing_every_route": 0.0
+      },
+      "TH570908": {
+       "residents_with_hospital_within_30_min_before": 3787.85,
+       "residents_newly_losing_hospital_within_30_min": 528.048,
+       "residents_with_main_road_within_15_min_before": 2702.476,
+       "residents_newly_losing_main_road_within_15_min": 373.506,
+       "residents_with_a_route_before": 4005.14,
+       "residents_losing_every_route": 19.028
+      },
+      "TH570909": {
+       "residents_with_hospital_within_30_min_before": 6193.562,
+       "residents_newly_losing_hospital_within_30_min": 15.769,
+       "residents_with_main_road_within_15_min_before": 6142.379,
+       "residents_newly_losing_main_road_within_15_min": 15.769,
+       "residents_with_a_route_before": 6193.562,
+       "residents_losing_every_route": 15.769
+      }
+     }
+    },
+    "permissive": {
+     "closure": {
+      "edges": 65673,
+      "intersected_edges": 161,
+      "closed_edges": 161,
+      "delayed_edges": 0,
+      "intersected_edges_left_open": 0,
+      "closed_bridge_tagged_edges": 0,
+      "grade_join_connectors": 345,
+      "connectors_with_their_coordinate_inside_the_extent": 0,
+      "main_road_entries": 1939,
+      "entries_with_every_main_road_edge_closed": 0,
+      "entries_with_every_edge_closed": 0
+     },
+     "frame": {
+      "residents_with_hospital_within_30_min_before": 74596.846,
+      "residents_newly_losing_hospital_within_30_min": 1252.117,
+      "residents_with_main_road_within_15_min_before": 68887.945,
+      "residents_newly_losing_main_road_within_15_min": 712.192,
+      "residents_with_a_route_before": 75170.53,
+      "residents_losing_every_route": 766.276
+     },
+     "units": {
+      "TH570901": {
+       "residents_with_hospital_within_30_min_before": 17453.232,
+       "residents_newly_losing_hospital_within_30_min": 13.075,
+       "residents_with_main_road_within_15_min_before": 17453.232,
+       "residents_newly_losing_main_road_within_15_min": 13.075,
+       "residents_with_a_route_before": 17453.232,
+       "residents_losing_every_route": 13.075
+      },
+      "TH570902": {
+       "residents_with_hospital_within_30_min_before": 7148.753,
+       "residents_newly_losing_hospital_within_30_min": 0.0,
+       "residents_with_main_road_within_15_min_before": 7010.764,
+       "residents_newly_losing_main_road_within_15_min": 0.0,
+       "residents_with_a_route_before": 7213.945,
+       "residents_losing_every_route": 0.0
+      },
+      "TH570903": {
+       "residents_with_hospital_within_30_min_before": 5709.62,
+       "residents_newly_losing_hospital_within_30_min": 196.651,
+       "residents_with_main_road_within_15_min_before": 2963.157,
+       "residents_newly_losing_main_road_within_15_min": 0.0,
+       "residents_with_a_route_before": 5972.366,
+       "residents_losing_every_route": 235.688
+      },
+      "TH570904": {
+       "residents_with_hospital_within_30_min_before": 8609.449,
+       "residents_newly_losing_hospital_within_30_min": 119.401,
+       "residents_with_main_road_within_15_min_before": 8557.126,
+       "residents_newly_losing_main_road_within_15_min": 152.92,
+       "residents_with_a_route_before": 8609.449,
+       "residents_losing_every_route": 119.401
+      },
+      "TH570905": {
+       "residents_with_hospital_within_30_min_before": 6529.839,
+       "residents_newly_losing_hospital_within_30_min": 370.258,
+       "residents_with_main_road_within_15_min_before": 4919.862,
+       "residents_newly_losing_main_road_within_15_min": 38.522,
+       "residents_with_a_route_before": 6558.295,
+       "residents_losing_every_route": 354.399
+      },
+      "TH570906": {
+       "residents_with_hospital_within_30_min_before": 19164.542,
+       "residents_newly_losing_hospital_within_30_min": 0.0,
+       "residents_with_main_road_within_15_min_before": 19138.949,
+       "residents_newly_losing_main_road_within_15_min": 0.0,
+       "residents_with_a_route_before": 19164.542,
+       "residents_losing_every_route": 0.0
+      },
+      "TH570908": {
+       "residents_with_hospital_within_30_min_before": 3787.85,
+       "residents_newly_losing_hospital_within_30_min": 532.948,
+       "residents_with_main_road_within_15_min_before": 2702.476,
+       "residents_newly_losing_main_road_within_15_min": 438.078,
+       "residents_with_a_route_before": 4005.14,
+       "residents_losing_every_route": 23.928
+      },
+      "TH570909": {
+       "residents_with_hospital_within_30_min_before": 6193.562,
+       "residents_newly_losing_hospital_within_30_min": 19.784,
+       "residents_with_main_road_within_15_min_before": 6142.379,
+       "residents_newly_losing_main_road_within_15_min": 69.597,
+       "residents_with_a_route_before": 6193.562,
+       "residents_losing_every_route": 19.784
+      }
+     }
+    }
+   }
+  }
+ },
+ "table_of_flood_inputs_of_work_package_2": {
+  "path": "outputs/flood_input_comparison/mae_sai_v1.json",
+  "sha256": "22b7b30fd07058cce33b10e041bc2537ca7ace1a276b34801bed07b0859e6479",
+  "generated_at_utc": "2026-10-07T09:40:31Z"
+ },
+ "credits": [
+  "Contains modified Copernicus Sentinel data 2024, processed by Microsoft Planetary Computer.",
+  "Roads © OpenStreetMap contributors (ODbL 1.0). Residents: WorldPop 2020 (CC BY 4.0). ESA WorldCover 2021 v200 (CC BY 4.0). Copernicus DEM GLO-30."
+ ],
+ "assumptions": [
+  "A closure is modelled with closure rule v1 from where a reading puts water on a road; a flood intersection does not prove a closure.",
+  "Each reading is cut to the eight tambons, as the radar inputs of work package 2 were.",
+  "The radar passed about four days after the peak of the flood; water that had drained is not in any reading."
+ ],
+ "limits": [
+  "No dated reference exists for September 2024. The readings cannot be scored.",
+  "The detector was developed on October 2024 residual water and on a lowland tile of July 2025.",
+  "C-band radar does not see water between buildings or under trees: Mae Sai town is where it sees least.",
+  "No component, no planning score and no class is computed."
+ ]
+}

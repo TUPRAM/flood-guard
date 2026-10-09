@@ -499,6 +499,52 @@
       "gates": "Showing the second reading in the pitch or on a page.",
       "ready": true,
       "added": "2026-10-09"
+    },
+    {
+      "id": "V-25",
+      "group": "models",
+      "title": "The work on the radar detection and its one test",
+      "check": "Read the short version and the two tables of the test. Six changes were tried on data already seen; a simple threshold with cleaning was frozen; on the held-out chip, a flooded town, nothing we built sees more than a quarter of the water, and by the rule fixed beforehand the fixed radar rules stay. Accept if the team will say that the detection improved on open land in development and was not confirmed on the held-out chip, and will not quote M1-literal's 0.45 as a good result.",
+      "evidence": [
+        {
+          "label": "Result in plain words",
+          "path": "docs/radar_detection_improvement.md"
+        },
+        {
+          "label": "The one test",
+          "path": "outputs/radar_detection_improvement/held_out_test_v1.json"
+        },
+        {
+          "label": "Freeze record, committed before the held-out chips were read",
+          "path": "outputs/radar_detection_improvement/freeze_v1.json"
+        },
+        {
+          "label": "Plan, committed before any change was tried",
+          "path": "docs/proposal_execution/radar_detection_improvement_plan_v1.md"
+        }
+      ],
+      "gates": "Any sentence about improved detection in the pitch.",
+      "ready": true,
+      "added": "2026-10-09"
+    },
+    {
+      "id": "V-26",
+      "group": "models",
+      "title": "The September 2024 pass read again",
+      "check": "Read section 3. Read with the frozen detector and a dry-season baseline, the pass of 15 September shows 23.8 square km of water in the district; 1,704 residents lose every route and 290 of them are in Ko Chang, against all 5,972 under the season layer. There is no dated reference for September, so the reading is unchecked. Accept if the team will keep calling the Ko Chang result a scenario and will not tell it as what the radar saw on a day.",
+      "evidence": [
+        {
+          "label": "Result in plain words, section 3",
+          "path": "docs/radar_detection_improvement.md"
+        },
+        {
+          "label": "Result file",
+          "path": "outputs/september_reread/mae_sai_20240915_v1.json"
+        }
+      ],
+      "gates": "How the Ko Chang result is told when someone asks what the satellite saw.",
+      "ready": true,
+      "added": "2026-10-09"
     }
   ]
 }

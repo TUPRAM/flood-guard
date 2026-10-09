@@ -366,3 +366,18 @@ Agreement between two sensors 44 hours apart; not accuracy.
 - Radar results: `outputs/planning_v1/radar_o1_mae_sai_v1.json`
 - THEOS-2 check: `docs/theos2_radar_cross_check.md`
 - Decisions: `docs/decision-log-d1-d16.md`
+
+## 8. Added on 8 and 9 October: results to bring, each with its caveat
+
+| Result | Where | One sentence for the session |
+|---|---|---|
+| Radar rules against a dated agency layer at Mae Sai | `docs/dated_radar_check.md` | The image taken as "before" decides what a change rule sees: 70% of the mapped water with a dry-season image, almost none with a wet-season one. The agency layer may come from the same radar pass. |
+| A trained radar classifier | `docs/radar_flood_classifier.md` | Trained on agency labels, tested on an independent THEOS-2 tile: the full model did not carry over; a single backscatter threshold did better than our rules. |
+| Work on the detection, with a held-out test | `docs/radar_detection_improvement.md` | It improved on open land in development; on a held-out flooded town nothing we built sees more than a quarter of the water, so the fixed rules stay. |
+| The September pass read again | `docs/radar_detection_improvement.md`, section 3 | Read with a better detector, the radar pass cuts off 290 of Ko Chang's 5,972 residents; the total loss belongs to the season scenario. Unchecked: no dated reference for September. |
+| Ko Chang roads at three closure levels | `docs/ko_chang_road_check.md` | The same road is the first to keep passable at every level. |
+| Access loss by age | `docs/equity_by_age.md` | Computed; the open age data cannot show a gap inside a tambon. |
+| The proposal's own class wording | `docs/class_v2_reading.md` | As a secondary reading, Mae Sai town is "protect essential services". The binding classes do not change. |
+
+Each is on the team page for the team's word (items V-17, V-19 and V-22 to
+V-26). None changes a published class or enters a planning score.

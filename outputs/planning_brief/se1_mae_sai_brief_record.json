@@ -1,0 +1,50 @@
+{
+ "schema": "floodguard.planning_brief_record.v1",
+ "what_this_is": "The record of the printable brief of case SE1: what it was made from, and that it changes nothing published.",
+ "source_timestamp": "2024-08-01 to 2024-10-12",
+ "result_generated_at": "2026-10-06T13:43:19Z",
+ "confidence_classes_of_the_rows": [
+  "medium"
+ ],
+ "operational_status": "non_operational",
+ "official_warning": false,
+ "can_feed_decision_layer": false,
+ "made_from": {
+  "path": "outputs/planning_v1/overlays/planning_assessment_overlay_se1_mae_sai.json",
+  "sha256": "bb101e8021cffedc94044572c98863bd46bd38ed314e38435b436dfc8b552205"
+ },
+ "stability_note_from": {
+  "path": "outputs/uncertainty_ensemble_rescaled/se1_mae_sai_v1.json",
+  "sha256": "bd507967a77f555b8d60bce21bead5812fa776621566fc6dfb8ee16a6aa17176",
+  "what": "A report-only run (decision log R38). The note is labelled on the brief as not part of the published result."
+ },
+ "files": [
+  {
+   "name": "se1_mae_sai_brief.md",
+   "sha256": "bf01cb5af0d30eaa16fa494616094cfc8d83431ed2d3c2f7f4133cf84be5a91a",
+   "bytes": 7888
+  },
+  {
+   "name": "se1_mae_sai_brief.html",
+   "sha256": "f07c10a53963c089779498dded044a11e0257d81bc5346ea4500636475fa937e",
+   "bytes": 11082
+  }
+ ],
+ "classes_on_the_brief": {
+  "TH570903": "B",
+  "TH570901": "D",
+  "TH570905": "D",
+  "TH570908": "D",
+  "TH570904": "E",
+  "TH570909": "E",
+  "TH570906": "E",
+  "TH570902": "E"
+ },
+ "assumptions": [
+  "Road closures are modelled from the flood layer. No closure was observed.",
+  "Residents are modelled counts (WorldPop 2020).",
+  "The flood layer is an agency product that was not checked in the field."
+ ],
+ "thai_text": "Thai text written by the project's assistant; not reviewed by a native speaker.",
+ "how_to_print": "Open the HTML file in a browser and print: A4, landscape, one sheet."
+}

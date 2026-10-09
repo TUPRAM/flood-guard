@@ -43,13 +43,23 @@ Before any scene is received, six readings of the pass are written on the
 | `frozen_detector` | The detector frozen in decision log R37: VH after at or below −18.46 dB, cleaned |
 | `simple_threshold` | The same threshold, not cleaned |
 | `un_spider_dry_baseline` | The UN-SPIDER quotient rule, image before = the median of three dry-season passes |
-| `un_spider_12_days_before` | The UN-SPIDER quotient rule, image before = the pass of the same orbit 12 days earlier |
-| `m1_literal_12_days_before` | Rule M1-literal, same image before |
-| `m1_v2_12_days_before` | The frozen rule M1-v2, same image before |
+| `un_spider_last_pass_before` | The UN-SPIDER quotient rule, image before = the last pass of the same orbit before the event that the radar source holds |
+| `m1_literal_last_pass_before` | Rule M1-literal, same image before |
+| `m1_v2_last_pass_before` | The frozen rule M1-v2, same image before |
 
-The last three are the **fixed rules**. The image before follows the rule of
-the held-out test of R37 (the pass of the same orbit 12 days earlier), not a
-choice made for this event. No reading is tuned, re-cut or cleaned again
+The last three are the **fixed rules**. Their image before is fixed by a rule,
+not chosen for this event: the last pass of the same orbit before the pass of
+15 September, at most 36 days earlier, in the source the project reads radar
+from.
+
+**Amended on 9 October 2026, before any reading was written and before any
+image was received.** The first text of this section named the pass 12 days
+earlier, the rule of the held-out test of R37. The first run of the radar
+stage stopped: the source (Sentinel-1 RTC on the Planetary Computer) holds no
+pass of 3 September 2024. The pass it does hold is that of 22 August 2024,
+24 days earlier, which is also the image before of the dated radar check
+(R34). The run of record of September 2024 used the pass of 3 September from
+another processing chain; it is not one of the six readings. No reading is tuned, re-cut or cleaned again
 after an image is seen: the comparison stage refuses a raster whose SHA-256
 is not the frozen one.
 

@@ -18,7 +18,7 @@ import numpy as np
 NAME_MARGIN_IOU = 0.02
 """A new reading is named better than the fixed rules only when its IoU is higher than the best of them by this much."""
 
-FIXED_RULES = ("un_spider_12_days_before", "m1_literal_12_days_before", "m1_v2_12_days_before")
+FIXED_RULES = ("un_spider_last_pass_before", "m1_literal_last_pass_before", "m1_v2_last_pass_before")
 NEW_READINGS = ("frozen_detector", "simple_threshold", "un_spider_dry_baseline")
 READINGS = (*NEW_READINGS, *FIXED_RULES)
 GAP_SENTENCE = ("The image was taken {hours:.1f} hours after the radar pass. Water that left in between counts against the radar, "

@@ -55,15 +55,15 @@ def test_every_frozen_reading_is_scored_also_by_stratum() -> None:
 
 
 def test_a_new_reading_is_named_only_with_the_margin_over_the_best_fixed_rule() -> None:
-    named = study.statement(scores_with(frozen_detector=0.42, m1_literal_12_days_before=0.40, un_spider_12_days_before=0.30), hours_after_the_pass=28.6)
-    assert named["named_better"] == ["frozen_detector"] and named["best_fixed_rule"] == "m1_literal_12_days_before"
+    named = study.statement(scores_with(frozen_detector=0.42, m1_literal_last_pass_before=0.40, un_spider_last_pass_before=0.30), hours_after_the_pass=28.6)
+    assert named["named_better"] == ["frozen_detector"] and named["best_fixed_rule"] == "m1_literal_last_pass_before"
     assert "not replaced" in named["sentence"] and "28.6 hours" in named["time_gap"] and "lower bound" in named["time_gap"]
-    short = study.statement(scores_with(frozen_detector=0.419, m1_literal_12_days_before=0.40), hours_after_the_pass=4.3)
+    short = study.statement(scores_with(frozen_detector=0.419, m1_literal_last_pass_before=0.40), hours_after_the_pass=4.3)
     assert short["named_better"] == [] and short["sentence"].endswith("The fixed rules stay.")
 
 
 def test_nothing_is_named_when_a_fixed_rule_has_no_figure() -> None:
-    result = study.statement(scores_with(frozen_detector=0.9, m1_v2_12_days_before=None), hours_after_the_pass=28.6)
+    result = study.statement(scores_with(frozen_detector=0.9, m1_v2_last_pass_before=None), hours_after_the_pass=28.6)
     assert result["named_better"] == [] and "nothing is named" in result["sentence"]
 
 

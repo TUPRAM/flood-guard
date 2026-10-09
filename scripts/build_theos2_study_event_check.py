@@ -48,8 +48,9 @@ FREEZE_NAME = "radar_freeze_v1.json"
 WORK = Path("proposal_execution") / "theos2_study_event_check_v1"
 READINGS_RASTER = "radar_readings_mae_sai_20240915.tif"
 PASS_AFTER_UTC = "2024-09-15T23:16:14Z"
+MAX_DAYS_BEFORE = 36
 ROAD_SHEET = "outputs/ko_chang_road_check/ko_chang_roads_se1_v1.json"
-SOURCE_TIMESTAMP = "Sentinel-1 2024-09-15T23:16:14Z; image before 12 days earlier; dry-season passes of 24 February, 7 March and 12 April 2024"
+SOURCE_TIMESTAMP = "Sentinel-1 2024-09-15T23:16:14Z; image before: the last pass of the same orbit the source holds; dry-season passes of 24 February, 7 March and 12 April 2024"
 ASSUMPTIONS = [
     "The radar readings are those of one Sentinel-1 pass, four to five days after the peak of the flood at Mae Sai.",
     "The water of a THEOS-2 image is read by one rule (NDWI, three-class Otsu) with no setting made by eye; it is not a check on the ground.",
@@ -108,7 +109,7 @@ def mae_sai(external: Path) -> dict[str, Any]:
 
 
 def pass_before(grid: tuple[float, float, int, int]) -> list[dict[str, Any]]:
-    """The pass of the same orbit 12 days before the pass of 15 September 2024: the rule of the held-out test."""
+    """The last pass of the same orbit before the pass of 15 September 2024 that the radar source holds (plan section 3)."""
 
     from pyproj import Transformer
 
@@ -121,12 +122,13 @@ def pass_before(grid: tuple[float, float, int, int]) -> list[dict[str, Any]]:
         bbox, (after - timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M:%SZ"), (after + timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M:%SZ"))), None)
     if orbit is None:
         raise BuildError("the catalogue does not list the pass of 15 September 2024 over the district")
-    target = after - timedelta(days=12)
-    found = s1_rtc.search_passes(bbox, (target - timedelta(hours=2)).strftime("%Y-%m-%dT%H:%M:%SZ"),
-                                 (target + timedelta(hours=2)).strftime("%Y-%m-%dT%H:%M:%SZ"), relative_orbit=orbit)
+    found = s1_rtc.search_passes(bbox, (after - timedelta(days=MAX_DAYS_BEFORE)).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                                 (after - timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M:%SZ"), relative_orbit=orbit)
     if not found:
-        raise BuildError("no pass of the same orbit 12 days before 15 September 2024 covers the district")
-    return found
+        raise BuildError(f"the source holds no pass of the same orbit in the {MAX_DAYS_BEFORE} days before 15 September 2024")
+    last = max(found, key=lambda entry: entry["datetime"])
+    return [entry for entry in found if abs((datetime.strptime(entry["datetime"][:19], "%Y-%m-%dT%H:%M:%S")
+                                              - datetime.strptime(last["datetime"][:19], "%Y-%m-%dT%H:%M:%S")).total_seconds()) < 300]
 
 
 def stage_radar(arguments: argparse.Namespace) -> None:
@@ -172,7 +174,7 @@ def stage_radar(arguments: argparse.Namespace) -> None:
     readings["un_spider_dry_baseline"] = candidate.astype("uint8")
 
     passes = pass_before(grid)
-    before_record = s1_rtc.fetch_pass(work, grid, [item["item"] for item in passes], "s1_mae_sai_before_12_days", epsg=EPSG, cell_m=CELL_M)
+    before_record = s1_rtc.fetch_pass(work, grid, [item["item"] for item in passes], "s1_mae_sai_last_pass_before", epsg=EPSG, cell_m=CELL_M)
     with rasterio.open(work / before_record["window_file"]) as source:
         before = source.read().astype("float64")
     binding = review.require_frozen_m1_v2(ROOT)
@@ -180,7 +182,7 @@ def stage_radar(arguments: argparse.Namespace) -> None:
     tiles = rc.lattice_tiles((west, north - rows * CELL_M, west + columns * CELL_M, north))
     candidates = dated.run_methods(before, after, tiles, grid, permanent_water, slope, configs)
     for name in ("un_spider", "m1_literal", "m1_v2"):
-        readings[f"{name}_12_days_before"] = candidates[name].astype("uint8")
+        readings[f"{name}_last_pass_before"] = candidates[name].astype("uint8")
 
     raster = work / READINGS_RASTER
     with rasterio.open(raster, "w", driver="GTiff", height=rows, width=columns, count=len(study.READINGS), dtype="uint8", nodata=255,
@@ -203,11 +205,11 @@ def stage_radar(arguments: argparse.Namespace) -> None:
             "frozen_detector": "the detector frozen in decision log R37: VH after at or below the frozen threshold, cleaned (slope, group size, growth)",
             "simple_threshold": "VH after at or below the frozen threshold, not cleaned",
             "un_spider_dry_baseline": "the UN-SPIDER quotient rule with the median of three dry-season passes as its image before",
-            "un_spider_12_days_before": "the UN-SPIDER quotient rule with the pass 12 days earlier as its image before",
-            "m1_literal_12_days_before": "rule M1-literal with the pass 12 days earlier as its image before",
-            "m1_v2_12_days_before": "the frozen rule M1-v2 with the pass 12 days earlier as its image before",
+            "un_spider_last_pass_before": "the UN-SPIDER quotient rule with the last pass of the same orbit before the event as its image before",
+            "m1_literal_last_pass_before": "rule M1-literal with the same image before",
+            "m1_v2_last_pass_before": "the frozen rule M1-v2 with the same image before",
         },
-        "sentinel1": {"after": PASS_AFTER_UTC, "before_12_days": [{"item": item["item"], "datetime": item["datetime"]} for item in passes],
+        "sentinel1": {"after": PASS_AFTER_UTC, "last_pass_before": [{"item": item["item"], "datetime": item["datetime"]} for item in passes],
                       "relative_orbit": passes[0]["relative_orbit"]},
         "frozen_detector": {"freeze_record": f"{improve.OUTPUT_DIR}/freeze_v1.json",
                             "sha256": t2.sha256_file(ROOT / improve.OUTPUT_DIR / "freeze_v1.json")},

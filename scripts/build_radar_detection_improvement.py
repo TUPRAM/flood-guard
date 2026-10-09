@@ -127,15 +127,21 @@ def stage_baselines(arguments: argparse.Namespace) -> None:
     work.mkdir(parents=True, exist_ok=True)
     areas = area_grids(external)
     record: dict[str, Any] = {}
+    only = [key for key in (arguments.only or "").split(",") if key]
     for key, area in areas.items():
+        if only and key not in only:
+            continue
         started = time.time()
         _path, record[key] = dry_baseline(external, key, area)
         print(f"{area['name']}: dry-season baseline of {len(area['dry'])} passes, {time.time() - started:.0f} s", flush=True)
+    if only and "mae_sai" not in only:
+        return  # a helper run for some areas: the record is written by the run that covers them all
     started = time.time()
     record["mae_sai_september_pass"] = s1_rtc.fetch_pass(work, areas["mae_sai"]["grid"], MAE_SAI_SEPTEMBER, "s1_mae_sai_20240915",
                                                          epsg=EPSG, cell_m=CELL_M)
     print(f"Mae Sai, pass of 15 September 2024: {time.time() - started:.0f} s", flush=True)
-    t2.write_json(work / "baselines_record.json", {"fetched_at_utc": t2.now_utc(), "areas": record})
+    if not only:
+        t2.write_json(work / "baselines_record.json", {"fetched_at_utc": t2.now_utc(), "areas": record})
 
 
 # ---------------------------------------------------------------------------
@@ -758,6 +764,8 @@ def main() -> None:
         stage.add_argument("--external-root", required=True)
         stage.add_argument("--replace", action="store_true")
         stage.add_argument("--reason", default="")
+        if name == "baselines":
+            stage.add_argument("--only", default="", help="comma-separated area keys, to fetch some areas in a second process")
         if name == "reference":
             stage.add_argument("--theos2-dir", required=True, help="the folder that holds the two held-out THEOS-2 files")
     arguments = parser.parse_args()

@@ -1,6 +1,6 @@
 # Validation check: state of the team's acceptance
 
-Written by `scripts/import_validation_records.py` on 2026-10-09T11:42:55Z from 9 record(s). Do not edit by hand.
+Written by `scripts/import_validation_records.py` on 2026-10-09T15:02:04Z from 9 record(s). Do not edit by hand.
 
 This is the word of the three team members on the project's own work. It is not a review by an independent expert, it qualifies no flood map, and it is not an official approval.
 
@@ -33,7 +33,8 @@ This is the word of the three team members on the project's own work. It is not 
 | V-25 | The work on the radar detection and its one test | Accepted | accept | accept | accept |
 | V-26 | The September 2024 pass read again | Accepted | accept | accept | accept |
 | V-27 | The stability of the SE1 classes over all 180 cells | Accepted | accept | accept | accept |
-| V-28 | Access loss by age over the 180 cells of the ensemble | Waiting |  |  |  |
+| V-28 | Access loss by age: over the 180 cells, with a smallest size, and with registered age counts | Waiting |  |  |  |
 | V-29 | Shelters: access on foot and listed places against the residents in reach | Waiting |  |  |  |
 | V-30 | The printable brief of case SE1, Thai and English | Waiting |  |  |  |
 | V-31 | THEOS-2 on Mae Sai itself: the plan and the frozen radar readings | Waiting |  |  |  |
+| V-32 | The run of record of the SE1 ensemble: seven classes hold, Mae Sai is 'unstable: verify' | Waiting |  |  |  |

@@ -1,6 +1,6 @@
 {
   "schema_version": "floodguard.uncertainty_ensemble_run_receipt.v2",
-  "generated_at_utc": "2026-10-09T13:54:46Z",
+  "generated_at_utc": "2026-10-09T14:27:43Z",
   "run_kind": "superseding_run",
   "plan_task": "E10: uncertainty_ensemble.py + LOCO + headline rule; 540 cells per lane reported",
   "status": "run_receipt",
@@ -2036,16 +2036,7 @@
     "rescaled_demand": {
       "combinations_measured": 9,
       "unit_residents_same_in_the_rescaled_demand_and_the_access_tables": true,
-      "residents_by_unit": {
-        "TH570901": 31648.04,
-        "TH570902": 8954.47,
-        "TH570903": 7881.094,
-        "TH570904": 10286.85,
-        "TH570905": 4605.16,
-        "TH570906": 21645.235,
-        "TH570908": 3408.671,
-        "TH570909": 7042.577
-      }
+      "residents_in_the_units": 95472.09743362064
     }
   },
   "result": {
@@ -3100,7 +3091,8 @@
     "what": "Reads of the same inputs made while the code was written, before this run. They are listed because every run is reported.",
     "reads": [
       "The report-only run of decision log R38 (scripts/build_ensemble_rescaled_demand.py) computed the same 180 cells from the same inputs on 9 October 2026, and its per-tambon result was read before this run.",
-      "The age comparison of decision log R40 (scripts/build_equity_ensemble.py) made the same nine access runs on 9 October 2026."
+      "The age comparison of decision log R40 (scripts/build_equity_ensemble.py) made the same nine access runs on 9 October 2026.",
+      "The fifth run of this builder, made 31 minutes before on 9 October 2026 (receipt 627431b2...1b97), computed the same 180 cells; its result was read."
     ]
   },
   "open_points": [
@@ -3221,9 +3213,9 @@
     "The 2024-rescaled demand follows two readings of the formula of the protocol (decision log R38), which the team accepted (R39). The two population products are two models of where residents are counted; neither was checked on the ground."
   ],
   "implementation": {
-    "base_commit": "9113225c086f9e5d88f992165718d71186fb6954",
+    "base_commit": "f4ebc8d79853ab06bedb19b09e386e93e585ee51",
     "base_commit_note": "The commit the working tree was on. The files below are the ones this run loaded, identified by their own SHA-256, committed or not.",
-    "builder_sha256": "ad7539e06c989b0c15c2b895c94ebddc389a2f3dfac24294db35ee63e470f0a3",
+    "builder_sha256": "3074602f65bb202a4dd89ad2026e8f79385e61d28e777eb2f3a5aaf0a7daefb8",
     "e8_builder_sha256": "245e66f44c27ef4fe7023028d9f4db2367365908c8f44e661073bcbba0528077",
     "e5_builder_sha256": "fa376c611b2d2d2b509d9d8ac408034b81ad7964d3da56d4f17788360e38e749",
     "uncertainty_ensemble_module_sha256": "a85247125245476a803e3198676574811a9e0eee3f497b0bef1efcc3fdbfc617",
@@ -3247,26 +3239,26 @@
     }
   },
   "timing_seconds": {
-    "inputs_checked": 10.6,
+    "inputs_checked": 10.4,
     "stages_compared_unit_by_unit": 2.5,
     "units_read_and_lineage": 0.0,
-    "access_runs": 1831.6,
+    "access_runs": 1834.8,
     "access": {
-      "minus_edge_intersections_vehicle": 506.9,
+      "minus_edge_intersections_vehicle": 517.3,
       "minus_strict_runs_and_tables": 2.5,
-      "minus_central_runs_and_tables": 2.4,
+      "minus_central_runs_and_tables": 2.5,
       "minus_permissive_runs_and_tables": 5.2,
-      "as_provided_edge_intersections_vehicle": 535.0,
+      "as_provided_edge_intersections_vehicle": 538.3,
       "as_provided_strict_runs_and_tables": 2.4,
-      "as_provided_central_runs_and_tables": 2.4,
+      "as_provided_central_runs_and_tables": 2.5,
       "as_provided_permissive_runs_and_tables": 5.2,
-      "plus_edge_intersections_vehicle": 757.0,
-      "plus_strict_runs_and_tables": 2.7,
-      "plus_central_runs_and_tables": 2.6,
-      "plus_permissive_runs_and_tables": 5.5
+      "plus_edge_intersections_vehicle": 747.1,
+      "plus_strict_runs_and_tables": 2.5,
+      "plus_central_runs_and_tables": 2.4,
+      "plus_permissive_runs_and_tables": 5.2
     },
-    "units_measured_at_three_flood_levels": 5.8,
-    "cells_scored": 31.3
+    "units_measured_at_three_flood_levels": 5.5,
+    "cells_scored": 31.1
   },
   "open_points_answered_for_this_run": [
     {
@@ -3279,7 +3271,7 @@
       "files": [
         {
           "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/uncertainty_ensemble_se1_mae_sai.json",
-          "sha256": "ddccee7ba22e37c4cfbe7df10374904108478df711b3a1055d29bc53522d5fe5",
+          "sha256": "4cb81b59c4cdc4b57d440c1513a45232f54186f53c62536e06442965ac3d11bf",
           "bytes": 2521577,
           "what": "uncertainty_ensemble_units",
           "in_git": false,
@@ -3298,75 +3290,46 @@
     }
   },
   "timestamps": {
-    "run_started_at_utc": "2026-10-09T13:54:46Z",
-    "run_finished_at_utc": "2026-10-09T14:26:15Z",
-    "wall_time_minutes": 31.48,
+    "run_started_at_utc": "2026-10-09T14:27:43Z",
+    "run_finished_at_utc": "2026-10-09T14:59:14Z",
+    "wall_time_minutes": 31.52,
     "note": "generated_at_utc is the start of the run; the file of per-unit results carries the same time."
   },
   "supersedes": {
-    "receipt_sha256": "026937b840c1c5d65838fcb0ea25ef29db48099174ea553d69c7f5777158d0ce",
-    "generated_at_utc": "2026-10-06T13:44:46Z",
-    "reason": "The 2024-rescaled demand is now built with the two readings of decision log R38, which the team accepted (R39), so the 90 cells of the second population level are run and the headline rule is evaluated on the 180 cells of the public facility set.",
-    "result_same": false,
-    "summary_same": false,
-    "summary_fields_that_differ": [
-      "after_declared_cut_line_6",
-      "cells_not_run",
-      "cells_not_run_by_reason",
-      "cells_ranked",
-      "cells_run",
-      "class_counts_by_cell",
-      "class_counts_over_every_unit_cell",
-      "counts_that_state_a_value_of_a_single_unit",
-      "headline_status_counts",
-      "other_reading_of_the_protocol_set",
-      "outcome_fixed_by_the_bounds_counts",
-      "retention_over_the_cells_run",
-      "unit_cells_run",
-      "unit_cells_with_a_result",
-      "units_by_number_of_classes_over_the_cells_run"
-    ],
-    "units_same": false,
-    "units_sha256_of_the_superseded_run": "eb13676a27c8f0c084d3fedb7e25097c7024c63bf0cbab4e28eb1d013b8838e7",
+    "receipt_sha256": "627431b2d058ddc0a2ecb95c36aec48d1fbc34174fcb682ef3320df0aea71b97",
+    "generated_at_utc": "2026-10-09T13:54:46Z",
+    "reason": "The receipt of the fifth run listed the rescaled residents of each tambon among its checks, and a receipt names no tambon beside a value; the builder was corrected and the run made again. Nothing of the computation changed.",
+    "result_same": true,
+    "summary_same": true,
+    "summary_fields_that_differ": [],
+    "units_same": true,
+    "units_sha256_of_the_superseded_run": "b9023cae49181964cf7cc83fbcfb8720cfb1dea5187f70714128e430227c48d8",
     "units_sha256_of_this_run": "b9023cae49181964cf7cc83fbcfb8720cfb1dea5187f70714128e430227c48d8",
-    "unit_cells_same": false,
-    "unit_cells_sha256_of_the_superseded_run": "53ffe917764b11299ba56fb4a02a79cd7b538660cff6be255f74cea0d444c28d",
+    "unit_cells_same": true,
+    "unit_cells_sha256_of_the_superseded_run": "465cfa319b53040ca2de534b7a3023d34af3352beec3087f9725cd8561b37845",
     "unit_cells_sha256_of_this_run": "465cfa319b53040ca2de534b7a3023d34af3352beec3087f9725cd8561b37845",
-    "unit_record_fields_that_differ": [
-      "cells",
-      "cells_run",
-      "cells_with_a_result",
-      "class_counts",
-      "class_shares",
-      "fpps_0_100",
-      "fpps_swing",
-      "headline_stability",
-      "leave_one_component_out_over_the_cells",
-      "people_losing_30_minute_access",
-      "rank",
-      "routing_combinations"
-    ],
+    "unit_record_fields_that_differ": [],
     "access_unit_rows_same": true,
     "lineage_inputs_same": true,
     "outputs_of_the_superseded_run": {
-      "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/uncertainty_ensemble_se1_mae_sai.json": "fab80fbe9ba15ed6fd373e09a70cc9276a7431ec7b09fee2918d4bf1e950ed02",
+      "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/uncertainty_ensemble_se1_mae_sai.json": "ddccee7ba22e37c4cfbe7df10374904108478df711b3a1055d29bc53522d5fe5",
       "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/LICENSE_NOTICE.txt": "acaafc1b83a5fe5d72a9f50e0e0efe476517328f581c5c487fb2e0a1290de1df"
     },
     "copies_kept_outside_git": [
       {
-        "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/superseded_runs/20261006T134446Z/e10_uncertainty_ensemble_se1_mae_sai.json",
-        "sha256": "026937b840c1c5d65838fcb0ea25ef29db48099174ea553d69c7f5777158d0ce",
+        "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/superseded_runs/20261009T135446Z/e10_uncertainty_ensemble_se1_mae_sai.json",
+        "sha256": "627431b2d058ddc0a2ecb95c36aec48d1fbc34174fcb682ef3320df0aea71b97",
         "what": "receipt",
         "copied": true
       },
       {
-        "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/superseded_runs/20261006T134446Z/uncertainty_ensemble_se1_mae_sai.json",
-        "sha256": "fab80fbe9ba15ed6fd373e09a70cc9276a7431ec7b09fee2918d4bf1e950ed02",
+        "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/superseded_runs/20261009T135446Z/uncertainty_ensemble_se1_mae_sai.json",
+        "sha256": "ddccee7ba22e37c4cfbe7df10374904108478df711b3a1055d29bc53522d5fe5",
         "what": "file the receipt bound",
         "copied": true
       },
       {
-        "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/superseded_runs/20261006T134446Z/LICENSE_NOTICE.txt",
+        "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/superseded_runs/20261009T135446Z/LICENSE_NOTICE.txt",
         "sha256": "acaafc1b83a5fe5d72a9f50e0e0efe476517328f581c5c487fb2e0a1290de1df",
         "what": "file the receipt bound",
         "copied": true
@@ -3497,6 +3460,38 @@
         },
         {
           "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/superseded_runs/20261006T134446Z/LICENSE_NOTICE.txt",
+          "sha256": "acaafc1b83a5fe5d72a9f50e0e0efe476517328f581c5c487fb2e0a1290de1df",
+          "what": "file the receipt bound",
+          "copied": true
+        }
+      ]
+    },
+    {
+      "generated_at_utc": "2026-10-09T13:54:46Z",
+      "receipt_sha256": "627431b2d058ddc0a2ecb95c36aec48d1fbc34174fcb682ef3320df0aea71b97",
+      "superseded_because": "The receipt of the fifth run listed the rescaled residents of each tambon among its checks, and a receipt names no tambon beside a value; the builder was corrected and the run made again. Nothing of the computation changed.",
+      "result_same_as_the_run_that_replaced_it": true,
+      "unit_cells_same_as_the_run_that_replaced_it": true,
+      "units_sha256": "b9023cae49181964cf7cc83fbcfb8720cfb1dea5187f70714128e430227c48d8",
+      "outputs_sha256": {
+        "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/uncertainty_ensemble_se1_mae_sai.json": "ddccee7ba22e37c4cfbe7df10374904108478df711b3a1055d29bc53522d5fe5",
+        "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/LICENSE_NOTICE.txt": "acaafc1b83a5fe5d72a9f50e0e0efe476517328f581c5c487fb2e0a1290de1df"
+      },
+      "copies_kept_outside_git": [
+        {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/superseded_runs/20261009T135446Z/e10_uncertainty_ensemble_se1_mae_sai.json",
+          "sha256": "627431b2d058ddc0a2ecb95c36aec48d1fbc34174fcb682ef3320df0aea71b97",
+          "what": "receipt",
+          "copied": true
+        },
+        {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/superseded_runs/20261009T135446Z/uncertainty_ensemble_se1_mae_sai.json",
+          "sha256": "ddccee7ba22e37c4cfbe7df10374904108478df711b3a1055d29bc53522d5fe5",
+          "what": "file the receipt bound",
+          "copied": true
+        },
+        {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/superseded_runs/20261009T135446Z/LICENSE_NOTICE.txt",
           "sha256": "acaafc1b83a5fe5d72a9f50e0e0efe476517328f581c5c487fb2e0a1290de1df",
           "what": "file the receipt bound",
           "copied": true

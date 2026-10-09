@@ -51,6 +51,10 @@ FIRST_RUN_RECEIPTS = {"SE1": "cac28f7352b276c8f550faea0375e0ae19f9a82ce246875e18
 SECOND_RUN_RECEIPTS = {"SE1": "5d432b0b71b6f90e2b65d9d322e95dec2f7b32775aad5a117b1cd5e64217089e",
                        "O2": "270b0c5b024379b76bd4e5bdae5a4e1e98112af65f2e3c9f52e0f14a2f067e95"}
 """The SHA-256 of the receipt of the second run of each case (4 October 2026, after the review; in the Git history, commit 487d29a)."""
+CELLS_RUN = {"SE1": 180, "O2": 90}
+"""Case SE1 was run with the 2024-rescaled demand on 9 October 2026 (decision log R41): the 180 cells of the public
+facility set. Case O2 was not run again: its 90 cells are those of the WorldPop 2020 demand."""
+VINTAGES_RUN = {"SE1": ["worldpop_2020", "rescaled_2024"], "O2": ["worldpop_2020"]}
 
 pytestmark = pytest.mark.skipif(not all(path.is_file() for path in RECEIPTS.values()),
                                 reason="the uncertainty ensemble has not been run on this checkout")
@@ -146,10 +150,12 @@ def test_each_receipt_is_registered_names_the_protocols_and_names_no_tambon_besi
     assert single == {**receipt["result"]["summary"]["counts_that_state_a_value_of_a_single_unit"], **{
         key: single[key] for key in ("where", "who_can_read_them", "cannot_be_rebuilt_from_committed_files")}}
     if case == "SE1":
-        # One tambon alone is class B in the default cell; the count of class B follows it through the 90 cells.
-        assert alone == ["B"] and single["cells_in_which_such_a_class_has_another_count"] == 20
-        assert single["cells_whose_class_counts_differ_from_the_default_cell"] == 23
-        assert single["cells_in_which_every_unit_has_one_class"] == 0 and single["units_with_more_than_one_class_over_the_cells_run"] == 2
+        # One tambon alone is class B in the default cell. Over the 180 cells the count of class B is another one in 80:
+        # none in the 40 cells in which that tambon is D, and two in the 40 cells of the rescaled demand in which a second
+        # tambon is B as well.
+        assert alone == ["B"] and single["cells_in_which_such_a_class_has_another_count"] == 80
+        assert single["cells_whose_class_counts_differ_from_the_default_cell"] == 113
+        assert single["cells_in_which_every_unit_has_one_class"] == 0 and single["units_with_more_than_one_class_over_the_cells_run"] == 3
     else:
         # All eight tambons are class E in every cell: each count states the class of each tambon.
         assert alone == [] and single["cells_in_which_every_unit_has_one_class"] == 90
@@ -158,7 +164,7 @@ def test_each_receipt_is_registered_names_the_protocols_and_names_no_tambon_besi
     assert [item["what"] for item in files] == ["uncertainty_ensemble_units", "licence_notice"]
     assert all(item["path"].startswith(EXTERNAL_LABEL + "/") and item["in_git"] is False for item in files)
     assert all(f"/{case.lower()}_mae_sai/e10_uncertainty_ensemble/" in item["path"] for item in files)
-    assert files[0]["units"] == 8 and files[0]["cells_run"] == 90
+    assert files[0]["units"] == 8 and files[0]["cells_run"] == CELLS_RUN[case]
     public = ROOT / "apps" / "web" / "public"
     assert not list(public.rglob("uncertainty_ensemble_*")) if public.is_dir() else True
     assert receipt["lane_purity"]["result"] == "PASS"
@@ -186,14 +192,22 @@ def test_each_receipt_is_a_superseding_run_whose_cells_are_those_of_the_first_ru
     supersedes = receipt["supersedes"]
     history = receipt["run_history"]
     assert [item["receipt_sha256"] for item in history[:2]] == [FIRST_RUN_RECEIPTS[case], SECOND_RUN_RECEIPTS[case]]
-    assert len(history) == 3 and supersedes["receipt_sha256"] == history[-1]["receipt_sha256"]
-    assert "decision log R21" in supersedes["reason"]
+    assert len(history) == (5 if case == "SE1" else 3) and supersedes["receipt_sha256"] == history[-1]["receipt_sha256"]
+    if case == "SE1":
+        # 9 October 2026 (decision log R41). The fifth run added the 90 cells of the 2024-rescaled demand, so its cells are
+        # not those of the fourth alone; the sixth repeated it, because the receipt of the fifth named each tambon beside a
+        # value. The 90 cells of the 2020 demand are those of the fourth run (outputs/uncertainty_ensemble_rescaled).
+        assert "names no tambon beside a value" in supersedes["reason"] and "decision log R38" in history[3]["superseded_because"]
+        assert [item["unit_cells_same_as_the_run_that_replaced_it"] for item in history] == [True, True, True, False, True]
+        assert len(receipt["development_reads"]["reads"]) == 3
+    else:
+        assert "decision log R21" in supersedes["reason"]
+        assert all(item["unit_cells_same_as_the_run_that_replaced_it"] is True for item in history)
+        assert len(receipt["development_reads"]["reads"]) == 1
     assert supersedes["unit_cells_same"] is True, "every FPPS, class, reason code and leave-one-out of every cell is the same"
     assert supersedes["access_unit_rows_same"] is True
     assert supersedes["units_same"] is True and supersedes["result_same"] is True and supersedes["summary_same"] is True
     assert supersedes["unit_record_fields_that_differ"] == [] and supersedes["summary_fields_that_differ"] == []
-    assert all(item["unit_cells_same_as_the_run_that_replaced_it"] is True for item in history)
-    assert len(receipt["development_reads"]["reads"]) == 1
     assert all(item["copied"] is True and item["path"].startswith(EXTERNAL_LABEL + "/") for item in supersedes["copies_kept_outside_git"])
     assert [item["what"] for item in supersedes["copies_kept_outside_git"]].count("receipt") == 1
     for earlier in history:
@@ -224,16 +238,27 @@ def test_each_receipt_reports_every_cell_of_the_grid_protocol_v1b_states(case: s
     cells = receipt["cells"]
     not_run = [identifier for identifiers in cells["not_run"].values() for identifier in identifiers]
     assert len(every) == 540 and sorted([*cells["run"], *not_run]) == sorted(every), "540 cells per lane reported"
-    assert len(cells["run"]) == 90 and len(not_run) == 450
-    assert all(identifier.split("|")[2:4] == ["public", "worldpop_2020"] for identifier in cells["run"])
+    assert len(cells["run"]) == CELLS_RUN[case] and len(not_run) == 540 - CELLS_RUN[case]
+    assert all(identifier.split("|")[2] == "public" and identifier.split("|")[3] in VINTAGES_RUN[case] for identifier in cells["run"])
+    assert {identifier.split("|")[3] for identifier in cells["run"]} == set(VINTAGES_RUN[case])
     assert {reason: len(identifiers) for reason, identifiers in cells["not_run"].items()} == receipt["result"]["summary"]["cells_not_run_by_reason"]
-    assert sorted(len(identifiers) for identifiers in cells["not_run"].values()) == [90, 180, 180]
+    assert sorted(len(identifiers) for identifiers in cells["not_run"].values()) == ([360] if case == "SE1" else [90, 180, 180])
     levels = receipt["parameters"]["levels_not_run"]
     assert [(item["axis"], item["level"]) for item in levels] == [
-        ("facilities", FACILITY_SET_NAME), ("facilities", "all_listed"), ("population_vintage", "rescaled_2024")]
+        ("facilities", FACILITY_SET_NAME), ("facilities", "all_listed"),
+        *([] if case == "SE1" else [("population_vintage", "rescaled_2024")])]
     assert all("not approximated" in item["reason"] and item["open_points"] for item in levels)
     assert receipt["parameters"]["levels_run"]["facilities"] == ["public"]
-    assert receipt["parameters"]["levels_run"]["population_vintage"] == ["worldpop_2020"]
+    assert receipt["parameters"]["levels_run"]["population_vintage"] == VINTAGES_RUN[case]
+    if case == "SE1":
+        # The rescaled demand is built with the two readings the team accepted, and the receipt says where they are decided.
+        rescaled = receipt["parameters"]["rescaled_demand"]
+        assert len(rescaled["rules"]) == 2 and "decision log R38" in rescaled["decision"]
+        assert rescaled["demand_residents_rescaled"] > rescaled["demand_residents_2020"] > rescaled["demand_residents_kept_at_2020"] > 0
+        assert [item["id"] for item in receipt["open_points_answered_for_this_run"]] == ["E10-OP2"]
+        assert receipt["measurement_checks"]["rescaled_demand"]["combinations_measured"] == 9
+    else:
+        assert "rescaled_demand" not in receipt["parameters"] and "open_points_answered_for_this_run" not in receipt
     assert receipt["parameters"]["levels_run"]["weights"] == list(grid.axis("weights").levels), "weight presets are never cut"
 
 
@@ -282,15 +307,16 @@ def test_the_counts_of_each_receipt_add_up_and_no_class_is_headlined(case: str) 
     result = receipt["result"]
     assert result["computed"] is True and result["not_computed_because"] is None and len(result["units_sha256"]) == 64
     counts = result["summary"]
-    assert (counts["units"], counts["core_cells_per_lane"], counts["cells_run"], counts["cells_not_run"]) == (8, 540, 90, 450)
+    run = CELLS_RUN[case]
+    assert (counts["units"], counts["core_cells_per_lane"], counts["cells_run"], counts["cells_not_run"]) == (8, 540, run, 540 - run)
     assert counts["cells_of_the_protocol_set_for_retention"] == 180, "the public facility set of protocol v1b"
-    assert counts["unit_cells_run"] == counts["unit_cells_with_a_result"] == 720 and counts["unit_cells_failed"] == 0
+    assert counts["unit_cells_run"] == counts["unit_cells_with_a_result"] == 8 * run and counts["unit_cells_failed"] == 0
     assert counts["cells_run_with_a_failed_unit"] == 0 and counts["unit_cells_with_a_component_not_computed"] == 0
-    assert counts["cells_ranked"] == 90 and counts["units_without_a_default_cell_result"] == 0
+    assert counts["cells_ranked"] == run and counts["units_without_a_default_cell_result"] == 0
     by_cell = counts["class_counts_by_cell"]
     assert sorted(by_cell) == sorted(receipt["cells"]["run"]) and all(sum(item.values()) == 8 for item in by_cell.values())
     overall = counts["class_counts_over_every_unit_cell"]
-    assert sum(overall.values()) == 720
+    assert sum(overall.values()) == 8 * run
     assert {name: sum(item.get(name, 0) for item in by_cell.values()) for name in overall} == overall
     # The default cell holds the binding classes of the task E8 run.
     e8 = json.loads(E8_RECEIPTS[case].read_text(encoding="ascii"))["result"]
@@ -303,10 +329,17 @@ def test_the_counts_of_each_receipt_add_up_and_no_class_is_headlined(case: str) 
     assert (kept["units_keeping_the_class_in_at_least_the_minimum_share"] + kept["units_keeping_the_class_in_less_than_the_minimum_share"]
             + kept["units_without_a_class_to_keep"]) == 8
     assert kept["units_keeping_the_class_in_every_cell_run"] <= kept["units_keeping_the_class_in_at_least_the_minimum_share"]
-    # Guardrail GR8: half of the 180 cells of the protocol's set were not run, so no class is headlined.
-    assert counts["headline_status_counts"] == {"not_evaluated": 8, "headline_eligible": 0, "unstable_verify": 0}
-    assert sum(counts["outcome_fixed_by_the_bounds_counts"].values()) == 8
-    assert counts["outcome_fixed_by_the_bounds_counts"]["at_or_above_the_minimum"] == 0, "90 of 180 cells cannot reach 0.6 alone"
+    if case == "SE1":
+        # Guardrail GR8: all 180 cells of the protocol's set are run, so the rule is evaluated. Seven tambons keep the class
+        # of the default cell in at least 60% of them; one keeps it in 50% and is shown as "unstable: verify".
+        assert counts["headline_status_counts"] == {"not_evaluated": 0, "headline_eligible": 7, "unstable_verify": 1}
+        assert sum(counts["outcome_fixed_by_the_bounds_counts"].values()) == 0, "no bounds: nothing of the set is missing"
+        assert (kept["units_keeping_the_class_in_at_least_the_minimum_share"], kept["units_keeping_the_class_in_less_than_the_minimum_share"]) == (7, 1)
+    else:
+        # Guardrail GR8: half of the 180 cells of the protocol's set were not run, so no class is headlined.
+        assert counts["headline_status_counts"] == {"not_evaluated": 8, "headline_eligible": 0, "unstable_verify": 0}
+        assert sum(counts["outcome_fixed_by_the_bounds_counts"].values()) == 8
+        assert counts["outcome_fixed_by_the_bounds_counts"]["at_or_above_the_minimum"] == 0, "90 of 180 cells cannot reach 0.6 alone"
     after_cut = counts["after_declared_cut_line_6"]
     assert after_cut["cells"] == 45 and after_cut["units_at_or_above_the_minimum"] + after_cut["units_below_the_minimum"] == 8
     # Cut line 6 does not say which level of its two axes stays (E10-OP12): the levels of the default cell, and the others.
@@ -315,11 +348,15 @@ def test_the_counts_of_each_receipt_add_up_and_no_class_is_headlined(case: str) 
     assert [tuple(item["levels_kept"].values()) for item in others] == [
         ("worldpop_2020", "P5_P95"), ("rescaled_2024", "P10_P90"), ("rescaled_2024", "P5_P95")]
     assert others[0]["units_at_or_above_the_minimum"] + others[0]["units_below_the_minimum"] == 8
-    assert all(item["units_without_a_class_in_every_one_of_those_cells"] == 8 for item in others[1:]), "the 2024 demand was not run"
-    # The other reading of the protocol's set (E10-OP11): over the 540 core cells no outcome is fixed either.
     other = counts["other_reading_of_the_protocol_set"]
-    assert other["cells"] == 540 and other["outcome_fixed_by_the_bounds_counts"] == {
-        "at_or_above_the_minimum": 0, "below_the_minimum": 0, "not_fixed": 8}
+    if case == "SE1":
+        assert all(item["units_without_a_class_in_every_one_of_those_cells"] == 0 for item in others[1:]), "the 2024 demand was run"
+        assert other is None, "the other reading is given while the status is not evaluated"
+    else:
+        assert all(item["units_without_a_class_in_every_one_of_those_cells"] == 8 for item in others[1:]), "the 2024 demand was not run"
+        # The other reading of the protocol's set (E10-OP11): over the 540 core cells no outcome is fixed either.
+        assert other["cells"] == 540 and other["outcome_fixed_by_the_bounds_counts"] == {
+            "at_or_above_the_minimum": 0, "below_the_minimum": 0, "not_fixed": 8}
 
 
 def test_the_readme_reports_the_runs_as_the_receipts_hold_them() -> None:
@@ -351,7 +388,8 @@ def test_the_readme_reports_the_runs_as_the_receipts_hold_them() -> None:
         row("Tambons whose class changes in the default cell when one component is left out",
             lambda s: s["units_whose_class_changes_under_leave_one_component_out_in_the_default_cell"]),
         row("Tambons whose retention over the 180 cells cannot reach 0.6 whatever the cells not run give",
-            lambda s: s["outcome_fixed_by_the_bounds_counts"]["below_the_minimum"]),
+            lambda s: s["outcome_fixed_by_the_bounds_counts"]["below_the_minimum"] if s["headline_status_counts"]["not_evaluated"]
+            else "all 180 cells are run"),
         row("After declared cut line 6, keeping WorldPop 2020 and P10 / P90 (45 cells): tambons at or above 0.6 / below",
             lambda s: f"{s['after_declared_cut_line_6']['units_at_or_above_the_minimum']} / {s['after_declared_cut_line_6']['units_below_the_minimum']}"),
         row("The same, keeping WorldPop 2020 and P5 / P95 (45 cells)",
@@ -361,8 +399,11 @@ def test_the_readme_reports_the_runs_as_the_receipts_hold_them() -> None:
             lambda s: (f"{s['after_declared_cut_line_6']['units_keeping_the_class_in_every_one_of_those_cells']}; "
                        f"{s['after_declared_cut_line_6']['other_levels_the_cut_could_keep'][0]['units_keeping_the_class_in_every_one_of_those_cells']}")),
         row("Tambons whose retention over the 540 core cells is fixed by the bounds (the other reading, E10-OP11)",
-            lambda s: 8 - s["other_reading_of_the_protocol_set"]["outcome_fixed_by_the_bounds_counts"]["not_fixed"]),
-        row("Headline status", lambda s: f"not evaluated for all {s['headline_status_counts']['not_evaluated']}"),
+            lambda s: "not given: the 180 cells are all run" if s["other_reading_of_the_protocol_set"] is None
+            else 8 - s["other_reading_of_the_protocol_set"]["outcome_fixed_by_the_bounds_counts"]["not_fixed"]),
+        row("Headline status", lambda s: f"not evaluated for all {s['headline_status_counts']['not_evaluated']}"
+            if s["headline_status_counts"]["not_evaluated"] == s["units"] else
+            f"{s['headline_status_counts']['headline_eligible']} headline-eligible, {s['headline_status_counts']['unstable_verify']} unstable: verify"),
     ):
         assert line in section, line
     # The access runs, as the receipts hold them for the whole frame.
@@ -377,14 +418,17 @@ def test_the_readme_reports_the_runs_as_the_receipts_hold_them() -> None:
             assert line in section, line
     assert "CC BY-SA 4.0" in section and PRODUCT_4009_CREDIT in section and "Changed by FloodGuard" in section
     assert "It is not an official warning" in section and "Class E never means safe" in section
-    assert "is not a probability" in section and "**No class is headlined.**" in section
+    assert "is not a probability" in section
+    assert "**No class of case O2 is headlined, and none of case SE1 was until its fifth run**" in section
+    assert "**Third update, 9 October 2026: case SE1 was run with the 2024-rescaled demand" in section
+    assert "**No page, brief or overlay shows this yet.**" in section
     for point in ue.OPEN_POINTS:
         assert f"**{point['id']}," in section, point["id"]
     # The section says of case SE1, as of case O2, that its counts are statements about single tambons.
     single = receipts["SE1"]["rights"]["figures_of_local_level_layers_in_this_receipt"]["counts_that_state_a_value_of_a_single_unit"]
     assert "**These counts are statements about single tambons.**" in section
-    assert f"no tambon is class B in {single['cells_in_which_such_a_class_has_another_count']} cells" in section
-    assert f"{single['cells_whose_class_counts_differ_from_the_default_cell']} of the 90 cells" in section
+    assert f"the count of class B is not one in {single['cells_in_which_such_a_class_has_another_count']} cells" in section
+    assert f"{single['cells_whose_class_counts_differ_from_the_default_cell']} of the {CELLS_RUN['SE1']} cells" in section
     # Guardrail GR8 has two displays; the section does not tell a page to show a class without the second.
     assert "without a stability claim" not in section and "stable against" not in section
     assert "Otherwise it is shown as unstable: verify" in section
@@ -458,16 +502,23 @@ def test_the_results_outside_git_are_the_files_the_receipt_binds(case: str) -> N
     assert hashlib.sha256(canonical).hexdigest() == receipt["result"]["units_sha256"]
     assert document["summary"] == receipt["result"]["summary"]
     units = document["units"]
-    assert [unit["unit_id"] for unit in units] == MAE_SAI_UNITS and all(len(unit["cells"]) == 90 for unit in units)
+    run = CELLS_RUN[case]
+    assert [unit["unit_id"] for unit in units] == MAE_SAI_UNITS and all(len(unit["cells"]) == run for unit in units)
     assert len(document["cells"]) == 540 and len(document["access_runs"]["runs"]) == 6
     for unit in units:
         headline = unit["headline_stability"]
         classes = [cell["action_class"] for cell in unit["cells"]]
-        assert headline["status"] == "not_evaluated" and headline["class_retention"] is None
-        assert headline["cells_of_the_protocol_set"] == 180 and headline["cells_with_a_class"] == 90
+        if case == "SE1":  # all 180 cells of the set are run: the rule is evaluated (decision log R41)
+            kept_share = classes.count(unit["reference_cell"]["action_class"]) / 180
+            assert headline["class_retention"] == pytest.approx(kept_share)
+            assert headline["status"] == ("headline_eligible" if kept_share >= 0.6 else "unstable_verify")
+            assert (headline["fallback_text"] is None) is (kept_share >= 0.6)
+        else:
+            assert headline["status"] == "not_evaluated" and headline["class_retention"] is None
+        assert headline["cells_of_the_protocol_set"] == 180 and headline["cells_with_a_class"] == run
         assert headline["cells_keeping_the_reference_class"] == classes.count(unit["reference_cell"]["action_class"])
         assert unit["class_counts"] == {name: classes.count(name) for name in CLASSES} | {"no_class": 0}
-        assert unit["fpps_0_100"]["count"] == 90 and 1 <= unit["rank"]["best"] <= unit["rank"]["worst"] <= 8
+        assert unit["fpps_0_100"]["count"] == run and 1 <= unit["rank"]["best"] <= unit["rank"]["worst"] <= 8
     # The counts the README gives "from the file outside Git": they are in no receipt, so they are checked here.
     section = _section()
     changed = {anchor: sum(1 for unit in units for item in unit["one_at_a_time"]["flood_likelihood_anchor"]
@@ -487,7 +538,9 @@ def test_the_results_outside_git_are_the_files_the_receipt_binds(case: str) -> N
         assert "The v2 result is E for four tambons and not evaluated for four" in section
         assert spans == [0, 0, 0, 0, 1, 1, 1, 1] and "the other four move by one place" in section
         assert (by_largest.count("flood_input_single_state"), by_largest.count("weights")) == (4, 4)
-        assert (by_mean.count("flood_input_single_state"), by_mean.count("weights")) == (3, 5)
+        # Over the 180 cells: for one tambon the mean swing is largest between the two demands.
+        assert (by_mean.count("flood_input_single_state"), by_mean.count("weights"), by_mean.count("population_vintage")) == (2, 5, 1)
+        assert "on the flood-level axis for two tambons, on the weight axis for five and on the population axis for one" in section
         assert ("on the flood-level axis for four tambons and on the weight axis for four; taken as a mean over the other axes, "
                 "for three and for five") in section
         # The tambon that is B in the default cell: D with the minus level under the strict or the central closure level.
@@ -503,7 +556,7 @@ def test_the_results_outside_git_are_the_files_the_receipt_binds(case: str) -> N
         class_e = [unit for unit in units if unit["reference_cell"]["action_class"] == "E"]
         mover = next(unit for unit in class_e if unit["class_counts"]["D"])
         assert mover["unit_id"] == max(class_e, key=lambda unit: unit["reference_cell"]["fpps_0_100"])["unit_id"]
-        assert (mover["class_counts"]["E"], mover["class_counts"]["D"]) == (87, 3)
+        assert (mover["class_counts"]["E"], mover["class_counts"]["D"]) == (177, 3), "E in every cell of the rescaled demand"
         assert "which class-E tambon has the highest FPPS there" in section
 
         # After cut line 6, for the two tambons that move: the levels of the default cell kept, and P5 / P95 kept.
@@ -516,12 +569,18 @@ def test_the_results_outside_git_are_the_files_the_receipt_binds(case: str) -> N
         assert kept_after_the_cut(moving) == (35, 35) and kept_after_the_cut(mover) == (45, 42)
         assert ("the tambon that is class B keeps its class in 35 of the 45 cells under either pair, and the class-E tambon that "
                 "moves keeps class E in all 45 under P10 / P90 and in 42 under P5 / P95") in section
-        # The bounds under both readings of the protocol's set, for a tambon that keeps its class in all 90 cells run.
-        steady = [unit["headline_stability"] for unit in units if unit["headline_stability"]["cells_keeping_the_reference_class"] == 90]
-        assert len(steady) == 6
-        for headline in steady:
-            assert headline["bounds_over_the_protocol_set"] == {"lower": 0.5, "upper": 1.0, "cells_without_a_class": 90}
-            assert headline["other_reading_of_the_protocol_set"]["bounds"] == {"lower": 90 / 540, "upper": 1.0, "cells_without_a_class": 450}
+        # Five tambons keep their class in all 180 cells. The class-D tambon with the highest FPPS in the default cell keeps
+        # it in the 90 cells of the 2020 demand only: retention 0.5, shown as "unstable: verify".
+        steady = [unit["headline_stability"] for unit in units if unit["headline_stability"]["cells_keeping_the_reference_class"] == 180]
+        assert len(steady) == 5 and all(headline["status"] == "headline_eligible" and headline["bounds_over_the_protocol_set"] is None for headline in steady)
+        unstable = [unit for unit in units if unit["headline_stability"]["status"] == "unstable_verify"]
+        class_d = [unit for unit in units if unit["reference_cell"]["action_class"] == "D"]
+        assert len(unstable) == 1 and unstable[0]["unit_id"] == max(class_d, key=lambda unit: unit["reference_cell"]["fpps_0_100"])["unit_id"]
+        assert unstable[0]["headline_stability"]["class_retention"] == 0.5
+        assert {cell["population_vintage"] for cell in unstable[0]["cells"] if cell["action_class"] == "D"} == {"worldpop_2020"}
+        assert {name: count for name, count in unstable[0]["class_counts"].items() if count} == {"A": 30, "B": 40, "C": 20, "D": 90}
+        assert "it is class A in 30 of those cells, class C in 20 and class B in the rest" in section
+        # The paragraph on a case with 90 of the 180 cells run still gives its bounds: it describes case O2.
         assert "between 0.5 and 1.0" in section and "between 0.167 and 1.0" in section
     else:
         assert changed == {0.1: 0, 0.3: 0} and v2.count(("evaluated", "E")) == 8

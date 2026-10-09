@@ -379,10 +379,11 @@ Agreement between two sensors 44 hours apart; not accuracy.
 | Access loss by age | `docs/equity_by_age.md` | Computed; the open age data cannot show a gap inside a tambon. |
 | The proposal's own class wording | `docs/class_v2_reading.md` | As a secondary reading, Mae Sai town is "protect essential services". The binding classes do not change. |
 | The stability of the classes over all 180 cells | `docs/uncertainty_ensemble_rescaled_demand.md` | Seven of eight classes hold, Ko Chang's in 78% of the cells. Mae Sai town's D holds in 50%: it is D with the 2020 population product and A, B or C with the 2024 totals. Report-only; the published file still says "not evaluated". |
-| Access loss by age over the 180 cells | `docs/equity_by_age.md`, section added on 9 October | Computed as the protocol asks: older residents lose hospital access at 0.86 to 0.98 times the rate of younger ones, children at 1.01 to 1.08 times. The scenario does not show older residents cut off more. Modelled age data on 1 km cells. |
+| Access loss by age | `docs/equity_by_age.md`, the two sections added on 9 October | The direction depends on the age data. With the modelled age grid no gap of a point or more for the district; with registered age counts by tambon (DOPA) older residents lose hospital access 1.10 to 1.13 times as often. The registered ages leave out two residents in five. |
+| The run of record of the ensemble | `outputs/planning_v1/README.md`, plan task E10, third update | Of record since 9 October: seven classes hold over 180 cells and Mae Sai's D is "unstable: verify". Not yet on any page. |
 | Shelters: access on foot and listed places | `docs/shelter_capacity.md` (figures in the pitch note outside the repository) | Pitch level only, label "listed planned capacity; scenario". Capacities are listed planning figures; nobody verified that a shelter was open. |
 | A printable brief of case SE1 | `outputs/planning_brief/se1_mae_sai_brief.html` | One page, Thai and English, made from the published result. The Thai is not reviewed by a native speaker. |
 | THEOS-2 on the study event | `docs/proposal_execution/theos2_study_event_check_plan_v1.md` | The plan is committed and the radar readings are frozen before any image arrives; the comparison runs once per scene when GISTDA delivers. |
 
 Each is on the team page for the team's word (items V-17, V-19 and V-22 to
-V-31). None changes a published class or enters a planning score.
+V-32). None changes a published class or enters a planning score.

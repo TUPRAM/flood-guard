@@ -65,6 +65,7 @@ from collections.abc import Mapping, Sequence
 import hashlib
 import importlib.util
 import json
+import math
 import os
 from pathlib import Path
 import shutil
@@ -769,9 +770,11 @@ def rescaled_measurements(found: SimpleNamespace, runs: Sequence[Mapping[str, An
         raise StageError(STAGE_MEASUREMENT, "access_runs_count_other_rescaled_residents",
                          "an access run counts other rescaled residents for a unit than the rescaled demand holds: "
                          f"{differing}")
+    # The receipt names no unit beside a value, so the residents of each unit under the rescaled demand are not put here;
+    # they are in the file of per-unit results (the unit_residents of every cell of the rescaled demand).
     return result, losing, {"combinations_measured": len(result),
                             "unit_residents_same_in_the_rescaled_demand_and_the_access_tables": True,
-                            "residents_by_unit": {unit_id: round(value, 3) for unit_id, value in sorted(residents.items())}}
+                            "residents_in_the_units": math.fsum(residents.values())}
 
 
 def whole_frame_access(runs: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:

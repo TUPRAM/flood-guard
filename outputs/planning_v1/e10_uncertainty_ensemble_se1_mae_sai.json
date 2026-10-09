@@ -1,6 +1,6 @@
 {
   "schema_version": "floodguard.uncertainty_ensemble_run_receipt.v2",
-  "generated_at_utc": "2026-10-06T13:44:46Z",
+  "generated_at_utc": "2026-10-09T13:54:46Z",
   "run_kind": "superseding_run",
   "plan_task": "E10: uncertainty_ensemble.py + LOCO + headline rule; 540 cells per lane reported",
   "status": "run_receipt",
@@ -15,7 +15,8 @@
     "osm_retrieved_at_utc": "2026-07-10T02:46:49Z",
     "population_year_represented": 2020,
     "age_counts": "2025-09-01",
-    "permanent_water": "2021-01-01/2021-12-31"
+    "permanent_water": "2021-01-01/2021-12-31",
+    "population_rescaled_to_year": 2024
   },
   "confidence_class": "low",
   "confidence_basis": "An ensemble of planning classes from modelled access on OpenStreetMap roads, modelled resident and age counts, and closures assumed from a flood input that FloodGuard did not check against the ground or against an independent source. Every cell is the same modelled chain with another declared choice; the spread across the cells says how far the result depends on those choices and nothing about its distance from what happened. This line is the confidence of the run as evidence; the confidence class of each unit under rule v1 is in the results.",
@@ -290,7 +291,8 @@
         "public"
       ],
       "population_vintage": [
-        "worldpop_2020"
+        "worldpop_2020",
+        "rescaled_2024"
       ],
       "vulnerability_anchors": [
         "P10_P90",
@@ -323,15 +325,6 @@
         "open_points": [
           "E10-OP3",
           "E5-OP5"
-        ]
-      },
-      {
-        "axis": "population_vintage",
-        "level": "rescaled_2024",
-        "code": "rescale_rule_leaves_two_points_open_and_no_stage_builds_the_demand",
-        "reason": "The 2024-rescaled demand is not built by any stage. Its formula (protocol v1b, owner choice 12) does not say which 1 km cell a 100 m count is inside, and the two grids do not nest; nor what a positive 2020 count becomes in a 1 km cell with no 2024 total (floodguard.age_exposure.rescale_2020_counts_to_2024 decides neither). The level is not approximated.",
-        "open_points": [
-          "E10-OP2"
         ]
       }
     ],
@@ -412,6 +405,48 @@
     "tolerances": {
       "residents_between_two_stages": 1e-06,
       "note": "A choice of this task, not a rule of the protocols."
+    },
+    "rescaled_demand": {
+      "rules": [
+        "A 100 m count belongs to the 1 km cell that holds the centre of its 100 m cell.",
+        "A positive 2020 count whose 1 km cell has no valid 2024 total keeps its 2020 value and is reported; it is neither set to zero nor rescaled."
+      ],
+      "counts_2020": 81571,
+      "positive_counts_2020": 62699,
+      "residents_2020": 120550.14895324409,
+      "residents_after": 126795.26671086781,
+      "cells_1km_with_a_ratio": 626,
+      "ratio_lowest_median_highest": [
+        0.003282,
+        0.382324,
+        60.080753
+      ],
+      "kept_at_2020_because_the_1km_cell_has_no_2024_total": {
+        "counts": 2173,
+        "residents_2020": 1299.7296432852745,
+        "cells_1km": 31
+      },
+      "residents_2024_in_1km_cells_with_no_2020_count": 22.791645295917988,
+      "decision": "The two rules are the readings of decision log R38, accepted by the team (R39, item V-27 of the team page).",
+      "scope_of_the_counts_above": "every 2020 100 m count of the 1 km cells that hold a demand cell of the planning context, and one ring of cells around them",
+      "demand_cells": 36765,
+      "demand_residents_2020": 81836.8894393444,
+      "demand_residents_rescaled": 95472.09743362064,
+      "demand_cells_kept_at_2020": 1952,
+      "demand_residents_kept_at_2020": 1153.2493594884872,
+      "sources": {
+        "worldpop_2020": {
+          "file": "open_context/worldpop_population/tha_ppp_2020.tif",
+          "sha256": "fb39d85dd150c45c7b25771f29bcd548e611afa0967224ac6d8ca05727230e20"
+        },
+        "worldpop_2024_age_counts": {
+          "product": "Global2 R2025A v1, Thailand constrained total-sex age estimates",
+          "year_represented": 2024,
+          "manifest_sha256": "f7a169877177a374bc461724dcb93b6ec96d76451347cd2e98dc2fc7b0f8356c",
+          "rights_level": "public (decision log R21)",
+          "total": "the sum of the 20 age bands of a 1 km cell; no total where a band has no valid count"
+        }
+      }
     }
   },
   "inputs": {
@@ -623,9 +658,9 @@
         "classes_one_unit_alone_holds_in_the_default_cell": [
           "B"
         ],
-        "cells_in_which_such_a_class_has_another_count": 20,
-        "cells_whose_class_counts_differ_from_the_default_cell": 23,
-        "units_with_more_than_one_class_over_the_cells_run": 2,
+        "cells_in_which_such_a_class_has_another_count": 80,
+        "cells_whose_class_counts_differ_from_the_default_cell": 113,
+        "units_with_more_than_one_class_over_the_cells_run": 3,
         "what": "A count names no unit. Two kinds of count state the class of a single unit all the same. In a cell where every unit of the case has one class, class_counts_by_cell states the class of each unit. And a class that one unit alone holds in the default cell marks that unit: in every cell, the count of that class says whether the unit holds it there, for whoever knows which unit it is. A cell whose counts differ from those of the default cell says that a unit changed class there, and between which classes.",
         "where": "result.summary.class_counts_by_cell, read with reference_class_counts, class_counts_over_every_unit_cell, units_by_number_of_classes_over_the_cells_run and retention_over_the_cells_run of the same summary.",
         "who_can_read_them": "Whoever knows the class of each unit in the default cell, which is the row of the task E8 run of the case. Those rows are in a file outside Git; where committed files let a reader work them out (the README of the output folder says so for each case), the counts here follow single units through the cells.",
@@ -711,6 +746,16 @@
       "minus|strict|public|worldpop_2020|P5_P95|exposure_heavy",
       "minus|strict|public|worldpop_2020|P5_P95|road_heavy",
       "minus|strict|public|worldpop_2020|P5_P95|vulnerability_heavy",
+      "minus|strict|public|rescaled_2024|P10_P90|default",
+      "minus|strict|public|rescaled_2024|P10_P90|access_heavy",
+      "minus|strict|public|rescaled_2024|P10_P90|exposure_heavy",
+      "minus|strict|public|rescaled_2024|P10_P90|road_heavy",
+      "minus|strict|public|rescaled_2024|P10_P90|vulnerability_heavy",
+      "minus|strict|public|rescaled_2024|P5_P95|default",
+      "minus|strict|public|rescaled_2024|P5_P95|access_heavy",
+      "minus|strict|public|rescaled_2024|P5_P95|exposure_heavy",
+      "minus|strict|public|rescaled_2024|P5_P95|road_heavy",
+      "minus|strict|public|rescaled_2024|P5_P95|vulnerability_heavy",
       "minus|central|public|worldpop_2020|P10_P90|default",
       "minus|central|public|worldpop_2020|P10_P90|access_heavy",
       "minus|central|public|worldpop_2020|P10_P90|exposure_heavy",
@@ -721,6 +766,16 @@
       "minus|central|public|worldpop_2020|P5_P95|exposure_heavy",
       "minus|central|public|worldpop_2020|P5_P95|road_heavy",
       "minus|central|public|worldpop_2020|P5_P95|vulnerability_heavy",
+      "minus|central|public|rescaled_2024|P10_P90|default",
+      "minus|central|public|rescaled_2024|P10_P90|access_heavy",
+      "minus|central|public|rescaled_2024|P10_P90|exposure_heavy",
+      "minus|central|public|rescaled_2024|P10_P90|road_heavy",
+      "minus|central|public|rescaled_2024|P10_P90|vulnerability_heavy",
+      "minus|central|public|rescaled_2024|P5_P95|default",
+      "minus|central|public|rescaled_2024|P5_P95|access_heavy",
+      "minus|central|public|rescaled_2024|P5_P95|exposure_heavy",
+      "minus|central|public|rescaled_2024|P5_P95|road_heavy",
+      "minus|central|public|rescaled_2024|P5_P95|vulnerability_heavy",
       "minus|permissive|public|worldpop_2020|P10_P90|default",
       "minus|permissive|public|worldpop_2020|P10_P90|access_heavy",
       "minus|permissive|public|worldpop_2020|P10_P90|exposure_heavy",
@@ -731,6 +786,16 @@
       "minus|permissive|public|worldpop_2020|P5_P95|exposure_heavy",
       "minus|permissive|public|worldpop_2020|P5_P95|road_heavy",
       "minus|permissive|public|worldpop_2020|P5_P95|vulnerability_heavy",
+      "minus|permissive|public|rescaled_2024|P10_P90|default",
+      "minus|permissive|public|rescaled_2024|P10_P90|access_heavy",
+      "minus|permissive|public|rescaled_2024|P10_P90|exposure_heavy",
+      "minus|permissive|public|rescaled_2024|P10_P90|road_heavy",
+      "minus|permissive|public|rescaled_2024|P10_P90|vulnerability_heavy",
+      "minus|permissive|public|rescaled_2024|P5_P95|default",
+      "minus|permissive|public|rescaled_2024|P5_P95|access_heavy",
+      "minus|permissive|public|rescaled_2024|P5_P95|exposure_heavy",
+      "minus|permissive|public|rescaled_2024|P5_P95|road_heavy",
+      "minus|permissive|public|rescaled_2024|P5_P95|vulnerability_heavy",
       "as_provided|strict|public|worldpop_2020|P10_P90|default",
       "as_provided|strict|public|worldpop_2020|P10_P90|access_heavy",
       "as_provided|strict|public|worldpop_2020|P10_P90|exposure_heavy",
@@ -741,6 +806,16 @@
       "as_provided|strict|public|worldpop_2020|P5_P95|exposure_heavy",
       "as_provided|strict|public|worldpop_2020|P5_P95|road_heavy",
       "as_provided|strict|public|worldpop_2020|P5_P95|vulnerability_heavy",
+      "as_provided|strict|public|rescaled_2024|P10_P90|default",
+      "as_provided|strict|public|rescaled_2024|P10_P90|access_heavy",
+      "as_provided|strict|public|rescaled_2024|P10_P90|exposure_heavy",
+      "as_provided|strict|public|rescaled_2024|P10_P90|road_heavy",
+      "as_provided|strict|public|rescaled_2024|P10_P90|vulnerability_heavy",
+      "as_provided|strict|public|rescaled_2024|P5_P95|default",
+      "as_provided|strict|public|rescaled_2024|P5_P95|access_heavy",
+      "as_provided|strict|public|rescaled_2024|P5_P95|exposure_heavy",
+      "as_provided|strict|public|rescaled_2024|P5_P95|road_heavy",
+      "as_provided|strict|public|rescaled_2024|P5_P95|vulnerability_heavy",
       "as_provided|central|public|worldpop_2020|P10_P90|default",
       "as_provided|central|public|worldpop_2020|P10_P90|access_heavy",
       "as_provided|central|public|worldpop_2020|P10_P90|exposure_heavy",
@@ -751,6 +826,16 @@
       "as_provided|central|public|worldpop_2020|P5_P95|exposure_heavy",
       "as_provided|central|public|worldpop_2020|P5_P95|road_heavy",
       "as_provided|central|public|worldpop_2020|P5_P95|vulnerability_heavy",
+      "as_provided|central|public|rescaled_2024|P10_P90|default",
+      "as_provided|central|public|rescaled_2024|P10_P90|access_heavy",
+      "as_provided|central|public|rescaled_2024|P10_P90|exposure_heavy",
+      "as_provided|central|public|rescaled_2024|P10_P90|road_heavy",
+      "as_provided|central|public|rescaled_2024|P10_P90|vulnerability_heavy",
+      "as_provided|central|public|rescaled_2024|P5_P95|default",
+      "as_provided|central|public|rescaled_2024|P5_P95|access_heavy",
+      "as_provided|central|public|rescaled_2024|P5_P95|exposure_heavy",
+      "as_provided|central|public|rescaled_2024|P5_P95|road_heavy",
+      "as_provided|central|public|rescaled_2024|P5_P95|vulnerability_heavy",
       "as_provided|permissive|public|worldpop_2020|P10_P90|default",
       "as_provided|permissive|public|worldpop_2020|P10_P90|access_heavy",
       "as_provided|permissive|public|worldpop_2020|P10_P90|exposure_heavy",
@@ -761,6 +846,16 @@
       "as_provided|permissive|public|worldpop_2020|P5_P95|exposure_heavy",
       "as_provided|permissive|public|worldpop_2020|P5_P95|road_heavy",
       "as_provided|permissive|public|worldpop_2020|P5_P95|vulnerability_heavy",
+      "as_provided|permissive|public|rescaled_2024|P10_P90|default",
+      "as_provided|permissive|public|rescaled_2024|P10_P90|access_heavy",
+      "as_provided|permissive|public|rescaled_2024|P10_P90|exposure_heavy",
+      "as_provided|permissive|public|rescaled_2024|P10_P90|road_heavy",
+      "as_provided|permissive|public|rescaled_2024|P10_P90|vulnerability_heavy",
+      "as_provided|permissive|public|rescaled_2024|P5_P95|default",
+      "as_provided|permissive|public|rescaled_2024|P5_P95|access_heavy",
+      "as_provided|permissive|public|rescaled_2024|P5_P95|exposure_heavy",
+      "as_provided|permissive|public|rescaled_2024|P5_P95|road_heavy",
+      "as_provided|permissive|public|rescaled_2024|P5_P95|vulnerability_heavy",
       "plus|strict|public|worldpop_2020|P10_P90|default",
       "plus|strict|public|worldpop_2020|P10_P90|access_heavy",
       "plus|strict|public|worldpop_2020|P10_P90|exposure_heavy",
@@ -771,6 +866,16 @@
       "plus|strict|public|worldpop_2020|P5_P95|exposure_heavy",
       "plus|strict|public|worldpop_2020|P5_P95|road_heavy",
       "plus|strict|public|worldpop_2020|P5_P95|vulnerability_heavy",
+      "plus|strict|public|rescaled_2024|P10_P90|default",
+      "plus|strict|public|rescaled_2024|P10_P90|access_heavy",
+      "plus|strict|public|rescaled_2024|P10_P90|exposure_heavy",
+      "plus|strict|public|rescaled_2024|P10_P90|road_heavy",
+      "plus|strict|public|rescaled_2024|P10_P90|vulnerability_heavy",
+      "plus|strict|public|rescaled_2024|P5_P95|default",
+      "plus|strict|public|rescaled_2024|P5_P95|access_heavy",
+      "plus|strict|public|rescaled_2024|P5_P95|exposure_heavy",
+      "plus|strict|public|rescaled_2024|P5_P95|road_heavy",
+      "plus|strict|public|rescaled_2024|P5_P95|vulnerability_heavy",
       "plus|central|public|worldpop_2020|P10_P90|default",
       "plus|central|public|worldpop_2020|P10_P90|access_heavy",
       "plus|central|public|worldpop_2020|P10_P90|exposure_heavy",
@@ -781,6 +886,16 @@
       "plus|central|public|worldpop_2020|P5_P95|exposure_heavy",
       "plus|central|public|worldpop_2020|P5_P95|road_heavy",
       "plus|central|public|worldpop_2020|P5_P95|vulnerability_heavy",
+      "plus|central|public|rescaled_2024|P10_P90|default",
+      "plus|central|public|rescaled_2024|P10_P90|access_heavy",
+      "plus|central|public|rescaled_2024|P10_P90|exposure_heavy",
+      "plus|central|public|rescaled_2024|P10_P90|road_heavy",
+      "plus|central|public|rescaled_2024|P10_P90|vulnerability_heavy",
+      "plus|central|public|rescaled_2024|P5_P95|default",
+      "plus|central|public|rescaled_2024|P5_P95|access_heavy",
+      "plus|central|public|rescaled_2024|P5_P95|exposure_heavy",
+      "plus|central|public|rescaled_2024|P5_P95|road_heavy",
+      "plus|central|public|rescaled_2024|P5_P95|vulnerability_heavy",
       "plus|permissive|public|worldpop_2020|P10_P90|default",
       "plus|permissive|public|worldpop_2020|P10_P90|access_heavy",
       "plus|permissive|public|worldpop_2020|P10_P90|exposure_heavy",
@@ -790,7 +905,17 @@
       "plus|permissive|public|worldpop_2020|P5_P95|access_heavy",
       "plus|permissive|public|worldpop_2020|P5_P95|exposure_heavy",
       "plus|permissive|public|worldpop_2020|P5_P95|road_heavy",
-      "plus|permissive|public|worldpop_2020|P5_P95|vulnerability_heavy"
+      "plus|permissive|public|worldpop_2020|P5_P95|vulnerability_heavy",
+      "plus|permissive|public|rescaled_2024|P10_P90|default",
+      "plus|permissive|public|rescaled_2024|P10_P90|access_heavy",
+      "plus|permissive|public|rescaled_2024|P10_P90|exposure_heavy",
+      "plus|permissive|public|rescaled_2024|P10_P90|road_heavy",
+      "plus|permissive|public|rescaled_2024|P10_P90|vulnerability_heavy",
+      "plus|permissive|public|rescaled_2024|P5_P95|default",
+      "plus|permissive|public|rescaled_2024|P5_P95|access_heavy",
+      "plus|permissive|public|rescaled_2024|P5_P95|exposure_heavy",
+      "plus|permissive|public|rescaled_2024|P5_P95|road_heavy",
+      "plus|permissive|public|rescaled_2024|P5_P95|vulnerability_heavy"
     ],
     "not_run": {
       "facility_set_needs_a_walking_context_of_record_and_the_pitch_level": [
@@ -804,178 +929,6 @@
         "minus|strict|corroborated|worldpop_2020|P5_P95|exposure_heavy",
         "minus|strict|corroborated|worldpop_2020|P5_P95|road_heavy",
         "minus|strict|corroborated|worldpop_2020|P5_P95|vulnerability_heavy",
-        "minus|strict|all_listed|worldpop_2020|P10_P90|default",
-        "minus|strict|all_listed|worldpop_2020|P10_P90|access_heavy",
-        "minus|strict|all_listed|worldpop_2020|P10_P90|exposure_heavy",
-        "minus|strict|all_listed|worldpop_2020|P10_P90|road_heavy",
-        "minus|strict|all_listed|worldpop_2020|P10_P90|vulnerability_heavy",
-        "minus|strict|all_listed|worldpop_2020|P5_P95|default",
-        "minus|strict|all_listed|worldpop_2020|P5_P95|access_heavy",
-        "minus|strict|all_listed|worldpop_2020|P5_P95|exposure_heavy",
-        "minus|strict|all_listed|worldpop_2020|P5_P95|road_heavy",
-        "minus|strict|all_listed|worldpop_2020|P5_P95|vulnerability_heavy",
-        "minus|central|corroborated|worldpop_2020|P10_P90|default",
-        "minus|central|corroborated|worldpop_2020|P10_P90|access_heavy",
-        "minus|central|corroborated|worldpop_2020|P10_P90|exposure_heavy",
-        "minus|central|corroborated|worldpop_2020|P10_P90|road_heavy",
-        "minus|central|corroborated|worldpop_2020|P10_P90|vulnerability_heavy",
-        "minus|central|corroborated|worldpop_2020|P5_P95|default",
-        "minus|central|corroborated|worldpop_2020|P5_P95|access_heavy",
-        "minus|central|corroborated|worldpop_2020|P5_P95|exposure_heavy",
-        "minus|central|corroborated|worldpop_2020|P5_P95|road_heavy",
-        "minus|central|corroborated|worldpop_2020|P5_P95|vulnerability_heavy",
-        "minus|central|all_listed|worldpop_2020|P10_P90|default",
-        "minus|central|all_listed|worldpop_2020|P10_P90|access_heavy",
-        "minus|central|all_listed|worldpop_2020|P10_P90|exposure_heavy",
-        "minus|central|all_listed|worldpop_2020|P10_P90|road_heavy",
-        "minus|central|all_listed|worldpop_2020|P10_P90|vulnerability_heavy",
-        "minus|central|all_listed|worldpop_2020|P5_P95|default",
-        "minus|central|all_listed|worldpop_2020|P5_P95|access_heavy",
-        "minus|central|all_listed|worldpop_2020|P5_P95|exposure_heavy",
-        "minus|central|all_listed|worldpop_2020|P5_P95|road_heavy",
-        "minus|central|all_listed|worldpop_2020|P5_P95|vulnerability_heavy",
-        "minus|permissive|corroborated|worldpop_2020|P10_P90|default",
-        "minus|permissive|corroborated|worldpop_2020|P10_P90|access_heavy",
-        "minus|permissive|corroborated|worldpop_2020|P10_P90|exposure_heavy",
-        "minus|permissive|corroborated|worldpop_2020|P10_P90|road_heavy",
-        "minus|permissive|corroborated|worldpop_2020|P10_P90|vulnerability_heavy",
-        "minus|permissive|corroborated|worldpop_2020|P5_P95|default",
-        "minus|permissive|corroborated|worldpop_2020|P5_P95|access_heavy",
-        "minus|permissive|corroborated|worldpop_2020|P5_P95|exposure_heavy",
-        "minus|permissive|corroborated|worldpop_2020|P5_P95|road_heavy",
-        "minus|permissive|corroborated|worldpop_2020|P5_P95|vulnerability_heavy",
-        "minus|permissive|all_listed|worldpop_2020|P10_P90|default",
-        "minus|permissive|all_listed|worldpop_2020|P10_P90|access_heavy",
-        "minus|permissive|all_listed|worldpop_2020|P10_P90|exposure_heavy",
-        "minus|permissive|all_listed|worldpop_2020|P10_P90|road_heavy",
-        "minus|permissive|all_listed|worldpop_2020|P10_P90|vulnerability_heavy",
-        "minus|permissive|all_listed|worldpop_2020|P5_P95|default",
-        "minus|permissive|all_listed|worldpop_2020|P5_P95|access_heavy",
-        "minus|permissive|all_listed|worldpop_2020|P5_P95|exposure_heavy",
-        "minus|permissive|all_listed|worldpop_2020|P5_P95|road_heavy",
-        "minus|permissive|all_listed|worldpop_2020|P5_P95|vulnerability_heavy",
-        "as_provided|strict|corroborated|worldpop_2020|P10_P90|default",
-        "as_provided|strict|corroborated|worldpop_2020|P10_P90|access_heavy",
-        "as_provided|strict|corroborated|worldpop_2020|P10_P90|exposure_heavy",
-        "as_provided|strict|corroborated|worldpop_2020|P10_P90|road_heavy",
-        "as_provided|strict|corroborated|worldpop_2020|P10_P90|vulnerability_heavy",
-        "as_provided|strict|corroborated|worldpop_2020|P5_P95|default",
-        "as_provided|strict|corroborated|worldpop_2020|P5_P95|access_heavy",
-        "as_provided|strict|corroborated|worldpop_2020|P5_P95|exposure_heavy",
-        "as_provided|strict|corroborated|worldpop_2020|P5_P95|road_heavy",
-        "as_provided|strict|corroborated|worldpop_2020|P5_P95|vulnerability_heavy",
-        "as_provided|strict|all_listed|worldpop_2020|P10_P90|default",
-        "as_provided|strict|all_listed|worldpop_2020|P10_P90|access_heavy",
-        "as_provided|strict|all_listed|worldpop_2020|P10_P90|exposure_heavy",
-        "as_provided|strict|all_listed|worldpop_2020|P10_P90|road_heavy",
-        "as_provided|strict|all_listed|worldpop_2020|P10_P90|vulnerability_heavy",
-        "as_provided|strict|all_listed|worldpop_2020|P5_P95|default",
-        "as_provided|strict|all_listed|worldpop_2020|P5_P95|access_heavy",
-        "as_provided|strict|all_listed|worldpop_2020|P5_P95|exposure_heavy",
-        "as_provided|strict|all_listed|worldpop_2020|P5_P95|road_heavy",
-        "as_provided|strict|all_listed|worldpop_2020|P5_P95|vulnerability_heavy",
-        "as_provided|central|corroborated|worldpop_2020|P10_P90|default",
-        "as_provided|central|corroborated|worldpop_2020|P10_P90|access_heavy",
-        "as_provided|central|corroborated|worldpop_2020|P10_P90|exposure_heavy",
-        "as_provided|central|corroborated|worldpop_2020|P10_P90|road_heavy",
-        "as_provided|central|corroborated|worldpop_2020|P10_P90|vulnerability_heavy",
-        "as_provided|central|corroborated|worldpop_2020|P5_P95|default",
-        "as_provided|central|corroborated|worldpop_2020|P5_P95|access_heavy",
-        "as_provided|central|corroborated|worldpop_2020|P5_P95|exposure_heavy",
-        "as_provided|central|corroborated|worldpop_2020|P5_P95|road_heavy",
-        "as_provided|central|corroborated|worldpop_2020|P5_P95|vulnerability_heavy",
-        "as_provided|central|all_listed|worldpop_2020|P10_P90|default",
-        "as_provided|central|all_listed|worldpop_2020|P10_P90|access_heavy",
-        "as_provided|central|all_listed|worldpop_2020|P10_P90|exposure_heavy",
-        "as_provided|central|all_listed|worldpop_2020|P10_P90|road_heavy",
-        "as_provided|central|all_listed|worldpop_2020|P10_P90|vulnerability_heavy",
-        "as_provided|central|all_listed|worldpop_2020|P5_P95|default",
-        "as_provided|central|all_listed|worldpop_2020|P5_P95|access_heavy",
-        "as_provided|central|all_listed|worldpop_2020|P5_P95|exposure_heavy",
-        "as_provided|central|all_listed|worldpop_2020|P5_P95|road_heavy",
-        "as_provided|central|all_listed|worldpop_2020|P5_P95|vulnerability_heavy",
-        "as_provided|permissive|corroborated|worldpop_2020|P10_P90|default",
-        "as_provided|permissive|corroborated|worldpop_2020|P10_P90|access_heavy",
-        "as_provided|permissive|corroborated|worldpop_2020|P10_P90|exposure_heavy",
-        "as_provided|permissive|corroborated|worldpop_2020|P10_P90|road_heavy",
-        "as_provided|permissive|corroborated|worldpop_2020|P10_P90|vulnerability_heavy",
-        "as_provided|permissive|corroborated|worldpop_2020|P5_P95|default",
-        "as_provided|permissive|corroborated|worldpop_2020|P5_P95|access_heavy",
-        "as_provided|permissive|corroborated|worldpop_2020|P5_P95|exposure_heavy",
-        "as_provided|permissive|corroborated|worldpop_2020|P5_P95|road_heavy",
-        "as_provided|permissive|corroborated|worldpop_2020|P5_P95|vulnerability_heavy",
-        "as_provided|permissive|all_listed|worldpop_2020|P10_P90|default",
-        "as_provided|permissive|all_listed|worldpop_2020|P10_P90|access_heavy",
-        "as_provided|permissive|all_listed|worldpop_2020|P10_P90|exposure_heavy",
-        "as_provided|permissive|all_listed|worldpop_2020|P10_P90|road_heavy",
-        "as_provided|permissive|all_listed|worldpop_2020|P10_P90|vulnerability_heavy",
-        "as_provided|permissive|all_listed|worldpop_2020|P5_P95|default",
-        "as_provided|permissive|all_listed|worldpop_2020|P5_P95|access_heavy",
-        "as_provided|permissive|all_listed|worldpop_2020|P5_P95|exposure_heavy",
-        "as_provided|permissive|all_listed|worldpop_2020|P5_P95|road_heavy",
-        "as_provided|permissive|all_listed|worldpop_2020|P5_P95|vulnerability_heavy",
-        "plus|strict|corroborated|worldpop_2020|P10_P90|default",
-        "plus|strict|corroborated|worldpop_2020|P10_P90|access_heavy",
-        "plus|strict|corroborated|worldpop_2020|P10_P90|exposure_heavy",
-        "plus|strict|corroborated|worldpop_2020|P10_P90|road_heavy",
-        "plus|strict|corroborated|worldpop_2020|P10_P90|vulnerability_heavy",
-        "plus|strict|corroborated|worldpop_2020|P5_P95|default",
-        "plus|strict|corroborated|worldpop_2020|P5_P95|access_heavy",
-        "plus|strict|corroborated|worldpop_2020|P5_P95|exposure_heavy",
-        "plus|strict|corroborated|worldpop_2020|P5_P95|road_heavy",
-        "plus|strict|corroborated|worldpop_2020|P5_P95|vulnerability_heavy",
-        "plus|strict|all_listed|worldpop_2020|P10_P90|default",
-        "plus|strict|all_listed|worldpop_2020|P10_P90|access_heavy",
-        "plus|strict|all_listed|worldpop_2020|P10_P90|exposure_heavy",
-        "plus|strict|all_listed|worldpop_2020|P10_P90|road_heavy",
-        "plus|strict|all_listed|worldpop_2020|P10_P90|vulnerability_heavy",
-        "plus|strict|all_listed|worldpop_2020|P5_P95|default",
-        "plus|strict|all_listed|worldpop_2020|P5_P95|access_heavy",
-        "plus|strict|all_listed|worldpop_2020|P5_P95|exposure_heavy",
-        "plus|strict|all_listed|worldpop_2020|P5_P95|road_heavy",
-        "plus|strict|all_listed|worldpop_2020|P5_P95|vulnerability_heavy",
-        "plus|central|corroborated|worldpop_2020|P10_P90|default",
-        "plus|central|corroborated|worldpop_2020|P10_P90|access_heavy",
-        "plus|central|corroborated|worldpop_2020|P10_P90|exposure_heavy",
-        "plus|central|corroborated|worldpop_2020|P10_P90|road_heavy",
-        "plus|central|corroborated|worldpop_2020|P10_P90|vulnerability_heavy",
-        "plus|central|corroborated|worldpop_2020|P5_P95|default",
-        "plus|central|corroborated|worldpop_2020|P5_P95|access_heavy",
-        "plus|central|corroborated|worldpop_2020|P5_P95|exposure_heavy",
-        "plus|central|corroborated|worldpop_2020|P5_P95|road_heavy",
-        "plus|central|corroborated|worldpop_2020|P5_P95|vulnerability_heavy",
-        "plus|central|all_listed|worldpop_2020|P10_P90|default",
-        "plus|central|all_listed|worldpop_2020|P10_P90|access_heavy",
-        "plus|central|all_listed|worldpop_2020|P10_P90|exposure_heavy",
-        "plus|central|all_listed|worldpop_2020|P10_P90|road_heavy",
-        "plus|central|all_listed|worldpop_2020|P10_P90|vulnerability_heavy",
-        "plus|central|all_listed|worldpop_2020|P5_P95|default",
-        "plus|central|all_listed|worldpop_2020|P5_P95|access_heavy",
-        "plus|central|all_listed|worldpop_2020|P5_P95|exposure_heavy",
-        "plus|central|all_listed|worldpop_2020|P5_P95|road_heavy",
-        "plus|central|all_listed|worldpop_2020|P5_P95|vulnerability_heavy",
-        "plus|permissive|corroborated|worldpop_2020|P10_P90|default",
-        "plus|permissive|corroborated|worldpop_2020|P10_P90|access_heavy",
-        "plus|permissive|corroborated|worldpop_2020|P10_P90|exposure_heavy",
-        "plus|permissive|corroborated|worldpop_2020|P10_P90|road_heavy",
-        "plus|permissive|corroborated|worldpop_2020|P10_P90|vulnerability_heavy",
-        "plus|permissive|corroborated|worldpop_2020|P5_P95|default",
-        "plus|permissive|corroborated|worldpop_2020|P5_P95|access_heavy",
-        "plus|permissive|corroborated|worldpop_2020|P5_P95|exposure_heavy",
-        "plus|permissive|corroborated|worldpop_2020|P5_P95|road_heavy",
-        "plus|permissive|corroborated|worldpop_2020|P5_P95|vulnerability_heavy",
-        "plus|permissive|all_listed|worldpop_2020|P10_P90|default",
-        "plus|permissive|all_listed|worldpop_2020|P10_P90|access_heavy",
-        "plus|permissive|all_listed|worldpop_2020|P10_P90|exposure_heavy",
-        "plus|permissive|all_listed|worldpop_2020|P10_P90|road_heavy",
-        "plus|permissive|all_listed|worldpop_2020|P10_P90|vulnerability_heavy",
-        "plus|permissive|all_listed|worldpop_2020|P5_P95|default",
-        "plus|permissive|all_listed|worldpop_2020|P5_P95|access_heavy",
-        "plus|permissive|all_listed|worldpop_2020|P5_P95|exposure_heavy",
-        "plus|permissive|all_listed|worldpop_2020|P5_P95|road_heavy",
-        "plus|permissive|all_listed|worldpop_2020|P5_P95|vulnerability_heavy"
-      ],
-      "facility_set_needs_a_walking_context_of_record_and_the_pitch_level+rescale_rule_leaves_two_points_open_and_no_stage_builds_the_demand": [
         "minus|strict|corroborated|rescaled_2024|P10_P90|default",
         "minus|strict|corroborated|rescaled_2024|P10_P90|access_heavy",
         "minus|strict|corroborated|rescaled_2024|P10_P90|exposure_heavy",
@@ -986,6 +939,16 @@
         "minus|strict|corroborated|rescaled_2024|P5_P95|exposure_heavy",
         "minus|strict|corroborated|rescaled_2024|P5_P95|road_heavy",
         "minus|strict|corroborated|rescaled_2024|P5_P95|vulnerability_heavy",
+        "minus|strict|all_listed|worldpop_2020|P10_P90|default",
+        "minus|strict|all_listed|worldpop_2020|P10_P90|access_heavy",
+        "minus|strict|all_listed|worldpop_2020|P10_P90|exposure_heavy",
+        "minus|strict|all_listed|worldpop_2020|P10_P90|road_heavy",
+        "minus|strict|all_listed|worldpop_2020|P10_P90|vulnerability_heavy",
+        "minus|strict|all_listed|worldpop_2020|P5_P95|default",
+        "minus|strict|all_listed|worldpop_2020|P5_P95|access_heavy",
+        "minus|strict|all_listed|worldpop_2020|P5_P95|exposure_heavy",
+        "minus|strict|all_listed|worldpop_2020|P5_P95|road_heavy",
+        "minus|strict|all_listed|worldpop_2020|P5_P95|vulnerability_heavy",
         "minus|strict|all_listed|rescaled_2024|P10_P90|default",
         "minus|strict|all_listed|rescaled_2024|P10_P90|access_heavy",
         "minus|strict|all_listed|rescaled_2024|P10_P90|exposure_heavy",
@@ -996,6 +959,16 @@
         "minus|strict|all_listed|rescaled_2024|P5_P95|exposure_heavy",
         "minus|strict|all_listed|rescaled_2024|P5_P95|road_heavy",
         "minus|strict|all_listed|rescaled_2024|P5_P95|vulnerability_heavy",
+        "minus|central|corroborated|worldpop_2020|P10_P90|default",
+        "minus|central|corroborated|worldpop_2020|P10_P90|access_heavy",
+        "minus|central|corroborated|worldpop_2020|P10_P90|exposure_heavy",
+        "minus|central|corroborated|worldpop_2020|P10_P90|road_heavy",
+        "minus|central|corroborated|worldpop_2020|P10_P90|vulnerability_heavy",
+        "minus|central|corroborated|worldpop_2020|P5_P95|default",
+        "minus|central|corroborated|worldpop_2020|P5_P95|access_heavy",
+        "minus|central|corroborated|worldpop_2020|P5_P95|exposure_heavy",
+        "minus|central|corroborated|worldpop_2020|P5_P95|road_heavy",
+        "minus|central|corroborated|worldpop_2020|P5_P95|vulnerability_heavy",
         "minus|central|corroborated|rescaled_2024|P10_P90|default",
         "minus|central|corroborated|rescaled_2024|P10_P90|access_heavy",
         "minus|central|corroborated|rescaled_2024|P10_P90|exposure_heavy",
@@ -1006,6 +979,16 @@
         "minus|central|corroborated|rescaled_2024|P5_P95|exposure_heavy",
         "minus|central|corroborated|rescaled_2024|P5_P95|road_heavy",
         "minus|central|corroborated|rescaled_2024|P5_P95|vulnerability_heavy",
+        "minus|central|all_listed|worldpop_2020|P10_P90|default",
+        "minus|central|all_listed|worldpop_2020|P10_P90|access_heavy",
+        "minus|central|all_listed|worldpop_2020|P10_P90|exposure_heavy",
+        "minus|central|all_listed|worldpop_2020|P10_P90|road_heavy",
+        "minus|central|all_listed|worldpop_2020|P10_P90|vulnerability_heavy",
+        "minus|central|all_listed|worldpop_2020|P5_P95|default",
+        "minus|central|all_listed|worldpop_2020|P5_P95|access_heavy",
+        "minus|central|all_listed|worldpop_2020|P5_P95|exposure_heavy",
+        "minus|central|all_listed|worldpop_2020|P5_P95|road_heavy",
+        "minus|central|all_listed|worldpop_2020|P5_P95|vulnerability_heavy",
         "minus|central|all_listed|rescaled_2024|P10_P90|default",
         "minus|central|all_listed|rescaled_2024|P10_P90|access_heavy",
         "minus|central|all_listed|rescaled_2024|P10_P90|exposure_heavy",
@@ -1016,6 +999,16 @@
         "minus|central|all_listed|rescaled_2024|P5_P95|exposure_heavy",
         "minus|central|all_listed|rescaled_2024|P5_P95|road_heavy",
         "minus|central|all_listed|rescaled_2024|P5_P95|vulnerability_heavy",
+        "minus|permissive|corroborated|worldpop_2020|P10_P90|default",
+        "minus|permissive|corroborated|worldpop_2020|P10_P90|access_heavy",
+        "minus|permissive|corroborated|worldpop_2020|P10_P90|exposure_heavy",
+        "minus|permissive|corroborated|worldpop_2020|P10_P90|road_heavy",
+        "minus|permissive|corroborated|worldpop_2020|P10_P90|vulnerability_heavy",
+        "minus|permissive|corroborated|worldpop_2020|P5_P95|default",
+        "minus|permissive|corroborated|worldpop_2020|P5_P95|access_heavy",
+        "minus|permissive|corroborated|worldpop_2020|P5_P95|exposure_heavy",
+        "minus|permissive|corroborated|worldpop_2020|P5_P95|road_heavy",
+        "minus|permissive|corroborated|worldpop_2020|P5_P95|vulnerability_heavy",
         "minus|permissive|corroborated|rescaled_2024|P10_P90|default",
         "minus|permissive|corroborated|rescaled_2024|P10_P90|access_heavy",
         "minus|permissive|corroborated|rescaled_2024|P10_P90|exposure_heavy",
@@ -1026,6 +1019,16 @@
         "minus|permissive|corroborated|rescaled_2024|P5_P95|exposure_heavy",
         "minus|permissive|corroborated|rescaled_2024|P5_P95|road_heavy",
         "minus|permissive|corroborated|rescaled_2024|P5_P95|vulnerability_heavy",
+        "minus|permissive|all_listed|worldpop_2020|P10_P90|default",
+        "minus|permissive|all_listed|worldpop_2020|P10_P90|access_heavy",
+        "minus|permissive|all_listed|worldpop_2020|P10_P90|exposure_heavy",
+        "minus|permissive|all_listed|worldpop_2020|P10_P90|road_heavy",
+        "minus|permissive|all_listed|worldpop_2020|P10_P90|vulnerability_heavy",
+        "minus|permissive|all_listed|worldpop_2020|P5_P95|default",
+        "minus|permissive|all_listed|worldpop_2020|P5_P95|access_heavy",
+        "minus|permissive|all_listed|worldpop_2020|P5_P95|exposure_heavy",
+        "minus|permissive|all_listed|worldpop_2020|P5_P95|road_heavy",
+        "minus|permissive|all_listed|worldpop_2020|P5_P95|vulnerability_heavy",
         "minus|permissive|all_listed|rescaled_2024|P10_P90|default",
         "minus|permissive|all_listed|rescaled_2024|P10_P90|access_heavy",
         "minus|permissive|all_listed|rescaled_2024|P10_P90|exposure_heavy",
@@ -1036,6 +1039,16 @@
         "minus|permissive|all_listed|rescaled_2024|P5_P95|exposure_heavy",
         "minus|permissive|all_listed|rescaled_2024|P5_P95|road_heavy",
         "minus|permissive|all_listed|rescaled_2024|P5_P95|vulnerability_heavy",
+        "as_provided|strict|corroborated|worldpop_2020|P10_P90|default",
+        "as_provided|strict|corroborated|worldpop_2020|P10_P90|access_heavy",
+        "as_provided|strict|corroborated|worldpop_2020|P10_P90|exposure_heavy",
+        "as_provided|strict|corroborated|worldpop_2020|P10_P90|road_heavy",
+        "as_provided|strict|corroborated|worldpop_2020|P10_P90|vulnerability_heavy",
+        "as_provided|strict|corroborated|worldpop_2020|P5_P95|default",
+        "as_provided|strict|corroborated|worldpop_2020|P5_P95|access_heavy",
+        "as_provided|strict|corroborated|worldpop_2020|P5_P95|exposure_heavy",
+        "as_provided|strict|corroborated|worldpop_2020|P5_P95|road_heavy",
+        "as_provided|strict|corroborated|worldpop_2020|P5_P95|vulnerability_heavy",
         "as_provided|strict|corroborated|rescaled_2024|P10_P90|default",
         "as_provided|strict|corroborated|rescaled_2024|P10_P90|access_heavy",
         "as_provided|strict|corroborated|rescaled_2024|P10_P90|exposure_heavy",
@@ -1046,6 +1059,16 @@
         "as_provided|strict|corroborated|rescaled_2024|P5_P95|exposure_heavy",
         "as_provided|strict|corroborated|rescaled_2024|P5_P95|road_heavy",
         "as_provided|strict|corroborated|rescaled_2024|P5_P95|vulnerability_heavy",
+        "as_provided|strict|all_listed|worldpop_2020|P10_P90|default",
+        "as_provided|strict|all_listed|worldpop_2020|P10_P90|access_heavy",
+        "as_provided|strict|all_listed|worldpop_2020|P10_P90|exposure_heavy",
+        "as_provided|strict|all_listed|worldpop_2020|P10_P90|road_heavy",
+        "as_provided|strict|all_listed|worldpop_2020|P10_P90|vulnerability_heavy",
+        "as_provided|strict|all_listed|worldpop_2020|P5_P95|default",
+        "as_provided|strict|all_listed|worldpop_2020|P5_P95|access_heavy",
+        "as_provided|strict|all_listed|worldpop_2020|P5_P95|exposure_heavy",
+        "as_provided|strict|all_listed|worldpop_2020|P5_P95|road_heavy",
+        "as_provided|strict|all_listed|worldpop_2020|P5_P95|vulnerability_heavy",
         "as_provided|strict|all_listed|rescaled_2024|P10_P90|default",
         "as_provided|strict|all_listed|rescaled_2024|P10_P90|access_heavy",
         "as_provided|strict|all_listed|rescaled_2024|P10_P90|exposure_heavy",
@@ -1056,6 +1079,16 @@
         "as_provided|strict|all_listed|rescaled_2024|P5_P95|exposure_heavy",
         "as_provided|strict|all_listed|rescaled_2024|P5_P95|road_heavy",
         "as_provided|strict|all_listed|rescaled_2024|P5_P95|vulnerability_heavy",
+        "as_provided|central|corroborated|worldpop_2020|P10_P90|default",
+        "as_provided|central|corroborated|worldpop_2020|P10_P90|access_heavy",
+        "as_provided|central|corroborated|worldpop_2020|P10_P90|exposure_heavy",
+        "as_provided|central|corroborated|worldpop_2020|P10_P90|road_heavy",
+        "as_provided|central|corroborated|worldpop_2020|P10_P90|vulnerability_heavy",
+        "as_provided|central|corroborated|worldpop_2020|P5_P95|default",
+        "as_provided|central|corroborated|worldpop_2020|P5_P95|access_heavy",
+        "as_provided|central|corroborated|worldpop_2020|P5_P95|exposure_heavy",
+        "as_provided|central|corroborated|worldpop_2020|P5_P95|road_heavy",
+        "as_provided|central|corroborated|worldpop_2020|P5_P95|vulnerability_heavy",
         "as_provided|central|corroborated|rescaled_2024|P10_P90|default",
         "as_provided|central|corroborated|rescaled_2024|P10_P90|access_heavy",
         "as_provided|central|corroborated|rescaled_2024|P10_P90|exposure_heavy",
@@ -1066,6 +1099,16 @@
         "as_provided|central|corroborated|rescaled_2024|P5_P95|exposure_heavy",
         "as_provided|central|corroborated|rescaled_2024|P5_P95|road_heavy",
         "as_provided|central|corroborated|rescaled_2024|P5_P95|vulnerability_heavy",
+        "as_provided|central|all_listed|worldpop_2020|P10_P90|default",
+        "as_provided|central|all_listed|worldpop_2020|P10_P90|access_heavy",
+        "as_provided|central|all_listed|worldpop_2020|P10_P90|exposure_heavy",
+        "as_provided|central|all_listed|worldpop_2020|P10_P90|road_heavy",
+        "as_provided|central|all_listed|worldpop_2020|P10_P90|vulnerability_heavy",
+        "as_provided|central|all_listed|worldpop_2020|P5_P95|default",
+        "as_provided|central|all_listed|worldpop_2020|P5_P95|access_heavy",
+        "as_provided|central|all_listed|worldpop_2020|P5_P95|exposure_heavy",
+        "as_provided|central|all_listed|worldpop_2020|P5_P95|road_heavy",
+        "as_provided|central|all_listed|worldpop_2020|P5_P95|vulnerability_heavy",
         "as_provided|central|all_listed|rescaled_2024|P10_P90|default",
         "as_provided|central|all_listed|rescaled_2024|P10_P90|access_heavy",
         "as_provided|central|all_listed|rescaled_2024|P10_P90|exposure_heavy",
@@ -1076,6 +1119,16 @@
         "as_provided|central|all_listed|rescaled_2024|P5_P95|exposure_heavy",
         "as_provided|central|all_listed|rescaled_2024|P5_P95|road_heavy",
         "as_provided|central|all_listed|rescaled_2024|P5_P95|vulnerability_heavy",
+        "as_provided|permissive|corroborated|worldpop_2020|P10_P90|default",
+        "as_provided|permissive|corroborated|worldpop_2020|P10_P90|access_heavy",
+        "as_provided|permissive|corroborated|worldpop_2020|P10_P90|exposure_heavy",
+        "as_provided|permissive|corroborated|worldpop_2020|P10_P90|road_heavy",
+        "as_provided|permissive|corroborated|worldpop_2020|P10_P90|vulnerability_heavy",
+        "as_provided|permissive|corroborated|worldpop_2020|P5_P95|default",
+        "as_provided|permissive|corroborated|worldpop_2020|P5_P95|access_heavy",
+        "as_provided|permissive|corroborated|worldpop_2020|P5_P95|exposure_heavy",
+        "as_provided|permissive|corroborated|worldpop_2020|P5_P95|road_heavy",
+        "as_provided|permissive|corroborated|worldpop_2020|P5_P95|vulnerability_heavy",
         "as_provided|permissive|corroborated|rescaled_2024|P10_P90|default",
         "as_provided|permissive|corroborated|rescaled_2024|P10_P90|access_heavy",
         "as_provided|permissive|corroborated|rescaled_2024|P10_P90|exposure_heavy",
@@ -1086,6 +1139,16 @@
         "as_provided|permissive|corroborated|rescaled_2024|P5_P95|exposure_heavy",
         "as_provided|permissive|corroborated|rescaled_2024|P5_P95|road_heavy",
         "as_provided|permissive|corroborated|rescaled_2024|P5_P95|vulnerability_heavy",
+        "as_provided|permissive|all_listed|worldpop_2020|P10_P90|default",
+        "as_provided|permissive|all_listed|worldpop_2020|P10_P90|access_heavy",
+        "as_provided|permissive|all_listed|worldpop_2020|P10_P90|exposure_heavy",
+        "as_provided|permissive|all_listed|worldpop_2020|P10_P90|road_heavy",
+        "as_provided|permissive|all_listed|worldpop_2020|P10_P90|vulnerability_heavy",
+        "as_provided|permissive|all_listed|worldpop_2020|P5_P95|default",
+        "as_provided|permissive|all_listed|worldpop_2020|P5_P95|access_heavy",
+        "as_provided|permissive|all_listed|worldpop_2020|P5_P95|exposure_heavy",
+        "as_provided|permissive|all_listed|worldpop_2020|P5_P95|road_heavy",
+        "as_provided|permissive|all_listed|worldpop_2020|P5_P95|vulnerability_heavy",
         "as_provided|permissive|all_listed|rescaled_2024|P10_P90|default",
         "as_provided|permissive|all_listed|rescaled_2024|P10_P90|access_heavy",
         "as_provided|permissive|all_listed|rescaled_2024|P10_P90|exposure_heavy",
@@ -1096,6 +1159,16 @@
         "as_provided|permissive|all_listed|rescaled_2024|P5_P95|exposure_heavy",
         "as_provided|permissive|all_listed|rescaled_2024|P5_P95|road_heavy",
         "as_provided|permissive|all_listed|rescaled_2024|P5_P95|vulnerability_heavy",
+        "plus|strict|corroborated|worldpop_2020|P10_P90|default",
+        "plus|strict|corroborated|worldpop_2020|P10_P90|access_heavy",
+        "plus|strict|corroborated|worldpop_2020|P10_P90|exposure_heavy",
+        "plus|strict|corroborated|worldpop_2020|P10_P90|road_heavy",
+        "plus|strict|corroborated|worldpop_2020|P10_P90|vulnerability_heavy",
+        "plus|strict|corroborated|worldpop_2020|P5_P95|default",
+        "plus|strict|corroborated|worldpop_2020|P5_P95|access_heavy",
+        "plus|strict|corroborated|worldpop_2020|P5_P95|exposure_heavy",
+        "plus|strict|corroborated|worldpop_2020|P5_P95|road_heavy",
+        "plus|strict|corroborated|worldpop_2020|P5_P95|vulnerability_heavy",
         "plus|strict|corroborated|rescaled_2024|P10_P90|default",
         "plus|strict|corroborated|rescaled_2024|P10_P90|access_heavy",
         "plus|strict|corroborated|rescaled_2024|P10_P90|exposure_heavy",
@@ -1106,6 +1179,16 @@
         "plus|strict|corroborated|rescaled_2024|P5_P95|exposure_heavy",
         "plus|strict|corroborated|rescaled_2024|P5_P95|road_heavy",
         "plus|strict|corroborated|rescaled_2024|P5_P95|vulnerability_heavy",
+        "plus|strict|all_listed|worldpop_2020|P10_P90|default",
+        "plus|strict|all_listed|worldpop_2020|P10_P90|access_heavy",
+        "plus|strict|all_listed|worldpop_2020|P10_P90|exposure_heavy",
+        "plus|strict|all_listed|worldpop_2020|P10_P90|road_heavy",
+        "plus|strict|all_listed|worldpop_2020|P10_P90|vulnerability_heavy",
+        "plus|strict|all_listed|worldpop_2020|P5_P95|default",
+        "plus|strict|all_listed|worldpop_2020|P5_P95|access_heavy",
+        "plus|strict|all_listed|worldpop_2020|P5_P95|exposure_heavy",
+        "plus|strict|all_listed|worldpop_2020|P5_P95|road_heavy",
+        "plus|strict|all_listed|worldpop_2020|P5_P95|vulnerability_heavy",
         "plus|strict|all_listed|rescaled_2024|P10_P90|default",
         "plus|strict|all_listed|rescaled_2024|P10_P90|access_heavy",
         "plus|strict|all_listed|rescaled_2024|P10_P90|exposure_heavy",
@@ -1116,6 +1199,16 @@
         "plus|strict|all_listed|rescaled_2024|P5_P95|exposure_heavy",
         "plus|strict|all_listed|rescaled_2024|P5_P95|road_heavy",
         "plus|strict|all_listed|rescaled_2024|P5_P95|vulnerability_heavy",
+        "plus|central|corroborated|worldpop_2020|P10_P90|default",
+        "plus|central|corroborated|worldpop_2020|P10_P90|access_heavy",
+        "plus|central|corroborated|worldpop_2020|P10_P90|exposure_heavy",
+        "plus|central|corroborated|worldpop_2020|P10_P90|road_heavy",
+        "plus|central|corroborated|worldpop_2020|P10_P90|vulnerability_heavy",
+        "plus|central|corroborated|worldpop_2020|P5_P95|default",
+        "plus|central|corroborated|worldpop_2020|P5_P95|access_heavy",
+        "plus|central|corroborated|worldpop_2020|P5_P95|exposure_heavy",
+        "plus|central|corroborated|worldpop_2020|P5_P95|road_heavy",
+        "plus|central|corroborated|worldpop_2020|P5_P95|vulnerability_heavy",
         "plus|central|corroborated|rescaled_2024|P10_P90|default",
         "plus|central|corroborated|rescaled_2024|P10_P90|access_heavy",
         "plus|central|corroborated|rescaled_2024|P10_P90|exposure_heavy",
@@ -1126,6 +1219,16 @@
         "plus|central|corroborated|rescaled_2024|P5_P95|exposure_heavy",
         "plus|central|corroborated|rescaled_2024|P5_P95|road_heavy",
         "plus|central|corroborated|rescaled_2024|P5_P95|vulnerability_heavy",
+        "plus|central|all_listed|worldpop_2020|P10_P90|default",
+        "plus|central|all_listed|worldpop_2020|P10_P90|access_heavy",
+        "plus|central|all_listed|worldpop_2020|P10_P90|exposure_heavy",
+        "plus|central|all_listed|worldpop_2020|P10_P90|road_heavy",
+        "plus|central|all_listed|worldpop_2020|P10_P90|vulnerability_heavy",
+        "plus|central|all_listed|worldpop_2020|P5_P95|default",
+        "plus|central|all_listed|worldpop_2020|P5_P95|access_heavy",
+        "plus|central|all_listed|worldpop_2020|P5_P95|exposure_heavy",
+        "plus|central|all_listed|worldpop_2020|P5_P95|road_heavy",
+        "plus|central|all_listed|worldpop_2020|P5_P95|vulnerability_heavy",
         "plus|central|all_listed|rescaled_2024|P10_P90|default",
         "plus|central|all_listed|rescaled_2024|P10_P90|access_heavy",
         "plus|central|all_listed|rescaled_2024|P10_P90|exposure_heavy",
@@ -1136,6 +1239,16 @@
         "plus|central|all_listed|rescaled_2024|P5_P95|exposure_heavy",
         "plus|central|all_listed|rescaled_2024|P5_P95|road_heavy",
         "plus|central|all_listed|rescaled_2024|P5_P95|vulnerability_heavy",
+        "plus|permissive|corroborated|worldpop_2020|P10_P90|default",
+        "plus|permissive|corroborated|worldpop_2020|P10_P90|access_heavy",
+        "plus|permissive|corroborated|worldpop_2020|P10_P90|exposure_heavy",
+        "plus|permissive|corroborated|worldpop_2020|P10_P90|road_heavy",
+        "plus|permissive|corroborated|worldpop_2020|P10_P90|vulnerability_heavy",
+        "plus|permissive|corroborated|worldpop_2020|P5_P95|default",
+        "plus|permissive|corroborated|worldpop_2020|P5_P95|access_heavy",
+        "plus|permissive|corroborated|worldpop_2020|P5_P95|exposure_heavy",
+        "plus|permissive|corroborated|worldpop_2020|P5_P95|road_heavy",
+        "plus|permissive|corroborated|worldpop_2020|P5_P95|vulnerability_heavy",
         "plus|permissive|corroborated|rescaled_2024|P10_P90|default",
         "plus|permissive|corroborated|rescaled_2024|P10_P90|access_heavy",
         "plus|permissive|corroborated|rescaled_2024|P10_P90|exposure_heavy",
@@ -1146,6 +1259,16 @@
         "plus|permissive|corroborated|rescaled_2024|P5_P95|exposure_heavy",
         "plus|permissive|corroborated|rescaled_2024|P5_P95|road_heavy",
         "plus|permissive|corroborated|rescaled_2024|P5_P95|vulnerability_heavy",
+        "plus|permissive|all_listed|worldpop_2020|P10_P90|default",
+        "plus|permissive|all_listed|worldpop_2020|P10_P90|access_heavy",
+        "plus|permissive|all_listed|worldpop_2020|P10_P90|exposure_heavy",
+        "plus|permissive|all_listed|worldpop_2020|P10_P90|road_heavy",
+        "plus|permissive|all_listed|worldpop_2020|P10_P90|vulnerability_heavy",
+        "plus|permissive|all_listed|worldpop_2020|P5_P95|default",
+        "plus|permissive|all_listed|worldpop_2020|P5_P95|access_heavy",
+        "plus|permissive|all_listed|worldpop_2020|P5_P95|exposure_heavy",
+        "plus|permissive|all_listed|worldpop_2020|P5_P95|road_heavy",
+        "plus|permissive|all_listed|worldpop_2020|P5_P95|vulnerability_heavy",
         "plus|permissive|all_listed|rescaled_2024|P10_P90|default",
         "plus|permissive|all_listed|rescaled_2024|P10_P90|access_heavy",
         "plus|permissive|all_listed|rescaled_2024|P10_P90|exposure_heavy",
@@ -1156,98 +1279,6 @@
         "plus|permissive|all_listed|rescaled_2024|P5_P95|exposure_heavy",
         "plus|permissive|all_listed|rescaled_2024|P5_P95|road_heavy",
         "plus|permissive|all_listed|rescaled_2024|P5_P95|vulnerability_heavy"
-      ],
-      "rescale_rule_leaves_two_points_open_and_no_stage_builds_the_demand": [
-        "minus|strict|public|rescaled_2024|P10_P90|default",
-        "minus|strict|public|rescaled_2024|P10_P90|access_heavy",
-        "minus|strict|public|rescaled_2024|P10_P90|exposure_heavy",
-        "minus|strict|public|rescaled_2024|P10_P90|road_heavy",
-        "minus|strict|public|rescaled_2024|P10_P90|vulnerability_heavy",
-        "minus|strict|public|rescaled_2024|P5_P95|default",
-        "minus|strict|public|rescaled_2024|P5_P95|access_heavy",
-        "minus|strict|public|rescaled_2024|P5_P95|exposure_heavy",
-        "minus|strict|public|rescaled_2024|P5_P95|road_heavy",
-        "minus|strict|public|rescaled_2024|P5_P95|vulnerability_heavy",
-        "minus|central|public|rescaled_2024|P10_P90|default",
-        "minus|central|public|rescaled_2024|P10_P90|access_heavy",
-        "minus|central|public|rescaled_2024|P10_P90|exposure_heavy",
-        "minus|central|public|rescaled_2024|P10_P90|road_heavy",
-        "minus|central|public|rescaled_2024|P10_P90|vulnerability_heavy",
-        "minus|central|public|rescaled_2024|P5_P95|default",
-        "minus|central|public|rescaled_2024|P5_P95|access_heavy",
-        "minus|central|public|rescaled_2024|P5_P95|exposure_heavy",
-        "minus|central|public|rescaled_2024|P5_P95|road_heavy",
-        "minus|central|public|rescaled_2024|P5_P95|vulnerability_heavy",
-        "minus|permissive|public|rescaled_2024|P10_P90|default",
-        "minus|permissive|public|rescaled_2024|P10_P90|access_heavy",
-        "minus|permissive|public|rescaled_2024|P10_P90|exposure_heavy",
-        "minus|permissive|public|rescaled_2024|P10_P90|road_heavy",
-        "minus|permissive|public|rescaled_2024|P10_P90|vulnerability_heavy",
-        "minus|permissive|public|rescaled_2024|P5_P95|default",
-        "minus|permissive|public|rescaled_2024|P5_P95|access_heavy",
-        "minus|permissive|public|rescaled_2024|P5_P95|exposure_heavy",
-        "minus|permissive|public|rescaled_2024|P5_P95|road_heavy",
-        "minus|permissive|public|rescaled_2024|P5_P95|vulnerability_heavy",
-        "as_provided|strict|public|rescaled_2024|P10_P90|default",
-        "as_provided|strict|public|rescaled_2024|P10_P90|access_heavy",
-        "as_provided|strict|public|rescaled_2024|P10_P90|exposure_heavy",
-        "as_provided|strict|public|rescaled_2024|P10_P90|road_heavy",
-        "as_provided|strict|public|rescaled_2024|P10_P90|vulnerability_heavy",
-        "as_provided|strict|public|rescaled_2024|P5_P95|default",
-        "as_provided|strict|public|rescaled_2024|P5_P95|access_heavy",
-        "as_provided|strict|public|rescaled_2024|P5_P95|exposure_heavy",
-        "as_provided|strict|public|rescaled_2024|P5_P95|road_heavy",
-        "as_provided|strict|public|rescaled_2024|P5_P95|vulnerability_heavy",
-        "as_provided|central|public|rescaled_2024|P10_P90|default",
-        "as_provided|central|public|rescaled_2024|P10_P90|access_heavy",
-        "as_provided|central|public|rescaled_2024|P10_P90|exposure_heavy",
-        "as_provided|central|public|rescaled_2024|P10_P90|road_heavy",
-        "as_provided|central|public|rescaled_2024|P10_P90|vulnerability_heavy",
-        "as_provided|central|public|rescaled_2024|P5_P95|default",
-        "as_provided|central|public|rescaled_2024|P5_P95|access_heavy",
-        "as_provided|central|public|rescaled_2024|P5_P95|exposure_heavy",
-        "as_provided|central|public|rescaled_2024|P5_P95|road_heavy",
-        "as_provided|central|public|rescaled_2024|P5_P95|vulnerability_heavy",
-        "as_provided|permissive|public|rescaled_2024|P10_P90|default",
-        "as_provided|permissive|public|rescaled_2024|P10_P90|access_heavy",
-        "as_provided|permissive|public|rescaled_2024|P10_P90|exposure_heavy",
-        "as_provided|permissive|public|rescaled_2024|P10_P90|road_heavy",
-        "as_provided|permissive|public|rescaled_2024|P10_P90|vulnerability_heavy",
-        "as_provided|permissive|public|rescaled_2024|P5_P95|default",
-        "as_provided|permissive|public|rescaled_2024|P5_P95|access_heavy",
-        "as_provided|permissive|public|rescaled_2024|P5_P95|exposure_heavy",
-        "as_provided|permissive|public|rescaled_2024|P5_P95|road_heavy",
-        "as_provided|permissive|public|rescaled_2024|P5_P95|vulnerability_heavy",
-        "plus|strict|public|rescaled_2024|P10_P90|default",
-        "plus|strict|public|rescaled_2024|P10_P90|access_heavy",
-        "plus|strict|public|rescaled_2024|P10_P90|exposure_heavy",
-        "plus|strict|public|rescaled_2024|P10_P90|road_heavy",
-        "plus|strict|public|rescaled_2024|P10_P90|vulnerability_heavy",
-        "plus|strict|public|rescaled_2024|P5_P95|default",
-        "plus|strict|public|rescaled_2024|P5_P95|access_heavy",
-        "plus|strict|public|rescaled_2024|P5_P95|exposure_heavy",
-        "plus|strict|public|rescaled_2024|P5_P95|road_heavy",
-        "plus|strict|public|rescaled_2024|P5_P95|vulnerability_heavy",
-        "plus|central|public|rescaled_2024|P10_P90|default",
-        "plus|central|public|rescaled_2024|P10_P90|access_heavy",
-        "plus|central|public|rescaled_2024|P10_P90|exposure_heavy",
-        "plus|central|public|rescaled_2024|P10_P90|road_heavy",
-        "plus|central|public|rescaled_2024|P10_P90|vulnerability_heavy",
-        "plus|central|public|rescaled_2024|P5_P95|default",
-        "plus|central|public|rescaled_2024|P5_P95|access_heavy",
-        "plus|central|public|rescaled_2024|P5_P95|exposure_heavy",
-        "plus|central|public|rescaled_2024|P5_P95|road_heavy",
-        "plus|central|public|rescaled_2024|P5_P95|vulnerability_heavy",
-        "plus|permissive|public|rescaled_2024|P10_P90|default",
-        "plus|permissive|public|rescaled_2024|P10_P90|access_heavy",
-        "plus|permissive|public|rescaled_2024|P10_P90|exposure_heavy",
-        "plus|permissive|public|rescaled_2024|P10_P90|road_heavy",
-        "plus|permissive|public|rescaled_2024|P10_P90|vulnerability_heavy",
-        "plus|permissive|public|rescaled_2024|P5_P95|default",
-        "plus|permissive|public|rescaled_2024|P5_P95|access_heavy",
-        "plus|permissive|public|rescaled_2024|P5_P95|exposure_heavy",
-        "plus|permissive|public|rescaled_2024|P5_P95|road_heavy",
-        "plus|permissive|public|rescaled_2024|P5_P95|vulnerability_heavy"
       ]
     }
   },
@@ -2001,7 +2032,21 @@
     "each_combination_carries_the_flood_measurements_of_its_own_level": true,
     "flooded_land_not_smaller_at_a_larger_flood_level_in_every_unit": true,
     "residents_inside_not_fewer_at_a_larger_flood_level_in_every_unit": true,
-    "flood_level_checks_read": "The measurements handed to the ensemble: for each unit and closure level, the flooded land and the residents inside the extent of the minus, the as-provided and the plus combination."
+    "flood_level_checks_read": "The measurements handed to the ensemble: for each unit and closure level, the flooded land and the residents inside the extent of the minus, the as-provided and the plus combination.",
+    "rescaled_demand": {
+      "combinations_measured": 9,
+      "unit_residents_same_in_the_rescaled_demand_and_the_access_tables": true,
+      "residents_by_unit": {
+        "TH570901": 31648.04,
+        "TH570902": 8954.47,
+        "TH570903": 7881.094,
+        "TH570904": 10286.85,
+        "TH570905": 4605.16,
+        "TH570906": 21645.235,
+        "TH570908": 3408.671,
+        "TH570909": 7042.577
+      }
+    }
   },
   "result": {
     "computed": true,
@@ -2016,21 +2061,19 @@
       "units": 8,
       "level": "public",
       "core_cells_per_lane": 540,
-      "cells_run": 90,
-      "cells_not_run": 450,
+      "cells_run": 180,
+      "cells_not_run": 360,
       "cells_not_run_by_reason": {
-        "facility_set_needs_a_walking_context_of_record_and_the_pitch_level": 180,
-        "facility_set_needs_a_walking_context_of_record_and_the_pitch_level+rescale_rule_leaves_two_points_open_and_no_stage_builds_the_demand": 180,
-        "rescale_rule_leaves_two_points_open_and_no_stage_builds_the_demand": 90
+        "facility_set_needs_a_walking_context_of_record_and_the_pitch_level": 360
       },
       "cells_of_the_protocol_set_for_retention": 180,
       "cells_run_with_a_failed_unit": 0,
-      "unit_cells_run": 720,
-      "unit_cells_with_a_result": 720,
+      "unit_cells_run": 1440,
+      "unit_cells_with_a_result": 1440,
       "unit_cells_failed": 0,
       "unit_cells_failed_by_stage_and_error": {},
       "unit_cells_with_a_component_not_computed": 0,
-      "cells_ranked": 90,
+      "cells_ranked": 180,
       "reference_class_counts": {
         "A": 0,
         "B": 1,
@@ -2041,45 +2084,37 @@
       },
       "units_without_a_default_cell_result": 0,
       "class_counts_over_every_unit_cell": {
-        "A": 0,
-        "B": 70,
-        "C": 0,
-        "D": 293,
-        "E": 357,
+        "A": 30,
+        "B": 180,
+        "C": 20,
+        "D": 493,
+        "E": 717,
         "no_class": 0
       },
       "units_by_number_of_classes_over_the_cells_run": {
-        "1": 6,
-        "2": 2
+        "1": 5,
+        "2": 2,
+        "4": 1
       },
       "retention_over_the_cells_run": {
         "what": "The share of the cells that were run in which a unit keeps the class of its default cell. A cell that was run and failed counts as run and keeps no class. It is not the retention of the headline rule unless every cell of the protocol's set was run.",
         "class_retention_min": 0.6,
-        "units_keeping_the_class_in_every_cell_run": 6,
-        "units_keeping_the_class_in_at_least_the_minimum_share": 8,
-        "units_keeping_the_class_in_less_than_the_minimum_share": 0,
+        "units_keeping_the_class_in_every_cell_run": 5,
+        "units_keeping_the_class_in_at_least_the_minimum_share": 7,
+        "units_keeping_the_class_in_less_than_the_minimum_share": 1,
         "units_without_a_class_to_keep": 0
       },
       "headline_status_counts": {
-        "not_evaluated": 8,
-        "headline_eligible": 0,
-        "unstable_verify": 0
+        "not_evaluated": 0,
+        "headline_eligible": 7,
+        "unstable_verify": 1
       },
       "outcome_fixed_by_the_bounds_counts": {
         "at_or_above_the_minimum": 0,
         "below_the_minimum": 0,
-        "not_fixed": 8
+        "not_fixed": 0
       },
-      "other_reading_of_the_protocol_set": {
-        "over": "the 540 core cells (protocol v1b ensemble_grid.headline_rule)",
-        "cells": 540,
-        "outcome_fixed_by_the_bounds_counts": {
-          "at_or_above_the_minimum": 0,
-          "below_the_minimum": 0,
-          "not_fixed": 8
-        },
-        "note": "The same counts with the core cells as the set of the rule. Which set applies to a result that is not a public overlay is open point E10-OP11; no status is set from either."
-      },
+      "other_reading_of_the_protocol_set": null,
       "after_declared_cut_line_6": {
         "levels_kept": {
           "population_vintage": "worldpop_2020",
@@ -2109,10 +2144,10 @@
               "vulnerability_anchors": "P10_P90"
             },
             "cells": 45,
-            "units_at_or_above_the_minimum": 0,
-            "units_below_the_minimum": 0,
-            "units_keeping_the_class_in_every_one_of_those_cells": 0,
-            "units_without_a_class_in_every_one_of_those_cells": 8
+            "units_at_or_above_the_minimum": 7,
+            "units_below_the_minimum": 1,
+            "units_keeping_the_class_in_every_one_of_those_cells": 6,
+            "units_without_a_class_in_every_one_of_those_cells": 0
           },
           {
             "levels_kept": {
@@ -2120,10 +2155,10 @@
               "vulnerability_anchors": "P5_P95"
             },
             "cells": 45,
-            "units_at_or_above_the_minimum": 0,
-            "units_below_the_minimum": 0,
-            "units_keeping_the_class_in_every_one_of_those_cells": 0,
-            "units_without_a_class_in_every_one_of_those_cells": 8
+            "units_at_or_above_the_minimum": 7,
+            "units_below_the_minimum": 1,
+            "units_keeping_the_class_in_every_one_of_those_cells": 6,
+            "units_without_a_class_in_every_one_of_those_cells": 0
           }
         ],
         "note": "Counts over the cells that declared cut line 6 would leave. Not the headline: the owners have not invoked the cut (open point E10-OP1). The cut does not say which level of its two axes stays: the first counts keep the levels of the default cell, and other_levels_the_cut_could_keep gives the counts for every other pair (open point E10-OP12)."
@@ -2173,6 +2208,56 @@
           "D": 4,
           "E": 4
         },
+        "minus|strict|public|rescaled_2024|P10_P90|default": {
+          "C": 1,
+          "D": 3,
+          "E": 4
+        },
+        "minus|strict|public|rescaled_2024|P10_P90|access_heavy": {
+          "C": 1,
+          "D": 3,
+          "E": 4
+        },
+        "minus|strict|public|rescaled_2024|P10_P90|exposure_heavy": {
+          "C": 1,
+          "D": 3,
+          "E": 4
+        },
+        "minus|strict|public|rescaled_2024|P10_P90|road_heavy": {
+          "C": 1,
+          "D": 3,
+          "E": 4
+        },
+        "minus|strict|public|rescaled_2024|P10_P90|vulnerability_heavy": {
+          "C": 1,
+          "D": 3,
+          "E": 4
+        },
+        "minus|strict|public|rescaled_2024|P5_P95|default": {
+          "C": 1,
+          "D": 3,
+          "E": 4
+        },
+        "minus|strict|public|rescaled_2024|P5_P95|access_heavy": {
+          "C": 1,
+          "D": 3,
+          "E": 4
+        },
+        "minus|strict|public|rescaled_2024|P5_P95|exposure_heavy": {
+          "C": 1,
+          "D": 3,
+          "E": 4
+        },
+        "minus|strict|public|rescaled_2024|P5_P95|road_heavy": {
+          "C": 1,
+          "D": 3,
+          "E": 4
+        },
+        "minus|strict|public|rescaled_2024|P5_P95|vulnerability_heavy": {
+          "C": 1,
+          "D": 3,
+          "E": 4
+        },
         "minus|central|public|worldpop_2020|P10_P90|default": {
           "D": 4,
           "E": 4
@@ -2211,6 +2296,56 @@
         },
         "minus|central|public|worldpop_2020|P5_P95|vulnerability_heavy": {
           "D": 4,
+          "E": 4
+        },
+        "minus|central|public|rescaled_2024|P10_P90|default": {
+          "C": 1,
+          "D": 3,
+          "E": 4
+        },
+        "minus|central|public|rescaled_2024|P10_P90|access_heavy": {
+          "C": 1,
+          "D": 3,
+          "E": 4
+        },
+        "minus|central|public|rescaled_2024|P10_P90|exposure_heavy": {
+          "C": 1,
+          "D": 3,
+          "E": 4
+        },
+        "minus|central|public|rescaled_2024|P10_P90|road_heavy": {
+          "C": 1,
+          "D": 3,
+          "E": 4
+        },
+        "minus|central|public|rescaled_2024|P10_P90|vulnerability_heavy": {
+          "C": 1,
+          "D": 3,
+          "E": 4
+        },
+        "minus|central|public|rescaled_2024|P5_P95|default": {
+          "C": 1,
+          "D": 3,
+          "E": 4
+        },
+        "minus|central|public|rescaled_2024|P5_P95|access_heavy": {
+          "C": 1,
+          "D": 3,
+          "E": 4
+        },
+        "minus|central|public|rescaled_2024|P5_P95|exposure_heavy": {
+          "C": 1,
+          "D": 3,
+          "E": 4
+        },
+        "minus|central|public|rescaled_2024|P5_P95|road_heavy": {
+          "C": 1,
+          "D": 3,
+          "E": 4
+        },
+        "minus|central|public|rescaled_2024|P5_P95|vulnerability_heavy": {
+          "C": 1,
+          "D": 3,
           "E": 4
         },
         "minus|permissive|public|worldpop_2020|P10_P90|default": {
@@ -2263,6 +2398,56 @@
           "D": 3,
           "E": 4
         },
+        "minus|permissive|public|rescaled_2024|P10_P90|default": {
+          "B": 2,
+          "D": 2,
+          "E": 4
+        },
+        "minus|permissive|public|rescaled_2024|P10_P90|access_heavy": {
+          "B": 2,
+          "D": 2,
+          "E": 4
+        },
+        "minus|permissive|public|rescaled_2024|P10_P90|exposure_heavy": {
+          "B": 2,
+          "D": 2,
+          "E": 4
+        },
+        "minus|permissive|public|rescaled_2024|P10_P90|road_heavy": {
+          "B": 2,
+          "D": 2,
+          "E": 4
+        },
+        "minus|permissive|public|rescaled_2024|P10_P90|vulnerability_heavy": {
+          "B": 2,
+          "D": 2,
+          "E": 4
+        },
+        "minus|permissive|public|rescaled_2024|P5_P95|default": {
+          "B": 2,
+          "D": 2,
+          "E": 4
+        },
+        "minus|permissive|public|rescaled_2024|P5_P95|access_heavy": {
+          "B": 2,
+          "D": 2,
+          "E": 4
+        },
+        "minus|permissive|public|rescaled_2024|P5_P95|exposure_heavy": {
+          "B": 2,
+          "D": 2,
+          "E": 4
+        },
+        "minus|permissive|public|rescaled_2024|P5_P95|road_heavy": {
+          "B": 2,
+          "D": 2,
+          "E": 4
+        },
+        "minus|permissive|public|rescaled_2024|P5_P95|vulnerability_heavy": {
+          "B": 2,
+          "D": 2,
+          "E": 4
+        },
         "as_provided|strict|public|worldpop_2020|P10_P90|default": {
           "B": 1,
           "D": 3,
@@ -2311,6 +2496,56 @@
         "as_provided|strict|public|worldpop_2020|P5_P95|vulnerability_heavy": {
           "B": 1,
           "D": 3,
+          "E": 4
+        },
+        "as_provided|strict|public|rescaled_2024|P10_P90|default": {
+          "B": 2,
+          "D": 2,
+          "E": 4
+        },
+        "as_provided|strict|public|rescaled_2024|P10_P90|access_heavy": {
+          "B": 2,
+          "D": 2,
+          "E": 4
+        },
+        "as_provided|strict|public|rescaled_2024|P10_P90|exposure_heavy": {
+          "B": 2,
+          "D": 2,
+          "E": 4
+        },
+        "as_provided|strict|public|rescaled_2024|P10_P90|road_heavy": {
+          "B": 2,
+          "D": 2,
+          "E": 4
+        },
+        "as_provided|strict|public|rescaled_2024|P10_P90|vulnerability_heavy": {
+          "B": 2,
+          "D": 2,
+          "E": 4
+        },
+        "as_provided|strict|public|rescaled_2024|P5_P95|default": {
+          "B": 2,
+          "D": 2,
+          "E": 4
+        },
+        "as_provided|strict|public|rescaled_2024|P5_P95|access_heavy": {
+          "B": 2,
+          "D": 2,
+          "E": 4
+        },
+        "as_provided|strict|public|rescaled_2024|P5_P95|exposure_heavy": {
+          "B": 2,
+          "D": 2,
+          "E": 4
+        },
+        "as_provided|strict|public|rescaled_2024|P5_P95|road_heavy": {
+          "B": 2,
+          "D": 2,
+          "E": 4
+        },
+        "as_provided|strict|public|rescaled_2024|P5_P95|vulnerability_heavy": {
+          "B": 2,
+          "D": 2,
           "E": 4
         },
         "as_provided|central|public|worldpop_2020|P10_P90|default": {
@@ -2363,6 +2598,56 @@
           "D": 3,
           "E": 4
         },
+        "as_provided|central|public|rescaled_2024|P10_P90|default": {
+          "B": 2,
+          "D": 2,
+          "E": 4
+        },
+        "as_provided|central|public|rescaled_2024|P10_P90|access_heavy": {
+          "B": 2,
+          "D": 2,
+          "E": 4
+        },
+        "as_provided|central|public|rescaled_2024|P10_P90|exposure_heavy": {
+          "B": 2,
+          "D": 2,
+          "E": 4
+        },
+        "as_provided|central|public|rescaled_2024|P10_P90|road_heavy": {
+          "B": 2,
+          "D": 2,
+          "E": 4
+        },
+        "as_provided|central|public|rescaled_2024|P10_P90|vulnerability_heavy": {
+          "B": 2,
+          "D": 2,
+          "E": 4
+        },
+        "as_provided|central|public|rescaled_2024|P5_P95|default": {
+          "B": 2,
+          "D": 2,
+          "E": 4
+        },
+        "as_provided|central|public|rescaled_2024|P5_P95|access_heavy": {
+          "B": 2,
+          "D": 2,
+          "E": 4
+        },
+        "as_provided|central|public|rescaled_2024|P5_P95|exposure_heavy": {
+          "B": 2,
+          "D": 2,
+          "E": 4
+        },
+        "as_provided|central|public|rescaled_2024|P5_P95|road_heavy": {
+          "B": 2,
+          "D": 2,
+          "E": 4
+        },
+        "as_provided|central|public|rescaled_2024|P5_P95|vulnerability_heavy": {
+          "B": 2,
+          "D": 2,
+          "E": 4
+        },
         "as_provided|permissive|public|worldpop_2020|P10_P90|default": {
           "B": 1,
           "D": 3,
@@ -2411,6 +2696,56 @@
         "as_provided|permissive|public|worldpop_2020|P5_P95|vulnerability_heavy": {
           "B": 1,
           "D": 3,
+          "E": 4
+        },
+        "as_provided|permissive|public|rescaled_2024|P10_P90|default": {
+          "B": 2,
+          "D": 2,
+          "E": 4
+        },
+        "as_provided|permissive|public|rescaled_2024|P10_P90|access_heavy": {
+          "B": 2,
+          "D": 2,
+          "E": 4
+        },
+        "as_provided|permissive|public|rescaled_2024|P10_P90|exposure_heavy": {
+          "B": 2,
+          "D": 2,
+          "E": 4
+        },
+        "as_provided|permissive|public|rescaled_2024|P10_P90|road_heavy": {
+          "B": 2,
+          "D": 2,
+          "E": 4
+        },
+        "as_provided|permissive|public|rescaled_2024|P10_P90|vulnerability_heavy": {
+          "B": 2,
+          "D": 2,
+          "E": 4
+        },
+        "as_provided|permissive|public|rescaled_2024|P5_P95|default": {
+          "B": 2,
+          "D": 2,
+          "E": 4
+        },
+        "as_provided|permissive|public|rescaled_2024|P5_P95|access_heavy": {
+          "B": 2,
+          "D": 2,
+          "E": 4
+        },
+        "as_provided|permissive|public|rescaled_2024|P5_P95|exposure_heavy": {
+          "B": 2,
+          "D": 2,
+          "E": 4
+        },
+        "as_provided|permissive|public|rescaled_2024|P5_P95|road_heavy": {
+          "B": 2,
+          "D": 2,
+          "E": 4
+        },
+        "as_provided|permissive|public|rescaled_2024|P5_P95|vulnerability_heavy": {
+          "B": 2,
+          "D": 2,
           "E": 4
         },
         "plus|strict|public|worldpop_2020|P10_P90|default": {
@@ -2463,6 +2798,66 @@
           "D": 4,
           "E": 3
         },
+        "plus|strict|public|rescaled_2024|P10_P90|default": {
+          "A": 1,
+          "B": 1,
+          "D": 2,
+          "E": 4
+        },
+        "plus|strict|public|rescaled_2024|P10_P90|access_heavy": {
+          "A": 1,
+          "B": 1,
+          "D": 2,
+          "E": 4
+        },
+        "plus|strict|public|rescaled_2024|P10_P90|exposure_heavy": {
+          "A": 1,
+          "B": 1,
+          "D": 2,
+          "E": 4
+        },
+        "plus|strict|public|rescaled_2024|P10_P90|road_heavy": {
+          "A": 1,
+          "B": 1,
+          "D": 2,
+          "E": 4
+        },
+        "plus|strict|public|rescaled_2024|P10_P90|vulnerability_heavy": {
+          "A": 1,
+          "B": 1,
+          "D": 2,
+          "E": 4
+        },
+        "plus|strict|public|rescaled_2024|P5_P95|default": {
+          "A": 1,
+          "B": 1,
+          "D": 2,
+          "E": 4
+        },
+        "plus|strict|public|rescaled_2024|P5_P95|access_heavy": {
+          "A": 1,
+          "B": 1,
+          "D": 2,
+          "E": 4
+        },
+        "plus|strict|public|rescaled_2024|P5_P95|exposure_heavy": {
+          "A": 1,
+          "B": 1,
+          "D": 2,
+          "E": 4
+        },
+        "plus|strict|public|rescaled_2024|P5_P95|road_heavy": {
+          "A": 1,
+          "B": 1,
+          "D": 2,
+          "E": 4
+        },
+        "plus|strict|public|rescaled_2024|P5_P95|vulnerability_heavy": {
+          "A": 1,
+          "B": 1,
+          "D": 2,
+          "E": 4
+        },
         "plus|central|public|worldpop_2020|P10_P90|default": {
           "B": 1,
           "D": 3,
@@ -2513,6 +2908,66 @@
           "D": 4,
           "E": 3
         },
+        "plus|central|public|rescaled_2024|P10_P90|default": {
+          "A": 1,
+          "B": 1,
+          "D": 2,
+          "E": 4
+        },
+        "plus|central|public|rescaled_2024|P10_P90|access_heavy": {
+          "A": 1,
+          "B": 1,
+          "D": 2,
+          "E": 4
+        },
+        "plus|central|public|rescaled_2024|P10_P90|exposure_heavy": {
+          "A": 1,
+          "B": 1,
+          "D": 2,
+          "E": 4
+        },
+        "plus|central|public|rescaled_2024|P10_P90|road_heavy": {
+          "A": 1,
+          "B": 1,
+          "D": 2,
+          "E": 4
+        },
+        "plus|central|public|rescaled_2024|P10_P90|vulnerability_heavy": {
+          "A": 1,
+          "B": 1,
+          "D": 2,
+          "E": 4
+        },
+        "plus|central|public|rescaled_2024|P5_P95|default": {
+          "A": 1,
+          "B": 1,
+          "D": 2,
+          "E": 4
+        },
+        "plus|central|public|rescaled_2024|P5_P95|access_heavy": {
+          "A": 1,
+          "B": 1,
+          "D": 2,
+          "E": 4
+        },
+        "plus|central|public|rescaled_2024|P5_P95|exposure_heavy": {
+          "A": 1,
+          "B": 1,
+          "D": 2,
+          "E": 4
+        },
+        "plus|central|public|rescaled_2024|P5_P95|road_heavy": {
+          "A": 1,
+          "B": 1,
+          "D": 2,
+          "E": 4
+        },
+        "plus|central|public|rescaled_2024|P5_P95|vulnerability_heavy": {
+          "A": 1,
+          "B": 1,
+          "D": 2,
+          "E": 4
+        },
         "plus|permissive|public|worldpop_2020|P10_P90|default": {
           "B": 1,
           "D": 3,
@@ -2562,6 +3017,66 @@
           "B": 1,
           "D": 4,
           "E": 3
+        },
+        "plus|permissive|public|rescaled_2024|P10_P90|default": {
+          "A": 1,
+          "B": 1,
+          "D": 2,
+          "E": 4
+        },
+        "plus|permissive|public|rescaled_2024|P10_P90|access_heavy": {
+          "A": 1,
+          "B": 1,
+          "D": 2,
+          "E": 4
+        },
+        "plus|permissive|public|rescaled_2024|P10_P90|exposure_heavy": {
+          "A": 1,
+          "B": 1,
+          "D": 2,
+          "E": 4
+        },
+        "plus|permissive|public|rescaled_2024|P10_P90|road_heavy": {
+          "A": 1,
+          "B": 1,
+          "D": 2,
+          "E": 4
+        },
+        "plus|permissive|public|rescaled_2024|P10_P90|vulnerability_heavy": {
+          "A": 1,
+          "B": 1,
+          "D": 2,
+          "E": 4
+        },
+        "plus|permissive|public|rescaled_2024|P5_P95|default": {
+          "A": 1,
+          "B": 1,
+          "D": 2,
+          "E": 4
+        },
+        "plus|permissive|public|rescaled_2024|P5_P95|access_heavy": {
+          "A": 1,
+          "B": 1,
+          "D": 2,
+          "E": 4
+        },
+        "plus|permissive|public|rescaled_2024|P5_P95|exposure_heavy": {
+          "A": 1,
+          "B": 1,
+          "D": 2,
+          "E": 4
+        },
+        "plus|permissive|public|rescaled_2024|P5_P95|road_heavy": {
+          "A": 1,
+          "B": 1,
+          "D": 2,
+          "E": 4
+        },
+        "plus|permissive|public|rescaled_2024|P5_P95|vulnerability_heavy": {
+          "A": 1,
+          "B": 1,
+          "D": 2,
+          "E": 4
         }
       },
       "class_counts_by_cell_note": "For each cell that was run, the number of units in each class; a class no unit has in the cell is left out.",
@@ -2571,20 +3086,21 @@
         "classes_one_unit_alone_holds_in_the_default_cell": [
           "B"
         ],
-        "cells_in_which_such_a_class_has_another_count": 20,
-        "cells_whose_class_counts_differ_from_the_default_cell": 23,
-        "units_with_more_than_one_class_over_the_cells_run": 2,
+        "cells_in_which_such_a_class_has_another_count": 80,
+        "cells_whose_class_counts_differ_from_the_default_cell": 113,
+        "units_with_more_than_one_class_over_the_cells_run": 3,
         "states_a_value_of_a_single_unit": true,
         "what": "A count names no unit. Two kinds of count state the class of a single unit all the same. In a cell where every unit of the case has one class, class_counts_by_cell states the class of each unit. And a class that one unit alone holds in the default cell marks that unit: in every cell, the count of that class says whether the unit holds it there, for whoever knows which unit it is. A cell whose counts differ from those of the default cell says that a unit changed class there, and between which classes."
       }
     },
-    "units_sha256": "eb13676a27c8f0c084d3fedb7e25097c7024c63bf0cbab4e28eb1d013b8838e7",
+    "units_sha256": "b9023cae49181964cf7cc83fbcfb8720cfb1dea5187f70714128e430227c48d8",
     "units_sha256_note": "The SHA-256 of the per-unit results alone, in a canonical form: every value of every unit in every cell, without the generation time and the header text of the file that holds them. Two runs that computed the same results have the same value here."
   },
   "development_reads": {
     "what": "Reads of the same inputs made while the code was written, before this run. They are listed because every run is reported.",
     "reads": [
-      "Before this run the agent and the owners knew the result of the ensembles of 4 and 6 October 2026 for this case (decision log R18 and R20) and the E8 rows of 6 October 2026."
+      "The report-only run of decision log R38 (scripts/build_ensemble_rescaled_demand.py) computed the same 180 cells from the same inputs on 9 October 2026, and its per-tambon result was read before this run.",
+      "The age comparison of decision log R40 (scripts/build_equity_ensemble.py) made the same nine access runs on 9 October 2026."
     ]
   },
   "open_points": [
@@ -2675,7 +3191,6 @@
   ],
   "not_computed": [
     "the cells of the two facility sets that add shelters",
-    "the cells of the 2024-rescaled demand",
     "equity difference and ratio by age group (EED, EER)",
     "the terrain and remoteness proxy (case O1 only)",
     "the outcomes of class rule v2 triggers B, C and D",
@@ -2692,21 +3207,25 @@
     "Every cell carries the confidence of its unit in its lane, derived as task E8 derives it. Condition C4 always compares the plus and the minus level of the flood input as provided (open point E10-OP4).",
     "Each cell is one modelled chain with one declared choice changed. The cells are not samples of a distribution: the share of cells in a class is not a probability, and the range of the FPPS is not a confidence interval.",
     "The weight presets are those of protocol v1a, normalised to sum to 1 by the scorer. The default is the published default; another preset is a sensitivity view.",
-    "Planning guidance only. Not an official warning. Class E never means safe."
+    "Planning guidance only. Not an official warning. Class E never means safe.",
+    "A 100 m count belongs to the 1 km cell that holds the centre of its 100 m cell.",
+    "A positive 2020 count whose 1 km cell has no valid 2024 total keeps its 2020 value and is reported; it is neither set to zero nor rescaled.",
+    "In the cells of the rescaled demand the residents of a cell are its WorldPop 2020 count multiplied by the ratio of its 1 km cell (WorldPop 2024 total over the 2020 sum). Travel times do not depend on the demand, so the nine access runs serve both demands. The age counts of a unit, and so its vulnerability component, are the same for both."
   ],
   "limitations": [
-    "Only a part of the predeclared grid can be run today: the public facility set with WorldPop 2020. The cells of the two facility sets that add shelters and of the 2024-rescaled demand are reported as not run, with the reason (open points E10-OP2 and E10-OP3).",
-    "The headline rule is evaluated only when every cell the protocol takes retention over has a class. Until then no class is headlined (open point E10-OP1).",
+    "Only a part of the predeclared grid can be run today: the public facility set, with both levels of the population axis. The cells of the two facility sets that add shelters are reported as not run, with the reason (open point E10-OP3).",
+    "The headline rule is evaluated on the cells of the public facility set, the set protocol v1b names for a public overlay. No published file carries its result until a result file is published again.",
     "A resident whose cell does not snap to the vehicle graph within 250 m is in no access count.",
     "One flood input drives 4 of 5 components (90% of weight), so the flood-level axis moves four components at once.",
-    "The equity figures (EED and EER) that protocol v1b lists among the per-unit outputs are plan task E9."
+    "The equity figures (EED and EER) that protocol v1b lists among the per-unit outputs are plan task E9.",
+    "The 2024-rescaled demand follows two readings of the formula of the protocol (decision log R38), which the team accepted (R39). The two population products are two models of where residents are counted; neither was checked on the ground."
   ],
   "implementation": {
-    "base_commit": "3381b2a3b2ac15c029add0f94dc5d90c57a90a19",
+    "base_commit": "9113225c086f9e5d88f992165718d71186fb6954",
     "base_commit_note": "The commit the working tree was on. The files below are the ones this run loaded, identified by their own SHA-256, committed or not.",
-    "builder_sha256": "0919d8ba0bf7d4dee99913c75c6a6a05bfd81429b9609c55f70a10c6a2d47430",
+    "builder_sha256": "ad7539e06c989b0c15c2b895c94ebddc389a2f3dfac24294db35ee63e470f0a3",
     "e8_builder_sha256": "245e66f44c27ef4fe7023028d9f4db2367365908c8f44e661073bcbba0528077",
-    "e5_builder_sha256": "61b93fbfe48f36fc5ba46475828d3d7abeb5188813b7c923d01d7467d98e89f8",
+    "e5_builder_sha256": "fa376c611b2d2d2b509d9d8ac408034b81ad7964d3da56d4f17788360e38e749",
     "uncertainty_ensemble_module_sha256": "a85247125245476a803e3198676574811a9e0eee3f497b0bef1efcc3fdbfc617",
     "planning_assessment_module_sha256": "488a94ce39f6c03c10279f883c9eafb6d3aecacb225b2f89e50755864bae9204",
     "planning_overlay_module_sha256": "f3075fa1539db1287a7fc700707e25648ba62feadc61efc75bd32824ab2f91cb",
@@ -2728,39 +3247,45 @@
     }
   },
   "timing_seconds": {
-    "inputs_checked": 10.4,
-    "stages_compared_unit_by_unit": 2.4,
+    "inputs_checked": 10.6,
+    "stages_compared_unit_by_unit": 2.5,
     "units_read_and_lineage": 0.0,
-    "access_runs": 2251.9,
+    "access_runs": 1831.6,
     "access": {
-      "minus_edge_intersections_vehicle": 539.8,
-      "minus_strict_runs_and_tables": 1.8,
-      "minus_central_runs_and_tables": 1.8,
-      "minus_permissive_runs_and_tables": 4.6,
-      "as_provided_edge_intersections_vehicle": 652.7,
-      "as_provided_strict_runs_and_tables": 1.9,
+      "minus_edge_intersections_vehicle": 506.9,
+      "minus_strict_runs_and_tables": 2.5,
+      "minus_central_runs_and_tables": 2.4,
+      "minus_permissive_runs_and_tables": 5.2,
+      "as_provided_edge_intersections_vehicle": 535.0,
+      "as_provided_strict_runs_and_tables": 2.4,
       "as_provided_central_runs_and_tables": 2.4,
-      "as_provided_permissive_runs_and_tables": 5.8,
-      "plus_edge_intersections_vehicle": 1030.4,
-      "plus_strict_runs_and_tables": 1.9,
-      "plus_central_runs_and_tables": 1.8,
-      "plus_permissive_runs_and_tables": 5.1
+      "as_provided_permissive_runs_and_tables": 5.2,
+      "plus_edge_intersections_vehicle": 757.0,
+      "plus_strict_runs_and_tables": 2.7,
+      "plus_central_runs_and_tables": 2.6,
+      "plus_permissive_runs_and_tables": 5.5
     },
-    "units_measured_at_three_flood_levels": 5.7,
-    "cells_scored": 16.2
+    "units_measured_at_three_flood_levels": 5.8,
+    "cells_scored": 31.3
   },
+  "open_points_answered_for_this_run": [
+    {
+      "id": "E10-OP2",
+      "answer": "The two points the formula leaves open were read as decision log R38 records, and the team accepted the readings (R39, item V-27 of the team page)."
+    }
+  ],
   "outputs": {
     "ensemble": {
       "files": [
         {
           "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/uncertainty_ensemble_se1_mae_sai.json",
-          "sha256": "fab80fbe9ba15ed6fd373e09a70cc9276a7431ec7b09fee2918d4bf1e950ed02",
-          "bytes": 1602942,
+          "sha256": "ddccee7ba22e37c4cfbe7df10374904108478df711b3a1055d29bc53522d5fe5",
+          "bytes": 2521577,
           "what": "uncertainty_ensemble_units",
           "in_git": false,
           "publication_eligibility": "public",
           "units": 8,
-          "cells_run": 90
+          "cells_run": 180
         },
         {
           "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/LICENSE_NOTICE.txt",
@@ -2773,46 +3298,75 @@
     }
   },
   "timestamps": {
-    "run_started_at_utc": "2026-10-06T13:44:46Z",
-    "run_finished_at_utc": "2026-10-06T14:22:59Z",
-    "wall_time_minutes": 38.21,
+    "run_started_at_utc": "2026-10-09T13:54:46Z",
+    "run_finished_at_utc": "2026-10-09T14:26:15Z",
+    "wall_time_minutes": 31.48,
     "note": "generated_at_utc is the start of the run; the file of per-unit results carries the same time."
   },
   "supersedes": {
-    "receipt_sha256": "a9495f29ecebcaa8db6caad7f8a3abd8934a8e2a4514c593254ae9f9a20b33a3",
-    "generated_at_utc": "2026-10-06T12:57:54Z",
-    "reason": "The run of plan task E8 this table rests on was replaced on 6 October 2026 after the purpose review of the 2024 age counts was answered (decision log R21; sheet Q2): the age table is at the public level. No input, no axis, no level and no rule was changed; the same cells are run and the same results are expected.",
-    "result_same": true,
-    "summary_same": true,
-    "summary_fields_that_differ": [],
-    "units_same": true,
+    "receipt_sha256": "026937b840c1c5d65838fcb0ea25ef29db48099174ea553d69c7f5777158d0ce",
+    "generated_at_utc": "2026-10-06T13:44:46Z",
+    "reason": "The 2024-rescaled demand is now built with the two readings of decision log R38, which the team accepted (R39), so the 90 cells of the second population level are run and the headline rule is evaluated on the 180 cells of the public facility set.",
+    "result_same": false,
+    "summary_same": false,
+    "summary_fields_that_differ": [
+      "after_declared_cut_line_6",
+      "cells_not_run",
+      "cells_not_run_by_reason",
+      "cells_ranked",
+      "cells_run",
+      "class_counts_by_cell",
+      "class_counts_over_every_unit_cell",
+      "counts_that_state_a_value_of_a_single_unit",
+      "headline_status_counts",
+      "other_reading_of_the_protocol_set",
+      "outcome_fixed_by_the_bounds_counts",
+      "retention_over_the_cells_run",
+      "unit_cells_run",
+      "unit_cells_with_a_result",
+      "units_by_number_of_classes_over_the_cells_run"
+    ],
+    "units_same": false,
     "units_sha256_of_the_superseded_run": "eb13676a27c8f0c084d3fedb7e25097c7024c63bf0cbab4e28eb1d013b8838e7",
-    "units_sha256_of_this_run": "eb13676a27c8f0c084d3fedb7e25097c7024c63bf0cbab4e28eb1d013b8838e7",
-    "unit_cells_same": true,
+    "units_sha256_of_this_run": "b9023cae49181964cf7cc83fbcfb8720cfb1dea5187f70714128e430227c48d8",
+    "unit_cells_same": false,
     "unit_cells_sha256_of_the_superseded_run": "53ffe917764b11299ba56fb4a02a79cd7b538660cff6be255f74cea0d444c28d",
-    "unit_cells_sha256_of_this_run": "53ffe917764b11299ba56fb4a02a79cd7b538660cff6be255f74cea0d444c28d",
-    "unit_record_fields_that_differ": [],
+    "unit_cells_sha256_of_this_run": "465cfa319b53040ca2de534b7a3023d34af3352beec3087f9725cd8561b37845",
+    "unit_record_fields_that_differ": [
+      "cells",
+      "cells_run",
+      "cells_with_a_result",
+      "class_counts",
+      "class_shares",
+      "fpps_0_100",
+      "fpps_swing",
+      "headline_stability",
+      "leave_one_component_out_over_the_cells",
+      "people_losing_30_minute_access",
+      "rank",
+      "routing_combinations"
+    ],
     "access_unit_rows_same": true,
     "lineage_inputs_same": true,
     "outputs_of_the_superseded_run": {
-      "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/uncertainty_ensemble_se1_mae_sai.json": "5c2d5974df030be6d037ff6dc52d956655b7ee29a85a9114303bdb33ff8d9ec2",
+      "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/uncertainty_ensemble_se1_mae_sai.json": "fab80fbe9ba15ed6fd373e09a70cc9276a7431ec7b09fee2918d4bf1e950ed02",
       "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/LICENSE_NOTICE.txt": "acaafc1b83a5fe5d72a9f50e0e0efe476517328f581c5c487fb2e0a1290de1df"
     },
     "copies_kept_outside_git": [
       {
-        "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/superseded_runs/20261006T125754Z/e10_uncertainty_ensemble_se1_mae_sai.json",
-        "sha256": "a9495f29ecebcaa8db6caad7f8a3abd8934a8e2a4514c593254ae9f9a20b33a3",
+        "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/superseded_runs/20261006T134446Z/e10_uncertainty_ensemble_se1_mae_sai.json",
+        "sha256": "026937b840c1c5d65838fcb0ea25ef29db48099174ea553d69c7f5777158d0ce",
         "what": "receipt",
         "copied": true
       },
       {
-        "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/superseded_runs/20261006T125754Z/uncertainty_ensemble_se1_mae_sai.json",
-        "sha256": "5c2d5974df030be6d037ff6dc52d956655b7ee29a85a9114303bdb33ff8d9ec2",
+        "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/superseded_runs/20261006T134446Z/uncertainty_ensemble_se1_mae_sai.json",
+        "sha256": "fab80fbe9ba15ed6fd373e09a70cc9276a7431ec7b09fee2918d4bf1e950ed02",
         "what": "file the receipt bound",
         "copied": true
       },
       {
-        "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/superseded_runs/20261006T125754Z/LICENSE_NOTICE.txt",
+        "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/superseded_runs/20261006T134446Z/LICENSE_NOTICE.txt",
         "sha256": "acaafc1b83a5fe5d72a9f50e0e0efe476517328f581c5c487fb2e0a1290de1df",
         "what": "file the receipt bound",
         "copied": true
@@ -2911,6 +3465,38 @@
         },
         {
           "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/superseded_runs/20261006T125754Z/LICENSE_NOTICE.txt",
+          "sha256": "acaafc1b83a5fe5d72a9f50e0e0efe476517328f581c5c487fb2e0a1290de1df",
+          "what": "file the receipt bound",
+          "copied": true
+        }
+      ]
+    },
+    {
+      "generated_at_utc": "2026-10-06T13:44:46Z",
+      "receipt_sha256": "026937b840c1c5d65838fcb0ea25ef29db48099174ea553d69c7f5777158d0ce",
+      "superseded_because": "The 2024-rescaled demand is now built with the two readings of decision log R38, which the team accepted (R39), so the 90 cells of the second population level are run and the headline rule is evaluated on the 180 cells of the public facility set.",
+      "result_same_as_the_run_that_replaced_it": false,
+      "unit_cells_same_as_the_run_that_replaced_it": false,
+      "units_sha256": "eb13676a27c8f0c084d3fedb7e25097c7024c63bf0cbab4e28eb1d013b8838e7",
+      "outputs_sha256": {
+        "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/uncertainty_ensemble_se1_mae_sai.json": "fab80fbe9ba15ed6fd373e09a70cc9276a7431ec7b09fee2918d4bf1e950ed02",
+        "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/LICENSE_NOTICE.txt": "acaafc1b83a5fe5d72a9f50e0e0efe476517328f581c5c487fb2e0a1290de1df"
+      },
+      "copies_kept_outside_git": [
+        {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/superseded_runs/20261006T134446Z/e10_uncertainty_ensemble_se1_mae_sai.json",
+          "sha256": "026937b840c1c5d65838fcb0ea25ef29db48099174ea553d69c7f5777158d0ce",
+          "what": "receipt",
+          "copied": true
+        },
+        {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/superseded_runs/20261006T134446Z/uncertainty_ensemble_se1_mae_sai.json",
+          "sha256": "fab80fbe9ba15ed6fd373e09a70cc9276a7431ec7b09fee2918d4bf1e950ed02",
+          "what": "file the receipt bound",
+          "copied": true
+        },
+        {
+          "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e10_uncertainty_ensemble/superseded_runs/20261006T134446Z/LICENSE_NOTICE.txt",
           "sha256": "acaafc1b83a5fe5d72a9f50e0e0efe476517328f581c5c487fb2e0a1290de1df",
           "what": "file the receipt bound",
           "copied": true

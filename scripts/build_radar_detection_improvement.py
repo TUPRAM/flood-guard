@@ -491,6 +491,13 @@ HELD_OUT = {"chip_001": "IMG_T2V_20250731035100_ORTHO_PMS_32-001.tif", "chip_003
 HELD_OUT_ACQUIRED_UTC = "2025-07-31T03:51:00Z"
 DRY_DATES_2025 = ("2025-02-25", "2025-03-09", "2025-04-14")
 RULES = ("un_spider", "m1_literal", "m1_v2")
+SET_ASIDE = {
+    "chip_001": "The image shows hill country with ploughed fields, forest and one river in a corner; it holds no flood. Its NDWI "
+                "histogram has no water group, and the split of the rule marks bare soil as water. Seen on the image alone, before "
+                "any radar of the chip was read. The chip is not used as a reference; it is used to count what each detector flags "
+                "on ground with no flood.",
+}
+"""Chips whose water reference was looked at on the image alone and found unusable."""
 
 
 def apply_detector(bundle: dict[str, Any], features: dict[str, np.ndarray], usable: np.ndarray, slope: np.ndarray) -> tuple[np.ndarray, dict[str, Any]]:
@@ -563,6 +570,7 @@ def stage_reference(arguments: argparse.Namespace) -> None:
             "cells_10m": {"compared": int(cells["compared"].sum()), "wet": int(cells["wet"].sum()), "dry": int(cells["dry"].sum()),
                           "compared_km2": round(int(cells["compared"].sum()) * cell_km2, 4), "wet_km2": round(int(cells["wet"].sum()) * cell_km2, 4)},
             "raster_outside_git": {"name": f"held_{key}_reference_10m.tif", "sha256": t2.sha256_file(work / f"held_{key}_reference_10m.tif")},
+            "set_aside_from_the_test": SET_ASIDE.get(key),
         }
         print(key, chips[key]["cells_10m"], summary.get("ndwi_three_class_otsu"), flush=True)
     record = {
@@ -572,6 +580,7 @@ def stage_reference(arguments: argparse.Namespace) -> None:
         "freeze_record": {"path": f"{OUTPUT_DIR}/freeze_v1.json", "sha256": t2.sha256_file(ROOT / OUTPUT_DIR / "freeze_v1.json")},
         "rule": "NDWI above the upper threshold of a three-class Otsu split, computed on each chip; bright objects unobservable; water objects under 1,000 square metres dropped. The one rectangle set by eye at Sukhothai is not carried over.",
         "radar_read": False,
+        "looked_at": "Each reference was looked at beside its image before any radar was read. One chip is set aside for the reason given with it.",
         "chips": chips,
         "licence": "THEOS-2 sample imagery provided by GISTDA for GeoHackathon 2026. The imagery stays outside Git; derived figures are shared.",
         "assumptions": ASSUMPTIONS[:1] + ["The water rule of the Sukhothai cross-check is applied to each held-out chip without any setting made by eye."],
@@ -708,6 +717,20 @@ def stage_test(arguments: argparse.Namespace) -> None:
         tiles = rc.lattice_tiles((west, north - rows * CELL_M, west + columns * CELL_M, north))
         candidates = dated.run_methods(images["before"], images["after"], tiles, grid, permanent_water, slope, configs)
         seen = rd.observable(land_cover)
+        if entry.get("set_aside_from_the_test"):
+            # Not a flood scene: no reference. What each detector flags on the cells the image shows is reported, nothing is scored.
+            shown = usable & (cells["compared"] | cells["mixed"])
+            cell_km2 = CELL_M * CELL_M / 1e6
+            chips[key] = {
+                "set_aside_from_the_test": entry["set_aside_from_the_test"],
+                "sentinel1": {"relative_orbit": passes["relative_orbit"], "hours_after_the_image": passes["hours_after_the_image"]},
+                "cells_the_image_shows": int(shown.sum()), "km2": round(int(shown.sum()) * cell_km2, 4),
+                "flagged_km2": {"frozen_detector": round(int((frozen_flag & shown).sum()) * cell_km2, 4),
+                                "simple_threshold": round(int((threshold_flag & shown).sum()) * cell_km2, 4),
+                                **{name: round(int(((candidates[name] == 1) & shown).sum()) * cell_km2, 4) for name in RULES}},
+            }
+            print(key, "set aside:", chips[key]["flagged_km2"], flush=True)
+            continue
         chips[key] = {
             "sentinel1": {"relative_orbit": passes["relative_orbit"], "hours_after_the_image": passes["hours_after_the_image"],
                           "after": after, "before_for_the_fixed_rules": before, "dry_season": dry_records},
@@ -747,7 +770,7 @@ def stage_test(arguments: argparse.Namespace) -> None:
         "held_out_chips_together": together,
         "what_the_plan_fixed": said,
         "assumptions": ASSUMPTIONS,
-        "limits": [*LIMITS[1:], "Two chips of about 9 square km each, from one week and one region."],
+        "limits": [*LIMITS[1:], "One chip of about 7 square km is scored: a flooded town, where radar sees least. The other chip holds no flood and is not scored."],
     }
     result["supersedes"] = t2.superseded(result_path, arguments, ("held_out_chips_together",), result)
     t2.write_json(result_path, result)

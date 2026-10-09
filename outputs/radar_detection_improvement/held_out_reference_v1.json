@@ -1,0 +1,162 @@
+{
+ "schema": "floodguard.radar_detection_held_out_reference.v1",
+ "generated_at_utc": "2026-10-09T05:57:36Z",
+ "source_timestamp": "2024-10-22 (agency layer); THEOS-2 2025-07-30T03:33Z (development); THEOS-2 2025-07-31T03:51Z (held out)",
+ "confidence_class": "low",
+ "confidence_basis": "Detectors developed on an agency layer that was not checked in the field and on one optical tile; no ground check.",
+ "operational_status": "non_operational",
+ "official_warning": false,
+ "can_feed_decision_layer": false,
+ "plan": {
+  "path": "docs/proposal_execution/radar_detection_improvement_plan_v1.md",
+  "sha256": "38f2bfc8c14dded7c113a376bb02d174997f885111131c469b45e3da7bafe866"
+ },
+ "what_this_is": "The water reference of the two held-out THEOS-2 chips, read from the images alone with the rule of the Sukhothai cross-check and no setting made by eye. No radar of these chips has been read.",
+ "freeze_record": {
+  "path": "outputs/radar_detection_improvement/freeze_v1.json",
+  "sha256": "d40135c2c8d12dd68219b18e14d1d2e797ffa74bbbb7c8fed9d59062f8bc2ac6"
+ },
+ "rule": "NDWI above the upper threshold of a three-class Otsu split, computed on each chip; bright objects unobservable; water objects under 1,000 square metres dropped. The one rectangle set by eye at Sukhothai is not carried over.",
+ "radar_read": false,
+ "looked_at": "Each reference was looked at beside its image before any radar was read. One chip is set aside for the reason given with it.",
+ "chips": {
+  "chip_001": {
+   "file_name": "IMG_T2V_20250731035100_ORTHO_PMS_32-001.tif",
+   "sha256": "89caf5946e6b25ef855dc95892bfeb4e45b7a67dfce7539465d8a9a0dc1961b5",
+   "acquired_utc": "2025-07-31T03:51:00Z",
+   "valid_rectangle_epsg32647": {
+    "west": 677582.0,
+    "south": 2043732.0,
+    "east": 680584.0,
+    "north": 2046732.0
+   },
+   "optical_water_rule": {
+    "configuration": {
+     "ndwi_threshold": null,
+     "histogram_low": -0.6,
+     "histogram_high": 0.4,
+     "histogram_bins": 200,
+     "bright_brightness_min": 520.0,
+     "bright_nir_min": 560.0,
+     "bright_min_width_px": 11,
+     "bright_margin_px": 10,
+     "min_object_px": 250,
+     "unobservable_boxes": []
+    },
+    "ndwi_threshold_applied": -0.365,
+    "ndwi_threshold_source": "three_class_otsu_upper",
+    "ndwi_two_class_otsu": -0.425,
+    "ndwi_three_class_otsu": [
+     -0.465,
+     -0.365
+    ],
+    "pixels": 2251500,
+    "valid_pixels": 2251500,
+    "unobservable_bright_object_pixels": 0,
+    "unobservable_boxed_pixels": 0,
+    "observable_pixels": 2251500,
+    "flagged_pixels_before_object_rule": 566995,
+    "pixels_dropped_by_object_rule": 46281,
+    "water_pixels": 520714
+   },
+   "grid_10m": {
+    "epsg": 32647,
+    "west": 675840.0,
+    "north": 2048000.0,
+    "rows": 1024,
+    "columns": 1024,
+    "cell_m": 10.0
+   },
+   "cells_10m": {
+    "compared": 90601,
+    "wet": 21099,
+    "dry": 69502,
+    "compared_km2": 9.0601,
+    "wet_km2": 2.1099
+   },
+   "raster_outside_git": {
+    "name": "held_chip_001_reference_10m.tif",
+    "sha256": "5cfafdc58aeb14c3ce72eefd12475db6723c69673a86430691680d20e02aa528"
+   },
+   "set_aside_from_the_test": "The image shows hill country with ploughed fields, forest and one river in a corner; it holds no flood. Its NDWI histogram has no water group, and the split of the rule marks bare soil as water. Seen on the image alone, before any radar of the chip was read. The chip is not used as a reference; it is used to count what each detector flags on ground with no flood."
+  },
+  "chip_003": {
+   "file_name": "IMG_T2V_20250731035100_ORTHO_PMS_32-003.tif",
+   "sha256": "b8dc72dd30f2149c9f4e76c083403c92b25d8a90e7353d58bdc1131ba867b74d",
+   "acquired_utc": "2025-07-31T03:51:00Z",
+   "valid_rectangle_epsg32647": {
+    "west": 683982.0,
+    "south": 2053070.0,
+    "east": 686984.0,
+    "north": 2056070.0
+   },
+   "optical_water_rule": {
+    "configuration": {
+     "ndwi_threshold": null,
+     "histogram_low": -0.6,
+     "histogram_high": 0.4,
+     "histogram_bins": 200,
+     "bright_brightness_min": 520.0,
+     "bright_nir_min": 560.0,
+     "bright_min_width_px": 11,
+     "bright_margin_px": 10,
+     "min_object_px": 250,
+     "unobservable_boxes": []
+    },
+    "ndwi_threshold_applied": -0.145,
+    "ndwi_threshold_source": "three_class_otsu_upper",
+    "ndwi_two_class_otsu": -0.22,
+    "ndwi_three_class_otsu": [
+     -0.275,
+     -0.145
+    ],
+    "pixels": 2251500,
+    "valid_pixels": 2251500,
+    "unobservable_bright_object_pixels": 421094,
+    "unobservable_boxed_pixels": 0,
+    "observable_pixels": 1830406,
+    "flagged_pixels_before_object_rule": 903077,
+    "pixels_dropped_by_object_rule": 46930,
+    "water_pixels": 856147
+   },
+   "grid_10m": {
+    "epsg": 32647,
+    "west": 675840.0,
+    "north": 2058240.0,
+    "rows": 1024,
+    "columns": 2048,
+    "cell_m": 10.0
+   },
+   "cells_10m": {
+    "compared": 72536,
+    "wet": 34270,
+    "dry": 38266,
+    "compared_km2": 7.2536,
+    "wet_km2": 3.427
+   },
+   "raster_outside_git": {
+    "name": "held_chip_003_reference_10m.tif",
+    "sha256": "9d45a1cd12baf3daef0ffd9bd944ba9318f169ffbb5b08ff2c67db796d893f86"
+   },
+   "set_aside_from_the_test": null
+  }
+ },
+ "licence": "THEOS-2 sample imagery provided by GISTDA for GeoHackathon 2026. The imagery stays outside Git; derived figures are shared.",
+ "assumptions": [
+  "Development labels are the layer UNOSAT and GISTDA dated 22 October 2024 (as provided) and the water read from the THEOS-2 image of Sukhothai.",
+  "The water rule of the Sukhothai cross-check is applied to each held-out chip without any setting made by eye."
+ ],
+ "limits": [
+  "The agency layer was not checked in the field and may come from the same radar pass; the THEOS-2 image is 44 hours older than the radar.",
+  "C-band radar does not see water under rice, trees or between buildings, nor water that drained before the pass.",
+  "Every figure is agreement with a reference layer, not accuracy. No detector enters a planning score."
+ ],
+ "supersedes": {
+  "reason": "One chip is set aside: its image holds no flood and the water rule marks bare soil; seen on the image alone, before any radar of the chips was read",
+  "generated_at_utc": "2026-10-09T05:54:54Z",
+  "canonical_json_sha256": "383271fea03eeb70ae079142f7217ba926254b73110ecd7073c826ab6a43e6fb",
+  "figures_same": {
+   "chips": false
+  }
+ }
+}

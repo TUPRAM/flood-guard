@@ -1,0 +1,753 @@
+{
+ "schema": "floodguard.equity_registration_ensemble.v1",
+ "generated_at_utc": "2026-10-10T16:05:45Z",
+ "source_timestamp": "flood layer 2024-08-01/2024-10-12; registration counts of December 2024; residents of 2020, in half the cells rescaled to 2024 totals",
+ "confidence_class": "low",
+ "confidence_basis": "Modelled access and modelled residents, with the age mix of each tambon taken from registration counts that leave out everyone who is not a Thai national in a house register.",
+ "operational_status": "non_operational",
+ "official_warning": false,
+ "can_feed_decision_layer": false,
+ "what_this_is": "The age comparison of case SE1 with the registered age mix of each tambon, in every cell of the public facility set of the uncertainty ensemble. Report-only.",
+ "ensemble": {
+  "cells": 180,
+  "different_counts": 18,
+  "why": "The anchors and the weights change a score, not a count of residents: each count of a flood level, a closure level and a demand stands for 10 cells."
+ },
+ "rule": {
+  "of_the_protocol": "bounds that exclude zero and at least 60 percent sign retention across the ensemble",
+  "smallest_size_share": 0.01,
+  "smallest_size_decided_in": "decision log R41"
+ },
+ "source": {
+  "publisher": "Department of Provincial Administration (DOPA), Bureau of Registration Administration",
+  "table": "registered population by single year of age, Chiang Rai province, December 2567 (2024)",
+  "url": "https://stat.bora.dopa.go.th/new_stat/file/6712/6712cc57.txt",
+  "source_file_sha256": "c17023ebe6067609e3bc3abe1cc2df8539873effb7e84d3828b3b5e8bd0277dd",
+  "extract_outside_git_sha256": "3ab26e85d45afc12f6e0c323363f0686a26cfebc0bcb7045e5c4576a21c5b89f",
+  "licence": "none stated on the source pages that were read; cited as a published official statistic",
+  "ages_cover": "Thai nationals named in a house register only (the source says so)"
+ },
+ "age_mix_by_tambon": {
+  "TH570901": {
+   "registered": 31409.0,
+   "not_thai_nationals_and_without_an_age": 11307.0,
+   "share_of_children_0_14": 0.1699,
+   "share_of_60_plus": 0.2058
+  },
+  "TH570902": {
+   "registered": 8094.0,
+   "not_thai_nationals_and_without_an_age": 1631.0,
+   "share_of_children_0_14": 0.1256,
+   "share_of_60_plus": 0.2808
+  },
+  "TH570903": {
+   "registered": 13465.0,
+   "not_thai_nationals_and_without_an_age": 4267.0,
+   "share_of_children_0_14": 0.1443,
+   "share_of_60_plus": 0.2713
+  },
+  "TH570904": {
+   "registered": 21622.0,
+   "not_thai_nationals_and_without_an_age": 11340.0,
+   "share_of_children_0_14": 0.1985,
+   "share_of_60_plus": 0.1859
+  },
+  "TH570905": {
+   "registered": 6285.0,
+   "not_thai_nationals_and_without_an_age": 1579.0,
+   "share_of_children_0_14": 0.1364,
+   "share_of_60_plus": 0.2548
+  },
+  "TH570906": {
+   "registered": 35337.0,
+   "not_thai_nationals_and_without_an_age": 17832.0,
+   "share_of_children_0_14": 0.2014,
+   "share_of_60_plus": 0.1671
+  },
+  "TH570908": {
+   "registered": 3690.0,
+   "not_thai_nationals_and_without_an_age": 117.0,
+   "share_of_children_0_14": 0.1058,
+   "share_of_60_plus": 0.3104
+  },
+  "TH570909": {
+   "registered": 12774.0,
+   "not_thai_nationals_and_without_an_age": 4999.0,
+   "share_of_children_0_14": 0.1585,
+   "share_of_60_plus": 0.2228
+  }
+ },
+ "made_from": {
+  "cache_receipt": {
+   "path": "outputs/cell_outcomes/se1_mae_sai_v1_receipt.json",
+   "sha256": "f1eea949238d79a6439ebe1d17010f8c720fb85a2fa051c64ef0dd44416d62c8"
+  },
+  "first_registration_check": {
+   "path": "outputs/equity_by_age/se1_mae_sai_registration_check_v1.json",
+   "sha256": "a74455e6687ce15041d683618a1483d8846501630eda66343a8cb8741d7398f5"
+  }
+ },
+ "checks": {
+  "the_three_counts_of_the_first_check_come_out_the_same": true
+ },
+ "loses_a_hospital_within_30_minutes": {
+  "60_plus_vs_under_60": {
+   "rule_with_the_smallest_size": {
+    "runs": 180,
+    "runs_with_a_difference": 180,
+    "lowest": 0.024475,
+    "highest": 0.043109,
+    "median": 0.032182,
+    "range_excludes_zero": true,
+    "sign_retention": 1.0,
+    "may_state_a_gap": true,
+    "sentence": null,
+    "rule_of_the_protocol_met": true,
+    "smallest_size_asked": 0.01,
+    "smallest_difference": 0.024475
+   },
+   "difference_of_rates": {
+    "lowest": 0.024475,
+    "median": 0.032182,
+    "highest": 0.043109
+   },
+   "ratio_of_rates": {
+    "lowest": 1.0649,
+    "median": 1.09205,
+    "highest": 1.1291
+   },
+   "by_demand": {
+    "worldpop_2020": {
+     "difference_of_rates": {
+      "lowest": 0.029859,
+      "median": 0.04125,
+      "highest": 0.043109
+     },
+     "ratio_of_rates": {
+      "lowest": 1.103,
+      "median": 1.1271,
+      "highest": 1.1291
+     }
+    },
+    "rescaled_2024": {
+     "difference_of_rates": {
+      "lowest": 0.024475,
+      "median": 0.032177,
+      "highest": 0.033225
+     },
+     "ratio_of_rates": {
+      "lowest": 1.0649,
+      "median": 1.0803,
+      "highest": 1.0811
+     }
+    }
+   }
+  },
+  "0_14_vs_15_plus": {
+   "rule_with_the_smallest_size": {
+    "runs": 180,
+    "runs_with_a_difference": 180,
+    "lowest": -0.035918,
+    "highest": -0.021874,
+    "median": -0.028242,
+    "range_excludes_zero": true,
+    "sign_retention": 1.0,
+    "may_state_a_gap": true,
+    "sentence": null,
+    "rule_of_the_protocol_met": true,
+    "smallest_size_asked": 0.01,
+    "smallest_difference": 0.021874
+   },
+   "difference_of_rates": {
+    "lowest": -0.035918,
+    "median": -0.028242,
+    "highest": -0.021874
+   },
+   "ratio_of_rates": {
+    "lowest": 0.8984,
+    "median": 0.92475,
+    "highest": 0.9431
+   },
+   "by_demand": {
+    "worldpop_2020": {
+     "difference_of_rates": {
+      "lowest": -0.035918,
+      "median": -0.033731,
+      "highest": -0.024117
+     },
+     "ratio_of_rates": {
+      "lowest": 0.8984,
+      "median": 0.8998,
+      "highest": 0.9192
+     }
+    },
+    "rescaled_2024": {
+     "difference_of_rates": {
+      "lowest": -0.029508,
+      "median": -0.028174,
+      "highest": -0.021874
+     },
+     "ratio_of_rates": {
+      "lowest": 0.9303,
+      "median": 0.9313,
+      "highest": 0.9431
+     }
+    }
+   }
+  }
+ },
+ "counts": [
+  {
+   "flood_input_single_state": "minus",
+   "passability": "strict",
+   "population_vintage": "worldpop_2020",
+   "stands_for_cells": 10,
+   "loses_a_hospital_within_30_minutes": {
+    "60_plus_vs_under_60": {
+     "group_residents_with_baseline_access": 16171.5,
+     "group_residents_who_lose_it": 5117.4,
+     "others_with_baseline_access": 58425.3,
+     "others_who_lose_it": 16744.1,
+     "group_loss_rate": 0.316448,
+     "others_loss_rate": 0.286589,
+     "difference_of_rates": 0.029859,
+     "ratio_of_rates": 1.1042,
+     "ratio_not_given_because": null
+    },
+    "0_14_vs_15_plus": {
+     "group_residents_with_baseline_access": 12530.4,
+     "group_residents_who_lose_it": 3420.8,
+     "others_with_baseline_access": 62066.4,
+     "others_who_lose_it": 18440.8,
+     "group_loss_rate": 0.272996,
+     "others_loss_rate": 0.297113,
+     "difference_of_rates": -0.024117,
+     "ratio_of_rates": 0.9188,
+     "ratio_not_given_because": null
+    }
+   }
+  },
+  {
+   "flood_input_single_state": "minus",
+   "passability": "strict",
+   "population_vintage": "rescaled_2024",
+   "stands_for_cells": 10,
+   "loses_a_hospital_within_30_minutes": {
+    "60_plus_vs_under_60": {
+     "group_residents_with_baseline_access": 19678.6,
+     "group_residents_who_lose_it": 7866.7,
+     "others_with_baseline_access": 72504.3,
+     "others_who_lose_it": 27209.9,
+     "group_loss_rate": 0.399762,
+     "others_loss_rate": 0.375287,
+     "difference_of_rates": 0.024475,
+     "ratio_of_rates": 1.0652,
+     "ratio_not_given_because": null
+    },
+    "0_14_vs_15_plus": {
+     "group_residents_with_baseline_access": 15658.7,
+     "group_residents_who_lose_it": 5674.0,
+     "others_with_baseline_access": 76524.2,
+     "others_who_lose_it": 29402.7,
+     "group_loss_rate": 0.362353,
+     "others_loss_rate": 0.384227,
+     "difference_of_rates": -0.021874,
+     "ratio_of_rates": 0.9431,
+     "ratio_not_given_because": null
+    }
+   }
+  },
+  {
+   "flood_input_single_state": "minus",
+   "passability": "central",
+   "population_vintage": "worldpop_2020",
+   "stands_for_cells": 10,
+   "loses_a_hospital_within_30_minutes": {
+    "60_plus_vs_under_60": {
+     "group_residents_with_baseline_access": 16171.5,
+     "group_residents_who_lose_it": 5142.2,
+     "others_with_baseline_access": 58425.3,
+     "others_who_lose_it": 16827.2,
+     "group_loss_rate": 0.317978,
+     "others_loss_rate": 0.288012,
+     "difference_of_rates": 0.029966,
+     "ratio_of_rates": 1.104,
+     "ratio_not_given_because": null
+    },
+    "0_14_vs_15_plus": {
+     "group_residents_with_baseline_access": 12530.4,
+     "group_residents_who_lose_it": 3437.5,
+     "others_with_baseline_access": 62066.4,
+     "others_who_lose_it": 18531.9,
+     "group_loss_rate": 0.274333,
+     "others_loss_rate": 0.298581,
+     "difference_of_rates": -0.024248,
+     "ratio_of_rates": 0.9188,
+     "ratio_not_given_because": null
+    }
+   }
+  },
+  {
+   "flood_input_single_state": "minus",
+   "passability": "central",
+   "population_vintage": "rescaled_2024",
+   "stands_for_cells": 10,
+   "loses_a_hospital_within_30_minutes": {
+    "60_plus_vs_under_60": {
+     "group_residents_with_baseline_access": 19678.6,
+     "group_residents_who_lose_it": 7880.4,
+     "others_with_baseline_access": 72504.3,
+     "others_who_lose_it": 27259.0,
+     "group_loss_rate": 0.400456,
+     "others_loss_rate": 0.375964,
+     "difference_of_rates": 0.024492,
+     "ratio_of_rates": 1.0651,
+     "ratio_not_given_because": null
+    },
+    "0_14_vs_15_plus": {
+     "group_residents_with_baseline_access": 15658.7,
+     "group_residents_who_lose_it": 5684.2,
+     "others_with_baseline_access": 76524.2,
+     "others_who_lose_it": 29455.2,
+     "group_loss_rate": 0.363005,
+     "others_loss_rate": 0.384914,
+     "difference_of_rates": -0.021909,
+     "ratio_of_rates": 0.9431,
+     "ratio_not_given_because": null
+    }
+   }
+  },
+  {
+   "flood_input_single_state": "minus",
+   "passability": "permissive",
+   "population_vintage": "worldpop_2020",
+   "stands_for_cells": 10,
+   "loses_a_hospital_within_30_minutes": {
+    "60_plus_vs_under_60": {
+     "group_residents_with_baseline_access": 16171.5,
+     "group_residents_who_lose_it": 5173.2,
+     "others_with_baseline_access": 58425.3,
+     "others_who_lose_it": 16936.5,
+     "group_loss_rate": 0.319898,
+     "others_loss_rate": 0.289883,
+     "difference_of_rates": 0.030015,
+     "ratio_of_rates": 1.1035,
+     "ratio_not_given_because": null
+    },
+    "0_14_vs_15_plus": {
+     "group_residents_with_baseline_access": 12530.4,
+     "group_residents_who_lose_it": 3460.5,
+     "others_with_baseline_access": 62066.4,
+     "others_who_lose_it": 18649.3,
+     "group_loss_rate": 0.276164,
+     "others_loss_rate": 0.300473,
+     "difference_of_rates": -0.024309,
+     "ratio_of_rates": 0.9191,
+     "ratio_not_given_because": null
+    }
+   }
+  },
+  {
+   "flood_input_single_state": "minus",
+   "passability": "permissive",
+   "population_vintage": "rescaled_2024",
+   "stands_for_cells": 10,
+   "loses_a_hospital_within_30_minutes": {
+    "60_plus_vs_under_60": {
+     "group_residents_with_baseline_access": 19678.6,
+     "group_residents_who_lose_it": 7906.4,
+     "others_with_baseline_access": 72504.3,
+     "others_who_lose_it": 27351.2,
+     "group_loss_rate": 0.401776,
+     "others_loss_rate": 0.377235,
+     "difference_of_rates": 0.024541,
+     "ratio_of_rates": 1.0651,
+     "ratio_not_given_because": null
+    },
+    "0_14_vs_15_plus": {
+     "group_residents_with_baseline_access": 15658.7,
+     "group_residents_who_lose_it": 5703.4,
+     "others_with_baseline_access": 76524.2,
+     "others_who_lose_it": 29554.1,
+     "group_loss_rate": 0.364234,
+     "others_loss_rate": 0.386206,
+     "difference_of_rates": -0.021973,
+     "ratio_of_rates": 0.9431,
+     "ratio_not_given_because": null
+    }
+   }
+  },
+  {
+   "flood_input_single_state": "as_provided",
+   "passability": "strict",
+   "population_vintage": "worldpop_2020",
+   "stands_for_cells": 10,
+   "loses_a_hospital_within_30_minutes": {
+    "60_plus_vs_under_60": {
+     "group_residents_with_baseline_access": 16171.5,
+     "group_residents_who_lose_it": 5296.0,
+     "others_with_baseline_access": 58425.3,
+     "others_who_lose_it": 17347.3,
+     "group_loss_rate": 0.327489,
+     "others_loss_rate": 0.296913,
+     "difference_of_rates": 0.030576,
+     "ratio_of_rates": 1.103,
+     "ratio_not_given_because": null
+    },
+    "0_14_vs_15_plus": {
+     "group_residents_with_baseline_access": 12530.4,
+     "group_residents_who_lose_it": 3544.1,
+     "others_with_baseline_access": 62066.4,
+     "others_who_lose_it": 19099.1,
+     "group_loss_rate": 0.282843,
+     "others_loss_rate": 0.307721,
+     "difference_of_rates": -0.024877,
+     "ratio_of_rates": 0.9192,
+     "ratio_not_given_because": null
+    }
+   }
+  },
+  {
+   "flood_input_single_state": "as_provided",
+   "passability": "strict",
+   "population_vintage": "rescaled_2024",
+   "stands_for_cells": 10,
+   "loses_a_hospital_within_30_minutes": {
+    "60_plus_vs_under_60": {
+     "group_residents_with_baseline_access": 19678.6,
+     "group_residents_who_lose_it": 8042.7,
+     "others_with_baseline_access": 72504.3,
+     "others_who_lose_it": 27826.0,
+     "group_loss_rate": 0.408703,
+     "others_loss_rate": 0.383784,
+     "difference_of_rates": 0.02492,
+     "ratio_of_rates": 1.0649,
+     "ratio_not_given_because": null
+    },
+    "0_14_vs_15_plus": {
+     "group_residents_with_baseline_access": 15658.7,
+     "group_residents_who_lose_it": 5801.9,
+     "others_with_baseline_access": 76524.2,
+     "others_who_lose_it": 30066.8,
+     "group_loss_rate": 0.37052,
+     "others_loss_rate": 0.392906,
+     "difference_of_rates": -0.022386,
+     "ratio_of_rates": 0.943,
+     "ratio_not_given_because": null
+    }
+   }
+  },
+  {
+   "flood_input_single_state": "as_provided",
+   "passability": "central",
+   "population_vintage": "worldpop_2020",
+   "stands_for_cells": 10,
+   "loses_a_hospital_within_30_minutes": {
+    "60_plus_vs_under_60": {
+     "group_residents_with_baseline_access": 16171.5,
+     "group_residents_who_lose_it": 5834.8,
+     "others_with_baseline_access": 58425.3,
+     "others_who_lose_it": 18670.4,
+     "group_loss_rate": 0.360809,
+     "others_loss_rate": 0.319559,
+     "difference_of_rates": 0.04125,
+     "ratio_of_rates": 1.1291,
+     "ratio_not_given_because": null
+    },
+    "0_14_vs_15_plus": {
+     "group_residents_with_baseline_access": 12530.4,
+     "group_residents_who_lose_it": 3764.6,
+     "others_with_baseline_access": 62066.4,
+     "others_who_lose_it": 20740.6,
+     "group_loss_rate": 0.300437,
+     "others_loss_rate": 0.334168,
+     "difference_of_rates": -0.033731,
+     "ratio_of_rates": 0.8991,
+     "ratio_not_given_because": null
+    }
+   }
+  },
+  {
+   "flood_input_single_state": "as_provided",
+   "passability": "central",
+   "population_vintage": "rescaled_2024",
+   "stands_for_cells": 10,
+   "loses_a_hospital_within_30_minutes": {
+    "60_plus_vs_under_60": {
+     "group_residents_with_baseline_access": 19678.6,
+     "group_residents_who_lose_it": 8443.1,
+     "others_with_baseline_access": 72504.3,
+     "others_who_lose_it": 28774.9,
+     "group_loss_rate": 0.429049,
+     "others_loss_rate": 0.396871,
+     "difference_of_rates": 0.032177,
+     "ratio_of_rates": 1.0811,
+     "ratio_not_given_because": null
+    },
+    "0_14_vs_15_plus": {
+     "group_residents_with_baseline_access": 15658.7,
+     "group_residents_who_lose_it": 5955.8,
+     "others_with_baseline_access": 76524.2,
+     "others_who_lose_it": 31262.1,
+     "group_loss_rate": 0.380352,
+     "others_loss_rate": 0.408526,
+     "difference_of_rates": -0.028174,
+     "ratio_of_rates": 0.931,
+     "ratio_not_given_because": null
+    }
+   }
+  },
+  {
+   "flood_input_single_state": "as_provided",
+   "passability": "permissive",
+   "population_vintage": "worldpop_2020",
+   "stands_for_cells": 10,
+   "loses_a_hospital_within_30_minutes": {
+    "60_plus_vs_under_60": {
+     "group_residents_with_baseline_access": 16171.5,
+     "group_residents_who_lose_it": 5904.6,
+     "others_with_baseline_access": 58425.3,
+     "others_who_lose_it": 18919.8,
+     "group_loss_rate": 0.365125,
+     "others_loss_rate": 0.323829,
+     "difference_of_rates": 0.041296,
+     "ratio_of_rates": 1.1275,
+     "ratio_not_given_because": null
+    },
+    "0_14_vs_15_plus": {
+     "group_residents_with_baseline_access": 12530.4,
+     "group_residents_who_lose_it": 3816.3,
+     "others_with_baseline_access": 62066.4,
+     "others_who_lose_it": 21008.2,
+     "group_loss_rate": 0.30456,
+     "others_loss_rate": 0.338479,
+     "difference_of_rates": -0.033919,
+     "ratio_of_rates": 0.8998,
+     "ratio_not_given_because": null
+    }
+   }
+  },
+  {
+   "flood_input_single_state": "as_provided",
+   "passability": "permissive",
+   "population_vintage": "rescaled_2024",
+   "stands_for_cells": 10,
+   "loses_a_hospital_within_30_minutes": {
+    "60_plus_vs_under_60": {
+     "group_residents_with_baseline_access": 19678.6,
+     "group_residents_who_lose_it": 8516.5,
+     "others_with_baseline_access": 72504.3,
+     "others_who_lose_it": 29044.9,
+     "group_loss_rate": 0.432782,
+     "others_loss_rate": 0.400596,
+     "difference_of_rates": 0.032186,
+     "ratio_of_rates": 1.0803,
+     "ratio_not_given_because": null
+    },
+    "0_14_vs_15_plus": {
+     "group_residents_with_baseline_access": 15658.7,
+     "group_residents_who_lose_it": 6012.4,
+     "others_with_baseline_access": 76524.2,
+     "others_who_lose_it": 31549.0,
+     "group_loss_rate": 0.383967,
+     "others_loss_rate": 0.412276,
+     "difference_of_rates": -0.028309,
+     "ratio_of_rates": 0.9313,
+     "ratio_not_given_because": null
+    }
+   }
+  },
+  {
+   "flood_input_single_state": "plus",
+   "passability": "strict",
+   "population_vintage": "worldpop_2020",
+   "stands_for_cells": 10,
+   "loses_a_hospital_within_30_minutes": {
+    "60_plus_vs_under_60": {
+     "group_residents_with_baseline_access": 16171.5,
+     "group_residents_who_lose_it": 6057.5,
+     "others_with_baseline_access": 58425.3,
+     "others_who_lose_it": 19400.4,
+     "group_loss_rate": 0.374576,
+     "others_loss_rate": 0.332055,
+     "difference_of_rates": 0.042521,
+     "ratio_of_rates": 1.1281,
+     "ratio_not_given_because": null
+    },
+    "0_14_vs_15_plus": {
+     "group_residents_with_baseline_access": 12530.4,
+     "group_residents_who_lose_it": 3909.2,
+     "others_with_baseline_access": 62066.4,
+     "others_who_lose_it": 21548.7,
+     "group_loss_rate": 0.311976,
+     "others_loss_rate": 0.347188,
+     "difference_of_rates": -0.035212,
+     "ratio_of_rates": 0.8986,
+     "ratio_not_given_because": null
+    }
+   }
+  },
+  {
+   "flood_input_single_state": "plus",
+   "passability": "strict",
+   "population_vintage": "rescaled_2024",
+   "stands_for_cells": 10,
+   "loses_a_hospital_within_30_minutes": {
+    "60_plus_vs_under_60": {
+     "group_residents_with_baseline_access": 19678.6,
+     "group_residents_who_lose_it": 8669.1,
+     "others_with_baseline_access": 72504.3,
+     "others_who_lose_it": 29548.8,
+     "group_loss_rate": 0.440532,
+     "others_loss_rate": 0.407546,
+     "difference_of_rates": 0.032987,
+     "ratio_of_rates": 1.0809,
+     "ratio_not_given_because": null
+    },
+    "0_14_vs_15_plus": {
+     "group_residents_with_baseline_access": 15658.7,
+     "group_residents_who_lose_it": 6112.5,
+     "others_with_baseline_access": 76524.2,
+     "others_who_lose_it": 32105.4,
+     "group_loss_rate": 0.390356,
+     "others_loss_rate": 0.419546,
+     "difference_of_rates": -0.029189,
+     "ratio_of_rates": 0.9304,
+     "ratio_not_given_because": null
+    }
+   }
+  },
+  {
+   "flood_input_single_state": "plus",
+   "passability": "central",
+   "population_vintage": "worldpop_2020",
+   "stands_for_cells": 10,
+   "loses_a_hospital_within_30_minutes": {
+    "60_plus_vs_under_60": {
+     "group_residents_with_baseline_access": 16171.5,
+     "group_residents_who_lose_it": 6104.7,
+     "others_with_baseline_access": 58425.3,
+     "others_who_lose_it": 19552.1,
+     "group_loss_rate": 0.377499,
+     "others_loss_rate": 0.334652,
+     "difference_of_rates": 0.042848,
+     "ratio_of_rates": 1.128,
+     "ratio_not_given_because": null
+    },
+    "0_14_vs_15_plus": {
+     "group_residents_with_baseline_access": 12530.4,
+     "group_residents_who_lose_it": 3939.0,
+     "others_with_baseline_access": 62066.4,
+     "others_who_lose_it": 21717.9,
+     "group_loss_rate": 0.314357,
+     "others_loss_rate": 0.349913,
+     "difference_of_rates": -0.035557,
+     "ratio_of_rates": 0.8984,
+     "ratio_not_given_because": null
+    }
+   }
+  },
+  {
+   "flood_input_single_state": "plus",
+   "passability": "central",
+   "population_vintage": "rescaled_2024",
+   "stands_for_cells": 10,
+   "loses_a_hospital_within_30_minutes": {
+    "60_plus_vs_under_60": {
+     "group_residents_with_baseline_access": 19678.6,
+     "group_residents_who_lose_it": 8684.3,
+     "others_with_baseline_access": 72504.3,
+     "others_who_lose_it": 29598.2,
+     "group_loss_rate": 0.441307,
+     "others_loss_rate": 0.408227,
+     "difference_of_rates": 0.03308,
+     "ratio_of_rates": 1.081,
+     "ratio_not_given_because": null
+    },
+    "0_14_vs_15_plus": {
+     "group_residents_with_baseline_access": 15658.7,
+     "group_residents_who_lose_it": 6122.3,
+     "others_with_baseline_access": 76524.2,
+     "others_who_lose_it": 32160.3,
+     "group_loss_rate": 0.390981,
+     "others_loss_rate": 0.420263,
+     "difference_of_rates": -0.029282,
+     "ratio_of_rates": 0.9303,
+     "ratio_not_given_because": null
+    }
+   }
+  },
+  {
+   "flood_input_single_state": "plus",
+   "passability": "permissive",
+   "population_vintage": "worldpop_2020",
+   "stands_for_cells": 10,
+   "loses_a_hospital_within_30_minutes": {
+    "60_plus_vs_under_60": {
+     "group_residents_with_baseline_access": 16171.5,
+     "group_residents_who_lose_it": 6180.7,
+     "others_with_baseline_access": 58425.3,
+     "others_who_lose_it": 19811.2,
+     "group_loss_rate": 0.382195,
+     "others_loss_rate": 0.339086,
+     "difference_of_rates": 0.043109,
+     "ratio_of_rates": 1.1271,
+     "ratio_not_given_because": null
+    },
+    "0_14_vs_15_plus": {
+     "group_residents_with_baseline_access": 12530.4,
+     "group_residents_who_lose_it": 3991.5,
+     "others_with_baseline_access": 62066.4,
+     "others_who_lose_it": 22000.3,
+     "group_loss_rate": 0.318547,
+     "others_loss_rate": 0.354465,
+     "difference_of_rates": -0.035918,
+     "ratio_of_rates": 0.8987,
+     "ratio_not_given_because": null
+    }
+   }
+  },
+  {
+   "flood_input_single_state": "plus",
+   "passability": "permissive",
+   "population_vintage": "rescaled_2024",
+   "stands_for_cells": 10,
+   "loses_a_hospital_within_30_minutes": {
+    "60_plus_vs_under_60": {
+     "group_residents_with_baseline_access": 19678.6,
+     "group_residents_who_lose_it": 8757.9,
+     "others_with_baseline_access": 72504.3,
+     "others_who_lose_it": 29858.9,
+     "group_loss_rate": 0.445047,
+     "others_loss_rate": 0.411822,
+     "difference_of_rates": 0.033225,
+     "ratio_of_rates": 1.0807,
+     "ratio_not_given_because": null
+    },
+    "0_14_vs_15_plus": {
+     "group_residents_with_baseline_access": 15658.7,
+     "group_residents_who_lose_it": 6176.1,
+     "others_with_baseline_access": 76524.2,
+     "others_who_lose_it": 32440.7,
+     "group_loss_rate": 0.394419,
+     "others_loss_rate": 0.423927,
+     "difference_of_rates": -0.029508,
+     "ratio_of_rates": 0.9304,
+     "ratio_not_given_because": null
+    }
+   }
+  }
+ ],
+ "assumptions": [
+  "Everyone in a tambon is given the rate of losing access of the tambon: a gap can only come from differences between tambons.",
+  "The age mix of the registered Thai nationals of a tambon is taken for all its residents.",
+  "A closure is a modelled assumption of closure rule v1, not an observed closure."
+ ],
+ "limits": [
+  "Registered is not resident: people are registered where their house register is, not where they stay.",
+  "About two registered residents in five in this district are not Thai nationals and have no age in the source.",
+  "Everyone in a tambon is given the loss rate of the tambon: the comparison cannot see a difference inside a tambon.",
+  "The lowest and the highest of 18 counts of a scenario are not a statistical interval.",
+  "No tambon is ranked by its age mix. Figures are for the district; they say nothing of what the people of a place can or cannot do."
+ ]
+}

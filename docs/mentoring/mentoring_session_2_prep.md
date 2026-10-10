@@ -147,113 +147,162 @@ from the flood layer.
 in it. FloodGuard puts Ko Chang first, because in the scenario every resident
 there who has a road to a hospital or a main road loses it.
 
-**Two cautions to keep.** (1) Mae Sai town is class D under the signed rule
-although about 12,000 of its residents lose hospital access in the model. A
-judge who knows 2024 will ask. The answer: the class names a type of action,
-not a size of harm; the score beside it is 71, the second highest; and the
-proposal's own class wording (section 5.2) is run as a second reading that is
-not finished. Decide before the final whether to finish it (section 7).
-(2) Ko Chang's class rests on modelled closures. The roads are listed on a
-desk sheet (`docs/ko_chang_road_check.md`): one unnamed road of 1.24 km in the
-next tambon, Si Mueang Chum, carries 56% of the result, and only five road
-pieces in Ko Chang carry a bridge tag. Nobody has looked at them on the ground
-or on an image.
+**Three cautions to keep** (rewritten on 11 October; each now has a computed
+answer).
 
-**A second finding, from the replay.** At the modelled peak the homes of about
-14,200 residents are in water. The eight shelter sites of the default plan
+(1) *Mae Sai town is class D although most of its residents are in the water.*
+A judge who knows 2024 will ask. Three answers, all computed: under the
+proposal's own class wording the town reads "protect essential services", as
+a secondary reading (`docs/class_v2_reading.md`); across the 180 runs of the
+uncertainty ensemble its D holds in only half, so by our own rule it is shown
+as "unstable: verify" (`docs/uncertainty_ensemble_rescaled_demand.md`; of
+record since 9 October, not yet on a page); and the need mix shows what the
+letter hides: 56% of its residents in the water (`docs/need_mix.md`).
+
+(2) *Ko Chang's class rests on modelled closures.* The road what-if
+(`docs/road_reconnection.md`) names the roads: one unnamed road of 1.3 km in
+the next tambon gives 3,369 of Ko Chang's 5,972 cut-off residents a route
+back. Nobody has looked at it on the ground or on an image of the event; the
+THEOS-2 scene that could show it has been asked for and has not arrived. Read
+with one radar pass four days after the peak, only 290 of those residents are
+cut off: the total loss belongs to the season scenario.
+
+(3) *The equity gap does not point one way.* With the open, modelled age grid
+there is no gap of a point or more for the district. With the registered age
+counts of each tambon, residents of 60 and over lose hospital access at 1.06
+to 1.13 times the rate of younger residents in every one of the 180 runs. The
+registered ages leave out two registered residents in five, who are not Thai
+nationals (`docs/equity_by_age.md`). Say that the direction depends on the age
+data. Do not lead with equity.
+
+**From the replay** (unchanged). At the modelled peak the homes of about
+14,200 residents are in water; the eight shelter sites of the default plan
 have 7,580 of them within walking reach and room for roughly 500 to 1,050
 (estimated from building footprints). Source: decision log, follow-up 7.
 
-### 4.2 Draft pitch, five minutes, for a policy audience
+**Shelters in case SE1.** Access on foot to the located DDPM shelters and
+listed places against the residents in reach were computed on 9 October
+(`docs/shelter_capacity.md`). Those figures are pitch level: they are in the
+pitch note outside this repository, they carry the label "listed planned
+capacity; scenario", and they may be spoken and shown in the pitch but not
+written into a public file. This page therefore gives none.
 
-About 650 words. Screens are in brackets.
+### 4.2 Draft pitch, second version (11 October), five minutes, for a policy audience
+
+About 680 words. Screens are in brackets. The first version (accepted as item
+V-11 on 8 October) is in the history of this file; what changed is listed
+after the text.
 
 > **[Mae Sai, September 2024, satellite image]**
 > In September 2024 the Sai River flooded Mae Sai. Thailand had the satellite
-> maps within days. GISTDA and UNOSAT mapped the water. But a map of water
-> does not tell a district officer which village is cut off, or where to send
-> the one boat he has.
+> maps within days. But a map of water does not tell a district officer which
+> village is cut off, or where to send the one boat he has.
 >
 > **[FloodGuard: one line]**
 > We are TeamBits. FloodGuard takes the flood map that already exists and
-> answers the next question: who loses access, and where do you act first?
+> answers the next question: who loses access, and what does each place need?
 >
-> **[The eight tambons, two rows highlighted]**
-> Here is what it found for Mae Sai district, using the area UNOSAT and GISTDA
-> mapped as flooded in the 2024 season. Mae Sai town has the most water and
-> the most people in it: about ten thousand. Any flood map puts it first.
+> **[The need map]**
+> This is Mae Sai district, with the area UNOSAT and GISTDA mapped as flooded
+> in the 2024 season. Every square is half a kilometre. Blue: people in the
+> water. Orange: people who stay dry and lose every road. Green: people who
+> stay dry and on the road, with the hospital out of reach.
 >
-> FloodGuard puts Ko Chang first. Ko Chang has a quarter as many people in the
-> water. But when we close the roads that the flood crosses, every resident of
-> Ko Chang who had a road out loses it. About six thousand people, none of
-> them with a way to a hospital or a main road by vehicle. That is not visible on a flood map.
-> It is visible when you connect the flood to the road network and to where
-> people live.
+> A flood map shows you the blue. In the scenario that is eighteen thousand
+> residents. The orange and the green are ten thousand more, and no flood map
+> shows them.
 >
-> **[Ko Chang case card: class B]**
-> So the tool does not say "Ko Chang is flooded". It says "keep the routes to
-> Ko Chang open": check those roads before the season, decide where a boat or
-> a high vehicle waits, agree who calls it.
+> **[Three bars: Mae Sai, Ban Dai, Si Mueang Chum]**
+> Look at three tambons that get the same class from our score. In Mae Sai
+> town most residents are in the water. In Ban Dai the largest group is dry,
+> with the hospital out of reach. They need different things: one needs
+> evacuation support, the other needs a way to care.
 >
-> **[Shelter numbers]**
-> A second finding. At the peak of our reconstruction, about fourteen thousand
-> residents have water at home. The eight shelter sites of the plan have room
-> for about a thousand at most: fewer than one in thirteen. That is a planning
-> number a local administration can act on in the dry season.
+> **[Ko Chang]**
+> And Ko Chang. A third of its residents are in the water. Almost all the
+> rest are dry, with every road cut. Nobody there is unaffected. So the tool
+> does not say "Ko Chang is flooded". It says "keep the routes to Ko Chang
+> open".
 >
-> **[Pipeline in four boxes: flood map, roads and people, access loss, action]**
-> How does it work? Four steps. A flood extent, from an agency or from radar.
-> Open data on roads, hospitals and population. A routing model that compares
-> travel before and after. And a published score with five parts that anyone
-> can re-weight.
+> **[Two roads on the map]**
+> Which routes? We asked the model. One road of one point three kilometres,
+> in the next tambon, would give three and a half thousand people a route
+> back. A second, under a kilometre, two thousand more. Two short roads, a
+> quarter of everyone cut off. That is a list a highways office can check in
+> one afternoon.
+>
+> **[One line: seven of eight]**
+> How sure are we? We ran the whole chain one hundred and eighty times, with
+> a smaller and a larger flood, stricter and looser road closures, two
+> population datasets, two vulnerability scales and five sets of weights. Seven of the eight classes
+> hold. One does not: Mae Sai town. Its class depends on which population
+> data you use, so we mark it "unstable, verify" and say so.
 >
 > **[What we tested, honestly]**
-> We tested our own radar detection and we report what we found. At Mae Sai
-> the satellite passed almost four days after the peak, and our three methods
-> did not meet our own bar. So for decisions the system uses the agency map
-> and marks our own radar as low confidence. Low confidence can never raise an
-> alarm in FloodGuard: it becomes "monitor and verify".
+> We also tested our own radar flood detection, and tried to improve it. In a
+> flooded town it sees about a quarter of the water. So for decisions the
+> system uses the agency map, and marks our radar as low confidence. Low
+> confidence can never raise an alarm in FloodGuard: it becomes "monitor and
+> verify".
 >
-> Then we used the THEOS-2 imagery GISTDA gave us. On a flood scene at half a
-> metre we could see which roads were under water. Our road rule agreed with
-> the image for four roads in five. Our 10-metre radar could not tell which
-> road was flooded. That is the case for THEOS-2 in this chain: it sees the
-> road.
+> With the THEOS-2 imagery GISTDA gave us, at half a metre, we could see which
+> roads were under water, and our road rule agreed with the image for four
+> roads in five. That is the case for THEOS-2 in this chain: it sees the road.
 >
 > **[What it is not]**
 > This is a planning tool. It is not a warning system and it does not replace
-> DDPM or TMD. The Ko Chang result is a scenario and its roads still need a
-> check on the ground.
+> DDPM or TMD. Every number here is a scenario with modelled roads and
+> modelled residents. The two roads still need a check on the ground.
 >
 > **[Call to action: three lines]**
 > We ask for three things. From the DDPM office in Chiang Rai: one afternoon
-> to check the Ko Chang roads with us before the next season. From GISTDA:
-> the THEOS-2 scene of 16 September 2024 over Mae Sai, taken four hours after
-> the radar pass, so we can repeat the road check on the real event. And from
-> any province that wants it: a boundary, a road network and a population
-> grid are all it takes to run this for your district. The code is open.
+> to check those two roads with us before the next season. From GISTDA: the
+> THEOS-2 scenes of September 2024 over Mae Sai that we have requested, so we
+> can check the roads on the real event; our test plan is already fixed and
+> public. And from any province that wants it: a boundary, a road network and
+> a population grid are all it takes. The code is open.
 >
-> A flood map shows where the water is. FloodGuard shows who it cuts off.
-> Thank you.
+> A flood map shows where the water is. FloodGuard shows what each place
+> needs. Thank you.
 
 Rules for whoever speaks: say "scenario" once per figure, not in every
 sentence. Round every number. Never say "real-time", "validated" or
-"accurate".
+"accurate". Never call a need type a class.
+
+What changed from the first version:
+
+- It opens on the need map, not on the table: the picture carries "what a
+  flood map does not show".
+- The comparison is no longer "Mae Sai against Ko Chang" alone. Three tambons
+  of one class with different needs is the stronger point, and it is the
+  answer to "why is the town only D" before anyone asks.
+- The roads are named as a count (two roads, a quarter of the cut-off
+  residents).
+- The uncertainty is one sentence with a result: seven of eight hold.
+- The shelter sentence is out of the draft. If shelters are spoken, use the
+  figures and the label of the pitch note.
+- Equity is not in the five minutes. It is in the questions, with caution (3).
 
 ## 5. Policy translation table
 
+Rewritten on 11 October. Counts are of the scenario and rounded.
+
 | Who | Decision | What FloodGuard gives | So what, in Mae Sai |
 |---|---|---|---|
-| DDPM provincial office, district chief | Where to place boats, vehicles and teams before the season | Tambons by class and score, with the reason | Ko Chang: plan for loss of all road access, not only for water |
-| Local administrative organisation | Which shelters to open and how many more are needed | Residents with water at home against shelter room within walking reach | Room for 500 to 1,050 of about 14,200 at the modelled peak with the eight default sites |
-| Department of Highways, Rural Roads | Which links to inspect, raise or keep clear | The closed links in the scenario, ranked by residents who depend on them | A short list for a field check (not yet produced as a map) |
-| Ministry of Public Health, hospital | Who loses the hospital within 30 minutes | Count per tambon, before and after | About 12,000 residents of Mae Sai town in the scenario |
-| GISTDA | How a flood product becomes a decision product | A layer that reads GISTDA extents and returns access loss; a use for THEOS-2 that radar cannot fill | The road check of section 6 |
-| ONWR, planners | Where repeated flooding and access loss coincide | Class D tambons with their scores | Mae Sai, Si Mueang Chum, Ban Dai |
+| DDPM provincial office, district chief | Where to place boats, high vehicles and teams before the season | Tambons by class and score, and under each class the need mix | Ko Chang: 58% of residents dry with every road cut. Mae Sai town: 56% in the water. Two different plans |
+| Department of Highways, Rural Roads | Which links to inspect, raise or keep clear | The closed roads that would reconnect the most residents, one after another | Two roads, 2.1 km together, a quarter of the 21,800 cut-off residents; a list of ten (`docs/road_reconnection.md`) |
+| Ministry of Public Health, hospital | Who loses the hospital within 30 minutes, and where they are | Count per tambon, and on the need map the residents who are dry with the hospital out of reach | About 24,500 in the district; in Ban Dai 44% of residents are dry with the hospital out of reach |
+| Local administrative organisation | Which shelters are in reach on foot, and whether their listed places are enough | Residents with a located shelter within 30 minutes, before and in the scenario; listed places against the residents in reach | Figures in the pitch note only (pitch level, "listed planned capacity; scenario") |
+| GISTDA | How a flood product becomes a decision product | A layer that reads GISTDA extents and returns access loss and needs; a use for THEOS-2 that radar cannot fill | The road check at Sukhothai; the plan for the scenes of September 2024 is fixed and its radar readings are frozen |
+| ONWR, planners | Where repeated flooding and loss of access coincide | The class D tambons, with what each one needs | Mae Sai (water), Ban Dai (hospital), Si Mueang Chum (water and cut roads) |
+| Anyone who reads a class | How far to rely on it | Over 180 runs: how often each tambon keeps its class | Seven of eight hold; Mae Sai town is "unstable: verify" because its class depends on the population data |
 
 Not claimed: a feed into Cell Broadcast. The proposal names it as an ambition.
 Nothing was built or agreed. If asked, say it is a later step that belongs to
 DDPM.
+
+Not claimed either: that older residents are cut off more. The direction of
+the age gap depends on the age data (caution 3 of section 4.1).
 
 ## 6. THEOS-2: what was done, and what to ask for
 
@@ -378,12 +427,14 @@ Agreement between two sensors 44 hours apart; not accuracy.
 | Ko Chang roads at three closure levels | `docs/ko_chang_road_check.md` | The same road is the first to keep passable at every level. |
 | Access loss by age | `docs/equity_by_age.md` | Computed; the open age data cannot show a gap inside a tambon. |
 | The proposal's own class wording | `docs/class_v2_reading.md` | As a secondary reading, Mae Sai town is "protect essential services". The binding classes do not change. |
+| What is under a class: the need mix and its map | `docs/need_mix.md` | Three tambons of class D need three different things: Mae Sai is mostly in the water, Ban Dai mostly dry with the hospital out of reach. A need type is not a class. |
+| Which road reconnects whom, district-wide | `docs/road_reconnection.md` | Two short roads, 2.1 km together, would give a quarter of the 21,800 cut-off residents a route back; most of the rest are in the water themselves. A what-if on the model. |
 | The stability of the classes over all 180 cells | `docs/uncertainty_ensemble_rescaled_demand.md` | Seven of eight classes hold, Ko Chang's in 78% of the cells. Mae Sai town's D holds in 50%: it is D with the 2020 population product and A, B or C with the 2024 totals. Report-only; the published file still says "not evaluated". |
-| Access loss by age | `docs/equity_by_age.md`, the two sections added on 9 October | The direction depends on the age data. With the modelled age grid no gap of a point or more for the district; with registered age counts by tambon (DOPA) older residents lose hospital access 1.10 to 1.13 times as often. The registered ages leave out two residents in five. |
+| Access loss by age | `docs/equity_by_age.md`, the sections added on 9 and 11 October | The direction depends on the age data. With the modelled age grid no gap of a point or more for the district; with registered age counts by tambon (DOPA) older residents lose hospital access 1.06 to 1.13 times as often, in all 180 runs. The registered ages leave out two residents in five. |
 | The run of record of the ensemble | `outputs/planning_v1/README.md`, plan task E10, third update | Of record since 9 October: seven classes hold over 180 cells and Mae Sai's D is "unstable: verify". Not yet on any page. |
 | Shelters: access on foot and listed places | `docs/shelter_capacity.md` (figures in the pitch note outside the repository) | Pitch level only, label "listed planned capacity; scenario". Capacities are listed planning figures; nobody verified that a shelter was open. |
 | A printable brief of case SE1 | `outputs/planning_brief/se1_mae_sai_brief.html` | One page, Thai and English, made from the published result. The Thai is not reviewed by a native speaker. |
 | THEOS-2 on the study event | `docs/proposal_execution/theos2_study_event_check_plan_v1.md` | The plan is committed and the radar readings are frozen before any image arrives; the comparison runs once per scene when GISTDA delivers. |
 
 Each is on the team page for the team's word (items V-17, V-19 and V-22 to
-V-32). None changes a published class or enters a planning score.
+V-35). None changes a published class or enters a planning score.

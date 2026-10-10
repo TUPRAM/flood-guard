@@ -1,0 +1,1345 @@
+{
+ "schema": "floodguard.need_mix.v1",
+ "generated_at_utc": "2026-10-10T16:05:31Z",
+ "source_timestamp": "2024-08-01/2024-10-12",
+ "source_timestamps": {
+  "flood_input": "2024-08-01/2024-10-12",
+  "population_year_represented": 2020,
+  "population_rescaled_to_year": 2024
+ },
+ "confidence_class": "low",
+ "confidence_basis": "Modelled access on OpenStreetMap roads and modelled residents; closures assumed from an agency season layer that was not checked in the field.",
+ "operational_status": "non_operational",
+ "official_warning": false,
+ "can_feed_decision_layer": false,
+ "label": "Modelled, not observed. A scenario of the 2024 season layer, not a flood of any day.",
+ "not_a_class": "A need type is not a planning class: it uses no score, no threshold of class rule v1 and no confidence, and it changes no class. The binding class of each tambon is the one of the published result file.",
+ "credits": [
+  "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009 (CC BY-SA 4.0). Changed by FloodGuard: laid over modelled residents and roads and counted; the figures derived from it are shared under CC BY-SA 4.0.",
+  "Residents: WorldPop 2020 (CC BY 4.0), in the second demand rescaled to WorldPop 2024 totals. Roads © OpenStreetMap contributors (ODbL 1.0). Boundaries: HDX Thailand COD-AB."
+ ],
+ "what_this_is": "For case SE1: the residents of each tambon by what the scenario does to them, in the run the published result rests on and across the nine runs of the uncertainty ensemble, with both population products. Report-only.",
+ "need_types": [
+  {
+   "type": "in_the_water",
+   "order_of_the_test": 1,
+   "what_it_is": "The centre of the cell lies inside the flood layer.",
+   "in_short": "people and homes in the water"
+  },
+  {
+   "type": "dry_but_cut_off",
+   "order_of_the_test": 2,
+   "what_it_is": "Outside the flood layer; had a road route to a hospital or a main road before, and has none in the flooded run.",
+   "in_short": "dry, with every road cut"
+  },
+  {
+   "type": "dry_and_loses_the_hospital",
+   "order_of_the_test": 3,
+   "what_it_is": "Outside the flood layer and still with a road route; reached a hospital within 30 minutes before, and does not in the flooded run.",
+   "in_short": "dry and on the road network, with the hospital out of reach"
+  },
+  {
+   "type": "not_affected",
+   "order_of_the_test": 4,
+   "what_it_is": "Outside the flood layer, and none of the two losses above.",
+   "in_short": "not affected in the scenario"
+  },
+  {
+   "type": "not_assessed",
+   "order_of_the_test": 5,
+   "what_it_is": "Outside the flood layer, and not joined to the road graph or without any road route even before the flood: access cannot be said.",
+   "in_short": "access not assessed"
+  }
+ ],
+ "published_run": {
+  "flood_input_single_state": "as_provided",
+  "passability": "central",
+  "population_vintage": "worldpop_2020"
+ },
+ "runs": [
+  {
+   "flood_input_single_state": "minus",
+   "passability": "strict"
+  },
+  {
+   "flood_input_single_state": "minus",
+   "passability": "central"
+  },
+  {
+   "flood_input_single_state": "minus",
+   "passability": "permissive"
+  },
+  {
+   "flood_input_single_state": "as_provided",
+   "passability": "strict"
+  },
+  {
+   "flood_input_single_state": "as_provided",
+   "passability": "central"
+  },
+  {
+   "flood_input_single_state": "as_provided",
+   "passability": "permissive"
+  },
+  {
+   "flood_input_single_state": "plus",
+   "passability": "strict"
+  },
+  {
+   "flood_input_single_state": "plus",
+   "passability": "central"
+  },
+  {
+   "flood_input_single_state": "plus",
+   "passability": "permissive"
+  }
+ ],
+ "made_from": {
+  "cache_receipt": {
+   "path": "outputs/cell_outcomes/se1_mae_sai_v1_receipt.json",
+   "sha256": "f1eea949238d79a6439ebe1d17010f8c720fb85a2fa051c64ef0dd44416d62c8"
+  },
+  "published_result_file": {
+   "path": "outputs/planning_v1/overlays/planning_assessment_overlay_se1_mae_sai.json",
+   "sha256": "bb101e8021cffedc94044572c98863bd46bd38ed314e38435b436dfc8b552205"
+  }
+ },
+ "checks": {
+  "counts_of_the_published_run_against_the_published_file": {
+   "result": "PASS",
+   "values_compared": 32,
+   "what": "per tambon: residents, residents inside the flood layer, residents who lose every road route, residents who lose a hospital within 30 minutes"
+  }
+ },
+ "district": {
+  "worldpop_2020": {
+   "in_the_published_run": {
+    "residents": 81836.9,
+    "by_type": {
+     "in_the_water": {
+      "residents": 17927.5,
+      "share": 0.2191
+     },
+     "dry_but_cut_off": {
+      "residents": 7509.8,
+      "share": 0.0918
+     },
+     "dry_and_loses_the_hospital": {
+      "residents": 2447.0,
+      "share": 0.0299
+     },
+     "not_affected": {
+      "residents": 49278.7,
+      "share": 0.6022
+     },
+     "not_assessed": {
+      "residents": 4673.9,
+      "share": 0.0571
+     }
+    },
+    "hidden_by_the_order": {
+     "in_the_water_and_cut_off": 14287.9,
+     "in_the_water_and_losing_the_hospital": 14559.7,
+     "cut_off_in_the_water_or_dry": 21797.7,
+     "losing_the_hospital_in_the_water_or_dry": 24505.2
+    }
+   },
+   "over_the_nine_runs": {
+    "in_the_water": {
+     "share_lowest": 0.198,
+     "share_highest": 0.2373,
+     "residents_lowest": 16205.0,
+     "residents_highest": 19416.3
+    },
+    "dry_but_cut_off": {
+     "share_lowest": 0.0133,
+     "share_highest": 0.0972,
+     "residents_lowest": 1084.7,
+     "residents_highest": 7953.3
+    },
+    "dry_and_loses_the_hospital": {
+     "share_lowest": 0.0124,
+     "share_highest": 0.0955,
+     "residents_lowest": 1018.7,
+     "residents_highest": 7815.7
+    },
+    "not_affected": {
+     "share_lowest": 0.5887,
+     "share_highest": 0.6349,
+     "residents_lowest": 48178.2,
+     "residents_highest": 51955.9
+    },
+    "not_assessed": {
+     "share_lowest": 0.0561,
+     "share_highest": 0.0584,
+     "residents_lowest": 4591.3,
+     "residents_highest": 4775.6
+    }
+   }
+  },
+  "rescaled_2024": {
+   "in_the_published_run": {
+    "residents": 95472.1,
+    "by_type": {
+     "in_the_water": {
+      "residents": 26891.0,
+      "share": 0.2817
+     },
+     "dry_but_cut_off": {
+      "residents": 9907.4,
+      "share": 0.1038
+     },
+     "dry_and_loses_the_hospital": {
+      "residents": 2098.8,
+      "share": 0.022
+     },
+     "not_affected": {
+      "residents": 54164.7,
+      "share": 0.5673
+     },
+     "not_assessed": {
+      "residents": 2410.2,
+      "share": 0.0252
+     }
+    },
+    "hidden_by_the_order": {
+     "in_the_water_and_cut_off": 24647.8,
+     "in_the_water_and_losing_the_hospital": 25215.6,
+     "cut_off_in_the_water_or_dry": 34555.2,
+     "losing_the_hospital_in_the_water_or_dry": 37218.0
+    }
+   },
+   "over_the_nine_runs": {
+    "in_the_water": {
+     "share_lowest": 0.2613,
+     "share_highest": 0.2993,
+     "residents_lowest": 24943.0,
+     "residents_highest": 28572.1
+    },
+    "dry_but_cut_off": {
+     "share_lowest": 0.008,
+     "share_highest": 0.1129,
+     "residents_lowest": 764.1,
+     "residents_highest": 10781.2
+    },
+    "dry_and_loses_the_hospital": {
+     "share_lowest": 0.0096,
+     "share_highest": 0.1141,
+     "residents_lowest": 912.3,
+     "residents_highest": 10894.8
+    },
+    "not_affected": {
+     "share_lowest": 0.5569,
+     "share_highest": 0.591,
+     "residents_lowest": 53166.6,
+     "residents_highest": 56422.0
+    },
+    "not_assessed": {
+     "share_lowest": 0.0249,
+     "share_highest": 0.0256,
+     "residents_lowest": 2375.2,
+     "residents_highest": 2448.2
+    }
+   }
+  }
+ },
+ "by_tambon": {
+  "TH570901": {
+   "unit_name_en": "Mae Sai",
+   "unit_name_th": "แม่สาย",
+   "binding_class_v1_of_the_published_file": "D",
+   "worldpop_2020": {
+    "in_the_published_run": {
+     "residents": 17893.1,
+     "by_type": {
+      "in_the_water": {
+       "residents": 10058.2,
+       "share": 0.5621
+      },
+      "dry_but_cut_off": {
+       "residents": 2700.8,
+       "share": 0.1509
+      },
+      "dry_and_loses_the_hospital": {
+       "residents": 3.0,
+       "share": 0.0002
+      },
+      "not_affected": {
+       "residents": 5013.0,
+       "share": 0.2802
+      },
+      "not_assessed": {
+       "residents": 118.1,
+       "share": 0.0066
+      }
+     },
+     "hidden_by_the_order": {
+      "in_the_water_and_cut_off": 8913.4,
+      "in_the_water_and_losing_the_hospital": 9369.6,
+      "cut_off_in_the_water_or_dry": 11614.1,
+      "losing_the_hospital_in_the_water_or_dry": 12073.3
+     }
+    },
+    "over_the_nine_runs": {
+     "in_the_water": {
+      "share_lowest": 0.5068,
+      "share_highest": 0.6037,
+      "residents_lowest": 9068.5,
+      "residents_highest": 10802.6
+     },
+     "dry_but_cut_off": {
+      "share_lowest": 0.0269,
+      "share_highest": 0.1801,
+      "residents_lowest": 480.5,
+      "residents_highest": 3222.8
+     },
+     "dry_and_loses_the_hospital": {
+      "share_lowest": 0.0,
+      "share_highest": 0.1533,
+      "residents_lowest": 0.0,
+      "residents_highest": 2742.3
+     },
+     "not_affected": {
+      "share_lowest": 0.2542,
+      "share_highest": 0.3041,
+      "residents_lowest": 4549.1,
+      "residents_highest": 5441.0
+     },
+     "not_assessed": {
+      "share_lowest": 0.0051,
+      "share_highest": 0.009,
+      "residents_lowest": 90.6,
+      "residents_highest": 160.8
+     }
+    }
+   },
+   "rescaled_2024": {
+    "in_the_published_run": {
+     "residents": 31648.0,
+     "by_type": {
+      "in_the_water": {
+       "residents": 22017.0,
+       "share": 0.6957
+      },
+      "dry_but_cut_off": {
+       "residents": 3716.9,
+       "share": 0.1174
+      },
+      "dry_and_loses_the_hospital": {
+       "residents": 0.8,
+       "share": 0.0
+      },
+      "not_affected": {
+       "residents": 5888.6,
+       "share": 0.1861
+      },
+      "not_assessed": {
+       "residents": 24.8,
+       "share": 0.0008
+      }
+     },
+     "hidden_by_the_order": {
+      "in_the_water_and_cut_off": 20974.0,
+      "in_the_water_and_losing_the_hospital": 21563.0,
+      "cut_off_in_the_water_or_dry": 24690.8,
+      "losing_the_hospital_in_the_water_or_dry": 25280.7
+     }
+    },
+    "over_the_nine_runs": {
+     "in_the_water": {
+      "share_lowest": 0.6554,
+      "share_highest": 0.7258,
+      "residents_lowest": 20740.6,
+      "residents_highest": 22970.8
+     },
+     "dry_but_cut_off": {
+      "share_lowest": 0.0098,
+      "share_highest": 0.1407,
+      "residents_lowest": 309.5,
+      "residents_highest": 4452.8
+     },
+     "dry_and_loses_the_hospital": {
+      "share_lowest": 0.0,
+      "share_highest": 0.1309,
+      "residents_lowest": 0.0,
+      "residents_highest": 4143.3
+     },
+     "not_affected": {
+      "share_lowest": 0.1689,
+      "share_highest": 0.2029,
+      "residents_lowest": 5344.5,
+      "residents_highest": 6422.7
+     },
+     "not_assessed": {
+      "share_lowest": 0.0006,
+      "share_highest": 0.001,
+      "residents_lowest": 19.3,
+      "residents_highest": 32.0
+     }
+    }
+   }
+  },
+  "TH570902": {
+   "unit_name_en": "Huai Khrai",
+   "unit_name_th": "ห้วยไคร้",
+   "binding_class_v1_of_the_published_file": "E",
+   "worldpop_2020": {
+    "in_the_published_run": {
+     "residents": 8911.5,
+     "by_type": {
+      "in_the_water": {
+       "residents": 0.0,
+       "share": 0.0
+      },
+      "dry_but_cut_off": {
+       "residents": 0.0,
+       "share": 0.0
+      },
+      "dry_and_loses_the_hospital": {
+       "residents": 192.6,
+       "share": 0.0216
+      },
+      "not_affected": {
+       "residents": 7021.3,
+       "share": 0.7879
+      },
+      "not_assessed": {
+       "residents": 1697.5,
+       "share": 0.1905
+      }
+     },
+     "hidden_by_the_order": {
+      "in_the_water_and_cut_off": 0.0,
+      "in_the_water_and_losing_the_hospital": 0.0,
+      "cut_off_in_the_water_or_dry": 0.0,
+      "losing_the_hospital_in_the_water_or_dry": 192.6
+     }
+    },
+    "over_the_nine_runs": {
+     "in_the_water": {
+      "share_lowest": 0.0,
+      "share_highest": 0.0,
+      "residents_lowest": 0.0,
+      "residents_highest": 0.0
+     },
+     "dry_but_cut_off": {
+      "share_lowest": 0.0,
+      "share_highest": 0.0,
+      "residents_lowest": 0.0,
+      "residents_highest": 0.0
+     },
+     "dry_and_loses_the_hospital": {
+      "share_lowest": 0.0,
+      "share_highest": 0.0231,
+      "residents_lowest": 0.0,
+      "residents_highest": 205.9
+     },
+     "not_affected": {
+      "share_lowest": 0.7864,
+      "share_highest": 0.8095,
+      "residents_lowest": 7008.0,
+      "residents_highest": 7213.9
+     },
+     "not_assessed": {
+      "share_lowest": 0.1905,
+      "share_highest": 0.1905,
+      "residents_lowest": 1697.5,
+      "residents_highest": 1697.5
+     }
+    }
+   },
+   "rescaled_2024": {
+    "in_the_published_run": {
+     "residents": 8954.5,
+     "by_type": {
+      "in_the_water": {
+       "residents": 0.0,
+       "share": 0.0
+      },
+      "dry_but_cut_off": {
+       "residents": 0.0,
+       "share": 0.0
+      },
+      "dry_and_loses_the_hospital": {
+       "residents": 144.3,
+       "share": 0.0161
+      },
+      "not_affected": {
+       "residents": 8021.6,
+       "share": 0.8958
+      },
+      "not_assessed": {
+       "residents": 788.5,
+       "share": 0.0881
+      }
+     },
+     "hidden_by_the_order": {
+      "in_the_water_and_cut_off": 0.0,
+      "in_the_water_and_losing_the_hospital": 0.0,
+      "cut_off_in_the_water_or_dry": 0.0,
+      "losing_the_hospital_in_the_water_or_dry": 144.3
+     }
+    },
+    "over_the_nine_runs": {
+     "in_the_water": {
+      "share_lowest": 0.0,
+      "share_highest": 0.0,
+      "residents_lowest": 0.0,
+      "residents_highest": 0.0
+     },
+     "dry_but_cut_off": {
+      "share_lowest": 0.0,
+      "share_highest": 0.0,
+      "residents_lowest": 0.0,
+      "residents_highest": 0.0
+     },
+     "dry_and_loses_the_hospital": {
+      "share_lowest": 0.0,
+      "share_highest": 0.0166,
+      "residents_lowest": 0.0,
+      "residents_highest": 149.0
+     },
+     "not_affected": {
+      "share_lowest": 0.8953,
+      "share_highest": 0.9119,
+      "residents_lowest": 8016.9,
+      "residents_highest": 8165.9
+     },
+     "not_assessed": {
+      "share_lowest": 0.0881,
+      "share_highest": 0.0881,
+      "residents_lowest": 788.5,
+      "residents_highest": 788.5
+     }
+    }
+   }
+  },
+  "TH570903": {
+   "unit_name_en": "Ko Chang",
+   "unit_name_th": "เกาะช้าง",
+   "binding_class_v1_of_the_published_file": "B",
+   "worldpop_2020": {
+    "in_the_published_run": {
+     "residents": 6708.4,
+     "by_type": {
+      "in_the_water": {
+       "residents": 2498.3,
+       "share": 0.3724
+      },
+      "dry_but_cut_off": {
+       "residents": 3902.9,
+       "share": 0.5818
+      },
+      "dry_and_loses_the_hospital": {
+       "residents": 0.0,
+       "share": 0.0
+      },
+      "not_affected": {
+       "residents": 0.0,
+       "share": 0.0
+      },
+      "not_assessed": {
+       "residents": 307.3,
+       "share": 0.0458
+      }
+     },
+     "hidden_by_the_order": {
+      "in_the_water_and_cut_off": 2069.5,
+      "in_the_water_and_losing_the_hospital": 1813.6,
+      "cut_off_in_the_water_or_dry": 5972.4,
+      "losing_the_hospital_in_the_water_or_dry": 5709.6
+     }
+    },
+    "over_the_nine_runs": {
+     "in_the_water": {
+      "share_lowest": 0.3292,
+      "share_highest": 0.4189,
+      "residents_lowest": 2208.1,
+      "residents_highest": 2810.4
+     },
+     "dry_but_cut_off": {
+      "share_lowest": 0.0412,
+      "share_highest": 0.6207,
+      "residents_lowest": 276.4,
+      "residents_highest": 4163.6
+     },
+     "dry_and_loses_the_hospital": {
+      "share_lowest": 0.0,
+      "share_highest": 0.5794,
+      "residents_lowest": 0.0,
+      "residents_highest": 3887.1
+     },
+     "not_affected": {
+      "share_lowest": 0.0,
+      "share_highest": 0.0,
+      "residents_lowest": 0.0,
+      "residents_highest": 0.0
+     },
+     "not_assessed": {
+      "share_lowest": 0.0432,
+      "share_highest": 0.0502,
+      "residents_lowest": 290.0,
+      "residents_highest": 336.7
+     }
+    }
+   },
+   "rescaled_2024": {
+    "in_the_published_run": {
+     "residents": 7881.1,
+     "by_type": {
+      "in_the_water": {
+       "residents": 2122.5,
+       "share": 0.2693
+      },
+      "dry_but_cut_off": {
+       "residents": 5593.1,
+       "share": 0.7097
+      },
+      "dry_and_loses_the_hospital": {
+       "residents": 0.0,
+       "share": 0.0
+      },
+      "not_affected": {
+       "residents": 0.0,
+       "share": 0.0
+      },
+      "not_assessed": {
+       "residents": 165.5,
+       "share": 0.021
+      }
+     },
+     "hidden_by_the_order": {
+      "in_the_water_and_cut_off": 1908.1,
+      "in_the_water_and_losing_the_hospital": 1814.4,
+      "cut_off_in_the_water_or_dry": 7501.2,
+      "losing_the_hospital_in_the_water_or_dry": 7404.5
+     }
+    },
+    "over_the_nine_runs": {
+     "in_the_water": {
+      "share_lowest": 0.2272,
+      "share_highest": 0.3221,
+      "residents_lowest": 1790.7,
+      "residents_highest": 2538.6
+     },
+     "dry_but_cut_off": {
+      "share_lowest": 0.0324,
+      "share_highest": 0.7491,
+      "residents_lowest": 255.0,
+      "residents_highest": 5903.5
+     },
+     "dry_and_loses_the_hospital": {
+      "share_lowest": 0.0,
+      "share_highest": 0.7167,
+      "residents_lowest": 0.0,
+      "residents_highest": 5648.6
+     },
+     "not_affected": {
+      "share_lowest": 0.0,
+      "share_highest": 0.0,
+      "residents_lowest": 0.0,
+      "residents_highest": 0.0
+     },
+     "not_assessed": {
+      "share_lowest": 0.0197,
+      "share_highest": 0.0237,
+      "residents_lowest": 155.6,
+      "residents_highest": 186.9
+     }
+    }
+   }
+  },
+  "TH570904": {
+   "unit_name_en": "Pong Pha",
+   "unit_name_th": "โป่งผา",
+   "binding_class_v1_of_the_published_file": "E",
+   "worldpop_2020": {
+    "in_the_published_run": {
+     "residents": 9349.4,
+     "by_type": {
+      "in_the_water": {
+       "residents": 908.4,
+       "share": 0.0972
+      },
+      "dry_but_cut_off": {
+       "residents": 124.8,
+       "share": 0.0133
+      },
+      "dry_and_loses_the_hospital": {
+       "residents": 2.8,
+       "share": 0.0003
+      },
+      "not_affected": {
+       "residents": 7714.7,
+       "share": 0.8252
+      },
+      "not_assessed": {
+       "residents": 598.8,
+       "share": 0.064
+      }
+     },
+     "hidden_by_the_order": {
+      "in_the_water_and_cut_off": 604.9,
+      "in_the_water_and_losing_the_hospital": 622.3,
+      "cut_off_in_the_water_or_dry": 729.7,
+      "losing_the_hospital_in_the_water_or_dry": 749.8
+     }
+    },
+    "over_the_nine_runs": {
+     "in_the_water": {
+      "share_lowest": 0.0912,
+      "share_highest": 0.1044,
+      "residents_lowest": 852.7,
+      "residents_highest": 975.6
+     },
+     "dry_but_cut_off": {
+      "share_lowest": 0.004,
+      "share_highest": 0.0137,
+      "residents_lowest": 37.0,
+      "residents_highest": 127.8
+     },
+     "dry_and_loses_the_hospital": {
+      "share_lowest": 0.0,
+      "share_highest": 0.0006,
+      "residents_lowest": 0.0,
+      "residents_highest": 6.0
+     },
+     "not_affected": {
+      "share_lowest": 0.8178,
+      "share_highest": 0.8402,
+      "residents_lowest": 7646.0,
+      "residents_highest": 7855.5
+     },
+     "not_assessed": {
+      "share_lowest": 0.0635,
+      "share_highest": 0.0646,
+      "residents_lowest": 593.9,
+      "residents_highest": 604.2
+     }
+    }
+   },
+   "rescaled_2024": {
+    "in_the_published_run": {
+     "residents": 10286.9,
+     "by_type": {
+      "in_the_water": {
+       "residents": 648.7,
+       "share": 0.0631
+      },
+      "dry_but_cut_off": {
+       "residents": 98.7,
+       "share": 0.0096
+      },
+      "dry_and_loses_the_hospital": {
+       "residents": 0.6,
+       "share": 0.0001
+      },
+      "not_affected": {
+       "residents": 9151.6,
+       "share": 0.8896
+      },
+      "not_assessed": {
+       "residents": 387.1,
+       "share": 0.0376
+      }
+     },
+     "hidden_by_the_order": {
+      "in_the_water_and_cut_off": 436.8,
+      "in_the_water_and_losing_the_hospital": 440.8,
+      "cut_off_in_the_water_or_dry": 535.5,
+      "losing_the_hospital_in_the_water_or_dry": 540.2
+     }
+    },
+    "over_the_nine_runs": {
+     "in_the_water": {
+      "share_lowest": 0.0588,
+      "share_highest": 0.0692,
+      "residents_lowest": 604.4,
+      "residents_highest": 711.5
+     },
+     "dry_but_cut_off": {
+      "share_lowest": 0.0034,
+      "share_highest": 0.0099,
+      "residents_lowest": 35.3,
+      "residents_highest": 101.8
+     },
+     "dry_and_loses_the_hospital": {
+      "share_lowest": 0.0,
+      "share_highest": 0.0001,
+      "residents_lowest": 0.0,
+      "residents_highest": 1.4
+     },
+     "not_affected": {
+      "share_lowest": 0.8845,
+      "share_highest": 0.9,
+      "residents_lowest": 9098.8,
+      "residents_highest": 9258.6
+     },
+     "not_assessed": {
+      "share_lowest": 0.0372,
+      "share_highest": 0.0378,
+      "residents_lowest": 382.5,
+      "residents_highest": 388.6
+     }
+    }
+   }
+  },
+  "TH570905": {
+   "unit_name_en": "Si Mueang Chum",
+   "unit_name_th": "ศรีเมืองชุม",
+   "binding_class_v1_of_the_published_file": "D",
+   "worldpop_2020": {
+    "in_the_published_run": {
+     "residents": 7157.6,
+     "by_type": {
+      "in_the_water": {
+       "residents": 3047.7,
+       "share": 0.4258
+      },
+      "dry_but_cut_off": {
+       "residents": 729.8,
+       "share": 0.102
+      },
+      "dry_and_loses_the_hospital": {
+       "residents": 0.0,
+       "share": 0.0
+      },
+      "not_affected": {
+       "residents": 3175.4,
+       "share": 0.4436
+      },
+      "not_assessed": {
+       "residents": 204.7,
+       "share": 0.0286
+      }
+     },
+     "hidden_by_the_order": {
+      "in_the_water_and_cut_off": 2167.7,
+      "in_the_water_and_losing_the_hospital": 2139.3,
+      "cut_off_in_the_water_or_dry": 2897.5,
+      "losing_the_hospital_in_the_water_or_dry": 2869.0
+     }
+    },
+    "over_the_nine_runs": {
+     "in_the_water": {
+      "share_lowest": 0.3904,
+      "share_highest": 0.4677,
+      "residents_lowest": 2794.4,
+      "residents_highest": 3347.5
+     },
+     "dry_but_cut_off": {
+      "share_lowest": 0.0335,
+      "share_highest": 0.1278,
+      "residents_lowest": 239.6,
+      "residents_highest": 914.6
+     },
+     "dry_and_loses_the_hospital": {
+      "share_lowest": 0.0,
+      "share_highest": 0.0242,
+      "residents_lowest": 0.0,
+      "residents_highest": 173.1
+     },
+     "not_affected": {
+      "share_lowest": 0.3782,
+      "share_highest": 0.5218,
+      "residents_lowest": 2707.2,
+      "residents_highest": 3734.6
+     },
+     "not_assessed": {
+      "share_lowest": 0.0263,
+      "share_highest": 0.0302,
+      "residents_lowest": 188.3,
+      "residents_highest": 215.9
+     }
+    }
+   },
+   "rescaled_2024": {
+    "in_the_published_run": {
+     "residents": 4605.2,
+     "by_type": {
+      "in_the_water": {
+       "residents": 1536.7,
+       "share": 0.3337
+      },
+      "dry_but_cut_off": {
+       "residents": 447.2,
+       "share": 0.0971
+      },
+      "dry_and_loses_the_hospital": {
+       "residents": 0.0,
+       "share": 0.0
+      },
+      "not_affected": {
+       "residents": 2528.3,
+       "share": 0.549
+      },
+      "not_assessed": {
+       "residents": 93.0,
+       "share": 0.0202
+      }
+     },
+     "hidden_by_the_order": {
+      "in_the_water_and_cut_off": 1090.3,
+      "in_the_water_and_losing_the_hospital": 1084.3,
+      "cut_off_in_the_water_or_dry": 1537.5,
+      "losing_the_hospital_in_the_water_or_dry": 1531.5
+     }
+    },
+    "over_the_nine_runs": {
+     "in_the_water": {
+      "share_lowest": 0.2977,
+      "share_highest": 0.379,
+      "residents_lowest": 1370.8,
+      "residents_highest": 1745.2
+     },
+     "dry_but_cut_off": {
+      "share_lowest": 0.0239,
+      "share_highest": 0.1282,
+      "residents_lowest": 110.0,
+      "residents_highest": 590.3
+     },
+     "dry_and_loses_the_hospital": {
+      "share_lowest": 0.0,
+      "share_highest": 0.0417,
+      "residents_lowest": 0.0,
+      "residents_highest": 191.8
+     },
+     "not_affected": {
+      "share_lowest": 0.474,
+      "share_highest": 0.6156,
+      "residents_lowest": 2182.8,
+      "residents_highest": 2835.0
+     },
+     "not_assessed": {
+      "share_lowest": 0.0189,
+      "share_highest": 0.0212,
+      "residents_lowest": 86.9,
+      "residents_highest": 97.6
+     }
+    }
+   }
+  },
+  "TH570906": {
+   "unit_name_en": "Wiang Phang Kham",
+   "unit_name_th": "เวียงพางคำ",
+   "binding_class_v1_of_the_published_file": "E",
+   "worldpop_2020": {
+    "in_the_published_run": {
+     "residents": 19532.1,
+     "by_type": {
+      "in_the_water": {
+       "residents": 77.9,
+       "share": 0.004
+      },
+      "dry_but_cut_off": {
+       "residents": 35.9,
+       "share": 0.0018
+      },
+      "dry_and_loses_the_hospital": {
+       "residents": 0.0,
+       "share": 0.0
+      },
+      "not_affected": {
+       "residents": 19050.8,
+       "share": 0.9754
+      },
+      "not_assessed": {
+       "residents": 367.5,
+       "share": 0.0188
+      }
+     },
+     "hidden_by_the_order": {
+      "in_the_water_and_cut_off": 39.6,
+      "in_the_water_and_losing_the_hospital": 39.6,
+      "cut_off_in_the_water_or_dry": 75.5,
+      "losing_the_hospital_in_the_water_or_dry": 75.5
+     }
+    },
+    "over_the_nine_runs": {
+     "in_the_water": {
+      "share_lowest": 0.0,
+      "share_highest": 0.004,
+      "residents_lowest": 0.0,
+      "residents_highest": 77.9
+     },
+     "dry_but_cut_off": {
+      "share_lowest": 0.0018,
+      "share_highest": 0.0018,
+      "residents_lowest": 35.9,
+      "residents_highest": 35.9
+     },
+     "dry_and_loses_the_hospital": {
+      "share_lowest": 0.0,
+      "share_highest": 0.0,
+      "residents_lowest": 0.0,
+      "residents_highest": 0.0
+     },
+     "not_affected": {
+      "share_lowest": 0.9754,
+      "share_highest": 0.9793,
+      "residents_lowest": 19050.8,
+      "residents_highest": 19128.6
+     },
+     "not_assessed": {
+      "share_lowest": 0.0188,
+      "share_highest": 0.0188,
+      "residents_lowest": 367.5,
+      "residents_highest": 367.5
+     }
+    }
+   },
+   "rescaled_2024": {
+    "in_the_published_run": {
+     "residents": 21645.2,
+     "by_type": {
+      "in_the_water": {
+       "residents": 91.2,
+       "share": 0.0042
+      },
+      "dry_but_cut_off": {
+       "residents": 47.9,
+       "share": 0.0022
+      },
+      "dry_and_loses_the_hospital": {
+       "residents": 0.0,
+       "share": 0.0
+      },
+      "not_affected": {
+       "residents": 21283.1,
+       "share": 0.9833
+      },
+      "not_assessed": {
+       "residents": 223.0,
+       "share": 0.0103
+      }
+     },
+     "hidden_by_the_order": {
+      "in_the_water_and_cut_off": 52.9,
+      "in_the_water_and_losing_the_hospital": 52.9,
+      "cut_off_in_the_water_or_dry": 100.8,
+      "losing_the_hospital_in_the_water_or_dry": 100.8
+     }
+    },
+    "over_the_nine_runs": {
+     "in_the_water": {
+      "share_lowest": 0.0,
+      "share_highest": 0.0042,
+      "residents_lowest": 0.0,
+      "residents_highest": 91.2
+     },
+     "dry_but_cut_off": {
+      "share_lowest": 0.0022,
+      "share_highest": 0.0022,
+      "residents_lowest": 47.9,
+      "residents_highest": 47.9
+     },
+     "dry_and_loses_the_hospital": {
+      "share_lowest": 0.0,
+      "share_highest": 0.0,
+      "residents_lowest": 0.0,
+      "residents_highest": 0.0
+     },
+     "not_affected": {
+      "share_lowest": 0.9833,
+      "share_highest": 0.9875,
+      "residents_lowest": 21283.1,
+      "residents_highest": 21374.3
+     },
+     "not_assessed": {
+      "share_lowest": 0.0103,
+      "share_highest": 0.0103,
+      "residents_lowest": 223.0,
+      "residents_highest": 223.0
+     }
+    }
+   }
+  },
+  "TH570908": {
+   "unit_name_en": "Ban Dai",
+   "unit_name_th": "บ้านด้าย",
+   "binding_class_v1_of_the_published_file": "D",
+   "worldpop_2020": {
+    "in_the_published_run": {
+     "residents": 5036.1,
+     "by_type": {
+      "in_the_water": {
+       "residents": 957.4,
+       "share": 0.1901
+      },
+      "dry_but_cut_off": {
+       "residents": 10.4,
+       "share": 0.0021
+      },
+      "dry_and_loses_the_hospital": {
+       "residents": 2213.1,
+       "share": 0.4394
+      },
+      "not_affected": {
+       "residents": 1334.2,
+       "share": 0.2649
+      },
+      "not_assessed": {
+       "residents": 521.1,
+       "share": 0.1035
+      }
+     },
+     "hidden_by_the_order": {
+      "in_the_water_and_cut_off": 348.8,
+      "in_the_water_and_losing_the_hospital": 430.6,
+      "cut_off_in_the_water_or_dry": 359.2,
+      "losing_the_hospital_in_the_water_or_dry": 2649.6
+     }
+    },
+    "over_the_nine_runs": {
+     "in_the_water": {
+      "share_lowest": 0.1813,
+      "share_highest": 0.2007,
+      "residents_lowest": 913.3,
+      "residents_highest": 1010.6
+     },
+     "dry_but_cut_off": {
+      "share_lowest": 0.0021,
+      "share_highest": 0.0112,
+      "residents_lowest": 10.4,
+      "residents_highest": 56.4
+     },
+     "dry_and_loses_the_hospital": {
+      "share_lowest": 0.1997,
+      "share_highest": 0.4413,
+      "residents_lowest": 1005.5,
+      "residents_highest": 2222.2
+     },
+     "not_affected": {
+      "share_lowest": 0.2501,
+      "share_highest": 0.5107,
+      "residents_lowest": 1259.3,
+      "residents_highest": 2572.0
+     },
+     "not_assessed": {
+      "share_lowest": 0.1008,
+      "share_highest": 0.1058,
+      "residents_lowest": 507.6,
+      "residents_highest": 532.7
+     }
+    }
+   },
+   "rescaled_2024": {
+    "in_the_published_run": {
+     "residents": 3408.7,
+     "by_type": {
+      "in_the_water": {
+       "residents": 358.8,
+       "share": 0.1053
+      },
+      "dry_but_cut_off": {
+       "residents": 3.3,
+       "share": 0.001
+      },
+      "dry_and_loses_the_hospital": {
+       "residents": 1943.8,
+       "share": 0.5702
+      },
+      "not_affected": {
+       "residents": 896.6,
+       "share": 0.263
+      },
+      "not_assessed": {
+       "residents": 206.1,
+       "share": 0.0605
+      }
+     },
+     "hidden_by_the_order": {
+      "in_the_water_and_cut_off": 138.3,
+      "in_the_water_and_losing_the_hospital": 212.7,
+      "cut_off_in_the_water_or_dry": 141.6,
+      "losing_the_hospital_in_the_water_or_dry": 2158.9
+     }
+    },
+    "over_the_nine_runs": {
+     "in_the_water": {
+      "share_lowest": 0.0958,
+      "share_highest": 0.1151,
+      "residents_lowest": 326.7,
+      "residents_highest": 392.3
+     },
+     "dry_but_cut_off": {
+      "share_lowest": 0.001,
+      "share_highest": 0.0059,
+      "residents_lowest": 3.3,
+      "residents_highest": 19.9
+     },
+     "dry_and_loses_the_hospital": {
+      "share_lowest": 0.267,
+      "share_highest": 0.5746,
+      "residents_lowest": 910.2,
+      "residents_highest": 1958.5
+     },
+     "not_affected": {
+      "share_lowest": 0.2493,
+      "share_highest": 0.5739,
+      "residents_lowest": 849.7,
+      "residents_highest": 1956.1
+     },
+     "not_assessed": {
+      "share_lowest": 0.0589,
+      "share_highest": 0.0615,
+      "residents_lowest": 200.7,
+      "residents_highest": 209.5
+     }
+    }
+   }
+  },
+  "TH570909": {
+   "unit_name_en": "Pong Ngam",
+   "unit_name_th": "โป่งงาม",
+   "binding_class_v1_of_the_published_file": "E",
+   "worldpop_2020": {
+    "in_the_published_run": {
+     "residents": 7248.7,
+     "by_type": {
+      "in_the_water": {
+       "residents": 379.7,
+       "share": 0.0524
+      },
+      "dry_but_cut_off": {
+       "residents": 5.3,
+       "share": 0.0007
+      },
+      "dry_and_loses_the_hospital": {
+       "residents": 35.5,
+       "share": 0.0049
+      },
+      "not_affected": {
+       "residents": 5969.3,
+       "share": 0.8235
+      },
+      "not_assessed": {
+       "residents": 858.9,
+       "share": 0.1185
+      }
+     },
+     "hidden_by_the_order": {
+      "in_the_water_and_cut_off": 144.0,
+      "in_the_water_and_losing_the_hospital": 144.9,
+      "cut_off_in_the_water_or_dry": 149.3,
+      "losing_the_hospital_in_the_water_or_dry": 185.8
+     }
+    },
+    "over_the_nine_runs": {
+     "in_the_water": {
+      "share_lowest": 0.0508,
+      "share_highest": 0.0541,
+      "residents_lowest": 367.9,
+      "residents_highest": 391.8
+     },
+     "dry_but_cut_off": {
+      "share_lowest": 0.0004,
+      "share_highest": 0.0009,
+      "residents_lowest": 2.6,
+      "residents_highest": 6.7
+     },
+     "dry_and_loses_the_hospital": {
+      "share_lowest": 0.0011,
+      "share_highest": 0.0051,
+      "residents_lowest": 7.7,
+      "residents_highest": 36.9
+     },
+     "not_affected": {
+      "share_lowest": 0.8219,
+      "share_highest": 0.8291,
+      "residents_lowest": 5957.8,
+      "residents_highest": 6010.2
+     },
+     "not_assessed": {
+      "share_lowest": 0.118,
+      "share_highest": 0.1187,
+      "residents_lowest": 855.6,
+      "residents_highest": 860.3
+     }
+    }
+   },
+   "rescaled_2024": {
+    "in_the_published_run": {
+     "residents": 7042.6,
+     "by_type": {
+      "in_the_water": {
+       "residents": 116.1,
+       "share": 0.0165
+      },
+      "dry_but_cut_off": {
+       "residents": 0.2,
+       "share": 0.0
+      },
+      "dry_and_loses_the_hospital": {
+       "residents": 9.3,
+       "share": 0.0013
+      },
+      "not_affected": {
+       "residents": 6394.8,
+       "share": 0.908
+      },
+      "not_assessed": {
+       "residents": 522.1,
+       "share": 0.0741
+      }
+     },
+     "hidden_by_the_order": {
+      "in_the_water_and_cut_off": 47.5,
+      "in_the_water_and_losing_the_hospital": 47.5,
+      "cut_off_in_the_water_or_dry": 47.7,
+      "losing_the_hospital_in_the_water_or_dry": 57.0
+     }
+    },
+    "over_the_nine_runs": {
+     "in_the_water": {
+      "share_lowest": 0.0156,
+      "share_highest": 0.0174,
+      "residents_lowest": 109.9,
+      "residents_highest": 122.6
+     },
+     "dry_but_cut_off": {
+      "share_lowest": 0.0,
+      "share_highest": 0.0001,
+      "residents_lowest": 0.2,
+      "residents_highest": 0.5
+     },
+     "dry_and_loses_the_hospital": {
+      "share_lowest": 0.0001,
+      "share_highest": 0.0014,
+      "residents_lowest": 0.8,
+      "residents_highest": 10.2
+     },
+     "not_affected": {
+      "share_lowest": 0.9074,
+      "share_highest": 0.9101,
+      "residents_lowest": 6390.8,
+      "residents_highest": 6409.5
+     },
+     "not_assessed": {
+      "share_lowest": 0.0737,
+      "share_highest": 0.0741,
+      "residents_lowest": 518.7,
+      "residents_highest": 522.2
+     }
+    }
+   }
+  }
+ },
+ "squares_file": {
+  "path": "outputs/need_mix/se1_mae_sai_squares_500m_v1.json",
+  "squares": 1277,
+  "side_m": 500.0
+ },
+ "assumptions": [
+  "A cell is in the water when its centre lies inside the flood layer; a resident of a cell in the water is counted there whatever else is true of the cell.",
+  "A closure is a modelled assumption of closure rule v1, not an observed closure.",
+  "Residents are modelled counts on 100 m cells (WorldPop 2020; in the second demand rescaled to 2024 totals).",
+  "The hospital is reached by vehicle within 30 minutes; a road route is a route to any hospital or main-road entry."
+ ],
+ "limits": [
+  "A need type of a cell or a square says nothing about a household, a building or a person.",
+  "The kinds follow one flood scenario and one road model; nothing was checked on the ground.",
+  "Residents not joined to the road graph are counted as not assessed for access; in the water they are counted in the water.",
+  "Report-only. No published class changes. Class E never means safe: the mix shows residents in the water in tambons of every class."
+ ]
+}

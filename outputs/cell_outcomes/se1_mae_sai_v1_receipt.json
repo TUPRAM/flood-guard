@@ -1,0 +1,101 @@
+{
+ "schema": "floodguard.cell_outcomes_receipt.v1",
+ "generated_at_utc": "2026-10-10T16:05:23Z",
+ "source_timestamp": "2024-08-01/2024-10-12",
+ "source_timestamps": {
+  "flood_input": "2024-08-01/2024-10-12",
+  "population_year_represented": 2020,
+  "population_rescaled_to_year": 2024
+ },
+ "confidence_class": "low",
+ "confidence_basis": "Modelled access on OpenStreetMap roads and modelled residents; closures assumed from an agency season layer that was not checked in the field.",
+ "operational_status": "non_operational",
+ "official_warning": false,
+ "can_feed_decision_layer": false,
+ "what_this_is": "The receipt of a cache: for every 100 m demand cell of the eight tambons of case SE1, whether it lies inside the flood layer at each flood level and its modelled minutes to a hospital and to a main-road entry before the flood and in each of the nine access runs. Report-only; no score and no class.",
+ "case_id": "SE1",
+ "frame_set": "mae_sai",
+ "protocol_sha256": {
+  "planning_protocol_v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+  "planning_protocol_v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+ },
+ "cells": {
+  "demand_cells": 36765,
+  "connected_to_the_road_graph": 27487,
+  "residents_worldpop_2020": 81836.9,
+  "residents_rescaled_2024": 95472.1,
+  "residents_in_cells_not_connected_to_the_graph_2020": 6609.9
+ },
+ "runs": [
+  {
+   "flood_input_single_state": "minus",
+   "passability": "strict"
+  },
+  {
+   "flood_input_single_state": "minus",
+   "passability": "central"
+  },
+  {
+   "flood_input_single_state": "minus",
+   "passability": "permissive"
+  },
+  {
+   "flood_input_single_state": "as_provided",
+   "passability": "strict"
+  },
+  {
+   "flood_input_single_state": "as_provided",
+   "passability": "central"
+  },
+  {
+   "flood_input_single_state": "as_provided",
+   "passability": "permissive"
+  },
+  {
+   "flood_input_single_state": "plus",
+   "passability": "strict"
+  },
+  {
+   "flood_input_single_state": "plus",
+   "passability": "central"
+  },
+  {
+   "flood_input_single_state": "plus",
+   "passability": "permissive"
+  }
+ ],
+ "checks": {
+  "as_provided_runs_against_the_e5_table": {
+   "result": "PASS",
+   "values_compared": 48,
+   "what": "per tambon and closure level: residents who lose a hospital within 30 minutes, and residents who lose every road route"
+  },
+  "every_run_against_the_registered_ensemble": {
+   "result": "PASS",
+   "values_compared": 288,
+   "tolerance": 1e-06,
+   "what": "per tambon, flood level, closure level and demand: the exposure and the road criticality that follow from the cells are the components of the registered run",
+   "registered_receipt": {
+    "path": "outputs/planning_v1/e10_uncertainty_ensemble_se1_mae_sai.json",
+    "sha256": "c50ac12dd110cc168868e7b6029ab8f3e515b817e20f8c5ae2110455488a0f25"
+   },
+   "file_of_per_unit_results_sha256": "4cb81b59c4cdc4b57d440c1513a45232f54186f53c62536e06442965ac3d11bf"
+  }
+ },
+ "cache_outside_git": {
+  "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/cell_outcomes/cell_outcomes_se1_mae_sai_v1.npz",
+  "sha256": "16b1ee2d20189ae50f8789f1f3da2d30b9ea9d0ee484e37fcce632c8723bf1e8",
+  "bytes": 3918474
+ },
+ "assumptions": [
+  "A closure is a modelled assumption of closure rule v1, not an observed closure.",
+  "A cell is inside the flood layer when its centre is; a cell is connected when it snaps to the vehicle graph within 250 m.",
+  "A 100 m count belongs to the 1 km cell that holds the centre of its 100 m cell.",
+  "A positive 2020 count whose 1 km cell has no valid 2024 total keeps its 2020 value and is reported; it is neither set to zero nor rescaled."
+ ],
+ "limits": [
+  "A 100 m cell holds a modelled count of residents; it says nothing about a household or a building.",
+  "The scenario is the season layer of 1 August to 12 October 2024 with every mapped area flooded at once, not a flood of any day.",
+  "Report-only. The registered receipts and the published result file are unchanged."
+ ]
+}

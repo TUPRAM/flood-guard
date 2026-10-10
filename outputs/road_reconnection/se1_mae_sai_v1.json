@@ -1,0 +1,516 @@
+{
+ "schema": "floodguard.road_reconnection.v1",
+ "generated_at_utc": "2026-10-10T16:10:57Z",
+ "source_timestamp": "2024-08-01/2024-10-12 (season layer of product 4009)",
+ "confidence_class": "low",
+ "confidence_basis": "A what-if on a modelled road graph (OpenStreetMap) with closures assumed from an agency season layer that was not checked in the field, and modelled residents.",
+ "operational_status": "non_operational",
+ "official_warning": false,
+ "can_feed_decision_layer": false,
+ "what_this_is": "For case SE1 at the central closure level: the closed roads that, kept passable along their whole closed length, give the most cut-off residents of the eight tambons a road route back. Report-only; a what-if on the model graph.",
+ "label": "Modelled, not observed. A scenario of the 2024 season layer, not a flood of any day. A road named here was not looked at on the ground.",
+ "closure_level": "central",
+ "cut_off_in_the_scenario": {
+  "residents": 21797.7,
+  "by_tambon": {
+   "TH570901": {
+    "unit_name_en": "Mae Sai",
+    "residents": 11614.1
+   },
+   "TH570902": {
+    "unit_name_en": "Huai Khrai",
+    "residents": 0.0
+   },
+   "TH570903": {
+    "unit_name_en": "Ko Chang",
+    "residents": 5972.4
+   },
+   "TH570904": {
+    "unit_name_en": "Pong Pha",
+    "residents": 729.7
+   },
+   "TH570905": {
+    "unit_name_en": "Si Mueang Chum",
+    "residents": 2897.5
+   },
+   "TH570906": {
+    "unit_name_en": "Wiang Phang Kham",
+    "residents": 75.5
+   },
+   "TH570908": {
+    "unit_name_en": "Ban Dai",
+    "residents": 359.2
+   },
+   "TH570909": {
+    "unit_name_en": "Pong Ngam",
+    "residents": 149.3
+   }
+  }
+ },
+ "roads": {
+  "osm_ways_with_a_closed_piece": 1129,
+  "that_give_a_resident_a_route_back_on_their_own": 100
+ },
+ "one_road_on_its_own": {
+  "what": "Each closed road kept passable on its own: the residents who get a route back. The ten that help most.",
+  "best": [
+   {
+    "osm_way_id": "206803562",
+    "name": "",
+    "name_en": "",
+    "ref": "",
+    "highway": "unclassified",
+    "look_at": "https://www.openstreetmap.org/way/206803562",
+    "closed_pieces": 13,
+    "closed_length_m": 1290.5,
+    "centre_of_the_closed_pieces_lonlat": [
+     99.94824,
+     20.3969
+    ],
+    "residents_who_get_a_route_back": 3574.3,
+    "by_tambon": {
+     "TH570901": 62.4,
+     "TH570903": 3369.1,
+     "TH570905": 142.8
+    }
+   },
+   {
+    "osm_way_id": "1114870832",
+    "name": "ถนนเหมืองแดง",
+    "name_en": "Mueangdang Road",
+    "ref": "ชร.3059",
+    "highway": "tertiary",
+    "look_at": "https://www.openstreetmap.org/way/1114870832",
+    "closed_pieces": 19,
+    "closed_length_m": 819.0,
+    "centre_of_the_closed_pieces_lonlat": [
+     99.93107,
+     20.43939
+    ],
+    "residents_who_get_a_route_back": 2120.7,
+    "by_tambon": {
+     "TH570901": 2120.7
+    }
+   },
+   {
+    "osm_way_id": "546922784",
+    "name": "",
+    "name_en": "",
+    "ref": "",
+    "highway": "residential",
+    "look_at": "https://www.openstreetmap.org/way/546922784",
+    "closed_pieces": 9,
+    "closed_length_m": 617.6,
+    "centre_of_the_closed_pieces_lonlat": [
+     99.90906,
+     20.43871
+    ],
+    "residents_who_get_a_route_back": 1358.1,
+    "by_tambon": {
+     "TH570901": 1358.1
+    }
+   },
+   {
+    "osm_way_id": "93294657",
+    "name": "",
+    "name_en": "",
+    "ref": "",
+    "highway": "residential",
+    "look_at": "https://www.openstreetmap.org/way/93294657",
+    "closed_pieces": 10,
+    "closed_length_m": 698.8,
+    "centre_of_the_closed_pieces_lonlat": [
+     99.94919,
+     20.36931
+    ],
+    "residents_who_get_a_route_back": 431.0,
+    "by_tambon": {
+     "TH570904": 4.4,
+     "TH570905": 426.6
+    }
+   },
+   {
+    "osm_way_id": "93294660",
+    "name": "",
+    "name_en": "",
+    "ref": "",
+    "highway": "track",
+    "look_at": "https://www.openstreetmap.org/way/93294660",
+    "closed_pieces": 11,
+    "closed_length_m": 1313.6,
+    "centre_of_the_closed_pieces_lonlat": [
+     99.94989,
+     20.36529
+    ],
+    "residents_who_get_a_route_back": 359.6,
+    "by_tambon": {
+     "TH570904": 4.4,
+     "TH570905": 355.3
+    }
+   },
+   {
+    "osm_way_id": "93294655",
+    "name": "",
+    "name_en": "",
+    "ref": "",
+    "highway": "residential",
+    "look_at": "https://www.openstreetmap.org/way/93294655",
+    "closed_pieces": 17,
+    "closed_length_m": 1133.8,
+    "centre_of_the_closed_pieces_lonlat": [
+     99.95909,
+     20.35684
+    ],
+    "residents_who_get_a_route_back": 351.2,
+    "by_tambon": {
+     "TH570904": 4.4,
+     "TH570905": 346.8
+    }
+   },
+   {
+    "osm_way_id": "93294653",
+    "name": "",
+    "name_en": "",
+    "ref": "",
+    "highway": "track",
+    "look_at": "https://www.openstreetmap.org/way/93294653",
+    "closed_pieces": 9,
+    "closed_length_m": 466.5,
+    "centre_of_the_closed_pieces_lonlat": [
+     99.95401,
+     20.36532
+    ],
+    "residents_who_get_a_route_back": 345.9,
+    "by_tambon": {
+     "TH570904": 4.4,
+     "TH570905": 341.6
+    }
+   },
+   {
+    "osm_way_id": "935666325",
+    "name": "ถนนเหมืองแดง",
+    "name_en": "Mueangdang Road",
+    "ref": "ชร.1041",
+    "highway": "tertiary",
+    "look_at": "https://www.openstreetmap.org/way/935666325",
+    "closed_pieces": 18,
+    "closed_length_m": 1146.6,
+    "centre_of_the_closed_pieces_lonlat": [
+     99.89805,
+     20.43929
+    ],
+    "residents_who_get_a_route_back": 318.6,
+    "by_tambon": {
+     "TH570901": 318.6
+    }
+   },
+   {
+    "osm_way_id": "93294658",
+    "name": "",
+    "name_en": "",
+    "ref": "",
+    "highway": "track",
+    "look_at": "https://www.openstreetmap.org/way/93294658",
+    "closed_pieces": 1,
+    "closed_length_m": 267.5,
+    "centre_of_the_closed_pieces_lonlat": [
+     99.93821,
+     20.37538
+    ],
+    "residents_who_get_a_route_back": 304.4,
+    "by_tambon": {
+     "TH570904": 4.4,
+     "TH570905": 300.1
+    }
+   },
+   {
+    "osm_way_id": "546680916",
+    "name": "",
+    "name_en": "",
+    "ref": "",
+    "highway": "unclassified",
+    "look_at": "https://www.openstreetmap.org/way/546680916",
+    "closed_pieces": 32,
+    "closed_length_m": 2073.9,
+    "centre_of_the_closed_pieces_lonlat": [
+     99.91986,
+     20.42025
+    ],
+    "residents_who_get_a_route_back": 238.3,
+    "by_tambon": {
+     "TH570901": 217.1,
+     "TH570905": 21.2
+    }
+   }
+  ]
+ },
+ "one_road_after_another": {
+  "what": "At each step the one road is added that gives the most residents a route back, given the roads added before.",
+  "steps": [
+   {
+    "step": 1,
+    "osm_way_id": "206803562",
+    "name": "",
+    "name_en": "",
+    "ref": "",
+    "highway": "unclassified",
+    "look_at": "https://www.openstreetmap.org/way/206803562",
+    "closed_pieces": 13,
+    "closed_length_m": 1290.5,
+    "centre_of_the_closed_pieces_lonlat": [
+     99.94824,
+     20.3969
+    ],
+    "residents_who_get_a_route_back_at_this_step": 3574.3,
+    "by_tambon_at_this_step": {
+     "TH570901": 62.4,
+     "TH570903": 3369.1,
+     "TH570905": 142.8
+    },
+    "residents_still_cut_off_after_this_step": 18223.4,
+    "share_of_the_cut_off_residents_with_a_route_back": 0.164
+   },
+   {
+    "step": 2,
+    "osm_way_id": "1114870832",
+    "name": "ถนนเหมืองแดง",
+    "name_en": "Mueangdang Road",
+    "ref": "ชร.3059",
+    "highway": "tertiary",
+    "look_at": "https://www.openstreetmap.org/way/1114870832",
+    "closed_pieces": 19,
+    "closed_length_m": 819.0,
+    "centre_of_the_closed_pieces_lonlat": [
+     99.93107,
+     20.43939
+    ],
+    "residents_who_get_a_route_back_at_this_step": 2120.7,
+    "by_tambon_at_this_step": {
+     "TH570901": 2120.7
+    },
+    "residents_still_cut_off_after_this_step": 16102.6,
+    "share_of_the_cut_off_residents_with_a_route_back": 0.2613
+   },
+   {
+    "step": 3,
+    "osm_way_id": "93294657",
+    "name": "",
+    "name_en": "",
+    "ref": "",
+    "highway": "residential",
+    "look_at": "https://www.openstreetmap.org/way/93294657",
+    "closed_pieces": 10,
+    "closed_length_m": 698.8,
+    "centre_of_the_closed_pieces_lonlat": [
+     99.94919,
+     20.36931
+    ],
+    "residents_who_get_a_route_back_at_this_step": 431.0,
+    "by_tambon_at_this_step": {
+     "TH570904": 4.4,
+     "TH570905": 426.6
+    },
+    "residents_still_cut_off_after_this_step": 15671.7,
+    "share_of_the_cut_off_residents_with_a_route_back": 0.281
+   },
+   {
+    "step": 4,
+    "osm_way_id": "1112593664",
+    "name": "ถนนเหมืองแดง",
+    "name_en": "Mueangdang Road",
+    "ref": "ชร.3059",
+    "highway": "tertiary",
+    "look_at": "https://www.openstreetmap.org/way/1112593664",
+    "closed_pieces": 15,
+    "closed_length_m": 1601.2,
+    "centre_of_the_closed_pieces_lonlat": [
+     99.99944,
+     20.3975
+    ],
+    "residents_who_get_a_route_back_at_this_step": 323.3,
+    "by_tambon_at_this_step": {
+     "TH570903": 323.3
+    },
+    "residents_still_cut_off_after_this_step": 15348.3,
+    "share_of_the_cut_off_residents_with_a_route_back": 0.2959
+   },
+   {
+    "step": 5,
+    "osm_way_id": "935666325",
+    "name": "ถนนเหมืองแดง",
+    "name_en": "Mueangdang Road",
+    "ref": "ชร.1041",
+    "highway": "tertiary",
+    "look_at": "https://www.openstreetmap.org/way/935666325",
+    "closed_pieces": 18,
+    "closed_length_m": 1146.6,
+    "centre_of_the_closed_pieces_lonlat": [
+     99.89805,
+     20.43929
+    ],
+    "residents_who_get_a_route_back_at_this_step": 318.6,
+    "by_tambon_at_this_step": {
+     "TH570901": 318.6
+    },
+    "residents_still_cut_off_after_this_step": 15029.7,
+    "share_of_the_cut_off_residents_with_a_route_back": 0.3105
+   },
+   {
+    "step": 6,
+    "osm_way_id": "206803573",
+    "name": "",
+    "name_en": "",
+    "ref": "ชร.5055",
+    "highway": "tertiary",
+    "look_at": "https://www.openstreetmap.org/way/206803573",
+    "closed_pieces": 34,
+    "closed_length_m": 3219.0,
+    "centre_of_the_closed_pieces_lonlat": [
+     99.95881,
+     20.42302
+    ],
+    "residents_who_get_a_route_back_at_this_step": 265.4,
+    "by_tambon_at_this_step": {
+     "TH570901": 5.0,
+     "TH570903": 260.4
+    },
+    "residents_still_cut_off_after_this_step": 14764.3,
+    "share_of_the_cut_off_residents_with_a_route_back": 0.3227
+   },
+   {
+    "step": 7,
+    "osm_way_id": "546680916",
+    "name": "",
+    "name_en": "",
+    "ref": "",
+    "highway": "unclassified",
+    "look_at": "https://www.openstreetmap.org/way/546680916",
+    "closed_pieces": 32,
+    "closed_length_m": 2073.9,
+    "centre_of_the_closed_pieces_lonlat": [
+     99.91986,
+     20.42025
+    ],
+    "residents_who_get_a_route_back_at_this_step": 238.3,
+    "by_tambon_at_this_step": {
+     "TH570901": 217.1,
+     "TH570905": 21.2
+    },
+    "residents_still_cut_off_after_this_step": 14526.1,
+    "share_of_the_cut_off_residents_with_a_route_back": 0.3336
+   },
+   {
+    "step": 8,
+    "osm_way_id": "486365596",
+    "name": "",
+    "name_en": "",
+    "ref": "",
+    "highway": "unclassified",
+    "look_at": "https://www.openstreetmap.org/way/486365596",
+    "closed_pieces": 40,
+    "closed_length_m": 1662.2,
+    "centre_of_the_closed_pieces_lonlat": [
+     99.90963,
+     20.44329
+    ],
+    "residents_who_get_a_route_back_at_this_step": 225.2,
+    "by_tambon_at_this_step": {
+     "TH570901": 225.2
+    },
+    "residents_still_cut_off_after_this_step": 14300.9,
+    "share_of_the_cut_off_residents_with_a_route_back": 0.3439
+   },
+   {
+    "step": 9,
+    "osm_way_id": "375697259",
+    "name": "ถนนเหมืองแดง",
+    "name_en": "Mueangdang Road",
+    "ref": "",
+    "highway": "tertiary",
+    "look_at": "https://www.openstreetmap.org/way/375697259",
+    "closed_pieces": 15,
+    "closed_length_m": 804.1,
+    "centre_of_the_closed_pieces_lonlat": [
+     99.89012,
+     20.4387
+    ],
+    "residents_who_get_a_route_back_at_this_step": 193.4,
+    "by_tambon_at_this_step": {
+     "TH570901": 193.4
+    },
+    "residents_still_cut_off_after_this_step": 14107.5,
+    "share_of_the_cut_off_residents_with_a_route_back": 0.3528
+   },
+   {
+    "step": 10,
+    "osm_way_id": "345929304",
+    "name": "",
+    "name_en": "",
+    "ref": "",
+    "highway": "unclassified",
+    "look_at": "https://www.openstreetmap.org/way/345929304",
+    "closed_pieces": 70,
+    "closed_length_m": 4151.9,
+    "centre_of_the_closed_pieces_lonlat": [
+     99.92237,
+     20.44684
+    ],
+    "residents_who_get_a_route_back_at_this_step": 174.4,
+    "by_tambon_at_this_step": {
+     "TH570901": 70.0,
+     "TH570903": 104.4
+    },
+    "residents_still_cut_off_after_this_step": 13933.1,
+    "share_of_the_cut_off_residents_with_a_route_back": 0.3608
+   }
+  ],
+  "still_cut_off_after_the_last_step": {
+   "residents": 13933.1,
+   "by_tambon": {
+    "TH570901": 8401.7,
+    "TH570903": 1915.1,
+    "TH570904": 725.3,
+    "TH570905": 2306.9,
+    "TH570906": 75.5,
+    "TH570908": 359.2,
+    "TH570909": 149.3
+   }
+  }
+ },
+ "checks": {
+  "cut_off_residents_per_tambon_are_those_of_the_access_table": true,
+  "the_count_by_joined_parts_is_the_count_of_a_full_relabelling_at_every_step": true,
+  "the_first_road_of_the_ko_chang_sheet_gets_the_residents_the_sheet_gives_it": {
+   "osm_way_id": "206803562",
+   "residents_of_ko_chang": 3369.1
+  }
+ },
+ "made_from": {
+  "access_table": {
+   "path": "outputs/planning_v1/e5_access_diff_se1_mae_sai_public_services.json",
+   "sha256": "d4a618fad7fb3df12666ab1eba353b84aa80c6ebe3c370fd9e11096f7dbe116b"
+  },
+  "ko_chang_sheet": {
+   "path": "outputs/ko_chang_road_check/ko_chang_roads_se1_v1.json",
+   "sha256": "3c42b7436c72d12c7e13e1ce8f2e03d9fd96c477f6fcd38a84da3afc647884dc"
+  },
+  "season_extent_sha256": "5d7c1c0ca7909284317a66d2a3611452de3f91d729dfb4cc31b96840e147b794"
+ },
+ "credits": [
+  "Roads © OpenStreetMap contributors (ODbL 1.0).",
+  "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009 (CC BY-SA 4.0). Changed by FloodGuard; the figures derived from it are shared under CC BY-SA 4.0.",
+  "Residents: WorldPop 2020 (CC BY 4.0)."
+ ],
+ "assumptions": [
+  "A closure is a modelled assumption of closure rule v1 at the central level, not an observed closure.",
+  "A road is an OpenStreetMap way. Kept passable means every closed piece of it is taken as open; nothing is said about how.",
+  "A resident has a route when the cell is joined to a part of the graph that holds a hospital or a main-road entry.",
+  "The order of the steps is greedy: the best single road at each step, not the best set of roads."
+ ],
+ "limits": [
+  "A what-if on a model: no road was surveyed, and a road that helps here may be a track, a dyke road or a bridge approach that cannot be kept open.",
+  "One closure level and the flood layer as provided. The Ko Chang sheet shows how its first road fares at the other levels.",
+  "A road outside a tambon can be the one that reconnects it; the centre of its closed pieces says where to look.",
+  "Planning guidance only. Nothing here is a route to take in a flood."
+ ]
+}

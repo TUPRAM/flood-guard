@@ -569,7 +569,7 @@
       "id": "V-28",
       "group": "result",
       "title": "Access loss by age: over the 180 cells, with a smallest size, and with registered age counts",
-      "check": "Read the two sections added on 9 October. With the modelled age grid, over the 180 cells, the differences between age groups are small; the owners now state a gap only from one percentage point, so no gap is stated for the district. With the registered age mix of each tambon (DOPA, December 2024) the direction turns round: residents of 60 and over lose hospital access at 1.10 to 1.13 times the rate of younger residents. The registered ages leave out two registered residents in five, who are not Thai nationals. Accept if the team will say that the direction of the age gap depends on the age data, will give both readings with their limits, and will not lead the pitch with the equity gap.",
+      "check": "Read the three sections added on 9 and 11 October. With the modelled age grid, over the 180 cells, the differences between age groups are small; the owners state a gap only from one percentage point, so no gap is stated for the district. With the registered age mix of each tambon (DOPA, December 2024) the direction turns round, and it holds in all 180 cells: residents of 60 and over lose hospital access at 1.06 to 1.13 times the rate of younger residents. The registered ages leave out two registered residents in five, who are not Thai nationals. Accept if the team will say that the direction of the age gap depends on the age data, will give both readings with their limits, and will not lead the pitch with the equity gap.",
       "evidence": [
         {
           "label": "Result in plain words, the two sections added on 9 October",
@@ -582,6 +582,10 @@
         {
           "label": "With the registered age mix of each tambon",
           "path": "outputs/equity_by_age/se1_mae_sai_registration_check_v1.json"
+        },
+        {
+          "label": "With the registered age mix, over the 180 cells",
+          "path": "outputs/equity_by_age/se1_mae_sai_registration_ensemble_v1.json"
         }
       ],
       "gates": "Any sentence about an age-group gap, in the pitch or on a page.",
@@ -663,6 +667,71 @@
       "gates": "Publishing the SE1 result file again with a status on each class.",
       "ready": true,
       "added": "2026-10-09"
+    },
+    {
+      "id": "V-33",
+      "group": "result",
+      "title": "What is under a class: the need mix of each tambon, and the need map",
+      "check": "Look at the picture, then read the page. Every resident is put in one kind: in the water; dry with every road cut; dry with the hospital out of reach; not affected; access not assessed. The three tambons of class D turn out to need three different things, and Ko Chang has nobody unaffected. Check the tambon you know best against the map. A need type is not a class and changes none. Accept if the team will show this picture in the pitch with the words 'scenario' and 'modelled', and will not call a need type a class or read a square as a street.",
+      "evidence": [
+        {
+          "label": "The need map",
+          "path": "outputs/need_mix/se1_mae_sai_need_map_v1.png"
+        },
+        {
+          "label": "Result in plain words",
+          "path": "docs/need_mix.md"
+        },
+        {
+          "label": "Result file",
+          "path": "outputs/need_mix/se1_mae_sai_v1.json"
+        }
+      ],
+      "gates": "Showing the need map or the need mix in the pitch or on a page.",
+      "ready": true,
+      "added": "2026-10-11"
+    },
+    {
+      "id": "V-34",
+      "group": "result",
+      "title": "Which road reconnects whom, across the district",
+      "check": "Read the page and open the first two roads on OpenStreetMap from the links. In the scenario two short roads, kept passable, would give about a quarter of the 21,800 cut-off residents a route back; most of the rest are in the water themselves. It is a what-if on the model and no road was looked at on the ground. Accept if the team will name the two roads as roads to check, never as roads that are passable, raised or safe.",
+      "evidence": [
+        {
+          "label": "Result in plain words",
+          "path": "docs/road_reconnection.md"
+        },
+        {
+          "label": "Result file",
+          "path": "outputs/road_reconnection/se1_mae_sai_v1.json"
+        }
+      ],
+      "gates": "Naming a road in the pitch or to an agency.",
+      "ready": true,
+      "added": "2026-10-11"
+    },
+    {
+      "id": "V-35",
+      "group": "pitch",
+      "title": "The second pitch draft, the policy table and the page for an outside reader",
+      "check": "Read section 4.2 aloud with a timer, then section 5 and the page for an outside reader. The pitch now opens on the need map, names two roads, and says that seven of eight classes hold; equity and shelters are out of the five minutes. Accept if this draft replaces the first one (item V-11). Choose 'change' with a note for any sentence that should be different, and say in the note who will be asked to read the outside page and who sends the invitation.",
+      "evidence": [
+        {
+          "label": "Pitch draft and policy table, sections 4 and 5",
+          "path": "docs/mentoring/mentoring_session_2_prep.md"
+        },
+        {
+          "label": "The page for an outside reader",
+          "path": "docs/mentoring/outside_review_pack.md"
+        },
+        {
+          "label": "Drafted invitation (a team member sends it)",
+          "path": "docs/mentoring/outside_review_invitation_draft.md"
+        }
+      ],
+      "gates": "Rehearsing the pitch for Session II, and sending the invitation.",
+      "ready": true,
+      "added": "2026-10-11"
     }
   ]
 }

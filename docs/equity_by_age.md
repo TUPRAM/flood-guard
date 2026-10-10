@@ -4,9 +4,10 @@
 > cells of the ensemble, the owners gave the rule a smallest size of one point,
 > and a check was made with registered age counts. In short: with the modelled
 > age grid no gap of a point or more is stated for the district; with the
-> registered age mix of each tambon, older residents lose access more often.
-> The direction depends on the age data. See the two sections added below; the
-> text before them is the first result, at three closure levels.
+> registered age mix of each tambon, older residents lose access more often,
+> in all 180 cells (section of 11 October). The direction depends on the age
+> data. See the three sections added below; the text before them is the first
+> result, at three closure levels.
 
 **What this is.** The two age comparisons the protocol names, computed for the
 first time for case SE1: residents of 60 and over against those under 60, and
@@ -190,6 +191,48 @@ is no gap of a point or more for the district. With the registered age mix of
 each tambon, residents of 60 and over lose hospital access at 1.10 to 1.13
 times the rate of younger residents. Neither source counts everyone who lives
 in this border district." No tambon is ranked by its age mix.
+
+## Added on 11 October 2026: the registered age mix over the 180 cells
+
+The check with registered age counts stood on three runs. It was carried to
+every cell of the ensemble: three flood levels, three closure levels and two
+population products, 18 different counts that each stand for ten cells
+(`outputs/equity_by_age/se1_mae_sai_registration_ensemble_v1.json`). The three
+counts of the first check come out the same.
+
+| Loses a hospital within 30 minutes | Difference of loss rates over the 180 cells | Ratio of loss rates |
+|---|---|---|
+| Residents of 60 and over, against residents under 60 | **2.4 to 4.3 points higher** (median 3.2) | 1.06 to 1.13 |
+| Children of 0 to 14, against residents of 15 and over | **2.2 to 3.6 points lower** (median 2.8) | 0.90 to 0.94 |
+
+The sign is the same in all 180 cells and the difference nearest to zero is
+above one point, so the rule of the protocol with the smallest size of R41 is
+met for both comparisons. With the rescaled demand the gap is a little
+smaller (ratio 1.06 to 1.08 for older residents) than with the 2020 counts
+(1.10 to 1.13).
+
+**So the two age sources give two answers, and each holds across the
+ensemble.**
+
+| Age data | Residents of 60 and over, against younger residents | Stated by the rule? |
+|---|---|---|
+| Modelled grid, 1 km (WorldPop 2024) | 0.7 to 5.5 points lower | No: under one point in part of the cells |
+| Registered counts by tambon (DOPA, December 2024) | 2.4 to 4.3 points higher | Yes |
+
+Neither is the truth about who lives in the district. The modelled grid gives
+almost every place the same age mix. The registered counts differ between
+tambons, but they give everyone in a tambon the loss rate of the tambon, they
+count people where their house register is, and they hold no age for the two
+registered residents in five who are not Thai nationals. "Bounds" here are
+the lowest and the highest of 18 counts of one scenario, not a statistical
+interval.
+
+**What may be said now.** "The direction of the age gap depends on the age
+data. With official registration counts by tambon, residents of 60 and over
+lose hospital access at 1.06 to 1.13 times the rate of younger residents, in
+every run we made; with the open modelled age grid there is no gap of a point
+or more. Neither source counts everyone who lives in this border district."
+No tambon is ranked by its age mix.
 
 ## Limits
 

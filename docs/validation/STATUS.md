@@ -1,6 +1,6 @@
 # Validation check: state of the team's acceptance
 
-Written by `scripts/import_validation_records.py` on 2026-10-09T15:02:04Z from 9 record(s). Do not edit by hand.
+Written by `scripts/import_validation_records.py` on 2026-10-10T16:14:57Z from 9 record(s). Do not edit by hand.
 
 This is the word of the three team members on the project's own work. It is not a review by an independent expert, it qualifies no flood map, and it is not an official approval.
 
@@ -38,3 +38,6 @@ This is the word of the three team members on the project's own work. It is not 
 | V-30 | The printable brief of case SE1, Thai and English | Waiting |  |  |  |
 | V-31 | THEOS-2 on Mae Sai itself: the plan and the frozen radar readings | Waiting |  |  |  |
 | V-32 | The run of record of the SE1 ensemble: seven classes hold, Mae Sai is 'unstable: verify' | Waiting |  |  |  |
+| V-33 | What is under a class: the need mix of each tambon, and the need map | Waiting |  |  |  |
+| V-34 | Which road reconnects whom, across the district | Waiting |  |  |  |
+| V-35 | The second pitch draft, the policy table and the page for an outside reader | Waiting |  |  |  |

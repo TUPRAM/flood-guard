@@ -122,3 +122,33 @@ the buildings reading, on the cells that hold a building.
 - When GISTDA's images of Mae Sai arrive, question 1 can be asked there. That
   needs an amendment of the plan for those images and is not part of this
   plan.
+
+## 7. Added on 11 October 2026: a side run with residents spread over buildings
+
+Written after the figures of sections 3 and 4 were read (decision log R45)
+and before this run was made. The owner asked for it on 11 October.
+
+**The demand.** The residents of each tambon, as the population grid of 2020
+counts them, are spread evenly over the buildings of that tambon. A cell
+holds the residents of the buildings nearest to its centre; a cell without a
+building holds nobody. The total of every tambon stays what it was.
+
+**What is run with it**, beside the published figures and changing none:
+
+1. The need mix of case SE1: residents of each tambon by need type, in the
+   run the published result rests on and over the nine access runs.
+2. The 90 cells of the uncertainty ensemble (three flood levels, three
+   closure levels, two anchor pairs, five weight presets), through the code
+   of the registered run. The run first reproduces the 90 cells of the 2020
+   demand of the registered run, cell by cell, and stops if one differs.
+
+**What is written, whatever the figures.** For each tambon: the class of the
+default cell with each demand, the classes over the 90 cells with each
+demand, and the need mix with each demand. If a class of the default cell
+changes, that is said in the first sentence. No class of record changes: the
+classes of the published result and of the registered run stand.
+
+**Limits known before the run.** Every building counts as one home of the
+same size: a shed and a block of flats weigh the same. The share of children
+and older residents of a tambon is not changed by the demand. Travel times
+are those of the registered run; only the residents of the cells differ.

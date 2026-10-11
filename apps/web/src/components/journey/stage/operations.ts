@@ -23,8 +23,12 @@ export interface OperationsBuilding {
   monitorScreen: THREE.Mesh;
   /** Planning table display (unit plane, scaled), facing up. */
   tableScreen: THREE.Mesh;
-  /** Where the seated responder sits (figure origin) and faces (+x). */
+  /** Where the seated responder sits (figure origin, on the floor) and faces (+x). */
   seat: THREE.Vector3;
+  /** The middle of the task chair's cushion, on its top. */
+  cushion: THREE.Vector3;
+  /** The middle of the keyboard's home row, on the key tops. */
+  keyboard: THREE.Vector3;
   skylight: THREE.Vector3;
   light: THREE.PointLight;
   /** Interior lights (switched off away from the building: every lit pixel in the scene pays for them). */
@@ -232,11 +236,13 @@ export function buildOperations(monitorTexture: THREE.Texture, tableTexture: THR
   monitor.add(monitorScreen);
 
   // Keyboard, mouse, mug, notepad, lamp, papers.
+  // The keyboard's rows face the chair (the space bar nearest it); its home row is the middle row of the texture.
   const keys = own(keyboardTexture());
-  add(rbox(0.16, 0.016, 0.44, 0.004), new THREE.MeshStandardMaterial({ color: "#2a2f31", roughness: 0.5 }), deskX - 0.25, 0.789, deskZ);
-  const keyTop = add(new THREE.PlaneGeometry(0.42, 0.14), new THREE.MeshStandardMaterial({ map: keys, roughness: 0.6 }), deskX - 0.25, 0.7975, deskZ, [-Math.PI / 2, 0, Math.PI / 2]);
+  const keyboardX = deskX - 0.32, keyTopY = 0.7975;
+  add(rbox(0.16, 0.016, 0.44, 0.004), new THREE.MeshStandardMaterial({ color: "#2a2f31", roughness: 0.5 }), keyboardX, 0.789, deskZ);
+  const keyTop = add(new THREE.PlaneGeometry(0.42, 0.14), new THREE.MeshStandardMaterial({ map: keys, roughness: 0.6 }), keyboardX, keyTopY, deskZ, [-Math.PI / 2, 0, -Math.PI / 2]);
   keyTop.castShadow = false;
-  const mouse = add(new THREE.CapsuleGeometry(0.028, 0.05, 4, 10), mat.plastic, deskX - 0.24, 0.792, deskZ + 0.36, [0, 0, Math.PI / 2]);
+  const mouse = add(new THREE.CapsuleGeometry(0.028, 0.05, 4, 10), mat.plastic, keyboardX + 0.01, 0.792, deskZ + 0.36, [0, 0, Math.PI / 2]);
   mouse.scale.set(0.5, 1, 1);
   add(new THREE.CylinderGeometry(0.04, 0.036, 0.095, 20), mat.ceramic, deskX - 0.02, 0.83, deskZ - 0.72);
   add(new THREE.TorusGeometry(0.025, 0.007, 8, 16, Math.PI), mat.ceramic, deskX - 0.02, 0.835, deskZ - 0.762, [0, Math.PI / 2, -Math.PI / 2]);
@@ -259,20 +265,20 @@ export function buildOperations(monitorTexture: THREE.Texture, tableTexture: THR
   add(new THREE.SphereGeometry(0.016, 10, 8), mat.steel, lampElbow.x, lampElbow.y, lampElbow.z);
   add(new THREE.ConeGeometry(0.07, 0.11, 20, 1, true), mat.steel, lampHead.x - 0.02, lampHead.y - 0.05, lampHead.z, [0, 0, -0.35]);
 
-  // Task chair: five-star base with castors, gas column, cushioned seat and backrest, armrests.
-  const chairX = deskX - 0.86;
+  // Task chair, drawn up to the desk: five-star base with castors, gas column, cushioned seat and backrest, armrests.
+  const chairX = deskX - 0.67, seatTop = 0.48;
   for (let i = 0; i < 5; i += 1) {
     const a = (i / 5) * Math.PI * 2;
     add(box(0.3, 0.035, 0.05), mat.steel, chairX + Math.cos(a) * 0.15, 0.075, deskZ + Math.sin(a) * 0.15, [0, -a, 0]);
     add(new THREE.SphereGeometry(0.028, 10, 8), mat.plastic, chairX + Math.cos(a) * 0.29, 0.028, deskZ + Math.sin(a) * 0.29);
   }
-  add(new THREE.CylinderGeometry(0.026, 0.03, 0.34, 12), mat.steel, chairX, 0.26, deskZ);
-  add(rbox(0.5, 0.08, 0.48, 0.035), mat.fabric, chairX, 0.47, deskZ);
-  add(box(0.04, 0.32, 0.06), mat.steel, chairX - 0.27, 0.62, deskZ);
-  add(rbox(0.07, 0.56, 0.46, 0.03), mat.fabric, chairX - 0.29, 0.92, deskZ, [0, 0, 0.12]);
+  add(new THREE.CylinderGeometry(0.026, 0.03, seatTop - 0.17, 12), mat.steel, chairX, (seatTop + 0.01) / 2, deskZ);
+  add(rbox(0.5, 0.08, 0.48, 0.035), mat.fabric, chairX, seatTop - 0.04, deskZ);
+  add(box(0.04, 0.32, 0.06), mat.steel, chairX - 0.27, seatTop + 0.11, deskZ);
+  add(rbox(0.07, 0.56, 0.46, 0.03), mat.fabric, chairX - 0.29, seatTop + 0.41, deskZ, [0, 0, 0.12]);
   for (const side of [-1, 1]) {
-    add(box(0.04, 0.2, 0.04), mat.steel, chairX - 0.02, 0.6, deskZ + side * 0.27);
-    add(rbox(0.28, 0.035, 0.07, 0.015), mat.plastic, chairX + 0.02, 0.7, deskZ + side * 0.27);
+    add(box(0.04, 0.2, 0.04), mat.steel, chairX - 0.02, seatTop + 0.09, deskZ + side * 0.27);
+    add(rbox(0.28, 0.035, 0.07, 0.015), mat.plastic, chairX + 0.02, seatTop + 0.19, deskZ + side * 0.27);
   }
 
   // Planning table (rebuilt to the real page's aspect): framed display on a two-leg base.
@@ -384,7 +390,9 @@ export function buildOperations(monitorTexture: THREE.Texture, tableTexture: THR
     floor,
     monitorScreen,
     tableScreen,
-    seat: new THREE.Vector3(cx + deskX - 0.82, floor, cz + deskZ),
+    seat: new THREE.Vector3(cx + chairX - 0.1, floor, cz + deskZ),
+    cushion: new THREE.Vector3(cx + chairX, floor + seatTop, cz + deskZ),
+    keyboard: new THREE.Vector3(cx + keyboardX, floor + keyTopY, cz + deskZ),
     skylight: new THREE.Vector3(cx + sky.x, floor + roofY, cz + sky.z),
     light,
     lights: [light, fill],

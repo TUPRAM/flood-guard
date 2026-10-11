@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { solveReach, type Point } from "./reach";
 import { applyHomography, quadIsDrawable, quadToMatrix3d, squareToQuad, type Quad } from "./screen-projection";
 import { LAYOUT, WATER_LEVEL, floodedRoadRanges, isUnderWater, roadHeight, terrainHeight } from "./terrain";
 import {
@@ -150,5 +151,53 @@ describe("illustrative terrain", () => {
   it("puts standing water on the floodplain when conditions rise", () => {
     expect(isUnderWater(0, 26, "dry")).toBe(false);
     expect(isUnderWater(0, 26, "rising")).toBe(true);
+  });
+});
+
+describe("two-bone reach", () => {
+  const distance = (a: Point, b: Point) => Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
+  const shoulder: Point = { x: 0.2, y: 1.1, z: 0 };
+  const upper = 0.28, lower = 0.23;
+
+  it("puts the wrist on a target within reach and keeps both bone lengths", () => {
+    const target: Point = { x: 0.1, y: 0.85, z: 0.3 };
+    const reach = solveReach(shoulder, target, { x: 0.5, y: 0.2, z: -0.3 }, upper, lower);
+    expect(reach.reached).toBe(true);
+    expect(distance(reach.end, target)).toBeLessThan(1e-9);
+    expect(distance(shoulder, reach.joint)).toBeCloseTo(upper, 9);
+    expect(distance(reach.joint, reach.end)).toBeCloseTo(lower, 9);
+  });
+
+  it("bends the elbow toward the pole", () => {
+    const target: Point = { x: 0.2, y: 1.1, z: 0.4 };
+    const down = solveReach(shoulder, target, { x: 0.2, y: 0, z: 0.2 }, upper, lower);
+    const out = solveReach(shoulder, target, { x: 1.2, y: 1.1, z: 0.2 }, upper, lower);
+    expect(down.joint.y).toBeLessThan(shoulder.y - 0.05);
+    expect(down.joint.x).toBeCloseTo(shoulder.x, 9);
+    expect(out.joint.x).toBeGreaterThan(shoulder.x + 0.05);
+    expect(out.joint.y).toBeCloseTo(shoulder.y, 9);
+  });
+
+  it("approaches a target that is too far along the same line, without straightening fully", () => {
+    const target: Point = { x: 0.2, y: 1.1, z: 2 };
+    const reach = solveReach(shoulder, target, { x: 0.2, y: 0, z: 0.2 }, upper, lower);
+    expect(reach.reached).toBe(false);
+    expect(reach.end.x).toBeCloseTo(shoulder.x, 9);
+    expect(reach.end.y).toBeCloseTo(shoulder.y, 9);
+    expect(reach.end.z).toBeGreaterThan(0.5);
+    expect(distance(shoulder, reach.end)).toBeLessThan(upper + lower);
+    expect(distance(shoulder, reach.joint)).toBeCloseTo(upper, 9);
+    expect(distance(reach.joint, reach.end)).toBeCloseTo(lower, 9);
+  });
+
+  it("stays finite when the target or the pole gives no direction", () => {
+    for (const reach of [
+      solveReach(shoulder, shoulder, { x: 1, y: 1, z: 1 }, upper, lower),
+      solveReach(shoulder, { x: 0.2, y: 0.8, z: 0 }, { x: 0.2, y: 0.3, z: 0 }, upper, lower),
+    ]) {
+      for (const value of [...Object.values(reach.joint), ...Object.values(reach.end)]) expect(Number.isFinite(value)).toBe(true);
+      expect(distance(shoulder, reach.joint)).toBeCloseTo(upper, 9);
+      expect(distance(reach.joint, reach.end)).toBeCloseTo(lower, 9);
+    }
   });
 });

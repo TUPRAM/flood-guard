@@ -16,7 +16,16 @@ import {
   neighbourhoodSpecs,
   type HouseSpec,
 } from "./architecture";
-import { attachScreen, loadCharacter, poseResident as poseResidentModel, poseResponder as poseResponderModel, prepareResident, type Character, type HeldScreen } from "./characters";
+import {
+  attachScreen,
+  loadCharacter,
+  poseResident as poseResidentModel,
+  poseResponder as poseResponderModel,
+  prepareResident,
+  prepareResponder,
+  type Character,
+  type HeldScreen,
+} from "./characters";
 import { GRIPS, buildFigure, poseSeated, poseStanding, setGrip, solveArm, type Figure } from "./figure";
 import { contactShadowTexture, type Quality } from "./materials";
 import { buildOperations, type OperationsBuilding } from "./operations";
@@ -167,7 +176,7 @@ export class JourneyStage {
   private sinceResize = 0;
   private time = 0;
 
-  private readonly scratch = { pos: new THREE.Vector3(), target: new THREE.Vector3(), up: new THREE.Vector3(), v: new THREE.Vector3(), q: new THREE.Quaternion(), m: new THREE.Matrix4() };
+  private readonly scratch = { pos: new THREE.Vector3(), target: new THREE.Vector3(), up: new THREE.Vector3(), v: new THREE.Vector3(), w: new THREE.Vector3(), q: new THREE.Quaternion(), m: new THREE.Matrix4() };
 
   constructor(canvas: HTMLCanvasElement, options: StageOptions) {
     this.quality = options.quality;
@@ -341,9 +350,10 @@ export class JourneyStage {
   }
 
   /**
-   * The push-ins end where the person's eyes are (the phone) or just past their shoulder (the monitor). As the camera
-   * gets there, the resident's head is folded away (a first-person view of her phone) and the responder is hidden
-   * once the camera has passed him, so neither fills the frame around the real page.
+   * The push-ins end where the person's eyes are (the phone) or in front of their face (the monitor). As the camera
+   * gets there, the resident's head is folded away (a first-person view of her phone); the responder is hidden once
+   * the camera is ahead of his shoulders, when he is already out of the frame, so neither fills the frame around the
+   * real page.
    */
   private clearCloseUps(camera: THREE.Vector3): void {
     const woman = this.residentModel;
@@ -355,9 +365,11 @@ export class JourneyStage {
       }
     }
     const man = this.responderModel;
-    if (man) {
-      const neck = man.bones.get("Neck");
-      if (neck && camera.distanceTo(neck.getWorldPosition(this.scratch.v)) < 0.62) man.root.visible = false;
+    const neck = man?.bones.get("Neck");
+    if (man && neck) {
+      const fromNeck = this.scratch.v.copy(camera).sub(neck.getWorldPosition(this.scratch.w));
+      const ahead = fromNeck.dot(this.scratch.w.set(0, 0, 1).applyQuaternion(man.root.quaternion));
+      if (ahead > 0.02 && fromNeck.length() < 0.9) man.root.visible = false;
     }
   }
 
@@ -417,9 +429,14 @@ export class JourneyStage {
       for (const character of [woman, man]) character.root.traverse((object) => (object as THREE.Mesh).geometry?.dispose());
       return;
     }
+    // Fit both people to what they hold and touch before either joins the scene: if a model cannot be fitted, the
+    // procedural figures stay as they are.
     prepareResident(woman);
     woman.root.position.copy(this.resident.root.position);
     woman.root.rotation.y = this.resident.root.rotation.y;
+    man.root.position.copy(this.ops.seat);
+    man.root.rotation.y = Math.PI / 2;
+    prepareResponder(man, { keys: this.ops.keyboard, cushion: this.ops.cushion, floor: this.ops.floor });
     this.scene.add(woman.root);
     poseResidentModel(woman, 1, 0);
     woman.root.updateMatrixWorld(true);
@@ -434,8 +451,6 @@ export class JourneyStage {
     this.residentModel = woman;
     this.residentCastsShadow = true;
 
-    man.root.position.copy(this.ops.seat);
-    man.root.rotation.y = Math.PI / 2;
     this.scene.add(man.root);
     this.responder.root.visible = false;
     this.responderModel = man;
@@ -502,13 +517,12 @@ export class JourneyStage {
     poseSeated(figure, 0.24 - 0.18 * attention, this.time);
     figure.root.updateMatrixWorld(true);
     const j = figure.joints;
-    const deskTop = this.ops.floor + 0.8;
-    const kbX = this.ops.seat.x + 0.57;
+    const keys = this.ops.keyboard;
     const palmDown = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(v(0, 0, 1), v(-1, 0, 0), v(0, -1, 0)));
     const typing = Math.sin(this.time * 9) * 0.004 * attention;
     for (const [side, shoulder, elbow, wrist] of [[1, j.shoulderL, j.elbowL, j.wristL], [-1, j.shoulderR, j.elbowR, j.wristR]] as const) {
       // Figure faces +x; its left (+side) is world -z.
-      const target = v(kbX - 0.1, deskTop + 0.045 + typing * side, this.ops.seat.z - side * 0.12);
+      const target = v(keys.x - 0.1, keys.y + 0.047 + typing * side, keys.z - side * 0.12);
       const s = shoulder.getWorldPosition(new THREE.Vector3());
       solveArm(shoulder, elbow, wrist, target, s.clone().add(v(-0.1, -0.5, -side * 0.45)), palmDown);
     }
@@ -570,7 +584,11 @@ export class JourneyStage {
     const monitorC = this.screenGeometry(ops.monitorScreen).center;
     const tableC = this.screenGeometry(ops.tableScreen).center;
     const inside = { pos: v(seat.x - 3.6, ops.floor + 1.95, seat.z + 3.1), target: v(seat.x + 0.55, ops.floor + 1.0, seat.z) };
-    const overShoulder = { pos: seat.clone().add(v(-0.72, 1.6, 0.78)), target: monitorC.clone() };
+    // Over his right shoulder, with his hands on the keyboard and the screen both in frame; then past his shoulder
+    // (he leaves the frame to the left, his hands below it) before the camera swings in front of the monitor.
+    const overShoulder = { pos: seat.clone().add(v(-0.62, 1.42, 0.62)), target: monitorC.clone().lerp(ops.keyboard, 0.45) };
+    const pastShoulder = { pos: seat.clone().add(v(0.2, 1.3, 0.4)), target: monitorC.clone() };
+    const behind = { pos: seat.clone().add(v(-1.9, 1.75, 1.05)), target: overShoulder.target };
     switch (segment) {
       case "opening":
         return [k(0, { pos: v(-80, 46, 96), target: v(-2, 0, 4) }), k(1, { pos: v(-60, 35, 76), target: v(-6, 0, 3) })];
@@ -613,11 +631,14 @@ export class JourneyStage {
           k(1, inside),
         ];
       case "enter-monitor":
-        return [k(0, inside), k(0.5, overShoulder), this.endPose(ops.monitorScreen)];
+        return [k(0, inside), k(0.5, overShoulder), k(0.78, pastShoulder), this.endPose(ops.monitorScreen)];
       case "aerial":
         return [
           this.atKey(0, this.endPose(ops.monitorScreen)),
-          k(0.08, overShoulder),
+          k(0.03, pastShoulder),
+          k(0.07, overShoulder),
+          // A step back before the long pull across the room, so the spline does not whip away from his shoulder.
+          k(0.11, behind),
           k(0.18, { pos: v(seat.x - 9.5, ops.floor + 2.7, seat.z + 2.6), target: v(seat.x - 2, ops.floor + 1, seat.z - 1) }),
           k(0.28, { pos: ops.window.clone().add(v(0, 0.7, 4)), target: ops.window.clone().add(v(0, -0.6, -6)) }),
           k(0.46, { pos: v(-22, 36, 44), target: v(0, 0, 5) }),

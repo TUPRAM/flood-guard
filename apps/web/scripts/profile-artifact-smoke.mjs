@@ -73,6 +73,7 @@ function validatePublicProduction() {
   for (const excluded of [
     "landing",
     "policy",
+    "journey",
     "command",
     "studio",
     "studies",

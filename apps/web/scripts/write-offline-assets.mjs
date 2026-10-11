@@ -10,6 +10,8 @@ import { collectCaseBriefAssets } from "./case-brief-assets.mjs";
 
 const out = resolve(process.cwd(), "out");
 const nextStatic = resolve(out, "_next", "static");
+/** Marker string compiled into the cinematic journey's chunks (see components/journey). */
+const JOURNEY_MARKER = "data-floodguard-journey";
 const appProfile = resolveAppProfile(process.env.FLOODGUARD_APP_PROFILE ?? process.env.NEXT_PUBLIC_FLOODGUARD_APP_PROFILE);
 
 if (appProfile === "public-production") prunePublicProductionOutput();
@@ -231,16 +233,24 @@ function collectOptionalLandingAssets() {
     const manifest = JSON.parse(readFileSync(path, "utf8"));
     for (const [name, entry] of Object.entries(manifest)) {
       const files = Array.isArray(entry?.files) ? entry.files : [];
-      const isNarrative = name.includes("narrative-canvas") || files.some((file) => {
+      // The cinematic journey (/journey/) frames live pages and is online-only, so its 3D stage is optional too.
+      const isNarrative = name.includes("narrative-canvas") || name.includes("journey-stage") || files.some((file) => {
         if (typeof file !== "string" || !file.startsWith("static/") || !file.endsWith(".js")) return false;
         const chunkPath = resolve(out, "_next", file);
-        return chunkPath.startsWith(`${nextStatic}${sep}`) && existsSync(chunkPath)
-          && readFileSync(chunkPath, "utf8").includes("data-narrative-canvas");
+        if (!chunkPath.startsWith(`${nextStatic}${sep}`) || !existsSync(chunkPath)) return false;
+        const source = readFileSync(chunkPath, "utf8");
+        return source.includes("data-narrative-canvas") || source.includes(JOURNEY_MARKER);
       });
       if (!isNarrative) continue;
       for (const file of files) {
         if (typeof file === "string" && file.startsWith("static/")) optional.add(`/_next/${file}`);
       }
+    }
+  }
+  // The journey page's own chunks carry a marker; they are never needed offline.
+  for (const path of walk(nextStatic)) {
+    if (path.endsWith(".js") && readFileSync(path, "utf8").includes(JOURNEY_MARKER)) {
+      optional.add(`/${relative(out, path).split(sep).join("/")}`);
     }
   }
   if (appProfile === "public-production") {
@@ -276,6 +286,7 @@ function prunePublicProductionOutput() {
   const excluded = [
     "landing",
     "policy",
+    "journey",
     "command",
     "studio",
     "studies",

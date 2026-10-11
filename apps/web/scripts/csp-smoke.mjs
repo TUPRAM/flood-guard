@@ -31,6 +31,8 @@ const VERCEL_JSON = resolve(HERE, "..", "..", "..", "vercel.json");
 const ROUTES = [
   "/", "/policy/", "/public/", "/public-cases/", "/command/", "/studio/archive/command-workspace/", "/command/planning/", "/command/cases/",
   "/command/archive/", "/command/ver2/", "/command/exercise/",
+  // The cinematic story frames the real pages in same-origin iframes, so it checks the framing headers too.
+  "/journey/", "/journey/?scene=case",
   "/studio/", "/studio/planning-evidence/", "/studio/candidate-report/", "/studio/library/", "/studio/brief/", "/studio/archive/",
   "/studio/archive/mae-sai-geoai/", "/studio/cases/mae-sai-2024/", "/studio/studies/c2s-ms-20260915/",
   ...["data", "models", "results", "rtc", "explorer", "files", "mae-sai"].map((section) => `/studio/studies/c2s-ms-20260915/${section}/`),
@@ -403,6 +405,13 @@ async function main() {
         // The exercise page writes its replay hour into its address at once, so the forward is known by its path.
         await page.waitForURL((url) => url.pathname === to, { timeout: 15_000 }).catch(() => problems.push(`the forward to ${to} did not run`));
         await page.locator(landed).waitFor({ state: "visible", timeout: 15_000 }).catch(() => problems.push(`the forward did not open ${to}`));
+      }
+      // The journey loads its rigged people (GLB with embedded textures) before the story starts; wait for that, so a
+      // policy that blocked their textures (blob: decoding) would show up as a violation here.
+      if (route === "/journey/") {
+        await page.waitForFunction(() => !document.body.innerText.includes("Preparing the neighbourhood"), null, { timeout: 30_000 })
+          .catch(() => problems.push("the journey's 3D stage did not become ready"));
+        await page.waitForTimeout(1500);
       }
       // Hydration is the thing 'unsafe-inline' protects; if it were blocked the
       // React root would stay empty.

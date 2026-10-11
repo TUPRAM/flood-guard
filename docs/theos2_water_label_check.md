@@ -1,6 +1,7 @@
 # The THEOS-2 water rule against labels by two people
 
-**State on 11 October 2026: the points are drawn; nobody has labelled yet.**
+**State on 11 October 2026: the points are drawn and the first labeller has
+started; no label file has been handed over.**
 The figures are added here when two label files exist.
 
 Plan: `docs/proposal_execution/theos2_water_label_check_plan_v1.md`.
@@ -68,9 +69,16 @@ Once, from both files (`scripts/build_theos2_water_labels.py score`):
 - how far the two labellers agree with each other.
 
 Each comes with an interval, for each chip and for the two reference chips
-together. The result, the key and both label files are then committed, and
-the figures are set beside every comparison of radar with THEOS-2 water in
-the docs. No radar figure is changed with them.
+together.
+
+The same run scores a second water rule on the same 300 points
+(`docs/theos2_water_rule_v2.md`). That rule was developed on 240 other points
+and frozen on 11 October, before anybody but the labeller had seen a label
+of a team member. The run refuses to start without that freeze, so that
+nothing learnt from your labels can find its way into the rule.
+
+The result, the key and both label files are then committed, and the figures
+are set beside every comparison of radar with THEOS-2 water in the docs. No radar figure is changed with them.
 
 ## Limits
 

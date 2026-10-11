@@ -121,6 +121,13 @@ labeller typed and the seconds spent on each point.
 4. The figures of section 6 are computed once. The key, the two label files
    and the result are committed together.
 
+**Added on 11 October 2026, while the first labeller was at work and before
+anybody else had seen a label.** The run of step 4
+also scores a second water rule on the same points. That rule has a plan of its
+own (`theos2_water_rule_v2_plan_v1.md`): it is developed on other points and
+frozen before step 4, and the run refuses to start without the freeze. No
+figure of section 6 changes.
+
 A second draw needs a reason written into the record that replaces the first,
 and is not made once a label file exists. The figures are computed again only
 with a reason, and every result is kept.

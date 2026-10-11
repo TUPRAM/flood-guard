@@ -373,6 +373,94 @@ def figures(points: Sequence[Mapping[str, Any]], scoring: Mapping[str, str | Non
     }
 
 
+UNOBSERVABLE: str = "unobservable"
+
+
+def answers_of_rule_v1(points: Sequence[Mapping[str, Any]]) -> dict[str, str]:
+    """What rule v1 says at each point, read from the group the point was drawn in."""
+
+    return {
+        point["id"]: (WATER if point["group"] in WATER_GROUPS else UNOBSERVABLE if point["group"] == "unobservable" else NOT_WATER)
+        for point in points
+    }
+
+
+def figures_of_a_map(points: Sequence[Mapping[str, Any]], scoring: Mapping[str, str | None], answers: Mapping[str, str],
+                     sizes: Mapping[tuple[str, str], int], chips: Sequence[str]) -> dict[str, Any]:
+    """Figures for any water map on the same points: the map need not be the one the groups were cut from.
+
+    ``answers`` gives the answer of the map at each point (water, not water
+    or unobservable). The groups stay the strata, which is what the
+    estimators of Stehman (2014) allow. ``share_answered_and_alike`` is the
+    choice figure of the plan for the second rule: of the area with a scoring
+    label, the share where the map gives an answer and the answer is the
+    label.
+    """
+
+    def ratio(y_of: Any, x_of: Any) -> dict[str, Any]:
+        strata = []
+        for chip in chips:
+            for group in GROUPS:
+                mine = [point["id"] for point in points
+                        if point["chip"] == chip and point["group"] == group and scoring[point["id"]] is not None]
+                strata.append(Stratum(
+                    size=int(sizes[(chip, group)]),
+                    y=tuple(float(y_of(answers[i], scoring[i])) for i in mine),
+                    x=tuple(float(x_of(answers[i], scoring[i])) for i in mine),
+                ))
+        return stratified_ratio(strata)
+
+    def answered(answer: str) -> bool:
+        return answer in (WATER, NOT_WATER)
+
+    in_chips = [point for point in points if point["chip"] in chips]
+    return {
+        "chips": list(chips),
+        "points": len(in_chips),
+        "points_scored": sum(1 for point in in_chips if scoring[point["id"]] is not None),
+        "share_answered_and_alike": ratio(lambda answer, label: answer == label, lambda answer, label: True),
+        "share_of_labelled_area_the_map_answers": ratio(lambda answer, label: answered(answer), lambda answer, label: True),
+        "a_share_of_map_water_labelled_water": ratio(
+            lambda answer, label: answer == WATER and label == WATER, lambda answer, label: answer == WATER),
+        "b_share_of_labelled_water_the_map_finds": ratio(
+            lambda answer, label: answer == WATER and label == WATER, lambda answer, label: answered(answer) and label == WATER),
+        "c_share_of_answered_area_where_both_say_the_same": ratio(
+            lambda answer, label: answered(answer) and answer == label, lambda answer, label: answered(answer)),
+        "d_water_share_of_answered_area": {
+            "by_the_map_at_the_points": ratio(lambda answer, label: answer == WATER, lambda answer, label: answered(answer)),
+            "by_the_labels": ratio(lambda answer, label: answered(answer) and label == WATER, lambda answer, label: answered(answer)),
+        },
+    }
+
+
+def difference_of_two_maps(points: Sequence[Mapping[str, Any]], scoring: Mapping[str, str | None],
+                            first: Mapping[str, str], second: Mapping[str, str],
+                            sizes: Mapping[tuple[str, str], int], chips: Sequence[str]) -> dict[str, Any]:
+    """The share answered and alike of the second map minus that of the first, on the same points.
+
+    Both maps are read at the same points, so the difference is estimated
+    point by point (+1 where only the second is alike, -1 where only the
+    first is) and its interval is narrower than the two intervals set side by
+    side. The interval is not cut at zero or one.
+    """
+
+    strata = []
+    for chip in chips:
+        for group in GROUPS:
+            mine = [point["id"] for point in points
+                    if point["chip"] == chip and point["group"] == group and scoring[point["id"]] is not None]
+            strata.append(Stratum(
+                size=int(sizes[(chip, group)]),
+                y=tuple(float(second[i] == scoring[i]) - float(first[i] == scoring[i]) for i in mine),
+                x=tuple(1.0 for _ in mine),
+            ))
+    result = stratified_ratio(strata)
+    if result["estimate"] is not None:
+        estimate, error = result["estimate"], result["standard_error"]
+        result["interval_95"] = [round(estimate - Z_95 * error, 4), round(estimate + Z_95 * error, 4)]
+    return result
+
+
 def label_counts(points: Sequence[Mapping[str, Any]], labels: Mapping[str, str], chips: Sequence[str]) -> dict[str, dict[str, int]]:
     """For one labeller, the number of points of each group given each of the three labels."""
 

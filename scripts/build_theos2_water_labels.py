@@ -49,6 +49,8 @@ KEY_NAME = "key_v1.json"
 PAGE_NAME = "label_page_v1.html"
 PAGE_TEMPLATE = "scripts/theos2_water_label_page.html"
 WORK = "proposal_execution/theos2_water_labels_v1"
+SECOND_RULE_FREEZE = "outputs/theos2_water_rule_v2/freeze_v1.json"
+SECOND_RULE_WORK = "proposal_execution/theos2_water_rule_v2"
 SOURCE_TIMESTAMP = "THEOS-2 2025-07-30T03:33Z (sukhothai) and 2025-07-31T03:51Z (chip_003, chip_001)"
 
 NATIVE_M = 0.5
@@ -345,6 +347,35 @@ def sentences(names: list[str], together: dict[str, Any], set_aside: dict[str, A
     ]
 
 
+def second_rule_sentences(two_rules: dict[str, Any], freeze: dict[str, Any]) -> list[str]:
+    """The sentences of the plan for the second rule (section 6), written from the figures whatever they are."""
+
+    together = two_rules["reference_chips_together"]["both_agree"]
+    alone = two_rules["chip_001"]["both_agree"]
+    difference = together["share_answered_and_alike_v2_minus_v1"]
+    shares = freeze["frozen_rule"]["chips"]["chip_001"]["water_share_of_the_chip"]
+    by_labels = alone["rule_v2"]["d_water_share_of_answered_area"]["by_the_labels"]
+    lines = [
+        f"On the two reference chips together, rule v1 gives an answer that is the label on "
+        f"{with_interval(together['rule_v1']['share_answered_and_alike'])} of the area the two labellers agree on, and the "
+        f"second rule on {with_interval(together['rule_v2']['share_answered_and_alike'])}.",
+        f"On the chip without a flood, rule v1 calls {percent(shares['rule_v1'])} of the chip water and the second rule "
+        f"{percent(shares['rule_v2'])}; by the labels {with_interval(by_labels)} of it is water.",
+    ]
+    if difference["estimate"] is None:
+        lines.append("The two rules cannot be compared: no point has a label both labellers gave.")
+    elif difference["interval_95"][0] > 0:
+        low, high = difference["interval_95"]
+        lines.append(f"The second rule is better on these points by {round(difference['estimate'] * 100)} points "
+                     f"({round(low * 100)} to {round(high * 100)}).")
+    else:
+        low, high = difference["interval_95"]
+        lines.append(f"The second rule is not shown to be better: the difference is {round(difference['estimate'] * 100)} "
+                     f"points ({round(low * 100)} to {round(high * 100)}).")
+    lines.append("The test points lie on the three images the second rule was developed on; no earlier figure is replaced.")
+    return lines
+
+
 def stage_score(arguments: argparse.Namespace) -> None:
     work = Path(arguments.external_root) / WORK
     out = ROOT / OUTPUT_DIR
@@ -389,6 +420,38 @@ def stage_score(arguments: argparse.Namespace) -> None:
         for name, data in zip(names, raw)
     }
 
+    # --- the second rule, frozen before any label file was opened (plan for rule v2, sections 5 and 6) ---------------------
+    freeze_path = ROOT / SECOND_RULE_FREEZE
+    if not freeze_path.exists():
+        raise BuildError("the plan for the second water rule: the figures are computed only after that rule is frozen")
+    freeze = json.loads(freeze_path.read_text(encoding="utf-8"))
+    import rasterio
+
+    words = {0: wl.NOT_WATER, 1: wl.WATER, 255: wl.UNOBSERVABLE}
+    answers_v2: dict[str, str] = {}
+    for chip in wl.CHIPS:
+        named = freeze["frozen_rule"]["chips"][chip]["raster_outside_git"]
+        raster_path = Path(arguments.external_root) / SECOND_RULE_WORK / named["name"]
+        if t2.sha256_file(raster_path) != named["sha256"]:
+            raise BuildError(f"{named['name']} is not the raster the freeze names")
+        with rasterio.open(raster_path) as source:
+            water = source.read(1)
+        for point in points:
+            if point["chip"] == chip:
+                answers_v2[point["id"]] = words[int(water[point["row"], point["column"]])]
+    answers_v1 = wl.answers_of_rule_v1(points)
+    two_rules = {
+        name: {
+            scoring: {
+                "rule_v1": wl.figures_of_a_map(points, labels, answers_v1, sizes, chips),
+                "rule_v2": wl.figures_of_a_map(points, labels, answers_v2, sizes, chips),
+                "share_answered_and_alike_v2_minus_v1": wl.difference_of_two_maps(points, labels, answers_v1, answers_v2, sizes, chips),
+            }
+            for scoring, labels in scorings.items()
+        }
+        for name, chips in sets.items()
+    }
+
     together = figures["reference_chips_together"]["both_agree"]
     low = [letter for letter, field in (("a", "a_share_of_rule_water_labelled_water"), ("b", "b_share_of_labelled_water_the_rule_finds"))
            if together[field]["estimate"] is not None and together[field]["estimate"] < 0.80]
@@ -418,6 +481,16 @@ def stage_score(arguments: argparse.Namespace) -> None:
         "median_seconds_per_point": seconds,
         "label_counts_by_group": {name: wl.label_counts(points, labels, wl.CHIPS) for name, labels in zip(names, given)},
         "figures": figures,
+        "two_rules": {
+            "what_this_is": "Rule v1 and the second rule, frozen before any label file was opened, on the same 300 points. "
+                            "The share answered and alike counts area a rule sets aside as not alike.",
+            "freeze": {"path": SECOND_RULE_FREEZE, "sha256": t2.sha256_file(freeze_path)},
+            "answers_of_rule_v2_by_group": {
+                group: {answer: sum(1 for point in points if point["group"] == group and answers_v2[point["id"]] == answer)
+                        for answer in (wl.WATER, wl.NOT_WATER, wl.UNOBSERVABLE)} for group in wl.GROUPS},
+            "figures": two_rules,
+            "sentences": second_rule_sentences(two_rules, freeze),
+        },
         "plan_section_7": {
             "sentences": sentences(names, figures["reference_chips_together"], figures["chip_001"], readers),
             "figures_below_0.80_on_the_reference_chips_together": low,
@@ -430,7 +503,7 @@ def stage_score(arguments: argparse.Namespace) -> None:
     if previous is not None:
         result["supersedes"] = previous
     t2.write_json(result_path, result)
-    print("\n".join(result["plan_section_7"]["sentences"]))
+    print("\n".join(result["plan_section_7"]["sentences"] + result["two_rules"]["sentences"]))
 
 
 def main() -> None:

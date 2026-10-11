@@ -1,6 +1,6 @@
 {
   "schema": "floodguard.validation_check.items.v1",
-  "updated": "2026-10-09",
+  "updated": "2026-10-11",
   "repository": "https://github.com/TUPRAM/flood-guard",
   "reviewers": [
     "Rachmania",
@@ -730,6 +730,29 @@
         }
       ],
       "gates": "Rehearsing the pitch for Session II, and sending the invitation.",
+      "ready": true,
+      "added": "2026-10-11"
+    },
+    {
+      "id": "V-36",
+      "group": "theos2",
+      "title": "Measuring the THEOS-2 water rule: the plan, the 300 points and the three labels",
+      "check": "Read sections 3, 4, 6 and 7 of the plan. Accept if the three labels and the rule 'more than half of the square decides' are what you would label by, and if the sentences of section 7 are the ones to write whatever the figures turn out to be. Choose 'change' with a note if a label should be defined differently: that has to be said before anybody labels. Say in the note who the two labellers are.",
+      "evidence": [
+        {
+          "label": "The plan, written before any point was drawn",
+          "path": "docs/proposal_execution/theos2_water_label_check_plan_v1.md"
+        },
+        {
+          "label": "How to label, and what is computed afterwards",
+          "path": "docs/theos2_water_label_check.md"
+        },
+        {
+          "label": "The record of the draw (no place of a point)",
+          "path": "outputs/theos2_water_labels/sample_v1.json"
+        }
+      ],
+      "gates": "Two team members labelling the 300 points.",
       "ready": true,
       "added": "2026-10-11"
     }

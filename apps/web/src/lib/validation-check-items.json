@@ -778,6 +778,33 @@
       "gates": "Scoring the second rule on the 300 points, and deciding which rule reads the images of Mae Sai.",
       "ready": true,
       "added": "2026-10-11"
+    },
+    {
+      "id": "V-38",
+      "group": "result",
+      "title": "Buildings against residents in the water: the count is likely too high in three rural tambons",
+      "check": "Read 'Case SE1: the main finding' and its table. Accept if the finding is worded carefully enough: where a cell holds a building the count is sound, but 39 percent of the modelled residents are in cells without a building, and in Ko Chang, Si Mueang Chum and Ban Dai the published share in the water is two to four times the share of buildings in the layer. Choose 'change' with a note if the pitch should say more or less than that, and say in the note whether a report-only run with residents spread over buildings should be made before the freeze.",
+      "evidence": [
+        {
+          "label": "The write-up",
+          "path": "docs/buildings_in_water.md"
+        },
+        {
+          "label": "The plan, written before any building was set against water",
+          "path": "docs/proposal_execution/buildings_in_water_plan_v1.md"
+        },
+        {
+          "label": "Case SE1, by tambon and flood level",
+          "path": "outputs/buildings_in_water/se1_mae_sai_v1.json"
+        },
+        {
+          "label": "The two THEOS-2 chips",
+          "path": "outputs/buildings_in_water/theos2_chips_v1.json"
+        }
+      ],
+      "gates": "What the pitch says of Ko Chang, and a report-only run with residents spread over buildings.",
+      "ready": true,
+      "added": "2026-10-11"
     }
   ]
 }

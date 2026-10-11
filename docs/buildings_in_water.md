@@ -77,14 +77,68 @@ people. It is not a second exposure count.
   fields where no building stands.
 - It does not show that the buildings in the layer were flooded. There is no
   image in this comparison.
-- It was not computed whether the residents who would leave "in the water"
-  are then "dry with every road cut". The need mix of those tambons rests on
-  the same grid.
-- No class was recomputed. Exposure is one of five components of the score.
-- **The planning score keeps the centre rule.** Whether a later run should
-  spread residents over buildings is for the owners to decide. A report-only
-  run of the need mix and of the ensemble with such a demand is possible
-  with what is now on disk.
+- Whether the residents who leave "in the water" are then "dry with every
+  road cut", and whether a class moves, is answered by the side run below.
+- **The planning score keeps the centre rule.** Whether a registered run
+  should spread residents over buildings is for the owners to decide.
+
+## The side run: residents spread over buildings
+
+Asked for by the owner on 11 October and planned before it was made (plan,
+section 7). The residents of each tambon are spread evenly over the buildings
+of that tambon; a cell without a building holds nobody. With that demand the
+need mix was made again and the 90 cells of the ensemble were run through the
+code of the registered run. The run first reproduced all 720 results of the
+registered run for the 2020 demand. Record:
+`outputs/buildings_in_water/se1_mae_sai_buildings_demand_v1.json`.
+
+**No class changes.** All eight tambons keep the class of their default cell.
+
+| Tambon | Class and score, 2020 grid | Class and score, buildings | Classes over the 90 cells, 2020 grid | buildings |
+|---|---|---|---|---|
+| Ko Chang | B, 78 | B, 73 | 70 B, 20 D | 70 B, 20 D |
+| Mae Sai | D, 71 | D, 72 | 90 D | 80 D, 10 B |
+| Si Mueang Chum | D, 59 | D, 46 | 90 D | 90 D |
+| Ban Dai | D, 50 | D, 47 | 90 D | 90 D |
+| Pong Pha | E, 32 | E, 29 | 87 E, 3 D | 90 E |
+| Pong Ngam, Wiang Phang Kham, Huai Khrai | E | E | 90 E | 90 E |
+
+**The need mix moves from "in the water" to "dry and cut off".**
+
+| | In the water | Dry, every road cut | Dry, hospital out of reach | Not affected | Access not assessed |
+|---|---:|---:|---:|---:|---:|
+| District, 2020 grid | 17,900 (22%) | 7,500 (9%) | 2,400 (3%) | 49,300 (60%) | 4,700 (6%) |
+| District, buildings | 12,600 (15%) | 10,100 (12%) | 3,400 (4%) | 55,300 (68%) | 400 (0.5%) |
+| **Ko Chang**, 2020 grid | 37% | 58% | 0% | 0% | 5% |
+| **Ko Chang**, buildings | **17%** | **83%** | 0% | 0% | 0.3% |
+| Si Mueang Chum, 2020 grid | 43% | 10% | 0% | 44% | 3% |
+| Si Mueang Chum, buildings | 12% | 15% | 0% | 73% | 0.2% |
+| Ban Dai, 2020 grid | 19% | 0.2% | 44% | 27% | 10% |
+| Ban Dai, buildings | 7% | 0% | 63% | 29% | 2% |
+| Mae Sai, 2020 grid | 56% | 15% | 0% | 28% | 0.7% |
+| Mae Sai, buildings | 54% | 19% | 0% | 27% | 0.2% |
+
+What it says:
+
+- **The finding on Ko Chang gets stronger, not weaker.** With residents where
+  the buildings are, one in six is in the water and five in six are dry with
+  every road cut. Still nobody is unaffected, and the class is B in the same
+  70 of 90 cells.
+- **Residents in the water in the district: 12,600 to 17,900**, by the two
+  demands. The residents the flood map does not show (dry and cut off, or dry
+  with the hospital out of reach) are 10,000 to 13,500.
+- Si Mueang Chum loses 13 points of its score and keeps its class; most of
+  its residents are then not affected.
+- "Access not assessed" nearly disappears: the cells with no road within
+  reach are mostly cells with no building.
+- Mae Sai town is the same by either demand in its default cell, and less
+  steady over the cells: 10 of 90 are B with the buildings demand. That fits
+  what the registered run already says of it: unstable, verify.
+
+What it does not say: this is one way of many to spread residents, every
+building counts as one home, and the 2024-rescaled demand was not run with
+it (90 cells, not 180). The classes of record are those of the published
+result.
 
 ## On two THEOS-2 images: buildings that stand in water
 

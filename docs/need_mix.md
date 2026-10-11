@@ -6,6 +6,12 @@ water, some stay dry and lose every road, some keep a road and lose the
 hospital. This page counts them, tambon by tambon, and shows where each kind
 sits on squares of 500 m.
 
+**Added on 11 October 2026.** The counts on this page place residents where
+the population grid puts them, fields included. With residents spread over
+building outlines the district has 12,600 residents in the water, not
+17,900, and more who are dry with every road cut; no class changes
+(`docs/buildings_in_water.md`). The figures below are unchanged.
+
 **How to read it.** Report-only. **A need type is not a planning class**: it
 uses no score, no threshold of the class rule and no confidence, and it
 changes no class. The binding class of each tambon is the one of the

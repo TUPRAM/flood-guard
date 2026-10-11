@@ -89,3 +89,64 @@ def test_the_district_is_checked_against_the_published_need_mix() -> None:
     apart = [row for row in tambons.values()
              if abs(row["on_the_cells_that_hold_a_building"]["buildings_minus_centre_rule_points"] or 0.0) > bw.DIFFERENCE_POINTS]
     assert len(named) == len(apart)
+
+
+# ---------------------------------------------------------------------------
+# The side run with residents spread over buildings
+# ---------------------------------------------------------------------------
+
+SIDE_RUN = json.loads((OUT / "se1_mae_sai_buildings_demand_v1.json").read_text(encoding="utf-8"))
+DEMANDS = ("worldpop_2020", "spread_over_buildings")
+
+
+def test_the_side_run_is_report_only_and_reproduces_the_registered_run_first() -> None:
+    assert SIDE_RUN["confidence_class"] == "low" and SIDE_RUN["operational_status"] == "non_operational"
+    assert SIDE_RUN["official_warning"] is False and SIDE_RUN["can_feed_decision_layer"] is False
+    assert SIDE_RUN["label"] == "scenario, not an observation" and SIDE_RUN["source_timestamp"]
+    assert "not a registered run" in SIDE_RUN["not_of_record"] and SIDE_RUN["plan"]["section"] == 7
+    checks = SIDE_RUN["checks"]
+    assert checks["default_cell_of_the_2020_demand_against_the_e8_rows"]["result"] == "PASS"
+    against = checks["cells_of_the_2020_demand_against_the_registered_run"]
+    assert against["result"] == "PASS" and against["unit_cells_compared"] == 8 * 90
+    assert checks["residents_of_the_district_same_in_both_demands"] is True
+    assert any("Class E never means safe" in limit for limit in SIDE_RUN["limits"])
+
+
+def test_the_demand_keeps_the_residents_of_every_tambon() -> None:
+    demand = SIDE_RUN["demand"]
+    assert demand["buildings_in_a_cell_of_the_district"] == DISTRICT["buildings"]["in_a_demand_cell"]
+    assert sum(unit["buildings"] for unit in demand["by_unit"].values()) == demand["buildings_in_a_cell_of_the_district"]
+    for code, unit in demand["by_unit"].items():
+        assert 0 < unit["cells_with_a_building"] < unit["cells"]
+        for name in DEMANDS:
+            mix = SIDE_RUN["need_mix"]["by_tambon"][code][name]["in_the_published_run"]
+            assert abs(mix["residents"] - unit["residents"]) < 0.6
+            assert abs(sum(kind["share"] for kind in mix["by_type"].values()) - 1.0) < 0.001
+
+
+def test_the_classes_of_the_default_cell_and_what_the_report_says_of_them() -> None:
+    units = {unit["unit_id"]: unit for unit in SIDE_RUN["units"]}
+    assert set(units) == set(NEED_MIX["by_tambon"])
+    differing = [code for code, unit in units.items()
+                 if unit[DEMANDS[0]]["default_cell"]["action_class"] != unit[DEMANDS[1]]["default_cell"]["action_class"]]
+    assert len(SIDE_RUN["default_cell_classes_that_differ"]) == len(differing)
+    for unit in units.values():
+        for name in DEMANDS:
+            assert unit[name]["cells_run"] == 90 and sum(unit[name]["class_counts"].values()) == 90
+            assert unit[name]["default_cell"]["action_class"] in ("A", "B", "C", "D", "E")
+
+
+def test_ko_chang_with_residents_where_the_buildings_stand() -> None:
+    # The finding the pitch leads with, by both demands: nobody unaffected, and with buildings fewer in the water
+    # and more dry with every road cut.
+    grid, by_buildings = (SIDE_RUN["need_mix"]["by_tambon"]["TH570903"][name]["in_the_published_run"]["by_type"] for name in DEMANDS)
+    assert grid["not_affected"]["residents"] == by_buildings["not_affected"]["residents"] == 0
+    assert by_buildings["in_the_water"]["share"] < grid["in_the_water"]["share"]
+    assert by_buildings["dry_but_cut_off"]["share"] > grid["dry_but_cut_off"]["share"] > 0.5
+    district = SIDE_RUN["need_mix"]["district"]
+    assert district[DEMANDS[1]]["in_the_published_run"]["by_type"]["in_the_water"]["residents"] < \
+        district[DEMANDS[0]]["in_the_published_run"]["by_type"]["in_the_water"]["residents"]
+    # The 2020 demand here is the need mix that is already published.
+    published = NEED_MIX["district"]["worldpop_2020"]["in_the_published_run"]["by_type"]
+    for kind, row in district[DEMANDS[0]]["in_the_published_run"]["by_type"].items():
+        assert abs(row["residents"] - published[kind]["residents"]) < 0.6

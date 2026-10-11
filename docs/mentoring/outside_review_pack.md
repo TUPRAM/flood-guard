@@ -18,16 +18,18 @@ observed. Residents are modelled counts. Nothing was checked on the ground.
 
 ![The need map of Mae Sai district](../../outputs/need_mix/se1_mae_sai_need_map_v1.png)
 
-1. **A flood map shows the blue. The orange and the green are 10,000 more
-   people.** In the scenario about 18,000 residents are in the water. About
-   7,500 more stay dry and lose every road; about 2,400 stay dry and on the
-   road network with the hospital out of reach.
+1. **A flood map shows the blue. The orange and the green are at least
+   10,000 more people.** In the scenario 13,000 to 18,000 residents are in
+   the water. Another 7,500 to 10,000 stay dry and lose every road; 2,400 to
+   3,400 stay dry and on the road network with the hospital out of reach.
+   The first figure of each pair counts residents where a population grid
+   puts them, the second where the buildings stand.
 2. **Tambons with the same class need different things.** Mae Sai, Ban Dai
    and Si Mueang Chum are all class D ("build resilience"). In Mae Sai most
    residents are in the water; in Ban Dai the largest group is dry with the
    hospital out of reach.
-3. **Ko Chang is the tambon to plan routes for.** A third of its residents are
-   in the water and nearly all the rest are dry with every road cut.
+3. **Ko Chang is the tambon to plan routes for.** Most of its residents stay
+   dry with every road cut (six to eight in ten); the rest are in the water.
 4. **Two short roads matter most.** Kept passable, a road of 1.3 km and one of
    0.8 km would give about a quarter of the 21,800 cut-off residents a route
    back. Most of the rest are in the water themselves.
@@ -43,6 +45,9 @@ observed. Residents are modelled counts. Nothing was checked on the ground.
   flooded town. For decisions it uses the agency map.
 - It has no dated picture of the September 2024 flood. THEOS-2 scenes have
   been requested from GISTDA.
+- It does not know where people live inside a tambon. Two ways of placing
+  them (a population grid, building outlines) give the ranges above; no
+  class changes between them.
 - Whether older residents are cut off more than others depends on the age
   data: the open modelled data show no gap, registration counts show older
   residents losing hospital access about 1.1 times as often.
@@ -66,9 +71,12 @@ will not be described as one.
 
 ---
 
-*Credits. Flood layer: UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009
+*Credits. Building outlines: Google Open Buildings v3 (CC BY 4.0) and Microsoft
+building footprints (ODbL), combined by VIDA and hosted by Source Cooperative.
+Flood layer: UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009
 (CC BY-SA 4.0), changed by FloodGuard. Residents: WorldPop (CC BY 4.0). Roads
 © OpenStreetMap contributors (ODbL). Registration counts: Department of
 Provincial Administration. Details and every limit:
 `docs/need_mix.md`, `docs/road_reconnection.md`,
-`docs/uncertainty_ensemble_rescaled_demand.md`, `docs/equity_by_age.md`.*
+`docs/uncertainty_ensemble_rescaled_demand.md`, `docs/equity_by_age.md`,
+`docs/buildings_in_water.md`.*

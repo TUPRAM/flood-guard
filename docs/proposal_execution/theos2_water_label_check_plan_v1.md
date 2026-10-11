@@ -79,8 +79,8 @@ kept.
 A page that opens in a browser, one point at a time, with three pictures:
 
 - the 64 m around the point at the full 0.5 m, in true colour;
-- the same 64 m in false colour (near infrared shown as red), in which open
-  water is dark and plants are red;
+- the same 64 m in false colour (near infrared shown as red), in which
+  plants are red, clear water is dark and muddy water is blue-green;
 - the 320 m around the point at 1 m, for context.
 
 The square of 2 m is outlined in the middle of the first two pictures; a key
@@ -95,6 +95,12 @@ The labeller gives one of three labels:
 | **Water** | More than half of the square is a water surface that can be seen: river, canal, pond, flood water, a field under water. Muddy water is water |
 | **Not water** | More than half of the square is anything else: plants (also a crop or a tree standing in water when leaves cover the surface), bare soil, a roof, a road, a shadow on land |
 | **Cannot tell** | Cloud, haze, a shadow too deep to see into, or no decision after looking at the three pictures |
+
+**Amended on 11 October 2026, after the draw and before anybody labelled.**
+The first text of this section and of the page said that open water is dark
+in false colour. The six practice points, looked at by the agent who built
+the page, show muddy flood water blue-green there. The sentence on the page
+was corrected; the points, the pictures and the three labels are unchanged.
 
 Two team members label all 300 points, each alone. They do not look at the
 water map of the rule while they label and do not speak about single points

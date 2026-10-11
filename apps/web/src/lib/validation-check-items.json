@@ -755,6 +755,29 @@
       "gates": "Two team members labelling the 300 points.",
       "ready": true,
       "added": "2026-10-11"
+    },
+    {
+      "id": "V-37",
+      "group": "theos2",
+      "title": "A second THEOS-2 water rule, frozen before the team's labels are read",
+      "check": "Look at the picture of the three chips with the water of each rule, then read 'The rule' and 'How it was chosen'. Accept if you agree that the second rule may be scored beside rule v1 on the 300 points, and that the development labels by the agent are said clearly enough to be no reference. Choose 'change' with a note if the picture shows a mistake of the second rule that the page does not name.",
+      "evidence": [
+        {
+          "label": "The write-up, with the picture",
+          "path": "docs/theos2_water_rule_v2.md"
+        },
+        {
+          "label": "The plan, written before the development points were drawn",
+          "path": "docs/proposal_execution/theos2_water_rule_v2_plan_v1.md"
+        },
+        {
+          "label": "The freeze record with every candidate and its score",
+          "path": "outputs/theos2_water_rule_v2/freeze_v1.json"
+        }
+      ],
+      "gates": "Scoring the second rule on the 300 points, and deciding which rule reads the images of Mae Sai.",
+      "ready": true,
+      "added": "2026-10-11"
     }
   ]
 }

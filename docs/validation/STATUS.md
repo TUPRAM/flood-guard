@@ -1,6 +1,6 @@
 # Validation check: state of the team's acceptance
 
-Written by `scripts/import_validation_records.py` on 2026-10-11T07:50:56Z from 9 record(s). Do not edit by hand.
+Written by `scripts/import_validation_records.py` on 2026-10-11T08:52:37Z from 9 record(s). Do not edit by hand.
 
 This is the word of the three team members on the project's own work. It is not a review by an independent expert, it qualifies no flood map, and it is not an official approval.
 
@@ -42,3 +42,4 @@ This is the word of the three team members on the project's own work. It is not 
 | V-34 | Which road reconnects whom, across the district | Waiting |  |  |  |
 | V-35 | The second pitch draft, the policy table and the page for an outside reader | Waiting |  |  |  |
 | V-36 | Measuring the THEOS-2 water rule: the plan, the 300 points and the three labels | Waiting |  |  |  |
+| V-37 | A second THEOS-2 water rule, frozen before the team's labels are read | Waiting |  |  |  |

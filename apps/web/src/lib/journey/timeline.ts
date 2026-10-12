@@ -50,6 +50,12 @@ const PLACED: readonly Placed[] = (() => {
   });
 })();
 
+/** Start and end of a camera segment on the timeline. */
+export function segmentRange(id: SegmentId): { start: number; end: number } {
+  const placed = PLACED.find((entry) => entry.item.kind === "segment" && entry.item.id === id)!;
+  return { start: placed.start, end: placed.end };
+}
+
 /** Total story length in units (the position of the final stop). */
 export const TIMELINE_END = PLACED[PLACED.length - 1].end;
 

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 
-import { PHONE_PAGE_FILL, quadBounds, quadIsDrawable, quadToMatrix3d, type Quad } from "@/lib/journey/screen-projection";
+import { LANDSCAPE_PAGE_FILL, PHONE_PAGE_FILL, quadBounds, quadIsDrawable, quadToMatrix3d, type Quad } from "@/lib/journey/screen-projection";
 import {
   CHAPTERS,
   TIMELINE_END,
@@ -14,6 +14,7 @@ import {
   parseScene,
   sceneAt,
   scenePosition,
+  segmentRange,
   stepToward,
   stopAt,
   stopPosition,
@@ -33,8 +34,6 @@ import styles from "./journey.module.css";
 /** Which 3D screen hosts the real page for each stop. */
 const STOP_SCREEN: Record<StopId, ScreenId> = { public: "phone", "public-sos": "phone", case: "monitor", command: "table" };
 const SCREEN_STOP: Record<ScreenId, StopId> = { phone: "public", monitor: "case", table: "command" };
-const SCENE_ORDER: SceneId[] = ["opening", "everyday", "public", "conditions", "public-sos", "affected", "case", "response", "command"];
-const REDUCED_MOTION_KEY = "floodguard:journey:reduced-motion";
 const FADE_MS = 260;
 
 interface Sizes {
@@ -83,41 +82,55 @@ interface View {
   atEnd: boolean;
 }
 
+/**
+ * Where the story waits on each caption (its `pause`), as timeline positions. Begin, Next and Continue glide to the next
+ * one and wait there; scrolling also stops at each one, so nothing runs on to the next caption by itself.
+ */
+const CAPTION_PAUSES: number[] = (Object.keys(CAPTIONS) as SegmentId[])
+  .flatMap((segment) => {
+    const { start, end } = segmentRange(segment);
+    return CAPTIONS[segment].flatMap((caption) => (caption.pause === undefined ? [] : [start + (end - start) * caption.pause]));
+  })
+  .sort((a, b) => a - b);
+
+/** Everything Next/Previous steps through, in order: every caption pause and every real page. */
+const STEP_POINTS: number[] = [...CAPTION_PAUSES, ...(["public", "public-sos", "case", "command"] as const).map(stopPosition)].sort((a, b) => a - b);
+
+function nextPoint(points: number[], after: number): number | null {
+  return points.find((point) => point > after + 1e-3) ?? null;
+}
+
+function previousPoint(points: number[], before: number): number | null {
+  return [...points].reverse().find((point) => point < before - 1e-3) ?? null;
+}
+
+/** Scrolling stops at the next (or previous) caption pause, like it stops at a real page. */
+function clampToPauses(display: number, requested: number): number {
+  if (requested > display) {
+    const next = nextPoint(CAPTION_PAUSES, display - 1e-3 + 1e-4);
+    return next !== null && next > display + 1e-4 ? Math.min(requested, next) : requested;
+  }
+  const previous = previousPoint(CAPTION_PAUSES, display + 1e-3 - 1e-4);
+  return previous !== null && previous < display - 1e-4 ? Math.max(requested, previous) : requested;
+}
+
 function captionIndex(segment: SegmentId, progress: number): number {
   return CAPTIONS[segment].findIndex((caption) => progress >= caption.from && progress < caption.to);
 }
 
-const REDUCED_MOTION_EVENT = "floodguard:journey:reduced-motion";
-
 function readReducedMotion(): boolean {
-  try {
-    const stored = window.localStorage.getItem(REDUCED_MOTION_KEY);
-    if (stored === "on") return true;
-    if (stored === "off") return false;
-  } catch {
-    // Storage can be unavailable; fall back to the system preference.
-  }
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
 function subscribeReducedMotion(notify: () => void): () => void {
   const query = window.matchMedia("(prefers-reduced-motion: reduce)");
   query.addEventListener("change", notify);
-  window.addEventListener(REDUCED_MOTION_EVENT, notify);
-  return () => {
-    query.removeEventListener("change", notify);
-    window.removeEventListener(REDUCED_MOTION_EVENT, notify);
-  };
+  return () => query.removeEventListener("change", notify);
 }
 
-/** The visitor's reduced-motion choice (stored toggle first, then the system setting). */
-function useReducedMotion(): [boolean, (next: boolean) => void] {
-  const value = useSyncExternalStore(subscribeReducedMotion, readReducedMotion, () => false);
-  const change = useCallback((next: boolean) => {
-    try { window.localStorage.setItem(REDUCED_MOTION_KEY, next ? "on" : "off"); } catch { /* optional */ }
-    window.dispatchEvent(new Event(REDUCED_MOTION_EVENT));
-  }, []);
-  return [value, change];
+/** The system's reduced-motion setting (the story then fades between moments instead of flying). */
+function useReducedMotion(): boolean {
+  return useSyncExternalStore(subscribeReducedMotion, readReducedMotion, () => false);
 }
 
 export function JourneyExperience() {
@@ -128,15 +141,16 @@ export function JourneyExperience() {
   /** Where each page was last drawn on its 3D screen: docking starts there, undocking returns there. */
   const lastQuads = useRef<Partial<Record<ScreenId, Quad>>>({});
   const labelRefs = useRef<Record<string, HTMLDivElement | null>>({});
-  const barRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<JourneyStage | null>(null);
   const sizesRef = useRef<Sizes | null>(null);
-  const motion = useRef({ target: 0, display: 0, docked: null as StopId | null, busy: false, reduced: false, wheelBuffer: 0, lastScene: "" as string, fromPopState: false });
+  /** The latest Next/Previous handler, for the keyboard listener. */
+  const stepRef = useRef<(direction: 1 | -1) => void>(() => {});
+  const motion = useRef({ target: 0, display: 0, docked: null as StopId | null, busy: false, reduced: false, wheelBuffer: 0, lastScene: "" as string, fromPopState: false, restUntil: 0, lastWheel: 0, freshGesture: false });
 
   // The same shared preference the FloodGuard pages use, so the real pages follow the story's language.
   const [language, changeLanguage] = useLanguage("en") as [JourneyLanguage, (next: JourneyLanguage) => void];
   const [status, setStatus] = useState<"loading" | "ready" | "failed">("loading");
-  const [reducedMotion, setReducedMotion] = useReducedMotion();
+  const reducedMotion = useReducedMotion();
   const [view, setView] = useState<View>({ segment: "opening", caption: -1, chapter: "opening", docked: null, heroVisible: true, atStart: true, atEnd: false });
   const [mounted, setMounted] = useState<Record<ScreenId, boolean>>({ phone: false, monitor: false, table: false });
   const [loaded, setLoaded] = useState<Record<ScreenId, boolean>>({ phone: false, monitor: false, table: false });
@@ -179,7 +193,6 @@ export function JourneyExperience() {
 
   // --- Preferences -------------------------------------------------------------------------------------------------
   useEffect(() => { motion.current.reduced = reducedMotion; }, [reducedMotion]);
-  const toggleReducedMotion = () => setReducedMotion(!reducedMotion);
 
   // --- Real-page hosts ---------------------------------------------------------------------------------------------
   const ensureMounted = useCallback((screen: ScreenId) => {
@@ -213,8 +226,6 @@ export function JourneyExperience() {
     host.style.height = `${size.css[screen].height}px`;
   }, [setFrameScrollbar]);
 
-  const barHeight = () => barRef.current?.getBoundingClientRect().height ?? 0;
-
   /**
    * The rectangle a page occupies at the end of the push onto its screen: where it was last drawn there, or (when the
    * story opened directly at a stop) where the end pose puts it. The page keeps its layout size and is scaled.
@@ -227,7 +238,7 @@ export function JourneyExperience() {
       const bounds = quadBounds(quad);
       return { left: bounds.left, top: bounds.top, width: css.width, height: css.height, scale: bounds.height / css.height };
     }
-    const scale = (size.height * (screen === "phone" ? PHONE_PAGE_FILL : 1)) / css.height;
+    const scale = (size.height * (screen === "phone" ? PHONE_PAGE_FILL : LANDSCAPE_PAGE_FILL)) / css.height;
     return { left: (size.width - css.width * scale) / 2, top: (size.height - css.height * scale) / 2, width: css.width, height: css.height, scale };
   }, []);
 
@@ -255,8 +266,8 @@ export function JourneyExperience() {
       host.style.transform = "none";
       host.style.left = "0px";
       host.style.width = "100%";
-      host.style.top = `var(--journey-bar, 0px)`;
-      host.style.height = `calc(100% - var(--journey-bar, 0px))`;
+      host.style.top = "0px";
+      host.style.height = "100%";
     };
     if (!size.exact[screen] && animate) {
       host.style.opacity = "0";
@@ -330,30 +341,10 @@ export function JourneyExperience() {
     if (fade) fade.dataset.on = "false";
   }, [undockIfNeeded]);
 
-  const sceneNeighbour = useCallback((direction: 1 | -1) => {
-    const position = motion.current.display;
-    const ordered = SCENE_ORDER.map((scene) => ({ scene, at: scenePosition(scene) }));
-    const candidate = direction > 0
-      ? ordered.find((entry) => entry.at > position + 1e-3)
-      : [...ordered].reverse().find((entry) => entry.at < position - 1e-3);
-    return candidate ?? null;
-  }, []);
-
   const continueFrom = useCallback((stop: StopId) => {
-    const next: Record<StopId, number> = {
-      public: stopPosition("public-sos"),
-      "public-sos": stopPosition("case"),
-      case: stopPosition("command"),
-      command: 0,
-    };
     if (stop === "command") void goTo(0, { animate: false });
-    // With reduced motion the story steps through beats; continuing lands on the next chapter's first beat.
-    else if (motion.current.reduced) void goTo(stopPosition(stop) + 0.5, { animate: false });
-    else void goTo(next[stop], { animate: true });
-  }, [goTo]);
-
-  const backToStory = useCallback((stop: StopId) => {
-    void goTo(stopPosition(stop) - 0.55, { animate: !motion.current.reduced });
+    // Glide to the next chapter's first caption and wait there (with reduced motion, fade to it).
+    else void goTo(nextPoint(CAPTION_PAUSES, stopPosition(stop)) ?? stopPosition(stop) + 0.5, { animate: !motion.current.reduced });
   }, [goTo]);
 
   const jumpToStop = useCallback((stop: StopId) => {
@@ -382,6 +373,8 @@ export function JourneyExperience() {
       sizesRef.current = next;
       setSizes(next);
       stage?.setViewport({ width: next.width, height: next.height }, next.aspects);
+      // Resizing clears the canvas; while a page is docked (no frames run) redraw the scene under the bottom bar once.
+      if (m.docked) stage?.update(m.display, 0);
       (Object.keys(hostRefs.current) as ScreenId[]).forEach((screen) => {
         const host = hostRefs.current[screen];
         if (host && host.dataset.mode !== "docked") projectHost(screen);
@@ -402,7 +395,15 @@ export function JourneyExperience() {
       if (!size) return;
       if (m.docked) return; // the real page owns the viewport; no 3D rendering while docked
 
-      if (!m.busy) m.display = stepToward(m.display, m.target, dt);
+      if (!m.busy) {
+        const before = m.display;
+        m.display = stepToward(m.display, m.target, dt);
+        // Arriving on a caption: rest briefly, so the end of a scroll gesture does not run on past it.
+        if (before !== m.display && m.display === m.target && CAPTION_PAUSES.some((pause) => Math.abs(pause - m.display) < 1e-4)) {
+          m.restUntil = performance.now() + 650;
+          m.freshGesture = true;
+        }
+      }
       const position = m.display;
       const result: StageFrame = stage.update(position, dt);
 
@@ -461,7 +462,7 @@ export function JourneyExperience() {
         ensureMounted(screen);
         m.docked = stop;
         dockHost(screen, !m.reduced);
-        canvas.style.visibility = "hidden";
+        // The 3D stays visible (its last frame) under the see-through bottom bar; rendering pauses while docked.
         setView((current) => ({ ...current, docked: stop }));
         setAnnouncement(`${trRef.current(STOPS[stop].page)}. ${trRef.current(STOPS[stop].note)}`);
         if (!m.fromPopState) updateHistory(stop, true);
@@ -532,18 +533,6 @@ export function JourneyExperience() {
     });
   }, [mounted, projectHost]);
 
-  // Keep the docked page below the story bar.
-  useEffect(() => {
-    const bar = barRef.current;
-    if (!bar) return;
-    const observer = new ResizeObserver(() => document.documentElement.style.setProperty("--journey-bar", `${barHeight()}px`));
-    observer.observe(bar);
-    return () => {
-      observer.disconnect();
-      document.documentElement.style.removeProperty("--journey-bar");
-    };
-  }, [view.docked]);
-
   // --- Input -------------------------------------------------------------------------------------------------------
   useEffect(() => {
     const m = motion.current;
@@ -561,7 +550,17 @@ export function JourneyExperience() {
         void goTo(clampScrollTarget(m.display, next), { animate: false });
         return;
       }
-      m.target = clampScrollTarget(m.display, m.target + delta);
+      const now = performance.now();
+      // Arriving on a caption ends the scroll gesture that brought the story there: what is left of it (or a
+      // trackpad's momentum) is ignored, and only a new gesture, after a short pause in scrolling, moves on.
+      const gap = now - m.lastWheel;
+      m.lastWheel = now;
+      if (now < m.restUntil) return;
+      if (m.freshGesture) {
+        if (gap < 450) return;
+        m.freshGesture = false;
+      }
+      m.target = clampToPauses(m.display, clampScrollTarget(m.display, m.target + delta));
     };
 
     const onWheel = (event: WheelEvent) => {
@@ -579,13 +578,26 @@ export function JourneyExperience() {
       touchY = y;
     };
     const onKey = (event: KeyboardEvent) => {
-      if (m.docked) return;
+      // Over a real page, only the presentation keys move the story (the page keeps arrows and space for itself).
+      if (m.docked) {
+        if (event.key === "PageDown" || event.key === "PageUp") {
+          event.preventDefault();
+          stepRef.current(event.key === "PageDown" ? 1 : -1);
+        }
+        return;
+      }
       const active = document.activeElement;
       const interactive = active instanceof HTMLButtonElement || active instanceof HTMLAnchorElement || active instanceof HTMLInputElement;
-      if (["ArrowDown", "PageDown"].includes(event.key) || (event.key === " " && !interactive)) {
+      if (["PageDown", "ArrowRight"].includes(event.key) || (event.key === " " && !interactive)) {
+        event.preventDefault();
+        stepRef.current(1);
+      } else if (["PageUp", "ArrowLeft"].includes(event.key)) {
+        event.preventDefault();
+        stepRef.current(-1);
+      } else if (event.key === "ArrowDown") {
         event.preventDefault();
         advance(0.35);
-      } else if (["ArrowUp", "PageUp"].includes(event.key)) {
+      } else if (event.key === "ArrowUp") {
         event.preventDefault();
         advance(-0.35);
       } else if (event.key === "Home" && !interactive) {
@@ -622,10 +634,29 @@ export function JourneyExperience() {
   const docked = view.docked;
   const stopCopy = docked ? STOPS[docked] : null;
   const chapterIndex = CHAPTERS.indexOf(view.chapter);
+  // Next / Previous: one caption (or real page) at a time, gliding and then waiting.
   const step = (direction: 1 | -1) => {
-    const target = sceneNeighbour(direction);
-    if (target) void goTo(target.at);
+    const m = motion.current;
+    if (m.docked) {
+      if (direction > 0) continueFrom(m.docked);
+      else {
+        const back = previousPoint(STEP_POINTS, stopPosition(m.docked));
+        void goTo(back ?? 0, { animate: !m.reduced });
+      }
+      return;
+    }
+    const from = Math.abs(m.target - m.display) > 1e-3 ? m.target : m.display;
+    const target = direction > 0 ? nextPoint(STEP_POINTS, from) : previousPoint(STEP_POINTS, from);
+    if (target !== null) void goTo(target, { animate: !m.reduced });
+    // From the very start, back wraps round to the end of the story (the command exercise).
+    else if (direction < 0) {
+      ensureMounted("table");
+      void goTo(stopPosition("command"), { animate: false });
+    }
   };
+  useEffect(() => {
+    stepRef.current = step;
+  });
 
   return (
     // `data-floodguard-journey` marks this route's chunks as online-only for the offline installer (write-offline-assets.mjs).
@@ -684,7 +715,6 @@ export function JourneyExperience() {
                 <button type="button" aria-pressed={language === "en"} onClick={() => changeLanguage("en")}>EN</button>
                 <button type="button" aria-pressed={language === "th"} onClick={() => changeLanguage("th")}>ไทย</button>
               </div>
-              <button type="button" className={styles.ghost} aria-pressed={reducedMotion} onClick={toggleReducedMotion}>{tr(UI.reduceMotion)}</button>
             </div>
           </header>
 
@@ -696,7 +726,7 @@ export function JourneyExperience() {
               <h1 id="journey-title">{tr(UI.title).split("\n").map((line) => <span key={line}>{line}</span>)}</h1>
               <p>{tr(UI.subtitle)}</p>
               <div className={styles.heroActions}>
-                <button type="button" className={styles.primary} onClick={() => void goTo(stopPosition("public"), { animate: !reducedMotion })}>{tr(UI.begin)}</button>
+                <button type="button" className={styles.primary} onClick={() => void goTo(CAPTION_PAUSES[0], { animate: !reducedMotion })}>{tr(UI.begin)}</button>
                 <button type="button" className={styles.secondary} onClick={() => setSkipOpen(true)}>{tr(UI.skip)}</button>
               </div>
               <small>{tr(UI.scrollHint)}</small>
@@ -707,13 +737,22 @@ export function JourneyExperience() {
             <div className={styles.caption} key={`${view.segment}-${view.caption}-${language}`} aria-live="polite">
               {caption.eyebrow && <span className={styles.eyebrow}>{tr(caption.eyebrow)}</span>}
               <p>{tr(caption.text)}</p>
+              {caption.points && caption.points.length > 0 && (
+                <ul className={styles.points}>
+                  {caption.points.map((point, index) => <li key={index}>{tr(point)}</li>)}
+                </ul>
+              )}
             </div>
           )}
 
           <p className={styles.illustrative}>{tr(UI.illustrative)}</p>
+        </>
+      )}
 
-          <nav className={styles.chapterNav} aria-label={tr(UI.chapters)}>
-            <button type="button" className={styles.step} disabled={view.atStart} onClick={() => step(-1)} aria-label={tr(UI.previous)}>←</button>
+      {/* One navigation bar, always at the bottom: in the 3D story and over a real page alike. */}
+      {status !== "failed" && (
+          <nav className={styles.chapterNav} data-docked={docked ? "true" : "false"} aria-label={tr(UI.chapters)}>
+            <button type="button" className={styles.step} onClick={() => step(-1)} aria-label={tr(UI.previous)}>←</button>
             <ol>
               {CHAPTERS.map((chapter, index) => (
                 <li key={chapter}>
@@ -724,40 +763,18 @@ export function JourneyExperience() {
                 </li>
               ))}
             </ol>
-            <button type="button" className={styles.step} disabled={view.atEnd} onClick={() => step(1)} aria-label={tr(UI.next)}>→</button>
+            {docked && stopCopy && (
+              <a className={styles.step} href={stopCopy.href(language)} target="_top" aria-label={tr(UI.openPage)} title={tr(UI.openPage)}>↗</a>
+            )}
+            <button
+              type="button"
+              className={styles.step}
+              disabled={view.atEnd && !docked}
+              onClick={() => step(1)}
+              aria-label={docked && stopCopy?.continueLabel ? tr(stopCopy.continueLabel) : tr(UI.next)}
+              title={docked && stopCopy?.continueLabel ? tr(stopCopy.continueLabel) : tr(UI.next)}
+            >→</button>
           </nav>
-        </>
-      )}
-
-      {/* Story bar while a real page is docked. */}
-      {docked && stopCopy && (
-        <div ref={barRef} className={styles.storyBar} role="region" aria-label={tr(stopCopy.page)}>
-          <div className={styles.barMain}>
-            <span className={styles.barChapter}>{CHAPTER_LABELS[view.chapter].number} {tr(CHAPTER_LABELS[view.chapter].title)}</span>
-            <strong>{tr(stopCopy.page)}</strong>
-            <span className={styles.barNote}>{tr(stopCopy.note)}</span>
-            <div className={styles.barActions}>
-              <button type="button" className={styles.secondary} onClick={() => backToStory(docked)}>
-                <span className={styles.long}>{tr(UI.backToStory)}</span><span className={styles.short} aria-hidden="true">← {tr(UI.story)}</span>
-              </button>
-              {stopCopy.continueLabel && (
-                <button type="button" className={docked === "public-sos" ? styles.sos : styles.primary} onClick={() => continueFrom(docked)}>
-                  {tr(stopCopy.continueLabel)}
-                </button>
-              )}
-              {docked === "command" && (
-                <>
-                  <button type="button" className={styles.primary} onClick={() => continueFrom("command")}>{tr(UI.replay)}</button>
-                  <Link className={styles.secondary} href="/" target="_top">{tr(UI.home)}</Link>
-                </>
-              )}
-              <a className={styles.link} href={stopCopy.href(language)} target="_top" aria-label={tr(UI.openPage)}>
-                <span className={styles.long}>{tr(UI.openPage)} ↗</span><span className={styles.short} aria-hidden="true">↗</span>
-              </a>
-            </div>
-          </div>
-          {stopCopy.warning && <p className={styles.barWarning}>{tr(stopCopy.warning)}</p>}
-        </div>
       )}
 
       {skipOpen && (

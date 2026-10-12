@@ -1,6 +1,6 @@
 import * as THREE from "three";
 
-import { PHONE_PAGE_FILL, type Quad } from "@/lib/journey/screen-projection";
+import { LANDSCAPE_PAGE_FILL, PHONE_PAGE_FILL, type Quad } from "@/lib/journey/screen-projection";
 import { BACK_STREET_Z, LAYOUT, ROAD_Z, SIDE_STREETS_X, WATER_LEVEL, terrainHeight, waterLevelBetween } from "@/lib/journey/terrain";
 import { locate, type SegmentId } from "@/lib/journey/timeline";
 
@@ -642,12 +642,12 @@ export class JourneyStage {
           k(1, inside),
         ];
       case "enter-monitor":
-        return [k(0, inside), k(0.5, overShoulder), through(0.78, pastShoulder), this.endPose(ops.monitorScreen)];
+        return [k(0, inside), k(0.5, overShoulder), through(0.78, pastShoulder), this.endPose(ops.monitorScreen, LANDSCAPE_PAGE_FILL)];
       case "aerial":
         // Step back from the monitor, rise straight up through the skylight to a map view of the whole area, hold,
         // then come straight back down onto the planning table.
         return [
-          this.atKey(0, this.endPose(ops.monitorScreen)),
+          this.atKey(0, this.endPose(ops.monitorScreen, LANDSCAPE_PAGE_FILL)),
           through(0.04, pastShoulder),
           through(0.08, overShoulder),
           through(0.12, behind),
@@ -656,7 +656,7 @@ export class JourneyStage {
           k(0.46, map),
           k(0.74, map),
           through(0.88, abovePlan),
-          { ...this.endPose(ops.tableScreen), up: NORTH },
+          { ...this.endPose(ops.tableScreen, LANDSCAPE_PAGE_FILL), up: NORTH },
         ];
     }
   }

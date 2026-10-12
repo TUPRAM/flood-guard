@@ -13,6 +13,9 @@ export interface Point { x: number; y: number }
  */
 export const PHONE_PAGE_FILL = 0.74;
 
+/** The same for the monitor and the planning table: their frames stay in view, clear of the top bar. */
+export const LANDSCAPE_PAGE_FILL = 0.86;
+
 /** Corners in screen pixels: top-left, top-right, bottom-right, bottom-left. */
 export type Quad = readonly [Point, Point, Point, Point];
 

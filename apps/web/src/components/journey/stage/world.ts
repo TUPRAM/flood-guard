@@ -444,9 +444,12 @@ export function buildRoads(quality: Quality, wet: WetUniforms): Roads {
   group.name = "Roads";
   const asphaltMap = asphaltTexture();
   const concreteMap = concreteTexture();
-  const asphalt = withWetness(new THREE.MeshStandardMaterial({ color: "#8f8d86", map: asphaltMap, roughness: 0.9 }), wet, true);
-  const concrete = withWetness(new THREE.MeshStandardMaterial({ color: "#d3cdc0", map: concreteMap, roughness: 0.93 }), wet, false);
-  const marking = withWetness(new THREE.MeshStandardMaterial({ color: "#ece7da", roughness: 0.72, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }), wet, false);
+  // Road surfaces sit a few centimetres over the terrain and are drawn with a depth offset, so the ground mesh (which
+  // interpolates between its vertices) never pokes through them as green specks, even from high above.
+  const surface = { polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4 };
+  const asphalt = withWetness(new THREE.MeshStandardMaterial({ color: "#8f8d86", map: asphaltMap, roughness: 0.9, ...surface }), wet, true);
+  const concrete = withWetness(new THREE.MeshStandardMaterial({ color: "#d3cdc0", map: concreteMap, roughness: 0.93, ...surface }), wet, false);
+  const marking = withWetness(new THREE.MeshStandardMaterial({ color: "#ece7da", roughness: 0.72, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -8 }), wet, false);
 
   const add = (geometries: THREE.BufferGeometry[], material: THREE.Material, name: string, shadows = true) => {
     const mesh = new THREE.Mesh(mergeGeometries(geometries)!, material);
@@ -467,9 +470,9 @@ export function buildRoads(quality: Quality, wet: WetUniforms): Roads {
 
   // Concrete side streets and back street.
   const streets: THREE.BufferGeometry[] = [];
-  for (const x of SIDE_STREETS_X) streets.push(strip([[x, ROAD_Z - ROAD_HALF + 0.05], [x, -46]], 4.4, 0.05, 1, 4, 4.4));
-  streets.push(strip([[-62, BACK_STREET_Z], [66, BACK_STREET_Z]], 4.4, 0.055, 1, 4, 4.4));
-  streets.push(strip([[LAYOUT.operations.x, BACK_STREET_Z], [LAYOUT.operations.x, LAYOUT.operations.z + 7.5]], 5, 0.05, 1, 4, 5));
+  for (const x of SIDE_STREETS_X) streets.push(strip([[x, ROAD_Z - ROAD_HALF + 0.05], [x, -46]], 4.4, 0.09, 1, 4, 4.4));
+  streets.push(strip([[-62, BACK_STREET_Z], [66, BACK_STREET_Z]], 4.4, 0.1, 1, 4, 4.4));
+  streets.push(strip([[LAYOUT.operations.x, BACK_STREET_Z], [LAYOUT.operations.x, LAYOUT.operations.z + 7.5]], 5, 0.09, 1, 4, 5));
   add(streets, concrete, "Streets");
 
   // Raised footpath with kerbs on the north side through the town, broken at the side streets.

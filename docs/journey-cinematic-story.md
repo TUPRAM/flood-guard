@@ -24,7 +24,7 @@ Opening → 01 Everyday connections → [real /public/] → 02 Conditions change
 | People | `apps/web/src/components/journey/stage/characters.ts` | The resident and the responder are rigged models (`public/journey/characters/*.glb`, built from the delivered characters by `scripts/build-journey-characters.mjs`). Each carries its bind pose and one held pose (`PhoneHold`, `Typing`), made without the scene, so the stage fits them to it. **Responder:** hips on the chair's cushion, feet flat on the floor, each fingertip lowered onto the keyboard's home row (the knuckle bends until the skin meets the keys); his wrists are held there every frame, so breathing does not lift his hands, and typing is a small lift and tap of each finger. **Resident:** the phone stays exactly where the delivered pose reads it, but her hand is rebuilt around it (`PHONE_GRIP`: fingers hooked on the far edge from behind, thumb beside the near edge), because the real page is drawn over the whole screen and would cut through a finger in front of it; her arm is then brought to that hand. The story blends per bone from a relaxed pose (her right arm mirrored from her relaxed left, still holding the phone) to the reading pose, and adds breathing and small head movements. The real public app is projected onto a plane fitted to the screen of the phone she holds. |
 | Fallback people | `apps/web/src/components/journey/stage/figure.ts` | Procedural sculpted figures, shown only until the models load (the story waits up to 9 s) or if they fail to load. |
 | Camera, lighting and scene state | `apps/web/src/components/journey/stage/journey-stage.ts` | Per-segment keyframes; push-ins end exactly where the screen fills the viewport. Neutral tone mapping, outdoor sky environment light, a sun whose shadow frustum follows the shot. |
-| UI, input, docking, history | `apps/web/src/components/journey/journey-experience.tsx` | Wheel/touch/keys scrub; stops dock the real page; `?scene=` links and Back/Forward. |
+| UI, input, docking, history | `apps/web/src/components/journey/journey-experience.tsx` | The story waits on every caption: → (or Page Down / Space / a clicker) glides to the next caption or real page; scrolling also stops on each caption and needs a fresh gesture to move on. One bottom bar (chapters, ←, ↗, →) stays over the real pages too, which open at full height. ← on the opening goes to the end. `?scene=` links and Back/Forward. |
 | Copy (EN/TH) | `apps/web/src/components/journey/journey-copy.ts` | Thai strings need native review. |
 
 **Real pages, not mockups.** Each real route runs in its own same-origin `<iframe>` (so its routing, URL parameters
@@ -68,7 +68,7 @@ table; when the camera aligns, the transform becomes identity, the page fills th
 
 ## Accessibility and fallbacks
 
-Reduced motion (system setting or the toggle) replaces camera flights with cross-fades between story beats. Every
+Reduced motion (the system setting) replaces camera flights with cross-fades between story beats. Every
 control is a real button or link with visible focus; the skip dialog traps focus and closes with Escape. Without WebGL
 the page shows the story as text with links to every real page.
 

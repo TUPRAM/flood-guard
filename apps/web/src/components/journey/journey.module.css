@@ -209,6 +209,9 @@
 .chapterNav ol button[aria-current="step"] { border-bottom-color: var(--teal); color: var(--ink); }
 .step { flex: none; width: 40px; height: 40px; border: 1px solid var(--line); border-radius: 999px; background: var(--paper); color: var(--ink); font-size: 1.05rem; cursor: pointer; }
 .step:disabled { opacity: 0.35; cursor: default; }
+a.step { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; font-size: 0.95rem; }
+/* Over a real page the bar stays where it was and looks the same (see-through, over the scene). */
+.chapterNav[data-docked="true"] { position: fixed; z-index: 7; }
 
 /* Story bar over a docked real page. */
 .storyBar {
@@ -283,3 +286,12 @@
   .hero, .caption, .storyBar { animation: none; }
   .label, .fade { transition-duration: 80ms; }
 }
+
+/* Supporting points under a caption's headline. */
+.points { margin: 10px 0 0; padding-left: 1.1em; color: #3f4f51; font-size: 0.92rem; line-height: 1.45; }
+.points li { margin: 3px 0; }
+.points li::marker { color: var(--teal); }
+@media (max-width: 699px) {
+  .points { margin-top: 6px; font-size: 0.82rem; line-height: 1.4; }
+}
+

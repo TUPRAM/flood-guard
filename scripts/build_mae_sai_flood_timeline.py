@@ -100,6 +100,7 @@ import shutil
 import sys
 import tempfile
 import zipfile
+from types import SimpleNamespace
 
 import numpy as np
 from PIL import Image
@@ -146,6 +147,7 @@ from floodguard.flood_timeline import (  # noqa: E402
     depth_factor,
 )
 import floodguard.replay_exports as replay_exports  # noqa: E402
+import floodguard.replay_river_fit as river_fit  # noqa: E402
 import floodguard.reported_depths as reported_depths  # noqa: E402
 import floodguard.shelter_validation as shelter_validation  # noqa: E402
 from floodguard.replay_manifest import (  # noqa: E402
@@ -295,8 +297,19 @@ def warp(src: np.ndarray, src_transform, src_crs, grid: Grid, resampling=Resampl
     return dst
 
 
-def hydrology(dem_paths: list[Path], work: Path) -> tuple[np.ndarray, np.ndarray, np.ndarray, Grid, np.ndarray, float, np.ndarray]:
-    """Return HAND (m), stream mask, conditioned DEM, the UTM grid, the depth factor k, the reference area and a
+def hydrology(dem_paths: list[Path], work: Path, rivers: list | None = None) -> SimpleNamespace:
+    """Route the flow and return what the flood model is made of.
+
+    ``rivers`` are mapped river lines in the UTM zone. When they are given they are cut ``RIVER_BURN_M`` into the
+    surface model **for the routing of flow only** (plan ``replay_river_fit_plan_v1.md``, section 3): the channels and
+    their upstream areas then follow the mapped rivers, while heights above a channel are still taken from the surface
+    model as it was. Without them the routing is the one of revision r4.
+
+    The namespace holds ``hand`` (m), ``streams``, ``conditioned`` (the surface model after filling), ``grid``, ``k``
+    (the depth factor from upstream area), ``reference_km2``, ``low_confidence``, ``drain`` (the flat index of the
+    channel cell each cell drains to) and ``area_km2`` (upstream area). The old description follows.
+
+    Return HAND (m), stream mask, conditioned DEM, the UTM grid, the depth factor k, the reference area and a
     low-confidence mask (filled depressions and flat-fallback cells)."""
     from pysheds.grid import Grid as ShedGrid
 
@@ -319,7 +332,19 @@ def hydrology(dem_paths: list[Path], work: Path) -> tuple[np.ndarray, np.ndarray
     sg = ShedGrid.from_raster(str(tmp))
     raw = sg.read_raster(str(tmp))
     inflated = sg.resolve_flats(sg.fill_depressions(sg.fill_pits(raw)))
-    fdir = sg.flowdir(inflated)
+    routing = inflated
+    if rivers:
+        from rasterio import features
+
+        river_cells = features.rasterize(((geometry, 1) for geometry in rivers), out_shape=grid.shape, transform=grid.transform,
+                                         fill=0, all_touched=True, dtype="uint8") > 0
+        burned = np.where(river_cells & (dem_utm > -9000), dem_utm - river_fit.RIVER_BURN_M, dem_utm).astype(np.float32)
+        tmp_burned = work / "dem_utm30_rivers.tif"
+        with rasterio.open(tmp_burned, "w", driver="GTiff", width=grid.width, height=grid.height, count=1, dtype="float32",
+                           crs=UTM, transform=grid.transform, nodata=-9999.0) as dst:
+            dst.write(burned, 1)
+        routing = sg.resolve_flats(sg.fill_depressions(sg.fill_pits(sg.read_raster(str(tmp_burned)))))
+    fdir = sg.flowdir(routing)
     acc = sg.accumulation(fdir)
     area_km2 = np.asarray(acc) * (HYDRO_RES**2) / 1e6
     stream_raster = acc * (HYDRO_RES**2) / 1e6 >= STREAM_THRESHOLD_KM2  # Keeps the pysheds Raster type.
@@ -354,7 +379,8 @@ def hydrology(dem_paths: list[Path], work: Path) -> tuple[np.ndarray, np.ndarray
     filled = (conditioned - np.asarray(raw, dtype=np.float32)) > LOW_CONFIDENCE_FILL_M
     near_zero = np.isfinite(hand) & (hand < LOW_CONFIDENCE_HAND_M)
     low_confidence = ((filled | missing) & near_zero) & ~nodata
-    return hand, streams, conditioned, grid, k.astype(np.float32), reference_km2, low_confidence
+    return SimpleNamespace(hand=hand, streams=streams, conditioned=conditioned, grid=grid, k=k.astype(np.float32),
+                           reference_km2=reference_km2, low_confidence=low_confidence, drain=drain, area_km2=area_km2)
 
 
 def hillshade(dem: np.ndarray, res: float, azimuth: float = 315.0, altitude: float = 45.0) -> np.ndarray:
@@ -542,8 +568,9 @@ def build(external: Path, out_dir: Path, track: Track = untracked) -> dict:
 
     # --- Hydrology and HAND -------------------------------------------------------------
     with tempfile.TemporaryDirectory() as tmp:
-        hand30, streams30, dem30, hgrid, k30, reference_km2, lowconf30 = hydrology(
-            [track(external / "open_context/copernicus_dem_glo30" / tile) for tile in DEM_TILES], Path(tmp))
+        hydro = hydrology([track(external / "open_context/copernicus_dem_glo30" / tile) for tile in DEM_TILES], Path(tmp))
+    hand30, streams30, dem30, hgrid, k30, reference_km2, lowconf30 = (
+        hydro.hand, hydro.streams, hydro.conditioned, hydro.grid, hydro.k, hydro.reference_km2, hydro.low_confidence)
 
     def hand_codes(grid: Grid) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         hand = warp(np.nan_to_num(hand30, nan=-1), hgrid.transform, UTM, grid, Resampling.bilinear, src_nodata=-1)

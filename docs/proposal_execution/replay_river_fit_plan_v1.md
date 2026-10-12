@@ -115,3 +115,58 @@ model. One honest figure is kept:
 - OpenStreetMap's river lines are where a mapper drew them.
 - Every figure of the replay changes with the model. The earlier revision
   and its figures stay in the history of the repository.
+
+## 9. Amended on 12 October 2026, after the prototype: what failed, and what the owner chose
+
+Three things came out of a prototype that changed no published file.
+
+**Step 1 is dropped.** With the mapped rivers cut in, the peak covered 63
+percent of the evidence where the published model covers 73. The image shows
+why: the flood also ran through the middle of the plain, along the course the
+surface model takes for the main river. The published routing has a channel
+on both courses and is kept. Section 3 is not carried out.
+
+**Step 2 works where the image sees.** Fitted on the published routing, the
+peak covers 89 percent of the evidence in the replay area (published: 73)
+and 94 percent along the border river (published: 54).
+
+**Step 3 fails by the rule of section 6, point 4.** Fitted on the fit
+squares only, the model covers 62 percent of the evidence of the held-back
+squares; the published model covers 73. A fitted level does not carry over
+to a stretch two kilometres away that has no evidence of its own. By the
+rule as written, the published model would stay.
+
+**The owner chose the fitted model all the same** (12 October, after the
+rule and its failure were put to him), for three reasons that are his and
+the agent's to answer for:
+
+1. The purpose is a replay that agrees with what the satellite saw, not a
+   claim that the model predicts a flood better. The rule guards the second.
+2. In the replay the model is fitted wherever the image sees, which is three
+   quarters of the channels; the held-back test hides half of them.
+3. The layer of UNOSAT and GISTDA, which the fit does not use and which also
+   sees under cloud, agrees better with the fitted peak on both counts: 79
+   percent of the layer lies inside the peak (published: 70) and 62 percent
+   of the peak lies inside the layer (published: 60), in the district. That
+   comparison was known when the choice was made, so it is recorded as known
+   during tuning and is no longer an independent check of the replay.
+
+**What follows from the failure, and is written into the replay:**
+
+- The peak is **fitted to the Sentinel-2 image of 15 September**. Where the
+  image sees no evidence (cloud, ground already bare, floods that left no
+  mud) a stretch keeps the published rule.
+- **The fitted levels do not carry over to places the image cannot see**;
+  the held-back figures (62 against 73 percent) are given with the model.
+- The Sentinel-2 water check of the replay shares the scene the fit uses. It
+  is relabelled calibration-informed, as the replay's own rule on tuning
+  requires.
+- Nobody calls the fitted replay validated, more accurate or a better
+  forecast.
+
+A variant that never lowers a level below the published rule passed the
+held-back test (75 against 73 percent) and floods more. It was designed
+after the failure was seen and is not used.
+
+The revision of the replay before this change stays reachable as an archive
+(tag `replay-r4` in Git, and a page of the site).

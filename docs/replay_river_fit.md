@@ -137,8 +137,8 @@ opened with a connection.
   24,444 others.
 - `docs/studio-study-library.md` and `docs/command_exercise_plan.md` describe
   the page with the figures of r4; each says so at the place.
-- The policy page still names r4 as the current replay. A team member is
-  working on that page; it is theirs to change.
+- The policy page names r5 as the current replay: only the name of the
+  revision was changed there, on the owner's word of 12 October.
 
 ## To make the figures again
 

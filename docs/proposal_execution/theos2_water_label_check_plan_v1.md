@@ -121,8 +121,9 @@ labeller typed and the seconds spent on each point.
 4. The figures of section 6 are computed once. The key, the two label files
    and the result are committed together.
 
-**Added on 11 October 2026, while the first labeller was at work and before
-anybody else had seen a label.** The run of step 4
+**Added on 11 October 2026, before the agent had seen a label.** (Two label
+files had been saved earlier that day, as their time stamps show; they were
+handed over on 12 October.) The run of step 4
 also scores a second water rule on the same points. That rule has a plan of its
 own (`theos2_water_rule_v2_plan_v1.md`): it is developed on other points and
 frozen before step 4, and the run refuses to start without the freeze. No
@@ -138,6 +139,19 @@ with a reason, and every result is kept.
 both gave "water" or both gave "not water". A point on which they differ, or
 which one of them could not tell, is left out of figures a to d and counted.
 The same figures are given beside it for each labeller alone.
+
+**Amended on 12 October 2026, after three label files were handed over and
+before any figure was computed.** All three team members labelled, where this
+plan asked for two. No two of the three are picked: that choice would be made
+with the labels in hand. The label a point is scored with is the label **at
+least two of the three** gave, where that label is water or not water; other
+points are left out of figures a to d and counted. Given beside it, so that
+the rule as first written can be read for every pair: the figures for each
+pair of labellers where both gave the same label, for the points on which
+all three gave the same label, and for each labeller alone. Figure h is given
+for each pair, with the share of points on which all three gave the same
+label. The agent read the three files into its working context before this
+amendment was written and computed nothing from them.
 
 For each chip, and for `sukhothai` and `chip_003` together (the two chips
 that served as a reference; `chip_001` is reported alone):

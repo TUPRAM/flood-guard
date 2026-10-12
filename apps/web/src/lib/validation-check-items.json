@@ -736,9 +736,13 @@
     {
       "id": "V-36",
       "group": "theos2",
-      "title": "Measuring the THEOS-2 water rule: the plan, the 300 points and the three labels",
-      "check": "Read sections 3, 4, 6 and 7 of the plan. Accept if the three labels and the rule 'more than half of the square decides' are what you would label by, and if the sentences of section 7 are the ones to write whatever the figures turn out to be. Choose 'change' with a note if a label should be defined differently: that has to be said before anybody labels. Say in the note who the two labellers are.",
+      "title": "The THEOS-2 water rule measured against three labellers: it finds 71% of the water people see",
+      "check": "Read 'The result' on the page. Accept if the figures are worded carefully enough: three of us agree on 57 percent of the points; what the rule calls water is water in 90 percent, and it finds 71 percent of the water we see; the pages that compare radar with THEOS-2 water now carry these figures and no radar figure is changed. Choose 'change' with a note if you labelled and do not recognise your labels in the description, or if a sentence says more than the labels can carry.",
       "evidence": [
+        {
+          "label": "The result, with the key and the three label files",
+          "path": "outputs/theos2_water_labels/result_v1.json"
+        },
         {
           "label": "The plan, written before any point was drawn",
           "path": "docs/proposal_execution/theos2_water_label_check_plan_v1.md"
@@ -752,15 +756,15 @@
           "path": "outputs/theos2_water_labels/sample_v1.json"
         }
       ],
-      "gates": "Two team members labelling the 300 points.",
+      "gates": "What the pitch and the pages say of the THEOS-2 water.",
       "ready": true,
       "added": "2026-10-11"
     },
     {
       "id": "V-37",
       "group": "theos2",
-      "title": "A second THEOS-2 water rule, frozen before the team's labels are read",
-      "check": "Look at the picture of the three chips with the water of each rule, then read 'The rule' and 'How it was chosen'. Accept if you agree that the second rule may be scored beside rule v1 on the 300 points, and that the development labels by the agent are said clearly enough to be no reference. Choose 'change' with a note if the picture shows a mistake of the second rule that the page does not name.",
+      "title": "The second THEOS-2 water rule: better by 8 points on the team's labels, and it reads the images of Mae Sai",
+      "check": "Read 'The test on the 300 points'. Accept if you agree that the second rule, which gives the label on 78 percent of the labelled area where rule v1 gives it on 69, reads the images of Mae Sai when they arrive, with rule v1 beside it, and that the page says plainly enough that development overstated the gain. Choose 'change' with a note if rule v1 should stay the first reading.",
       "evidence": [
         {
           "label": "The write-up, with the picture",
@@ -773,9 +777,13 @@
         {
           "label": "The freeze record with every candidate and its score",
           "path": "outputs/theos2_water_rule_v2/freeze_v1.json"
+        },
+        {
+          "label": "The amendment to the plan for the images of Mae Sai",
+          "path": "docs/proposal_execution/theos2_study_event_check_plan_v1_amendment_1.md"
         }
       ],
-      "gates": "Scoring the second rule on the 300 points, and deciding which rule reads the images of Mae Sai.",
+      "gates": "Reading the images of Mae Sai with the second rule.",
       "ready": true,
       "added": "2026-10-11"
     },

@@ -456,6 +456,9 @@ Agreement between two sensors 44 hours apart; not accuracy.
 | Shelters: access on foot and listed places | `docs/shelter_capacity.md` (figures in the pitch note outside the repository) | Pitch level only, label "listed planned capacity; scenario". Capacities are listed planning figures; nobody verified that a shelter was open. |
 | A printable brief of case SE1 | `outputs/planning_brief/se1_mae_sai_brief.html` | One page, Thai and English, made from the published result. The Thai is not reviewed by a native speaker. |
 | THEOS-2 on the study event | `docs/proposal_execution/theos2_study_event_check_plan_v1.md` | The plan is committed and the radar readings are frozen before any image arrives; the comparison runs once per scene when GISTDA delivers. |
+| The THEOS-2 water rule measured against three of us | `docs/theos2_water_label_check.md` | Three team members labelled 300 points and agree with each other on 57% of them. What the rule calls water is water in 90%; it finds 71% of the water we see. So the radar's share of the real water is lower than we reported, not higher. |
+| A second THEOS-2 water rule | `docs/theos2_water_rule_v2.md` | Near infrared below red, one fixed limit, nothing set by eye: better than the first rule by 8 points (4 to 13) on our own labels, and it does not invent water on a dry scene. Simple beat the trained classifiers. It will read the images of Mae Sai. |
+| Buildings against residents in the water | `docs/buildings_in_water.md` | The population grid puts 39% of residents in cells with no building. With residents on buildings, 12,600 are in the water where the grid gives 17,900, no class changes, and Ko Chang is 83% dry with every road cut. |
 
 Each is on the team page for the team's word (items V-17, V-19 and V-22 to
-V-35). None changes a published class or enters a planning score.
+V-38). None changes a published class or enters a planning score.

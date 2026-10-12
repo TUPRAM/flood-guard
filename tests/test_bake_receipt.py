@@ -37,8 +37,8 @@ from floodguard.bake_receipt import (
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / "scripts"
-COMMITTED_RECEIPT = ROOT / "docs" / "mae_sai_timeline_r4_input_receipt.json"
-COMMITTED_FOLDER = ROOT / "apps" / "web" / "public" / "studies" / "mae-sai-2024-timeline" / "r4"
+COMMITTED_RECEIPT = ROOT / "docs" / "mae_sai_timeline_r5_input_receipt.json"
+COMMITTED_FOLDER = ROOT / "apps" / "web" / "public" / "studies" / "mae-sai-2024-timeline" / "r5"
 LOCAL_PATH = re.compile(r"(?<![A-Za-z])[A-Za-z]:[\\/](?!/)|/Users/|\\Users\\|/home/|%20")
 
 # --- Recording which files Python opens --------------------------------------------------------------
@@ -780,7 +780,7 @@ def test_per_subdistrict_peak_figures_come_from_the_peak_day_and_the_drawn_road_
         {"tambon_id": "T2", "area_km2": 40.0, "modelled_km2": 30.0, "flooded_km2": 2.5, "residents_in_water": 5.5, "road_km_impassable": 0.1}]
 
 
-# --- The committed r4 receipt ---------------------------------------------------------------------------
+# --- The committed r5 receipt ---------------------------------------------------------------------------
 
 
 @pytest.fixture(scope="module")
@@ -793,7 +793,7 @@ def test_committed_receipt_carries_provenance_fields_and_no_machine_path(committ
     assert b"\r" not in raw and raw.endswith(b"\n")
     assert not LOCAL_PATH.search(raw.decode("utf-8"))
     assert committed_receipt["schema"] == RECEIPT_SCHEMA
-    assert committed_receipt["study_id"] == "mae-sai-2024-flood-timeline" and committed_receipt["revision"] == "r4"
+    assert committed_receipt["study_id"] == "mae-sai-2024-flood-timeline" and committed_receipt["revision"] == "r5"
     assert committed_receipt["generated_by"] == "scripts/build_mae_sai_flood_timeline.py"
     assert committed_receipt["source_timestamp"] and committed_receipt["confidence"] == "low" and committed_receipt["assumptions"]
     assert committed_receipt["official_warning"] is False
@@ -837,7 +837,7 @@ def test_committed_receipt_lists_every_input_kind_the_bake_opens(committed_recei
     assert count(r"S2B_47QNC_202409(05|15)_0_L2A/(red|green|blue)\.tif$") == 6
     # The Sentinel-2 water check also reads the short-wave infrared band and the scene classification of both scenes.
     assert count(r"S2B_47QNC_202409(05|15)_0_L2A/(swir16|scl)\.tif$") == 4
-    assert count(r"S2B_47QNC_") == 10
+    assert count(r"S2B_47QNC_") == 12  # ten until r4; r5 also reads the near-infrared band of both scenes for the mud line
     # No land-cover map is an input. Of the UNOSAT products the bake opens one file, the product 4009 archive (it reads one
     # layer of it, the season envelope), beside the product's rights record.
     assert count(r"worldcover|land.?cover") == 0

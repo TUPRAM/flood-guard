@@ -352,7 +352,7 @@ def test_the_record_names_the_use_the_replay_already_makes_of_one_of_its_archive
     assert "scripts/build_mae_sai_flood_timeline.py (S1_ANCHOR_PRE)" in existing["what"]
     assert f'"file": "{pre_event["file_name"]}"' in bake and '"folder": "sentinel1_original_safe"' in bake
     assert pre_event["relative_path"] == f"sentinel1_original_safe/{pre_event['file_name']}"
-    timeline_path = "apps/web/public/studies/mae-sai-2024-timeline/r4/timeline.json"
+    timeline_path = "apps/web/public/studies/mae-sai-2024-timeline/r4/timeline.json"  # the draft names the revision it was written for; r4 stays public as the archive
     assert timeline_path in existing["what"]
     anchor = read_json(ROOT / timeline_path)["s1_anchor"]
     published = next(image for image in anchor["images"] if image["role"] == "pre_event")

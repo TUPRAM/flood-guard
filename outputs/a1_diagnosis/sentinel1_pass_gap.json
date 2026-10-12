@@ -1,6 +1,6 @@
 {
   "schema_version": "floodguard.a1_diagnosis_figures.v1",
-  "generated_at_utc": "2026-10-04T22:14:47Z",
+  "generated_at_utc": "2026-10-12T06:39:21Z",
   "plan_task": "A1 (abstention diagnosis: why threshold-only change detection failed at the 16 Sep pass)",
   "figure_id": "sentinel1_pass_gap",
   "title": "Sentinel-1 passes over Mae Sai in September 2024 and the gap between 6 and 15 September",

@@ -464,7 +464,7 @@
   },
   {
    "path": "scripts/build_mae_sai_flood_timeline.py",
-   "sha256": "6d745d50f05909304fb5a2a5aafe2370d84828faacf4e5baab3112b0c4b98deb"
+   "sha256": "d10d631e9306083c6158f8e8f1bbcdf2d679c790eafd067474c52fd49677c93a"
   },
   {
    "path": "scripts/mae_sai_timeline_evacuation.py",
@@ -501,6 +501,10 @@
   {
    "path": "src/floodguard/replay_manifest.py",
    "sha256": "b96602caef21cc6b52494a1a02c010e8340e350951d178ddabad1d958a9db69f"
+  },
+  {
+   "path": "src/floodguard/replay_river_fit.py",
+   "sha256": "76844d37827ec7f9cae0e5f672a3e10fda763b25ec1ba7f60366176af54fbcf0"
   },
   {
    "path": "src/floodguard/reported_depths.py",

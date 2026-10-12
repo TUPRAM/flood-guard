@@ -2106,6 +2106,7 @@ BAKE_SOURCES = (
     "src/floodguard/flood_timeline.py",
     "src/floodguard/optical_water_check.py",
     "src/floodguard/replay_exports.py",
+    "src/floodguard/replay_river_fit.py",
     "src/floodguard/replay_manifest.py",
     "src/floodguard/reported_depths.py",
     "src/floodguard/rights_basis.py",

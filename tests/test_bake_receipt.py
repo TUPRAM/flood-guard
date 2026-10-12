@@ -863,7 +863,7 @@ def test_committed_receipt_lists_every_input_kind_the_bake_opens(committed_recei
                            "outputs/mae_sai_population_nodes.csv", "outputs/mae_sai_reported_depths_2024.json",
                            "outputs/mae_sai_reported_shelters_2024.json", "outputs/mae_sai_road_risk.geojson"]
     # The reported depths (news, not surveyed; roadmap C-2) are an in-repo input like the reported shelters.
-    assert len(inputs) == 39
+    assert len(inputs) == 41  # 39 until r4; r5 adds the near-infrared band of the two Sentinel-2 scenes
 
 
 def test_committed_receipt_matches_the_in_repo_inputs_and_the_committed_revision(committed_receipt: dict) -> None:

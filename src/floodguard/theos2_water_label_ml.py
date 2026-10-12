@@ -20,11 +20,19 @@ FEATURES: tuple[str, ...] = (
     "blue", "green", "red", "nir", "green_nir_index", "red_nir_index", "blue_nir_index", "brightness",
     "nir_mean_5x5", "nir_sd_5x5", "red_nir_index_mean_5x5", "red_nir_index_sd_5x5",
 )
+FEATURES_AMENDMENT_1: tuple[str, ...] = (
+    "green_nir_index", "red_nir_index", "blue_nir_index", "red_green_index",
+    "red_nir_index_mean_5x5", "red_nir_index_sd_5x5", "green_nir_index_mean_5x5", "green_nir_index_sd_5x5",
+)
+"""The features of amendment 1: ratios of two bands as read, with no scaling by chip."""
+
 MODELS: tuple[str, ...] = ("one_index", "logistic", "forest", "boosting")
 WATER, NOT_WATER = "water", "not_water"
 COMPARISONS = len(MODELS)
 SHARED_LEVEL_Z = 2.4977
 """Standard errors for a two-sided 95% level shared over four comparisons (0.05 / 4)."""
+SHARED_LEVEL_Z_AMENDMENT_1 = 2.7344
+"""The same for the eight comparisons of both runs (0.05 / 8): the bar of the second run."""
 
 
 class LabelLearningError(ValueError):
@@ -93,6 +101,36 @@ def features(bands: Mapping[str, np.ndarray], rows: Sequence[int], columns: Sequ
     return np.column_stack(columns_out)
 
 
+def features_amendment_1(bands: Mapping[str, np.ndarray], rows: Sequence[int], columns: Sequence[int]) -> np.ndarray:
+    """The eight features of amendment 1 at the given pixels of one chip: ratios of two bands as read.
+
+    A ratio of two bands does not change when both are brighter or darker by one factor, so nothing is scaled by chip.
+
+    Raises:
+        LabelLearningError: for a missing band, bands of different shapes, or a pixel outside the chip.
+    """
+
+    if set(bands) != {"blue", "green", "red", "nir"}:
+        raise LabelLearningError("the four bands blue, green, red and nir are needed")
+    shape = bands["nir"].shape
+    if any(band.shape != shape for band in bands.values()):
+        raise LabelLearningError("the bands are not on one grid")
+    rows_, columns_ = np.asarray(rows, dtype=int), np.asarray(columns, dtype=int)
+    if rows_.shape != columns_.shape or rows_.ndim != 1:
+        raise LabelLearningError("rows and columns must be two lists of the same length")
+    if rows_.size and (rows_.min() < 0 or columns_.min() < 0 or rows_.max() >= shape[0] or columns_.max() >= shape[1]):
+        raise LabelLearningError("a pixel lies outside the chip")
+    raw = {name: band.astype("float64") for name, band in bands.items()}
+    green_nir, red_nir = _index(raw["green"], raw["nir"]), _index(raw["nir"], raw["red"])
+    red_nir_mean, red_nir_sd = _window_stats(red_nir, rows_, columns_)
+    green_nir_mean, green_nir_sd = _window_stats(green_nir, rows_, columns_)
+    at = lambda layer: layer[rows_, columns_]  # noqa: E731
+    return np.column_stack([
+        at(green_nir), at(red_nir), at(_index(raw["blue"], raw["nir"])), at(_index(raw["red"], raw["green"])),
+        red_nir_mean, red_nir_sd, green_nir_mean, green_nir_sd,
+    ])
+
+
 def make_model(name: str) -> Any:
     """A model of the plan, with the settings the plan fixes."""
 
@@ -110,10 +148,10 @@ def make_model(name: str) -> Any:
     raise LabelLearningError(f"no model is called {name}")
 
 
-def columns_of(name: str) -> list[int]:
-    """The feature columns a model reads: one for ``one_index``, all twelve for the others."""
+def columns_of(name: str, feature_names: Sequence[str] = FEATURES) -> list[int]:
+    """The feature columns a model reads: the index of rule v2 for ``one_index``, every column for the others."""
 
-    return [FEATURES.index("red_nir_index")] if name == "one_index" else list(range(len(FEATURES)))
+    return [list(feature_names).index("red_nir_index")] if name == "one_index" else list(range(len(feature_names)))
 
 
 def _fit(model: Any, name: str, x: np.ndarray, y: np.ndarray, weights: np.ndarray | None) -> Any:
@@ -125,7 +163,7 @@ def _fit(model: Any, name: str, x: np.ndarray, y: np.ndarray, weights: np.ndarra
 
 
 def leave_one_chip_out(points: Sequence[Mapping[str, Any]], matrix: np.ndarray, labels: Mapping[str, str | None],
-                       weights: Mapping[str, float] | None = None) -> dict[str, Any]:
+                       weights: Mapping[str, float] | None = None, feature_names: Sequence[str] = FEATURES) -> dict[str, Any]:
     """Predict every point with models fitted on the points of the other chips.
 
     Args:
@@ -133,6 +171,7 @@ def leave_one_chip_out(points: Sequence[Mapping[str, Any]], matrix: np.ndarray, 
         matrix: The features of the points.
         labels: The scoring label of each point: water, not water, or None where there is none.
         weights: The weight of each point in the fit; None for the same weight for every point.
+        feature_names: The names of the columns of ``matrix``: those of the plan, or those of amendment 1.
 
     Returns:
         ``answers``: for each model, its answer (water or not water) at every point, also at points without a label.
@@ -143,8 +182,8 @@ def leave_one_chip_out(points: Sequence[Mapping[str, Any]], matrix: np.ndarray, 
             points hold one label only.
     """
 
-    if matrix.shape != (len(points), len(FEATURES)):
-        raise LabelLearningError("one row of twelve features is needed for each point")
+    if matrix.shape != (len(points), len(feature_names)):
+        raise LabelLearningError("one row of features is needed for each point, one column for each feature name")
     chips = sorted({point["chip"] for point in points})
     if len(chips) < 2:
         raise LabelLearningError("leaving one chip out needs two chips or more")
@@ -162,7 +201,7 @@ def leave_one_chip_out(points: Sequence[Mapping[str, Any]], matrix: np.ndarray, 
             raise LabelLearningError(f"without {chip} the labelled points hold one label only")
         folds[chip] = {"points_fitted_on": int(train.sum()), "of_them_water": int(target[train].sum()), "points_predicted": int(test.sum())}
         for name in MODELS:
-            use = columns_of(name)
+            use = columns_of(name, feature_names)
             model = _fit(make_model(name), name, matrix[train][:, use], target[train], None if weight is None else weight[train])
             predicted = model.predict(matrix[test][:, use])
             for point_id, value in zip(np.array(ids)[test], predicted):
@@ -180,10 +219,10 @@ def area_weights(points: Sequence[Mapping[str, Any]], sizes: Mapping[tuple[str, 
     return {point["id"]: sizes[(point["chip"], point["group"])] / drawn[(point["chip"], point["group"])] for point in points}
 
 
-def shown_better(difference: Mapping[str, Any]) -> bool:
-    """The rule of the plan: above zero by more than the standard errors of a level shared over four comparisons."""
+def shown_better(difference: Mapping[str, Any], z: float = SHARED_LEVEL_Z) -> bool:
+    """The rule of the plan: above zero by more than ``z`` standard errors (a 95% level shared over the comparisons made)."""
 
     estimate, error = difference.get("estimate"), difference.get("standard_error")
     if estimate is None or error is None:
         return False
-    return bool(estimate - SHARED_LEVEL_Z * error > 0)
+    return bool(estimate - z * error > 0)

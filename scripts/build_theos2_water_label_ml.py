@@ -25,7 +25,9 @@ from floodguard import theos2_water_label_ml as ml  # noqa: E402
 from floodguard import theos2_water_labels as wl  # noqa: E402
 
 PLAN = "docs/proposal_execution/theos2_water_label_ml_plan_v1.md"
+AMENDMENT_1 = "docs/proposal_execution/theos2_water_label_ml_plan_v1_amendment_1.md"
 OUTPUT = "outputs/theos2_water_label_ml/result_v1.json"
+OUTPUT_AMENDMENT_1 = "outputs/theos2_water_label_ml/result_v2.json"
 LABEL_DIR = "outputs/theos2_water_labels"
 LABELLERS = ("callixta", "putu", "rachmania")
 SETS = {**{chip: (chip,) for chip in wl.CHIPS}, "reference_chips_together": wl.REFERENCE_CHIPS, "three_chips_together": wl.CHIPS}
@@ -73,10 +75,20 @@ def main() -> None:
     parser.add_argument("--external-root", required=True)
     parser.add_argument("--replace", action="store_true")
     parser.add_argument("--reason", default="")
+    parser.add_argument("--amendment-1", action="store_true",
+                        help="the second run: the features of amendment 1 (ratios of two bands as read) and its stricter bar")
     arguments = parser.parse_args()
-    out = ROOT / OUTPUT
+    second = arguments.amendment_1
+    output = OUTPUT_AMENDMENT_1 if second else OUTPUT
+    feature_names = ml.FEATURES_AMENDMENT_1 if second else ml.FEATURES
+    read_features = ml.features_amendment_1 if second else ml.features
+    bar = ml.SHARED_LEVEL_Z_AMENDMENT_1 if second else ml.SHARED_LEVEL_Z
+    comparisons = 2 * ml.COMPARISONS if second else ml.COMPARISONS
+    out = ROOT / output
+    if second and not (ROOT / OUTPUT).exists():
+        raise BuildError("the second run comes after the first: no result of the plan's own run exists")
     if out.exists() and not arguments.replace:
-        raise BuildError(f"{OUTPUT} exists; the figures are computed again only with --replace and --reason")
+        raise BuildError(f"{output} exists; the figures are computed again only with --replace and --reason")
     if arguments.replace and not arguments.reason.strip():
         raise BuildError("--replace needs --reason")
 
@@ -91,7 +103,7 @@ def main() -> None:
     scoring = wl.majority(list(given.values()))
 
     # --- features of the points, chip by chip; the groups of the key are checked against rule v1 on the same grid -------------
-    matrix = np.zeros((len(points), len(ml.FEATURES)))
+    matrix = np.zeros((len(points), len(feature_names)))
     scenes = {}
     for chip in wl.CHIPS:
         scene = Path(arguments.theos2_dir) / labels_script.CHIPS[chip]["file_name"]
@@ -107,7 +119,7 @@ def main() -> None:
             if answer != expected:
                 raise BuildError(f"{point['id']}: the pixel is not in the group the key gives; the grid is not the one of the draw")
         bands = {name: image[t2.THEOS2_BANDS[name] - 1] for name in ("blue", "green", "red", "nir")}
-        matrix[mine] = ml.features(bands, rows, columns)
+        matrix[mine] = read_features(bands, rows, columns)
         scenes[chip] = {"file_name": scene.name, "sha256": t2.sha256_file(scene), "points": len(mine)}
 
     # --- rule v1 and the frozen rule v2 at the points, as the label check read them -------------------------------------------
@@ -131,8 +143,8 @@ def main() -> None:
 
     # --- the fits: each point counts for the area it stands for (main run), and every point the same (beside it) -------------
     runs = {
-        "area_weighted": ml.leave_one_chip_out(points, matrix, scoring, ml.area_weights(points, sizes)),
-        "every_point_the_same": ml.leave_one_chip_out(points, matrix, scoring, None),
+        "area_weighted": ml.leave_one_chip_out(points, matrix, scoring, ml.area_weights(points, sizes), feature_names),
+        "every_point_the_same": ml.leave_one_chip_out(points, matrix, scoring, None, feature_names),
     }
 
     def scored(answers: dict[str, str]) -> dict[str, Any]:
@@ -147,7 +159,7 @@ def main() -> None:
         "rule_v2": {name: short(wl.figures_of_a_map(points, scoring, answers_v2, sizes, chips)) for name, chips in SETS.items()},
     }
     models = {run: {name: scored(result["answers"][name]) for name in ml.MODELS} for run, result in runs.items()}
-    verdicts = {name: ml.shown_better(models["area_weighted"][name][DECISION_SET]["minus_rule_v2"]) for name in ml.MODELS}
+    verdicts = {name: ml.shown_better(models["area_weighted"][name][DECISION_SET]["minus_rule_v2"], bar) for name in ml.MODELS}
 
     # --- each team member against the label the other two agree on: what these labels can show at most ------------------------
     people = {}
@@ -169,6 +181,9 @@ def main() -> None:
         "official_warning": False,
         "can_feed_decision_layer": False,
         "plan": {"path": PLAN, "sha256": t2.sha256_file(ROOT / PLAN)},
+        **({"amendment": {"path": AMENDMENT_1, "sha256": t2.sha256_file(ROOT / AMENDMENT_1)},
+            "run": "second run, made after the result of the first was seen; the features are those of amendment 1",
+            "first_run": {"path": OUTPUT, "sha256": t2.sha256_file(ROOT / OUTPUT)}} if second else {"run": "the one run of the plan"}),
         "what_this_is": "Four classifiers fitted on the team's labels of two chips and scored on the third, each chip left out "
                         "once, beside the two hand-written rules on the same 300 points. Agreement with the readers of an image; "
                         "no ground check.",
@@ -182,8 +197,9 @@ def main() -> None:
         "scoring_label": "The label at least two of the three gave, where it is water or not water.",
         "points": {"all": len(points), "with_a_scoring_label": sum(1 for value in scoring.values() if value is not None),
                    "labelled_water": sum(1 for value in scoring.values() if value == wl.WATER)},
-        "features": list(ml.FEATURES),
-        "models": {"one_index": "logistic regression on red_nir_index alone", "logistic": "logistic regression on the twelve features, standardised, C = 1",
+        "features": list(feature_names),
+        "features_scaled_by_chip": not second,
+        "models": {"one_index": "logistic regression on red_nir_index alone", "logistic": "logistic regression on every feature, standardised, C = 1",
                    "forest": "random forest, 500 trees, at least 5 points in a leaf", "boosting": "gradient-boosted trees (histogram), depth 3, 200 rounds, learning rate 0.1",
                    "seed": ml.SEED},
         "folds": runs["area_weighted"]["folds"],
@@ -191,7 +207,7 @@ def main() -> None:
         "models_scored": models,
         "decision": {
             "rule": f"A model is called better than rule v2 only if, in the area-weighted run and over the three chips together, its "
-                    f"difference with rule v2 is above zero by more than {ml.SHARED_LEVEL_Z} standard errors (95% shared over {ml.COMPARISONS} comparisons).",
+                    f"difference with rule v2 is above zero by more than {bar} standard errors (95% shared over {comparisons} comparisons).",
             "set": DECISION_SET,
             "shown_better_than_rule_v2": verdicts,
             "rule_that_reads_mae_sai": "rule v2, unchanged",
@@ -202,7 +218,7 @@ def main() -> None:
     }
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_bytes((json.dumps(result, ensure_ascii=False, indent=2) + "\n").encode("utf-8"))
-    print(f"wrote {OUTPUT}")
+    print(f"wrote {output}")
     for run, by_model in models.items():
         for name, sets in by_model.items():
             entry = sets[DECISION_SET]

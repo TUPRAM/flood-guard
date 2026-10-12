@@ -124,3 +124,42 @@ def test_the_result_was_made_under_the_committed_plan_and_keeps_its_labels() -> 
     flat = json.dumps(result)
     assert "Users" not in flat and "Downloads" not in flat, "no machine path"
     assert not any(key in flat for key in ("fpps", "action_class"))
+
+
+# --- amendment 1: features that need no scaling by chip --------------------------------------------------------------------
+
+
+def test_the_features_of_amendment_1_are_ratios_that_no_brightness_and_no_mix_of_a_scene_changes() -> None:
+    bands, water = chip(1.0, seed=0)
+    rows, columns = [5, 5, 30], [3, 30, 30]
+    first = ml.features_amendment_1(bands, rows, columns)
+    assert first.shape == (3, len(ml.FEATURES_AMENDMENT_1)) == (3, 8)
+    assert ml.features_amendment_1({name: band * 4.0 for name, band in bands.items()}, rows, columns) == pytest.approx(first)
+    # The fault of the first run: a chip that is nearly all water has another median, and the scaled index moved with it.
+    # A ratio of the bands as read does not: the same water pixel has the same value whatever the rest of the chip holds.
+    mostly_water = {name: band.copy() for name, band in bands.items()}
+    for name in mostly_water:
+        mostly_water[name][:, 20:36] = bands[name][:, 0:16]
+    index = ml.FEATURES_AMENDMENT_1.index("red_nir_index")
+    assert ml.features_amendment_1(mostly_water, [5], [3])[0, index] == pytest.approx(first[0, index])
+    scaled = ml.FEATURES.index("red_nir_index")
+    assert ml.features(mostly_water, [5], [3])[0, scaled] != pytest.approx(ml.features(bands, [5], [3])[0, scaled], abs=0.05)
+    with pytest.raises(ml.LabelLearningError):
+        ml.features_amendment_1(bands, [40], [0])
+
+
+def test_the_second_run_uses_its_own_columns_and_a_higher_bar() -> None:
+    assert ml.columns_of("one_index", ml.FEATURES_AMENDMENT_1) == [1] and len(ml.columns_of("forest", ml.FEATURES_AMENDMENT_1)) == 8
+    assert ml.SHARED_LEVEL_Z_AMENDMENT_1 == pytest.approx(2.7344) and ml.SHARED_LEVEL_Z_AMENDMENT_1 > ml.SHARED_LEVEL_Z
+    difference = {"estimate": 0.05, "standard_error": 0.019}
+    assert ml.shown_better(difference) is True and ml.shown_better(difference, ml.SHARED_LEVEL_Z_AMENDMENT_1) is False
+    points, _, labels = labelled_points()
+    rows = []
+    for number, (name, scale) in enumerate((("a", 1.0), ("b", 3.0), ("c", 0.5))):
+        bands, _ = chip(scale, seed=number)
+        generator = np.random.default_rng(100 + number)
+        row, column = generator.integers(2, 38, size=30), generator.integers(2, 38, size=30)
+        rows.append(ml.features_amendment_1(bands, row, column))
+    result = ml.leave_one_chip_out(points, np.vstack(rows), labels, None, ml.FEATURES_AMENDMENT_1)
+    for name in ml.MODELS:
+        assert sum(1 for point_id, label in labels.items() if result["answers"][name][point_id] == label) >= 85, name

@@ -163,3 +163,32 @@ def test_the_second_run_uses_its_own_columns_and_a_higher_bar() -> None:
     result = ml.leave_one_chip_out(points, np.vstack(rows), labels, None, ml.FEATURES_AMENDMENT_1)
     for name in ml.MODELS:
         assert sum(1 for point_id, label in labels.items() if result["answers"][name][point_id] == label) >= 85, name
+
+
+# --- the committed result of the second run -------------------------------------------------------------------------------
+
+
+def test_the_second_result_names_the_first_and_keeps_the_stricter_bar() -> None:
+    import hashlib
+
+    first_bytes = RESULT.read_bytes()
+    second = json.loads((RESULT.parent / "result_v2.json").read_text(encoding="utf-8"))
+    amendment = ROOT / "docs" / "proposal_execution" / "theos2_water_label_ml_plan_v1_amendment_1.md"
+    assert second["first_run"]["sha256"] == hashlib.sha256(first_bytes.replace(b"\r\n", b"\n")).hexdigest()
+    assert second["amendment"]["sha256"] == hashlib.sha256(amendment.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
+    assert second["features"] == list(ml.FEATURES_AMENDMENT_1) and second["features_scaled_by_chip"] is False
+    assert "second run" in second["run"] and "2.7344" in second["decision"]["rule"] and "8 comparisons" in second["decision"]["rule"]
+    main = second["models_scored"]["area_weighted"]
+    for name in ml.MODELS:
+        difference = main[name]["three_chips_together"]["minus_rule_v2"]
+        assert second["decision"]["shown_better_than_rule_v2"][name] == ml.shown_better(difference, ml.SHARED_LEVEL_Z_AMENDMENT_1), name
+    # What the account says: no model is called better; the one learned index is close to rule v2; the others are worse.
+    assert not any(second["decision"]["shown_better_than_rule_v2"].values())
+    assert abs(main["one_index"]["three_chips_together"]["minus_rule_v2"]["estimate"]) < 0.05
+    for name in ("logistic", "forest", "boosting"):
+        assert main[name]["three_chips_together"]["minus_rule_v2"]["interval_95"][1] < 0, name
+    # Rule v2 is within the range of a team member against the other two.
+    people = [entry["three_chips_together"]["share_answered_and_alike"]["estimate"] for entry in second["each_team_member_against_the_other_two"].values()]
+    rule_v2 = second["rules_on_the_same_points"]["rule_v2"]["three_chips_together"]["share_answered_and_alike"]["estimate"]
+    assert min(people) - 0.01 <= rule_v2 <= max(people) + 0.01
+    assert second["decision"]["rule_that_reads_mae_sai"] == "rule v2, unchanged" and second["official_warning"] is False

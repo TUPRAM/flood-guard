@@ -14,7 +14,9 @@ score and no class, and it is not an official warning.
 **How to read every figure.** Each figure is agreement with a reference
 layer. None is accuracy. At Mae Sai the reference is an agency layer that was
 not checked in the field and may come from the same radar pass. At Sukhothai
-the reference is another sensor, 44 hours earlier, on one tile of 8 km².
+the reference is another sensor, 44 hours earlier, on one tile of 8 km², read
+by a rule that finds 71% (64 to 77) of the water people see
+(`docs/theos2_water_label_check.md`, added 12 October).
 
 - Plan, committed before any model was fitted and before the result of work package 3 was read: `docs/proposal_execution/radar_flood_classifier_plan_v1.md`
 - Freeze record, committed before any test label was read: `outputs/radar_flood_classifier/chiang_rai_20241022_freeze_v1.json`

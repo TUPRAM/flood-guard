@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FloodGuard: water or not water</title>
+<style>
+  :root {
+    --ground: #17191c; --panel: #22262b; --line: #3a4048; --ink: #eceff2; --soft: #a9b1ba;
+    --mark: #ffe600; --water: #3d8fe0; --land: #c98a3c; --unsure: #7d8791; --side: min(34vw, 60vh, 512px);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--ground); color: var(--ink); font: 16px/1.5 system-ui, "Segoe UI", sans-serif; }
+  main { max-width: 1400px; margin: 0 auto; padding: 16px; }
+  h1 { font-size: 1.25rem; margin: 0 0 8px; }
+  p { margin: 0 0 12px; max-width: 70ch; }
+  .soft { color: var(--soft); }
+  table { border-collapse: collapse; margin: 0 0 16px; max-width: 80ch; }
+  th, td { text-align: left; vertical-align: top; padding: 6px 12px 6px 0; border-bottom: 1px solid var(--line); }
+  input[type=text] { font: inherit; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); width: 16em; }
+  button { font: inherit; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 10px 16px; cursor: pointer; }
+  button:hover { border-color: var(--soft); }
+  button:focus-visible, input:focus-visible { outline: 2px solid var(--mark); outline-offset: 2px; }
+  button.water { border-color: var(--water); }
+  button.land { border-color: var(--land); }
+  button.given { background: #3b4450; font-weight: 600; }
+  kbd { font: 0.8rem ui-monospace, Consolas, monospace; border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; margin-left: 6px; color: var(--soft); }
+  .bar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 12px; }
+  .bar .grow { flex: 1; }
+  .views { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; }
+  figure { margin: 0; }
+  figcaption { font-size: 0.85rem; color: var(--soft); margin-top: 4px; max-width: var(--side); }
+  .frame { position: relative; width: var(--side); height: var(--side); background: #000; overflow: hidden; }
+  .frame.context { width: min(24vw, 60vh, 320px); height: min(24vw, 60vh, 320px); }
+  .frame img { width: 100%; height: 100%; display: block; image-rendering: pixelated; }
+  .frame.context img { image-rendering: auto; }
+  /* The square of 2 m: 4 of 128 pixels, starting at pixel 62. */
+  .square { position: absolute; left: 48.4375%; top: 48.4375%; width: 3.125%; height: 3.125%; outline: 2px solid var(--mark); outline-offset: 2px; box-shadow: 0 0 0 5px rgba(0, 0, 0, 0.55); pointer-events: none; }
+  .tick { position: absolute; background: var(--mark); box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6); pointer-events: none; }
+  .tick.n, .tick.s { left: calc(50% - 1px); width: 2px; height: 7%; }
+  .tick.w, .tick.e { top: calc(50% - 1px); height: 2px; width: 7%; }
+  .tick.n { top: 36%; } .tick.s { top: 57%; } .tick.w { left: 36%; } .tick.e { left: 57%; }
+  /* The 64 m of the first two pictures inside the 320 m of the third. */
+  .window { position: absolute; left: 40%; top: 40%; width: 20%; height: 20%; outline: 1px solid var(--mark); box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.5); pointer-events: none; }
+  .hidden .square, .hidden .tick, .hidden .window { display: none; }
+  .choices { display: flex; flex-wrap: wrap; gap: 12px; margin: 16px 0 8px; }
+  .choices button { min-width: 11em; }
+  progress { width: 14em; height: 10px; accent-color: var(--mark); }
+  .note { border-left: 3px solid var(--mark); padding: 4px 0 4px 12px; margin: 12px 0; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+
+<section id="start">
+  <h1>Water or not water: 300 points on three THEOS-2 images</h1>
+  <p>You will see one point at a time: a square of 2 m outlined in yellow, on three pictures of the same place. Say what the square is. It takes about an hour, and you can close the page and come back: your labels are kept in this browser.</p>
+  <table>
+    <tr><th>Water</th><td>More than half of the square is a water surface you can see: river, canal, pond, flood water, a field under water. Muddy water is water.</td></tr>
+    <tr><th>Not water</th><td>More than half of the square is anything else: plants (also a crop or a tree standing in water when leaves cover the surface), bare soil, a roof, a road, a shadow on land.</td></tr>
+    <tr><th>Cannot tell</th><td>Cloud, haze, a shadow too deep to see into, or no decision after looking at the three pictures.</td></tr>
+  </table>
+  <p class="soft">Left: the 64 m around the point in true colour. Middle: the same in false colour, where plants are red, clear water is dark and muddy water is blue-green. Right: the 320 m around it. Label the square, not the surroundings.</p>
+  <p class="note">Please label alone, do not look at the water maps in the project docs while you label, and do not compare single points with the other labeller until both files are saved. The first six points are practice and are not kept.</p>
+  <p><label for="name">Your first name</label><br><input type="text" id="name" autocomplete="off" maxlength="40"></p>
+  <p><button id="begin">Start</button> <span id="resume" class="soft"></span></p>
+  <p id="storage" class="soft" hidden>This browser does not keep data for this page. Keep the tab open until you have saved the label file.</p>
+</section>
+
+<section id="work" hidden>
+  <div class="bar">
+    <strong id="where"></strong>
+    <progress id="progress" max="1" value="0"></progress>
+    <span class="grow"></span>
+    <button id="back">Back<kbd>&larr;</kbd></button>
+    <button id="outline">Hide outline<kbd>H</kbd></button>
+  </div>
+  <div class="views" id="views">
+    <figure>
+      <div class="frame"><img id="detail" alt="True colour, 64 m around the point">
+        <div class="tick n"></div><div class="tick s"></div><div class="tick w"></div><div class="tick e"></div><div class="square"></div></div>
+      <figcaption>True colour, 64 m across, 0.5 m pixels</figcaption>
+    </figure>
+    <figure>
+      <div class="frame"><img id="false" alt="False colour, 64 m around the point">
+        <div class="tick n"></div><div class="tick s"></div><div class="tick w"></div><div class="tick e"></div><div class="square"></div></div>
+      <figcaption>False colour (near infrared as red): plants are red, clear water dark, muddy water blue-green</figcaption>
+    </figure>
+    <figure>
+      <div class="frame context"><img id="context" alt="True colour, 320 m around the point"><div class="window"></div></div>
+      <figcaption>Context, 320 m across; the box is the area of the other two pictures</figcaption>
+    </figure>
+  </div>
+  <div class="choices">
+    <button class="water" data-label="water">Water<kbd>W</kbd></button>
+    <button class="land" data-label="not_water">Not water<kbd>N</kbd></button>
+    <button data-label="cannot_tell">Cannot tell<kbd>U</kbd></button>
+  </div>
+  <p class="soft">More than half of the yellow square decides. Keys: W, N, U, or 1, 2, 3.</p>
+</section>
+
+<section id="done" hidden>
+  <h1>All 300 points are labelled</h1>
+  <p id="summary"></p>
+  <p><button id="save">Save the label file</button> <button id="review">Go back to the last point</button></p>
+  <p class="soft">The file lands in your downloads folder. Give it to the person who runs the scoring; do not open the other labeller's file before both exist.</p>
+</section>
+
+</main>
+<script>
+const SAMPLE_ID = "/*SAMPLE_ID*/";
+const PRACTICE = /*PRACTICE*/[];
+const POINTS = /*POINTS*/[];
+
+const $ = (id) => document.getElementById(id);
+let labeller = "";
+let place = 0;            // index into the practice points, then into the points
+let practising = true;
+let labels = {};          // point id -> {label, seconds}
+let shownAt = null;       // when the point came on screen, or null while the page is hidden
+let elapsed = 0;          // seconds this point was on screen before the page was last hidden
+
+function storageKey() { return "floodguard-water-labels:" + SAMPLE_ID + ":" + labeller.toLowerCase(); }
+function remember() {
+  try { localStorage.setItem(storageKey(), JSON.stringify({ labels, place, practising })); }
+  catch (error) { $("storage").hidden = false; }
+}
+function recall() {
+  try { return JSON.parse(localStorage.getItem(storageKey()) || "null"); } catch (error) { return null; }
+}
+function list() { return practising ? PRACTICE : POINTS; }
+
+function spent() { return elapsed + (shownAt === null ? 0 : (Date.now() - shownAt) / 1000); }
+
+function show() {
+  const points = list();
+  if (!practising && place >= points.length) { finish(); return; }
+  const point = points[place];
+  $("start").hidden = true; $("done").hidden = true; $("work").hidden = false;
+  $("detail").src = "data:image/jpeg;base64," + point.d;
+  $("false").src = "data:image/jpeg;base64," + point.f;
+  $("context").src = "data:image/jpeg;base64," + point.c;
+  $("where").textContent = practising ? "Practice " + (place + 1) + " of " + points.length + " (not kept)"
+                                      : "Point " + (place + 1) + " of " + points.length;
+  $("progress").value = practising ? 0 : Object.keys(labels).length / POINTS.length;
+  const given = !practising && labels[point.id] ? labels[point.id].label : null;
+  document.querySelectorAll(".choices button").forEach((button) => button.classList.toggle("given", button.dataset.label === given));
+  $("back").disabled = place === 0;
+  elapsed = 0; shownAt = Date.now();
+}
+
+function give(label) {
+  if ($("work").hidden) return;
+  const point = list()[place];
+  if (!practising) {
+    const before = labels[point.id] ? labels[point.id].seconds : 0;
+    labels[point.id] = { label, seconds: Math.round((before + spent()) * 10) / 10 };
+  }
+  place += 1;
+  if (practising && place >= PRACTICE.length) { practising = false; place = 0; }
+  remember();
+  show();
+}
+
+function back() {
+  if ($("work").hidden) return;
+  if (place === 0) return;
+  place -= 1;
+  show();
+}
+
+function finish() {
+  $("work").hidden = true; $("done").hidden = false;
+  const counts = { water: 0, not_water: 0, cannot_tell: 0 };
+  Object.values(labels).forEach((entry) => { counts[entry.label] += 1; });
+  $("summary").textContent = labeller + ": " + counts.water + " water, " + counts.not_water + " not water, "
+    + counts.cannot_tell + " cannot tell.";
+}
+
+function save() {
+  const record = {
+    schema: "floodguard.theos2_water_labels.labels.v1",
+    sample_id: SAMPLE_ID,
+    labeller,
+    saved_at_utc: new Date().toISOString().replace(/\.\d+Z$/, "Z"),
+    points: POINTS.length,
+    labels,
+  };
+  const blob = new Blob([JSON.stringify(record, null, 1) + "\n"], { type: "application/json" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = "floodguard_water_labels_" + labeller.toLowerCase().replace(/[^a-z0-9]+/g, "_") + ".json";
+  document.body.appendChild(link); link.click(); link.remove();
+}
+
+$("name").addEventListener("input", () => {
+  labeller = $("name").value.trim();
+  const kept = labeller ? recall() : null;
+  $("resume").textContent = kept ? Object.keys(kept.labels).length + " labels of this name are kept in this browser; Start continues." : "";
+});
+$("begin").addEventListener("click", () => {
+  labeller = $("name").value.trim();
+  if (!labeller) { $("name").focus(); return; }
+  const kept = recall();
+  if (kept) { labels = kept.labels; practising = kept.practising; place = kept.place; }
+  if (!PRACTICE.length) { practising = false; }
+  show();
+});
+$("back").addEventListener("click", back);
+$("outline").addEventListener("click", toggleOutline);
+$("save").addEventListener("click", save);
+$("review").addEventListener("click", () => { place = POINTS.length - 1; show(); });
+document.querySelectorAll(".choices button").forEach((button) => button.addEventListener("click", () => give(button.dataset.label)));
+
+function toggleOutline() {
+  const hidden = $("views").classList.toggle("hidden");
+  $("outline").firstChild.textContent = hidden ? "Show outline" : "Hide outline";
+}
+
+document.addEventListener("keydown", (event) => {
+  if (event.target === $("name")) { if (event.key === "Enter") $("begin").click(); return; }
+  if (event.ctrlKey || event.metaKey || event.altKey) return;
+  const key = event.key.toLowerCase();
+  if (key === "w" || key === "1") give("water");
+  else if (key === "n" || key === "2") give("not_water");
+  else if (key === "u" || key === "3") give("cannot_tell");
+  else if (key === "arrowleft") back();
+  else if (key === "h") toggleOutline();
+});
+// Time away from the page is not time spent on a point.
+document.addEventListener("visibilitychange", () => {
+  if ($("work").hidden) return;
+  if (document.hidden) { elapsed = spent(); shownAt = null; } else { shownAt = Date.now(); }
+});
+</script>
+</body>
+</html>

@@ -175,6 +175,18 @@ registered ages leave out two registered residents in five, who are not Thai
 nationals (`docs/equity_by_age.md`). Say that the direction depends on the age
 data. Do not lead with equity.
 
+(4) *The count of residents in the water depends on where the grid puts
+people* (added 11 October, `docs/buildings_in_water.md`). The population grid
+gives every cell of land some residents, fields included: 39% of the
+district's modelled residents are in cells with no building. Set against
+88,900 building outlines, the residents in the water are 12,600 to 17,900
+for the district, and in Ko Chang 17% to 37%. A side run with residents
+spread over buildings changes no class, and in Ko Chang it moves people from
+"in the water" to "dry with every road cut" (58% to 83%). So say ranges for
+these counts, and say that the finding on Ko Chang holds either way. The
+need map is drawn from the grid: its blue squares in open fields are too
+full.
+
 **From the replay** (unchanged). At the modelled peak the homes of about
 14,200 residents are in water; the eight shelter sites of the default plan
 have 7,580 of them within walking reach and room for roughly 500 to 1,050
@@ -189,7 +201,11 @@ written into a public file. This page therefore gives none.
 
 ### 4.2 Draft pitch, second version (11 October), five minutes, for a policy audience
 
-About 680 words. Screens are in brackets. The first version (accepted as item
+Softened on 11 October, on the owner's word, after the buildings check: the
+counts of residents in the water are now ranges, and the paragraph on Ko
+Chang leads with the cut roads.
+
+About 700 words. Screens are in brackets. The first version (accepted as item
 V-11 on 8 October) is in the history of this file; what changed is listed
 after the text.
 
@@ -208,9 +224,10 @@ after the text.
 > water. Orange: people who stay dry and lose every road. Green: people who
 > stay dry and on the road, with the hospital out of reach.
 >
-> A flood map shows you the blue. In the scenario that is eighteen thousand
-> residents. The orange and the green are ten thousand more, and no flood map
-> shows them.
+> A flood map shows you the blue. In the scenario that is thirteen to
+> eighteen thousand residents; the lower figure counts people where the
+> buildings stand. The orange and the green are at least ten thousand more,
+> and no flood map shows them.
 >
 > **[Three bars: Mae Sai, Ban Dai, Si Mueang Chum]**
 > Look at three tambons that get the same class from our score. In Mae Sai
@@ -219,10 +236,11 @@ after the text.
 > evacuation support, the other needs a way to care.
 >
 > **[Ko Chang]**
-> And Ko Chang. A third of its residents are in the water. Almost all the
-> rest are dry, with every road cut. Nobody there is unaffected. So the tool
-> does not say "Ko Chang is flooded". It says "keep the routes to Ko Chang
-> open".
+> And Ko Chang. Most of its residents stay dry, and every road they have is
+> cut: six in ten if we count people on the population grid, eight in ten
+> if we count them where the buildings stand. The rest are in the water.
+> Nobody there is unaffected. So the tool does not say "Ko Chang is
+> flooded". It says "keep the routes to Ko Chang open".
 >
 > **[Two roads on the map]**
 > Which routes? We asked the model. One road of one point three kilometres,
@@ -282,6 +300,9 @@ What changed from the first version:
 - The shelter sentence is out of the draft. If shelters are spoken, use the
   figures and the label of the pitch note.
 - Equity is not in the five minutes. It is in the questions, with caution (3).
+- Softened on 11 October: "eighteen thousand" is "thirteen to eighteen
+  thousand", and Ko Chang is no longer "a third in the water" but "most
+  dry with every road cut", with both counts (caution 4).
 
 ## 5. Policy translation table
 
@@ -289,9 +310,9 @@ Rewritten on 11 October. Counts are of the scenario and rounded.
 
 | Who | Decision | What FloodGuard gives | So what, in Mae Sai |
 |---|---|---|---|
-| DDPM provincial office, district chief | Where to place boats, high vehicles and teams before the season | Tambons by class and score, and under each class the need mix | Ko Chang: 58% of residents dry with every road cut. Mae Sai town: 56% in the water. Two different plans |
+| DDPM provincial office, district chief | Where to place boats, high vehicles and teams before the season | Tambons by class and score, and under each class the need mix | Ko Chang: 58 to 83% of residents dry with every road cut (population grid; buildings). Mae Sai town: 54 to 56% in the water. Two different plans |
 | Department of Highways, Rural Roads | Which links to inspect, raise or keep clear | The closed roads that would reconnect the most residents, one after another | Two roads, 2.1 km together, a quarter of the 21,800 cut-off residents; a list of ten (`docs/road_reconnection.md`) |
-| Ministry of Public Health, hospital | Who loses the hospital within 30 minutes, and where they are | Count per tambon, and on the need map the residents who are dry with the hospital out of reach | About 24,500 in the district; in Ban Dai 44% of residents are dry with the hospital out of reach |
+| Ministry of Public Health, hospital | Who loses the hospital within 30 minutes, and where they are | Count per tambon, and on the need map the residents who are dry with the hospital out of reach | About 24,500 to 25,500 in the district; in Ban Dai 44 to 63% of residents are dry with the hospital out of reach |
 | Local administrative organisation | Which shelters are in reach on foot, and whether their listed places are enough | Residents with a located shelter within 30 minutes, before and in the scenario; listed places against the residents in reach | Figures in the pitch note only (pitch level, "listed planned capacity; scenario") |
 | GISTDA | How a flood product becomes a decision product | A layer that reads GISTDA extents and returns access loss and needs; a use for THEOS-2 that radar cannot fill | The road check at Sukhothai; the plan for the scenes of September 2024 is fixed and its radar readings are frozen |
 | ONWR, planners | Where repeated flooding and loss of access coincide | The class D tambons, with what each one needs | Mae Sai (water), Ban Dai (hospital), Si Mueang Chum (water and cut roads) |
@@ -435,6 +456,9 @@ Agreement between two sensors 44 hours apart; not accuracy.
 | Shelters: access on foot and listed places | `docs/shelter_capacity.md` (figures in the pitch note outside the repository) | Pitch level only, label "listed planned capacity; scenario". Capacities are listed planning figures; nobody verified that a shelter was open. |
 | A printable brief of case SE1 | `outputs/planning_brief/se1_mae_sai_brief.html` | One page, Thai and English, made from the published result. The Thai is not reviewed by a native speaker. |
 | THEOS-2 on the study event | `docs/proposal_execution/theos2_study_event_check_plan_v1.md` | The plan is committed and the radar readings are frozen before any image arrives; the comparison runs once per scene when GISTDA delivers. |
+| The THEOS-2 water rule measured against three of us | `docs/theos2_water_label_check.md` | Three team members labelled 300 points and agree with each other on 57% of them. What the rule calls water is water in 90%; it finds 71% of the water we see. So the radar's share of the real water is lower than we reported, not higher. |
+| A second THEOS-2 water rule | `docs/theos2_water_rule_v2.md` | Near infrared below red, one fixed limit, nothing set by eye: better than the first rule by 8 points (4 to 13) on our own labels, and it does not invent water on a dry scene. Simple beat the trained classifiers. It will read the images of Mae Sai. |
+| Buildings against residents in the water | `docs/buildings_in_water.md` | The population grid puts 39% of residents in cells with no building. With residents on buildings, 12,600 are in the water where the grid gives 17,900, no class changes, and Ko Chang is 83% dry with every road cut. |
 
 Each is on the team page for the team's word (items V-17, V-19 and V-22 to
-V-35). None changes a published class or enters a planning score.
+V-38). None changes a published class or enters a planning score.

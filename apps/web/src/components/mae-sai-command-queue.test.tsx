@@ -6,6 +6,8 @@
  * subdistrict. Every rendered panel passes the shared wording lint.
  */
 
+// Since 12 Oct 2026 this suite reads the archived revision (r4) as a fixed dataset: its figures are the ones the plans and
+// wireframes were written with. The page serves r5; what it tests here is the logic, which does not depend on the revision.
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import type { ReactElement } from "react";
@@ -14,7 +16,7 @@ import { describe, expect, it } from "vitest";
 
 import fixture from "@/lib/__fixtures__/planning-assessment-overlay.fixture.json";
 import {
-  TIMELINE_MANIFEST_URL,
+  ARCHIVE_1_MANIFEST_URL,
   type AreaGeometry,
   type FacilityProps,
   type GeoCollection,
@@ -62,7 +64,7 @@ import { CommandPlanChip, CommandQueueControls, CommandQueueTable, MaeSaiCommand
 const publicRoot = resolve(import.meta.dirname, "../../public");
 const read = (href: string) => readFileSync(resolve(publicRoot, href.replace(/^\//, "")));
 const json = <T,>(href: string): T => JSON.parse(read(href).toString("utf8")) as T;
-const manifest = json<TimelineManifest>(TIMELINE_MANIFEST_URL);
+const manifest = json<TimelineManifest>(ARCHIVE_1_MANIFEST_URL);
 const roads = json<GeoCollection<LineGeometry, RoadProps>>(manifest.vectors.roads.href);
 const tambons = json<GeoCollection<AreaGeometry, TambonProps>>(manifest.vectors.tambons.href);
 const facilities = json<GeoCollection<PointGeometry, FacilityProps>>(manifest.vectors.facilities.href);

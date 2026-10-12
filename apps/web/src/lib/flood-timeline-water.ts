@@ -29,6 +29,8 @@ import type { WaterMode } from "./flood-timeline-link";
 export interface WaterGrid {
   codes: Uint8Array;
   factorKeys: Uint16Array | null;
+  /** What a full factor byte stands for (`depthFactorScale` of the manifest); absent: 1. */
+  factorScale?: number;
   candidates: Uint32Array;
   lowCells?: Uint32Array | null;
   lowStripes?: Uint8Array | null;
@@ -142,7 +144,7 @@ export function waterPaintPlan(
   if (grid.factorKeys) {
     return {
       mode, keys: grid.factorKeys, cells: grid.candidates, lutSize: FACTOR_LUT_SIZE, low,
-      buildLut: (out) => buildFactorDepthLut(moment.stage, stepM, littleEndian, out),
+      buildLut: (out) => buildFactorDepthLut(moment.stage, stepM, littleEndian, out, grid.factorScale ?? 1),
     };
   }
   return { mode, keys: grid.codes, cells: grid.candidates, lutSize: 256, low, buildLut: (out) => buildDepthLut(moment.stage, stepM, littleEndian, out) };

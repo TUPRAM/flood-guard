@@ -74,7 +74,7 @@ export function buildTwoToneLut(stage: number, step: number, thresholdM: number,
  * The same lookup indexed by `code | factor << 8` (the painter keys of a raster with a depth-factor channel): the
  * tone follows the reconstructed depth f × (stage − code × step); wetness still depends on the code alone.
  */
-export function buildTwoToneFactorLut(stage: number, step: number, thresholdM: number, littleEndian = true, out?: Uint32Array): Uint32Array {
+export function buildTwoToneFactorLut(stage: number, step: number, thresholdM: number, littleEndian = true, out?: Uint32Array, factorScale = 1): Uint32Array {
   if (out && out.length !== FACTOR_LUT_SIZE) throw new Error(`LUT buffer must have ${FACTOR_LUT_SIZE} entries`);
   const lut = out ?? new Uint32Array(FACTOR_LUT_SIZE);
   if (out) lut.fill(0);
@@ -82,7 +82,7 @@ export function buildTwoToneFactorLut(stage: number, step: number, thresholdM: n
   const deep = pack(COMMAND_WATER_RGBA.deep, littleEndian);
   for (let factor = 0; factor < 256; factor += 1) {
     const base = factor << 8;
-    const k = depthFactor(factor);
+    const k = depthFactor(factor, factorScale);
     lut[base] = deep;
     for (let code = 1; code < 255; code += 1) {
       const hand = code * step;

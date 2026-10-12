@@ -31,6 +31,7 @@ import {
   densityColours,
   DEPTH_CLASSES,
   depthFactorKeys,
+  depthFactorScale,
   districtStats,
   DURATION_CLASSES,
   facilitiesInWater,
@@ -52,7 +53,6 @@ import {
   latestObservation,
   lowConfidenceCells,
   lutEquals,
-  manifestRevision,
   namedRoadLengths,
   observationGap,
   peopleKeys,
@@ -240,6 +240,8 @@ import { WorkspaceHeader } from "./workspace-header";
 import styles from "./mae-sai-flood-timeline.module.css";
 
 export const MAE_SAI_TIMELINE_ROUTE = "/studio/cases/mae-sai-2024/";
+/** The replay of the revision before the peak was fitted to the 15 Sep 2024 image (r4), kept unchanged. */
+export const MAE_SAI_TIMELINE_ARCHIVE_1_ROUTE = "/archive1/";
 const SECONDS_PER_DAY = 2.5;
 const START_T = 0.5;
 const HOUR_STEPS = TIMELINE_END_T * 24;
@@ -467,6 +469,7 @@ async function loadHand(manifest: TimelineManifest, signal: AbortSignal): Promis
   return {
     codes: grid.codes,
     factorKeys: grid.factors ? depthFactorKeys(grid.codes, grid.factors) : null,
+    factorScale: depthFactorScale(manifest),
     candidates,
     lowCells,
     lowStripes: lowCells ? hatchStripes(lowCells, grid.width) : null,
@@ -648,7 +651,11 @@ export function playLabels(language: Language): string[] {
   ])];
 }
 
-export function MaeSaiFloodTimeline() {
+/**
+ * `manifestUrl` chooses the data revision; `archive` marks a revision that is no longer the live one. An archived replay
+ * says so above the map, links to the live one, and asks for no offline copy (the offline copy is the live revision's).
+ */
+export function MaeSaiFloodTimeline({ manifestUrl = TIMELINE_MANIFEST_URL, archive = false }: { manifestUrl?: string; archive?: boolean } = {}) {
   const [language, setLanguage] = useLanguage("en");
   const t = useCallback((en: string, th: string) => (language === "th" ? th : en), [language]);
   const reducedMotion = useReducedMotion();
@@ -722,7 +729,7 @@ export function MaeSaiFloodTimeline() {
     const { signal } = controller;
     (async () => {
       try {
-        const manifest = parseTimelineManifest(await fetchJson<unknown>(TIMELINE_MANIFEST_URL, signal));
+        const manifest = parseTimelineManifest(await fetchJson<unknown>(manifestUrl, signal));
         loadHand(manifest, signal).then(
           (raster) => { if (!signal.aborted) setHand(raster); },
           () => { if (!signal.aborted) setHandFailed(true); },
@@ -797,7 +804,7 @@ export function MaeSaiFloodTimeline() {
       }
     })();
     return () => controller.abort();
-  }, [reloadKey, moveTo, setLanguage]);
+  }, [reloadKey, moveTo, setLanguage, manifestUrl]);
 
   const data = load.status === "ready" ? load.data : null;
   const manifest = data?.manifest ?? null;
@@ -993,7 +1000,7 @@ export function MaeSaiFloodTimeline() {
   // --- Offline copy: after the replay has rendered online, ask the service worker to keep its data ------
   const replayRendered = load.status === "ready" && mapReady && (hand !== null || handFailed);
   useEffect(() => {
-    if (!replayRendered || process.env.NODE_ENV !== "production" || !("serviceWorker" in navigator)) return;
+    if (archive || !replayRendered || process.env.NODE_ENV !== "production" || !("serviceWorker" in navigator)) return;
     let active = true;
     let channel: MessageChannel | null = null;
     navigator.serviceWorker.ready.then((registration) => {
@@ -1018,7 +1025,7 @@ export function MaeSaiFloodTimeline() {
       active = false;
       channel?.port1.close();
     };
-  }, [replayRendered]);
+  }, [replayRendered, archive]);
 
   // --- Map mount ---------------------------------------------------------------------------------
   useEffect(() => {
@@ -2188,7 +2195,7 @@ export function MaeSaiFloodTimeline() {
       <nav className={styles.breadcrumbs} aria-label={t("Breadcrumb", "เส้นทางนำทาง")}>
         <a href="/studio/">{t("Studio", "สตูดิโอ")}</a><span aria-hidden="true">/</span><span>{t("Case replay", "การย้อนดูเหตุการณ์")}</span>
       </nav>
-      <p className={styles.eyebrow}>{t("CASE REPLAY · MAE SAI · SEPTEMBER 2024", `ย้อนดูเหตุการณ์ · แม่สาย · กันยายน ${thaiYear(2024)}`)}</p>
+      <p className={styles.eyebrow}>{archive ? t("ARCHIVE 1 · ", "คลังข้อมูลเก่า 1 · ") : ""}{t("CASE REPLAY · MAE SAI · SEPTEMBER 2024", `ย้อนดูเหตุการณ์ · แม่สาย · กันยายน ${thaiYear(2024)}`)}</p>
       <h1 id="mae-sai-replay-title">{t("Mae Sai flood, September 2024 — day by day", `น้ำท่วมแม่สาย กันยายน ${thaiYear(2024)} — ไล่เรียงรายวัน`)}</h1>
       <p className={styles.lead}>{t(
         "Replay 9–19 September hour by hour: dated satellite images under a terrain-model reconstruction of the water and its modelled impacts, with daily satellite flood maps and rain gauges where they observed something.",
@@ -2198,6 +2205,7 @@ export function MaeSaiFloodTimeline() {
         <p className={styles.banner} role="note">
           <strong>{t("Historical reconstruction for preparedness learning — not real-time, not an official warning.", "การจำลองย้อนหลังเพื่อการเรียนรู้ด้านการเตรียมพร้อม — ไม่ใช่ข้อมูลเรียลไทม์ และไม่ใช่คำเตือนอย่างเป็นทางการ")}</strong>
         </p>
+        <RevisionNote manifest={manifest} archive={archive} language={lang} />
         <HowToRead manifest={manifest} language={lang} />
       </div>
     </section>
@@ -2836,6 +2844,49 @@ export function MaeSaiFloodTimeline() {
  * The shared "How to read these numbers" box near the top: what is model, observed or reported, the replay's
  * confidence, how timestamps work, where the assumptions are, and a short glossary. Collapsed to one line.
  */
+const wholePercent = (share: number | null): string => (share === null ? "–" : `${Math.round(share * 100)}%`);
+
+/**
+ * Which revision the reader is looking at, said above the map. On the live replay (r5 on): the peak is fitted to the
+ * image of 15 Sep 2024, with the share of the evidence it covers and the held-back test it failed, and a link to the
+ * archive. On an archived replay: that it is the earlier one, kept unchanged, with a link to the live one.
+ */
+export function RevisionNote({ manifest, archive, language }: { manifest: TimelineManifest | null; archive: boolean; language: Language }) {
+  const t = (en: string, th: string) => (language === "th" ? th : en);
+  if (!manifest) return null;
+  if (archive) {
+    return (
+      <p className={styles.banner} role="note" data-testid="revision-note" data-archive="true">
+        <strong>{t(`Archived replay (revision ${manifest.revision}).`, `การย้อนดูชุดเก่า (ข้อมูลรุ่น ${manifest.revision})`)}</strong>{" "}
+        {t(
+          "This is the replay as it stood before 12 Oct 2026, when the peak level of each stretch of channel was fitted to the satellite image of 15 Sep 2024. It is kept unchanged so that the two can be compared. Its figures are not the current ones.",
+          `นี่คือการย้อนดูตามที่เป็นอยู่ก่อนวันที่ 12 ต.ค. ${thaiYear(2026)} ซึ่งเป็นวันที่ปรับระดับน้ำสูงสุดของลำน้ำแต่ละช่วงให้เข้ากับภาพดาวเทียมวันที่ 15 ก.ย. ${thaiYear(2024)} เก็บไว้โดยไม่แก้ไขเพื่อให้เปรียบเทียบกันได้ ตัวเลขในหน้านี้ไม่ใช่ตัวเลขปัจจุบัน`,
+        )}{" "}
+        <a href={MAE_SAI_TIMELINE_ROUTE} data-testid="revision-note-link">{t("Open the current replay", "เปิดการย้อนดูชุดปัจจุบัน")}</a>{language === "en" ? "." : ""}
+      </p>
+    );
+  }
+  const fit = manifest.river_fit;
+  if (!fit) return null;
+  const now = wholePercent(fit.replay_area.fitted_model.share_of_the_evidence_inside_the_peak);
+  const before = wholePercent(fit.replay_area.model_before_the_fit.share_of_the_evidence_inside_the_peak);
+  const heldFitted = wholePercent(fit.held_back_squares.fitted_on_the_other_squares.share_of_the_evidence_inside_the_peak);
+  const heldBefore = wholePercent(fit.held_back_squares.model_before_the_fit.share_of_the_evidence_inside_the_peak);
+  return (
+    <p className={styles.banner} role="note" data-testid="revision-note" data-archive="false">
+      <strong>{t(
+        `Revision ${manifest.revision}: the modelled peak is fitted to the satellite image of 15 Sep 2024.`,
+        `ข้อมูลรุ่น ${manifest.revision}: น้ำสูงสุดของแบบจำลองถูกปรับให้เข้ากับภาพดาวเทียมวันที่ 15 ก.ย. ${thaiYear(2024)}`,
+      )}</strong>{" "}
+      {t(
+        `It covers ${now} of the ground that turned to mud or stayed wet in that image (${before} before the fit). This is a fit, not a check: fitted on half of the area, the levels covered ${heldFitted} of that ground on the other half, against ${heldBefore} for the earlier model, so they do not carry over to places the image cannot see.`,
+        `ครอบคลุม ${now} ของพื้นที่ที่กลายเป็นโคลนหรือยังเปียกอยู่ในภาพนั้น (ก่อนปรับ ${before}) นี่เป็นการปรับให้เข้ากับภาพ ไม่ใช่การตรวจสอบ: เมื่อปรับจากพื้นที่เพียงครึ่งหนึ่ง ระดับน้ำที่ได้ครอบคลุม ${heldFitted} ของพื้นที่ดังกล่าวในอีกครึ่งหนึ่ง เทียบกับ ${heldBefore} ของแบบจำลองเดิม จึงใช้กับบริเวณที่ภาพมองไม่เห็นไม่ได้`,
+      )}{" "}
+      <a href={MAE_SAI_TIMELINE_ARCHIVE_1_ROUTE} data-testid="revision-note-link">{t("The earlier replay is kept as an archive", "การย้อนดูชุดเดิมเก็บไว้ในคลังข้อมูลเก่า")}</a>{language === "en" ? "." : ""}
+    </p>
+  );
+}
+
 export function HowToRead({ manifest, language }: { manifest: TimelineManifest | null; language: Language }) {
   const th = language === "th";
   const t = (en: string, thai: string) => (th ? thai : en);
@@ -3244,7 +3295,7 @@ export const SourcesPanel = memo(function SourcesPanel({ manifest, language, off
         "เวลาที่เริ่มท่วม ระยะเวลาที่จมน้ำ และชั่วโมงที่ถนนถูกตัดขาด นับตามช่วงรายชั่วโมงของการย้อนดู โดยใช้ระดับน้ำสมมุติ ณ ต้นชั่วโมงเวลาท้องถิ่น ตั้งแต่ 9 ก.ย. 00:00 ถึง 19 ก.ย. 23:00",
       )}</p>
       <p className={styles.muted} data-testid="sources-footer">
-        {t("Source timestamp", "เวลาของข้อมูลต้นทาง")}: {manifest.source_timestamp} · {manifest.timezone} · {manifest.study_id} {manifestRevision()} · {t("confidence", "ความเชื่อมั่น")}: {confidenceText} · {t("status", "สถานะ")}: {t("non-operational", "ไม่ใช้ในการปฏิบัติการ")}
+        {t("Source timestamp", "เวลาของข้อมูลต้นทาง")}: {manifest.source_timestamp} · {manifest.timezone} · {manifest.study_id} {manifest.revision} · {t("confidence", "ความเชื่อมั่น")}: {confidenceText} · {t("status", "สถานะ")}: {t("non-operational", "ไม่ใช้ในการปฏิบัติการ")}
         <GeneratedAt manifest={manifest} language={language} />
       </p>
       {manifest.source_timestamp_note && (

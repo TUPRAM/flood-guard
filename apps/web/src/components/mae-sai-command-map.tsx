@@ -427,7 +427,7 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
         const length = factor ? FACTOR_LUT_SIZE : 256;
         const buffer = spareLut && spareLut.length === length ? spareLut : new Uint32Array(length);
         const lut = factor
-          ? buildTwoToneFactorLut(frame.stage, m.hand.step_m, m.impassable_depth_m, LITTLE_ENDIAN, buffer)
+          ? buildTwoToneFactorLut(frame.stage, m.hand.step_m, m.impassable_depth_m, LITTLE_ENDIAN, buffer, raster.factorScale)
           : buildTwoToneLut(frame.stage, m.hand.step_m, m.impassable_depth_m, LITTLE_ENDIAN, buffer);
         if (lastHand === raster && lutEquals(lastLut, lut)) {
           spareLut = lut;
@@ -759,7 +759,7 @@ export function MaeSaiCommandMap({ data, hand, hour, stage, playing, language, b
       const depthAt = (lat: number, lon: number): number | null | undefined => {
         const raster = applied?.hand;
         if (!raster) return undefined;
-        return modelDepthAt({ codes: raster.codes, factorKeys: raster.factorKeys, width: m.hand.width, height: m.hand.height, bounds: m.bounds, step: m.hand.step_m, channelCode: m.hand.channel_code, neverCode: m.hand.never_code }, lat, lon, applied?.stage ?? 0);
+        return modelDepthAt({ codes: raster.codes, factorKeys: raster.factorKeys, factorScale: raster.factorScale, width: m.hand.width, height: m.hand.height, bounds: m.bounds, step: m.hand.step_m, channelCode: m.hand.channel_code, neverCode: m.hand.never_code }, lat, lon, applied?.stage ?? 0);
       };
       let reportFrame: CommandMarkerFrame | null = null;
       const markerLayer = mountCommandMarkers({

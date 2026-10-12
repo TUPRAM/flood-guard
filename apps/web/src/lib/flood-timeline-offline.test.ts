@@ -19,7 +19,7 @@ import {
   timelineManifestUrl,
 } from "../../scripts/case-replay-inventory.mjs";
 import { MAE_SAI_TIMELINE_ROUTE } from "../components/mae-sai-flood-timeline";
-import { EXPORT_PACK_KEY, manifestAssets, manifestDirectory, manifestExportAssets, manifestRevision, TIMELINE_MANIFEST_URL } from "./flood-timeline";
+import { ARCHIVE_1_MANIFEST_URL, EXPORT_PACK_KEY, manifestAssets, manifestDirectory, manifestExportAssets, manifestRevision, TIMELINE_MANIFEST_URL } from "./flood-timeline";
 
 const webRoot = resolve(import.meta.dirname, "../..");
 const publicRoot = resolve(webRoot, "public");
@@ -66,7 +66,7 @@ describe("Mae Sai replay offline inventory", () => {
     for (const day of typed.viirs_daily!.days) expect(urls).toContain(day.href);
   });
 
-  it("ships one revision whose precache set stays within its 6.5 MB budget", () => {
+  it("ships one live revision whose precache set stays within its 6.5 MB budget, and the archived one beside it", () => {
     const { assets } = readCaseReplayAssets(publicRoot);
     expect(CASE_REPLAY_BUDGET_BYTES).toBe(6_500_000);
     const bytes = caseReplayBytes(assets);
@@ -82,7 +82,12 @@ describe("Mae Sai replay offline inventory", () => {
     const onDisk = [...entries.filter((entry) => entry.isFile()).map((entry) => entry.name), ...envelopeFiles];
     expect(onDisk.sort()).toEqual(assets.map((asset) => asset.url.slice(base.length)).sort());
     expect(onDisk.reduce((sum, name) => sum + statSync(resolve(directory, name)).size, 0)).toBe(bytes);
-    expect(readdirSync(resolve(directory, ".."))).toEqual([manifestRevision()]);
+    // Two revisions are on disk since 12 Oct 2026: the live one and the archive shown at /archive1/. The archive is
+    // fetched when that page is opened and is never in the offline copy.
+    expect(readdirSync(resolve(directory, "..")).sort()).toEqual([manifestRevision(ARCHIVE_1_MANIFEST_URL), manifestRevision()].sort());
+    expect(manifestRevision(ARCHIVE_1_MANIFEST_URL)).not.toBe(manifestRevision());
+    const archive = manifestDirectory(ARCHIVE_1_MANIFEST_URL);
+    expect(assets.some((asset) => asset.url.startsWith(archive))).toBe(false);
     // The check fails one byte over the budget, and on a list with no measurable size.
     expect(caseReplayBytes(assets, bytes)).toBe(bytes);
     expect(() => caseReplayBytes(assets, bytes - 1)).toThrow(/over its \d+-byte budget/);

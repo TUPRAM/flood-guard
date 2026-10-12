@@ -188,6 +188,7 @@ function validateCompetition() {
   }
   for (const required of [
     "policy/index.html",
+    "policy/technical/index.html",
     "command/index.html",
     "studio/archive/command-workspace/index.html",
     "command/planning/index.html",
@@ -260,7 +261,7 @@ function validateCompetition() {
       throw new Error(`Competition profile published an unapproved aerial reference: ${name}`);
     }
   }
-  for (const route of ["/", "/public/", "/public-cases/", "/command/", "/studio/archive/command-workspace/", "/command/planning/", "/command/cases/", "/command/archive/", "/command/ver2/", "/command/exercise/", "/studio/", "/studio/planning-evidence/", "/studio/candidate-report/", "/studio/library/", "/studio/brief/", "/studio/archive/", "/policy/", EVIDENCE_CATALOG_ASSET, ...collectPublicCaseAssets(out), ...collectCaseBriefAssets(out)]) {
+  for (const route of ["/", "/public/", "/public-cases/", "/command/", "/studio/archive/command-workspace/", "/command/planning/", "/command/cases/", "/command/archive/", "/command/ver2/", "/command/exercise/", "/studio/", "/studio/planning-evidence/", "/studio/candidate-report/", "/studio/library/", "/studio/brief/", "/studio/archive/", "/policy/", "/policy/technical/", EVIDENCE_CATALOG_ASSET, ...collectPublicCaseAssets(out), ...collectCaseBriefAssets(out)]) {
     if (!coreUrls.includes(route)) throw new Error(`Competition cache list omits ${route}`);
   }
   // The evidence library: its catalogue is precached; each study area is a deferred bucket saved when opened or on request, and

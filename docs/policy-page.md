@@ -1,5 +1,7 @@
 # Policy page: source and refresh record
 
+> **Since 12 October 2026 this document describes the technical record at `/policy/technical/`.** The address `/policy/` now opens a plain-language page that follows the team's policy document (`apps/web/src/components/policy-brief.tsx`, text in `apps/web/src/lib/policy-brief.ts`); it prints its example from the published case SE1 and links here for the detail. Its sources and what was checked are in `docs/policy_sources.md`; the test of the five weights is in `docs/fpps_weight_sensitivity.md`. The component, the fixed example and the refresh rule below are unchanged.
+
 The landing-linked `/policy/` page explains project policy for mentoring. Its fixed example lives in `apps/web/src/lib/policy-evidence.ts`; it does not change the Public, Planning or Studio calculations.
 
 The example is a **historical worked example that predates the signed scoring frame**. The page titles it "Worked example from the 28 Sep study (before the signed scoring frame)" and shows its eight scores only inside one card that first states the caveats below. Nothing on the page computes an FPPS or a class.

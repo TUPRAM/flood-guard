@@ -11,6 +11,17 @@ official warning.
 image. Each figure is agreement between two sensors at two times. None is
 accuracy.
 
+**Added on 12 October 2026: the optical water of this page has now been
+measured.** Three team members labelled 300 points on this chip and two others
+(`docs/theos2_water_label_check.md`). On the two chips that served as a
+reference, 90% (83 to 96) of the area the rule calls water is water to them,
+and the rule finds 71% (64 to 77) of the water they see; the three agree with
+each other on 57% of the points. So where this page says "reference" or
+"optical water", read: a rule that is mostly right where it says water and
+misses about three tenths of the water people see. The radar's share of the
+water people see is therefore lower than the figures below, not higher. No
+figure of this page is changed.
+
 - Plan, written before the comparison: `docs/proposal_execution/theos2_cross_check_plan_v1.md`
 - Reference record: `outputs/theos2_cross_check/sukhothai_20250730_reference_v1.json`
 - Result and receipt: `outputs/theos2_cross_check/sukhothai_20250730_v1.json`, `…_v1_receipt.json`
@@ -30,7 +41,7 @@ The three radar methods are the ones of the Mae Sai runs, unchanged: the
 UN-SPIDER practice (quotient 1.25), M1-literal and the frozen M1-v2. Nothing
 was tuned for this tile.
 
-## The optical reference
+## The optical reference (a rule that finds 71% of the water people see)
 
 Water on the THEOS-2 image is NDWI (green and near-infrared) at 2 m, above the
 upper threshold of a three-class Otsu split (-0.045). The plan named the

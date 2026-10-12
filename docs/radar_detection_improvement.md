@@ -1,5 +1,16 @@
 # Improving the radar flood detection: result
 
+**Added on 12 October 2026: the optical water of this page has now been
+measured.** Three team members labelled 300 points on this chip and two others
+(`docs/theos2_water_label_check.md`). On the two chips that served as a
+reference, 90% (83 to 96) of the area the rule calls water is water to them,
+and the rule finds 71% (64 to 77) of the water they see; the three agree with
+each other on 57% of the points. So where this page says "reference" or
+"optical water", read: a rule that is mostly right where it says water and
+misses about three tenths of the water people see. The radar's share of the
+water people see is therefore lower than the figures below, not higher. No
+figure of this page is changed.
+
 **What this is.** Six changes to the radar detection were tried on data the
 project had already looked at, one detector was frozen by a rule fixed
 beforehand, and that detector was tested once on a THEOS-2 chip nobody had
@@ -193,7 +204,9 @@ saw on a day.
 
 - Development: one province in October 2024 and one lowland tile in July
   2025. Test: one chip of 7 km², a town, one event.
-- The THEOS-2 references are 19 and 44 hours older than the radar passes.
+- The THEOS-2 references are 19 and 44 hours older than the radar passes, and
+  the rule that reads them finds 71% (64 to 77) of the water people see
+  (`docs/theos2_water_label_check.md`).
   Water that drained in between counts against every detector.
 - The agency layer may come from the same radar pass as the features.
 - Boosted trees are scikit-learn's `HistGradientBoostingClassifier`.

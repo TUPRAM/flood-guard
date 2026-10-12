@@ -1,8 +1,8 @@
 # A sturdier THEOS-2 water rule (rule v2)
 
-**State on 11 October 2026: the rule is chosen and frozen. It has not been
-scored on the 300 test points yet; that happens once, when two team members
-have labelled them.**
+**State on 12 October 2026: the rule was frozen on 11 October and scored once
+on the 300 test points on 12 October. It is better than rule v1 there by 8
+points (4 to 13), less than development suggested.**
 
 Plan: `docs/proposal_execution/theos2_water_rule_v2_plan_v1.md`.
 Freeze record: `outputs/theos2_water_rule_v2/freeze_v1.json`.
@@ -85,7 +85,34 @@ The picture is for looking, not a measurement. What it shows, both ways:
 - On the chip of the flooded town, thin cloud at the edge of thick cloud is
   called water in places.
 
-## What happens next
+## The test on the 300 points (12 October 2026)
+
+Three team members labelled the test points; the figures were computed once
+(`docs/theos2_water_label_check.md`, `outputs/theos2_water_labels/result_v1.json`).
+The share of the labelled area where a rule gives an answer and the answer is
+the label:
+
+| Chips | Rule v1 | Rule v2 | Difference |
+|---|---:|---:|---:|
+| The two reference chips together | 69% | **78%** | **+8 points (4 to 13)** |
+| Sukhothai | 79% | 82% | +3 (-1 to 7): not shown to be better |
+| Flooded town | 60% | 74% | +14 (6 to 21) |
+| No flood | 78% | 99% | +21 (16 to 25) |
+
+**Rule v2 is better on these points, and by less than development said.** On
+the agent's labels it scored 0.97; on the team's it scores 0.78. Where it
+answers it finds no more of the water than rule v1 (70% against 71%); it
+gains by answering almost everywhere and by not inventing water on a dry
+scene. It finds none of the little water on the chip without a flood. The
+three labellers agree with each other on 57% of the points, so no rule could
+score much higher against them.
+
+**Which rule reads the images of Mae Sai**: rule v2, with rule v1 beside it
+(`docs/proposal_execution/theos2_study_event_check_plan_v1_amendment_1.md`,
+written on 12 October before any image was received; the plan itself is not
+edited, because the radar readings are frozen under its hash).
+
+## What was to happen next (written on 11 October; all four steps are done)
 
 1. Two team members label the 300 test points
    (`docs/theos2_water_label_check.md`).

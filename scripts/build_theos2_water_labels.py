@@ -326,44 +326,47 @@ def with_interval(figure: dict[str, Any]) -> str:
     return f"{percent(figure['estimate'])} ({percent(low)} to {percent(high)})"
 
 
-def sentences(names: list[str], together: dict[str, Any], set_aside: dict[str, Any], readers: dict[str, Any]) -> list[str]:
+def sentences(names: list[str], together: dict[str, Any], set_aside: dict[str, Any], readers: dict[str, Any], primary: str) -> list[str]:
     """The sentences of plan section 7, written from the figures whatever they are."""
 
-    agreed = together["both_agree"]
-    alone = set_aside["both_agree"]
+    agreed = together[primary]
+    alone = set_aside[primary]
+    three = len(names) == 3
+    who = f"{names[0]}, {names[1]} and {names[2]}" if three else f"{names[0]} and {names[1]}"
+    same = "at least two of the three gave the same label" if three else "they gave the same label"
+    to_whom = "to at least two of the three" if three else "to both"
+    kappas = ", ".join(f"{pair.replace('_and_', ' and ')} {entry['cohens_kappa']}" for pair, entry in readers["pairs"].items())
     return [
-        f"{names[0]} and {names[1]} each labelled {readers['points']} points on three THEOS-2 chips. On the two chips "
-        f"that served as a reference they gave the same label of water or not water on {agreed['points_scored']} of "
-        f"{agreed['points']} points. On those, {with_interval(agreed['a_share_of_rule_water_labelled_water'])} of the area "
-        f"the rule calls water is water to both, and the rule finds "
-        f"{with_interval(agreed['b_share_of_labelled_water_the_rule_finds'])} of the water both see.",
-        f"The two gave the same label on {percent(readers['share_same_label'])} of all points "
-        f"(Cohen's kappa {readers['cohens_kappa']}).",
+        f"{who} each labelled {readers['points']} points on three THEOS-2 chips. On the two chips that served as a "
+        f"reference {same} of water or not water on {agreed['points_scored']} of {agreed['points']} points. On those, "
+        f"{with_interval(agreed['a_share_of_rule_water_labelled_water'])} of the area the rule calls water is water "
+        f"{to_whom}, and the rule finds {with_interval(agreed['b_share_of_labelled_water_the_rule_finds'])} of the water they see.",
+        f"All labellers gave the same label on {percent(readers['share_all_same_label'])} of all points; Cohen's kappa by pair: {kappas}.",
         f"On the chip that was set aside because it holds no flood, "
-        f"{with_interval(alone['a_share_of_rule_water_labelled_water'])} of the area the rule calls water is water to both "
+        f"{with_interval(alone['a_share_of_rule_water_labelled_water'])} of the area the rule calls water is water {to_whom} "
         f"({alone['points_scored']} of {alone['points']} points scored).",
-        "Every figure is agreement between a rule and two readers of the same image; nobody went to the ground, and no "
+        "Every figure is agreement between a rule and readers of the same image; nobody went to the ground, and no "
         "radar figure is changed with them.",
     ]
 
 
-def second_rule_sentences(two_rules: dict[str, Any], freeze: dict[str, Any]) -> list[str]:
+def second_rule_sentences(two_rules: dict[str, Any], freeze: dict[str, Any], primary: str) -> list[str]:
     """The sentences of the plan for the second rule (section 6), written from the figures whatever they are."""
 
-    together = two_rules["reference_chips_together"]["both_agree"]
-    alone = two_rules["chip_001"]["both_agree"]
+    together = two_rules["reference_chips_together"][primary]
+    alone = two_rules["chip_001"][primary]
     difference = together["share_answered_and_alike_v2_minus_v1"]
     shares = freeze["frozen_rule"]["chips"]["chip_001"]["water_share_of_the_chip"]
     by_labels = alone["rule_v2"]["d_water_share_of_answered_area"]["by_the_labels"]
     lines = [
         f"On the two reference chips together, rule v1 gives an answer that is the label on "
-        f"{with_interval(together['rule_v1']['share_answered_and_alike'])} of the area the two labellers agree on, and the "
+        f"{with_interval(together['rule_v1']['share_answered_and_alike'])} of the area with a scoring label, and the "
         f"second rule on {with_interval(together['rule_v2']['share_answered_and_alike'])}.",
         f"On the chip without a flood, rule v1 calls {percent(shares['rule_v1'])} of the chip water and the second rule "
         f"{percent(shares['rule_v2'])}; by the labels {with_interval(by_labels)} of it is water.",
     ]
     if difference["estimate"] is None:
-        lines.append("The two rules cannot be compared: no point has a label both labellers gave.")
+        lines.append("The two rules cannot be compared: no point has a scoring label.")
     elif difference["interval_95"][0] > 0:
         low, high = difference["interval_95"]
         lines.append(f"The second rule is better on these points by {round(difference['estimate'] * 100)} points "
@@ -394,27 +397,50 @@ def stage_score(arguments: argparse.Namespace) -> None:
     sizes = {(chip, group): int(sample["chips"][chip]["pixels_by_group"][group]) for chip in wl.CHIPS for group in wl.GROUPS}
 
     files = [Path(path) for path in arguments.labels]
-    if len(files) != 2:
-        raise BuildError("the plan has two labellers: give two label files")
+    if len(files) not in (2, 3):
+        raise BuildError("the plan has two labellers, three since its amendment of 12 October: give two or three label files")
     raw = [json.loads(path.read_text(encoding="utf-8")) for path in files]
     given = [wl.check_labels(data, sample_id=sample["sample_id"], point_ids=ids) for data in raw]
-    names = [str(data["labeller"]).strip() for data in raw]
-    if names[0].lower() == names[1].lower():
-        raise BuildError("the two label files name the same labeller")
+    names = [str(data["labeller"]).strip().capitalize() for data in raw]
+    if len({name.lower() for name in names}) != len(names):
+        raise BuildError("two label files name the same labeller")
+    order = sorted(range(len(names)), key=lambda index: names[index].lower())
+    files, raw, given, names = ([values[index] for index in order] for values in (files, raw, given, names))
 
-    scorings = {"both_agree": wl.agreed(given[0], given[1]), **{f"{name}_alone": wl.alone(labels) for name, labels in zip(names, given)}}
+    pairs = [(first, second) for first in range(len(names)) for second in range(first + 1, len(names))]
+    by_pair = {f"{names[first]}_and_{names[second]}_agree": wl.agreed(given[first], given[second]) for first, second in pairs}
+    if len(names) == 3:
+        primary = "at_least_two_of_three"
+        scorings = {primary: wl.majority(given), "all_three_agree": wl.unanimous(given), **by_pair}
+    else:
+        primary = "both_agree"
+        scorings = {primary: wl.agreed(given[0], given[1])}
+    scorings.update({f"{name}_alone": wl.alone(labels) for name, labels in zip(names, given)})
     sets = {**{chip: (chip,) for chip in wl.CHIPS}, "reference_chips_together": wl.REFERENCE_CHIPS}
     figures = {
         name: {scoring: wl.figures(points, labels, sizes, chips) for scoring, labels in scorings.items()}
         for name, chips in sets.items()
     }
-    readers = wl.between_labellers(given[0], given[1])
-    readers["order"] = {"first": names[0], "second": names[1]}
-    readers["by_chip"] = {}
+    readers: dict[str, Any] = {
+        "points": len(ids),
+        "labellers": names,
+        "share_all_same_label": round(sum(1 for point in ids if len({labels[point] for labels in given}) == 1) / len(ids), 4),
+        "pairs": {},
+        "share_all_same_label_by_chip": {},
+    }
+    for first, second in pairs:
+        entry = wl.between_labellers(given[first], given[second])
+        entry["order"] = {"first": names[first], "second": names[second]}
+        entry["by_chip"] = {}
+        for chip in wl.CHIPS:
+            mine = [point["id"] for point in points if point["chip"] == chip]
+            part = wl.between_labellers({i: given[first][i] for i in mine}, {i: given[second][i] for i in mine})
+            entry["by_chip"][chip] = {field: part[field] for field in ("points", "share_same_label", "cohens_kappa")}
+        readers["pairs"][f"{names[first]}_and_{names[second]}"] = entry
     for chip in wl.CHIPS:
         mine = [point["id"] for point in points if point["chip"] == chip]
-        part = wl.between_labellers({i: given[0][i] for i in mine}, {i: given[1][i] for i in mine})
-        readers["by_chip"][chip] = {field: part[field] for field in ("points", "share_same_label", "cohens_kappa")}
+        readers["share_all_same_label_by_chip"][chip] = round(
+            sum(1 for point in mine if len({labels[point] for labels in given}) == 1) / len(mine), 4)
     seconds = {
         name: round(statistics.median(float(entry["seconds"]) for entry in data["labels"].values() if isinstance(entry, dict)), 1)
         for name, data in zip(names, raw)
@@ -452,7 +478,7 @@ def stage_score(arguments: argparse.Namespace) -> None:
         for name, chips in sets.items()
     }
 
-    together = figures["reference_chips_together"]["both_agree"]
+    together = figures["reference_chips_together"][primary]
     low = [letter for letter, field in (("a", "a_share_of_rule_water_labelled_water"), ("b", "b_share_of_labelled_water_the_rule_finds"))
            if together[field]["estimate"] is not None and together[field]["estimate"] < 0.80]
     copies = {}
@@ -466,18 +492,24 @@ def stage_score(arguments: argparse.Namespace) -> None:
     result = {
         "schema": "floodguard.theos2_water_labels.result.v1",
         **envelope(),
-        "what_this_is": "How often the THEOS-2 water rule says what two team members say who look at the same image at full "
-                        "detail, on 300 points drawn at random in six groups. Agreement between a rule and two readers; no "
+        "what_this_is": "How often the THEOS-2 water rule says what team members say who look at the same image at full "
+                        "detail, on 300 points drawn at random in six groups. Agreement between a rule and its readers; no "
                         "ground check.",
         "sample": {"path": f"{OUTPUT_DIR}/{SAMPLE_NAME}", "sha256": t2.sha256_file(sample_path)},
         "key": {"path": f"{OUTPUT_DIR}/{KEY_NAME}", "sha256": t2.sha256_file(out / KEY_NAME)},
         "label_files": copies,
-        "scoring_label": "The label both gave, where both gave water or both gave not water. Other points are left out of "
-                         "figures a to d and counted; the figures for each labeller alone are given beside.",
+        "labellers": names,
+        "primary_scoring": primary,
+        "scoring_label": ("The label at least two of the three gave, where it is water or not water (plan section 6, amended "
+                          "on 12 October before any figure was computed). Other points are left out of figures a to d and "
+                          "counted. Beside it: all three agreeing, each pair agreeing as the plan first had it, and each "
+                          "labeller alone.") if len(names) == 3 else
+                         ("The label both gave, where both gave water or both gave not water. Other points are left out of "
+                          "figures a to d and counted; the figures for each labeller alone are given beside."),
         "estimator": "Stratified random sample with the six groups of each chip as strata (Stehman 2014); 95 percent "
                      "intervals by the normal approximation; counts of one group with a Wilson interval. Points left out "
                      "are taken to be missing at random inside their group.",
-        "between_the_two_labellers": readers,
+        "between_the_labellers": readers,
         "median_seconds_per_point": seconds,
         "label_counts_by_group": {name: wl.label_counts(points, labels, wl.CHIPS) for name, labels in zip(names, given)},
         "figures": figures,
@@ -489,17 +521,17 @@ def stage_score(arguments: argparse.Namespace) -> None:
                 group: {answer: sum(1 for point in points if point["group"] == group and answers_v2[point["id"]] == answer)
                         for answer in (wl.WATER, wl.NOT_WATER, wl.UNOBSERVABLE)} for group in wl.GROUPS},
             "figures": two_rules,
-            "sentences": second_rule_sentences(two_rules, freeze),
+            "sentences": second_rule_sentences(two_rules, freeze, primary),
         },
         "plan_section_7": {
-            "sentences": sentences(names, figures["reference_chips_together"], figures["chip_001"], readers),
+            "sentences": sentences(names, figures["reference_chips_together"], figures["chip_001"], readers, primary),
             "figures_below_0.80_on_the_reference_chips_together": low,
             "consequence": "The documents and the pitch do not call the THEOS-2 water a reference without the figure in the "
                            "same sentence." if low else "None: both figures are at or above 0.80.",
         },
         "limits": LIMITS,
     }
-    previous = t2.superseded(result_path, arguments, ("figures", "between_the_two_labellers"), result)
+    previous = t2.superseded(result_path, arguments, ("figures", "between_the_labellers"), result)
     if previous is not None:
         result["supersedes"] = previous
     t2.write_json(result_path, result)
@@ -512,7 +544,7 @@ def main() -> None:
     first = stages.add_parser("sample")
     first.add_argument("--theos2-dir", required=True, help="the folder that holds the three THEOS-2 files")
     second = stages.add_parser("score")
-    second.add_argument("--labels", nargs=2, required=True, help="the two label files the page wrote")
+    second.add_argument("--labels", nargs="+", required=True, help="the label files the page wrote: two, or three")
     for stage in (first, second):
         stage.add_argument("--external-root", required=True)
         stage.add_argument("--replace", action="store_true")

@@ -238,3 +238,17 @@ def test_figures_keep_chips_apart_and_count_labels() -> None:
     counts = wl.label_counts(points + other, labels, ("one",))
     assert counts["unobservable"] == {wl.WATER: 1, wl.NOT_WATER: 1, wl.CANNOT_TELL: 2}
     assert sum(sum(row.values()) for row in counts.values()) == 24
+
+
+def test_the_scoring_label_of_three_labellers() -> None:
+    first = {"a": wl.WATER, "b": wl.WATER, "c": wl.NOT_WATER, "d": wl.CANNOT_TELL, "e": wl.WATER, "f": wl.CANNOT_TELL}
+    second = {"a": wl.WATER, "b": wl.NOT_WATER, "c": wl.NOT_WATER, "d": wl.CANNOT_TELL, "e": wl.NOT_WATER, "f": wl.WATER}
+    third = {"a": wl.WATER, "b": wl.WATER, "c": wl.CANNOT_TELL, "d": wl.WATER, "e": wl.CANNOT_TELL, "f": wl.NOT_WATER}
+    assert wl.majority([first, second, third]) == {"a": wl.WATER, "b": wl.WATER, "c": wl.NOT_WATER, "d": None, "e": None, "f": None}
+    assert wl.unanimous([first, second, third]) == {"a": wl.WATER, "b": None, "c": None, "d": None, "e": None, "f": None}
+    # With two labellers the majority is the label both gave.
+    assert wl.majority([first, second]) == wl.agreed(first, second) == wl.unanimous([first, second])
+    with pytest.raises(wl.LabelCheckError):
+        wl.majority([first, {"a": wl.WATER}])
+    with pytest.raises(wl.LabelCheckError):
+        wl.unanimous([])

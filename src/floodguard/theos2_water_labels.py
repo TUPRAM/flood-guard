@@ -201,6 +201,27 @@ def agreed(first: Mapping[str, str], second: Mapping[str, str]) -> dict[str, str
     return {point: (label if label == second[point] and label in (WATER, NOT_WATER) else None) for point, label in first.items()}
 
 
+def majority(labelled: Sequence[Mapping[str, str]]) -> dict[str, str | None]:
+    """The label more than half of the labellers gave, where it is water or not water; else ``None``."""
+
+    if not labelled or any(set(labels) != set(labelled[0]) for labels in labelled):
+        raise LabelCheckError("the labellers did not label the same points")
+    result: dict[str, str | None] = {}
+    for point in labelled[0]:
+        given = [labels[point] for labels in labelled]
+        result[point] = next((label for label in (WATER, NOT_WATER) if 2 * given.count(label) > len(given)), None)
+    return result
+
+
+def unanimous(labelled: Sequence[Mapping[str, str]]) -> dict[str, str | None]:
+    """The label every labeller gave, where it is water or not water; else ``None``."""
+
+    if not labelled or any(set(labels) != set(labelled[0]) for labels in labelled):
+        raise LabelCheckError("the labellers did not label the same points")
+    return {point: (label if label in (WATER, NOT_WATER) and all(labels[point] == label for labels in labelled) else None)
+            for point, label in labelled[0].items()}
+
+
 def alone(labels: Mapping[str, str]) -> dict[str, str | None]:
     """The scoring label of one labeller alone: water or not water; ``None`` where they could not tell."""
 

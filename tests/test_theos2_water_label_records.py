@@ -88,7 +88,7 @@ def test_the_key_and_the_labels_enter_git_only_with_the_figures() -> None:
         assert not key.exists() and labels == [] and SAMPLE["labels_received"] == 0
         return
     assert hashlib.sha256(key.read_bytes()).hexdigest() == SAMPLE["key_outside_git"]["sha256"]
-    assert len(labels) == 2
+    assert len(labels) in (2, 3)
     figures = json.loads(result.read_text(encoding="utf-8"))
     assert figures["official_warning"] is False and figures["confidence_class"] == "low"
     assert len(json.loads(key.read_text(encoding="utf-8"))["points"]) == SAMPLE["points"]

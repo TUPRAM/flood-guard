@@ -88,6 +88,8 @@ interface Key {
   pos: THREE.Vector3;
   target: THREE.Vector3;
   up?: THREE.Vector3;
+  /** A waypoint the camera glides through without settling (it only shapes the path). */
+  pass?: boolean;
 }
 
 const Y = new THREE.Vector3(0, 1, 0);
@@ -114,11 +116,21 @@ function catmull(p0: THREE.Vector3, p1: THREE.Vector3, p2: THREE.Vector3, p3: TH
   );
 }
 
-/** Camera pose along keyframes at segment progress p (eased overall, Catmull-Rom between keys, exact at the ends). */
+/**
+ * Camera pose along keyframes at segment progress p. Each glide between two keys eases in and out on its own, so the
+ * camera settles on every shot (and a hold, two equal keys, lasts exactly as long as its keys say).
+ */
 function samplePath(keys: Key[], p: number, outPos: THREE.Vector3, outTarget: THREE.Vector3, outUp: THREE.Vector3): void {
-  const e = easeInOut(clamp01(p));
-  let i = 0;
-  while (i < keys.length - 2 && e > keys[i + 1].at) i += 1;
+  const x = clamp01(p);
+  // Ease between the keys the camera settles on; pass-through waypoints keep the motion going.
+  let s0 = 0;
+  for (let k = 1; k < keys.length - 1; k += 1) if (!keys[k].pass && keys[k].at <= x) s0 = k;
+  let s1 = keys.length - 1;
+  for (let k = keys.length - 2; k > s0; k -= 1) if (!keys[k].pass) s1 = k;
+  const span = Math.max(1e-6, keys[s1].at - keys[s0].at);
+  const e = keys[s0].at + easeInOut(clamp01((x - keys[s0].at) / span)) * span;
+  let i = s0;
+  while (i < s1 - 1 && e > keys[i + 1].at) i += 1;
   const a = keys[i], b = keys[i + 1];
   const local = clamp01((e - a.at) / Math.max(1e-6, b.at - a.at));
   const k0 = keys[Math.max(0, i - 1)], k3 = keys[Math.min(keys.length - 1, i + 2)];
@@ -578,8 +590,10 @@ export class JourneyStage {
     const phoneC = this.screenGeometry(this.phoneScreen).center;
     const os = { at: 0, pos: R.clone().add(v(-0.78, 2.02, -0.5)), target: phoneC.clone() };
     const front = { at: 0, pos: R.clone().add(v(-1.9, 1.48, 3.6)), target: R.clone().add(v(0.2, 1.12, 0)) };
-    const side = { at: 0, pos: R.clone().add(v(-1.45, 1.66, 0.75)), target: phoneC.clone() };
     const k = (at: number, base: { pos: THREE.Vector3; target: THREE.Vector3; up?: THREE.Vector3 }): Key => ({ at, pos: base.pos, target: base.target, up: base.up });
+    const through = (at: number, base: { pos: THREE.Vector3; target: THREE.Vector3; up?: THREE.Vector3 }): Key => ({ ...k(at, base), pass: true });
+    // Beside her, outside the garden wall: the way round to her shoulder that keeps clear of the gate post.
+    const beside = { pos: R.clone().add(v(-1.05, 1.8, 1.35)), target: phoneC.clone() };
     const seat = ops.seat;
     const monitorC = this.screenGeometry(ops.monitorScreen).center;
     const tableC = this.screenGeometry(ops.tableScreen).center;
@@ -589,62 +603,58 @@ export class JourneyStage {
     const overShoulder = { pos: seat.clone().add(v(-0.62, 1.42, 0.62)), target: monitorC.clone().lerp(ops.keyboard, 0.45) };
     const pastShoulder = { pos: seat.clone().add(v(0.2, 1.3, 0.4)), target: monitorC.clone() };
     const behind = { pos: seat.clone().add(v(-1.9, 1.75, 1.05)), target: overShoulder.target };
+    // Simple camera language: a few clear shots, each reached by one smooth glide (no orbits or swoops). Holding a
+    // shot is two keys with the same pose.
+    const wide = { pos: v(-60, 35, 76), target: v(-6, 0, 3) };
+    const road = { pos: v(-12, 9, 24), target: v(2, 0.4, 9) };
+    const overview = { pos: v(-36, 42, 36), target: v(-6, 2, -10) };
+    const windowFront = { pos: ops.window.clone().add(v(0, 0.9, 9)), target: ops.window.clone() };
+    const roomView = { pos: tableC.clone().add(v(0, 3.4, 3.6)), target: tableC.clone() };
+    const abovePlan = { pos: tableC.clone().add(v(0, 24, 0.02)), target: tableC.clone(), up: NORTH };
+    const map = { pos: v(2, 92, -12.02), target: v(2, 0, -12), up: NORTH };
+    const glide = (from: { pos: THREE.Vector3; target: THREE.Vector3 }, to: { pos: THREE.Vector3; target: THREE.Vector3 }, t: number) =>
+      ({ pos: from.pos.clone().lerp(to.pos, t), target: from.target.clone().lerp(to.target, t) });
     switch (segment) {
       case "opening":
-        return [k(0, { pos: v(-80, 46, 96), target: v(-2, 0, 4) }), k(1, { pos: v(-60, 35, 76), target: v(-6, 0, 3) })];
+        return [k(0, { pos: v(-80, 46, 96), target: v(-2, 0, 4) }), k(1, wide)];
       case "everyday":
-        return [
-          k(0, { pos: v(-60, 35, 76), target: v(-6, 0, 3) }),
-          k(0.24, { pos: v(-14, 24, 50), target: v(2, 0, 5) }),
-          k(0.46, { pos: v(-36, 9, 30), target: R.clone().add(v(1, 1.2, 0)) }),
-          k(0.68, { pos: R.clone().add(v(4.6, 2.4, 6.4)), target: R.clone().add(v(0, 1.2, 0)) }),
-          k(1, front),
-        ];
+        // One straight descent from the neighbourhood to the resident at her gate.
+        return [k(0, wide), k(0.5, glide(wide, front, 0.55)), k(1, front)];
       case "enter-phone":
-        return [k(0, front), k(0.34, side), k(0.62, os), this.endPose(this.phoneScreen)];
+        // Round her right shoulder, then straight onto the screen.
+        return [k(0, front), through(0.3, beside), k(0.55, os), this.endPose(this.phoneScreen)];
       case "conditions":
-        return [
-          this.atKey(0, this.endPose(this.phoneScreen)),
-          k(0.12, os),
-          k(0.3, { pos: R.clone().add(v(2.5, 5.5, 3.5)), target: R.clone().add(v(10, -1, 14)) }),
-          k(0.62, { pos: v(-9, 17, 37), target: v(2, 0, 17) }),
-          k(1, { pos: v(15, 7.2, 23), target: v(2, 0.6, 9) }),
-        ];
+        return [this.atKey(0, this.endPose(this.phoneScreen)), through(0.12, os), through(0.24, beside), k(0.6, road), k(1, road)];
       case "return-phone":
-        return [
-          k(0, { pos: v(15, 7.2, 23), target: v(2, 0.6, 9) }),
-          k(0.4, { pos: R.clone().add(v(5, 3, 7)), target: R.clone().add(v(0, 1.2, 0)) }),
-          k(0.6, front),
-          k(0.8, os),
-          this.endPose(this.phoneScreen),
-        ];
+        return [k(0, road), through(0.4, front), through(0.58, beside), k(0.75, os), this.endPose(this.phoneScreen)];
       case "sos-signal":
+        // Back to the road view and hold while the water crosses it; rise to see the signal reach the operations
+        // building; glide in through its window.
         return [
           this.atKey(0, this.endPose(this.phoneScreen)),
-          k(0.08, os),
-          k(0.18, { pos: R.clone().add(v(2.5, 6, 4)), target: v(-4, 0, 12) }),
-          k(0.36, { pos: v(-14, 14, 29), target: v(2, 0.4, 8) }),
-          k(0.5, { pos: v(3, 9, 22), target: v(2, 0.5, 8) }),
-          k(0.64, { pos: v(-8, 30, 18), target: v(LAYOUT.operations.x, 0, LAYOUT.operations.z) }),
-          k(0.8, { pos: ops.window.clone().add(v(0, 1.4, 15)), target: ops.window.clone() }),
-          k(0.9, { pos: ops.window.clone().add(v(0, 0.1, 2.2)), target: ops.window.clone().add(v(3, -0.6, -5)) }),
+          through(0.08, os),
+          through(0.15, beside),
+          k(0.26, road),
+          k(0.48, road),
+          k(0.66, overview),
+          through(0.86, windowFront),
           k(1, inside),
         ];
       case "enter-monitor":
-        return [k(0, inside), k(0.5, overShoulder), k(0.78, pastShoulder), this.endPose(ops.monitorScreen)];
+        return [k(0, inside), k(0.5, overShoulder), through(0.78, pastShoulder), this.endPose(ops.monitorScreen)];
       case "aerial":
+        // Step back from the monitor, rise straight up through the skylight to a map view of the whole area, hold,
+        // then come straight back down onto the planning table.
         return [
           this.atKey(0, this.endPose(ops.monitorScreen)),
-          k(0.03, pastShoulder),
-          k(0.07, overShoulder),
-          // A step back before the long pull across the room, so the spline does not whip away from his shoulder.
-          k(0.11, behind),
-          k(0.18, { pos: v(seat.x - 9.5, ops.floor + 2.7, seat.z + 2.6), target: v(seat.x - 2, ops.floor + 1, seat.z - 1) }),
-          k(0.28, { pos: ops.window.clone().add(v(0, 0.7, 4)), target: ops.window.clone().add(v(0, -0.6, -6)) }),
-          k(0.46, { pos: v(-22, 36, 44), target: v(0, 0, 5) }),
-          k(0.62, { pos: v(30, 48, 32), target: v(2, 0, 4) }),
-          k(0.8, { pos: tableC.clone().add(v(0, 24, 4)), target: tableC.clone(), up: NORTH }),
-          k(0.92, { pos: tableC.clone().add(v(0, 7, 0.3)), target: tableC.clone(), up: NORTH }),
+          through(0.04, pastShoulder),
+          through(0.08, overShoulder),
+          through(0.12, behind),
+          k(0.22, roomView),
+          through(0.34, abovePlan),
+          k(0.46, map),
+          k(0.74, map),
+          through(0.88, abovePlan),
           { ...this.endPose(ops.tableScreen), up: NORTH },
         ];
     }

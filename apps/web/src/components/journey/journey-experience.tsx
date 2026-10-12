@@ -52,6 +52,10 @@ export function computeSizes(width: number, height: number): Sizes {
   const ratio = width / height;
   const mobile = width < 700 || ratio < 0.9;
   const phoneAspect = mobile ? Math.min(0.62, Math.max(0.42, ratio)) : 0.4615;
+  // On desktop the public app is laid out at a real phone size (at least 390 CSS px wide), whatever the window height:
+  // short windows and zoomed browsers would otherwise give it a column too narrow for its layout. The projection
+  // scales the page onto the 3D phone, so the CSS size need not match the window.
+  const phoneWidth = Math.max(390, Math.round(height * phoneAspect));
   const landscapeExact = ratio >= 1.2 && ratio <= 2.2;
   const landscapeAspect = landscapeExact ? ratio : 1.6;
   const landscapeCss = landscapeExact ? { width, height } : { width: 1280, height: 800 };
@@ -61,7 +65,7 @@ export function computeSizes(width: number, height: number): Sizes {
     mobile,
     aspects: { phone: phoneAspect, monitor: landscapeAspect, table: landscapeAspect },
     css: {
-      phone: mobile ? { width, height } : { width: Math.round(height * phoneAspect), height },
+      phone: mobile ? { width, height } : { width: phoneWidth, height: Math.round(phoneWidth / phoneAspect) },
       monitor: landscapeCss,
       table: landscapeCss,
     },
@@ -180,18 +184,32 @@ export function JourneyExperience() {
     setMounted((current) => (current[screen] ? current : { ...current, [screen]: true }));
   }, []);
 
+  /**
+   * While a real page sits on a 3D screen its own scrollbar is hidden (it would show as a grey bar on the device);
+   * docked, the page is itself again. Same-origin frames, so the parent can set this on the framed document.
+   */
+  const setFrameScrollbar = useCallback((screen: ScreenId, visible: boolean) => {
+    try {
+      const root = frameRefs.current[screen]?.contentDocument?.documentElement;
+      if (root) root.style.setProperty("scrollbar-width", visible ? "" : "none");
+    } catch {
+      /* not reachable (still loading); applied again on load */
+    }
+  }, []);
+
   /** Puts a host into "on a 3D screen" mode at its CSS layout size. */
   const projectHost = useCallback((screen: ScreenId) => {
     const host = hostRefs.current[screen];
     const size = sizesRef.current;
     if (!host || !size) return;
+    setFrameScrollbar(screen, false);
     host.dataset.mode = "screen";
     host.style.transition = "";
     host.style.left = "0px";
     host.style.top = "0px";
     host.style.width = `${size.css[screen].width}px`;
     host.style.height = `${size.css[screen].height}px`;
-  }, []);
+  }, [setFrameScrollbar]);
 
   const barHeight = () => barRef.current?.getBoundingClientRect().height ?? 0;
 
@@ -201,19 +219,25 @@ export function JourneyExperience() {
     const size = sizesRef.current;
     if (!host || !size) return;
     const css = size.css[screen];
-    // Start from exactly where the screen is at the end of the push (full height; phone may be a centred column).
-    const startWidth = screen === "phone" && !size.mobile ? css.width : size.width;
+    // Start from exactly where the screen is at the end of the push: the page at its layout size, scaled to the window
+    // height (the desktop phone is a centred column), then widen to the whole viewport.
+    const column = screen === "phone" && !size.mobile;
+    const scale = column ? size.height / css.height : 1;
+    const startWidth = column ? css.width : size.width;
+    setFrameScrollbar(screen, true);
     host.dataset.mode = "docked";
-    host.style.transform = "none";
+    host.style.transformOrigin = "0 0";
+    host.style.transform = column ? `scale(${scale})` : "none";
     host.style.opacity = "1";
     host.style.visibility = "visible";
     host.style.transition = "";
-    host.style.left = `${(size.width - startWidth) / 2}px`;
+    host.style.left = `${(size.width - startWidth * scale) / 2}px`;
     host.style.top = "0px";
     host.style.width = `${startWidth}px`;
-    host.style.height = `${size.height}px`;
+    host.style.height = `${column ? css.height : size.height}px`;
     const settle = () => {
-      host.style.transition = animate ? "left 620ms cubic-bezier(.65,0,.35,1), width 620ms cubic-bezier(.65,0,.35,1), top 420ms ease, height 420ms ease" : "";
+      host.style.transition = animate ? "left 620ms cubic-bezier(.65,0,.35,1), width 620ms cubic-bezier(.65,0,.35,1), top 420ms ease, height 420ms ease, transform 620ms cubic-bezier(.65,0,.35,1)" : "";
+      host.style.transform = "none";
       host.style.left = "0px";
       host.style.width = "100%";
       host.style.top = `var(--journey-bar, 0px)`;
@@ -225,7 +249,7 @@ export function JourneyExperience() {
     } else if (animate) {
       requestAnimationFrame(() => requestAnimationFrame(settle));
     } else settle();
-  }, []);
+  }, [setFrameScrollbar]);
 
   /** Reverse of docking: back to the end-of-push rectangle, then onto the 3D screen. */
   const undockHost = useCallback((screen: ScreenId, animate: boolean): Promise<void> => {
@@ -233,16 +257,20 @@ export function JourneyExperience() {
     const size = sizesRef.current;
     if (!host || !size) return Promise.resolve();
     const css = size.css[screen];
-    const endWidth = screen === "phone" && !size.mobile ? css.width : size.width;
+    const column = screen === "phone" && !size.mobile;
+    const scale = column ? size.height / css.height : 1;
+    const endWidth = column ? css.width : size.width;
     if (!animate) {
       projectHost(screen);
       return Promise.resolve();
     }
-    host.style.transition = "left 420ms cubic-bezier(.65,0,.35,1), width 420ms cubic-bezier(.65,0,.35,1), top 300ms ease, height 300ms ease";
-    host.style.left = `${(size.width - endWidth) / 2}px`;
+    host.style.transition = "left 420ms cubic-bezier(.65,0,.35,1), width 420ms cubic-bezier(.65,0,.35,1), top 300ms ease, height 300ms ease, transform 420ms cubic-bezier(.65,0,.35,1)";
+    host.style.transformOrigin = "0 0";
+    host.style.transform = column ? `scale(${scale})` : "none";
+    host.style.left = `${(size.width - endWidth * scale) / 2}px`;
     host.style.width = `${endWidth}px`;
     host.style.top = "0px";
-    host.style.height = `${size.height}px`;
+    host.style.height = `${column ? css.height : size.height}px`;
     return new Promise((resolve) => window.setTimeout(() => { projectHost(screen); resolve(); }, 440));
   }, [projectHost]);
 
@@ -608,7 +636,10 @@ export function JourneyExperience() {
                   className={styles.frame}
                   src={(frameSrc.current[screen] ??= stopFrameSrc(SCREEN_STOP[screen], language))}
                   title={tr(STOPS[SCREEN_STOP[screen]].page)}
-                  onLoad={() => setLoaded((current) => ({ ...current, [screen]: true }))}
+                  onLoad={() => {
+                    setLoaded((current) => ({ ...current, [screen]: true }));
+                    setFrameScrollbar(screen, hostRefs.current[screen]?.dataset.mode === "docked");
+                  }}
                   tabIndex={docked && STOP_SCREEN[docked] === screen ? 0 : -1}
                 />
                 {!loaded[screen] && <div className={styles.frameLoading} role="status">{tr(UI.loadingPage)}</div>}

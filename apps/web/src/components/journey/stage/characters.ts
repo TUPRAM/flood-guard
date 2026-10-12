@@ -490,7 +490,9 @@ export function attachScreen(character: Character, faceTarget: THREE.Vector3): H
   return {
     screen,
     fit(aspect: number) {
-      const h = Math.min(height * 0.985, (width * 0.985) / aspect);
+      // Inset from the glass so a black border shows all round the page, as on a real phone.
+      const inset = 0.88;
+      const h = Math.min(height * inset, (width * inset) / aspect);
       screen.scale.set(h * aspect, h, 1);
     },
   };

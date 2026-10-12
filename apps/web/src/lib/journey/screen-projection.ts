@@ -6,6 +6,13 @@
 
 export interface Point { x: number; y: number }
 
+/**
+ * At the end of the push onto the phone, the page fills this share of the window height, so the whole handset (its
+ * black border and frame) stays in view around the page. Shared by the 3D stage (camera end pose) and the page host
+ * (docking starts from the same rectangle).
+ */
+export const PHONE_PAGE_FILL = 0.74;
+
 /** Corners in screen pixels: top-left, top-right, bottom-right, bottom-left. */
 export type Quad = readonly [Point, Point, Point, Point];
 

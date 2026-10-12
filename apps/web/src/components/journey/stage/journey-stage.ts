@@ -1,6 +1,6 @@
 import * as THREE from "three";
 
-import type { Quad } from "@/lib/journey/screen-projection";
+import { PHONE_PAGE_FILL, type Quad } from "@/lib/journey/screen-projection";
 import { BACK_STREET_Z, LAYOUT, ROAD_Z, SIDE_STREETS_X, WATER_LEVEL, terrainHeight, waterLevelBetween } from "@/lib/journey/terrain";
 import { locate, type SegmentId } from "@/lib/journey/timeline";
 
@@ -553,9 +553,10 @@ export class JourneyStage {
   }
 
   /** Camera pose at which a screen exactly fills the viewport height (and width, when the aspects match). */
-  private endPose(mesh: THREE.Mesh): Key {
+  /** Camera pose square-on to a screen, at which it fills `fill` of the viewport height (1 = exactly). */
+  private endPose(mesh: THREE.Mesh, fill = 1): Key {
     const g = this.screenGeometry(mesh);
-    const distance = g.height / 2 / Math.tan(THREE.MathUtils.degToRad(this.camera.fov) / 2);
+    const distance = g.height / 2 / Math.tan(THREE.MathUtils.degToRad(this.camera.fov) / 2) / fill;
     return { at: 1, pos: g.center.clone().addScaledVector(g.normal, distance), target: g.center.clone(), up: g.up.clone() };
   }
 
@@ -622,16 +623,16 @@ export class JourneyStage {
         return [k(0, wide), k(0.5, glide(wide, front, 0.55)), k(1, front)];
       case "enter-phone":
         // Round her right shoulder, then straight onto the screen.
-        return [k(0, front), through(0.3, beside), k(0.55, os), this.endPose(this.phoneScreen)];
+        return [k(0, front), through(0.3, beside), k(0.55, os), this.endPose(this.phoneScreen, PHONE_PAGE_FILL)];
       case "conditions":
-        return [this.atKey(0, this.endPose(this.phoneScreen)), through(0.12, os), through(0.24, beside), k(0.6, road), k(1, road)];
+        return [this.atKey(0, this.endPose(this.phoneScreen, PHONE_PAGE_FILL)), through(0.12, os), through(0.24, beside), k(0.6, road), k(1, road)];
       case "return-phone":
-        return [k(0, road), through(0.4, front), through(0.58, beside), k(0.75, os), this.endPose(this.phoneScreen)];
+        return [k(0, road), through(0.4, front), through(0.58, beside), k(0.75, os), this.endPose(this.phoneScreen, PHONE_PAGE_FILL)];
       case "sos-signal":
         // Back to the road view and hold while the water crosses it; rise to see the signal reach the operations
         // building; glide in through its window.
         return [
-          this.atKey(0, this.endPose(this.phoneScreen)),
+          this.atKey(0, this.endPose(this.phoneScreen, PHONE_PAGE_FILL)),
           through(0.08, os),
           through(0.15, beside),
           k(0.26, road),

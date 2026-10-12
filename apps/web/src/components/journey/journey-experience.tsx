@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 
-import { quadIsDrawable, quadToMatrix3d } from "@/lib/journey/screen-projection";
+import { PHONE_PAGE_FILL, quadBounds, quadIsDrawable, quadToMatrix3d, type Quad } from "@/lib/journey/screen-projection";
 import {
   CHAPTERS,
   TIMELINE_END,
@@ -125,6 +125,8 @@ export function JourneyExperience() {
   const fadeRef = useRef<HTMLDivElement>(null);
   const hostRefs = useRef<Record<ScreenId, HTMLDivElement | null>>({ phone: null, monitor: null, table: null });
   const frameRefs = useRef<Record<ScreenId, HTMLIFrameElement | null>>({ phone: null, monitor: null, table: null });
+  /** Where each page was last drawn on its 3D screen: docking starts there, undocking returns there. */
+  const lastQuads = useRef<Partial<Record<ScreenId, Quad>>>({});
   const labelRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const barRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<JourneyStage | null>(null);
@@ -213,28 +215,41 @@ export function JourneyExperience() {
 
   const barHeight = () => barRef.current?.getBoundingClientRect().height ?? 0;
 
+  /**
+   * The rectangle a page occupies at the end of the push onto its screen: where it was last drawn there, or (when the
+   * story opened directly at a stop) where the end pose puts it. The page keeps its layout size and is scaled.
+   */
+  const endRect = useCallback((screen: ScreenId) => {
+    const size = sizesRef.current!;
+    const css = size.css[screen];
+    const quad = lastQuads.current[screen];
+    if (quad && quadIsDrawable(quad, size.width, size.height)) {
+      const bounds = quadBounds(quad);
+      return { left: bounds.left, top: bounds.top, width: css.width, height: css.height, scale: bounds.height / css.height };
+    }
+    const scale = (size.height * (screen === "phone" ? PHONE_PAGE_FILL : 1)) / css.height;
+    return { left: (size.width - css.width * scale) / 2, top: (size.height - css.height * scale) / 2, width: css.width, height: css.height, scale };
+  }, []);
+
   /** Docks a host: the real page becomes the viewport and receives input. */
   const dockHost = useCallback((screen: ScreenId, animate: boolean) => {
     const host = hostRefs.current[screen];
     const size = sizesRef.current;
     if (!host || !size) return;
-    const css = size.css[screen];
-    // Start from exactly where the screen is at the end of the push: the page at its layout size, scaled to the window
-    // height (the desktop phone is a centred column), then widen to the whole viewport.
-    const column = screen === "phone" && !size.mobile;
-    const scale = column ? size.height / css.height : 1;
-    const startWidth = column ? css.width : size.width;
+    // Start from exactly where the page sits at the end of the push (on the phone, inside its border), then open out
+    // to the whole viewport.
+    const start = endRect(screen);
     setFrameScrollbar(screen, true);
     host.dataset.mode = "docked";
     host.style.transformOrigin = "0 0";
-    host.style.transform = column ? `scale(${scale})` : "none";
+    host.style.transform = `scale(${start.scale})`;
     host.style.opacity = "1";
     host.style.visibility = "visible";
     host.style.transition = "";
-    host.style.left = `${(size.width - startWidth * scale) / 2}px`;
-    host.style.top = "0px";
-    host.style.width = `${startWidth}px`;
-    host.style.height = `${column ? css.height : size.height}px`;
+    host.style.left = `${start.left}px`;
+    host.style.top = `${start.top}px`;
+    host.style.width = `${start.width}px`;
+    host.style.height = `${start.height}px`;
     const settle = () => {
       host.style.transition = animate ? "left 620ms cubic-bezier(.65,0,.35,1), width 620ms cubic-bezier(.65,0,.35,1), top 420ms ease, height 420ms ease, transform 620ms cubic-bezier(.65,0,.35,1)" : "";
       host.style.transform = "none";
@@ -249,30 +264,27 @@ export function JourneyExperience() {
     } else if (animate) {
       requestAnimationFrame(() => requestAnimationFrame(settle));
     } else settle();
-  }, [setFrameScrollbar]);
+  }, [endRect, setFrameScrollbar]);
 
   /** Reverse of docking: back to the end-of-push rectangle, then onto the 3D screen. */
   const undockHost = useCallback((screen: ScreenId, animate: boolean): Promise<void> => {
     const host = hostRefs.current[screen];
     const size = sizesRef.current;
     if (!host || !size) return Promise.resolve();
-    const css = size.css[screen];
-    const column = screen === "phone" && !size.mobile;
-    const scale = column ? size.height / css.height : 1;
-    const endWidth = column ? css.width : size.width;
     if (!animate) {
       projectHost(screen);
       return Promise.resolve();
     }
-    host.style.transition = "left 420ms cubic-bezier(.65,0,.35,1), width 420ms cubic-bezier(.65,0,.35,1), top 300ms ease, height 300ms ease, transform 420ms cubic-bezier(.65,0,.35,1)";
+    const end = endRect(screen);
+    host.style.transition = "left 420ms cubic-bezier(.65,0,.35,1), width 420ms cubic-bezier(.65,0,.35,1), top 420ms cubic-bezier(.65,0,.35,1), height 420ms cubic-bezier(.65,0,.35,1), transform 420ms cubic-bezier(.65,0,.35,1)";
     host.style.transformOrigin = "0 0";
-    host.style.transform = column ? `scale(${scale})` : "none";
-    host.style.left = `${(size.width - endWidth * scale) / 2}px`;
-    host.style.width = `${endWidth}px`;
-    host.style.top = "0px";
-    host.style.height = `${column ? css.height : size.height}px`;
+    host.style.transform = `scale(${end.scale})`;
+    host.style.left = `${end.left}px`;
+    host.style.top = `${end.top}px`;
+    host.style.width = `${end.width}px`;
+    host.style.height = `${end.height}px`;
     return new Promise((resolve) => window.setTimeout(() => { projectHost(screen); resolve(); }, 440));
-  }, [projectHost]);
+  }, [endRect, projectHost]);
 
   // --- Navigation --------------------------------------------------------------------------------------------------
   const updateHistory = useCallback((scene: SceneId, push: boolean) => {
@@ -402,6 +414,7 @@ export function JourneyExperience() {
         const css = size.css[screen];
         if (info.quad && info.opacity > 0.005 && quadIsDrawable(info.quad, size.width, size.height)) {
           host.style.transform = quadToMatrix3d(css.width, css.height, info.quad);
+          lastQuads.current[screen] = info.quad;
           host.style.opacity = String(info.opacity);
           host.style.visibility = "visible";
         } else {

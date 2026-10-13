@@ -879,8 +879,8 @@
     {
       "id": "V-41",
       "group": "pitch",
-      "title": "The Public home map without a score, and its practice scenarios",
-      "check": "Open /public/ on a phone, in Thai and in English. First without practice: accept if no score, scale or coloured subdistrict is left, the banner under the search field is grey and reads 'No flood reports near you', and the panel behind it says plainly that the app does not measure current water. Then press the button to the right of the language switch and go through the seven scenarios. Three things to look at closely: (1) in every scenario the banner, the panel it opens, the note at the foot of the map and the map itself tell the same thing, and the words 'Practice replay' and 'not an official warning' are on the first screen; (2) the two scenarios at the peak, 'Cut off, home dry' and 'Water at home', are two homes about 110 m apart, and the page says they are points of the model and not addresses; (3) the page reports kilometres of road under water within 1 km and the walk to a shelter, not a count of ways out as in the first sketches: say in the note whether that reads well enough for the pitch. Choose 'change' with a note for any sentence, Thai or English, that should be different.",
+      "title": "The Public home map without a score, its practice scenarios, and the Shelter map",
+      "check": "Open /public/ on a phone, in Thai and in English. First without practice: accept if no score, scale or coloured subdistrict is left, the banner under the search field is grey and reads 'No flood reports near you', and the panel behind it says plainly that the app does not measure current water. Then press the button to the right of the language switch and go through the seven scenarios. Three things to look at closely: (1) in every scenario the banner, the panel it opens, the note at the foot of the map and the map itself tell the same thing, and the words 'Practice replay' and 'not an official warning' are on the first screen; (2) the two scenarios at the peak, 'Cut off, home dry' and 'Water at home', are two homes about 110 m apart, and the page says they are points of the model and not addresses; (3) the page reports kilometres of road under water within 1 km and the walk to a shelter, not a count of ways out as in the first sketches: say in the note whether that reads well enough for the pitch. Then open the Shelter tab: (4) the page is a map with a destination field, one banner and a note, and the markers are the places reported in use as shelters in September 2024; open one and read its popup, then the sheet behind the banner. Accept if nothing on that page reads as 'this shelter is open today', and if you agree that these places of 2024 are shown on a Public page at all; choose 'change' if they should come off. Choose 'change' with a note for any sentence, Thai or English, that should be different.",
       "evidence": [
         {
           "label": "The states and the words of the practice mode",
@@ -889,6 +889,14 @@
         {
           "label": "The test that binds each scenario to the replay files",
           "path": "apps/web/src/lib/public-practice.test.ts"
+        },
+        {
+          "label": "The places of 2024 and the words about them",
+          "path": "apps/web/src/lib/public-shelter-history.ts"
+        },
+        {
+          "label": "The banner and the words of the Shelter page",
+          "path": "apps/web/src/lib/public-shelter-view.ts"
         },
         {
           "label": "What may and may not be said about it",

@@ -240,6 +240,10 @@ export function GeoMap({
   const accessLayerRef = useRef<LayerGroup | null>(null);
   const locationLayerRef = useRef<LayerGroup | null>(null);
   const routeLayerRef = useRef<LayerGroup | null>(null);
+  // What the caller's `overlay` returned for the layers it drew. The teardown of the map calls it before the map is
+  // removed: when this component goes away React runs the cleanup of the effect that made the map first, and a
+  // caller's cleanup may still move the map (the practice replay puts the earlier view back).
+  const overlayCleanupRef = useRef<(() => void) | null>(null);
   const selectionPinRef = useRef<import("leaflet").Marker | null>(null);
   const hasFitRegionalBounds = useRef(false);
   const previousSelectedId = useRef(selectedId);
@@ -383,6 +387,8 @@ export function GeoMap({
       routeLayerRef.current = null;
       leafletRef.current = null;
       mapRef.current = null;
+      overlayCleanupRef.current?.();
+      overlayCleanupRef.current = null;
       mountedMap?.stop();
       mountedMap?.remove();
     };
@@ -632,7 +638,14 @@ export function GeoMap({
     const map = mapRef.current;
     const L = leafletRef.current;
     if (!mapReady || !map || !L || !overlay) return;
-    return overlay(map, L) ?? undefined;
+    const cleanup = overlay(map, L) ?? null;
+    overlayCleanupRef.current = cleanup;
+    return () => {
+      // Already called by the teardown of the map when the ref no longer holds it.
+      if (overlayCleanupRef.current !== cleanup) return;
+      overlayCleanupRef.current = null;
+      cleanup?.();
+    };
   }, [mapReady, overlay]);
 
   useEffect(() => {

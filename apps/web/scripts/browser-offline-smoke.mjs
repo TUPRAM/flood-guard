@@ -1691,7 +1691,7 @@ async function assertCompactMapNotice(page, mapScope, language, label, alsoRequi
     || folded.lines < 1 || folded.lines > 2 || folded.truncated || folded.height > 64) {
     throw new Error(`The compact map notice is not a short line and one button in one row at ${label} (${language}): ${JSON.stringify(folded)}`);
   }
-  for (const required of ["list button", "search field", "map layers button", "zoom buttons", "locate button", "map attribution", "map note", "signal banner", ...alsoRequired]) {
+  for (const required of ["list button", "search field", "map layers button", "zoom buttons", "locate button", "map note", "signal banner", ...alsoRequired]) {
     if (!folded.found.includes(required)) throw new Error(`The notice check found no ${required} to compare with at ${label} (${language}).`);
   }
   if (folded.overlaps.length > 0 || !folded.insideMap || folded.scroll > 1) {

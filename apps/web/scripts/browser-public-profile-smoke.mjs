@@ -369,9 +369,11 @@ async function assertInitialPreciseLocation(page) {
       areaFeatureCount: shell?.getAttribute("data-area-feature-count"),
       options: globalThis.__floodGuardGeolocationOptions ?? null,
       customAttributionCount: document.querySelectorAll(".public-home-page p.map-attribution").length,
-      nativeAttributionVisible: Boolean(
-        document.querySelector(".public-home-page .leaflet-control-attribution")?.getClientRects().length,
-      ),
+      // The credit of the map data folds away once it has been shown (13 Oct 2026): it stays in the page, the map
+      // says which of the two states it is in, and the layers menu repeats the credit.
+      nativeAttributionPresent: Boolean(document.querySelector(".public-home-page .leaflet-control-attribution")),
+      creditState: document.querySelector(".public-home-page .geo-map-shell")?.getAttribute("data-map-credit"),
+      menuCredit: document.querySelector(".public-home-page .map-basemap-menu .map-credit")?.textContent ?? "",
       borderWidth: style?.borderWidth,
       borderRadius: style?.borderRadius,
       leakedToStorage: storedValues.some((value) => (
@@ -396,7 +398,9 @@ async function assertInitialPreciseLocation(page) {
   if (
     audit.areaFeatureCount !== "8"
     || audit.customAttributionCount !== 0
-    || !audit.nativeAttributionVisible
+    || !audit.nativeAttributionPresent
+    || !["shown", "folded"].includes(audit.creditState)
+    || !audit.menuCredit.includes("OpenStreetMap contributors")
     || audit.borderWidth !== "0px"
     || audit.borderRadius !== "0px"
     || audit.leakedToStorage

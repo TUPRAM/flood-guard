@@ -63,6 +63,9 @@ const EMPTY_CONTEXT: FeatureCollection = {
 };
 /** A tap on the map chooses no planning area while a practice scenario is shown. */
 const ignoreAreaSelection = () => {};
+/** The practice replay draws road pieces from OpenStreetMap on every background, so its credit joins the map's. */
+const PRACTICE_CREDITS = ["© OpenStreetMap contributors"];
+const NO_EXTRA_CREDITS: string[] = [];
 
 type SearchState = "idle" | "loading" | "ready" | "empty" | "unavailable";
 type GpsState = "idle" | "requesting" | "ready" | "denied" | "unavailable" | "timeout";
@@ -496,7 +499,8 @@ export function PublicHomePage({
           contextFeatures={EMPTY_CONTEXT}
           datasetMode={data.status.dataset_mode}
           showSelectionSheet={false}
-          attributions={[]}
+          attributions={practising ? PRACTICE_CREDITS : NO_EXTRA_CREDITS}
+          collapseAttribution
           visualPalette="public-outline"
           enableBasemaps
           basemapControlVariant="menu"

@@ -624,7 +624,38 @@
 .public-home-map .leaflet-top.leaflet-left { bottom: calc(68px + var(--public-nav-clear, 0px)); }
 .public-home-map .map-basemap-menu { bottom: calc(166px + var(--public-nav-clear, 0px)); }
 .public-map-dock { bottom: var(--public-nav-clear, 0px); }
-/* The credit stays above the note: one line on a day without practice, up to four while a scenario is shown. */
+/*
+   The credit of the map data folds away once it has been shown (owner request of 13 Oct 2026; see
+   `collapseAttribution` of the map). It is not removed: the layers menu repeats it for the chosen background.
+*/
+.geo-map-shell[data-map-credit="folded"] .leaflet-control-attribution { display: none; }
+.map-basemap-menu .map-credit {
+  margin: 4px 0 0;
+  padding: 6px 8px 2px;
+  border-top: 1px solid var(--fg-neutral-200);
+  color: var(--fg-neutral-600);
+  font-size: .6rem;
+  line-height: 1.45;
+}
+.map-basemap-menu .map-credit a { color: var(--fg-primary-700); text-underline-offset: 1px; }
+/*
+   A waiting update shows no bar on a Public page (owner request of 13 Oct 2026). A dot on the profile button marks
+   it, and the entry "App status and offline use" of the profile menu opens the panel with the button that installs it.
+*/
+html[data-app-update="available"] .public-profile-trigger { position: relative; }
+html[data-app-update="available"] .public-profile-trigger::after {
+  content: "";
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 11px;
+  height: 11px;
+  border: 2px solid var(--fg-surface);
+  border-radius: 50%;
+  background: var(--fg-secondary);
+}
+html[data-app-update="available"] [data-public-app-status] > span::after { content: " •"; color: var(--fg-secondary-600); }
+/* While it is shown, the credit stays above the note: one line on a day without practice, up to four in a scenario. */
 .public-home-map .leaflet-control-attribution { margin-bottom: calc(58px + var(--public-nav-clear, 0px)) !important; }
 .public-home-map:has(.public-map-note[data-practice="true"]) .leaflet-control-attribution { margin-bottom: calc(96px + var(--public-nav-clear, 0px)) !important; }
 @media (max-width: 680px) {

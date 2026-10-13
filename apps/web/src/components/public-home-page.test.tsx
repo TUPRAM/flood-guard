@@ -61,6 +61,11 @@ describe("PublicHomePage on a day without practice", () => {
     expect(note).toContain("data-public-not-a-warning");
     expect(note).toContain("Preparedness information · not an official warning");
     expect(note).not.toContain('data-practice="true"');
+    // The credit of the map data folds away from the map once shown, and is repeated in the layers menu.
+    expect(html).toContain('data-map-credit="shown"');
+    const credit = html.match(/<p class="map-credit"[\s\S]*?<\/p>/)?.[0] ?? "";
+    expect(credit).toContain('href="https://www.openstreetmap.org/copyright"');
+    expect(credit).toContain("© OpenStreetMap contributors");
     // Nothing stands between the header and the map but a heading for a screen reader.
     expect(html).not.toContain("public-home-intro");
     expect(html).not.toContain("Make my plan");

@@ -125,11 +125,22 @@ interface GeoMapProps {
    * goes away. Keep the function stable between renders.
    */
   overlay?: (map: LeafletMap, leaflet: LeafletModule) => void | (() => void);
+  /**
+   * Fold the credit of the map data away once it has been shown (the Public home map). OpenStreetMap, Esri and
+   * OpenTopoMap license their tiles on the condition of a credit, so it is not removed: it is shown when the map
+   * opens and whenever the background changes, folds away after five seconds or at the first touch of the map, and
+   * is repeated in the layers menu, where a reader who looks for it finds it (the attribution guideline of the
+   * OpenStreetMap Foundation allows exactly this). The word "Leaflet" before the credit is left out.
+   */
+  collapseAttribution?: boolean;
 }
 
 type MapArea = AreaRecord | PublicPreparednessArea;
 
 type BasemapId = "street" | "satellite" | "terrain";
+
+/** How long a folding credit is shown before it folds away by itself (see `collapseAttribution`). */
+export const ATTRIBUTION_DISPLAY_MS = 5_000;
 
 /** The street background's credit, as Leaflet shows it. A layer drawn from OpenStreetMap data gives the same string, so it is shown once. */
 export const OSM_ATTRIBUTION_HTML = '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="license noopener noreferrer">OpenStreetMap</a> contributors';
@@ -209,6 +220,7 @@ export function GeoMap({
   selectionPinTitle,
   routePath,
   overlay,
+  collapseAttribution = false,
 }: GeoMapProps) {
   const mapElement = useRef<HTMLDivElement>(null);
   const mapRef = useRef<LeafletMap | null>(null);
@@ -234,6 +246,8 @@ export function GeoMap({
   const [basemapState, setBasemapState] = useState<BasemapState>("loading");
   const [basemapHidden, setBasemapHidden] = useState(false);
   const [basemapAttempt, setBasemapAttempt] = useState(0);
+  // A folding credit is shown at first and again whenever the background changes.
+  const [creditShown, setCreditShown] = useState(true);
   const [isOnline, setIsOnline] = useState(true);
   const effectiveBasemapState = basemapHidden ? "hidden" : !isOnline ? "offline" : basemapState;
   // While the background loads for the first time, or again after it was ready, the notice is not yet due: the
@@ -278,6 +292,8 @@ export function GeoMap({
     setBasemapState("loading");
     setBasemapHidden(false);
     setBasemapId(nextBasemapId);
+    // Another background has another credit: it is shown again for its few seconds.
+    setCreditShown(true);
   };
   const retryBasemap = () => {
     setBasemapState("loading");
@@ -330,6 +346,7 @@ export function GeoMap({
         preferCanvas: true,
         renderer: L.Browser.canvas ? createGeoMapRenderer(L) : undefined,
       });
+      if (collapseAttribution) mountedMap.attributionControl?.setPrefix(false);
       mountedMap.setView([20.36, 99.89], 10);
       mapRef.current = mountedMap;
       leafletRef.current = L;
@@ -362,7 +379,24 @@ export function GeoMap({
       mountedMap?.stop();
       mountedMap?.remove();
     };
-  }, [enableBasemaps]);
+  }, [collapseAttribution, enableBasemaps]);
+
+  // The folding credit folds away after its few seconds, or as soon as the reader touches the map.
+  useEffect(() => {
+    const element = mapElement.current;
+    if (!collapseAttribution || !mapReady || !creditShown || !element) return;
+    const fold = () => setCreditShown(false);
+    const timer = window.setTimeout(fold, ATTRIBUTION_DISPLAY_MS);
+    element.addEventListener("pointerdown", fold);
+    element.addEventListener("wheel", fold, { passive: true });
+    element.addEventListener("keydown", fold);
+    return () => {
+      window.clearTimeout(timer);
+      element.removeEventListener("pointerdown", fold);
+      element.removeEventListener("wheel", fold);
+      element.removeEventListener("keydown", fold);
+    };
+  }, [collapseAttribution, creditShown, mapReady]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -924,6 +958,7 @@ export function GeoMap({
       data-access-feature-count={accessFeatures.features.length}
       data-basemap={enableBasemaps ? basemapId : "none"}
       data-basemap-state={enableBasemaps ? effectiveBasemapState : "disabled"}
+      data-map-credit={collapseAttribution && enableBasemaps ? (creditShown ? "shown" : "folded") : undefined}
       data-location-source={location?.source ?? "none"}
       data-location-latitude={location?.latitude ?? ""}
       data-location-longitude={location?.longitude ?? ""}
@@ -981,6 +1016,19 @@ export function GeoMap({
                 ? (language === "th" ? "แสดงพื้นหลัง" : "Show background")
                 : (language === "th" ? "ซ่อนพื้นหลัง" : "Hide background")}
             </button>
+            {/* Where the credit folds away from the map, it is repeated here for the background that is chosen. */}
+            {collapseAttribution && (
+              <p className="map-credit" aria-label={language === "th" ? "แหล่งที่มาของข้อมูลแผนที่" : "Map data credit"}>
+                {visibleAttributions.map((attribution, index) => (
+                  <span key={attribution}>
+                    {index > 0 && " · "}
+                    {attributionLink(attribution)
+                      ? <a href={attributionLink(attribution)} target="_blank" rel="license noopener noreferrer">{displayAttribution(attribution)}</a>
+                      : displayAttribution(attribution)}
+                  </span>
+                ))}
+              </p>
+            )}
           </div>
         </details>
       )}

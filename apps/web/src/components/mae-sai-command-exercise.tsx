@@ -866,7 +866,7 @@ export function MaeSaiCommandExercise({ initial }: {
   const tambonName = useCallback((id: string): Localized | null => model?.tambons.find((tambon) => tambon.id === id) ?? null, [model]);
   // The modelled depth at the selected item's point, at this replay hour (model, low confidence; no current).
   const itemDepth = useMemo(() => (selectedItem && manifest && hand
-    ? modelDepthAt({ codes: hand.codes, factorKeys: hand.factorKeys, width: manifest.hand.width, height: manifest.hand.height, bounds: manifest.bounds, step: manifest.hand.step_m, channelCode: manifest.hand.channel_code, neverCode: manifest.hand.never_code },
+    ? modelDepthAt({ codes: hand.codes, factorKeys: hand.factorKeys, factorScale: hand.factorScale, width: manifest.hand.width, height: manifest.hand.height, bounds: manifest.bounds, step: manifest.hand.step_m, channelCode: manifest.hand.channel_code, neverCode: manifest.hand.never_code },
       selectedItem.point.lat, selectedItem.point.lon, stageNow)
     : handFailed ? null : undefined), [selectedItem, manifest, hand, stageNow, handFailed]);
   // What the inspector states about the selected item: facts of the model and of the reported sites, no advice.

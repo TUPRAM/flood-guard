@@ -1,0 +1,119 @@
+FloodGuard Thailand
+Licence notice for the season-envelope files derived from UNOSAT product 4009
+
+1. Files this notice covers
+   - envelope.png
+   - envelope.json
+   - LICENSE
+
+2. Source
+   UNOSAT and GISTDA water extents, 1 August to 22 October 2024, Chiang Rai Province, Thailand (UNOSAT product 4009, event code FL20240912THA)
+   Layer read: CHIANGRAI_20240801_20241012_AccumulatedFlood
+   https://unosat.org/products/4009
+   https://data.humdata.org/dataset/water-extents-from-1-aug-2024-to-22-october-2024-over-chiang-rai-province
+   Archive: FL20240912THA_GDB.zip, 27,977,189 bytes
+   SHA-256: 1fe3243c2bc986d4111bb3d82aff292abccf7fb1bb1dd722747e994618b66e85
+   Rights record: docs/proposal_execution/rights_basis_4009_v1.json
+
+3. Credit
+   UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009
+
+4. Licence
+   Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
+   https://creativecommons.org/licenses/by-sa/4.0/
+   https://creativecommons.org/licenses/by-sa/4.0/legalcode
+
+5. ShareAlike
+   You may copy, share and adapt these files if you give the credit above, link to the licence, say what you changed and share your version under the same licence, CC BY-SA 4.0.
+
+6. Changes made by FloodGuard (change notice)
+   envelope.png:
+   Changed by FloodGuard: clipped to Mae Sai district (the eight subdistricts of HDX Thailand COD-AB v01); geometry repaired (make_valid; 3 parts repaired); reprojected from EPSG:4326 to EPSG:3857; rasterised to about 15 m cells. Source: UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009, CC BY-SA 4.0.
+   envelope.json:
+   Changed by FloodGuard: clipped to Mae Sai district (the eight subdistricts of HDX Thailand COD-AB v01); geometry repaired (make_valid; 3 parts repaired); reprojected from EPSG:4326 to EPSG:32647; rasterised to 10 m cells. Source: UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009, CC BY-SA 4.0. The cells were then counted, and compared with the replay's modelled water, to make this table.
+
+7. Other inputs (their own credits and licences)
+   envelope.json also holds figures that come from the open data below. Each keeps its own credit and licence: give these credits as well when you reuse the file. The licence and the credit above cover what comes from product 4009. This is a caution, not legal advice.
+   - Copernicus DEM GLO-30 (tiles N20 E099 and N20 E100)
+     Licence: Copernicus DEM licence (free, attribution)
+     Credit: © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018, provided under COPERNICUS by the European Union and ESA
+     Used for: The modelled water set beside the envelope: model_stage_m, model_km2, model_only_km2, the overlap, the union and the three ratios, the low-confidence areas and on_mapped_channels_km2. Model output on a terrain model (T1 scenario), not an observation.
+   - WorldPop Thailand 100 m population 2020, unconstrained top-down (tha_ppp_2020)
+     Licence: CC BY 4.0
+     Credit: WorldPop (www.worldpop.org), University of Southampton
+     Used for: residents_in_envelope, residents_in_envelope_replay_rule and model_residents_in_water: modelled population estimates for 2020, not a census count.
+   - HDX Thailand COD-AB subdistrict boundaries v01
+     Licence: CC BY-IGO
+     Credit: OCHA / HDX Thailand COD-AB
+     Used for: The district clip, the subdistrict ids, tambon_km2 and share_of_tambon.
+
+8. Limits
+   - The product is preliminary and was not checked in the field (Field_Validation=0). FloodGuard did not check it either.
+   - It shows water accumulated from August to October 2024. FloodGuard uses it only as a scenario envelope, never as an observation for a single day.
+   - The layer's name ends 20241012, while the product text runs to 22 October 2024.
+   - The third-party satellite imagery used to make the product is not relicensed by this notice.
+   - UNOSAT and GISTDA do not endorse FloodGuard or its use of the product.
+   - The statistics file sets the product beside a model: a plausibility comparison, not a validation.
+   - This notice is not legal advice and not an official warning.
+
+--------------------------------------------------------------------------------
+
+FloodGuard Thailand
+ประกาศสัญญาอนุญาตสำหรับไฟล์ขอบเขตน้ำตลอดฤดูที่ดัดแปลงจากผลิตภัณฑ์ UNOSAT หมายเลข 4009
+
+1. ไฟล์ที่ประกาศนี้ครอบคลุม
+   - envelope.png
+   - envelope.json
+   - LICENSE
+
+2. แหล่งข้อมูล
+   ขอบเขตน้ำของ UNOSAT และ GISTDA ระหว่างวันที่ 1 สิงหาคม ถึง 22 ตุลาคม 2567 (2024) จังหวัดเชียงราย ประเทศไทย (ผลิตภัณฑ์ UNOSAT หมายเลข 4009 รหัสเหตุการณ์ FL20240912THA)
+   ชั้นข้อมูลที่อ่าน: CHIANGRAI_20240801_20241012_AccumulatedFlood
+   https://unosat.org/products/4009
+   https://data.humdata.org/dataset/water-extents-from-1-aug-2024-to-22-october-2024-over-chiang-rai-province
+   ไฟล์: FL20240912THA_GDB.zip ขนาด 27,977,189 ไบต์
+   SHA-256: 1fe3243c2bc986d4111bb3d82aff292abccf7fb1bb1dd722747e994618b66e85
+   บันทึกสิทธิ์: docs/proposal_execution/rights_basis_4009_v1.json
+
+3. การให้เครดิต
+   UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009
+
+4. สัญญาอนุญาต
+   Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
+   https://creativecommons.org/licenses/by-sa/4.0/
+   https://creativecommons.org/licenses/by-sa/4.0/legalcode
+
+5. การอนุญาตแบบเดียวกัน (ShareAlike)
+   ท่านคัดลอก แบ่งปัน และดัดแปลงไฟล์เหล่านี้ได้ หากให้เครดิตตามข้างต้น ใส่ลิงก์ไปยังสัญญาอนุญาต ระบุสิ่งที่ท่านเปลี่ยนแปลง และเผยแพร่ผลงานของท่านภายใต้สัญญาอนุญาตเดียวกัน คือ CC BY-SA 4.0
+
+6. สิ่งที่ FloodGuard เปลี่ยนแปลง (ประกาศการเปลี่ยนแปลง)
+   envelope.png:
+   FloodGuard เปลี่ยนแปลงดังนี้: ตัดตามขอบเขตอำเภอแม่สาย (ตำบลทั้งแปดตาม HDX Thailand COD-AB v01) ซ่อมแซมรูปทรงเรขาคณิต (make_valid ซ่อมแซม 3 ส่วน) แปลงระบบพิกัดจาก EPSG:4326 เป็น EPSG:3857 และแปลงเป็นราสเตอร์ขนาดเซลล์ ประมาณ 15 ม. แหล่งข้อมูล: UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009, CC BY-SA 4.0
+   Changed by FloodGuard: clipped to Mae Sai district (the eight subdistricts of HDX Thailand COD-AB v01); geometry repaired (make_valid; 3 parts repaired); reprojected from EPSG:4326 to EPSG:3857; rasterised to about 15 m cells. Source: UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009, CC BY-SA 4.0.
+   envelope.json:
+   FloodGuard เปลี่ยนแปลงดังนี้: ตัดตามขอบเขตอำเภอแม่สาย (ตำบลทั้งแปดตาม HDX Thailand COD-AB v01) ซ่อมแซมรูปทรงเรขาคณิต (make_valid ซ่อมแซม 3 ส่วน) แปลงระบบพิกัดจาก EPSG:4326 เป็น EPSG:32647 และแปลงเป็นราสเตอร์ขนาดเซลล์ 10 ม. แหล่งข้อมูล: UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009, CC BY-SA 4.0 จากนั้นนับจำนวนเซลล์และเทียบกับน้ำจากแบบจำลองของการย้อนดู เพื่อจัดทำตารางนี้
+   Changed by FloodGuard: clipped to Mae Sai district (the eight subdistricts of HDX Thailand COD-AB v01); geometry repaired (make_valid; 3 parts repaired); reprojected from EPSG:4326 to EPSG:32647; rasterised to 10 m cells. Source: UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009, CC BY-SA 4.0. The cells were then counted, and compared with the replay's modelled water, to make this table.
+
+7. ข้อมูลนำเข้าอื่น (มีเครดิตและสัญญาอนุญาตของตนเอง)
+   envelope.json มีตัวเลขที่มาจากข้อมูลเปิดด้านล่างนี้ด้วย ข้อมูลแต่ละชุดมีเครดิตและสัญญาอนุญาตของตนเอง เมื่อนำไฟล์ไปใช้ต่อ โปรดให้เครดิตเหล่านี้ด้วย สัญญาอนุญาตและเครดิตข้างต้นครอบคลุมส่วนที่มาจากผลิตภัณฑ์หมายเลข 4009 ข้อความนี้เป็นข้อควรระวัง ไม่ใช่คำแนะนำทางกฎหมาย
+   - Copernicus DEM GLO-30 (tiles N20 E099 and N20 E100)
+     สัญญาอนุญาต: Copernicus DEM licence (free, attribution)
+     เครดิต: © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018, provided under COPERNICUS by the European Union and ESA
+     ใช้สำหรับ: น้ำจากแบบจำลองที่นำมาเทียบกับขอบเขตนี้ ได้แก่ model_stage_m, model_km2, model_only_km2 พื้นที่ซ้อนทับ พื้นที่รวม อัตราส่วนทั้งสาม พื้นที่ความเชื่อมั่นต่ำ และ on_mapped_channels_km2 เป็นผลจากแบบจำลองบนแบบจำลองภูมิประเทศ (สถานการณ์จำลอง T1) ไม่ใช่การสังเกตการณ์
+   - WorldPop Thailand 100 m population 2020, unconstrained top-down (tha_ppp_2020)
+     สัญญาอนุญาต: CC BY 4.0
+     เครดิต: WorldPop (www.worldpop.org), University of Southampton
+     ใช้สำหรับ: residents_in_envelope, residents_in_envelope_replay_rule และ model_residents_in_water เป็นค่าประมาณประชากรจากแบบจำลองของปี 2563 (2020) ไม่ใช่ผลสำมะโนประชากร
+   - HDX Thailand COD-AB subdistrict boundaries v01
+     สัญญาอนุญาต: CC BY-IGO
+     เครดิต: OCHA / HDX Thailand COD-AB
+     ใช้สำหรับ: การตัดตามขอบเขตอำเภอ รหัสตำบล tambon_km2 และ share_of_tambon
+
+8. ข้อจำกัด
+   - ผลิตภัณฑ์นี้เป็นข้อมูลเบื้องต้นและยังไม่ได้ตรวจสอบในพื้นที่จริง (Field_Validation=0) FloodGuard ก็ไม่ได้ตรวจสอบเช่นกัน
+   - ข้อมูลแสดงน้ำสะสมตั้งแต่เดือนสิงหาคมถึงตุลาคม 2567 (2024) FloodGuard ใช้เป็นกรอบสถานการณ์สมมติเท่านั้น ไม่ใช้เป็นข้อมูลสังเกตการณ์ของวันใดวันหนึ่ง
+   - ชื่อชั้นข้อมูลลงท้ายด้วย 20241012 แต่คำอธิบายผลิตภัณฑ์ครอบคลุมถึงวันที่ 22 ตุลาคม 2567 (2024)
+   - ประกาศนี้ไม่ได้ให้สิทธิ์ใหม่ในภาพถ่ายดาวเทียมของบุคคลที่สามที่ใช้จัดทำผลิตภัณฑ์
+   - UNOSAT และ GISTDA ไม่ได้รับรอง FloodGuard หรือการใช้ผลิตภัณฑ์นี้ของ FloodGuard
+   - ไฟล์สถิติเทียบผลิตภัณฑ์กับแบบจำลองเพื่อดูความสมเหตุสมผล ไม่ใช่การยืนยันความถูกต้องของแบบจำลอง
+   - ประกาศนี้ไม่ใช่คำแนะนำทางกฎหมาย และไม่ใช่การเตือนภัยอย่างเป็นทางการ

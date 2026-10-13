@@ -521,30 +521,34 @@ def test_committed_statistics_reproduce_the_scouts_values(manifest: dict, docume
     assert comparison["title"] == "Season envelope comparison (scenario; plausibility, not validation)"
     assert comparison["use"].startswith("Plausibility against a season envelope, not a validation.")
     peak, window = comparison["district"]
-    # District, at the 3.5 m peak: the scouts measured 0.483, 0.605 and 0.704.
+    # District, at the 3.5 m peak. With revision r4 the scouts measured 0.483, 0.605 and 0.704. With r5, whose peak is
+    # fitted to the 15 Sep image, the figures are higher; the comparison was known when r5 was chosen and was one of the
+    # reasons, so it is calibration-informed (the manifest says so) and none of the figures below is a check of r5.
     assert (peak["id"], peak["model_stage_m"]) == ("modelled_peak", 3.5)
-    assert (peak["agreement_iou"], peak["containment_model_in_envelope"], peak["containment_envelope_in_model"]) == (0.483, 0.605, 0.704)
-    # At the largest modelled extent inside 13-19 Sep (2.65 m): the scouts measured an IoU of 0.458.
+    assert (peak["agreement_iou"], peak["containment_model_in_envelope"], peak["containment_envelope_in_model"]) == (0.539, 0.622, 0.801)
+    # At the largest modelled extent inside 13-19 Sep (2.65 m): 0.505 with r5 (the scouts measured 0.458 with r4).
     assert (window["id"], window["model_stage_m"]) == ("largest_extent_13_19_sep", 2.65)
-    assert window["agreement_iou"] == pytest.approx(0.458, abs=0.002)
+    assert window["agreement_iou"] == pytest.approx(0.505, abs=0.002)
     # The model side is the replay's own water: the peak day and the size check's window.
     assert peak["model_km2"] == pytest.approx(max(day["stats"]["flooded_km2"] for day in manifest["days"]), abs=0.01)
     unosat_3991 = next(check for check in manifest["external_checks"] if check["id"] == "unosat-3991")
     assert (window["model_stage_m"], round(window["model_km2"], 1)) == (unosat_3991["model_stage_m"], unosat_3991["model_km2"])
-    # Per subdistrict: the scouts' range across the six with envelope water was 0.38 to 0.74.
+    # Per subdistrict, across the six with envelope water: 0.40 to 0.71 with r5 (0.38 to 0.74 with r4). Ko Chang moves
+    # most, from 0.38 to 0.55.
     by_tambon = {TAMBON_NAMES[row["tambon_id"]]: row for row in comparison["by_tambon"]}
     assert len(by_tambon) == 8
     assert {name: round(by_tambon[name]["agreement_iou"], 2) for name in ("Pong Ngam", "Si Mueang Chum", "Ban Dai", "Mae Sai", "Pong Pha", "Ko Chang")} == {
-        "Pong Ngam": 0.74, "Si Mueang Chum": 0.65, "Ban Dai": 0.48, "Mae Sai": 0.43, "Pong Pha": 0.4, "Ko Chang": 0.38}
+        "Pong Ngam": 0.71, "Si Mueang Chum": 0.66, "Ban Dai": 0.53, "Mae Sai": 0.47, "Pong Pha": 0.4, "Ko Chang": 0.55}
     assert by_tambon["Huai Khrai"]["envelope_km2"] == 0.0 and by_tambon["Huai Khrai"]["containment_envelope_in_model"] is None
-    # Where the two differ most: envelope water the model lacks in Ko Chang and the town; modelled water outside it in Ban Dai and Pong Pha.
+    # Where the two differ most with r5: envelope water the model lacks in the town and Si Mueang Chum; modelled water
+    # outside it in Ko Chang and Ban Dai. (With r4: Ko Chang and the town; Ban Dai and Pong Pha.)
     lacks = [TAMBON_NAMES[tid] for tid in comparison["disagreement"]["envelope_water_the_model_lacks"]]
     outside = [TAMBON_NAMES[tid] for tid in comparison["disagreement"]["modelled_water_outside_the_envelope"]]
-    assert (lacks[:2], outside[:2]) == (["Ko Chang", "Mae Sai"], ["Ban Dai", "Pong Pha"])
-    # Low-confidence modelled water: the scouts measured 59.4% inside the envelope, against 60.5% for all modelled water.
+    assert (lacks[:2], outside[:2]) == (["Mae Sai", "Si Mueang Chum"], ["Ko Chang", "Ban Dai"])
+    # Low-confidence modelled water: 59.3% inside the envelope, against 62.6% for the other modelled water (r5).
     low = comparison["low_confidence"]
-    assert low["share_inside_envelope_low_confidence"] == pytest.approx(0.594, abs=0.002)
-    assert low["share_inside_envelope_other"] == pytest.approx(0.608, abs=0.002)
+    assert low["share_inside_envelope_low_confidence"] == pytest.approx(0.593, abs=0.002)
+    assert low["share_inside_envelope_other"] == pytest.approx(0.626, abs=0.002)
     assert low["low_confidence_model_km2"] + low["other_model_km2"] == pytest.approx(peak["model_km2"], abs=0.02)
     assert low["low_confidence_model_km2"] == pytest.approx(manifest["hand"]["low_confidence_share"]["low_confidence_km2"], abs=0.06)
     # The figures add up: the rows of the subdistricts give the district row, and the envelope side leaves channel cells out.

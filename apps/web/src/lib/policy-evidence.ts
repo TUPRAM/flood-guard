@@ -73,7 +73,7 @@ export const POLICY_EVIDENCE = {
   /** The replay that is live now. It is a narrative surface (D7): it computes no FPPS and assigns no class. */
   currentReplay: {
     route: "/studio/cases/mae-sai-2024/",
-    revision: "r4",
+    revision: "r5",
     coverageShare: 1,
     tier: "T1 scenario (model)",
     computesFpps: false,
@@ -145,7 +145,7 @@ export const POLICY_EVIDENCE = {
   ],
   verification: {
     scoreReproduction: "Recomputed all eight rows once, on 29 Sep 2026, from the exact committed TypeScript methods and original r2 Git asset bytes.",
-    sourceSelection: "The current replay (r4) computes no FPPS (D7), so this example cannot be refreshed from it. It is replaced only by D4/v1 planning-assessment results after protocol v1b is hashed.",
+    sourceSelection: "The current replay (r5) computes no FPPS (D7), so this example cannot be refreshed from it. It is replaced only by D4/v1 planning-assessment results after protocol v1b is hashed.",
     generationTimestamp: "The source manifest does not record a generation time; the commit date is recorded separately.",
     scientificValidation: "Not established",
     operationalAcceptance: "Not established",

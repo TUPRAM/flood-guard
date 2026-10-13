@@ -1,6 +1,6 @@
 {
   "schema": "floodguard.validation_check.items.v1",
-  "updated": "2026-10-11",
+  "updated": "2026-10-12",
   "repository": "https://github.com/TUPRAM/flood-guard",
   "reviewers": [
     "Rachmania",
@@ -821,6 +821,33 @@
       "gates": "Drawing the need map and the brief again from the buildings demand, and what the pitch says of Ko Chang.",
       "ready": true,
       "added": "2026-10-11"
+    },
+    {
+      "id": "V-39",
+      "group": "result",
+      "title": "The replay's peak fitted to the image of 15 September, with the earlier replay kept as an archive",
+      "check": "Open the replay and read the note above the map, then open /archive1/ and compare the two peaks. Read 'How well it follows the image, and the test it failed'. Accept if you agree that the fitted replay (revision r5) is the one to show, and that the page and the write-up say plainly enough that it is a fit and not a check: the peak covers 89 percent of the mud line where the image sees, 73 before, and on the half of the area held back the fitted levels did worse than the earlier model, 62 percent against 73. Choose 'change' with a note if the earlier replay should be the current one again, or if a sentence should be different.",
+      "evidence": [
+        {
+          "label": "The write-up, with the two peaks side by side",
+          "path": "docs/replay_river_fit.md"
+        },
+        {
+          "label": "The plan and its amendment, with the rule the fit failed",
+          "path": "docs/proposal_execution/replay_river_fit_plan_v1.md"
+        },
+        {
+          "label": "The figures a speaker may quote, written again from r5",
+          "path": "docs/demo/replay_numbers.md"
+        },
+        {
+          "label": "The replay beat of the walkthrough, with the new line on the fit",
+          "path": "docs/demo_walkthrough.md"
+        }
+      ],
+      "gates": "Which replay the pitch shows, and what is said of the 15 September image beside it.",
+      "ready": true,
+      "added": "2026-10-12"
     }
   ]
 }

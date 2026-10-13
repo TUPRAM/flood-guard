@@ -20,7 +20,6 @@ import {
   hourlyStages,
   latestObservation,
   lutEquals,
-  manifestRevision,
   mercatorY,
   phaseAt,
   projectToFrame,
@@ -134,7 +133,7 @@ export interface ReplayExportSource {
    * HAND codes, depth-factor keys and wet-able cells; `lowCells`/`lowStripes` are the low-confidence cells and their
    * hatch, present only when the manifest declares the low-confidence channel.
    */
-  hand: { codes: Uint8Array; factorKeys: Uint16Array | null; candidates: Uint32Array; lowCells?: Uint32Array | null; lowStripes?: Uint8Array | null };
+  hand: { codes: Uint8Array; factorKeys: Uint16Array | null; factorScale?: number; candidates: Uint32Array; lowCells?: Uint32Array | null; lowStripes?: Uint8Array | null };
 }
 
 /**
@@ -406,7 +405,7 @@ export async function createExportRenderer(
   // Low-confidence water is washed out and hatched as on the map, only when the manifest declares its channel.
   const declared = Boolean(manifest.hand.low_confidence_channel);
   const grid: WaterGrid = {
-    codes: hand.codes, factorKeys: hand.factorKeys, candidates: hand.candidates,
+    codes: hand.codes, factorKeys: hand.factorKeys, factorScale: hand.factorScale, candidates: hand.candidates,
     lowCells: declared ? hand.lowCells ?? null : null, lowStripes: declared ? hand.lowStripes ?? null : null,
   };
   const hatched = Boolean(grid.lowCells && grid.lowStripes);
@@ -841,8 +840,8 @@ export async function createExportRenderer(
       ? `${text.people} ${Math.round(stats.people_in_water).toLocaleString("en-US")}${text.peopleUnit ? ` ${text.peopleUnit}` : ""}`
       : null;
     const sourceLine = th
-      ? `เวลาของข้อมูลต้นทาง ${manifest.source_timestamp} (UTC) · ${manifest.study_id} ${manifestRevision()} · เวลาประเทศไทย (UTC+7)`
-      : `Source time ${manifest.source_timestamp} (UTC) · ${manifest.study_id} ${manifestRevision()} · Asia/Bangkok (ICT, UTC+7)`;
+      ? `เวลาของข้อมูลต้นทาง ${manifest.source_timestamp} (UTC) · ${manifest.study_id} ${manifest.revision} · เวลาประเทศไทย (UTC+7)`
+      : `Source time ${manifest.source_timestamp} (UTC) · ${manifest.study_id} ${manifest.revision} · Asia/Bangkok (ICT, UTC+7)`;
 
     if (landscape) {
       // Caption panel beside the map: text wrapped to the panel, the legend at its foot.
@@ -987,7 +986,7 @@ export async function createExportRenderer(
         weight: 500, size: 12.5, colour: "#e3ebf5", gap: 12,
       },
       ...creditLines.map((credit) => ({ value: credit, weight: 400, size: 10.5, colour: "#b9c6d8", gap: 4 })),
-      { value: `${manifest.study_id} ${manifestRevision()} · ${th ? "ความเชื่อมั่น" : "confidence"}: ${text.level}`, weight: 400, size: 10.5, colour: "#9fb0c6" },
+      { value: `${manifest.study_id} ${manifest.revision} · ${th ? "ความเชื่อมั่น" : "confidence"}: ${text.level}`, weight: 400, size: 10.5, colour: "#9fb0c6" },
     ]);
   };
   return { canvas, draw, drawTitle, drawEnd };

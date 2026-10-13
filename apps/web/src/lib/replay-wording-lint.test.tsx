@@ -284,6 +284,8 @@ function replaySourceFiles(): string[] {
     ...list("src/components", /^mae-sai-.*\.tsx$/),
     ...list("src/lib", /^flood-timeline.*\.ts$/),
     "src/app/studio/cases/mae-sai-2024/page.tsx",
+    // The archived replay (revision r4) at /archive1/: its title and description are replay text too.
+    "src/app/archive1/page.tsx",
     // The route of the Command exercise replay: its title and description are replay text too.
     "src/app/command/page.tsx",
   ].sort();
@@ -1020,7 +1022,7 @@ describe("Replay wording lint: current text", () => {
     expect(commandText).toMatch(/12 Sep 12:00 ICT\s+·\s+h 84|10 Sep 20:00 ICT\s+· h 44/);
     expect(commandText).toMatch(/Mae Sai, September 2024\s+·\s+reconstructed, not real-time\s+·\s+not an official warning/);
     expect(commandText).toContain("Trainee mode: the summary at the modelled peak is shown once the replay reaches that hour.");
-    expect(commandText).toContain("newly impassable: Mae Sai bypass, Phahonyothin Rd (Hwy 1) and 1 more");
+    expect(commandText).toContain("newly impassable: Phahonyothin Rd (Hwy 1), Mueang Daeng Rd");
     expect(commandText).toContain("not yet known at this hour");
     expect(commandText).toContain("It has not been reviewed by a native speaker.");
     expect(commandText).toContain("Not for emergency response, evacuation orders or any operational decision; not an official warning.");
@@ -1061,7 +1063,7 @@ describe("Replay wording lint: current text", () => {
     const commandCopy = items.filter((item) => item.source.startsWith("Command exercise copy ("));
     expect(commandCopy.map((item) => item.source)).toEqual(["Command exercise copy (en)", "Command exercise copy (th)"]);
     expect(commandCopy[0].text).toContain("Exercise replay · Mae Sai, September 2024 · reconstructed, not real-time · not an official warning");
-    expect(commandCopy[0].text).toContain("~7,100 · lost shelter access · of ~34,500 in reach");
+    expect(commandCopy[0].text).toContain("~6,600 · lost shelter access · of ~34,500 in reach");
     expect(commandCopy[0].text).toContain("It has not been reviewed by a native speaker.");
     // The briefs are in the built copy in both languages, as whole texts: an English brief is never rendered by default.
     expect(commandCopy[0].text).toContain("[EXERCISE – not a real incident] EX-05 · team BOAT-2");
@@ -1099,11 +1101,11 @@ describe("Replay wording lint: current text", () => {
     expect(accessText).toContain("no ratio shown");
     expect(accessText).toContain("ไม่แสดงอัตราส่วน");
     expect(accessText).toContain("Of the residents in each group who had a shelter within reach before the flood, the share who lost it.");
-    expect(accessText).toContain("Among residents with a shelter within reach before the flood, proxy-vulnerable residents are about 1.6× more likely to lose it (85.77% vs 53.42%)");
+    expect(accessText).toContain("Among residents with a shelter within reach before the flood, proxy-vulnerable residents are about 1.7× more likely to lose it (85.77% vs 49.34%)");
     expect(accessText).toContain("no proxy-vulnerable resident has lost access");
     expect(accessText).toContain("so none could lose it");
     expect(accessText).toContain("No one in either group has lost access at this replay hour");
-    expect(accessText).toContain("มากกว่ากลุ่มอื่นประมาณ 1.6 เท่า");
+    expect(accessText).toContain("มากกว่ากลุ่มอื่นประมาณ 1.7 เท่า");
     expect(accessText).toContain("จึงไม่มีผู้ใดในกลุ่มนี้สูญเสียการเข้าถึงได้");
     // The corpus really holds the standing disclaimer in both languages, export caption included.
     const all = items.map((item) => item.text).join("\n");

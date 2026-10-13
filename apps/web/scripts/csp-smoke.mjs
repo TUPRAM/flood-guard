@@ -32,7 +32,7 @@ const ROUTES = [
   "/", "/policy/", "/public/", "/public-cases/", "/command/", "/studio/archive/command-workspace/", "/command/planning/", "/command/cases/",
   "/command/archive/", "/command/ver2/", "/command/exercise/",
   "/studio/", "/studio/planning-evidence/", "/studio/candidate-report/", "/studio/library/", "/studio/brief/", "/studio/archive/",
-  "/studio/archive/mae-sai-geoai/", "/studio/cases/mae-sai-2024/", "/studio/studies/c2s-ms-20260915/",
+  "/studio/archive/mae-sai-geoai/", "/studio/cases/mae-sai-2024/", "/archive1/", "/studio/studies/c2s-ms-20260915/",
   ...["data", "models", "results", "rtc", "explorer", "files", "mae-sai"].map((section) => `/studio/studies/c2s-ms-20260915/${section}/`),
 ];
 const TILE_ORIGINS = new Set([

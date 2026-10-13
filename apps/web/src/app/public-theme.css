@@ -639,6 +639,29 @@
 }
 .map-basemap-menu .map-credit a { color: var(--fg-primary-700); text-underline-offset: 1px; }
 /*
+   The Shelter map's layers menu: an icon-only cell like the one on Home, whose list opens to the left at its full
+   width. It was 48 px wide, which cut its labels off, and the list now ends with the credit of the map data. While
+   the list is open the map is tall enough to hold it: the map's box clips what lies outside it.
+*/
+.public-shelter-route-overview__graphic .map-basemap-menu > summary {
+  min-height: 48px;
+  grid-template-columns: 24px;
+  justify-content: center;
+  padding: 12px;
+}
+.public-shelter-route-overview__graphic .map-basemap-menu > summary > span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+}
+.public-shelter-route-overview__graphic .map-basemap-menu > div {
+  width: 148px;
+  transform: translateX(calc(-100% + 48px));
+}
+.public-shelter-route-overview__graphic:has(.map-basemap-menu[open]) { min-height: 348px; }
+/*
    A waiting update shows no bar on a Public page (owner request of 13 Oct 2026). A dot on the profile button marks
    it, and the entry "App status and offline use" of the profile menu opens the panel with the button that installs it.
 */

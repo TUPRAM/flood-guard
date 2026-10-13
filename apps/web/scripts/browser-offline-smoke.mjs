@@ -334,6 +334,33 @@ try {
   if (!/DDPM|1784|confirm/iu.test(shelterText)) {
     throw new Error("The Shelter page lost its official-confirmation boundary.");
   }
+  // The credit of the map data folds away from the Shelter map as it does on Home (13 Oct 2026). It is not removed:
+  // the layers menu repeats it, and the open menu lies inside the map's box with its labels and the credit in full.
+  const shelterMap = page.locator(".public-shelter-page .geo-map-shell");
+  await page.waitForFunction(() => ["shown", "folded"].includes(
+    document.querySelector(".public-shelter-page .geo-map-shell")?.getAttribute("data-map-credit"),
+  ));
+  await shelterMap.locator(".map-basemap-menu > summary").click();
+  const shelterMenu = await page.waitForFunction(() => {
+    const box = document.querySelector(".public-shelter-route-overview__graphic")?.getBoundingClientRect();
+    const list = document.querySelector(".public-shelter-page .map-basemap-menu > div")?.getBoundingClientRect();
+    const credit = document.querySelector(".public-shelter-page .map-basemap-menu .map-credit");
+    const creditBox = credit?.getBoundingClientRect();
+    if (!box || !list || !creditBox || creditBox.height === 0) return null;
+    const audit = {
+      credit: credit.textContent,
+      inside: list.left >= box.left - 0.5 && list.right <= box.right + 0.5 && creditBox.bottom <= box.bottom + 0.5,
+      width: Math.round(list.width),
+      labels: [...document.querySelectorAll(".public-shelter-page .map-basemap-menu button")]
+        .every((button) => button.scrollWidth <= button.clientWidth + 1),
+    };
+    // The map grows to hold the open list; wait until it has.
+    return audit.inside ? audit : null;
+  }, undefined, { timeout: 10_000 }).then((handle) => handle.jsonValue(), () => null);
+  if (!shelterMenu || !shelterMenu.credit.includes("OpenStreetMap contributors") || shelterMenu.width < 140 || !shelterMenu.labels) {
+    throw new Error(`The Shelter map's layers menu does not show its choices and the map credit in full: ${JSON.stringify(shelterMenu)}`);
+  }
+  await shelterMap.locator(".map-basemap-menu > summary").click();
 
   await activatePublicPage(page, "prepare", "#household-plan-builder");
   await page.locator(".household-need-options button").first().click();

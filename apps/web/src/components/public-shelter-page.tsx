@@ -583,6 +583,8 @@ export function PublicShelterPage({
             datasetMode={datasetMode}
             showSelectionSheet={false}
             attributions={[]}
+            // As on Home: the credit of the map data folds away once shown and is repeated in the layers menu.
+            collapseAttribution
             visualPalette="public-outline"
             enableBasemaps
             basemapControlVariant="menu"

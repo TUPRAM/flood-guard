@@ -45,6 +45,9 @@ describe("Public household pages", () => {
     expect(html).toContain("0/4");
     expect(html).toContain("current capacity or operating status");
     expect(html).not.toContain('checked=""');
+    // As on Home, the credit of the map data folds away from the map once shown; the layers menu repeats it.
+    expect(html).toContain('data-map-credit="shown"');
+    expect(html.match(/<p class="map-credit"[\s\S]*?<\/p>/)?.[0] ?? "").toContain("© OpenStreetMap contributors");
   });
 
   it("puts direct official phone links ahead of the optional hold interaction", () => {

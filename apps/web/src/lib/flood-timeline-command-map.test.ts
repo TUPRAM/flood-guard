@@ -4,6 +4,8 @@
  * them and the scale bar.
  */
 
+// Since 12 Oct 2026 this suite reads the archived revision (r4) as a fixed dataset: its figures are the ones the plans and
+// wireframes were written with. The page serves r5; what it tests here is the logic, which does not depend on the revision.
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -12,7 +14,7 @@ import {
   buildDepthLut,
   buildFactorDepthLut,
   FACTOR_LUT_SIZE,
-  TIMELINE_MANIFEST_URL,
+  ARCHIVE_1_MANIFEST_URL,
   type AreaGeometry,
   type GeoCollection,
   type RoadProps,
@@ -41,7 +43,7 @@ import { parseAccessNodes } from "./flood-timeline-evacuation";
 
 const publicRoot = resolve(import.meta.dirname, "../../public");
 const readJson = <T,>(href: string): T => JSON.parse(readFileSync(resolve(publicRoot, href.replace(/^\//, "")), "utf8")) as T;
-const manifest = readJson<TimelineManifest>(TIMELINE_MANIFEST_URL);
+const manifest = readJson<TimelineManifest>(ARCHIVE_1_MANIFEST_URL);
 const tambons = readJson<GeoCollection<AreaGeometry, TambonProps>>(manifest.vectors.tambons.href);
 const roads = readJson<GeoCollection<unknown, RoadProps>>(manifest.vectors.roads.href);
 

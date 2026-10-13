@@ -5,13 +5,15 @@
  * the shared wording lint.
  */
 
+// Since 12 Oct 2026 this suite reads the archived revision (r4) as a fixed dataset: its figures are the ones the plans and
+// wireframes were written with. The page serves r5; what it tests here is the logic, which does not depend on the revision.
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import type { ReactElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
-import { TIMELINE_MANIFEST_URL, type AreaGeometry, type GeoCollection, type Language, type RoadProps, type TambonProps, type TimelineManifest } from "@/lib/flood-timeline";
+import { ARCHIVE_1_MANIFEST_URL, type AreaGeometry, type GeoCollection, type Language, type RoadProps, type TambonProps, type TimelineManifest } from "@/lib/flood-timeline";
 import { buildCommandModel, districtFiguresAt } from "@/lib/flood-timeline-command";
 import { COMMAND_BANNER, commandBannerLine } from "@/lib/flood-timeline-command-copy";
 import {
@@ -44,7 +46,7 @@ import { MaeSaiCommandTimebar, type CommandPhaseBandItem } from "./mae-sai-comma
 
 const publicRoot = resolve(import.meta.dirname, "../../public");
 const read = (href: string) => readFileSync(resolve(publicRoot, href.replace(/^\//, "")));
-const manifest = JSON.parse(read(TIMELINE_MANIFEST_URL).toString("utf8")) as TimelineManifest;
+const manifest = JSON.parse(read(ARCHIVE_1_MANIFEST_URL).toString("utf8")) as TimelineManifest;
 const roads = JSON.parse(read(manifest.vectors.roads.href).toString("utf8")) as GeoCollection<unknown, RoadProps>;
 const tambons = JSON.parse(read(manifest.vectors.tambons.href).toString("utf8")) as GeoCollection<AreaGeometry, TambonProps>;
 const model = buildCommandModel({ manifest, roads: roads.features, tambons: tambons.features, nodes: parseAccessNodes(read(manifest.access!.nodes.href), manifest.access!) });

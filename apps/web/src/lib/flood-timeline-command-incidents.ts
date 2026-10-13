@@ -497,6 +497,8 @@ export interface PointDepthInput {
   codes: Uint8Array;
   /** `code | factor << 8` per cell, when the raster has a depth-factor channel. */
   factorKeys: Uint16Array | null;
+  /** What a full factor byte stands for (`depthFactorScale` of the manifest); absent: 1. */
+  factorScale?: number;
   width: number;
   height: number;
   bounds: readonly [readonly [number, number], readonly [number, number]];
@@ -516,5 +518,5 @@ export function modelDepthAt(input: PointDepthInput, lat: number, lon: number, s
   if (column < 0 || row < 0 || column >= input.width || row >= input.height) return null;
   const cell = row * input.width + column;
   const factor = input.factorKeys ? input.factorKeys[cell] >> 8 : 255;
-  return cellDepth(input.codes[cell], stage, input.step, factor, input.channelCode ?? 0, input.neverCode ?? 255) ?? 0;
+  return cellDepth(input.codes[cell], stage, input.step, factor, input.channelCode ?? 0, input.neverCode ?? 255, input.factorScale ?? 1) ?? 0;
 }

@@ -286,6 +286,7 @@ function prunePublicProductionOutput() {
     "public-case-projections",
     "briefs",
     "public-cases",
+    "archive1",
     "planning-overlays",
     "exercises",
     "offline-demo/bundle.json",

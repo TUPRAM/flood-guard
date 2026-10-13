@@ -187,10 +187,12 @@ these counts, and say that the finding on Ko Chang holds either way. The
 need map is drawn from the grid: its blue squares in open fields are too
 full.
 
-**From the replay** (unchanged). At the modelled peak the homes of about
-14,200 residents are in water; the eight shelter sites of the default plan
-have 7,580 of them within walking reach and room for roughly 500 to 1,050
-(estimated from building footprints). Source: decision log, follow-up 7.
+**From the replay** (revision r5 of 12 October, whose peak is fitted to the
+image of 15 September; with r4 the figures were 14,200, 7,580 and 500 to
+1,050). At the modelled peak the homes of about 14,400 residents are in
+water; the eight shelter sites of the default plan have 6,440 of them within
+walking reach and room for roughly 560 to 1,030 (estimated from building
+footprints). Source: `docs/demo/replay_numbers.md`, key `capacity.bounds`.
 
 **Shelters in case SE1.** Access on foot to the located DDPM shelters and
 listed places against the residents in reach were computed on 9 October
@@ -458,7 +460,8 @@ Agreement between two sensors 44 hours apart; not accuracy.
 | THEOS-2 on the study event | `docs/proposal_execution/theos2_study_event_check_plan_v1.md` | The plan is committed and the radar readings are frozen before any image arrives; the comparison runs once per scene when GISTDA delivers. |
 | The THEOS-2 water rule measured against three of us | `docs/theos2_water_label_check.md` | Three team members labelled 300 points and agree with each other on 57% of them. What the rule calls water is water in 90%; it finds 71% of the water we see. So the radar's share of the real water is lower than we reported, not higher. |
 | A second THEOS-2 water rule | `docs/theos2_water_rule_v2.md` | Near infrared below red, one fixed limit, nothing set by eye: better than the first rule by 8 points (4 to 13) on our own labels, and it does not invent water on a dry scene. Simple beat the trained classifiers. It will read the images of Mae Sai. |
+| The replay's peak fitted to the image of 15 September | `docs/replay_river_fit.md` | The peak now covers 89% of the mud line of the 15 September image, 73% before, and Ko Chang's flooded area nearly doubles. It is a fit, not a check: on the half of the area held back, the fitted levels did worse than the earlier model (62% against 73%). The earlier replay is kept at `/archive1/`. |
 | Buildings against residents in the water | `docs/buildings_in_water.md` | The population grid puts 39% of residents in cells with no building. With residents on buildings, 12,600 are in the water where the grid gives 17,900, no class changes, and Ko Chang is 83% dry with every road cut. |
 
 Each is on the team page for the team's word (items V-17, V-19 and V-22 to
-V-38). None changes a published class or enters a planning score.
+V-39). None changes a published class or enters a planning score.

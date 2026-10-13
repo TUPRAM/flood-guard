@@ -24,7 +24,7 @@ from floodguard.flood_timeline import (
     stage_at,
 )
 
-MANIFEST = Path(__file__).resolve().parents[1] / "apps/web/public/studies/mae-sai-2024-timeline/r4/timeline.json"
+MANIFEST = Path(__file__).resolve().parents[1] / "apps/web/public/studies/mae-sai-2024-timeline/r5/timeline.json"
 
 
 def test_stage_hits_keyframes_at_local_noon_and_clamps() -> None:

@@ -363,15 +363,16 @@ describe("Access loss and equity parity on the served node file (T1 scenario)", 
       for (const value of [group.within_reach.vulnerable, group.within_reach.non_vulnerable]) expect(Math.abs(value - EQUITY_MIN_GROUP), label).toBeGreaterThan(1e-3);
     }
     // The denominators are not the residents counted: for the default plan only 373 of 7,152 proxy-vulnerable residents
-    // had a site within reach before the flood, and none of the 103 whose homes flood had a reported site within reach.
+    // had a site within reach before the flood, and none of the 78 whose homes flood had a reported site within reach.
+    // (Figures of revision r5; with r4 they were 24,537 and 103.)
     const group = (set: string, scope: string) => fixture.access.find((item) => item.set === set && item.scope === scope)!;
     const planAll = group(`plan_${shelters.knee_k}`, "all");
     expect([Math.round(planAll.within_reach.vulnerable), Math.round(planAll.totals.vulnerable)]).toEqual([373, 7152]);
-    expect([Math.round(planAll.within_reach.non_vulnerable), Math.round(planAll.totals.non_vulnerable)]).toEqual([24537, 74647]);
+    expect([Math.round(planAll.within_reach.non_vulnerable), Math.round(planAll.totals.non_vulnerable)]).toEqual([24444, 74647]);
     const reportedAll = group("reported_2024", "all");
     expect([Math.round(reportedAll.within_reach.vulnerable), Math.round(reportedAll.within_reach.non_vulnerable)]).toEqual([2440, 32085]);
     const reportedWet = group("reported_2024", "flooded");
-    expect([reportedWet.within_reach.vulnerable, Math.round(reportedWet.totals.vulnerable)]).toEqual([0, 103]);
+    expect([reportedWet.within_reach.vulnerable, Math.round(reportedWet.totals.vulnerable)]).toEqual([0, 78]);
   });
 
   it("states the same Evacuation Equity Gap as Python from its own sums, at every level, set and scope", () => {
@@ -400,19 +401,20 @@ describe("Access loss and equity parity on the served node file (T1 scenario)", 
     }
   });
 
-  it("gives on the served data what the owners' decision records: about 1.6 for the plan of 8, no ratio in the default view", () => {
+  it("gives on the served data a ratio for the plan of 8 (about 1.7 from r5; the owners' decision recorded about 1.6 on r4) and none in the default view", () => {
     const peakLevel = accessLevelIndex(fixture.peak_stage_m, access.levels);
     const peakRow = (set: string, scope: string) => fixture.access.find((item) => item.set === set && item.scope === scope)!.levels[peakLevel];
-    // Plan of 8, all residents: 320 of 373 against 13,109 of 24,537.
+    // Plan of 8, all residents: 320 of 373 against 12,060 of 24,444. With r4 it was 13,109 of 24,537, about 1.6: the
+    // fitted peak of r5 is lower along some stretches, so fewer of the other residents lose their site.
     const plan = peakRow(`plan_${shelters.knee_k}`, "all");
-    expect([Math.round(plan[2]), Math.round(plan[3])]).toEqual([320, 13109]);
-    expect(plan.slice(4)).toEqual([0.8577, 0.5342, 1.606, "higher", "Vulnerable residents are 1.61 times more likely to lose access.", null]);
+    expect([Math.round(plan[2]), Math.round(plan[3])]).toEqual([320, 12060]);
+    expect(plan.slice(4)).toEqual([0.8577, 0.4934, 1.738, "higher", "Vulnerable residents are 1.74 times more likely to lose access.", null]);
     // Reported set, all residents: none of the 2,440 proxy-vulnerable residents within reach lost access.
     const reported = peakRow("reported_2024", "all");
-    expect([reported[2], Math.round(reported[3])]).toEqual([0, 7086]);
-    expect(reported.slice(4, 8)).toEqual([0, 0.2208, 0, "lower"]);
+    expect([reported[2], Math.round(reported[3])]).toEqual([0, 6595]);
+    expect(reported.slice(4, 8)).toEqual([0, 0.2055, 0, "lower"]);
     // The default view (reported set, residents whose homes flood): no proxy-vulnerable resident within reach, no ratio.
-    expect(peakRow("reported_2024", "flooded").slice(4)).toEqual([null, 0.9476, null, null, TOO_SMALL, "insufficient_group_denominator"]);
+    expect(peakRow("reported_2024", "flooded").slice(4)).toEqual([null, 0.9429, null, null, TOO_SMALL, "insufficient_group_denominator"]);
     // Every result the rule can give on real data is in the fixture: both directions, no loss and too small a group.
     const seen = new Set(fixture.access.flatMap((item) => item.levels.map((row) => row[9] ?? row[7])));
     expect([...seen].sort()).toEqual(["higher", "insufficient_group_denominator", "lower", "no_loss"]);

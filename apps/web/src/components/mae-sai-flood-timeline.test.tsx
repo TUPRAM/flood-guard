@@ -11,6 +11,8 @@ import {
   districtStats,
   hourlyStages,
   manifestRevision,
+  ARCHIVE_1_MANIFEST_URL,
+  depthFactorScale,
   parseTimelineManifest,
   rainAt,
   referencesNotIngested,
@@ -41,6 +43,9 @@ import {
   facilityStatusText,
   GeneratedAt,
   HowToRead,
+  MAE_SAI_TIMELINE_ARCHIVE_1_ROUTE,
+  MAE_SAI_TIMELINE_ROUTE,
+  RevisionNote,
   Hydrograph,
   ImpactCard,
   LicencesByInput,
@@ -307,13 +312,14 @@ describe("Mae Sai replay panels", () => {
     expect([post.id, post.utc, post.local, post.pass, post.relative_orbit, post.published_as_layer]).toEqual(
       ["s1-20240915", "2024-09-15T23:16:01Z", "2024-09-16T06:16:01+07:00", "descending", 135, true]);
     expect(anchor.source_timestamp).toBe("2024-09-03T23:16:00Z/2024-09-15T23:16:01Z");
-    expect([anchor.newly_dark_km2, anchor.best_fit_stage_m, anchor.best_fit_model_km2, anchor.iou_at_best_fit]).toEqual([19.54, 0.1, 22.54, 0.065]);
+    expect([anchor.newly_dark_km2, anchor.best_fit_stage_m, anchor.best_fit_model_km2, anchor.iou_at_best_fit]).toEqual([22.11, 0.1, 22.59, 0.064]);
     expect(manifest.layers.some((layer) => layer.id === pre.id) || manifest.observations.some((item) => item.id === pre.id)).toBe(false);
     // Sensitivity: the cross-track pair (6 Sep ascending, relative orbit 172), the one the recession keyframes were tuned with.
     const [cross] = anchor.sensitivity!;
     expect(cross.pair).toBe("cross_track");
     expect(cross.images.map((image) => [image.id, image.pass, image.relative_orbit])).toEqual([["s1-20240906", "ascending", 172], ["s1-20240915", "descending", 135]]);
-    expect([cross.newly_dark_km2, cross.best_fit_stage_m, cross.best_fit_model_km2, cross.iou_at_best_fit]).toEqual([23.57, 0.1, 22.54, 0.074]);
+    // From r5 the two pairs no longer fit best at the same stage: the cross-track pair fits best one step higher.
+    expect([cross.newly_dark_km2, cross.best_fit_stage_m, cross.best_fit_model_km2, cross.iou_at_best_fit]).toEqual([26.19, 0.15, 25.72, 0.079]);
     expect(cross.source_timestamp).toBe("2024-09-06T11:31:06Z/2024-09-15T23:16:01Z");
     // The pass and orbit of every radar observation the page shows are in the manifest too.
     for (const observation of manifest.observations.filter((item) => item.kind === "radar")) {
@@ -321,7 +327,7 @@ describe("Mae Sai replay panels", () => {
       expect(observation.relative_orbit, observation.id).toBeGreaterThan(0);
     }
     const html = text(renderToStaticMarkup(<RadarCheck manifest={manifest} radarSpan="" language="en" />));
-    expect(html).toContain("Sensitivity, cross-track pair (6 Sep 18:31 ICT → 16 Sep 06:16 ICT; ascending, relative orbit 172 → descending, relative orbit 135, the pair the keyframes were tuned with): 23.57 km² turned newly water-like; best fit at a 0.10 m stage (22.54 km²), IoU 0.074.");
+    expect(html).toContain("Sensitivity, cross-track pair (6 Sep 18:31 ICT → 16 Sep 06:16 ICT; ascending, relative orbit 172 → descending, relative orbit 135, the pair the keyframes were tuned with): 26.19 km² turned newly water-like; best fit at a 0.15 m stage (25.72 km²), IoU 0.079.");
     expect(html).toContain("The 4 Sep image is used for this comparison only; it is not on the map.");
     // The old caveat ("the two radar passes use different orbit directions") no longer describes the comparison.
     expect(manifest.assumptions.join(" ")).not.toContain("the two radar passes use different orbit directions");
@@ -581,7 +587,7 @@ describe("Mae Sai replay water modes, route cuts and exports", () => {
   });
 
   it("names the served data revision, which is also the manifest's own revision field", () => {
-    expect(manifestRevision()).toBe("r4");
+    expect(manifestRevision()).toBe("r5");
     expect(manifest.revision).toBe(manifestRevision());
     expect(manifestRevision("/studies/x/r9/timeline.json")).toBe("r9");
   });
@@ -1003,7 +1009,60 @@ describe("Mae Sai Sentinel-2 water check on 15 Sep", () => {
   });
 });
 
-describe("Mae Sai replay evidence envelope on the page (r4)", () => {
+describe("Mae Sai replay: the live revision and the archive", () => {
+  const archived = parseTimelineManifest(JSON.parse(readFileSync(resolve(process.cwd(), "public", ARCHIVE_1_MANIFEST_URL.slice(1)), "utf8")));
+
+  it("says above the map that the peak is fitted to the image, with the test the fit failed, and links to the archive", () => {
+    const html = renderToStaticMarkup(<RevisionNote manifest={manifest} archive={false} language="en" />);
+    const plain = text(html);
+    expect(html).toContain('data-archive="false"');
+    expect(plain).toContain("Revision r5: the modelled peak is fitted to the satellite image of 15 Sep 2024.");
+    // The figures are the manifest's own: 89% of the evidence inside the fitted peak, 73% before the fit.
+    expect(plain).toContain("It covers 89% of the ground that turned to mud or stayed wet in that image (73% before the fit).");
+    // The failure is said in the same breath: on the held-back half the fit covers less than the model before it.
+    expect(plain).toContain("This is a fit, not a check: fitted on half of the area, the levels covered 62% of that ground on the other half, against 73% for the earlier model, so they do not carry over to places the image cannot see.");
+    const fit = manifest.river_fit!;
+    expect(fit.held_back_squares.fitted_on_the_other_squares.share_of_the_evidence_inside_the_peak!).toBeLessThan(fit.held_back_squares.model_before_the_fit.share_of_the_evidence_inside_the_peak!);
+    expect(html).toContain(`href="${MAE_SAI_TIMELINE_ARCHIVE_1_ROUTE}"`);
+    expect(MAE_SAI_TIMELINE_ARCHIVE_1_ROUTE).toBe("/archive1/");
+    expect(findWordingViolations(visibleText(html), "RevisionNote en")).toEqual([]);
+    const thaiHtml = renderToStaticMarkup(<RevisionNote manifest={manifest} archive={false} language="th" />);
+    const thai = text(thaiHtml);
+    expect(thai).toContain("ข้อมูลรุ่น r5: น้ำสูงสุดของแบบจำลองถูกปรับให้เข้ากับภาพดาวเทียมวันที่ 15 ก.ย. 2567 (2024)");
+    expect(thai).toContain("นี่เป็นการปรับให้เข้ากับภาพ ไม่ใช่การตรวจสอบ");
+    expect(thai).toContain("62%");
+    expect(findWordingViolations(visibleText(thaiHtml), "RevisionNote th")).toEqual([]);
+  });
+
+  it("marks the archived replay as the earlier one, with a link to the live replay and no claim about the fit", () => {
+    expect(archived.revision).toBe("r4");
+    expect(archived.river_fit).toBeUndefined();
+    const html = renderToStaticMarkup(<RevisionNote manifest={archived} archive language="en" />);
+    const plain = text(html);
+    expect(html).toContain('data-archive="true"');
+    expect(plain).toContain("Archived replay (revision r4).");
+    expect(plain).toContain("It is kept unchanged so that the two can be compared. Its figures are not the current ones.");
+    expect(plain).toContain("Open the current replay.");
+    expect(html).toContain(`href="${MAE_SAI_TIMELINE_ROUTE}"`);
+    expect(plain).not.toContain("covers");
+    expect(findWordingViolations(visibleText(html), "RevisionNote archive en")).toEqual([]);
+    const thaiHtml = renderToStaticMarkup(<RevisionNote manifest={archived} archive language="th" />);
+    expect(text(thaiHtml)).toContain("การย้อนดูชุดเก่า (ข้อมูลรุ่น r4)");
+    expect(text(thaiHtml)).toContain("ตัวเลขในหน้านี้ไม่ใช่ตัวเลขปัจจุบัน");
+    expect(findWordingViolations(visibleText(thaiHtml), "RevisionNote archive th")).toEqual([]);
+    // Nothing is said while the manifest is still loading, and a live revision without a fit says nothing either.
+    expect(renderToStaticMarkup(<RevisionNote manifest={null} archive={false} language="en" />)).toBe("");
+    expect(renderToStaticMarkup(<RevisionNote manifest={archived} archive={false} language="en" />)).toBe("");
+  });
+
+  it("reads the archived revision with the same reader: a factor byte there stands for a factor of at most 1", () => {
+    expect(depthFactorScale(archived)).toBe(1);
+    expect(depthFactorScale(manifest)).toBe(2.5);
+    expect(archived.study_id).toBe(manifest.study_id);
+  });
+});
+
+describe("Mae Sai replay evidence envelope on the page (r5)", () => {
   const THAI = /[฀-๿]/;
   // The r3 shape a client may still hold in its offline copy (trimmed; see the fixture's own notes).
   const r3 = parseTimelineManifest((JSON.parse(readFileSync(resolve(import.meta.dirname, "../lib/__fixtures__/mae-sai-timeline-r3-shape.json"), "utf8")) as { manifest: unknown }).manifest);
@@ -1111,22 +1170,26 @@ describe("Mae Sai replay evidence envelope on the page (r4)", () => {
     const plain = text(html);
     expect(plain).toContain("What was known when the model was tuned");
     expect(plain).toContain("Used for tuning: GISTDA's RADARSAT-2 figure for 10 Sep 18:15 (9.9 km² flooded in Mae Sai) was used on purpose to set the onset stage knot");
-    expect(plain).toContain("Used for tuning: The Sentinel-1 pass of 16 Sep 06:16 ICT was used to re-tune the recession keyframes (best-fit stage 0.10 m)");
+    expect(plain).toContain("Used for tuning: The Sentinel-1 pass of 16 Sep 06:16 ICT was used to re-tune the recession keyframes (best-fit stage 0.10 m with the model of that time;");
     expect(plain).toContain("Known during tuning: UNOSAT 3991 (about 70 km² over 13-19 Sep) was known while the stage keyframes were tuned");
     // VIIRS: only what the build history supports. The comparison and the last stage-knot edit are in one commit.
     expect(plain).toContain("Not used for tuning: The VIIRS daily comparison was not used for tuning. It was first computed in the change of 29 Sep 2026 (commit 129ff03)");
     expect(plain).toContain("The build history does not record which came first within that change, so the comparison is not presented as an independent check.");
     expect(plain).not.toContain("The VIIRS daily comparison was computed after the keyframes were final");
-    expect(plain).toContain("Not used for tuning: The comparison with UNOSAT/GISTDA product 4009 was computed after the keyframes were final");
-    // The Sentinel-2 water check entered the bake after the last keyframe change; the images themselves had been seen.
-    expect(plain).toContain("Not used for tuning: The Sentinel-2 water check (MNDWI on the 5 Sep and 15 Sep scenes) was computed after the keyframes were final and was not used for tuning");
-    expect(plain).toContain("they were seen while the keyframes were set, but no water area had been derived from them.");
-    expect(html.match(/data-relation="used_for_tuning"/g)).toHaveLength(2);
-    expect(html.match(/data-relation="known_during_tuning"/g)).toHaveLength(1);
+    // From r5 the peak is fitted to the Sentinel-2 scenes: the mud line and the water check are used for tuning, and
+    // product 4009, one of the reasons the fitted model was chosen, is no longer called an independent check.
+    expect(plain).toContain("Known during tuning: The comparison with UNOSAT/GISTDA product 4009 was computed after the keyframes were final and no level is fitted to it.");
+    expect(plain).toContain("so from revision r5 it is calibration-informed, not an independent check.");
+    expect(plain).toContain("Used for tuning: From revision r5 (12 Oct 2026) the peak level of each stretch of channel is fitted to the ground that turned to mud or stayed wet");
+    expect(plain).toContain("Fitted on half of the area, the levels did not carry over to the other half");
+    expect(plain).toContain("Used for tuning: The Sentinel-2 water check (MNDWI on the 5 Sep and 15 Sep scenes) entered the bake on 2 Oct 2026");
+    expect(plain).not.toContain("Not used for tuning: The Sentinel-2 water check");
+    expect(html.match(/data-relation="used_for_tuning"/g)).toHaveLength(4);
+    expect(html.match(/data-relation="known_during_tuning"/g)).toHaveLength(2);
     // The reported depths (news, not surveyed) were compiled after the keyframes were final; a recorded rule keeps them out of tuning.
     expect(plain).toContain("Not used for tuning: The reported depths (news reports of 10-13 Sep 2024 at named places, compiled on 3 Oct 2026)");
     expect(plain).toContain("Recorded rule: the reported depths are never used to tune the model.");
-    expect(html.match(/data-relation="computed_after_keyframes_final"/g)).toHaveLength(3);
+    expect(html.match(/data-relation="computed_after_keyframes_final"/g)).toHaveLength(1);
     expect(html.match(/data-relation="not_used_for_tuning"/g)).toHaveLength(1);
     expect(plain).toContain(plainManifestText(manifest.exploratory_knowledge!.rule));
     expect(findWordingViolations(visibleText(html), "TuningDisclosure")).toEqual([]);
@@ -1154,7 +1217,7 @@ describe("Mae Sai replay evidence envelope on the page (r4)", () => {
     expect(plain.split(manifest.population!.note)).toHaveLength(2);
     const footer = inside(html, "sources-footer", "p");
     expect(footer).toContain(`Source timestamp: ${manifest.source_timestamp}`);
-    expect(footer).toContain(`${manifest.study_id} r4`);
+    expect(footer).toContain(`${manifest.study_id} r5`);
     expect(footer).toContain("confidence: low · status: non-operational · Data files generated: ");
     expect(plain).toContain(manifest.source_timestamp_note!);
     const thai = text(renderToStaticMarkup(<SourcesPanel manifest={manifest} language="th" offlineCopy={null} />));

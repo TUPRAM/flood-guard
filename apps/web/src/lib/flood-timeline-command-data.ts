@@ -9,6 +9,7 @@
 import {
   decodePng,
   depthFactorKeys,
+  depthFactorScale,
   handGridFromRaster,
   hatchStripes,
   inflateZlib,
@@ -58,6 +59,8 @@ export interface CommandReplayData {
 export interface CommandHandRaster {
   codes: Uint8Array;
   factorKeys: Uint16Array | null;
+  /** What a full factor byte stands for (`depthFactorScale` of the manifest). */
+  factorScale: number;
   candidates: Uint32Array;
   lowCells: Uint32Array | null;
   lowStripes: Uint8Array | null;
@@ -194,6 +197,7 @@ export async function loadCommandHand(manifest: TimelineManifest, signal: AbortS
   return {
     codes: grid.codes,
     factorKeys: grid.factors ? depthFactorKeys(grid.codes, grid.factors) : null,
+    factorScale: depthFactorScale(manifest),
     candidates,
     lowCells,
     lowStripes: lowCells ? hatchStripes(lowCells, grid.width) : null,

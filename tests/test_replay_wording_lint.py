@@ -44,7 +44,7 @@ BAKE_SCRIPTS = ("scripts/build_mae_sai_flood_timeline.py", "scripts/mae_sai_time
                 # The reported depths' block (rules, likely causes, labels) is written by this module.
                 "src/floodguard/reported_depths.py")
 JSON_DOCUMENTS = ("outputs/mae_sai_reported_shelters_2024.json", "outputs/mae_sai_reported_depths_2024.json", "docs/proposal_execution/rights_basis_4009_v1.json",
-                  "docs/mae_sai_timeline_r4_input_receipt.json", "apps/web/src/lib/__fixtures__/mae-sai-equity-access-parity.json",
+                  "docs/mae_sai_timeline_r4_input_receipt.json", "docs/mae_sai_timeline_r5_input_receipt.json", "apps/web/src/lib/__fixtures__/mae-sai-equity-access-parity.json",
                   # The invented items of the Command exercise: what a trainee reads on a marker and in the inspector.
                   "apps/web/public/exercises/mae-sai-2024/injects.v1.json")
 TEXT_DOCUMENTS = ("docs/decision-log-d1-d16.md", "docs/proposal_execution/rights_basis_4009_v1_NOTICE.txt",

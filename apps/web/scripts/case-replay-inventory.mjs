@@ -53,6 +53,16 @@ export function timelineManifestUrl(root = webRoot) {
   return url;
 }
 
+/** The manifest URL of the archived replay shown at /archive1/, read from the same file. It is never precached. */
+export function archiveManifestUrl(root = webRoot) {
+  const source = readFileSync(resolve(root, "src/lib/flood-timeline.ts"), "utf8");
+  const url = source.match(/^export const ARCHIVE_1_MANIFEST_URL = "([^"]+)";$/m)?.[1];
+  if (!url || !url.startsWith("/studies/") || !url.endsWith(".json") || !SAFE_URL.test(url) || url.includes("..") || url === timelineManifestUrl(root)) {
+    throw new Error("ARCHIVE_1_MANIFEST_URL is missing or invalid in src/lib/flood-timeline.ts.");
+  }
+  return url;
+}
+
 /** Directory (with trailing slash) that must contain every file the manifest references. */
 export function manifestDirectory(manifestUrl) {
   return manifestUrl.slice(0, manifestUrl.lastIndexOf("/") + 1);

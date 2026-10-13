@@ -357,19 +357,23 @@ def test_manifest_reports_follow_the_data_file_and_the_counts_are_the_measured_o
     for name in ("ms-c2-01", "ms-c2-02", "ms-c2-07", "ms-c2-08", "ms-c2-09", "ms-c2-12"):
         assert outcome[name] == "model_dry", name
         assert next(report for report in block["reports"] if report["id"] == name)["model"]["window_max_stage_m"] <= 0.1
-    # One number reaches its lower bound; two storey or body references are wet in the model, with no depth compared
-    # (Piyaphon's "chest-deep" beside 0.78 m of modelled water is wet, not consistent).
-    assert (outcome["ms-c2-15"], outcome["ms-c2-19"], outcome["ms-c2-22"]) == ("consistent", "model_wet", "model_wet")
+    # One number reaches its lower bound; one storey or body reference is wet in the model, with no depth compared.
+    # With revision r5 the second one, Piyaphon's "chest-deep", reads dry: the level fitted to the 15 Sep image along
+    # that stretch is about 1.2 m at the peak, below the 1.11 m of the point until 13:00 on 11 Sep. With r4 the model had
+    # 0.78 m of water there in the report's window. A fit that made one located report worse is recorded as such.
+    assert (outcome["ms-c2-15"], outcome["ms-c2-19"], outcome["ms-c2-22"]) == ("consistent", "model_wet", "model_dry")
+    piyaphon = next(report for report in block["reports"] if report["id"] == "ms-c2-22")["model"]
+    assert piyaphon["depth_m"] == 0 and piyaphon["peak_depth_m"] <= 0.2
     assert (outcome["ms-c2-14"], outcome["ms-c2-18"], outcome["ms-c2-20"]) == ("model_dry", "model_dry", "model_dry")
     assert block["counts"] == {
         "numeric": {"consistent": 1, "model_shallower": 0, "model_wet": 0, "model_dry": 6, "not_comparable": 5},
-        "qualitative": {"consistent": 0, "model_shallower": 0, "model_wet": 2, "model_dry": 3, "not_comparable": 4},
-        "all": {"consistent": 1, "model_shallower": 0, "model_wet": 2, "model_dry": 9, "not_comparable": 9},
+        "qualitative": {"consistent": 0, "model_shallower": 0, "model_wet": 1, "model_dry": 4, "not_comparable": 4},
+        "all": {"consistent": 1, "model_shallower": 0, "model_wet": 1, "model_dry": 10, "not_comparable": 9},
     }
     assert block["counts_within_tolerance"]["all"] == {"consistent": 2, "model_shallower": 3, "model_wet": 4, "model_dry": 3, "not_comparable": 9}
     # 21 place records from 17 statements in 14 articles; counted once per statement, Thai PBS's three places differ.
     assert block["counted"] == {"place_records": 21, "statements": 17, "articles": 14}
-    assert block["counts_by_statement"] == {"consistent": 0, "model_shallower": 0, "model_wet": 2, "model_dry": 6, "not_comparable": 8, "mixed": 1}
+    assert block["counts_by_statement"] == {"consistent": 0, "model_shallower": 0, "model_wet": 1, "model_dry": 7, "not_comparable": 8, "mixed": 1}
     assert block["shared_statements"] == [
         {"statement_id": "ms-c2-07", "reports": ["ms-c2-07", "ms-c2-08", "ms-c2-09"], "outcomes": ["model_dry"] * 3},
         {"statement_id": "ms-c2-14", "reports": ["ms-c2-14", "ms-c2-15", "ms-c2-16"], "outcomes": ["model_dry", "consistent", "not_comparable"]},
@@ -392,10 +396,12 @@ def test_manifest_reports_follow_the_data_file_and_the_counts_are_the_measured_o
     assert "until 10 Sep 18:15 ICT" in causes["timing"]["text"]["en"] and "all 6 of these read dry" in causes["timing"]["text"]["en"]
     points = {(report["point"]["lat"], report["point"]["lon"]): report["model"]["height_above_channel_m"] for report in located}
     above = sorted(report["id"] for report in located if report["model"]["height_above_channel_m"] is None)
-    assert above == ["ms-c2-18", "ms-c2-20"] and len(points) == 9  # The school and Wat Tham Pha Chom: two distinct points.
+    # Wat Tham Pha Chom. With r4 the school (ms-c2-18) was above the highest level too; with r5 the raster reaches
+    # higher where a fitted factor exceeds 1, and the school has a height (about 16 m above its channel).
+    assert above == ["ms-c2-20"] and len(points) == 9
     raised = sum(1 for height in points.values() if height is not None and height >= 2.0)
-    assert f"{raised} of the 9 report points sit 2 m or more above their channel, and 2 sit above the highest level" in causes["surface_model"]["text"]["en"]
-    assert "2 จุดอยู่สูงกว่าระดับสูงสุดที่แบบจำลองบันทึกไว้" in causes["surface_model"]["text"]["th"]
+    assert f"{raised} of the 9 report points sit 2 m or more above their channel, and 1 sits above the highest level" in causes["surface_model"]["text"]["en"]
+    assert "1 จุดอยู่สูงกว่าระดับสูงสุดที่แบบจำลองบันทึกไว้" in causes["surface_model"]["text"]["th"]
     assert "2 statements each name several communities" in causes["location"]["text"]["en"]
     for cause in block["likely_causes"]:
         assert not re.search(r"wrong|too (low|high|shallow|deep)|validat|confirm", cause["text"]["en"], re.IGNORECASE)

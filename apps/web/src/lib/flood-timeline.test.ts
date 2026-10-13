@@ -73,6 +73,8 @@ import {
   peopleInWater,
   peopleInWaterStats,
   cellDepth,
+  depthFactor,
+  depthFactorScale,
   stageAt,
   tFromDate,
   TIMELINE_END_T,
@@ -373,21 +375,33 @@ describe("Mae Sai flood timeline logic", () => {
     for (let index = 0; index < grid.codes.length; index += 1) counts[grid.codes[index]] += 1;
     expect(counts[0]).toBeGreaterThan(0);
     expect(counts[255]).toBeGreaterThan(0);
-    // From r2 on: RGB with R = effective HAND code and G = round(k * 255), k clipped to [floor, 1].
+    // From r2 on: RGB with R = effective HAND code and G = the depth factor k. Up to r4 G = round(k * 255) with k clipped
+    // to [floor, 1]. From r5 a stretch fitted to the mud line can lie below the floor or above 1, so G = round(k /
+    // byte_scale * 255) and no byte exceeds the one of the largest factor a stretch can have.
     expect(raster.channels).toBe(3);
     expect(manifest.hand.depth_factor_channel).toBe("G");
     expect(grid.factors).not.toBeNull();
-    const floorByte = Math.round(manifest.hand.depth_factor!.floor * 255);
-    let reduced = 0;
-    let belowFloor = 0;
+    const scale = depthFactorScale(manifest);
+    expect(scale).toBe(2.5);
+    expect(manifest.hand.depth_factor!.max!).toBeLessThanOrEqual(scale);
+    const topByte = Math.round((manifest.hand.depth_factor!.max! / scale) * 255);
+    const oneByte = Math.round(255 / scale);
+    let aboveTop = 0;
+    let aboveOne = 0;
+    let none = 0;
     for (let index = 0; index < grid.factors!.length; index += 1) {
       if (grid.codes[index] === manifest.hand.never_code) continue;
       const factor = grid.factors![index];
-      if (factor < floorByte - 1) belowFloor += 1;
-      if (factor < 255) reduced += 1;
+      if (factor > topByte) aboveTop += 1;
+      if (factor > oneByte) aboveOne += 1;
+      if (factor === 0) none += 1;
     }
-    expect(belowFloor).toBe(0);
-    expect(reduced).toBeGreaterThan(0);
+    expect(aboveTop).toBe(0);
+    expect(none).toBe(0);
+    // Some stretches are fitted above the level at the Sai bridges: their factor is above 1.
+    expect(aboveOne).toBeGreaterThan(0);
+    expect(depthFactor(oneByte, scale)).toBeCloseTo(1, 2);
+    expect(cellDepth(0, 2, 0.05, 204, 0, 255, scale)).toBeCloseTo((204 / 255) * 2.5 * 2, 12);
     // Wetness depends on the code only; depth scales with k (channel depth = k * stage).
     expect(cellDepth(0, 2, 0.05, 128)).toBeCloseTo((128 / 255) * 2, 12);
     expect(cellDepth(20, 2, 0.05, 128)).toBeCloseTo((128 / 255) * (2 - 1), 12);

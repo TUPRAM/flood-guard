@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { SHELTER_PAGE_COPY, shelterBanner, type ShelterBannerInput } from "./public-shelter-view";
+import { EMPTY_SHELTER_TRIP, SHELTER_PAGE_COPY, shelterBanner, shelterTone, type ShelterBannerInput } from "./public-shelter-view";
 import { findWordingViolations } from "./replay-wording-lint";
 
 const STATES: Record<string, ShelterBannerInput> = {
@@ -46,6 +46,27 @@ describe("shelterBanner", () => {
     for (const input of Object.values(STATES)) {
       expect(shelterBanner(input, "en").tone).not.toBe("calm");
     }
+  });
+
+  it("says in a practice scenario what the replay gives this page, until a destination is in the field", () => {
+    const practice = { tone: "danger", text: "No shelter within walking reach" } as const;
+    expect(shelterBanner({ ...STATES.none, practice }, "en")).toEqual({ tone: "danger", icon: "shelter", text: "No shelter within walking reach" });
+    // A destination in the field is the reader's own matter and takes the banner back.
+    expect(shelterBanner({ ...STATES.typed, practice }, "en").text).toBe("Not confirmed yet: Wat Tham Pha Chom");
+    expect(shelterBanner({ ...STATES.walk, practice }, "en").tone).toBe("easing");
+  });
+
+  it("shows the scenario without water in grey here, where green would read as an open shelter", () => {
+    const calm = { tone: "calm", text: "A shelter reported in 2024 is within a 2 km walk" } as const;
+    expect(shelterBanner({ ...STATES.none, practice: calm }, "en").tone).toBe("neutral");
+    expect(shelterTone("calm")).toBe("neutral");
+    for (const tone of ["neutral", "watch", "alert", "danger", "easing"] as const) expect(shelterTone(tone)).toBe(tone);
+  });
+});
+
+describe("the reader's entries on the Shelter page", () => {
+  it("start empty, with nothing confirmed", () => {
+    expect(EMPTY_SHELTER_TRIP).toEqual({ draft: "", draftSite: null, destination: "", destinationSite: null, authorityConfirmed: false, completedSteps: [] });
   });
 });
 

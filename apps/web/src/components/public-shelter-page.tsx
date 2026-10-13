@@ -34,8 +34,16 @@ import {
   shelterSiteSummary,
   type ShelterHistorySite,
 } from "@/lib/public-shelter-history";
-import { SHELTER_PAGE_COPY, shelterBanner } from "@/lib/public-shelter-view";
+import {
+  EMPTY_SHELTER_TRIP,
+  SHELTER_PAGE_COPY,
+  shelterBanner,
+  shelterTone,
+  type ShelterStepId,
+  type ShelterTrip,
+} from "@/lib/public-shelter-view";
 import type { FeatureCollection, Language } from "@/lib/types";
+import type { PublicPractice } from "@/lib/use-public-practice";
 import { useSheetKeyboard } from "@/lib/use-sheet-keyboard";
 
 type LeafletModule = typeof import("leaflet");
@@ -50,6 +58,14 @@ interface PublicShelterPageProps {
   datasetMode: DatasetMode;
   plan: HouseholdPlan;
   onNavigatePrepare: () => void;
+  /** What the reader has entered here. The Public shell keeps it, so it survives a visit to another page. */
+  trip: ShelterTrip;
+  onTripChange: (update: (trip: ShelterTrip) => ShelterTrip) => void;
+  /**
+   * The practice scenario chosen in the header, if any. While one is shown this map shows the same hour of the
+   * replay around the example home, and distances are measured from that home.
+   */
+  practice?: PublicPractice;
   /**
    * Whether the places reported in use as shelters in September 2024 are shown. Their list is part of the Mae Sai
    * replay, which ships in the competition build alone.
@@ -63,16 +79,15 @@ const EMPTY_FEATURES: FeatureCollection = {
   features: [],
 };
 const NO_EXTRA_CREDITS: string[] = [];
+/** The practice replay draws road pieces from OpenStreetMap on every background, so its credit joins the map's. */
+const PRACTICE_CREDITS = ["© OpenStreetMap contributors"];
+const PRACTICE_OFF: PublicPractice = { status: "off" };
 /** The areas are drawn for orientation on this map; a tap on one chooses nothing. */
 const ignoreAreaSelection = () => {};
 /** What the route keeps clear of when the map frames it: the field and the banner above, the tools and the note below. */
-const ROUTE_VIEW_PADDING = { topLeft: [24, 140], bottomRight: [72, 120] } as const;
+const ROUTE_VIEW_PADDING = { topLeft: [24, 176], bottomRight: [72, 120] } as const;
 
-type RouteStepId =
-  | "confirm_destination"
-  | "confirm_route"
-  | "prepare_household"
-  | "share_plan";
+type RouteStepId = ShelterStepId;
 type ShelterIconName =
   | "accessibility"
   | "arrow"
@@ -299,19 +314,26 @@ export function PublicShelterPage({
   datasetMode,
   plan,
   onNavigatePrepare,
+  trip,
+  onTripChange,
+  practice = PRACTICE_OFF,
   showShelterHistory = false,
 }: PublicShelterPageProps) {
   const th = language === "th";
   const destinationInputId = useId();
   const destinationConfirmationId = useId();
   const routeChecklistId = useId();
-  const [destinationDraft, setDestinationDraft] = useState("");
-  const [selectedDestination, setSelectedDestination] = useState("");
-  // A place taken from the list of 2024. Its position is the list's own, so no address is looked up for it.
-  const [draftSite, setDraftSite] = useState<ShelterHistorySite | null>(null);
-  const [selectedSite, setSelectedSite] = useState<ShelterHistorySite | null>(null);
-  const [authorityConfirmed, setAuthorityConfirmed] = useState(false);
-  const [completedSteps, setCompletedSteps] = useState<Set<RouteStepId>>(() => new Set());
+  // A site is a place taken from the list of 2024. Its position is the list's own, so no address is looked up for it.
+  const {
+    draft: destinationDraft,
+    draftSite,
+    destination: selectedDestination,
+    destinationSite: selectedSite,
+    authorityConfirmed,
+  } = trip;
+  const completedSteps = useMemo(() => new Set(trip.completedSteps), [trip.completedSteps]);
+  const practiceView = practice.status === "ready" ? practice.view : undefined;
+  const drawPractice = practice.status === "ready" ? practice.overlay : undefined;
   const [resolvedPin, setResolvedPin] = useState<{
     destination: string;
     location: PublicMapLocation;
@@ -355,13 +377,8 @@ export function PublicShelterPage({
 
   // A new destination in the field: whatever was confirmed or ticked before belongs to the old one.
   const startDestination = useCallback((value: string, site: ShelterHistorySite | null) => {
-    setDestinationDraft(value);
-    setDraftSite(site);
-    setAuthorityConfirmed(false);
-    setSelectedDestination("");
-    setSelectedSite(null);
-    setCompletedSteps(new Set());
-  }, []);
+    onTripChange(() => ({ ...EMPTY_SHELTER_TRIP, draft: value, draftSite: site }));
+  }, [onTripChange]);
 
   // Taking a place of 2024 only fills the field. The sheet opens on the step that asks whether an authority
   // confirmed it: the list is history and says nothing about today.
@@ -373,14 +390,25 @@ export function PublicShelterPage({
 
   const hasMarkers = Boolean(history?.sites.some((site) => site.point));
   const overlay = useMemo(() => {
-    if (!history || !hasMarkers) return undefined;
+    const places = history && hasMarkers ? history : null;
+    if (!drawPractice && !places) return undefined;
     return (map: LeafletMap, leaflet: LeafletModule) => {
-      // With an area chosen the map already shows that area, which is where the reader is.
-      const frame = !historyFramedRef.current && !selectedAreaId;
-      historyFramedRef.current = true;
-      return history.mount(leaflet, map, history.sites, language, chooseSite, frame);
+      // The scenario first: it draws the hour of the replay and moves the map to the example home. The markers of
+      // 2024 lie over it.
+      const removePractice = drawPractice?.(map, leaflet);
+      let removePlaces: (() => void) | undefined;
+      if (places) {
+        // With a scenario or an area chosen the map already shows where the reader is looking.
+        const frame = !drawPractice && !historyFramedRef.current && !selectedAreaId;
+        if (!drawPractice) historyFramedRef.current = true;
+        removePlaces = places.mount(leaflet, map, places.sites, language, chooseSite, frame);
+      }
+      return () => {
+        removePlaces?.();
+        removePractice?.();
+      };
     };
-  }, [chooseSite, hasMarkers, history, language, selectedAreaId]);
+  }, [chooseSite, drawPractice, hasMarkers, history, language, selectedAreaId]);
 
   // The pin is the position of the place taken from the list, or comes from geocoding whatever destination is
   // confirmed, so the map never shows a coordinate the app invented. Tagged with the destination it belongs to, so a
@@ -417,14 +445,23 @@ export function PublicShelterPage({
     return () => controller.abort();
   }, [language, selectedDestination, selectedSite]);
 
-  // Straight-line leg from the planning area to the destination. Both ends come from real geometry, so the distance
-  // and bearing below are measured rather than invented.
+  // Where distances start: the centre of the chosen planning area, never a position of the reader. In a practice
+  // scenario it is the example home, which is a point of the model and nobody's address.
+  const practiceHome = practiceView?.home;
+  const origin = useMemo(() => (
+    practiceHome
+      ? { latitude: practiceHome.latitude, longitude: practiceHome.longitude }
+      : areaCentre(areaFeatures, selectedAreaId)
+  ), [areaFeatures, practiceHome, selectedAreaId]);
+
+  // Straight-line leg from there to the destination. Both ends come from real geometry, so the distance and bearing
+  // below are measured rather than invented.
   const routeLeg = useMemo(() => buildRouteLeg(
-    areaCentre(areaFeatures, selectedAreaId),
+    origin,
     destinationPin
       ? { latitude: destinationPin.latitude, longitude: destinationPin.longitude }
       : undefined,
-  ), [areaFeatures, destinationPin, selectedAreaId]);
+  ), [destinationPin, origin]);
 
   const [resolvedRoute, setResolvedRoute] = useState<{
     key: string;
@@ -545,25 +582,24 @@ export function PublicShelterPage({
 
   const saveDestination = () => {
     if (!draftName || !authorityConfirmed) return;
-    setSelectedDestination(draftName);
-    setSelectedSite(draftSite);
-    setCompletedSteps(new Set());
+    onTripChange((current) => ({ ...current, destination: draftName, destinationSite: current.draftSite, completedSteps: [] }));
     // The sheet makes way for the map, which now shows the pin and the line to it.
     closeSheet();
   };
 
   const toggleStep = (stepId: RouteStepId) => {
-    setCompletedSteps((current) => {
-      const next = new Set(current);
-      if (next.has(stepId)) next.delete(stepId);
-      else next.add(stepId);
-      return next;
-    });
+    onTripChange((current) => ({
+      ...current,
+      completedSteps: current.completedSteps.includes(stepId)
+        ? current.completedSteps.filter((id) => id !== stepId)
+        : [...current.completedSteps, stepId],
+    }));
   };
 
   const banner = shelterBanner({
     draft: destinationDraft,
     destination: selectedDestination,
+    practice: practiceView ? { tone: practiceView.tone, text: practiceView.pages.shelter.banner } : undefined,
     walk: walkingRoute ? { metres: walkingRoute.metres, minutes: walkingRoute.minutes } : undefined,
     directMetres: routeLeg?.metres,
   }, language);
@@ -617,7 +653,7 @@ export function PublicShelterPage({
           contextFeatures={EMPTY_FEATURES}
           datasetMode={datasetMode}
           showSelectionSheet={false}
-          attributions={NO_EXTRA_CREDITS}
+          attributions={drawPractice ? PRACTICE_CREDITS : NO_EXTRA_CREDITS}
           // As on Home: the credit of the map data folds away once shown and is repeated in the layers menu.
           collapseAttribution
           visualPalette="public-outline"
@@ -684,11 +720,21 @@ export function PublicShelterPage({
         </div>
 
         <div className="public-map-dock">
-          <p className="public-map-note">
+          {/*
+            In a practice scenario the note says, as on Home, which hour of the replay the map shows and what the
+            replay is not. What the page does not know about today is then the first line of the sheet.
+          */}
+          <p className="public-map-note" data-practice={practiceView ? "true" : undefined} data-public-not-a-warning={practiceView ? true : undefined}>
+            {practiceView ? (
+              <>
+                <strong>{practiceView.copy.noteTitle} · {practiceView.moment}</strong>
+                <span>{practiceView.copy.noteBoundary}</span>
+              </>
+            ) : null}
             {routePath ? (
               <strong>{(walkingRoute ? SHELTER_PAGE_COPY.routeWalk : SHELTER_PAGE_COPY.routeDirect)[language]}</strong>
             ) : null}
-            <span>{SHELTER_PAGE_COPY.noteUnknown[language]}</span>
+            {practiceView ? null : <span>{SHELTER_PAGE_COPY.noteUnknown[language]}</span>}
             {hasMarkers ? <span>{SHELTER_HISTORY_COPY.mapNote[language]}</span> : null}
           </p>
         </div>
@@ -728,12 +774,29 @@ export function PublicShelterPage({
               </div>
               <p className="public-hazard-explain">{SHELTER_PAGE_COPY.unknown[language]}</p>
 
+              {practiceView ? (
+                <section className="public-shelter-practice" aria-label={practiceView.copy.noteTitle}>
+                  <p className="public-practice-state" data-tone={shelterTone(practiceView.tone)}>
+                    <strong>{practiceView.pages.shelter.banner}</strong>
+                    <span>{practiceView.copy.noteTitle} · {practiceView.moment} · {practiceView.copy.homeLabel}</span>
+                  </p>
+                  <ul className="public-practice-lines">
+                    {practiceView.pages.shelter.lines.map((line) => <li key={line}>{line}</li>)}
+                  </ul>
+                  <div className="public-hazard-guidance">
+                    <PublicAppIcon name="prepare" />
+                    <p>{practiceView.pages.shelter.prompt}</p>
+                  </div>
+                  <p className="public-hazard-boundary" data-public-not-a-warning>{practiceView.copy.homeNote} {practiceView.copy.boundary}</p>
+                </section>
+              ) : null}
+
               {selectedDestination ? (
                 <>
                   <dl className="public-hazard-facts">
                     <div>
-                      <dt>{th ? "พื้นที่วางแผน" : "Planning area"}</dt>
-                      <dd>{selectedAreaName || (th ? "ไม่ได้เลือกพื้นที่" : "No area selected")}</dd>
+                      <dt>{practiceView ? SHELTER_PAGE_COPY.from[language] : (th ? "พื้นที่วางแผน" : "Planning area")}</dt>
+                      <dd>{practiceView ? practiceView.copy.heading : selectedAreaName || (th ? "ไม่ได้เลือกพื้นที่" : "No area selected")}</dd>
                     </div>
                     <div>
                       <dt>{th ? "รูปแบบการเดินทาง" : "Travel mode"}</dt>
@@ -791,7 +854,10 @@ export function PublicShelterPage({
                     <input
                       id={destinationConfirmationId}
                       checked={authorityConfirmed}
-                      onChange={(event) => setAuthorityConfirmed(event.target.checked)}
+                      onChange={(event) => {
+                        const authorityConfirmed = event.target.checked;
+                        onTripChange((current) => ({ ...current, authorityConfirmed }));
+                      }}
                       type="checkbox"
                     />
                     <span>{SHELTER_PAGE_COPY.confirmation[language]}</span>

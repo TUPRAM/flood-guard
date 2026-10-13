@@ -10,6 +10,8 @@ import {
 } from "react";
 
 import { PublicFloodHeightPicker } from "@/components/public-flood-height-picker";
+import { PublicPracticeStrip } from "@/components/public-practice-strip";
+import type { PracticeView } from "@/lib/public-practice";
 import {
   PUBLIC_REPORT_NOTES_MAX_LENGTH,
   type PublicReportWaterDepth,
@@ -27,7 +29,12 @@ interface PublicReportPageProps {
   selectedArea?: PublicReportArea;
   areas: PublicReportArea[];
   onSelectArea: (areaId: string) => void;
+  /** The practice scenario chosen in the header, once it is read; absent on a day without practice. */
+  practice?: PracticeView;
+  onPracticeEnd?: () => void;
 }
+
+const ignoreEnd = () => {};
 
 const DEPTH_ICONS: Record<PublicReportWaterDepth, string> = {
   ankle: "≋",
@@ -41,6 +48,8 @@ export function PublicReportPage({
   selectedArea,
   areas,
   onSelectArea,
+  practice,
+  onPracticeEnd,
 }: PublicReportPageProps) {
   const th = language === "th";
   const { reports, addReport } = usePublicReports();
@@ -136,6 +145,37 @@ export function PublicReportPage({
           )}
         </p>
       </div>
+
+      {/*
+        In a practice scenario: the same hour as on the Home map, what to practise with this form, and the invented
+        exercise items that have arrived by that hour. They are listed apart from the notes saved on this device and
+        folded away, so the form keeps its place.
+      */}
+      {practice ? (
+        <>
+          <PublicPracticeStrip view={practice} prompt={practice.pages.report.prompt} onEnd={onPracticeEnd ?? ignoreEnd} />
+          <details className="public-practice-reports">
+            <summary>{practice.copy.reportsHeading} ({practice.pages.report.items.length})</summary>
+            <p>{practice.copy.reportsNote}</p>
+            {practice.pages.report.items.length === 0 ? (
+              <p>{practice.copy.reportsNone}</p>
+            ) : (
+              <ol>
+                {practice.pages.report.items.map((item) => (
+                  <li key={item.id}>
+                    <b>EX</b>
+                    <span>
+                      <strong>{item.title}</strong>
+                      <span>{item.text}</span>
+                      <small>{item.depth} · {item.id}</small>
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </details>
+        </>
+      ) : null}
 
       <form className="public-report-form" onSubmit={submitReport}>
         <section className="public-report-area" aria-labelledby="public-report-area-title">

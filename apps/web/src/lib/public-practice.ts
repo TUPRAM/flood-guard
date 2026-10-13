@@ -271,6 +271,137 @@ export const PRACTICE_PROMPT: Readonly<Record<PracticeState, Localized>> = {
   },
 };
 
+/** The pages of the Public view, besides Home, that say something of their own while a scenario is shown. */
+export type PracticePage = "shelter" | "report" | "prepare" | "sos";
+
+/**
+ * What a household can practise on each of those pages in each state: the same hour of the replay, seen from what
+ * that page is for. Each is a question to work through. None names an hour as the time to leave, and none says
+ * which place to go to.
+ */
+export const PRACTICE_PAGE_PROMPT: Readonly<Record<PracticePage, Readonly<Record<PracticeState, Localized>>>> = {
+  shelter: {
+    normal: {
+      en: "Practise: which of the places on the map would you ask about first, and how would you check that it is open?",
+      th: "ลองฝึก: คุณจะสอบถามสถานที่ใดบนแผนที่เป็นแห่งแรก และจะตรวจสอบอย่างไรว่าเปิดรับ",
+    },
+    heads_up: {
+      en: "Practise: if the water kept rising, which place would you ask about, and by which road would you go?",
+      th: "ลองฝึก: ถ้าน้ำยังสูงขึ้น คุณจะสอบถามสถานที่ใด และจะไปทางถนนสายไหน",
+    },
+    roads_cut: {
+      en: "Practise: follow the roads from the example home on the map. Is there still a way on foot that keeps clear of the roads marked as under water?",
+      th: "ลองฝึก: ไล่ดูถนนจากบ้านตัวอย่างบนแผนที่ ยังมีทางเดินที่ไม่ผ่านถนนที่แสดงว่าจมน้ำหรือไม่",
+    },
+    reach_at_risk: {
+      en: "Practise: the walk to a shelter is close to being cut in the model. Who in your household decides whether to set out, and whom would they ask first?",
+      th: "ลองฝึก: ในแบบจำลอง ทางเดินไปที่พักพิงใกล้ถูกตัดขาด ใครในครัวเรือนเป็นผู้ตัดสินใจว่าจะออกเดินทางหรือไม่ และจะสอบถามใครก่อน",
+    },
+    cut_off: {
+      en: "Practise: no place is within walking reach in the model. Where in this home would you wait, and what would you tell 1784?",
+      th: "ลองฝึก: ในแบบจำลอง ไม่มีสถานที่ใดอยู่ในระยะเดิน คุณจะรออยู่ที่ส่วนใดของบ้าน และจะบอก 1784 ว่าอย่างไร",
+    },
+    water_at_home: {
+      en: "Practise: with water in the home, decide who calls 1784 or 1669 and what they say: where you are, how many people, who cannot move.",
+      th: "ลองฝึก: เมื่อน้ำเข้าบ้าน ตัดสินใจว่าใครจะโทร 1784 หรือ 1669 และจะบอกอะไร: อยู่ที่ไหน มีกี่คน ใครเคลื่อนไหวไม่ได้",
+    },
+    going_down: {
+      en: "Practise: before you go on or go back, how would you check that the road is clear of mud and damage?",
+      th: "ลองฝึก: ก่อนเดินทางต่อหรือกลับบ้าน คุณจะตรวจสอบอย่างไรว่าถนนไม่มีโคลนและความเสียหาย",
+    },
+  },
+  report: {
+    normal: {
+      en: "Practise: read the form on a quiet day. From where near your home could you take a photo without stepping into water?",
+      th: "ลองฝึก: อ่านแบบบันทึกในวันปกติ คุณจะถ่ายภาพจากจุดใดใกล้บ้านได้โดยไม่ต้องลงน้ำ",
+    },
+    heads_up: {
+      en: "Practise: shallow water on a road is worth a note. How deep is it against your leg, and how would you describe the place?",
+      th: "ลองฝึก: น้ำตื้นบนถนนก็ควรบันทึกไว้ น้ำสูงถึงส่วนใดของขา และคุณจะบรรยายสถานที่อย่างไร",
+    },
+    roads_cut: {
+      en: "Practise: which road near the example home is under water on the map? Describe it so that a stranger would find it.",
+      th: "ลองฝึก: บนแผนที่ ถนนสายใดใกล้บ้านตัวอย่างจมน้ำ ลองบรรยายให้คนที่ไม่รู้จักพื้นที่หาเจอ",
+    },
+    reach_at_risk: {
+      en: "Practise: what would others need to know from this home now: the depth, the road, who is with you?",
+      th: "ลองฝึก: ตอนนี้ผู้อื่นควรรู้อะไรจากบ้านนี้: ความลึกของน้ำ ถนน และใครอยู่กับคุณ",
+    },
+    cut_off: {
+      en: "Practise: what would others need to know from this home now: the depth, the road, who is with you?",
+      th: "ลองฝึก: ตอนนี้ผู้อื่นควรรู้อะไรจากบ้านนี้: ความลึกของน้ำ ถนน และใครอยู่กับคุณ",
+    },
+    water_at_home: {
+      en: "Practise: a note on this page is not a call for help. In a real flood, who needs a call first: 1784 or 1669?",
+      th: "ลองฝึก: บันทึกในหน้านี้ไม่ใช่การขอความช่วยเหลือ ในเหตุการณ์จริง ควรโทรหาใครก่อน: 1784 หรือ 1669",
+    },
+    going_down: {
+      en: "Practise: what is left that others should know of: mud, a damaged road, a blocked drain?",
+      th: "ลองฝึก: ยังเหลืออะไรที่ผู้อื่นควรรู้: โคลน ถนนเสียหาย หรือท่อระบายน้ำอุดตัน",
+    },
+  },
+  prepare: {
+    normal: {
+      en: "Practise: go through the checklist below on a quiet day. What is not ready yet?",
+      th: "ลองฝึก: ทบทวนรายการด้านล่างในวันปกติ ยังมีอะไรที่ยังไม่พร้อม",
+    },
+    heads_up: {
+      en: "Practise: which items of the checklist would you do first today: phone, medicine, documents?",
+      th: "ลองฝึก: วันนี้คุณจะทำรายการใดก่อน: โทรศัพท์ ยา หรือเอกสาร",
+    },
+    roads_cut: {
+      en: "Practise: who in this household needs help to move, and is what they need already packed?",
+      th: "ลองฝึก: ใครในครัวเรือนต้องการความช่วยเหลือในการเคลื่อนย้าย และของที่จำเป็นสำหรับเขาจัดไว้แล้วหรือยัง",
+    },
+    reach_at_risk: {
+      en: "Practise: is the bag ready, and does everyone know where the household would meet?",
+      th: "ลองฝึก: กระเป๋าพร้อมหรือยัง และทุกคนรู้หรือไม่ว่าครัวเรือนจะนัดพบกันที่ใด",
+    },
+    cut_off: {
+      en: "Practise: what do you have upstairs for a day or more: drinking water, food, medicine, a light?",
+      th: "ลองฝึก: ชั้นบนมีอะไรพอสำหรับหนึ่งวันหรือนานกว่านั้น: น้ำดื่ม อาหาร ยา และไฟฉาย",
+    },
+    water_at_home: {
+      en: "Practise: what would you carry to the highest floor first, and what would you leave behind?",
+      th: "ลองฝึก: คุณจะนำอะไรขึ้นชั้นสูงสุดเป็นอย่างแรก และจะทิ้งอะไรไว้",
+    },
+    going_down: {
+      en: "Practise: what ran out or could not be found? Note it in your plan.",
+      th: "ลองฝึก: มีอะไรหมดหรือหาไม่เจอ จดไว้ในแผนของคุณ",
+    },
+  },
+  sos: {
+    normal: {
+      en: "Practise: save these numbers in your phone on a quiet day.",
+      th: "ลองฝึก: บันทึกหมายเลขเหล่านี้ไว้ในโทรศัพท์ในวันปกติ",
+    },
+    heads_up: {
+      en: "Practise: would everyone in the household know which number to call, and for what?",
+      th: "ลองฝึก: ทุกคนในครัวเรือนรู้หรือไม่ว่าควรโทรหมายเลขใด และโทรเรื่องอะไร",
+    },
+    roads_cut: {
+      en: "Practise: who outside the flooded area would you tell where you are?",
+      th: "ลองฝึก: คุณจะแจ้งใครที่อยู่นอกพื้นที่น้ำท่วมว่าคุณอยู่ที่ไหน",
+    },
+    reach_at_risk: {
+      en: "Practise: if the walk to a shelter were cut, whom would you call for help to move, and what would you say?",
+      th: "ลองฝึก: ถ้าทางเดินไปที่พักพิงถูกตัดขาด คุณจะโทรขอความช่วยเหลือในการเคลื่อนย้ายจากใคร และจะพูดว่าอย่างไร",
+    },
+    cut_off: {
+      en: "Practise: say out loud what you would tell 1784: where you are, how many people, who needs help.",
+      th: "ลองฝึก: พูดออกเสียงสิ่งที่จะบอก 1784: อยู่ที่ไหน มีกี่คน ใครต้องการความช่วยเหลือ",
+    },
+    water_at_home: {
+      en: "Practise: say out loud what you would tell 1784 or 1669: where you are, how many people, who cannot move.",
+      th: "ลองฝึก: พูดออกเสียงสิ่งที่จะบอก 1784 หรือ 1669: อยู่ที่ไหน มีกี่คน ใครเคลื่อนไหวไม่ได้",
+    },
+    going_down: {
+      en: "Practise: whom would you tell that your household is safe?",
+      th: "ลองฝึก: คุณจะแจ้งใครว่าครัวเรือนของคุณปลอดภัยแล้ว",
+    },
+  },
+};
+
 export const PRACTICE_COPY = {
   homeLabel: { en: "Example home", th: "บ้านตัวอย่าง" },
   homeHeading: { en: "Example home in Mae Sai town", th: "บ้านตัวอย่างในตัวเมืองแม่สาย" },
@@ -293,6 +424,24 @@ export const PRACTICE_COPY = {
   },
   keyHeading: { en: "On the map", th: "บนแผนที่" },
   reportTag: { en: "Practice report, invented for the exercise. Not a real call or report.", th: "รายงานฝึกซ้อมที่สมมติขึ้นเพื่อการฝึก ไม่ใช่การโทรหรือรายงานจริง" },
+  end: { en: "End practice", th: "จบการฝึกซ้อม" },
+  /** The Shelter page: a line drawn to a destination is the road map's and knows nothing of the replay's water. */
+  routeCaveat: {
+    en: "A line to a destination on this map comes from the road map. It does not know the water of the replay: compare it with the roads marked as under water.",
+    th: "เส้นไปยังจุดหมายบนแผนที่นี้มาจากแผนที่ถนน และไม่ทราบน้ำในภาพจำลอง โปรดเทียบกับถนนที่แสดงว่าจมน้ำ",
+  },
+  /** The Report page: the invented items that have arrived by the hour shown. */
+  reportsHeading: { en: "Practice reports by this hour", th: "รายงานฝึกซ้อมจนถึงชั่วโมงนี้" },
+  reportsNote: {
+    en: "Invented for the exercise. Not real calls or reports, and none came from this device.",
+    th: "สมมติขึ้นเพื่อการฝึก ไม่ใช่การโทรหรือรายงานจริง และไม่ได้มาจากอุปกรณ์นี้",
+  },
+  reportsNone: { en: "No practice report has arrived by this hour.", th: "ยังไม่มีรายงานฝึกซ้อมจนถึงชั่วโมงนี้" },
+  /** The SOS page: the numbers above the strip are real, the scenario is not. */
+  sosReal: {
+    en: "This is practice: no call is placed. In a real emergency, call the numbers above.",
+    th: "นี่คือการฝึกซ้อม ไม่มีการโทรออก ในเหตุฉุกเฉินจริง ให้โทรหมายเลขด้านบน",
+  },
 } as const satisfies Record<string, Localized>;
 
 /** One entry of the map key: a swatch name the stylesheet draws, and its words. */
@@ -343,6 +492,21 @@ function reachLine(status: HouseholdStatus, thresholdM: number, language: Langua
   return language === "th"
     ? `ยังเดินไปที่พักพิงที่มีรายงานว่าเปิดใช้ในปี 2567 (2024) ได้ภายใน ${walk} กม. บนถนนที่ยังผ่านได้`
     : `A shelter reported in use in 2024 is within a ${walk} km walk on passable roads.`;
+}
+
+/** The banner of the Shelter page in a scenario: whether the model still has a walk to a shelter reported in 2024. */
+function shelterReachBanner(status: HouseholdStatus, thresholdM: number, language: Language): string {
+  const walk = kilometres(thresholdM).replace(/\.0$/, "");
+  if (status.reach === "lost") return PRACTICE_BANNER.cut_off[language];
+  if (status.reach === "at_risk") return PRACTICE_BANNER.reach_at_risk[language];
+  if (status.reach === "none_before_flood") {
+    return language === "th"
+      ? `ไม่มีที่พักพิงที่มีรายงานในปี 2567 (2024) ในระยะเดิน ${walk} กม.`
+      : `No shelter reported in 2024 within a ${walk} km walk`;
+  }
+  return language === "th"
+    ? `ยังเดินไปที่พักพิงที่มีรายงานในปี 2567 (2024) ได้ภายใน ${walk} กม.`
+    : `A shelter reported in 2024 is within a ${walk} km walk`;
 }
 
 function homeLine(status: HouseholdStatus, language: Language): string {
@@ -406,6 +570,16 @@ export function practiceReportLines(item: ExerciseItem, language: Language): { t
 
 /** Everything the page shows for one scenario, in one language. */
 export interface PracticeView {
+  /**
+   * What the other pages of the Public view say in this scenario: the same hour, seen from what each page is for.
+   * The Shelter page has a banner and lines of its own; every page has a question to practise.
+   */
+  pages: {
+    shelter: { banner: string; lines: string[]; prompt: string };
+    report: { prompt: string; items: { id: string; title: string; text: string; depth: string }[] };
+    prepare: { prompt: string };
+    sos: { prompt: string };
+  };
   scenario: PracticeScenario;
   home: PracticeHome;
   status: HouseholdStatus;
@@ -423,7 +597,11 @@ export interface PracticeView {
   /** The furthest water of the replay is hatched while the water is still low. */
   showPeakExtent: boolean;
   /** The fixed words around a scenario, in the view's language. */
-  copy: Record<"heading" | "homeNote" | "noteTitle" | "noteBoundary" | "boundary" | "sources" | "keyHeading", string>;
+  copy: Record<
+    "heading" | "homeLabel" | "homeNote" | "noteTitle" | "noteBoundary" | "boundary" | "sources" | "keyHeading"
+    | "end" | "reportsHeading" | "reportsNote" | "reportsNone" | "sosReal",
+    string
+  >;
 }
 
 export function practiceView(
@@ -439,13 +617,32 @@ export function practiceView(
   const arrived = practiceReports(exercise, home, scenario.hour);
   const nearby = arrived.filter((entry) => entry.distanceM <= PRACTICE_RADIUS_M).length;
   const showPeakExtent = status.state === "normal" || status.state === "heads_up";
+  const thresholdM = manifest.access?.threshold_m ?? 2000;
+  const roads = roadsLine(status.roads, manifest.impassable_depth_m, language);
+  const reach = reachLine(status, thresholdM, language);
   const lines = [
-    roadsLine(status.roads, manifest.impassable_depth_m, language),
-    reachLine(status, manifest.access?.threshold_m ?? 2000, language),
+    roads,
+    reach,
     homeLine(status, language),
     reportsLine(nearby, language),
   ].filter((line): line is string => line !== null);
   return {
+    pages: {
+      shelter: {
+        banner: shelterReachBanner(status, thresholdM, language),
+        lines: [reach, roads, PRACTICE_COPY.routeCaveat[language]],
+        prompt: PRACTICE_PAGE_PROMPT.shelter[status.state][language],
+      },
+      report: {
+        prompt: PRACTICE_PAGE_PROMPT.report[status.state][language],
+        items: arrived.map(({ item }) => {
+          const text = practiceReportLines(item, language);
+          return { id: item.id, title: text.title, text: text.text, depth: text.depth };
+        }),
+      },
+      prepare: { prompt: PRACTICE_PAGE_PROMPT.prepare[status.state][language] },
+      sos: { prompt: PRACTICE_PAGE_PROMPT.sos[status.state][language] },
+    },
     scenario,
     home,
     status,
@@ -459,12 +656,18 @@ export function practiceView(
     showPeakExtent,
     copy: {
       heading: PRACTICE_COPY.homeHeading[language],
+      homeLabel: PRACTICE_COPY.homeLabel[language],
       homeNote: PRACTICE_COPY.homeNote[language],
       noteTitle: PRACTICE_COPY.noteTitle[language],
       noteBoundary: PRACTICE_COPY.noteBoundary[language],
       boundary: PRACTICE_COPY.boundary[language],
       sources: PRACTICE_COPY.sources[language],
       keyHeading: PRACTICE_COPY.keyHeading[language],
+      end: PRACTICE_COPY.end[language],
+      reportsHeading: PRACTICE_COPY.reportsHeading[language],
+      reportsNote: PRACTICE_COPY.reportsNote[language],
+      reportsNone: PRACTICE_COPY.reportsNone[language],
+      sosReal: PRACTICE_COPY.sosReal[language],
     },
   };
 }

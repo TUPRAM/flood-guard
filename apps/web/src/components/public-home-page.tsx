@@ -21,9 +21,9 @@ import {
   type PublicAddressSuggestion,
   type PublicMapLocation,
 } from "@/lib/public-location";
-import { PRACTICE_MENU_COPY, type PracticeState, type PracticeTone } from "@/lib/public-practice-scenarios";
+import { PRACTICE_MENU_COPY, type PracticeTone } from "@/lib/public-practice-scenarios";
 import type { FeatureCollection, Language, PublicFloodGuardData } from "@/lib/types";
-import { usePublicPractice } from "@/lib/use-public-practice";
+import type { PublicPractice } from "@/lib/use-public-practice";
 import { useSheetKeyboard } from "@/lib/use-sheet-keyboard";
 
 interface PublicHomePageProps {
@@ -34,8 +34,8 @@ interface PublicHomePageProps {
   location?: PublicMapLocation;
   onLocationChange: (location: PublicMapLocation | undefined) => void;
   researchHref?: string;
-  /** The practice scenario chosen in the header; null or absent on a day without practice. */
-  practiceScenarioId?: PracticeState | null;
+  /** The practice scenario chosen in the header, as the Public shell read it; absent on a day without practice. */
+  practice?: PublicPractice;
   /** Called when the reader looks for their own place: that ends the practice. */
   onPracticeEnd?: () => void;
   onNavigatePrepare?: () => void;
@@ -67,6 +67,7 @@ const ignoreAreaSelection = () => {};
 /** The practice replay draws road pieces from OpenStreetMap on every background, so its credit joins the map's. */
 const PRACTICE_CREDITS = ["© OpenStreetMap contributors"];
 const NO_EXTRA_CREDITS: string[] = [];
+const PRACTICE_OFF: PublicPractice = { status: "off" };
 
 type SearchState = "idle" | "loading" | "ready" | "empty" | "unavailable";
 type GpsState = "idle" | "requesting" | "ready" | "denied" | "unavailable" | "timeout";
@@ -142,7 +143,7 @@ export function PublicHomePage({
   location,
   onLocationChange,
   researchHref,
-  practiceScenarioId = null,
+  practice = PRACTICE_OFF,
   onPracticeEnd,
   onNavigatePrepare,
   onNavigateSos,
@@ -169,7 +170,6 @@ export function PublicHomePage({
   const hazardPanelRef = useRef<HTMLElement>(null);
   // No area is framed for the reader: until they choose one the map shows the whole district.
   const chosenArea = data.publicAreas.find((area) => area.area_id === selectedAreaId);
-  const practice = usePublicPractice(practiceScenarioId, language);
   const practising = practice.status !== "off";
   const practiceView = practice.status === "ready" ? practice.view : undefined;
 

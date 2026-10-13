@@ -1850,6 +1850,9 @@ async function assertPublicPractice(page) {
   if (/Planning indicator|\/100|planning priority/i.test(panelText)) throw new Error("The practice panel shows a planning score.");
   await page.getByRole("button", { name: "Close hazard information" }).click();
 
+  // The scenario stays on from page to page, and ends from any of them.
+  await assertPracticeAcrossPages(page);
+
   // The neighbour that floods, then the day without water: the green tick belongs to this scenario alone.
   await choose("water_at_home");
   await settle("danger", "Water has reached this home");
@@ -1867,6 +1870,122 @@ async function assertPublicPractice(page) {
   if (after.practising !== null || after.selected !== selectedBefore || after.place.includes("Example home")) {
     throw new Error(`Ending the practice left something of it on the page, or changed the chosen area: ${JSON.stringify(after)}`);
   }
+}
+
+/**
+ * A scenario is chosen once and stays on from page to page (13 Oct 2026). The Shelter map shows the same hour of the
+ * replay and says whether the example home still has a walk to a shelter; the pages without a map carry a strip with
+ * the sentence of the Home banner and a question of their own. Called with "Cut off, home dry" on the Home map, and
+ * returns on Home without a scenario.
+ *
+ * Leaving Home with a scenario shown ended in "This page couldn't load" before this check existed: the map was
+ * removed before the scenario's own layers were, and their cleanup then moved a map that was gone.
+ */
+async function assertPracticeAcrossPages(page) {
+  const pageErrors = [];
+  const onPageError = (error) => pageErrors.push(error.message);
+  page.on("pageerror", onPageError);
+  const header = () => page.evaluate(() => ({
+    menu: document.querySelectorAll(".public-practice-trigger").length,
+    place: document.querySelector(".public-greeting-location")?.innerText.trim() ?? "",
+  }));
+  const strip = async (id, readySelector, question) => {
+    await activatePublicPage(page, id, readySelector);
+    const element = page.locator(".public-practice-strip");
+    await element.waitFor({ state: "visible", timeout: 30_000 });
+    const text = (await element.innerText()).replace(/\s+/g, " ");
+    for (const required of ["Practice replay", "not real-time", "not an official warning", "No shelter within walking reach", question, "End practice"]) {
+      if (!text.includes(required)) throw new Error(`The practice strip on the ${id} page is missing: ${required}. It reads: ${text}`);
+    }
+    const shown = await header();
+    if (await element.getAttribute("data-tone") !== "danger" || shown.menu !== 1 || !shown.place.includes("Example home")) {
+      throw new Error(`The ${id} page does not carry the scenario of the Home map: ${JSON.stringify(shown)}`);
+    }
+  };
+
+  // Shelter: the same hour of the replay on its map, with the places of 2024 over it.
+  await activatePublicPage(page, "shelter", ".public-shelter-page");
+  await page.waitForFunction(() => {
+    const banner = document.querySelector(".public-shelter-page .public-signal-banner");
+    return banner?.getAttribute("data-tone") === "danger"
+      && banner.innerText.includes("No shelter within walking reach")
+      && document.querySelectorAll("canvas.public-practice-water").length === 1
+      && document.querySelectorAll(".public-shelter-site").length === 14
+      && [...document.querySelectorAll(".public-area-pin-label")].some((label) => label.textContent === "Example home");
+  }, undefined, { timeout: 45_000 });
+  const shelterNote = page.locator(".public-shelter-page .public-map-note");
+  const shelterNoteText = (await shelterNote.innerText()).replace(/\s+/g, " ");
+  if (await shelterNote.getAttribute("data-practice") !== "true"
+    || !shelterNoteText.includes("Practice replay")
+    || !shelterNoteText.includes("not an official warning")
+    || !shelterNoteText.includes("Markers: reported as shelters in September 2024")) {
+    throw new Error(`The Shelter note does not say that the map shows a practice replay: ${shelterNoteText}`);
+  }
+  const onShelter = await header();
+  if (onShelter.menu !== 1 || !onShelter.place.includes("Example home")) {
+    throw new Error(`The Shelter page lost the scenario menu or the example home: ${JSON.stringify(onShelter)}`);
+  }
+  await page.locator(".public-shelter-page .public-signal-banner").click();
+  const sheet = page.locator("#public-shelter-panel");
+  await sheet.waitFor({ state: "visible" });
+  const sheetText = (await sheet.innerText()).replace(/\s+/g, " ");
+  for (const required of [
+    "No shelter reported in use in 2024 can be reached within a 2 km walk on passable roads.",
+    "does not know the water of the replay",
+    "Practise: no place is within walking reach in the model.",
+    "Not a real address",
+    "Not real-time and not an official warning",
+    "does not know its current capacity or operating status",
+  ]) {
+    if (!sheetText.includes(required)) throw new Error(`The Shelter sheet of the practice scenario is missing: ${required}.`);
+  }
+  await page.keyboard.press("Escape");
+  await sheet.waitFor({ state: "detached" });
+
+  // Report: the strip, and the invented items that have arrived, folded away above the form.
+  await strip("report", ".public-report-page", "Practise: what would others need to know from this home now");
+  const practiceReports = page.locator(".public-practice-reports");
+  if (!/Practice reports by this hour \([1-9]\d*\)/.test(await practiceReports.locator("summary").innerText())) {
+    throw new Error("The Report page does not count the practice reports that have arrived.");
+  }
+  await practiceReports.locator("summary").click();
+  const practiceReportsText = await practiceReports.innerText();
+  if (!practiceReportsText.includes("Invented for the exercise") || !/EX-\d+/.test(practiceReportsText)) {
+    throw new Error("The practice reports on the Report page are not marked as invented exercise items.");
+  }
+
+  await strip("prepare", "#household-plan-builder", "Practise: what do you have upstairs for a day or more");
+
+  // SOS: the official numbers stay first; the strip under them says that no call is placed.
+  await strip("sos", ".public-sos-page", "Practise: say out loud what you would tell 1784");
+  const sosText = await page.locator("#main-content").innerText();
+  if (sosText.indexOf("Official emergency hotlines") > sosText.indexOf("Practice replay") || !sosText.includes("no call is placed")) {
+    throw new Error("The practice strip on the SOS page stands above the official numbers, or does not say that no call is placed.");
+  }
+
+  // Back on Home the scenario is still shown, with its layers.
+  await activatePublicPage(page, "home", "#main-content .leaflet-container");
+  await page.waitForFunction(() => {
+    const banner = document.querySelector(".public-signal-banner");
+    return banner?.getAttribute("data-tone") === "danger"
+      && banner.innerText.includes("No shelter within walking reach")
+      && document.querySelectorAll("canvas.public-practice-water").length === 1;
+  }, undefined, { timeout: 45_000 });
+
+  // Ended from a page without a map: Home is a day without practice again.
+  await activatePublicPage(page, "prepare", "#household-plan-builder");
+  await page.locator(".public-practice-strip button").click();
+  await page.locator(".public-practice-strip").waitFor({ state: "detached" });
+  await activatePublicPage(page, "home", "#main-content .leaflet-container");
+  await page.waitForFunction(() => {
+    const banner = document.querySelector(".public-signal-banner");
+    return banner?.getAttribute("data-tone") === "neutral"
+      && banner.innerText.includes("No flood reports near you")
+      && document.querySelectorAll("canvas.public-practice-water").length === 0;
+  }, undefined, { timeout: 30_000 });
+
+  page.off("pageerror", onPageError);
+  if (pageErrors.length > 0) throw new Error(`Moving between the Public pages with a scenario shown raised: ${pageErrors.join(" | ")}`);
 }
 
 /**

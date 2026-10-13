@@ -11,6 +11,7 @@ import {
   nearestAccessNode,
   PRACTICE_BANNER,
   PRACTICE_COPY,
+  PRACTICE_PAGE_PROMPT,
   PRACTICE_PROMPT,
   PRACTICE_RADIUS_M,
   practiceReportLabel,
@@ -217,6 +218,35 @@ describe("the practice scenarios on the published replay (r5)", () => {
     expect(risk.lines[1]).toMatch(/that walk is cut once the river is about \d+ cm higher\.$/);
   });
 
+  it("tells the same hour on the other pages: the walk to a shelter on Shelter, a question on each", () => {
+    const view = (id: PracticeState) => practiceView(replay, exercise.items, practiceScenario(id)!, "en")!;
+    // The Shelter banner follows the walk to a shelter, not the state of the home.
+    expect(view("normal").pages.shelter.banner).toBe("A shelter reported in 2024 is within a 2 km walk");
+    expect(view("roads_cut").pages.shelter.banner).toBe("A shelter reported in 2024 is within a 2 km walk");
+    expect(view("reach_at_risk").pages.shelter.banner).toBe("The walk to a shelter is nearly cut");
+    expect(view("cut_off").pages.shelter.banner).toBe("No shelter within walking reach");
+    // Its lines are the walk, the roads and what a line to a destination does not know.
+    const cut = view("cut_off");
+    expect(cut.pages.shelter.lines).toEqual([cut.lines[1], cut.lines[0], PRACTICE_COPY.routeCaveat.en]);
+    expect(cut.pages.shelter.lines[2]).toContain("does not know the water of the replay");
+    // The Report page lists the invented items that have arrived, by their exercise number.
+    expect(cut.pages.report.items.map((item) => item.id)).toEqual(cut.reports.map((item) => item.id));
+    expect(cut.pages.report.items.length).toBeGreaterThan(0);
+    for (const item of cut.pages.report.items) expect(item.id).toMatch(/^EX-\d+$/);
+    expect(view("normal").pages.report.items).toEqual([]);
+    // Every page has a question of its own for every state.
+    for (const scenario of PRACTICE_SCENARIOS) {
+      const pages = view(scenario.id).pages;
+      expect(pages.shelter.prompt).toBe(PRACTICE_PAGE_PROMPT.shelter[scenario.id].en);
+      expect(pages.report.prompt).toBe(PRACTICE_PAGE_PROMPT.report[scenario.id].en);
+      expect(pages.prepare.prompt).toBe(PRACTICE_PAGE_PROMPT.prepare[scenario.id].en);
+      expect(pages.sos.prompt).toBe(PRACTICE_PAGE_PROMPT.sos[scenario.id].en);
+    }
+    // With water in the home the Report page says that a note is not a call for help.
+    expect(view("water_at_home").pages.report.prompt).toContain("not a call for help");
+    expect(PRACTICE_COPY.sosReal.en).toBe("This is practice: no call is placed. In a real emergency, call the numbers above.");
+  });
+
   it("only counts an hour the replay covers and a home it knows", () => {
     expect(practiceStatus(replay, { latitude: 13.75, longitude: 100.5 }, 84)).toBeNull();
     for (const scenario of PRACTICE_SCENARIOS) {
@@ -231,7 +261,7 @@ describe("practice wording", () => {
 
   it("names every state in both languages", () => {
     for (const state of states) {
-      for (const table of [PRACTICE_BANNER, PRACTICE_PROMPT, PRACTICE_SCENARIO_LABELS]) {
+      for (const table of [PRACTICE_BANNER, PRACTICE_PROMPT, PRACTICE_SCENARIO_LABELS, ...Object.values(PRACTICE_PAGE_PROMPT)]) {
         expect(table[state].en.trim()).not.toBe("");
         expect(table[state].th.trim()).not.toBe("");
       }
@@ -250,10 +280,16 @@ describe("practice wording", () => {
     add("PRACTICE_COPY", PRACTICE_COPY);
     add("PRACTICE_SCENARIO_LABELS", PRACTICE_SCENARIO_LABELS);
     add("PRACTICE_MENU_COPY", PRACTICE_MENU_COPY);
+    for (const [page, table] of Object.entries(PRACTICE_PAGE_PROMPT)) add(`PRACTICE_PAGE_PROMPT.${page}`, table);
     for (const scenario of PRACTICE_SCENARIOS) {
       for (const language of ["en", "th"] as const) {
         const view = practiceView(replay, exercise.items, scenario, language)!;
         texts.push({ source: `view ${scenario.id} (${language})`, text: [view.banner, view.moment, ...view.lines, view.prompt, ...view.key.map((item) => item.text)].join(" │ ") });
+        const { shelter, report, prepare, sos } = view.pages;
+        texts.push({
+          source: `pages ${scenario.id} (${language})`,
+          text: [shelter.banner, ...shelter.lines, shelter.prompt, report.prompt, ...report.items.flatMap((item) => [item.title, item.depth]), prepare.prompt, sos.prompt, ...Object.values(view.copy)].join(" │ "),
+        });
       }
     }
     for (const item of exercise.items) {

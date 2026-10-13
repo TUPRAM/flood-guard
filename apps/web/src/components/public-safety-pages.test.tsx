@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import { createEmptyHouseholdPlan } from "@/lib/household-plan";
+import { EMPTY_SHELTER_TRIP } from "@/lib/public-shelter-view";
 import type { FeatureCollection } from "@/lib/types";
 
 import { PublicReportPage } from "./public-report-page";
@@ -38,6 +39,8 @@ describe("Public household pages", () => {
         datasetMode="candidate"
         plan={createEmptyHouseholdPlan("")}
         onNavigatePrepare={() => {}}
+        trip={EMPTY_SHELTER_TRIP}
+        onTripChange={() => {}}
       />,
     );
     // The frame of Home (13 Oct 2026): the destination field and the banner stand over the map.

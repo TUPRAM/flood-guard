@@ -9,6 +9,7 @@
 
 import type { PracticeTone } from "./public-practice-scenarios";
 import { formatRouteDistance } from "./public-route";
+import type { ShelterHistorySite } from "./public-shelter-history";
 import type { Language } from "./types";
 
 type Localized = Record<Language, string>;
@@ -27,6 +28,7 @@ export const SHELTER_PAGE_COPY = {
   },
   routeWalk: { en: "Road-following walk · verify conditions", th: "เส้นทางเดินตามถนน · ตรวจสอบสภาพจริง" },
   routeDirect: { en: "Straight line for orientation only · not a walking route", th: "เส้นตรงเพื่อดูทิศทางเท่านั้น · ไม่ใช่เส้นทางเดิน" },
+  from: { en: "From", th: "จาก" },
   panelEyebrow: { en: "SHELTER AND TRAVEL", th: "ที่พักพิงและการเดินทาง" },
   panelHeading: { en: "Choose a destination", th: "เลือกจุดหมาย" },
   panelClose: { en: "Close shelter and travel details", th: "ปิดรายละเอียดที่พักพิงและการเดินทาง" },
@@ -55,11 +57,45 @@ export const SHELTER_PAGE_COPY = {
   },
 } as const satisfies Record<string, Localized>;
 
+/** The steps of the page's checklist. */
+export type ShelterStepId = "confirm_destination" | "confirm_route" | "prepare_household" | "share_plan";
+
+/**
+ * What the reader has entered on the Shelter page. The Public shell keeps it for the visit, so it is still there
+ * when the reader comes back from another page (the sheet itself sends them to Prepare to edit the household).
+ * Nothing of it is saved on the device.
+ */
+export interface ShelterTrip {
+  /** What stands in the destination field. */
+  draft: string;
+  /** The place of 2024 the field was filled from; null for a typed destination. */
+  draftSite: ShelterHistorySite | null;
+  /** The destination in use: the reader said an authority confirmed it. Empty until then. */
+  destination: string;
+  destinationSite: ShelterHistorySite | null;
+  authorityConfirmed: boolean;
+  completedSteps: ShelterStepId[];
+}
+
+export const EMPTY_SHELTER_TRIP: ShelterTrip = {
+  draft: "",
+  draftSite: null,
+  destination: "",
+  destinationSite: null,
+  authorityConfirmed: false,
+  completedSteps: [],
+};
+
 export interface ShelterBannerInput {
   /** What stands in the destination field. */
   draft: string;
   /** The destination in use: the reader said an authority confirmed it. Empty until then. */
   destination: string;
+  /**
+   * The practice scenario shown, with the sentence the replay gives this page: whether the example home still has a
+   * walk to a shelter reported in 2024. It is the banner while no destination is in the field.
+   */
+  practice?: { tone: PracticeTone; text: string };
   /** The walking route from the road map, when the router answered. */
   walk?: { metres: number; minutes: number };
   /** The straight-line distance, when both ends are known. */
@@ -72,11 +108,22 @@ export interface ShelterBanner {
   text: string;
 }
 
+/**
+ * The tone of a practice scenario as this page shows it. The scenario without water is green on the Home map; here
+ * it is grey, because a green line on the Shelter page would read as "a shelter is open".
+ */
+export function shelterTone(tone: PracticeTone): PracticeTone {
+  return tone === "calm" ? "neutral" : tone;
+}
+
 /** The banner of the page for what the reader has entered so far. The figures come first: a long name is cut last. */
 export function shelterBanner(input: ShelterBannerInput, language: Language): ShelterBanner {
   const th = language === "th";
   const name = input.destination || input.draft.trim();
-  if (!name) return { tone: "neutral", icon: "shelter", text: SHELTER_PAGE_COPY.bannerNone[language] };
+  if (!name) {
+    if (!input.practice) return { tone: "neutral", icon: "shelter", text: SHELTER_PAGE_COPY.bannerNone[language] };
+    return { tone: shelterTone(input.practice.tone), icon: "shelter", text: input.practice.text };
+  }
   if (!input.destination) return { tone: "watch", icon: "hazard", text: `${SHELTER_PAGE_COPY.bannerUnconfirmed[language]}: ${name}` };
   if (input.walk) {
     const distance = formatRouteDistance(input.walk.metres, language);

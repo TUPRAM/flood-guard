@@ -6,6 +6,7 @@ import { HouseholdPlanBuilder } from "@/components/household-plan-builder";
 import { PublicAppHeader } from "@/components/public-app-header";
 import { PublicAppIcon, type PublicAppIconName } from "@/components/public-app-icon";
 import { PublicHomePage } from "@/components/public-home-page";
+import { PublicPracticeStrip } from "@/components/public-practice-strip";
 import { PublicReportPage } from "@/components/public-report-page";
 import { PublicShelterPage } from "@/components/public-shelter-page";
 import { PublicSosPage } from "@/components/public-sos-page";
@@ -14,11 +15,13 @@ import { HOUSEHOLD_NEEDS, countCompletedPlanItems } from "@/lib/household-plan";
 import { competitionPagesAvailable } from "@/lib/policy-links";
 import type { PublicMapLocation } from "@/lib/public-location";
 import { PRACTICE_MENU_COPY, type PracticeState } from "@/lib/public-practice-scenarios";
+import { EMPTY_SHELTER_TRIP } from "@/lib/public-shelter-view";
 import type { FeatureCollection } from "@/lib/types";
 import { useDisplayName } from "@/lib/use-display-name";
 import { useHouseholdPlan } from "@/lib/use-household-plan";
 import { useLanguage } from "@/lib/use-language";
 import { usePublicFloodGuardData } from "@/lib/use-public-floodguard-data";
+import { usePublicPractice } from "@/lib/use-public-practice";
 
 type PublicPage = "home" | "report" | "shelter" | "prepare" | "sos";
 
@@ -90,12 +93,16 @@ export function PublicExperience() {
   const [page, setPage] = useState<PublicPage>("home");
   const [researchHref, setResearchHref] = useState("/public-cases/");
   const [homeLocation, setHomeLocation] = useState<PublicMapLocation>();
-  // The practice scenario shown on the Home map. It is kept in this visit only and never written to the saved plan.
-  // The replay it reads ships in the competition build alone, so the public build has no menu for it, and no
-  // markers of the places reported as shelters in 2024 on the Shelter map.
+  // The practice scenario. It is chosen in the header on any page and stays on from page to page: the Home and
+  // Shelter maps show its hour of the replay, and the other pages say what a household can practise there. It is
+  // kept in this visit only and never written to the saved plan. The replay it reads ships in the competition build
+  // alone, so the public build has no menu for it, and no markers of the places reported as shelters in 2024 on the
+  // Shelter map.
   const [practiceScenarioId, setPracticeScenarioId] = useState<PracticeState | null>(null);
   const practiceAvailable = competitionPagesAvailable();
   const endPractice = useCallback(() => setPracticeScenarioId(null), []);
+  // What the reader entered on the Shelter page, kept while they visit another page.
+  const [shelterTrip, setShelterTrip] = useState(EMPTY_SHELTER_TRIP);
   const contentRef = useRef<HTMLElement>(null);
   const { displayName, changeDisplayName } = useDisplayName();
   const {
@@ -110,6 +117,8 @@ export function PublicExperience() {
     clearPlan,
   } = useHouseholdPlan("");
   const th = language === "th";
+  const practice = usePublicPractice(practiceAvailable ? practiceScenarioId : null, language);
+  const practiceView = practice.status === "ready" ? practice.view : undefined;
   const selectedArea = data.publicAreas.find(
     (area) => area.area_id === plan.planning_area_id,
   );
@@ -187,12 +196,12 @@ export function PublicExperience() {
         needsSummary={needsSummary}
         displayName={displayName}
         onDisplayNameChange={changeDisplayName}
-        locationLabel={practiceScenarioId && page === "home"
+        locationLabel={practiceScenarioId
           ? PRACTICE_MENU_COPY.homePlace[language]
           : homeLocation?.label ?? selectedAreaName}
         onNavigatePrepare={() => navigate("prepare")}
         onNavigateSos={() => navigate("sos")}
-        practice={practiceAvailable && page === "home"
+        practice={practiceAvailable
           ? { scenarioId: practiceScenarioId, onChange: setPracticeScenarioId }
           : undefined}
       />
@@ -217,7 +226,7 @@ export function PublicExperience() {
             location={homeLocation}
             onLocationChange={setHomeLocation}
             researchHref={process.env.NEXT_PUBLIC_FLOODGUARD_APP_PROFILE === "public-production" ? undefined : researchHref}
-            practiceScenarioId={practiceAvailable ? practiceScenarioId : null}
+            practice={practice}
             onPracticeEnd={endPractice}
             onNavigatePrepare={() => navigate("prepare")}
             onNavigateSos={() => navigate("sos")}
@@ -230,6 +239,8 @@ export function PublicExperience() {
             selectedArea={reportArea}
             areas={data.publicAreas}
             onSelectArea={selectPlanningArea}
+            practice={practiceView}
+            onPracticeEnd={endPractice}
           />
         )}
 
@@ -243,6 +254,9 @@ export function PublicExperience() {
             datasetMode={data.status.dataset_mode}
             plan={plan}
             onNavigatePrepare={() => navigate("prepare")}
+            trip={shelterTrip}
+            onTripChange={setShelterTrip}
+            practice={practice}
             showShelterHistory={practiceAvailable}
           />
         )}
@@ -255,6 +269,11 @@ export function PublicExperience() {
               </h1>
               <p>{th ? "เลือกพื้นที่กว้าง ทบทวนความต้องการและรายการเตรียมพร้อม แล้วเก็บสำเนาไว้ในอุปกรณ์นี้" : "Choose a broad area, review household needs and actions, then keep a copy on this device."}</p>
             </header>
+
+            {/* In a practice scenario: the same hour as on the Home map, and what to practise with the plan. */}
+            {practiceView ? (
+              <PublicPracticeStrip view={practiceView} prompt={practiceView.pages.prepare.prompt} onEnd={endPractice} />
+            ) : null}
 
             <section className="public-prepare-area-selector" aria-labelledby="public-prepare-area-title">
               <div>
@@ -306,6 +325,8 @@ export function PublicExperience() {
             hotlines={data.hotlines}
             plan={plan}
             selectedAreaName={selectedAreaName}
+            practice={practiceView}
+            onPracticeEnd={endPractice}
           />
         )}
       </section>

@@ -95,7 +95,7 @@ describe("PublicHomePage with a practice scenario chosen", () => {
       selectedAreaId="TH570903"
       onSelectArea={vi.fn()}
       onLocationChange={vi.fn()}
-      practiceScenarioId="cut_off"
+      practice={{ status: "loading" }}
     />);
     const banner = html.match(/<button type="button" class="public-signal-banner"[\s\S]*?<\/button>/)?.[0] ?? "";
     const note = html.match(/<p class="public-map-note"[\s\S]*?<\/p>/)?.[0] ?? "";

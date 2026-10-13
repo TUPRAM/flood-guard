@@ -1,6 +1,6 @@
 {
   "schema": "floodguard.validation_check.items.v1",
-  "updated": "2026-10-12",
+  "updated": "2026-10-13",
   "repository": "https://github.com/TUPRAM/flood-guard",
   "reviewers": [
     "Rachmania",
@@ -848,6 +848,33 @@
       "gates": "Which replay the pitch shows, and what is said of the 15 September image beside it.",
       "ready": true,
       "added": "2026-10-12"
+    },
+    {
+      "id": "V-40",
+      "group": "pitch",
+      "title": "The plain-language policy page, its sources, and the test of the five weights",
+      "check": "Open /policy/ in English and in Thai and read it from top to bottom, then open the technical record linked at the foot. Accept if the page says what the team's policy document says, in words a non-specialist can follow. Three things to look at closely: (1) the 20 percent part reads 'a hospital or a main road', because the published score does not count shelters; (2) the weight test under the five percentages: Ko Chang stays first with equal weights and in nine of ten random weightings, and Mae Sai town comes first only if lost access is left out; (3) the section numbers of the 2007 Act (12(2), 15 and 16, 20 and 21, 44) and the chapters of the National Plan, which were taken from the team's document and not checked against the official text. Choose 'change' with a note for any sentence that should be different, and say in the note whether you checked the section numbers yourself.",
+      "evidence": [
+        {
+          "label": "The text of the page, English and Thai",
+          "path": "apps/web/src/lib/policy-brief.ts"
+        },
+        {
+          "label": "The weight test, with its limits",
+          "path": "docs/fpps_weight_sensitivity.md"
+        },
+        {
+          "label": "The sources and how the list was made",
+          "path": "docs/policy_sources.md"
+        },
+        {
+          "label": "Decision R49",
+          "path": "docs/decision-log-d1-d16.md"
+        }
+      ],
+      "gates": "What the pitch says about policy, and the answer to 'why these percentages'.",
+      "ready": true,
+      "added": "2026-10-13"
     }
   ]
 }

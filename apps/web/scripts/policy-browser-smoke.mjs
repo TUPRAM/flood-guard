@@ -7,7 +7,7 @@ import { launchFloodGuardBrowser } from "./browser-launch.mjs";
 
 const output = resolve(process.env.FLOODGUARD_PROFILE_OUT ?? "out");
 const artifacts = resolve("../../.tmp/policy-qa");
-assert(existsSync(resolve(output, "policy/index.html")), "Build the competition profile before testing policy.");
+assert(existsSync(resolve(output, "policy/index.html")) && existsSync(resolve(output, "policy/technical/index.html")), "Build the competition profile before testing policy.");
 assert.equal(JSON.parse(readFileSync(resolve(output, "deployment-profile.json"), "utf8")).profile, "competition");
 mkdirSync(artifacts, { recursive: true });
 const types = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".png": "image/png", ".webp": "image/webp", ".svg": "image/svg+xml", ".woff2": "font/woff2" };
@@ -26,6 +26,10 @@ const errors = [];
 const checks = [];
 let browser;
 const replayRoute = "/studio/cases/mae-sai-2024/";
+/** The plain-language policy page, and the technical record it links to (the page this script checked before 12 Oct 2026). */
+const briefRoute = "/policy/";
+const technicalRoute = "/policy/technical/";
+const briefHeading = "Flood maps show where the water goes.";
 /** The replay's study data. Only an offline visit before it was saved may fail to load it. */
 const replayDataPath = "/studies/mae-sai-2024-timeline/";
 const offlineLoadFailure = /^(?:Failed to load resource: )?net::(?:ERR_INTERNET_DISCONNECTED|ERR_FAILED)$/;
@@ -111,9 +115,41 @@ try {
   await keepLocal(context);
   const page = await context.newPage();
   recordErrors(page);
-  assert.equal((await page.goto(`${baseUrl}/policy/`, { waitUntil: "networkidle" }))?.status(), 200);
-  await expect(page.locator("h1")).toContainText("From flood evidence");
+  // The plain-language page first: its order, its example from the published case, its weight test and its sources.
+  assert.equal((await page.goto(`${baseUrl}${briefRoute}`, { waitUntil: "networkidle" }))?.status(), 200);
+  await expect(page.locator("h1")).toContainText(briefHeading);
   await expect(page).toHaveTitle("Policy & public value · นโยบายและประโยชน์ต่อสังคม · FloodGuard Thailand");
+  await expect(page.getByTestId("policy-standing-note")).toHaveText("Planning support only. Not an official warning. Local officials decide.");
+  const briefSections = await page.locator("main section[id]").evaluateAll((sections) => sections.map((section) => section.id));
+  assert.deepEqual(briefSections, ["purpose", "government", "proposals", "example", "score", "attention", "rules", "questions", "reading"], "The policy page follows the order of the policy document");
+  await expect(page.getByTestId("policy-example-ko-chang")).toContainText("78.5");
+  await expect(page.getByTestId("policy-example-ko-chang")).toContainText("(5,972 of 5,972) loses all routes");
+  await expect(page.getByTestId("policy-example-mae-sai")).toContainText("(11,614 of 17,453) lose every route");
+  await expect(page.getByTestId("policy-example-note")).toContainText("this is a scenario, not a real day");
+  await expect(page.getByTestId("policy-five-things").locator("span")).toHaveText(["30%", "25%", "20%", "15%", "10%"]);
+  await expect(page.getByTestId("policy-weight-test")).toContainText("Report only: the test changes no score, weight or class.");
+  await expect(page.getByTestId("weight-test-equal")).toContainText("With five equal weights Ko Chang is still first");
+  await expect(page.getByTestId("weight-test-without-access")).toContainText("Only when the two access parts are left out does Mae Sai come first.");
+  await expect(page.getByTestId("policy-questions").locator("dt")).toHaveCount(6);
+  const briefLinks = await page.locator("#reading a[href^='http']").evaluateAll((links) => links.map((link) => link.getAttribute("href")));
+  assert(briefLinks.length >= 25 && briefLinks.every((href) => href.startsWith("https://")) && new Set(briefLinks).size === briefLinks.length, "Every source is linked once, over https");
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth), 0, "The policy page does not scroll sideways at 1440 px");
+  await page.setViewportSize({ width: 390, height: 844 });
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth), 0, "The policy page does not scroll sideways at 390 px");
+  await page.getByRole("button", { name: "ใช้ภาษาไทย", exact: true }).click();
+  await expect(page.locator("h1")).toContainText("แผนที่น้ำท่วมบอกว่าน้ำไปที่ใด");
+  await expect(page.getByTestId("policy-standing-note")).toContainText("ไม่ใช่การเตือนภัยอย่างเป็นทางการ");
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth), 0, "The Thai policy page does not scroll sideways at 390 px");
+  await page.getByRole("button", { name: "Use English", exact: true }).click();
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.getByTestId("policy-technical-link").click();
+  await expect(page).toHaveURL(new RegExp(`${technicalRoute}$`));
+  checks.push("plain-language policy page: the order of the document, the example from the published case, the weight test with the weighting that turns the order, sources over https, no sideways scroll in English or Thai, and the link to the technical record");
+
+  // The technical record, as before.
+  assert.equal((await page.goto(`${baseUrl}${technicalRoute}`, { waitUntil: "networkidle" }))?.status(), 200);
+  await expect(page.locator("h1")).toContainText("From flood evidence");
+  await expect(page).toHaveTitle("Policy: technical record · นโยบาย: บันทึกทางเทคนิค · FloodGuard Thailand");
 
   // Keyboard first, before any pointer use: a visible focus ring, and disclosures that open from the keyboard.
   // The layout skip link comes first; the next stop is the page header brand link.
@@ -280,12 +316,12 @@ try {
       assert(bounds && bounds.x >= 0 && bounds.x + bounds.width <= 321, "The compact landing header fits 320px.");
     }
     await policyLink.click();
-    await expect(page.locator("h1")).toContainText("From flood evidence");
+    await expect(page.locator("h1")).toContainText(briefHeading);
   }
   checks.push("landing header and footer policy links, including the 320px header, navigate both ways");
 
   await page.setViewportSize({ width: 1440, height: 1000 });
-  await page.goto(`${baseUrl}/policy/`, { waitUntil: "networkidle" });
+  await page.goto(`${baseUrl}${technicalRoute}`, { waitUntil: "networkidle" });
   await page.locator(`[data-testid="replay-link"] a[href="${replayRoute}"]`).click();
   await expect(page.locator("h1")).toHaveText(replayTitle);
   await expect(page).toHaveURL(new RegExp(replayRoute));
@@ -293,17 +329,17 @@ try {
   await expect(replayPolicyLink).toHaveAttribute("href", "/policy/");
   await expect(replayPolicyLink).toHaveText("How FPPS and the A–E classes work, and why this replay assigns neither");
   await replayPolicyLink.click();
-  await expect(page.locator("h1")).toContainText("From flood evidence");
-  checks.push("policy page links the r5 replay, and the replay footer links back to the policy page");
+  await expect(page.locator("h1")).toContainText(briefHeading);
+  checks.push("the technical record links the r5 replay, and the replay footer links back to the policy page");
   await context.close();
 
   const offline = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: "allow" });
   const offlinePage = await offline.newPage();
   let offlineReplayVisit = false;
   recordErrors(offlinePage, () => offlineReplayVisit);
-  await offlinePage.goto(`${baseUrl}/policy/`, { waitUntil: "networkidle" });
+  await offlinePage.goto(`${baseUrl}${technicalRoute}`, { waitUntil: "networkidle" });
   await offlinePage.evaluate(() => navigator.serviceWorker.ready.then(() => true));
-  const cachePaths = ["/", "/policy/", ...(await (await offline.request.get(`${baseUrl}/offline-assets.json`)).json())];
+  const cachePaths = ["/", briefRoute, technicalRoute, ...(await (await offline.request.get(`${baseUrl}/offline-assets.json`)).json())];
   await offlinePage.waitForFunction(async (paths) => {
     if (!navigator.serviceWorker.controller) return false;
     for (const key of await caches.keys()) {
@@ -329,6 +365,9 @@ try {
   await expect(replayError).toContainText("You are offline and this replay's data has not been saved on this device yet.");
   await expect(offlinePage.locator("main footer")).toContainText("assigns no action class (A–E)");
   await offlinePage.getByTestId("replay-policy-link").click();
+  await expect(offlinePage.locator("h1")).toContainText(briefHeading);
+  // Offline, the plain page opens its technical record from the same saved copy.
+  await offlinePage.getByTestId("policy-technical-link").click();
   await expect(offlinePage.locator("h1")).toContainText("From flood evidence");
   await offlinePage.waitForLoadState("networkidle");
   offlineReplayVisit = false;

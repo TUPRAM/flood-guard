@@ -1,0 +1,574 @@
+{
+  "schema": "floodguard.fpps_weight_sensitivity.v1",
+  "label": "Report only. It changes no score, weight or class.",
+  "components": [
+    "flood_likelihood_0_100",
+    "exposure_0_100",
+    "access_gap_0_100",
+    "road_criticality_0_100",
+    "vulnerability_context_0_100"
+  ],
+  "published": {
+    "weights": {
+      "flood_likelihood_0_100": 0.3,
+      "exposure_0_100": 0.25,
+      "access_gap_0_100": 0.2,
+      "road_criticality_0_100": 0.15,
+      "vulnerability_context_0_100": 0.1
+    },
+    "order": [
+      "TH570903",
+      "TH570901",
+      "TH570905",
+      "TH570908",
+      "TH570904",
+      "TH570909",
+      "TH570906",
+      "TH570902"
+    ],
+    "scores": {
+      "TH570901": 70.71,
+      "TH570902": 4.72,
+      "TH570903": 78.48,
+      "TH570904": 31.61,
+      "TH570905": 59.3,
+      "TH570906": 5.24,
+      "TH570908": 50.22,
+      "TH570909": 21.9
+    },
+    "first": "TH570903"
+  },
+  "named": [
+    {
+      "id": "equal",
+      "weights": {
+        "flood_likelihood_0_100": 0.2,
+        "exposure_0_100": 0.2,
+        "access_gap_0_100": 0.2,
+        "road_criticality_0_100": 0.2,
+        "vulnerability_context_0_100": 0.2
+      },
+      "order": [
+        "TH570903",
+        "TH570901",
+        "TH570905",
+        "TH570908",
+        "TH570904",
+        "TH570909",
+        "TH570906",
+        "TH570902"
+      ],
+      "scores": {
+        "TH570901": 64.34,
+        "TH570902": 9.17,
+        "TH570903": 75.79,
+        "TH570904": 28.52,
+        "TH570905": 53.66,
+        "TH570906": 9.29,
+        "TH570908": 44.01,
+        "TH570909": 20.92
+      },
+      "first": "TH570903",
+      "same_order": true
+    },
+    {
+      "id": "three_groups",
+      "weights": {
+        "flood_likelihood_0_100": 0.166667,
+        "exposure_0_100": 0.166667,
+        "access_gap_0_100": 0.166667,
+        "road_criticality_0_100": 0.166667,
+        "vulnerability_context_0_100": 0.333333
+      },
+      "order": [
+        "TH570903",
+        "TH570901",
+        "TH570905",
+        "TH570908",
+        "TH570904",
+        "TH570909",
+        "TH570902",
+        "TH570906"
+      ],
+      "scores": {
+        "TH570901": 58.79,
+        "TH570902": 15.06,
+        "TH570903": 70.1,
+        "TH570904": 30.91,
+        "TH570905": 51.87,
+        "TH570906": 14.88,
+        "TH570908": 43.82,
+        "TH570909": 24.59
+      },
+      "first": "TH570903",
+      "same_order": false
+    },
+    {
+      "id": "flood_and_exposure_only",
+      "weights": {
+        "flood_likelihood_0_100": 0.5,
+        "exposure_0_100": 0.5,
+        "access_gap_0_100": 0.0,
+        "road_criticality_0_100": 0.0,
+        "vulnerability_context_0_100": 0.0
+      },
+      "order": [
+        "TH570901",
+        "TH570905",
+        "TH570903",
+        "TH570908",
+        "TH570904",
+        "TH570909",
+        "TH570906",
+        "TH570902"
+      ],
+      "scores": {
+        "TH570901": 78.11,
+        "TH570902": 0.0,
+        "TH570903": 68.62,
+        "TH570904": 41.46,
+        "TH570905": 71.29,
+        "TH570906": 1.4,
+        "TH570908": 59.51,
+        "TH570909": 28.24
+      },
+      "first": "TH570901",
+      "same_order": false
+    },
+    {
+      "id": "without_access",
+      "weights": {
+        "flood_likelihood_0_100": 0.461538,
+        "exposure_0_100": 0.384615,
+        "access_gap_0_100": 0.0,
+        "road_criticality_0_100": 0.0,
+        "vulnerability_context_0_100": 0.153846
+      },
+      "order": [
+        "TH570901",
+        "TH570905",
+        "TH570903",
+        "TH570908",
+        "TH570904",
+        "TH570909",
+        "TH570906",
+        "TH570902"
+      ],
+      "scores": {
+        "TH570901": 72.55,
+        "TH570902": 6.84,
+        "TH570903": 66.89,
+        "TH570904": 44.12,
+        "TH570905": 69.13,
+        "TH570906": 7.85,
+        "TH570908": 60.06,
+        "TH570909": 32.26
+      },
+      "first": "TH570901",
+      "same_order": false
+    }
+  ],
+  "one_at_a_time": [
+    {
+      "component": "flood_likelihood_0_100",
+      "factor": 0.5,
+      "weights": {
+        "flood_likelihood_0_100": 0.176471,
+        "exposure_0_100": 0.294118,
+        "access_gap_0_100": 0.235294,
+        "road_criticality_0_100": 0.176471,
+        "vulnerability_context_0_100": 0.117647
+      },
+      "order": [
+        "TH570903",
+        "TH570901",
+        "TH570905",
+        "TH570908",
+        "TH570904",
+        "TH570909",
+        "TH570906",
+        "TH570902"
+      ],
+      "scores": {
+        "TH570901": 65.55,
+        "TH570902": 5.55,
+        "TH570903": 74.68,
+        "TH570904": 24.27,
+        "TH570905": 52.11,
+        "TH570906": 5.74,
+        "TH570908": 41.44,
+        "TH570909": 16.72
+      },
+      "first": "TH570903",
+      "same_order": true
+    },
+    {
+      "component": "exposure_0_100",
+      "factor": 0.5,
+      "weights": {
+        "flood_likelihood_0_100": 0.342857,
+        "exposure_0_100": 0.142857,
+        "access_gap_0_100": 0.228571,
+        "road_criticality_0_100": 0.171429,
+        "vulnerability_context_0_100": 0.114286
+      },
+      "order": [
+        "TH570903",
+        "TH570901",
+        "TH570905",
+        "TH570908",
+        "TH570904",
+        "TH570909",
+        "TH570906",
+        "TH570902"
+      ],
+      "scores": {
+        "TH570901": 72.78,
+        "TH570902": 5.4,
+        "TH570903": 84.37,
+        "TH570904": 34.74,
+        "TH570905": 61.68,
+        "TH570906": 5.93,
+        "TH570908": 54.68,
+        "TH570909": 24.28
+      },
+      "first": "TH570903",
+      "same_order": true
+    },
+    {
+      "component": "access_gap_0_100",
+      "factor": 0.5,
+      "weights": {
+        "flood_likelihood_0_100": 0.333333,
+        "exposure_0_100": 0.277778,
+        "access_gap_0_100": 0.111111,
+        "road_criticality_0_100": 0.166667,
+        "vulnerability_context_0_100": 0.111111
+      },
+      "order": [
+        "TH570903",
+        "TH570901",
+        "TH570905",
+        "TH570908",
+        "TH570904",
+        "TH570909",
+        "TH570906",
+        "TH570902"
+      ],
+      "scores": {
+        "TH570901": 71.03,
+        "TH570902": 5.09,
+        "TH570903": 76.09,
+        "TH570904": 34.2,
+        "TH570905": 61.59,
+        "TH570906": 5.78,
+        "TH570908": 50.34,
+        "TH570909": 24.02
+      },
+      "first": "TH570903",
+      "same_order": true
+    },
+    {
+      "component": "road_criticality_0_100",
+      "factor": 0.5,
+      "weights": {
+        "flood_likelihood_0_100": 0.324324,
+        "exposure_0_100": 0.27027,
+        "access_gap_0_100": 0.216216,
+        "road_criticality_0_100": 0.081081,
+        "vulnerability_context_0_100": 0.108108
+      },
+      "order": [
+        "TH570903",
+        "TH570901",
+        "TH570905",
+        "TH570908",
+        "TH570904",
+        "TH570909",
+        "TH570906",
+        "TH570902"
+      ],
+      "scores": {
+        "TH570901": 71.05,
+        "TH570902": 5.1,
+        "TH570903": 76.73,
+        "TH570904": 33.49,
+        "TH570905": 60.52,
+        "TH570906": 5.64,
+        "TH570908": 53.57,
+        "TH570909": 23.48
+      },
+      "first": "TH570903",
+      "same_order": true
+    },
+    {
+      "component": "vulnerability_context_0_100",
+      "factor": 0.5,
+      "weights": {
+        "flood_likelihood_0_100": 0.315789,
+        "exposure_0_100": 0.263158,
+        "access_gap_0_100": 0.210526,
+        "road_criticality_0_100": 0.157895,
+        "vulnerability_context_0_100": 0.052632
+      },
+      "order": [
+        "TH570903",
+        "TH570901",
+        "TH570905",
+        "TH570908",
+        "TH570904",
+        "TH570909",
+        "TH570906",
+        "TH570902"
+      ],
+      "scores": {
+        "TH570901": 72.8,
+        "TH570902": 2.63,
+        "TH570903": 80.42,
+        "TH570904": 31.02,
+        "TH570905": 60.16,
+        "TH570906": 3.26,
+        "TH570908": 50.61,
+        "TH570909": 20.79
+      },
+      "first": "TH570903",
+      "same_order": true
+    },
+    {
+      "component": "flood_likelihood_0_100",
+      "factor": 1.5,
+      "weights": {
+        "flood_likelihood_0_100": 0.391304,
+        "exposure_0_100": 0.217391,
+        "access_gap_0_100": 0.173913,
+        "road_criticality_0_100": 0.130435,
+        "vulnerability_context_0_100": 0.086957
+      },
+      "order": [
+        "TH570903",
+        "TH570901",
+        "TH570905",
+        "TH570908",
+        "TH570904",
+        "TH570909",
+        "TH570906",
+        "TH570902"
+      ],
+      "scores": {
+        "TH570901": 74.53,
+        "TH570902": 4.1,
+        "TH570903": 81.29,
+        "TH570904": 37.03,
+        "TH570905": 64.61,
+        "TH570906": 4.87,
+        "TH570908": 56.71,
+        "TH570909": 25.72
+      },
+      "first": "TH570903",
+      "same_order": true
+    },
+    {
+      "component": "exposure_0_100",
+      "factor": 1.5,
+      "weights": {
+        "flood_likelihood_0_100": 0.266667,
+        "exposure_0_100": 0.333333,
+        "access_gap_0_100": 0.177778,
+        "road_criticality_0_100": 0.133333,
+        "vulnerability_context_0_100": 0.088889
+      },
+      "order": [
+        "TH570903",
+        "TH570901",
+        "TH570905",
+        "TH570908",
+        "TH570904",
+        "TH570909",
+        "TH570906",
+        "TH570902"
+      ],
+      "scores": {
+        "TH570901": 69.1,
+        "TH570902": 4.2,
+        "TH570903": 73.9,
+        "TH570904": 29.18,
+        "TH570905": 57.44,
+        "TH570906": 4.7,
+        "TH570908": 46.75,
+        "TH570909": 20.05
+      },
+      "first": "TH570903",
+      "same_order": true
+    },
+    {
+      "component": "access_gap_0_100",
+      "factor": 1.5,
+      "weights": {
+        "flood_likelihood_0_100": 0.272727,
+        "exposure_0_100": 0.227273,
+        "access_gap_0_100": 0.272727,
+        "road_criticality_0_100": 0.136364,
+        "vulnerability_context_0_100": 0.090909
+      },
+      "order": [
+        "TH570903",
+        "TH570901",
+        "TH570905",
+        "TH570908",
+        "TH570904",
+        "TH570909",
+        "TH570906",
+        "TH570902"
+      ],
+      "scores": {
+        "TH570901": 70.45,
+        "TH570902": 4.42,
+        "TH570903": 80.44,
+        "TH570904": 29.49,
+        "TH570905": 57.42,
+        "TH570906": 4.8,
+        "TH570908": 50.13,
+        "TH570909": 20.16
+      },
+      "first": "TH570903",
+      "same_order": true
+    },
+    {
+      "component": "road_criticality_0_100",
+      "factor": 1.5,
+      "weights": {
+        "flood_likelihood_0_100": 0.27907,
+        "exposure_0_100": 0.232558,
+        "access_gap_0_100": 0.186047,
+        "road_criticality_0_100": 0.209302,
+        "vulnerability_context_0_100": 0.093023
+      },
+      "order": [
+        "TH570903",
+        "TH570901",
+        "TH570905",
+        "TH570908",
+        "TH570904",
+        "TH570909",
+        "TH570906",
+        "TH570902"
+      ],
+      "scores": {
+        "TH570901": 70.42,
+        "TH570902": 4.39,
+        "TH570903": 79.98,
+        "TH570904": 30.0,
+        "TH570905": 58.24,
+        "TH570906": 4.9,
+        "TH570908": 47.34,
+        "TH570909": 20.54
+      },
+      "first": "TH570903",
+      "same_order": true
+    },
+    {
+      "component": "vulnerability_context_0_100",
+      "factor": 1.5,
+      "weights": {
+        "flood_likelihood_0_100": 0.285714,
+        "exposure_0_100": 0.238095,
+        "access_gap_0_100": 0.190476,
+        "road_criticality_0_100": 0.142857,
+        "vulnerability_context_0_100": 0.142857
+      },
+      "order": [
+        "TH570903",
+        "TH570901",
+        "TH570905",
+        "TH570908",
+        "TH570904",
+        "TH570909",
+        "TH570906",
+        "TH570902"
+      ],
+      "scores": {
+        "TH570901": 68.83,
+        "TH570902": 6.61,
+        "TH570903": 76.73,
+        "TH570904": 32.15,
+        "TH570905": 58.51,
+        "TH570906": 7.03,
+        "TH570908": 49.87,
+        "TH570909": 22.9
+      },
+      "first": "TH570903",
+      "same_order": true
+    }
+  ],
+  "random": {
+    "draws": 200000,
+    "seed": 20261012,
+    "distribution": "even over all sets of five weights, each zero or more, that sum to one",
+    "share_first": {
+      "TH570901": 0.0863,
+      "TH570903": 0.9121,
+      "TH570905": 0.0016
+    },
+    "share_same_first_three": 0.9152,
+    "share_same_first_four": 0.9982,
+    "share_same_order": 0.4636,
+    "rank_correlation": {
+      "median": 0.976,
+      "p05": 0.952,
+      "lowest": 0.357
+    }
+  },
+  "limits": [
+    "The components are those of the published case. A component that is wrong stays wrong under every weighting.",
+    "A class follows rules on the components as well as the score, so this report says nothing about classes.",
+    "Random weightings are drawn evenly over all weight sets. Nobody proposes most of them; the share is a measure of how much room there is, not a probability."
+  ],
+  "case": {
+    "id": "SE1",
+    "path": "apps/web/public/planning-overlays/mae-sai-2024/se1.json",
+    "sha256": "bb101e8021cffedc94044572c98863bd46bd38ed314e38435b436dfc8b552205",
+    "lane": "SCN-ENV",
+    "source_timestamp": "2024-10-12T00:00:00Z",
+    "dataset_mode": "candidate",
+    "official_warning": false,
+    "confidence": "medium, declared for a scenario; the weight test adds no confidence to it"
+  },
+  "units": {
+    "TH570901": {
+      "en": "Mae Sai",
+      "th": "แม่สาย"
+    },
+    "TH570902": {
+      "en": "Huai Khrai",
+      "th": "ห้วยไคร้"
+    },
+    "TH570903": {
+      "en": "Ko Chang",
+      "th": "เกาะช้าง"
+    },
+    "TH570904": {
+      "en": "Pong Pha",
+      "th": "โป่งผา"
+    },
+    "TH570905": {
+      "en": "Si Mueang Chum",
+      "th": "ศรีเมืองชุม"
+    },
+    "TH570906": {
+      "en": "Wiang Phang Kham",
+      "th": "เวียงพางคำ"
+    },
+    "TH570908": {
+      "en": "Ban Dai",
+      "th": "บ้านด้าย"
+    },
+    "TH570909": {
+      "en": "Pong Ngam",
+      "th": "โป่งงาม"
+    }
+  },
+  "assumptions": [
+    "Case SE1 is a scenario: every area mapped as flooded in the 2024 season is treated as flooded at once. It is not an observation of any day.",
+    "Only the weights change. The components, their anchors and the roads closed are those of the published case."
+  ]
+}

@@ -204,6 +204,7 @@ try {
   if (cacheAudit.urls.some((url) => url.startsWith("/landing/"))) throw new Error("Public cache includes landing artwork.");
   for (const forbidden of [
     "/policy/",
+    "/policy/technical/",
     "/command/",
     "/command/ver2/",
     "/command/cases/",

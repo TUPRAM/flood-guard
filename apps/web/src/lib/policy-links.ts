@@ -3,6 +3,9 @@ import { resolveDeploymentProfile } from "./deployment-profile";
 /** The bilingual policy brief (`src/app/policy`). */
 export const POLICY_ROUTE = "/policy/";
 
+/** The technical record behind it: the scored case in full, the signed scoring frame, the class rules and the earlier worked example. */
+export const POLICY_TECHNICAL_ROUTE = "/policy/technical/";
+
 /** The current Mae Sai replay (revision in `POLICY_EVIDENCE.currentReplay`). A unit test keeps it equal to the replay's own route constants. */
 export const MAE_SAI_REPLAY_ROUTE = "/studio/cases/mae-sai-2024/";
 

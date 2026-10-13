@@ -1800,7 +1800,8 @@ async function assertPublicPractice(page) {
     place: document.querySelector(".public-greeting-location")?.innerText.trim(),
     water: document.querySelectorAll("canvas.public-practice-water").length,
     reports: document.querySelectorAll(".public-practice-report").length,
-    pin: document.querySelector(".public-area-pin-label")?.textContent,
+    // A pin's label fades for a moment after its pin is taken away, so the label is looked for by its words.
+    examplePin: [...document.querySelectorAll(".public-area-pin-label")].some((label) => label.textContent === "Example home"),
     selected: document.querySelector(".public-home-page .geo-map-shell")?.getAttribute("data-selected-area"),
     menuItems: document.querySelectorAll("#public-practice-list button").length,
   }));
@@ -1808,6 +1809,18 @@ async function assertPublicPractice(page) {
     const element = document.querySelector(".public-signal-banner");
     return element?.getAttribute("data-tone") === expectedTone && element.innerText.includes(expectedText);
   }, [tone, text], { timeout: 45_000 });
+  // The map's layers follow the banner a moment later (they are drawn after the page has painted, and a label
+  // fades out), so the map is waited for, never looked at once.
+  const mapSettles = async (label, expected) => {
+    const settled = await page.waitForFunction(({ water, reports, examplePin }) => {
+      const reportCount = document.querySelectorAll(".public-practice-report").length;
+      const pinShown = [...document.querySelectorAll(".public-area-pin-label")].some((element) => element.textContent === "Example home");
+      return document.querySelectorAll("canvas.public-practice-water").length === water
+        && (reports === "some" ? reportCount > 0 : reportCount === 0)
+        && pinShown === examplePin;
+    }, expected, { timeout: 15_000 }).then(() => true, () => false);
+    if (!settled) throw new Error(`The practice map did not settle for ${label}: ${JSON.stringify(await state())}`);
+  };
 
   await page.locator(".public-practice-trigger").click();
   await page.locator("#public-practice-list").waitFor({ state: "visible" });
@@ -1817,13 +1830,13 @@ async function assertPublicPractice(page) {
 
   await choose("cut_off");
   await settle("danger", "No shelter within walking reach");
+  await mapSettles("the scenario \"cut off\"", { water: 1, reports: "some", examplePin: true });
   const cutOff = await state();
   if (
     cutOff.hazardTone !== "danger" || cutOff.practising !== "true"
     || !cutOff.note.includes("Practice replay") || !cutOff.note.includes("12 Sep 2024")
     || !cutOff.note.includes("not real-time") || !cutOff.note.includes("not an official warning")
-    || !cutOff.place.includes("Example home") || cutOff.pin !== "Example home"
-    || cutOff.water !== 1 || cutOff.reports < 1 || cutOff.selected !== selectedBefore
+    || !cutOff.place.includes("Example home") || cutOff.selected !== selectedBefore
   ) {
     throw new Error(`The practice scenario "cut off" is not shown as one message on the banner, the note and the map: ${JSON.stringify(cutOff)}`);
   }
@@ -1854,15 +1867,16 @@ async function assertPublicPractice(page) {
   await settle("danger", "Water has reached this home");
   await choose("normal");
   await settle("calm", "No water near this home");
+  // No invented item has arrived on the replay's first day.
+  await mapSettles("the scenario without water", { water: 1, reports: "none", examplePin: true });
   const calm = await state();
-  if (calm.reports !== 0 || calm.water !== 1 || calm.practising !== "true") {
-    throw new Error(`The practice scenario without water still shows reports, or lost its layers: ${JSON.stringify(calm)}`);
-  }
+  if (calm.practising !== "true") throw new Error(`The practice scenario without water lost its note: ${JSON.stringify(calm)}`);
 
   await choose(null);
   await settle("neutral", "No flood reports near you");
+  await mapSettles("the end of the practice", { water: 0, reports: "none", examplePin: false });
   const after = await state();
-  if (after.water !== 0 || after.reports !== 0 || after.practising !== null || after.pin === "Example home" || after.selected !== selectedBefore || after.place.includes("Example home")) {
+  if (after.practising !== null || after.selected !== selectedBefore || after.place.includes("Example home")) {
     throw new Error(`Ending the practice left something of it on the page, or changed the chosen area: ${JSON.stringify(after)}`);
   }
 }
@@ -1995,8 +2009,9 @@ function requiredFinalCopy(routePath) {
     : routePath === "/public/"
       // The Public header now shows the FloodGuard logo image instead of a text
       // wordmark, so the brand is no longer body text here. The nav labels and
-      // Hazard Info still prove the finished Public UI rendered.
-      ? ["hazard info", "report", "shelter", "prepare", "sos", "candidate", "non-operational", "lower priority", "higher priority"]
+      // Hazard Info still prove the finished Public UI rendered. Since 13 Oct 2026 the first screen has no
+      // priority card: its words are the grey banner of a day without practice and the note at the foot of the map.
+      ? ["hazard info", "report", "shelter", "prepare", "sos", "no flood reports near you", "not an official warning"]
       : routePath === "/command/planning/"
         ? ["planning overview", "candidate", "accepted fpps and action class remain unavailable"]
         : routePath === "/studio/"

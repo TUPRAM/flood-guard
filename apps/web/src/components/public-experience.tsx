@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { HouseholdPlanBuilder } from "@/components/household-plan-builder";
 import { PublicAppHeader } from "@/components/public-app-header";
@@ -11,7 +11,9 @@ import { PublicShelterPage } from "@/components/public-shelter-page";
 import { PublicSosPage } from "@/components/public-sos-page";
 import { caseHref, readCaseSelection } from "@/lib/case-selection";
 import { HOUSEHOLD_NEEDS, countCompletedPlanItems } from "@/lib/household-plan";
+import { competitionPagesAvailable } from "@/lib/policy-links";
 import type { PublicMapLocation } from "@/lib/public-location";
+import { PRACTICE_MENU_COPY, type PracticeState } from "@/lib/public-practice-scenarios";
 import type { FeatureCollection } from "@/lib/types";
 import { useDisplayName } from "@/lib/use-display-name";
 import { useHouseholdPlan } from "@/lib/use-household-plan";
@@ -88,6 +90,11 @@ export function PublicExperience() {
   const [page, setPage] = useState<PublicPage>("home");
   const [researchHref, setResearchHref] = useState("/public-cases/");
   const [homeLocation, setHomeLocation] = useState<PublicMapLocation>();
+  // The practice scenario shown on the Home map. It is kept in this visit only and never written to the saved plan.
+  // The replay it reads ships in the competition build alone, so the public build has no menu for it.
+  const [practiceScenarioId, setPracticeScenarioId] = useState<PracticeState | null>(null);
+  const practiceAvailable = competitionPagesAvailable();
+  const endPractice = useCallback(() => setPracticeScenarioId(null), []);
   const contentRef = useRef<HTMLElement>(null);
   const { displayName, changeDisplayName } = useDisplayName();
   const {
@@ -178,9 +185,14 @@ export function PublicExperience() {
         needsSummary={needsSummary}
         displayName={displayName}
         onDisplayNameChange={changeDisplayName}
-        locationLabel={homeLocation?.label ?? selectedAreaName}
+        locationLabel={practiceScenarioId && page === "home"
+          ? PRACTICE_MENU_COPY.homePlace[language]
+          : homeLocation?.label ?? selectedAreaName}
         onNavigatePrepare={() => navigate("prepare")}
         onNavigateSos={() => navigate("sos")}
+        practice={practiceAvailable && page === "home"
+          ? { scenarioId: practiceScenarioId, onChange: setPracticeScenarioId }
+          : undefined}
       />
 
       <div data-app-availability-slot className="public-availability-slot" />
@@ -203,6 +215,10 @@ export function PublicExperience() {
             location={homeLocation}
             onLocationChange={setHomeLocation}
             researchHref={process.env.NEXT_PUBLIC_FLOODGUARD_APP_PROFILE === "public-production" ? undefined : researchHref}
+            practiceScenarioId={practiceAvailable ? practiceScenarioId : null}
+            onPracticeEnd={endPractice}
+            onNavigatePrepare={() => navigate("prepare")}
+            onNavigateSos={() => navigate("sos")}
           />
         )}
 

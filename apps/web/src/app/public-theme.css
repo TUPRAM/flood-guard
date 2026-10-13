@@ -128,8 +128,7 @@
    --------------------------------------------------------------------------- */
 .public-map-search,
 .public-address-suggestions,
-.public-location-status,
-.public-risk-indicator {
+.public-location-status {
   border: 1px solid var(--fg-neutral-200);
   border-radius: var(--fg-radius-lg);
   background: var(--fg-surface);
@@ -177,30 +176,41 @@
 }
 
 /*
-   Preparedness-signal alert.
-   A saturated full-width slab reads as panic and buries the map under it; the
-   severity is carried by a left stripe plus the warning icon instead, so the
-   alert still separates itself from the search card without shouting. Colour is
-   never the only cue — the icon carries it too.
+   Tones of the banner, of Hazard Info and of the scenario menu: grey on a day without practice, then one per state
+   of the practice replay. Colour is never the only cue: the banner's icon and its sentence carry the state too.
+*/
+.public-app-shell [data-tone="neutral"] { --tone-bg: #f4f6f9; --tone-border: var(--fg-neutral-200); --tone-stripe: var(--fg-neutral); --tone-text: var(--fg-neutral-700); }
+.public-app-shell [data-tone="calm"] { --tone-bg: #ecfdf5; --tone-border: #a7f3d0; --tone-stripe: #15803d; --tone-text: #166534; }
+.public-app-shell [data-tone="watch"] { --tone-bg: #fffbeb; --tone-border: #fde68a; --tone-stripe: #b45309; --tone-text: #92400e; }
+.public-app-shell [data-tone="alert"] { --tone-bg: var(--fg-secondary-50); --tone-border: var(--fg-secondary-100); --tone-stripe: var(--fg-secondary-600); --tone-text: var(--fg-secondary-700); }
+.public-app-shell [data-tone="danger"] { --tone-bg: var(--fg-tertiary-50); --tone-border: var(--fg-tertiary-100); --tone-stripe: var(--fg-tertiary); --tone-text: var(--fg-tertiary-700); }
+.public-app-shell [data-tone="easing"] { --tone-bg: #eff6ff; --tone-border: #bfdbfe; --tone-stripe: #2563eb; --tone-text: #1e40af; }
+
+/*
+   The banner, directly under the search field (owner request of 13 Oct 2026) and always there.
+   A saturated full-width slab reads as panic and buries the map under it; the state is carried by a left stripe, the
+   icon and the sentence instead. The box has one height whatever it says (two lines at most), because the row of the
+   list button and Hazard Info below it is placed from the map's upper edge.
 */
 .public-signal-banner {
   position: relative;
   width: 100%;
-  min-height: 46px;
+  height: 46px;
   display: grid;
   grid-template-columns: 20px minmax(0, 1fr) 16px;
   align-items: center;
   gap: 10px;
-  padding: 8px 12px 8px 15px;
+  padding: 4px 12px 4px 15px;
   overflow: hidden;
-  border: 1px solid var(--fg-tertiary-100);
+  border: 1px solid var(--tone-border);
   border-left: 0;
   border-radius: var(--fg-radius-lg);
-  background: var(--fg-tertiary-50);
-  color: var(--fg-tertiary-700);
+  background: var(--tone-bg);
+  color: var(--tone-text);
   font: inherit;
   font-size: .78rem;
   font-weight: 700;
+  line-height: 1.22;
   text-align: left;
   box-shadow: var(--fg-shadow-md);
   cursor: pointer;
@@ -212,57 +222,51 @@
   bottom: 0;
   left: 0;
   width: 4px;
-  background: var(--fg-tertiary);
+  background: var(--tone-stripe);
 }
-.public-signal-banner:hover { background: var(--fg-tertiary-100); }
-.public-signal-banner .public-app-icon { width: 20px; height: 20px; color: var(--fg-tertiary); }
-.public-signal-banner > span { min-width: 0; }
-.public-signal-banner > .public-app-icon:last-child { color: var(--fg-tertiary); opacity: .55; }
+.public-signal-banner:hover { filter: brightness(.97); }
+.public-signal-banner .public-app-icon { width: 20px; height: 20px; color: var(--tone-stripe); }
+.public-signal-banner > span {
+  min-width: 0;
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.public-signal-banner > .public-app-icon:last-child { opacity: .6; }
 
 /*
-   Historical planning priority: place, evidence context, and scale.
-   Set in the body face throughout so it matches the Hazard Info control it sits
-   beside, rather than mixing a display face and a mono face in one small card.
+   The note at the foot of the map, where the priority card stood until 13 Oct 2026: what the page is not, and while a
+   practice scenario is shown, which hour of the replay it is.
 */
-.public-risk-indicator {
-  flex: 1;
-  min-width: 0;
-  max-width: 360px;
-  grid-template-columns: minmax(0, 1fr);
-  font-family: var(--fg-font-body);
-}
-.public-risk-headline { flex-wrap: wrap; }
-.public-risk-headline > strong {
-  overflow: visible;
-  white-space: normal;
-}
-.public-home-map .public-risk-scale { min-width: 0; }
-.public-priority-label {
-  margin: 0;
-  color: var(--fg-neutral-700);
-  font-size: .68rem;
-  font-weight: 700;
-  line-height: 1.4;
-}
-.public-priority-evidence {
+.public-map-note {
+  max-width: min(340px, calc(100% - 60px));
   display: grid;
-  gap: 3px;
+  gap: 1px;
   margin: 0;
+  padding: 6px 10px;
+  border: 1px solid var(--fg-neutral-200);
+  border-radius: var(--fg-radius-md);
+  background: rgb(255 255 255 / 94%);
   color: var(--fg-neutral-700);
+  font-family: var(--fg-font-body);
   font-size: .64rem;
   line-height: 1.4;
+  box-shadow: var(--fg-shadow-sm);
 }
-.public-home-map .public-map-search-field { margin-bottom: 52px; }
+.public-map-note strong { font-weight: 700; }
+.public-map-note[data-practice="true"] { border-color: #fde68a; background: #fffbeb; color: #92400e; }
+.public-home-map .public-signal-banner { margin-bottom: 52px; }
 .public-map-rail:has(.public-address-suggestions) { z-index: 2000; }
 /*
-   The list button and the map-background notice stand in one column under the search field, the notice directly
+   The list button and the map-background notice stand in one column under the banner, the notice directly
    below the button. Both are placed from the map's upper edge, so the notice cannot slide under the search field or
    the list button when the map is short (it was placed from the lower edge before, and did). The column is as wide
    as the search field; the notice stops short of the tool column on the right.
 */
 .public-home-map .map-top-stack {
   position: absolute;
-  top: 76px;
+  top: 130px;
   right: calc(var(--public-map-tool-inset) + 12px);
   left: calc(var(--public-map-tool-inset) + 12px);
   display: flex;
@@ -307,24 +311,24 @@
 .public-home-map .map-top-stack > .map-basemap-notice[data-pending="true"] > :not(p) { display: none; }
 /*
    While the notice is due it takes one row of the column (62 px and the gap above it: 70 px). The attribution, the
-   priority card and the tools are placed from the map's lower edge, so the map is then at least 448 px tall and
-   that row stays clear of them; the page already scrolls when the map is taller than the screen. The rail leaves
-   the same row free before its own cards (a location, a signal), and when it shows one, the map is that row taller
-   than it would be, so the card keeps the distance it had to the tools below it.
+   note and the tools are placed from the map's lower edge, so the map is then at least 448 px tall and that row
+   stays clear of them; the page already scrolls when the map is taller than the screen. The rail leaves the same
+   row free before its location card, and when it shows one, the map is that row taller than it would be, so the
+   card keeps the distance it had to the tools below it.
 */
 .public-home-page:has(.map-basemap-notice:not([data-pending="true"])) { grid-template-rows: auto minmax(448px, 1fr); }
 .public-home-page:has(.map-basemap-notice:not([data-pending="true"])) .public-home-map { min-height: 448px; }
-.public-home-page:has(.map-basemap-notice:not([data-pending="true"])):has(.public-location-status, .public-signal-banner) { min-height: calc(100% + 70px); }
-.public-home-map:has(.map-basemap-notice:not([data-pending="true"])) .public-map-search-field { margin-bottom: 122px; }
+.public-home-page:has(.map-basemap-notice:not([data-pending="true"])):has(.public-location-status) { min-height: calc(100% + 70px); }
+.public-home-map:has(.map-basemap-notice:not([data-pending="true"])) .public-signal-banner { margin-bottom: 122px; }
 .public-home-map .map-results-list { max-height: min(50vh, 420px); }
 .public-home-map .map-results-list dt { overflow-wrap: anywhere; }
 .public-home-map .leaflet-control-attribution {
-  margin-bottom: 224px !important;
+  margin-bottom: 52px !important;
   max-width: min(360px, 58%);
 }
 @media (max-width: 680px) {
-  .public-home-map .public-map-search-field { margin-bottom: 64px; }
-  .public-home-map:has(.map-basemap-notice:not([data-pending="true"])) .public-map-search-field { margin-bottom: 134px; }
+  .public-home-map .public-signal-banner { margin-bottom: 64px; }
+  .public-home-map:has(.map-basemap-notice:not([data-pending="true"])) .public-signal-banner { margin-bottom: 134px; }
   .public-home-map .map-text-alternative { max-width: calc(100% - 156px); }
   .public-home-map .map-top-stack > .map-text-alternative[open] {
     z-index: 1900;
@@ -348,34 +352,20 @@
     max-width: 150px;
   }
 }
-.public-risk-headline > strong { color: var(--fg-neutral-900); }
-.public-risk-chip { background: var(--fg-neutral-100); color: var(--fg-neutral-700); }
-.public-risk-chip[data-band="lower"] { background: #dcfce7; color: #15803d; }
-.public-risk-chip[data-band="moderate"] { background: #fef3c7; color: #a16207; }
-.public-risk-chip[data-band="high"] { background: var(--fg-secondary-100); color: var(--fg-secondary-700); }
-.public-risk-chip[data-band="very_high"] { background: var(--fg-tertiary-100); color: var(--fg-tertiary-700); }
-.public-risk-scale-labels {
-  color: var(--fg-neutral);
-  font-size: .62rem;
-  font-weight: 600;
-}
-.public-risk-status { color: var(--fg-neutral-700); }
-
 /*
-   Hazard-info action. Same card surface as the legend it sits beside, so the
-   bottom of the map reads as one pair rather than two unrelated blobs; the
-   secondary hue stays on the icon where it marks the hazard, not the whole pill.
+   Hazard-info action. It opens the panel behind the banner and takes the banner's tone, so the two read as one
+   message; without a tone it keeps the secondary hue.
 */
 .public-hazard-button {
-  border: 1px solid var(--fg-secondary-100);
+  border: 1px solid var(--tone-border, var(--fg-secondary-100));
   border-radius: var(--fg-radius-lg);
-  background: var(--fg-secondary-50);
-  color: var(--fg-secondary-700);
+  background: var(--tone-bg, var(--fg-secondary-50));
+  color: var(--tone-text, var(--fg-secondary-700));
   font-weight: 700;
   box-shadow: var(--fg-shadow-md);
 }
-.public-hazard-button .public-app-icon { color: var(--fg-secondary); }
-.public-hazard-button:hover { background: var(--fg-secondary-100); border-color: var(--fg-secondary); }
+.public-hazard-button .public-app-icon { color: var(--tone-stripe, var(--fg-secondary)); }
+.public-hazard-button:hover { filter: brightness(.97); border-color: var(--tone-stripe, var(--fg-secondary)); }
 
 /* Locate control: same card surface as the tool cells it sits beside. */
 .public-locate-button {
@@ -386,21 +376,139 @@
   box-shadow: var(--fg-shadow-md);
 }
 .public-locate-button:hover:not(:disabled) { background: var(--fg-primary-50); }
-.public-hazard-signals { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
-.public-hazard-signals li {
+
+/* The panel behind the banner: its words on a day without practice, and the practice scenario. */
+.public-hazard-explain { margin: 10px 0 0; color: var(--fg-neutral-700); font-size: .72rem; line-height: 1.5; }
+.public-practice-state {
   display: grid;
-  grid-template-columns: 18px minmax(0, 1fr);
-  align-items: start;
-  gap: 9px;
+  gap: 2px;
+  margin: 12px 0 0;
   padding: 10px 12px;
-  border: 1px solid var(--fg-secondary-100);
+  border: 1px solid var(--tone-border);
+  border-left: 4px solid var(--tone-stripe);
   border-radius: var(--fg-radius-sm);
-  background: var(--fg-secondary-50);
-  color: var(--fg-secondary-700);
-  font-size: .76rem;
-  line-height: 1.45;
+  background: var(--tone-bg);
+  color: var(--tone-text);
 }
-.public-hazard-signals .public-app-icon { width: 18px; height: 18px; margin-top: 1px; }
+.public-practice-state strong { font-size: .86rem; line-height: 1.3; }
+.public-practice-state span { font-size: .66rem; }
+.public-practice-lines {
+  display: grid;
+  gap: 6px;
+  margin: 12px 0;
+  padding: 0 0 0 18px;
+  color: var(--fg-neutral-900);
+  font-size: .72rem;
+  line-height: 1.5;
+}
+.public-practice-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.public-practice-actions button {
+  min-height: 44px;
+  padding: 8px 14px;
+  border: 1px solid var(--fg-primary-100);
+  border-radius: var(--fg-radius-md);
+  background: var(--fg-primary-50);
+  color: var(--fg-primary-700);
+  font: inherit;
+  font-size: .74rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.public-practice-actions button:hover { background: var(--fg-primary-100); }
+.public-practice-key-heading { margin: 16px 0 6px; color: var(--fg-neutral-700); font-size: .68rem; font-weight: 700; }
+.public-practice-key { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; color: var(--fg-neutral-700); font-size: .68rem; line-height: 1.4; }
+.public-practice-key li { display: grid; grid-template-columns: 28px minmax(0, 1fr); align-items: center; gap: 8px; }
+.public-practice-key i { width: 28px; height: 10px; display: block; border-radius: var(--fg-radius-xs); }
+.public-practice-key i[data-swatch="water"] { background: linear-gradient(90deg, #8dc0e4 0 50%, #2f86c4 50% 100%); }
+.public-practice-key i[data-swatch="peak"] { border: 1px solid #b9d5ea; background: repeating-linear-gradient(135deg, #2f86c4 0 2px, transparent 2px 6px); }
+.public-practice-key i[data-swatch="road-impassable"] { height: 4px; background: #c62f24; }
+.public-practice-key i[data-swatch="road-wet"] { height: 4px; background: repeating-linear-gradient(90deg, #b86e00 0 6px, transparent 6px 10px); }
+.public-practice-key i[data-swatch="report"] { width: 22px; height: 12px; border-radius: var(--fg-radius-pill); background: #e69f00; }
+.public-practice-key i[data-swatch="radius"] { width: 12px; height: 12px; margin-left: 8px; border: 1.5px dashed var(--fg-primary-700); border-radius: 50%; }
+.public-practice-sources { margin: 8px 0 0; color: var(--fg-neutral); font-size: .64rem; line-height: 1.45; }
+
+/*
+   Practice reports on the map: invented exercise items. Each wears the amber "EX" tag, so a cropped picture of the
+   map still says that it is invented; the outline carries the urgency the item states.
+*/
+.public-practice-report-shell { display: grid; place-items: center; border: 0; background: transparent; }
+.public-practice-report {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px 2px 2px;
+  border: 1.5px solid #0072b2;
+  border-radius: var(--fg-radius-pill);
+  background: #fff;
+  color: #12262d;
+  font: 700 .62rem/1.2 var(--fg-font-body);
+  white-space: nowrap;
+  box-shadow: var(--fg-shadow-sm);
+}
+.public-practice-report > b { padding: 2px 5px; border-radius: var(--fg-radius-pill); background: #e69f00; font-size: .56rem; letter-spacing: .04em; }
+/* The depth word waits for a close zoom (the map carries this class from there on); until then the tag stands alone. */
+.public-practice-report { padding-right: 2px; }
+.public-practice-report > span { display: none; }
+.public-practice-detail .public-practice-report { padding-right: 7px; }
+.public-practice-detail .public-practice-report > span { display: inline; }
+.public-practice-report[data-urgency="urgent"] { border-color: #b86e00; }
+.public-practice-report[data-urgency="life_at_risk"] { border-color: #d55e00; border-width: 2px; }
+
+/* The scenario menu of the header, to the right of the language switch (owner request of 13 Oct 2026). */
+.public-practice-menu { position: relative; flex: 0 0 auto; }
+.public-practice-trigger {
+  min-width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+  border: 1px solid var(--fg-neutral-200);
+  border-radius: var(--fg-radius-md);
+  background: var(--fg-surface);
+  color: var(--fg-primary-700);
+  cursor: pointer;
+}
+.public-practice-trigger .public-app-icon { width: 22px; height: 22px; }
+.public-practice-trigger .public-app-icon:last-child { width: 12px; height: 12px; transform: rotate(90deg); }
+.public-practice-trigger:hover { background: var(--fg-primary-50); }
+.public-practice-menu[data-active="true"] .public-practice-trigger { border-color: #fde68a; background: #fffbeb; color: #92400e; }
+.public-practice-list {
+  position: absolute;
+  z-index: 1200;
+  top: calc(100% + 8px);
+  right: 0;
+  width: max-content;
+  max-width: min(290px, calc(100vw - 24px));
+  display: grid;
+  gap: 2px;
+  padding: 6px;
+  border: 1px solid var(--fg-neutral-200);
+  border-radius: var(--fg-radius-lg);
+  background: var(--fg-surface);
+  box-shadow: var(--fg-shadow-lg);
+}
+.public-practice-list > p { margin: 0; padding: 4px 10px 6px; color: var(--fg-neutral); font-size: .62rem; font-weight: 700; line-height: 1.4; }
+.public-practice-list > button {
+  min-height: 44px;
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: var(--fg-radius-sm);
+  background: transparent;
+  color: var(--fg-neutral-900);
+  font: inherit;
+  font-size: .76rem;
+  line-height: 1.3;
+  text-align: left;
+  cursor: pointer;
+}
+.public-practice-list > button:hover { background: var(--fg-neutral-100); }
+.public-practice-list > button[aria-pressed="true"] { background: var(--fg-primary-50); color: var(--fg-primary-800); font-weight: 700; }
+.public-practice-list > button > i { width: 10px; height: 10px; border-radius: 50%; background: var(--tone-stripe); }
 
 /*
    Map tool column. Layers and zoom were two differently-sized white boxes; they
@@ -521,22 +629,23 @@
 */
 .public-home-map .map-text-alternative:not([open]):not(:focus-within) { opacity: 0; pointer-events: none; }
 
-/* Hazard Info: at the top right, just under the search field, where the list button's row is. */
+/* Hazard Info: at the top right, under the banner, where the list button's row is. */
 .public-home-map > .public-hazard-button {
   position: absolute;
   z-index: 700;
-  top: 76px;
+  top: 130px;
   right: calc(var(--public-map-tool-inset) + 12px);
 }
-/* With the button gone from the foot of the map, the card keeps clear of the tool column on the right... */
-.public-map-dock > .public-risk-indicator { max-width: min(360px, calc(100% - 60px)); }
+/* With the button gone from the foot of the map, the note keeps clear of the tool column on the right... */
+.public-map-dock > .public-map-note { max-width: min(340px, calc(100% - 60px)); }
 /* ...and the tools stand where the button was: locate, then zoom, then the layer menu. */
 .public-locate-button { bottom: calc(12px + var(--public-nav-clear, 0px)); }
 .public-home-map .leaflet-top.leaflet-left { bottom: calc(68px + var(--public-nav-clear, 0px)); }
 .public-home-map .map-basemap-menu { bottom: calc(166px + var(--public-nav-clear, 0px)); }
 .public-map-dock { bottom: var(--public-nav-clear, 0px); }
-/* The credit stays above the card, as before. */
-.public-home-map .leaflet-control-attribution { margin-bottom: calc(224px + var(--public-nav-clear, 0px)) !important; }
+/* The credit stays above the note: one line on a day without practice, up to four while a scenario is shown. */
+.public-home-map .leaflet-control-attribution { margin-bottom: calc(58px + var(--public-nav-clear, 0px)) !important; }
+.public-home-map:has(.public-map-note[data-practice="true"]) .leaflet-control-attribution { margin-bottom: calc(96px + var(--public-nav-clear, 0px)) !important; }
 @media (max-width: 680px) {
   .public-locate-button { bottom: 8px; }
   .public-home-map .leaflet-top.leaflet-left { bottom: 64px; }
@@ -556,3 +665,9 @@
 }
 /* One line, in Thai too. */
 .public-home-map > .public-hazard-button { white-space: nowrap; }
+
+/*
+   The panel behind the banner lies over the whole map, its tools included. Leaflet stacks its controls at 1000, above
+   the 920 the panel had, so the zoom buttons and the credit stood on top of the panel's text.
+*/
+.public-home-map > .public-hazard-overlay { z-index: 1050; }

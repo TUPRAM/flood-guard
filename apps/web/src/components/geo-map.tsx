@@ -30,8 +30,11 @@ const ACTION_CLASS_LABELS = {
 
 type LeafletModule = typeof import("leaflet");
 
-/** Keep queued draws scoped to this map's Canvas lifecycle. */
-export function createGeoMapRenderer(leaflet: Pick<LeafletModule, "Canvas">): LeafletCanvas {
+/**
+ * Keep queued draws scoped to this map's Canvas lifecycle. `options` are Leaflet's renderer options (a pane, say),
+ * for a caller that draws its own layers on this map through `overlay`.
+ */
+export function createGeoMapRenderer(leaflet: Pick<LeafletModule, "Canvas">, options?: import("leaflet").RendererOptions): LeafletCanvas {
   let active = false;
   const base = leaflet.Canvas.prototype as LeafletCanvas & { _redraw: () => void };
   const Renderer = leaflet.Canvas.extend({
@@ -49,7 +52,7 @@ export function createGeoMapRenderer(leaflet: Pick<LeafletModule, "Canvas">): Le
       if (active) base._redraw.call(this);
     },
   });
-  return new Renderer();
+  return new (Renderer as unknown as new (settings?: import("leaflet").RendererOptions) => LeafletCanvas)(options);
 }
 
 type FeatureLayer = Layer & {
@@ -80,7 +83,11 @@ interface GeoMapProps {
   showSelectionSheet?: boolean;
   contextFeatures?: FeatureCollection;
   attributions?: string[];
-  visualPalette?: "default" | "public-blue" | "public-risk";
+  /**
+   * "public-outline" draws the public areas as outlines without a colour for their planning priority, and leaves the
+   * priority figure out of the tooltip and of the list of the map's results: the Public pages show no score.
+   */
+  visualPalette?: "default" | "public-blue" | "public-risk" | "public-outline";
   enableBasemaps?: boolean;
   basemapControlVariant?: "segmented" | "menu";
   /**
@@ -112,11 +119,20 @@ interface GeoMapProps {
    * pairs. It is a direct line, never a computed road route.
    */
   routePath?: ReadonlyArray<readonly [number, number]>;
+  /**
+   * Layers a caller draws on this map itself (the practice replay of the Public home map). Called once the map is
+   * ready and again whenever the function changes; what it returns is called before the next call and when the map
+   * goes away. Keep the function stable between renders.
+   */
+  overlay?: (map: LeafletMap, leaflet: LeafletModule) => void | (() => void);
 }
 
 type MapArea = AreaRecord | PublicPreparednessArea;
 
 type BasemapId = "street" | "satellite" | "terrain";
+
+/** The street background's credit, as Leaflet shows it. A layer drawn from OpenStreetMap data gives the same string, so it is shown once. */
+export const OSM_ATTRIBUTION_HTML = '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="license noopener noreferrer">OpenStreetMap</a> contributors';
 
 const BASEMAPS: Record<BasemapId, {
   url: string;
@@ -130,7 +146,7 @@ const BASEMAPS: Record<BasemapId, {
     maxZoom: 19,
     labels: { en: "Street", th: "ถนน" },
     attributions: ["© OpenStreetMap contributors"],
-    attributionHtml: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="license noopener noreferrer">OpenStreetMap</a> contributors',
+    attributionHtml: OSM_ATTRIBUTION_HTML,
   },
   satellite: {
     url: "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
@@ -192,6 +208,7 @@ export function GeoMap({
   initialFocus = "region",
   selectionPinTitle,
   routePath,
+  overlay,
 }: GeoMapProps) {
   const mapElement = useRef<HTMLDivElement>(null);
   const mapRef = useRef<LeafletMap | null>(null);
@@ -460,7 +477,9 @@ export function GeoMap({
               : ` · modelled access change ${formatServerDelta(result.delta)}`;
           bindTextTooltip(featureLayer, `${name} · ${area.action_class} · FPPS ${area.fpps_0_100.toFixed(1)}${scenarioText}`, { sticky: true });
         } else {
-          bindTextTooltip(featureLayer, `${name} · ${language === "th" ? "ลำดับความสำคัญการวางแผน" : "planning priority"} ${area.planning_priority_0_100.toFixed(1)} · ${formatConfidence(area.evidence_sufficiency, language)}`, { sticky: true });
+          bindTextTooltip(featureLayer, visualPalette === "public-outline"
+            ? name
+            : `${name} · ${language === "th" ? "ลำดับความสำคัญการวางแผน" : "planning priority"} ${area.planning_priority_0_100.toFixed(1)} · ${formatConfidence(area.evidence_sufficiency, language)}`, { sticky: true });
         }
         featureLayer.on("click", () => onSelect(id));
       },
@@ -565,6 +584,15 @@ export function GeoMap({
       if (selectionPinRef.current === marker) selectionPinRef.current = null;
     };
   }, [areaFeatures, location, mapReady, selectedId, selectionPinTitle]);
+
+  // The caller's own layers. Declared after the area layer and its framing, so on a first render the caller's view
+  // is the one that stays.
+  useEffect(() => {
+    const map = mapRef.current;
+    const L = leafletRef.current;
+    if (!mapReady || !map || !L || !overlay) return;
+    return overlay(map, L) ?? undefined;
+  }, [mapReady, overlay]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -1104,7 +1132,9 @@ export function GeoMap({
                   <button type="button" onClick={() => onSelect(area.area_id)} aria-current={area.area_id === selectedId ? "true" : undefined}>
                     {language === "th" ? area.area_name_th : area.area_name_en}: {isStaffMapArea(area)
                       ? `${language === "th" ? "ชั้น" : "class"} ${area.action_class}, FPPS ${area.fpps_0_100.toFixed(1)}, ${formatConfidence(area.confidence_class, language)}`
-                      : `${language === "th" ? "ลำดับความสำคัญการวางแผน" : "planning priority"} ${area.planning_priority_0_100.toFixed(1)}, ${formatConfidence(area.evidence_sufficiency, language)}, ${publicRecommendationLabel(area.recommendation_code, language)}`}
+                      : visualPalette === "public-outline"
+                        ? `${publicRecommendationLabel(area.recommendation_code, language)} (${language === "th" ? "ความเพียงพอของหลักฐาน" : "evidence sufficiency"}: ${formatConfidence(area.evidence_sufficiency, language)})`
+                        : `${language === "th" ? "ลำดับความสำคัญการวางแผน" : "planning priority"} ${area.planning_priority_0_100.toFixed(1)}, ${formatConfidence(area.evidence_sufficiency, language)}, ${publicRecommendationLabel(area.recommendation_code, language)}`}
                   </button>
                 </li>
               ))}
@@ -1183,10 +1213,23 @@ function areaStyle(
   scenarioId: ScenarioId,
   areas: MapArea[],
   actionClassColors: Record<string, string> = ACTION_CLASS_COLORS,
-  visualPalette: "default" | "public-blue" | "public-risk" = "default",
+  visualPalette: "default" | "public-blue" | "public-risk" | "public-outline" = "default",
   hasBasemap = false,
 ): import("leaflet").PathOptions {
   const area = areas.find((item) => item.area_id === areaId);
+  if (area && !isStaffMapArea(area) && visualPalette === "public-outline") {
+    // An outline and no colour for a score: the area reads as a place. The chosen one has a solid line and a faint
+    // wash; the fill stays (at no opacity) so a tap anywhere inside an area still selects it.
+    const selected = areaId === selectedId;
+    return {
+      color: selected ? "#0f4c81" : "#516173",
+      weight: selected ? 2.6 : 1.3,
+      opacity: selected ? 1 : 0.85,
+      dashArray: selected ? undefined : "5 4",
+      fillColor: "#0f4c81",
+      fillOpacity: selected ? (hasBasemap ? 0.06 : 0.14) : 0,
+    };
+  }
   if (area && !isStaffMapArea(area)) {
     const isRisk = visualPalette === "public-risk";
     const fillColor = isRisk

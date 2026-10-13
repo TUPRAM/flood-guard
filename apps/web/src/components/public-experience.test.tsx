@@ -29,7 +29,8 @@ describe("PublicExperience", () => {
     expect(visibleText).not.toMatch(/Public preparedness/iu);
     expect(visibleText).not.toMatch(/Historical preparedness information/iu);
     expect(html).not.toContain('href="/studio/"');
-    expect(visibleText).toMatch(/ตัวอย่าง/u);
+    // No example area is framed for the reader any more (13 Oct 2026); the note at the foot of the map stays.
+    expect(visibleText).not.toMatch(/ตัวอย่าง/u);
     expect(visibleText).toMatch(/ไม่ใช่คำเตือนทางการ/u);
     // The research link moved into the Hazard Info panel (owner request of 7 Oct 2026), which is closed at first, and
     // nothing stands between the header and the map: no intro block, and no status bar while everything is in order.
@@ -81,46 +82,42 @@ describe("PublicExperience", () => {
     expect(html).not.toContain('class="map-attribution"');
   });
 
-  it("frames Home on the highest-priority area without writing it into the saved plan", () => {
+  it("opens Home on the whole district, with no score and no example area", () => {
     const html = renderToStaticMarkup(<PublicExperience />);
-    const legend = html.match(
-      /<aside class="public-risk-indicator"[\s\S]*?<\/aside>/,
-    )?.[0] ?? "";
+    const visibleText = html.replace(/<[^>]*>/g, " ");
 
-    // Ko Chang carries the highest planning priority in the Mae Sai bundle, so
-    // Home opens on it and the severity chip reports its own band.
-    expect(legend).toContain("ตัวอย่าง · เกาะช้าง");
-    expect(legend).toContain('data-area-context="example"');
-    expect(legend).toContain('data-band="high"');
-    expect(legend).toContain(">สูง<");
-    expect(legend).not.toMatch(/ยังไม่พบพื้นที่วางแผน/u);
-    // The exact score stays in the panel; historical evidence remains visible.
-    expect(legend).not.toContain("public-risk-value");
-    expect(legend).toContain("ความสำคัญต่ำ");
-    expect(legend).toContain("ความสำคัญสูง");
-    expect(legend).toContain("ลำดับความสำคัญจากข้อมูลในอดีต");
-    expect(legend).toContain("ความเชื่อมั่น ต่ำ");
-    expect(legend).toContain("ตรวจสอบสภาพปัจจุบัน");
-    expect(legend).toContain("2567");
+    // The priority card and its scale were removed on the owner's request of 13 Oct 2026.
+    expect(html).not.toContain("public-risk-indicator");
+    expect(visibleText).not.toMatch(/ลำดับความสำคัญ|ความสำคัญต่ำ|ความสำคัญสูง/u);
     expect(html).toContain('class="map-text-alternative"');
-    expect(legend).toContain("พื้นที่ตัวอย่าง · ข้อมูลผู้สมัคร ไม่ใช้ปฏิบัติการ");
-
-    // The title is dropped from the visible card but kept as the accessible
-    // name, so the card is still identifiable to a screen reader.
-    const legendText = legend.replace(/<[^>]*>/g, "");
-    expect(legendText).not.toMatch(/ตัวชี้วัดการวางแผนน้ำท่วม/u);
-    expect(legend).toContain('aria-label="ตัวชี้วัดการวางแผนน้ำท่วม"');
-
-    expect(html).toContain('data-selected-area="TH570903"');
-
-    // Framing the map is not the reader choosing a household planning area, so
-    // the header location stays unset until they pick one.
+    // No area is chosen for the reader, on the map or in the header.
+    expect(html).toContain('data-selected-area=""');
     const greeting = html.match(
       /<span class="public-greeting-location">[\s\S]*?<\/span><\/span>/,
     )?.[0] ?? "";
     expect(greeting).toContain("ยังไม่ได้เลือกตำแหน่ง");
     expect(greeting).not.toContain("เกาะช้าง");
-    expect(html).not.toContain("public-signal-banner");
+
+    // The banner is always there, grey on a day without practice, and the note says what the page is not.
+    const banner = html.match(/<button type="button" class="public-signal-banner"[\s\S]*?<\/button>/)?.[0] ?? "";
+    expect(banner).toContain('data-tone="neutral"');
+    expect(banner).toContain("ไม่มีรายงานน้ำท่วมใกล้คุณ");
+    const note = html.match(/<p class="public-map-note"[\s\S]*?<\/p>/)?.[0] ?? "";
+    expect(note).toContain("ข้อมูลเพื่อการเตรียมพร้อม · ไม่ใช่คำเตือนทางการ");
+  });
+
+  it("offers the practice scenarios from the header, to the right of the language switch, with none chosen", () => {
+    const html = renderToStaticMarkup(<PublicExperience />);
+    const actions = html.match(/<div class="public-header-actions">[\s\S]*?<\/header>/)?.[0] ?? "";
+
+    expect(actions.indexOf('class="language-toggle"')).toBeGreaterThan(-1);
+    expect(actions.indexOf('class="public-practice-trigger"')).toBeGreaterThan(actions.indexOf('class="language-toggle"'));
+    expect(actions).toContain('aria-label="สถานการณ์ฝึกซ้อม"');
+    expect(actions).toContain('aria-expanded="false"');
+    // The list is closed at first, and no scenario is shown until the reader chooses one.
+    expect(html).not.toContain('class="public-practice-list"');
+    expect(actions).not.toContain('data-active="true"');
+    expect(html).not.toContain('data-practice="true"');
   });
 
   it("draws the public preparedness areas on the Home map instead of hiding them", () => {

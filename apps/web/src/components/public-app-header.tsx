@@ -8,6 +8,13 @@ import {
   greetingText,
   PUBLIC_DISPLAY_NAME_MAX_LENGTH,
 } from "@/lib/public-display-name";
+import {
+  PRACTICE_MENU_COPY,
+  PRACTICE_SCENARIO_LABELS,
+  PRACTICE_SCENARIOS,
+  PRACTICE_STATE_TONE,
+  type PracticeState,
+} from "@/lib/public-practice-scenarios";
 import type { Language } from "@/lib/types";
 
 import { PublicAppIcon } from "./public-app-icon";
@@ -22,6 +29,11 @@ interface PublicAppHeaderProps {
   locationLabel: string;
   onNavigatePrepare: () => void;
   onNavigateSos: () => void;
+  /**
+   * The practice scenarios of the Home map: the chosen one (null on a day without practice) and how to change it.
+   * Absent where there is nothing to choose: on the other tabs, and in a build that does not ship the replay.
+   */
+  practice?: { scenarioId: PracticeState | null; onChange: (scenarioId: PracticeState | null) => void };
 }
 
 export function PublicAppHeader({
@@ -34,8 +46,12 @@ export function PublicAppHeader({
   locationLabel,
   onNavigatePrepare,
   onNavigateSos,
+  practice,
 }: PublicAppHeaderProps) {
   const [open, setOpen] = useState(false);
+  const [practiceOpen, setPracticeOpen] = useState(false);
+  const practiceRef = useRef<HTMLDivElement>(null);
+  const practiceButtonRef = useRef<HTMLButtonElement>(null);
   const [nameDraft, setNameDraft] = useState(displayName);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const drawerRef = useRef<HTMLElement>(null);
@@ -76,6 +92,31 @@ export function PublicAppHeader({
       document.removeEventListener("keydown", onKeyDown);
     };
   }, [open]);
+
+  // The scenario menu closes on Escape (the focus returns to its button) and on a press anywhere outside it.
+  useEffect(() => {
+    if (!practiceOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      setPracticeOpen(false);
+      practiceButtonRef.current?.focus();
+    };
+    const onPointerDown = (event: PointerEvent) => {
+      if (event.target instanceof Node && !practiceRef.current?.contains(event.target)) setPracticeOpen(false);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener("pointerdown", onPointerDown);
+    };
+  }, [practiceOpen]);
+
+  const choosePractice = (scenarioId: PracticeState | null) => {
+    practice?.onChange(scenarioId);
+    setPracticeOpen(false);
+    practiceButtonRef.current?.focus();
+  };
 
   const closeAndNavigate = (navigate: () => void) => {
     setOpen(false);
@@ -126,6 +167,46 @@ export function PublicAppHeader({
             <span className="public-header-logo-mark" aria-hidden="true" />
           </a>
           <LanguageToggle language={language} onChange={onLanguageChange} />
+          {/* To the right of the language switch (owner request of 13 Oct 2026): the practice scenarios of the Home map. */}
+          {practice && (
+            <div ref={practiceRef} className="public-practice-menu" data-active={practice.scenarioId ? "true" : undefined}>
+              <button
+                ref={practiceButtonRef}
+                type="button"
+                className="public-practice-trigger"
+                aria-label={PRACTICE_MENU_COPY.button[language]}
+                aria-haspopup="true"
+                aria-expanded={practiceOpen}
+                aria-controls="public-practice-list"
+                onClick={() => setPracticeOpen((shown) => !shown)}
+              >
+                <PublicAppIcon name="play" />
+                <PublicAppIcon name="chevron" />
+              </button>
+              {practiceOpen && (
+                <div id="public-practice-list" className="public-practice-list" role="group" aria-label={PRACTICE_MENU_COPY.heading[language]}>
+                  <p>{PRACTICE_MENU_COPY.heading[language]}</p>
+                  <button type="button" aria-pressed={practice.scenarioId === null} data-tone="neutral" onClick={() => choosePractice(null)}>
+                    <i aria-hidden="true" />
+                    {PRACTICE_MENU_COPY.off[language]}
+                  </button>
+                  {PRACTICE_SCENARIOS.map((scenario) => (
+                    <button
+                      key={scenario.id}
+                      type="button"
+                      aria-pressed={practice.scenarioId === scenario.id}
+                      data-tone={PRACTICE_STATE_TONE[scenario.id]}
+                      data-practice-scenario={scenario.id}
+                      onClick={() => choosePractice(scenario.id)}
+                    >
+                      <i aria-hidden="true" />
+                      {PRACTICE_SCENARIO_LABELS[scenario.id][language]}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </header>
 

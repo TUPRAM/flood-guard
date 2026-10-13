@@ -298,12 +298,15 @@ try {
   const hazardPanel = page.locator("#public-hazard-panel");
   await hazardPanel.waitFor({ state: "visible" });
   const hazardText = await hazardPanel.innerText();
-  for (const required of ["Planning indicator", "Evidence sufficiency", "Source time", "candidate planning indicator", "separate from the selected study case", "non-operational", "DDPM"]) {
+  for (const required of ["Evidence sufficiency", "Source time", "does not measure current water levels", "candidate research", "non-operational", "not an official warning", "DDPM"]) {
     if (!hazardText.includes(required)) {
       throw new Error(`Public Hazard Info is missing its evidence boundary: ${required}.`);
     }
   }
+  // No score on a Public page since 13 Oct 2026: the panel shows neither the indicator nor its value.
+  if (/Planning indicator|\/100/.test(hazardText)) throw new Error("Public Hazard Info still shows a planning score.");
   await page.getByRole("button", { name: "Close hazard information" }).click();
+  await assertPublicPractice(page);
 
   await activatePublicPage(page, "report", ".public-report-page");
   // Water depth is a continuous slider now; its band buttons set a
@@ -1466,9 +1469,12 @@ async function assertPublicHomeLayout(page, mapScope) {
     const navigation = document.querySelector(".public-bottom-nav")?.getBoundingClientRect();
     const map = document.querySelector(`${scope} .leaflet-container`)?.getBoundingClientRect();
     const trigger = document.querySelector(".public-profile-trigger")?.getBoundingClientRect();
-    const priorityIndicator = document.querySelector(".public-risk-indicator");
-    const risk = priorityIndicator?.getBoundingClientRect();
+    // The note at the foot of the map, where the priority card stood until 13 Oct 2026.
+    const mapNote = document.querySelector(".public-map-note");
+    const risk = mapNote?.getBoundingClientRect();
     const hazard = document.querySelector(".public-hazard-button")?.getBoundingClientRect();
+    const banner = document.querySelector(".public-signal-banner")?.getBoundingClientRect();
+    const search = document.querySelector(".public-map-search-field")?.getBoundingClientRect();
     const attribution = document.querySelector(".leaflet-control-attribution")?.getBoundingClientRect();
     const availability = document.querySelector('[data-pwa-availability="true"] > summary')?.getBoundingClientRect();
     const closedAvailability = document.querySelector('[data-pwa-availability="true"]:not([open])')?.getBoundingClientRect();
@@ -1512,9 +1518,16 @@ async function assertPublicHomeLayout(page, mapScope) {
       trigger: trigger ? { width: trigger.width, height: trigger.height } : null,
       navigationTargets: navigationTargets.map(({ width, height }) => ({ width, height })),
       lowerControls: {
-        priority: risk?.toJSON(),
-        priorityContentWidth: priorityIndicator?.scrollWidth,
-        priorityClientWidth: priorityIndicator?.clientWidth,
+        note: risk?.toJSON(),
+        noteContentWidth: mapNote?.scrollWidth,
+        noteClientWidth: mapNote?.clientWidth,
+        // The banner stands directly under the search field and Hazard Info under the banner (13 Oct 2026).
+        priorityCardCount: document.querySelectorAll(".public-risk-indicator").length,
+        bannerUnderSearch: Boolean(banner && search && banner.top >= search.bottom - 1 && banner.top - search.bottom <= 16),
+        hazardUnderBanner: Boolean(banner && hazard && hazard.top >= banner.bottom - 1 && hazard.top - banner.bottom <= 16),
+        bannerHeight: banner ? Math.round(banner.height) : null,
+        noteAttributionOverlap: overlaps(risk, attribution),
+        noteHazardOverlap: overlaps(risk, hazard),
         attribution: attribution?.toJSON(),
         availability: availability?.toJSON(),
         riskNavigationGap: risk && navigation ? navigation.top - risk.bottom : null,
@@ -1563,7 +1576,14 @@ async function assertPublicHomeLayout(page, mapScope) {
     throw new Error("Public bottom navigation contains a touch target smaller than 44px.");
   }
   if (
-    audit.lowerControls.priorityContentWidth > audit.lowerControls.priorityClientWidth + 1
+    audit.lowerControls.noteContentWidth > audit.lowerControls.noteClientWidth + 1
+    || audit.lowerControls.priorityCardCount !== 0
+    || !audit.lowerControls.note
+    || !audit.lowerControls.bannerUnderSearch
+    || !audit.lowerControls.hazardUnderBanner
+    || audit.lowerControls.bannerHeight !== 46
+    || audit.lowerControls.noteAttributionOverlap
+    || audit.lowerControls.noteHazardOverlap
     || audit.lowerControls.riskNavigationGap < 10
     || audit.lowerControls.hazardNavigationGap < 10
     || audit.lowerControls.hazardAttributionOverlap
@@ -1622,7 +1642,7 @@ async function assertCompactMapNotice(page, mapScope, language, label, alsoRequi
       "zoom buttons": `${scope} .leaflet-control-zoom`,
       "locate button": ".public-locate-button",
       "map attribution": `${scope} .leaflet-control-attribution`,
-      "priority card": ".public-risk-indicator",
+      "map note": ".public-map-note",
       "hazard button": ".public-hazard-button",
       "signal banner": ".public-signal-banner",
       "location card": ".public-location-status",
@@ -1679,7 +1699,7 @@ async function assertCompactMapNotice(page, mapScope, language, label, alsoRequi
     || folded.lines < 1 || folded.lines > 2 || folded.truncated || folded.height > 64) {
     throw new Error(`The compact map notice is not a short line and one button in one row at ${label} (${language}): ${JSON.stringify(folded)}`);
   }
-  for (const required of ["list button", "search field", "map layers button", "zoom buttons", "locate button", "map attribution", "priority card", "hazard button", ...alsoRequired]) {
+  for (const required of ["list button", "search field", "map layers button", "zoom buttons", "locate button", "map attribution", "map note", "hazard button", "signal banner", ...alsoRequired]) {
     if (!folded.found.includes(required)) throw new Error(`The notice check found no ${required} to compare with at ${label} (${language}).`);
   }
   if (folded.overlaps.length > 0 || !folded.insideMap || folded.scroll > 1) {
@@ -1731,12 +1751,17 @@ async function assertCompactMapNoticeActions(page, mapScope) {
 }
 
 async function assertPublicPlanningFallback(page, mapScope) {
-  const indicator = await page.locator(".public-risk-indicator").innerText();
-  for (const required of ["Historical planning priority", "2024", "Confidence: low", "Verify current conditions"]) {
-    if (!indicator.includes(required)) throw new Error(`Public planning context is missing: ${required}.`);
+  // A day without practice: a grey banner (never the green of an all-clear), the note at the foot of the map, and
+  // no planning score anywhere on the page.
+  const banner = page.locator(".public-signal-banner");
+  if (await banner.getAttribute("data-tone") !== "neutral" || !(await banner.innerText()).includes("No flood reports near you")) {
+    throw new Error(`Public Home banner is not the grey line of a day without practice: ${await banner.innerText()}`);
   }
-  if (/Low risk|High risk/.test(indicator)) {
-    throw new Error("Public historical planning priority is still labelled as current risk.");
+  const note = await page.locator(".public-map-note").innerText();
+  if (!note.includes("not an official warning")) throw new Error(`Public Home note does not say what the page is not: ${note}`);
+  const homeText = await page.locator(".public-home-page").innerText();
+  if (/Low risk|High risk|planning priority|Lower priority|Higher priority/i.test(homeText) || await page.locator(".public-risk-indicator").count() !== 0) {
+    throw new Error("Public Home still shows a planning score or a risk label.");
   }
   await page.locator("#public-area-search").fill("Mae Sai Hospital");
   await page.locator(".public-location-status").filter({ hasText: "Online address search is unavailable" }).waitFor({ state: "visible" });
@@ -1749,6 +1774,96 @@ async function assertPublicPlanningFallback(page, mapScope) {
   await toggleMapListFromKeyboard(page, list);
   if (await page.locator("#public-area-search").inputValue() !== "") {
     throw new Error("Choosing a local planning area did not clear the failed online search.");
+  }
+}
+
+/**
+ * The practice scenarios of the Home map (competition build): chosen from the header, each one changes the banner,
+ * the note, the panel and the map together, and "Today" takes all of it away again. The replay files are read from
+ * this origin, so the check needs no street tiles. Nothing of a scenario is written to the saved plan.
+ */
+async function assertPublicPractice(page) {
+  const selectedBefore = await page.locator(".public-home-page .geo-map-shell").getAttribute("data-selected-area");
+  const choose = async (scenario) => {
+    await page.locator(".public-practice-trigger").click();
+    const list = page.locator("#public-practice-list");
+    await list.waitFor({ state: "visible" });
+    await (scenario ? list.locator(`[data-practice-scenario="${scenario}"]`) : list.locator("button").first()).click();
+    await list.waitFor({ state: "detached" });
+  };
+  const state = () => page.evaluate(() => ({
+    tone: document.querySelector(".public-signal-banner")?.getAttribute("data-tone"),
+    banner: document.querySelector(".public-signal-banner")?.innerText.trim(),
+    hazardTone: document.querySelector(".public-hazard-button")?.getAttribute("data-tone"),
+    note: document.querySelector(".public-map-note")?.innerText.replace(/\s+/g, " ").trim(),
+    practising: document.querySelector(".public-map-note")?.getAttribute("data-practice"),
+    place: document.querySelector(".public-greeting-location")?.innerText.trim(),
+    water: document.querySelectorAll("canvas.public-practice-water").length,
+    reports: document.querySelectorAll(".public-practice-report").length,
+    pin: document.querySelector(".public-area-pin-label")?.textContent,
+    selected: document.querySelector(".public-home-page .geo-map-shell")?.getAttribute("data-selected-area"),
+    menuItems: document.querySelectorAll("#public-practice-list button").length,
+  }));
+  const settle = (tone, text) => page.waitForFunction(([expectedTone, expectedText]) => {
+    const element = document.querySelector(".public-signal-banner");
+    return element?.getAttribute("data-tone") === expectedTone && element.innerText.includes(expectedText);
+  }, [tone, text], { timeout: 45_000 });
+
+  await page.locator(".public-practice-trigger").click();
+  await page.locator("#public-practice-list").waitFor({ state: "visible" });
+  if ((await state()).menuItems !== 8) throw new Error("The practice menu does not list Today and the seven scenarios.");
+  await page.keyboard.press("Escape");
+  await page.locator("#public-practice-list").waitFor({ state: "detached" });
+
+  await choose("cut_off");
+  await settle("danger", "No shelter within walking reach");
+  const cutOff = await state();
+  if (
+    cutOff.hazardTone !== "danger" || cutOff.practising !== "true"
+    || !cutOff.note.includes("Practice replay") || !cutOff.note.includes("12 Sep 2024")
+    || !cutOff.note.includes("not real-time") || !cutOff.note.includes("not an official warning")
+    || !cutOff.place.includes("Example home") || cutOff.pin !== "Example home"
+    || cutOff.water !== 1 || cutOff.reports < 1 || cutOff.selected !== selectedBefore
+  ) {
+    throw new Error(`The practice scenario "cut off" is not shown as one message on the banner, the note and the map: ${JSON.stringify(cutOff)}`);
+  }
+  await page.locator(".public-signal-banner").click();
+  const panel = page.locator("#public-hazard-panel");
+  await panel.waitFor({ state: "visible" });
+  const panelText = (await panel.innerText()).replace(/\s+/g, " ");
+  for (const required of [
+    "Example home in Mae Sai town",
+    "No shelter within walking reach",
+    "of road within 1 km are under 30 cm of water or more",
+    "No shelter reported in use in 2024 can be reached within a 2 km walk on passable roads.",
+    "The model has this home dry.",
+    "invented for the exercise",
+    "Practise:",
+    "Not a real address",
+    "low confidence",
+    "Not real-time and not an official warning",
+    "DDPM",
+  ]) {
+    if (!panelText.includes(required)) throw new Error(`The practice panel is missing: ${required}. It reads: ${panelText}`);
+  }
+  if (/Planning indicator|\/100|planning priority/i.test(panelText)) throw new Error("The practice panel shows a planning score.");
+  await page.getByRole("button", { name: "Close hazard information" }).click();
+
+  // The neighbour that floods, then the day without water: the green tick belongs to this scenario alone.
+  await choose("water_at_home");
+  await settle("danger", "Water has reached this home");
+  await choose("normal");
+  await settle("calm", "No water near this home");
+  const calm = await state();
+  if (calm.reports !== 0 || calm.water !== 1 || calm.practising !== "true") {
+    throw new Error(`The practice scenario without water still shows reports, or lost its layers: ${JSON.stringify(calm)}`);
+  }
+
+  await choose(null);
+  await settle("neutral", "No flood reports near you");
+  const after = await state();
+  if (after.water !== 0 || after.reports !== 0 || after.practising !== null || after.pin === "Example home" || after.selected !== selectedBefore || after.place.includes("Example home")) {
+    throw new Error(`Ending the practice left something of it on the page, or changed the chosen area: ${JSON.stringify(after)}`);
   }
 }
 

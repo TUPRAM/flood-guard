@@ -1680,69 +1680,6 @@ button.model-card { cursor: pointer; }
   border-radius: 50%;
   background: #fff;
 }
-/* Compact readout: place and severity on one line, then the scale. */
-.public-risk-indicator {
-  width: max-content;
-  max-width: min(260px, 100%);
-  display: grid;
-  gap: 8px;
-  padding: 10px 12px 11px;
-}
-.public-risk-headline {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.public-risk-headline > strong {
-  min-width: 0;
-  overflow: hidden;
-  font-size: .88rem;
-  font-weight: 800;
-  line-height: 1.2;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.public-risk-chip {
-  flex: 0 0 auto;
-  padding: 3px 9px;
-  border-radius: var(--fg-radius-pill);
-  font-size: .66rem;
-  font-weight: 700;
-  white-space: nowrap;
-}
-/* Four banded steps, not a smear: the scale is ordinal, so it reads as steps. */
-.public-risk-scale {
-  position: relative;
-  height: 6px;
-  min-width: 176px;
-  border-radius: var(--fg-radius-xs);
-  background: linear-gradient(90deg,
-    #16a34a 0 calc(25% - 2px), transparent calc(25% - 2px) 25%,
-    #eab308 25% calc(50% - 2px), transparent calc(50% - 2px) 50%,
-    #f97316 50% calc(75% - 2px), transparent calc(75% - 2px) 75%,
-    #dc2626 75% 100%);
-}
-.public-risk-scale i {
-  position: absolute;
-  top: 50%;
-  width: 3px;
-  height: 16px;
-  transform: translate(-50%, -50%);
-  border-radius: var(--fg-radius-xs);
-  background: var(--fg-neutral-900);
-  box-shadow: 0 0 0 2px var(--fg-surface);
-}
-.public-risk-scale-labels {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  margin-top: -3px;
-}
-.public-risk-status {
-  margin: -5px 0 0;
-  font-size: .6rem;
-  line-height: 1.2;
-}
 /* Map-tool column, stacked upward: locate, zoom, layers. */
 .public-locate-button {
   position: absolute;
@@ -2820,9 +2757,6 @@ button.model-card { cursor: pointer; }
     white-space: normal;
   }
   .public-home-map .map-basemap-menu { right: 10px; bottom: 218px; }
-  .public-risk-indicator { padding: 9px 11px 10px; }
-  .public-risk-headline > strong { font-size: .82rem; }
-  .public-risk-scale { min-width: 150px; }
   .public-hazard-button { min-height: 46px; padding: 9px 13px; font-size: .72rem; }
   .public-hazard-button .public-app-icon { width: 21px; }
   .public-hazard-overlay { padding: 0; }
@@ -2870,7 +2804,6 @@ button.model-card { cursor: pointer; }
 }
 
 @media (max-width: 390px) {
-  .public-risk-scale { min-width: 132px; }
   .public-hazard-button > span { max-width: 66px; line-height: 1.15; }
   .public-report-choice-grid label b { font-size: .64rem; }
   .public-app-shell > .public-bottom-nav button { font-size: .54rem; }

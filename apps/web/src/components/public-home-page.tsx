@@ -15,18 +15,15 @@ import { GeoMap } from "@/components/geo-map";
 import { PublicAppIcon } from "@/components/public-app-icon";
 import { formatConfidence, formatSourceTime } from "@/lib/format";
 import {
-  derivePublicHazardSignals,
-  hazardSignalLabel,
-  hazardSignalSummary,
-} from "@/lib/public-hazard-signals";
-import {
   findAreaIdForPoint,
   PUBLIC_GEOCODER_ATTRIBUTION_URL,
   searchPublicAddresses,
   type PublicAddressSuggestion,
   type PublicMapLocation,
 } from "@/lib/public-location";
+import { PRACTICE_MENU_COPY, type PracticeState, type PracticeTone } from "@/lib/public-practice-scenarios";
 import type { FeatureCollection, Language, PublicFloodGuardData } from "@/lib/types";
+import { usePublicPractice } from "@/lib/use-public-practice";
 
 interface PublicHomePageProps {
   language: Language;
@@ -36,6 +33,12 @@ interface PublicHomePageProps {
   location?: PublicMapLocation;
   onLocationChange: (location: PublicMapLocation | undefined) => void;
   researchHref?: string;
+  /** The practice scenario chosen in the header; null or absent on a day without practice. */
+  practiceScenarioId?: PracticeState | null;
+  /** Called when the reader looks for their own place: that ends the practice. */
+  onPracticeEnd?: () => void;
+  onNavigatePrepare?: () => void;
+  onNavigateSos?: () => void;
 }
 
 const EMPTY_ROADS: FeatureCollection = {
@@ -58,6 +61,8 @@ const EMPTY_CONTEXT: FeatureCollection = {
   name: "public_home_context_withheld",
   features: [],
 };
+/** A tap on the map chooses no planning area while a practice scenario is shown. */
+const ignoreAreaSelection = () => {};
 
 type SearchState = "idle" | "loading" | "ready" | "empty" | "unavailable";
 type GpsState = "idle" | "requesting" | "ready" | "denied" | "unavailable" | "timeout";
@@ -95,35 +100,22 @@ function recommendationLabel(
   return labels[area.recommendation_code][language];
 }
 
-type PriorityBand = "very_high" | "high" | "moderate" | "lower";
-
-function priorityBandCode(value: number): PriorityBand {
-  if (value >= 75) return "very_high";
-  if (value >= 50) return "high";
-  if (value >= 25) return "moderate";
-  return "lower";
-}
-
-function priorityBand(value: number, language: Language): string {
-  const labels: Record<PriorityBand, Record<Language, string>> = {
-    very_high: { en: "Very high", th: "สูงมาก" },
-    high: { en: "High", th: "สูง" },
-    moderate: { en: "Moderate", th: "ปานกลาง" },
-    lower: { en: "Lower", th: "ต่ำกว่า" },
-  };
-  return labels[priorityBandCode(value)][language];
-}
-
-/** Highest-priority area, used to frame Home before the reader picks one. */
-function highestPriorityAreaId(areas: PublicPreparednessArea[]): string {
-  let best: PublicPreparednessArea | undefined;
-  for (const area of areas) {
-    if (!best || area.planning_priority_0_100 > best.planning_priority_0_100) {
-      best = area;
-    }
-  }
-  return best?.area_id ?? "";
-}
+/**
+ * What Home says on a day without practice. The app has no feed of current water and receives no reports from other
+ * people, so the banner is grey, never the green of an all-clear, and the panel behind it says why.
+ */
+const TODAY_COPY = {
+  banner: { en: "No flood reports near you", th: "ไม่มีรายงานน้ำท่วมใกล้คุณ" },
+  note: { en: "Preparedness information · not an official warning", th: "ข้อมูลเพื่อการเตรียมพร้อม · ไม่ใช่คำเตือนทางการ" },
+  explain: {
+    en: "This app does not measure current water levels and receives no reports from other people. For current conditions, check DDPM and your local authorities.",
+    th: "แอปนี้ไม่ได้วัดระดับน้ำปัจจุบัน และไม่ได้รับรายงานจากผู้อื่น โปรดตรวจสอบสถานการณ์ปัจจุบันกับ ปภ. และหน่วยงานท้องถิ่นของคุณ",
+  },
+  boundary: {
+    en: "The preparedness information for this area is candidate research. It is non-operational: not an accepted priority score, not a reading of current hazard and not an official warning.",
+    th: "ข้อมูลเพื่อการเตรียมพร้อมของพื้นที่นี้เป็นผลวิจัยแบบผู้สมัคร ไม่ใช้ปฏิบัติการ ไม่ใช่คะแนนลำดับความสำคัญที่ยอมรับแล้ว ไม่ใช่การวัดอันตรายปัจจุบัน และไม่ใช่คำเตือนทางการ",
+  },
+} as const;
 
 function localAreaMatch(
   areas: PublicPreparednessArea[],
@@ -146,6 +138,10 @@ export function PublicHomePage({
   location,
   onLocationChange,
   researchHref,
+  practiceScenarioId = null,
+  onPracticeEnd,
+  onNavigatePrepare,
+  onNavigateSos,
 }: PublicHomePageProps) {
   const th = language === "th";
   const [searchDraft, setSearchDraft] = useState(
@@ -166,16 +162,18 @@ export function PublicHomePage({
   const hazardButtonRef = useRef<HTMLButtonElement>(null);
   const hazardCloseRef = useRef<HTMLButtonElement>(null);
   const hazardPanelRef = useRef<HTMLElement>(null);
-  // The map opens on an example area without selecting it for the household.
-  const focusAreaId = selectedAreaId || highestPriorityAreaId(data.publicAreas);
-  const selectedArea = data.publicAreas.find((area) => area.area_id === focusAreaId);
+  // No area is framed for the reader: until they choose one the map shows the whole district.
   const chosenArea = data.publicAreas.find((area) => area.area_id === selectedAreaId);
+  const practice = usePublicPractice(practiceScenarioId, language);
+  const practising = practice.status !== "off";
+  const practiceView = practice.status === "ready" ? practice.view : undefined;
 
   const focusAddressInput = useCallback(() => {
     window.requestAnimationFrame(() => searchInputRef.current?.focus());
   }, []);
 
   const applyLocation = useCallback((nextLocation: PublicMapLocation) => {
+    onPracticeEnd?.();
     const areaId = findAreaIdForPoint(
       data.areaFeatures,
       nextLocation.longitude,
@@ -184,9 +182,10 @@ export function PublicHomePage({
     onLocationChange(nextLocation);
     if (areaId) onSelectArea(areaId);
     return areaId;
-  }, [data.areaFeatures, onLocationChange, onSelectArea]);
+  }, [data.areaFeatures, onLocationChange, onPracticeEnd, onSelectArea]);
 
   const selectPlanningArea = useCallback((areaId: string) => {
+    onPracticeEnd?.();
     locationAttemptRef.current += 1;
     searchAbortRef.current?.abort();
     setGpsState("idle");
@@ -198,7 +197,7 @@ export function PublicHomePage({
     setActiveSuggestionIndex(-1);
     onLocationChange(undefined);
     onSelectArea(areaId);
-  }, [onLocationChange, onSelectArea]);
+  }, [onLocationChange, onPracticeEnd, onSelectArea]);
 
   const requestPreciseLocation = useCallback(() => {
     const geolocation = navigator.geolocation;
@@ -451,8 +450,14 @@ export function PublicHomePage({
     }
   };
 
-  const priorityValue = selectedArea?.planning_priority_0_100 ?? 0;
-  const hazardSignals = derivePublicHazardSignals(chosenArea);
+  // One banner, always there: the scenario's sentence while practising, and a grey line on a day without practice.
+  const banner: { tone: PracticeTone; text: string } = practiceView
+    ? { tone: practiceView.tone, text: practiceView.banner }
+    : practice.status === "loading"
+      ? { tone: "neutral", text: PRACTICE_MENU_COPY.loading[language] }
+      : practice.status === "unavailable"
+        ? { tone: "neutral", text: PRACTICE_MENU_COPY.unavailable[language] }
+        : { tone: "neutral", text: TODAY_COPY.banner[language] };
   const locationProblem = gpsState === "denied"
     || gpsState === "unavailable"
     || gpsState === "timeout"
@@ -467,14 +472,16 @@ export function PublicHomePage({
           request of 7 Oct 2026, so the search field stands directly under the header. The heading stays for a screen
           reader; "Make my plan" and "Help and contacts" are the Prepare and SOS tabs; the research link is in the
           Hazard Info panel; the words "not an official warning" are on the priority card and in that panel. */}
-      <h1 className="sr-only">{chosenArea
-        ? (th ? chosenArea.area_name_th : chosenArea.area_name_en)
-        : (th ? "เลือกพื้นที่วางแผนของคุณ" : "Choose your planning area")}</h1>
+      <h1 className="sr-only">{practiceView
+        ? practiceView.copy.heading
+        : chosenArea
+          ? (th ? chosenArea.area_name_th : chosenArea.area_name_en)
+          : (th ? "เลือกพื้นที่วางแผนของคุณ" : "Choose your planning area")}</h1>
       <div className="public-home-map">
         <GeoMap
           areas={data.publicAreas}
-          selectedId={focusAreaId}
-          onSelect={selectPlanningArea}
+          selectedId={selectedAreaId}
+          onSelect={practising ? ignoreAreaSelection : selectPlanningArea}
           language={language}
           showRoads={false}
           showFacilities={false}
@@ -488,7 +495,7 @@ export function PublicHomePage({
           datasetMode={data.status.dataset_mode}
           showSelectionSheet={false}
           attributions={[]}
-          visualPalette="public-risk"
+          visualPalette="public-outline"
           enableBasemaps
           basemapControlVariant="menu"
           compactBasemapNotice
@@ -497,11 +504,13 @@ export function PublicHomePage({
           showTextAlternative
           showDataAttribution={false}
           audience="public"
-          location={location}
-          initialFocus="selection"
-          selectionPinTitle={selectedArea
-            ? (th ? selectedArea.area_name_th : selectedArea.area_name_en)
+          // While a scenario is shown, its example home is the only pin on the map.
+          location={practising ? undefined : location}
+          initialFocus={selectedAreaId ? "selection" : "region"}
+          selectionPinTitle={chosenArea && !practising
+            ? (th ? chosenArea.area_name_th : chosenArea.area_name_en)
             : undefined}
+          overlay={practice.overlay}
         />
 
         <div className="public-map-rail">
@@ -585,6 +594,24 @@ export function PublicHomePage({
         </div>
 
         {/*
+          The banner stands directly under the search field and is always there (owner request of 13 Oct 2026). Its
+          colour and its icon follow what it says; the tick is kept for the practice scenario without water, so a
+          day without practice never reads as an all-clear.
+        */}
+        <button
+          type="button"
+          className="public-signal-banner"
+          data-tone={banner.tone}
+          aria-controls="public-hazard-panel"
+          aria-expanded={hazardOpen}
+          onClick={() => setHazardOpen(true)}
+        >
+          <PublicAppIcon name={banner.tone === "calm" ? "check" : "hazard"} />
+          <span>{banner.text}</span>
+          <PublicAppIcon name="chevron" />
+        </button>
+
+        {/*
           The card appears for a resolved location or a real problem only. A
           plain "type an address" instruction repeats the input placeholder, so
           it stays in the live region below instead of taking a slab of map.
@@ -631,74 +658,31 @@ export function PublicHomePage({
           </div>
         )}
 
-        {hazardSignals.length > 0 && (
-          <button
-            type="button"
-            className="public-signal-banner"
-            aria-controls="public-hazard-panel"
-            aria-expanded={hazardOpen}
-            onClick={() => setHazardOpen(true)}
-          >
-            <PublicAppIcon name="hazard" />
-            <span>{hazardSignalSummary(hazardSignals.length, language)}</span>
-            <PublicAppIcon name="chevron" />
-          </button>
-        )}
         </div>
 
         <div className="public-map-dock">
-          <aside
-            className="public-risk-indicator"
-            data-area-context={chosenArea ? "selected" : "example"}
-            aria-label={th ? "ตัวชี้วัดการวางแผนน้ำท่วม" : "Flood planning indicator"}
-          >
-            <p className="public-priority-label">
-              {th ? "ลำดับความสำคัญจากข้อมูลในอดีต" : "Historical planning priority"}
-            </p>
-            <div className="public-risk-headline">
-              <strong>
-                {selectedArea
-                  ? `${chosenArea ? "" : (th ? "ตัวอย่าง · " : "Example · ")}${th ? selectedArea.area_name_th : selectedArea.area_name_en}`
-                  : (th ? "ยังไม่พบพื้นที่วางแผน" : "No planning area matched")}
-              </strong>
-              {selectedArea && (
-                <span
-                  className="public-risk-chip"
-                  data-band={priorityBandCode(priorityValue)}
-                >
-                  {priorityBand(priorityValue, language)}
-                </span>
-              )}
-            </div>
-            <div className="public-risk-scale">
-              {selectedArea && (
-                <i
-                  style={{ left: `${Math.max(0, Math.min(100, priorityValue))}%` }}
-                  aria-hidden="true"
-                />
-              )}
-            </div>
-            <div className="public-risk-scale-labels">
-              <span>{th ? "ความสำคัญต่ำ" : "Lower priority"}</span>
-              <span>{th ? "ความสำคัญสูง" : "Higher priority"}</span>
-            </div>
-            {selectedArea && (
-              <p className="public-priority-evidence">
-                <span>{th ? "ข้อมูล " : "Evidence "}{formatSourceTime(selectedArea.source_timestamp, language)} ICT</span>
-                <span>{th ? "ความเชื่อมั่น " : "Confidence: "}{formatConfidence(selectedArea.evidence_sufficiency, language)} · {th ? "ตรวจสอบสภาพปัจจุบัน" : "Verify current conditions"}</span>
-              </p>
+          {/*
+            The priority card stood here until 13 Oct 2026 (owner: the public does not need the score). What stays on
+            the first screen is the line that says what the page is not, and, while practising, which hour is shown.
+          */}
+          <p className="public-map-note" data-practice={practising ? "true" : undefined} data-public-not-a-warning>
+            {practiceView ? (
+              <>
+                <strong>{practiceView.copy.noteTitle} · {practiceView.moment}</strong>
+                <span>{practiceView.copy.noteBoundary}</span>
+              </>
+            ) : (
+              <span>{TODAY_COPY.note[language]}</span>
             )}
-            <p className="public-risk-status">{chosenArea
-              ? (th ? "ข้อมูลผู้สมัคร · ไม่ใช้ปฏิบัติการ · ไม่ใช่คำเตือนทางการ" : "Candidate · non-operational · not an official warning")
-              : (th ? "พื้นที่ตัวอย่าง · ข้อมูลผู้สมัคร ไม่ใช้ปฏิบัติการ · ไม่ใช่คำเตือนทางการ" : "Example area · candidate, non-operational · not an official warning")}</p>
-          </aside>
+          </p>
         </div>
 
-        {/* At the top right, just under the search field (owner request of 7 Oct 2026); it stood in the dock before. */}
+        {/* At the top right, under the banner (owner request of 13 Oct 2026); it takes the banner's colour. */}
         <button
           ref={hazardButtonRef}
           type="button"
           className="public-hazard-button"
+          data-tone={banner.tone}
           aria-expanded={hazardOpen}
           aria-controls="public-hazard-panel"
           onClick={() => setHazardOpen(true)}
@@ -745,11 +729,17 @@ export function PublicHomePage({
             >
               <div className="public-hazard-panel-heading">
                 <div>
-                  <p>{th ? "ข้อมูลเพื่อการวางแผน" : "PLANNING INFORMATION"}</p>
+                  <p>{practising
+                    ? (th ? "ฝึกซ้อมด้วยภาพจำลอง" : "PRACTICE REPLAY")
+                    : (th ? "ข้อมูลเพื่อการเตรียมพร้อม" : "PREPAREDNESS INFORMATION")}</p>
                   <h2 id="public-hazard-title">
-                    {selectedArea
-                      ? (th ? selectedArea.area_name_th : selectedArea.area_name_en)
-                      : (th ? "ยังไม่พบพื้นที่วางแผน" : "No planning area matched")}
+                    {practiceView
+                      ? practiceView.copy.heading
+                      : practising
+                        ? banner.text
+                        : chosenArea
+                          ? (th ? chosenArea.area_name_th : chosenArea.area_name_en)
+                          : (th ? "ยังไม่ได้เลือกพื้นที่วางแผน" : "No planning area chosen")}
                   </h2>
                 </div>
                 <button
@@ -765,52 +755,79 @@ export function PublicHomePage({
                   <PublicAppIcon name="close" />
                 </button>
               </div>
-              {/* The line that stood above the map until 7 Oct 2026: it is said here, whatever area is chosen. */}
-              <p className="public-home-context" data-public-not-a-warning>{th ? "ข้อมูลเพื่อการเตรียมพร้อม · ไม่ใช่คำเตือนทางการ" : "Preparedness research · not an official warning"}</p>
 
-              {selectedArea ? (
+              {practiceView ? (
                 <>
-                  <dl className="public-hazard-facts">
-                    <div>
-                      <dt>{th ? "ตัวชี้วัดการวางแผน" : "Planning indicator"}</dt>
-                      <dd>{priorityBand(priorityValue, language)} · {priorityValue.toFixed(1)}/100</dd>
-                    </div>
-                    <div>
-                      <dt>{th ? "ความเพียงพอของหลักฐาน" : "Evidence sufficiency"}</dt>
-                      <dd>{formatConfidence(selectedArea.evidence_sufficiency, language)}</dd>
-                    </div>
-                    <div>
-                      <dt>{th ? "เวลาของแหล่งข้อมูล" : "Source time"}</dt>
-                      <dd>{formatSourceTime(selectedArea.source_timestamp, language)} ICT</dd>
-                    </div>
-                  </dl>
-                  {hazardSignals.length > 0 && (
-                    <ul className="public-hazard-signals">
-                      {hazardSignals.map((signal) => (
-                        <li key={signal.code}>
-                          <PublicAppIcon name="hazard" />
-                          <span>{hazardSignalLabel(signal, language)}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-
-                  <div className="public-hazard-guidance">
-                    <PublicAppIcon name="hazard" />
-                    <p>{recommendationLabel(selectedArea, language)}</p>
-                  </div>
-                  <p className="public-hazard-boundary">
-                    {th
-                      ? "ตัวชี้วัดการวางแผนแบบผู้สมัครบนแผนที่นี้แยกจากกรณีศึกษาที่เลือก เป็นผลวิจัยที่ไม่ใช้ปฏิบัติการ ไม่ใช่คะแนน FPPS ที่ยอมรับ การวัดอันตรายปัจจุบัน หรือคำเตือนทางการ"
-                      : "This map's candidate planning indicator is separate from the selected study case. It is non-operational, not an accepted FPPS, a current hazard reading or an official warning."}
+                  <p className="public-home-context" data-public-not-a-warning>{practiceView.copy.noteBoundary}</p>
+                  <p className="public-practice-state" data-tone={practiceView.tone}>
+                    <strong>{practiceView.banner}</strong>
+                    <span>{practiceView.moment}</span>
                   </p>
+                  <ul className="public-practice-lines">
+                    {practiceView.lines.map((line) => <li key={line}>{line}</li>)}
+                  </ul>
+                  <div className="public-hazard-guidance">
+                    <PublicAppIcon name="prepare" />
+                    <p>{practiceView.prompt}</p>
+                  </div>
+                  {(onNavigatePrepare || onNavigateSos) && (
+                    <div className="public-practice-actions">
+                      {onNavigatePrepare && (
+                        <button type="button" onClick={onNavigatePrepare}>{th ? "ทบทวนแผนของฉัน" : "Review my plan"}</button>
+                      )}
+                      {onNavigateSos && (
+                        <button type="button" onClick={onNavigateSos}>{th ? "หมายเลขฉุกเฉิน" : "Emergency numbers"}</button>
+                      )}
+                    </div>
+                  )}
+                  <h3 className="public-practice-key-heading">{practiceView.copy.keyHeading}</h3>
+                  <ul className="public-practice-key">
+                    {practiceView.key.map((item) => (
+                      <li key={item.swatch}><i data-swatch={item.swatch} aria-hidden="true" />{item.text}</li>
+                    ))}
+                  </ul>
+                  <p className="public-hazard-boundary">{practiceView.copy.homeNote} {practiceView.copy.boundary}</p>
+                  <p className="public-practice-sources">{practiceView.copy.sources}</p>
                 </>
-              ) : (
-                <p className="public-hazard-empty">
-                  {th
-                    ? "ใช้ GPS หรือเลือกที่อยู่เพื่อเชื่อมหมุดกับข้อมูลพื้นที่วางแผนที่มีอยู่"
-                    : "Use GPS or choose an address to match the pin with available planning-area information."}
+              ) : practising ? (
+                <p className="public-hazard-empty" role="status">
+                  {practice.status === "unavailable"
+                    ? PRACTICE_MENU_COPY.unavailableDetail[language]
+                    : PRACTICE_MENU_COPY.loading[language]}
                 </p>
+              ) : (
+                <>
+                  {/* The line that stood above the map until 7 Oct 2026: it is said here, whatever area is chosen. */}
+                  <p className="public-home-context" data-public-not-a-warning>{th ? "ข้อมูลเพื่อการเตรียมพร้อม · ไม่ใช่คำเตือนทางการ" : "Preparedness research · not an official warning"}</p>
+                  <p className="public-hazard-explain">{TODAY_COPY.explain[language]}</p>
+
+                  {chosenArea ? (
+                    <>
+                      <dl className="public-hazard-facts">
+                        <div>
+                          <dt>{th ? "ความเพียงพอของหลักฐาน" : "Evidence sufficiency"}</dt>
+                          <dd>{formatConfidence(chosenArea.evidence_sufficiency, language)}</dd>
+                        </div>
+                        <div>
+                          <dt>{th ? "เวลาของแหล่งข้อมูล" : "Source time"}</dt>
+                          <dd>{formatSourceTime(chosenArea.source_timestamp, language)} ICT</dd>
+                        </div>
+                      </dl>
+
+                      <div className="public-hazard-guidance">
+                        <PublicAppIcon name="hazard" />
+                        <p>{recommendationLabel(chosenArea, language)}</p>
+                      </div>
+                      <p className="public-hazard-boundary">{TODAY_COPY.boundary[language]}</p>
+                    </>
+                  ) : (
+                    <p className="public-hazard-empty">
+                      {th
+                        ? "เลือกพื้นที่บนแผนที่ ใช้ GPS หรือค้นหาที่อยู่ เพื่อดูข้อมูลการเตรียมพร้อมของพื้นที่นั้น"
+                        : "Choose an area on the map, use GPS or search for an address to see the preparedness information for that area."}
+                    </p>
+                  )}
+                </>
               )}
 
               <a

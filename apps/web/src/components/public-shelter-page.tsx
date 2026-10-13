@@ -583,7 +583,7 @@ export function PublicShelterPage({
             datasetMode={datasetMode}
             showSelectionSheet={false}
             attributions={[]}
-            visualPalette="public-risk"
+            visualPalette="public-outline"
             enableBasemaps
             basemapControlVariant="menu"
             showLegend={false}

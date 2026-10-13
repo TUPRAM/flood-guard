@@ -1696,18 +1696,6 @@ button.model-card { cursor: pointer; }
   cursor: pointer;
 }
 .public-locate-button:disabled { cursor: progress; opacity: .65; }
-.public-hazard-button {
-  flex: 0 0 auto;
-  min-height: 48px;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 16px;
-  border: 0;
-  font: inherit;
-  font-size: .76rem;
-  cursor: pointer;
-}
 .public-hazard-overlay {
   position: absolute;
   z-index: 920;
@@ -2757,8 +2745,6 @@ button.model-card { cursor: pointer; }
     white-space: normal;
   }
   .public-home-map .map-basemap-menu { right: 10px; bottom: 218px; }
-  .public-hazard-button { min-height: 46px; padding: 9px 13px; font-size: .72rem; }
-  .public-hazard-button .public-app-icon { width: 21px; }
   .public-hazard-overlay { padding: 0; }
   .public-hazard-panel {
     width: 100%;
@@ -2804,7 +2790,6 @@ button.model-card { cursor: pointer; }
 }
 
 @media (max-width: 390px) {
-  .public-hazard-button > span { max-width: 66px; line-height: 1.15; }
   .public-report-choice-grid label b { font-size: .64rem; }
   .public-app-shell > .public-bottom-nav button { font-size: .54rem; }
 }

@@ -39,7 +39,7 @@ describe("PublicHomePage on a day without practice", () => {
     for (const area of data.publicAreas) expect(html).toContain(area.area_name_en);
   });
 
-  it("keeps a grey banner under the search field, with Hazard Info after it", () => {
+  it("keeps a grey banner under the search field as the one control that opens the panel", () => {
     const { html } = render("TH570903");
     const banner = html.match(/<button type="button" class="public-signal-banner"[\s\S]*?<\/button>/)?.[0] ?? "";
 
@@ -47,11 +47,11 @@ describe("PublicHomePage on a day without practice", () => {
     expect(banner).toContain('data-tone="neutral"');
     expect(banner).toContain("No flood reports near you");
     expect(banner).toContain('aria-controls="public-hazard-panel"');
-    // The banner stands directly after the search field, in the rail; Hazard Info is a control of the map, after the
-    // note at its foot, and takes the banner's tone.
+    // The banner stands directly after the search field, in the rail. The separate Hazard Info button, which opened
+    // the same panel, was removed as redundant (owner request of 13 Oct 2026).
     expect(html).toMatch(/<\/form><\/div><button type="button" class="public-signal-banner"/);
-    expect(html).toMatch(/<\/p><\/div><button type="button" class="public-hazard-button" data-tone="neutral"/);
-    expect(html.indexOf("public-signal-banner")).toBeLessThan(html.indexOf("public-hazard-button"));
+    expect(html).not.toContain("public-hazard-button");
+    expect(html.replace(/<[^>]*>/g, " ")).not.toMatch(/Hazard Info/);
   });
 
   it("says on the first screen what the page is not", () => {
@@ -66,7 +66,7 @@ describe("PublicHomePage on a day without practice", () => {
     expect(html).not.toContain("Make my plan");
     expect(html).not.toContain("Help and contacts");
     expect(html).toContain('<h1 class="sr-only">Ko Chang</h1>');
-    // The research link waits in the Hazard Info panel, which is closed at first.
+    // The research link waits in the panel behind the banner, which is closed at first.
     expect(html).not.toContain("Explore research cases");
     expect(onSelectArea).not.toHaveBeenCalled();
     expect(onLocationChange).not.toHaveBeenCalled();

@@ -176,7 +176,7 @@
 }
 
 /*
-   Tones of the banner, of Hazard Info and of the scenario menu: grey on a day without practice, then one per state
+   Tones of the banner, of the panel behind it and of the scenario menu: grey on a day without practice, then one per state
    of the practice replay. Colour is never the only cue: the banner's icon and its sentence carry the state too.
 */
 .public-app-shell [data-tone="neutral"] { --tone-bg: #f4f6f9; --tone-border: var(--fg-neutral-200); --tone-stripe: var(--fg-neutral); --tone-text: var(--fg-neutral-700); }
@@ -190,7 +190,7 @@
    The banner, directly under the search field (owner request of 13 Oct 2026) and always there.
    A saturated full-width slab reads as panic and buries the map under it; the state is carried by a left stripe, the
    icon and the sentence instead. The box has one height whatever it says (two lines at most), because the row of the
-   list button and Hazard Info below it is placed from the map's upper edge.
+   list button below it is placed from the map's upper edge.
 */
 .public-signal-banner {
   position: relative;
@@ -352,21 +352,6 @@
     max-width: 150px;
   }
 }
-/*
-   Hazard-info action. It opens the panel behind the banner and takes the banner's tone, so the two read as one
-   message; without a tone it keeps the secondary hue.
-*/
-.public-hazard-button {
-  border: 1px solid var(--tone-border, var(--fg-secondary-100));
-  border-radius: var(--fg-radius-lg);
-  background: var(--tone-bg, var(--fg-secondary-50));
-  color: var(--tone-text, var(--fg-secondary-700));
-  font-weight: 700;
-  box-shadow: var(--fg-shadow-md);
-}
-.public-hazard-button .public-app-icon { color: var(--tone-stripe, var(--fg-secondary)); }
-.public-hazard-button:hover { filter: brightness(.97); border-color: var(--tone-stripe, var(--fg-secondary)); }
-
 /* Locate control: same card surface as the tool cells it sits beside. */
 .public-locate-button {
   border: 1px solid var(--fg-neutral-200);
@@ -619,7 +604,7 @@
 .public-home-page { grid-template-rows: minmax(360px, 1fr); }
 .public-home-page:has(.map-basemap-notice:not([data-pending="true"])) { grid-template-rows: minmax(448px, 1fr); }
 
-/* The research link stands in the Hazard Info panel, under the link to the official updates. */
+/* The research link stands in the panel behind the banner, under the link to the official updates. */
 .public-hazard-panel .public-home-research-link { display: inline-flex; align-items: center; min-height: 44px; margin-top: 4px; }
 
 /*
@@ -629,16 +614,12 @@
 */
 .public-home-map .map-text-alternative:not([open]):not(:focus-within) { opacity: 0; pointer-events: none; }
 
-/* Hazard Info: at the top right, under the banner, where the list button's row is. */
-.public-home-map > .public-hazard-button {
-  position: absolute;
-  z-index: 700;
-  top: 130px;
-  right: calc(var(--public-map-tool-inset) + 12px);
-}
-/* With the button gone from the foot of the map, the note keeps clear of the tool column on the right... */
+/*
+   The Hazard Info button is gone (13 Oct 2026): the banner opens the same panel. The row under the banner stays for
+   the list button and the map-background notice. The note keeps clear of the tool column on the right...
+*/
 .public-map-dock > .public-map-note { max-width: min(340px, calc(100% - 60px)); }
-/* ...and the tools stand where the button was: locate, then zoom, then the layer menu. */
+/* ...and the tools stand at the foot of that column: locate, then zoom, then the layer menu. */
 .public-locate-button { bottom: calc(12px + var(--public-nav-clear, 0px)); }
 .public-home-map .leaflet-top.leaflet-left { bottom: calc(68px + var(--public-nav-clear, 0px)); }
 .public-home-map .map-basemap-menu { bottom: calc(166px + var(--public-nav-clear, 0px)); }
@@ -663,8 +644,6 @@
   .public-app-shell:has(> .public-app-content.is-home) .public-home-map { --public-nav-clear: 88px; }
   .public-app-shell:has(> .public-app-content.is-home) .public-hazard-overlay { padding-bottom: calc(16px + 88px); }
 }
-/* One line, in Thai too. */
-.public-home-map > .public-hazard-button { white-space: nowrap; }
 
 /*
    The panel behind the banner lies over the whole map, its tools included. Leaflet stacks its controls at 1000, above

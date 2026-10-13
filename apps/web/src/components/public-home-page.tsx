@@ -159,7 +159,8 @@ export function PublicHomePage({
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchAbortRef = useRef<AbortController | null>(null);
   const locationAttemptRef = useRef(0);
-  const hazardButtonRef = useRef<HTMLButtonElement>(null);
+  // The banner is the one control that opens the panel, so the focus goes back to it when the panel closes.
+  const bannerRef = useRef<HTMLButtonElement>(null);
   const hazardCloseRef = useRef<HTMLButtonElement>(null);
   const hazardPanelRef = useRef<HTMLElement>(null);
   // No area is framed for the reader: until they choose one the map shows the whole district.
@@ -359,7 +360,7 @@ export function PublicHomePage({
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setHazardOpen(false);
-        hazardButtonRef.current?.focus();
+        bannerRef.current?.focus();
         return;
       }
       if (event.key !== "Tab" || !hazardPanelRef.current) return;
@@ -471,7 +472,8 @@ export function PublicHomePage({
       {/* The block that stood above the map (heading, two buttons, the research link) was removed on the owner's
           request of 7 Oct 2026, so the search field stands directly under the header. The heading stays for a screen
           reader; "Make my plan" and "Help and contacts" are the Prepare and SOS tabs; the research link is in the
-          Hazard Info panel; the words "not an official warning" are on the priority card and in that panel. */}
+          panel behind the banner; the words "not an official warning" are in the note at the foot of the map and in
+          that panel. */}
       <h1 className="sr-only">{practiceView
         ? practiceView.copy.heading
         : chosenArea
@@ -596,9 +598,11 @@ export function PublicHomePage({
         {/*
           The banner stands directly under the search field and is always there (owner request of 13 Oct 2026). Its
           colour and its icon follow what it says; the tick is kept for the practice scenario without water, so a
-          day without practice never reads as an all-clear.
+          day without practice never reads as an all-clear. It opens the panel with the detail: the separate Hazard
+          Info button, which opened the same panel, was removed as redundant on the owner's request of the same day.
         */}
         <button
+          ref={bannerRef}
           type="button"
           className="public-signal-banner"
           data-tone={banner.tone}
@@ -677,20 +681,6 @@ export function PublicHomePage({
           </p>
         </div>
 
-        {/* At the top right, under the banner (owner request of 13 Oct 2026); it takes the banner's colour. */}
-        <button
-          ref={hazardButtonRef}
-          type="button"
-          className="public-hazard-button"
-          data-tone={banner.tone}
-          aria-expanded={hazardOpen}
-          aria-controls="public-hazard-panel"
-          onClick={() => setHazardOpen(true)}
-        >
-          <PublicAppIcon name="hazard" />
-          <span>{th ? "ข้อมูลอันตราย" : "Hazard Info"}</span>
-        </button>
-
         {/*
           Sits with zoom and layers in the map-tool column. GPS is only ever
           requested from here, so opening the app never reaches for the device
@@ -716,7 +706,7 @@ export function PublicHomePage({
             onMouseDown={(event) => {
               if (event.currentTarget !== event.target) return;
               setHazardOpen(false);
-              hazardButtonRef.current?.focus();
+              bannerRef.current?.focus();
             }}
           >
             <aside
@@ -749,7 +739,7 @@ export function PublicHomePage({
                   aria-label={th ? "ปิดข้อมูลอันตราย" : "Close hazard information"}
                   onClick={() => {
                     setHazardOpen(false);
-                    hazardButtonRef.current?.focus();
+                    bannerRef.current?.focus();
                   }}
                 >
                   <PublicAppIcon name="close" />

@@ -76,7 +76,7 @@ export const PRACTICE_SCENARIO_LABELS: Readonly<Record<PracticeState, Localized>
 };
 
 /**
- * Colour tone of the banner and of Hazard Info. "neutral" is the grey of a day without practice: the app has no
+ * Colour tone of the banner and of the panel behind it. "neutral" is the grey of a day without practice: the app has no
  * feed of current water, so it never shows the green of "calm" on its own.
  */
 export type PracticeTone = "neutral" | "calm" | "watch" | "alert" | "danger" | "easing";

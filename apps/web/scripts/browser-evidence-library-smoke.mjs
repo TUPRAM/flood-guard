@@ -274,8 +274,9 @@ async function verifyMainSurfaces(page, offline) {
     + "&service=hospital&mode=walking&scenario=" + projectedVariant.candidate_flood_scenario_id;
   await page.goto(origin + "/public/?" + query, { waitUntil: "domcontentloaded" });
   await switchPublicToEnglish(page);
-  // The research link stands in the Hazard Info panel since 7 Oct 2026; the panel is opened first.
-  await page.locator(".public-home-map > .public-hazard-button").click();
+  // The research link stands in the panel behind the banner since 7 Oct 2026; the panel is opened first, with the
+  // banner (the separate Hazard Info button was removed on 13 Oct 2026).
+  await page.locator(".public-home-map .public-signal-banner").click();
   const researchLink = page.locator(".public-hazard-panel .public-home-research-link");
   await researchLink.waitFor();
   if (!(await researchLink.getAttribute("href"))?.includes(query)) throw new Error("Public home research link lost the selected case or scenario");
@@ -335,7 +336,7 @@ async function verifyMainSurfaces(page, offline) {
   await page.getByRole("button", { name: "Use English", exact: true }).click();
   await verifyRoleUrlSynchronization(page);
   await page.goto(origin + "/public/?aoi=unknown&event=unknown", { waitUntil: "domcontentloaded" });
-  await page.locator(".public-home-map > .public-hazard-button").click();
+  await page.locator(".public-home-map .public-signal-banner").click();
   await page.locator(".public-hazard-panel .public-home-research-link").click();
   await page.locator("main[data-evidence-library]").getByRole("alert").filter({ hasText: "Another area's data will not be substituted" }).waitFor();
   if (await page.locator("[data-public-case-summary]").count()) throw new Error("Unknown Public case displayed another case");

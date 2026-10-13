@@ -294,17 +294,19 @@ try {
   await page.locator("#public-area-search").fill("");
   await page.setViewportSize({ width: 390, height: 844 });
   await assertPublicPlanningFallback(page, publicMapScope);
-  await page.locator(".public-hazard-button").click();
+  // The banner opens the panel; the separate Hazard Info button was removed on 13 Oct 2026.
+  if (await page.locator(".public-hazard-button").count() !== 0) throw new Error("Public Home still has the Hazard Info button beside the banner.");
+  await page.locator(".public-signal-banner").click();
   const hazardPanel = page.locator("#public-hazard-panel");
   await hazardPanel.waitFor({ state: "visible" });
   const hazardText = await hazardPanel.innerText();
   for (const required of ["Evidence sufficiency", "Source time", "does not measure current water levels", "candidate research", "non-operational", "not an official warning", "DDPM"]) {
     if (!hazardText.includes(required)) {
-      throw new Error(`Public Hazard Info is missing its evidence boundary: ${required}.`);
+      throw new Error(`The panel behind the Public banner is missing its evidence boundary: ${required}.`);
     }
   }
   // No score on a Public page since 13 Oct 2026: the panel shows neither the indicator nor its value.
-  if (/Planning indicator|\/100/.test(hazardText)) throw new Error("Public Hazard Info still shows a planning score.");
+  if (/Planning indicator|\/100/.test(hazardText)) throw new Error("The panel behind the Public banner still shows a planning score.");
   await page.getByRole("button", { name: "Close hazard information" }).click();
   await assertPublicPractice(page);
 
@@ -1472,7 +1474,6 @@ async function assertPublicHomeLayout(page, mapScope) {
     // The note at the foot of the map, where the priority card stood until 13 Oct 2026.
     const mapNote = document.querySelector(".public-map-note");
     const risk = mapNote?.getBoundingClientRect();
-    const hazard = document.querySelector(".public-hazard-button")?.getBoundingClientRect();
     const banner = document.querySelector(".public-signal-banner")?.getBoundingClientRect();
     const search = document.querySelector(".public-map-search-field")?.getBoundingClientRect();
     const attribution = document.querySelector(".leaflet-control-attribution")?.getBoundingClientRect();
@@ -1521,20 +1522,16 @@ async function assertPublicHomeLayout(page, mapScope) {
         note: risk?.toJSON(),
         noteContentWidth: mapNote?.scrollWidth,
         noteClientWidth: mapNote?.clientWidth,
-        // The banner stands directly under the search field and Hazard Info under the banner (13 Oct 2026).
+        // The banner stands directly under the search field (13 Oct 2026); the Hazard Info button is gone.
         priorityCardCount: document.querySelectorAll(".public-risk-indicator").length,
+        hazardButtonCount: document.querySelectorAll(".public-hazard-button").length,
         bannerUnderSearch: Boolean(banner && search && banner.top >= search.bottom - 1 && banner.top - search.bottom <= 16),
-        hazardUnderBanner: Boolean(banner && hazard && hazard.top >= banner.bottom - 1 && hazard.top - banner.bottom <= 16),
         bannerHeight: banner ? Math.round(banner.height) : null,
         noteAttributionOverlap: overlaps(risk, attribution),
-        noteHazardOverlap: overlaps(risk, hazard),
         attribution: attribution?.toJSON(),
         availability: availability?.toJSON(),
         riskNavigationGap: risk && navigation ? navigation.top - risk.bottom : null,
-        hazardNavigationGap: hazard && navigation ? navigation.top - hazard.bottom : null,
-        hazardAttributionOverlap: overlaps(hazard, attribution),
         availabilityRiskOverlap: overlaps(availability, risk),
-        availabilityHazardOverlap: overlaps(availability, hazard),
         availabilityAttributionOverlap: overlaps(availability, attribution),
         availabilityMapControlOverlap: mapControls.some((control) => overlaps(availability, control)),
         availabilitySlot: slot?.toJSON(),
@@ -1580,15 +1577,11 @@ async function assertPublicHomeLayout(page, mapScope) {
     || audit.lowerControls.priorityCardCount !== 0
     || !audit.lowerControls.note
     || !audit.lowerControls.bannerUnderSearch
-    || !audit.lowerControls.hazardUnderBanner
+    || audit.lowerControls.hazardButtonCount !== 0
     || audit.lowerControls.bannerHeight !== 46
     || audit.lowerControls.noteAttributionOverlap
-    || audit.lowerControls.noteHazardOverlap
     || audit.lowerControls.riskNavigationGap < 10
-    || audit.lowerControls.hazardNavigationGap < 10
-    || audit.lowerControls.hazardAttributionOverlap
     || audit.lowerControls.availabilityRiskOverlap
-    || audit.lowerControls.availabilityHazardOverlap
     || audit.lowerControls.availabilityAttributionOverlap
     || audit.lowerControls.availabilityMapControlOverlap
     // The status bar is shown only when something needs attention; when it is shown, it is in its slot.
@@ -1643,7 +1636,6 @@ async function assertCompactMapNotice(page, mapScope, language, label, alsoRequi
       "locate button": ".public-locate-button",
       "map attribution": `${scope} .leaflet-control-attribution`,
       "map note": ".public-map-note",
-      "hazard button": ".public-hazard-button",
       "signal banner": ".public-signal-banner",
       "location card": ".public-location-status",
       "status pill": '[data-pwa-availability="true"] > summary',
@@ -1699,7 +1691,7 @@ async function assertCompactMapNotice(page, mapScope, language, label, alsoRequi
     || folded.lines < 1 || folded.lines > 2 || folded.truncated || folded.height > 64) {
     throw new Error(`The compact map notice is not a short line and one button in one row at ${label} (${language}): ${JSON.stringify(folded)}`);
   }
-  for (const required of ["list button", "search field", "map layers button", "zoom buttons", "locate button", "map attribution", "map note", "hazard button", "signal banner", ...alsoRequired]) {
+  for (const required of ["list button", "search field", "map layers button", "zoom buttons", "locate button", "map attribution", "map note", "signal banner", ...alsoRequired]) {
     if (!folded.found.includes(required)) throw new Error(`The notice check found no ${required} to compare with at ${label} (${language}).`);
   }
   if (folded.overlaps.length > 0 || !folded.insideMap || folded.scroll > 1) {
@@ -1794,7 +1786,6 @@ async function assertPublicPractice(page) {
   const state = () => page.evaluate(() => ({
     tone: document.querySelector(".public-signal-banner")?.getAttribute("data-tone"),
     banner: document.querySelector(".public-signal-banner")?.innerText.trim(),
-    hazardTone: document.querySelector(".public-hazard-button")?.getAttribute("data-tone"),
     note: document.querySelector(".public-map-note")?.innerText.replace(/\s+/g, " ").trim(),
     practising: document.querySelector(".public-map-note")?.getAttribute("data-practice"),
     place: document.querySelector(".public-greeting-location")?.innerText.trim(),
@@ -1833,7 +1824,7 @@ async function assertPublicPractice(page) {
   await mapSettles("the scenario \"cut off\"", { water: 1, reports: "some", examplePin: true });
   const cutOff = await state();
   if (
-    cutOff.hazardTone !== "danger" || cutOff.practising !== "true"
+    cutOff.practising !== "true"
     || !cutOff.note.includes("Practice replay") || !cutOff.note.includes("12 Sep 2024")
     || !cutOff.note.includes("not real-time") || !cutOff.note.includes("not an official warning")
     || !cutOff.place.includes("Example home") || cutOff.selected !== selectedBefore
@@ -2009,9 +2000,10 @@ function requiredFinalCopy(routePath) {
     : routePath === "/public/"
       // The Public header now shows the FloodGuard logo image instead of a text
       // wordmark, so the brand is no longer body text here. The nav labels and
-      // Hazard Info still prove the finished Public UI rendered. Since 13 Oct 2026 the first screen has no
-      // priority card: its words are the grey banner of a day without practice and the note at the foot of the map.
-      ? ["hazard info", "report", "shelter", "prepare", "sos", "no flood reports near you", "not an official warning"]
+      // banner still prove the finished Public UI rendered. Since 13 Oct 2026 the first screen has no priority card
+      // and no Hazard Info button: its words are the grey banner of a day without practice and the note at the foot
+      // of the map.
+      ? ["report", "shelter", "prepare", "sos", "no flood reports near you", "not an official warning"]
       : routePath === "/command/planning/"
         ? ["planning overview", "candidate", "accepted fpps and action class remain unavailable"]
         : routePath === "/studio/"

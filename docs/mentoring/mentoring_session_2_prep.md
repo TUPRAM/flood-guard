@@ -366,7 +366,7 @@ Agreement between two sensors 44 hours apart; not accuracy.
 | Shelter room against need | replay, shelter panel | Live. |
 | THEOS-2 against radar | `docs/mentoring/visuals/theos2_check_slide.png` (made by `scripts/build_theos2_slide.py` from the committed figure and result) | Slide drawn on 8 October, 16:9: three panels and the three figures. It shows a reduced picture of the sample image; the question to GISTDA on the terms for showing it (section 6) is still open. |
 | Pipeline in four boxes | `docs/mentoring/visuals/pipeline_four_boxes.svg` | Drawn on 8 October, 16:9. Opens in a browser; drag it onto a slide. |
-| Policy page | `/policy/` | Leads with case SE1 since 8 October: the eight tambons, the finding on Ko Chang and the four cautions. The earlier example is an appendix. |
+| Policy page | `/policy/` | Since 13 October a plain-language page in the order of the team's policy document, with the weight test and a list of sources. The page that leads with case SE1 (8 October) is the technical record at `/policy/technical/`. |
 | Public view on a phone | `/public/` | Live. |
 
 ## 7. What is missing, in order
@@ -463,5 +463,7 @@ Agreement between two sensors 44 hours apart; not accuracy.
 | The replay's peak fitted to the image of 15 September | `docs/replay_river_fit.md` | The peak now covers 89% of the mud line of the 15 September image, 73% before, and Ko Chang's flooded area nearly doubles. It is a fit, not a check: on the half of the area held back, the fitted levels did worse than the earlier model (62% against 73%). The earlier replay is kept at `/archive1/`. |
 | Buildings against residents in the water | `docs/buildings_in_water.md` | The population grid puts 39% of residents in cells with no building. With residents on buildings, 12,600 are in the water where the grid gives 17,900, no class changes, and Ko Chang is 83% dry with every road cut. |
 
+| The five weights of the score, tested | `docs/fpps_weight_sensitivity.md` | The weights are our choice and no paper gives them. With equal weights, with each weight halved or raised by half, and in nine of ten random weightings, Ko Chang stays first. Mae Sai town comes first only if lost access is left out. Report only: no weight, score or class changes. |
+
 Each is on the team page for the team's word (items V-17, V-19 and V-22 to
-V-39). None changes a published class or enters a planning score.
+V-40). None changes a published class or enters a planning score.

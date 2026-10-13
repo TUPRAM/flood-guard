@@ -14,6 +14,7 @@ import type { CommandHandRaster } from "@/lib/flood-timeline-command-data";
 import type { ExerciseItem } from "@/lib/flood-timeline-command-incidents";
 import { areaPolygons, buildTwoToneFactorLut, buildTwoToneLut, cellsInMask, commandRoadStyle, COMMAND_WET_ROAD } from "@/lib/flood-timeline-command-map";
 import { PRACTICE_COPY, PRACTICE_RADIUS_M, practiceReportLabel, practiceReportLines } from "@/lib/public-practice";
+import { cellOutlines, frameToLatLng } from "@/lib/public-practice-outline";
 import type { Language } from "@/lib/types";
 
 import { createGeoMapRenderer, OSM_ATTRIBUTION_HTML } from "./geo-map";
@@ -41,28 +42,21 @@ export interface PracticeMapFrame {
 
 const LITTLE_ENDIAN = new Uint8Array(new Uint32Array([1]).buffer)[0] === 1;
 const IMPASSABLE_ROAD = "#c62f24";
-/** The hatch of the furthest water of the replay: the deep tone of the water, thin. */
-const PEAK_HATCH_RGBA = [47, 134, 196, 150] as const;
-const PEAK_HATCH_SPACING = 4;
+/**
+ * The furthest water of the replay: a faint wash of the water's deep tone inside a dashed outline. The outline is
+ * traced from the cells and drawn as a line, so it stays crisp at every zoom (owner request of 13 Oct 2026: the
+ * hatch it replaces blurred into dots when the map was zoomed in).
+ */
+const PEAK_WASH_RGBA = [47, 134, 196, 26] as const;
+const PEAK_OUTLINE = "#2f6fb5";
+/** How far, in cells, the drawn outline may leave the edges of the cells: it turns their stair steps into slopes. */
+const PEAK_OUTLINE_TOLERANCE = 1.5;
 /** From this zoom on a practice report shows the depth it states beside its "EX" tag; below it, the tag alone. */
 const REPORT_DETAIL_ZOOM = 16;
 const REPORT_DETAIL_CLASS = "public-practice-detail";
 
 const pack = ([r, g, b, a]: readonly number[], littleEndian: boolean): number =>
   (littleEndian ? ((a << 24) | (b << 16) | (g << 8) | r) : ((r << 24) | (g << 16) | (b << 8) | a)) >>> 0;
-
-/**
- * Diagonal hatch over `cells` of a grid `width` cells wide: every `spacing`-th cell along a row, shifted by one cell
- * per row. The cells are those that are wet at the highest stage of the replay, so the hatch is its furthest water.
- */
-export function paintPeakHatch(cells: Uint32Array, width: number, pixels: Uint32Array, colour: number, spacing = PEAK_HATCH_SPACING): void {
-  for (let index = 0; index < cells.length; index += 1) {
-    const cell = cells[index];
-    const column = cell % width;
-    const row = (cell - column) / width;
-    if ((column + row) % spacing === 0) pixels[cell] = colour;
-  }
-}
 
 interface ClippedCells { candidates: Uint32Array; lowCells: Uint32Array | null; lowStripes: Uint8Array | null }
 const clippedByRaster = new WeakMap<CommandHandRaster, ClippedCells>();
@@ -105,6 +99,26 @@ function districtCells(data: PracticeMapData, raster: CommandHandRaster): Clippe
   return clipped;
 }
 
+const peakOutlineByRaster = new WeakMap<CommandHandRaster, [number, number][][]>();
+
+/**
+ * The outline of the furthest water of the replay inside the eight subdistricts, as rings of latitude and longitude.
+ * It does not depend on the hour, so it is traced once per raster.
+ */
+function peakOutline(L: LeafletModule, data: PracticeMapData, raster: CommandHandRaster): [number, number][][] {
+  const known = peakOutlineByRaster.get(raster);
+  if (known) return known;
+  const { bounds, hand } = data.manifest;
+  const rings = cellOutlines(districtCells(data, raster).candidates, hand.width, hand.height).map((loop) => {
+    const corners = [];
+    for (let index = 0; index < loop.length; index += 2) corners.push(L.point(loop[index], loop[index + 1]));
+    corners.push(corners[0]);
+    return L.LineUtil.simplify(corners, PEAK_OUTLINE_TOLERANCE).map((corner) => frameToLatLng(corner.x, corner.y, bounds, hand.width, hand.height));
+  }).filter((ring) => ring.length >= 4);
+  peakOutlineByRaster.set(raster, rings);
+  return rings;
+}
+
 const HOME_PIN_HTML = [
   '<svg class="public-area-pin" viewBox="0 0 32 40" aria-hidden="true" focusable="false">',
   '<path d="M16 38.4c0 0 11.2-15.6 11.2-22.6a11.2 11.2 0 1 0-22.4 0c0 7 11.2 22.6 11.2 22.6Z"',
@@ -131,8 +145,9 @@ export function mountPracticeLayers(L: LeafletModule, map: LeafletMap, data: Pra
   const waterPane = pane("fg-practice-water", 350);
   const roadPane = pane("fg-practice-roads", 420);
   const home: [number, number] = [frame.home.latitude, frame.home.longitude];
+  const renderer = createGeoMapRenderer(L, { pane: roadPane, padding: 0.4 });
 
-  // --- Modelled water of the hour, with the furthest water of the replay hatched under it while the water is low.
+  // --- Modelled water of the hour, with the furthest water of the replay washed in under it while the water is low.
   if (data.hand) {
     const raster = data.hand;
     const canvas = document.createElement("canvas");
@@ -143,15 +158,20 @@ export function mountPracticeLayers(L: LeafletModule, map: LeafletMap, data: Pra
     if (context && image) {
       const pixels = new Uint32Array(image.data.buffer);
       const cells = districtCells(data, raster);
-      if (frame.showPeakExtent) paintPeakHatch(cells.candidates, canvas.width, pixels, pack(PEAK_HATCH_RGBA, LITTLE_ENDIAN));
+      if (frame.showPeakExtent) {
+        const wash = pack(PEAK_WASH_RGBA, LITTLE_ENDIAN);
+        for (let index = 0; index < cells.candidates.length; index += 1) pixels[cells.candidates[index]] = wash;
+      }
       const lut = raster.factorKeys
         ? buildTwoToneFactorLut(frame.stage, manifest.hand.step_m, manifest.impassable_depth_m, LITTLE_ENDIAN, new Uint32Array(FACTOR_LUT_SIZE), raster.factorScale)
         : buildTwoToneLut(frame.stage, manifest.hand.step_m, manifest.impassable_depth_m, LITTLE_ENDIAN);
-      // A dry cell has a transparent entry in the lookup table and would wipe the hatch, so only wet cells are painted.
+      // A dry cell has a transparent entry in the lookup table and would wipe the wash, so only wet cells are painted.
+      // On a dry day (stage 0) nothing is: the model counts its mapped stream channels as water at every stage, and
+      // their blue blocks beside "No water near this home" read as a contradiction (owner request of 13 Oct 2026).
       const keys = raster.factorKeys ?? raster.codes;
-      const wet = cells.candidates.filter((cell) => lut[keys[cell]] !== 0);
+      const wet = frame.stage > 0 ? cells.candidates.filter((cell) => lut[keys[cell]] !== 0) : new Uint32Array(0);
       paintDepth(keys, wet, lut, pixels);
-      if (cells.lowCells && cells.lowStripes) {
+      if (frame.stage > 0 && cells.lowCells && cells.lowStripes) {
         const lowWet: number[] = [];
         const lowStripes: number[] = [];
         cells.lowCells.forEach((cell, index) => {
@@ -166,8 +186,14 @@ export function mountPracticeLayers(L: LeafletModule, map: LeafletMap, data: Pra
     }
   }
 
+  // --- The outline of that furthest water: a dashed line on a white edge, under the roads.
+  if (data.hand && frame.showPeakExtent) {
+    const rings = peakOutline(L, data, data.hand);
+    layers.push(L.polyline(rings, { renderer, interactive: false, color: "#ffffff", opacity: 0.85, weight: 3.6, lineJoin: "round" }).addTo(map));
+    layers.push(L.polyline(rings, { renderer, interactive: false, color: PEAK_OUTLINE, opacity: 1, weight: 1.6, dashArray: "6 5", lineJoin: "round" }).addTo(map));
+  }
+
   // --- Road pieces with water on them: impassable in red, shallower water in dashed amber, each on a white casing.
-  const renderer = createGeoMapRenderer(L, { pane: roadPane, padding: 0.4 });
   const casings: Layer[] = [];
   const lines: Layer[] = [];
   for (const road of data.roads.features) {

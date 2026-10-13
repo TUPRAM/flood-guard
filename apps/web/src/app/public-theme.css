@@ -405,7 +405,7 @@
 .public-practice-key li { display: grid; grid-template-columns: 28px minmax(0, 1fr); align-items: center; gap: 8px; }
 .public-practice-key i { width: 28px; height: 10px; display: block; border-radius: var(--fg-radius-xs); }
 .public-practice-key i[data-swatch="water"] { background: linear-gradient(90deg, #8dc0e4 0 50%, #2f86c4 50% 100%); }
-.public-practice-key i[data-swatch="peak"] { border: 1px solid #b9d5ea; background: repeating-linear-gradient(135deg, #2f86c4 0 2px, transparent 2px 6px); }
+.public-practice-key i[data-swatch="peak"] { border: 1.5px dashed #2f6fb5; background: rgb(47 134 196 / 10%); }
 .public-practice-key i[data-swatch="road-impassable"] { height: 4px; background: #c62f24; }
 .public-practice-key i[data-swatch="road-wet"] { height: 4px; background: repeating-linear-gradient(90deg, #b86e00 0 6px, transparent 6px 10px); }
 .public-practice-key i[data-swatch="report"] { width: 22px; height: 12px; border-radius: var(--fg-radius-pill); background: #e69f00; }

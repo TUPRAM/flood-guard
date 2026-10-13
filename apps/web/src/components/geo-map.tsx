@@ -120,6 +120,12 @@ interface GeoMapProps {
    */
   routePath?: ReadonlyArray<readonly [number, number]>;
   /**
+   * Room the route keeps clear when the map frames it, in pixels from the upper left and from the lower right corner:
+   * for a page that lays its own controls over the map. Without it the route is framed with an even margin. Keep the
+   * object stable between renders.
+   */
+  routeViewPadding?: { topLeft: readonly [number, number]; bottomRight: readonly [number, number] };
+  /**
    * Layers a caller draws on this map itself (the practice replay of the Public home map). Called once the map is
    * ready and again whenever the function changes; what it returns is called before the next call and when the map
    * goes away. Keep the function stable between renders.
@@ -219,6 +225,7 @@ export function GeoMap({
   initialFocus = "region",
   selectionPinTitle,
   routePath,
+  routeViewPadding,
   overlay,
   collapseAttribution = false,
 }: GeoMapProps) {
@@ -660,7 +667,12 @@ export function GeoMap({
     routeLayerRef.current = group;
     map.fitBounds(L.latLngBounds(points), {
       animate: false,
-      padding: [34, 34],
+      ...(routeViewPadding
+        ? {
+            paddingTopLeft: L.point(routeViewPadding.topLeft[0], routeViewPadding.topLeft[1]),
+            paddingBottomRight: L.point(routeViewPadding.bottomRight[0], routeViewPadding.bottomRight[1]),
+          }
+        : { padding: L.point(34, 34) }),
       maxZoom: 15,
     });
 
@@ -668,7 +680,7 @@ export function GeoMap({
       group.remove();
       if (routeLayerRef.current === group) routeLayerRef.current = null;
     };
-  }, [mapReady, routePath]);
+  }, [mapReady, routePath, routeViewPadding]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -714,7 +726,9 @@ export function GeoMap({
     }).addTo(group);
     bindTextTooltip(marker, location.label, { direction: "top", offset: [0, -34] });
     locationLayerRef.current = group;
-    map.setView(latlng, Math.max(map.getZoom(), 17), { animate: false });
+    // A route that ends at this pin has just been framed (its effect runs before this one): moving the map to the
+    // pin would push the other end of the route out of view.
+    if (!routeLayerRef.current) map.setView(latlng, Math.max(map.getZoom(), 17), { animate: false });
 
     return () => {
       group.remove();

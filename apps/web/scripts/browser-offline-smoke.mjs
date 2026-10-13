@@ -330,37 +330,7 @@ try {
     "shelter",
     ".public-shelter-page, .public-shelter-view",
   );
-  const shelterText = await page.locator("#main-content").innerText();
-  if (!/DDPM|1784|confirm/iu.test(shelterText)) {
-    throw new Error("The Shelter page lost its official-confirmation boundary.");
-  }
-  // The credit of the map data folds away from the Shelter map as it does on Home (13 Oct 2026). It is not removed:
-  // the layers menu repeats it, and the open menu lies inside the map's box with its labels and the credit in full.
-  const shelterMap = page.locator(".public-shelter-page .geo-map-shell");
-  await page.waitForFunction(() => ["shown", "folded"].includes(
-    document.querySelector(".public-shelter-page .geo-map-shell")?.getAttribute("data-map-credit"),
-  ));
-  await shelterMap.locator(".map-basemap-menu > summary").click();
-  const shelterMenu = await page.waitForFunction(() => {
-    const box = document.querySelector(".public-shelter-route-overview__graphic")?.getBoundingClientRect();
-    const list = document.querySelector(".public-shelter-page .map-basemap-menu > div")?.getBoundingClientRect();
-    const credit = document.querySelector(".public-shelter-page .map-basemap-menu .map-credit");
-    const creditBox = credit?.getBoundingClientRect();
-    if (!box || !list || !creditBox || creditBox.height === 0) return null;
-    const audit = {
-      credit: credit.textContent,
-      inside: list.left >= box.left - 0.5 && list.right <= box.right + 0.5 && creditBox.bottom <= box.bottom + 0.5,
-      width: Math.round(list.width),
-      labels: [...document.querySelectorAll(".public-shelter-page .map-basemap-menu button")]
-        .every((button) => button.scrollWidth <= button.clientWidth + 1),
-    };
-    // The map grows to hold the open list; wait until it has.
-    return audit.inside ? audit : null;
-  }, undefined, { timeout: 10_000 }).then((handle) => handle.jsonValue(), () => null);
-  if (!shelterMenu || !shelterMenu.credit.includes("OpenStreetMap contributors") || shelterMenu.width < 140 || !shelterMenu.labels) {
-    throw new Error(`The Shelter map's layers menu does not show its choices and the map credit in full: ${JSON.stringify(shelterMenu)}`);
-  }
-  await shelterMap.locator(".map-basemap-menu > summary").click();
+  await assertPublicShelter(page);
 
   await activatePublicPage(page, "prepare", "#household-plan-builder");
   await page.locator(".household-need-options button").first().click();
@@ -1896,6 +1866,136 @@ async function assertPublicPractice(page) {
   const after = await state();
   if (after.practising !== null || after.selected !== selectedBefore || after.place.includes("Example home")) {
     throw new Error(`Ending the practice left something of it on the page, or changed the chosen area: ${JSON.stringify(after)}`);
+  }
+}
+
+/**
+ * The Shelter page (13 Oct 2026): the frame of Home, with the places reported in use as shelters in September 2024
+ * on the map (competition build). A place of that list only fills the destination field: the pin and the line to it
+ * wait for the reader's word that an authority confirmed the destination.
+ */
+async function assertPublicShelter(page) {
+  const scope = ".public-shelter-page";
+  const banner = page.locator(`${scope} .public-signal-banner`);
+  const state = () => page.evaluate((root) => {
+    const shell = document.querySelector(`${root} .geo-map-shell`);
+    const element = document.querySelector(`${root} .public-signal-banner`);
+    return {
+      tone: element?.getAttribute("data-tone"),
+      banner: element?.innerText.trim(),
+      note: document.querySelector(`${root} .public-map-note`)?.innerText.replace(/\s+/g, " ").trim(),
+      field: document.querySelector(`${root} .public-map-search input`)?.value,
+      pin: shell?.getAttribute("data-location-source"),
+      latitude: shell?.getAttribute("data-location-latitude"),
+      markers: document.querySelectorAll(".public-shelter-site").length,
+    };
+  }, scope);
+  const settle = (tone) => page.waitForFunction(([root, expected]) => (
+    document.querySelector(`${root} .public-signal-banner`)?.getAttribute("data-tone") === expected
+  ), [scope, tone], { timeout: 30_000 });
+
+  // The first screen: a grey banner under an empty field, and what the page does not know at the foot of the map.
+  const first = await state();
+  if (first.tone !== "neutral" || first.banner !== "No destination chosen yet" || first.field !== "" || first.pin !== "none") {
+    throw new Error(`The Shelter page does not open with an empty field and a grey banner: ${JSON.stringify(first)}`);
+  }
+  if (!first.note.includes("does not know which place is open today") || !first.note.includes("1784")) {
+    throw new Error(`The Shelter page lost its official-confirmation boundary: ${first.note}`);
+  }
+  if (!(await page.locator(`${scope} .public-map-search button[type="submit"]`).isDisabled())) {
+    throw new Error("The Shelter field offers its next step without a destination.");
+  }
+
+  // The credit of the map data folds away from the Shelter map as it does on Home. It is not removed: the layers
+  // menu repeats it, and the open menu lies inside the map with its labels and the credit in full.
+  const shelterMap = page.locator(`${scope} .geo-map-shell`);
+  await page.waitForFunction((root) => ["shown", "folded"].includes(
+    document.querySelector(`${root} .geo-map-shell`)?.getAttribute("data-map-credit"),
+  ), scope);
+  await shelterMap.locator(".map-basemap-menu > summary").click();
+  const shelterMenu = await page.waitForFunction((root) => {
+    const box = document.querySelector(`${root} .public-shelter-map`)?.getBoundingClientRect();
+    const list = document.querySelector(`${root} .map-basemap-menu > div`)?.getBoundingClientRect();
+    const credit = document.querySelector(`${root} .map-basemap-menu .map-credit`);
+    const creditBox = credit?.getBoundingClientRect();
+    if (!box || !list || !creditBox || creditBox.height === 0) return null;
+    return {
+      credit: credit.textContent,
+      inside: list.left >= box.left - 0.5 && list.right <= box.right + 0.5 && list.top >= box.top - 0.5 && creditBox.bottom <= box.bottom + 0.5,
+      width: Math.round(list.width),
+      labels: [...document.querySelectorAll(`${root} .map-basemap-menu button`)]
+        .every((button) => button.scrollWidth <= button.clientWidth + 1),
+    };
+  }, scope, { timeout: 10_000 }).then((handle) => handle.jsonValue(), () => null);
+  if (!shelterMenu || !shelterMenu.inside || !shelterMenu.credit.includes("OpenStreetMap contributors") || shelterMenu.width < 140 || !shelterMenu.labels) {
+    throw new Error(`The Shelter map's layers menu does not show its choices and the map credit in full: ${JSON.stringify(shelterMenu)}`);
+  }
+  await shelterMap.locator(".map-basemap-menu > summary").click();
+
+  // The places of 2024: 14 of the 18 have a position, and the note says what the markers are.
+  await page.waitForFunction(() => document.querySelectorAll(".public-shelter-site").length === 14, undefined, { timeout: 30_000 });
+  if (!(await state()).note.includes("Markers: reported as shelters in September 2024")) {
+    throw new Error("The Shelter note does not say what the markers on the map are.");
+  }
+
+  // The sheet behind the banner. With no destination it leads with the list of 2024 and has no checklist yet.
+  await banner.click();
+  const sheet = page.locator("#public-shelter-panel");
+  await sheet.waitFor({ state: "visible" });
+  const sheetText = await sheet.innerText();
+  for (const required of [
+    "does not know its current capacity or operating status",
+    "Reported as shelters in September 2024",
+    "not an official list",
+    "says nothing about today",
+    "position not known",
+    "Safety disclaimer",
+    "Call DDPM 1784 to confirm",
+  ]) {
+    if (!sheetText.includes(required)) throw new Error(`The Shelter sheet is missing: ${required}.`);
+  }
+  if (sheetText.includes("Step-by-step checklist")) throw new Error("The Shelter sheet shows a checklist before any destination.");
+  if (await sheet.locator(".public-shelter-history li").count() !== 18 || await sheet.locator(".public-shelter-history li button").count() !== 14) {
+    throw new Error("The Shelter sheet does not list the 18 places of 2024, 14 of them with a position.");
+  }
+
+  // Taking a place fills the field and asks for the confirmation; nothing is drawn yet.
+  await sheet.locator(".public-shelter-history li").filter({ hasText: "Wat Tham Pha Chom shelter" }).locator("button").click();
+  await settle("watch");
+  const taken = await state();
+  const use = sheet.locator(".public-shelter-primary-action");
+  if (taken.field !== "Wat Tham Pha Chom shelter" || taken.banner !== "Not confirmed yet: Wat Tham Pha Chom shelter" || taken.pin !== "none" || !(await use.isDisabled())) {
+    throw new Error(`A place of 2024 was used as a destination without the reader's confirmation: ${JSON.stringify(taken)}`);
+  }
+  const confirmText = await sheet.innerText();
+  if (!confirmText.includes("Reported in use as a shelter in September 2024. Official source.") || !confirmText.includes("Step-by-step checklist")) {
+    throw new Error("The Shelter sheet does not show the place's record and the checklist once a destination is in the field.");
+  }
+
+  // The reader's word that an authority confirmed it: the sheet makes way for the map, the pin stands on the place.
+  await sheet.locator(".public-shelter-destination__confirmation input").check();
+  await use.click();
+  await sheet.waitFor({ state: "detached" });
+  await settle("easing");
+  await page.waitForFunction((root) => (
+    document.querySelector(`${root} .geo-map-shell`)?.getAttribute("data-location-latitude") === "20.4418139"
+  ), scope);
+  const used = await state();
+  if (!/^(?:Walking route|Straight line|Destination set)/.test(used.banner) || !used.banner.includes("Wat Tham Pha Chom shelter")) {
+    throw new Error(`The Shelter banner does not name the destination in use: ${used.banner}`);
+  }
+  await banner.click();
+  await sheet.waitFor({ state: "visible" });
+  if (!(await sheet.innerText()).includes("Travel mode")) throw new Error("The Shelter sheet does not show the facts of the destination in use.");
+  await page.keyboard.press("Escape");
+  await sheet.waitFor({ state: "detached" });
+
+  // A change in the field withdraws the destination, its pin and its confirmation.
+  await page.locator(`${scope} .public-map-search input`).fill("");
+  await settle("neutral");
+  const cleared = await state();
+  if (cleared.pin !== "none" || cleared.banner !== "No destination chosen yet") {
+    throw new Error(`Clearing the Shelter field left the destination in use: ${JSON.stringify(cleared)}`);
   }
 }
 

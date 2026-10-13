@@ -91,7 +91,8 @@ export function PublicExperience() {
   const [researchHref, setResearchHref] = useState("/public-cases/");
   const [homeLocation, setHomeLocation] = useState<PublicMapLocation>();
   // The practice scenario shown on the Home map. It is kept in this visit only and never written to the saved plan.
-  // The replay it reads ships in the competition build alone, so the public build has no menu for it.
+  // The replay it reads ships in the competition build alone, so the public build has no menu for it, and no
+  // markers of the places reported as shelters in 2024 on the Shelter map.
   const [practiceScenarioId, setPracticeScenarioId] = useState<PracticeState | null>(null);
   const practiceAvailable = competitionPagesAvailable();
   const endPractice = useCallback(() => setPracticeScenarioId(null), []);
@@ -173,7 +174,8 @@ export function PublicExperience() {
   const prepareAreaNameEn = selectedArea?.area_name_en ?? "";
   const contentClassName = [
     "public-app-content",
-    page === "home" ? "is-home" : "is-scrollable",
+    // Home and Shelter are a map that takes the page; the other pages are a column that scrolls.
+    page === "home" || page === "shelter" ? "is-home" : "is-scrollable",
   ].join(" ");
 
   return (
@@ -241,6 +243,7 @@ export function PublicExperience() {
             datasetMode={data.status.dataset_mode}
             plan={plan}
             onNavigatePrepare={() => navigate("prepare")}
+            showShelterHistory={practiceAvailable}
           />
         )}
 

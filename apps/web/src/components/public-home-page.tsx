@@ -24,6 +24,7 @@ import {
 import { PRACTICE_MENU_COPY, type PracticeState, type PracticeTone } from "@/lib/public-practice-scenarios";
 import type { FeatureCollection, Language, PublicFloodGuardData } from "@/lib/types";
 import { usePublicPractice } from "@/lib/use-public-practice";
+import { useSheetKeyboard } from "@/lib/use-sheet-keyboard";
 
 interface PublicHomePageProps {
   language: Language;
@@ -357,33 +358,11 @@ export function PublicHomePage({
     locationAttemptRef.current += 1;
   }, []);
 
-  useEffect(() => {
-    if (!hazardOpen) return;
-    hazardCloseRef.current?.focus();
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setHazardOpen(false);
-        bannerRef.current?.focus();
-        return;
-      }
-      if (event.key !== "Tab" || !hazardPanelRef.current) return;
-      const focusable = [...hazardPanelRef.current.querySelectorAll<HTMLElement>(
-        "button, a[href], input, select, textarea, [tabindex]:not([tabindex='-1'])",
-      )].filter((element) => !element.hasAttribute("disabled"));
-      if (focusable.length === 0) return;
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, [hazardOpen]);
+  const closeHazard = useCallback(() => {
+    setHazardOpen(false);
+    bannerRef.current?.focus();
+  }, []);
+  useSheetKeyboard(hazardOpen, hazardPanelRef, hazardCloseRef, closeHazard);
 
   const chooseSuggestion = (suggestion: PublicAddressSuggestion) => {
     locationAttemptRef.current += 1;
@@ -708,9 +687,7 @@ export function PublicHomePage({
             className="public-hazard-overlay"
             role="presentation"
             onMouseDown={(event) => {
-              if (event.currentTarget !== event.target) return;
-              setHazardOpen(false);
-              bannerRef.current?.focus();
+              if (event.currentTarget === event.target) closeHazard();
             }}
           >
             <aside
@@ -741,10 +718,7 @@ export function PublicHomePage({
                   type="button"
                   className="public-icon-button"
                   aria-label={th ? "ปิดข้อมูลอันตราย" : "Close hazard information"}
-                  onClick={() => {
-                    setHazardOpen(false);
-                    bannerRef.current?.focus();
-                  }}
+                  onClick={closeHazard}
                 >
                   <PublicAppIcon name="close" />
                 </button>

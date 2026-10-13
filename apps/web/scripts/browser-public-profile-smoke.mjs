@@ -330,6 +330,22 @@ async function exercisePublicPages(page) {
       /(?:^|[^\p{L}\p{N}])(?:demos?|prototypes?|mocks?|samples?|illustrative|placeholders?)(?=$|[^\p{L}\p{N}])|coming soon|under construction|not ready|work in progress/iu,
     );
     if (forbidden) throw new Error(`Public ${id} exposes development-state copy: ${forbidden[0]}.`);
+    if (id === "shelter") {
+      // The places reported as shelters in September 2024 belong to the Mae Sai replay, which this build does not
+      // carry: no markers on the map, and no list in the sheet behind the banner.
+      await page.locator(".public-shelter-page .public-signal-banner").click();
+      const sheet = page.locator("#public-shelter-panel");
+      await sheet.waitFor({ state: "visible" });
+      const sheetText = await sheet.innerText();
+      if (!sheetText.includes("does not know its current capacity or operating status") || !sheetText.includes("Call DDPM 1784 to confirm")) {
+        throw new Error("The Shelter sheet lost its official-confirmation boundary.");
+      }
+      if (sheetText.includes("September 2024") || await page.locator(".public-shelter-site").count() !== 0) {
+        throw new Error("The public profile shows the places reported as shelters in 2024.");
+      }
+      await page.keyboard.press("Escape");
+      await sheet.waitFor({ state: "detached" });
+    }
   }
   for (const retired of ["map", "shelters", "data"]) {
     if (await page.locator(`#public-tab-${retired}`).count()) {

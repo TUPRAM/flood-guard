@@ -639,29 +639,6 @@
 }
 .map-basemap-menu .map-credit a { color: var(--fg-primary-700); text-underline-offset: 1px; }
 /*
-   The Shelter map's layers menu: an icon-only cell like the one on Home, whose list opens to the left at its full
-   width. It was 48 px wide, which cut its labels off, and the list now ends with the credit of the map data. While
-   the list is open the map is tall enough to hold it: the map's box clips what lies outside it.
-*/
-.public-shelter-route-overview__graphic .map-basemap-menu > summary {
-  min-height: 48px;
-  grid-template-columns: 24px;
-  justify-content: center;
-  padding: 12px;
-}
-.public-shelter-route-overview__graphic .map-basemap-menu > summary > span {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-}
-.public-shelter-route-overview__graphic .map-basemap-menu > div {
-  width: 148px;
-  transform: translateX(calc(-100% + 48px));
-}
-.public-shelter-route-overview__graphic:has(.map-basemap-menu[open]) { min-height: 348px; }
-/*
    A waiting update shows no bar on a Public page (owner request of 13 Oct 2026). A dot on the profile button marks
    it, and the entry "App status and offline use" of the profile menu opens the panel with the button that installs it.
 */
@@ -704,3 +681,85 @@ html[data-app-update="available"] [data-public-app-status] > span::after { conte
    the 920 the panel had, so the zoom buttons and the credit stood on top of the panel's text.
 */
 .public-home-map > .public-hazard-overlay { z-index: 1050; }
+
+/* --- Public Shelter, map first (owner request of 13 Oct 2026) --------------------------------------------------- */
+
+/*
+   The Shelter page wears the frame of Home (.public-home-page, .public-home-map): the map takes the page, the
+   destination field and the banner stand over it, and the detail is in the sheet behind the banner. It has no locate
+   button, so zoom and the layers menu stand one cell lower than on Home. Its note is up to three lines, so the
+   credit of the map data, while it is shown, stands above that.
+*/
+.public-shelter-map .leaflet-top.leaflet-left { bottom: calc(12px + var(--public-nav-clear, 0px)); }
+.public-shelter-map .map-basemap-menu { bottom: calc(110px + var(--public-nav-clear, 0px)); }
+.public-shelter-map .leaflet-control-attribution { margin-bottom: calc(96px + var(--public-nav-clear, 0px)) !important; }
+@media (max-width: 680px) {
+  .public-shelter-map .leaflet-top.leaflet-left { bottom: 8px; }
+  .public-shelter-map .map-basemap-menu { bottom: 106px; }
+}
+/* The button of the field opens the next step and waits for a destination; it is not busy. */
+.public-shelter-map .public-map-search button:disabled { cursor: not-allowed; opacity: .5; }
+
+/*
+   A place reported in use as a shelter in September 2024: a house in a white disc with the locational blue rim. It
+   is history, so it wears none of the colours of a state. A dashed rim marks a position that is approximate.
+*/
+.public-shelter-site {
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--fg-primary-700);
+  border-radius: 50%;
+  background: var(--fg-surface);
+  color: var(--fg-primary-700);
+  box-shadow: var(--fg-shadow-sm);
+}
+.public-shelter-site.is-approximate { border-style: dashed; }
+.public-shelter-site svg { width: 16px; height: 16px; }
+.public-shelter-site:focus-visible { outline: 3px solid rgb(37 99 235 / 45%); outline-offset: 2px; }
+.public-shelter-site-use {
+  min-height: 44px;
+  margin-top: 6px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: var(--fg-radius-md);
+  background: var(--fg-primary-700);
+  color: #fff;
+  font: 700 .72rem/1.2 var(--fg-font-label);
+  cursor: pointer;
+}
+.public-shelter-site-use:hover { background: var(--fg-primary-800); }
+
+/* The sheet behind the banner: one step at its head, then sections divided by a line. */
+.public-shelter-confirm { display: grid; gap: 10px; margin-top: 12px; }
+.public-shelter-confirm .public-practice-lines { margin: 0; }
+.public-shelter-sheet-section { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--fg-neutral-200); }
+.public-shelter-sheet-section h3 { margin: 0; color: var(--fg-neutral-900); font-size: .86rem; font-weight: 800; line-height: 1.3; }
+.public-shelter-sheet-section > p { margin: 6px 0 0; color: var(--fg-neutral-600); font-size: .7rem; line-height: 1.5; }
+.public-shelter-history ul { display: grid; gap: 6px; margin: 10px 0 0; padding: 0; list-style: none; }
+.public-shelter-history li {
+  min-height: 56px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 6px 6px 12px;
+  border-radius: var(--fg-radius-sm);
+  background: #f3f6fa;
+}
+.public-shelter-history li > span { min-width: 0; display: grid; gap: 2px; }
+.public-shelter-history strong { color: var(--fg-neutral-900); font-size: .72rem; line-height: 1.35; overflow-wrap: anywhere; }
+.public-shelter-history small { color: var(--fg-neutral-600); font-size: .64rem; line-height: 1.4; }
+.public-shelter-history button {
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 1px solid var(--fg-primary-100);
+  border-radius: var(--fg-radius-md);
+  background: var(--fg-surface);
+  color: var(--fg-primary-700);
+  font: inherit;
+  font-size: .66rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.public-shelter-history button:hover { background: var(--fg-primary-50); }
+.public-shelter-panel .public-shelter-safety { margin-top: 16px; }

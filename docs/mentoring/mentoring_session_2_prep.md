@@ -126,6 +126,20 @@ outside the team.
 
 ## 4. The spatial insight, and a five-minute pitch
 
+**The Nan case (14 October).** Our own radar map (M1-z) was tuned on other
+events and frozen, then tested on the Nan floods of July 2025 under rules
+fixed in advance. A first run took the GFM fallback, because the frozen code
+did not recognise JAXA's observation-area layer by its name, and also missed
+its bar; amendment 2 then made the JAXA comparison test 1 of record, run
+once. Then the map fed the unchanged planning chain. Test 1 did not pass:
+IoU 0.226 against JAXA's ALOS-2 map of 28 July, against a bar of 0.40. Of
+the JAXA water our map does not flag, most was ruled out by the terrain
+screen before the radar was read (counted after the test, report only). So
+all 35 tambons are class E at low confidence. The lead result below is
+still case SE1; the Nan case shows the rule applied on a real event; it
+changed no class, since every would-be class was E. Details:
+`docs/nan_case.md`.
+
 ### 4.1 The result to lead with
 
 Case SE1: the area UNOSAT and GISTDA mapped as water at any time in the 2024
@@ -462,8 +476,12 @@ Agreement between two sensors 44 hours apart; not accuracy.
 | A second THEOS-2 water rule | `docs/theos2_water_rule_v2.md` | Near infrared below red, one fixed limit, nothing set by eye: better than the first rule by 8 points (4 to 13) on our own labels, and it does not invent water on a dry scene. Simple beat the trained classifiers. It will read the images of Mae Sai. |
 | The replay's peak fitted to the image of 15 September | `docs/replay_river_fit.md` | The peak now covers 89% of the mud line of the 15 September image, 73% before, and Ko Chang's flooded area nearly doubles. It is a fit, not a check: on the half of the area held back, the fitted levels did worse than the earlier model (62% against 73%). The earlier replay is kept at `/archive1/`. |
 | Buildings against residents in the water | `docs/buildings_in_water.md` | The population grid puts 39% of residents in cells with no building. With residents on buildings, 12,600 are in the water where the grid gives 17,900, no class changes, and Ko Chang is 83% dry with every road cut. |
-
 | The five weights of the score, tested | `docs/fpps_weight_sensitivity.md` | The weights are our choice and no paper gives them. With equal weights, with each weight halved or raised by half, and in nine of ten random weightings, Ko Chang stays first. Mae Sai town comes first only if lost access is left out. Report only: no weight, score or class changes. |
+| The Nan case: test 1 of record | `docs/nan_case.md`, section 4; `outputs/nan_case/test_1_jaxa_v1.json`; `outputs/nan_case/post_test_reasons_v1.json` | Our own radar map, frozen before the test, reached IoU 0.226 (0.173 to 0.282) against JAXA's ALOS-2 map of 28 July, under the bar of 0.40: it does not pass. Agreement with another satellite's automatic map, not a ground check. Terrain answered 95% of the compared cells before the radar was read. Of the JAXA water our map does not flag, most (71%) was ruled out by the terrain screen (counted after the test, report only). |
+| The Nan case: test 2 and the dry control | `docs/nan_case.md`, section 5; `outputs/nan_case/test_result_v1.json` | In Wiang Sa town 99% of our flags lie on THEOS-2 water (rule v2, which finds about 70% of the water three team labellers marked), but they cover 6.5% of it (IoU 0.065). On hills where THEOS-2 shows no water the map flags 0.04% of the answered cells (bar 5%), so the dry control passes; but terrain answered 98.8% of those cells, and of the 262 the radar decided it flagged 8 (3.1%). The first run's test against GFM (same pass, not independent) also failed (IoU 0.068). The town chip had been seen before, so test 2 is reported, not binding. |
+| The Nan case: the score of our own map (case N1) | `docs/nan_case.md`, section 6; `outputs/planning_brief/n1_nan_brief.html`; `docs/mentoring/visuals/nan_case_slide.png` | The map ran through the whole chain. Because test 1 failed, all 35 tambons are class E at low confidence (33 with a would-be class E, 2 without a score), and E holds in all 180 cells. The rule changed no class, since every would-be class is E. Counting no-answer cells as flooded changes the class read in 20 tambons (report only). Test 5, against the same chain fed with JAXA's map (central level only, 60 cells), agrees on 34 of 35; that says only that both give low scores. The would-be classes are not priorities. |
+| The Nan case: roads and the hospital | `docs/nan_case.md`, section 5; `outputs/nan_case/consequence_tests_v1.json` | All 6 road edges our map closes in the Wiang Sa chip lie under THEOS-2 water (rule v2, which finds about 70% of the water three team labellers marked), but they are 84 m of road, against 23.27 km seen there under water (0.4% by length). One of 5 listed road cuts is found, placed with low confidence. News records report water at Nan Hospital; the map flags no cell of the site on either pass, because terrain answers all of it: the method cannot flag the site. Checks beside dated records; the hospital check has no pass mark. |
 
-Each is on the team page for the team's word (items V-17, V-19 and V-22 to
-V-40). None changes a published class or enters a planning score.
+Each is on the team page for the team's word (items V-17, V-19, V-22 to
+V-40 and, for the Nan case, V-42 to V-46). None changes a published class.
+The Nan case's scores are in its own result file, all class E.

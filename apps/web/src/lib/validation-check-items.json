@@ -1,6 +1,6 @@
 {
   "schema": "floodguard.validation_check.items.v1",
-  "updated": "2026-10-13",
+  "updated": "2026-10-15",
   "repository": "https://github.com/TUPRAM/flood-guard",
   "reviewers": [
     "Rachmania",
@@ -38,6 +38,11 @@
       "id": "models",
       "title": "Trained models and later packages",
       "note": "Report-only. None of them changes a class."
+    },
+    {
+      "id": "nan",
+      "title": "The Nan case (July 2025)",
+      "note": "Decision log R51. Our own radar map tested with JAXA, GFM and THEOS-2, then through the score."
     }
   ],
   "items": [
@@ -910,6 +915,137 @@
       "gates": "What the Public view shows in the pitch, and whether the practice mode goes into master.",
       "ready": true,
       "added": "2026-10-13"
+    },
+    {
+      "id": "V-42",
+      "group": "nan",
+      "title": "The rules of the Nan case, fixed before any Nan reference was scored, and amended twice, once after the first run",
+      "check": "Read the plan (one page) and the protocol file. Accept if the frame, the three tuning events, the rule that picks the method's limits, the five tests with their pass rules and the binding rule are what you would defend to a judge before seeing any result. Ask for a change if a pass rule looks set to be passed rather than to test; say which.",
+      "evidence": [
+        {
+          "label": "Plan",
+          "path": "docs/proposal_execution/nan_case_plan_v1.md"
+        },
+        {
+          "label": "Protocol (binding rules)",
+          "path": "docs/proposal_execution/nan_case_protocol_v1.json"
+        },
+        {
+          "label": "Amendment 1 (before any candidate was scored)",
+          "path": "docs/proposal_execution/nan_case_protocol_v1_amendment_1.json"
+        },
+        {
+          "label": "Amendment 2 (after the first run)",
+          "path": "docs/proposal_execution/nan_case_protocol_v1_amendment_2.json"
+        }
+      ],
+      "gates": "Every result of the Nan case is read against these rules.",
+      "ready": true,
+      "added": "2026-10-14"
+    },
+    {
+      "id": "V-43",
+      "group": "nan",
+      "title": "Test 1 of record: our radar map against the JAXA ALOS-2 map (amendment 2; the first run on the GFM fallback is kept beside it)",
+      "check": "Read the result of test 1. Accept if the figure, its interval and the sentence about what it means follow the rule of the protocol.",
+      "evidence": [
+        {
+          "label": "Test 1 of record against JAXA (amendment 2)",
+          "path": "outputs/nan_case/test_1_jaxa_v1.json"
+        },
+        {
+          "label": "The first run: GFM fallback, test 2 and the dry control",
+          "path": "outputs/nan_case/test_result_v1.json"
+        },
+        {
+          "label": "Reason counts after the test (report only)",
+          "path": "outputs/nan_case/post_test_reasons_v1.json"
+        },
+        {
+          "label": "The Nan case, written up",
+          "path": "docs/nan_case.md"
+        },
+        {
+          "label": "Plan",
+          "path": "docs/proposal_execution/nan_case_plan_v1.md"
+        }
+      ],
+      "gates": "Whether the classes of case N1 are binding.",
+      "ready": true,
+      "added": "2026-10-14"
+    },
+    {
+      "id": "V-44",
+      "group": "nan",
+      "title": "Test 2: Wiang Sa town on THEOS-2, and the dry control",
+      "check": "Read the result of test 2. Accept if the town figures and the dry-control share are reported as the protocol says, with the note that the chip had been seen before.",
+      "evidence": [
+        {
+          "label": "The first run: test 2 and the dry control",
+          "path": "outputs/nan_case/test_result_v1.json"
+        },
+        {
+          "label": "The Nan case, written up",
+          "path": "docs/nan_case.md"
+        },
+        {
+          "label": "Plan",
+          "path": "docs/proposal_execution/nan_case_plan_v1.md"
+        }
+      ],
+      "gates": "The dry control is part of the binding rule.",
+      "ready": true,
+      "added": "2026-10-14"
+    },
+    {
+      "id": "V-45",
+      "group": "nan",
+      "title": "Roads and the hospital: THEOS-2 roads, the five listed road cuts (four in the protocol, one added by amendment 1), Nan Hospital",
+      "check": "Read tests 3a, 3b and 4. Accept if each point and road is placed as the protocol says and the hospital check is worded as a check, not a confirmation.",
+      "evidence": [
+        {
+          "label": "Tests 3a, 3b and 4",
+          "path": "outputs/nan_case/consequence_tests_v1.json"
+        },
+        {
+          "label": "The Nan case, written up",
+          "path": "docs/nan_case.md"
+        },
+        {
+          "label": "Plan",
+          "path": "docs/proposal_execution/nan_case_plan_v1.md"
+        }
+      ],
+      "gates": "Reported beside the classes.",
+      "ready": true,
+      "added": "2026-10-14"
+    },
+    {
+      "id": "V-46",
+      "group": "nan",
+      "title": "Case N1: the score and class of the 35 tambons from our own map",
+      "check": "Read the table of case N1. Accept if every class is labelled binding or would-be by the protocol's rule, and the stability over the ensemble is shown.",
+      "evidence": [
+        {
+          "label": "The N1 result file",
+          "path": "outputs/nan_case/planning_result_n1_nan_v1.json"
+        },
+        {
+          "label": "The printable N1 brief",
+          "path": "outputs/planning_brief/n1_nan_brief.html"
+        },
+        {
+          "label": "The Nan case, written up",
+          "path": "docs/nan_case.md"
+        },
+        {
+          "label": "Plan",
+          "path": "docs/proposal_execution/nan_case_plan_v1.md"
+        }
+      ],
+      "gates": "What the pitch may say about our own map feeding the score.",
+      "ready": true,
+      "added": "2026-10-14"
     }
   ]
 }

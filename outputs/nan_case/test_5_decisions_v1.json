@@ -1,0 +1,1083 @@
+{
+  "schema": "floodguard.nan_case_test_5_decisions.v1",
+  "generated_at_utc": "2026-10-14T20:24:29Z",
+  "source_timestamp": "Case N1: Sentinel-1C pass 2025-07-28T11:20:49Z; case N2: JAXA ALOS-2 Flood Proxy Map of 2025-07-28 (its files give no time with a zone)",
+  "confidence_class": "low",
+  "confidence_basis": "Two runs of one modelled planning chain on one event and one frame; one run reads our own radar map, the other another satellite's automatic map. Neither is a ground check.",
+  "assumptions": [
+    "Test 5 of the Nan case (protocol v1, tests.test_5_decisions): the class each tambon gets from case N1 (our map) set against the class it gets from case N2 (the test 1 reference as provided, through the same chain).",
+    "The class read is the binding class, or the would-be class where the binding class is E for low confidence (floodguard.nan_case_chain.row_class); both cases at the default cell of protocol v1b (central map, central closure level, public services, WorldPop 2020, P10 / P90 anchors, default weights).",
+    "Pass mark: at least 0.70 of the 35 tambons in the same class. The share is agreement between two planning chains that differ only in the flood input; neither chain is a ground check.",
+    "Stability: a class holds when kept in at least 0.60 of the cells of the N1 ensemble that were run (guardrail GR8 of protocol v1a). Retention is a share of modelled cells, not a probability.",
+    "Per-tambon classes of case N2 stay in the work folder outside Git (Sentinel Asia terms; nan_case_protocol_v1 rights_in_git). This file gives figures only: counts and the share.",
+    "Case N2 ran the central flood map only (the reference has one level); its rows are those of the default cell.",
+    "Planning guidance only. Not an official warning. Class E never means safe.",
+    "The public copy leaves out which tambon differs and every per-tambon comparison with case N2 (case N2 stays in the work folder); the counts and the share are those of the full record."
+  ],
+  "official_warning": false,
+  "operational_status": "non_operational",
+  "can_feed_decision_layer": false,
+  "accepted_fpps": null,
+  "accepted_action_class": null,
+  "what_this_is": "Test 5 of the Nan case: the decisions of case N1 against those of case N2, and the class retention of case N1 over its ensemble. Figures only.",
+  "inputs": {
+    "case_n1_result": {
+      "path": "outputs/nan_case/planning_result_n1_nan_v1.json",
+      "sha256": "903d96df99b357f12ce3e79e40eb11c13f1416c16fa3ccdb6d9fdb726342ef7c"
+    },
+    "case_n1_record": {
+      "path": "outputs/nan_case/planning_result_n1_nan_v1_record.json",
+      "sha256": "36c5d7afc304da4b005bd83b4d54165e3b70c699dbbd051557ff0f872636c991"
+    },
+    "case_n2_result": {
+      "path": "<external>/proposal_execution/nan_case_v1/score_chain/planning_result_n2_nan_v1.json",
+      "sha256": "5321bd066733eef9e1c63efe46d2c989b745c06f029985722e728e399f60e390",
+      "in_git": false
+    },
+    "case_n2_record": {
+      "path": "<external>/proposal_execution/nan_case_v1/score_chain/planning_result_n2_nan_v1_record.json",
+      "sha256": "88bdaaac4d16271ac3e49c76fe5757fad4b3d97944d67f3fe57a38b2cee21f48",
+      "in_git": false
+    },
+    "test_1_record": {
+      "path": "outputs/nan_case/test_1_jaxa_v1.json",
+      "sha256": "a823139f833bfcc6d54c8543e3fc596f5c9f172bb990e9e23d9dfc3362e8ce06"
+    },
+    "code": {
+      "src/floodguard/nan_case_chain.py": "ca241330521c88aba6f3424208d7c9f68a568efc6c69e1927e08effbfae0a428"
+    }
+  },
+  "test_5_classes": {
+    "tambons": 35,
+    "same_class": 34,
+    "class_differs": 1,
+    "share_same_class": 0.971429,
+    "share_min": 0.7,
+    "passes": true,
+    "class_read": "binding class, or the would-be class of a low-confidence row",
+    "wording": "agreement between two planning chains that differ only in the flood input",
+    "case_n2_class_values": "not in Git; in the work folder, as are the class counts of case N2.",
+    "reading": "Case N1 reads class E in all 35 tambons (33 with a would-be class E and the rest without a planning score), and case N2 gives E in every tambon but the one listed. The share therefore says that both chains give low planning scores across the frame; it does not say that they agree on an order of the tambons.",
+    "which_tambons_differ": "not in Git: naming the tambon whose class differs, with case N1 at class E everywhere, would give a per-tambon result of case N2, which reads the JAXA map; the full record is in the work folder (score_chain/test_5_decisions_v1_full_local.json)"
+  },
+  "test_5_stability_case_n1": {
+    "rule": "guardrail GR8: a class holds when kept in at least 0.60 of the cells run",
+    "cells_run": 180,
+    "binding_class_holds": 35,
+    "would_be_class_holds": 33,
+    "tambons": 35
+  },
+  "case_n1_class_counts": {
+    "binding": {
+      "E": 35
+    },
+    "would_be": {
+      "E": 33,
+      "None": 2
+    },
+    "read_by_test_5": {
+      "E": 35
+    }
+  },
+  "case_n1_per_tambon": [
+    {
+      "unit_id": "TH550101",
+      "unit_name": "Nai Wiang",
+      "fpps_0_100": 4.76,
+      "action_class": "E",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier",
+        "C3_coverage",
+        "C4_input_uncertainty"
+      ],
+      "no_answer_share_of_land": 0.35460308533709084,
+      "class_read_by_test_5": "E",
+      "gr8_binding_class": {
+        "reference_class": "E",
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "would_be_class_retention": {
+        "class": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "holds_at_0_60": true
+      }
+    },
+    {
+      "unit_id": "TH550102",
+      "unit_name": "Bo",
+      "fpps_0_100": 3.65,
+      "action_class": "E",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier"
+      ],
+      "no_answer_share_of_land": 0.0067335066228638085,
+      "class_read_by_test_5": "E",
+      "gr8_binding_class": {
+        "reference_class": "E",
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "would_be_class_retention": {
+        "class": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "holds_at_0_60": true
+      }
+    },
+    {
+      "unit_id": "TH550103",
+      "unit_name": "Pha Sing",
+      "fpps_0_100": 3.64,
+      "action_class": "E",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier"
+      ],
+      "no_answer_share_of_land": 0.01933691085985182,
+      "class_read_by_test_5": "E",
+      "gr8_binding_class": {
+        "reference_class": "E",
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "would_be_class_retention": {
+        "class": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "holds_at_0_60": true
+      }
+    },
+    {
+      "unit_id": "TH550104",
+      "unit_name": "Chai Sathan",
+      "fpps_0_100": 9.38,
+      "action_class": "E",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier"
+      ],
+      "no_answer_share_of_land": 0.16426877666643747,
+      "class_read_by_test_5": "E",
+      "gr8_binding_class": {
+        "reference_class": "E",
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "would_be_class_retention": {
+        "class": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "holds_at_0_60": true
+      }
+    },
+    {
+      "unit_id": "TH550105",
+      "unit_name": "Thuem Tong",
+      "fpps_0_100": 10.47,
+      "action_class": "E",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier"
+      ],
+      "no_answer_share_of_land": 0.10379835498652519,
+      "class_read_by_test_5": "E",
+      "gr8_binding_class": {
+        "reference_class": "E",
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "would_be_class_retention": {
+        "class": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "holds_at_0_60": true
+      }
+    },
+    {
+      "unit_id": "TH550106",
+      "unit_name": "Rueang",
+      "fpps_0_100": 5.89,
+      "action_class": "E",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier"
+      ],
+      "no_answer_share_of_land": 0.011251502531070197,
+      "class_read_by_test_5": "E",
+      "gr8_binding_class": {
+        "reference_class": "E",
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "would_be_class_retention": {
+        "class": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "holds_at_0_60": true
+      }
+    },
+    {
+      "unit_id": "TH550107",
+      "unit_name": "Na Sao",
+      "fpps_0_100": 4.33,
+      "action_class": "E",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier"
+      ],
+      "no_answer_share_of_land": 0.03813916011501061,
+      "class_read_by_test_5": "E",
+      "gr8_binding_class": {
+        "reference_class": "E",
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "would_be_class_retention": {
+        "class": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "holds_at_0_60": true
+      }
+    },
+    {
+      "unit_id": "TH550108",
+      "unit_name": "Du Tai",
+      "fpps_0_100": 9.18,
+      "action_class": "E",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier"
+      ],
+      "no_answer_share_of_land": 0.09828481129872757,
+      "class_read_by_test_5": "E",
+      "gr8_binding_class": {
+        "reference_class": "E",
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "would_be_class_retention": {
+        "class": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "holds_at_0_60": true
+      }
+    },
+    {
+      "unit_id": "TH550109",
+      "unit_name": "Kong Khwai",
+      "fpps_0_100": 10.07,
+      "action_class": "E",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier"
+      ],
+      "no_answer_share_of_land": 0.058248841379371794,
+      "class_read_by_test_5": "E",
+      "gr8_binding_class": {
+        "reference_class": "E",
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "would_be_class_retention": {
+        "class": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "holds_at_0_60": true
+      }
+    },
+    {
+      "unit_id": "TH550116",
+      "unit_name": "Bo Suak",
+      "fpps_0_100": 5.48,
+      "action_class": "E",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier"
+      ],
+      "no_answer_share_of_land": 0.017486691986062116,
+      "class_read_by_test_5": "E",
+      "gr8_binding_class": {
+        "reference_class": "E",
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "would_be_class_retention": {
+        "class": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "holds_at_0_60": true
+      }
+    },
+    {
+      "unit_id": "TH550117",
+      "unit_name": "Sanian",
+      "fpps_0_100": 3.96,
+      "action_class": "E",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier"
+      ],
+      "no_answer_share_of_land": 0.010255334489630107,
+      "class_read_by_test_5": "E",
+      "gr8_binding_class": {
+        "reference_class": "E",
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "would_be_class_retention": {
+        "class": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "holds_at_0_60": true
+      }
+    },
+    {
+      "unit_id": "TH550701",
+      "unit_name": "Klang Wiang",
+      "fpps_0_100": 15.56,
+      "action_class": "E",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier"
+      ],
+      "no_answer_share_of_land": 0.06855041280545965,
+      "class_read_by_test_5": "E",
+      "gr8_binding_class": {
+        "reference_class": "E",
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "would_be_class_retention": {
+        "class": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "holds_at_0_60": true
+      }
+    },
+    {
+      "unit_id": "TH550702",
+      "unit_name": "Khueng",
+      "fpps_0_100": 24.15,
+      "action_class": "E",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier"
+      ],
+      "no_answer_share_of_land": 0.013526572295680925,
+      "class_read_by_test_5": "E",
+      "gr8_binding_class": {
+        "reference_class": "E",
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "would_be_class_retention": {
+        "class": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "holds_at_0_60": true
+      }
+    },
+    {
+      "unit_id": "TH550703",
+      "unit_name": "Lai Nan",
+      "fpps_0_100": 9.71,
+      "action_class": "E",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier"
+      ],
+      "no_answer_share_of_land": 0.006376291470349349,
+      "class_read_by_test_5": "E",
+      "gr8_binding_class": {
+        "reference_class": "E",
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "would_be_class_retention": {
+        "class": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "holds_at_0_60": true
+      }
+    },
+    {
+      "unit_id": "TH550704",
+      "unit_name": "Tan Chum",
+      "fpps_0_100": 13.61,
+      "action_class": "E",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier"
+      ],
+      "no_answer_share_of_land": 0.08205769889870913,
+      "class_read_by_test_5": "E",
+      "gr8_binding_class": {
+        "reference_class": "E",
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "would_be_class_retention": {
+        "class": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "holds_at_0_60": true
+      }
+    },
+    {
+      "unit_id": "TH550705",
+      "unit_name": "Na Lueang",
+      "fpps_0_100": 9.55,
+      "action_class": "E",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier"
+      ],
+      "no_answer_share_of_land": 0.04667497077231369,
+      "class_read_by_test_5": "E",
+      "gr8_binding_class": {
+        "reference_class": "E",
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "would_be_class_retention": {
+        "class": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "holds_at_0_60": true
+      }
+    },
+    {
+      "unit_id": "TH550706",
+      "unit_name": "San",
+      "fpps_0_100": 9.83,
+      "action_class": "E",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier"
+      ],
+      "no_answer_share_of_land": 0.016505845270743134,
+      "class_read_by_test_5": "E",
+      "gr8_binding_class": {
+        "reference_class": "E",
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "would_be_class_retention": {
+        "class": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "holds_at_0_60": true
+      }
+    },
+    {
+      "unit_id": "TH550707",
+      "unit_name": "Nam Muap",
+      "fpps_0_100": 28.04,
+      "action_class": "E",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier"
+      ],
+      "no_answer_share_of_land": 0.006889296892234965,
+      "class_read_by_test_5": "E",
+      "gr8_binding_class": {
+        "reference_class": "E",
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "would_be_class_retention": {
+        "class": "E",
+        "cells": 180,
+        "cells_keeping_it": 156,
+        "share": 0.8666666666666667,
+        "holds_at_0_60": true
+      }
+    },
+    {
+      "unit_id": "TH550708",
+      "unit_name": "Nam Pua",
+      "fpps_0_100": 12.21,
+      "action_class": "E",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier"
+      ],
+      "no_answer_share_of_land": 0.0871828330674864,
+      "class_read_by_test_5": "E",
+      "gr8_binding_class": {
+        "reference_class": "E",
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "would_be_class_retention": {
+        "class": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "holds_at_0_60": true
+      }
+    },
+    {
+      "unit_id": "TH550709",
+      "unit_name": "Yap Hua Na",
+      "fpps_0_100": 7.93,
+      "action_class": "E",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier",
+        "C7_baseline_no_route"
+      ],
+      "no_answer_share_of_land": 0.009116684785650546,
+      "class_read_by_test_5": "E",
+      "gr8_binding_class": {
+        "reference_class": "E",
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "would_be_class_retention": {
+        "class": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "holds_at_0_60": true
+      }
+    },
+    {
+      "unit_id": "TH550710",
+      "unit_name": "Pong Sanuk",
+      "fpps_0_100": 9.2,
+      "action_class": "E",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier"
+      ],
+      "no_answer_share_of_land": 0.020402237294937606,
+      "class_read_by_test_5": "E",
+      "gr8_binding_class": {
+        "reference_class": "E",
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "would_be_class_retention": {
+        "class": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "holds_at_0_60": true
+      }
+    },
+    {
+      "unit_id": "TH550711",
+      "unit_name": "Ai Na Lai",
+      "fpps_0_100": 8.65,
+      "action_class": "E",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier"
+      ],
+      "no_answer_share_of_land": 0.024710190962865957,
+      "class_read_by_test_5": "E",
+      "gr8_binding_class": {
+        "reference_class": "E",
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "would_be_class_retention": {
+        "class": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "holds_at_0_60": true
+      }
+    },
+    {
+      "unit_id": "TH550712",
+      "unit_name": "Sanna Nong Mai",
+      "fpps_0_100": null,
+      "action_class": "E",
+      "would_be_class": null,
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier",
+        "C5_components"
+      ],
+      "no_answer_share_of_land": 0.0023485274607270225,
+      "class_read_by_test_5": "E",
+      "gr8_binding_class": {
+        "reference_class": "E",
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "would_be_class_retention": {
+        "class": null,
+        "cells": 180,
+        "cells_keeping_it": 0,
+        "share": null,
+        "holds_at_0_60": null
+      }
+    },
+    {
+      "unit_id": "TH550713",
+      "unit_name": "Mae Khaning",
+      "fpps_0_100": null,
+      "action_class": "E",
+      "would_be_class": null,
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier",
+        "C5_components"
+      ],
+      "no_answer_share_of_land": 0.011269159933172219,
+      "class_read_by_test_5": "E",
+      "gr8_binding_class": {
+        "reference_class": "E",
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "would_be_class_retention": {
+        "class": null,
+        "cells": 180,
+        "cells_keeping_it": 0,
+        "share": null,
+        "holds_at_0_60": null
+      }
+    },
+    {
+      "unit_id": "TH550714",
+      "unit_name": "Mae Sakhon",
+      "fpps_0_100": 7.95,
+      "action_class": "E",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier"
+      ],
+      "no_answer_share_of_land": 0.02300036643213645,
+      "class_read_by_test_5": "E",
+      "gr8_binding_class": {
+        "reference_class": "E",
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "would_be_class_retention": {
+        "class": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "holds_at_0_60": true
+      }
+    },
+    {
+      "unit_id": "TH550715",
+      "unit_name": "Chom Chan",
+      "fpps_0_100": 10.25,
+      "action_class": "E",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier"
+      ],
+      "no_answer_share_of_land": 0.006230465288313762,
+      "class_read_by_test_5": "E",
+      "gr8_binding_class": {
+        "reference_class": "E",
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "would_be_class_retention": {
+        "class": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "holds_at_0_60": true
+      }
+    },
+    {
+      "unit_id": "TH550716",
+      "unit_name": "Mae Sa",
+      "fpps_0_100": 11.91,
+      "action_class": "E",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier"
+      ],
+      "no_answer_share_of_land": 0.031487060671237875,
+      "class_read_by_test_5": "E",
+      "gr8_binding_class": {
+        "reference_class": "E",
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "would_be_class_retention": {
+        "class": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "holds_at_0_60": true
+      }
+    },
+    {
+      "unit_id": "TH550717",
+      "unit_name": "Thung Si Thong",
+      "fpps_0_100": 7.95,
+      "action_class": "E",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier"
+      ],
+      "no_answer_share_of_land": 0.019075376325175048,
+      "class_read_by_test_5": "E",
+      "gr8_binding_class": {
+        "reference_class": "E",
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "would_be_class_retention": {
+        "class": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "holds_at_0_60": true
+      }
+    },
+    {
+      "unit_id": "TH551401",
+      "unit_name": "Muang Tuet",
+      "fpps_0_100": 24.09,
+      "action_class": "E",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier",
+        "C4_input_uncertainty"
+      ],
+      "no_answer_share_of_land": 0.13689922379552796,
+      "class_read_by_test_5": "E",
+      "gr8_binding_class": {
+        "reference_class": "E",
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "would_be_class_retention": {
+        "class": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "holds_at_0_60": true
+      }
+    },
+    {
+      "unit_id": "TH551402",
+      "unit_name": "Na Pang",
+      "fpps_0_100": 9.21,
+      "action_class": "E",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier"
+      ],
+      "no_answer_share_of_land": 0.06584594889693997,
+      "class_read_by_test_5": "E",
+      "gr8_binding_class": {
+        "reference_class": "E",
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "would_be_class_retention": {
+        "class": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "holds_at_0_60": true
+      }
+    },
+    {
+      "unit_id": "TH551403",
+      "unit_name": "Nam Kaen",
+      "fpps_0_100": 5.34,
+      "action_class": "E",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier"
+      ],
+      "no_answer_share_of_land": 0.007605542380251439,
+      "class_read_by_test_5": "E",
+      "gr8_binding_class": {
+        "reference_class": "E",
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "would_be_class_retention": {
+        "class": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "holds_at_0_60": true
+      }
+    },
+    {
+      "unit_id": "TH551404",
+      "unit_name": "Nam Kian",
+      "fpps_0_100": 5.48,
+      "action_class": "E",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier"
+      ],
+      "no_answer_share_of_land": 0.016155683107793715,
+      "class_read_by_test_5": "E",
+      "gr8_binding_class": {
+        "reference_class": "E",
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "would_be_class_retention": {
+        "class": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "holds_at_0_60": true
+      }
+    },
+    {
+      "unit_id": "TH551405",
+      "unit_name": "Mueang Chang",
+      "fpps_0_100": 5.34,
+      "action_class": "E",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier"
+      ],
+      "no_answer_share_of_land": 0.01267384021754359,
+      "class_read_by_test_5": "E",
+      "gr8_binding_class": {
+        "reference_class": "E",
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "would_be_class_retention": {
+        "class": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "holds_at_0_60": true
+      }
+    },
+    {
+      "unit_id": "TH551406",
+      "unit_name": "Tha Nao",
+      "fpps_0_100": 22.38,
+      "action_class": "E",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier",
+        "C4_input_uncertainty"
+      ],
+      "no_answer_share_of_land": 0.057908306061068365,
+      "class_read_by_test_5": "E",
+      "gr8_binding_class": {
+        "reference_class": "E",
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "would_be_class_retention": {
+        "class": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "holds_at_0_60": true
+      }
+    },
+    {
+      "unit_id": "TH551407",
+      "unit_name": "Fai Kaeo",
+      "fpps_0_100": 5.8,
+      "action_class": "E",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier"
+      ],
+      "no_answer_share_of_land": 0.013718830023685487,
+      "class_read_by_test_5": "E",
+      "gr8_binding_class": {
+        "reference_class": "E",
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "would_be_class_retention": {
+        "class": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "holds_at_0_60": true
+      }
+    }
+  ],
+  "runs": {
+    "case_n1": {
+      "flood_input": "m1z_20250728T1120_o99_S1C.tif",
+      "levels_run": [
+        "central",
+        "lower",
+        "upper"
+      ],
+      "ensemble_cells_run": 180,
+      "sensitivity_run": true,
+      "timing_seconds": {
+        "inputs_read": 11.7,
+        "flood_extents": 14.5,
+        "no_answer_figures": 36.0,
+        "access_runs": 632.8,
+        "units_measured": 260.7,
+        "sensitivity_run": 217.9,
+        "rows_assembled_and_checked": 4.7,
+        "ensemble": 856.8,
+        "headline_verify_and_write": 16.9
+      }
+    },
+    "case_n2": {
+      "flood_input": "the test 1 reference raster as provided (tier T3), central level only",
+      "levels_run": [
+        "central"
+      ],
+      "ensemble_cells_run": 60,
+      "sensitivity_run": false,
+      "timing_seconds": {
+        "inputs_read": 59.8,
+        "flood_extents": 3.4,
+        "no_answer_figures": 117.6,
+        "access_runs": 431.3,
+        "units_measured": 76.9,
+        "rows_assembled_and_checked": 2.5,
+        "ensemble": 76.6,
+        "headline_verify_and_write": 5.5
+      }
+    },
+    "same_inputs_apart_from_the_flood_input": "planning context, routing geometry, boundaries, permanent water, age counts computed from the WorldPop 2024 age folder, and the 2024-rescaled demand built by the chain"
+  },
+  "rights_note": "Case N2 reads JAXA's ALOS-2 Flood Proxy Map of 2025-07-28 (Provided by JAXA), used under the Sentinel Asia site policy; only figures computed from it are here.",
+  "supersedes": {
+    "what": "the first write of this file, which named the differing tambon",
+    "kept_at": "the work folder, test_5_decisions_v1_full_local.json"
+  }
+}

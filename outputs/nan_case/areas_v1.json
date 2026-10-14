@@ -1,0 +1,119 @@
+{
+  "schema": "floodguard.nan_case_areas.v1",
+  "generated_at_utc": "2026-10-14T13:50:00Z",
+  "protocol": "docs/proposal_execution/nan_case_protocol_v1.json",
+  "official_warning": false,
+  "operational_status": "non_operational",
+  "confidence_class": "not applicable (grid definitions)",
+  "source_timestamp": "not applicable (grid definitions)",
+  "assumptions": [
+    "Every grid is EPSG:32647, 20 m cells, north-up; a grid is (west, north, rows, cols) as in floodguard.s1_rtc.Grid.",
+    "The tuning grids are the extents of their recorded references, snapped outward to 20 m."
+  ],
+  "areas": {
+    "nan_frame": {
+      "role": "case frame (test)",
+      "grid": {
+        "west": 639520,
+        "north": 2111500,
+        "rows": 4303,
+        "cols": 4280
+      },
+      "event": {
+        "window_utc": [
+          "2025-07-15T17:00:00Z",
+          "2025-08-13T16:59:59Z"
+        ],
+        "passes": "every sentinel-1-rtc scene intersecting the grid that starts in the window"
+      },
+      "dry_season": {
+        "start": "2025-01-01",
+        "end": "2025-04-30",
+        "per_relative_orbit_of_each_event_pass": true,
+        "max_passes": 10,
+        "latest_first": true
+      }
+    },
+    "sukhothai_chip": {
+      "role": "tuning",
+      "grid": {
+        "west": 583660,
+        "north": 1883820,
+        "rows": 151,
+        "cols": 151
+      },
+      "event": {
+        "pass_utc": "2025-07-31T23:08",
+        "relative_orbit": 62,
+        "platform": "Sentinel-1A"
+      },
+      "dry_season": {
+        "start": "2025-01-01",
+        "end": "2025-04-30",
+        "relative_orbit": 62,
+        "max_passes": 10,
+        "latest_first": true
+      },
+      "reference": "<external>/proposal_execution/theos2_water_rule_v2/water_v2_sukhothai_2m.tif (frozen rule v2)"
+    },
+    "mae_sai_20241022": {
+      "role": "tuning",
+      "grid": {
+        "west": 583680,
+        "north": 2273280,
+        "rows": 2048,
+        "cols": 1536
+      },
+      "event": {
+        "pass_utc": "2024-10-21T23:16",
+        "relative_orbit": 135,
+        "platform": "Sentinel-1A"
+      },
+      "dry_season": {
+        "start": "2024-01-01",
+        "end": "2024-04-30",
+        "relative_orbit": 135,
+        "max_passes": 10,
+        "latest_first": true
+      },
+      "reference": "<external>/proposal_execution/dated_radar_check_v1/dated_reference_10m.tif (agency layer of 22 Oct 2024, local level; compare inside Mae Sai district only)"
+    },
+    "chaiyaphum_20210928": {
+      "role": "tuning",
+      "grid": {
+        "west": 820260,
+        "north": 1754780,
+        "rows": 451,
+        "cols": 490
+      },
+      "event": {
+        "pass_utc": "2021-09-27T23:00",
+        "relative_orbit": 164,
+        "platform": "Sentinel-1B"
+      },
+      "dry_season": {
+        "start": "2021-01-01",
+        "end": "2021-04-30",
+        "relative_orbit": 164,
+        "max_passes": 10,
+        "latest_first": true
+      },
+      "reference": "<external>/proposal_execution/automated_track/v2/final_holdout/automated_optical_reference_v2.tif (code 1 water, 0 dry, others not compared)"
+    }
+  },
+  "sealed_until_the_test": {
+    "nan_chip_003": {
+      "west": 683982.0,
+      "south": 2053070.0,
+      "east": 686984.0,
+      "north": 2056070.0
+    },
+    "nan_chip_001": {
+      "west": 677582.0,
+      "south": 2043732.0,
+      "east": 680584.0,
+      "north": 2046732.0
+    },
+    "jaxa": "<external>/proposal_execution/nan_case_v1/jaxa_sealed/"
+  }
+}

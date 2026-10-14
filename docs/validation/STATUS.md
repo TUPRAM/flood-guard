@@ -1,6 +1,6 @@
 # Validation check: state of the team's acceptance
 
-Written by `scripts/import_validation_records.py` on 2026-10-14T05:08:33Z from 9 record(s). Do not edit by hand.
+Written by `scripts/import_validation_records.py` on 2026-10-14T21:46:58Z from 9 record(s). Do not edit by hand.
 
 This is the word of the three team members on the project's own work. It is not a review by an independent expert, it qualifies no flood map, and it is not an official approval.
 
@@ -47,3 +47,8 @@ This is the word of the three team members on the project's own work. It is not 
 | V-39 | The replay's peak fitted to the image of 15 September, with the earlier replay kept as an archive | Waiting |  |  |  |
 | V-40 | The plain-language policy page, its sources, and the test of the five weights | Waiting |  |  |  |
 | V-41 | The Public home map without a score, its practice scenarios, and the Shelter map | Waiting |  |  |  |
+| V-42 | The rules of the Nan case, fixed before any Nan reference was scored, and amended twice, once after the first run | Waiting |  |  |  |
+| V-43 | Test 1 of record: our radar map against the JAXA ALOS-2 map (amendment 2; the first run on the GFM fallback is kept beside it) | Waiting |  |  |  |
+| V-44 | Test 2: Wiang Sa town on THEOS-2, and the dry control | Waiting |  |  |  |
+| V-45 | Roads and the hospital: THEOS-2 roads, the five listed road cuts (four in the protocol, one added by amendment 1), Nan Hospital | Waiting |  |  |  |
+| V-46 | Case N1: the score and class of the 35 tambons from our own map | Waiting |  |  |  |

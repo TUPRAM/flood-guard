@@ -1,0 +1,422 @@
+{
+ "schema": "floodguard.nan_case_tuning_references.v1",
+ "generated_at_utc": "2026-10-14T14:01:18Z",
+ "source_timestamp": "sukhothai_chip: THEOS-2 2025-07-30T03:33:31Z; mae_sai_20241022: agency layer dated 2024-10-22 (UNOSAT and GISTDA, product 4009); radar check pass 2024-10-21T23:16:14Z; chaiyaphum_20210928: Sentinel-2B 2021-09-28T03:53:49Z (event), dry context Sentinel-2B 2021-09-18T03:53:47Z",
+ "confidence_class": "low",
+ "confidence_basis": "Reference layers from one optical scene, one agency layer and two automated optical methods; no ground check.",
+ "assumptions": [
+  "Each reference is the layer an earlier work package recorded, read unchanged and checked against the SHA-256 and the counts of the record that binds it.",
+  "A 20 m cell takes part in tuning only where the rule of its set gives water (1) or dry (0); every other cell is 255 and takes no part.",
+  "Sukhothai: a 2 m pixel holds a value when the frozen rule v2 gave it 0 or 1; 255 (cloud) and pixels outside the chip hold none.",
+  "Mae Sai: the rule given for the set is silent on 20 m cells of which only one of four 10 m cells was compared; this lane leaves them out, by the half rule the other two sets use, and counts them.",
+  "Mae Sai: where the agency mapped no water the cell counts as dry, as in the dated radar check; the layer has no 'not observed' class.",
+  "Chaiyaphum: code 2 records water on both optical dates, not independently established permanent water, and is not compared.",
+  "No radar map is set against any reference here: the counts describe the references only."
+ ],
+ "official_warning": false,
+ "operational_status": "non_operational",
+ "can_feed_decision_layer": false,
+ "what_this_is": "The recorded reference of each tuning area of the Nan case on that area's 20 m grid, built before the method is tuned. Counts of reference cells only; no radar map is set against them here.",
+ "label": "Reference layers for tuning. Agreement of a radar map with them is agreement with a reference, not accuracy.",
+ "protocol": {
+  "path": "docs/proposal_execution/nan_case_protocol_v1.json",
+  "sha256": "e40966c7474e2168f732fa77de51d02efb128fa063757aa774085dc981d4d7cd"
+ },
+ "plan": {
+  "path": "docs/proposal_execution/nan_case_plan_v1.md",
+  "sha256": "b1174992fe1e999e39a33b7752c7164312ee76acb38ddc9509a56bc6994ef73b"
+ },
+ "areas": {
+  "path": "outputs/nan_case/areas_v1.json",
+  "sha256": "7c9d1cf0ee6b4405d8d9eda0a41f8395e71a954971f3c8a0e0b5ebb068723be5"
+ },
+ "value_codes": {
+  "1": "water",
+  "0": "dry",
+  "255": "not compared"
+ },
+ "sets": {
+  "sukhothai_chip": {
+   "protocol_set_id": "sukhothai_theos2_20250730",
+   "protocol_reference": "the frozen THEOS-2 water rule v2 on the Sukhothai chip: a 20 m cell is water when at least half of its 2 m pixels are water, not compared when fewer than half of them hold a value",
+   "source_timestamp": "THEOS-2 2025-07-30T03:33:31Z",
+   "grid_20m": {
+    "epsg": 32647,
+    "cell_m": 20.0,
+    "west": 583660.0,
+    "north": 1883820.0,
+    "rows": 151,
+    "cols": 151
+   },
+   "rule": "A 20 m cell is water when at least half of its 2 m pixels (50 of 100) are water under the frozen THEOS-2 water rule v2; dry when at least half hold a value (0 or 1) and fewer than half are water; not compared when fewer than half hold a value or the cell centre lies outside the chip rectangle (valid_rectangle_epsg32647 of the cross-check reference record). Pixels outside the chip hold no value.",
+   "rights": {
+    "rights_level": "unassigned",
+    "level_from": "no record of THEOS-2 in floodguard.rights.REGISTERED_RECORDS",
+    "basis": "THEOS-2 sample imagery provided by GISTDA for GeoHackathon 2026; the owner reported on 3 July 2026 that it can be used freely (docs/theos2_usage_terms_log.md). Protocol N1 (rights_in_git) allows THEOS-2-derived figures in Git and keeps the originals and every raster outside Git.",
+    "in_git": "counts of the 20 m reference and of the label points (the points themselves are already committed in outputs/theos2_water_labels/)",
+    "outside_git": [
+     "reference_20m.tif",
+     "reference_20m.json",
+     "points_sukhothai.json"
+    ]
+   },
+   "points": {
+    "points": 120,
+    "labellers": [
+     "Putu",
+     "Rachmania",
+     "callixta"
+    ],
+    "key": {
+     "path": "outputs/theos2_water_labels/key_v1.json",
+     "sha256": "9f5560c5b75e42f389decf131e45fb33626b54161007f6d8673d6529d9779ae4"
+    },
+    "label_files": [
+     {
+      "path": "outputs/theos2_water_labels/labels_callixta.json",
+      "sha256": "dffd41fb3fb4298bf1a79482c55d355e9fe5059ecf9282456ecf79afe38edc2a"
+     },
+     {
+      "path": "outputs/theos2_water_labels/labels_putu.json",
+      "sha256": "47e8e7b412d4c7423af5ffaab2b1a2b94870ce5a5fc1f0f4b2a6a47b3175ed01"
+     },
+     {
+      "path": "outputs/theos2_water_labels/labels_rachmania.json",
+      "sha256": "3743b27e628c776a424afbcb04d41a988173eb5013de3fe0c0b80de944ca98e6"
+     }
+    ],
+    "points_by_label_and_reference_cell": {
+     "water": {
+      "water": 38,
+      "dry": 21,
+      "not_compared": 1,
+      "outside_the_grid": 0
+     },
+     "not_water": {
+      "water": 10,
+      "dry": 37,
+      "not_compared": 0,
+      "outside_the_grid": 0
+     },
+     "cannot_tell": {
+      "water": 2,
+      "dry": 2,
+      "not_compared": 0,
+      "outside_the_grid": 0
+     },
+     "no_two_alike": {
+      "water": 4,
+      "dry": 5,
+      "not_compared": 0,
+      "outside_the_grid": 0
+     }
+    },
+    "pixels_by_stratum_of_the_draw": {
+     "water_inside": 516461,
+     "water_edge": 239484,
+     "dropped_small_object": 31840,
+     "land_edge": 213289,
+     "land_inside": 1061549,
+     "unobservable": 190378
+    },
+    "note": "Points were drawn at random within six strata of rule v1 (outputs/theos2_water_labels/sample_v1.json); a figure from them needs the stratum weights. Only the Sukhothai points were kept; the key and the label files were parsed whole as JSON and every other point was dropped unread.",
+    "file_outside_git": "points_sukhothai.json"
+   },
+   "status": "built",
+   "counts": {
+    "cells": 22801,
+    "compared_cells": 22377,
+    "water_cells": 9285,
+    "dry_cells": 13092,
+    "not_compared_cells": 424,
+    "water_share_of_compared": 0.414935,
+    "compared_km2": 8.9508,
+    "water_km2": 3.714
+   },
+   "source": {
+    "what": "the frozen THEOS-2 water rule v2 (floodguard.theos2_water_rule_v2.water_v2) on the Sukhothai chip",
+    "file": "<external>/proposal_execution/theos2_water_rule_v2/water_v2_sukhothai_2m.tif",
+    "sha256": "2e931b87fd273a0426c0b1e19ad209ec0c7661297d86a2bb9fc920260d83bcf5",
+    "bound_by": {
+     "path": "outputs/theos2_water_rule_v2/freeze_v1.json",
+     "sha256": "f6cc40e1db8f37cc2fe5d3bebeb5d83e478211c3ceb364d89d2525d9ed3ae168"
+    },
+    "value_codes": {
+     "0": "not water",
+     "1": "water",
+     "255": "unobservable (cloud)"
+    },
+    "scene": "IMG_T2V_20250730033331_ORTHO_PMS_32-004.tif",
+    "chip_rectangle_epsg32647": {
+     "west": 583664.0,
+     "south": 1880816.0,
+     "east": 586666.0,
+     "north": 1883818.0
+    },
+    "chip_rectangle_from": {
+     "path": "outputs/theos2_cross_check/sukhothai_20250730_reference_v1.json",
+     "sha256": "e2fc5f0c479458be5036928e300b433adb83fd93f19a6ffcbe95f327bb5f0d78"
+    },
+    "pixel_m": 2.0,
+    "pixels_per_20m_cell": 100,
+    "offset_in_2m_pixels": {
+     "rows": 1,
+     "columns": 2
+    }
+   },
+   "checks": {
+    "sha256_matches_the_freeze_record": true,
+    "water_pixels": 940069,
+    "water_pixels_recorded": 940069,
+    "unobservable_pixels": 13555,
+    "unobservable_pixels_recorded": 13555,
+    "raster_covers_the_chip_rectangle_exactly": true
+   },
+   "not_compared_by_reason": {
+    "fewer_than_half_of_the_pixels_hold_a_value": 424,
+    "at_least_half_hold_a_value_but_the_centre_lies_outside_the_chip": 0
+   },
+   "files_outside_git": {
+    "folder": "<external>/proposal_execution/nan_case_v1/references_tuning/sukhothai_chip",
+    "reference_20m.tif": {
+     "sha256": "fcdc85b8c595706cb14b47263c579d5d9d48f32d27b168744386cf506f1456ab"
+    },
+    "points_sukhothai.json": {
+     "sha256": "173a0006dd51db4fad1cf728520764b1334a99ee769aeb8f3c8602a76b457da8"
+    },
+    "reference_20m.json": {
+     "sha256": "246a8b6c8c9154b6d2a5e22d4fee25418a16d1e599ca51ddac60290805905d30"
+    }
+   }
+  },
+  "mae_sai_20241022": {
+   "protocol_set_id": "mae_sai_20241022",
+   "protocol_reference": "the UNOSAT/GISTDA layer CHIANGRAI_20241022_FloodExtent inside Mae Sai district, held at the local level (R33)",
+   "source_timestamp": "agency layer dated 2024-10-22 (UNOSAT and GISTDA, product 4009); radar check pass 2024-10-21T23:16:14Z",
+   "grid_20m": {
+    "epsg": 32647,
+    "cell_m": 20.0,
+    "west": 583680.0,
+    "north": 2273280.0,
+    "rows": 2048,
+    "cols": 1536
+   },
+   "rule": "A 10 m cell is compared where the dated radar check of work package 3 compared it: inside Mae Sai district (COD-AB tha_admin3 units with adm2_pcode TH5709), outside ESA WorldCover permanent water, with a valid radar value after. A 20 m cell is compared when at least half of its four 10 m cells (two or more) were compared; it is water when at least half of its compared 10 m cells are agency water, dry otherwise; every other 20 m cell is not compared.",
+   "rights": {
+    "rights_level": "local",
+    "level_from": "floodguard.rights registry grant",
+    "grant": {
+     "input_id": "unosat_4009",
+     "layer": "CHIANGRAI_20241022_FloodExtent",
+     "record_id": "rights_basis_4009_v1",
+     "record_path": "docs/proposal_execution/rights_basis_4009_v1.json",
+     "record_sha256": "531ab40beb2b3e80a02d6de0d4d7d791b299176af0b192bfe105ca23c7e50cb3",
+     "record_schema": "floodguard.rights_basis_4009.v1",
+     "record_status": "confirmed",
+     "source": "unosat_gistda_product_4009",
+     "confirmed_by": [
+      "Putu",
+      "Rachmania"
+     ],
+     "confirmed_on": "2026-10-02",
+     "licence": {
+      "name": "CC BY-SA 4.0",
+      "full_name": "Creative Commons Attribution-ShareAlike 4.0 International",
+      "spdx_id": "CC-BY-SA-4.0",
+      "url": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "legal_code_url": "https://creativecommons.org/licenses/by-sa/4.0/legalcode"
+     },
+     "attribution": "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009",
+     "share_alike": "Every layer or table derived from product 4009 is shared under CC BY-SA 4.0, in its own file, with the attribution and a change notice. Keeping product 4009 derivatives in their own files is a caution, not legal advice.",
+     "rights_level": "local",
+     "rights_level_basis": "The confirmed record rights_basis_4009_v1 covers the product and its archive under CC BY-SA 4.0 (decision D2), but it names only CHIANGRAI_20240801_20241012_AccumulatedFlood as its layer in scope, and decision R6 allows publication as a season envelope only. This layer is read and processed outside Git; nothing derived from it is written into public web files until the owners extend the record.",
+     "not_legal_advice": true
+    },
+    "in_git": "whole-district counts and shares only (decision log R33)",
+    "outside_git": [
+     "reference_20m.tif",
+     "reference_20m.json"
+    ]
+   },
+   "status": "built",
+   "counts": {
+    "cells": 3145728,
+    "compared_cells": 762633,
+    "water_cells": 9737,
+    "dry_cells": 752896,
+    "not_compared_cells": 2383095,
+    "water_share_of_compared": 0.012768,
+    "compared_km2": 305.0532,
+    "water_km2": 3.8948
+   },
+   "source": {
+    "what": "the layer UNOSAT and GISTDA dated 22 October 2024 (CHIANGRAI_20241022_FloodExtent), as rasterised on 10 m by the dated radar check of work package 3 (cell centre inside the layer)",
+    "file": "<external>/proposal_execution/dated_radar_check_v1/dated_reference_10m.tif",
+    "sha256": "7eeee4af8f339a35b92b5ffda839ebee425be54cb2055b2c4785ac7470ff25eb",
+    "bound_by": {
+     "path": "outputs/dated_radar_check/mae_sai_20241022_reference_v1.json",
+     "sha256": "94618125c1a2291d04e66e4e4e5c8b90ce72c87fc806197b8f230aa3b68969e9"
+    },
+    "compared_cells_from": {
+     "path": "outputs/dated_radar_check/mae_sai_20241022_v1.json",
+     "sha256": "06954c1613803e1831b7a6ccb6a4b6626f6689d65a1e392bf91f2492b4df8fe1"
+    },
+    "bands": {
+     "1": "agency water",
+     "2": "in the district",
+     "3": "permanent water",
+     "4": "not at the edge of the layer",
+     "5": "season layer"
+    },
+    "band_used_as_reference": "1 (agency water)",
+    "compared_10m": "band 2 (in the district) and not band 3 (permanent water) and a finite VV and VH value in the radar after-image window of the check",
+    "radar_after_window": {
+     "file": "<external>/proposal_execution/dated_radar_check_v1/s1_post_gamma0.tif",
+     "sha256": "4b1c91efb65479ad1349102052e57c4ebbde9dc30dd9dee1e1060a8e2417e064",
+     "bound_by": {
+      "path": "outputs/dated_radar_check/mae_sai_20241022_v1_receipt.json",
+      "sha256": "3a468677a4f96e077af47aa3915d38269109f0b9437e41651c80ffd6ca7c9686"
+     },
+     "read_for": "its valid cells only"
+    },
+    "boundaries": "<external>/open_context/hdx_cod_ab/tha_admin_boundaries.gdb.zip, layer tha_admin3, adm2_pcode TH5709",
+    "cells_per_20m_cell": 4
+   },
+   "checks": {
+    "sha256_matches_the_reference_record": true,
+    "district_cells": 3055567,
+    "district_cells_recorded": 3055567,
+    "compared_10m_cells": 3045629,
+    "compared_10m_cells_recorded": 3045629,
+    "agency_water_10m_cells_compared": 36189,
+    "agency_water_10m_cells_compared_recorded": 36189,
+    "district_cells_without_radar_after": 0,
+    "district_units": 8,
+    "district_redrawn_from_cod_ab_equals_band_2": true
+   },
+   "not_compared_by_reason": {
+    "no_10m_cell_compared": 2381711,
+    "one_of_four_10m_cells_compared": 1384,
+    "of_those_with_the_one_cell_agency_water": 10
+   },
+   "rights_note": "Held at the local level (decision log R33): the rasters stay in the work folder; this record holds whole-district figures only.",
+   "files_outside_git": {
+    "folder": "<external>/proposal_execution/nan_case_v1/references_tuning/mae_sai_20241022",
+    "reference_20m.tif": {
+     "sha256": "20d565aec51211e7b06cb68fbf4219fe6cf8ca560ee9dae4479a4ce9c8019743"
+    },
+    "reference_20m.json": {
+     "sha256": "aeaabe572d4163c3aba6fbcae0eea12fcc3b66bfbdfc2006c1328b43be54b9e0"
+    }
+   }
+  },
+  "chaiyaphum_20210928": {
+   "protocol_set_id": "chaiyaphum_20210928",
+   "protocol_reference": "automated_optical_reference_v2.tif of the optical v2 final hold-out (Sentinel-2B of 2021-09-28, 4.9 h after the radar): code 1 is water, code 0 is dry, every other code is not compared",
+   "source_timestamp": "Sentinel-2B 2021-09-28T03:53:49Z (event), dry context Sentinel-2B 2021-09-18T03:53:47Z",
+   "grid_20m": {
+    "epsg": 32647,
+    "cell_m": 20.0,
+    "west": 820260.0,
+    "north": 1754780.0,
+    "rows": 451,
+    "cols": 490
+   },
+   "rule": "A 20 m cell is water when at least half of its four 10 m cells (two or more) are code 1; dry when at least half are code 0 and none is code 1; otherwise not compared. Codes 2, 3, 4 and 255 are neither water nor dry, and so are 10 m cells outside the raster.",
+   "rights": {
+    "rights_level": "unassigned",
+    "level_from": "the registry refuses the record of the automated optical track",
+    "registry_answer": "input 'copernicus_sentinel2_l2a_automated_track' may not be used: its rights record (automated_legal_notice_record) is not signed by a human (signed_by_human and human_rights_clearance must both be true)",
+    "basis": "Copernicus Sentinel-2 Level-2A data under the Copernicus legal notice, which permits reproduction, distribution and adaptation with credit (record docs/proposal_execution/automated_track/rights_basis_v1.json, an automated legal-notice record not signed by a human). Protocol N1 (rights_in_git) allows records and figures of Copernicus Sentinel data in Git; rasters stay outside Git.",
+    "credit": "Contains modified Copernicus Sentinel data 2021",
+    "in_git": "counts of the 20 m reference",
+    "outside_git": [
+     "reference_20m.tif",
+     "reference_20m.json"
+    ]
+   },
+   "status": "built",
+   "counts": {
+    "cells": 220990,
+    "compared_cells": 76149,
+    "water_cells": 6176,
+    "dry_cells": 69973,
+    "not_compared_cells": 144841,
+    "water_share_of_compared": 0.081104,
+    "compared_km2": 30.4596,
+    "water_km2": 2.4704
+   },
+   "source": {
+    "what": "automated_optical_reference_v2.tif of the optical v2 final hold-out (two automated optical methods on Sentinel-2B of 2021-09-28, dry context 2021-09-18)",
+    "file": "<external>/proposal_execution/automated_track/v2/final_holdout/automated_optical_reference_v2.tif",
+    "sha256": "130ab3aac33a3c296eb9dc2612478088a6f6ea129dd4489992ed2a241af77773",
+    "bound_by": {
+     "path": "outputs/automated_optical_v2_holdout.json",
+     "sha256": "84b3dce6476b8929f2bd27d47eff9b55f0f3de2cd35dad1b6c4d68c0b0237260"
+    },
+    "value_codes": {
+     "0": "both methods dry",
+     "1": "temporary flood agreed by both methods",
+     "2": "water on both dates",
+     "3": "method disagreement or indeterminate dry context",
+     "4": "unobservable (SCL) and buffered cells",
+     "255": "outside the area of the hold-out"
+    },
+    "codes_described_in": "docs/proposal_execution/GATE_RESEARCH_DOSSIER.md and outputs/automated_optical_v2_holdout.json",
+    "cells_per_20m_cell": 4,
+    "offset_in_10m_cells": {
+     "rows": 1,
+     "columns": 0
+    }
+   },
+   "checks": {
+    "sha256_matches_the_holdout_record": true,
+    "class_counts": {
+     "0": 268418,
+     "1": 21853,
+     "2": 1374,
+     "3": 106796,
+     "4": 456686
+    },
+    "class_counts_recorded": {
+     "0": 268418,
+     "1": 21853,
+     "2": 1374,
+     "3": 106796,
+     "4": 456686
+    },
+    "cells_outside_the_area_code_255": 26952
+   },
+   "not_compared_by_reason": {
+    "with_one_code_1_cell": 1431,
+    "without_code_1_and_fewer_than_half_code_0": 143410
+   },
+   "files_outside_git": {
+    "folder": "<external>/proposal_execution/nan_case_v1/references_tuning/chaiyaphum_20210928",
+    "reference_20m.tif": {
+     "sha256": "ee9cf1bf95de14c38921e746bcdc4ff8320cfebb6bf338e5127894e00e38d913"
+    },
+    "reference_20m.json": {
+     "sha256": "5ac837311143eb3bdf70da58026a46db197958d361a8716e0c9e2745ed14ad4f"
+    }
+   }
+  }
+ },
+ "sets_built": [
+  "sukhothai_chip",
+  "mae_sai_20241022",
+  "chaiyaphum_20210928"
+ ],
+ "sets_dropped": [],
+ "firewall": "No file of the Nan frame was opened: not the sealed JAXA folder, not any GFM file, not the THEOS-2 files of 31 July 2025 nor anything derived from them. Every path was checked against that list before it was opened.",
+ "code": {
+  "path": "scripts/nan_case_tuning_references.py",
+  "sha256": "e1c27fc2dcb0d177affbdba64ba2a8943fe91e3202a6a105055b8b3f9e7c9db8"
+ },
+ "limits": [
+  "The references are not ground observations: an optical rule at Sukhothai, an agency layer at Mae Sai that was not checked in the field, and two automated optical methods at Chaiyaphum.",
+  "Sukhothai and Mae Sai were seen as development data before this case (R37); Chaiyaphum's optical reference was used once for the optical v2 test.",
+  "Any figure computed against these layers is agreement with a reference, not accuracy. Planning guidance only."
+ ],
+ "supersedes": null
+}

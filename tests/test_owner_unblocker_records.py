@@ -71,6 +71,15 @@ CODE_THAT_LISTS_A_FOLDER = [
     # Names its plan in docs/proposal_execution and lists its own output folder for the reference records of a scene
     # (outputs/theos2_study_event_check); it lists nothing under docs/ and reads no draft.
     "scripts/build_theos2_study_event_check.py",
+    # The consequence tests and the time series of the Nan case (decision log R51, R54) read the protocol and its
+    # amendments by name and list only the M1-z maps (m1z_*.tif) of the external work folder method/maps; neither
+    # lists docs/proposal_execution or reads a draft. (The list keeps the order of the scan: by path.)
+    "scripts/nan_case_consequence_tests.py",
+    # The three staged scripts of the Nan case (decision log R51) name the external proposal_execution work folder
+    # and list only their own work folders under the external root (and outputs/theos2_water_labels); none lists
+    # docs/proposal_execution or reads a draft.
+    "scripts/nan_case_method.py", "scripts/nan_case_radar.py", "scripts/nan_case_terrain.py",
+    "scripts/nan_case_time_series.py",
     # Lists the published overlay files of one folder under apps/web/public/ to write their index; it reads the two
     # protocol files and the receipts of docs/proposal_execution by name, and no draft.
     "scripts/publish_planning_overlay.py",

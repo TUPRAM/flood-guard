@@ -1,0 +1,1166 @@
+{
+ "schema": "floodguard.nan_case_test_result.v1",
+ "generated_at_utc": "2026-10-14T18:10:18Z",
+ "source_timestamp": "Nan passes 2025-07-19T23:08:07Z, 2025-07-22T11:22:07Z, 2025-07-25T23:06:50Z, 2025-07-27T11:30:07Z, 2025-07-28T11:20:49Z, 2025-07-31T23:08:03Z; JAXA maps of 2025-07-19 and 2025-07-28; THEOS-2 2025-07-31T03:51:00Z",
+ "confidence_class": "low",
+ "assumptions": [
+  "M1-z is applied as the protocol writes it, on the 20 m grid of each area: z_vh = (VH after dB - dry mean dB) / dry spread dB.",
+  "Permanent water is ESA WorldCover 2021 class 80; it is never flagged and is left out of the compared cells of every measure.",
+  "The terrain answer comes first: HAND above the limit or a slope of 5 degrees or more is answered not flooded even where the radar has no value.",
+  "A cell without a HAND or slope value that terrain does not answer gets no answer; the protocol does not name this case, it is a data gap.",
+  "The no-answer share and the binding IoU are counted on the compared cells only; a cell without an answer counts as not flagged in the binding IoU.",
+  "The frozen method runs unchanged; the comparators run with their own frozen rules on the same passes and cells.",
+  "Test 1 compares frame land (cells whose centre lies inside the 35 units) outside permanent water; JAXA polygons and the observation area are rasterised by cell centre.",
+  "A JAXA time is read only where the files give it with a zone; otherwise the protocol's pass of 2025-07-28 11:21 UTC is used.",
+  "Test 2 compares the frame cells whose centre lies inside the chip, outside permanent water, by the 20 m half rule on rule v2 water.",
+  "The 95% intervals come from 1000 draws of 2 km tiles (100 by 100 cells from the frame's north-west corner) with the seed recorded."
+ ],
+ "official_warning": false,
+ "operational_status": "non_operational",
+ "can_feed_decision_layer": false,
+ "confidence_basis": "One event and one frame; references are other maps and labels from images, not ground checks.",
+ "what_this_is": "The one test of the frozen M1-z of the Nan case: tests 1, 1b, 2 and the dry control of the protocol.",
+ "freeze_record": {
+  "path": "outputs/nan_case/freeze_v1.json",
+  "sha256": "a658d60daf3f985a0369d2a300e02e4981d07fa01b2aa3c6932f18d2c72f74b4"
+ },
+ "protocol": {
+  "path": "docs/proposal_execution/nan_case_protocol_v1.json",
+  "sha256": "e40966c7474e2168f732fa77de51d02efb128fa063757aa774085dc981d4d7cd"
+ },
+ "code_sha256": {
+  "src/floodguard/m1z.py": "17ff735d766638d17386dd72ab3c938affdd46c3f30a4f5cb38b3547960108ed",
+  "scripts/nan_case_method.py": "32e68b0ce94ad631c6efa11be87ffedd2b41aa6e3fa55aaf0164fa5643651549"
+ },
+ "git_commit": "258c2d50e5ce8cba2860661bd841ca0a8ac65f25",
+ "frozen_parameters": {
+  "lower": {
+   "z_vh_max": -1.5,
+   "vh_after_max_db": -18.0,
+   "hand_max_m": 5.0,
+   "dry_spread_max_db": null
+  },
+  "central": {
+   "z_vh_max": -1.0,
+   "vh_after_max_db": -18.0,
+   "hand_max_m": 5.0,
+   "dry_spread_max_db": null
+  },
+  "upper": {
+   "z_vh_max": -0.5,
+   "vh_after_max_db": -18.0,
+   "hand_max_m": 5.0,
+   "dry_spread_max_db": null
+  }
+ },
+ "frame": {
+  "file": "tha_admin_boundaries.gdb.zip",
+  "layer": "tha_admin3",
+  "units": 35,
+  "units_by_district": {
+   "TH5501": 11,
+   "TH5507": 17,
+   "TH5514": 7
+  },
+  "cells_inside": 9006963,
+  "units_the_protocol_names": 35,
+  "matches_the_protocol": true,
+  "frame_land_cells": 8984701,
+  "grid": {
+   "west": 639520.0,
+   "north": 2111500.0,
+   "rows": 4303,
+   "cols": 4280
+  },
+  "terrain_inputs": {
+   "hand": {
+    "name": "hand_m.tif",
+    "sha256": "1d0e98741498f071a2752f24378977f299118ea2ca1d9cdb609dec3bb876e0cd"
+   },
+   "slope": {
+    "name": "slope_deg.tif",
+    "sha256": "d1c92ddb7a0f54f050cf6ba85d4325ad3bef5c0f254b822ce53db496135949d0"
+   },
+   "cover": {
+    "name": "worldcover.tif",
+    "sha256": "34a51675e09a6dd92cdd9fc1f2203b96302c7b9045202af6eed566df8ecf5854"
+   },
+   "permanent_water": {
+    "name": "permanent_water.tif",
+    "sha256": "587d1cb981880d6a0602e7ccf3af655c03d04ae56cce671611df313d0bab9043"
+   }
+  },
+  "cells_where_the_lane_permanent_water_differs_from_class_80": 0
+ },
+ "passes_fetched": [
+  {
+   "file": "event_20250719T2308Z_s1a_o62.tif",
+   "time_utc": "2025-07-19T23:08:07Z",
+   "relative_orbit": 62,
+   "platform": "Sentinel-1A",
+   "label": "20250719T2308_o62_S1A"
+  },
+  {
+   "file": "event_20250722T1122Z_s1a_o99.tif",
+   "time_utc": "2025-07-22T11:22:07Z",
+   "relative_orbit": 99,
+   "platform": "Sentinel-1A",
+   "label": "20250722T1122_o99_S1A"
+  },
+  {
+   "file": "event_20250725T2306Z_s1c_o62.tif",
+   "time_utc": "2025-07-25T23:06:50Z",
+   "relative_orbit": 62,
+   "platform": "Sentinel-1C",
+   "label": "20250725T2306_o62_S1C"
+  },
+  {
+   "file": "event_20250727T1130Z_s1a_o172.tif",
+   "time_utc": "2025-07-27T11:30:07Z",
+   "relative_orbit": 172,
+   "platform": "Sentinel-1A",
+   "label": "20250727T1130_o172_S1A"
+  },
+  {
+   "file": "event_20250728T1120Z_s1c_o99.tif",
+   "time_utc": "2025-07-28T11:20:49Z",
+   "relative_orbit": 99,
+   "platform": "Sentinel-1C",
+   "label": "20250728T1120_o99_S1C"
+  },
+  {
+   "file": "event_20250731T2308Z_s1a_o62.tif",
+   "time_utc": "2025-07-31T23:08:03Z",
+   "relative_orbit": 62,
+   "platform": "Sentinel-1A",
+   "label": "20250731T2308_o62_S1A"
+  }
+ ],
+ "pass_set_check": {
+  "passes_found": 6,
+  "every_pass_has_its_dry_season_statistics": true,
+  "radar_record": {
+   "path": "outputs/nan_case/radar_passes_nan_frame_v1.json",
+   "sha256": "2f29c3d742358d31f08d9d9aef4b435d5ae79b2f0408c8c96ba237e65f59de10"
+  },
+  "event_passes_not_on_disk": [
+   "20250716T1120Z_s1c_o99",
+   "20250724T2316Z_s1a_o135",
+   "20250803T1122Z_s1a_o99",
+   "20250805T2316Z_s1a_o135",
+   "20250806T2306Z_s1c_o62",
+   "20250808T1130Z_s1a_o172",
+   "20250809T1120Z_s1c_o99",
+   "20250812T2308Z_s1a_o62"
+  ],
+  "missing_passes_reason": "Passes not fetched at the time of the test: 2025-07-16 (Sentinel-1C, orbit 99), 2025-07-24 (orbit 135) and the six passes of 3 to 12 August 2025. None can be the pass of test 1 (the JAXA map is of 28 July and the passes of 27 and 28 July are fetched) or of test 2 (31 July, fetched). They are fetched after the test for the time series and test 3b.",
+  "event_passes_listed": 14
+ },
+ "theos2_images": {
+  "nan_chip_003": {
+   "file": "IMG_T2V_20250731035100_ORTHO_PMS_32-003.tif",
+   "found": true,
+   "largest_edge_difference_m": 7304.0
+  },
+  "nan_chip_001": {
+   "file": "IMG_T2V_20250731035100_ORTHO_PMS_32-001.tif",
+   "found": true,
+   "largest_edge_difference_m": 10622.0
+  }
+ },
+ "amendment_1": {
+  "path": "docs/proposal_execution/nan_case_protocol_v1_amendment_1.json",
+  "sha256": "2b2b8cb476bea4905c893d4ae429f8b598a558c9aa6a71f7a209ee7d737102f7",
+  "platform_offset_db_applied_to_event_passes": {
+   "sentinel-1c": 0.79
+  }
+ },
+ "test_1": {
+  "reference": "GFM ensemble flood extent of the Sentinel-1A pass of 2025-07-31 (fallback)",
+  "label": "Agreement with a same-pass CEMS map, not independent and not accuracy.",
+  "gfm_items": [
+   {
+    "id": "ENSEMBLE_FLOOD_20250731T230803_VV_AS020M_E048N015T3",
+    "datetime": "2025-07-31T23:08:03Z",
+    "equi7_tile": "AS020M_E048N015T3",
+    "platform": null
+   },
+   {
+    "id": "ENSEMBLE_FLOOD_20250731T230803_VV_AS020M_E051N015T3",
+    "datetime": "2025-07-31T23:08:03Z",
+    "equi7_tile": "AS020M_E051N015T3",
+    "platform": null
+   },
+   {
+    "id": "ENSEMBLE_FLOOD_20250731T230828_VV_AS020M_E048N015T3",
+    "datetime": "2025-07-31T23:08:28Z",
+    "equi7_tile": "AS020M_E048N015T3",
+    "platform": null
+   },
+   {
+    "id": "ENSEMBLE_FLOOD_20250731T230828_VV_AS020M_E051N015T3",
+    "datetime": "2025-07-31T23:08:28Z",
+    "equi7_tile": "AS020M_E051N015T3",
+    "platform": null
+   },
+   {
+    "id": "ENSEMBLE_FLOOD_20250731T230853_VV_AS020M_E048N015T3",
+    "datetime": "2025-07-31T23:08:53Z",
+    "equi7_tile": "AS020M_E048N015T3",
+    "platform": null
+   }
+  ],
+  "pass": {
+   "file": "event_20250731T2308Z_s1a_o62.tif",
+   "time_utc": "2025-07-31T23:08:03Z",
+   "relative_orbit": 62,
+   "platform": "Sentinel-1A",
+   "label": "20250731T2308_o62_S1A"
+  },
+  "central": {
+   "compared_cells": 782027,
+   "reference_water_cells": 7492,
+   "answered_cells": 725638,
+   "no_answer_cells": 56389,
+   "true_positive": 1677,
+   "false_positive": 17133,
+   "false_negative_answered": 5138,
+   "true_negative_answered": 701690,
+   "no_answer_reference_water": 677,
+   "no_answer_reference_dry": 55712,
+   "iou_no_answer_as_not_flagged": 0.068102,
+   "iou_answered_cells": 0.070027,
+   "flagged_that_is_reference_water": 0.089155,
+   "reference_water_flagged_no_answer_as_not_flagged": 0.223839,
+   "reference_water_flagged_answered_cells": 0.246075,
+   "no_answer_share": 0.072106
+  },
+  "lower": {
+   "compared_cells": 782027,
+   "reference_water_cells": 7492,
+   "answered_cells": 725638,
+   "no_answer_cells": 56389,
+   "true_positive": 1520,
+   "false_positive": 12946,
+   "false_negative_answered": 5295,
+   "true_negative_answered": 705877,
+   "no_answer_reference_water": 677,
+   "no_answer_reference_dry": 55712,
+   "iou_no_answer_as_not_flagged": 0.074371,
+   "iou_answered_cells": 0.076919,
+   "flagged_that_is_reference_water": 0.105074,
+   "reference_water_flagged_no_answer_as_not_flagged": 0.202883,
+   "reference_water_flagged_answered_cells": 0.223037,
+   "no_answer_share": 0.072106
+  },
+  "upper": {
+   "compared_cells": 782027,
+   "reference_water_cells": 7492,
+   "answered_cells": 725638,
+   "no_answer_cells": 56389,
+   "true_positive": 1747,
+   "false_positive": 20790,
+   "false_negative_answered": 5068,
+   "true_negative_answered": 698033,
+   "no_answer_reference_water": 677,
+   "no_answer_reference_dry": 55712,
+   "iou_no_answer_as_not_flagged": 0.061771,
+   "iou_answered_cells": 0.063286,
+   "flagged_that_is_reference_water": 0.077517,
+   "reference_water_flagged_no_answer_as_not_flagged": 0.233182,
+   "reference_water_flagged_answered_cells": 0.256346,
+   "no_answer_share": 0.072106
+  },
+  "central_by_worldcover_group": {
+   "built_up": {
+    "compared_cells": 20624,
+    "reference_water_cells": 1,
+    "answered_cells": 12928,
+    "no_answer_cells": 7696,
+    "true_positive": 0,
+    "false_positive": 0,
+    "false_negative_answered": 1,
+    "true_negative_answered": 12927,
+    "no_answer_reference_water": 0,
+    "no_answer_reference_dry": 7696,
+    "iou_no_answer_as_not_flagged": 0.0,
+    "iou_answered_cells": 0.0,
+    "flagged_that_is_reference_water": null,
+    "reference_water_flagged_no_answer_as_not_flagged": 0.0,
+    "reference_water_flagged_answered_cells": 0.0,
+    "no_answer_share": 0.373157
+   },
+   "cropland": {
+    "compared_cells": 334376,
+    "reference_water_cells": 5845,
+    "answered_cells": 334376,
+    "no_answer_cells": 0,
+    "true_positive": 1604,
+    "false_positive": 16673,
+    "false_negative_answered": 4241,
+    "true_negative_answered": 311858,
+    "no_answer_reference_water": 0,
+    "no_answer_reference_dry": 0,
+    "iou_no_answer_as_not_flagged": 0.071232,
+    "iou_answered_cells": 0.071232,
+    "flagged_that_is_reference_water": 0.087761,
+    "reference_water_flagged_no_answer_as_not_flagged": 0.274423,
+    "reference_water_flagged_answered_cells": 0.274423,
+    "no_answer_share": 0.0
+   },
+   "tree_cover": {
+    "compared_cells": 329360,
+    "reference_water_cells": 1274,
+    "answered_cells": 280667,
+    "no_answer_cells": 48693,
+    "true_positive": 0,
+    "false_positive": 0,
+    "false_negative_answered": 597,
+    "true_negative_answered": 280070,
+    "no_answer_reference_water": 677,
+    "no_answer_reference_dry": 48016,
+    "iou_no_answer_as_not_flagged": 0.0,
+    "iou_answered_cells": 0.0,
+    "flagged_that_is_reference_water": null,
+    "reference_water_flagged_no_answer_as_not_flagged": 0.0,
+    "reference_water_flagged_answered_cells": 0.0,
+    "no_answer_share": 0.147841
+   },
+   "other": {
+    "compared_cells": 97667,
+    "reference_water_cells": 372,
+    "answered_cells": 97667,
+    "no_answer_cells": 0,
+    "true_positive": 73,
+    "false_positive": 460,
+    "false_negative_answered": 299,
+    "true_negative_answered": 96835,
+    "no_answer_reference_water": 0,
+    "no_answer_reference_dry": 0,
+    "iou_no_answer_as_not_flagged": 0.08774,
+    "iou_answered_cells": 0.08774,
+    "flagged_that_is_reference_water": 0.136961,
+    "reference_water_flagged_no_answer_as_not_flagged": 0.196237,
+    "reference_water_flagged_answered_cells": 0.196237,
+    "no_answer_share": 0.0
+   }
+  },
+  "central_interval_95": {
+   "resamples": 1000,
+   "seed": 20261014,
+   "tile_cells": 100,
+   "tile_m": 2000.0,
+   "tiles": 947,
+   "percentiles": [
+    2.5,
+    97.5
+   ],
+   "interval": {
+    "iou_no_answer_as_not_flagged": [
+     0.03236,
+     0.108309
+    ],
+    "iou_answered_cells": [
+     0.032967,
+     0.111979
+    ],
+    "flagged_that_is_reference_water": [
+     0.039329,
+     0.156496
+    ],
+    "reference_water_flagged_no_answer_as_not_flagged": [
+     0.131929,
+     0.345094
+    ],
+    "no_answer_share": [
+     0.062656,
+     0.081671
+    ]
+   }
+  },
+  "central_reasons_on_compared_cells": {
+   "flagged": 18810,
+   "not_flagged_radar_dry": 132855,
+   "not_flagged_group_of_fewer_than_2_cells_dropped": 1607,
+   "not_flagged_terrain_hand_above_the_limit": 295039,
+   "not_flagged_terrain_slope_5_degrees_or_more": 277327,
+   "no_answer_built_up_at_low_hand": 7696,
+   "no_answer_tree_cover_at_low_hand": 48693
+  },
+  "platform_offset_db": 0.0,
+  "comparators": {
+   "r37_frozen_detector": {
+    "compared_cells": 782027,
+    "reference_water_cells": 7492,
+    "answered_cells": 782027,
+    "no_answer_cells": 0,
+    "true_positive": 6425,
+    "false_positive": 52835,
+    "false_negative_answered": 1067,
+    "true_negative_answered": 721700,
+    "no_answer_reference_water": 0,
+    "no_answer_reference_dry": 0,
+    "iou_no_answer_as_not_flagged": 0.106503,
+    "iou_answered_cells": 0.106503,
+    "flagged_that_is_reference_water": 0.108421,
+    "reference_water_flagged_no_answer_as_not_flagged": 0.857581,
+    "reference_water_flagged_answered_cells": 0.857581,
+    "no_answer_share": 0.0
+   },
+   "r37_simple_threshold": {
+    "compared_cells": 782027,
+    "reference_water_cells": 7492,
+    "answered_cells": 782027,
+    "no_answer_cells": 0,
+    "true_positive": 6524,
+    "false_positive": 31780,
+    "false_negative_answered": 968,
+    "true_negative_answered": 742755,
+    "no_answer_reference_water": 0,
+    "no_answer_reference_dry": 0,
+    "iou_no_answer_as_not_flagged": 0.166123,
+    "iou_answered_cells": 0.166123,
+    "flagged_that_is_reference_water": 0.170322,
+    "reference_water_flagged_no_answer_as_not_flagged": 0.870796,
+    "reference_water_flagged_answered_cells": 0.870796,
+    "no_answer_share": 0.0
+   },
+   "un_spider_dry_mean_before": {
+    "compared_cells": 782027,
+    "reference_water_cells": 7492,
+    "answered_cells": 782027,
+    "no_answer_cells": 0,
+    "true_positive": 4570,
+    "false_positive": 5943,
+    "false_negative_answered": 2922,
+    "true_negative_answered": 768592,
+    "no_answer_reference_water": 0,
+    "no_answer_reference_dry": 0,
+    "iou_no_answer_as_not_flagged": 0.340156,
+    "iou_answered_cells": 0.340156,
+    "flagged_that_is_reference_water": 0.4347,
+    "reference_water_flagged_no_answer_as_not_flagged": 0.609984,
+    "reference_water_flagged_answered_cells": 0.609984,
+    "no_answer_share": 0.0
+   },
+   "m1_literal_dry_mean_before": {
+    "compared_cells": 782027,
+    "reference_water_cells": 7492,
+    "answered_cells": 782027,
+    "no_answer_cells": 0,
+    "true_positive": 7150,
+    "false_positive": 114913,
+    "false_negative_answered": 342,
+    "true_negative_answered": 659622,
+    "no_answer_reference_water": 0,
+    "no_answer_reference_dry": 0,
+    "iou_no_answer_as_not_flagged": 0.058413,
+    "iou_answered_cells": 0.058413,
+    "flagged_that_is_reference_water": 0.058576,
+    "reference_water_flagged_no_answer_as_not_flagged": 0.954351,
+    "reference_water_flagged_answered_cells": 0.954351,
+    "no_answer_share": 0.0
+   },
+   "m1_v2_dry_mean_before": {
+    "compared_cells": 782027,
+    "reference_water_cells": 7492,
+    "answered_cells": 385654,
+    "no_answer_cells": 396373,
+    "true_positive": 6195,
+    "false_positive": 33090,
+    "false_negative_answered": 776,
+    "true_negative_answered": 345593,
+    "no_answer_reference_water": 521,
+    "no_answer_reference_dry": 395852,
+    "iou_no_answer_as_not_flagged": 0.152654,
+    "iou_answered_cells": 0.154639,
+    "flagged_that_is_reference_water": 0.157694,
+    "reference_water_flagged_no_answer_as_not_flagged": 0.826882,
+    "reference_water_flagged_answered_cells": 0.888682,
+    "no_answer_share": 0.506853
+   }
+  },
+  "jaxa_usability": {
+   "contents": {
+    "file": "JAXA_20250728_FPM_ALOS2_Thailand_geojson.zip",
+    "layers": [
+     {
+      "member": "JAXA_20250728_FPM_ALOS2_Thailand_geojson/2025-00032-WLD_202507281720_FLDEXT.geojson",
+      "read": true,
+      "kind": "flood",
+      "features": 1,
+      "polygons": 1,
+      "observation_polygons": 0,
+      "set_aside_polygons": 0,
+      "flood_polygons": 1,
+      "geometry_types": [
+       "MultiPolygon"
+      ],
+      "crs": "EPSG:4326",
+      "fields": [
+       "polygon"
+      ]
+     },
+     {
+      "member": "JAXA_20250728_FPM_ALOS2_Thailand_geojson/2025-00032-WLD_202507281720_REGION.geojson",
+      "read": true,
+      "kind": "flood",
+      "features": 1,
+      "polygons": 1,
+      "observation_polygons": 0,
+      "set_aside_polygons": 0,
+      "flood_polygons": 1,
+      "geometry_types": [
+       "Polygon"
+      ],
+      "crs": "EPSG:4326",
+      "fields": [
+       "polygon"
+      ]
+     }
+    ],
+    "scene_identifiers": [],
+    "times_with_a_zone_utc": []
+   },
+   "errors": [],
+   "observation_area_geometry_found": false,
+   "scene_footprints_route": "no scene identifier is listed",
+   "share_of_frame_land_inside_the_observation_area": 0.0,
+   "usable": false,
+   "why": "no observation-area geometry in the files"
+  },
+  "pass_if": "IoU (no answer counted as not flagged) >= 0.4 and no-answer share <= 0.2",
+  "passes": false,
+  "comparators_better_by_iou": {
+   "r37_frozen_detector": 0.106503,
+   "r37_simple_threshold": 0.166123,
+   "un_spider_dry_mean_before": 0.340156,
+   "m1_v2_dry_mean_before": 0.152654
+  }
+ },
+ "test_1b_report_only": {
+  "report_only": true,
+  "jaxa_usability": {
+   "contents": {
+    "file": "JAXA_20250719_FPM_ALOS2_Thailand_geojson.zip",
+    "layers": [
+     {
+      "member": "JAXA_20250719_FPM_ALOS2_Thailand_geojson/2025-00032-WLD_202507191727_FLDEXT.geojson",
+      "read": true,
+      "kind": "flood",
+      "features": 1,
+      "polygons": 1,
+      "observation_polygons": 0,
+      "set_aside_polygons": 0,
+      "flood_polygons": 1,
+      "geometry_types": [
+       "MultiPolygon"
+      ],
+      "crs": "EPSG:4326",
+      "fields": [
+       "polygon"
+      ]
+     },
+     {
+      "member": "JAXA_20250719_FPM_ALOS2_Thailand_geojson/2025-00032-WLD_202507191727_REGION.geojson",
+      "read": true,
+      "kind": "flood",
+      "features": 1,
+      "polygons": 1,
+      "observation_polygons": 0,
+      "set_aside_polygons": 0,
+      "flood_polygons": 1,
+      "geometry_types": [
+       "Polygon"
+      ],
+      "crs": "EPSG:4326",
+      "fields": [
+       "polygon"
+      ]
+     }
+    ],
+    "scene_identifiers": [],
+    "times_with_a_zone_utc": []
+   },
+   "errors": [],
+   "observation_area_geometry_found": false,
+   "scene_footprints_route": "no scene identifier is listed",
+   "share_of_frame_land_inside_the_observation_area": 0.0,
+   "usable": false,
+   "why": "no observation-area geometry in the files"
+  }
+ },
+ "test_2": {
+  "status": "seen image, new method: the chip was the held-out test of R37 and was labelled in R47; reported, not binding",
+  "label": "Agreement with water read from THEOS-2 by the frozen rule v2, and with the labels of three team members; not accuracy.",
+  "pass": {
+   "file": "event_20250731T2308Z_s1a_o62.tif",
+   "time_utc": "2025-07-31T23:08:03Z",
+   "relative_orbit": 62,
+   "platform": "Sentinel-1A",
+   "label": "20250731T2308_o62_S1A"
+  },
+  "hours_after_theos2": 19.28,
+  "reference": {
+   "raster": {
+    "name": "water_v2_chip_003_2m.tif",
+    "sha256": "b967a05c089535f0a15d06e8b1024969794c59e5b3cad0fc2b7d6c84c62282a1"
+   },
+   "fine_m": 2.0,
+   "pixels_per_cell": 100,
+   "half_rule": "water when at least half of the cell's 2 m pixels are water; not compared when fewer than half hold a value",
+   "cells": 22650,
+   "compared_cells": 21487,
+   "water_cells": 9907
+  },
+  "central": {
+   "compared_cells": 20689,
+   "reference_water_cells": 9184,
+   "answered_cells": 18050,
+   "no_answer_cells": 2639,
+   "true_positive": 599,
+   "false_positive": 7,
+   "false_negative_answered": 7598,
+   "true_negative_answered": 9846,
+   "no_answer_reference_water": 987,
+   "no_answer_reference_dry": 1652,
+   "iou_no_answer_as_not_flagged": 0.065172,
+   "iou_answered_cells": 0.073013,
+   "flagged_that_is_reference_water": 0.988449,
+   "reference_water_flagged_no_answer_as_not_flagged": 0.065222,
+   "reference_water_flagged_answered_cells": 0.073076,
+   "no_answer_share": 0.127556
+  },
+  "lower": {
+   "compared_cells": 20689,
+   "reference_water_cells": 9184,
+   "answered_cells": 18050,
+   "no_answer_cells": 2639,
+   "true_positive": 516,
+   "false_positive": 6,
+   "false_negative_answered": 7681,
+   "true_negative_answered": 9847,
+   "no_answer_reference_water": 987,
+   "no_answer_reference_dry": 1652,
+   "iou_no_answer_as_not_flagged": 0.056148,
+   "iou_answered_cells": 0.062904,
+   "flagged_that_is_reference_water": 0.988506,
+   "reference_water_flagged_no_answer_as_not_flagged": 0.056185,
+   "reference_water_flagged_answered_cells": 0.06295,
+   "no_answer_share": 0.127556
+  },
+  "upper": {
+   "compared_cells": 20689,
+   "reference_water_cells": 9184,
+   "answered_cells": 18050,
+   "no_answer_cells": 2639,
+   "true_positive": 670,
+   "false_positive": 7,
+   "false_negative_answered": 7527,
+   "true_negative_answered": 9846,
+   "no_answer_reference_water": 987,
+   "no_answer_reference_dry": 1652,
+   "iou_no_answer_as_not_flagged": 0.072897,
+   "iou_answered_cells": 0.081667,
+   "flagged_that_is_reference_water": 0.98966,
+   "reference_water_flagged_no_answer_as_not_flagged": 0.072953,
+   "reference_water_flagged_answered_cells": 0.081737,
+   "no_answer_share": 0.127556
+  },
+  "central_by_built_up_and_open_land": {
+   "built_up": {
+    "compared_cells": 2717,
+    "reference_water_cells": 651,
+    "answered_cells": 1917,
+    "no_answer_cells": 800,
+    "true_positive": 0,
+    "false_positive": 0,
+    "false_negative_answered": 416,
+    "true_negative_answered": 1501,
+    "no_answer_reference_water": 235,
+    "no_answer_reference_dry": 565,
+    "iou_no_answer_as_not_flagged": 0.0,
+    "iou_answered_cells": 0.0,
+    "flagged_that_is_reference_water": null,
+    "reference_water_flagged_no_answer_as_not_flagged": 0.0,
+    "reference_water_flagged_answered_cells": 0.0,
+    "no_answer_share": 0.294442
+   },
+   "open_land_not_built_up": {
+    "compared_cells": 17972,
+    "reference_water_cells": 8533,
+    "answered_cells": 16133,
+    "no_answer_cells": 1839,
+    "true_positive": 599,
+    "false_positive": 7,
+    "false_negative_answered": 7182,
+    "true_negative_answered": 8345,
+    "no_answer_reference_water": 752,
+    "no_answer_reference_dry": 1087,
+    "iou_no_answer_as_not_flagged": 0.070141,
+    "iou_answered_cells": 0.076913,
+    "flagged_that_is_reference_water": 0.988449,
+    "reference_water_flagged_no_answer_as_not_flagged": 0.070198,
+    "reference_water_flagged_answered_cells": 0.076982,
+    "no_answer_share": 0.102326
+   }
+  },
+  "central_by_worldcover_group": {
+   "built_up": {
+    "compared_cells": 2717,
+    "reference_water_cells": 651,
+    "answered_cells": 1917,
+    "no_answer_cells": 800,
+    "true_positive": 0,
+    "false_positive": 0,
+    "false_negative_answered": 416,
+    "true_negative_answered": 1501,
+    "no_answer_reference_water": 235,
+    "no_answer_reference_dry": 565,
+    "iou_no_answer_as_not_flagged": 0.0,
+    "iou_answered_cells": 0.0,
+    "flagged_that_is_reference_water": null,
+    "reference_water_flagged_no_answer_as_not_flagged": 0.0,
+    "reference_water_flagged_answered_cells": 0.0,
+    "no_answer_share": 0.294442
+   },
+   "cropland": {
+    "compared_cells": 6847,
+    "reference_water_cells": 4359,
+    "answered_cells": 6847,
+    "no_answer_cells": 0,
+    "true_positive": 558,
+    "false_positive": 7,
+    "false_negative_answered": 3801,
+    "true_negative_answered": 2481,
+    "no_answer_reference_water": 0,
+    "no_answer_reference_dry": 0,
+    "iou_no_answer_as_not_flagged": 0.127806,
+    "iou_answered_cells": 0.127806,
+    "flagged_that_is_reference_water": 0.987611,
+    "reference_water_flagged_no_answer_as_not_flagged": 0.128011,
+    "reference_water_flagged_answered_cells": 0.128011,
+    "no_answer_share": 0.0
+   },
+   "tree_cover": {
+    "compared_cells": 10280,
+    "reference_water_cells": 3662,
+    "answered_cells": 8441,
+    "no_answer_cells": 1839,
+    "true_positive": 0,
+    "false_positive": 0,
+    "false_negative_answered": 2910,
+    "true_negative_answered": 5531,
+    "no_answer_reference_water": 752,
+    "no_answer_reference_dry": 1087,
+    "iou_no_answer_as_not_flagged": 0.0,
+    "iou_answered_cells": 0.0,
+    "flagged_that_is_reference_water": null,
+    "reference_water_flagged_no_answer_as_not_flagged": 0.0,
+    "reference_water_flagged_answered_cells": 0.0,
+    "no_answer_share": 0.178891
+   },
+   "other": {
+    "compared_cells": 845,
+    "reference_water_cells": 512,
+    "answered_cells": 845,
+    "no_answer_cells": 0,
+    "true_positive": 41,
+    "false_positive": 0,
+    "false_negative_answered": 471,
+    "true_negative_answered": 333,
+    "no_answer_reference_water": 0,
+    "no_answer_reference_dry": 0,
+    "iou_no_answer_as_not_flagged": 0.080078,
+    "iou_answered_cells": 0.080078,
+    "flagged_that_is_reference_water": 1.0,
+    "reference_water_flagged_no_answer_as_not_flagged": 0.080078,
+    "reference_water_flagged_answered_cells": 0.080078,
+    "no_answer_share": 0.0
+   }
+  },
+  "comparators": {
+   "r37_frozen_detector": {
+    "compared_cells": 20689,
+    "reference_water_cells": 9184,
+    "answered_cells": 20689,
+    "no_answer_cells": 0,
+    "true_positive": 2381,
+    "false_positive": 292,
+    "false_negative_answered": 6803,
+    "true_negative_answered": 11213,
+    "no_answer_reference_water": 0,
+    "no_answer_reference_dry": 0,
+    "iou_no_answer_as_not_flagged": 0.251266,
+    "iou_answered_cells": 0.251266,
+    "flagged_that_is_reference_water": 0.890759,
+    "reference_water_flagged_no_answer_as_not_flagged": 0.259255,
+    "reference_water_flagged_answered_cells": 0.259255,
+    "no_answer_share": 0.0
+   },
+   "r37_simple_threshold": {
+    "compared_cells": 20689,
+    "reference_water_cells": 9184,
+    "answered_cells": 20689,
+    "no_answer_cells": 0,
+    "true_positive": 1927,
+    "false_positive": 173,
+    "false_negative_answered": 7257,
+    "true_negative_answered": 11332,
+    "no_answer_reference_water": 0,
+    "no_answer_reference_dry": 0,
+    "iou_no_answer_as_not_flagged": 0.205942,
+    "iou_answered_cells": 0.205942,
+    "flagged_that_is_reference_water": 0.917619,
+    "reference_water_flagged_no_answer_as_not_flagged": 0.209821,
+    "reference_water_flagged_answered_cells": 0.209821,
+    "no_answer_share": 0.0
+   },
+   "un_spider_dry_mean_before": {
+    "compared_cells": 20689,
+    "reference_water_cells": 9184,
+    "answered_cells": 20689,
+    "no_answer_cells": 0,
+    "true_positive": 1013,
+    "false_positive": 4,
+    "false_negative_answered": 8171,
+    "true_negative_answered": 11501,
+    "no_answer_reference_water": 0,
+    "no_answer_reference_dry": 0,
+    "iou_no_answer_as_not_flagged": 0.110253,
+    "iou_answered_cells": 0.110253,
+    "flagged_that_is_reference_water": 0.996067,
+    "reference_water_flagged_no_answer_as_not_flagged": 0.110301,
+    "reference_water_flagged_answered_cells": 0.110301,
+    "no_answer_share": 0.0
+   },
+   "m1_literal_dry_mean_before": {
+    "compared_cells": 20689,
+    "reference_water_cells": 9184,
+    "answered_cells": 20689,
+    "no_answer_cells": 0,
+    "true_positive": 3947,
+    "false_positive": 855,
+    "false_negative_answered": 5237,
+    "true_negative_answered": 10650,
+    "no_answer_reference_water": 0,
+    "no_answer_reference_dry": 0,
+    "iou_no_answer_as_not_flagged": 0.393167,
+    "iou_answered_cells": 0.393167,
+    "flagged_that_is_reference_water": 0.821949,
+    "reference_water_flagged_no_answer_as_not_flagged": 0.429769,
+    "reference_water_flagged_answered_cells": 0.429769,
+    "no_answer_share": 0.0
+   },
+   "m1_v2_dry_mean_before": {
+    "compared_cells": 20689,
+    "reference_water_cells": 9184,
+    "answered_cells": 20689,
+    "no_answer_cells": 0,
+    "true_positive": 2466,
+    "false_positive": 207,
+    "false_negative_answered": 6718,
+    "true_negative_answered": 11298,
+    "no_answer_reference_water": 0,
+    "no_answer_reference_dry": 0,
+    "iou_no_answer_as_not_flagged": 0.262592,
+    "iou_answered_cells": 0.262592,
+    "flagged_that_is_reference_water": 0.922559,
+    "reference_water_flagged_no_answer_as_not_flagged": 0.26851,
+    "reference_water_flagged_answered_cells": 0.26851,
+    "no_answer_share": 0.0
+   }
+  },
+  "external_comparator_gfm_same_pass": {
+   "items": [
+    {
+     "id": "ENSEMBLE_FLOOD_20250731T230803_VV_AS020M_E048N015T3",
+     "datetime": "2025-07-31T23:08:03Z",
+     "equi7_tile": "AS020M_E048N015T3",
+     "platform": null
+    },
+    {
+     "id": "ENSEMBLE_FLOOD_20250731T230803_VV_AS020M_E051N015T3",
+     "datetime": "2025-07-31T23:08:03Z",
+     "equi7_tile": "AS020M_E051N015T3",
+     "platform": null
+    },
+    {
+     "id": "ENSEMBLE_FLOOD_20250731T230828_VV_AS020M_E048N015T3",
+     "datetime": "2025-07-31T23:08:28Z",
+     "equi7_tile": "AS020M_E048N015T3",
+     "platform": null
+    },
+    {
+     "id": "ENSEMBLE_FLOOD_20250731T230828_VV_AS020M_E051N015T3",
+     "datetime": "2025-07-31T23:08:28Z",
+     "equi7_tile": "AS020M_E051N015T3",
+     "platform": null
+    },
+    {
+     "id": "ENSEMBLE_FLOOD_20250731T230853_VV_AS020M_E048N015T3",
+     "datetime": "2025-07-31T23:08:53Z",
+     "equi7_tile": "AS020M_E048N015T3",
+     "platform": null
+    }
+   ],
+   "compared_cells": 20689,
+   "reference_water_cells": 9184,
+   "answered_cells": 11634,
+   "no_answer_cells": 9055,
+   "true_positive": 713,
+   "false_positive": 0,
+   "false_negative_answered": 5669,
+   "true_negative_answered": 5252,
+   "no_answer_reference_water": 2802,
+   "no_answer_reference_dry": 6253,
+   "iou_no_answer_as_not_flagged": 0.077635,
+   "iou_answered_cells": 0.11172,
+   "flagged_that_is_reference_water": 1.0,
+   "reference_water_flagged_no_answer_as_not_flagged": 0.077635,
+   "reference_water_flagged_answered_cells": 0.11172,
+   "no_answer_share": 0.437672
+  },
+  "labelled_points": {
+   "key": {
+    "name": "key_v1.json",
+    "sha256": "9f5560c5b75e42f389decf131e45fb33626b54161007f6d8673d6529d9779ae4"
+   },
+   "label_files": [
+    {
+     "name": "labels_callixta.json",
+     "sha256": "dffd41fb3fb4298bf1a79482c55d355e9fe5059ecf9282456ecf79afe38edc2a"
+    },
+    {
+     "name": "labels_putu.json",
+     "sha256": "47e8e7b412d4c7423af5ffaab2b1a2b94870ce5a5fc1f0f4b2a6a47b3175ed01"
+    },
+    {
+     "name": "labels_rachmania.json",
+     "sha256": "3743b27e628c776a424afbcb04d41a988173eb5013de3fe0c0b80de944ca98e6"
+    }
+   ],
+   "scoring": "the label at least two of the three gave, where it is water or not water",
+   "points": 120,
+   "points_outside_the_grid": 0,
+   "agreement": {
+    "central": {
+     "points": 120,
+     "points_with_a_label": 109,
+     "points_answered": 99,
+     "share_agreed_no_answer_as_not_flagged": 0.412844,
+     "share_agreed_answered_points": 0.40404,
+     "table": {
+      "water_flagged": 1,
+      "water_not_flagged": 59,
+      "water_no_answer": 5,
+      "not_water_flagged": 0,
+      "not_water_not_flagged": 39,
+      "not_water_no_answer": 5
+     }
+    },
+    "r37_frozen_detector": {
+     "points": 120,
+     "points_with_a_label": 109,
+     "points_answered": 104,
+     "share_agreed_no_answer_as_not_flagged": 0.458716,
+     "share_agreed_answered_points": 0.480769,
+     "table": {
+      "water_flagged": 6,
+      "water_not_flagged": 54,
+      "water_no_answer": 5,
+      "not_water_flagged": 0,
+      "not_water_not_flagged": 44,
+      "not_water_no_answer": 0
+     }
+    },
+    "r37_simple_threshold": {
+     "points": 120,
+     "points_with_a_label": 109,
+     "points_answered": 104,
+     "share_agreed_no_answer_as_not_flagged": 0.440367,
+     "share_agreed_answered_points": 0.461538,
+     "table": {
+      "water_flagged": 4,
+      "water_not_flagged": 56,
+      "water_no_answer": 5,
+      "not_water_flagged": 0,
+      "not_water_not_flagged": 44,
+      "not_water_no_answer": 0
+     }
+    },
+    "un_spider_dry_mean_before": {
+     "points": 120,
+     "points_with_a_label": 109,
+     "points_answered": 109,
+     "share_agreed_no_answer_as_not_flagged": 0.422018,
+     "share_agreed_answered_points": 0.422018,
+     "table": {
+      "water_flagged": 2,
+      "water_not_flagged": 63,
+      "water_no_answer": 0,
+      "not_water_flagged": 0,
+      "not_water_not_flagged": 44,
+      "not_water_no_answer": 0
+     }
+    },
+    "m1_literal_dry_mean_before": {
+     "points": 120,
+     "points_with_a_label": 109,
+     "points_answered": 109,
+     "share_agreed_no_answer_as_not_flagged": 0.568807,
+     "share_agreed_answered_points": 0.568807,
+     "table": {
+      "water_flagged": 20,
+      "water_not_flagged": 45,
+      "water_no_answer": 0,
+      "not_water_flagged": 2,
+      "not_water_not_flagged": 42,
+      "not_water_no_answer": 0
+     }
+    },
+    "m1_v2_dry_mean_before": {
+     "points": 120,
+     "points_with_a_label": 109,
+     "points_answered": 109,
+     "share_agreed_no_answer_as_not_flagged": 0.46789,
+     "share_agreed_answered_points": 0.46789,
+     "table": {
+      "water_flagged": 7,
+      "water_not_flagged": 58,
+      "water_no_answer": 0,
+      "not_water_flagged": 0,
+      "not_water_not_flagged": 44,
+      "not_water_no_answer": 0
+     }
+    }
+   }
+  },
+  "comparators_better_by_iou": {
+   "r37_frozen_detector": 0.251266,
+   "r37_simple_threshold": 0.205942,
+   "un_spider_dry_mean_before": 0.110253,
+   "m1_literal_dry_mean_before": 0.393167,
+   "m1_v2_dry_mean_before": 0.262592,
+   "gfm": 0.077635
+  }
+ },
+ "dry_control": {
+  "rule": "our map flags at most 0.05 of the chip's answered cells (permanent water left out)",
+  "pass": {
+   "file": "event_20250731T2308Z_s1a_o62.tif",
+   "time_utc": "2025-07-31T23:08:03Z",
+   "relative_orbit": 62,
+   "platform": "Sentinel-1A",
+   "label": "20250731T2308_o62_S1A"
+  },
+  "central": {
+   "cells": 22500,
+   "answered_cells": 21408,
+   "flagged_cells": 8,
+   "flagged_share_of_answered": 0.000374
+  },
+  "passes": true,
+  "lower": {
+   "cells": 22500,
+   "answered_cells": 21408,
+   "flagged_cells": 6,
+   "flagged_share_of_answered": 0.00028
+  },
+  "upper": {
+   "cells": 22500,
+   "answered_cells": 21408,
+   "flagged_cells": 8,
+   "flagged_share_of_answered": 0.000374
+  },
+  "comparators": {
+   "r37_frozen_detector": {
+    "cells": 22500,
+    "answered_cells": 22459,
+    "flagged_cells": 62,
+    "flagged_share_of_answered": 0.002761
+   },
+   "r37_simple_threshold": {
+    "cells": 22500,
+    "answered_cells": 22459,
+    "flagged_cells": 113,
+    "flagged_share_of_answered": 0.005031
+   },
+   "un_spider_dry_mean_before": {
+    "cells": 22500,
+    "answered_cells": 22459,
+    "flagged_cells": 0,
+    "flagged_share_of_answered": 0.0
+   },
+   "m1_literal_dry_mean_before": {
+    "cells": 22500,
+    "answered_cells": 22459,
+    "flagged_cells": 1389,
+    "flagged_share_of_answered": 0.061846
+   },
+   "m1_v2_dry_mean_before": {
+    "cells": 22500,
+    "answered_cells": 0,
+    "flagged_cells": 0,
+    "flagged_share_of_answered": null
+   }
+  }
+ },
+ "binding": {
+  "test_1_passes": false,
+  "dry_control_passes": true,
+  "case_reference_date": "2025-07-31",
+  "flood_input_of_case_N1": {
+   "file": "event_20250731T2308Z_s1a_o62.tif",
+   "time_utc": "2025-07-31T23:08:03Z",
+   "relative_orbit": 62,
+   "platform": "Sentinel-1A",
+   "label": "20250731T2308_o62_S1A",
+   "map": {
+    "name": "m1z_20250731T2308_o62_S1A.tif",
+    "sha256": "c22c11c2d40118f470e2cc8176221d2cb2db78131b8dd427b31317fdcb849adb",
+    "record": "m1z_20250731T2308_o62_S1A.json"
+   },
+   "days_from_the_case_reference_date_thai_calendar": 1
+  },
+  "per_tambon_conditions": "set by the planning lane from the map of the flood input: no-answer share <= 0.20, answered land >= 0.80, pass within 3 days, C4 to C8",
+  "reference_of_case_N2": {
+   "name": "reference_test_1_gfm_20250731T2308.tif",
+   "sha256": "d34bf9c8cca74e4b980730b024c09cfd5a3d0e4a7285100a40d07e8baaaf3318",
+   "folder": "<external>/proposal_execution/nan_case_v1/method/case_n2_reference",
+   "what": "GFM's ensemble flood extent of the pass of 2025-07-31 23:08 UTC as provided, where GFM holds data outside its exclusion mask; 255 elsewhere",
+   "codes": "1 water, 0 not water, 255 not observed (no answer)",
+   "cells_by_code": {
+    "1": 8043,
+    "0": 1316208,
+    "255": 17092589
+   },
+   "use": "the flood input of case N2 (test 5): scripts/nan_case_chain.py nan --case N2 --flood-central <this file>",
+   "rights": "a raster made from the reference for the chain; it stays outside Git and is never published"
+  }
+ },
+ "comparators": {
+  "what": {
+   "r37_frozen_detector": "Decision log R37 frozen detector (simple_threshold_cleaned): VH after, a 3 by 3 mean at 20 m (the 5 by 5 at 10 m), at or below -18.46 dB; flags on slopes of 5 degrees or more dropped, then groups of fewer than 2 cells (800 m2), then growth into touching cells within 1.5 dB.",
+   "r37_simple_threshold": "Decision log R37 simple threshold: VH after, a 3 by 3 mean at 20 m, at or below -18.46 dB; no cleaning.",
+   "un_spider_dry_mean_before": "UN-SPIDER recommended practice with the dry-season mean of VH as its image before; groups of fewer than 2 cells at 20 m (the 8 cells at 10 m).",
+   "m1_literal_dry_mean_before": "M1-literal (frozen configuration) with the dry-season means of VV and VH as the image before, per 10,240 m lattice tile at 20 m.",
+   "m1_v2_dry_mean_before": "M1-v2 (frozen configuration, checked by geoid_m1_review.require_frozen_m1_v2) with the dry-season means as the image before, per lattice tile at 20 m."
+  },
+  "rule": "a comparator that does better is reported, never renamed as the result"
+ },
+ "maps_written_outside_git": {
+  "20250731T2308_o62_S1A": {
+   "name": "m1z_20250731T2308_o62_S1A.tif",
+   "sha256": "c22c11c2d40118f470e2cc8176221d2cb2db78131b8dd427b31317fdcb849adb",
+   "record": "m1z_20250731T2308_o62_S1A.json"
+  }
+ },
+ "rights_note": "Only figures are recorded; no JAXA or GFM geometry or raster enters Git. Credit: JAXA ALOS-2 maps 'Provided by JAXA' (Sentinel Asia).",
+ "limits": [
+  "C-band radar does not see water under trees, between buildings or under rice canopy, nor water that drained before the pass.",
+  "The references are other maps (optical water read by a fixed rule, an agency layer, another satellite's map), not ground checks.",
+  "Every figure is agreement with a reference layer, not accuracy. Planning guidance only; not an official warning."
+ ],
+ "supersedes": null
+}

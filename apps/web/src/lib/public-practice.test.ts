@@ -2,9 +2,17 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { parseTimelineManifest, TIMELINE_MANIFEST_URL, type GeoCollection, type LineGeometry, type RoadProps } from "./flood-timeline";
+import {
+  depthFactorScale,
+  parseTimelineManifest,
+  stageAt,
+  TIMELINE_MANIFEST_URL,
+  type GeoCollection,
+  type LineGeometry,
+  type RoadProps,
+} from "./flood-timeline";
 import { parseExerciseFile, EXERCISE_FILE_URL } from "./flood-timeline-command-incidents";
-import { NEVER_LOST_CODE, NO_BASELINE_CODE, parseAccessNodes } from "./flood-timeline-evacuation";
+import { HOME_K_BYTE_SCALE, NEVER_LOST_CODE, NO_BASELINE_CODE, parseAccessNodes } from "./flood-timeline-evacuation";
 import {
   groundDistanceM,
   householdStatus,
@@ -175,7 +183,14 @@ describe("the practice scenarios on the published replay (r5)", () => {
     const flooded = practiceStatus(replay, PRACTICE_HOMES.flooded, peak.hour)!;
     expect(dry.homeDepthM).toBeNull();
     expect(dry.reach).toBe("lost");
-    expect(flooded.homeDepthM!).toBeGreaterThan(1);
+    // The depth at the flooded home comes from its node bytes alone: k = home_k / 255 (no byte scale), times the
+    // stage over the home's terrain code. In r5 that is code 55 (2.75 m) with k = 1: 0.75 m at the 3.5 m peak.
+    const node = nearestAccessNode(nodes, PRACTICE_HOMES.flooded.latitude, PRACTICE_HOMES.flooded.longitude);
+    const k = nodes.homeK[node] / 255;
+    expect(flooded.stage).toBe(stageAt(peak.hour / 24, manifest.stage_anchors));
+    expect(flooded.homeDepthM!).toBeCloseTo(k * (flooded.stage - nodes.homeCode[node] * manifest.hand.step_m), 9);
+    expect([nodes.homeCode[node], nodes.homeK[node], flooded.stage]).toEqual([55, 255, 3.5]);
+    expect(flooded.homeDepthM!).toBeCloseTo(0.75, 9);
     // Most of the road within reach is impassable at the peak, and none of it at noon on 9 September.
     expect(dry.roads.impassableM / dry.roads.totalM).toBeGreaterThan(0.6);
     expect(practiceStatus(replay, PRACTICE_HOMES.dry, practiceScenario("normal")!.hour)!.roads).toMatchObject({ wetM: 0, impassableM: 0 });
@@ -208,8 +223,10 @@ describe("the practice scenarios on the published replay (r5)", () => {
     expect(peak.lines[1]).toBe("No shelter reported in use in 2024 can be reached within a 2 km walk on passable roads.");
     expect(peak.lines[2]).toBe("The model has this home dry.");
     expect(peak.lines[3]).toMatch(/practice reports within 1 km \(invented for the exercise\)\.$/);
+    // 0.75 m at the flooded example home, rounded to a tenth (it read 1.9 m while the node bytes took the raster's scale).
     const flooded = practiceView(replay, exercise.items, practiceScenario("water_at_home")!, "en")!;
-    expect(flooded.lines[2]).toMatch(/^The model has about \d\.\d m of water at this home\.$/);
+    expect(flooded.lines[2]).toBe("The model has about 0.8 m of water at this home.");
+    expect(practiceView(replay, exercise.items, practiceScenario("water_at_home")!, "th")!.lines[2]).toBe("ในแบบจำลอง น้ำที่บ้านนี้ลึกประมาณ 0.8 ม.");
     const calm = practiceView(replay, exercise.items, practiceScenario("normal")!, "en")!;
     expect(calm.lines[0]).toBe("No road within 1 km has water on it.");
     expect(calm.reports).toEqual([]);
@@ -245,6 +262,39 @@ describe("the practice scenarios on the published replay (r5)", () => {
     // With water in the home the Report page says that a note is not a call for help.
     expect(view("water_at_home").pages.report.prompt).toContain("not a call for help");
     expect(PRACTICE_COPY.sosReal.en).toBe("This is practice: no call is placed. In a real emergency, call the numbers above.");
+  });
+
+  it("reads the depth factor of a node as k * 255, without the hand raster's byte scale", () => {
+    // One resident point at the dry example home, on the r5 manifest whose hand raster scales its G byte by 2.5.
+    expect(depthFactorScale(manifest)).toBe(2.5);
+    expect(HOME_K_BYTE_SCALE).toBe(1);
+    const sets = manifest.access!.sets.length;
+    const onePoint = (homeCode: number, homeK: number): PracticeReplay => ({
+      manifest,
+      roads: { features: [] },
+      nodes: {
+        count: 1,
+        lon: new Float32Array([PRACTICE_HOMES.dry.longitude]),
+        lat: new Float32Array([PRACTICE_HOMES.dry.latitude]),
+        population: new Float32Array([1]),
+        vulnerable: new Float32Array([0]),
+        tambonIndex: new Uint8Array([1]),
+        homeCode: new Uint8Array([homeCode]),
+        homeK: new Uint8Array([homeK]),
+        cutCodes: new Uint8Array(sets).fill(NEVER_LOST_CODE),
+        setCount: sets,
+      },
+    });
+    const peakHour = practiceScenario("cut_off")!.hour;
+    // k byte 255 is k = 1: code 55 (2.75 m) at a stage of 3.5 m is 0.75 m deep, not 1.875 m.
+    const full = practiceStatus(onePoint(55, 255), PRACTICE_HOMES.dry, peakHour)!;
+    expect(full.stage).toBe(3.5);
+    expect(full.homeDepthM!).toBeCloseTo(0.75, 9);
+    expect(full.state).toBe("water_at_home");
+    // k byte 102 is k = 0.4: 0.3 m.
+    expect(practiceStatus(onePoint(55, 102), PRACTICE_HOMES.dry, peakHour)!.homeDepthM!).toBeCloseTo(0.3, 9);
+    // Above the stage the home stays dry whatever its factor.
+    expect(practiceStatus(onePoint(74, 255), PRACTICE_HOMES.dry, peakHour)!.homeDepthM).toBeNull();
   });
 
   it("only counts an hour the replay covers and a home it knows", () => {

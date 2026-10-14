@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { PRACTICE_PARAM, PRACTICE_SCENARIOS, readPracticeParam, withoutPracticeParam } from "@/lib/public-practice-scenarios";
 import type { FeatureCollection } from "@/lib/types";
 
 import { PublicExperience, projectPublicFacilityFeatures, readPublicPage } from "./public-experience";
@@ -226,5 +227,36 @@ describe("Public tab URL", () => {
     expect(readPublicPage("?tab=sos")).toBe("sos");
     expect(readPublicPage("?tab=unknown")).toBe("home");
     expect(readPublicPage("?aoi=aoi-01")).toBe("home");
+  });
+});
+
+describe("Practice scenario URL", () => {
+  it("is read from ?practice=, never from the case parameter scenario=", () => {
+    expect(PRACTICE_PARAM).toBe("practice");
+    expect(readPracticeParam("?practice=cut_off")).toBe("cut_off");
+    expect(readPracticeParam("?tab=prepare&practice=going_down")).toBe("going_down");
+    expect(readPracticeParam("practice=water_at_home")).toBe("water_at_home");
+  });
+
+  it("accepts only the seven scenario ids", () => {
+    for (const scenario of PRACTICE_SCENARIOS) expect(readPracticeParam(`?practice=${scenario.id}`)).toBe(scenario.id);
+    expect(readPracticeParam("")).toBeNull();
+    expect(readPracticeParam("?practice=")).toBeNull();
+    expect(readPracticeParam("?practice=today")).toBeNull();
+    expect(readPracticeParam("?practice=CUT_OFF")).toBeNull();
+    expect(readPracticeParam("?scenario=cut_off")).toBeNull();
+  });
+
+  it("is dropped from the address once read, keeping every other parameter", () => {
+    const base = "https://example.test/public/";
+    expect(withoutPracticeParam(`${base}?practice=cut_off`)).toBe(base);
+    expect(withoutPracticeParam(`${base}?tab=prepare&practice=heads_up`)).toBe(`${base}?tab=prepare`);
+    expect(withoutPracticeParam(`${base}?practice=heads_up&tab=prepare&scenario=sc-1#map`)).toBe(`${base}?tab=prepare&scenario=sc-1#map`);
+    // An empty or unknown value is dropped too, so no entry keeps a parameter the page does not show.
+    expect(withoutPracticeParam(`${base}?practice=`)).toBe(base);
+    expect(withoutPracticeParam(`${base}?tab=sos&practice=today`)).toBe(`${base}?tab=sos`);
+    // Without the parameter nothing is to be replaced.
+    expect(withoutPracticeParam(base)).toBeNull();
+    expect(withoutPracticeParam(`${base}?tab=prepare&scenario=cut_off`)).toBeNull();
   });
 });

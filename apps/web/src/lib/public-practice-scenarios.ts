@@ -64,6 +64,33 @@ export function practiceScenario(id: PracticeState | null | undefined): Practice
   return PRACTICE_SCENARIOS.find((scenario) => scenario.id === id);
 }
 
+/**
+ * Query parameter of the Public page that opens it on one practice scenario, as in `/public/?practice=cut_off`.
+ * It is not `scenario`: that parameter names the flood scenario of a case (`case-selection.ts`).
+ */
+export const PRACTICE_PARAM = "practice";
+
+/**
+ * The practice scenario a query string names in `PRACTICE_PARAM`, or null when it names none of the seven (absent,
+ * empty or unknown). Takes `location.search`, with or without its leading "?".
+ */
+export function readPracticeParam(search: string): PracticeState | null {
+  const value = new URLSearchParams(search).get(PRACTICE_PARAM);
+  return PRACTICE_SCENARIOS.find((scenario) => scenario.id === value)?.id ?? null;
+}
+
+/**
+ * The absolute address `href` without `PRACTICE_PARAM` (every other parameter kept), or null when it has none. The
+ * Public page drops the parameter as soon as it has read it: a history entry that kept it would bring that scenario
+ * back on Back or Forward after the reader had chosen another one or ended the practice.
+ */
+export function withoutPracticeParam(href: string): string | null {
+  const url = new URL(href);
+  if (!url.searchParams.has(PRACTICE_PARAM)) return null;
+  url.searchParams.delete(PRACTICE_PARAM);
+  return url.href;
+}
+
 /** Name of a scenario in the menu. */
 export const PRACTICE_SCENARIO_LABELS: Readonly<Record<PracticeState, Localized>> = {
   normal: { en: "Normal day", th: "วันปกติ" },

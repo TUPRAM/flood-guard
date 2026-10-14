@@ -237,6 +237,7 @@ try {
   // Once the practice has read its replay online, the page asks the worker to keep the files, so the practice opens
   // without a connection too (14 Oct 2026).
   await waitForEvaluated(page, buildCacheHolds, practiceReplayUrls, "the practice replay's files to be kept from the Public page", 60_000);
+  await assertPublicPracticeLink(context);
   await assertCompactPublicShell(page);
   await assertPublicNavigation(page);
   // Looking for one's own area ends the practice: the checks below are of the day without practice.
@@ -1933,6 +1934,55 @@ async function assertPublicOpeningScenario(page) {
   await page.keyboard.press("Escape");
   await page.locator("#public-practice-list").waitFor({ state: "detached" });
   if (pressed !== "normal") throw new Error(`The scenario menu does not show "Normal day" as the scenario shown: ${pressed}`);
+}
+
+/**
+ * A link can open the Public page on one practice scenario (`?practice=`, 14 Oct 2026): "Cut off, home dry" pressed
+ * in the menu with its banner, and the page follows the address when it is replaced with another scenario. The page
+ * drops the parameter once read, so Back after the reader chose another scenario keeps the reader's choice. Checked in
+ * a page of its own, which is closed again, so the page of the other checks keeps its state.
+ */
+async function assertPublicPracticeLink(context) {
+  const linked = await context.newPage();
+  linked.on("pageerror", (error) => pageErrors.push(error.message));
+  const keepsNoParameter = () => {
+    if (new URL(linked.url()).searchParams.has("practice")) throw new Error(`The Public page keeps ?practice= in its address: ${linked.url()}`);
+  };
+  const shows = async (id, tone, text) => {
+    await linked.waitForFunction(({ tone, text }) => {
+      const banner = document.querySelector(".public-signal-banner");
+      return banner?.getAttribute("data-tone") === tone && banner.innerText.includes(text)
+        && document.querySelectorAll("canvas.public-practice-water").length === 1;
+    }, { tone, text }, { timeout: 45_000 });
+    await linked.locator(".public-practice-trigger").click();
+    const pressed = await linked.locator('#public-practice-list button[aria-pressed="true"]').getAttribute("data-practice-scenario");
+    await linked.keyboard.press("Escape");
+    await linked.locator("#public-practice-list").waitFor({ state: "detached" });
+    if (pressed !== id) throw new Error(`The link ?practice=${id} shows another scenario in the menu: ${pressed}`);
+  };
+  try {
+    await linked.goto(`${baseUrl}/public/?practice=cut_off`, { waitUntil: "networkidle" });
+    await linked.locator('.language-toggle button[lang="en"]').click();
+    await shows("cut_off", "danger", "No shelter within walking reach");
+    keepsNoParameter();
+    await linked.evaluate(() => {
+      window.history.replaceState(null, "", "?practice=going_down");
+      window.dispatchEvent(new PopStateEvent("popstate"));
+    });
+    await shows("going_down", "easing", "Water is going down");
+    keepsNoParameter();
+    // Another scenario chosen on Prepare stays on when the reader goes Back to Home: no entry brings the linked one back.
+    await linked.locator("#public-tab-prepare").click();
+    await linked.waitForFunction(() => document.querySelector("#main-content")?.getAttribute("data-public-page") === "prepare");
+    await linked.locator(".public-practice-trigger").click();
+    await linked.locator('#public-practice-list button[data-practice-scenario="roads_cut"]').click();
+    await linked.locator("#public-practice-list").waitFor({ state: "detached" });
+    await linked.goBack();
+    await linked.waitForFunction(() => document.querySelector("#main-content")?.getAttribute("data-public-page") === "home");
+    await shows("roads_cut", "alert", "Nearby roads are under water");
+  } finally {
+    await linked.close();
+  }
 }
 
 /**

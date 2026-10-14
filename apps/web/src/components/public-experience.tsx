@@ -14,7 +14,12 @@ import { caseHref, readCaseSelection } from "@/lib/case-selection";
 import { HOUSEHOLD_NEEDS, countCompletedPlanItems } from "@/lib/household-plan";
 import { competitionPagesAvailable } from "@/lib/policy-links";
 import type { PublicMapLocation } from "@/lib/public-location";
-import { PRACTICE_MENU_COPY, type PracticeState } from "@/lib/public-practice-scenarios";
+import {
+  PRACTICE_MENU_COPY,
+  readPracticeParam,
+  withoutPracticeParam,
+  type PracticeState,
+} from "@/lib/public-practice-scenarios";
 import { EMPTY_SHELTER_TRIP } from "@/lib/public-shelter-view";
 import type { FeatureCollection } from "@/lib/types";
 import { useDisplayName } from "@/lib/use-display-name";
@@ -37,6 +42,28 @@ export function readPublicPage(search: string): PublicPage {
   return value === "report" || value === "shelter" || value === "prepare" || value === "sos"
     ? value
     : "home";
+}
+
+/**
+ * The practice scenario a link names (`?practice=cut_off`), read once and then dropped from the address, or null when
+ * it names none. Dropping it keeps every history entry free of a scenario the reader may since have changed or ended
+ * (`navigate` copies the query into each new entry), so Back and Forward never bring one back. Effects only (it reads
+ * and writes `window`).
+ *
+ * The address is replaced a moment later, with null as the state, like `navigate`: by then the Next.js router has
+ * patched `history` (in an effect of an ancestor, which on the first render runs after this one), so the call keeps
+ * the router's own entry state and tells the router the new address. Passing the entry's state instead skips the
+ * router, which then writes back an address with the parameter that a driver of the page set with `replaceState`.
+ */
+function takeLinkedPractice(): PracticeState | null {
+  const linked = readPracticeParam(window.location.search);
+  if (withoutPracticeParam(window.location.href) !== null) {
+    queueMicrotask(() => {
+      const rest = withoutPracticeParam(window.location.href);
+      if (rest !== null) window.history.replaceState(null, "", rest);
+    });
+  }
+  return linked;
 }
 
 const PAGE_LABELS: Record<PublicPage, {
@@ -101,10 +128,11 @@ export function PublicExperience() {
   const [researchHref, setResearchHref] = useState("/public-cases/");
   const [homeLocation, setHomeLocation] = useState<PublicMapLocation>();
   // The practice scenario. It is chosen in the header on any page and stays on from page to page: the Home and
-  // Shelter maps show its hour of the replay, and the other pages say what a household can practise there. It is
-  // kept in this visit only and never written to the saved plan. The replay it reads ships in the competition build
-  // alone, so the public build has no menu for it, and no markers of the places reported as shelters in 2024 on the
-  // Shelter map.
+  // Shelter maps show its hour of the replay, and the other pages say what a household can practise there. A link can
+  // name it (`?practice=`, read once in the effect below and then dropped from the address). It is kept in this visit
+  // only and never written to the saved plan or to any other storage. The replay it reads ships in the competition
+  // build alone, so the public build has no menu for it, and no markers of the places reported as shelters in 2024 on
+  // the Shelter map.
   const practiceAvailable = competitionPagesAvailable();
   // `chosen` tells the reader's own choice from the scenario the page opens on.
   const [practiceChoice, setPracticeChoice] = useState<{ id: PracticeState | null; chosen: boolean }>(() => ({
@@ -182,11 +210,19 @@ export function PublicExperience() {
     const syncFromUrl = () => {
       setPage(readPublicPage(window.location.search));
       setResearchHref(caseHref("/public-cases/", readCaseSelection(window.location.search)));
+      // A link can open the page on one practice scenario (`?practice=cut_off`), as if the reader had chosen it; the
+      // parameter is then dropped from the address. An address without one, or with an unknown one, leaves the
+      // scenario as it is. The public build has no practice and leaves the address alone.
+      if (!practiceAvailable) return;
+      const linked = takeLinkedPractice();
+      if (linked) {
+        setPracticeChoice((current) => (current.id === linked && current.chosen ? current : { id: linked, chosen: true }));
+      }
     };
     syncFromUrl();
     window.addEventListener("popstate", syncFromUrl);
     return () => window.removeEventListener("popstate", syncFromUrl);
-  }, []);
+  }, [practiceAvailable]);
 
   const navigate = (nextPage: PublicPage) => {
     const url = new URL(window.location.href);

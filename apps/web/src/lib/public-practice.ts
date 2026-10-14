@@ -12,7 +12,6 @@
 
 import {
   cellDepth,
-  depthFactorScale,
   formatMoment,
   roadState,
   stageAt,
@@ -25,6 +24,7 @@ import { COMMAND_DEPTH_BAND } from "./flood-timeline-command-reports-copy";
 import type { ExerciseItem } from "./flood-timeline-command-incidents";
 import {
   accessLevelIndex,
+  HOME_K_BYTE_SCALE,
   NEVER_LOST_CODE,
   NO_BASELINE_CODE,
   nodeLostAccess,
@@ -134,7 +134,7 @@ export interface HouseholdInput {
   /** Stage one hour earlier and one hour later, for the direction of the water. */
   stageBefore: number;
   stageAfter: number;
-  /** Terrain code and depth-factor byte of the home's resident point. */
+  /** Terrain code and depth-factor byte of the home's resident point (`home_code` and `home_k` of the node file). */
   homeCode: number;
   homeFactor: number;
   /** Cut code of the point for the shelters reported in use in 2024 (`cut_codes` of the access node file). */
@@ -144,6 +144,10 @@ export interface HouseholdInput {
   step: number;
   channelCode?: number;
   neverCode?: number;
+  /**
+   * What a full `homeFactor` byte stands for; absent: 1. Node bytes are k * 255 unscaled (`HOME_K_BYTE_SCALE`); the
+   * hand raster's `byte_scale` belongs to its G channel only.
+   */
   factorScale?: number;
   roads: RoadTally;
 }
@@ -209,7 +213,9 @@ export function practiceStatus(replay: PracticeReplay, home: Pick<PracticeHome, 
     step: manifest.hand.step_m,
     channelCode: manifest.hand.channel_code,
     neverCode: manifest.hand.never_code,
-    factorScale: depthFactorScale(manifest),
+    // The node file stores k * 255 without the hand raster's byte scale (2.5 from r5). Read with that scale, the
+    // depth at the home was 2.5 times too deep (1.9 m instead of 0.75 m at the flooded example home at hour 84).
+    factorScale: HOME_K_BYTE_SCALE,
     roads: tallyRoads(roadsNear(replay.roads.features, home.latitude, home.longitude), stage, manifest.impassable_depth_m),
   });
 }

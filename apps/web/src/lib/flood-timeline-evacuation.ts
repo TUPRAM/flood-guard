@@ -44,11 +44,23 @@ export interface AccessNodes {
   /** 1-based index into `access.tambons`; 0 = none. */
   tambonIndex: Uint8Array;
   homeCode: Uint8Array;
+  /**
+   * Depth factor at the home as round(k * 255), clipped to 1..255 (the layout's "depth factor * 255"). It is not
+   * scaled like the G channel of `hand-codes.png` (k / `byte_scale` * 255 from r5): read it with
+   * `HOME_K_BYTE_SCALE`, never with `depthFactorScale(manifest)`.
+   */
   homeK: Uint8Array;
   /** Row `s` (shelter set `access.sets[s]`) covers bytes `[s * count, (s + 1) * count)`. */
   cutCodes: Uint8Array;
   setCount: number;
 }
+
+/**
+ * What a full `home_k` byte of the access node file stands for: k = 1. The builder writes
+ * clip(round(k * 255), 1, 255) (`scripts/build_mae_sai_flood_timeline.py`), so a factor above 1 is stored as 1; the
+ * hand raster's `byte_scale` (2.5 from r5) does not apply to these bytes.
+ */
+export const HOME_K_BYTE_SCALE = 1;
 
 const FIELD_DTYPES = {
   lon: "float32",

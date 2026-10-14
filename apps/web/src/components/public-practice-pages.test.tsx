@@ -53,6 +53,8 @@ describe("the practice scenario from page to page", () => {
       <PublicReportPage language="en" areas={[]} onSelectArea={() => {}} practice={scenario} />,
     );
     expect(html).toContain("Practise: what would others need to know from this home now");
+    // The form keeps working during the practice, and the strip says that what it saves is real.
+    expect(html).toContain("A note you save on this page during the practice is a real note on this device.");
     expect(html).toContain(`Practice reports by this hour (${scenario.pages.report.items.length})`);
     expect(html).toContain("Invented for the exercise. Not real calls or reports, and none came from this device.");
     expect(html).toContain(scenario.pages.report.items[0].id);

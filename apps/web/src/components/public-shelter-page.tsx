@@ -30,8 +30,10 @@ import {
 import {
   loadShelterHistory,
   SHELTER_HISTORY_COPY,
+  shelterListCompiled,
   shelterSiteLines,
   shelterSiteSummary,
+  type ShelterHistory,
   type ShelterHistorySite,
 } from "@/lib/public-shelter-history";
 import {
@@ -339,10 +341,7 @@ export function PublicShelterPage({
     location: PublicMapLocation;
   } | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [history, setHistory] = useState<{
-    sites: ShelterHistorySite[];
-    mount: MountShelterHistory;
-  } | null>(null);
+  const [history, setHistory] = useState<(ShelterHistory & { mount: MountShelterHistory }) | null>(null);
   // The banner is the control that opens the sheet, so the focus goes back to it when the sheet closes.
   const bannerRef = useRef<HTMLButtonElement>(null);
   const sheetCloseRef = useRef<HTMLButtonElement>(null);
@@ -365,9 +364,9 @@ export function PublicShelterPage({
       loadShelterHistory(controller.signal),
       import("@/components/public-shelter-layer"),
     ])
-      .then(([sites, layer]) => {
-        if (controller.signal.aborted || sites.length === 0) return;
-        setHistory({ sites, mount: layer.mountShelterHistory });
+      .then(([list, layer]) => {
+        if (controller.signal.aborted || list.sites.length === 0) return;
+        setHistory({ ...list, mount: layer.mountShelterHistory });
       })
       .catch(() => {
         /* The list of 2024 is an addition; the map and the destination field stay. */
@@ -401,7 +400,7 @@ export function PublicShelterPage({
         // With a scenario or an area chosen the map already shows where the reader is looking.
         const frame = !drawPractice && !historyFramedRef.current && !selectedAreaId;
         if (!drawPractice) historyFramedRef.current = true;
-        removePlaces = places.mount(leaflet, map, places.sites, language, chooseSite, frame);
+        removePlaces = places.mount(leaflet, map, places, language, chooseSite, { frame, practice: Boolean(drawPractice) });
       }
       return () => {
         removePlaces?.();
@@ -607,13 +606,13 @@ export function PublicShelterPage({
   const historySection = history ? (
     <section className="public-shelter-sheet-section public-shelter-history" aria-labelledby="public-shelter-history-title">
       <h3 id="public-shelter-history-title">{SHELTER_HISTORY_COPY.listHeading[language]}</h3>
-      <p>{SHELTER_HISTORY_COPY.listNote[language]}</p>
+      <p>{shelterListCompiled(history.compiled, language)} {SHELTER_HISTORY_COPY.listNote[language]}</p>
       <ul>
         {history.sites.map((site) => (
           <li key={site.id}>
             <span>
               <strong>{site.name[language]}</strong>
-              <small>{shelterSiteSummary(site, language)}</small>
+              <small>{shelterSiteSummary(site, language, Boolean(practiceView))}</small>
             </span>
             {/* A place without a known position cannot be drawn, so it is listed and not offered. */}
             {site.point ? (
@@ -847,7 +846,8 @@ export function PublicShelterPage({
                 <div className="public-shelter-confirm">
                   {draftSite ? (
                     <ul className="public-practice-lines">
-                      {shelterSiteLines(draftSite, language).map((line) => <li key={line}>{line}</li>)}
+                      {shelterSiteLines(draftSite, language, { compiled: history?.compiled ?? "", practice: Boolean(practiceView) })
+                        .map((line) => <li key={line}>{line}</li>)}
                     </ul>
                   ) : null}
                   <label className="public-shelter-destination__confirmation" htmlFor={destinationConfirmationId}>

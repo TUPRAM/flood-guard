@@ -715,6 +715,8 @@ html[data-app-update="available"] [data-public-app-status] > span::after { conte
   box-shadow: var(--fg-shadow-sm);
 }
 .public-shelter-site.is-approximate { border-style: dashed; }
+/* In a practice scenario: a place the walk of the replay does not count (first used after 12 Sep 2024). */
+.public-shelter-site.is-not-counted { border-color: var(--fg-neutral-400); color: var(--fg-neutral-500); opacity: .75; }
 .public-shelter-site svg { width: 16px; height: 16px; }
 .public-shelter-site:focus-visible { outline: 3px solid rgb(37 99 235 / 45%); outline-offset: 2px; }
 .public-shelter-site-use {

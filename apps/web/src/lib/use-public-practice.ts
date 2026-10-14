@@ -53,6 +53,24 @@ function loadPracticeRuntime(): Promise<PracticeRuntime> {
   return runtimeRequest;
 }
 
+let replayKeepRequested = false;
+
+/**
+ * Once the replay has been read online, ask the service worker to keep its files, with the message the Command
+ * exercise replay and the Studio replay send. The practice then opens without a connection too; without it the page
+ * fell back to the day without practice offline unless one of those pages had been opened on the device. The worker
+ * acts on it in the competition build alone, and stores each file only when its hash matches this build.
+ */
+function keepReplayOffline(): void {
+  if (replayKeepRequested || process.env.NODE_ENV !== "production" || typeof navigator === "undefined" || !("serviceWorker" in navigator)) return;
+  replayKeepRequested = true;
+  navigator.serviceWorker.ready
+    .then((registration) => registration.active?.postMessage({ type: "FLOODGUARD_CACHE_CASE_REPLAY" }))
+    .catch(() => {
+      replayKeepRequested = false;
+    });
+}
+
 export type PublicPracticeStatus = "off" | "loading" | "ready" | "unavailable";
 
 export interface PublicPractice {
@@ -87,6 +105,10 @@ export function usePublicPractice(scenarioId: PracticeState | null, language: La
       current = false;
     };
   }, [runtime, scenarioId]);
+
+  useEffect(() => {
+    if (runtime) keepReplayOffline();
+  }, [runtime]);
 
   const view = useMemo(
     () => (runtime && scenario ? runtime.logic.practiceView(runtime.data, runtime.exercise, scenario, language) : null),

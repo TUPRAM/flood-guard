@@ -8,7 +8,7 @@
 
 import type { Layer, Map as LeafletMap } from "leaflet";
 
-import { SHELTER_HISTORY_COPY, shelterSiteLines, type ShelterHistorySite } from "@/lib/public-shelter-history";
+import { SHELTER_HISTORY_COPY, shelterSiteLines, type ShelterHistory, type ShelterHistorySite } from "@/lib/public-shelter-history";
 import type { Language } from "@/lib/types";
 
 import { MAP_POPUP_CLASS, MAP_POPUP_FRAME_CLASS } from "./mae-sai-map-kit";
@@ -25,42 +25,53 @@ const SITE_ICON_HTML = [
 /** Room the markers keep clear when the map frames them: the field and the banner above, the tools and the note below. */
 const FRAME_PADDING = { topLeft: [24, 140], bottomRight: [72, 120] } as const;
 
+export interface ShelterHistoryOptions {
+  /** Move the map to show every place. */
+  frame?: boolean;
+  /**
+   * A practice scenario is shown: a place the walk of the replay does not count is drawn grey and says why, so a
+   * marker near the example home cannot contradict a banner that finds no shelter within walking reach.
+   */
+  practice?: boolean;
+}
+
 /**
- * Put the located places on `map`. `onChoose` is called when the reader takes a place as their destination. With
- * `frame` the map moves to show them all. Returns the function that takes the markers away again.
+ * Put the located places on `map`. `onChoose` is called when the reader takes a place as their destination. Returns
+ * the function that takes the markers away again.
  */
 export function mountShelterHistory(
   L: LeafletModule,
   map: LeafletMap,
-  sites: readonly ShelterHistorySite[],
+  history: ShelterHistory,
   language: Language,
   onChoose: (site: ShelterHistorySite) => void,
-  frame = false,
+  { frame = false, practice = false }: ShelterHistoryOptions = {},
 ): () => void {
   const layers: Layer[] = [];
   const points: [number, number][] = [];
-  for (const site of sites) {
+  for (const site of history.sites) {
     if (!site.point) continue;
     points.push([site.point.latitude, site.point.longitude]);
     const name = site.name[language];
+    const notCounted = practice && !site.countedForWalk;
     const marker = L.marker([site.point.latitude, site.point.longitude], {
       icon: L.divIcon({
-        className: `public-shelter-site${site.approximate ? " is-approximate" : ""}`,
+        className: `public-shelter-site${site.approximate ? " is-approximate" : ""}${notCounted ? " is-not-counted" : ""}`,
         html: SITE_ICON_HTML,
         iconSize: [30, 30],
         iconAnchor: [15, 15],
       }),
       keyboard: true,
-      title: name,
-      alt: name,
-      zIndexOffset: 200,
+      title: notCounted ? `${name} · ${SHELTER_HISTORY_COPY.notCountedShort[language]}` : name,
+      alt: notCounted ? `${name} · ${SHELTER_HISTORY_COPY.notCountedShort[language]}` : name,
+      zIndexOffset: notCounted ? 100 : 200,
     });
     const content = document.createElement("div");
     content.className = MAP_POPUP_CLASS;
     const title = document.createElement("strong");
     title.textContent = name;
     content.append(title);
-    for (const line of shelterSiteLines(site, language)) {
+    for (const line of shelterSiteLines(site, language, { compiled: history.compiled, practice })) {
       const paragraph = document.createElement("p");
       paragraph.textContent = line;
       content.append(paragraph);

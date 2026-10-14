@@ -436,6 +436,11 @@ export const PRACTICE_COPY = {
     th: "สมมติขึ้นเพื่อการฝึก ไม่ใช่การโทรหรือรายงานจริง และไม่ได้มาจากอุปกรณ์นี้",
   },
   reportsNone: { en: "No practice report has arrived by this hour.", th: "ยังไม่มีรายงานฝึกซ้อมจนถึงชั่วโมงนี้" },
+  /** The Report page: the form keeps working during the practice, and what it saves is real. */
+  reportReal: {
+    en: "A note you save on this page during the practice is a real note on this device. It also appears on this device's Command exercise map.",
+    th: "บันทึกที่คุณบันทึกในหน้านี้ระหว่างการฝึกซ้อมเป็นบันทึกจริงในอุปกรณ์นี้ และจะแสดงบนแผนที่ฝึกซ้อมสั่งการของอุปกรณ์นี้ด้วย",
+  },
   /** The SOS page: the numbers above the strip are real, the scenario is not. */
   sosReal: {
     en: "This is practice: no call is placed. In a real emergency, call the numbers above.",
@@ -598,7 +603,7 @@ export interface PracticeView {
   /** The fixed words around a scenario, in the view's language. */
   copy: Record<
     "heading" | "homeLabel" | "homeNote" | "noteTitle" | "noteBoundary" | "boundary" | "sources" | "keyHeading"
-    | "reportsHeading" | "reportsNote" | "reportsNone" | "sosReal",
+    | "reportsHeading" | "reportsNote" | "reportsNone" | "reportReal" | "sosReal",
     string
   >;
 }
@@ -665,6 +670,7 @@ export function practiceView(
       reportsHeading: PRACTICE_COPY.reportsHeading[language],
       reportsNote: PRACTICE_COPY.reportsNote[language],
       reportsNone: PRACTICE_COPY.reportsNone[language],
+      reportReal: PRACTICE_COPY.reportReal[language],
       sosReal: PRACTICE_COPY.sosReal[language],
     },
   };

@@ -221,10 +221,22 @@ try {
   // primary mobile viewport. Home owns the full middle row; the other pages
   // retain device-local interactions and safety boundaries.
   await page.setViewportSize({ width: 390, height: 844 });
+  // The routes above may already have kept the replay's files (the Command exercise replay asks for them). They are
+  // taken out of the cache here, so the check below proves that the Public page asks for them itself.
+  const practiceReplayUrls = readCaseReplay(out).assets.map((asset) => asset.url);
+  await page.evaluate(async (urls) => {
+    const key = (await caches.keys()).find((entry) => /^floodguard-offline-[0-9a-f]{12}$/.test(entry));
+    if (!key) return;
+    const cache = await caches.open(key);
+    await Promise.all(urls.map((url) => cache.delete(url)));
+  }, practiceReplayUrls);
   await page.goto(`${baseUrl}/public/`, { waitUntil: "networkidle" });
   await page.locator('.language-toggle button[lang="en"]').click();
   await waitForFinalVisibleCopy(page, "/public/");
   await assertPublicOpeningScenario(page);
+  // Once the practice has read its replay online, the page asks the worker to keep the files, so the practice opens
+  // without a connection too (14 Oct 2026).
+  await waitForEvaluated(page, buildCacheHolds, practiceReplayUrls, "the practice replay's files to be kept from the Public page", 60_000);
   await assertCompactPublicShell(page);
   await assertPublicNavigation(page);
   // Looking for one's own area ends the practice: the checks below are of the day without practice.
@@ -990,6 +1002,11 @@ try {
         await activatePublicPage(page, id, selector);
       }
       await activatePublicPage(page, "home", "#main-content .leaflet-container");
+      // The practice opens without a connection from the files the page kept: "Normal day", not the fallback.
+      await page.waitForFunction(() => (
+        document.querySelector(".public-signal-banner")?.getAttribute("data-tone") === "calm"
+        && document.querySelectorAll("canvas.public-practice-water").length === 1
+      ), undefined, { timeout: 30_000 });
       const offlinePublicMapScope = await firstVisibleSelector(page, [
         ".public-home-page",
         ".public-home-view",
@@ -1969,6 +1986,12 @@ async function assertPracticeAcrossPages(page) {
     || !shelterNoteText.includes("Markers: reported as shelters in September 2024")) {
     throw new Error(`The Shelter note does not say that the map shows a practice replay: ${shelterNoteText}`);
   }
+  // Two places on the map were first used after the peak, so the walk of the replay does not count them: in a
+  // scenario they are grey, and Wat Mueang Daeng, 630 m from the example home, says why.
+  const notCounted = await page.evaluate(() => [...document.querySelectorAll(".public-shelter-site.is-not-counted")].map((marker) => marker.getAttribute("title") ?? ""));
+  if (notCounted.length !== 2 || !notCounted.some((title) => title.startsWith("Wat Mueang Daeng shelter"))) {
+    throw new Error(`The places the walk does not count are not marked in the scenario: ${JSON.stringify(notCounted)}`);
+  }
   const onShelter = await header();
   if (onShelter.menu !== 1 || !onShelter.place.includes("Example home")) {
     throw new Error(`The Shelter page lost the scenario menu or the example home: ${JSON.stringify(onShelter)}`);
@@ -1981,6 +2004,7 @@ async function assertPracticeAcrossPages(page) {
     "No shelter reported in use in 2024 can be reached within a 2 km walk on passable roads.",
     "does not know the water of the replay",
     "Practise: no place is within walking reach in the model.",
+    "Official source · not counted for the walk",
     "Not a real address",
     "Not real-time and not an official warning",
     "does not know its current capacity or operating status",
@@ -1992,6 +2016,9 @@ async function assertPracticeAcrossPages(page) {
 
   // Report: the strip, and the invented items that have arrived, folded away above the form.
   await strip("report", ".public-report-page", "Practise: what would others need to know from this home now");
+  if (!(await page.locator(".public-practice-strip").innerText()).includes("is a real note on this device")) {
+    throw new Error("The Report strip does not say that a note saved during the practice is a real note.");
+  }
   const practiceReports = page.locator(".public-practice-reports");
   if (!/Practice reports by this hour \([1-9]\d*\)/.test(await practiceReports.locator("summary").innerText())) {
     throw new Error("The Report page does not count the practice reports that have arrived.");
@@ -2105,6 +2132,9 @@ async function assertPublicShelter(page) {
   if (!(await state()).note.includes("Markers: reported as shelters in September 2024")) {
     throw new Error("The Shelter note does not say what the markers on the map are.");
   }
+  if (await page.locator(".public-shelter-site.is-not-counted").count() !== 0) {
+    throw new Error("Without a scenario the Shelter map marks places as not counted for a walk it does not show.");
+  }
 
   // The sheet behind the banner. With no destination it leads with the list of 2024 and has no checklist yet.
   await banner.click();
@@ -2114,7 +2144,7 @@ async function assertPublicShelter(page) {
   for (const required of [
     "does not know its current capacity or operating status",
     "Reported as shelters in September 2024",
-    "not an official list",
+    "List compiled on 27 Sep 2026 from public sources; not an official list.",
     "says nothing about today",
     "position not known",
     "Safety disclaimer",

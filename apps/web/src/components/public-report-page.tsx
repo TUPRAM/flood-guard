@@ -149,7 +149,7 @@ export function PublicReportPage({
       */}
       {practice ? (
         <>
-          <PublicPracticeStrip view={practice} prompt={practice.pages.report.prompt} />
+          <PublicPracticeStrip view={practice} prompt={practice.pages.report.prompt} note={practice.copy.reportReal} />
           <details className="public-practice-reports">
             <summary>{practice.copy.reportsHeading} ({practice.pages.report.items.length})</summary>
             <p>{practice.copy.reportsNote}</p>

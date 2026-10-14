@@ -141,7 +141,10 @@ def test_each_figure_is_bound_by_its_receipt_and_the_receipt_by_the_register(nam
     history = receipt["run_history"]["earlier_runs"]
     assert receipt["run_kind"] == "superseding_run", "every figure was run again after the review"
     supersedes = receipt["supersedes"]
-    assert supersedes["reason"].startswith("Review of 4 October 2026 (UTC):") and isinstance(supersedes["figures_same"], bool)
+    # Six figures were last run after the review of 4 October. The pass list was run once more on 12 October 2026,
+    # when the replay numbers it reads were written again for replay revision r5.
+    reason = "docs/demo/replay_numbers.md was written again" if name == "sentinel1_pass_gap" else "Review of 4 October 2026 (UTC):"
+    assert supersedes["reason"].startswith(reason) and isinstance(supersedes["figures_same"], bool)
     assert history and history[-1]["receipt_sha256"] == supersedes["receipt_sha256"]
     assert history[-1]["figures_sha256"] == supersedes["figures_sha256"]
     assert history[-1]["generated_at_utc"] == supersedes["generated_at_utc"] < receipt["generated_at_utc"]
@@ -789,9 +792,9 @@ def test_the_run_times_in_the_run_tables_are_the_times_the_receipts_record(sourc
             else:
                 assert any(re.match(rf"\| \d{{2}}:\d{{2}}:\d{{2}}Z \* \| {finish} \|", row) for row in rows), (name, run)
             runs += 1
-    # Seven figures: four were run three or four times, three were run twice.
+    # Seven figures: four were run three or four times, three were run twice, and the pass list a fifth time on 12 Oct.
     timed = [row for row in rows if re.match(r"\| \d{2}:\d{2}:\d{2}Z", row)]
-    assert runs == len(timed) == 20, "one row for each run that wrote a receipt, and no other row with exact times"
+    assert runs == len(timed) == 21, "one row for each run that wrote a receipt, and no other row with exact times"
     assert len([row for row in timed if " * |" in row[:16]]) == 4
     # The runs that wrote nothing are listed too: the reads, the verifications and the runs of the review.
     untimed = " ".join(row for row in rows if row.startswith("| about "))

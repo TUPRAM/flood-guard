@@ -448,7 +448,7 @@ def test_product_4009_status_is_the_rights_records_status(manifest: dict) -> Non
 
 def test_input_hashes_are_the_receipts_and_name_no_machine_path(manifest: dict) -> None:
     rows = manifest["input_sha256"]
-    assert len(rows) == 39 and [(row["root"], row["path"]) for row in rows] == sorted((row["root"], row["path"]) for row in rows)
+    assert len(rows) == 41 and [(row["root"], row["path"]) for row in rows] == sorted((row["root"], row["path"]) for row in rows)
     for row in rows:
         assert row["root"] in ("external", "repo") and re.fullmatch(r"[0-9a-f]{64}", row["sha256"]) and row["bytes"] > 0
     receipt = json.loads((ROOT / "docs" / f"mae_sai_timeline_{manifest['revision']}_input_receipt.json").read_text(encoding="utf-8"))
@@ -467,20 +467,22 @@ def test_exploratory_knowledge_states_what_was_used_or_known_during_tuning(manif
     items = {item["id"]: item for item in disclosure["items"]}
     assert (items["gistda-radarsat2-20240910"]["relation"], items["sentinel-1-20240916"]["relation"]) == ("used_for_tuning", "used_for_tuning")
     assert "9.9 km2" in items["gistda-radarsat2-20240910"]["statement"] and "on purpose" in items["gistda-radarsat2-20240910"]["statement"]
-    assert "re-tune the recession keyframes (best-fit stage 0.10 m)" in items["sentinel-1-20240916"]["statement"]
+    assert "re-tune the recession keyframes (best-fit stage 0.10 m with the model of that time;" in items["sentinel-1-20240916"]["statement"]
     assert items["unosat-3991"]["relation"] == "known_during_tuning" and "70 km2" in items["unosat-3991"]["statement"]
-    assert (items["unosat-4009"]["relation"], items["unosat-4009"]["known_during_tuning"]) == ("computed_after_keyframes_final", False)
-    assert "was not used for tuning" in items["unosat-4009"]["statement"]
-    # The recorded rule: nothing is tuned to product 4009 afterwards, or the figure becomes a calibration figure.
-    assert ("Recorded rule: no keyframe or elevation change is tuned to product 4009 afterwards; if one is, the comparison is "
-            "relabelled as calibration.") in items["unosat-4009"]["statement"]
+    # From revision r5: no level is fitted to product 4009, but its comparison was known when the fitted model was
+    # chosen and was one of the reasons, so the rule recorded with r4 applies and the comparison is relabelled.
+    assert (items["unosat-4009"]["relation"], items["unosat-4009"]["known_during_tuning"]) == ("known_during_tuning", True)
+    assert "no level is fitted to it" in items["unosat-4009"]["statement"]
+    assert "from revision r5 it is calibration-informed, not an independent check" in items["unosat-4009"]["statement"]
     assert "not shown" not in items["unosat-4009"]["statement"]
-    # The Sentinel-2 water check entered the bake after the last keyframe change. The images had been on the page, and
-    # the statement says so rather than claiming the scenes were unseen.
+    # The Sentinel-2 water check entered the bake after the last keyframe change and was not used for tuning until r5.
+    # From r5 the depth factor is fitted to the same two scenes, so the check and the mud line are used for tuning.
     s2 = items["sentinel-2-water-check"]
-    assert (s2["relation"], s2["known_during_tuning"]) == ("computed_after_keyframes_final", False)
-    assert "was not used for tuning" in s2["statement"] and "commit 129ff03 of 29 Sep 2026" in s2["statement"]
-    assert "they were seen while the keyframes were set, but no water area had been derived from them" in s2["statement"]
+    assert (s2["relation"], s2["known_during_tuning"]) == ("used_for_tuning", True)
+    assert "was not used for tuning until revision r5" in s2["statement"] and "not an independent check" in s2["statement"]
+    mud = items["sentinel-2-mud-line"]
+    assert (mud["relation"], mud["known_during_tuning"]) == ("used_for_tuning", True)
+    assert "the levels did not carry over to the other half" in mud["statement"]
     assert "the Sentinel-2 water check" in disclosure["rule"]
     # VIIRS: the build history shows the comparison and the last stage-knot edit in one change (commit 129ff03), so the
     # manifest claims only what that supports: not used for tuning, order within the change not recorded.
@@ -843,9 +845,10 @@ def test_capacity_aware_plan_states_the_roadmap_example_and_its_caveats(manifest
     shelters = manifest["shelters"]
     plan = shelters["capacitated"]
     k = shelters["knee_k"]
-    # The site the nearest-site rule overloads: 79 places, about 2,430 residents assigned in the default plan.
+    # The site the nearest-site rule overloads: 79 places, about 2,210 residents assigned in the default plan (r5;
+    # about 2,430 with r4).
     first = plan["coverage_plan"][0]
-    assert (first["capacity_est"], shelters["plan"][k - 1]["loads"][0]) == (79, 2430)
+    assert (first["capacity_est"], shelters["plan"][k - 1]["loads"][0]) == (79, 2208)
     assert first["upper"] == {"capacity": 79, "load": 79, "served": 79, "overflow": shelters["demand_people"] - 79}
     # With capacity counted, the default plan's sites hold far fewer residents than can walk to them.
     assert plan["coverage_plan"][k - 1]["upper"]["served"] < 0.2 * shelters["plan"][k - 1]["cumulative_demand"]
@@ -880,7 +883,7 @@ def test_plan_robustness_repeats_the_ranking_at_what_if_levels_not_return_period
         shelters["demand_people"], shelters["eligible_count"], shelters["uncoverable_people"], shelters["knee_k"])
     assert peak["cumulative_demand"] == [int(entry["cumulative_demand"] + 0.5) for entry in shelters["plan"]]  # Halves up, as the page rounds.
     # Residents whose homes flood at each level (roadmap C-1).
-    assert [stage["demand_people"] for stage in stages] == [10333, 14169, 16069]
+    assert [stage["demand_people"] for stage in stages] == [9956, 14428, 16629]  # r5; with r4: 10,333, 14,169 and 16,069
     eligible = {candidate["id"] for candidate in shelters["candidates"]}
     for stage in stages:
         assert len(set(stage["plan"])) == len(stage["plan"]) == len(stage["cumulative_demand"]) and set(stage["plan"]) <= eligible

@@ -42,3 +42,17 @@ The row for the WorldPop Global2 R2025A v1 2024 `1km_ua` age series above is kep
 
 The provider's page states CC BY 4.0 for WorldPop datasets and the ODbL for datasets derived from OpenStreetMap or
 Microsoft building data; it does not say which applies to this product (the review, section 11).
+
+## Note of 11 October 2026: open building outlines (decision log R45)
+
+A source the table above does not hold, taken up on the owner's word of 11 October 2026 for one report-only
+comparison (`buildings_in_water_plan_v1.md`):
+
+| Source family | Current identity/time and purpose | Processing | Human label / independent final evaluation | Hosted/download derivative | Downstream decision |
+| --- | --- | --- | --- | --- | --- |
+| Google-Microsoft Open Buildings, combined by VIDA (Source Cooperative) | Thailand file of 26 August 2024, FlatGeobuf, read by bounding box with range requests for two THEOS-2 chips and Mae Sai district; identity, ETag and the SHA-256 of what was read are in `outputs/buildings_in_water/outlines_v1.json` | Counting buildings against image water and against the flood layer of case SE1 | Outlines drawn by a model on satellite images of earlier years; no survey, no register of dwellings, no label of a flooded building | Counts by chip and by tambon only, with the credit. The outlines stay in the external root | No. The planning score keeps its own exposure count |
+
+The provider states CC BY 4.0 and ODbL v1.0 for the outlines of Google Open Buildings v3 and ODbL v1.0 for those of
+Microsoft. Counts derived from them are published with the credit "Building outlines: Google Open Buildings v3
+(CC BY 4.0) and Microsoft building footprints (ODbL), combined by VIDA and hosted by Source Cooperative." This is an
+engineering note on the right to use, as the rest of this register, and not a legal clearance.

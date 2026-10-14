@@ -1,3 +1,5 @@
+// Since 12 Oct 2026 this suite reads the archived revision (r4) as a fixed dataset: its figures are the ones the plans and
+// wireframes were written with. The page serves r5; what it tests here is the logic, which does not depend on the revision.
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { inflateSync } from "node:zlib";
@@ -71,13 +73,13 @@ import {
   formatHourStamp,
   hourlyStages,
   peopleKeys,
-  TIMELINE_MANIFEST_URL,
+  ARCHIVE_1_MANIFEST_URL,
   type TimelineManifest,
 } from "./flood-timeline";
 
 const publicRoot = resolve(import.meta.dirname, "../../public");
 const publicFile = (href: string) => resolve(publicRoot, href.replace(/^\//, ""));
-const manifest = JSON.parse(readFileSync(publicFile(TIMELINE_MANIFEST_URL), "utf8")) as TimelineManifest;
+const manifest = JSON.parse(readFileSync(publicFile(ARCHIVE_1_MANIFEST_URL), "utf8")) as TimelineManifest;
 const access = manifest.access!;
 const shelters = manifest.shelters!;
 const nodes = parseAccessNodes(new Uint8Array(readFileSync(publicFile(access.nodes.href))), access);

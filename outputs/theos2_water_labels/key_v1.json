@@ -1,0 +1,2760 @@
+{
+ "schema": "floodguard.theos2_water_labels.key.v1",
+ "plan": "docs/proposal_execution/theos2_water_label_check_plan_v1.md",
+ "seed": 20261011,
+ "epsg": 32647,
+ "pixel_m": 2.0,
+ "what_a_point_is": "One pixel of the 2 m raster of the water rule; x and y are its centre.",
+ "points": [
+  {
+   "id": "p001",
+   "chip": "chip_001",
+   "group": "water_inside",
+   "row": 1073,
+   "column": 354,
+   "x": 678291.0,
+   "y": 2044585.0
+  },
+  {
+   "id": "p002",
+   "chip": "sukhothai",
+   "group": "unobservable",
+   "row": 1387,
+   "column": 418,
+   "x": 584501.0,
+   "y": 1881043.0
+  },
+  {
+   "id": "p003",
+   "chip": "sukhothai",
+   "group": "water_inside",
+   "row": 24,
+   "column": 160,
+   "x": 583985.0,
+   "y": 1883769.0
+  },
+  {
+   "id": "p004",
+   "chip": "chip_003",
+   "group": "water_inside",
+   "row": 656,
+   "column": 1001,
+   "x": 685985.0,
+   "y": 2054757.0
+  },
+  {
+   "id": "p005",
+   "chip": "sukhothai",
+   "group": "land_edge",
+   "row": 1070,
+   "column": 1092,
+   "x": 585849.0,
+   "y": 1881677.0
+  },
+  {
+   "id": "p006",
+   "chip": "sukhothai",
+   "group": "water_inside",
+   "row": 965,
+   "column": 646,
+   "x": 584957.0,
+   "y": 1881887.0
+  },
+  {
+   "id": "p007",
+   "chip": "sukhothai",
+   "group": "unobservable",
+   "row": 1271,
+   "column": 1144,
+   "x": 585953.0,
+   "y": 1881275.0
+  },
+  {
+   "id": "p008",
+   "chip": "chip_003",
+   "group": "unobservable",
+   "row": 200,
+   "column": 1031,
+   "x": 686045.0,
+   "y": 2055669.0
+  },
+  {
+   "id": "p009",
+   "chip": "sukhothai",
+   "group": "land_inside",
+   "row": 132,
+   "column": 966,
+   "x": 585597.0,
+   "y": 1883553.0
+  },
+  {
+   "id": "p010",
+   "chip": "chip_001",
+   "group": "water_inside",
+   "row": 1297,
+   "column": 154,
+   "x": 677891.0,
+   "y": 2044137.0
+  },
+  {
+   "id": "p011",
+   "chip": "chip_003",
+   "group": "water_edge",
+   "row": 523,
+   "column": 424,
+   "x": 684831.0,
+   "y": 2055023.0
+  },
+  {
+   "id": "p012",
+   "chip": "chip_003",
+   "group": "land_inside",
+   "row": 156,
+   "column": 1133,
+   "x": 686249.0,
+   "y": 2055757.0
+  },
+  {
+   "id": "p013",
+   "chip": "sukhothai",
+   "group": "land_edge",
+   "row": 502,
+   "column": 1012,
+   "x": 585689.0,
+   "y": 1882813.0
+  },
+  {
+   "id": "p014",
+   "chip": "sukhothai",
+   "group": "dropped_small_object",
+   "row": 598,
+   "column": 953,
+   "x": 585571.0,
+   "y": 1882621.0
+  },
+  {
+   "id": "p015",
+   "chip": "chip_003",
+   "group": "land_edge",
+   "row": 858,
+   "column": 895,
+   "x": 685773.0,
+   "y": 2054353.0
+  },
+  {
+   "id": "p016",
+   "chip": "sukhothai",
+   "group": "water_inside",
+   "row": 699,
+   "column": 1475,
+   "x": 586615.0,
+   "y": 1882419.0
+  },
+  {
+   "id": "p017",
+   "chip": "chip_003",
+   "group": "land_edge",
+   "row": 429,
+   "column": 943,
+   "x": 685869.0,
+   "y": 2055211.0
+  },
+  {
+   "id": "p018",
+   "chip": "chip_003",
+   "group": "land_edge",
+   "row": 649,
+   "column": 199,
+   "x": 684381.0,
+   "y": 2054771.0
+  },
+  {
+   "id": "p019",
+   "chip": "chip_003",
+   "group": "dropped_small_object",
+   "row": 767,
+   "column": 361,
+   "x": 684705.0,
+   "y": 2054535.0
+  },
+  {
+   "id": "p020",
+   "chip": "sukhothai",
+   "group": "water_edge",
+   "row": 916,
+   "column": 112,
+   "x": 583889.0,
+   "y": 1881985.0
+  },
+  {
+   "id": "p021",
+   "chip": "chip_001",
+   "group": "water_edge",
+   "row": 1495,
+   "column": 810,
+   "x": 679203.0,
+   "y": 2043741.0
+  },
+  {
+   "id": "p022",
+   "chip": "chip_003",
+   "group": "water_edge",
+   "row": 342,
+   "column": 433,
+   "x": 684849.0,
+   "y": 2055385.0
+  },
+  {
+   "id": "p023",
+   "chip": "sukhothai",
+   "group": "water_inside",
+   "row": 290,
+   "column": 583,
+   "x": 584831.0,
+   "y": 1883237.0
+  },
+  {
+   "id": "p024",
+   "chip": "chip_003",
+   "group": "water_inside",
+   "row": 1285,
+   "column": 203,
+   "x": 684389.0,
+   "y": 2053499.0
+  },
+  {
+   "id": "p025",
+   "chip": "sukhothai",
+   "group": "water_inside",
+   "row": 296,
+   "column": 309,
+   "x": 584283.0,
+   "y": 1883225.0
+  },
+  {
+   "id": "p026",
+   "chip": "chip_003",
+   "group": "water_inside",
+   "row": 941,
+   "column": 925,
+   "x": 685833.0,
+   "y": 2054187.0
+  },
+  {
+   "id": "p027",
+   "chip": "sukhothai",
+   "group": "water_inside",
+   "row": 1156,
+   "column": 647,
+   "x": 584959.0,
+   "y": 1881505.0
+  },
+  {
+   "id": "p028",
+   "chip": "chip_003",
+   "group": "unobservable",
+   "row": 933,
+   "column": 1367,
+   "x": 686717.0,
+   "y": 2054203.0
+  },
+  {
+   "id": "p029",
+   "chip": "chip_003",
+   "group": "land_inside",
+   "row": 403,
+   "column": 1455,
+   "x": 686893.0,
+   "y": 2055263.0
+  },
+  {
+   "id": "p030",
+   "chip": "chip_003",
+   "group": "land_inside",
+   "row": 1166,
+   "column": 798,
+   "x": 685579.0,
+   "y": 2053737.0
+  },
+  {
+   "id": "p031",
+   "chip": "sukhothai",
+   "group": "water_inside",
+   "row": 426,
+   "column": 44,
+   "x": 583753.0,
+   "y": 1882965.0
+  },
+  {
+   "id": "p032",
+   "chip": "sukhothai",
+   "group": "land_inside",
+   "row": 317,
+   "column": 28,
+   "x": 583721.0,
+   "y": 1883183.0
+  },
+  {
+   "id": "p033",
+   "chip": "chip_003",
+   "group": "water_edge",
+   "row": 1224,
+   "column": 617,
+   "x": 685217.0,
+   "y": 2053621.0
+  },
+  {
+   "id": "p034",
+   "chip": "sukhothai",
+   "group": "dropped_small_object",
+   "row": 1286,
+   "column": 1308,
+   "x": 586281.0,
+   "y": 1881245.0
+  },
+  {
+   "id": "p035",
+   "chip": "sukhothai",
+   "group": "water_edge",
+   "row": 191,
+   "column": 1135,
+   "x": 585935.0,
+   "y": 1883435.0
+  },
+  {
+   "id": "p036",
+   "chip": "sukhothai",
+   "group": "water_edge",
+   "row": 1184,
+   "column": 941,
+   "x": 585547.0,
+   "y": 1881449.0
+  },
+  {
+   "id": "p037",
+   "chip": "sukhothai",
+   "group": "dropped_small_object",
+   "row": 505,
+   "column": 34,
+   "x": 583733.0,
+   "y": 1882807.0
+  },
+  {
+   "id": "p038",
+   "chip": "sukhothai",
+   "group": "water_edge",
+   "row": 1314,
+   "column": 1319,
+   "x": 586303.0,
+   "y": 1881189.0
+  },
+  {
+   "id": "p039",
+   "chip": "chip_003",
+   "group": "unobservable",
+   "row": 1016,
+   "column": 1498,
+   "x": 686979.0,
+   "y": 2054037.0
+  },
+  {
+   "id": "p040",
+   "chip": "sukhothai",
+   "group": "water_edge",
+   "row": 116,
+   "column": 349,
+   "x": 584363.0,
+   "y": 1883585.0
+  },
+  {
+   "id": "p041",
+   "chip": "sukhothai",
+   "group": "land_inside",
+   "row": 1146,
+   "column": 1058,
+   "x": 585781.0,
+   "y": 1881525.0
+  },
+  {
+   "id": "p042",
+   "chip": "chip_003",
+   "group": "water_inside",
+   "row": 956,
+   "column": 854,
+   "x": 685691.0,
+   "y": 2054157.0
+  },
+  {
+   "id": "p043",
+   "chip": "chip_003",
+   "group": "dropped_small_object",
+   "row": 779,
+   "column": 423,
+   "x": 684829.0,
+   "y": 2054511.0
+  },
+  {
+   "id": "p044",
+   "chip": "sukhothai",
+   "group": "land_inside",
+   "row": 38,
+   "column": 419,
+   "x": 584503.0,
+   "y": 1883741.0
+  },
+  {
+   "id": "p045",
+   "chip": "chip_003",
+   "group": "land_inside",
+   "row": 1106,
+   "column": 914,
+   "x": 685811.0,
+   "y": 2053857.0
+  },
+  {
+   "id": "p046",
+   "chip": "chip_003",
+   "group": "water_inside",
+   "row": 1084,
+   "column": 1032,
+   "x": 686047.0,
+   "y": 2053901.0
+  },
+  {
+   "id": "p047",
+   "chip": "chip_003",
+   "group": "land_inside",
+   "row": 1076,
+   "column": 153,
+   "x": 684289.0,
+   "y": 2053917.0
+  },
+  {
+   "id": "p048",
+   "chip": "sukhothai",
+   "group": "water_inside",
+   "row": 778,
+   "column": 918,
+   "x": 585501.0,
+   "y": 1882261.0
+  },
+  {
+   "id": "p049",
+   "chip": "chip_001",
+   "group": "water_edge",
+   "row": 356,
+   "column": 74,
+   "x": 677731.0,
+   "y": 2046019.0
+  },
+  {
+   "id": "p050",
+   "chip": "sukhothai",
+   "group": "water_edge",
+   "row": 79,
+   "column": 1085,
+   "x": 585835.0,
+   "y": 1883659.0
+  },
+  {
+   "id": "p051",
+   "chip": "chip_003",
+   "group": "land_edge",
+   "row": 49,
+   "column": 560,
+   "x": 685103.0,
+   "y": 2055971.0
+  },
+  {
+   "id": "p052",
+   "chip": "sukhothai",
+   "group": "land_edge",
+   "row": 1144,
+   "column": 484,
+   "x": 584633.0,
+   "y": 1881529.0
+  },
+  {
+   "id": "p053",
+   "chip": "sukhothai",
+   "group": "unobservable",
+   "row": 90,
+   "column": 1380,
+   "x": 586425.0,
+   "y": 1883637.0
+  },
+  {
+   "id": "p054",
+   "chip": "chip_003",
+   "group": "land_inside",
+   "row": 1390,
+   "column": 79,
+   "x": 684141.0,
+   "y": 2053289.0
+  },
+  {
+   "id": "p055",
+   "chip": "chip_003",
+   "group": "water_edge",
+   "row": 647,
+   "column": 831,
+   "x": 685645.0,
+   "y": 2054775.0
+  },
+  {
+   "id": "p056",
+   "chip": "chip_001",
+   "group": "land_inside",
+   "row": 438,
+   "column": 506,
+   "x": 678595.0,
+   "y": 2045855.0
+  },
+  {
+   "id": "p057",
+   "chip": "chip_003",
+   "group": "land_inside",
+   "row": 141,
+   "column": 1140,
+   "x": 686263.0,
+   "y": 2055787.0
+  },
+  {
+   "id": "p058",
+   "chip": "chip_001",
+   "group": "water_inside",
+   "row": 1399,
+   "column": 559,
+   "x": 678701.0,
+   "y": 2043933.0
+  },
+  {
+   "id": "p059",
+   "chip": "chip_001",
+   "group": "water_inside",
+   "row": 1319,
+   "column": 243,
+   "x": 678069.0,
+   "y": 2044093.0
+  },
+  {
+   "id": "p060",
+   "chip": "chip_003",
+   "group": "land_inside",
+   "row": 1259,
+   "column": 1074,
+   "x": 686131.0,
+   "y": 2053551.0
+  },
+  {
+   "id": "p061",
+   "chip": "chip_003",
+   "group": "water_edge",
+   "row": 383,
+   "column": 343,
+   "x": 684669.0,
+   "y": 2055303.0
+  },
+  {
+   "id": "p062",
+   "chip": "sukhothai",
+   "group": "unobservable",
+   "row": 1114,
+   "column": 1326,
+   "x": 586317.0,
+   "y": 1881589.0
+  },
+  {
+   "id": "p063",
+   "chip": "sukhothai",
+   "group": "unobservable",
+   "row": 1097,
+   "column": 1284,
+   "x": 586233.0,
+   "y": 1881623.0
+  },
+  {
+   "id": "p064",
+   "chip": "sukhothai",
+   "group": "water_edge",
+   "row": 1161,
+   "column": 457,
+   "x": 584579.0,
+   "y": 1881495.0
+  },
+  {
+   "id": "p065",
+   "chip": "sukhothai",
+   "group": "land_edge",
+   "row": 1116,
+   "column": 171,
+   "x": 584007.0,
+   "y": 1881585.0
+  },
+  {
+   "id": "p066",
+   "chip": "chip_003",
+   "group": "water_inside",
+   "row": 947,
+   "column": 563,
+   "x": 685109.0,
+   "y": 2054175.0
+  },
+  {
+   "id": "p067",
+   "chip": "chip_003",
+   "group": "water_edge",
+   "row": 1212,
+   "column": 508,
+   "x": 684999.0,
+   "y": 2053645.0
+  },
+  {
+   "id": "p068",
+   "chip": "sukhothai",
+   "group": "land_inside",
+   "row": 1098,
+   "column": 69,
+   "x": 583803.0,
+   "y": 1881621.0
+  },
+  {
+   "id": "p069",
+   "chip": "sukhothai",
+   "group": "unobservable",
+   "row": 253,
+   "column": 1320,
+   "x": 586305.0,
+   "y": 1883311.0
+  },
+  {
+   "id": "p070",
+   "chip": "chip_003",
+   "group": "land_edge",
+   "row": 972,
+   "column": 365,
+   "x": 684713.0,
+   "y": 2054125.0
+  },
+  {
+   "id": "p071",
+   "chip": "chip_003",
+   "group": "land_edge",
+   "row": 491,
+   "column": 233,
+   "x": 684449.0,
+   "y": 2055087.0
+  },
+  {
+   "id": "p072",
+   "chip": "sukhothai",
+   "group": "water_inside",
+   "row": 715,
+   "column": 1500,
+   "x": 586665.0,
+   "y": 1882387.0
+  },
+  {
+   "id": "p073",
+   "chip": "chip_003",
+   "group": "land_inside",
+   "row": 135,
+   "column": 1493,
+   "x": 686969.0,
+   "y": 2055799.0
+  },
+  {
+   "id": "p074",
+   "chip": "sukhothai",
+   "group": "land_edge",
+   "row": 1470,
+   "column": 455,
+   "x": 584575.0,
+   "y": 1880877.0
+  },
+  {
+   "id": "p075",
+   "chip": "chip_003",
+   "group": "land_edge",
+   "row": 1090,
+   "column": 1170,
+   "x": 686323.0,
+   "y": 2053889.0
+  },
+  {
+   "id": "p076",
+   "chip": "sukhothai",
+   "group": "water_edge",
+   "row": 926,
+   "column": 1007,
+   "x": 585679.0,
+   "y": 1881965.0
+  },
+  {
+   "id": "p077",
+   "chip": "chip_001",
+   "group": "land_inside",
+   "row": 560,
+   "column": 520,
+   "x": 678623.0,
+   "y": 2045611.0
+  },
+  {
+   "id": "p078",
+   "chip": "sukhothai",
+   "group": "land_edge",
+   "row": 1112,
+   "column": 1421,
+   "x": 586507.0,
+   "y": 1881593.0
+  },
+  {
+   "id": "p079",
+   "chip": "sukhothai",
+   "group": "water_edge",
+   "row": 1338,
+   "column": 1388,
+   "x": 586441.0,
+   "y": 1881141.0
+  },
+  {
+   "id": "p080",
+   "chip": "chip_001",
+   "group": "land_inside",
+   "row": 1481,
+   "column": 115,
+   "x": 677813.0,
+   "y": 2043769.0
+  },
+  {
+   "id": "p081",
+   "chip": "chip_003",
+   "group": "unobservable",
+   "row": 19,
+   "column": 272,
+   "x": 684527.0,
+   "y": 2056031.0
+  },
+  {
+   "id": "p082",
+   "chip": "chip_001",
+   "group": "water_inside",
+   "row": 626,
+   "column": 700,
+   "x": 678983.0,
+   "y": 2045479.0
+  },
+  {
+   "id": "p083",
+   "chip": "chip_001",
+   "group": "land_edge",
+   "row": 1162,
+   "column": 361,
+   "x": 678305.0,
+   "y": 2044407.0
+  },
+  {
+   "id": "p084",
+   "chip": "sukhothai",
+   "group": "water_inside",
+   "row": 340,
+   "column": 889,
+   "x": 585443.0,
+   "y": 1883137.0
+  },
+  {
+   "id": "p085",
+   "chip": "chip_003",
+   "group": "land_edge",
+   "row": 1055,
+   "column": 685,
+   "x": 685353.0,
+   "y": 2053959.0
+  },
+  {
+   "id": "p086",
+   "chip": "sukhothai",
+   "group": "land_inside",
+   "row": 835,
+   "column": 1238,
+   "x": 586141.0,
+   "y": 1882147.0
+  },
+  {
+   "id": "p087",
+   "chip": "sukhothai",
+   "group": "land_inside",
+   "row": 1095,
+   "column": 7,
+   "x": 583679.0,
+   "y": 1881627.0
+  },
+  {
+   "id": "p088",
+   "chip": "chip_001",
+   "group": "land_edge",
+   "row": 1255,
+   "column": 203,
+   "x": 677989.0,
+   "y": 2044221.0
+  },
+  {
+   "id": "p089",
+   "chip": "chip_003",
+   "group": "water_edge",
+   "row": 20,
+   "column": 327,
+   "x": 684637.0,
+   "y": 2056029.0
+  },
+  {
+   "id": "p090",
+   "chip": "chip_001",
+   "group": "dropped_small_object",
+   "row": 804,
+   "column": 692,
+   "x": 678967.0,
+   "y": 2045123.0
+  },
+  {
+   "id": "p091",
+   "chip": "sukhothai",
+   "group": "unobservable",
+   "row": 34,
+   "column": 1292,
+   "x": 586249.0,
+   "y": 1883749.0
+  },
+  {
+   "id": "p092",
+   "chip": "chip_001",
+   "group": "land_inside",
+   "row": 202,
+   "column": 856,
+   "x": 679295.0,
+   "y": 2046327.0
+  },
+  {
+   "id": "p093",
+   "chip": "chip_003",
+   "group": "land_inside",
+   "row": 497,
+   "column": 932,
+   "x": 685847.0,
+   "y": 2055075.0
+  },
+  {
+   "id": "p094",
+   "chip": "chip_003",
+   "group": "land_inside",
+   "row": 417,
+   "column": 771,
+   "x": 685525.0,
+   "y": 2055235.0
+  },
+  {
+   "id": "p095",
+   "chip": "chip_003",
+   "group": "land_inside",
+   "row": 78,
+   "column": 1351,
+   "x": 686685.0,
+   "y": 2055913.0
+  },
+  {
+   "id": "p096",
+   "chip": "chip_003",
+   "group": "water_inside",
+   "row": 1474,
+   "column": 1486,
+   "x": 686955.0,
+   "y": 2053121.0
+  },
+  {
+   "id": "p097",
+   "chip": "chip_001",
+   "group": "dropped_small_object",
+   "row": 613,
+   "column": 891,
+   "x": 679365.0,
+   "y": 2045505.0
+  },
+  {
+   "id": "p098",
+   "chip": "chip_003",
+   "group": "water_edge",
+   "row": 1421,
+   "column": 491,
+   "x": 684965.0,
+   "y": 2053227.0
+  },
+  {
+   "id": "p099",
+   "chip": "sukhothai",
+   "group": "water_inside",
+   "row": 692,
+   "column": 178,
+   "x": 584021.0,
+   "y": 1882433.0
+  },
+  {
+   "id": "p100",
+   "chip": "chip_003",
+   "group": "land_edge",
+   "row": 447,
+   "column": 317,
+   "x": 684617.0,
+   "y": 2055175.0
+  },
+  {
+   "id": "p101",
+   "chip": "sukhothai",
+   "group": "dropped_small_object",
+   "row": 1464,
+   "column": 1445,
+   "x": 586555.0,
+   "y": 1880889.0
+  },
+  {
+   "id": "p102",
+   "chip": "sukhothai",
+   "group": "water_edge",
+   "row": 1452,
+   "column": 203,
+   "x": 584071.0,
+   "y": 1880913.0
+  },
+  {
+   "id": "p103",
+   "chip": "chip_001",
+   "group": "water_inside",
+   "row": 629,
+   "column": 721,
+   "x": 679025.0,
+   "y": 2045473.0
+  },
+  {
+   "id": "p104",
+   "chip": "chip_003",
+   "group": "land_edge",
+   "row": 1414,
+   "column": 1063,
+   "x": 686109.0,
+   "y": 2053241.0
+  },
+  {
+   "id": "p105",
+   "chip": "chip_001",
+   "group": "water_edge",
+   "row": 167,
+   "column": 307,
+   "x": 678197.0,
+   "y": 2046397.0
+  },
+  {
+   "id": "p106",
+   "chip": "chip_001",
+   "group": "land_edge",
+   "row": 826,
+   "column": 309,
+   "x": 678201.0,
+   "y": 2045079.0
+  },
+  {
+   "id": "p107",
+   "chip": "chip_001",
+   "group": "land_edge",
+   "row": 1381,
+   "column": 937,
+   "x": 679457.0,
+   "y": 2043969.0
+  },
+  {
+   "id": "p108",
+   "chip": "sukhothai",
+   "group": "land_edge",
+   "row": 339,
+   "column": 780,
+   "x": 585225.0,
+   "y": 1883139.0
+  },
+  {
+   "id": "p109",
+   "chip": "chip_001",
+   "group": "land_inside",
+   "row": 728,
+   "column": 1221,
+   "x": 680025.0,
+   "y": 2045275.0
+  },
+  {
+   "id": "p110",
+   "chip": "sukhothai",
+   "group": "dropped_small_object",
+   "row": 1225,
+   "column": 1379,
+   "x": 586423.0,
+   "y": 1881367.0
+  },
+  {
+   "id": "p111",
+   "chip": "chip_003",
+   "group": "unobservable",
+   "row": 202,
+   "column": 776,
+   "x": 685535.0,
+   "y": 2055665.0
+  },
+  {
+   "id": "p112",
+   "chip": "sukhothai",
+   "group": "land_edge",
+   "row": 642,
+   "column": 406,
+   "x": 584477.0,
+   "y": 1882533.0
+  },
+  {
+   "id": "p113",
+   "chip": "chip_003",
+   "group": "water_edge",
+   "row": 705,
+   "column": 432,
+   "x": 684847.0,
+   "y": 2054659.0
+  },
+  {
+   "id": "p114",
+   "chip": "chip_003",
+   "group": "water_edge",
+   "row": 589,
+   "column": 1228,
+   "x": 686439.0,
+   "y": 2054891.0
+  },
+  {
+   "id": "p115",
+   "chip": "chip_001",
+   "group": "land_inside",
+   "row": 316,
+   "column": 1303,
+   "x": 680189.0,
+   "y": 2046099.0
+  },
+  {
+   "id": "p116",
+   "chip": "chip_003",
+   "group": "land_inside",
+   "row": 375,
+   "column": 1145,
+   "x": 686273.0,
+   "y": 2055319.0
+  },
+  {
+   "id": "p117",
+   "chip": "sukhothai",
+   "group": "unobservable",
+   "row": 17,
+   "column": 1436,
+   "x": 586537.0,
+   "y": 1883783.0
+  },
+  {
+   "id": "p118",
+   "chip": "chip_003",
+   "group": "dropped_small_object",
+   "row": 389,
+   "column": 853,
+   "x": 685689.0,
+   "y": 2055291.0
+  },
+  {
+   "id": "p119",
+   "chip": "sukhothai",
+   "group": "dropped_small_object",
+   "row": 839,
+   "column": 141,
+   "x": 583947.0,
+   "y": 1882139.0
+  },
+  {
+   "id": "p120",
+   "chip": "chip_003",
+   "group": "water_inside",
+   "row": 1251,
+   "column": 585,
+   "x": 685153.0,
+   "y": 2053567.0
+  },
+  {
+   "id": "p121",
+   "chip": "chip_001",
+   "group": "land_edge",
+   "row": 1279,
+   "column": 1192,
+   "x": 679967.0,
+   "y": 2044173.0
+  },
+  {
+   "id": "p122",
+   "chip": "chip_003",
+   "group": "land_edge",
+   "row": 354,
+   "column": 1062,
+   "x": 686107.0,
+   "y": 2055361.0
+  },
+  {
+   "id": "p123",
+   "chip": "chip_001",
+   "group": "land_inside",
+   "row": 688,
+   "column": 588,
+   "x": 678759.0,
+   "y": 2045355.0
+  },
+  {
+   "id": "p124",
+   "chip": "chip_001",
+   "group": "dropped_small_object",
+   "row": 305,
+   "column": 907,
+   "x": 679397.0,
+   "y": 2046121.0
+  },
+  {
+   "id": "p125",
+   "chip": "sukhothai",
+   "group": "dropped_small_object",
+   "row": 563,
+   "column": 68,
+   "x": 583801.0,
+   "y": 1882691.0
+  },
+  {
+   "id": "p126",
+   "chip": "chip_003",
+   "group": "land_inside",
+   "row": 1016,
+   "column": 7,
+   "x": 683997.0,
+   "y": 2054037.0
+  },
+  {
+   "id": "p127",
+   "chip": "chip_003",
+   "group": "water_edge",
+   "row": 1195,
+   "column": 724,
+   "x": 685431.0,
+   "y": 2053679.0
+  },
+  {
+   "id": "p128",
+   "chip": "chip_001",
+   "group": "land_inside",
+   "row": 1007,
+   "column": 521,
+   "x": 678625.0,
+   "y": 2044717.0
+  },
+  {
+   "id": "p129",
+   "chip": "chip_003",
+   "group": "water_edge",
+   "row": 1495,
+   "column": 574,
+   "x": 685131.0,
+   "y": 2053079.0
+  },
+  {
+   "id": "p130",
+   "chip": "chip_001",
+   "group": "land_inside",
+   "row": 309,
+   "column": 877,
+   "x": 679337.0,
+   "y": 2046113.0
+  },
+  {
+   "id": "p131",
+   "chip": "chip_001",
+   "group": "land_inside",
+   "row": 236,
+   "column": 1035,
+   "x": 679653.0,
+   "y": 2046259.0
+  },
+  {
+   "id": "p132",
+   "chip": "chip_003",
+   "group": "water_inside",
+   "row": 273,
+   "column": 498,
+   "x": 684979.0,
+   "y": 2055523.0
+  },
+  {
+   "id": "p133",
+   "chip": "chip_001",
+   "group": "land_inside",
+   "row": 290,
+   "column": 1105,
+   "x": 679793.0,
+   "y": 2046151.0
+  },
+  {
+   "id": "p134",
+   "chip": "sukhothai",
+   "group": "land_edge",
+   "row": 317,
+   "column": 1150,
+   "x": 585965.0,
+   "y": 1883183.0
+  },
+  {
+   "id": "p135",
+   "chip": "chip_001",
+   "group": "land_inside",
+   "row": 956,
+   "column": 808,
+   "x": 679199.0,
+   "y": 2044819.0
+  },
+  {
+   "id": "p136",
+   "chip": "chip_003",
+   "group": "water_edge",
+   "row": 605,
+   "column": 795,
+   "x": 685573.0,
+   "y": 2054859.0
+  },
+  {
+   "id": "p137",
+   "chip": "chip_001",
+   "group": "water_edge",
+   "row": 1398,
+   "column": 1440,
+   "x": 680463.0,
+   "y": 2043935.0
+  },
+  {
+   "id": "p138",
+   "chip": "chip_001",
+   "group": "land_inside",
+   "row": 435,
+   "column": 834,
+   "x": 679251.0,
+   "y": 2045861.0
+  },
+  {
+   "id": "p139",
+   "chip": "chip_001",
+   "group": "land_edge",
+   "row": 192,
+   "column": 1499,
+   "x": 680581.0,
+   "y": 2046347.0
+  },
+  {
+   "id": "p140",
+   "chip": "sukhothai",
+   "group": "land_edge",
+   "row": 457,
+   "column": 910,
+   "x": 585485.0,
+   "y": 1882903.0
+  },
+  {
+   "id": "p141",
+   "chip": "chip_001",
+   "group": "dropped_small_object",
+   "row": 1192,
+   "column": 129,
+   "x": 677841.0,
+   "y": 2044347.0
+  },
+  {
+   "id": "p142",
+   "chip": "chip_003",
+   "group": "water_inside",
+   "row": 1238,
+   "column": 932,
+   "x": 685847.0,
+   "y": 2053593.0
+  },
+  {
+   "id": "p143",
+   "chip": "chip_001",
+   "group": "land_edge",
+   "row": 270,
+   "column": 1400,
+   "x": 680383.0,
+   "y": 2046191.0
+  },
+  {
+   "id": "p144",
+   "chip": "chip_003",
+   "group": "water_edge",
+   "row": 1390,
+   "column": 565,
+   "x": 685113.0,
+   "y": 2053289.0
+  },
+  {
+   "id": "p145",
+   "chip": "chip_001",
+   "group": "land_inside",
+   "row": 407,
+   "column": 643,
+   "x": 678869.0,
+   "y": 2045917.0
+  },
+  {
+   "id": "p146",
+   "chip": "sukhothai",
+   "group": "water_inside",
+   "row": 141,
+   "column": 835,
+   "x": 585335.0,
+   "y": 1883535.0
+  },
+  {
+   "id": "p147",
+   "chip": "sukhothai",
+   "group": "land_edge",
+   "row": 1254,
+   "column": 901,
+   "x": 585467.0,
+   "y": 1881309.0
+  },
+  {
+   "id": "p148",
+   "chip": "chip_003",
+   "group": "dropped_small_object",
+   "row": 195,
+   "column": 424,
+   "x": 684831.0,
+   "y": 2055679.0
+  },
+  {
+   "id": "p149",
+   "chip": "chip_003",
+   "group": "water_inside",
+   "row": 125,
+   "column": 699,
+   "x": 685381.0,
+   "y": 2055819.0
+  },
+  {
+   "id": "p150",
+   "chip": "chip_001",
+   "group": "land_inside",
+   "row": 15,
+   "column": 51,
+   "x": 677685.0,
+   "y": 2046701.0
+  },
+  {
+   "id": "p151",
+   "chip": "sukhothai",
+   "group": "land_inside",
+   "row": 91,
+   "column": 1044,
+   "x": 585753.0,
+   "y": 1883635.0
+  },
+  {
+   "id": "p152",
+   "chip": "chip_003",
+   "group": "land_inside",
+   "row": 577,
+   "column": 306,
+   "x": 684595.0,
+   "y": 2054915.0
+  },
+  {
+   "id": "p153",
+   "chip": "sukhothai",
+   "group": "water_inside",
+   "row": 390,
+   "column": 485,
+   "x": 584635.0,
+   "y": 1883037.0
+  },
+  {
+   "id": "p154",
+   "chip": "chip_001",
+   "group": "water_inside",
+   "row": 145,
+   "column": 343,
+   "x": 678269.0,
+   "y": 2046441.0
+  },
+  {
+   "id": "p155",
+   "chip": "chip_001",
+   "group": "land_inside",
+   "row": 584,
+   "column": 1180,
+   "x": 679943.0,
+   "y": 2045563.0
+  },
+  {
+   "id": "p156",
+   "chip": "sukhothai",
+   "group": "water_inside",
+   "row": 557,
+   "column": 276,
+   "x": 584217.0,
+   "y": 1882703.0
+  },
+  {
+   "id": "p157",
+   "chip": "chip_001",
+   "group": "water_edge",
+   "row": 252,
+   "column": 363,
+   "x": 678309.0,
+   "y": 2046227.0
+  },
+  {
+   "id": "p158",
+   "chip": "sukhothai",
+   "group": "water_edge",
+   "row": 134,
+   "column": 1105,
+   "x": 585875.0,
+   "y": 1883549.0
+  },
+  {
+   "id": "p159",
+   "chip": "chip_003",
+   "group": "land_inside",
+   "row": 922,
+   "column": 0,
+   "x": 683983.0,
+   "y": 2054225.0
+  },
+  {
+   "id": "p160",
+   "chip": "sukhothai",
+   "group": "land_inside",
+   "row": 1320,
+   "column": 173,
+   "x": 584011.0,
+   "y": 1881177.0
+  },
+  {
+   "id": "p161",
+   "chip": "chip_003",
+   "group": "unobservable",
+   "row": 1016,
+   "column": 1341,
+   "x": 686665.0,
+   "y": 2054037.0
+  },
+  {
+   "id": "p162",
+   "chip": "sukhothai",
+   "group": "dropped_small_object",
+   "row": 1164,
+   "column": 1338,
+   "x": 586341.0,
+   "y": 1881489.0
+  },
+  {
+   "id": "p163",
+   "chip": "sukhothai",
+   "group": "land_inside",
+   "row": 868,
+   "column": 1030,
+   "x": 585725.0,
+   "y": 1882081.0
+  },
+  {
+   "id": "p164",
+   "chip": "chip_003",
+   "group": "unobservable",
+   "row": 529,
+   "column": 1120,
+   "x": 686223.0,
+   "y": 2055011.0
+  },
+  {
+   "id": "p165",
+   "chip": "sukhothai",
+   "group": "land_inside",
+   "row": 1488,
+   "column": 528,
+   "x": 584721.0,
+   "y": 1880841.0
+  },
+  {
+   "id": "p166",
+   "chip": "chip_003",
+   "group": "land_inside",
+   "row": 774,
+   "column": 44,
+   "x": 684071.0,
+   "y": 2054521.0
+  },
+  {
+   "id": "p167",
+   "chip": "sukhothai",
+   "group": "water_inside",
+   "row": 252,
+   "column": 1222,
+   "x": 586109.0,
+   "y": 1883313.0
+  },
+  {
+   "id": "p168",
+   "chip": "chip_001",
+   "group": "dropped_small_object",
+   "row": 799,
+   "column": 1238,
+   "x": 680059.0,
+   "y": 2045133.0
+  },
+  {
+   "id": "p169",
+   "chip": "sukhothai",
+   "group": "land_inside",
+   "row": 805,
+   "column": 402,
+   "x": 584469.0,
+   "y": 1882207.0
+  },
+  {
+   "id": "p170",
+   "chip": "chip_003",
+   "group": "water_edge",
+   "row": 538,
+   "column": 591,
+   "x": 685165.0,
+   "y": 2054993.0
+  },
+  {
+   "id": "p171",
+   "chip": "chip_003",
+   "group": "land_edge",
+   "row": 393,
+   "column": 55,
+   "x": 684093.0,
+   "y": 2055283.0
+  },
+  {
+   "id": "p172",
+   "chip": "sukhothai",
+   "group": "land_inside",
+   "row": 1444,
+   "column": 297,
+   "x": 584259.0,
+   "y": 1880929.0
+  },
+  {
+   "id": "p173",
+   "chip": "sukhothai",
+   "group": "land_inside",
+   "row": 955,
+   "column": 223,
+   "x": 584111.0,
+   "y": 1881907.0
+  },
+  {
+   "id": "p174",
+   "chip": "sukhothai",
+   "group": "land_edge",
+   "row": 319,
+   "column": 826,
+   "x": 585317.0,
+   "y": 1883179.0
+  },
+  {
+   "id": "p175",
+   "chip": "chip_003",
+   "group": "water_inside",
+   "row": 522,
+   "column": 1490,
+   "x": 686963.0,
+   "y": 2055025.0
+  },
+  {
+   "id": "p176",
+   "chip": "sukhothai",
+   "group": "land_inside",
+   "row": 765,
+   "column": 1237,
+   "x": 586139.0,
+   "y": 1882287.0
+  },
+  {
+   "id": "p177",
+   "chip": "sukhothai",
+   "group": "water_edge",
+   "row": 1106,
+   "column": 319,
+   "x": 584303.0,
+   "y": 1881605.0
+  },
+  {
+   "id": "p178",
+   "chip": "chip_003",
+   "group": "land_inside",
+   "row": 1239,
+   "column": 1026,
+   "x": 686035.0,
+   "y": 2053591.0
+  },
+  {
+   "id": "p179",
+   "chip": "chip_003",
+   "group": "water_inside",
+   "row": 1084,
+   "column": 1248,
+   "x": 686479.0,
+   "y": 2053901.0
+  },
+  {
+   "id": "p180",
+   "chip": "chip_001",
+   "group": "land_edge",
+   "row": 705,
+   "column": 529,
+   "x": 678641.0,
+   "y": 2045321.0
+  },
+  {
+   "id": "p181",
+   "chip": "chip_003",
+   "group": "water_inside",
+   "row": 1270,
+   "column": 1265,
+   "x": 686513.0,
+   "y": 2053529.0
+  },
+  {
+   "id": "p182",
+   "chip": "sukhothai",
+   "group": "land_inside",
+   "row": 1401,
+   "column": 1481,
+   "x": 586627.0,
+   "y": 1881015.0
+  },
+  {
+   "id": "p183",
+   "chip": "chip_001",
+   "group": "water_edge",
+   "row": 604,
+   "column": 572,
+   "x": 678727.0,
+   "y": 2045523.0
+  },
+  {
+   "id": "p184",
+   "chip": "chip_001",
+   "group": "dropped_small_object",
+   "row": 490,
+   "column": 978,
+   "x": 679539.0,
+   "y": 2045751.0
+  },
+  {
+   "id": "p185",
+   "chip": "sukhothai",
+   "group": "land_inside",
+   "row": 898,
+   "column": 1351,
+   "x": 586367.0,
+   "y": 1882021.0
+  },
+  {
+   "id": "p186",
+   "chip": "chip_003",
+   "group": "land_inside",
+   "row": 156,
+   "column": 637,
+   "x": 685257.0,
+   "y": 2055757.0
+  },
+  {
+   "id": "p187",
+   "chip": "chip_001",
+   "group": "dropped_small_object",
+   "row": 1274,
+   "column": 663,
+   "x": 678909.0,
+   "y": 2044183.0
+  },
+  {
+   "id": "p188",
+   "chip": "chip_001",
+   "group": "water_edge",
+   "row": 1174,
+   "column": 236,
+   "x": 678055.0,
+   "y": 2044383.0
+  },
+  {
+   "id": "p189",
+   "chip": "sukhothai",
+   "group": "land_inside",
+   "row": 978,
+   "column": 219,
+   "x": 584103.0,
+   "y": 1881861.0
+  },
+  {
+   "id": "p190",
+   "chip": "sukhothai",
+   "group": "dropped_small_object",
+   "row": 1326,
+   "column": 446,
+   "x": 584557.0,
+   "y": 1881165.0
+  },
+  {
+   "id": "p191",
+   "chip": "chip_003",
+   "group": "unobservable",
+   "row": 532,
+   "column": 1120,
+   "x": 686223.0,
+   "y": 2055005.0
+  },
+  {
+   "id": "p192",
+   "chip": "chip_003",
+   "group": "unobservable",
+   "row": 57,
+   "column": 222,
+   "x": 684427.0,
+   "y": 2055955.0
+  },
+  {
+   "id": "p193",
+   "chip": "chip_001",
+   "group": "land_edge",
+   "row": 76,
+   "column": 585,
+   "x": 678753.0,
+   "y": 2046579.0
+  },
+  {
+   "id": "p194",
+   "chip": "chip_003",
+   "group": "dropped_small_object",
+   "row": 866,
+   "column": 1419,
+   "x": 686821.0,
+   "y": 2054337.0
+  },
+  {
+   "id": "p195",
+   "chip": "chip_003",
+   "group": "water_edge",
+   "row": 1001,
+   "column": 959,
+   "x": 685901.0,
+   "y": 2054067.0
+  },
+  {
+   "id": "p196",
+   "chip": "chip_003",
+   "group": "land_edge",
+   "row": 959,
+   "column": 1208,
+   "x": 686399.0,
+   "y": 2054151.0
+  },
+  {
+   "id": "p197",
+   "chip": "chip_001",
+   "group": "water_inside",
+   "row": 1342,
+   "column": 698,
+   "x": 678979.0,
+   "y": 2044047.0
+  },
+  {
+   "id": "p198",
+   "chip": "chip_003",
+   "group": "land_edge",
+   "row": 1153,
+   "column": 293,
+   "x": 684569.0,
+   "y": 2053763.0
+  },
+  {
+   "id": "p199",
+   "chip": "sukhothai",
+   "group": "land_edge",
+   "row": 584,
+   "column": 1334,
+   "x": 586333.0,
+   "y": 1882649.0
+  },
+  {
+   "id": "p200",
+   "chip": "sukhothai",
+   "group": "dropped_small_object",
+   "row": 1345,
+   "column": 1179,
+   "x": 586023.0,
+   "y": 1881127.0
+  },
+  {
+   "id": "p201",
+   "chip": "sukhothai",
+   "group": "land_edge",
+   "row": 517,
+   "column": 893,
+   "x": 585451.0,
+   "y": 1882783.0
+  },
+  {
+   "id": "p202",
+   "chip": "sukhothai",
+   "group": "unobservable",
+   "row": 271,
+   "column": 1455,
+   "x": 586575.0,
+   "y": 1883275.0
+  },
+  {
+   "id": "p203",
+   "chip": "sukhothai",
+   "group": "water_inside",
+   "row": 400,
+   "column": 1475,
+   "x": 586615.0,
+   "y": 1883017.0
+  },
+  {
+   "id": "p204",
+   "chip": "chip_003",
+   "group": "land_inside",
+   "row": 618,
+   "column": 423,
+   "x": 684829.0,
+   "y": 2054833.0
+  },
+  {
+   "id": "p205",
+   "chip": "chip_003",
+   "group": "water_inside",
+   "row": 455,
+   "column": 1041,
+   "x": 686065.0,
+   "y": 2055159.0
+  },
+  {
+   "id": "p206",
+   "chip": "chip_003",
+   "group": "unobservable",
+   "row": 700,
+   "column": 1422,
+   "x": 686827.0,
+   "y": 2054669.0
+  },
+  {
+   "id": "p207",
+   "chip": "chip_003",
+   "group": "water_inside",
+   "row": 1107,
+   "column": 1143,
+   "x": 686269.0,
+   "y": 2053855.0
+  },
+  {
+   "id": "p208",
+   "chip": "sukhothai",
+   "group": "dropped_small_object",
+   "row": 453,
+   "column": 820,
+   "x": 585305.0,
+   "y": 1882911.0
+  },
+  {
+   "id": "p209",
+   "chip": "sukhothai",
+   "group": "land_edge",
+   "row": 712,
+   "column": 1359,
+   "x": 586383.0,
+   "y": 1882393.0
+  },
+  {
+   "id": "p210",
+   "chip": "sukhothai",
+   "group": "water_edge",
+   "row": 57,
+   "column": 844,
+   "x": 585353.0,
+   "y": 1883703.0
+  },
+  {
+   "id": "p211",
+   "chip": "chip_001",
+   "group": "land_inside",
+   "row": 529,
+   "column": 1112,
+   "x": 679807.0,
+   "y": 2045673.0
+  },
+  {
+   "id": "p212",
+   "chip": "chip_001",
+   "group": "water_edge",
+   "row": 503,
+   "column": 1411,
+   "x": 680405.0,
+   "y": 2045725.0
+  },
+  {
+   "id": "p213",
+   "chip": "chip_003",
+   "group": "land_inside",
+   "row": 123,
+   "column": 1148,
+   "x": 686279.0,
+   "y": 2055823.0
+  },
+  {
+   "id": "p214",
+   "chip": "chip_003",
+   "group": "water_inside",
+   "row": 1178,
+   "column": 1312,
+   "x": 686607.0,
+   "y": 2053713.0
+  },
+  {
+   "id": "p215",
+   "chip": "chip_003",
+   "group": "land_edge",
+   "row": 1101,
+   "column": 760,
+   "x": 685503.0,
+   "y": 2053867.0
+  },
+  {
+   "id": "p216",
+   "chip": "chip_003",
+   "group": "land_inside",
+   "row": 740,
+   "column": 58,
+   "x": 684099.0,
+   "y": 2054589.0
+  },
+  {
+   "id": "p217",
+   "chip": "chip_003",
+   "group": "water_inside",
+   "row": 1021,
+   "column": 704,
+   "x": 685391.0,
+   "y": 2054027.0
+  },
+  {
+   "id": "p218",
+   "chip": "chip_003",
+   "group": "water_edge",
+   "row": 1241,
+   "column": 387,
+   "x": 684757.0,
+   "y": 2053587.0
+  },
+  {
+   "id": "p219",
+   "chip": "sukhothai",
+   "group": "land_inside",
+   "row": 922,
+   "column": 1051,
+   "x": 585767.0,
+   "y": 1881973.0
+  },
+  {
+   "id": "p220",
+   "chip": "sukhothai",
+   "group": "water_inside",
+   "row": 384,
+   "column": 1438,
+   "x": 586541.0,
+   "y": 1883049.0
+  },
+  {
+   "id": "p221",
+   "chip": "sukhothai",
+   "group": "land_edge",
+   "row": 867,
+   "column": 1073,
+   "x": 585811.0,
+   "y": 1882083.0
+  },
+  {
+   "id": "p222",
+   "chip": "chip_003",
+   "group": "unobservable",
+   "row": 97,
+   "column": 943,
+   "x": 685869.0,
+   "y": 2055875.0
+  },
+  {
+   "id": "p223",
+   "chip": "sukhothai",
+   "group": "dropped_small_object",
+   "row": 1263,
+   "column": 1284,
+   "x": 586233.0,
+   "y": 1881291.0
+  },
+  {
+   "id": "p224",
+   "chip": "sukhothai",
+   "group": "water_edge",
+   "row": 254,
+   "column": 335,
+   "x": 584335.0,
+   "y": 1883309.0
+  },
+  {
+   "id": "p225",
+   "chip": "chip_003",
+   "group": "land_edge",
+   "row": 1187,
+   "column": 1142,
+   "x": 686267.0,
+   "y": 2053695.0
+  },
+  {
+   "id": "p226",
+   "chip": "sukhothai",
+   "group": "dropped_small_object",
+   "row": 509,
+   "column": 58,
+   "x": 583781.0,
+   "y": 1882799.0
+  },
+  {
+   "id": "p227",
+   "chip": "sukhothai",
+   "group": "unobservable",
+   "row": 1130,
+   "column": 1300,
+   "x": 586265.0,
+   "y": 1881557.0
+  },
+  {
+   "id": "p228",
+   "chip": "chip_003",
+   "group": "unobservable",
+   "row": 137,
+   "column": 1070,
+   "x": 686123.0,
+   "y": 2055795.0
+  },
+  {
+   "id": "p229",
+   "chip": "chip_003",
+   "group": "dropped_small_object",
+   "row": 349,
+   "column": 1237,
+   "x": 686457.0,
+   "y": 2055371.0
+  },
+  {
+   "id": "p230",
+   "chip": "sukhothai",
+   "group": "dropped_small_object",
+   "row": 1174,
+   "column": 105,
+   "x": 583875.0,
+   "y": 1881469.0
+  },
+  {
+   "id": "p231",
+   "chip": "chip_003",
+   "group": "land_edge",
+   "row": 595,
+   "column": 797,
+   "x": 685577.0,
+   "y": 2054879.0
+  },
+  {
+   "id": "p232",
+   "chip": "chip_003",
+   "group": "land_inside",
+   "row": 334,
+   "column": 1404,
+   "x": 686791.0,
+   "y": 2055401.0
+  },
+  {
+   "id": "p233",
+   "chip": "chip_003",
+   "group": "dropped_small_object",
+   "row": 979,
+   "column": 760,
+   "x": 685503.0,
+   "y": 2054111.0
+  },
+  {
+   "id": "p234",
+   "chip": "sukhothai",
+   "group": "land_edge",
+   "row": 1051,
+   "column": 916,
+   "x": 585497.0,
+   "y": 1881715.0
+  },
+  {
+   "id": "p235",
+   "chip": "chip_003",
+   "group": "land_edge",
+   "row": 1136,
+   "column": 357,
+   "x": 684697.0,
+   "y": 2053797.0
+  },
+  {
+   "id": "p236",
+   "chip": "sukhothai",
+   "group": "land_inside",
+   "row": 399,
+   "column": 1007,
+   "x": 585679.0,
+   "y": 1883019.0
+  },
+  {
+   "id": "p237",
+   "chip": "sukhothai",
+   "group": "water_inside",
+   "row": 651,
+   "column": 563,
+   "x": 584791.0,
+   "y": 1882515.0
+  },
+  {
+   "id": "p238",
+   "chip": "chip_003",
+   "group": "dropped_small_object",
+   "row": 1172,
+   "column": 949,
+   "x": 685881.0,
+   "y": 2053725.0
+  },
+  {
+   "id": "p239",
+   "chip": "chip_003",
+   "group": "water_inside",
+   "row": 337,
+   "column": 1152,
+   "x": 686287.0,
+   "y": 2055395.0
+  },
+  {
+   "id": "p240",
+   "chip": "sukhothai",
+   "group": "unobservable",
+   "row": 154,
+   "column": 780,
+   "x": 585225.0,
+   "y": 1883509.0
+  },
+  {
+   "id": "p241",
+   "chip": "sukhothai",
+   "group": "land_edge",
+   "row": 1143,
+   "column": 827,
+   "x": 585319.0,
+   "y": 1881531.0
+  },
+  {
+   "id": "p242",
+   "chip": "sukhothai",
+   "group": "water_edge",
+   "row": 876,
+   "column": 964,
+   "x": 585593.0,
+   "y": 1882065.0
+  },
+  {
+   "id": "p243",
+   "chip": "chip_001",
+   "group": "land_inside",
+   "row": 782,
+   "column": 499,
+   "x": 678581.0,
+   "y": 2045167.0
+  },
+  {
+   "id": "p244",
+   "chip": "sukhothai",
+   "group": "land_edge",
+   "row": 519,
+   "column": 4,
+   "x": 583673.0,
+   "y": 1882779.0
+  },
+  {
+   "id": "p245",
+   "chip": "chip_001",
+   "group": "water_inside",
+   "row": 412,
+   "column": 1087,
+   "x": 679757.0,
+   "y": 2045907.0
+  },
+  {
+   "id": "p246",
+   "chip": "chip_003",
+   "group": "water_inside",
+   "row": 271,
+   "column": 796,
+   "x": 685575.0,
+   "y": 2055527.0
+  },
+  {
+   "id": "p247",
+   "chip": "sukhothai",
+   "group": "land_inside",
+   "row": 1023,
+   "column": 106,
+   "x": 583877.0,
+   "y": 1881771.0
+  },
+  {
+   "id": "p248",
+   "chip": "sukhothai",
+   "group": "land_inside",
+   "row": 1018,
+   "column": 61,
+   "x": 583787.0,
+   "y": 1881781.0
+  },
+  {
+   "id": "p249",
+   "chip": "sukhothai",
+   "group": "water_inside",
+   "row": 370,
+   "column": 1463,
+   "x": 586591.0,
+   "y": 1883077.0
+  },
+  {
+   "id": "p250",
+   "chip": "sukhothai",
+   "group": "land_inside",
+   "row": 1386,
+   "column": 732,
+   "x": 585129.0,
+   "y": 1881045.0
+  },
+  {
+   "id": "p251",
+   "chip": "chip_003",
+   "group": "dropped_small_object",
+   "row": 1017,
+   "column": 505,
+   "x": 684993.0,
+   "y": 2054035.0
+  },
+  {
+   "id": "p252",
+   "chip": "chip_003",
+   "group": "water_edge",
+   "row": 429,
+   "column": 339,
+   "x": 684661.0,
+   "y": 2055211.0
+  },
+  {
+   "id": "p253",
+   "chip": "chip_003",
+   "group": "water_edge",
+   "row": 898,
+   "column": 762,
+   "x": 685507.0,
+   "y": 2054273.0
+  },
+  {
+   "id": "p254",
+   "chip": "sukhothai",
+   "group": "land_inside",
+   "row": 469,
+   "column": 1438,
+   "x": 586541.0,
+   "y": 1882879.0
+  },
+  {
+   "id": "p255",
+   "chip": "chip_003",
+   "group": "land_edge",
+   "row": 509,
+   "column": 1367,
+   "x": 686717.0,
+   "y": 2055051.0
+  },
+  {
+   "id": "p256",
+   "chip": "sukhothai",
+   "group": "dropped_small_object",
+   "row": 370,
+   "column": 696,
+   "x": 585057.0,
+   "y": 1883077.0
+  },
+  {
+   "id": "p257",
+   "chip": "chip_003",
+   "group": "water_edge",
+   "row": 322,
+   "column": 405,
+   "x": 684793.0,
+   "y": 2055425.0
+  },
+  {
+   "id": "p258",
+   "chip": "sukhothai",
+   "group": "land_inside",
+   "row": 1044,
+   "column": 887,
+   "x": 585439.0,
+   "y": 1881729.0
+  },
+  {
+   "id": "p259",
+   "chip": "sukhothai",
+   "group": "unobservable",
+   "row": 936,
+   "column": 1424,
+   "x": 586513.0,
+   "y": 1881945.0
+  },
+  {
+   "id": "p260",
+   "chip": "sukhothai",
+   "group": "water_edge",
+   "row": 1290,
+   "column": 229,
+   "x": 584123.0,
+   "y": 1881237.0
+  },
+  {
+   "id": "p261",
+   "chip": "chip_001",
+   "group": "land_inside",
+   "row": 542,
+   "column": 53,
+   "x": 677689.0,
+   "y": 2045647.0
+  },
+  {
+   "id": "p262",
+   "chip": "chip_003",
+   "group": "unobservable",
+   "row": 47,
+   "column": 269,
+   "x": 684521.0,
+   "y": 2055975.0
+  },
+  {
+   "id": "p263",
+   "chip": "chip_003",
+   "group": "land_inside",
+   "row": 952,
+   "column": 172,
+   "x": 684327.0,
+   "y": 2054165.0
+  },
+  {
+   "id": "p264",
+   "chip": "sukhothai",
+   "group": "water_edge",
+   "row": 318,
+   "column": 513,
+   "x": 584691.0,
+   "y": 1883181.0
+  },
+  {
+   "id": "p265",
+   "chip": "chip_003",
+   "group": "land_inside",
+   "row": 948,
+   "column": 357,
+   "x": 684697.0,
+   "y": 2054173.0
+  },
+  {
+   "id": "p266",
+   "chip": "chip_003",
+   "group": "dropped_small_object",
+   "row": 857,
+   "column": 300,
+   "x": 684583.0,
+   "y": 2054355.0
+  },
+  {
+   "id": "p267",
+   "chip": "sukhothai",
+   "group": "land_inside",
+   "row": 129,
+   "column": 1010,
+   "x": 585685.0,
+   "y": 1883559.0
+  },
+  {
+   "id": "p268",
+   "chip": "chip_003",
+   "group": "land_inside",
+   "row": 830,
+   "column": 100,
+   "x": 684183.0,
+   "y": 2054409.0
+  },
+  {
+   "id": "p269",
+   "chip": "chip_003",
+   "group": "unobservable",
+   "row": 1465,
+   "column": 746,
+   "x": 685475.0,
+   "y": 2053139.0
+  },
+  {
+   "id": "p270",
+   "chip": "sukhothai",
+   "group": "unobservable",
+   "row": 1263,
+   "column": 1145,
+   "x": 585955.0,
+   "y": 1881291.0
+  },
+  {
+   "id": "p271",
+   "chip": "chip_003",
+   "group": "dropped_small_object",
+   "row": 871,
+   "column": 336,
+   "x": 684655.0,
+   "y": 2054327.0
+  },
+  {
+   "id": "p272",
+   "chip": "sukhothai",
+   "group": "unobservable",
+   "row": 293,
+   "column": 1426,
+   "x": 586517.0,
+   "y": 1883231.0
+  },
+  {
+   "id": "p273",
+   "chip": "sukhothai",
+   "group": "land_inside",
+   "row": 738,
+   "column": 416,
+   "x": 584497.0,
+   "y": 1882341.0
+  },
+  {
+   "id": "p274",
+   "chip": "sukhothai",
+   "group": "water_inside",
+   "row": 478,
+   "column": 834,
+   "x": 585333.0,
+   "y": 1882861.0
+  },
+  {
+   "id": "p275",
+   "chip": "chip_003",
+   "group": "land_inside",
+   "row": 1399,
+   "column": 112,
+   "x": 684207.0,
+   "y": 2053271.0
+  },
+  {
+   "id": "p276",
+   "chip": "sukhothai",
+   "group": "water_edge",
+   "row": 763,
+   "column": 695,
+   "x": 585055.0,
+   "y": 1882291.0
+  },
+  {
+   "id": "p277",
+   "chip": "sukhothai",
+   "group": "unobservable",
+   "row": 1351,
+   "column": 387,
+   "x": 584439.0,
+   "y": 1881115.0
+  },
+  {
+   "id": "p278",
+   "chip": "chip_003",
+   "group": "land_inside",
+   "row": 849,
+   "column": 897,
+   "x": 685777.0,
+   "y": 2054371.0
+  },
+  {
+   "id": "p279",
+   "chip": "chip_003",
+   "group": "land_inside",
+   "row": 826,
+   "column": 862,
+   "x": 685707.0,
+   "y": 2054417.0
+  },
+  {
+   "id": "p280",
+   "chip": "chip_003",
+   "group": "land_edge",
+   "row": 1079,
+   "column": 1205,
+   "x": 686393.0,
+   "y": 2053911.0
+  },
+  {
+   "id": "p281",
+   "chip": "chip_001",
+   "group": "land_edge",
+   "row": 1192,
+   "column": 157,
+   "x": 677897.0,
+   "y": 2044347.0
+  },
+  {
+   "id": "p282",
+   "chip": "sukhothai",
+   "group": "land_inside",
+   "row": 1344,
+   "column": 788,
+   "x": 585241.0,
+   "y": 1881129.0
+  },
+  {
+   "id": "p283",
+   "chip": "chip_003",
+   "group": "unobservable",
+   "row": 1422,
+   "column": 923,
+   "x": 685829.0,
+   "y": 2053225.0
+  },
+  {
+   "id": "p284",
+   "chip": "chip_001",
+   "group": "land_inside",
+   "row": 463,
+   "column": 256,
+   "x": 678095.0,
+   "y": 2045805.0
+  },
+  {
+   "id": "p285",
+   "chip": "sukhothai",
+   "group": "water_edge",
+   "row": 758,
+   "column": 118,
+   "x": 583901.0,
+   "y": 1882301.0
+  },
+  {
+   "id": "p286",
+   "chip": "sukhothai",
+   "group": "land_edge",
+   "row": 652,
+   "column": 357,
+   "x": 584379.0,
+   "y": 1882513.0
+  },
+  {
+   "id": "p287",
+   "chip": "sukhothai",
+   "group": "land_inside",
+   "row": 996,
+   "column": 769,
+   "x": 585203.0,
+   "y": 1881825.0
+  },
+  {
+   "id": "p288",
+   "chip": "chip_001",
+   "group": "water_edge",
+   "row": 796,
+   "column": 520,
+   "x": 678623.0,
+   "y": 2045139.0
+  },
+  {
+   "id": "p289",
+   "chip": "chip_003",
+   "group": "land_inside",
+   "row": 152,
+   "column": 1475,
+   "x": 686933.0,
+   "y": 2055765.0
+  },
+  {
+   "id": "p290",
+   "chip": "sukhothai",
+   "group": "land_inside",
+   "row": 656,
+   "column": 833,
+   "x": 585331.0,
+   "y": 1882505.0
+  },
+  {
+   "id": "p291",
+   "chip": "sukhothai",
+   "group": "water_edge",
+   "row": 256,
+   "column": 165,
+   "x": 583995.0,
+   "y": 1883305.0
+  },
+  {
+   "id": "p292",
+   "chip": "chip_003",
+   "group": "dropped_small_object",
+   "row": 767,
+   "column": 260,
+   "x": 684503.0,
+   "y": 2054535.0
+  },
+  {
+   "id": "p293",
+   "chip": "chip_001",
+   "group": "water_edge",
+   "row": 1164,
+   "column": 356,
+   "x": 678295.0,
+   "y": 2044403.0
+  },
+  {
+   "id": "p294",
+   "chip": "chip_001",
+   "group": "land_inside",
+   "row": 308,
+   "column": 818,
+   "x": 679219.0,
+   "y": 2046115.0
+  },
+  {
+   "id": "p295",
+   "chip": "chip_001",
+   "group": "dropped_small_object",
+   "row": 246,
+   "column": 692,
+   "x": 678967.0,
+   "y": 2046239.0
+  },
+  {
+   "id": "p296",
+   "chip": "chip_003",
+   "group": "dropped_small_object",
+   "row": 537,
+   "column": 724,
+   "x": 685431.0,
+   "y": 2054995.0
+  },
+  {
+   "id": "p297",
+   "chip": "chip_001",
+   "group": "land_inside",
+   "row": 1337,
+   "column": 172,
+   "x": 677927.0,
+   "y": 2044057.0
+  },
+  {
+   "id": "p298",
+   "chip": "chip_003",
+   "group": "dropped_small_object",
+   "row": 1201,
+   "column": 140,
+   "x": 684263.0,
+   "y": 2053667.0
+  },
+  {
+   "id": "p299",
+   "chip": "chip_001",
+   "group": "water_inside",
+   "row": 859,
+   "column": 171,
+   "x": 677925.0,
+   "y": 2045013.0
+  },
+  {
+   "id": "p300",
+   "chip": "chip_003",
+   "group": "dropped_small_object",
+   "row": 1249,
+   "column": 1061,
+   "x": 686105.0,
+   "y": 2053571.0
+  }
+ ],
+ "practice": [
+  {
+   "chip": "sukhothai",
+   "group": "water_inside",
+   "row": 8,
+   "column": 3,
+   "x": 583671.0,
+   "y": 1883801.0
+  },
+  {
+   "chip": "sukhothai",
+   "group": "water_edge",
+   "row": 1130,
+   "column": 1071,
+   "x": 585807.0,
+   "y": 1881557.0
+  },
+  {
+   "chip": "sukhothai",
+   "group": "dropped_small_object",
+   "row": 1061,
+   "column": 1198,
+   "x": 586061.0,
+   "y": 1881695.0
+  },
+  {
+   "chip": "sukhothai",
+   "group": "land_edge",
+   "row": 941,
+   "column": 175,
+   "x": 584015.0,
+   "y": 1881935.0
+  },
+  {
+   "chip": "sukhothai",
+   "group": "land_inside",
+   "row": 1335,
+   "column": 1351,
+   "x": 586367.0,
+   "y": 1881147.0
+  },
+  {
+   "chip": "sukhothai",
+   "group": "unobservable",
+   "row": 9,
+   "column": 1259,
+   "x": 586183.0,
+   "y": 1883799.0
+  }
+ ]
+}

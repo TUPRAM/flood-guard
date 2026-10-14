@@ -1,0 +1,67 @@
+/* The plain-language policy page. It sits inside `.page` of policy-page.module.css and uses its colours. */
+.number { font-size: 11px; letter-spacing: .12em; color: var(--teal); font-weight: 600; }
+.srOnly { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+.points { display: grid; gap: 0; }
+.points article { display: flex; gap: 22px; padding: 26px 0; border-bottom: 1px solid var(--line); }
+.points article:first-child { padding-top: 0; }
+.points h3 { margin: 0 0 10px; font-size: 20px; font-weight: 600; line-height: 1.3; }
+.points p { margin: 0 0 10px; font-size: 14px; line-height: 1.7; max-width: 900px; }
+.points b { font-weight: 600; }
+.means { padding: 12px 16px; background: #edece4; border-radius: 5px; }
+.sourceLine { color: var(--muted); font-size: 12px !important; line-height: 1.7; }
+.sourceLine a { color: var(--teal); text-underline-offset: 4px; overflow-wrap: anywhere; }
+
+.proposals { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; }
+.proposals article { padding: 22px; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
+.proposals h3 { margin: 10px 0 10px; font-size: 17px; font-weight: 600; line-height: 1.35; }
+.proposals p { margin: 0 0 14px; font-size: 13px; line-height: 1.7; }
+.proposals dl { margin: 0; display: grid; gap: 10px; }
+.proposals dt { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.proposals dd { margin: 2px 0 0; font-size: 12px; line-height: 1.6; }
+.page:lang(th) .proposals dt, .proposals:lang(th) dt { letter-spacing: 0; }
+
+.example { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; }
+.example article { padding: 22px; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
+.example h3 { margin: 4px 0 8px; font-size: 18px; font-weight: 600; }
+.example p { margin: 0 0 10px; font-size: 13px; line-height: 1.7; }
+.exampleScore { display: flex; align-items: baseline; gap: 6px; }
+.exampleScore b { font-size: 34px; font-weight: 600; line-height: 1; }
+.exampleScore span { color: var(--muted); font-size: 12px; }
+.attention { font-weight: 600; }
+.contrast { margin: 22px 0 14px; font-size: 16px; line-height: 1.6; font-weight: 600; max-width: 900px; }
+
+.plainNote { margin: 22px 0 0; font-size: 13px; line-height: 1.7; color: var(--muted); max-width: 900px; }
+.weightTest { margin-top: 26px; padding: 22px; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
+.weightTest h3 { margin: 0 0 10px; font-size: 17px; font-weight: 600; }
+.weightTest p { margin: 0 0 12px; font-size: 13px; line-height: 1.7; max-width: 900px; }
+.weightTest ul { margin: 0 0 14px; padding-left: 20px; display: grid; gap: 6px; }
+.weightTest li { font-size: 13px; line-height: 1.65; max-width: 880px; }
+
+.attentionList { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; }
+.attentionList li { padding: 18px; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
+.attentionList b { display: block; font-size: 26px; font-weight: 600; color: var(--teal); line-height: 1; margin-bottom: 10px; }
+.attentionList h3 { margin: 0 0 6px; font-size: 14px; font-weight: 600; line-height: 1.35; }
+.attentionList p { margin: 0; font-size: 12px; line-height: 1.6; color: var(--muted); }
+
+.questions { margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 34px; }
+.questions > div { padding: 16px 0; border-bottom: 1px solid var(--line); }
+.questions dt { font-size: 14px; font-weight: 600; line-height: 1.5; }
+.questions dd { margin: 4px 0 0; font-size: 13px; line-height: 1.65; color: var(--muted); }
+
+.reading { display: grid; gap: 26px; }
+.reading h3 { margin: 0 0 10px; font-size: 15px; font-weight: 600; }
+.reading ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.reading li { display: grid; gap: 3px; max-width: 940px; }
+.reading a { font-size: 13px; line-height: 1.55; color: var(--teal); text-underline-offset: 4px; overflow-wrap: anywhere; }
+.reading span { font-size: 12px; line-height: 1.6; color: var(--muted); }
+
+@media (max-width: 900px) {
+  .proposals, .example, .questions { grid-template-columns: 1fr; }
+  .attentionList { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .points article { flex-direction: column; gap: 8px; }
+}
+@media (max-width: 520px) {
+  .attentionList { grid-template-columns: 1fr; }
+  .contrast { font-size: 15px; }
+}

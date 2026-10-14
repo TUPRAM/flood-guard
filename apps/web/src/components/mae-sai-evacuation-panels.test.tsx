@@ -1,3 +1,5 @@
+// Since 12 Oct 2026 this suite reads the archived revision (r4) as a fixed dataset: its figures are the ones the plans and
+// wireframes were written with. The page serves r5; what it tests here is the logic, which does not depend on the revision.
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -9,7 +11,7 @@ import {
   hourlyStages,
   sizeChecks,
   smallestFloodedExtent,
-  TIMELINE_MANIFEST_URL,
+  ARCHIVE_1_MANIFEST_URL,
   type FacilityProps,
   type GeoCollection,
   type RoadProps,
@@ -71,7 +73,7 @@ import { TimelineLegend } from "./mae-sai-flood-timeline";
 const publicRoot = resolve(import.meta.dirname, "../../public");
 const publicFile = (href: string) => resolve(publicRoot, href.replace(/^\//, ""));
 const readJson = <T,>(href: string): T => JSON.parse(readFileSync(publicFile(href), "utf8")) as T;
-const manifest = readJson<TimelineManifest>(TIMELINE_MANIFEST_URL);
+const manifest = readJson<TimelineManifest>(ARCHIVE_1_MANIFEST_URL);
 const roads = readJson<GeoCollection<unknown, RoadProps>>(manifest.vectors.roads.href).features.map((feature) => feature.properties);
 const facilities = readJson<GeoCollection<unknown, FacilityProps>>(manifest.vectors.facilities.href).features.map((feature) => feature.properties);
 const names = Object.fromEntries(readJson<GeoCollection<unknown, TambonProps>>(manifest.vectors.tambons.href).features.map((feature) => [feature.properties.id, feature.properties]));

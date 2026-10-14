@@ -4,7 +4,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { resolve, sep } from "node:path";
 import {
   CASE_REPLAY_BUDGET_BYTES, CASE_REPLAY_ENVELOPE_FOLDER, CASE_REPLAY_EXPORT_BUDGET_BYTES, CASE_REPLAY_EXPORT_KEY, caseReplayBytes, caseReplayExportBytes,
-  manifestDirectory, readCaseReplayAssets, readCaseReplayExports, timelineManifestUrl,
+  archiveManifestUrl, manifestDirectory, readCaseReplayAssets, readCaseReplayExports, timelineManifestUrl,
 } from "./case-replay-inventory.mjs";
 
 const root = resolve(import.meta.dirname, "../../..");
@@ -49,14 +49,23 @@ const { manifest: timeline, assets: timelineFiles } = readCaseReplayAssets(publi
 const timelineAssets = timelineFiles.slice(1);
 // Precache budget: the manifest plus every file it lists must fit in 6.5 MB (throws when over).
 const timelineBytes = caseReplayBytes(timelineFiles, CASE_REPLAY_BUDGET_BYTES);
-// One revision ships: the study folder holds the served revision only, and that folder holds nothing the manifest
-// does not list (an unlisted file would ship without a hash and outside the budget).
+// Two revisions ship since 12 Oct 2026: the served one and the archive shown at /archive1/. The study folder holds
+// these two only, and the served folder holds nothing the manifest does not list (an unlisted file would ship without
+// a hash and outside the budget). The archive is checked against its own manifest below; it is never precached.
 const timelineDirectory = resolve(publicRoot, manifestDirectory(timelineUrl).slice(1));
 const timelineRevision = timelineDirectory.split(sep).at(-1);
-const timelineRevisions = readdirSync(resolve(timelineDirectory, ".."));
-if (timelineRevisions.length !== 1 || timelineRevisions[0] !== timelineRevision) {
-  throw new Error(`Exactly one Mae Sai timeline revision may ship (${timelineRevision}); found: ${timelineRevisions.join(", ")}`);
+const archiveUrl = archiveManifestUrl();
+const archiveRevision = manifestDirectory(archiveUrl).split("/").filter(Boolean).at(-1);
+const timelineRevisions = readdirSync(resolve(timelineDirectory, "..")).sort();
+if (JSON.stringify(timelineRevisions) !== JSON.stringify([archiveRevision, timelineRevision].sort())) {
+  throw new Error(`Only the served Mae Sai timeline revision (${timelineRevision}) and the archive (${archiveRevision}) may ship; found: ${timelineRevisions.join(", ")}`);
 }
+// Every file the archived manifest lists is on disk with the bytes and the hash it gives.
+const { manifest: archivedTimeline, assets: archiveFiles } = readCaseReplayAssets(publicRoot, archiveUrl);
+if (archivedTimeline.revision !== archiveRevision || archivedTimeline.revision === timeline.revision) {
+  throw new Error(`The archived replay manifest names revision ${archivedTimeline.revision}, not ${archiveRevision}.`);
+}
+if (archiveFiles.some((file) => file.url.startsWith(manifestDirectory(timelineUrl)))) throw new Error("The archived replay lists a file of the served revision.");
 const timelineBase = manifestDirectory(timelineUrl);
 const timelineListed = new Set(timelineFiles.map((file) => file.url.slice(timelineBase.length)));
 for (const entry of readdirSync(timelineDirectory, { withFileTypes: true })) {

@@ -69,6 +69,8 @@ const coreAssets = appProfile === "public-production"
   : [
       ...publicCoreAssets,
       "/policy/",
+      // The technical record behind the policy page: opened from it, so it is saved with it.
+      "/policy/technical/",
       // The Planning addresses since 7 Oct 2026 (decision log R24): the Command exercise replay (default) with its
       // file of invented exercise items, the planning overview, the older map workspace in Studio's archive, and
       // the three earlier addresses, which only forward. All open without a connection.
@@ -133,6 +135,7 @@ const versionedFiles = [
   resolve(out, "offline-demo", "mae-sai", "public-areas.json"),
   ...(appProfile === "competition" ? [
     resolve(out, "policy", "index.html"),
+    resolve(out, "policy", "technical", "index.html"),
     resolve(out, "command", "index.html"),
     resolve(out, "command", "ver2", "index.html"),
     resolve(out, "command", "archive", "index.html"),
@@ -294,6 +297,7 @@ function prunePublicProductionOutput() {
     "public-case-projections",
     "briefs",
     "public-cases",
+    "archive1",
     "planning-overlays",
     "exercises",
     "offline-demo/bundle.json",

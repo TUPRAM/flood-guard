@@ -126,25 +126,26 @@ def test_fixture_divides_by_the_residents_within_reach_before_the_flood() -> Non
             for lost, within, rate in ((row[2], reach["vulnerable"], row[4]), (row[3], reach["non_vulnerable"], row[5])):
                 assert lost <= within + 1e-6
                 assert rate == (None if within == 0 else round(lost / within, 4))
-    # Plan of 8 sites at the 3.5 m peak, all residents: 320 of 373 against 13,109 of 24,537, about 1.6 ("higher").
+    # Plan of 8 sites at the 3.5 m peak, all residents: 320 of 373 against 12,060 of 24,444, about 1.7 ("higher").
+    # (Replay revision r5; with r4 it was 13,109 of 24,537, about 1.6.)
     plan = by_key[("plan_8", "all")]
-    assert (round(plan["within_reach"]["vulnerable"]), round(plan["within_reach"]["non_vulnerable"])) == (373, 24537)
+    assert (round(plan["within_reach"]["vulnerable"]), round(plan["within_reach"]["non_vulnerable"])) == (373, 24444)
     assert (round(plan["totals"]["vulnerable"]), round(plan["totals"]["non_vulnerable"])) == (7152, 74647)
     row = plan["levels"][peak]
-    assert (round(row[2]), round(row[3])) == (320, 13109)
-    assert row[4:] == [0.8577, 0.5342, 1.606, "higher", "Vulnerable residents are 1.61 times more likely to lose access.", None]
+    assert (round(row[2]), round(row[3])) == (320, 12060)
+    assert row[4:] == [0.8577, 0.4934, 1.738, "higher", "Vulnerable residents are 1.74 times more likely to lose access.", None]
     # Reported 2024 set, all residents: none of the 2,440 proxy-vulnerable residents within reach lost access.
     reported = by_key[("reported_2024", "all")]
     assert round(reported["within_reach"]["vulnerable"]) == 2440
     assert (reported["levels"][peak][2], reported["levels"][peak][6], reported["levels"][peak][7]) == (0.0, 0.0, "lower")
-    # The default view (reported set, residents whose homes flood): 103 proxy-vulnerable residents counted, none of
+    # The default view (reported set, residents whose homes flood): 78 proxy-vulnerable residents counted (r5; 103 with r4), none of
     # them within reach of a reported site before the flood, so no ratio at any level.
     default = by_key[("reported_2024", "flooded")]
-    assert (default["within_reach"]["vulnerable"], round(default["totals"]["vulnerable"])) == (0.0, 103)
-    assert default["levels"][peak][4:] == [None, 0.9476, None, None, TOO_SMALL, "insufficient_group_denominator"]
-    # Among residents whose homes flood the default plan has 27 proxy-vulnerable residents within reach: too few.
+    assert (default["within_reach"]["vulnerable"], round(default["totals"]["vulnerable"])) == (0.0, 78)
+    assert default["levels"][peak][4:] == [None, 0.9429, None, None, TOO_SMALL, "insufficient_group_denominator"]
+    # Among residents whose homes flood the default plan has 4 proxy-vulnerable residents within reach (27 with r4): too few.
     wet_plan = by_key[("plan_8", "flooded")]
-    assert round(wet_plan["within_reach"]["vulnerable"]) == 27
+    assert round(wet_plan["within_reach"]["vulnerable"]) == 4
     assert wet_plan["levels"][peak][6:] == [None, None, TOO_SMALL, "insufficient_group_denominator"]
 
 
@@ -156,14 +157,15 @@ def test_fixture_holds_the_shelter_set_comparison_for_every_set_and_scope() -> N
     assert fixture["cutoff_coverage_share"] == 0.5
     by_key = {(group["set"], group["scope"]): group for group in groups}
     whole = lambda value: round(value)  # noqa: E731
-    # The eight figures of the roadmap critic at the 3.5 m peak (P2-4), recomputed by Python.
+    # The eight figures of the roadmap critic at the 3.5 m peak (P2-4), recomputed by Python on replay revision r5
+    # (with r4: 7,086 and 21%; 5,698 and 299; 24,910, 13,429 and 54%; 7,580 and 460).
     reported_all, reported_wet = by_key[("reported_2024", "all")], by_key[("reported_2024", "flooded")]
     plan_all, plan_wet = by_key[("plan_8", "all")], by_key[("plan_8", "flooded")]
     assert fixture["peak_stage_m"] == 3.5
-    assert (whole(reported_all["baseline"]), whole(reported_all["at_peak"]["lost"]), round(reported_all["at_peak"]["lost_share"] * 100)) == (34525, 7086, 21)
-    assert (whole(reported_wet["baseline"]), whole(reported_wet["at_peak"]["keeping"])) == (5698, 299)
-    assert (whole(plan_all["baseline"]), whole(plan_all["at_peak"]["lost"]), round(plan_all["at_peak"]["lost_share"] * 100)) == (24910, 13429, 54)
-    assert (whole(plan_wet["baseline"]), whole(plan_wet["at_peak"]["keeping"])) == (7580, 460)
+    assert (whole(reported_all["baseline"]), whole(reported_all["at_peak"]["lost"]), round(reported_all["at_peak"]["lost_share"] * 100)) == (34525, 6595, 19)
+    assert (whole(reported_wet["baseline"]), whole(reported_wet["at_peak"]["keeping"])) == (5340, 305)
+    assert (whole(plan_all["baseline"]), whole(plan_all["at_peak"]["lost"]), round(plan_all["at_peak"]["lost_share"] * 100)) == (24817, 12380, 50)
+    assert (whole(plan_wet["baseline"]), whole(plan_wet["at_peak"]["keeping"])) == (6440, 404)
     # Proxy-vulnerable residents lost: 0 of 2,440 with the reported set, 320 of 373 with the plan of 8.
     assert (whole(reported_all["at_peak"]["vulnerable_lost"]), whole(reported_all["vulnerable_baseline"])) == (0, 2440)
     assert (whole(plan_all["at_peak"]["vulnerable_lost"]), whole(plan_all["vulnerable_baseline"])) == (320, 373)

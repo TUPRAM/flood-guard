@@ -100,6 +100,7 @@ import shutil
 import sys
 import tempfile
 import zipfile
+from types import SimpleNamespace
 
 import numpy as np
 from PIL import Image
@@ -146,6 +147,7 @@ from floodguard.flood_timeline import (  # noqa: E402
     depth_factor,
 )
 import floodguard.replay_exports as replay_exports  # noqa: E402
+import floodguard.replay_river_fit as river_fit  # noqa: E402
 import floodguard.reported_depths as reported_depths  # noqa: E402
 import floodguard.shelter_validation as shelter_validation  # noqa: E402
 from floodguard.replay_manifest import (  # noqa: E402
@@ -174,8 +176,11 @@ import mae_sai_timeline_evacuation as evac  # noqa: E402
 import mae_sai_timeline_observations as obs  # noqa: E402
 import mae_sai_timeline_unosat4009 as unosat4009  # noqa: E402
 
-REVISION = "r4"
+REVISION = "r5"
 STUDY_ID = "mae-sai-2024-flood-timeline"
+# The G channel of the HAND raster holds the depth factor over this scale: a factor of 1 is byte 102. From revision r5 a
+# stretch fitted to the mud line can have a factor above 1 (plan replay_river_fit_plan_v1.md).
+DEPTH_FACTOR_BYTE_SCALE = 2.5
 OUT_REL = Path(f"apps/web/public/studies/mae-sai-2024-timeline/{REVISION}")
 RECEIPT_REL = Path(f"docs/mae_sai_timeline_{REVISION}_input_receipt.json")
 SCHEMA_REL = Path("packages/contracts/schemas/case-replay-timeline.schema.json")
@@ -295,8 +300,19 @@ def warp(src: np.ndarray, src_transform, src_crs, grid: Grid, resampling=Resampl
     return dst
 
 
-def hydrology(dem_paths: list[Path], work: Path) -> tuple[np.ndarray, np.ndarray, np.ndarray, Grid, np.ndarray, float, np.ndarray]:
-    """Return HAND (m), stream mask, conditioned DEM, the UTM grid, the depth factor k, the reference area and a
+def hydrology(dem_paths: list[Path], work: Path, rivers: list | None = None) -> SimpleNamespace:
+    """Route the flow and return what the flood model is made of.
+
+    ``rivers`` are mapped river lines in the UTM zone. When they are given they are cut ``RIVER_BURN_M`` into the
+    surface model **for the routing of flow only** (plan ``replay_river_fit_plan_v1.md``, section 3): the channels and
+    their upstream areas then follow the mapped rivers, while heights above a channel are still taken from the surface
+    model as it was. Without them the routing is the one of revision r4.
+
+    The namespace holds ``hand`` (m), ``streams``, ``conditioned`` (the surface model after filling), ``grid``, ``k``
+    (the depth factor from upstream area), ``reference_km2``, ``low_confidence``, ``drain`` (the flat index of the
+    channel cell each cell drains to) and ``area_km2`` (upstream area). The old description follows.
+
+    Return HAND (m), stream mask, conditioned DEM, the UTM grid, the depth factor k, the reference area and a
     low-confidence mask (filled depressions and flat-fallback cells)."""
     from pysheds.grid import Grid as ShedGrid
 
@@ -319,7 +335,19 @@ def hydrology(dem_paths: list[Path], work: Path) -> tuple[np.ndarray, np.ndarray
     sg = ShedGrid.from_raster(str(tmp))
     raw = sg.read_raster(str(tmp))
     inflated = sg.resolve_flats(sg.fill_depressions(sg.fill_pits(raw)))
-    fdir = sg.flowdir(inflated)
+    routing = inflated
+    if rivers:
+        from rasterio import features
+
+        river_cells = features.rasterize(((geometry, 1) for geometry in rivers), out_shape=grid.shape, transform=grid.transform,
+                                         fill=0, all_touched=True, dtype="uint8") > 0
+        burned = np.where(river_cells & (dem_utm > -9000), dem_utm - river_fit.RIVER_BURN_M, dem_utm).astype(np.float32)
+        tmp_burned = work / "dem_utm30_rivers.tif"
+        with rasterio.open(tmp_burned, "w", driver="GTiff", width=grid.width, height=grid.height, count=1, dtype="float32",
+                           crs=UTM, transform=grid.transform, nodata=-9999.0) as dst:
+            dst.write(burned, 1)
+        routing = sg.resolve_flats(sg.fill_depressions(sg.fill_pits(sg.read_raster(str(tmp_burned)))))
+    fdir = sg.flowdir(routing)
     acc = sg.accumulation(fdir)
     area_km2 = np.asarray(acc) * (HYDRO_RES**2) / 1e6
     stream_raster = acc * (HYDRO_RES**2) / 1e6 >= STREAM_THRESHOLD_KM2  # Keeps the pysheds Raster type.
@@ -354,7 +382,94 @@ def hydrology(dem_paths: list[Path], work: Path) -> tuple[np.ndarray, np.ndarray
     filled = (conditioned - np.asarray(raw, dtype=np.float32)) > LOW_CONFIDENCE_FILL_M
     near_zero = np.isfinite(hand) & (hand < LOW_CONFIDENCE_HAND_M)
     low_confidence = ((filled | missing) & near_zero) & ~nodata
-    return hand, streams, conditioned, grid, k.astype(np.float32), reference_km2, low_confidence
+    return SimpleNamespace(hand=hand, streams=streams, conditioned=conditioned, grid=grid, k=k.astype(np.float32),
+                           reference_km2=reference_km2, low_confidence=low_confidence, drain=drain, area_km2=area_km2)
+
+
+def s2_band(scene_dir: Path, name: str, grid: Grid, track: Track = untracked, classes: bool = False) -> np.ndarray:
+    """One Sentinel-2 band on a grid: reflectance, or the scene classification unchanged when ``classes`` is set."""
+    with rasterio.open(track(scene_dir / f"{name}.tif")) as src:
+        aoi = transform_bounds(grid.crs, src.crs, *grid.bounds, densify_pts=21)
+        win = window_from_bounds(*aoi, transform=src.transform).round_offsets().round_lengths()
+        win = Window(win.col_off - 8, win.row_off - 8, win.width + 16, win.height + 16)
+        dn = src.read(1, window=win)
+        if classes:
+            return np.nan_to_num(warp(dn.astype(np.float32), src.window_transform(win), src.crs, grid, Resampling.nearest), nan=0.0)
+        return np.nan_to_num(warp(sentinel2_l2a_reflectance(dn), src.window_transform(win), src.crs, grid), nan=0.0)
+
+
+def mud_line_fit(hydro: SimpleNamespace, external: Path, peak_stage: float, track: Track = untracked) -> tuple[np.ndarray, dict]:
+    """Fit the peak level of each stretch of channel to the mud line of the 15 Sep Sentinel-2 scene.
+
+    Plan ``docs/proposal_execution/replay_river_fit_plan_v1.md`` as amended on 12 Oct 2026: the published routing is
+    kept, a stretch with enough evidence gets the level that 90 percent of its evidence lies below, and every other
+    stretch keeps the rule of upstream area. Returns the depth factor of every cell of the hydrology grid (the level
+    of its stretch over the peak level at the Sai bridges; above 1 where the mud line lies higher) and the record
+    that goes into the manifest, with the figures of the held-back squares.
+    """
+    aoi = Grid(UTM, AOI_UTM, AOI_RES)
+    scenes = {key: external / "earth_search/mae_sai_2024" / S2_SCENES[key][0] for key in (S2_CHECK_PRE, S2_CHECK_EVENT)}
+    before = {name: s2_band(scenes[S2_CHECK_PRE], name, aoi, track) for name in ("red", "nir")}
+    before["scl"] = s2_band(scenes[S2_CHECK_PRE], "scl", aoi, track, classes=True)
+    after = {name: s2_band(scenes[S2_CHECK_EVENT], name, aoi, track) for name in ("red", "green", "blue", "nir", "swir16")}
+    after["scl"] = s2_band(scenes[S2_CHECK_EVENT], "scl", aoi, track, classes=True)
+    judged10, evidence10 = river_fit.flood_evidence(before, after)
+
+    def on_hydro(mask: np.ndarray) -> np.ndarray:
+        return np.nan_to_num(warp(mask.astype(np.float32), aoi.transform, UTM, hydro.grid, Resampling.average), nan=0.0)
+
+    judged = on_hydro(judged10) >= 0.5
+    evidence = (on_hydro(evidence10) >= 0.5) & judged
+    inside = on_hydro(np.ones(aoi.shape, dtype=np.float32)) >= 0.999
+    area_k = np.clip(np.nan_to_num(hydro.k, nan=1.0), 0.01, 1.0)
+    fallback = np.where(hydro.streams, peak_stage * area_k, 0.0)
+    held = river_fit.chessboard(*hydro.hand.shape, HYDRO_RES)
+    fit = river_fit.fit_levels(hydro.hand, hydro.drain, hydro.streams, evidence, fallback, HYDRO_RES)
+    split = river_fit.fit_levels(hydro.hand, hydro.drain, hydro.streams, evidence, fallback, HYDRO_RES, use=~held)
+
+    def wet(level: np.ndarray) -> np.ndarray:
+        with np.errstate(invalid="ignore"):
+            return np.isfinite(hydro.hand) & ~hydro.streams & (hydro.hand < level)
+
+    published = wet(peak_stage * area_k)
+    drains_to_held = np.where(hydro.drain >= 0, held.ravel()[np.clip(hydro.drain, 0, None)], False).reshape(held.shape)
+    km2 = HYDRO_RES**2 / 1e6
+    fitted_here = fit["fitted"] & inside
+    levels = fit["channel_level"][fitted_here]
+    record = {
+        "plan": "docs/proposal_execution/replay_river_fit_plan_v1.md",
+        "fitted_to": {"scene": S2_SCENES[S2_CHECK_EVENT][0], "source_timestamp": S2_SCENES[S2_CHECK_EVENT][1],
+                      "compared_with": {"scene": S2_SCENES[S2_CHECK_PRE][0], "source_timestamp": S2_SCENES[S2_CHECK_PRE][1]}},
+        "evidence_rule": (f"A cell is judged when it is clear on both dates (scene classification {list(river_fit.CLEAR_CLASSES)}) and green on the "
+                          f"first (NDVI of {river_fit.GREEN_BEFORE_NDVI} or more). It is evidence when it is judged and on the second date either brown "
+                          f"without plants (NDVI of {river_fit.BARE_AFTER_NDVI} or less, red above {river_fit.RED_OVER_GREEN} times green and above "
+                          f"{river_fit.RED_OVER_BLUE} times blue) or still wet (MNDWI above {river_fit.WET_MNDWI:g})."),
+        "level_rule": (f"A stretch is every channel cell within {river_fit.STRETCH_RADIUS_M:g} m. With {river_fit.MIN_EVIDENCE_CELLS} or more evidence cells "
+                       f"of {HYDRO_RES:g} m its peak level is the height above the channel that {river_fit.COVERED_SHARE:.0%} of its evidence lies below, "
+                       f"at most {river_fit.MAX_LEVEL_M:g} m, averaged along the channel over {river_fit.SMOOTH_RADIUS_M:g} m. A stretch with less "
+                       "evidence keeps the rule of upstream area. On the other days every stretch rises and falls in step with the level at the Sai bridges."),
+        "routing": "As in revision r4. Cutting the mapped rivers into the surface model was tried and dropped: the flood also ran through the middle of the plain.",
+        "judged_km2": round(float((judged & inside).sum()) * km2, 1),
+        "evidence_km2": round(float((evidence & inside).sum()) * km2, 1),
+        "channel_cells": int((hydro.streams & inside).sum()),
+        "channel_cells_fitted": int(fitted_here.sum()),
+        "fitted_level_m": {name: round(float(value), 2) for name, value in zip(("p05", "p25", "p50", "p75", "p95"), np.percentile(levels, [5, 25, 50, 75, 95]))},
+        "share_of_fitted_stretches_above_the_level_at_the_bridges": round(float((levels > peak_stage + 0.05).mean()), 3),
+        "replay_area": {"model_before_the_fit": river_fit.shares(evidence, judged, published, inside, km2),
+                        "fitted_model": river_fit.shares(evidence, judged, wet(fit["level"]), inside, km2)},
+        "held_back_squares": {
+            "what": (f"Squares of {river_fit.SQUARE_M:g} m alternating like a chessboard. The model is fitted on the evidence of the other squares only "
+                     "and read on the cells that drain to a held-back square."),
+            "model_before_the_fit": river_fit.shares(evidence, judged, published, inside & drains_to_held, km2),
+            "fitted_on_the_other_squares": river_fit.shares(evidence, judged, wet(split["level"]), inside & drains_to_held, km2),
+            "reading": ("The fitted levels do not carry over to a stretch that has no evidence of its own: on the held-back squares the fit covers "
+                        "less of the evidence than the model before it. The plan said the earlier model would stay in that case; the owner chose "
+                        "the fitted one on 12 Oct 2026 and the plan records why."),
+        },
+        "label": "fitted to the image; not an independent check, not a forecast",
+    }
+    factor = np.where(np.isfinite(fit["level"]), fit["level"] / peak_stage, hydro.k)
+    return factor.astype(np.float32), record
 
 
 def hillshade(dem: np.ndarray, res: float, azimuth: float = 315.0, altitude: float = 45.0) -> np.ndarray:
@@ -542,15 +657,19 @@ def build(external: Path, out_dir: Path, track: Track = untracked) -> dict:
 
     # --- Hydrology and HAND -------------------------------------------------------------
     with tempfile.TemporaryDirectory() as tmp:
-        hand30, streams30, dem30, hgrid, k30, reference_km2, lowconf30 = hydrology(
-            [track(external / "open_context/copernicus_dem_glo30" / tile) for tile in DEM_TILES], Path(tmp))
+        hydro = hydrology([track(external / "open_context/copernicus_dem_glo30" / tile) for tile in DEM_TILES], Path(tmp))
+    hand30, streams30, dem30, hgrid, reference_km2, lowconf30 = (
+        hydro.hand, hydro.streams, hydro.conditioned, hydro.grid, hydro.reference_km2, hydro.low_confidence)
+    peak_level = max(k.stage_m for k in KEYFRAMES)
+    k30, river_fit_record = mud_line_fit(hydro, external, peak_level, track)
+    factor_max = river_fit.MAX_LEVEL_M / peak_level
 
     def hand_codes(grid: Grid) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         hand = warp(np.nan_to_num(hand30, nan=-1), hgrid.transform, UTM, grid, Resampling.bilinear, src_nodata=-1)
         kk = warp(np.nan_to_num(k30, nan=-1), hgrid.transform, UTM, grid, Resampling.nearest, src_nodata=-1)
         chan = warp(streams30.astype(np.float32), hgrid.transform, UTM, grid, Resampling.nearest) > 0.5
         valid = np.isfinite(hand) & np.isfinite(kk)
-        kk = np.where(valid, np.clip(kk, 0.01, 1.0), 1.0)
+        kk = np.where(valid, np.clip(kk, 0.01, factor_max), 1.0)
         effective = np.where(valid, hand / kk, 1e6)
         return encode_hand(effective, chan, valid), valid, kk.astype(np.float32)
 
@@ -559,7 +678,7 @@ def build(external: Path, out_dir: Path, track: Track = untracked) -> dict:
     lowconf_display = warp(lowconf30.astype(np.float32), hgrid.transform, UTM, water, Resampling.nearest) > 0.5
     lowconf_aoi = warp(lowconf30.astype(np.float32), hgrid.transform, UTM, aoi, Resampling.nearest) > 0.5
     buf = tempfile.SpooledTemporaryFile()
-    k_u8 = np.clip(np.rint(k_display * 255), 1, 255).astype(np.uint8)
+    k_u8 = np.clip(np.rint(k_display / DEPTH_FACTOR_BYTE_SCALE * 255), 1, 255).astype(np.uint8)
     b_u8 = np.where(lowconf_display & (codes_display != NEVER_CODE), 255, 0).astype(np.uint8)
     Image.fromarray(np.dstack([codes_display, k_u8, b_u8]), mode="RGB").save(buf, "PNG", optimize=True)
     buf.seek(0)
@@ -568,7 +687,10 @@ def build(external: Path, out_dir: Path, track: Track = untracked) -> dict:
                        low_confidence={"rule": f"B = 255 where the terrain was raised by more than {LOW_CONFIDENCE_FILL_M} m when filling pits (or needed the flat-area routing fallback) and ends up less than {LOW_CONFIDENCE_HAND_M} m above its channel",
                                        "meaning": "Dead-flat or filled low ground in the elevation model: HAND ~ 0, so it reads as wet at almost any stage. Real low paddies or ponds are possible, but so are elevation artefacts."},
                        depth_factor={"exponent": 0.3, "floor": 0.35, "reference_km2": round(reference_km2, 1),
-                                     "reference": "Sai River main stem at the Mae Sai border bridges"})
+                                     "reference": "Sai River main stem at the Mae Sai border bridges",
+                                     "byte_scale": DEPTH_FACTOR_BYTE_SCALE, "max": round(factor_max, 4),
+                                     "fitted": "Where a stretch of channel has enough evidence on the 15 Sep 2024 Sentinel-2 scene, the factor is its "
+                                               "fitted peak level over the peak level at the reference; elsewhere it follows upstream area."})
 
     dem_aoi = warp(dem30, hgrid.transform, UTM, aoi, Resampling.bilinear)
     shade = hillshade(dem_aoi, AOI_RES)
@@ -870,7 +992,7 @@ def build(external: Path, out_dir: Path, track: Track = untracked) -> dict:
     north, east = to_ll_3857(display.bounds[2], display.bounds[3])
     return {"reported_depths": depths_block, "rights_4009": rights_status(rights), "season_envelope_data": {"figures": envelope_data, "rights": rights,
                                                                           "raster_cell_m": water.res / MERCATOR_SCALE},
-            "layers": layers, "hand": hand_record, "vectors": vectors, "days": days, "histograms": histograms,
+            "layers": layers, "hand": hand_record, "river_fit": river_fit_record, "vectors": vectors, "days": days, "histograms": histograms,
             "bounds": [[south, west], [north, east]], "display": {"width": display.width, "height": display.height},
             "s1_meta": s1_meta, "s1_anchor": anchor, "coverage": coverage,
             "reported_meta": {k: reported_doc.get(k) for k in ("status", "compiled", "access_set_rule", "licence_note")},
@@ -1189,10 +1311,10 @@ ASSUMPTIONS = [
     "Roads are impassable when reconstructed depth reaches 0.3 m at any 10 m sample along a 120 m piece (per-sample depth factor; the exported k makes h + 0.3/k equal the earliest sample closure); river-channel samples on bridges are ignored.",
     "Bridge decks are not modelled: a bridge's road state reflects the ground at its approaches and beside it, so a raised deck can stay passable while the model shows the way impassable. Read a bridge's impassable hours as unknown.",
     "Road pieces whose lowest HAND exceeds 4 m never flood under these keyframes and are omitted, except trunk, primary and secondary roads.",
-    ("The recession keyframes were re-tuned to the 16 September 06:16 ICT Sentinel-1 pass (best-fit stage 0.10 m), so that radar comparison is "
+    ("The recession keyframes were re-tuned to the 16 September 06:16 ICT Sentinel-1 pass (best-fit stage 0.10 m with the model of that time; with the fitted depth factor of revision r5 the same-track pair still fits best at 0.10 m and the cross-track pair at 0.15 m, and the keyframes were not changed again), so that radar comparison is "
      "calibration-informed, not an independent check. It constrains the size of the late-recession extent only. The comparison pairs that pass "
      "with the 4 September 06:16 ICT pass of the same track (descending, relative orbit 135); the pairing with the 6 September ascending pass "
-     "(a different orbit direction), which the keyframes were tuned with, is kept as a sensitivity and gives the same best-fit stage."),
+     "(a different orbit direction), which the keyframes were tuned with, is kept as a sensitivity; with the model of revision r5 it fits best at 0.15 m."),
     "The onset is shaped by GISTDA's RADARSAT-2 figure for 10 Sep 18:15 (about 9.9 km2 flooded in Mae Sai) and reports of an overnight surge; the 11 Sep 02:00 knot (2.5 m) is illustrative. The model's smallest non-zero extent (flat land within 5 cm of channel level) already exceeds 9.9 km2, so the 18:15 knot is set to the closest level (0.1 m).",
     "Cells that drain off the hydrology domain before meeting a mapped channel use their outlet on the domain edge as the HAND reference (the edge lies outside the replay area).",
     "Where flow routing leaves no path to a channel (large flats), HAND falls back to height above the nearest channel cell.",
@@ -1254,10 +1376,12 @@ GENERATED_AT_NOTES = {
     "declared": "Declared with --generated-at when the revision was baked and recorded in the input receipt. It is not read from the machine clock, so --verify rebuilds the same bytes.",
     "newest_input_timestamp": "No bake time was declared: this is the newest dated input, not the time the files were written. It is not read from the machine clock, so --verify rebuilds the same bytes.",
 }
-S1_BEST_FIT_STAGE_M = 0.10  # Stated in the assumptions and the disclosure; compose_manifest refuses to write another value.
+S1_SENSITIVITY_BEST_FIT_STAGE_M = 0.15  # The cross-track pair, kept as a sensitivity, with the model of revision r5 (0.10 m before it).
+S1_BEST_FIT_STAGE_M = 0.10  # The same-track pair. Stated in the assumptions and the disclosure; compose_manifest refuses to write another value.
 S1_ANCHOR_USE = ("Calibration-informed, not an independent check: the recession keyframes were re-tuned to the 16 Sep pass (best-fit stage "
-                 "0.10 m, found with the cross-track pair now kept as a sensitivity; the same-track pair gives the same stage). It constrains "
-                 "size only, not location.")
+                 "0.10 m with the model of that time, found with the cross-track pair now kept as a sensitivity; with the fitted depth factor "
+                 "of revision r5 the same-track pair still fits best at 0.10 m and the cross-track pair at 0.15 m, and the keyframes were not changed "
+                 "again). It constrains size only, not location.")
 
 EXPLORATORY_KNOWLEDGE = {
     "purpose": "Which external figures were used, or already known, while the stage keyframes and the depth factor were set. A figure used or known during tuning cannot serve as an independent check.",
@@ -1265,24 +1389,28 @@ EXPLORATORY_KNOWLEDGE = {
         {"id": "gistda-radarsat2-20240910", "relation": "used_for_tuning", "known_during_tuning": True,
          "statement": "GISTDA's RADARSAT-2 figure for 10 Sep 18:15 (9.9 km2 flooded in Mae Sai) was used on purpose to set the onset stage knot (10 Sep 18:15, 0.1 m)."},
         {"id": "sentinel-1-20240916", "relation": "used_for_tuning", "known_during_tuning": True,
-         "statement": ("The Sentinel-1 pass of 16 Sep 06:16 ICT was used to re-tune the recession keyframes (best-fit stage 0.10 m), so the radar "
+         "statement": ("The Sentinel-1 pass of 16 Sep 06:16 ICT was used to re-tune the recession keyframes (best-fit stage 0.10 m with the model of that time; with the fitted depth factor of revision r5 the same-track pair still fits best at 0.10 m and the cross-track pair at 0.15 m, and the keyframes were not changed again), so the radar "
                        "size comparison is calibration-informed, not an independent check. The tuning paired it with the 6 Sep ascending pass; "
-                       "the same-track pairing with the 4 Sep pass, added on 3 Oct 2026, gives the same best-fit stage.")},
+                       "the same-track pairing with the 4 Sep pass, added on 3 Oct 2026, gave the same best-fit stage with the model of that time.")},
         {"id": "unosat-3991", "relation": "known_during_tuning", "known_during_tuning": True,
          "statement": "UNOSAT 3991 (about 70 km2 over 13-19 Sep) was known while the stage keyframes were tuned, so its size comparison is calibration-informed, not independent."},
         {"id": "viirs-daily", "relation": "not_used_for_tuning", "known_during_tuning": None,
          "statement": ("The VIIRS daily comparison was not used for tuning. It was first computed in the change of 29 Sep 2026 (commit 129ff03) "
                        "that also moved the 10 Sep 18:15 knot from 0.12 m to 0.1 m, the model's closest level to GISTDA's figure. The build "
                        "history does not record which came first within that change, so the comparison is not presented as an independent check.")},
-        {"id": "unosat-4009", "relation": "computed_after_keyframes_final", "known_during_tuning": False,
-         "statement": ("The comparison with UNOSAT/GISTDA product 4009 was computed after the keyframes were final and was not used for tuning. "
-                       "Recorded rule: no keyframe or elevation change is tuned to product 4009 afterwards; if one is, the comparison is "
-                       "relabelled as calibration.")},
-        {"id": "sentinel-2-water-check", "relation": "computed_after_keyframes_final", "known_during_tuning": False,
-         "statement": ("The Sentinel-2 water check (MNDWI on the 5 Sep and 15 Sep scenes) was computed after the keyframes were final and was not "
-                       "used for tuning: the last keyframe change is commit 129ff03 of 29 Sep 2026, and the check entered the bake on 2 Oct 2026. "
-                       "The two true-colour images have been on the page since the first revision, so they were seen while the keyframes were "
-                       "set, but no water area had been derived from them.")},
+        {"id": "unosat-4009", "relation": "known_during_tuning", "known_during_tuning": True,
+         "statement": ("The comparison with UNOSAT/GISTDA product 4009 was computed after the keyframes were final and no level is fitted to "
+                       "it. It was known on 12 Oct 2026 when the fitted model of revision r5 was chosen over the earlier one, and it was one "
+                       "of the reasons for that choice, so from revision r5 it is calibration-informed, not an independent check.")},
+        {"id": "sentinel-2-mud-line", "relation": "used_for_tuning", "known_during_tuning": True,
+         "statement": ("From revision r5 (12 Oct 2026) the peak level of each stretch of channel is fitted to the ground that turned to mud or "
+                       "stayed wet between the Sentinel-2 scenes of 5 Sep and 15 Sep 2024. The modelled peak follows that image where the image "
+                       "sees, so no comparison with it is an independent check. Fitted on half of the area, the levels did not carry over to "
+                       "the other half; the figures are in river_fit.")},
+        {"id": "sentinel-2-water-check", "relation": "used_for_tuning", "known_during_tuning": True,
+         "statement": ("The Sentinel-2 water check (MNDWI on the 5 Sep and 15 Sep scenes) entered the bake on 2 Oct 2026, after the keyframes "
+                       "were final, and was not used for tuning until revision r5. From revision r5 (12 Oct 2026) the depth factor is fitted to "
+                       "the same two scenes, so the check is calibration-informed, not an independent check.")},
         {"id": "reported-depths-2024", "relation": "computed_after_keyframes_final", "known_during_tuning": False,
          "statement": ("The reported depths (news reports of 10-13 Sep 2024 at named places, compiled on 3 Oct 2026) and their consistency "
                        "check were computed after the keyframes were final (the last keyframe change is commit 129ff03 of 29 Sep 2026) and "
@@ -1291,9 +1419,12 @@ EXPLORATORY_KNOWLEDGE = {
                        "reported depths are never used to tune the model.")},
     ],
     "depth_factor": (f"The depth factor k = clip((A / A_Sai) ** {DEPTH_FACTOR_EXPONENT}, {DEPTH_FACTOR_FLOOR}, 1) was added on 28 Sep 2026, when the GISTDA and "
-                     "UNOSAT 3991 figures were already known. Its exponent and floor follow a hydraulic-geometry rule of thumb; the build history records no fit to an external figure."),
-    "rule": ("No keyframe, depth-factor or terrain change may be tuned to VIIRS, the Sentinel-2 water check or product 4009 from here on; if "
-             "one is, that comparison is relabelled calibration-informed. The reported depths (news, not surveyed) are never used to tune "
+                     "UNOSAT 3991 figures were already known. Its exponent and floor follow a hydraulic-geometry rule of thumb; the build history records no fit to an external figure. "
+                     "From revision r5 (12 Oct 2026) the factor of a stretch of channel with enough evidence is its peak level fitted to the mud line of the 15 Sep 2024 "
+                     "Sentinel-2 scene, over the peak level at the Sai bridges; it can exceed 1."),
+    "rule": ("No keyframe, depth-factor or terrain change may be tuned to VIIRS or to product 4009; if one is, that comparison is relabelled "
+             "calibration-informed. The depth factor is fitted to the Sentinel-2 scenes from revision r5, and the Sentinel-2 water check and "
+             "the comparison with product 4009 are relabelled accordingly. The reported depths (news, not surveyed) are never used to tune "
              "the model."),
 }
 
@@ -1577,10 +1708,14 @@ def evidence_blocks(result: dict) -> list[dict]:
     imagery = {"lane": "OBS", "evidence_tier": "Observed image, shown as acquired; no flood extent is derived from it"}
     blocks = [
         {"id": "water_reconstruction", **scenario, "temporal_relation": "event_window_reconstruction",
-         "covers": ["hand", "impassable_depth_m", "pixel_area_m2", "stage_anchors", "tambon_coverage", "model_coverage", "tambon_histograms", "days",
+         "covers": ["hand", "river_fit", "impassable_depth_m", "pixel_area_m2", "stage_anchors", "tambon_coverage", "model_coverage", "tambon_histograms", "days",
                     "facilities_count", "roads_not_modelled_km", "vectors.roads", "vectors.facilities"],
-         "source_timestamp": f"Copernicus DEM (2011-2015 acquisitions); OSM roads and facilities {OSM_EXTRACT_DATE}; illustrative stage keyframes for 2024-09-09/2024-09-19 ICT",
-         "note": "HAND threshold reconstruction with illustrative stage keyframes: modelled water, road and facility impacts; not an observation."},
+         "source_timestamp": (f"Copernicus DEM (2011-2015 acquisitions); OSM roads and facilities {OSM_EXTRACT_DATE}; illustrative stage keyframes for "
+                              f"2024-09-09/2024-09-19 ICT; peak levels fitted to the Sentinel-2 scenes of {S2_CHECK_PAIR}"),
+         "note": ("HAND threshold reconstruction with illustrative stage keyframes: modelled water, road and facility impacts; not an observation. "
+                  "From revision r5 the peak level of each stretch of channel with enough evidence is fitted to the ground that turned to mud "
+                  "or stayed wet between the two Sentinel-2 scenes (river_fit); the modelled peak follows that image where the image sees, "
+                  "and the fitted levels did not carry over to the squares that were held back.")},
         {"id": "residents_in_water", **scenario, "temporal_relation": "static_context", "covers": ["population"],
          "source_timestamp": "WorldPop 2020 estimate",
          "note": "Modelled 2020 residents on the reconstructed water; not the 2024 population."},
@@ -1702,9 +1837,9 @@ def compose_manifest(result: dict, inputs: list[dict] | None = None, generated_a
     time; without it the newest dated input is used, never the machine clock.
     """
     anchor = result["s1_anchor"]
-    for fit in (anchor, *anchor.get("sensitivity", ())):
-        if round(fit["best_fit_stage_m"], 2) != S1_BEST_FIT_STAGE_M:
-            raise ReplayManifestError(f"the disclosure states a Sentinel-1 best-fit stage of {S1_BEST_FIT_STAGE_M:.2f} m, but this bake found {fit['best_fit_stage_m']} m")
+    for fit, stated in ((anchor, S1_BEST_FIT_STAGE_M), *((other, S1_SENSITIVITY_BEST_FIT_STAGE_M) for other in anchor.get("sensitivity", ()))):
+        if round(fit["best_fit_stage_m"], 2) != stated:
+            raise ReplayManifestError(f"the disclosure states a Sentinel-1 best-fit stage of {stated:.2f} m, but this bake found {fit['best_fit_stage_m']} m")
     stamp, basis = generated_stamp(result, generated_at)
     conducted = check_conducted(result["shelters"]["verification"])
     # The span starts at the earliest dated observation the replay uses: the same-track radar pass of 3 Sep 23:16 UTC.
@@ -1815,6 +1950,7 @@ def compose_manifest(result: dict, inputs: list[dict] | None = None, generated_a
             "days": result["viirs_days"],
         },
         **({"s2_crosscheck": s2_crosscheck_block(result["s2_check"], result["viirs_days"])} if "s2_check" in result else {}),
+        "river_fit": result["river_fit"],
         **({"reported_depths": result["reported_depths"]} if "reported_depths" in result else {}),
         "rainfall": {**result["rainfall"], "source": "HII ThaiWater open data, hourly rain gauges",
                      "source_url": "https://tiservice.hii.or.th/opendata/", "licence": "CC BY-NC (per the HII open-data catalogue)",
@@ -1970,6 +2106,7 @@ BAKE_SOURCES = (
     "src/floodguard/flood_timeline.py",
     "src/floodguard/optical_water_check.py",
     "src/floodguard/replay_exports.py",
+    "src/floodguard/replay_river_fit.py",
     "src/floodguard/replay_manifest.py",
     "src/floodguard/reported_depths.py",
     "src/floodguard/rights_basis.py",

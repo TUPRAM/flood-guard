@@ -72,7 +72,7 @@ describe("policy mentoring brief", () => {
     // The caveat: r2 reconstruction and its coverage, the pre-D4 anchors with each difference, and pre-v1b.
     const caveat = plain(elementAt(card, card.lastIndexOf("<div", card.indexOf('data-testid="worked-example-caveat"')), "ul"));
     expect(caveat).toContain("Computed on r2, which modelled 96.3% of the district (294.4 of 305.6 km²)");
-    expect(caveat).toContain("r4, the current replay, covers 100%");
+    expect(caveat).toContain("r5, the current replay, covers 100%");
     expect(caveat).toContain("replay_fpps_anchor_v1");
     expect(caveat).toContain("flood saturates at 0.25 instead of 0.20");
     expect(caveat).toContain("exposure mixes a share with a 5,000-person headcount instead of using the share only");
@@ -170,14 +170,14 @@ describe("policy mentoring brief", () => {
     expect(access).toContain("no single number makes one set better");
   });
 
-  it("links the current r4 replay with its tier and calibration roles", () => {
+  it("links the current r5 replay with its tier and calibration roles", () => {
     const link = elementAt(html, html.lastIndexOf("<div", html.indexOf('data-testid="replay-link"')), "div");
     expect(link).toContain(`href="${MAE_SAI_REPLAY_ROUTE}"`);
     const line = plain(link);
     expect(line).toContain("T1 scenario model with 100% district coverage");
     expect(line).toContain("VIIRS");
     expect(line).toContain("GISTDA’s 10 Sep flooded-area figure (about 9.9 km²) sets a stage knot, so it is a calibration anchor");
-    expect(line).toContain("Current replay (r4):");
+    expect(line).toContain("Current replay (r5):");
     expect(line).toContain("the UNOSAT 3991 size check is calibration-informed, not independent (R1)");
     expect(line).toContain("The 16 Sep Sentinel-1 radar pass was used to tune the recession, so that size comparison is calibration-informed too.");
     expect(line).not.toContain("10 Sep map");
@@ -404,6 +404,6 @@ describe("POLICY_EVIDENCE status flags", () => {
     expect([coverage.modelledKm2, coverage.districtKm2]).toEqual([294.4, 305.6]);
     expect(POLICY_EVIDENCE.reconstructionCoverageShare).toBeCloseTo(coverage.modelledKm2 / coverage.districtKm2, 3);
     expect(POLICY_EVIDENCE.reconstructionCoverageShare).toBeLessThan(1);
-    expect(POLICY_EVIDENCE.currentReplay).toMatchObject({ route: MAE_SAI_REPLAY_ROUTE, revision: "r4", coverageShare: 1, computesFpps: false });
+    expect(POLICY_EVIDENCE.currentReplay).toMatchObject({ route: MAE_SAI_REPLAY_ROUTE, revision: "r5", coverageShare: 1, computesFpps: false });
   });
 });

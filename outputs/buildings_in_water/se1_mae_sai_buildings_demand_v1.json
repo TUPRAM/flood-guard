@@ -1,0 +1,1637 @@
+{
+ "schema": "floodguard.buildings_in_water.buildings_demand_run.v1",
+ "generated_at_utc": "2026-10-11T14:29:33Z",
+ "source_timestamp": "2024-08-01/2024-10-12",
+ "source_timestamps": {
+  "flood_input": "2024-08-01/2024-10-12",
+  "population_year_represented": 2020,
+  "building_outlines": "file of 26 August 2024, images of earlier years"
+ },
+ "confidence_class": "low",
+ "confidence_basis": "An ensemble of planning classes from modelled access on OpenStreetMap roads, modelled resident and age counts, and closures assumed from a flood input that FloodGuard did not check against the ground or against an independent source. Every cell is the same modelled chain with another declared choice; the spread across the cells says how far the result depends on those choices and nothing about its distance from what happened. This line is the confidence of the run as evidence; the confidence class of each unit under rule v1 is in the results.",
+ "operational_status": "non_operational",
+ "official_warning": false,
+ "can_feed_decision_layer": false,
+ "label": "scenario, not an observation",
+ "plan": {
+  "path": "docs/proposal_execution/buildings_in_water_plan_v1.md",
+  "section": 7,
+  "sha256": "3c338ccf5c88f9458c1d6c776d8cb11f1e304b9b386f4a367bf63cc01da3d6b1"
+ },
+ "what_this_is": "Case SE1 with the residents of each tambon spread evenly over the buildings of that tambon, beside the same case with the population grid of 2020: the need mix, and the 90 cells of the uncertainty ensemble. Report-only.",
+ "not_of_record": "This is not a registered run. The published result file, the registered receipts and the run register are unchanged, and the classes of record are those of the published result.",
+ "case_id": "SE1",
+ "frame_set": "mae_sai",
+ "level": "public",
+ "protocol_sha256": {
+  "planning_protocol_v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+  "planning_protocol_v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+ },
+ "demand": {
+  "rule": "The residents of each tambon, as the 2020 grid counts them, spread evenly over the buildings of the tambon; a building belongs to the cell whose centre is nearest, within 75 m; a cell without a building holds nobody.",
+  "outlines": {
+   "path": "outputs/buildings_in_water/outlines_v1.json",
+   "sha256": "80d833bac95fac70560bcf5efbec8d25f4c041a85f0a27cb7fbab7a0298bf09e"
+  },
+  "buildings_in_a_cell_of_the_district": 88942,
+  "by_unit": {
+   "TH570901": {
+    "residents": 17893.1,
+    "buildings": 15168,
+    "residents_per_building": 1.18,
+    "cells": 2484,
+    "cells_with_a_building": 1264
+   },
+   "TH570902": {
+    "residents": 8911.5,
+    "buildings": 9637,
+    "residents_per_building": 0.925,
+    "cells": 5523,
+    "cells_with_a_building": 1177
+   },
+   "TH570903": {
+    "residents": 6708.4,
+    "buildings": 10937,
+    "residents_per_building": 0.613,
+    "cells": 5553,
+    "cells_with_a_building": 1536
+   },
+   "TH570904": {
+    "residents": 9349.4,
+    "buildings": 14821,
+    "residents_per_building": 0.631,
+    "cells": 5423,
+    "cells_with_a_building": 1974
+   },
+   "TH570905": {
+    "residents": 7157.6,
+    "buildings": 6629,
+    "residents_per_building": 1.08,
+    "cells": 5204,
+    "cells_with_a_building": 1236
+   },
+   "TH570906": {
+    "residents": 19532.1,
+    "buildings": 17340,
+    "residents_per_building": 1.126,
+    "cells": 3362,
+    "cells_with_a_building": 1560
+   },
+   "TH570908": {
+    "residents": 5036.1,
+    "buildings": 5042,
+    "residents_per_building": 0.999,
+    "cells": 4199,
+    "cells_with_a_building": 797
+   },
+   "TH570909": {
+    "residents": 7248.7,
+    "buildings": 9368,
+    "residents_per_building": 0.774,
+    "cells": 5017,
+    "cells_with_a_building": 1199
+   }
+  }
+ },
+ "checks": {
+  "default_cell_of_the_2020_demand_against_the_e8_rows": {
+   "result": "PASS",
+   "rows_sha256": "362d1563eb21bdf0229c6d1dc522e425ad06f64fd7d613614987f6951a519dbc"
+  },
+  "cells_of_the_2020_demand_against_the_registered_run": {
+   "result": "PASS",
+   "unit_cells_compared": 720,
+   "registered_receipt": {
+    "path": "outputs/planning_v1/e10_uncertainty_ensemble_se1_mae_sai.json",
+    "sha256": "c50ac12dd110cc168868e7b6029ab8f3e515b817e20f8c5ae2110455488a0f25"
+   }
+  },
+  "as_provided_runs_against_the_e5_table": {
+   "result": "PASS",
+   "compared": [
+    {
+     "closure_level": "strict",
+     "unit_rows_same": true,
+     "closure_result_same": true
+    },
+    {
+     "closure_level": "central",
+     "unit_rows_same": true,
+     "closure_result_same": true
+    },
+    {
+     "closure_level": "permissive",
+     "unit_rows_same": true,
+     "closure_result_same": true
+    }
+   ],
+   "what": "The three runs of this task at the flood level as provided against the unit rows and the closure result of the registered task E5 table: the same, value for value."
+  },
+  "measurements_with_the_buildings_demand": {
+   "combinations_measured": 9,
+   "unit_residents_same_in_the_demand_and_the_access_tables": true
+  },
+  "residents_of_the_district_same_in_both_demands": true
+ },
+ "default_cell_classes_that_differ": [],
+ "units": [
+  {
+   "unit_id": "TH570901",
+   "unit_name_en": "Mae Sai",
+   "worldpop_2020": {
+    "default_cell": {
+     "fpps_0_100": 70.71,
+     "action_class": "D",
+     "action_reason_code": "resilience"
+    },
+    "cells_run": 90,
+    "class_counts": {
+     "A": 0,
+     "B": 0,
+     "C": 0,
+     "D": 90,
+     "E": 0,
+     "no_class": 0
+    }
+   },
+   "spread_over_buildings": {
+    "default_cell": {
+     "fpps_0_100": 71.69,
+     "action_class": "D",
+     "action_reason_code": "resilience"
+    },
+    "cells_run": 90,
+    "class_counts": {
+     "A": 0,
+     "B": 10,
+     "C": 0,
+     "D": 80,
+     "E": 0,
+     "no_class": 0
+    }
+   }
+  },
+  {
+   "unit_id": "TH570902",
+   "unit_name_en": "Huai Khrai",
+   "worldpop_2020": {
+    "default_cell": {
+     "fpps_0_100": 4.72,
+     "action_class": "E",
+     "action_reason_code": "low_priority_score"
+    },
+    "cells_run": 90,
+    "class_counts": {
+     "A": 0,
+     "B": 0,
+     "C": 0,
+     "D": 0,
+     "E": 90,
+     "no_class": 0
+    }
+   },
+   "spread_over_buildings": {
+    "default_cell": {
+     "fpps_0_100": 4.76,
+     "action_class": "E",
+     "action_reason_code": "low_priority_score"
+    },
+    "cells_run": 90,
+    "class_counts": {
+     "A": 0,
+     "B": 0,
+     "C": 0,
+     "D": 0,
+     "E": 90,
+     "no_class": 0
+    }
+   }
+  },
+  {
+   "unit_id": "TH570903",
+   "unit_name_en": "Ko Chang",
+   "worldpop_2020": {
+    "default_cell": {
+     "fpps_0_100": 78.48,
+     "action_class": "B",
+     "action_reason_code": "critical_route_access"
+    },
+    "cells_run": 90,
+    "class_counts": {
+     "A": 0,
+     "B": 70,
+     "C": 0,
+     "D": 20,
+     "E": 0,
+     "no_class": 0
+    }
+   },
+   "spread_over_buildings": {
+    "default_cell": {
+     "fpps_0_100": 73.41,
+     "action_class": "B",
+     "action_reason_code": "critical_route_access"
+    },
+    "cells_run": 90,
+    "class_counts": {
+     "A": 0,
+     "B": 70,
+     "C": 0,
+     "D": 20,
+     "E": 0,
+     "no_class": 0
+    }
+   }
+  },
+  {
+   "unit_id": "TH570904",
+   "unit_name_en": "Pong Pha",
+   "worldpop_2020": {
+    "default_cell": {
+     "fpps_0_100": 31.61,
+     "action_class": "E",
+     "action_reason_code": "low_priority_score"
+    },
+    "cells_run": 90,
+    "class_counts": {
+     "A": 0,
+     "B": 0,
+     "C": 0,
+     "D": 3,
+     "E": 87,
+     "no_class": 0
+    }
+   },
+   "spread_over_buildings": {
+    "default_cell": {
+     "fpps_0_100": 29.2,
+     "action_class": "E",
+     "action_reason_code": "low_priority_score"
+    },
+    "cells_run": 90,
+    "class_counts": {
+     "A": 0,
+     "B": 0,
+     "C": 0,
+     "D": 0,
+     "E": 90,
+     "no_class": 0
+    }
+   }
+  },
+  {
+   "unit_id": "TH570905",
+   "unit_name_en": "Si Mueang Chum",
+   "worldpop_2020": {
+    "default_cell": {
+     "fpps_0_100": 59.3,
+     "action_class": "D",
+     "action_reason_code": "resilience"
+    },
+    "cells_run": 90,
+    "class_counts": {
+     "A": 0,
+     "B": 0,
+     "C": 0,
+     "D": 90,
+     "E": 0,
+     "no_class": 0
+    }
+   },
+   "spread_over_buildings": {
+    "default_cell": {
+     "fpps_0_100": 45.97,
+     "action_class": "D",
+     "action_reason_code": "resilience"
+    },
+    "cells_run": 90,
+    "class_counts": {
+     "A": 0,
+     "B": 0,
+     "C": 0,
+     "D": 90,
+     "E": 0,
+     "no_class": 0
+    }
+   }
+  },
+  {
+   "unit_id": "TH570906",
+   "unit_name_en": "Wiang Phang Kham",
+   "worldpop_2020": {
+    "default_cell": {
+     "fpps_0_100": 5.24,
+     "action_class": "E",
+     "action_reason_code": "low_priority_score"
+    },
+    "cells_run": 90,
+    "class_counts": {
+     "A": 0,
+     "B": 0,
+     "C": 0,
+     "D": 0,
+     "E": 90,
+     "no_class": 0
+    }
+   },
+   "spread_over_buildings": {
+    "default_cell": {
+     "fpps_0_100": 5.13,
+     "action_class": "E",
+     "action_reason_code": "low_priority_score"
+    },
+    "cells_run": 90,
+    "class_counts": {
+     "A": 0,
+     "B": 0,
+     "C": 0,
+     "D": 0,
+     "E": 90,
+     "no_class": 0
+    }
+   }
+  },
+  {
+   "unit_id": "TH570908",
+   "unit_name_en": "Ban Dai",
+   "worldpop_2020": {
+    "default_cell": {
+     "fpps_0_100": 50.22,
+     "action_class": "D",
+     "action_reason_code": "resilience"
+    },
+    "cells_run": 90,
+    "class_counts": {
+     "A": 0,
+     "B": 0,
+     "C": 0,
+     "D": 90,
+     "E": 0,
+     "no_class": 0
+    }
+   },
+   "spread_over_buildings": {
+    "default_cell": {
+     "fpps_0_100": 46.84,
+     "action_class": "D",
+     "action_reason_code": "resilience"
+    },
+    "cells_run": 90,
+    "class_counts": {
+     "A": 0,
+     "B": 0,
+     "C": 0,
+     "D": 90,
+     "E": 0,
+     "no_class": 0
+    }
+   }
+  },
+  {
+   "unit_id": "TH570909",
+   "unit_name_en": "Pong Ngam",
+   "worldpop_2020": {
+    "default_cell": {
+     "fpps_0_100": 21.9,
+     "action_class": "E",
+     "action_reason_code": "low_priority_score"
+    },
+    "cells_run": 90,
+    "class_counts": {
+     "A": 0,
+     "B": 0,
+     "C": 0,
+     "D": 0,
+     "E": 90,
+     "no_class": 0
+    }
+   },
+   "spread_over_buildings": {
+    "default_cell": {
+     "fpps_0_100": 20.17,
+     "action_class": "E",
+     "action_reason_code": "low_priority_score"
+    },
+    "cells_run": 90,
+    "class_counts": {
+     "A": 0,
+     "B": 0,
+     "C": 0,
+     "D": 0,
+     "E": 90,
+     "no_class": 0
+    }
+   }
+  }
+ ],
+ "need_mix": {
+  "district": {
+   "worldpop_2020": {
+    "in_the_published_run": {
+     "residents": 81836.9,
+     "by_type": {
+      "in_the_water": {
+       "residents": 17927.5,
+       "share": 0.2191
+      },
+      "dry_but_cut_off": {
+       "residents": 7509.8,
+       "share": 0.0918
+      },
+      "dry_and_loses_the_hospital": {
+       "residents": 2447.0,
+       "share": 0.0299
+      },
+      "not_affected": {
+       "residents": 49278.7,
+       "share": 0.6022
+      },
+      "not_assessed": {
+       "residents": 4673.9,
+       "share": 0.0571
+      }
+     },
+     "hidden_by_the_order": {
+      "in_the_water_and_cut_off": 14287.9,
+      "in_the_water_and_losing_the_hospital": 14559.7,
+      "cut_off_in_the_water_or_dry": 21797.7,
+      "losing_the_hospital_in_the_water_or_dry": 24505.2
+     }
+    },
+    "over_the_nine_runs": {
+     "in_the_water": {
+      "share_lowest": 0.198,
+      "share_highest": 0.2373,
+      "residents_lowest": 16205.0,
+      "residents_highest": 19416.3
+     },
+     "dry_but_cut_off": {
+      "share_lowest": 0.0133,
+      "share_highest": 0.0972,
+      "residents_lowest": 1084.7,
+      "residents_highest": 7953.3
+     },
+     "dry_and_loses_the_hospital": {
+      "share_lowest": 0.0124,
+      "share_highest": 0.0955,
+      "residents_lowest": 1018.7,
+      "residents_highest": 7815.7
+     },
+     "not_affected": {
+      "share_lowest": 0.5887,
+      "share_highest": 0.6349,
+      "residents_lowest": 48178.2,
+      "residents_highest": 51955.9
+     },
+     "not_assessed": {
+      "share_lowest": 0.0561,
+      "share_highest": 0.0584,
+      "residents_lowest": 4591.3,
+      "residents_highest": 4775.6
+     }
+    }
+   },
+   "spread_over_buildings": {
+    "in_the_published_run": {
+     "residents": 81836.9,
+     "by_type": {
+      "in_the_water": {
+       "residents": 12635.1,
+       "share": 0.1544
+      },
+      "dry_but_cut_off": {
+       "residents": 10069.1,
+       "share": 0.123
+      },
+      "dry_and_loses_the_hospital": {
+       "residents": 3426.6,
+       "share": 0.0419
+      },
+      "not_affected": {
+       "residents": 55324.4,
+       "share": 0.676
+      },
+      "not_assessed": {
+       "residents": 381.7,
+       "share": 0.0047
+      }
+     },
+     "hidden_by_the_order": {
+      "in_the_water_and_cut_off": 11847.7,
+      "in_the_water_and_losing_the_hospital": 12044.5,
+      "cut_off_in_the_water_or_dry": 21916.8,
+      "losing_the_hospital_in_the_water_or_dry": 25540.2
+     }
+    },
+    "over_the_nine_runs": {
+     "in_the_water": {
+      "share_lowest": 0.1349,
+      "share_highest": 0.1777,
+      "residents_lowest": 11037.3,
+      "residents_highest": 14543.9
+     },
+     "dry_but_cut_off": {
+      "share_lowest": 0.0054,
+      "share_highest": 0.1288,
+      "residents_lowest": 438.5,
+      "residents_highest": 10544.3
+     },
+     "dry_and_loses_the_hospital": {
+      "share_lowest": 0.0196,
+      "share_highest": 0.1425,
+      "residents_lowest": 1600.4,
+      "residents_highest": 11659.0
+     },
+     "not_affected": {
+      "share_lowest": 0.6577,
+      "share_highest": 0.7125,
+      "residents_lowest": 53827.6,
+      "residents_highest": 58308.2
+     },
+     "not_assessed": {
+      "share_lowest": 0.0044,
+      "share_highest": 0.0048,
+      "residents_lowest": 363.1,
+      "residents_highest": 393.9
+     }
+    }
+   }
+  },
+  "by_tambon": {
+   "TH570901": {
+    "worldpop_2020": {
+     "in_the_published_run": {
+      "residents": 17893.1,
+      "by_type": {
+       "in_the_water": {
+        "residents": 10058.2,
+        "share": 0.5621
+       },
+       "dry_but_cut_off": {
+        "residents": 2700.8,
+        "share": 0.1509
+       },
+       "dry_and_loses_the_hospital": {
+        "residents": 3.0,
+        "share": 0.0002
+       },
+       "not_affected": {
+        "residents": 5013.0,
+        "share": 0.2802
+       },
+       "not_assessed": {
+        "residents": 118.1,
+        "share": 0.0066
+       }
+      },
+      "hidden_by_the_order": {
+       "in_the_water_and_cut_off": 8913.4,
+       "in_the_water_and_losing_the_hospital": 9369.6,
+       "cut_off_in_the_water_or_dry": 11614.1,
+       "losing_the_hospital_in_the_water_or_dry": 12073.3
+      }
+     },
+     "over_the_nine_runs": {
+      "in_the_water": {
+       "share_lowest": 0.5068,
+       "share_highest": 0.6037,
+       "residents_lowest": 9068.5,
+       "residents_highest": 10802.6
+      },
+      "dry_but_cut_off": {
+       "share_lowest": 0.0269,
+       "share_highest": 0.1801,
+       "residents_lowest": 480.5,
+       "residents_highest": 3222.8
+      },
+      "dry_and_loses_the_hospital": {
+       "share_lowest": 0.0,
+       "share_highest": 0.1533,
+       "residents_lowest": 0.0,
+       "residents_highest": 2742.3
+      },
+      "not_affected": {
+       "share_lowest": 0.2542,
+       "share_highest": 0.3041,
+       "residents_lowest": 4549.1,
+       "residents_highest": 5441.0
+      },
+      "not_assessed": {
+       "share_lowest": 0.0051,
+       "share_highest": 0.009,
+       "residents_lowest": 90.6,
+       "residents_highest": 160.8
+      }
+     }
+    },
+    "spread_over_buildings": {
+     "in_the_published_run": {
+      "residents": 17893.1,
+      "by_type": {
+       "in_the_water": {
+        "residents": 9696.8,
+        "share": 0.5419
+       },
+       "dry_but_cut_off": {
+        "residents": 3392.7,
+        "share": 0.1896
+       },
+       "dry_and_loses_the_hospital": {
+        "residents": 0.0,
+        "share": 0.0
+       },
+       "not_affected": {
+        "residents": 4765.8,
+        "share": 0.2664
+       },
+       "not_assessed": {
+        "residents": 37.7,
+        "share": 0.0021
+       }
+      },
+      "hidden_by_the_order": {
+       "in_the_water_and_cut_off": 9302.8,
+       "in_the_water_and_losing_the_hospital": 9447.9,
+       "cut_off_in_the_water_or_dry": 12695.5,
+       "losing_the_hospital_in_the_water_or_dry": 12840.6
+      }
+     },
+     "over_the_nine_runs": {
+      "in_the_water": {
+       "share_lowest": 0.4876,
+       "share_highest": 0.5916,
+       "residents_lowest": 8724.8,
+       "residents_highest": 10585.1
+      },
+      "dry_but_cut_off": {
+       "share_lowest": 0.0136,
+       "share_highest": 0.222,
+       "residents_lowest": 244.2,
+       "residents_highest": 3973.1
+      },
+      "dry_and_loses_the_hospital": {
+       "share_lowest": 0.0,
+       "share_highest": 0.2084,
+       "residents_lowest": 0.0,
+       "residents_highest": 3728.9
+      },
+      "not_affected": {
+       "share_lowest": 0.2366,
+       "share_highest": 0.2879,
+       "residents_lowest": 4232.6,
+       "residents_highest": 5151.6
+      },
+      "not_assessed": {
+       "share_lowest": 0.0015,
+       "share_highest": 0.0024,
+       "residents_lowest": 27.1,
+       "residents_highest": 43.6
+      }
+     }
+    }
+   },
+   "TH570902": {
+    "worldpop_2020": {
+     "in_the_published_run": {
+      "residents": 8911.5,
+      "by_type": {
+       "in_the_water": {
+        "residents": 0.0,
+        "share": 0.0
+       },
+       "dry_but_cut_off": {
+        "residents": 0.0,
+        "share": 0.0
+       },
+       "dry_and_loses_the_hospital": {
+        "residents": 192.6,
+        "share": 0.0216
+       },
+       "not_affected": {
+        "residents": 7021.3,
+        "share": 0.7879
+       },
+       "not_assessed": {
+        "residents": 1697.5,
+        "share": 0.1905
+       }
+      },
+      "hidden_by_the_order": {
+       "in_the_water_and_cut_off": 0.0,
+       "in_the_water_and_losing_the_hospital": 0.0,
+       "cut_off_in_the_water_or_dry": 0.0,
+       "losing_the_hospital_in_the_water_or_dry": 192.6
+      }
+     },
+     "over_the_nine_runs": {
+      "in_the_water": {
+       "share_lowest": 0.0,
+       "share_highest": 0.0,
+       "residents_lowest": 0.0,
+       "residents_highest": 0.0
+      },
+      "dry_but_cut_off": {
+       "share_lowest": 0.0,
+       "share_highest": 0.0,
+       "residents_lowest": 0.0,
+       "residents_highest": 0.0
+      },
+      "dry_and_loses_the_hospital": {
+       "share_lowest": 0.0,
+       "share_highest": 0.0231,
+       "residents_lowest": 0.0,
+       "residents_highest": 205.9
+      },
+      "not_affected": {
+       "share_lowest": 0.7864,
+       "share_highest": 0.8095,
+       "residents_lowest": 7008.0,
+       "residents_highest": 7213.9
+      },
+      "not_assessed": {
+       "share_lowest": 0.1905,
+       "share_highest": 0.1905,
+       "residents_lowest": 1697.5,
+       "residents_highest": 1697.5
+      }
+     }
+    },
+    "spread_over_buildings": {
+     "in_the_published_run": {
+      "residents": 8911.5,
+      "by_type": {
+       "in_the_water": {
+        "residents": 0.0,
+        "share": 0.0
+       },
+       "dry_but_cut_off": {
+        "residents": 0.0,
+        "share": 0.0
+       },
+       "dry_and_loses_the_hospital": {
+        "residents": 273.7,
+        "share": 0.0307
+       },
+       "not_affected": {
+        "residents": 8526.8,
+        "share": 0.9568
+       },
+       "not_assessed": {
+        "residents": 111.0,
+        "share": 0.0125
+       }
+      },
+      "hidden_by_the_order": {
+       "in_the_water_and_cut_off": 0.0,
+       "in_the_water_and_losing_the_hospital": 0.0,
+       "cut_off_in_the_water_or_dry": 0.0,
+       "losing_the_hospital_in_the_water_or_dry": 273.7
+      }
+     },
+     "over_the_nine_runs": {
+      "in_the_water": {
+       "share_lowest": 0.0,
+       "share_highest": 0.0,
+       "residents_lowest": 0.0,
+       "residents_highest": 0.0
+      },
+      "dry_but_cut_off": {
+       "share_lowest": 0.0,
+       "share_highest": 0.0,
+       "residents_lowest": 0.0,
+       "residents_highest": 0.0
+      },
+      "dry_and_loses_the_hospital": {
+       "share_lowest": 0.0,
+       "share_highest": 0.0311,
+       "residents_lowest": 0.0,
+       "residents_highest": 277.4
+      },
+      "not_affected": {
+       "share_lowest": 0.9564,
+       "share_highest": 0.9875,
+       "residents_lowest": 8523.1,
+       "residents_highest": 8800.5
+      },
+      "not_assessed": {
+       "share_lowest": 0.0125,
+       "share_highest": 0.0125,
+       "residents_lowest": 111.0,
+       "residents_highest": 111.0
+      }
+     }
+    }
+   },
+   "TH570903": {
+    "worldpop_2020": {
+     "in_the_published_run": {
+      "residents": 6708.4,
+      "by_type": {
+       "in_the_water": {
+        "residents": 2498.3,
+        "share": 0.3724
+       },
+       "dry_but_cut_off": {
+        "residents": 3902.9,
+        "share": 0.5818
+       },
+       "dry_and_loses_the_hospital": {
+        "residents": 0.0,
+        "share": 0.0
+       },
+       "not_affected": {
+        "residents": 0.0,
+        "share": 0.0
+       },
+       "not_assessed": {
+        "residents": 307.3,
+        "share": 0.0458
+       }
+      },
+      "hidden_by_the_order": {
+       "in_the_water_and_cut_off": 2069.5,
+       "in_the_water_and_losing_the_hospital": 1813.6,
+       "cut_off_in_the_water_or_dry": 5972.4,
+       "losing_the_hospital_in_the_water_or_dry": 5709.6
+      }
+     },
+     "over_the_nine_runs": {
+      "in_the_water": {
+       "share_lowest": 0.3292,
+       "share_highest": 0.4189,
+       "residents_lowest": 2208.1,
+       "residents_highest": 2810.4
+      },
+      "dry_but_cut_off": {
+       "share_lowest": 0.0412,
+       "share_highest": 0.6207,
+       "residents_lowest": 276.4,
+       "residents_highest": 4163.6
+      },
+      "dry_and_loses_the_hospital": {
+       "share_lowest": 0.0,
+       "share_highest": 0.5794,
+       "residents_lowest": 0.0,
+       "residents_highest": 3887.1
+      },
+      "not_affected": {
+       "share_lowest": 0.0,
+       "share_highest": 0.0,
+       "residents_lowest": 0.0,
+       "residents_highest": 0.0
+      },
+      "not_assessed": {
+       "share_lowest": 0.0432,
+       "share_highest": 0.0502,
+       "residents_lowest": 290.0,
+       "residents_highest": 336.7
+      }
+     }
+    },
+    "spread_over_buildings": {
+     "in_the_published_run": {
+      "residents": 6708.4,
+      "by_type": {
+       "in_the_water": {
+        "residents": 1137.8,
+        "share": 0.1696
+       },
+       "dry_but_cut_off": {
+        "residents": 5549.8,
+        "share": 0.8273
+       },
+       "dry_and_loses_the_hospital": {
+        "residents": 0.0,
+        "share": 0.0
+       },
+       "not_affected": {
+        "residents": 0.0,
+        "share": 0.0
+       },
+       "not_assessed": {
+        "residents": 20.9,
+        "share": 0.0031
+       }
+      },
+      "hidden_by_the_order": {
+       "in_the_water_and_cut_off": 1122.5,
+       "in_the_water_and_losing_the_hospital": 1116.9,
+       "cut_off_in_the_water_or_dry": 6672.2,
+       "losing_the_hospital_in_the_water_or_dry": 6666.7
+      }
+     },
+     "over_the_nine_runs": {
+      "in_the_water": {
+       "share_lowest": 0.1239,
+       "share_highest": 0.2322,
+       "residents_lowest": 831.1,
+       "residents_highest": 1558.0
+      },
+      "dry_but_cut_off": {
+       "share_lowest": 0.0167,
+       "share_highest": 0.8729,
+       "residents_lowest": 112.2,
+       "residents_highest": 5855.8
+      },
+      "dry_and_loses_the_hospital": {
+       "share_lowest": 0.0,
+       "share_highest": 0.8562,
+       "residents_lowest": 0.0,
+       "residents_highest": 5743.6
+      },
+      "not_affected": {
+       "share_lowest": 0.0,
+       "share_highest": 0.0,
+       "residents_lowest": 0.0,
+       "residents_highest": 0.0
+      },
+      "not_assessed": {
+       "share_lowest": 0.0029,
+       "share_highest": 0.0032,
+       "residents_lowest": 19.6,
+       "residents_highest": 21.5
+      }
+     }
+    }
+   },
+   "TH570904": {
+    "worldpop_2020": {
+     "in_the_published_run": {
+      "residents": 9349.4,
+      "by_type": {
+       "in_the_water": {
+        "residents": 908.4,
+        "share": 0.0972
+       },
+       "dry_but_cut_off": {
+        "residents": 124.8,
+        "share": 0.0133
+       },
+       "dry_and_loses_the_hospital": {
+        "residents": 2.8,
+        "share": 0.0003
+       },
+       "not_affected": {
+        "residents": 7714.7,
+        "share": 0.8252
+       },
+       "not_assessed": {
+        "residents": 598.8,
+        "share": 0.064
+       }
+      },
+      "hidden_by_the_order": {
+       "in_the_water_and_cut_off": 604.9,
+       "in_the_water_and_losing_the_hospital": 622.3,
+       "cut_off_in_the_water_or_dry": 729.7,
+       "losing_the_hospital_in_the_water_or_dry": 749.8
+      }
+     },
+     "over_the_nine_runs": {
+      "in_the_water": {
+       "share_lowest": 0.0912,
+       "share_highest": 0.1044,
+       "residents_lowest": 852.7,
+       "residents_highest": 975.6
+      },
+      "dry_but_cut_off": {
+       "share_lowest": 0.004,
+       "share_highest": 0.0137,
+       "residents_lowest": 37.0,
+       "residents_highest": 127.8
+      },
+      "dry_and_loses_the_hospital": {
+       "share_lowest": 0.0,
+       "share_highest": 0.0006,
+       "residents_lowest": 0.0,
+       "residents_highest": 6.0
+      },
+      "not_affected": {
+       "share_lowest": 0.8178,
+       "share_highest": 0.8402,
+       "residents_lowest": 7646.0,
+       "residents_highest": 7855.5
+      },
+      "not_assessed": {
+       "share_lowest": 0.0635,
+       "share_highest": 0.0646,
+       "residents_lowest": 593.9,
+       "residents_highest": 604.2
+      }
+     }
+    },
+    "spread_over_buildings": {
+     "in_the_published_run": {
+      "residents": 9349.4,
+      "by_type": {
+       "in_the_water": {
+        "residents": 460.5,
+        "share": 0.0493
+       },
+       "dry_but_cut_off": {
+        "residents": 34.7,
+        "share": 0.0037
+       },
+       "dry_and_loses_the_hospital": {
+        "residents": 0.0,
+        "share": 0.0
+       },
+       "not_affected": {
+        "residents": 8811.3,
+        "share": 0.9424
+       },
+       "not_assessed": {
+        "residents": 42.9,
+        "share": 0.0046
+       }
+      },
+      "hidden_by_the_order": {
+       "in_the_water_and_cut_off": 424.5,
+       "in_the_water_and_losing_the_hospital": 425.8,
+       "cut_off_in_the_water_or_dry": 459.2,
+       "losing_the_hospital_in_the_water_or_dry": 460.5
+      }
+     },
+     "over_the_nine_runs": {
+      "in_the_water": {
+       "share_lowest": 0.0462,
+       "share_highest": 0.0529,
+       "residents_lowest": 431.5,
+       "residents_highest": 494.6
+      },
+      "dry_but_cut_off": {
+       "share_lowest": 0.0004,
+       "share_highest": 0.0043,
+       "residents_lowest": 3.8,
+       "residents_highest": 40.4
+      },
+      "dry_and_loses_the_hospital": {
+       "share_lowest": 0.0,
+       "share_highest": 0.0001,
+       "residents_lowest": 0.0,
+       "residents_highest": 1.3
+      },
+      "not_affected": {
+       "share_lowest": 0.9385,
+       "share_highest": 0.9488,
+       "residents_lowest": 8774.1,
+       "residents_highest": 8870.6
+      },
+      "not_assessed": {
+       "share_lowest": 0.0045,
+       "share_highest": 0.0047,
+       "residents_lowest": 42.3,
+       "residents_highest": 43.5
+      }
+     }
+    }
+   },
+   "TH570905": {
+    "worldpop_2020": {
+     "in_the_published_run": {
+      "residents": 7157.6,
+      "by_type": {
+       "in_the_water": {
+        "residents": 3047.7,
+        "share": 0.4258
+       },
+       "dry_but_cut_off": {
+        "residents": 729.8,
+        "share": 0.102
+       },
+       "dry_and_loses_the_hospital": {
+        "residents": 0.0,
+        "share": 0.0
+       },
+       "not_affected": {
+        "residents": 3175.4,
+        "share": 0.4436
+       },
+       "not_assessed": {
+        "residents": 204.7,
+        "share": 0.0286
+       }
+      },
+      "hidden_by_the_order": {
+       "in_the_water_and_cut_off": 2167.7,
+       "in_the_water_and_losing_the_hospital": 2139.3,
+       "cut_off_in_the_water_or_dry": 2897.5,
+       "losing_the_hospital_in_the_water_or_dry": 2869.0
+      }
+     },
+     "over_the_nine_runs": {
+      "in_the_water": {
+       "share_lowest": 0.3904,
+       "share_highest": 0.4677,
+       "residents_lowest": 2794.4,
+       "residents_highest": 3347.5
+      },
+      "dry_but_cut_off": {
+       "share_lowest": 0.0335,
+       "share_highest": 0.1278,
+       "residents_lowest": 239.6,
+       "residents_highest": 914.6
+      },
+      "dry_and_loses_the_hospital": {
+       "share_lowest": 0.0,
+       "share_highest": 0.0242,
+       "residents_lowest": 0.0,
+       "residents_highest": 173.1
+      },
+      "not_affected": {
+       "share_lowest": 0.3782,
+       "share_highest": 0.5218,
+       "residents_lowest": 2707.2,
+       "residents_highest": 3734.6
+      },
+      "not_assessed": {
+       "share_lowest": 0.0263,
+       "share_highest": 0.0302,
+       "residents_lowest": 188.3,
+       "residents_highest": 215.9
+      }
+     }
+    },
+    "spread_over_buildings": {
+     "in_the_published_run": {
+      "residents": 7157.6,
+      "by_type": {
+       "in_the_water": {
+        "residents": 855.1,
+        "share": 0.1195
+       },
+       "dry_but_cut_off": {
+        "residents": 1072.2,
+        "share": 0.1498
+       },
+       "dry_and_loses_the_hospital": {
+        "residents": 0.0,
+        "share": 0.0
+       },
+       "not_affected": {
+        "residents": 5214.0,
+        "share": 0.7285
+       },
+       "not_assessed": {
+        "residents": 16.2,
+        "share": 0.0023
+       }
+      },
+      "hidden_by_the_order": {
+       "in_the_water_and_cut_off": 724.5,
+       "in_the_water_and_losing_the_hospital": 698.6,
+       "cut_off_in_the_water_or_dry": 1796.7,
+       "losing_the_hospital_in_the_water_or_dry": 1770.8
+      }
+     },
+     "over_the_nine_runs": {
+      "in_the_water": {
+       "share_lowest": 0.0985,
+       "share_highest": 0.1834,
+       "residents_lowest": 705.1,
+       "residents_highest": 1313.0
+      },
+      "dry_but_cut_off": {
+       "share_lowest": 0.0081,
+       "share_highest": 0.2018,
+       "residents_lowest": 58.3,
+       "residents_highest": 1444.7
+      },
+      "dry_and_loses_the_hospital": {
+       "share_lowest": 0.0,
+       "share_highest": 0.0821,
+       "residents_lowest": 0.0,
+       "residents_highest": 587.4
+      },
+      "not_affected": {
+       "share_lowest": 0.6126,
+       "share_highest": 0.8089,
+       "residents_lowest": 4384.8,
+       "residents_highest": 5789.5
+      },
+      "not_assessed": {
+       "share_lowest": 0.0021,
+       "share_highest": 0.0024,
+       "residents_lowest": 15.1,
+       "residents_highest": 17.3
+      }
+     }
+    }
+   },
+   "TH570906": {
+    "worldpop_2020": {
+     "in_the_published_run": {
+      "residents": 19532.1,
+      "by_type": {
+       "in_the_water": {
+        "residents": 77.9,
+        "share": 0.004
+       },
+       "dry_but_cut_off": {
+        "residents": 35.9,
+        "share": 0.0018
+       },
+       "dry_and_loses_the_hospital": {
+        "residents": 0.0,
+        "share": 0.0
+       },
+       "not_affected": {
+        "residents": 19050.8,
+        "share": 0.9754
+       },
+       "not_assessed": {
+        "residents": 367.5,
+        "share": 0.0188
+       }
+      },
+      "hidden_by_the_order": {
+       "in_the_water_and_cut_off": 39.6,
+       "in_the_water_and_losing_the_hospital": 39.6,
+       "cut_off_in_the_water_or_dry": 75.5,
+       "losing_the_hospital_in_the_water_or_dry": 75.5
+      }
+     },
+     "over_the_nine_runs": {
+      "in_the_water": {
+       "share_lowest": 0.0,
+       "share_highest": 0.004,
+       "residents_lowest": 0.0,
+       "residents_highest": 77.9
+      },
+      "dry_but_cut_off": {
+       "share_lowest": 0.0018,
+       "share_highest": 0.0018,
+       "residents_lowest": 35.9,
+       "residents_highest": 35.9
+      },
+      "dry_and_loses_the_hospital": {
+       "share_lowest": 0.0,
+       "share_highest": 0.0,
+       "residents_lowest": 0.0,
+       "residents_highest": 0.0
+      },
+      "not_affected": {
+       "share_lowest": 0.9754,
+       "share_highest": 0.9793,
+       "residents_lowest": 19050.8,
+       "residents_highest": 19128.6
+      },
+      "not_assessed": {
+       "share_lowest": 0.0188,
+       "share_highest": 0.0188,
+       "residents_lowest": 367.5,
+       "residents_highest": 367.5
+      }
+     }
+    },
+    "spread_over_buildings": {
+     "in_the_published_run": {
+      "residents": 19532.1,
+      "by_type": {
+       "in_the_water": {
+        "residents": 50.7,
+        "share": 0.0026
+       },
+       "dry_but_cut_off": {
+        "residents": 18.0,
+        "share": 0.0009
+       },
+       "dry_and_loses_the_hospital": {
+        "residents": 0.0,
+        "share": 0.0
+       },
+       "not_affected": {
+        "residents": 19429.6,
+        "share": 0.9948
+       },
+       "not_assessed": {
+        "residents": 33.8,
+        "share": 0.0017
+       }
+      },
+      "hidden_by_the_order": {
+       "in_the_water_and_cut_off": 13.5,
+       "in_the_water_and_losing_the_hospital": 13.5,
+       "cut_off_in_the_water_or_dry": 31.5,
+       "losing_the_hospital_in_the_water_or_dry": 31.5
+      }
+     },
+     "over_the_nine_runs": {
+      "in_the_water": {
+       "share_lowest": 0.0,
+       "share_highest": 0.0026,
+       "residents_lowest": 0.0,
+       "residents_highest": 50.7
+      },
+      "dry_but_cut_off": {
+       "share_lowest": 0.0009,
+       "share_highest": 0.0009,
+       "residents_lowest": 18.0,
+       "residents_highest": 18.0
+      },
+      "dry_and_loses_the_hospital": {
+       "share_lowest": 0.0,
+       "share_highest": 0.0,
+       "residents_lowest": 0.0,
+       "residents_highest": 0.0
+      },
+      "not_affected": {
+       "share_lowest": 0.9948,
+       "share_highest": 0.9973,
+       "residents_lowest": 19429.6,
+       "residents_highest": 19480.3
+      },
+      "not_assessed": {
+       "share_lowest": 0.0017,
+       "share_highest": 0.0017,
+       "residents_lowest": 33.8,
+       "residents_highest": 33.8
+      }
+     }
+    }
+   },
+   "TH570908": {
+    "worldpop_2020": {
+     "in_the_published_run": {
+      "residents": 5036.1,
+      "by_type": {
+       "in_the_water": {
+        "residents": 957.4,
+        "share": 0.1901
+       },
+       "dry_but_cut_off": {
+        "residents": 10.4,
+        "share": 0.0021
+       },
+       "dry_and_loses_the_hospital": {
+        "residents": 2213.1,
+        "share": 0.4394
+       },
+       "not_affected": {
+        "residents": 1334.2,
+        "share": 0.2649
+       },
+       "not_assessed": {
+        "residents": 521.1,
+        "share": 0.1035
+       }
+      },
+      "hidden_by_the_order": {
+       "in_the_water_and_cut_off": 348.8,
+       "in_the_water_and_losing_the_hospital": 430.6,
+       "cut_off_in_the_water_or_dry": 359.2,
+       "losing_the_hospital_in_the_water_or_dry": 2649.6
+      }
+     },
+     "over_the_nine_runs": {
+      "in_the_water": {
+       "share_lowest": 0.1813,
+       "share_highest": 0.2007,
+       "residents_lowest": 913.3,
+       "residents_highest": 1010.6
+      },
+      "dry_but_cut_off": {
+       "share_lowest": 0.0021,
+       "share_highest": 0.0112,
+       "residents_lowest": 10.4,
+       "residents_highest": 56.4
+      },
+      "dry_and_loses_the_hospital": {
+       "share_lowest": 0.1997,
+       "share_highest": 0.4413,
+       "residents_lowest": 1005.5,
+       "residents_highest": 2222.2
+      },
+      "not_affected": {
+       "share_lowest": 0.2501,
+       "share_highest": 0.5107,
+       "residents_lowest": 1259.3,
+       "residents_highest": 2572.0
+      },
+      "not_assessed": {
+       "share_lowest": 0.1008,
+       "share_highest": 0.1058,
+       "residents_lowest": 507.6,
+       "residents_highest": 532.7
+      }
+     }
+    },
+    "spread_over_buildings": {
+     "in_the_published_run": {
+      "residents": 5036.1,
+      "by_type": {
+       "in_the_water": {
+        "residents": 350.6,
+        "share": 0.0696
+       },
+       "dry_but_cut_off": {
+        "residents": 1.0,
+        "share": 0.0002
+       },
+       "dry_and_loses_the_hospital": {
+        "residents": 3151.3,
+        "share": 0.6257
+       },
+       "not_affected": {
+        "residents": 1457.3,
+        "share": 0.2894
+       },
+       "not_assessed": {
+        "residents": 75.9,
+        "share": 0.0151
+       }
+      },
+      "hidden_by_the_order": {
+       "in_the_water_and_cut_off": 215.7,
+       "in_the_water_and_losing_the_hospital": 297.7,
+       "cut_off_in_the_water_or_dry": 216.7,
+       "losing_the_hospital_in_the_water_or_dry": 3450.0
+      }
+     },
+     "over_the_nine_runs": {
+      "in_the_water": {
+       "share_lowest": 0.053,
+       "share_highest": 0.0902,
+       "residents_lowest": 266.7,
+       "residents_highest": 454.5
+      },
+      "dry_but_cut_off": {
+       "share_lowest": 0.0002,
+       "share_highest": 0.02,
+       "residents_lowest": 1.0,
+       "residents_highest": 100.9
+      },
+      "dry_and_loses_the_hospital": {
+       "share_lowest": 0.3175,
+       "share_highest": 0.6257,
+       "residents_lowest": 1599.1,
+       "residents_highest": 3151.3
+      },
+      "not_affected": {
+       "share_lowest": 0.2711,
+       "share_highest": 0.6132,
+       "residents_lowest": 1365.4,
+       "residents_highest": 3088.4
+      },
+      "not_assessed": {
+       "share_lowest": 0.0147,
+       "share_highest": 0.0159,
+       "residents_lowest": 73.9,
+       "residents_highest": 79.9
+      }
+     }
+    }
+   },
+   "TH570909": {
+    "worldpop_2020": {
+     "in_the_published_run": {
+      "residents": 7248.7,
+      "by_type": {
+       "in_the_water": {
+        "residents": 379.7,
+        "share": 0.0524
+       },
+       "dry_but_cut_off": {
+        "residents": 5.3,
+        "share": 0.0007
+       },
+       "dry_and_loses_the_hospital": {
+        "residents": 35.5,
+        "share": 0.0049
+       },
+       "not_affected": {
+        "residents": 5969.3,
+        "share": 0.8235
+       },
+       "not_assessed": {
+        "residents": 858.9,
+        "share": 0.1185
+       }
+      },
+      "hidden_by_the_order": {
+       "in_the_water_and_cut_off": 144.0,
+       "in_the_water_and_losing_the_hospital": 144.9,
+       "cut_off_in_the_water_or_dry": 149.3,
+       "losing_the_hospital_in_the_water_or_dry": 185.8
+      }
+     },
+     "over_the_nine_runs": {
+      "in_the_water": {
+       "share_lowest": 0.0508,
+       "share_highest": 0.0541,
+       "residents_lowest": 367.9,
+       "residents_highest": 391.8
+      },
+      "dry_but_cut_off": {
+       "share_lowest": 0.0004,
+       "share_highest": 0.0009,
+       "residents_lowest": 2.6,
+       "residents_highest": 6.7
+      },
+      "dry_and_loses_the_hospital": {
+       "share_lowest": 0.0011,
+       "share_highest": 0.0051,
+       "residents_lowest": 7.7,
+       "residents_highest": 36.9
+      },
+      "not_affected": {
+       "share_lowest": 0.8219,
+       "share_highest": 0.8291,
+       "residents_lowest": 5957.8,
+       "residents_highest": 6010.2
+      },
+      "not_assessed": {
+       "share_lowest": 0.118,
+       "share_highest": 0.1187,
+       "residents_lowest": 855.6,
+       "residents_highest": 860.3
+      }
+     }
+    },
+    "spread_over_buildings": {
+     "in_the_published_run": {
+      "residents": 7248.7,
+      "by_type": {
+       "in_the_water": {
+        "residents": 83.6,
+        "share": 0.0115
+       },
+       "dry_but_cut_off": {
+        "residents": 0.8,
+        "share": 0.0001
+       },
+       "dry_and_loses_the_hospital": {
+        "residents": 1.5,
+        "share": 0.0002
+       },
+       "not_affected": {
+        "residents": 7119.5,
+        "share": 0.9822
+       },
+       "not_assessed": {
+        "residents": 43.3,
+        "share": 0.006
+       }
+      },
+      "hidden_by_the_order": {
+       "in_the_water_and_cut_off": 44.1,
+       "in_the_water_and_losing_the_hospital": 44.1,
+       "cut_off_in_the_water_or_dry": 44.9,
+       "losing_the_hospital_in_the_water_or_dry": 46.4
+      }
+     },
+     "over_the_nine_runs": {
+      "in_the_water": {
+       "share_lowest": 0.0108,
+       "share_highest": 0.0122,
+       "residents_lowest": 78.2,
+       "residents_highest": 88.2
+      },
+      "dry_but_cut_off": {
+       "share_lowest": 0.0,
+       "share_highest": 0.0001,
+       "residents_lowest": 0.0,
+       "residents_highest": 0.8
+      },
+      "dry_and_loses_the_hospital": {
+       "share_lowest": 0.0,
+       "share_highest": 0.0002,
+       "residents_lowest": 0.0,
+       "residents_highest": 1.5
+      },
+      "not_affected": {
+       "share_lowest": 0.982,
+       "share_highest": 0.9832,
+       "residents_lowest": 7118.0,
+       "residents_highest": 7127.3
+      },
+      "not_assessed": {
+       "share_lowest": 0.0056,
+       "share_highest": 0.006,
+       "residents_lowest": 40.2,
+       "residents_highest": 43.3
+      }
+     }
+    }
+   }
+  }
+ },
+ "credits": [
+  "Building outlines: Google Open Buildings v3 (CC BY 4.0) and Microsoft building footprints (ODbL), combined by VIDA and hosted by Source Cooperative.",
+  "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009 (CC BY-SA 4.0). Changed by FloodGuard; the figures derived from it are shared under CC BY-SA 4.0.",
+  "Residents: WorldPop 2020 (CC BY 4.0). Modelled, not observed.",
+  "Roads © OpenStreetMap contributors (ODbL 1.0)."
+ ],
+ "assumptions": [
+  "Every building counts as one home of the same size.",
+  "The share of children and older residents of a tambon, and so its vulnerability component, is the same for both demands.",
+  "Travel times do not depend on the demand: the nine access runs are the same, and only the residents of the cells differ.",
+  "A closure is a modelled assumption of closure rule v1, not an observed closure."
+ ],
+ "limits": [
+  "Report-only: not a registered run of the protocol, and one way of many to spread residents over buildings.",
+  "The outlines are drawn by a model on images of earlier years; sheds, shops and temples count like houses.",
+  "The cells of the 2024-rescaled demand are not run here: 90 cells, not the 180 a public result is judged on.",
+  "Planning guidance only. Class E never means safe."
+ ]
+}

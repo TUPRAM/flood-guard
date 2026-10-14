@@ -382,7 +382,7 @@ or `FLOODGUARD_EXTERNAL_DATA`. Nothing under it is in Git.
 | `src/floodguard/geoid_radar_benchmark.py` | `1407a0e196c5ed5e6e796e2f802d218afc7e120465d3781ca8c5c40d52e20b83` | GEOID windows |
 | `scripts/benchmark_geoid_flood_sar.py` | `11f17264da8914998f7e0aebd27f1eed69367752f03177a0502202e8fb4e5291` | GEOID windows (the source check) |
 | `outputs/cdse_mae_sai_2024_metadata.csv` | `335b8f19e05c8436c2f48acf4e9d9de6905b7156088ecd5c335c0712bbf7fa6e` | passes |
-| `docs/demo/replay_numbers.md` (rows `stage.onset_knot` and `stage.peak`) | `2b556e0474f7795b6826df459924e5013b59c5fd200e734aaf16657dfb07c1a1` | passes (the two replay keyframes) |
+| `docs/demo/replay_numbers.md` (rows `stage.onset_knot` and `stage.peak`) | `b5a2f20979aacc3dbadbd274253478c176f9a403fd27172e42cea9fa32275ab6` | passes (the two replay keyframes) |
 | `src/floodguard/label_factory/sentinel1_processing.py` | `3977d4112cde8e71aaf444518b2e635c3e8810a480728131c67aaf1c0443a590` | one population (the M2 kernel) |
 
 Both protocol files are named by SHA-256 in every receipt:
@@ -391,7 +391,9 @@ v1b `6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7`.
 
 `docs/demo/replay_numbers.md` is written by the replay lane. If the replay is
 baked again, that file changes and the pass-gap figure needs a new run; until
-then its test fails.
+then its test fails. That happened on 12 October 2026 with replay revision r5:
+the figure was run a fifth time, the two keyframe rows it reads had not
+changed, and the figure is the same.
 
 ## 6. Limits
 
@@ -553,13 +555,14 @@ file: it was read from the copy of the superseded receipt kept outside Git.
 | 22:11:37Z | 22:11:49Z | One population, third run: a flat-topped population measured; the receipt gains the library versions | Figures and receipt; superseded at 22:14 |
 | 22:11:50Z | 22:11:50Z | Passes, third run: the keyframes read from `docs/demo/replay_numbers.md` | Figures and receipt; superseded at 22:14 |
 | 22:14:30Z | 22:14:46Z | One population, fourth run: the shared module named by the third run had dated the reads of the review without a time zone | The files as they are here; same figures as the third run; the figures of the first two runs are unchanged |
-| 22:14:47Z | 22:14:47Z | Passes, fourth run: the third run said the other radar acquisitions lie inside the gap; two of them are known by date only | The files as they are here; the pass list, the gaps and the keyframe hours are those of the second run |
+| 22:14:47Z | 22:14:47Z | Passes, fourth run: the third run said the other radar acquisitions lie inside the gap; two of them are known by date only | Figures and receipt; the pass list, the gaps and the keyframe hours are those of the second run; superseded on 12 October 2026 at 06:39 |
 | 22:14:49Z | 22:14:49Z | M2 windows at Mae Sai, second run: the shared modules changed | The files as they are here; same figures |
 | 22:14:51Z | 22:15:03Z | GEOID windows, second run: the shared modules changed | The files as they are here; same figures |
 | 22:15:08Z | 22:15:27Z | Pilot grid, second run: the receipt gains the licence block and the label | The files as they are here; same figures |
 | 22:15:29Z | 22:15:47Z | Darkening, third run: six windows and the cells under 5 degrees | The files as they are here; every value of the second run is in the third, unchanged |
 | 22:15:49Z | 22:16:05Z | Terrain, third run: the cells under 5 degrees; what the exploratory script had computed | The files as they are here; every value of the second run is in the third, unchanged |
 | about 22:16:23 | about 22:17:48 | `--verify` of all seven figures. No receipt records these times | Nothing. Every figure, input, parameter and code hash was the one in the receipt; the library versions were the same |
+| 06:39:21Z | 06:39:21Z | Passes, fifth run, on 12 October 2026 (every other row is of 4 October): `docs/demo/replay_numbers.md` was written again for replay revision r5, so the receipt no longer named the file on disk | The files as they are here; same figures: the two keyframe rows the script reads did not change |
 
 Seven superseded runs are in commit `60a1aa6`: the first runs of the two window
 figures and of the pilot grid, and the second runs of the other four. The first

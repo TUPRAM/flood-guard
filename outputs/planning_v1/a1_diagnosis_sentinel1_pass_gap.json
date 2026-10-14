@@ -1,6 +1,6 @@
 {
   "schema_version": "floodguard.a1_diagnosis_run_receipt.v1",
-  "generated_at_utc": "2026-10-04T22:14:47Z",
+  "generated_at_utc": "2026-10-12T06:39:21Z",
   "plan_task": "A1 (abstention diagnosis: why threshold-only change detection failed at the 16 Sep pass)",
   "figure_id": "sentinel1_pass_gap",
   "title": "Sentinel-1 passes over Mae Sai in September 2024 and the gap between 6 and 15 September",
@@ -37,7 +37,7 @@
     "sha256": "840b1f7b75c849c7820946be5f0762e0f6005f132cc947b05468b9d26bc78e9b"
   },
   "implementation": {
-    "base_commit": "b26e5d2c641d1ee0319fcf39a595a097ffecf3cd",
+    "base_commit": "95839f7e5907e13331af04556656be6a546a57f7",
     "base_commit_note": "The commit the working tree was on. The files below are the ones this run loaded, identified by their own SHA-256, committed or not.",
     "files_sha256": {
       "scripts/diagnostics/sentinel1_pass_gap.py": "840b1f7b75c849c7820946be5f0762e0f6005f132cc947b05468b9d26bc78e9b",
@@ -85,8 +85,8 @@
     },
     "replay_numbers": {
       "path": "docs/demo/replay_numbers.md",
-      "sha256": "2b556e0474f7795b6826df459924e5013b59c5fd200e734aaf16657dfb07c1a1",
-      "bytes": 56832,
+      "sha256": "b5a2f20979aacc3dbadbd274253478c176f9a403fd27172e42cea9fa32275ab6",
+      "bytes": 56994,
       "rows_read": [
         "stage.onset_knot",
         "stage.peak"
@@ -96,25 +96,25 @@
   },
   "rights": null,
   "timestamps": {
-    "run_started_at_utc": "2026-10-04T22:14:47Z",
-    "run_finished_at_utc": "2026-10-04T22:14:47Z"
+    "run_started_at_utc": "2026-10-12T06:39:21Z",
+    "run_finished_at_utc": "2026-10-12T06:39:21Z"
   },
   "outputs": {
     "figures": {
       "path": "outputs/a1_diagnosis/sentinel1_pass_gap.json",
-      "sha256": "d6a519bed867d734e697ac3b4a3363ef73f3e666cd1553b7604fac304c1c1f27",
+      "sha256": "58f38c13e234fd2b1749832913dbe60669557628f1a8617666457ccbceedf4bd",
       "bytes": 8019
     }
   },
   "supersedes": {
-    "receipt_sha256": "c436b40e18d9e687e967b3519cb693c1868ad961e0112a66fa8c3961ed51f288",
-    "figures_sha256": "946498edb08b6fc910db1e1da708a6b89a8247752174a339fb57580f76ba3168",
-    "generated_at_utc": "2026-10-04T22:11:50Z",
-    "reason": "Review of 4 October 2026 (UTC): the two replay keyframes were typed into the script. They are now read from docs/demo/replay_numbers.md at run time, and that file is an input with its SHA-256. The limits name the other radar acquisitions dated inside the gap; the run of 22:11 UTC said they lie inside it, and the protocol gives two of them as dates with no time of day.",
-    "figures_same": false,
+    "receipt_sha256": "d1051bde4f6976015b6eae09209aebdc22be95f822ef99e496e66a780359c92b",
+    "figures_sha256": "d6a519bed867d734e697ac3b4a3363ef73f3e666cd1553b7604fac304c1c1f27",
+    "generated_at_utc": "2026-10-04T22:14:47Z",
+    "reason": "docs/demo/replay_numbers.md was written again for replay revision r5 (12 Oct 2026); the two keyframe rows the figure reads are unchanged, so the figure is the same",
+    "figures_same": true,
     "copies_kept": [
-      "<external_data_workspace>/proposal_execution/planning_v1/a1_diagnosis/superseded_runs/20261004T221150Z_sentinel1_pass_gap/a1_diagnosis_sentinel1_pass_gap.json",
-      "<external_data_workspace>/proposal_execution/planning_v1/a1_diagnosis/superseded_runs/20261004T221150Z_sentinel1_pass_gap/sentinel1_pass_gap.json"
+      "<external_data_workspace>/proposal_execution/planning_v1/a1_diagnosis/superseded_runs/20261004T221447Z_sentinel1_pass_gap/a1_diagnosis_sentinel1_pass_gap.json",
+      "<external_data_workspace>/proposal_execution/planning_v1/a1_diagnosis/superseded_runs/20261004T221447Z_sentinel1_pass_gap/sentinel1_pass_gap.json"
     ]
   },
   "run_history": {
@@ -144,6 +144,15 @@
         "figures_sha256": "946498edb08b6fc910db1e1da708a6b89a8247752174a339fb57580f76ba3168",
         "run_kind": "superseding_run",
         "superseded_because": "Review of 4 October 2026 (UTC): the two replay keyframes were typed into the script. They are now read from docs/demo/replay_numbers.md at run time, and that file is an input with its SHA-256. The limits name the other radar acquisitions dated inside the gap; the run of 22:11 UTC said they lie inside it, and the protocol gives two of them as dates with no time of day."
+      },
+      {
+        "generated_at_utc": "2026-10-04T22:14:47Z",
+        "run_started_at_utc": "2026-10-04T22:14:47Z",
+        "run_finished_at_utc": "2026-10-04T22:14:47Z",
+        "receipt_sha256": "d1051bde4f6976015b6eae09209aebdc22be95f822ef99e496e66a780359c92b",
+        "figures_sha256": "d6a519bed867d734e697ac3b4a3363ef73f3e666cd1553b7604fac304c1c1f27",
+        "run_kind": "superseding_run",
+        "superseded_because": "docs/demo/replay_numbers.md was written again for replay revision r5 (12 Oct 2026); the two keyframe rows the figure reads are unchanged, so the figure is the same"
       }
     ]
   },

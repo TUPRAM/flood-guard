@@ -57,7 +57,7 @@ def test_the_spoken_lines_fit_a_60_to_90_second_beat() -> None:
 
 def test_every_figure_said_aloud_is_in_the_numbers_file() -> None:
     figures = {figure for line in spoken_lines(BEAT) for figure in FIGURE.findall(line)}
-    assert {"48.1", "88.7", "16,060", "21%", "54%", "36.8", "18.0", "0.48"} <= figures
+    assert {"45.5", "98.3", "17,232", "19%", "50%", "36.8", "16.4", "0.54"} <= figures  # replay revision r5
     missing = [figure for figure in sorted(figures) if figure not in NUMBERS]
     assert missing == []
     asked = markdown_section(BEAT, "### If asked")

@@ -1,0 +1,1021 @@
+{
+ "schema": "floodguard.theos2_water_rule_v2.freeze.v1",
+ "generated_at_utc": "2026-10-11T08:49:18Z",
+ "source_timestamp": "THEOS-2 2025-07-30T03:33Z (sukhothai) and 2025-07-31T03:51Z (chip_003, chip_001)",
+ "confidence_class": "low",
+ "confidence_basis": "A rule developed on three THEOS-2 chips with labels by an AI model; no ground check.",
+ "operational_status": "non_operational",
+ "official_warning": false,
+ "can_feed_decision_layer": false,
+ "plan": {
+  "path": "docs/proposal_execution/theos2_water_rule_v2_plan_v1.md",
+  "sha256": "1ba852bf091c112fe11c22562bd5b993e77941d95d378f8d7436ffe448161303"
+ },
+ "what_this_is": "The second THEOS-2 water rule, chosen on 240 development points labelled by the agent and frozen before any label of a team member was read. It is scored on the 300 test points in the run that computes the figures of the label check.",
+ "test_labels_read_before_this_freeze": false,
+ "development_points": {
+  "path": "outputs/theos2_water_rule_v2/development_points_v1.json",
+  "sha256": "077cc7df86deeebfdcb864b7e3b8a171054405bb03a52f7ccf15bbd3d2f1ffd7"
+ },
+ "development_labels": {
+  "path": "outputs/theos2_water_rule_v2/development_labels_v1.json",
+  "sha256": "5be051e72dc97ae950fd8cd92ba164abf39b2499eaed68496ce521c11fce50dc",
+  "counts": {
+   "water": 83,
+   "not_water": 117,
+   "cannot_tell": 40
+  }
+ },
+ "choice_figure": "Share answered and alike: of the area where the development label is water or not water, the share where the candidate gives an answer and the answer is the label; each group weighted by its pixels. A candidate with fitted parameters is scored on a chip by a version fitted without that chip.",
+ "candidates": [
+  {
+   "name": "rule_v1",
+   "fitted_parameters": 0,
+   "by_chip": {
+    "sukhothai": 0.831,
+    "chip_003": 0.7363,
+    "chip_001": 0.7687
+   },
+   "mean": 0.7787,
+   "water_share_of_the_chip": {
+    "sukhothai": 0.3355,
+    "chip_003": 0.3803,
+    "chip_001": 0.2313
+   },
+   "unobservable_share_of_the_chip": {
+    "sukhothai": 0.0845,
+    "chip_003": 0.187,
+    "chip_001": 0.0
+   },
+   "note": "The rule of the earlier checks, as it was run."
+  },
+  {
+   "name": "nir_at_or_below_red",
+   "fitted_parameters": 0,
+   "by_chip": {
+    "sukhothai": 0.9113,
+    "chip_003": 0.94,
+    "chip_001": 1.0
+   },
+   "mean": 0.9504,
+   "water_share_of_the_chip": {
+    "sukhothai": 0.4314,
+    "chip_003": 0.517,
+    "chip_001": 0.0002
+   },
+   "unobservable_share_of_the_chip": {
+    "sukhothai": 0.0,
+    "chip_003": 0.0,
+    "chip_001": 0.0
+   }
+  },
+  {
+   "name": "index_at_or_below_a_fitted_limit",
+   "fitted_parameters": 1,
+   "by_chip": {
+    "sukhothai": 0.9327,
+    "chip_003": 0.9696,
+    "chip_001": 1.0
+   },
+   "mean": 0.9674,
+   "water_share_of_the_chip": {
+    "sukhothai": 0.4173,
+    "chip_003": 0.4783,
+    "chip_001": 0.0001
+   },
+   "unobservable_share_of_the_chip": {
+    "sukhothai": 0.0,
+    "chip_003": 0.0,
+    "chip_001": 0.0
+   },
+   "note": "The limit is fitted without the chip that is scored; limits chosen: {'sukhothai': -0.01, 'chip_003': -0.01, 'chip_001': -0.01}.",
+   "limits_on_all_three_chips": {
+    "-0.1": 0.8606,
+    "-0.09": 0.898,
+    "-0.08": 0.9158,
+    "-0.07": 0.9158,
+    "-0.06": 0.9227,
+    "-0.05": 0.9303,
+    "-0.04": 0.9546,
+    "-0.03": 0.9546,
+    "-0.02": 0.9594,
+    "-0.01": 0.9674,
+    "0.0": 0.9504,
+    "0.01": 0.9402,
+    "0.02": 0.9355
+   }
+  },
+  {
+   "name": "water_index_at_or_above_-0.045",
+   "fitted_parameters": 1,
+   "by_chip": {
+    "sukhothai": 0.9171,
+    "chip_003": 0.4376,
+    "chip_001": 1.0
+   },
+   "mean": 0.7849,
+   "water_share_of_the_chip": {
+    "sukhothai": 0.3815,
+    "chip_003": 0.0405,
+    "chip_001": 0.0
+   },
+   "unobservable_share_of_the_chip": {
+    "sukhothai": 0.0,
+    "chip_003": 0.0,
+    "chip_001": 0.0
+   },
+   "note": "The water index of rule v1 with one limit for every image; the limit is not fitted without the chip."
+  },
+  {
+   "name": "water_index_at_or_above_-0.1",
+   "fitted_parameters": 1,
+   "by_chip": {
+    "sukhothai": 0.8957,
+    "chip_003": 0.5786,
+    "chip_001": 1.0
+   },
+   "mean": 0.8248,
+   "water_share_of_the_chip": {
+    "sukhothai": 0.4514,
+    "chip_003": 0.2192,
+    "chip_001": 0.0006
+   },
+   "unobservable_share_of_the_chip": {
+    "sukhothai": 0.0,
+    "chip_003": 0.0,
+    "chip_001": 0.0
+   },
+   "note": "The water index of rule v1 with one limit for every image; the limit is not fitted without the chip."
+  },
+  {
+   "name": "water_index_at_or_above_-0.145",
+   "fitted_parameters": 1,
+   "by_chip": {
+    "sukhothai": 0.8681,
+    "chip_003": 0.9233,
+    "chip_001": 1.0
+   },
+   "mean": 0.9305,
+   "water_share_of_the_chip": {
+    "sukhothai": 0.5083,
+    "chip_003": 0.526,
+    "chip_001": 0.0076
+   },
+   "unobservable_share_of_the_chip": {
+    "sukhothai": 0.0,
+    "chip_003": 0.0,
+    "chip_001": 0.0
+   },
+   "note": "The water index of rule v1 with one limit for every image; the limit is not fitted without the chip."
+  },
+  {
+   "name": "index_at_or_below_-0.02_objects_of_25_px_or_more",
+   "fitted_parameters": 2,
+   "by_chip": {
+    "sukhothai": 0.9245,
+    "chip_003": 0.952,
+    "chip_001": 1.0
+   },
+   "mean": 0.9588,
+   "water_share_of_the_chip": {
+    "sukhothai": 0.3991,
+    "chip_003": 0.4326,
+    "chip_001": 0.0
+   },
+   "unobservable_share_of_the_chip": {
+    "sukhothai": 0.0,
+    "chip_003": 0.0,
+    "chip_001": 0.0
+   },
+   "note": "Tried to see whether a size rule helps; the limit and the size are not fitted without the chip."
+  },
+  {
+   "name": "index_at_or_below_-0.02_objects_of_250_px_or_more",
+   "fitted_parameters": 2,
+   "by_chip": {
+    "sukhothai": 0.9071,
+    "chip_003": 0.9361,
+    "chip_001": 1.0
+   },
+   "mean": 0.9477,
+   "water_share_of_the_chip": {
+    "sukhothai": 0.3849,
+    "chip_003": 0.418,
+    "chip_001": 0.0
+   },
+   "unobservable_share_of_the_chip": {
+    "sukhothai": 0.0,
+    "chip_003": 0.0,
+    "chip_001": 0.0
+   },
+   "note": "Tried to see whether a size rule helps; the limit and the size are not fitted without the chip."
+  },
+  {
+   "name": "logistic_index_water_index_red_blue_unweighted",
+   "fitted_parameters": 4,
+   "by_chip": {
+    "sukhothai": 0.8475,
+    "chip_003": 0.8961,
+    "chip_001": 1.0
+   },
+   "mean": 0.9145,
+   "water_share_of_the_chip": {
+    "sukhothai": 0.4317,
+    "chip_003": 0.3793,
+    "chip_001": 0.0007
+   },
+   "unobservable_share_of_the_chip": {
+    "sukhothai": 0.0,
+    "chip_003": 0.0,
+    "chip_001": 0.0
+   }
+  },
+  {
+   "name": "logistic_index_water_index_red_blue_green_blue_unweighted",
+   "fitted_parameters": 5,
+   "by_chip": {
+    "sukhothai": 0.8475,
+    "chip_003": 0.8961,
+    "chip_001": 1.0
+   },
+   "mean": 0.9145,
+   "water_share_of_the_chip": {
+    "sukhothai": 0.4249,
+    "chip_003": 0.3801,
+    "chip_001": 0.0007
+   },
+   "unobservable_share_of_the_chip": {
+    "sukhothai": 0.0,
+    "chip_003": 0.0,
+    "chip_001": 0.0
+   }
+  },
+  {
+   "name": "logistic_index_red_blue_unweighted",
+   "fitted_parameters": 3,
+   "by_chip": {
+    "sukhothai": 0.8837,
+    "chip_003": 0.9444,
+    "chip_001": 0.9846
+   },
+   "mean": 0.9376,
+   "water_share_of_the_chip": {
+    "sukhothai": 0.3648,
+    "chip_003": 0.4656,
+    "chip_001": 0.001
+   },
+   "unobservable_share_of_the_chip": {
+    "sukhothai": 0.0,
+    "chip_003": 0.0,
+    "chip_001": 0.0
+   }
+  },
+  {
+   "name": "logistic_index_water_index_red_blue_relative_brightness_unweighted",
+   "fitted_parameters": 5,
+   "by_chip": {
+    "sukhothai": 0.9327,
+    "chip_003": 0.9256,
+    "chip_001": 1.0
+   },
+   "mean": 0.9528,
+   "water_share_of_the_chip": {
+    "sukhothai": 0.4088,
+    "chip_003": 0.5795,
+    "chip_001": 0.0
+   },
+   "unobservable_share_of_the_chip": {
+    "sukhothai": 0.0,
+    "chip_003": 0.0,
+    "chip_001": 0.0
+   }
+  },
+  {
+   "name": "tree_depth_2_index_water_index_red_blue_unweighted",
+   "fitted_parameters": 3,
+   "by_chip": {
+    "sukhothai": 0.707,
+    "chip_003": 0.9585,
+    "chip_001": 0.9677
+   },
+   "mean": 0.8777,
+   "water_share_of_the_chip": {
+    "sukhothai": 0.0942,
+    "chip_003": 0.4902,
+    "chip_001": 0.0057
+   },
+   "unobservable_share_of_the_chip": {
+    "sukhothai": 0.0,
+    "chip_003": 0.0,
+    "chip_001": 0.0
+   }
+  },
+  {
+   "name": "tree_depth_3_with_relative_brightness_unweighted",
+   "fitted_parameters": 7,
+   "by_chip": {
+    "sukhothai": 0.9261,
+    "chip_003": 0.9611,
+    "chip_001": 1.0
+   },
+   "mean": 0.9624,
+   "water_share_of_the_chip": {
+    "sukhothai": 0.4123,
+    "chip_003": 0.4372,
+    "chip_001": 0.0
+   },
+   "unobservable_share_of_the_chip": {
+    "sukhothai": 0.0,
+    "chip_003": 0.0,
+    "chip_001": 0.0
+   }
+  },
+  {
+   "name": "logistic_index_water_index_red_blue_area_weighted",
+   "fitted_parameters": 4,
+   "by_chip": {
+    "sukhothai": 0.8831,
+    "chip_003": 0.8712,
+    "chip_001": 1.0
+   },
+   "mean": 0.9181,
+   "water_share_of_the_chip": {
+    "sukhothai": 0.4603,
+    "chip_003": 0.3494,
+    "chip_001": 0.0007
+   },
+   "unobservable_share_of_the_chip": {
+    "sukhothai": 0.0,
+    "chip_003": 0.0,
+    "chip_001": 0.0
+   }
+  },
+  {
+   "name": "logistic_index_water_index_red_blue_green_blue_area_weighted",
+   "fitted_parameters": 5,
+   "by_chip": {
+    "sukhothai": 0.8617,
+    "chip_003": 0.8712,
+    "chip_001": 1.0
+   },
+   "mean": 0.911,
+   "water_share_of_the_chip": {
+    "sukhothai": 0.4548,
+    "chip_003": 0.35,
+    "chip_001": 0.0007
+   },
+   "unobservable_share_of_the_chip": {
+    "sukhothai": 0.0,
+    "chip_003": 0.0,
+    "chip_001": 0.0
+   }
+  },
+  {
+   "name": "logistic_index_red_blue_area_weighted",
+   "fitted_parameters": 3,
+   "by_chip": {
+    "sukhothai": 0.8459,
+    "chip_003": 0.9667,
+    "chip_001": 0.9846
+   },
+   "mean": 0.9324,
+   "water_share_of_the_chip": {
+    "sukhothai": 0.3969,
+    "chip_003": 0.4098,
+    "chip_001": 0.001
+   },
+   "unobservable_share_of_the_chip": {
+    "sukhothai": 0.0,
+    "chip_003": 0.0,
+    "chip_001": 0.0
+   }
+  },
+  {
+   "name": "logistic_index_water_index_red_blue_relative_brightness_area_weighted",
+   "fitted_parameters": 5,
+   "by_chip": {
+    "sukhothai": 0.8617,
+    "chip_003": 0.9137,
+    "chip_001": 1.0
+   },
+   "mean": 0.9251,
+   "water_share_of_the_chip": {
+    "sukhothai": 0.4584,
+    "chip_003": 0.4904,
+    "chip_001": 0.0
+   },
+   "unobservable_share_of_the_chip": {
+    "sukhothai": 0.0,
+    "chip_003": 0.0,
+    "chip_001": 0.0
+   }
+  },
+  {
+   "name": "tree_depth_2_index_water_index_red_blue_area_weighted",
+   "fitted_parameters": 3,
+   "by_chip": {
+    "sukhothai": 0.9261,
+    "chip_003": 0.5086,
+    "chip_001": 0.9677
+   },
+   "mean": 0.8008,
+   "water_share_of_the_chip": {
+    "sukhothai": 0.4123,
+    "chip_003": 0.0933,
+    "chip_001": 0.0057
+   },
+   "unobservable_share_of_the_chip": {
+    "sukhothai": 0.0,
+    "chip_003": 0.0,
+    "chip_001": 0.0
+   }
+  },
+  {
+   "name": "tree_depth_3_with_relative_brightness_area_weighted",
+   "fitted_parameters": 7,
+   "by_chip": {
+    "sukhothai": 0.9261,
+    "chip_003": 0.5086,
+    "chip_001": 1.0
+   },
+   "mean": 0.8116,
+   "water_share_of_the_chip": {
+    "sukhothai": 0.4123,
+    "chip_003": 0.0951,
+    "chip_001": 0.0008
+   },
+   "unobservable_share_of_the_chip": {
+    "sukhothai": 0.0,
+    "chip_003": 0.0,
+    "chip_001": 0.0
+   }
+  },
+  {
+   "name": "nir_at_or_below_red_and_brown_or_dark_0.08",
+   "fitted_parameters": 2,
+   "by_chip": {
+    "sukhothai": 0.7952,
+    "chip_003": 0.9511,
+    "chip_001": 1.0
+   },
+   "mean": 0.9154,
+   "water_share_of_the_chip": {
+    "sukhothai": 0.2348,
+    "chip_003": 0.5126,
+    "chip_001": 0.0002
+   },
+   "unobservable_share_of_the_chip": {
+    "sukhothai": 0.0,
+    "chip_003": 0.0,
+    "chip_001": 0.0
+   },
+   "note": "A hand rule with a colour condition against grey roofs; its two limits are not fitted without the chip."
+  },
+  {
+   "name": "nir_at_or_below_red_and_brown_or_dark_0.12",
+   "fitted_parameters": 2,
+   "by_chip": {
+    "sukhothai": 0.7656,
+    "chip_003": 0.9537,
+    "chip_001": 1.0
+   },
+   "mean": 0.9064,
+   "water_share_of_the_chip": {
+    "sukhothai": 0.1795,
+    "chip_003": 0.4795,
+    "chip_001": 0.0001
+   },
+   "unobservable_share_of_the_chip": {
+    "sukhothai": 0.0,
+    "chip_003": 0.0,
+    "chip_001": 0.0
+   },
+   "note": "A hand rule with a colour condition against grey roofs; its two limits are not fitted without the chip."
+  },
+  {
+   "name": "nir_at_or_below_red_and_brown_or_dark_0.15",
+   "fitted_parameters": 2,
+   "by_chip": {
+    "sukhothai": 0.7007,
+    "chip_003": 0.9502,
+    "chip_001": 1.0
+   },
+   "mean": 0.8836,
+   "water_share_of_the_chip": {
+    "sukhothai": 0.1245,
+    "chip_003": 0.4179,
+    "chip_001": 0.0001
+   },
+   "unobservable_share_of_the_chip": {
+    "sukhothai": 0.0,
+    "chip_003": 0.0,
+    "chip_001": 0.0
+   },
+   "note": "A hand rule with a colour condition against grey roofs; its two limits are not fitted without the chip."
+  }
+ ],
+ "choice": {
+  "best_mean": "index_at_or_below_a_fitted_limit",
+  "chosen": "index_at_or_below_a_fitted_limit",
+  "fitted_parameters": 1,
+  "rule_of_the_plan": "Highest mean over the three chips; a candidate within 0.01 of the best with fewer fitted parameters is preferred; nothing is frozen unless it is more than 0.01 above rule v1.",
+  "mean_of_rule_v1": 0.7787,
+  "mean_of_the_chosen_with_one_chip_left_out": 0.9674,
+  "limit_fitted_on_all_three_chips": -0.01
+ },
+ "cloud": {
+  "why_outside_the_score": "A point under cloud has no scoring label, so the choice figure cannot see whether cloud is set aside. The variant frozen is the one that sets aside the most points the agent marked as cloud without lowering the choice figure. This is an addition to the plan, made on five points, and is said so.",
+  "variants": [
+   {
+    "name": "no_cloud_rule",
+    "by_chip": {
+     "sukhothai": 0.9327,
+     "chip_003": 0.9696,
+     "chip_001": 1.0
+    },
+    "mean": 0.9674,
+    "water_share_of_the_chip": {
+     "sukhothai": 0.4173,
+     "chip_003": 0.4783,
+     "chip_001": 0.0001
+    },
+    "unobservable_share_of_the_chip": {
+     "sukhothai": 0.0,
+     "chip_003": 0.0,
+     "chip_001": 0.0
+    },
+    "cloud_points": 5,
+    "cloud_points_set_aside": 0,
+    "cloud_points_called_water": 3
+   },
+   {
+    "name": "bright_11_px_wide_water_first",
+    "by_chip": {
+     "sukhothai": 0.8623,
+     "chip_003": 0.9696,
+     "chip_001": 1.0
+    },
+    "mean": 0.944,
+    "water_share_of_the_chip": {
+     "sukhothai": 0.4173,
+     "chip_003": 0.4783,
+     "chip_001": 0.0001
+    },
+    "unobservable_share_of_the_chip": {
+     "sukhothai": 0.0321,
+     "chip_003": 0.0694,
+     "chip_001": 0.0
+    },
+    "cloud_points": 5,
+    "cloud_points_set_aside": 2,
+    "cloud_points_called_water": 3
+   },
+   {
+    "name": "bright_11_px_wide_cloud_first",
+    "by_chip": {
+     "sukhothai": 0.8623,
+     "chip_003": 0.7826,
+     "chip_001": 1.0
+    },
+    "mean": 0.8816,
+    "water_share_of_the_chip": {
+     "sukhothai": 0.3999,
+     "chip_003": 0.3606,
+     "chip_001": 0.0001
+    },
+    "unobservable_share_of_the_chip": {
+     "sukhothai": 0.0495,
+     "chip_003": 0.187,
+     "chip_001": 0.0
+    },
+    "cloud_points": 5,
+    "cloud_points_set_aside": 4,
+    "cloud_points_called_water": 1
+   },
+   {
+    "name": "bright_11_px_wide_and_index_above_-0.04",
+    "by_chip": {
+     "sukhothai": 0.8623,
+     "chip_003": 0.9696,
+     "chip_001": 1.0
+    },
+    "mean": 0.944,
+    "water_share_of_the_chip": {
+     "sukhothai": 0.4107,
+     "chip_003": 0.4366,
+     "chip_001": 0.0001
+    },
+    "unobservable_share_of_the_chip": {
+     "sukhothai": 0.0387,
+     "chip_003": 0.1111,
+     "chip_001": 0.0
+    },
+    "cloud_points": 5,
+    "cloud_points_set_aside": 4,
+    "cloud_points_called_water": 1
+   },
+   {
+    "name": "bright_11_px_wide_and_index_above_-0.06",
+    "by_chip": {
+     "sukhothai": 0.8623,
+     "chip_003": 0.9322,
+     "chip_001": 1.0
+    },
+    "mean": 0.9315,
+    "water_share_of_the_chip": {
+     "sukhothai": 0.4058,
+     "chip_003": 0.4252,
+     "chip_001": 0.0001
+    },
+    "unobservable_share_of_the_chip": {
+     "sukhothai": 0.0436,
+     "chip_003": 0.1224,
+     "chip_001": 0.0
+    },
+    "cloud_points": 5,
+    "cloud_points_set_aside": 4,
+    "cloud_points_called_water": 1
+   },
+   {
+    "name": "bright_11_px_wide_and_index_above_-0.08",
+    "by_chip": {
+     "sukhothai": 0.8623,
+     "chip_003": 0.9322,
+     "chip_001": 1.0
+    },
+    "mean": 0.9315,
+    "water_share_of_the_chip": {
+     "sukhothai": 0.4027,
+     "chip_003": 0.4145,
+     "chip_001": 0.0001
+    },
+    "unobservable_share_of_the_chip": {
+     "sukhothai": 0.0467,
+     "chip_003": 0.1331,
+     "chip_001": 0.0
+    },
+    "cloud_points": 5,
+    "cloud_points_set_aside": 4,
+    "cloud_points_called_water": 1
+   },
+   {
+    "name": "bright_20_px_wide_water_first",
+    "by_chip": {
+     "sukhothai": 0.9327,
+     "chip_003": 0.9696,
+     "chip_001": 1.0
+    },
+    "mean": 0.9674,
+    "water_share_of_the_chip": {
+     "sukhothai": 0.4173,
+     "chip_003": 0.4783,
+     "chip_001": 0.0001
+    },
+    "unobservable_share_of_the_chip": {
+     "sukhothai": 0.0101,
+     "chip_003": 0.05,
+     "chip_001": 0.0
+    },
+    "cloud_points": 5,
+    "cloud_points_set_aside": 2,
+    "cloud_points_called_water": 3
+   },
+   {
+    "name": "bright_20_px_wide_cloud_first",
+    "by_chip": {
+     "sukhothai": 0.9327,
+     "chip_003": 0.7826,
+     "chip_001": 1.0
+    },
+    "mean": 0.9051,
+    "water_share_of_the_chip": {
+     "sukhothai": 0.4153,
+     "chip_003": 0.3852,
+     "chip_001": 0.0001
+    },
+    "unobservable_share_of_the_chip": {
+     "sukhothai": 0.0121,
+     "chip_003": 0.1431,
+     "chip_001": 0.0
+    },
+    "cloud_points": 5,
+    "cloud_points_set_aside": 4,
+    "cloud_points_called_water": 1
+   },
+   {
+    "name": "bright_20_px_wide_and_index_above_-0.04",
+    "by_chip": {
+     "sukhothai": 0.9327,
+     "chip_003": 0.9696,
+     "chip_001": 1.0
+    },
+    "mean": 0.9674,
+    "water_share_of_the_chip": {
+     "sukhothai": 0.4166,
+     "chip_003": 0.4403,
+     "chip_001": 0.0001
+    },
+    "unobservable_share_of_the_chip": {
+     "sukhothai": 0.0108,
+     "chip_003": 0.088,
+     "chip_001": 0.0
+    },
+    "cloud_points": 5,
+    "cloud_points_set_aside": 4,
+    "cloud_points_called_water": 1
+   },
+   {
+    "name": "bright_20_px_wide_and_index_above_-0.06",
+    "by_chip": {
+     "sukhothai": 0.9327,
+     "chip_003": 0.9322,
+     "chip_001": 1.0
+    },
+    "mean": 0.955,
+    "water_share_of_the_chip": {
+     "sukhothai": 0.4159,
+     "chip_003": 0.4317,
+     "chip_001": 0.0001
+    },
+    "unobservable_share_of_the_chip": {
+     "sukhothai": 0.0115,
+     "chip_003": 0.0966,
+     "chip_001": 0.0
+    },
+    "cloud_points": 5,
+    "cloud_points_set_aside": 4,
+    "cloud_points_called_water": 1
+   },
+   {
+    "name": "bright_20_px_wide_and_index_above_-0.08",
+    "by_chip": {
+     "sukhothai": 0.9327,
+     "chip_003": 0.9322,
+     "chip_001": 1.0
+    },
+    "mean": 0.955,
+    "water_share_of_the_chip": {
+     "sukhothai": 0.4154,
+     "chip_003": 0.4245,
+     "chip_001": 0.0001
+    },
+    "unobservable_share_of_the_chip": {
+     "sukhothai": 0.012,
+     "chip_003": 0.1038,
+     "chip_001": 0.0
+    },
+    "cloud_points": 5,
+    "cloud_points_set_aside": 4,
+    "cloud_points_called_water": 1
+   },
+   {
+    "name": "bright_40_px_wide_water_first",
+    "by_chip": {
+     "sukhothai": 0.9327,
+     "chip_003": 0.9696,
+     "chip_001": 1.0
+    },
+    "mean": 0.9674,
+    "water_share_of_the_chip": {
+     "sukhothai": 0.4173,
+     "chip_003": 0.4783,
+     "chip_001": 0.0001
+    },
+    "unobservable_share_of_the_chip": {
+     "sukhothai": 0.006,
+     "chip_003": 0.0211,
+     "chip_001": 0.0
+    },
+    "cloud_points": 5,
+    "cloud_points_set_aside": 2,
+    "cloud_points_called_water": 3
+   },
+   {
+    "name": "bright_40_px_wide_cloud_first",
+    "by_chip": {
+     "sukhothai": 0.9327,
+     "chip_003": 0.8948,
+     "chip_001": 1.0
+    },
+    "mean": 0.9425,
+    "water_share_of_the_chip": {
+     "sukhothai": 0.4172,
+     "chip_003": 0.4227,
+     "chip_001": 0.0001
+    },
+    "unobservable_share_of_the_chip": {
+     "sukhothai": 0.0061,
+     "chip_003": 0.0767,
+     "chip_001": 0.0
+    },
+    "cloud_points": 5,
+    "cloud_points_set_aside": 4,
+    "cloud_points_called_water": 1
+   },
+   {
+    "name": "bright_40_px_wide_and_index_above_-0.04",
+    "by_chip": {
+     "sukhothai": 0.9327,
+     "chip_003": 0.9696,
+     "chip_001": 1.0
+    },
+    "mean": 0.9674,
+    "water_share_of_the_chip": {
+     "sukhothai": 0.4173,
+     "chip_003": 0.4477,
+     "chip_001": 0.0001
+    },
+    "unobservable_share_of_the_chip": {
+     "sukhothai": 0.006,
+     "chip_003": 0.0517,
+     "chip_001": 0.0
+    },
+    "cloud_points": 5,
+    "cloud_points_set_aside": 4,
+    "cloud_points_called_water": 1
+   },
+   {
+    "name": "bright_40_px_wide_and_index_above_-0.06",
+    "by_chip": {
+     "sukhothai": 0.9327,
+     "chip_003": 0.9322,
+     "chip_001": 1.0
+    },
+    "mean": 0.955,
+    "water_share_of_the_chip": {
+     "sukhothai": 0.4172,
+     "chip_003": 0.4433,
+     "chip_001": 0.0001
+    },
+    "unobservable_share_of_the_chip": {
+     "sukhothai": 0.006,
+     "chip_003": 0.0561,
+     "chip_001": 0.0
+    },
+    "cloud_points": 5,
+    "cloud_points_set_aside": 4,
+    "cloud_points_called_water": 1
+   },
+   {
+    "name": "bright_40_px_wide_and_index_above_-0.08",
+    "by_chip": {
+     "sukhothai": 0.9327,
+     "chip_003": 0.9322,
+     "chip_001": 1.0
+    },
+    "mean": 0.955,
+    "water_share_of_the_chip": {
+     "sukhothai": 0.4172,
+     "chip_003": 0.4398,
+     "chip_001": 0.0001
+    },
+    "unobservable_share_of_the_chip": {
+     "sukhothai": 0.006,
+     "chip_003": 0.0596,
+     "chip_001": 0.0
+    },
+    "cloud_points": 5,
+    "cloud_points_set_aside": 4,
+    "cloud_points_called_water": 1
+   }
+  ],
+  "frozen": "bright_40_px_wide_and_index_above_-0.04",
+  "cloud_points_set_aside_by_the_frozen_rule": 4,
+  "cloud_points_called_water_by_the_frozen_rule": 1
+ },
+ "overview": {
+  "path": "outputs/theos2_water_rule_v2/rule_v1_and_v2_overview.jpg",
+  "sha256": "b1883940dcb61b60a9452ce779a33200228fb056c168c40b366ef56474e3570a",
+  "note": "The three chips at 6 m a pixel with the water of each rule. A picture to look at, not a measurement."
+ },
+ "frozen_rule": {
+  "code": "floodguard.theos2_water_rule_v2.water_v2",
+  "configuration": {
+   "index_water_max": -0.01,
+   "index_cloud_min": -0.04,
+   "bright_brightness_min": 520.0,
+   "bright_nir_min": 560.0,
+   "cloud_min_width_px": 40,
+   "cloud_margin_px": 10
+  },
+  "in_words": "A pixel of 2 m is water when (NIR - red) / (NIR + red) is at or below -0.01. Inside a bright object at least 80 m wide, a pixel with that index above -0.04 is unobservable (cloud). No limit is found on the image, no object is dropped for its size, and nothing is set by eye.",
+  "share_answered_and_alike_on_the_development_points": {
+   "by_chip": {
+    "sukhothai": 0.9327,
+    "chip_003": 0.9696,
+    "chip_001": 1.0
+   },
+   "mean": 0.9674,
+   "water_share_of_the_chip": {
+    "sukhothai": 0.4173,
+    "chip_003": 0.4477,
+    "chip_001": 0.0001
+   },
+   "unobservable_share_of_the_chip": {
+    "sukhothai": 0.006,
+    "chip_003": 0.0517,
+    "chip_001": 0.0
+   }
+  },
+  "chips": {
+   "sukhothai": {
+    "rule_v2": {
+     "configuration": {
+      "index_water_max": -0.01,
+      "index_cloud_min": -0.04,
+      "bright_brightness_min": 520.0,
+      "bright_nir_min": 560.0,
+      "cloud_min_width_px": 40,
+      "cloud_margin_px": 10
+     },
+     "pixels": 2253001,
+     "valid_pixels": 2253001,
+     "unobservable_cloud_pixels": 13555,
+     "observable_pixels": 2239446,
+     "water_pixels": 940069,
+     "water_pixels_inside_bright_objects": 87
+    },
+    "water_share_of_the_chip": {
+     "rule_v1": 0.3355,
+     "rule_v2": 0.4173
+    },
+    "unobservable_share_of_the_chip": {
+     "rule_v1": 0.0845,
+     "rule_v2": 0.006
+    },
+    "raster_outside_git": {
+     "name": "water_v2_sukhothai_2m.tif",
+     "sha256": "2e931b87fd273a0426c0b1e19ad209ec0c7661297d86a2bb9fc920260d83bcf5"
+    }
+   },
+   "chip_003": {
+    "rule_v2": {
+     "configuration": {
+      "index_water_max": -0.01,
+      "index_cloud_min": -0.04,
+      "bright_brightness_min": 520.0,
+      "bright_nir_min": 560.0,
+      "cloud_min_width_px": 40,
+      "cloud_margin_px": 10
+     },
+     "pixels": 2251500,
+     "valid_pixels": 2251500,
+     "unobservable_cloud_pixels": 116440,
+     "observable_pixels": 2135060,
+     "water_pixels": 1007921,
+     "water_pixels_inside_bright_objects": 56246
+    },
+    "water_share_of_the_chip": {
+     "rule_v1": 0.3803,
+     "rule_v2": 0.4477
+    },
+    "unobservable_share_of_the_chip": {
+     "rule_v1": 0.187,
+     "rule_v2": 0.0517
+    },
+    "raster_outside_git": {
+     "name": "water_v2_chip_003_2m.tif",
+     "sha256": "b967a05c089535f0a15d06e8b1024969794c59e5b3cad0fc2b7d6c84c62282a1"
+    }
+   },
+   "chip_001": {
+    "rule_v2": {
+     "configuration": {
+      "index_water_max": -0.01,
+      "index_cloud_min": -0.04,
+      "bright_brightness_min": 520.0,
+      "bright_nir_min": 560.0,
+      "cloud_min_width_px": 40,
+      "cloud_margin_px": 10
+     },
+     "pixels": 2251500,
+     "valid_pixels": 2251500,
+     "unobservable_cloud_pixels": 0,
+     "observable_pixels": 2251500,
+     "water_pixels": 212,
+     "water_pixels_inside_bright_objects": 0
+    },
+    "water_share_of_the_chip": {
+     "rule_v1": 0.2313,
+     "rule_v2": 0.0001
+    },
+    "unobservable_share_of_the_chip": {
+     "rule_v1": 0.0,
+     "rule_v2": 0.0
+    },
+    "raster_outside_git": {
+     "name": "water_v2_chip_001_2m.tif",
+     "sha256": "7091ff8a5416e7187d14d5c8af56684340e6054070045c61147500dae049f468"
+    }
+   }
+  }
+ },
+ "limits": [
+  "The development labels are the reading of an AI model on the same four bands the rule reads.",
+  "The limit of -0.01 was the best on every pair of chips, but there are only three chips, two of them from one pass.",
+  "Roofs, roads and concrete have an index just below zero and are called water in places; thin cloud that is not bright is not set aside.",
+  "The two brightness limits are raw sensor values taken over from rule v1; a scene with other light may need others.",
+  "On the chip without a flood the rule finds no water at all, also not the river in one corner of it: seen on the overview picture, not measured.",
+  "None of the three chips shows Mae Sai, a mountain valley, or terrain shadow."
+ ]
+}

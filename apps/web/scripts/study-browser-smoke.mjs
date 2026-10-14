@@ -722,7 +722,8 @@ try {
   assert.deepEqual(await envelopeSources.getByTestId("envelope-files").locator("a[download]").evaluateAll((links) => links.map((link) => link.getAttribute("href"))),
     envelopeFiles.map((file) => file.href), "The Sources panel links the raster, the statistics and the licence notice");
   assert(envelopeFiles[2].href.endsWith("/unosat4009/LICENSE"), "The licence notice ships beside the envelope's files");
-  await expect(sourcesPanel.getByTestId("tuning-disclosure").locator("li[data-relation='used_for_tuning']")).toHaveCount(2);
+  // From r5 four items are used for tuning: GISTDA's figure, the Sentinel-1 pass, and the Sentinel-2 mud line and water check.
+  await expect(sourcesPanel.getByTestId("tuning-disclosure").locator("li[data-relation='used_for_tuning']")).toHaveCount(4);
   await expect(sourcesPanel.getByTestId("sources-footer")).toContainText("status: non-operational · Data files generated:");
   // "k" is the plan size on this page: the sources name the depth factor in words and write it f.
   const sourcesText = await sourcesPanel.innerText();
@@ -824,8 +825,8 @@ try {
   const envelopeComparison = page.getByTestId("envelope-comparison");
   await expect(envelopeComparison).toContainText("Season envelope comparison (scenario; plausibility, not validation)");
   await expect(envelopeComparison).toContainText("Plausibility against a season envelope, not a validation.");
-  await expect(envelopeComparison.getByTestId("envelope-district").locator("li[data-row='modelled_peak']")).toContainText(/\(3\.5 m stage\): agreement \(IoU\) 0\.48; 60\.5% of the modelled water lies inside the envelope; the modelled water reaches 70\.4% of the envelope\./);
-  await expect(envelopeComparison.getByTestId("envelope-district").locator("li[data-row='largest_extent_13_19_sep']")).toContainText("(2.65 m stage): agreement (IoU) 0.46");
+  await expect(envelopeComparison.getByTestId("envelope-district").locator("li[data-row='modelled_peak']")).toContainText(/\(3\.5 m stage\): agreement \(IoU\) 0\.54; 62\.2% of the modelled water lies inside the envelope; the modelled water reaches 80\.1% of the envelope\./);
+  await expect(envelopeComparison.getByTestId("envelope-district").locator("li[data-row='largest_extent_13_19_sep']")).toContainText("(2.65 m stage): agreement (IoU) 0.51");
   await expect(envelopeComparison.getByTestId("envelope-disagreement")).toContainText("the comparison does not say which of the two is right");
   await expect(envelopeComparison.getByTestId("envelope-dsm")).toContainText("modelled water and residents in town are likely underestimated");
   const comparisonText = await envelopeComparison.innerText();
@@ -908,7 +909,7 @@ try {
   await expectClearMap(["zoom", "notes", "legend", "envelope failure", "attribution"], "raster missing", envelopeFailures);
   await expect(envelopeFailures.locator(".leaflet-fg-envelope-pane canvas")).toHaveCount(0);
   await expect(envelopeFailures.getByTestId("envelope-chip")).toHaveCount(0);
-  await expect(envelopeFailures.getByTestId("envelope-comparison").getByTestId("envelope-district").locator("li[data-row='modelled_peak']")).toContainText("agreement (IoU) 0.48");
+  await expect(envelopeFailures.getByTestId("envelope-comparison").getByTestId("envelope-district").locator("li[data-row='modelled_peak']")).toContainText("agreement (IoU) 0.54");
   await expect(envelopeFailures.getByTestId("envelope-comparison").getByTestId("envelope-residents")).toContainText("about 17,927");
   await expect(envelopeFailures.getByTestId("envelope-comparison-status")).toHaveCount(0);
   await expect(envelopeFailures).not.toHaveURL(/[?&]layers=[a-z]*e(&|$)/);
@@ -1347,8 +1348,8 @@ try {
   const countsTable = depthSources.getByTestId("reported-depth-counts");
   await expect(countsTable).toBeVisible();
   await expect(countsTable.locator("tr[data-status='consistent'] td")).toHaveText(["1", "–", "1"]);
-  await expect(countsTable.locator("tr[data-status='model_wet'] td")).toHaveText(["–", "2", "2"]);
-  await expect(countsTable.locator("tr[data-status='model_dry'] td")).toHaveText(["6", "3", "9"]);
+  await expect(countsTable.locator("tr[data-status='model_wet'] td")).toHaveText(["–", "1", "1"]);
+  await expect(countsTable.locator("tr[data-status='model_dry'] td")).toHaveText(["6", "4", "10"]);
   await expect(depthSources.getByTestId("reported-depths-counted")).toContainText("21 place records from 17 statements in 14 news articles");
   await expect(depthSources.getByTestId("reported-depths-statements")).toContainText("1 with different outcomes at its places");
   const wideTable = await expectDepthTableFits("1440 px, English");
@@ -1404,14 +1405,14 @@ try {
   await expect(comparison.getByTestId("set-comparison-label")).toContainText("No single figure ranks the sets");
   await expect(comparison.getByTestId("set-comparison-label")).toContainText("Hours from illustrative stage keyframes, not observed.");
   await expect(comparison.getByTestId("compare-reported-all-baseline")).toHaveText("34,525 of 81,799");
-  await expect(comparison.getByTestId("compare-reported-all-lost")).toHaveText("7,086 of 34,525 (21%)");
-  await expect(comparison.getByTestId("compare-reported-flooded-baseline")).toHaveText("5,698 of 14,169");
-  await expect(comparison.getByTestId("compare-reported-flooded-keeping")).toHaveText("299");
+  await expect(comparison.getByTestId("compare-reported-all-lost")).toHaveText("6,595 of 34,525 (19%)");
+  await expect(comparison.getByTestId("compare-reported-flooded-baseline")).toHaveText("5,340 of 14,428");
+  await expect(comparison.getByTestId("compare-reported-flooded-keeping")).toHaveText("305");
   await expect(comparison.getByTestId("compare-reported-all-cutoff")).toContainText("Not reached in this replay");
-  await expect(comparison.getByTestId("compare-plan-all-baseline")).toHaveText("24,910 of 81,799");
-  await expect(comparison.getByTestId("compare-plan-all-lost")).toHaveText("13,429 of 24,910 (54%)");
-  await expect(comparison.getByTestId("compare-plan-flooded-baseline")).toHaveText("7,580 of 14,169");
-  await expect(comparison.getByTestId("compare-plan-flooded-keeping")).toHaveText("460");
+  await expect(comparison.getByTestId("compare-plan-all-baseline")).toHaveText("24,817 of 81,799");
+  await expect(comparison.getByTestId("compare-plan-all-lost")).toHaveText("12,380 of 24,817 (50%)");
+  await expect(comparison.getByTestId("compare-plan-flooded-baseline")).toHaveText("6,440 of 14,428");
+  await expect(comparison.getByTestId("compare-plan-flooded-keeping")).toHaveText("404");
   await expect(comparison.getByTestId("compare-plan-flooded-cutoff")).toHaveText("10 Sep 23:00");
   // The plan's table leads with its cut-off hour and explains its loss at the peak.
   const planRows = await comparison.getByTestId("set-compare-plan").locator("tbody tr th").allInnerTexts();
@@ -1441,21 +1442,21 @@ try {
   await expect(equity).toContainText("No proxy-vulnerable resident counted here had a shelter within reach before the flood, so none could lose it. A ratio needs at least 50 such residents in each group.");
   await expect(equity.getByTestId("equity-rule")).toHaveText("What is compared. Of the residents in each group who had a shelter within reach before the flood, the share who lost it.");
   await expect(equity.getByTestId("equity-counts")).toHaveText(
-    "Proxy-vulnerable: 0 lost of 0 within reach before the flood (103 residents counted). Everyone else: 5,400 lost of 5,698 within reach before the flood (14,067 residents counted).");
+    "Proxy-vulnerable: 0 lost of 0 within reach before the flood (78 residents counted). Everyone else: 5,035 lost of 5,340 within reach before the flood (14,350 residents counted).");
   await expect(equity.getByTestId("equity-label")).toContainText("T1 scenario (model). Vulnerable = terrain/remoteness proxy. Hours from illustrative stage keyframes, not observed.");
   await expect(equity.getByTestId("equity-why")).toHaveCount(0);
   // All residents at road nodes, reported set: none of the 2,440 proxy-vulnerable residents within reach lost access. Never "0.00".
   await accessCard.getByRole("radio", { name: /^All residents at road nodes/ }).check();
-  await expect(equity).toContainText("Evacuation Equity Gap: no proxy-vulnerable resident has lost access · At this replay hour, 22.08% of everyone else who had a shelter within reach before the flood have lost it.");
+  await expect(equity).toContainText("Evacuation Equity Gap: no proxy-vulnerable resident has lost access · At this replay hour, 20.55% of everyone else who had a shelter within reach before the flood have lost it.");
   await expect(equity).not.toContainText("Evacuation Equity Gap: 0.00");
   await expect(equity.getByTestId("equity-counts")).toHaveText(
-    "Proxy-vulnerable: 0 lost of 2,440 within reach before the flood (7,152 residents counted). Everyone else: 7,086 lost of 32,085 within reach before the flood (74,647 residents counted).");
+    "Proxy-vulnerable: 0 lost of 2,440 within reach before the flood (7,152 residents counted). Everyone else: 6,595 lost of 32,085 within reach before the flood (74,647 residents counted).");
   assert.equal(await equity.getAttribute("data-reason"), null, "With a ratio the equity block carries no reason");
-  // All residents, ranked plan of 8 at the 3.5 m peak: 320 of 373 against 13,109 of 24,537, about 1.6 and "more likely".
+  // All residents, ranked plan of 8 at the 3.5 m peak: 320 of 373 against 12,060 of 24,444, about 1.7 and "more likely".
   await accessCard.getByRole("radio", { name: "Ranked plan" }).check();
-  await expect(equity).toContainText("Evacuation Equity Gap: 1.61 · Among residents with a shelter within reach before the flood, proxy-vulnerable residents are about 1.6× more likely to lose it (85.77% vs 53.42%).");
+  await expect(equity).toContainText("Evacuation Equity Gap: 1.74 · Among residents with a shelter within reach before the flood, proxy-vulnerable residents are about 1.7× more likely to lose it (85.77% vs 49.34%).");
   await expect(equity.getByTestId("equity-counts")).toHaveText(
-    "Proxy-vulnerable: 320 lost of 373 within reach before the flood (7,152 residents counted). Everyone else: 13,109 lost of 24,537 within reach before the flood (74,647 residents counted).");
+    "Proxy-vulnerable: 320 lost of 373 within reach before the flood (7,152 residents counted). Everyone else: 12,060 lost of 24,444 within reach before the flood (74,647 residents counted).");
   await expect(equity.getByTestId("equity-why")).toContainText("the ratio counts only residents who had a shelter of this set within reach before the flood. So a high ratio says where those homes sit");
   assert.equal(await equity.getAttribute("data-reason"), null, "The plan of 8 over all residents has a ratio");
   await equity.locator("details summary").click();
@@ -1463,13 +1464,13 @@ try {
   await expect(equity.locator("details")).toContainText("No ratio is shown when a group has fewer than 50 residents within reach before the flood");
   assert(!/all residents counted in that group|less likely to lose (?:access|it)/.test(await equity.innerText()), "No rate on the card divides by all residents counted");
   await equity.locator("details summary").click();
-  // Back to residents whose homes flood: 27 proxy-vulnerable residents are within reach of the plan's 8 sites, too few for a ratio.
+  // Back to residents whose homes flood: 4 proxy-vulnerable residents are within reach of the plan's 8 sites, too few for a ratio.
   await accessCard.getByRole("radio", { name: /^Residents whose homes flood at the peak/ }).check();
   await expect(equity).toHaveAttribute("data-reason", "insufficient_group_denominator");
-  await expect(equity).toContainText("Evacuation Equity Gap: no ratio shown · Only 27 proxy-vulnerable residents had a shelter within reach before the flood, fewer than the 50 a ratio needs in each group.");
-  await expect(equity.getByTestId("equity-counts")).toContainText("Proxy-vulnerable: 27 lost of 27 within reach before the flood (103 residents counted).");
+  await expect(equity).toContainText("Evacuation Equity Gap: no ratio shown · Only 4 proxy-vulnerable residents had a shelter within reach before the flood, fewer than the 50 a ratio needs in each group.");
+  await expect(equity.getByTestId("equity-counts")).toContainText("Proxy-vulnerable: 4 lost of 4 within reach before the flood (78 residents counted).");
   await expect(page).toHaveURL(/[?&]pop=flooded(&|$)/);
-  checks.push("Evacuation Equity Gap on the within-reach denominator (R8, option B): the rule in one sentence, 1.61 for the plan of 8 over all residents (320 of 373 against 13,109 of 24,537), no proxy-vulnerable loss for the reported set, no ratio with the reason in the default view, both counts per group");
+  checks.push("Evacuation Equity Gap on the within-reach denominator (R8, option B): the rule in one sentence, 1.74 for the plan of 8 over all residents (320 of 373 against 12,060 of 24,444), no proxy-vulnerable loss for the reported set, no ratio with the reason in the default view, both counts per group");
   await accessCard.getByRole("radio", { name: "Ranked plan" }).check();
   const planSlider = accessCard.getByRole("slider", { name: /^Plan size k/ });
   await planSlider.fill("3");
@@ -1497,12 +1498,12 @@ try {
   // The capacity-aware view sits beside the plan (k = 3): both bounds, overflow = demand − fit, and the standing caveats.
   const capacityBlock = planCard.getByTestId("capacity-aware");
   await expect(capacityBlock.getByRole("heading", { name: "If capacity counts: who fits (two bounds)" })).toBeVisible();
-  await expect(capacityBlock.getByTestId("capacity-coverage-lower")).toHaveText("385 overflow 13,784");
-  await expect(capacityBlock.getByTestId("capacity-coverage-upper")).toHaveText("466 overflow 13,703");
+  await expect(capacityBlock.getByTestId("capacity-coverage-lower")).toHaveText("385 overflow 14,043");
+  await expect(capacityBlock.getByTestId("capacity-coverage-upper")).toHaveText("461 overflow 13,967");
   await expect(capacityBlock.getByTestId("capacity-aware-sentence")).toHaveText(
-    "Reading for k = 3: 5,725 residents can walk to the first 3 sites of the plan above, and the capacity estimates hold 385 to 466 of them. That leaves 13,703 to 13,784 of the 14,169 without a place.");
+    "Reading for k = 3: 4,983 residents can walk to the first 3 sites of the plan above, and the capacity estimates hold 385 to 461 of them. That leaves 13,967 to 14,043 of the 14,428 without a place.");
   const capacityFigures = await capacityBlock.locator("td[data-testid^='capacity-']").evaluateAll((cells) => cells.map((cell) => cell.textContent.replaceAll(",", "").match(/\d+/g).map(Number)));
-  assert(capacityFigures.length === 8 && capacityFigures.every(([served, overflow]) => served + overflow === 14169), `Every capacity cell keeps overflow = demand − fit (${JSON.stringify(capacityFigures)})`);
+  assert(capacityFigures.length === 8 && capacityFigures.every(([served, overflow]) => served + overflow === 14428), `Every capacity cell keeps overflow = demand − fit (${JSON.stringify(capacityFigures)})`);
   for (let index = 0; index < capacityFigures.length; index += 2) {
     assert(capacityFigures[index][0] <= capacityFigures[index + 1][0], `The lower bound never exceeds the upper bound (${JSON.stringify(capacityFigures)})`);
   }
@@ -1515,9 +1516,9 @@ try {
   await expect(caveats).toContainText("Capacity is an unverified estimate from mapped building footprints");
   await expect(caveats).toContainText("candidates to verify on the ground, not a list of sites to open");
   await expect(caveats).toContainText("The planning overlay's listed-capacity figures come from a different source");
-  // The site with 79 places carrying about 2,430 residents is flagged on its row and named in the note.
-  await expect(planCard.locator("li[data-over-capacity]").first()).toContainText("≈ 79 places for ≈ 2,430 residents assigned");
-  await expect(capacityBlock.getByTestId("over-capacity-note")).toContainText("≈ 79 places for ≈ 2,430 residents assigned (about 31 times the estimate)");
+  // The site with 79 places carrying about 2,208 residents is flagged on its row and named in the note.
+  await expect(planCard.locator("li[data-over-capacity]").first()).toContainText("≈ 79 places for ≈ 2,208 residents assigned");
+  await expect(capacityBlock.getByTestId("over-capacity-note")).toContainText("≈ 79 places for ≈ 2,208 residents assigned (about 28 times the estimate)");
   await expect(planCard).not.toContainText(/open these shelters|shelters to open/i);
   // The capacity-aware ranking's own sites: closed until asked for, then load against capacity with the capacity basis.
   const capacitySites = capacityBlock.getByTestId("capacity-ranking-sites");
@@ -1531,12 +1532,12 @@ try {
   // What-if levels around the illustrative peak, not return periods, with the robust core marked on the plan list.
   const whatIf = planCard.getByTestId("what-if-levels");
   await expect(whatIf.getByTestId("what-if-label")).toContainText("What-if levels around an illustrative peak, not return periods.");
-  await expect(whatIf.getByTestId("what-if-demand-2.5")).toHaveText("10,333");
-  await expect(whatIf.getByTestId("what-if-demand-3.5")).toHaveText("14,169");
-  await expect(whatIf.getByTestId("what-if-demand-4.0")).toHaveText("16,069");
-  await expect(whatIf.getByTestId("robust-core-sentence")).toContainText("1 of the first 3 sites of the plan above is among the first 3 at every level");
-  await expect(planCard.getByTestId("robust-core")).toHaveCount(1);
-  await expect(planCard.getByTestId("robust-core")).toHaveText("Robust core: also among the first 3 sites at 2.5 m and 4.0 m");
+  await expect(whatIf.getByTestId("what-if-demand-2.5")).toHaveText("9,956");
+  await expect(whatIf.getByTestId("what-if-demand-3.5")).toHaveText("14,428");
+  await expect(whatIf.getByTestId("what-if-demand-4.0")).toHaveText("16,629");
+  await expect(whatIf.getByTestId("robust-core-sentence")).toContainText("2 of the first 3 sites of the plan above are among the first 3 at every level");
+  await expect(planCard.getByTestId("robust-core")).toHaveCount(2);
+  await expect(planCard.getByTestId("robust-core").first()).toHaveText("Robust core: also among the first 3 sites at 2.5 m and 4.0 m");
   await expect(planCard).not.toContainText(/\b(?:25|100)[- ]?year/i);
   const planTables = await planCard.locator("[data-testid='capacity-aware-table'], [data-testid='what-if-table']")
     .evaluateAll((boxes) => boxes.map((box) => ({ need: box.querySelector("table").scrollWidth, room: box.clientWidth })));
@@ -1561,10 +1562,10 @@ try {
   assert.deepEqual(sheetFile.bom, [0xef, 0xbb, 0xbf], "The blank sheet starts with a UTF-8 byte-order mark, so Excel reads its Thai text");
   assert(sheetText.includes("# verification_status,not_conducted"), "The blank sheet says no check was conducted");
   const sheetRows = sheetText.split("\n").filter((line) => /^C\d{3},/.test(line));
-  assert(sheetRows.length === 95 && sheetRows.every((line) => line.endsWith(",,,,,")), "The sheet lists the 95 eligible candidates with the five checker columns empty");
+  assert(sheetRows.length === 91 && sheetRows.every((line) => line.endsWith(",,,,,")), "The sheet lists the 91 eligible candidates with the five checker columns empty");
   assert(sheetText.includes("Keep the lines that start with # and the first eight columns exactly as they are"), "The sheet tells the checker to keep its provenance lines and prefilled columns");
   assert(/capacity_basis_th \([^)]*[\u0E00-\u0E7F]/.test(sheetText) && sheetText.includes("ไม่ทราบ"), "The sheet gives the capacity basis in Thai beside the English phrase");
-  checks.push("shelter-candidate check: not conducted, no result stated; the blank sheet downloads with 95 candidates and empty checker columns");
+  checks.push("shelter-candidate check: not conducted, no result stated; the blank sheet downloads with 91 candidates and empty checker columns");
   await planCard.getByRole("button", { name: /^Show plan site 1, / }).click();
   // A closing popup fades out for a moment, so each check picks the popup by its text.
   const popupWith = (text) => page.locator(".leaflet-popup-content").filter({ hasText: text });
@@ -1583,7 +1584,7 @@ try {
   // The comparison follows the plan size, and the chosen set carries the "shown on the map" marker.
   await expect(comparison.getByTestId("set-compare-plan")).toHaveAttribute("data-selected", "");
   await expect(comparison.getByTestId("set-compare-plan").locator("caption")).toContainText("Ranked plan, first 3 sites");
-  await expect(comparison.getByTestId("compare-plan-all-baseline")).toHaveText("17,794 of 81,799");
+  await expect(comparison.getByTestId("compare-plan-all-baseline")).toHaveText("17,477 of 81,799");
   checks.push("people in flood water and all-residents views, access scenario with population scope, set and k (live coverage sentence), cut-off heat, sticky map beside the cards, plan badges and sourced shelter popups");
   checks.push("shelter sets side by side: both denominators, own baseline and share, modelled access cut-off hour (leading for the plan), no ranking headline, equity never printed as 0.00");
   await page.reload({ waitUntil: "networkidle" });
@@ -1811,7 +1812,7 @@ try {
   const thaiComparison = touchPage.getByTestId("access-card").getByTestId("set-comparison");
   await expect(thaiComparison.getByTestId("set-comparison-label")).toContainText("ไม่มีตัวเลขใดตัวเลขเดียวที่ใช้จัดอันดับชุดที่พักพิง");
   await expect(thaiComparison.getByTestId("set-comparison-label")).toContainText("ชั่วโมงมาจากจุดกำหนดระดับน้ำเพื่อการอธิบาย ไม่ใช่ค่าที่สังเกตได้");
-  await expect(thaiComparison.getByTestId("compare-reported-all-lost")).toHaveText("7,086 จาก 34,525 (21%)");
+  await expect(thaiComparison.getByTestId("compare-reported-all-lost")).toHaveText("6,595 จาก 34,525 (19%)");
   await expect(thaiComparison.getByTestId("compare-plan-flooded-cutoff")).toHaveText("10 ก.ย. 23:00 น.");
   // The equity block in Thai, default view: no ratio, the plain reason, the rule and both counts per group.
   const thaiEquity = touchPage.getByTestId("access-card").getByTestId("equity-gap");
@@ -1819,12 +1820,12 @@ try {
   await expect(thaiEquity).toContainText("ช่องว่างความเท่าเทียมในการอพยพ: ไม่แสดงอัตราส่วน");
   await expect(thaiEquity).toContainText("ไม่มีผู้อยู่อาศัยกลุ่มเปราะบางตามตัวแทนที่นับในที่นี้มีที่พักพิงในระยะเดินตั้งแต่ก่อนน้ำท่วม จึงไม่มีผู้ใดในกลุ่มนี้สูญเสียการเข้าถึงได้");
   await expect(thaiEquity.getByTestId("equity-rule")).toHaveText("สิ่งที่นำมาเปรียบเทียบ: ในบรรดาผู้อยู่อาศัยของแต่ละกลุ่มที่มีที่พักพิงในระยะเดินก่อนน้ำท่วม สัดส่วนของผู้ที่สูญเสียการเข้าถึง");
-  await expect(thaiEquity.getByTestId("equity-counts")).toContainText("กลุ่มเปราะบางตามตัวแทน: สูญเสีย 0 จาก 0 คนที่มีที่พักพิงในระยะเดินก่อนน้ำท่วม (ผู้อยู่อาศัยที่นับทั้งหมด 103 คน)");
+  await expect(thaiEquity.getByTestId("equity-counts")).toContainText("กลุ่มเปราะบางตามตัวแทน: สูญเสีย 0 จาก 0 คนที่มีที่พักพิงในระยะเดินก่อนน้ำท่วม (ผู้อยู่อาศัยที่นับทั้งหมด 78 คน)");
   await expect(thaiEquity.getByTestId("equity-label")).toContainText("กลุ่มเปราะบาง = ตัวแทนจากภูมิประเทศและความห่างไกล");
   // All residents, ranked plan of 8: the ratio and its plain comparison in Thai.
   await touchPage.getByTestId("access-card").getByRole("radio", { name: /^ผู้อยู่อาศัยทั้งหมดที่จุดถนน/ }).check();
   await touchPage.getByTestId("access-card").getByRole("radio", { name: "แผนจัดอันดับ" }).check();
-  await expect(thaiEquity).toContainText("ช่องว่างความเท่าเทียมในการอพยพ: 1.61 · ในกลุ่มผู้อยู่อาศัยที่มีที่พักพิงในระยะเดินก่อนน้ำท่วม กลุ่มเปราะบางตามตัวแทนมีโอกาสสูญเสียการเข้าถึงมากกว่ากลุ่มอื่นประมาณ 1.6 เท่า (85.77% เทียบกับ 53.42%)");
+  await expect(thaiEquity).toContainText("ช่องว่างความเท่าเทียมในการอพยพ: 1.74 · ในกลุ่มผู้อยู่อาศัยที่มีที่พักพิงในระยะเดินก่อนน้ำท่วม กลุ่มเปราะบางตามตัวแทนมีโอกาสสูญเสียการเข้าถึงมากกว่ากลุ่มอื่นประมาณ 1.7 เท่า (85.77% เทียบกับ 49.34%)");
   await expect(thaiEquity.getByTestId("equity-counts")).toContainText("กลุ่มเปราะบางตามตัวแทน: สูญเสีย 320 จาก 373 คนที่มีที่พักพิงในระยะเดินก่อนน้ำท่วม (ผู้อยู่อาศัยที่นับทั้งหมด 7,152 คน)");
   await expect(thaiEquity.getByTestId("equity-why")).toContainText("ค่าที่สูงจึงบอกตำแหน่งของบ้านเหล่านั้น");
   const thaiEquityFit = await thaiEquity.evaluate((box) => ({ need: box.scrollWidth, room: box.clientWidth }));
@@ -1842,7 +1843,7 @@ try {
   assert(envelopeThaiScroll <= 1, `Touch phone in Thai: no horizontal scroll with the season envelope (${envelopeThaiScroll}px)`);
   const thaiComparisonGroup = touchPage.getByTestId("envelope-comparison");
   await expect(thaiComparisonGroup).toContainText("การเทียบกับขอบเขตน้ำตลอดฤดู (สถานการณ์จำลอง; ดูความสมเหตุสมผล ไม่ใช่การยืนยันความถูกต้อง)");
-  await expect(thaiComparisonGroup).toContainText("ความสอดคล้อง (IoU) 0.48");
+  await expect(thaiComparisonGroup).toContainText("ความสอดคล้อง (IoU) 0.54");
   const thaiComparisonFit = await thaiComparisonGroup.evaluate((box) => ({ need: box.scrollWidth, room: box.clientWidth }));
   assert(thaiComparisonFit.need <= thaiComparisonFit.room, `The Thai envelope comparison fits its card at 390 px (${JSON.stringify(thaiComparisonFit)})`);
   checks.push(`touch phone in Thai: the season envelope's chip and caption in Thai with the CE year, hatched (period ${envelopeThai.hatch.periodPx} px), credited, without overlap, overflow or letter-spacing; the comparison group in Thai`);
@@ -1865,7 +1866,7 @@ try {
   await thaiDepthSources.locator("summary").click();
   const thaiDepthTable = thaiDepthSources.getByTestId("reported-depth-counts");
   await expect(thaiDepthTable).toContainText("แบบจำลองตื้นกว่า");
-  await expect(thaiDepthTable.locator("tr[data-status='model_dry'] td")).toHaveText(["6", "3", "9"]);
+  await expect(thaiDepthTable.locator("tr[data-status='model_dry'] td")).toHaveText(["6", "4", "10"]);
   await expect(thaiDepthSources.getByTestId("reported-depths-counted")).toContainText("21 รายการตามสถานที่ จาก 17 ข้อความใน 14 ข่าว");
   const thaiTable = await expectDepthTableFits("touch phone in Thai, 390 px", touchPage);
   await touchPage.setViewportSize({ width: 360, height: 780 });
@@ -1886,13 +1887,13 @@ try {
   assert.deepEqual(thaiSpacing, [], "Thai text on the access card is not letter-spaced");
   // The capacity-aware view and the what-if levels in Thai (default plan size): same figures, the caveats, no letter-spacing, tables fit.
   const thaiPlan = touchPage.getByTestId("shelter-plan-card");
-  await expect(thaiPlan.getByTestId("capacity-coverage-lower")).toHaveText("495 ไม่มีที่รองรับ 13,674");
-  await expect(thaiPlan.getByTestId("capacity-coverage-upper")).toHaveText("1,057 ไม่มีที่รองรับ 13,112");
-  await expect(thaiPlan.getByTestId("capacity-aware-sentence")).toContainText("ค่าประมาณความจุรองรับได้ 495 ถึง 1,057 คน จึงเหลือ 13,112 ถึง 13,674 คนจาก 14,169 คนที่ไม่มีที่รองรับ");
+  await expect(thaiPlan.getByTestId("capacity-coverage-lower")).toHaveText("557 ไม่มีที่รองรับ 13,871");
+  await expect(thaiPlan.getByTestId("capacity-coverage-upper")).toHaveText("1,030 ไม่มีที่รองรับ 13,398");
+  await expect(thaiPlan.getByTestId("capacity-aware-sentence")).toContainText("ค่าประมาณความจุรองรับได้ 557 ถึง 1,030 คน จึงเหลือ 13,398 ถึง 13,871 คนจาก 14,428 คนที่ไม่มีที่รองรับ");
   await expect(thaiPlan.getByTestId("capacity-caveats")).toContainText("เป็นค่าขอบเขตบน เพราะหลายคนไปพักกับญาติ");
   await expect(thaiPlan.getByTestId("capacity-caveats")).toContainText("สถานที่ที่ควรตรวจสอบในพื้นที่ ไม่ใช่รายชื่อสถานที่ที่ต้องเปิด");
   await expect(thaiPlan.getByTestId("capacity-caveats")).toContainText("มาจากแหล่งข้อมูลอื่น");
-  await expect(thaiPlan.getByTestId("over-capacity-note")).toContainText("รองรับได้ ≈ 79 คน แต่ได้รับผู้อพยพ ≈ 2,430 คน");
+  await expect(thaiPlan.getByTestId("over-capacity-note")).toContainText("รองรับได้ ≈ 79 คน แต่ได้รับผู้อพยพ ≈ 2,208 คน");
   await expect(thaiPlan.getByTestId("what-if-label")).toContainText("ระดับน้ำสมมุติรอบ ๆ ระดับสูงสุดที่ใช้เพื่อการอธิบาย ไม่ใช่คาบการเกิดซ้ำ");
   await expect(thaiPlan.getByTestId("robust-core")).toHaveCount(5);
   await expect(thaiPlan.getByTestId("robust-core").first()).toHaveText("แกนที่คงทน: อยู่ใน 8 แห่งแรกที่ระดับ 2.5 ม. และ 4.0 ม. ด้วย");

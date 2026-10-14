@@ -14,7 +14,7 @@ export type SegmentId =
   | "enter-monitor"
   | "aerial";
 
-export type StopId = "public" | "public-sos" | "case" | "command";
+export type StopId = "public" | "public-prepare" | "case" | "command";
 
 export type ChapterId = "opening" | "everyday" | "conditions" | "affected" | "response";
 
@@ -29,7 +29,7 @@ export const TIMELINE: readonly TimelineItem[] = [
   { kind: "stop", id: "public", chapter: "everyday" },
   { kind: "segment", id: "conditions", length: 1.6, chapter: "conditions" },
   { kind: "segment", id: "return-phone", length: 1, chapter: "conditions" },
-  { kind: "stop", id: "public-sos", chapter: "conditions" },
+  { kind: "stop", id: "public-prepare", chapter: "conditions" },
   { kind: "segment", id: "sos-signal", length: 2, chapter: "affected" },
   { kind: "segment", id: "enter-monitor", length: 1, chapter: "affected" },
   { kind: "stop", id: "case", chapter: "affected" },
@@ -166,7 +166,7 @@ export function storyBeats(): number[] {
 /** Scene ids used in the address bar: every chapter start and every stop. */
 export type SceneId = ChapterId | StopId;
 
-const SCENE_IDS: readonly SceneId[] = [...CHAPTERS, "public", "public-sos", "case", "command"];
+const SCENE_IDS: readonly SceneId[] = [...CHAPTERS, "public", "public-prepare", "case", "command"];
 
 export function parseScene(search: string): SceneId | null {
   const value = new URLSearchParams(search).get("scene");

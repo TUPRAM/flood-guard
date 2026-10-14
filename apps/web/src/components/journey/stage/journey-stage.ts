@@ -93,6 +93,9 @@ interface Key {
 }
 
 const Y = new THREE.Vector3(0, 1, 0);
+/** Where Mali and Dao stand, relative to Lalita at her gate (m). */
+const LAYOUT_FAMILY = { mali: { x: 1.15, z: -0.95 }, dao: { x: 0.62, z: -0.3 } } as const;
+type PersonId = "lalita" | "mali" | "dao" | "narin" | "pim";
 const NORTH = new THREE.Vector3(0, 0, -1);
 const PHONE_SCREEN_HEIGHT = 0.15;
 const MONITOR_WIDTH = 0.66;
@@ -166,6 +169,12 @@ export class JourneyStage {
   private vegetation!: Vegetation;
   private readonly resident: Figure;
   private readonly responder: Figure;
+  /** Lalita's mother and daughter, and the district coordinator: simpler stand-in figures (no rigged models yet). */
+  private readonly mali: Figure;
+  private readonly dao: Figure;
+  private readonly pim: Figure;
+  private readonly familyShadows: THREE.Mesh[] = [];
+  private readonly pimShadow: THREE.Mesh;
   private readonly residentShadow: THREE.Mesh;
   private readonly phone: Phone;
   private readonly signal: { tube: THREE.Mesh; head: THREE.Mesh; curve: THREE.QuadraticBezierCurve3; material: THREE.MeshBasicMaterial };
@@ -317,6 +326,33 @@ export class JourneyStage {
     this.residentShadow.rotation.x = -Math.PI / 2;
     this.residentShadow.position.copy(this.resident.root.position).add(v(0, 0.02, 0.02));
     this.scene.add(this.residentShadow);
+    const footShadow = (position: THREE.Vector3, size: number) => {
+      const mesh = new THREE.Mesh(new THREE.PlaneGeometry(size, size), blobMaterial);
+      mesh.rotation.x = -Math.PI / 2;
+      mesh.position.copy(position).add(v(0, 0.02, 0.02));
+      this.scene.add(mesh);
+      return mesh;
+    };
+
+    // Mali and Dao in the gate opening beside Lalita (on her left, clear of the camera's way round her right shoulder),
+    // turned toward her and the road.
+    this.mali = buildFigure({ skin: 0xb8876b, shirt: 0x6f8068, trousers: 0x54463f, hair: 0xb9b3aa, shoes: 0x4a3f38, sole: 0x3b332e, hairStyle: "bun", build: "f" });
+    this.dao = buildFigure({ skin: 0xc99c80, shirt: 0xf1eee6, trousers: 0x2d3b5c, hair: 0x1c1512, shoes: 0x2a2a2e, sole: 0xe9e5dc, hairStyle: "short", build: "f" });
+    // A child: smaller overall, with the larger head of a child's proportions.
+    this.dao.root.scale.setScalar(0.74);
+    this.dao.joints.head.scale.setScalar(1.2);
+    for (const [figure, offset, turn] of [[this.mali, LAYOUT_FAMILY.mali, -0.75], [this.dao, LAYOUT_FAMILY.dao, -0.55]] as const) {
+      const x = LAYOUT.resident.x + offset.x, z = LAYOUT.resident.z + offset.z;
+      figure.root.position.set(x, terrainHeight(x, z), z);
+      figure.root.rotation.y = turn;
+      this.scene.add(figure.root);
+      this.familyShadows.push(footShadow(figure.root.position, figure === this.dao ? 0.7 : 0.9));
+    }
+
+    // Pim stands at the north side of the planning table, facing the room (+z), her hands on its edge.
+    this.pim = buildFigure({ skin: 0xb58266, shirt: 0x5d5478, trousers: 0x33363b, hair: 0x1d1714, shoes: 0x2b2826, sole: 0x2b2826, hairStyle: "bun", build: "f" });
+    this.scene.add(this.pim.root);
+    this.pimShadow = footShadow(new THREE.Vector3(), 0.9);
 
     // Responder seated at the desk, facing the monitor (+x).
     this.responder = buildFigure({ skin: 0xa77a5e, shirt: 0x3d6466, trousers: 0x2f3437, hair: 0x1f1a17, shoes: 0x2b2826, sole: 0x2b2826, hairStyle: "short", build: "m" });
@@ -346,7 +382,7 @@ export class JourneyStage {
       operations: v(LAYOUT.operations.x, this.ops.floor + 7.6, LAYOUT.operations.z),
     };
 
-    this.disposables.push(this.resident, this.responder);
+    this.disposables.push(this.resident, this.responder, this.mali, this.dao, this.pim);
 
     // Vegetation last: it keeps clear of the camera's actual path through the story.
     this.phone.resize(PHONE_SCREEN_HEIGHT * this.aspects.phone, PHONE_SCREEN_HEIGHT);
@@ -542,6 +578,43 @@ export class JourneyStage {
     setGrip(figure, "R", GRIPS.typing);
   }
 
+  /** Mali and Dao stand with Lalita: breathing, Mali a little stooped, Dao looking up at her mother. */
+  private poseFamily(): void {
+    poseStanding(this.mali, 0.12, this.time + 1.3, 0.07);
+    poseStanding(this.dao, -0.16, this.time + 2.1, 0);
+  }
+
+  /** Pim leans over the planning table with her hands on its near (north) edge, looking down at it. */
+  private posePim(): void {
+    const table = this.screenGeometry(this.ops.tableScreen);
+    const edge = table.center.z - table.height / 2 - 0.13;
+    const figure = this.pim;
+    figure.root.position.set(table.center.x + 0.45, this.ops.floor, edge - 0.2);
+    figure.root.rotation.y = 0;
+    this.pimShadow.position.copy(figure.root.position).add(v(0, 0.02, 0.02));
+    poseStanding(figure, 0.5, this.time + 0.7, 0.2);
+    figure.root.updateMatrixWorld(true);
+    const j = figure.joints;
+    const palmDown = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(v(-1, 0, 0), v(0, 0, -1), v(0, -1, 0)));
+    // Facing +z, her left (+side) is world +x.
+    for (const [side, shoulder, elbow, wrist] of [[1, j.shoulderL, j.elbowL, j.wristL], [-1, j.shoulderR, j.elbowR, j.wristR]] as const) {
+      const target = v(figure.root.position.x + side * 0.27, this.ops.floor + 0.975, edge + 0.07);
+      const s = shoulder.getWorldPosition(new THREE.Vector3());
+      solveArm(shoulder, elbow, wrist, target, s.clone().add(v(side * 0.45, -0.5, -0.1)), palmDown);
+    }
+    setGrip(figure, "L", GRIPS.relaxed);
+    setGrip(figure, "R", GRIPS.relaxed);
+  }
+
+  /** A point just above a person's head, for their name label. */
+  private headAnchor(id: PersonId): THREE.Vector3 {
+    const model = id === "lalita" ? this.residentModel : id === "narin" ? this.responderModel : null;
+    const bone = model?.bones.get("Head");
+    if (bone) return bone.getWorldPosition(new THREE.Vector3()).add(v(0, 0.32, 0));
+    const figure = { lalita: this.resident, mali: this.mali, dao: this.dao, narin: this.responder, pim: this.pim }[id];
+    return figure.joints.head.getWorldPosition(new THREE.Vector3()).add(v(0, id === "dao" ? 0.26 : 0.34, 0));
+  }
+
   // --- Screens -------------------------------------------------------------------------------------------------------
 
   private screenGeometry(mesh: THREE.Mesh): { center: THREE.Vector3; normal: THREE.Vector3; up: THREE.Vector3; width: number; height: number } {
@@ -610,9 +683,13 @@ export class JourneyStage {
     const road = { pos: v(-12, 9, 24), target: v(2, 0.4, 9) };
     const overview = { pos: v(-36, 42, 36), target: v(-6, 2, -10) };
     const windowFront = { pos: ops.window.clone().add(v(0, 0.9, 9)), target: ops.window.clone() };
-    const roomView = { pos: tableC.clone().add(v(0, 3.4, 3.6)), target: tableC.clone() };
+    // The room over the planning table, aimed a little past its middle so Pim, at its far edge, is in frame.
+    const roomView = { pos: tableC.clone().add(v(0, 3.4, 3.6)), target: tableC.clone().add(v(0, 0.3, -0.5)) };
+    // Lalita with Mali and Dao in the gate: a step back from her, low, all three in frame.
+    const family = { pos: R.clone().add(v(-0.5, 1.5, 4.7)), target: R.clone().add(v(0.6, 1.0, -0.5)) };
     const abovePlan = { pos: tableC.clone().add(v(0, 24, 0.02)), target: tableC.clone(), up: NORTH };
-    const map = { pos: v(2, 92, -12.02), target: v(2, 0, -12), up: NORTH };
+    // Straight down on the area, the flooded crossing right of centre (clear of the caption) and the office in view.
+    const map = { pos: v(-2, 92, -7.02), target: v(-2, 0, -7), up: NORTH };
     const glide = (from: { pos: THREE.Vector3; target: THREE.Vector3 }, to: { pos: THREE.Vector3; target: THREE.Vector3 }, t: number) =>
       ({ pos: from.pos.clone().lerp(to.pos, t), target: from.target.clone().lerp(to.target, t) });
     switch (segment) {
@@ -627,7 +704,8 @@ export class JourneyStage {
       case "conditions":
         return [this.atKey(0, this.endPose(this.phoneScreen, PHONE_PAGE_FILL)), through(0.12, os), through(0.24, beside), k(0.6, road), k(1, road)];
       case "return-phone":
-        return [k(0, road), through(0.4, front), through(0.58, beside), k(0.75, os), this.endPose(this.phoneScreen, PHONE_PAGE_FILL)];
+        // Down to the family at the gate and hold while they talk it through; then round her shoulder onto the phone.
+        return [k(0, road), k(0.36, family), k(0.52, family), through(0.66, beside), k(0.8, os), this.endPose(this.phoneScreen, PHONE_PAGE_FILL)];
       case "sos-signal":
         // Back to the road view and hold while the water crosses it; rise to see the signal reach the operations
         // building; glide in through its window.
@@ -689,6 +767,7 @@ export class JourneyStage {
         glow = ramp(p, 0.85, 1);
         phoneShow = ramp(p, 0.9, 1);
         labels.home = labels.clinic = labels.connection = p < 0.5;
+        labels.mali = labels.dao = p > 0.82;
         connection = 1 - ramp(p, 0.4, 0.56);
         break;
       case "enter-phone":
@@ -706,9 +785,10 @@ export class JourneyStage {
         connection = ramp(p, 0.22, 0.42);
         break;
       case "return-phone":
-        raise = 0.5 + 0.5 * ramp(p, 0.35, 0.78);
-        glow = ramp(p, 0.7, 0.85);
-        phoneShow = ramp(p, 0.84, 0.98);
+        raise = 0.5 + 0.5 * ramp(p, 0.55, 0.85);
+        glow = ramp(p, 0.76, 0.88);
+        phoneShow = ramp(p, 0.86, 0.98);
+        labels.lalita = labels.mali = labels.dao = p > 0.3 && p < 0.56;
         water = WATER_LEVEL.rising;
         rain = 0.75;
         overcast = 0.6;
@@ -727,6 +807,7 @@ export class JourneyStage {
         labels.home = labels.clinic = labels.crossing = p > 0.24 && p < 0.6;
         labels.signal = signal >= 0;
         labels.operations = p > 0.58 && p < 0.84;
+        labels.narin = p > 0.93;
         connection = ramp(p, 0.1, 0.22);
         break;
       }
@@ -734,6 +815,7 @@ export class JourneyStage {
         water = WATER_LEVEL.affected; affected = 1; overcast = 0.75; rain = 0.5; attention = 1;
         monitorShow = ramp(p, 0.15, 0.5);
         raise = 1;
+        labels.narin = p < 0.3;
         break;
       case "aerial":
         water = WATER_LEVEL.affected; affected = 1; overcast = 0.75 - 0.35 * ramp(p, 0.3, 0.7); rain = 0.5 * (1 - ramp(p, 0.25, 0.5)); attention = 1;
@@ -741,6 +823,7 @@ export class JourneyStage {
         tableShow = ramp(p, 0.8, 0.96);
         raise = 1;
         labels.home = labels.clinic = labels.crossing = labels.operations = p > 0.42 && p < 0.78;
+        labels.pim = p > 0.15 && p < 0.3;
         break;
     }
 
@@ -800,6 +883,12 @@ export class JourneyStage {
     const nearOps = pos.distanceTo(this.ops.seat) < 32;
     this.responder.root.visible = nearOps && !this.responderModel;
     if (this.responderModel) this.responderModel.root.visible = nearOps;
+    const nearHome = pos.distanceTo(this.anchors.resident) < 60;
+    for (const figure of [this.mali, this.dao]) figure.root.visible = nearHome;
+    for (const shadow of this.familyShadows) shadow.visible = nearHome;
+    if (nearHome) this.poseFamily();
+    this.pim.root.visible = this.pimShadow.visible = nearOps;
+    if (nearOps) this.posePim();
     this.clearCloseUps(pos);
     const opsLit = pos.distanceTo(this.ops.seat) < 48;
     for (const light of this.ops.lights) light.visible = opsLit;
@@ -814,8 +903,8 @@ export class JourneyStage {
     // times cheaper than screen-space AO on integrated graphics for a near-identical result.
     if (render) this.renderer.render(this.scene, this.camera);
 
-    const frameLabels: LabelFrame[] = (["home", "clinic", "connection", "crossing", "operations", "signal"] as const).map((id) => {
-      const anchor = id === "signal" ? this.signal.head.position.clone().add(v(0, 1.6, 0)) : this.anchors[id];
+    const frameLabels: LabelFrame[] = (["home", "clinic", "connection", "crossing", "operations", "signal", "lalita", "mali", "dao", "narin", "pim"] as const).map((id) => {
+      const anchor = id === "signal" ? this.signal.head.position.clone().add(v(0, 1.6, 0)) : this.anchors[id] ?? this.headAnchor(id as PersonId);
       const projected = this.project(anchor);
       const onScreen = projected.inFront && projected.x > -40 && projected.x < this.viewport.width + 40 && projected.y > -40 && projected.y < this.viewport.height + 40;
       return { id, x: projected.x, y: projected.y, visible: Boolean(labels[id]) && onScreen };

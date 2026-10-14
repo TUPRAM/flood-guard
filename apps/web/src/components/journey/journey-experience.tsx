@@ -26,13 +26,13 @@ import {
 } from "@/lib/journey/timeline";
 import { useLanguage } from "@/lib/use-language";
 
-import { CAPTIONS, CHAPTER_LABELS, LABELS, STOPS, UI, stopFrameSrc, type JourneyLanguage } from "./journey-copy";
+import { CAPTIONS, CHAPTER_LABELS, CHARACTERS, LABELS, STOPS, UI, stopFrameSrc, type JourneyLanguage, type PublicTab } from "./journey-copy";
 import type { JourneyStage, ScreenAspects, ScreenId, StageFrame } from "./stage/journey-stage";
 
 import styles from "./journey.module.css";
 
 /** Which 3D screen hosts the real page for each stop. */
-const STOP_SCREEN: Record<StopId, ScreenId> = { public: "phone", "public-sos": "phone", case: "monitor", command: "table" };
+const STOP_SCREEN: Record<StopId, ScreenId> = { public: "phone", "public-prepare": "phone", case: "monitor", command: "table" };
 const SCREEN_STOP: Record<ScreenId, StopId> = { phone: "public", monitor: "case", table: "command" };
 const FADE_MS = 260;
 
@@ -94,7 +94,7 @@ const CAPTION_PAUSES: number[] = (Object.keys(CAPTIONS) as SegmentId[])
   .sort((a, b) => a - b);
 
 /** Everything Next/Previous steps through, in order: every caption pause and every real page. */
-const STEP_POINTS: number[] = [...CAPTION_PAUSES, ...(["public", "public-sos", "case", "command"] as const).map(stopPosition)].sort((a, b) => a - b);
+const STEP_POINTS: number[] = [...CAPTION_PAUSES, ...(["public", "public-prepare", "case", "command"] as const).map(stopPosition)].sort((a, b) => a - b);
 
 function nextPoint(points: number[], after: number): number | null {
   return points.find((point) => point > after + 1e-3) ?? null;
@@ -183,6 +183,8 @@ export function JourneyExperience() {
     }
   };
   const [announcement, setAnnouncement] = useState("");
+  /** The real page whose note the visitor closed (it stays closed for that page). */
+  const [closedNote, setClosedNote] = useState<StopId | null>(null);
   const [sizes, setSizes] = useState<Sizes | null>(null);
 
   const tr = useCallback((text: Record<JourneyLanguage, string>) => text[language], [language]);
@@ -211,6 +213,35 @@ export function JourneyExperience() {
       /* not reachable (still loading); applied again on load */
     }
   }, []);
+
+  /**
+   * The public app's tab for this point of the story (Home for Lalita's first look, Prepare for her household plan).
+   * The app reads its tab from its address, so the story replaces that address and tells the app (no history entry);
+   * a frame that has not loaded yet picks the tab up when it does.
+   */
+  const publicTab = useRef<{ wanted: PublicTab; applied: PublicTab | null }>({ wanted: "home", applied: null });
+  const syncPublicTab = useCallback(() => {
+    const tab = publicTab.current;
+    if (tab.applied === tab.wanted) return;
+    try {
+      const win = frameRefs.current.phone?.contentWindow;
+      if (!win || !win.location.pathname.startsWith("/public")) return;
+      const url = new URL(win.location.href);
+      if (tab.wanted === "home") url.searchParams.delete("tab");
+      else url.searchParams.set("tab", tab.wanted);
+      if (url.href !== win.location.href) {
+        win.history.replaceState(win.history.state, "", url);
+        win.dispatchEvent(new (win as Window & typeof globalThis).PopStateEvent("popstate", { state: win.history.state }));
+      }
+      tab.applied = tab.wanted;
+    } catch {
+      /* not reachable yet; applied on load */
+    }
+  }, []);
+  const wantPublicTab = useCallback((wanted: PublicTab) => {
+    publicTab.current.wanted = wanted;
+    syncPublicTab();
+  }, [syncPublicTab]);
 
   /** Puts a host into "on a 3D screen" mode at its CSS layout size. */
   const projectHost = useCallback((screen: ScreenId) => {
@@ -431,9 +462,13 @@ export function JourneyExperience() {
         element.dataset.visible = String(label.visible);
       }
 
+      // Lalita's phone shows the Home tab for her first look and the Prepare tab once she makes her plan.
+      if (position >= segmentRange("return-phone").start) wantPublicTab("prepare");
+      else if (position <= stopPosition("public") + 1e-3) wantPublicTab("home");
+
       // Lazy-load the real pages a little before they are needed.
       if (position > 0.25 || m.target > 0.25) ensureMounted("phone");
-      if (position > stopPosition("public") + 0.5 || m.target >= stopPosition("public-sos")) ensureMounted("monitor");
+      if (position > stopPosition("public") + 0.5 || m.target >= stopPosition("public-prepare")) ensureMounted("monitor");
       if (position > stopPosition("case") - 0.4 || m.target >= stopPosition("case")) ensureMounted("table");
 
       // View state (React only when something visible changes).
@@ -461,10 +496,13 @@ export function JourneyExperience() {
         const screen = STOP_SCREEN[stop];
         ensureMounted(screen);
         m.docked = stop;
+        const tab = STOPS[stop].tab;
+        if (tab) wantPublicTab(tab);
         dockHost(screen, !m.reduced);
         // The 3D stays visible (its last frame) under the see-through bottom bar; rendering pauses while docked.
         setView((current) => ({ ...current, docked: stop }));
-        setAnnouncement(`${trRef.current(STOPS[stop].page)}. ${trRef.current(STOPS[stop].note)}`);
+        const warning = STOPS[stop].warning;
+        setAnnouncement(`${trRef.current(STOPS[stop].page)}. ${trRef.current(STOPS[stop].note)}${warning ? ` ${trRef.current(warning)}` : ""}`);
         if (!m.fromPopState) updateHistory(stop, true);
         m.fromPopState = false;
         window.setTimeout(() => frameRefs.current[screen]?.focus({ preventScroll: true }), 700);
@@ -516,7 +554,7 @@ export function JourneyExperience() {
       stage?.dispose();
       stageRef.current = null;
     };
-  }, [dockHost, ensureMounted, projectHost, updateHistory]);
+  }, [dockHost, ensureMounted, projectHost, updateHistory, wantPublicTab]);
 
   // Mount the public app shortly after load even without input, so the phone screen is ready.
   useEffect(() => {
@@ -683,6 +721,10 @@ export function JourneyExperience() {
                   onLoad={() => {
                     setLoaded((current) => ({ ...current, [screen]: true }));
                     setFrameScrollbar(screen, hostRefs.current[screen]?.dataset.mode === "docked");
+                    if (screen === "phone") {
+                      publicTab.current.applied = null;
+                      syncPublicTab();
+                    }
                   }}
                   tabIndex={docked && STOP_SCREEN[docked] === screen ? 0 : -1}
                 />
@@ -734,19 +776,42 @@ export function JourneyExperience() {
           )}
 
           {caption && (
-            <div className={styles.caption} key={`${view.segment}-${view.caption}-${language}`} aria-live="polite">
+            <div className={styles.caption} key={`${view.segment}-${view.caption}-${language}`} aria-live="polite" data-who={caption.who}>
               {caption.eyebrow && <span className={styles.eyebrow}>{tr(caption.eyebrow)}</span>}
+              {caption.who && (
+                <div className={styles.person} data-who={caption.who}>
+                  <span className={styles.avatar} aria-hidden="true">{tr(CHARACTERS[caption.who].name).slice(0, 1)}</span>
+                  <span>
+                    <b>{tr(CHARACTERS[caption.who].name)}</b>
+                    {caption.meet && <small>{tr(CHARACTERS[caption.who].role)} · {tr(UI.fictional)}</small>}
+                  </span>
+                </div>
+              )}
               <p>{tr(caption.text)}</p>
               {caption.points && caption.points.length > 0 && (
                 <ul className={styles.points}>
                   {caption.points.map((point, index) => <li key={index}>{tr(point)}</li>)}
                 </ul>
               )}
+              {caption.who && caption.meet && <q className={styles.question}>{tr(CHARACTERS[caption.who].question)}</q>}
             </div>
           )}
 
           <p className={styles.illustrative}>{tr(UI.illustrative)}</p>
         </>
+      )}
+
+      {/* Over a real page: whose page it is in the story, what it is, and any warning about the live page. */}
+      {docked && stopCopy && closedNote !== docked && (
+        <aside className={styles.dockNote} data-who={stopCopy.who} aria-label={tr(stopCopy.page)}>
+          <p>
+            <span className={styles.avatar} aria-hidden="true">{tr(CHARACTERS[stopCopy.who].name).slice(0, 1)}</span>
+            <b>{tr(stopCopy.page)}</b>
+            <span className={styles.dockText}>{tr(stopCopy.note)}</span>
+          </p>
+          <button type="button" className={styles.dockClose} onClick={() => setClosedNote(docked)} aria-label={tr(UI.close)} title={tr(UI.close)}>×</button>
+          {stopCopy.warning && <p className={styles.dockWarning} role="note">{tr(stopCopy.warning)}</p>}
+        </aside>
       )}
 
       {/* One navigation bar, always at the bottom: in the 3D story and over a real page alike. */}
@@ -803,7 +868,7 @@ export function JourneyExperience() {
           <p>{tr(UI.fallbackBody)}</p>
           <ol>
             {(["everyday", "conditions", "affected", "response"] as const).map((chapter, index) => {
-              const stop = (["public", "public-sos", "case", "command"] as const)[index];
+              const stop = (["public", "public-prepare", "case", "command"] as const)[index];
               return (
                 <li key={chapter}>
                   <b>{CHAPTER_LABELS[chapter].number} {tr(CHAPTER_LABELS[chapter].title)}</b>

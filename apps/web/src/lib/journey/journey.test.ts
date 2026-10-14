@@ -23,7 +23,7 @@ import {
 
 describe("journey timeline", () => {
   it("places the four real-page stops in story order", () => {
-    const stops = ["public", "public-sos", "case", "command"] as const;
+    const stops = ["public", "public-prepare", "case", "command"] as const;
     const positions = stops.map(stopPosition);
     expect([...positions].sort((a, b) => a - b)).toEqual(positions);
     expect(stopPosition("command")).toBe(TIMELINE_END);
@@ -39,7 +39,7 @@ describe("journey timeline", () => {
 
   it("assigns stops to the chapter that leads into them", () => {
     expect(chapterAt(stopPosition("public"))).toBe("everyday");
-    expect(chapterAt(stopPosition("public-sos"))).toBe("conditions");
+    expect(chapterAt(stopPosition("public-prepare"))).toBe("conditions");
     expect(chapterAt(stopPosition("case"))).toBe("affected");
     expect(chapterAt(stopPosition("command"))).toBe("response");
     expect(chapterStart("conditions")).toBeCloseTo(stopPosition("public"));
@@ -58,15 +58,15 @@ describe("journey timeline", () => {
     const publicStop = stopPosition("public");
     expect(clampScrollTarget(0.2, 99)).toBeCloseTo(publicStop);
     expect(clampScrollTarget(publicStop, publicStop + 0.5)).toBeCloseTo(publicStop + 0.5);
-    expect(clampScrollTarget(publicStop, 99)).toBeCloseTo(stopPosition("public-sos"));
+    expect(clampScrollTarget(publicStop, 99)).toBeCloseTo(stopPosition("public-prepare"));
     expect(clampScrollTarget(stopPosition("case"), 0.3)).toBeCloseTo(0.3);
     expect(clampScrollTarget(1, -4)).toBe(0);
   });
 
   it("finds neighbouring stops", () => {
     expect(nextStopAfter(0)).toBe("public");
-    expect(nextStopAfter(stopPosition("public"))).toBe("public-sos");
-    expect(previousStopBefore(stopPosition("case"))).toBe("public-sos");
+    expect(nextStopAfter(stopPosition("public"))).toBe("public-prepare");
+    expect(previousStopBefore(stopPosition("case"))).toBe("public-prepare");
     expect(nextStopAfter(TIMELINE_END)).toBeNull();
     expect(stopAt(stopPosition("case"))).toBe("case");
     expect(stopAt(stopPosition("case") - 0.01)).toBeNull();
@@ -88,7 +88,7 @@ describe("journey timeline", () => {
   it("gives reduced motion beats that reach every stop, in order", () => {
     const beats = storyBeats();
     expect([...beats].sort((a, b) => a - b)).toEqual(beats);
-    for (const stop of ["public", "public-sos", "case", "command"] as const) expect(beats).toContain(stopPosition(stop));
+    for (const stop of ["public", "public-prepare", "case", "command"] as const) expect(beats).toContain(stopPosition(stop));
     expect(beats.at(-1)).toBe(TIMELINE_END);
   });
 

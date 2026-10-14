@@ -287,6 +287,61 @@ a.step { display: inline-flex; align-items: center; justify-content: center; tex
   .label, .fade { transition-duration: 80ms; }
 }
 
+/* The person whose part of the story a caption tells, and the question that brings them to FloodGuard. */
+.root { --lalita: #b0573a; --narin: #2f6a6c; --pim: #6a5a8e; }
+.person { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.person > span:last-child { display: grid; line-height: 1.2; }
+.person b { font-size: 0.92rem; }
+.person small { color: var(--muted); font-size: 0.76rem; }
+.avatar {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: var(--who, var(--teal));
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+.root [data-who="lalita"] { --who: var(--lalita); }
+.root [data-who="narin"] { --who: var(--narin); }
+.root [data-who="pim"] { --who: var(--pim); }
+.caption[data-who] { border-left: 4px solid var(--who); }
+.question { display: block; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); color: var(--who, var(--ink)); font-size: 0.95rem; font-style: italic; font-weight: 600; }
+
+/* Over a real page: whose page it is, and what it is. Sits just above the bottom bar, clear of the page's own controls. */
+.dockNote {
+  position: fixed;
+  z-index: 7;
+  left: 16px;
+  bottom: 80px;
+  max-width: min(560px, calc(100vw - 32px));
+  border: 1px solid rgb(21 43 41 / 12%);
+  border-left: 4px solid var(--who);
+  border-radius: 10px;
+  background: rgb(250 248 242 / 96%);
+  box-shadow: 0 8px 24px rgb(21 43 41 / 14%);
+  animation: rise 420ms cubic-bezier(.2,.7,.2,1) both;
+}
+.dockNote p:first-child { padding-right: 36px; }
+.dockClose { position: absolute; top: 4px; right: 4px; width: 28px; height: 28px; border: 0; border-radius: 999px; background: transparent; color: var(--muted); font: inherit; font-size: 1.1rem; line-height: 1; cursor: pointer; }
+.dockClose:hover { background: rgb(21 43 41 / 8%); color: var(--ink); }
+.dockClose:focus-visible { outline: 2px solid var(--teal); outline-offset: 1px; }
+.dockNote p { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin: 0; padding: 7px 12px; font-size: 0.8rem; }
+.dockNote .avatar { width: 22px; height: 22px; font-size: 0.7rem; }
+.dockText { flex: 1 1 100%; color: var(--muted); font-size: 0.76rem; line-height: 1.35; }
+.dockWarning { border-top: 1px solid #ecdcb4; border-radius: 0 0 10px 0; background: #fffaf0; color: #5b4516; }
+@media (max-width: 760px) {
+  .dockNote { left: 8px; right: 8px; bottom: 66px; max-width: none; }
+  .dockText { display: none; }
+  .question { font-size: 0.85rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dockNote { animation: none; }
+}
+
 /* Supporting points under a caption's headline. */
 .points { margin: 10px 0 0; padding-left: 1.1em; color: #3f4f51; font-size: 0.92rem; line-height: 1.45; }
 .points li { margin: 3px 0; }

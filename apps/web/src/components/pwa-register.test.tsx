@@ -72,6 +72,17 @@ describe("PwaRegister", () => {
     expect(quietInSlot(true, "current", false, true)).toBe(false);
   });
 
+  it("keeps a waiting or failed update behind the profile menu on a Public page", () => {
+    // The bar would only say "App online" there: a dot on the profile button marks the update instead.
+    expect(quietInSlot(true, "available", false, false, true)).toBe(true);
+    expect(quietInSlot(true, "error", false, false, true)).toBe(true);
+    expect(quietInSlot(null, "available", false, false, true)).toBe(true);
+    // Without a connection, with the map background in trouble, or with the panel open, the bar is still shown.
+    expect(quietInSlot(false, "available", false, false, true)).toBe(false);
+    expect(quietInSlot(true, "available", true, false, true)).toBe(false);
+    expect(quietInSlot(true, "available", false, true, true)).toBe(false);
+  });
+
   it("hides the app-status pill on the exercise page and not on the Planning pages below it", () => {
     const paths = ["/studio/cases/", "/command/$"];
     expect(autoHidesOn("/command/", paths)).toBe(true);

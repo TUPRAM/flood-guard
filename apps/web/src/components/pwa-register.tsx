@@ -77,9 +77,15 @@ export const APP_STATUS_EVENT = "floodguard:show-app-status";
 /**
  * True while the bar of a page's own slot has nothing to say: the app is online (or still finding out), no update
  * waits or has failed, the map background is in order, and the reader has not opened the panel.
+ *
+ * With `updatesBehindMenu` (the Public pages, owner request of 13 Oct 2026) a waiting or failed update does not show
+ * the bar either: the bar would only say "App online". A dot on the profile button marks a waiting update, and the
+ * profile menu's entry opens the panel with the button that installs it. Without a connection, and when the map
+ * background is in trouble, the bar is still shown.
  */
-export function quietInSlot(online: boolean | null, updateState: string, mapNeedsAttention: boolean, panelOpen: boolean): boolean {
-  return online !== false && !mapNeedsAttention && !panelOpen && updateState !== "available" && updateState !== "error";
+export function quietInSlot(online: boolean | null, updateState: string, mapNeedsAttention: boolean, panelOpen: boolean, updatesBehindMenu = false): boolean {
+  const updateNeedsTheBar = !updatesBehindMenu && (updateState === "available" || updateState === "error");
+  return online !== false && !mapNeedsAttention && !panelOpen && !updateNeedsTheBar;
 }
 
 /**
@@ -339,6 +345,16 @@ export function PwaRegister({
   const registrationRef = useRef<ServiceWorkerRegistration | null>(null);
   const workerStatusRef = useRef<WorkerCacheStatus | null>(null);
   const reloadOnControlRef = useRef(false);
+  // A waiting update is marked on the page itself, for the dot on the Public profile button (public-theme.css).
+  useEffect(() => {
+    if (!enabled) return;
+    const root = document.documentElement;
+    if (updateState === "available") root.dataset.appUpdate = "available";
+    else delete root.dataset.appUpdate;
+    return () => {
+      delete root.dataset.appUpdate;
+    };
+  }, [enabled, updateState]);
 
   const refreshHouseholdPlanAvailability = useCallback(() => {
     try {
@@ -571,9 +587,10 @@ export function PwaRegister({
   const mapNeedsAttention = basemapHealth === "unavailable" || basemapHealth === "partial";
   const mapSummary = basemapHealth === "partial" ? copy.mapIncomplete : copy.mapUnavailable;
   const publicSummary = online === null ? copy.checkingConnection : online ? copy.appOnline : copy.appOffline;
+  const publicPage = Boolean(pathname?.startsWith("/public")) || EXPECTED_PROFILE === "public-production";
   const summaryLabel = mapNeedsAttention
     ? mapSummary
-    : pathname?.startsWith("/public") || EXPECTED_PROFILE === "public-production" ? publicSummary : appSummary;
+    : publicPage ? publicSummary : appSummary;
 
   const panel = (
     <details
@@ -645,10 +662,11 @@ export function PwaRegister({
       </div>
     </details>
   );
-  // In a page's own slot (the Public pages) the bar is not shown while everything is in order (owner request of
-  // 7 Oct 2026): it appears when the app is without a connection, when an update waits or has failed, or when the
-  // map background needs attention, and it stays while the reader has it open.
-  if (!autoHide && availabilitySlot && !revealed && quietInSlot(online, updateState, mapNeedsAttention, panelOpen)) return null;
+  // In a page's own slot the bar is not shown while everything is in order (owner request of 7 Oct 2026): it
+  // appears when the app is without a connection or when the map background needs attention, and it stays while the
+  // reader has it open. A waiting or failed update shows it on the staff pages only; on a Public page the profile
+  // menu leads to it (13 Oct 2026).
+  if (!autoHide && availabilitySlot && !revealed && quietInSlot(online, updateState, mapNeedsAttention, panelOpen, publicPage)) return null;
   if (!autoHide) return availabilitySlot ? createPortal(panel, availabilitySlot) : panel;
   // Auto-hide pages: the pill hides after a few seconds and can be dismissed at once; hover or focus keeps it. It
   // returns when its status changes (connection, saved for offline use, update waiting).

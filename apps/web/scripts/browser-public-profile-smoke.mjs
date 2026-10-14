@@ -330,6 +330,22 @@ async function exercisePublicPages(page) {
       /(?:^|[^\p{L}\p{N}])(?:demos?|prototypes?|mocks?|samples?|illustrative|placeholders?)(?=$|[^\p{L}\p{N}])|coming soon|under construction|not ready|work in progress/iu,
     );
     if (forbidden) throw new Error(`Public ${id} exposes development-state copy: ${forbidden[0]}.`);
+    if (id === "shelter") {
+      // The places reported as shelters in September 2024 belong to the Mae Sai replay, which this build does not
+      // carry: no markers on the map, and no list in the sheet behind the banner.
+      await page.locator(".public-shelter-page .public-signal-banner").click();
+      const sheet = page.locator("#public-shelter-panel");
+      await sheet.waitFor({ state: "visible" });
+      const sheetText = await sheet.innerText();
+      if (!sheetText.includes("does not know its current capacity or operating status") || !sheetText.includes("Call DDPM 1784 to confirm")) {
+        throw new Error("The Shelter sheet lost its official-confirmation boundary.");
+      }
+      if (sheetText.includes("September 2024") || await page.locator(".public-shelter-site").count() !== 0) {
+        throw new Error("The public profile shows the places reported as shelters in 2024.");
+      }
+      await page.keyboard.press("Escape");
+      await sheet.waitFor({ state: "detached" });
+    }
   }
   for (const retired of ["map", "shelters", "data"]) {
     if (await page.locator(`#public-tab-${retired}`).count()) {
@@ -369,9 +385,11 @@ async function assertInitialPreciseLocation(page) {
       areaFeatureCount: shell?.getAttribute("data-area-feature-count"),
       options: globalThis.__floodGuardGeolocationOptions ?? null,
       customAttributionCount: document.querySelectorAll(".public-home-page p.map-attribution").length,
-      nativeAttributionVisible: Boolean(
-        document.querySelector(".public-home-page .leaflet-control-attribution")?.getClientRects().length,
-      ),
+      // The credit of the map data folds away once it has been shown (13 Oct 2026): it stays in the page, the map
+      // says which of the two states it is in, and the layers menu repeats the credit.
+      nativeAttributionPresent: Boolean(document.querySelector(".public-home-page .leaflet-control-attribution")),
+      creditState: document.querySelector(".public-home-page .geo-map-shell")?.getAttribute("data-map-credit"),
+      menuCredit: document.querySelector(".public-home-page .map-basemap-menu .map-credit")?.textContent ?? "",
       borderWidth: style?.borderWidth,
       borderRadius: style?.borderRadius,
       leakedToStorage: storedValues.some((value) => (
@@ -396,7 +414,9 @@ async function assertInitialPreciseLocation(page) {
   if (
     audit.areaFeatureCount !== "8"
     || audit.customAttributionCount !== 0
-    || !audit.nativeAttributionVisible
+    || !audit.nativeAttributionPresent
+    || !["shown", "folded"].includes(audit.creditState)
+    || !audit.menuCredit.includes("OpenStreetMap contributors")
     || audit.borderWidth !== "0px"
     || audit.borderRadius !== "0px"
     || audit.leakedToStorage

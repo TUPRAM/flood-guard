@@ -10,10 +10,12 @@ import {
   type PointerEvent,
 } from "react";
 
+import { PublicPracticeStrip } from "@/components/public-practice-strip";
 import {
   HOUSEHOLD_NEEDS,
   type HouseholdPlan,
 } from "@/lib/household-plan";
+import type { PracticeView } from "@/lib/public-practice";
 import type { Hotline, Language } from "@/lib/types";
 
 interface PublicSosPageProps {
@@ -21,6 +23,8 @@ interface PublicSosPageProps {
   hotlines: Hotline[];
   plan: HouseholdPlan;
   selectedAreaName: string;
+  /** The practice scenario chosen in the header, once it is read; absent on a day without practice. */
+  practice?: PracticeView;
 }
 
 const HOLD_DURATION_MS = 3_000;
@@ -54,6 +58,7 @@ export function PublicSosPage({
   hotlines,
   plan,
   selectedAreaName,
+  practice,
 }: PublicSosPageProps) {
   const th = language === "th";
   const [holding, setHolding] = useState(false);
@@ -210,6 +215,18 @@ export function PublicSosPage({
           ))}
         </ul>
       </section>
+
+      {/*
+        In a practice scenario the strip stands under the official numbers, never above them: the numbers are real
+        and stay the first thing on the page. The strip says that the scenario is practice and that no call is placed.
+      */}
+      {practice ? (
+        <PublicPracticeStrip
+          view={practice}
+          prompt={practice.pages.sos.prompt}
+          note={practice.copy.sosReal}
+        />
+      ) : null}
 
       <section className="public-sos-calm-advice" aria-labelledby="public-sos-advice-title">
         <span className="public-sos-advice-icon" aria-hidden="true">!</span>

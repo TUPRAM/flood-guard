@@ -27,7 +27,7 @@ export const metadata: Metadata = {
  */
 const AUTO_HIDE_AVAILABILITY_PATHS: readonly string[] = process.env.NEXT_PUBLIC_FLOODGUARD_APP_PROFILE === "public-production"
   ? ["/studio/cases/"]
-  : ["/studio/cases/", "/command/$", "/archive1/"];
+  : ["/studio/cases/", "/command/$", "/archive1/", "/journey/"];
 
 export const viewport: Viewport = {
   width: "device-width",

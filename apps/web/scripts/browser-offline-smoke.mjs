@@ -1777,7 +1777,8 @@ async function assertPublicPractice(page) {
     await page.locator(".public-practice-trigger").click();
     const list = page.locator("#public-practice-list");
     await list.waitFor({ state: "visible" });
-    await (scenario ? list.locator(`[data-practice-scenario="${scenario}"]`) : list.locator("button").first()).click();
+    // There is no "Today" entry (14 Oct 2026): the scenario shown ends when it is chosen again.
+    await (scenario ? list.locator(`[data-practice-scenario="${scenario}"]`) : list.locator('button[aria-pressed="true"]')).click();
     await list.waitFor({ state: "detached" });
   };
   const state = () => page.evaluate(() => ({
@@ -1812,7 +1813,7 @@ async function assertPublicPractice(page) {
 
   await page.locator(".public-practice-trigger").click();
   await page.locator("#public-practice-list").waitFor({ state: "visible" });
-  if ((await state()).menuItems !== 8) throw new Error("The practice menu does not list Today and the seven scenarios.");
+  if ((await state()).menuItems !== 7) throw new Error("The practice menu does not list the seven scenarios alone.");
   await page.keyboard.press("Escape");
   await page.locator("#public-practice-list").waitFor({ state: "detached" });
 

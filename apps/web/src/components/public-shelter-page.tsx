@@ -66,6 +66,7 @@ interface PublicShelterPageProps {
    * replay around the example home, and distances are measured from that home.
    */
   practice?: PublicPractice;
+  onPracticeEnd?: () => void;
   /**
    * Whether the places reported in use as shelters in September 2024 are shown. Their list is part of the Mae Sai
    * replay, which ships in the competition build alone.
@@ -317,6 +318,7 @@ export function PublicShelterPage({
   trip,
   onTripChange,
   practice = PRACTICE_OFF,
+  onPracticeEnd,
   showShelterHistory = false,
 }: PublicShelterPageProps) {
   const th = language === "th";
@@ -787,6 +789,19 @@ export function PublicShelterPage({
                     <PublicAppIcon name="prepare" />
                     <p>{practiceView.pages.shelter.prompt}</p>
                   </div>
+                  {onPracticeEnd ? (
+                    <div className="public-practice-actions">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          closeSheet();
+                          onPracticeEnd();
+                        }}
+                      >
+                        {practiceView.copy.end}
+                      </button>
+                    </div>
+                  ) : null}
                   <p className="public-hazard-boundary" data-public-not-a-warning>{practiceView.copy.homeNote} {practiceView.copy.boundary}</p>
                 </section>
               ) : null}

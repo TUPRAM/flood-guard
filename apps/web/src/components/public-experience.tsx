@@ -257,6 +257,7 @@ export function PublicExperience() {
             trip={shelterTrip}
             onTripChange={setShelterTrip}
             practice={practice}
+            onPracticeEnd={endPractice}
             showShelterHistory={practiceAvailable}
           />
         )}

@@ -94,7 +94,6 @@ export const PRACTICE_STATE_TONE: Readonly<Record<PracticeState, PracticeTone>> 
 export const PRACTICE_MENU_COPY = {
   button: { en: "Practice scenarios", th: "สถานการณ์ฝึกซ้อม" },
   heading: { en: "Practice: replay of September 2024", th: "ฝึกซ้อม: ภาพจำลองเดือนกันยายน 2567 (2024)" },
-  off: { en: "Today (no practice)", th: "วันนี้ (ไม่ฝึกซ้อม)" },
   /** The place the header names while a scenario is shown. */
   homePlace: { en: "Example home · Mae Sai", th: "บ้านตัวอย่าง · แม่สาย" },
   loading: { en: "Loading the practice replay…", th: "กำลังโหลดภาพจำลองเพื่อฝึกซ้อม…" },

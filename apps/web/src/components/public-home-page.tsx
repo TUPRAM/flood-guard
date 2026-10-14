@@ -738,13 +738,24 @@ export function PublicHomePage({
                     <PublicAppIcon name="prepare" />
                     <p>{practiceView.prompt}</p>
                   </div>
-                  {(onNavigatePrepare || onNavigateSos) && (
+                  {(onNavigatePrepare || onNavigateSos || onPracticeEnd) && (
                     <div className="public-practice-actions">
                       {onNavigatePrepare && (
                         <button type="button" onClick={onNavigatePrepare}>{th ? "ทบทวนแผนของฉัน" : "Review my plan"}</button>
                       )}
                       {onNavigateSos && (
                         <button type="button" onClick={onNavigateSos}>{th ? "หมายเลขฉุกเฉิน" : "Emergency numbers"}</button>
+                      )}
+                      {onPracticeEnd && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            closeHazard();
+                            onPracticeEnd();
+                          }}
+                        >
+                          {practiceView.copy.end}
+                        </button>
                       )}
                     </div>
                   )}

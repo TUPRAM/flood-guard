@@ -186,10 +186,11 @@ export function PublicAppHeader({
               {practiceOpen && (
                 <div id="public-practice-list" className="public-practice-list" role="group" aria-label={PRACTICE_MENU_COPY.heading[language]}>
                   <p>{PRACTICE_MENU_COPY.heading[language]}</p>
-                  <button type="button" aria-pressed={practice.scenarioId === null} data-tone="neutral" onClick={() => choosePractice(null)}>
-                    <i aria-hidden="true" />
-                    {PRACTICE_MENU_COPY.off[language]}
-                  </button>
+                  {/*
+                    The seven scenarios alone: the entry "Today (no practice)" above them was removed on the owner's
+                    request of 14 Oct 2026. The scenario shown is a pressed toggle and ends when it is chosen again;
+                    every page also has a button that ends it.
+                  */}
                   {PRACTICE_SCENARIOS.map((scenario) => (
                     <button
                       key={scenario.id}
@@ -197,7 +198,7 @@ export function PublicAppHeader({
                       aria-pressed={practice.scenarioId === scenario.id}
                       data-tone={PRACTICE_STATE_TONE[scenario.id]}
                       data-practice-scenario={scenario.id}
-                      onClick={() => choosePractice(scenario.id)}
+                      onClick={() => choosePractice(practice.scenarioId === scenario.id ? null : scenario.id)}
                     >
                       <i aria-hidden="true" />
                       {PRACTICE_SCENARIO_LABELS[scenario.id][language]}

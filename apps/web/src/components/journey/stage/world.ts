@@ -922,13 +922,13 @@ export function alertTexture(): THREE.CanvasTexture {
   c.fillRect(46, 116, 708, 138);
   c.fillStyle = "#9a5d0c";
   c.font = "700 20px Inter, sans-serif";
-  c.fillText("STORY MODE · SIMULATED ALERT", 70, 160);
+  c.fillText("STORY MODE · SIMULATED CALL TO 1784", 70, 160);
   c.fillStyle = "#152b29";
   c.font = "500 26px Inter, sans-serif";
-  c.fillText("Household near the low road crossing", 70, 202);
+  c.fillText("Dry home, walk to the shelter cut", 70, 202);
   c.font = "400 19px Inter, sans-serif";
   c.fillStyle = "#53656d";
-  c.fillText("Illustrative scenario. Nothing was sent.", 70, 236);
+  c.fillText("Fictional household. Nothing was dialled or sent.", 70, 236);
   c.fillStyle = "#d9dfdc";
   for (let i = 0; i < 4; i += 1) c.fillRect(40, 300 + i * 44, 720 - i * 90, 22);
   const texture = new THREE.CanvasTexture(canvas);

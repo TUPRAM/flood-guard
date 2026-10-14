@@ -69,6 +69,8 @@ services/api/data/study_area_bundles/*.json     -text
 apps/web/public/offline-demo/mae-sai/*.json     -text
 # Study manifests bind exact bytes, including independently exported indexes.
 apps/web/public/studies/**                     -text
+# The journey town pack binds exact bytes (hashes in mae-sai-town.json and docs/journey_town_input_receipt.json).
+apps/web/public/journey/town/**                -text
 apps/web/public/evidence-library/**           -text
 apps/web/public/evidence-library/report.html  whitespace=cr-at-eol
 

@@ -3,15 +3,20 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 
+import { decodePng, formatMoment, inflateZlib } from "@/lib/flood-timeline";
+import { decodeWithCanvas } from "@/lib/flood-timeline-command-data";
 import { LANDSCAPE_PAGE_FILL, PHONE_PAGE_FILL, quadBounds, quadIsDrawable, quadToMatrix3d, type Quad } from "@/lib/journey/screen-projection";
 import {
   CHAPTERS,
+  STOP_IDS,
+  TIMELINE,
   TIMELINE_END,
   chapterAt,
   chapterEntry,
   clampScrollTarget,
   locate,
   parseScene,
+  phoneAt,
   sceneAt,
   scenePosition,
   segmentRange,
@@ -24,9 +29,10 @@ import {
   type SegmentId,
   type StopId,
 } from "@/lib/journey/timeline";
+import { loadTownPack, type Localized } from "@/lib/journey/town-data";
 import { useLanguage } from "@/lib/use-language";
 
-import { CAPTIONS, CHAPTER_LABELS, CHARACTERS, LABELS, STOPS, UI, stopFrameSrc, type JourneyLanguage, type PublicTab } from "./journey-copy";
+import { CAPTIONS, CHAPTER_LABELS, CHARACTERS, LABELS, STOPS, UI, clockText, stopFrameSrc, type JourneyLanguage, type PublicTab } from "./journey-copy";
 import type { JourneyStage, ScreenAspects, ScreenId, StageFrame } from "./stage/journey-stage";
 
 import styles from "./journey.module.css";
@@ -94,7 +100,12 @@ const CAPTION_PAUSES: number[] = (Object.keys(CAPTIONS) as SegmentId[])
   .sort((a, b) => a - b);
 
 /** Everything Next/Previous steps through, in order: every caption pause and every real page. */
-const STEP_POINTS: number[] = [...CAPTION_PAUSES, ...(["public", "public-prepare", "case", "command"] as const).map(stopPosition)].sort((a, b) => a - b);
+const STEP_POINTS: number[] = [...CAPTION_PAUSES, ...STOP_IDS.map(stopPosition)].sort((a, b) => a - b);
+
+/** PNG bytes to exact pixels: the replay's own decoder, or the canvas where the browser cannot inflate. */
+function decodeTownPng(bytes: Uint8Array) {
+  return typeof DecompressionStream === "function" ? decodePng(bytes, inflateZlib) : decodeWithCanvas(bytes);
+}
 
 function nextPoint(points: number[], after: number): number | null {
   return points.find((point) => point > after + 1e-3) ?? null;
@@ -136,6 +147,7 @@ function useReducedMotion(): boolean {
 export function JourneyExperience() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fadeRef = useRef<HTMLDivElement>(null);
+  const veilRef = useRef<HTMLDivElement>(null);
   const hostRefs = useRef<Record<ScreenId, HTMLDivElement | null>>({ phone: null, monitor: null, table: null });
   const frameRefs = useRef<Record<ScreenId, HTMLIFrameElement | null>>({ phone: null, monitor: null, table: null });
   /** Where each page was last drawn on its 3D screen: docking starts there, undocking returns there. */
@@ -186,6 +198,10 @@ export function JourneyExperience() {
   /** The real page whose note the visitor closed (it stays closed for that page). */
   const [closedNote, setClosedNote] = useState<StopId | null>(null);
   const [sizes, setSizes] = useState<Sizes | null>(null);
+  /** The replay hour on the clock (whole hours since 9 Sep 2024 00:00 ICT). */
+  const [clockHour, setClockHour] = useState(12);
+  /** Credits of the map (building outlines, OpenStreetMap, DEM, replay), from the bake. */
+  const [credits, setCredits] = useState<Localized | null>(null);
 
   const tr = useCallback((text: Record<JourneyLanguage, string>) => text[language], [language]);
   const trRef = useRef(tr);
@@ -215,33 +231,36 @@ export function JourneyExperience() {
   }, []);
 
   /**
-   * The public app's tab for this point of the story (Home for Lalita's first look, Prepare for her household plan).
-   * The app reads its tab from its address, so the story replaces that address and tells the app (no history entry);
-   * a frame that has not loaded yet picks the tab up when it does.
+   * The public app's page and practice scenario for this point of the story (Home on a normal day for Lalita's first
+   * look, Prepare as the rain sets in, Report at night, Home when she is cut off), so the phone shows the same replay
+   * hour as the scene. The app reads both from its address, so the story replaces that address and tells the app (no
+   * history entry); a frame that has not loaded yet picks them up when it does.
    */
-  const publicTab = useRef<{ wanted: PublicTab; applied: PublicTab | null }>({ wanted: "home", applied: null });
-  const syncPublicTab = useCallback(() => {
-    const tab = publicTab.current;
-    if (tab.applied === tab.wanted) return;
+  const phoneState = useRef<{ wanted: { tab: PublicTab; practice: string }; applied: string | null }>({ wanted: { tab: "home", practice: "normal" }, applied: null });
+  const syncPhone = useCallback(() => {
+    const state = phoneState.current;
+    const key = `${state.wanted.tab}:${state.wanted.practice}`;
+    if (state.applied === key) return;
     try {
       const win = frameRefs.current.phone?.contentWindow;
       if (!win || !win.location.pathname.startsWith("/public")) return;
       const url = new URL(win.location.href);
-      if (tab.wanted === "home") url.searchParams.delete("tab");
-      else url.searchParams.set("tab", tab.wanted);
+      if (state.wanted.tab === "home") url.searchParams.delete("tab");
+      else url.searchParams.set("tab", state.wanted.tab);
+      url.searchParams.set("practice", state.wanted.practice);
       if (url.href !== win.location.href) {
         win.history.replaceState(win.history.state, "", url);
         win.dispatchEvent(new (win as Window & typeof globalThis).PopStateEvent("popstate", { state: win.history.state }));
       }
-      tab.applied = tab.wanted;
+      state.applied = key;
     } catch {
       /* not reachable yet; applied on load */
     }
   }, []);
-  const wantPublicTab = useCallback((wanted: PublicTab) => {
-    publicTab.current.wanted = wanted;
-    syncPublicTab();
-  }, [syncPublicTab]);
+  const wantPhone = useCallback((wanted: { tab: PublicTab; practice: string }) => {
+    phoneState.current.wanted = wanted;
+    syncPhone();
+  }, [syncPhone]);
 
   /** Puts a host into "on a 3D screen" mode at its CSS layout size. */
   const projectHost = useCallback((screen: ScreenId) => {
@@ -373,9 +392,8 @@ export function JourneyExperience() {
   }, [undockIfNeeded]);
 
   const continueFrom = useCallback((stop: StopId) => {
-    if (stop === "command") void goTo(0, { animate: false });
     // Glide to the next chapter's first caption and wait there (with reduced motion, fade to it).
-    else void goTo(nextPoint(CAPTION_PAUSES, stopPosition(stop)) ?? stopPosition(stop) + 0.5, { animate: !motion.current.reduced });
+    void goTo(nextPoint(CAPTION_PAUSES, stopPosition(stop)) ?? stopPosition(stop) + 0.5, { animate: !motion.current.reduced });
   }, [goTo]);
 
   const jumpToStop = useCallback((stop: StopId) => {
@@ -437,6 +455,9 @@ export function JourneyExperience() {
       }
       const position = m.display;
       const result: StageFrame = stage.update(position, dt);
+      if (veilRef.current) veilRef.current.style.opacity = result.veil.toFixed(3);
+      const wholeHour = Math.floor(result.hour + 1e-6);
+      setClockHour((current) => (current === wholeHour ? current : wholeHour));
 
       // Real pages on the 3D screens.
       (Object.keys(result.screens) as ScreenId[]).forEach((screen) => {
@@ -462,9 +483,8 @@ export function JourneyExperience() {
         element.dataset.visible = String(label.visible);
       }
 
-      // Lalita's phone shows the Home tab for her first look and the Prepare tab once she makes her plan.
-      if (position >= segmentRange("return-phone").start) wantPublicTab("prepare");
-      else if (position <= stopPosition("public") + 1e-3) wantPublicTab("home");
+      // Lalita's phone shows the page and practice scenario of the story's hour.
+      wantPhone(phoneAt(position));
 
       // Lazy-load the real pages a little before they are needed.
       if (position > 0.25 || m.target > 0.25) ensureMounted("phone");
@@ -496,8 +516,7 @@ export function JourneyExperience() {
         const screen = STOP_SCREEN[stop];
         ensureMounted(screen);
         m.docked = stop;
-        const tab = STOPS[stop].tab;
-        if (tab) wantPublicTab(tab);
+        if (screen === "phone") wantPhone(phoneAt(position));
         dockHost(screen, !m.reduced);
         // The 3D stays visible (its last frame) under the see-through bottom bar; rendering pauses while docked.
         setView((current) => ({ ...current, docked: stop }));
@@ -515,9 +534,10 @@ export function JourneyExperience() {
         const gl = probe.getContext("webgl2") ?? probe.getContext("webgl");
         if (!gl) throw new Error("WebGL unavailable");
         const lowPower = window.innerWidth < 700 || (navigator.hardwareConcurrency ?? 8) < 4 || ((navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 8) < 4;
-        const { JourneyStage: Stage } = await import("./stage/journey-stage");
+        const [{ JourneyStage: Stage }, town] = await Promise.all([import("./stage/journey-stage"), loadTownPack(decodeTownPng)]);
         if (disposed) return;
-        stage = new Stage(canvas, { quality: lowPower ? "low" : "high" });
+        setCredits(town.manifest.credits);
+        stage = new Stage(canvas, { quality: lowPower ? "low" : "high", town });
         stageRef.current = stage;
         canvas.addEventListener("webglcontextlost", onContextLost);
         applySizes();
@@ -554,7 +574,7 @@ export function JourneyExperience() {
       stage?.dispose();
       stageRef.current = null;
     };
-  }, [dockHost, ensureMounted, projectHost, updateHistory, wantPublicTab]);
+  }, [dockHost, ensureMounted, projectHost, updateHistory, wantPhone]);
 
   // Mount the public app shortly after load even without input, so the phone screen is ready.
   useEffect(() => {
@@ -686,11 +706,9 @@ export function JourneyExperience() {
     const from = Math.abs(m.target - m.display) > 1e-3 ? m.target : m.display;
     const target = direction > 0 ? nextPoint(STEP_POINTS, from) : previousPoint(STEP_POINTS, from);
     if (target !== null) void goTo(target, { animate: !m.reduced });
-    // From the very start, back wraps round to the end of the story (the command exercise).
-    else if (direction < 0) {
-      ensureMounted("table");
-      void goTo(stopPosition("command"), { animate: false });
-    }
+    // From the very start, back wraps round to the end of the story; from the end, next starts it again.
+    else if (direction < 0) void goTo(TIMELINE_END, { animate: false });
+    else void goTo(0, { animate: false });
   };
   useEffect(() => {
     stepRef.current = step;
@@ -722,8 +740,8 @@ export function JourneyExperience() {
                     setLoaded((current) => ({ ...current, [screen]: true }));
                     setFrameScrollbar(screen, hostRefs.current[screen]?.dataset.mode === "docked");
                     if (screen === "phone") {
-                      publicTab.current.applied = null;
-                      syncPublicTab();
+                      phoneState.current.applied = null;
+                      syncPhone();
                     }
                   }}
                   tabIndex={docked && STOP_SCREEN[docked] === screen ? 0 : -1}
@@ -745,6 +763,7 @@ export function JourneyExperience() {
       </div>
 
       <div ref={fadeRef} className={styles.fade} data-on="false" aria-hidden="true" />
+      <div ref={veilRef} className={styles.veil} aria-hidden="true" />
 
       {/* Cinematic chrome (hidden while a real page is docked). */}
       {!docked && status !== "failed" && (
@@ -797,7 +816,13 @@ export function JourneyExperience() {
             </div>
           )}
 
-          <p className={styles.illustrative}>{tr(UI.illustrative)}</p>
+          {!view.heroVisible && status === "ready" && (
+            <p className={styles.clock} aria-live="off">{clockText(formatMoment(clockHour / 24, language), language)}</p>
+          )}
+          <p className={styles.illustrative}>
+            {tr(UI.illustrative)}
+            {credits && <small title={tr(credits)}>{tr(UI.credits)}</small>}
+          </p>
         </>
       )}
 
@@ -834,11 +859,10 @@ export function JourneyExperience() {
             <button
               type="button"
               className={styles.step}
-              disabled={view.atEnd && !docked}
               onClick={() => step(1)}
-              aria-label={docked && stopCopy?.continueLabel ? tr(stopCopy.continueLabel) : tr(UI.next)}
-              title={docked && stopCopy?.continueLabel ? tr(stopCopy.continueLabel) : tr(UI.next)}
-            >→</button>
+              aria-label={docked && stopCopy?.continueLabel ? tr(stopCopy.continueLabel) : view.atEnd ? tr(UI.replay) : tr(UI.next)}
+              title={docked && stopCopy?.continueLabel ? tr(stopCopy.continueLabel) : view.atEnd ? tr(UI.replay) : tr(UI.next)}
+            >{view.atEnd && !docked ? "↺" : "→"}</button>
           </nav>
       )}
 
@@ -867,13 +891,17 @@ export function JourneyExperience() {
           <h1 id="journey-fallback">{tr(UI.fallbackTitle)}</h1>
           <p>{tr(UI.fallbackBody)}</p>
           <ol>
-            {(["everyday", "conditions", "affected", "response"] as const).map((chapter, index) => {
-              const stop = (["public", "public-prepare", "case", "command"] as const)[index];
+            {CHAPTERS.filter((chapter) => chapter !== "opening").map((chapter) => {
+              const items = TIMELINE.filter((item) => item.chapter === chapter);
               return (
                 <li key={chapter}>
                   <b>{CHAPTER_LABELS[chapter].number} {tr(CHAPTER_LABELS[chapter].title)}</b>
-                  <p>{CAPTIONS[(["everyday", "conditions", "sos-signal", "aerial"] as const)[index]].map((entry) => tr(entry.text)).join(" ")}</p>
-                  <a href={STOPS[stop].href(language)}>{tr(STOPS[stop].page)} ↗</a>
+                  {items.flatMap((item) => (item.kind === "segment" ? CAPTIONS[item.id] : [])).map((entry, index) => (
+                    <p key={index}>{tr(entry.text)} {(entry.points ?? []).map((point) => tr(point)).join(" ")}</p>
+                  ))}
+                  {items.flatMap((item) => (item.kind === "stop" ? [item.id] : [])).map((stop) => (
+                    <a key={stop} href={STOPS[stop].href(language)}>{tr(STOPS[stop].page)} ↗</a>
+                  ))}
                 </li>
               );
             })}

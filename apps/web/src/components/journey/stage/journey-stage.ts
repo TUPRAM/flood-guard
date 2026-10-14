@@ -1,21 +1,10 @@
 import * as THREE from "three";
 
 import { LANDSCAPE_PAGE_FILL, PHONE_PAGE_FILL, type Quad } from "@/lib/journey/screen-projection";
-import { BACK_STREET_Z, LAYOUT, ROAD_Z, SIDE_STREETS_X, WATER_LEVEL, terrainHeight, waterLevelBetween } from "@/lib/journey/terrain";
-import { locate, type SegmentId } from "@/lib/journey/timeline";
+import { SEGMENT_IDS, locate, replayHourAt, veilAt, type SegmentId } from "@/lib/journey/timeline";
+import { stageAtHour, type TownPack } from "@/lib/journey/town-data";
 
-import {
-  Parts,
-  architectureMaterials,
-  architectureTextures,
-  buildClinic,
-  buildHouse,
-  homeSpec,
-  houseTopHeight,
-  mergeParts,
-  neighbourhoodSpecs,
-  type HouseSpec,
-} from "./architecture";
+import { Parts, architectureMaterials, architectureTextures, buildHouse, houseTopHeight, mergeParts, setArchitectureGround, type HouseSpec } from "./architecture";
 import {
   attachScreen,
   loadCharacter,
@@ -27,26 +16,11 @@ import {
   type HeldScreen,
 } from "./characters";
 import { GRIPS, buildFigure, poseSeated, poseStanding, setGrip, solveArm, type Figure } from "./figure";
-import { contactShadowTexture, type Quality } from "./materials";
+import { PALETTE, contactShadowTexture, type Quality } from "./materials";
 import { buildOperations, type OperationsBuilding } from "./operations";
-import { buildVegetation, type Vegetation } from "./vegetation";
-import {
-  alertTexture,
-  buildConnection,
-  buildContactShadows,
-  buildEnvironmentScene,
-  buildPhone,
-  buildRain,
-  buildRoads,
-  buildSky,
-  buildTerrain,
-  buildWater,
-  tableTexture,
-  type Connection,
-  type Phone,
-  type WaterUniforms,
-  type WetUniforms,
-} from "./world";
+import { buildTown, type Town } from "./town";
+import { buildTrees, type Vegetation } from "./vegetation";
+import { alertTexture, buildEnvironmentScene, buildPhone, buildRain, buildSky, tableTexture, type Phone } from "./world";
 
 export type ScreenId = "phone" | "monitor" | "table";
 
@@ -69,6 +43,10 @@ export interface LabelFrame {
 export interface StageFrame {
   screens: Record<ScreenId, ScreenFrame>;
   labels: LabelFrame[];
+  /** The replay hour shown (whole hours since 9 Sep 2024 00:00 ICT, fractional between beats). */
+  hour: number;
+  /** 0..1: darkness over the scene for a cut in time. */
+  veil: number;
 }
 
 export interface StageViewport {
@@ -92,14 +70,19 @@ interface Key {
   pass?: boolean;
 }
 
+interface Pose { pos: THREE.Vector3; target: THREE.Vector3; up?: THREE.Vector3 }
+
 const Y = new THREE.Vector3(0, 1, 0);
-/** Where Mali and Dao stand, relative to Lalita at her gate (m). */
+/** Where Mali and Dao stand, relative to Lalita at her gate, in the house's frame (x along the front, z toward the street). */
 const LAYOUT_FAMILY = { mali: { x: 1.15, z: -0.95 }, dao: { x: 0.62, z: -0.3 } } as const;
 type PersonId = "lalita" | "mali" | "dao" | "narin" | "pim";
 const NORTH = new THREE.Vector3(0, 0, -1);
 const PHONE_SCREEN_HEIGHT = 0.15;
 const MONITOR_WIDTH = 0.66;
 const TABLE_WIDTH = 2.9;
+/** The labels the stage places (the keys of LABELS in journey-copy.ts). */
+export const LABEL_IDS = ["home", "neighbour", "shelter", "route", "low", "cut", "river", "office", "wat", "signal", "lalita", "mali", "dao", "narin", "pim"] as const;
+type LabelId = (typeof LABEL_IDS)[number];
 
 const v = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z);
 const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
@@ -109,6 +92,18 @@ const ramp = (value: number, a: number, b: number) => {
   return t * t * (3 - 2 * t);
 };
 const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
+const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+
+/** Point in a ring of x/z pairs (even-odd rule). */
+function insideRing(ring: Float32Array, x: number, z: number): boolean {
+  let inside = false;
+  const n = ring.length / 2;
+  for (let i = 0, j = n - 1; i < n; j = i, i += 1) {
+    const xi = ring[i * 2], zi = ring[i * 2 + 1], xj = ring[j * 2], zj = ring[j * 2 + 1];
+    if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) inside = !inside;
+  }
+  return inside;
+}
 
 function catmull(p0: THREE.Vector3, p1: THREE.Vector3, p2: THREE.Vector3, p3: THREE.Vector3, t: number, out: THREE.Vector3): THREE.Vector3 {
   const t2 = t * t, t3 = t2 * t;
@@ -125,7 +120,6 @@ function catmull(p0: THREE.Vector3, p1: THREE.Vector3, p2: THREE.Vector3, p3: TH
  */
 function samplePath(keys: Key[], p: number, outPos: THREE.Vector3, outTarget: THREE.Vector3, outUp: THREE.Vector3): void {
   const x = clamp01(p);
-  // Ease between the keys the camera settles on; pass-through waypoints keep the motion going.
   let s0 = 0;
   for (let k = 1; k < keys.length - 1; k += 1) if (!keys[k].pass && keys[k].at <= x) s0 = k;
   let s1 = keys.length - 1;
@@ -142,29 +136,54 @@ function samplePath(keys: Key[], p: number, outPos: THREE.Vector3, outTarget: TH
   outUp.copy(a.up ?? Y).lerp(b.up ?? Y, local).normalize();
 }
 
+// --- Replay time to light and weather -----------------------------------------------------------------------------------
+
+/** 0 by day, 1 at night, for a replay hour (local time); dusk and dawn take about an hour and a half. */
+export function nightAt(hour: number): number {
+  const hd = ((hour % 24) + 24) % 24;
+  const dusk = ramp(hd, 18.0, 19.4);
+  const dawn = 1 - ramp(hd, 5.2, 6.6);
+  return hd >= 12 ? dusk : dawn;
+}
+
+/** Illustrative weather by replay hour: rain set in on 10 September and eased after the peak (not data). */
+export function weatherAt(hour: number): { rain: number; overcast: number } {
+  const points: Array<[number, number, number]> = [
+    [0, 0, 0.3], [30, 0, 0.35], [36, 0.55, 0.75], [40, 0.85, 0.85], [50, 0.8, 0.85], [60, 0.45, 0.75], [84, 0.25, 0.65], [100, 0.05, 0.5], [130, 0, 0.32], [200, 0, 0.3],
+  ];
+  for (let i = 1; i < points.length; i += 1) {
+    if (hour <= points[i][0]) {
+      const [h0, r0, o0] = points[i - 1], [h1, r1, o1] = points[i];
+      const t = (hour - h0) / (h1 - h0);
+      return { rain: lerp(r0, r1, t), overcast: lerp(o0, o1, t) };
+    }
+  }
+  return { rain: 0, overcast: 0.3 };
+}
+
 export interface StageOptions {
   quality: Quality;
+  town: TownPack;
 }
 
 export class JourneyStage {
   readonly renderer: THREE.WebGLRenderer;
   private readonly scene = new THREE.Scene();
-  private readonly camera = new THREE.PerspectiveCamera(40, 1, 0.01, 900);
+  private readonly camera = new THREE.PerspectiveCamera(40, 1, 0.01, 9000);
   private readonly quality: Quality;
   private viewport: StageViewport = { width: 1, height: 1 };
   private aspects: ScreenAspects = { phone: 0.4615, monitor: 1.6, table: 1.6 };
   private readonly disposables: Array<{ dispose(): void }> = [];
 
-  private readonly water: THREE.Mesh;
-  private readonly waterNormal: THREE.Texture;
-  private readonly waterUniforms: WaterUniforms;
-  private readonly wet: WetUniforms;
+  private readonly town: Town;
+  private readonly pack: TownPack;
   private readonly rain: ReturnType<typeof buildRain>;
   private readonly sky: ReturnType<typeof buildSky>;
   private readonly sun: THREE.DirectionalLight;
-  private readonly sunDir = new THREE.Vector3(-0.52, 0.66, 0.54).normalize();
+  private readonly sunDir = new THREE.Vector3(-0.42, 0.78, 0.46).normalize();
   private readonly hemi: THREE.HemisphereLight;
-  private readonly connection: Connection;
+  private readonly porch: THREE.PointLight;
+  private readonly fog: THREE.FogExp2;
   private readonly ops: OperationsBuilding;
   private vegetation!: Vegetation;
   private readonly resident: Figure;
@@ -178,6 +197,14 @@ export class JourneyStage {
   private readonly residentShadow: THREE.Mesh;
   private readonly phone: Phone;
   private readonly signal: { tube: THREE.Mesh; head: THREE.Mesh; curve: THREE.QuadraticBezierCurve3; material: THREE.MeshBasicMaterial };
+  /** House frame: where Lalita stands (R), the street-ward normal (F) and the along-front axis (S). */
+  private readonly frame: { R: THREE.Vector3; F: THREE.Vector3; S: THREE.Vector3; rotation: number; homeTop: number };
+  /** The clearest way to look at Lalita from her street (real outlines around her), and how far it is clear. */
+  private street!: { dir: THREE.Vector3; clear: number };
+  /** The nearest river channel to the home (replay cells), for the shot toward the river. */
+  private river!: THREE.Vector3;
+  /** Where the water was deepest at the peak among the lanes near the home (for the tide lines). */
+  private deep!: THREE.Vector3;
   private readonly anchors: Record<string, THREE.Vector3>;
   private shadowExtent = 0;
   private shadowKey = "";
@@ -190,17 +217,18 @@ export class JourneyStage {
   private disposed = false;
   /** Resolves when the rigged people are in the scene (or failed to load; the procedural figures then stay). */
   readonly charactersReady: Promise<void>;
-  /** Adaptive resolution: the pixel ratio steps down on slow GPUs and back up when there is headroom. */
   private readonly maxPixelRatio: number;
   private pixelRatio: number;
   private frameAverage = 1 / 60;
   private sinceResize = 0;
   private time = 0;
+  private readonly peakStage: number;
 
-  private readonly scratch = { pos: new THREE.Vector3(), target: new THREE.Vector3(), up: new THREE.Vector3(), v: new THREE.Vector3(), w: new THREE.Vector3(), q: new THREE.Quaternion(), m: new THREE.Matrix4() };
+  private readonly scratch = { pos: new THREE.Vector3(), target: new THREE.Vector3(), up: new THREE.Vector3(), v: new THREE.Vector3(), w: new THREE.Vector3() };
 
   constructor(canvas: HTMLCanvasElement, options: StageOptions) {
     this.quality = options.quality;
+    this.pack = options.town;
     const high = options.quality === "high";
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: "high-performance", alpha: false });
     this.maxPixelRatio = Math.min(window.devicePixelRatio || 1, high ? 1.75 : 1.25);
@@ -229,8 +257,11 @@ export class JourneyStage {
     this.disposables.push(environment);
 
     this.scene.userData.marker = JOURNEY_CHUNK_MARKER;
-    this.scene.fog = new THREE.Fog("#e9e6dc", 90, 360);
+    this.fog = new THREE.FogExp2("#e9e6dc", 0.0003);
+    this.scene.fog = this.fog;
     this.sky = buildSky();
+    this.sky.mesh.scale.setScalar(12);
+    this.sky.material.fog = false;
     this.sky.material.uniforms.uSunDir.value.copy(this.sunDir);
     this.scene.add(this.sky.mesh);
 
@@ -241,79 +272,60 @@ export class JourneyStage {
     this.sun.shadow.mapSize.set(high ? 2048 : 1024, high ? 2048 : 1024);
     this.sun.shadow.radius = high ? 3 : 2;
     this.sun.shadow.bias = -0.0003;
-    this.sun.shadow.normalBias = 0.025;
+    this.sun.shadow.normalBias = 0.03;
     this.sun.shadow.camera.near = 1;
-    this.sun.shadow.camera.far = 320;
+    this.sun.shadow.camera.far = 1600;
     this.scene.add(this.sun, this.sun.target);
 
-    // Architecture: houses (merged per material) and the clinic.
+    // The town: the real outlines, roads and land cover of Mae Sai, with the replay's water.
+    this.town = buildTown(this.pack, { quality: options.quality });
+    this.scene.add(this.town.group);
+    this.disposables.push(this.town);
+    const field = this.town.field;
+    this.peakStage = Math.max(...this.pack.manifest.replay.stage_anchors.map((anchor) => anchor.stage_m));
+
+    // Lalita's home: the house kit on the real outline's box, facing its street.
+    setArchitectureGround((x, z) => field.groundAt(x, z));
     const textures = architectureTextures();
     const materials = architectureMaterials(textures);
     Object.values(textures).forEach((texture) => this.disposables.push(texture));
     Object.values(materials).forEach((material) => this.disposables.push(material));
-    const home = homeSpec();
-    const avoid = (x: number, z: number) => {
-      if (Math.abs(x - 2) < 12 && z > -12) return true; // the swale
-      if (Math.abs(x - LAYOUT.clinic.x) < 13 && z > -12) return true;
-      if (Math.abs(x - LAYOUT.home.x) < 10 && z > -12) return true;
-      if (Math.abs(x - LAYOUT.operations.x) < 15 && z < -20) return true;
-      return false;
+    const home = this.town.home;
+    const gateX = Math.min(1.6, home.w / 2 - 1.2);
+    const spec: HouseSpec = {
+      x: home.x, z: home.z, w: home.w, d: home.d, storeys: 2, roof: "hip", pitch: THREE.MathUtils.degToRad(27), rotation: home.rotation,
+      wall: new THREE.Color("#efe7d6"), roofColor: new THREE.Color("#a35f45"), trim: PALETTE.trim, porch: true, hoods: true, tank: true, ac: true,
+      fence: true, yard: home.yard, gateX, doorX: 1.4, seed: 4242,
     };
-    const specs: HouseSpec[] = [...neighbourhoodSpecs(options.quality, avoid, SIDE_STREETS_X), home];
     const parts = new Parts();
-    specs.forEach((spec) => buildHouse(parts, spec));
-    this.scene.add(mergeParts(parts, materials, "Houses"));
-    const clinic = buildClinic(materials, textures);
-    this.scene.add(clinic.group);
+    buildHouse(parts, spec);
+    this.scene.add(mergeParts(parts, materials, "Home"));
+    const F = v(Math.sin(home.rotation), 0, Math.cos(home.rotation));
+    const S = v(Math.cos(home.rotation), 0, -Math.sin(home.rotation));
+    const R = v(home.x, 0, home.z).addScaledVector(S, gateX).addScaledVector(F, home.d / 2 + home.yard + 0.2);
+    R.y = field.groundAt(R.x, R.z);
+    this.frame = { R, F, S, rotation: home.rotation, homeTop: houseTopHeight(spec) };
+    this.street = this.clearView(spec);
+    this.river = this.nearestChannel();
+    this.deep = this.deepestNear(170);
 
-    // Ground features: yards and driveways from the houses; footprints for vegetation and contact shadows.
-    const yards = specs.filter((spec) => spec.fence).map((spec) => {
-      const c = Math.cos(spec.rotation), s = Math.sin(spec.rotation);
-      const lz = spec.d / 2 + spec.yard / 2;
-      return { x: spec.x + lz * s, z: spec.z + lz * c, w: spec.w + 2.6, d: spec.yard, rotation: spec.rotation };
-    });
-    const pads = specs.filter((spec) => spec.fence).map((spec) => {
-      const fence = spec.z + spec.d / 2 + spec.yard;
-      const street = spec.z > -12 ? ROAD_Z - 3.2 - 1.6 : BACK_STREET_Z - 2.2;
-      return { x: spec.x + spec.gateX, z: (fence + street) / 2, w: 3.0, d: Math.max(0.2, street - fence) };
-    });
-    pads.push({ x: LAYOUT.clinic.x, z: LAYOUT.clinic.z + 4.5 + 3.4, w: 9, d: 2.2 });
-    const terrain = buildTerrain(options.quality, { yards, pads });
-    this.wet = terrain.uniforms;
-    this.scene.add(terrain.mesh);
-    this.disposables.push(terrain.mesh.userData.detail as THREE.Texture);
-    const water = buildWater();
-    this.water = water.mesh;
-    this.waterNormal = water.normalMap;
-    this.waterUniforms = water.uniforms;
-    this.water.position.y = WATER_LEVEL.dry;
-    this.scene.add(this.water);
-    this.scene.add(buildRoads(options.quality, this.wet).group);
-
-    this.ops = buildOperations(alertTexture(), tableTexture());
+    // The District Office: the operations room in the office's outline (exterior on its place; interior illustrative).
+    this.ops = buildOperations(alertTexture(), tableTexture(), this.town.office);
     this.scene.add(this.ops.group);
     this.disposables.push(this.ops);
 
-    const footprints = [
-      ...specs.map((spec) => ({ x: spec.x, z: spec.z + (spec.fence ? spec.yard / 2 : 0), w: spec.w + 3, d: spec.d + (spec.fence ? spec.yard : 0) + 1.5 })),
-      { x: LAYOUT.clinic.x + 2.6, z: LAYOUT.clinic.z + 1.6, w: 25, d: 13 },
-      this.ops.footprint,
-    ];
-    this.scene.add(buildContactShadows([
-      ...specs.map((spec) => ({ x: spec.x, z: spec.z, w: spec.w + 1.7, d: spec.d + 1.7, rotation: spec.rotation })),
-      { x: LAYOUT.clinic.x, z: LAYOUT.clinic.z, w: 17.6, d: 10.6, rotation: 0 },
-      { x: this.ops.footprint.x, z: this.ops.footprint.z, w: this.ops.footprint.w + 1.2, d: this.ops.footprint.d + 1.2, rotation: 0 },
-    ]));
-
-    this.connection = buildConnection();
-    this.scene.add(this.connection.group);
     this.rain = buildRain(options.quality);
     this.scene.add(this.rain.mesh);
 
-    // Resident at the garden gate, facing the road (+z), in clothes that suit a warm climate.
+    // A porch light at Lalita's home (on at night only; both states are compiled up front).
+    this.porch = new THREE.PointLight("#ffcf94", 0, 14, 1.6);
+    this.porch.position.copy(R).addScaledVector(F, -home.yard - 0.6).add(v(0, 2.7, 0));
+    this.scene.add(this.porch);
+
+    // Resident at the garden gate, facing the street, in clothes that suit a warm climate.
     this.resident = buildFigure({ skin: 0xc4957a, shirt: 0xa7644b, trousers: 0x4a4d45, hair: 0x221a16, shoes: 0xd9d4ca, sole: 0xf1eee8, hairStyle: "bun", build: "f" });
-    this.resident.root.position.set(LAYOUT.resident.x, terrainHeight(LAYOUT.resident.x, LAYOUT.resident.z), LAYOUT.resident.z);
-    this.resident.root.rotation.y = -0.18;
+    this.resident.root.position.copy(R);
+    this.resident.root.rotation.y = home.rotation - 0.18;
     this.scene.add(this.resident.root);
     this.phone = buildPhone();
     this.scene.add(this.phone.group);
@@ -324,27 +336,26 @@ export class JourneyStage {
     const blobMaterial = new THREE.MeshBasicMaterial({ color: "#1b1f19", alphaMap: blob, transparent: true, opacity: 0.55, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 });
     this.residentShadow = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 0.9), blobMaterial);
     this.residentShadow.rotation.x = -Math.PI / 2;
-    this.residentShadow.position.copy(this.resident.root.position).add(v(0, 0.02, 0.02));
+    this.residentShadow.position.copy(R).add(v(0, 0.02, 0));
     this.scene.add(this.residentShadow);
     const footShadow = (position: THREE.Vector3, size: number) => {
       const mesh = new THREE.Mesh(new THREE.PlaneGeometry(size, size), blobMaterial);
       mesh.rotation.x = -Math.PI / 2;
-      mesh.position.copy(position).add(v(0, 0.02, 0.02));
+      mesh.position.copy(position).add(v(0, 0.02, 0));
       this.scene.add(mesh);
       return mesh;
     };
 
-    // Mali and Dao in the gate opening beside Lalita (on her left, clear of the camera's way round her right shoulder),
-    // turned toward her and the road.
+    // Mali and Dao in the gate opening beside Lalita (on her left, clear of the camera's way round her right shoulder).
     this.mali = buildFigure({ skin: 0xb8876b, shirt: 0x6f8068, trousers: 0x54463f, hair: 0xb9b3aa, shoes: 0x4a3f38, sole: 0x3b332e, hairStyle: "bun", build: "f" });
     this.dao = buildFigure({ skin: 0xc99c80, shirt: 0xf1eee6, trousers: 0x2d3b5c, hair: 0x1c1512, shoes: 0x2a2a2e, sole: 0xe9e5dc, hairStyle: "short", build: "f" });
-    // A child: smaller overall, with the larger head of a child's proportions.
     this.dao.root.scale.setScalar(0.74);
     this.dao.joints.head.scale.setScalar(1.2);
     for (const [figure, offset, turn] of [[this.mali, LAYOUT_FAMILY.mali, -0.75], [this.dao, LAYOUT_FAMILY.dao, -0.55]] as const) {
-      const x = LAYOUT.resident.x + offset.x, z = LAYOUT.resident.z + offset.z;
-      figure.root.position.set(x, terrainHeight(x, z), z);
-      figure.root.rotation.y = turn;
+      const p = this.rel(offset.x, 0, offset.z);
+      p.y = field.groundAt(p.x, p.z);
+      figure.root.position.copy(p);
+      figure.root.rotation.y = home.rotation + turn;
       this.scene.add(figure.root);
       this.familyShadows.push(footShadow(figure.root.position, figure === this.dao ? 0.7 : 0.9));
     }
@@ -360,36 +371,50 @@ export class JourneyStage {
     this.responder.root.rotation.y = Math.PI / 2;
     this.scene.add(this.responder.root);
 
-    // Simulated SOS signal: an arc from the resident to the operations window.
-    const start = this.resident.root.position.clone().add(v(0, 1.4, 0));
-    const end = this.ops.window.clone().add(v(0, 0.2, 1));
-    const control = start.clone().lerp(end, 0.5).add(v(0, 26, 6));
+    // Simulated call to the hotline: an arc from Lalita's home to the District Office (about 1.4 km), drawn at town
+    // scale so it reads from the overview.
+    const start = R.clone().add(v(0, 3, 0));
+    const end = this.ops.window.clone().add(v(0, 4, 2));
+    const control = start.clone().lerp(end, 0.5).add(v(0, start.distanceTo(end) * 0.28, 0));
     const curve = new THREE.QuadraticBezierCurve3(start, control, end);
-    const signalMaterial = new THREE.MeshBasicMaterial({ color: "#e7a54f", transparent: true, opacity: 0.9 });
-    const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, 160, 0.07, 6), signalMaterial);
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.45, 20, 14), signalMaterial);
+    const signalMaterial = new THREE.MeshBasicMaterial({ color: "#f0a64a", transparent: true, opacity: 0.95, toneMapped: false, fog: false });
+    const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, 240, 2.2, 8), signalMaterial);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(9, 20, 14), signalMaterial);
     tube.visible = head.visible = false;
     this.scene.add(tube, head);
     this.signal = { tube, head, curve, material: signalMaterial };
 
-    const r = this.resident.root.position;
+    const place = (id: string) => this.pack.manifest.places.find((entry) => entry.id === id);
+    const at = (id: string, lift: number) => {
+      const p = place(id);
+      return p ? v(p.x, field.groundAt(p.x, p.z) + lift, p.z) : v(0, lift, 0);
+    };
     this.anchors = {
-      resident: r.clone(),
-      home: v(LAYOUT.home.x, houseTopHeight(home) + 3.4, LAYOUT.home.z),
-      clinic: v(LAYOUT.clinic.x, clinic.top + 1.6, LAYOUT.clinic.z),
-      connection: this.connection.midDry.clone().add(v(0, 1.2, 0)),
-      crossing: this.connection.crossingMid.clone().add(v(0, 1.2, 0)),
-      operations: v(LAYOUT.operations.x, this.ops.floor + 7.6, LAYOUT.operations.z),
+      home: v(home.x, this.frame.homeTop + 3.2, home.z),
+      neighbour: this.town.anchors.neighbour,
+      shelter: this.town.anchors.shelter,
+      route: this.routePoint(0.45).add(v(0, 4, 0)),
+      cut: this.town.anchors.cut,
+      low: this.town.anchors.cut,
+      river: at("sai_river", 8),
+      office: v(this.town.office.x, this.ops.floor + 9, this.town.office.z),
+      wat: at("R04", 18),
     };
 
     this.disposables.push(this.resident, this.responder, this.mali, this.dao, this.pim);
 
-    // Vegetation last: it keeps clear of the camera's actual path through the story.
     this.phone.resize(PHONE_SCREEN_HEIGHT * this.aspects.phone, PHONE_SCREEN_HEIGHT);
     this.ops.setMonitorSize(MONITOR_WIDTH, MONITOR_WIDTH / this.aspects.monitor);
     this.ops.setTableSize(TABLE_WIDTH, TABLE_WIDTH / this.aspects.table);
     this.poseResident(1, 0);
-    this.vegetation = buildVegetation({ quality: options.quality, footprints, clearance: this.cameraSamples() });
+    // Trees last: they keep clear of the camera's actual path through the story.
+    this.vegetation = buildTrees({
+      quality: options.quality,
+      trees: this.pack.trees,
+      height: (x, z) => field.groundAt(x, z),
+      clearance: this.cameraSamples(),
+      focus: [{ x: R.x, z: R.z, r: 260 }, { x: this.town.office.x, z: this.town.office.z, r: 160 }],
+    });
     this.scene.add(this.vegetation.group);
     this.disposables.push(this.vegetation);
     this.charactersReady = this.loadCharacters().catch(() => {
@@ -398,10 +423,83 @@ export class JourneyStage {
   }
 
   /**
+   * Mae Sai's lanes are narrow: a camera a few metres in front of Lalita can end up inside the building across the
+   * lane. Look along directions around her street-ward normal and keep the one that stays clear of every outline (and
+   * of her own house and yard) the longest, preferring directions that face her.
+   */
+  private clearView(house: HouseSpec): { dir: THREE.Vector3; clear: number } {
+    const { R, F, S } = this.frame;
+    const H = v(house.x, 0, house.z);
+    const near = this.pack.buildings.filter((b) => b.index !== this.pack.special.home && Math.hypot(b.obb.cx - R.x, b.obb.cz - R.z) < 50);
+    const blocked = (x: number, z: number) => {
+      const lx = (x - H.x) * S.x + (z - H.z) * S.z, lz = (x - H.x) * F.x + (z - H.z) * F.z;
+      if (Math.abs(lx) < house.w / 2 + 1.2 && lz < house.d / 2 + house.yard + 0.15) return true;
+      return near.some((b) => insideRing(b.ring, x, z));
+    };
+    let best = { dir: F.clone(), clear: 0, score: -Infinity };
+    for (let deg = -105; deg <= 105; deg += 5) {
+      const a = THREE.MathUtils.degToRad(deg);
+      const dir = F.clone().multiplyScalar(Math.cos(a)).addScaledVector(S, Math.sin(a)).normalize();
+      let clear = 0.5;
+      while (clear < 14 && !blocked(R.x + dir.x * clear, R.z + dir.z * clear)) clear += 0.25;
+      const score = Math.min(clear, 7) - Math.abs(deg) / 60;
+      if (score > best.score) best = { dir, clear, score };
+    }
+    return { dir: best.dir, clear: best.clear };
+  }
+
+  /** The replay channel cell nearest the home (the Sai River and its branches). */
+  private nearestChannel(): THREE.Vector3 {
+    const field = this.town.field;
+    const { R } = this.frame;
+    let best = v(R.x, 0, R.z - 220), bestD = Infinity;
+    for (let r = 0; r < field.rows; r += 1) for (let c = 0; c < field.cols; c += 1) {
+      if (field.code[r * field.cols + c] !== 0) continue;
+      const x = field.x0 + (c + 0.5) * field.dx, z = field.z0 + (r + 0.5) * field.dz;
+      const d = Math.hypot(x - R.x, z - R.z);
+      if (d < bestD) { bestD = d; best = v(x, 0, z); }
+    }
+    return best;
+  }
+
+  /** The cell with the deepest water at the replay's peak within `radius` of the home, among cells next to buildings. */
+  private deepestNear(radius: number): THREE.Vector3 {
+    const field = this.town.field;
+    const { R } = this.frame;
+    let best = v(R.x, 0, R.z - 60), bestDepth = -1;
+    for (let r = 0; r < field.rows; r += 1) for (let c = 0; c < field.cols; c += 1) {
+      const x = field.x0 + (c + 0.5) * field.dx, z = field.z0 + (r + 0.5) * field.dz;
+      if (Math.hypot(x - R.x, z - R.z) > radius) continue;
+      const depth = field.cellDepth(r * field.cols + c, this.peakStage);
+      // Up to about 2.2 m: deeper cells are channels and open low ground, without walls to mark.
+      if (depth !== null && depth > bestDepth && depth < 2.2) { bestDepth = depth; best = v(x, field.groundAt(x, z), z); }
+    }
+    return best;
+  }
+
+  /** A point in the house's frame around Lalita: x along the front, y up, z toward the street. */
+  private rel(x: number, y: number, z: number): THREE.Vector3 {
+    const { R, S, F } = this.frame;
+    return R.clone().addScaledVector(S, x).addScaledVector(F, z).add(v(0, y, 0));
+  }
+
+  /** A point a share of the way along the walk to the shelter (on the ground). */
+  private routePoint(share: number): THREE.Vector3 {
+    const pts = this.town.route.points;
+    const lengths = [0];
+    for (let i = 1; i < pts.length; i += 1) lengths.push(lengths[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+    const goal = lengths[lengths.length - 1] * clamp01(share);
+    let i = 1;
+    while (i < pts.length - 1 && lengths[i] < goal) i += 1;
+    const t = (goal - lengths[i - 1]) / Math.max(1e-6, lengths[i] - lengths[i - 1]);
+    const x = lerp(pts[i - 1][0], pts[i][0], t), z = lerp(pts[i - 1][1], pts[i][1], t);
+    return v(x, this.town.field.groundAt(x, z), z);
+  }
+
+  /**
    * The push-ins end where the person's eyes are (the phone) or in front of their face (the monitor). As the camera
    * gets there, the resident's head is folded away (a first-person view of her phone); the responder is hidden once
-   * the camera is ahead of his shoulders, when he is already out of the frame, so neither fills the frame around the
-   * real page.
+   * the camera is ahead of his shoulders, when he is already out of the frame.
    */
   private clearCloseUps(camera: THREE.Vector3): void {
     const woman = this.residentModel;
@@ -422,27 +520,29 @@ export class JourneyStage {
   }
 
   /**
-   * Compile every material for both lighting states (interior lights on and off) up front, so switching them during
-   * the story never stalls a frame on shader compilation.
+   * Compile every material for every lighting state (interior and porch lights on and off) up front, so switching them
+   * during the story never stalls a frame on shader compilation.
    */
   precompile(): void {
-    this.camera.position.set(0, 60, 80);
-    this.camera.lookAt(0, 0, 0);
+    this.camera.position.copy(this.frame.R).add(v(0, 220, 380));
+    this.camera.lookAt(this.frame.R);
     this.camera.updateMatrixWorld(true);
-    for (const on of [true, false]) {
-      for (const light of this.ops.lights) light.visible = on;
-      this.renderer.compile(this.scene, this.camera);
+    for (const opsOn of [true, false]) {
+      for (const porchOn of [true, false]) {
+        for (const light of this.ops.lights) light.visible = opsOn;
+        this.porch.visible = porchOn;
+        this.renderer.compile(this.scene, this.camera);
+      }
     }
   }
 
   /** Camera positions sampled along every segment (for keeping trees out of the shots). */
   private cameraSamples(): THREE.Vector3[] {
-    const segments: SegmentId[] = ["opening", "everyday", "enter-phone", "conditions", "return-phone", "sos-signal", "enter-monitor", "aerial"];
     const samples: THREE.Vector3[] = [];
     const target = new THREE.Vector3(), up = new THREE.Vector3();
-    for (const segment of segments) {
+    for (const segment of SEGMENT_IDS) {
       const keys = this.keysFor(segment);
-      for (let p = 0; p <= 1.0001; p += 0.01) {
+      for (let p = 0; p <= 1.0001; p += 0.005) {
         const pos = new THREE.Vector3();
         samplePath(keys, p, pos, target, up);
         samples.push(pos);
@@ -477,8 +577,6 @@ export class JourneyStage {
       for (const character of [woman, man]) character.root.traverse((object) => (object as THREE.Mesh).geometry?.dispose());
       return;
     }
-    // Fit both people to what they hold and touch before either joins the scene: if a model cannot be fitted, the
-    // procedural figures stay as they are.
     prepareResident(woman);
     woman.root.position.copy(this.resident.root.position);
     woman.root.rotation.y = this.resident.root.rotation.y;
@@ -516,7 +614,6 @@ export class JourneyStage {
     const t = easeInOut(clamp01(raise));
     poseStanding(figure, 0.06 + 0.4 * t, this.time, 0.06 * t);
     figure.root.updateMatrixWorld(true);
-    // Local (figure space) phone poses: n is the screen normal, u the phone's up.
     const hold = { pos: v(-0.25, 0.76, 0.07), n: v(0.88, 0.05, 0.46).normalize(), u: v(0.04, -1, 0.1).normalize() };
     const read = { pos: v(-0.07, 1.25, 0.31), n: v(0.14, 0.76, -0.63).normalize(), u: v(0.06, 0.62, 0.78).normalize() };
     const mid = v(-0.22, 1.0, 0.26);
@@ -536,11 +633,7 @@ export class JourneyStage {
     this.phone.group.position.copy(worldPos);
     this.phone.group.quaternion.copy(worldQuat);
     this.phone.group.updateMatrixWorld(true);
-    // Right hand behind the phone: the palm on its back, fingers across it toward the left edge (curling round it),
-    // thumb along the right edge. Hand frame: fingers along local -y, palm normal +z (toward the phone).
     const px = v(1, 0, 0).applyQuaternion(worldQuat), py = v(0, 1, 0).applyQuaternion(worldQuat), pz = v(0, 0, 1).applyQuaternion(worldQuat);
-    // Solved so the middle finger reaches the left edge and the thumb base sits just outside the right edge:
-    // fingers on a 49 degree diagonal, the wrist at the lower-right corner, behind the phone.
     const fingers = px.clone().multiplyScalar(-0.656).addScaledVector(py, 0.755).normalize();
     const handY = fingers.clone().negate();
     const handX = handY.clone().cross(pz).normalize();
@@ -569,7 +662,6 @@ export class JourneyStage {
     const palmDown = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(v(0, 0, 1), v(-1, 0, 0), v(0, -1, 0)));
     const typing = Math.sin(this.time * 9) * 0.004 * attention;
     for (const [side, shoulder, elbow, wrist] of [[1, j.shoulderL, j.elbowL, j.wristL], [-1, j.shoulderR, j.elbowR, j.wristR]] as const) {
-      // Figure faces +x; its left (+side) is world -z.
       const target = v(keys.x - 0.1, keys.y + 0.047 + typing * side, keys.z - side * 0.12);
       const s = shoulder.getWorldPosition(new THREE.Vector3());
       solveArm(shoulder, elbow, wrist, target, s.clone().add(v(-0.1, -0.5, -side * 0.45)), palmDown);
@@ -591,12 +683,11 @@ export class JourneyStage {
     const figure = this.pim;
     figure.root.position.set(table.center.x + 0.45, this.ops.floor, edge - 0.2);
     figure.root.rotation.y = 0;
-    this.pimShadow.position.copy(figure.root.position).add(v(0, 0.02, 0.02));
+    this.pimShadow.position.copy(figure.root.position).add(v(0, 0.02, 0));
     poseStanding(figure, 0.5, this.time + 0.7, 0.2);
     figure.root.updateMatrixWorld(true);
     const j = figure.joints;
     const palmDown = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(v(-1, 0, 0), v(0, 0, -1), v(0, -1, 0)));
-    // Facing +z, her left (+side) is world +x.
     for (const [side, shoulder, elbow, wrist] of [[1, j.shoulderL, j.elbowL, j.wristL], [-1, j.shoulderR, j.elbowR, j.wristR]] as const) {
       const target = v(figure.root.position.x + side * 0.27, this.ops.floor + 0.975, edge + 0.07);
       const s = shoulder.getWorldPosition(new THREE.Vector3());
@@ -625,7 +716,6 @@ export class JourneyStage {
     return { center, normal: v(0, 0, 1).applyQuaternion(quat), up: v(0, 1, 0).applyQuaternion(quat), width: scale.x, height: scale.y };
   }
 
-  /** Camera pose at which a screen exactly fills the viewport height (and width, when the aspects match). */
   /** Camera pose square-on to a screen, at which it fills `fill` of the viewport height (1 = exactly). */
   private endPose(mesh: THREE.Mesh, fill = 1): Key {
     const g = this.screenGeometry(mesh);
@@ -641,9 +731,8 @@ export class JourneyStage {
 
   private screenQuad(mesh: THREE.Mesh): Quad | null {
     const g = this.screenGeometry(mesh);
-    // Hidden when the camera is behind the screen plane.
     if (this.camera.position.clone().sub(g.center).dot(g.normal) <= 0) return null;
-    const right = g.normal.clone().cross(g.up).negate().normalize(); // up × normal
+    const right = g.normal.clone().cross(g.up).negate().normalize();
     const hw = g.width / 2, hh = g.height / 2;
     const corners = [
       g.center.clone().addScaledVector(right, -hw).addScaledVector(g.up, hh),
@@ -658,72 +747,98 @@ export class JourneyStage {
   // --- Choreography --------------------------------------------------------------------------------------------------
 
   private keysFor(segment: SegmentId): Key[] {
-    const a = this.anchors;
-    const R = a.resident;
+    const R = this.frame.R;
     const ops = this.ops;
+    const rel = (x: number, y: number, z: number) => this.rel(x, y, z);
     const phoneC = this.screenGeometry(this.phoneScreen).center;
-    const os = { at: 0, pos: R.clone().add(v(-0.78, 2.02, -0.5)), target: phoneC.clone() };
-    const front = { at: 0, pos: R.clone().add(v(-1.9, 1.48, 3.6)), target: R.clone().add(v(0.2, 1.12, 0)) };
-    const k = (at: number, base: { pos: THREE.Vector3; target: THREE.Vector3; up?: THREE.Vector3 }): Key => ({ at, pos: base.pos, target: base.target, up: base.up });
-    const through = (at: number, base: { pos: THREE.Vector3; target: THREE.Vector3; up?: THREE.Vector3 }): Key => ({ ...k(at, base), pass: true });
-    // Beside her, outside the garden wall: the way round to her shoulder that keeps clear of the gate post.
-    const beside = { pos: R.clone().add(v(-1.05, 1.8, 1.35)), target: phoneC.clone() };
+    const k = (at: number, base: Pose): Key => ({ at, pos: base.pos, target: base.target, up: base.up });
+    const through = (at: number, base: Pose): Key => ({ ...k(at, base), pass: true });
+    const os: Pose = { pos: rel(-0.78, 2.02, -0.5), target: phoneC.clone() };
+    // In front of the family along the clearest line of the street; higher and looking down where the lane is tight.
+    const { dir: look, clear } = this.street;
+    const reachFront = Math.max(1.6, Math.min(3.6, clear - 0.6));
+    const reachFamily = Math.max(1.8, Math.min(4.8, clear - 0.5));
+    const lift = (reach: number) => Math.max(0, 3.2 - reach) * 0.55;
+    const { S } = this.frame;
+    const front: Pose = { pos: R.clone().addScaledVector(look, reachFront).addScaledVector(S, 0.25).add(v(0, 1.48 + lift(reachFront), 0)), target: rel(0.35, 1.12, 0) };
+    const beside: Pose = { pos: rel(-1.05, 1.8, 1.35), target: phoneC.clone() };
+    const family: Pose = { pos: R.clone().addScaledVector(look, reachFamily).addScaledVector(S, 0.55).add(v(0, 1.6 + lift(reachFamily), 0)), target: rel(0.6, 1.0, -0.4) };
+    const overFamily: Pose = { pos: R.clone().addScaledVector(look, 6).add(v(0, 34, 0)), target: R.clone() };
     const seat = ops.seat;
     const monitorC = this.screenGeometry(ops.monitorScreen).center;
     const tableC = this.screenGeometry(ops.tableScreen).center;
-    const inside = { pos: v(seat.x - 3.6, ops.floor + 1.95, seat.z + 3.1), target: v(seat.x + 0.55, ops.floor + 1.0, seat.z) };
-    // Over his right shoulder, with his hands on the keyboard and the screen both in frame; then past his shoulder
-    // (he leaves the frame to the left, his hands below it) before the camera swings in front of the monitor.
-    const overShoulder = { pos: seat.clone().add(v(-0.62, 1.42, 0.62)), target: monitorC.clone().lerp(ops.keyboard, 0.45) };
-    const pastShoulder = { pos: seat.clone().add(v(0.2, 1.3, 0.4)), target: monitorC.clone() };
-    const behind = { pos: seat.clone().add(v(-1.9, 1.75, 1.05)), target: overShoulder.target };
-    // Simple camera language: a few clear shots, each reached by one smooth glide (no orbits or swoops). Holding a
-    // shot is two keys with the same pose.
-    const wide = { pos: v(-60, 35, 76), target: v(-6, 0, 3) };
-    const road = { pos: v(-12, 9, 24), target: v(2, 0.4, 9) };
-    const overview = { pos: v(-36, 42, 36), target: v(-6, 2, -10) };
-    const windowFront = { pos: ops.window.clone().add(v(0, 0.9, 9)), target: ops.window.clone() };
-    // The room over the planning table, aimed a little past its middle so Pim, at its far edge, is in frame.
-    const roomView = { pos: tableC.clone().add(v(0, 3.4, 3.6)), target: tableC.clone().add(v(0, 0.3, -0.5)) };
-    // Lalita with Mali and Dao in the gate: a step back from her, low, all three in frame.
-    const family = { pos: R.clone().add(v(-0.5, 1.5, 4.7)), target: R.clone().add(v(0.6, 1.0, -0.5)) };
-    const abovePlan = { pos: tableC.clone().add(v(0, 24, 0.02)), target: tableC.clone(), up: NORTH };
-    // Straight down on the area, the flooded crossing right of centre (clear of the caption) and the office in view.
-    const map = { pos: v(-2, 92, -7.02), target: v(-2, 0, -7), up: NORTH };
-    const glide = (from: { pos: THREE.Vector3; target: THREE.Vector3 }, to: { pos: THREE.Vector3; target: THREE.Vector3 }, t: number) =>
-      ({ pos: from.pos.clone().lerp(to.pos, t), target: from.target.clone().lerp(to.target, t) });
+    const inside: Pose = { pos: v(seat.x - 3.6, ops.floor + 1.95, seat.z + 3.1), target: v(seat.x + 0.55, ops.floor + 1.0, seat.z) };
+    const overShoulder: Pose = { pos: seat.clone().add(v(-0.62, 1.42, 0.62)), target: monitorC.clone().lerp(ops.keyboard, 0.45) };
+    const pastShoulder: Pose = { pos: seat.clone().add(v(0.2, 1.3, 0.4)), target: monitorC.clone() };
+    const behind: Pose = { pos: seat.clone().add(v(-1.9, 1.75, 1.05)), target: overShoulder.target };
+    const roomView: Pose = { pos: tableC.clone().add(v(0, 3.4, 3.6)), target: tableC.clone().add(v(0, 0.3, -0.5)) };
+    const abovePlan: Pose = { pos: tableC.clone().add(v(0, 24, 0.02)), target: tableC.clone(), up: NORTH };
+    const windowFront: Pose = { pos: ops.window.clone().add(v(0, 0.9, 9)), target: ops.window.clone() };
+    const H = v(this.town.home.x, R.y, this.town.home.z);
+    const O = v(this.town.office.x, ops.floor, this.town.office.z);
+    const cut = this.town.firstCut.point.clone().setY(this.town.field.groundAt(this.town.firstCut.point.x, this.town.firstCut.point.z));
+    // Town shots.
+    const wide: Pose = { pos: H.clone().add(v(-260, 260, 520)), target: H.clone().add(v(40, 0, -170)) };
+    const opening: Pose = { pos: H.clone().add(v(-520, 520, 1040)), target: H.clone().add(v(30, 0, -120)) };
+    // Over the house toward the river, where the low streets fill first.
+    const toRiver = this.river.clone().sub(H).setY(0).normalize();
+    const riverReach = this.river.distanceTo(v(H.x, this.river.y, H.z));
+    const riverView: Pose = { pos: H.clone().addScaledVector(toRiver, -110).add(v(0, 120, 0)), target: H.clone().addScaledVector(toRiver, riverReach * 0.75) };
+    // Down onto the walk at its low point, steep enough to see into the lane.
+    const toCut = cut.clone().sub(H).setY(0).normalize();
+    const across = v(-toCut.z, 0, toCut.x);
+    const walkView: Pose = { pos: cut.clone().addScaledVector(toCut, -48).addScaledVector(across, 12).add(v(0, 62, 0)), target: cut.clone().addScaledVector(toCut, 10) };
+    const lowPoint: Pose = { pos: cut.clone().addScaledVector(toCut, -34).addScaledVector(across, 14).add(v(0, 44, 0)), target: cut.clone().addScaledVector(toCut, 18) };
+    const nightStreet: Pose = { pos: H.clone().addScaledVector(toRiver, -50).add(v(0, 58, 0)), target: H.clone().addScaledVector(toRiver, Math.min(140, riverReach * 0.6)) };
+    const island: Pose = { pos: H.clone().add(v(-70, 120, 110)), target: H.clone() };
+    const mid = H.clone().lerp(O, 0.42);
+    const overview: Pose = { pos: mid.clone().add(v(980, 760, -260)), target: mid.clone().add(v(-60, 0, -120)) };
+    // Over the deepest lane near the home: the walls carry the line of the highest water.
+    const fromHome = this.deep.clone().sub(H).setY(0).normalize();
+    const tide: Pose = { pos: this.deep.clone().addScaledVector(fromHome, -26).add(v(0, 18, 0)), target: this.deep.clone().add(v(0, 1.5, 0)) };
+    const aboveOffice: Pose = { pos: O.clone().add(v(-40, 70, -120)), target: O.clone() };
+    const map: Pose = { pos: H.clone().lerp(cut, 0.5).add(v(0, 520, 0.05)), target: H.clone().lerp(cut, 0.5), up: NORTH };
+    const glide = (from: Pose, to: Pose, t: number): Pose => ({ pos: from.pos.clone().lerp(to.pos, t), target: from.target.clone().lerp(to.target, t) });
     switch (segment) {
       case "opening":
-        return [k(0, { pos: v(-80, 46, 96), target: v(-2, 0, 4) }), k(1, wide)];
+        return [k(0, opening), k(1, wide)];
       case "everyday":
-        // One straight descent from the neighbourhood to the resident at her gate.
-        return [k(0, wide), k(0.5, glide(wide, front, 0.55)), k(1, front)];
+        return [k(0, wide), k(0.5, glide(wide, overFamily, 0.6)), through(0.82, overFamily), k(1, front)];
       case "enter-phone":
-        // Round her right shoulder, then straight onto the screen.
         return [k(0, front), through(0.3, beside), k(0.55, os), this.endPose(this.phoneScreen, PHONE_PAGE_FILL)];
       case "conditions":
-        return [this.atKey(0, this.endPose(this.phoneScreen, PHONE_PAGE_FILL)), through(0.12, os), through(0.24, beside), k(0.6, road), k(1, road)];
+        return [this.atKey(0, this.endPose(this.phoneScreen, PHONE_PAGE_FILL)), through(0.1, os), through(0.2, beside), k(0.42, riverView), k(0.58, riverView), k(0.8, walkView), k(1, walkView)];
       case "return-phone":
-        // Down to the family at the gate and hold while they talk it through; then round her shoulder onto the phone.
-        return [k(0, road), k(0.36, family), k(0.52, family), through(0.66, beside), k(0.8, os), this.endPose(this.phoneScreen, PHONE_PAGE_FILL)];
-      case "sos-signal":
-        // Back to the road view and hold while the water crosses it; rise to see the signal reach the operations
-        // building; glide in through its window.
+        return [k(0, walkView), through(0.22, overFamily), k(0.36, family), k(0.52, family), through(0.66, beside), k(0.8, os), this.endPose(this.phoneScreen, PHONE_PAGE_FILL)];
+      case "night":
         return [
           this.atKey(0, this.endPose(this.phoneScreen, PHONE_PAGE_FILL)),
-          through(0.08, os),
-          through(0.15, beside),
-          k(0.26, road),
-          k(0.48, road),
+          k(0.06, this.endPose(this.phoneScreen, PHONE_PAGE_FILL * 0.8)),
+          through(0.16, os),
+          through(0.24, beside),
+          k(0.38, nightStreet),
+          k(0.46, nightStreet),
+          k(0.62, lowPoint),
+          k(0.72, lowPoint),
+          k(0.86, walkView),
+          k(1, walkView),
+        ];
+      case "cut-off":
+        return [
+          k(0, family),
+          k(0.18, family),
+          through(0.26, overFamily),
+          k(0.34, island),
+          k(0.44, island),
+          k(0.56, overview),
           k(0.66, overview),
-          through(0.86, windowFront),
+          through(0.78, aboveOffice),
+          through(0.88, windowFront),
           k(1, inside),
         ];
       case "enter-monitor":
         return [k(0, inside), k(0.5, overShoulder), through(0.78, pastShoulder), this.endPose(ops.monitorScreen, LANDSCAPE_PAGE_FILL)];
       case "aerial":
-        // Step back from the monitor, rise straight up through the skylight to a map view of the whole area, hold,
-        // then come straight back down onto the planning table.
         return [
           this.atKey(0, this.endPose(ops.monitorScreen, LANDSCAPE_PAGE_FILL)),
           through(0.04, pastShoulder),
@@ -736,6 +851,19 @@ export class JourneyStage {
           through(0.88, abovePlan),
           { ...this.endPose(ops.tableScreen, LANDSCAPE_PAGE_FILL), up: NORTH },
         ];
+      case "after":
+        return [
+          { ...this.atKey(0, this.endPose(ops.tableScreen, LANDSCAPE_PAGE_FILL)), up: NORTH },
+          through(0.08, abovePlan),
+          through(0.16, { pos: O.clone().add(v(0, 260, 40)), target: O.clone(), up: NORTH }),
+          k(0.36, tide),
+          k(0.6, tide),
+          through(0.7, overFamily),
+          k(0.8, family),
+          k(0.9, family),
+          // A small step back along the lane, never up into the eaves.
+          k(1, { pos: family.pos.clone().addScaledVector(look, Math.max(0, Math.min(2.5, clear - reachFamily - 0.4))).add(v(0, 0.6, 0)), target: family.target }),
+        ];
     }
   }
 
@@ -745,123 +873,145 @@ export class JourneyStage {
 
   // --- Frame ---------------------------------------------------------------------------------------------------------
 
+  /** Highest stage reached at or before a replay hour. */
+  private maxStageUpTo(hour: number): number {
+    let max = stageAtHour(this.pack.manifest, hour);
+    for (const anchor of this.pack.manifest.replay.stage_anchors) if (anchor.t * 24 <= hour) max = Math.max(max, anchor.stage_m);
+    return Math.min(max, this.peakStage);
+  }
+
   /** Advance the scene to timeline position `t` and render. */
   update(t: number, dt: number, render = true): StageFrame {
     this.time += dt;
     if (render && dt > 0) this.adaptResolution(dt);
     const { segment, progress: p } = locate(t);
+    const hour = replayHourAt(t);
+    const stage = stageAtHour(this.pack.manifest, hour);
+    const night = nightAt(hour);
+    const weather = weatherAt(hour);
 
     // Story state per segment.
-    let raise = 0, glow = 0, phoneShow = 0, monitorShow = 0, tableShow = 0, rain = 0, affected = 0, attention = 0, signal = -1;
-    // The connection line reads at neighbourhood scale; at human scale it would look like a pipe, so it fades out.
-    let connection = 1;
-    let water = WATER_LEVEL.dry, overcast = 0;
-    const labels: Record<string, boolean> = {};
+    let raise = 0, glow = 0, phoneShow = 0, monitorShow = 0, tableShow = 0, attention = 0, signal = -1, route = 0;
+    const labels: Partial<Record<LabelId, boolean>> = {};
     switch (segment) {
       case "opening":
-        labels.home = labels.clinic = labels.connection = p > 0.55;
-        connection = ramp(p, 0.4, 0.6);
+        labels.river = labels.home = p > 0.55;
+        labels.shelter = labels.office = p > 0.7;
+        route = ramp(p, 0.5, 0.75);
         break;
       case "everyday":
         raise = ramp(p, 0.62, 0.97);
         glow = ramp(p, 0.85, 1);
         phoneShow = ramp(p, 0.9, 1);
-        labels.home = labels.clinic = labels.connection = p < 0.5;
+        labels.home = labels.route = labels.shelter = p < 0.5;
         labels.mali = labels.dao = p > 0.82;
-        connection = 1 - ramp(p, 0.4, 0.56);
+        route = 1 - ramp(p, 0.45, 0.6);
         break;
       case "enter-phone":
-        raise = 1; glow = 1; phoneShow = 1; connection = 0;
+        raise = 1; glow = 1; phoneShow = 1;
         break;
       case "conditions":
         raise = 1 - 0.5 * ramp(p, 0.05, 0.3);
         glow = 1 - ramp(p, 0.16, 0.3);
         phoneShow = 1 - ramp(p, 0.1, 0.2);
-        water = waterLevelBetween("dry", "rising", ramp(p, 0.18, 0.78));
-        rain = ramp(p, 0.1, 0.45) * 0.75;
-        overcast = ramp(p, 0.1, 0.6) * 0.6;
-        labels.home = labels.clinic = p > 0.35;
-        labels.connection = p > 0.35;
-        connection = ramp(p, 0.22, 0.42);
+        labels.river = p > 0.36 && p < 0.62;
+        labels.low = labels.route = p > 0.74;
+        route = ramp(p, 0.62, 0.78);
         break;
       case "return-phone":
         raise = 0.5 + 0.5 * ramp(p, 0.55, 0.85);
         glow = ramp(p, 0.76, 0.88);
         phoneShow = ramp(p, 0.86, 0.98);
         labels.lalita = labels.mali = labels.dao = p > 0.3 && p < 0.56;
-        water = WATER_LEVEL.rising;
-        rain = 0.75;
-        overcast = 0.6;
-        connection = 1 - ramp(p, 0.2, 0.4);
+        route = 1 - ramp(p, 0.1, 0.3);
         break;
-      case "sos-signal": {
-        raise = 1;
-        glow = 1 - ramp(p, 0.1, 0.2);
-        phoneShow = 1 - ramp(p, 0.06, 0.12);
-        water = waterLevelBetween("rising", "affected", ramp(p, 0.16, 0.46));
-        affected = ramp(p, 0.3, 0.48);
-        rain = 0.9 - 0.4 * ramp(p, 0.7, 0.95);
-        overcast = 0.75;
-        signal = p > 0.48 && p < 0.86 ? ramp(p, 0.5, 0.8) : -1;
-        attention = ramp(p, 0.84, 0.98);
-        labels.home = labels.clinic = labels.crossing = p > 0.24 && p < 0.6;
+      case "night":
+        raise = 1 - 0.5 * ramp(p, 0.1, 0.3);
+        glow = 1 - ramp(p, 0.14, 0.3);
+        phoneShow = 1 - ramp(p, 0.12, 0.22);
+        labels.home = p > 0.34 && p < 0.5;
+        labels.neighbour = p > 0.36 && p < 0.5;
+        labels.low = p > 0.58 && stage < this.town.firstCut.stage;
+        labels.cut = p > 0.58 && stage >= this.town.firstCut.stage;
+        route = ramp(p, 0.5, 0.6);
+        break;
+      case "cut-off":
+        labels.lalita = labels.mali = labels.dao = p > 0.06 && p < 0.26;
+        labels.home = labels.neighbour = p > 0.3 && p < 0.48;
+        labels.cut = p > 0.3 && p < 0.48;
+        signal = p > 0.5 && p < 0.78 ? ramp(p, 0.52, 0.72) : -1;
         labels.signal = signal >= 0;
-        labels.operations = p > 0.58 && p < 0.84;
+        labels.office = p > 0.58 && p < 0.8;
+        labels.wat = p > 0.52 && p < 0.7;
         labels.narin = p > 0.93;
-        connection = ramp(p, 0.1, 0.22);
+        attention = ramp(p, 0.84, 0.98);
+        route = p > 0.3 && p < 0.7 ? 1 : 0;
         break;
-      }
       case "enter-monitor":
-        water = WATER_LEVEL.affected; affected = 1; overcast = 0.75; rain = 0.5; attention = 1;
+        attention = 1;
         monitorShow = ramp(p, 0.15, 0.5);
-        raise = 1;
         labels.narin = p < 0.3;
         break;
       case "aerial":
-        water = WATER_LEVEL.affected; affected = 1; overcast = 0.75 - 0.35 * ramp(p, 0.3, 0.7); rain = 0.5 * (1 - ramp(p, 0.25, 0.5)); attention = 1;
+        attention = 1;
         monitorShow = 1 - ramp(p, 0.22, 0.3);
         tableShow = ramp(p, 0.8, 0.96);
-        raise = 1;
-        labels.home = labels.clinic = labels.crossing = labels.operations = p > 0.42 && p < 0.78;
+        labels.home = labels.cut = labels.shelter = labels.river = p > 0.42 && p < 0.78;
         labels.pim = p > 0.15 && p < 0.3;
+        route = p > 0.36 && p < 0.84 ? 1 : 0;
+        break;
+      case "after":
+        tableShow = 1 - ramp(p, 0.02, 0.1);
+        labels.neighbour = p > 0.34 && p < 0.62;
+        labels.lalita = labels.mali = labels.dao = p > 0.78 && p < 0.95;
+        raise = 0.4;
+        route = ramp(p, 0.78, 0.9);
         break;
     }
 
     this.poseResident(raise, glow);
     this.poseResponder(attention);
 
-    // Environment.
-    this.water.position.y = water;
-    this.waterNormal.offset.set(this.time * 0.006, this.time * 0.004);
-    this.waterUniforms.uMud.value = clamp01((water - WATER_LEVEL.dry) / (WATER_LEVEL.affected - WATER_LEVEL.dry));
-    this.waterUniforms.uRain.value = rain;
-    this.waterUniforms.uTime.value = this.time;
-    this.wet.uLevel.value = water;
-    this.wet.uWet.value = clamp01(rain * 1.25 + overcast * 0.3);
+    // Replay water, light and weather.
+    const u = this.town.uniforms;
+    u.uStage.value = stage;
+    u.uMaxStage.value = Math.max(stage, this.maxStageUpTo(hour));
+    u.uTime.value = this.time;
+    u.uRain.value = weather.rain;
+    u.uNight.value = night;
+    u.uWetness.value = clamp01(weather.rain * 1.3 + (hour > 84 && hour < 140 ? 0.35 : 0));
+    this.town.route.setOpacity(route);
+    this.town.lamps.setNight(night);
+    const day = 1 - night;
+    const overcast = weather.overcast;
     this.rain.material.uniforms.uTime.value = this.time;
-    this.rain.material.uniforms.uIntensity.value = rain;
-    this.rain.mesh.visible = rain > 0.01;
+    this.rain.material.uniforms.uIntensity.value = weather.rain;
+    this.rain.mesh.visible = weather.rain > 0.01;
     const sky = this.sky.material.uniforms;
-    sky.uTop.value.set("#b9cfd6").lerp(new THREE.Color("#9eaaad"), overcast);
-    sky.uHorizon.value.set("#efe9dc").lerp(new THREE.Color("#d5d6d0"), overcast);
+    const dayTop = new THREE.Color("#b9cfd6").lerp(new THREE.Color("#9eaaad"), overcast);
+    const dayHorizon = new THREE.Color("#efe9dc").lerp(new THREE.Color("#d5d6d0"), overcast);
+    sky.uTop.value.copy(dayTop).lerp(new THREE.Color("#0d1420"), night);
+    sky.uHorizon.value.copy(dayHorizon).lerp(new THREE.Color("#2a2a2c"), night);
+    sky.uGround.value.set("#c9c7b4").lerp(new THREE.Color("#141412"), night);
     sky.uCloud.value = 0.22 + 0.75 * overcast;
     sky.uTime.value = this.time;
-    (this.scene.fog as THREE.Fog).color.set("#e9e6dc").lerp(new THREE.Color("#d2d4ce"), overcast);
-    (this.scene.fog as THREE.Fog).near = 90 - 40 * overcast;
-    this.sun.intensity = 3.1 - 1.9 * overcast;
+    this.fog.color.copy(dayHorizon).lerp(new THREE.Color("#22252b"), night);
+    // Haze thins as the camera climbs, so the flood still reads from the aerial shots.
+    const altitude = Math.max(0, this.camera.position.y - 40);
+    this.fog.density = (0.00022 + 0.0011 * weather.rain + 0.0004 * night) / (1 + altitude / 140);
+    this.sun.intensity = (3.1 - 1.9 * overcast) * day;
     this.sun.color.set("#fff0d8").lerp(new THREE.Color("#e9eef0"), overcast);
-    this.hemi.intensity = 0.42 + 0.25 * overcast;
-    this.scene.environmentIntensity = 0.75 - 0.15 * overcast;
-    this.connection.group.visible = connection > 0.01;
-    this.connection.dryMaterial.opacity = 0.92 * connection;
-    this.connection.crossingMaterial.opacity = 0.95 * connection;
-    this.connection.setWaterLevel(water);
-    this.connection.setAffected(affected);
-    this.connection.tick(this.time);
+    this.sun.visible = day > 0.02;
+    this.hemi.intensity = (0.42 + 0.25 * overcast) * (0.22 + 0.78 * day);
+    this.hemi.color.set("#eef0ea").lerp(new THREE.Color("#7486a6"), night);
+    this.hemi.groundColor.set("#8a8466").lerp(new THREE.Color("#3a3326"), night);
+    this.scene.environmentIntensity = (0.75 - 0.15 * overcast) * (0.16 + 0.84 * day);
+    this.porch.intensity = 18 * night;
+    this.porch.visible = night > 0.02;
     this.signal.tube.visible = this.signal.head.visible = signal >= 0;
     if (signal >= 0) {
       const total = (this.signal.tube.geometry.index?.count ?? 0);
-      this.signal.tube.geometry.setDrawRange(Math.floor(total * Math.max(0, signal - 0.18)), Math.floor(total * Math.min(0.24, signal)));
+      this.signal.tube.geometry.setDrawRange(Math.floor(total * Math.max(0, signal - 0.22)), Math.floor(total * Math.min(0.28, signal)));
       this.signal.head.position.copy(this.signal.curve.getPoint(signal));
       this.signal.head.scale.setScalar(0.8 + 0.25 * Math.sin(this.time * 8));
     }
@@ -872,18 +1022,24 @@ export class JourneyStage {
     this.camera.position.copy(pos);
     this.camera.up.copy(up);
     this.camera.lookAt(target);
+    const reach = pos.distanceTo(target);
+    const near = THREE.MathUtils.clamp(reach * 0.004, 0.01, 2);
+    if (Math.abs(near - this.camera.near) > this.camera.near * 0.1) {
+      this.camera.near = near;
+      this.camera.updateProjectionMatrix();
+    }
     this.camera.updateMatrixWorld(true);
-    this.rain.material.uniforms.uCenter.value.set(pos.x, Math.max(0, pos.y - 10), pos.z);
+    this.sky.mesh.position.copy(pos);
+    this.rain.material.uniforms.uCenter.value.set(pos.x, pos.y - 10, pos.z);
     const fp = this.ops.footprint;
     const indoors = Math.abs(pos.x - fp.x) < fp.w / 2 && Math.abs(pos.z - fp.z) < fp.d / 2 && pos.y < this.ops.floor + 5.6;
     if (indoors) this.rain.mesh.visible = false;
     this.followShadow(pos, target);
-    // People cost dozens of draw calls: the responder is only drawn near the operations room, and the resident stops
-    // casting a (sub-pixel) shadow from far away.
+    // People cost dozens of draw calls: each is drawn only near their place.
     const nearOps = pos.distanceTo(this.ops.seat) < 32;
     this.responder.root.visible = nearOps && !this.responderModel;
     if (this.responderModel) this.responderModel.root.visible = nearOps;
-    const nearHome = pos.distanceTo(this.anchors.resident) < 60;
+    const nearHome = pos.distanceTo(this.frame.R) < 90;
     for (const figure of [this.mali, this.dao]) figure.root.visible = nearHome;
     for (const shadow of this.familyShadows) shadow.visible = nearHome;
     if (nearHome) this.poseFamily();
@@ -892,19 +1048,17 @@ export class JourneyStage {
     this.clearCloseUps(pos);
     const opsLit = pos.distanceTo(this.ops.seat) < 48;
     for (const light of this.ops.lights) light.visible = opsLit;
-    const residentCasts = pos.distanceTo(this.anchors.resident) < 45;
+    const residentCasts = pos.distanceTo(this.frame.R) < 45;
     if (residentCasts !== this.residentCastsShadow) {
       this.residentCastsShadow = residentCasts;
       (this.residentModel?.root ?? this.resident.root).traverse((object) => { object.castShadow = residentCasts; });
       this.phone.group.traverse((object) => { object.castShadow = residentCasts; });
     }
 
-    // No post-processing: occlusion is baked (contact shadows, wall gradients, canopy tones), which measured several
-    // times cheaper than screen-space AO on integrated graphics for a near-identical result.
     if (render) this.renderer.render(this.scene, this.camera);
 
-    const frameLabels: LabelFrame[] = (["home", "clinic", "connection", "crossing", "operations", "signal", "lalita", "mali", "dao", "narin", "pim"] as const).map((id) => {
-      const anchor = id === "signal" ? this.signal.head.position.clone().add(v(0, 1.6, 0)) : this.anchors[id] ?? this.headAnchor(id as PersonId);
+    const frameLabels: LabelFrame[] = LABEL_IDS.map((id) => {
+      const anchor = id === "signal" ? this.signal.head.position.clone().add(v(0, 16, 0)) : this.anchors[id] ?? this.headAnchor(id as PersonId);
       const projected = this.project(anchor);
       const onScreen = projected.inFront && projected.x > -40 && projected.x < this.viewport.width + 40 && projected.y > -40 && projected.y < this.viewport.height + 40;
       return { id, x: projected.x, y: projected.y, visible: Boolean(labels[id]) && onScreen };
@@ -917,6 +1071,8 @@ export class JourneyStage {
         table: { quad: tableShow > 0 ? this.screenQuad(this.ops.tableScreen) : null, opacity: tableShow },
       },
       labels: frameLabels,
+      hour,
+      veil: veilAt(t),
     };
   }
 
@@ -942,7 +1098,7 @@ export class JourneyStage {
    */
   private followShadow(position: THREE.Vector3, target: THREE.Vector3): void {
     const distance = position.distanceTo(target);
-    const extent = THREE.MathUtils.clamp(distance * 0.95, 6, 95);
+    const extent = THREE.MathUtils.clamp(distance * 0.95, 6, 320);
     const shadow = this.sun.shadow;
     const camera = shadow.camera as THREE.OrthographicCamera;
     if (Math.abs(extent - this.shadowExtent) > this.shadowExtent * 0.04) {
@@ -955,9 +1111,6 @@ export class JourneyStage {
     }
     const texel = (2 * this.shadowExtent) / shadow.mapSize.x;
     const focus = this.scratch.v.copy(target).lerp(position, distance < 12 ? 0.15 : 0);
-    // Close shots re-render the shadow map every frame (people move, the frustum is small and cheap). Wide shots
-    // snap the frustum to steps of an eighth of its size and re-render only when it moves a step, so a moving aerial
-    // camera does not redraw every shadow caster in the neighbourhood each frame.
     const close = this.shadowExtent < 20;
     const step = close ? texel : texel * Math.round(shadow.mapSize.x / 16);
     focus.set(Math.round(focus.x / step) * step, Math.round(focus.y / step) * step, Math.round(focus.z / step) * step);
@@ -972,7 +1125,7 @@ export class JourneyStage {
       this.shadowKey = "";
     }
     this.sun.target.position.copy(focus);
-    this.sun.position.copy(focus).addScaledVector(this.sunDir, 150);
+    this.sun.position.copy(focus).addScaledVector(this.sunDir, 700);
     this.sun.target.updateMatrixWorld();
   }
 

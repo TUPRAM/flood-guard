@@ -166,13 +166,38 @@
   z-index: 4;
   right: 16px;
   bottom: 84px;
+  max-width: min(640px, calc(100vw - 32px));
   margin: 0;
   padding: 4px 9px;
   border-radius: 6px;
   background: rgb(250 248 242 / 85%);
   color: var(--muted);
   font-size: 0.7rem;
+  text-align: right;
 }
+.illustrative small { display: block; margin-top: 2px; font-size: 0.62rem; opacity: 0.85; }
+
+/* The replay clock: the date and hour of the scene, and what it is (a model, low confidence). */
+.clock {
+  position: absolute;
+  z-index: 4;
+  top: 64px;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 5px 12px;
+  border: 1px solid rgb(21 43 41 / 12%);
+  border-radius: 999px;
+  background: rgb(250 248 242 / 90%);
+  color: var(--ink);
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* A dip to dark for a cut in time (the story skips ahead behind it). */
+.veil { position: absolute; inset: 0; z-index: 3; background: #07090c; opacity: 0; pointer-events: none; }
 
 .chapterNav {
   position: absolute;

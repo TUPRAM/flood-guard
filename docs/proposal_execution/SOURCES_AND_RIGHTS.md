@@ -56,3 +56,19 @@ The provider states CC BY 4.0 and ODbL v1.0 for the outlines of Google Open Buil
 Microsoft. Counts derived from them are published with the credit "Building outlines: Google Open Buildings v3
 (CC BY 4.0) and Microsoft building footprints (ODbL), combined by VIDA and hosted by Source Cooperative." This is an
 engineering note on the right to use, as the rest of this register, and not a legal clearance.
+
+## Note of 14 October 2026: building outlines in the journey scene (branch `journey-v2` only)
+
+On the owner's request of 14 October 2026 for the real buildings of Mae Sai town in the `/journey/` story, branch
+`journey-v2` publishes more than the counts of the note of 11 October 2026. It holds for that branch only; `master`
+keeps the counts-only rule until the branch is merged on the owner's word (`docs/journey-v2-real-map.md`).
+
+| Source family | Current identity/time and purpose | Processing | Human label / independent final evaluation | Hosted/download derivative | Downstream decision |
+| --- | --- | --- | --- | --- | --- |
+| Google-Microsoft Open Buildings, combined by VIDA (Source Cooperative), with OpenStreetMap roads, land use and water | The same Thailand outline file as the note of 11 October (its SHA-256 in `outputs/buildings_in_water/outlines_v1.json` is checked by the bake); the Geofabrik extract of 9 July 2026; read for the journey box only (x -1500 to 900 m, z -800 to 1800 m around the Public app's example home) by `scripts/build_journey_town.py`, receipt `docs/journey_town_input_receipt.json` | Outlines simplified by 0.35 m, slivers under 8 m2 dropped; kinds, floors, front edges and trees derived by fixed rules for an illustrative 3D scene | Outlines drawn by a model on satellite images of earlier years; no survey, no register of dwellings | The simplified outlines and the OSM roads and land cover of the journey box (`apps/web/public/journey/town/`) as a derivative database under ODbL 1.0 with the credit and a `LICENSE.txt`, and the 3D scene drawn from them with the credit | No. The scene is for preparedness learning; the planning score keeps its own exposure count |
+
+The credit published with the pack and the scene: "Building outlines: Google Open Buildings v3 (CC BY 4.0) and
+Microsoft building footprints (ODbL), combined by VIDA (Source Cooperative); roads and water © OpenStreetMap
+contributors (ODbL); terrain Copernicus DEM GLO-30 © DLR, Airbus DS; water: FloodGuard replay r5, a model
+reconstruction of September 2024, low confidence." This is an engineering note on the right to use, as the rest of
+this register, and not a legal clearance.

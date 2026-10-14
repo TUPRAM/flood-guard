@@ -1,0 +1,178 @@
+{
+ "schema": "floodguard.bake_input_receipt.v1",
+ "pack": "floodguard.journey-town.v1",
+ "generated_by": "scripts/build_journey_town.py",
+ "purpose": "Every input file the journey town bake opened, so the pack can be rebuilt and compared byte for byte (--verify).",
+ "generated_at": {
+  "value": "2026-10-14T15:45:00Z",
+  "basis": "declared"
+ },
+ "source_timestamp": "2024-09-03T23:16:00Z/2024-09-19T17:00:00Z",
+ "confidence": "low",
+ "confidence_reason": "Confidence of the baked scene, copied from mae-sai-town.json. The receipt itself is an exact file record.",
+ "assumptions": [
+  "Input paths are relative to the external data root (FLOODGUARD_EXTERNAL_DATA) or to the repository root; no machine path is recorded.",
+  "The same inputs give the same bytes only with the same library versions: another GDAL, GEOS, PROJ or zlib build can change bytes without changing the method.",
+  "The OpenStreetMap land use and waterways are read from the Geofabrik PBF itself on every run; no derived cache stands between the receipt and the result.",
+  "generated_at is a declared value, not a clock reading; a bake that changes any output file must declare a new one.",
+  "Bake sources are hashed with CRLF read as LF, so a Windows checkout gives the same hashes."
+ ],
+ "official_warning": false,
+ "real_time": false,
+ "operational_status": "non_operational",
+ "can_feed_decision_layer": false,
+ "roots": {
+  "external": "FLOODGUARD_EXTERNAL_DATA or --external-root (kept outside Git)",
+  "repo": "repository root"
+ },
+ "input_count": 10,
+ "input_bytes": 413791404,
+ "inputs": [
+  {
+   "root": "external",
+   "path": "derived_context/mae_sai_2024/mae_sai_osm_multipolygons.gpkg",
+   "bytes": 3387392,
+   "sha256": "527774a66d9993b5066584ba94124f256321f9d10f6eb321179ee021ec465c0e"
+  },
+  {
+   "root": "external",
+   "path": "derived_context/mae_sai_2024/mae_sai_osm_roads.geojson",
+   "bytes": 2320559,
+   "sha256": "7145f85d5ad9d1d23f2b59652053276146c3ac863f51e02eeb2e2b41ecb060ca"
+  },
+  {
+   "root": "external",
+   "path": "open_context/copernicus_dem_glo30/Copernicus_DSM_COG_10_N20_00_E099_00_DEM.tif",
+   "bytes": 44909388,
+   "sha256": "8965f85514b577b4b606c658412bfe3d713c0abf478d237539af309d8edb3757"
+  },
+  {
+   "root": "external",
+   "path": "open_context/osm_geofabrik/thailand-latest.osm.pbf",
+   "bytes": 325044304,
+   "sha256": "b7f46018249638413b1d318bc86519f140c27af20cac7c00d42fe03775b7add1"
+  },
+  {
+   "root": "external",
+   "path": "proposal_execution/buildings_in_water/mae_sai_outlines.gpkg",
+   "bytes": 32235520,
+   "sha256": "5997e45a41ae5dd9794dc201039ddaf643355b76ba4436000f830aa86355955e"
+  },
+  {
+   "root": "repo",
+   "path": "apps/web/public/studies/mae-sai-2024-timeline/r5/access-nodes.bin",
+   "bytes": 435840,
+   "sha256": "479a68af2605513402b00e752f03bdf5d4f173a4eba645efc1550648aa174a60"
+  },
+  {
+   "root": "repo",
+   "path": "apps/web/public/studies/mae-sai-2024-timeline/r5/hand-codes.png",
+   "bytes": 942530,
+   "sha256": "384bca34e3577c1d592994111e4361788a2fd0e1722767c94b1ecf53bab6eb79"
+  },
+  {
+   "root": "repo",
+   "path": "apps/web/public/studies/mae-sai-2024-timeline/r5/timeline.json",
+   "bytes": 357123,
+   "sha256": "a7072e7fdee575eb20b1f8ccc6c26fe4f58ed3c7f015c66cc639427e3ce40768"
+  },
+  {
+   "root": "repo",
+   "path": "outputs/buildings_in_water/outlines_v1.json",
+   "bytes": 2947,
+   "sha256": "80d833bac95fac70560bcf5efbec8d25f4c041a85f0a27cb7fbab7a0298bf09e"
+  },
+  {
+   "root": "repo",
+   "path": "outputs/mae_sai_access_edges.csv",
+   "bytes": 4155801,
+   "sha256": "266fd0f662b44b8210fc5ab064eadbb26b822ccb869221c92d666f4b172de454"
+  }
+ ],
+ "outputs": {
+  "folder": "apps/web/public/journey/town",
+  "file_count": 6,
+  "bytes": 1414081,
+  "files": [
+   {
+    "name": "LICENSE.txt",
+    "bytes": 2944,
+    "sha256": "11dfcdb1b6bb50d5c2aa4942cbae820aab146d0921e07d68e966b46d43d81259"
+   },
+   {
+    "name": "mae-sai-town-backdrop.png",
+    "bytes": 24086,
+    "sha256": "cf426c6c4922391068c64ade438f7d6e2692d707fb23286b5a407d19a0b50f73"
+   },
+   {
+    "name": "mae-sai-town-cells.png",
+    "bytes": 13283,
+    "sha256": "a4a632c5f9bd761af5a2354d41625d87b7d4d1198e5df6fd32ba3b7459746908"
+   },
+   {
+    "name": "mae-sai-town-cover.png",
+    "bytes": 57526,
+    "sha256": "e31489e85b17b43f725883d1ee00e8a76459ee748277b919ced58fc5e1746a63"
+   },
+   {
+    "name": "mae-sai-town-relief.png",
+    "bytes": 13831,
+    "sha256": "43907a8d701959b04d554f14c7da2e9dfb1bef579ebfbc463e18004ea5991bb1"
+   },
+   {
+    "name": "mae-sai-town.json",
+    "bytes": 1302411,
+    "sha256": "ea3bea7acaabff7bbbdef13ca373bcab7aed1e62424efde0a87d345ef9a3b864"
+   }
+  ]
+ },
+ "code": [
+  {
+   "path": "scripts/build_journey_town.py",
+   "sha256": "097769047d8a84596b492b60508f4d49b1e84573295daa746040557ec5b0101b"
+  },
+  {
+   "path": "scripts/mae_sai_timeline_evacuation.py",
+   "sha256": "afd6f230f6edfb71ff89abf59deacd308405da4582a8b68afa1f3bb50fa35858"
+  },
+  {
+   "path": "src/floodguard/bake_receipt.py",
+   "sha256": "c3bb1003506d383ae7f8fef142edec00692265f65a75b3e096ffef5eb8886765"
+  },
+  {
+   "path": "src/floodguard/evacuation_access.py",
+   "sha256": "49e8984feebce22f0bab012d9a835a96fcfc7a834ebcd0c7058ae1d405766b42"
+  },
+  {
+   "path": "src/floodguard/flood_timeline.py",
+   "sha256": "137eeb5df3ac23c80d0be2582d9b62b424a480bb34dccd4922721d621b034e9a"
+  }
+ ],
+ "libraries": {
+  "affine": "3.0.1",
+  "gdal (pyogrio)": "3.12.4",
+  "gdal (rasterio)": "3.10.3",
+  "geopandas": "1.1.4",
+  "geos (rasterio)": "3.13.0",
+  "geos (shapely)": "3.13.1",
+  "numba": "0.67.0",
+  "numpy": "2.2.6",
+  "pandas": "3.0.6",
+  "pillow": "12.3.0",
+  "proj (pyproj)": "9.5.1",
+  "proj (rasterio)": "9.6.0",
+  "pyogrio": "0.13.0",
+  "pyproj": "3.7.2",
+  "pysheds": "0.5",
+  "python": "3.11.8",
+  "rasterio": "1.4.4",
+  "scipy": "1.17.1",
+  "shapely": "2.1.2",
+  "webp (pillow)": "1.6.0",
+  "zlib (pillow)": "1.3.1.zlib-ng"
+ },
+ "platform": {
+  "system": "Windows",
+  "machine": "AMD64"
+ }
+}

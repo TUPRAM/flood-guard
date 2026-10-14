@@ -79,7 +79,7 @@ async function fetchBytes(href: string, signal: AbortSignal): Promise<Uint8Array
 }
 
 /** Fallback decoder for browsers without DecompressionStream; keeps greyscale or RGB according to the file header. */
-async function decodeWithCanvas(bytes: Uint8Array): Promise<PngRaster> {
+export async function decodeWithCanvas(bytes: Uint8Array): Promise<PngRaster> {
   const colourType = bytes.length > 25 ? bytes[25] : 0;
   const channels = colourType === 0 || colourType === 4 ? 1 : 3;
   const bitmap = await createImageBitmap(new Blob([new Uint8Array(bytes)], { type: "image/png" }), {

@@ -178,12 +178,20 @@ function doorItem(frame: Frame, trim: THREE.Color, wood: THREE.Color): void {
   frame.add("trim", box(f, dh, 0.1), trim, M(dw / 2 + f / 2, dh / 2, 0.05));
 }
 
+/** Ground height the kit builds on: the illustrative terrain by default, the real town's ground once set. */
+let groundHeight: (x: number, z: number) => number = terrainHeight;
+
+/** Build on another ground (the real-map town's drawn ground). */
+export function setArchitectureGround(height: (x: number, z: number) => number): void {
+  groundHeight = height;
+}
+
 /** Sample the lowest ground under a rotated footprint. */
 function groundUnder(x: number, z: number, w: number, d: number, rotation: number): number {
   let lowest = Infinity;
   const c = Math.cos(rotation), s = Math.sin(rotation);
   for (const [lx, lz] of [[-w / 2, -d / 2], [w / 2, -d / 2], [-w / 2, d / 2], [w / 2, d / 2], [0, 0]]) {
-    lowest = Math.min(lowest, terrainHeight(x + lx * c + lz * s, z - lx * s + lz * c));
+    lowest = Math.min(lowest, groundHeight(x + lx * c + lz * s, z - lx * s + lz * c));
   }
   return lowest;
 }

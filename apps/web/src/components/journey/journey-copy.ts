@@ -1,4 +1,6 @@
-import type { ChapterId, SegmentId, StopId } from "@/lib/journey/timeline";
+import { STOP_HOURS, type ChapterId, type PublicTab, type SegmentId, type StopId } from "@/lib/journey/timeline";
+
+export type { PublicTab } from "@/lib/journey/timeline";
 
 export type JourneyLanguage = "en" | "th";
 type Text = Record<JourneyLanguage, string>;
@@ -7,7 +9,9 @@ const t = (en: string, th: string): Text => ({ en, th });
 /**
  * The story follows three fictional people, each with a reason to use one real FloodGuard page: Lalita (the public
  * app), Narin (the case view) and Pim (the command exercise). Mali and Dao, Lalita's mother and daughter, give her
- * household plan its needs. None of them represents a real person.
+ * household plan its needs. None of them represents a real person. The place is real: Mae Sai town around the Public
+ * app's example home, with the water of the published replay (r5), a model reconstruction of September 2024 with low
+ * confidence. Thai text is written by the team's assistant and has not had a native review.
  */
 export type CharacterId = "lalita" | "narin" | "pim";
 
@@ -26,7 +30,7 @@ export const CHARACTERS: Record<CharacterId, Character> = {
   },
   narin: {
     name: t("Narin", "นรินทร์"),
-    role: t("Planning officer · district office", "เจ้าหน้าที่วางแผน · สำนักงานอำเภอ"),
+    role: t("Planning officer · Mae Sai District Office", "เจ้าหน้าที่วางแผน · ที่ว่าการอำเภอแม่สาย"),
     question: t("What do we know, and what still needs checking?", "เรารู้อะไรแล้ว และอะไรที่ยังต้องตรวจสอบ"),
   },
   pim: {
@@ -40,23 +44,32 @@ export const CHAPTER_LABELS: Record<ChapterId, { number: string; title: Text }> 
   opening: { number: "", title: t("Opening", "เริ่มต้น") },
   everyday: { number: "01", title: t("Lalita's family", "ครอบครัวของลลิตา") },
   conditions: { number: "02", title: t("Rain, and a plan", "ฝนตกและแผนรับมือ") },
-  affected: { number: "03", title: t("The road · Narin", "ถนน · นรินทร์") },
-  response: { number: "04", title: t("The district · Pim", "ภาพรวมอำเภอ · พิมพ์") },
+  night: { number: "03", title: t("The night", "คืนนั้น") },
+  affected: { number: "04", title: t("Cut off · Narin", "ถูกตัดขาด · นรินทร์") },
+  response: { number: "05", title: t("The district · Pim", "ภาพรวมอำเภอ · พิมพ์") },
+  after: { number: "06", title: t("Water going down", "น้ำลด") },
 };
 
 export const UI = {
-  title: t("One road.\nThree people.", "ถนนหนึ่งสาย\nคนสามคน"),
+  title: t("Home dry.\nWay cut off.", "บ้านยังแห้ง\nแต่ทางออกถูกตัดขาด"),
   subtitle: t(
-    "Lalita looks after her mother and daughter. Narin checks what is known. Pim brings the district together. A fictional story, told through the real FloodGuard pages.",
-    "ลลิตาดูแลแม่และลูกสาว นรินทร์ตรวจสอบสิ่งที่รู้แล้ว พิมพ์ประสานภาพรวมของอำเภอ เรื่องสมมุติที่เล่าผ่านหน้า FloodGuard จริง",
+    "Mae Sai, September 2024. Lalita looks after her mother and daughter. Narin checks what is known. Pim brings the district together. Fictional people on the real map, with the replay's modelled water.",
+    "แม่สาย กันยายน 2567 (2024) ลลิตาดูแลแม่และลูกสาว นรินทร์ตรวจสอบสิ่งที่รู้แล้ว พิมพ์ประสานภาพรวมของอำเภอ ตัวละครสมมุติบนแผนที่จริง กับน้ำจากแบบจำลองของภาพจำลองย้อนหลัง",
   ),
   begin: t("Begin the story", "เริ่มเรื่องราว"),
   skip: t("Skip to the apps", "ข้ามไปที่แอป"),
   scrollHint: t("Scroll, swipe or use the arrow keys", "เลื่อน ปัด หรือใช้ปุ่มลูกศร"),
   illustrative: t(
-    "Fictional people in an illustrative scenario · not a real place, not a forecast, not real-time data",
-    "ตัวละครสมมุติในสถานการณ์จำลอง · ไม่ใช่สถานที่จริง ไม่ใช่การพยากรณ์ และไม่ใช่ข้อมูลเรียลไทม์",
+    "Fictional people on the real map of Mae Sai · water from the FloodGuard replay (r5): a model reconstruction of September 2024, low confidence · not a forecast, not real-time",
+    "ตัวละครสมมุติบนแผนที่จริงของแม่สาย · น้ำจากภาพจำลองย้อนหลัง (r5) ของ FloodGuard: การสร้างเหตุการณ์กันยายน 2567 (2024) ขึ้นใหม่ด้วยแบบจำลอง ความเชื่อมั่นต่ำ · ไม่ใช่การพยากรณ์ ไม่ใช่ข้อมูลเรียลไทม์",
   ),
+  /** Short credits under the tag; the full credits and licences are in public/journey/town/LICENSE.txt. */
+  credits: t(
+    "Buildings: Google Open Buildings v3 (CC BY 4.0), Microsoft footprints (ODbL) · © OpenStreetMap contributors · Copernicus DEM © DLR, Airbus DS · Water: FloodGuard replay r5 · Heights and looks of buildings illustrative",
+    "อาคาร: Google Open Buildings v3 (CC BY 4.0), Microsoft footprints (ODbL) · © ผู้ร่วมให้ข้อมูล OpenStreetMap · Copernicus DEM © DLR, Airbus DS · น้ำ: ภาพจำลองย้อนหลัง r5 ของ FloodGuard · ความสูงและรูปลักษณ์ของอาคารเป็นภาพประกอบ",
+  ),
+  /** The replay clock: `{moment}` is the replay hour as the case view writes it. */
+  clock: t("Replay · {moment} · model, low confidence", "ภาพจำลองย้อนหลัง · {moment} · แบบจำลอง ความเชื่อมั่นต่ำ"),
   fictional: t("Fictional character", "ตัวละครสมมุติ"),
   previous: t("Previous", "ก่อนหน้า"),
   next: t("Next", "ถัดไป"),
@@ -77,13 +90,17 @@ export const UI = {
   ),
 };
 
-/** Labels projected onto the 3D scene: places, and the people when the camera is with them. */
+/** Labels projected onto the 3D scene: places, the walk, and the people when the camera is with them. */
 export const LABELS: Record<string, Text> = {
-  home: t("Lalita's home", "บ้านของลลิตา"),
-  clinic: t("Clinic", "คลินิก"),
-  connection: t("Usual way to the clinic", "เส้นทางปกติไปคลินิก"),
-  crossing: t("Connection potentially affected", "เส้นทางที่อาจได้รับผลกระทบ"),
-  operations: t("District office (illustrative)", "สำนักงานอำเภอ (จำลอง)"),
+  home: t("Lalita's home · the app's example home", "บ้านของลลิตา · บ้านตัวอย่างในแอป"),
+  neighbour: t("Neighbours · water at home in the model", "เพื่อนบ้าน · น้ำเข้าบ้านตามแบบจำลอง"),
+  shelter: t("Municipality office shelter · reported in use, Sept 2024", "ศูนย์พักพิงเทศบาลตำบลแม่สาย · มีรายงานว่าเปิดใช้ ก.ย. 2567"),
+  route: t("Usual walk to the shelter", "ทางเดินปกติไปศูนย์พักพิง"),
+  low: t("Low point on the walk · cut at 30 cm of water (model)", "จุดต่ำบนทางเดิน · ถูกตัดเมื่อน้ำลึก 30 ซม. (แบบจำลอง)"),
+  cut: t("Walk cut · water 30 cm or more (model)", "ทางเดินถูกตัด · น้ำลึก 30 ซม. ขึ้นไป (แบบจำลอง)"),
+  river: t("Sai River · border with Myanmar", "แม่น้ำสาย · ชายแดนเมียนมา"),
+  office: t("Mae Sai District Office · reported command centre, 2024", "ที่ว่าการอำเภอแม่สาย · มีรายงานว่าเป็นศูนย์บัญชาการปี 2567"),
+  wat: t("Wat Mueang Daeng · reported flooded, 11–12 Sep 2024", "วัดเหมืองแดง · มีรายงานว่าน้ำท่วม 11–12 ก.ย. 2567"),
   signal: t("Simulated call to hotline 1784 · nothing dialled", "จำลองการโทรสายด่วน 1784 · ไม่มีการโทรจริง"),
   lalita: t("Lalita", "ลลิตา"),
   mali: t("Mali, her mother", "มะลิ แม่ของเธอ"),
@@ -113,9 +130,10 @@ export interface Caption {
 
 /**
  * Captions over the 3D scene: [start, end) progress ranges within a segment. Every feature a caption names is one the
- * real page has: the public app's area overview, Prepare (household needs), Shelter (a destination the household has
- * confirmed; the app does not know capacity), Report (saved on the device, sent nowhere) and SOS (official hotlines);
- * the case view's replay and its confidence; the command exercise's hourly table, practice items and trainee mode.
+ * real page has: the Public app's example home and practice scenarios, Prepare (household needs), Shelter (a
+ * destination the household has checked; the app does not know capacity), Report (saved on the device, sent nowhere)
+ * and SOS (official hotlines); the case view's replay and its confidence; the command exercise's hourly table,
+ * practice items and trainee mode. Every time and depth named is the replay's (r5), at the hour the caption shows.
  */
 export const CAPTIONS: Record<SegmentId, Caption[]> = {
   opening: [],
@@ -124,23 +142,23 @@ export const CAPTIONS: Record<SegmentId, Caption[]> = {
       from: 0.08, to: 0.5, pause: 0.46, who: "lalita", meet: true,
       eyebrow: t("01 · Meet Lalita", "01 · พบกับลลิตา"),
       text: t(
-        "This is Lalita's street. She lives here with her mother, Mali, and her eight-year-old daughter, Dao.",
-        "นี่คือถนนบ้านของลลิตา เธออาศัยอยู่กับมะลิ แม่ของเธอ และดาว ลูกสาววัยแปดขวบ",
+        "This is Mae Sai, a few hundred metres from the Sai River. Lalita lives here with her mother, Mali, and her daughter, Dao, who is eight.",
+        "นี่คือแม่สาย ห่างจากแม่น้ำสายไม่กี่ร้อยเมตร ลลิตาอาศัยอยู่ที่นี่กับมะลิ แม่ของเธอ และดาว ลูกสาววัยแปดขวบ",
       ),
       points: [
-        t("Mali has regular appointments at the clinic down the road.", "มะลิต้องไปพบแพทย์ที่คลินิกปลายถนนเป็นประจำ"),
-        t("Lalita takes Dao to school and Mali to her appointments.", "ลลิตาเป็นคนพาดาวไปโรงเรียนและพามะลิไปหาหมอ"),
-        t("The teal line is their usual way to the clinic.", "เส้นสีเขียวอมฟ้าคือเส้นทางปกติไปคลินิก"),
+        t("Her house stands at the Public app's example home: a point of the model, not an address.", "บ้านของเธออยู่ที่บ้านตัวอย่างในแอปประชาชน ซึ่งเป็นจุดหนึ่งของแบบจำลอง ไม่ใช่ที่อยู่จริง"),
+        t("If they have to leave, their plan is to walk to the shelter at the municipality office, about 1.6 km south.", "หากต้องออกจากบ้าน แผนของพวกเขาคือเดินไปศูนย์พักพิงที่สำนักงานเทศบาล ห่างไปทางใต้ราว 1.6 กม."),
+        t("The teal line is that walk.", "เส้นสีเขียวอมฟ้าคือทางเดินนั้น"),
       ],
     },
     {
       from: 0.55, to: 1.01, pause: 0.985, who: "lalita",
       text: t(
-        "Heavy rain is expected. Before the rumours start, Lalita checks what is known about her area.",
-        "คาดว่าจะมีฝนตกหนัก ก่อนข่าวลือจะเริ่ม ลลิตาตรวจดูว่ามีข้อมูลอะไรเกี่ยวกับพื้นที่ของเธอบ้าง",
+        "Monday 9 September 2024, midday. Heavy rain is expected. Lalita checks what is known about her area.",
+        "วันจันทร์ที่ 9 กันยายน 2567 (2024) เที่ยงวัน คาดว่าจะมีฝนตกหนัก ลลิตาตรวจดูว่ามีข้อมูลอะไรเกี่ยวกับพื้นที่ของเธอบ้าง",
       ),
       points: [
-        t("She opens the FloodGuard public app.", "เธอเปิดแอป FloodGuard สำหรับประชาชน"),
+        t("She opens the FloodGuard Public app.", "เธอเปิดแอป FloodGuard สำหรับประชาชน"),
         t("It helps her prepare. It is not an official warning.", "แอปช่วยให้เธอเตรียมพร้อม แต่ไม่ใช่การแจ้งเตือนทางการ"),
       ],
     },
@@ -148,34 +166,37 @@ export const CAPTIONS: Record<SegmentId, Caption[]> = {
   "enter-phone": [
     {
       from: 0.55, to: 1.01, pause: 0.92, who: "lalita",
-      text: t("This is the real public app: what Lalita sees on her phone.", "นี่คือแอปสำหรับประชาชนจริง สิ่งที่ลลิตาเห็นบนโทรศัพท์"),
+      text: t("This is the real Public app, on a normal day.", "นี่คือแอปสำหรับประชาชนจริง ในวันปกติ"),
       points: [
-        t("She chooses a planning area, or searches for an address.", "เธอเลือกพื้นที่วางแผน หรือค้นหาที่อยู่"),
-        t("It shows a historical planning priority, with its date and confidence.", "แอปแสดงลำดับความสำคัญจากข้อมูลในอดีต พร้อมวันที่และระดับความเชื่อมั่น"),
-        t("A historical priority is not a prediction that her street will flood.", "ลำดับความสำคัญจากอดีตไม่ใช่การทำนายว่าถนนของเธอจะน้ำท่วม"),
+        t("It opens on the example home in Mae Sai town: the same place as this story.", "แอปเปิดที่บ้านตัวอย่างในตัวเมืองแม่สาย ซึ่งเป็นที่เดียวกับในเรื่องนี้"),
+        t("Practice scenarios replay the 2024 flood at this home, hour by hour.", "สถานการณ์ฝึกซ้อมย้อนดูน้ำท่วมปี 2567 ที่บ้านหลังนี้ทีละชั่วโมง"),
+        t("A replay of 2024 says nothing about today. It is not a forecast.", "ภาพจำลองย้อนหลังของปี 2567 ไม่ได้บอกอะไรเกี่ยวกับวันนี้ และไม่ใช่การพยากรณ์"),
       ],
     },
   ],
   conditions: [
     {
-      from: 0.12, to: 0.55, pause: 0.53, who: "lalita",
+      from: 0.12, to: 0.55, pause: 0.5, who: "lalita",
       eyebrow: t("02 · Rain, and a plan", "02 · ฝนตกและแผนรับมือ"),
-      text: t("The rain sets in. The channel rises and low ground begins to pond.", "ฝนเริ่มตกหนัก ระดับน้ำในลำน้ำสูงขึ้น และพื้นที่ต่ำเริ่มมีน้ำขัง"),
+      text: t(
+        "Tuesday 10 September, afternoon. The rain has not stopped, and in the replay the river begins to rise.",
+        "วันอังคารที่ 10 กันยายน ช่วงบ่าย ฝนยังไม่หยุด และในภาพจำลองย้อนหลัง แม่น้ำเริ่มสูงขึ้น",
+      ),
       points: [
-        t("Water collects first where the ground is lowest.", "น้ำขังที่จุดต่ำที่สุดก่อน"),
-        t("Lalita's house stands on higher ground and stays dry.", "บ้านของลลิตาตั้งอยู่บนที่สูงและยังแห้ง"),
-        t("An illustrative scenario, not a forecast.", "เป็นสถานการณ์จำลอง ไม่ใช่การพยากรณ์"),
+        t("In the model, water collects first in the lowest streets, toward the river.", "ในแบบจำลอง น้ำขังที่ถนนที่ต่ำที่สุดฝั่งแม่น้ำก่อน"),
+        t("Lalita's street is still dry.", "ถนนหน้าบ้านลลิตายังแห้งอยู่"),
+        t("Times and depths come from the replay: a reconstruction with low confidence.", "เวลาและความลึกมาจากภาพจำลองย้อนหลัง ซึ่งสร้างขึ้นใหม่ด้วยความเชื่อมั่นต่ำ"),
       ],
     },
     {
       from: 0.6, to: 1.01, pause: 0.95, who: "lalita",
       text: t(
-        "The road is still dry. But it dips through the lowest ground, on Mali's way to the clinic.",
-        "ถนนยังแห้งอยู่ แต่ถนนลาดต่ำผ่านพื้นที่ที่ต่ำที่สุด บนทางที่มะลิใช้ไปคลินิก",
+        "Their walk to the shelter dips through low ground about 100 m south of the house.",
+        "ทางเดินไปศูนย์พักพิงของพวกเขาผ่านพื้นที่ต่ำห่างจากบ้านไปทางใต้ราว 100 เมตร",
       ),
       points: [
-        t("If that stretch floods, the clinic is cut off from the house.", "ถ้าถนนช่วงนั้นน้ำท่วม บ้านจะไปคลินิกไม่ได้"),
-        t("Lalita cannot control the weather.", "ลลิตาควบคุมสภาพอากาศไม่ได้"),
+        t("If that dip floods, the walk is cut.", "ถ้าจุดต่ำนั้นน้ำท่วม ทางเดินก็ถูกตัด"),
+        t("Lalita cannot control the river.", "ลลิตาควบคุมแม่น้ำไม่ได้"),
         t("She can make a plan before she needs one.", "แต่เธอวางแผนไว้ก่อนที่จะต้องใช้ได้"),
       ],
     },
@@ -184,8 +205,8 @@ export const CAPTIONS: Record<SegmentId, Caption[]> = {
     {
       from: 0.28, to: 0.58, pause: 0.45, who: "lalita",
       text: t(
-        "Lalita talks it through with Mali and Dao: what to pack, who helps whom, where they could go.",
-        "ลลิตาคุยกับมะลิและดาวว่าต้องเตรียมอะไร ใครช่วยใคร และจะไปที่ไหนได้บ้าง",
+        "Lalita talks it through with Mali and Dao: what to pack, who helps whom, when to go.",
+        "ลลิตาคุยกับมะลิและดาวว่าต้องเตรียมอะไร ใครช่วยใคร และจะไปเมื่อไร",
       ),
       points: [
         t("Mali needs her regular medicine with her.", "มะลิต้องมียาประจำตัวติดไว้"),
@@ -203,46 +224,87 @@ export const CAPTIONS: Record<SegmentId, Caption[]> = {
       ],
     },
   ],
-  "sos-signal": [
+  night: [
     {
       from: 0.0, to: 0.2, pause: 0.06, who: "lalita",
-      eyebrow: t("03 · The road", "03 · ถนน"),
-      text: t("Lalita notes what she sees in Report: water in the low part of the road.", "ลลิตาบันทึกสิ่งที่เห็นในแท็บรายงาน: น้ำเริ่มท่วมถนนช่วงที่ต่ำ"),
+      eyebrow: t("03 · The night", "03 · คืนนั้น"),
+      text: t("Lalita notes what she sees in Report: water in the street toward the river.", "ลลิตาบันทึกสิ่งที่เห็นในแท็บรายงาน: มีน้ำบนถนนฝั่งแม่น้ำ"),
       points: [
         t("The note stays on her phone. FloodGuard sends it nowhere.", "บันทึกนี้อยู่ในโทรศัพท์ของเธอ FloodGuard ไม่ได้ส่งไปที่ใด"),
         t("Asking for help goes through official channels.", "การขอความช่วยเหลือต้องผ่านช่องทางทางการ"),
       ],
     },
     {
-      from: 0.22, to: 0.5, pause: 0.47, who: "lalita",
+      from: 0.3, to: 0.56, pause: 0.42, who: "lalita",
       text: t(
-        "Now the water crosses the road. Lalita's home and the clinic stay dry; the way between them does not.",
-        "ตอนนี้น้ำท่วมข้ามถนนแล้ว บ้านของลลิตาและคลินิกยังแห้ง แต่ทางระหว่างกันไม่ได้แห้ง",
+        "10 September, 22:00. In the model, water now covers the streets between the house and the river.",
+        "10 กันยายน เวลา 22:00 น. ในแบบจำลอง น้ำท่วมถนนระหว่างบ้านกับแม่น้ำแล้ว",
       ),
       points: [
-        t("Both buildings stand on higher ground.", "อาคารทั้งสองตั้งอยู่บนที่สูง"),
-        t("The low stretch of road between them is under water.", "ถนนช่วงต่ำระหว่างทั้งสองจมน้ำ"),
-        t("Lost access, not only flooding, is what FloodGuard looks at.", "FloodGuard ดูการเข้าถึงที่ขาดหาย ไม่ใช่แค่น้ำท่วม"),
+        t("The house is still dry.", "บ้านยังแห้งอยู่"),
+        t("The app's practice scenario for this hour: roads under water.", "สถานการณ์ฝึกซ้อมในแอปของชั่วโมงนี้: ถนนจมน้ำ"),
+        t("Depths are modelled, with low confidence.", "ความลึกมาจากแบบจำลอง ความเชื่อมั่นต่ำ"),
       ],
     },
     {
-      from: 0.52, to: 0.84, pause: 0.72, who: "lalita",
+      from: 0.56, to: 0.78, pause: 0.66, who: "lalita",
+      text: t("Midnight. The low point on their walk is almost under water.", "เที่ยงคืน จุดต่ำบนทางเดินของพวกเขาใกล้จะจมน้ำ"),
+      points: [
+        t("Mali cannot walk 1.6 km quickly, at night, in the rain.", "มะลิเดิน 1.6 กม. ได้ไม่เร็ว ในเวลากลางคืนและฝนตก"),
+        t("They stay on dry ground at home, the medicine bag ready.", "พวกเขาอยู่บนที่แห้งในบ้าน และเตรียมกระเป๋ายาไว้พร้อม"),
+        t("In the model, the house stays dry at every hour of the replay.", "ในแบบจำลอง บ้านแห้งตลอดทุกชั่วโมงของภาพจำลองย้อนหลัง"),
+      ],
+    },
+    {
+      from: 0.78, to: 1.01, pause: 0.88, who: "lalita",
+      text: t("About 1:00. The dip is under 30 cm of water or more. The walk is cut.", "ราวตีหนึ่ง จุดต่ำมีน้ำลึก 30 ซม. ขึ้นไป ทางเดินถูกตัดแล้ว"),
+      points: [
+        t("In the model, every walk to a reported shelter within 2 km is cut.", "ในแบบจำลอง ทางเดินไปศูนย์พักพิงที่มีรายงานภายในระยะ 2 กม. ถูกตัดทั้งหมด"),
+        t("Their home is dry. The way out is not.", "บ้านของพวกเขาแห้ง แต่ทางออกไม่แห้ง"),
+        t("Lost access, not only water at home, is what FloodGuard looks at.", "FloodGuard ดูการเข้าถึงที่ขาดหาย ไม่ใช่แค่น้ำที่เข้าบ้าน"),
+      ],
+    },
+  ],
+  "cut-off": [
+    {
+      from: 0.06, to: 0.3, pause: 0.16, who: "lalita",
+      eyebrow: t("04 · Cut off", "04 · ถูกตัดขาด"),
       text: t(
-        "Mali needs to see her doctor. Lalita calls the official hotline, 1784, to ask how to get her there.",
-        "มะลิต้องไปพบแพทย์ ลลิตาโทรหาสายด่วนทางการ 1784 เพื่อถามว่าจะพาแม่ไปได้อย่างไร",
+        "Thursday 12 September, midday: the river's highest point in the replay.",
+        "วันพฤหัสบดีที่ 12 กันยายน เที่ยงวัน ระดับแม่น้ำสูงที่สุดในภาพจำลองย้อนหลัง",
+      ),
+      points: [
+        t("Lalita's home is dry; the street in front of it is not.", "บ้านของลลิตายังแห้ง แต่ถนนหน้าบ้านไม่แห้ง"),
+        t("Her neighbours, 110 m away, have water in the house: 0.75 m in the model.", "เพื่อนบ้านที่อยู่ห่างไป 110 เมตร มีน้ำเข้าบ้าน ลึก 0.75 เมตรตามแบบจำลอง"),
+        t("Practice scenario on her phone: cut off, home dry.", "สถานการณ์ฝึกซ้อมในโทรศัพท์ของเธอ: ถูกตัดขาด บ้านยังแห้ง"),
+      ],
+    },
+    {
+      from: 0.3, to: 0.48, pause: 0.38, who: "lalita",
+      text: t("From above, the house stands on a dry patch, with water on most sides.", "เมื่อมองจากด้านบน บ้านตั้งอยู่บนพื้นที่แห้ง มีน้ำล้อมเกือบทุกด้าน"),
+      points: [
+        t("In the model, most roads within 1 km are under water.", "ในแบบจำลอง ถนนส่วนใหญ่ภายในระยะ 1 กม. จมน้ำ"),
+        t("Homes that are dry but cut off: this is what the access analysis finds.", "บ้านที่แห้งแต่ถูกตัดขาด คือสิ่งที่การวิเคราะห์การเข้าถึงค้นพบ"),
+      ],
+    },
+    {
+      from: 0.48, to: 0.72, pause: 0.58, who: "lalita",
+      text: t(
+        "Mali's medicine is running low. Lalita calls the official hotline, 1784, to ask for help.",
+        "ยาของมะลิใกล้หมด ลลิตาโทรหาสายด่วนทางการ 1784 เพื่อขอความช่วยเหลือ",
       ),
       points: [
         t("Story mode: the call is simulated. Nothing is dialled.", "โหมดเรื่องราว: เป็นการจำลอง ไม่มีการโทรจริง"),
         t("The call goes through the hotline, not through FloodGuard.", "สายนี้ผ่านสายด่วน ไม่ได้ผ่าน FloodGuard"),
-        t("In this story, requests like hers reach the district office.", "ในเรื่องนี้ คำขอแบบเดียวกับของเธอส่งต่อมาถึงสำนักงานอำเภอ"),
+        t("In 2024, the Mae Sai District Office ran the incident command centre (reported).", "ในปี 2567 ที่ว่าการอำเภอแม่สายเป็นศูนย์บัญชาการเหตุการณ์ (ตามรายงาน)"),
       ],
     },
     {
-      from: 0.88, to: 1.01, pause: 0.985, who: "narin", meet: true,
+      from: 0.9, to: 1.01, pause: 0.985, who: "narin", meet: true,
       eyebrow: t("Meet Narin", "พบกับนรินทร์"),
       text: t(
-        "Narin is a planning officer at the district office. Calls like Lalita's are part of what he has to make sense of.",
-        "นรินทร์เป็นเจ้าหน้าที่วางแผนที่สำนักงานอำเภอ สายแบบเดียวกับของลลิตาเป็นส่วนหนึ่งของสิ่งที่เขาต้องทำความเข้าใจ",
+        "Narin is a planning officer at the Mae Sai District Office. Calls like Lalita's are part of what he has to make sense of.",
+        "นรินทร์เป็นเจ้าหน้าที่วางแผนที่ที่ว่าการอำเภอแม่สาย สายแบบเดียวกับของลลิตาเป็นส่วนหนึ่งของสิ่งที่เขาต้องทำความเข้าใจ",
       ),
       points: [
         t("He has not seen every road or shelter himself.", "เขาไม่ได้เห็นถนนหรือที่พักพิงทุกแห่งด้วยตัวเอง"),
@@ -255,23 +317,23 @@ export const CAPTIONS: Record<SegmentId, Caption[]> = {
     {
       from: 0.4, to: 1.01, pause: 0.93, who: "narin",
       text: t(
-        "Narin opens the case view: a real, past flood in Mae Sai, September 2024. It is not Lalita's street.",
-        "นรินทร์เปิดหน้าเคส: น้ำท่วมจริงในอดีตที่แม่สาย กันยายน 2024 ไม่ใช่ถนนของลลิตา",
+        "Narin opens the case view at the same hour: 12 September, 12:00.",
+        "นรินทร์เปิดหน้าเคสที่ชั่วโมงเดียวกัน: 12 กันยายน เวลา 12:00 น.",
       ),
       points: [
-        t("He replays it day by day, with dated satellite images.", "เขาย้อนดูทีละวัน พร้อมภาพดาวเทียมที่ระบุวันที่"),
+        t("The same replay as Lalita's phone: Mae Sai, September 2024, hour by hour.", "ภาพจำลองย้อนหลังเดียวกับในโทรศัพท์ของลลิตา: แม่สาย กันยายน 2567 ทีละชั่วโมง"),
         t("Modelled water, roads, facilities and residents in water, each marked low confidence.", "น้ำ ถนน สถานบริการ และผู้อยู่อาศัยในน้ำจากแบบจำลอง ทั้งหมดระบุว่าความเชื่อมั่นต่ำ"),
-        t("Who could walk to a shelter, and who could not: the equity gap.", "ใครเดินไปถึงที่พักพิงได้ และใครไปไม่ถึง: ช่องว่างความเท่าเทียม"),
+        t("Reports and the model do not always agree: Wat Mueang Daeng was reported flooded; the model shows it dry.", "รายงานกับแบบจำลองไม่ได้ตรงกันเสมอ: มีรายงานว่าวัดเหมืองแดงน้ำท่วม แต่แบบจำลองแสดงว่าแห้ง"),
       ],
     },
   ],
   aerial: [
     {
       from: 0.14, to: 0.3, pause: 0.22, who: "pim", meet: true,
-      eyebrow: t("04 · Meet Pim", "04 · พบกับพิมพ์"),
+      eyebrow: t("05 · Meet Pim", "05 · พบกับพิมพ์"),
       text: t(
-        "Pim coordinates planning for the district. Narin's evidence is one input; she has many communities to think about.",
-        "พิมพ์ประสานงานการวางแผนของอำเภอ หลักฐานของนรินทร์เป็นข้อมูลส่วนหนึ่ง เธอต้องคิดถึงหลายชุมชน",
+        "Pim coordinates planning for the district from the same office. Narin's evidence is one input; she has many communities to think about.",
+        "พิมพ์ประสานงานการวางแผนของอำเภอจากที่ทำการเดียวกัน หลักฐานของนรินทร์เป็นข้อมูลส่วนหนึ่ง เธอต้องคิดถึงหลายชุมชน",
       ),
       points: [
         t("Her job is to organise the discussion, not to hand it to a computer.", "งานของเธอคือจัดการการหารือ ไม่ใช่ปล่อยให้คอมพิวเตอร์ตัดสินใจ"),
@@ -281,12 +343,12 @@ export const CAPTIONS: Record<SegmentId, Caption[]> = {
     {
       from: 0.38, to: 0.7, pause: 0.6, who: "pim",
       text: t(
-        "From above, Lalita's road is one of many links between people and the services they need.",
-        "เมื่อมองจากด้านบน ถนนของลลิตาเป็นเพียงหนึ่งในหลายเส้นทางที่เชื่อมผู้คนกับบริการที่จำเป็น",
+        "From above, Lalita's home is one of many dry homes that are cut off.",
+        "เมื่อมองจากด้านบน บ้านของลลิตาเป็นหนึ่งในบ้านที่แห้งแต่ถูกตัดขาดอีกหลายหลัง",
       ),
       points: [
-        t("Every household–service link can be checked the same way.", "ทุกเส้นทางระหว่างครัวเรือนกับบริการตรวจได้ด้วยวิธีเดียวกัน"),
-        t("Cut links show where help may not get through.", "เส้นทางที่ขาดชี้ว่าความช่วยเหลืออาจไปไม่ถึงที่ใด"),
+        t("Every walk from a home to a shelter can be checked the same way.", "ทางเดินจากบ้านไปศูนย์พักพิงทุกเส้นตรวจได้ด้วยวิธีเดียวกัน"),
+        t("Cut walks show where help may not get through on foot.", "ทางเดินที่ถูกตัดชี้ว่าความช่วยเหลืออาจเดินเท้าไปไม่ถึงที่ใด"),
       ],
     },
     {
@@ -302,10 +364,27 @@ export const CAPTIONS: Record<SegmentId, Caption[]> = {
       ],
     },
   ],
+  after: [
+    {
+      from: 0.2, to: 0.66, pause: 0.5, who: "lalita",
+      eyebrow: t("06 · Water going down", "06 · น้ำลด"),
+      text: t("Saturday 14 September. In the replay, the water is going down.", "วันเสาร์ที่ 14 กันยายน ในภาพจำลองย้อนหลัง น้ำกำลังลด"),
+      points: [
+        t("The lines on the walls show how high it came in the model.", "รอยบนผนังแสดงว่าน้ำขึ้นสูงแค่ไหนตามแบบจำลอง"),
+        t("Practice scenario on her phone: water going down.", "สถานการณ์ฝึกซ้อมในโทรศัพท์ของเธอ: น้ำกำลังลด"),
+      ],
+    },
+    {
+      from: 0.7, to: 1.01, pause: 0.97, who: "lalita",
+      text: t("Make the plan before you need it: know your walk, and where it gets cut.", "วางแผนไว้ก่อนที่จะต้องใช้: รู้จักทางเดินของคุณ และรู้ว่าจุดไหนจะถูกตัด"),
+      points: [
+        t("Try the practice scenarios for the example home in the Public app.", "ลองใช้สถานการณ์ฝึกซ้อมของบ้านตัวอย่างในแอปประชาชน"),
+        t("Coordinators can replay the same hours in the command exercise.", "ผู้ประสานงานย้อนดูชั่วโมงเดียวกันได้ในแบบฝึกบัญชาการ"),
+        t("The people are fictional. The place, the replay and its limits are real.", "ตัวละครเป็นเรื่องสมมุติ แต่สถานที่ ภาพจำลองย้อนหลัง และข้อจำกัดของมันเป็นของจริง"),
+      ],
+    },
+  ],
 };
-
-/** The public app's tabs a stop can open on (the app's own bottom navigation). */
-export type PublicTab = "home" | "prepare";
 
 export interface StopCopy {
   page: Text;
@@ -324,21 +403,24 @@ export const STOPS: Record<StopId, StopCopy> = {
   public: {
     page: t("Real page · Public app", "หน้าจริง · แอปประชาชน"),
     note: t(
-      "Lalita's first look. The app's data covers Mae Sai district; her street in this story is illustrated.",
-      "การเปิดดูครั้งแรกของลลิตา ข้อมูลในแอปครอบคลุมอำเภอแม่สาย ส่วนถนนของเธอในเรื่องนี้เป็นภาพจำลอง",
+      "Lalita's first look, on a normal day. The app opens on the example home in Mae Sai town, the place of this story.",
+      "การเปิดดูครั้งแรกของลลิตาในวันปกติ แอปเปิดที่บ้านตัวอย่างในตัวเมืองแม่สาย ซึ่งเป็นสถานที่ของเรื่องนี้",
     ),
     who: "lalita",
-    href: () => "/public/",
+    href: () => "/public/?practice=normal",
     tab: "home",
     continueLabel: t("Continue: rain, and a plan", "ไปต่อ: ฝนตกและแผนรับมือ"),
   },
   "public-prepare": {
     page: t("Real page · Prepare", "หน้าจริง · เตรียมพร้อม"),
-    note: t("Lalita's household plan. It stays on this device; nothing is sent.", "แผนของครัวเรือนของลลิตา เก็บไว้ในอุปกรณ์นี้ ไม่มีการส่งข้อมูล"),
+    note: t(
+      "Lalita's household plan. It stays on this device; nothing is sent. Practice scenario: shallow water on roads.",
+      "แผนของครัวเรือนของลลิตา เก็บไว้ในอุปกรณ์นี้ ไม่มีการส่งข้อมูล สถานการณ์ฝึกซ้อม: น้ำตื้นบนถนน",
+    ),
     who: "lalita",
-    href: () => "/public/?tab=prepare",
+    href: () => "/public/?tab=prepare&practice=heads_up",
     tab: "prepare",
-    continueLabel: t("Continue: the road", "ไปต่อ: ถนน"),
+    continueLabel: t("Continue: the night", "ไปต่อ: คืนนั้น"),
     warning: t(
       "The SOS tab's buttons open your phone's call or message app with real hotline numbers. The story never uses them.",
       "ปุ่มในแท็บ SOS จะเปิดแอปโทรศัพท์หรือข้อความพร้อมหมายเลขสายด่วนจริง เรื่องราวนี้ไม่ใช้ปุ่มเหล่านั้น",
@@ -347,25 +429,31 @@ export const STOPS: Record<StopId, StopCopy> = {
   case: {
     page: t("Real page · Case view", "หน้าจริง · หน้าเคส"),
     note: t(
-      "Narin's evidence. Mae Sai, September 2024: historical, reconstructed, low confidence. Not the illustrated street.",
-      "หลักฐานของนรินทร์ แม่สาย กันยายน 2024: ข้อมูลในอดีต สร้างขึ้นใหม่ ความเชื่อมั่นต่ำ ไม่ใช่ถนนในภาพจำลอง",
+      "Narin's evidence, opened at 12 September 2024, 12:00: the same replay as the story. Historical, reconstructed, low confidence.",
+      "หลักฐานของนรินทร์ เปิดที่ 12 กันยายน 2567 เวลา 12:00 น. ภาพจำลองย้อนหลังเดียวกับในเรื่อง ข้อมูลในอดีต สร้างขึ้นใหม่ ความเชื่อมั่นต่ำ",
     ),
     who: "narin",
-    href: (language) => `/studio/cases/mae-sai-2024/?lang=${language}`,
+    href: (language) => `/studio/cases/mae-sai-2024/?t=${STOP_HOURS.case}&lang=${language}`,
     continueLabel: t("Continue: the district", "ไปต่อ: ภาพรวมอำเภอ"),
   },
   command: {
     page: t("Real page · Command exercise", "หน้าจริง · แบบฝึกบัญชาการ"),
     note: t(
-      "Pim's planning table. An exercise replay for review and coordination: not real-time, not dispatch. Reports saved on this device appear here too.",
-      "โต๊ะวางแผนของพิมพ์ การเล่นซ้ำเพื่อฝึกทบทวนและประสานงาน ไม่ใช่ข้อมูลเรียลไทม์ และไม่ใช่การสั่งการ รายงานที่บันทึกในอุปกรณ์นี้จะแสดงที่นี่ด้วย",
+      "Pim's planning table, opened at the same hour. An exercise replay for review and coordination: not real-time, not dispatch. Reports saved on this device appear here too.",
+      "โต๊ะวางแผนของพิมพ์ เปิดที่ชั่วโมงเดียวกัน การเล่นซ้ำเพื่อฝึกทบทวนและประสานงาน ไม่ใช่ข้อมูลเรียลไทม์ และไม่ใช่การสั่งการ รายงานที่บันทึกในอุปกรณ์นี้จะแสดงที่นี่ด้วย",
     ),
     who: "pim",
-    href: (language) => `/command/?t=36&lang=${language}`,
+    href: (language) => `/command/?t=${STOP_HOURS.command}&lang=${language}`,
+    continueLabel: t("Continue: water going down", "ไปต่อ: น้ำลด"),
   },
 };
 
 /** The iframe address for a stop: the real route, untouched. Both public-app stops share one frame at `/public/`. */
 export function stopFrameSrc(stop: StopId, language: JourneyLanguage): string {
   return stop === "public-prepare" ? STOPS.public.href(language) : STOPS[stop].href(language);
+}
+
+/** The replay clock line for a moment written by `formatMoment` (flood-timeline.ts). */
+export function clockText(moment: string, language: JourneyLanguage): string {
+  return UI.clock[language].replace("{moment}", moment);
 }

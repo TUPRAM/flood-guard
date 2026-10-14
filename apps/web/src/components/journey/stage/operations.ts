@@ -89,11 +89,18 @@ function whiteboardTexture(): THREE.CanvasTexture {
   return texture;
 }
 
-export function buildOperations(monitorTexture: THREE.Texture, tableTexture: THREE.Texture): OperationsBuilding {
+/** Where the room stands: its centre and the ground there (the illustrative layout by default). */
+export interface OperationsPlace {
+  x: number;
+  z: number;
+  ground: number;
+}
+
+export function buildOperations(monitorTexture: THREE.Texture, tableTexture: THREE.Texture, place?: OperationsPlace): OperationsBuilding {
   const group = new THREE.Group();
   group.name = "Operations";
-  const { x: cx, z: cz } = LAYOUT.operations;
-  const floor = terrainHeight(cx, cz) + 0.35;
+  const { x: cx, z: cz } = place ?? LAYOUT.operations;
+  const floor = (place ? place.ground : terrainHeight(cx, cz)) + 0.35;
   const W = 18, D = 12, H = 5.4, t = 0.3;
   const disposables: Array<{ dispose(): void }> = [];
   const own = <T extends { dispose(): void }>(item: T): T => {

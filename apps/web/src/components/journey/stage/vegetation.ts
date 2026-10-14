@@ -331,6 +331,134 @@ export interface Vegetation {
   dispose(): void;
 }
 
+/** Banana plants: a short pseudo-stem and a few long, arching paddle leaves. */
+function banana(seed: number): VariantGeometry {
+  const random = seeded(seed);
+  const stem = limb(new THREE.Vector3(0, -0.2, 0), new THREE.Vector3(0.05, 1.7, 0), 0.13, 0.1, 7);
+  const leaves: THREE.BufferGeometry[] = [];
+  const count = 7;
+  for (let i = 0; i < count; i += 1) {
+    const a = (i / count) * Math.PI * 2 + random() * 0.5;
+    const length = 1.7 + random() * 0.6;
+    const positions: number[] = [];
+    const indices: number[] = [];
+    const segments = 8;
+    for (let s = 0; s <= segments; s += 1) {
+      const t = s / segments;
+      const r = length * t;
+      const y = 1.7 + Math.sin(t * Math.PI * 0.6) * 0.8 - t * t * 1.1;
+      const half = 0.32 * Math.sin(Math.min(1, t * 1.2) * Math.PI * 0.95);
+      const cx = Math.cos(a) * r, cz = Math.sin(a) * r;
+      const sx = -Math.sin(a) * half, sz = Math.cos(a) * half;
+      positions.push(cx - sx, y - half * 0.15, cz - sz, cx, y + 0.03, cz, cx + sx, y - half * 0.15, cz + sz);
+      if (s < segments) {
+        const b = s * 3;
+        indices.push(b, b + 3, b + 1, b + 1, b + 3, b + 4, b + 1, b + 4, b + 2, b + 2, b + 4, b + 5);
+      }
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+    g.setIndex(indices);
+    const flat = g.toNonIndexed();
+    flat.computeVertexNormals();
+    leaves.push(flat);
+  }
+  const canopy = mergeGeometries(leaves)!;
+  leaves.forEach((g) => g.dispose());
+  const cp = canopy.getAttribute("position") as THREE.BufferAttribute;
+  const colors = new Float32Array(cp.count * 3);
+  for (let i = 0; i < cp.count; i += 1) {
+    const shade = 0.75 + 0.35 * Math.min(1, Math.hypot(cp.getX(i), cp.getZ(i)) / 2);
+    colors[i * 3] = shade * 1.05; colors[i * 3 + 1] = shade * 1.1; colors[i * 3 + 2] = shade * 0.8;
+  }
+  canopy.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+  return { canopy, trunk: stem, radius: 1.8 };
+}
+
+export interface TreePlacement {
+  x: number;
+  z: number;
+  /** 0 broadleaf, 1 coconut palm, 2 banana, 3 mango or rain tree (the bake's kinds). */
+  kind: number;
+  scale: number;
+}
+
+export interface TreeOptions {
+  quality: Quality;
+  trees: TreePlacement[];
+  height: (x: number, z: number) => number;
+  /** Camera positions along the story; trees that would block or brush the camera are left out. */
+  clearance?: THREE.Vector3[];
+  /** Full-detail canopies only near these points (the story's close shots). */
+  focus: Array<{ x: number; z: number; r: number }>;
+}
+
+/** Trees at the bake's points (real open ground of the town), instanced per variant and per 48 m tile. */
+export function buildTrees(options: TreeOptions): Vegetation {
+  const detail = options.quality === "high" ? 2 : 1;
+  const variants: Record<string, VariantGeometry> = {
+    round: broadleaf("round", detail, 202),
+    rain: broadleaf("rain", detail, 101),
+    palm: palm(404),
+    banana: banana(606),
+  };
+  const far: Record<string, VariantGeometry> = { round: broadleaf("round", 1, 202), rain: broadleaf("rain", 1, 101) };
+  const kindVariant = ["round", "palm", "banana", "rain"];
+  const group = new THREE.Group();
+  group.name = "Trees";
+  const foliage = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.88, metalness: 0 });
+  const fronds = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.8, side: THREE.DoubleSide });
+  const bark = new THREE.MeshStandardMaterial({ color: "#6e5d4b", roughness: 0.92 });
+  const palmBark = new THREE.MeshStandardMaterial({ color: "#8d7d68", roughness: 0.9 });
+  const random = seeded(29);
+  const tiles = new Map<string, Array<{ p: TreePlacement; r: number; tint: number }>>();
+  for (const p of options.trees) {
+    const variant = kindVariant[p.kind] ?? "round";
+    const size = VARIANT_SIZE[(variant === "banana" ? "shrub" : variant) as Variant];
+    if (options.clearance) {
+      const r = (variant === "banana" ? 2 : size.radius) * p.scale + 3, h = (variant === "banana" ? 3.4 : size.height) * p.scale + 3;
+      if (options.clearance.some((c) => c.y < h + options.height(p.x, p.z) && (c.x - p.x) ** 2 + (c.z - p.z) ** 2 < r * r)) continue;
+    }
+    const key = `${variant}:${Math.floor(p.x / 48)}:${Math.floor(p.z / 48)}`;
+    if (!tiles.has(key)) tiles.set(key, []);
+    tiles.get(key)!.push({ p, r: random() * Math.PI * 2, tint: 0.88 + random() * 0.24 });
+  }
+  const matrix = new THREE.Matrix4(), color = new THREE.Color(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0);
+  tiles.forEach((list, key) => {
+    const [variant, tx, tz] = key.split(":");
+    const cx = (Number(tx) + 0.5) * 48, cz = (Number(tz) + 0.5) * 48;
+    const near = options.focus.some((f) => Math.hypot(f.x - cx, f.z - cz) < f.r);
+    const geo = (!near ? far[variant] : undefined) ?? variants[variant];
+    const leafy = variant === "palm" || variant === "banana";
+    const canopy = new THREE.InstancedMesh(geo.canopy, leafy ? fronds : foliage, list.length);
+    const trunk = new THREE.InstancedMesh(geo.trunk, variant === "palm" ? palmBark : bark, list.length);
+    list.forEach(({ p, r, tint }, i) => {
+      const y = options.height(p.x, p.z);
+      matrix.compose(new THREE.Vector3(p.x, y - 0.05, p.z), q.setFromAxisAngle(up, r), new THREE.Vector3(p.scale, p.scale * (0.92 + ((i * 7919) % 13) / 60), p.scale));
+      canopy.setMatrixAt(i, matrix);
+      trunk.setMatrixAt(i, matrix);
+      const base = leafy ? (variant === "banana" ? BANANA_GREEN : PALM_GREEN) : GREENS[(i * 5 + Math.floor(r * 10)) % GREENS.length];
+      color.copy(base).multiplyScalar(tint);
+      canopy.setColorAt(i, color);
+    });
+    canopy.castShadow = trunk.castShadow = near;
+    canopy.receiveShadow = trunk.receiveShadow = true;
+    canopy.computeBoundingSphere();
+    trunk.computeBoundingSphere();
+    canopy.name = `Canopy-${key}`;
+    group.add(canopy, trunk);
+  });
+  return {
+    group,
+    dispose() {
+      [...Object.values(variants), ...Object.values(far)].forEach((v) => { v.canopy.dispose(); v.trunk.dispose(); });
+      [foliage, fronds, bark, palmBark].forEach((m) => m.dispose());
+    },
+  };
+}
+
+const BANANA_GREEN = new THREE.Color("#86a64e");
+
 export function buildVegetation(options: VegetationOptions): Vegetation {
   const detail = options.quality === "high" ? 2 : 1;
   const variants: Record<Variant, VariantGeometry> = {

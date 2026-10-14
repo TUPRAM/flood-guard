@@ -1,9 +1,13 @@
 import { describe, expect, it } from "vitest";
 
+import { PRACTICE_SCENARIOS } from "@/lib/public-practice-scenarios";
+
 import { solveReach, type Point } from "./reach";
 import { applyHomography, quadIsDrawable, quadToMatrix3d, squareToQuad, type Quad } from "./screen-projection";
 import { LAYOUT, WATER_LEVEL, floodedRoadRanges, isUnderWater, roadHeight, terrainHeight } from "./terrain";
 import {
+  STOP_HOURS,
+  STOP_IDS,
   TIMELINE_END,
   chapterAt,
   chapterEntry,
@@ -18,22 +22,29 @@ import {
   stepToward,
   stopAt,
   stopPosition,
+  phoneAt,
+  practiceForHour,
+  replayHourAt,
+  segmentRange,
   storyBeats,
+  storyHours,
+  veilAt,
 } from "./timeline";
 
 describe("journey timeline", () => {
-  it("places the four real-page stops in story order", () => {
-    const stops = ["public", "public-prepare", "case", "command"] as const;
-    const positions = stops.map(stopPosition);
+  it("places the four real-page stops in story order, with the closing chapter after the last one", () => {
+    const positions = STOP_IDS.map(stopPosition);
+    expect(STOP_IDS).toEqual(["public", "public-prepare", "case", "command"]);
     expect([...positions].sort((a, b) => a - b)).toEqual(positions);
-    expect(stopPosition("command")).toBe(TIMELINE_END);
+    expect(segmentRange("after").start).toBeCloseTo(stopPosition("command"));
+    expect(segmentRange("after").end).toBe(TIMELINE_END);
   });
 
   it("locates segments and progress", () => {
     expect(locate(0)).toMatchObject({ segment: "opening", progress: 0, chapter: "opening" });
     expect(locate(0.5).progress).toBeCloseTo(0.5);
     expect(locate(stopPosition("public"))).toMatchObject({ segment: "enter-phone", progress: 1 });
-    expect(locate(TIMELINE_END + 5)).toMatchObject({ segment: "aerial", progress: 1 });
+    expect(locate(TIMELINE_END + 5)).toMatchObject({ segment: "after", progress: 1 });
     expect(locate(-3)).toMatchObject({ segment: "opening", progress: 0 });
   });
 
@@ -46,7 +57,7 @@ describe("journey timeline", () => {
   });
 
   it("enters a chapter just past a boundary stop, so chapter links never dock the previous page", () => {
-    for (const chapter of ["conditions", "affected", "response"] as const) {
+    for (const chapter of ["conditions", "night", "response", "after"] as const) {
       expect(stopAt(chapterEntry(chapter))).toBeNull();
       expect(chapterAt(chapterEntry(chapter))).toBe(chapter);
     }
@@ -60,6 +71,7 @@ describe("journey timeline", () => {
     expect(clampScrollTarget(publicStop, publicStop + 0.5)).toBeCloseTo(publicStop + 0.5);
     expect(clampScrollTarget(publicStop, 99)).toBeCloseTo(stopPosition("public-prepare"));
     expect(clampScrollTarget(stopPosition("case"), 0.3)).toBeCloseTo(0.3);
+    expect(clampScrollTarget(stopPosition("command"), 99)).toBe(TIMELINE_END);
     expect(clampScrollTarget(1, -4)).toBe(0);
   });
 
@@ -67,6 +79,7 @@ describe("journey timeline", () => {
     expect(nextStopAfter(0)).toBe("public");
     expect(nextStopAfter(stopPosition("public"))).toBe("public-prepare");
     expect(previousStopBefore(stopPosition("case"))).toBe("public-prepare");
+    expect(nextStopAfter(stopPosition("command"))).toBeNull();
     expect(nextStopAfter(TIMELINE_END)).toBeNull();
     expect(stopAt(stopPosition("case"))).toBe("case");
     expect(stopAt(stopPosition("case") - 0.01)).toBeNull();
@@ -85,19 +98,61 @@ describe("journey timeline", () => {
     expect(stepToward(1, 0.5, 1 / 60)).toBeLessThan(1);
   });
 
-  it("gives reduced motion beats that reach every stop, in order", () => {
+  it("gives reduced motion beats that reach every stop and the closing scene, in order", () => {
     const beats = storyBeats();
     expect([...beats].sort((a, b) => a - b)).toEqual(beats);
-    for (const stop of ["public", "public-prepare", "case", "command"] as const) expect(beats).toContain(stopPosition(stop));
+    for (const stop of STOP_IDS) expect(beats).toContain(stopPosition(stop));
     expect(beats.at(-1)).toBe(TIMELINE_END);
   });
 
-  it("round-trips scenes through the address bar", () => {
+  it("round-trips scenes through the address bar, old chapter ids included", () => {
     expect(parseScene("?scene=case")).toBe("case");
     expect(parseScene("?scene=affected")).toBe("affected");
+    expect(parseScene("?scene=night")).toBe("night");
+    expect(parseScene("?scene=after")).toBe("after");
     expect(parseScene("?scene=nope")).toBeNull();
     expect(sceneAt(stopPosition("command"))).toBe("command");
     expect(sceneAt(scenePosition("conditions") + 0.3)).toBe("conditions");
+  });
+});
+
+describe("journey replay time", () => {
+  it("runs at the Public app's practice-scenario hours", () => {
+    for (const scenario of PRACTICE_SCENARIOS.filter((entry) => entry.home === "dry")) {
+      expect(storyHours(), scenario.id).toContain(scenario.hour);
+      expect(practiceForHour(scenario.hour)).toBe(scenario.id);
+    }
+    expect(practiceForHour(49)).toBe("reach_at_risk");
+    expect(practiceForHour(0)).toBe("normal");
+  });
+
+  it("opens each real page at the hour of the scene around it", () => {
+    for (const stop of STOP_IDS) expect(replayHourAt(stopPosition(stop))).toBe(STOP_HOURS[stop]);
+    expect(STOP_HOURS).toEqual({ public: 12, "public-prepare": 40, case: 84, command: 84 });
+  });
+
+  it("only moves forward in time, and only skips ahead behind a page or a dip to dark", () => {
+    let previous = replayHourAt(0);
+    for (let t = 0; t <= TIMELINE_END + 1e-9; t += 0.005) {
+      const hour = replayHourAt(t);
+      expect(hour).toBeGreaterThanOrEqual(previous - 1e-9);
+      if (hour - previous > 1) {
+        // A skip: the page that covers it, or a dark screen.
+        const covered = STOP_IDS.some((stop) => Math.abs(stopPosition(stop) - (t - 0.0025)) < 0.006) || veilAt(t - 0.005) > 0.95 || veilAt(t) > 0.95;
+        expect(covered, `time skips from ${previous} to ${hour} at ${t.toFixed(3)} with the scene in view`).toBe(true);
+      }
+      previous = hour;
+    }
+    expect(replayHourAt(TIMELINE_END)).toBe(132);
+  });
+
+  it("shows on the phone the scenario of the hour, on the page the story is about", () => {
+    expect(phoneAt(stopPosition("public"))).toEqual({ tab: "home", practice: "normal" });
+    expect(phoneAt(stopPosition("public-prepare"))).toEqual({ tab: "prepare", practice: "heads_up" });
+    expect(phoneAt(segmentRange("night").start + 0.05)).toMatchObject({ tab: "report" });
+    const peak = segmentRange("cut-off");
+    expect(phoneAt((peak.start + peak.end) / 2)).toEqual({ tab: "home", practice: "cut_off" });
+    expect(phoneAt(TIMELINE_END)).toEqual({ tab: "home", practice: "going_down" });
   });
 });
 

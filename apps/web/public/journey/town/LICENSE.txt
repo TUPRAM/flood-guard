@@ -1,0 +1,29 @@
+FloodGuard journey town pack (apps/web/public/journey/town/)
+Baked by scripts/build_journey_town.py on branch journey-v2.
+
+Credits
+-------
+Building outlines: Google Open Buildings v3 (CC BY 4.0) and Microsoft building footprints (ODbL), combined by VIDA (Source Cooperative). Roads, water and land use © OpenStreetMap contributors (ODbL). Terrain: Copernicus DEM GLO-30 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018, provided under COPERNICUS by the European Union and ESA. Water: FloodGuard replay r5, a model reconstruction of September 2024, low confidence.
+
+ขอบเขตอาคาร: Google Open Buildings v3 (CC BY 4.0) และ Microsoft building footprints (ODbL) รวมชุดข้อมูลโดย VIDA (Source Cooperative) · ถนน แหล่งน้ำ และการใช้ที่ดิน © ผู้ร่วมสร้าง OpenStreetMap (ODbL) · ภูมิประเทศ: Copernicus DEM GLO-30 © DLR e.V. 2010-2014 และ © Airbus Defence and Space GmbH 2014-2018 ให้บริการภายใต้โครงการ COPERNICUS โดยสหภาพยุโรปและ ESA · น้ำ: การจำลองย้อนหลังของ FloodGuard รุ่น r5 ซึ่งสร้างขึ้นใหม่ด้วยแบบจำลองสำหรับเดือนกันยายน 2567 (2024) มีความเชื่อมั่นต่ำ
+
+Licences
+--------
+* Derivative database: the building outlines, roads and land cover in mae-sai-town.json and
+  mae-sai-town-cover.png are a derivative database of OpenStreetMap (ODbL 1.0) and of the open building
+  outlines of Google Open Buildings v3 (CC BY 4.0 and ODbL 1.0) and Microsoft building footprints (ODbL 1.0),
+  combined by VIDA and hosted by Source Cooperative. This pack publishes it under the Open Database License 1.0:
+  https://opendatacommons.org/licenses/odbl/1-0/ . Keep the credit; share changes to the database alike.
+* OpenStreetMap: © OpenStreetMap contributors, https://www.openstreetmap.org/copyright
+* Google Open Buildings v3: CC BY 4.0, https://creativecommons.org/licenses/by/4.0/
+* Copernicus DEM GLO-30 (relief and backdrop): © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH
+  2014-2018, provided under COPERNICUS by the European Union and ESA; all rights reserved.
+* Water, beats and walk: FloodGuard replay r5 (apps/web/public/studies/mae-sai-2024-timeline/r5/), a model
+  reconstruction of September 2024 with low confidence; its OpenStreetMap-derived parts are under ODbL 1.0.
+
+What this is not
+----------------
+Not an observation, a real-time product or an official warning. Building heights, floors, facades and trees
+are illustrative. The people of the story are fictional; the example homes are model points, not addresses.
+
+This is an engineering note on the right to use, not a legal clearance.

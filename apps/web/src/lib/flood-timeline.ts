@@ -199,6 +199,8 @@ export interface ReportedShelter {
   in_access_set: boolean;
   /** Why the site is or is not in that set. */
   access_set_note: string;
+  /** The same note in Thai (absent from a manifest baked before it existed). */
+  access_set_note_th?: string;
   model_check: ShelterModelCheck | null;
 }
 

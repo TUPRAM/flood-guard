@@ -1,24 +1,36 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { HouseholdPlanBuilder } from "@/components/household-plan-builder";
 import { PublicAppHeader } from "@/components/public-app-header";
 import { PublicAppIcon, type PublicAppIconName } from "@/components/public-app-icon";
 import { PublicHomePage } from "@/components/public-home-page";
+import { PublicPracticeStrip } from "@/components/public-practice-strip";
 import { PublicReportPage } from "@/components/public-report-page";
 import { PublicShelterPage } from "@/components/public-shelter-page";
 import { PublicSosPage } from "@/components/public-sos-page";
 import { caseHref, readCaseSelection } from "@/lib/case-selection";
 import { HOUSEHOLD_NEEDS, countCompletedPlanItems } from "@/lib/household-plan";
+import { competitionPagesAvailable } from "@/lib/policy-links";
 import type { PublicMapLocation } from "@/lib/public-location";
+import { PRACTICE_MENU_COPY, type PracticeState } from "@/lib/public-practice-scenarios";
+import { EMPTY_SHELTER_TRIP } from "@/lib/public-shelter-view";
 import type { FeatureCollection } from "@/lib/types";
 import { useDisplayName } from "@/lib/use-display-name";
 import { useHouseholdPlan } from "@/lib/use-household-plan";
 import { useLanguage } from "@/lib/use-language";
 import { usePublicFloodGuardData } from "@/lib/use-public-floodguard-data";
+import { usePublicPractice, type PublicPractice } from "@/lib/use-public-practice";
 
 type PublicPage = "home" | "report" | "shelter" | "prepare" | "sos";
+
+/**
+ * The scenario the Public page opens on where the replay ships: "Normal day" (owner request of 14 Oct 2026), so a
+ * visit starts in the practice replay and not on the map without it.
+ */
+const OPENING_SCENARIO: PracticeState = "normal";
+const PRACTICE_OFF: PublicPractice = { status: "off" };
 
 export function readPublicPage(search: string): PublicPage {
   const value = new URLSearchParams(search).get("tab");
@@ -88,6 +100,21 @@ export function PublicExperience() {
   const [page, setPage] = useState<PublicPage>("home");
   const [researchHref, setResearchHref] = useState("/public-cases/");
   const [homeLocation, setHomeLocation] = useState<PublicMapLocation>();
+  // The practice scenario. It is chosen in the header on any page and stays on from page to page: the Home and
+  // Shelter maps show its hour of the replay, and the other pages say what a household can practise there. It is
+  // kept in this visit only and never written to the saved plan. The replay it reads ships in the competition build
+  // alone, so the public build has no menu for it, and no markers of the places reported as shelters in 2024 on the
+  // Shelter map.
+  const practiceAvailable = competitionPagesAvailable();
+  // `chosen` tells the reader's own choice from the scenario the page opens on.
+  const [practiceChoice, setPracticeChoice] = useState<{ id: PracticeState | null; chosen: boolean }>(() => ({
+    id: practiceAvailable ? OPENING_SCENARIO : null,
+    chosen: false,
+  }));
+  const choosePractice = useCallback((id: PracticeState | null) => setPracticeChoice({ id, chosen: true }), []);
+  const endPractice = useCallback(() => setPracticeChoice({ id: null, chosen: true }), []);
+  // What the reader entered on the Shelter page, kept while they visit another page.
+  const [shelterTrip, setShelterTrip] = useState(EMPTY_SHELTER_TRIP);
   const contentRef = useRef<HTMLElement>(null);
   const { displayName, changeDisplayName } = useDisplayName();
   const {
@@ -102,6 +129,13 @@ export function PublicExperience() {
     clearPlan,
   } = useHouseholdPlan("");
   const th = language === "th";
+  const requestedPractice = usePublicPractice(practiceAvailable ? practiceChoice.id : null, language);
+  // The opening scenario is the page's default, not the reader's choice. When the replay cannot be read (offline
+  // before its files were saved on the device) the page opens on the day without practice, not on a message that
+  // the replay is unavailable; a scenario the reader chose says so.
+  const practice = !practiceChoice.chosen && requestedPractice.status === "unavailable" ? PRACTICE_OFF : requestedPractice;
+  const practiceScenarioId = practice.status === "off" ? null : practiceChoice.id;
+  const practiceView = practice.status === "ready" ? practice.view : undefined;
   const selectedArea = data.publicAreas.find(
     (area) => area.area_id === plan.planning_area_id,
   );
@@ -166,7 +200,8 @@ export function PublicExperience() {
   const prepareAreaNameEn = selectedArea?.area_name_en ?? "";
   const contentClassName = [
     "public-app-content",
-    page === "home" ? "is-home" : "is-scrollable",
+    // Home and Shelter are a map that takes the page; the other pages are a column that scrolls.
+    page === "home" || page === "shelter" ? "is-home" : "is-scrollable",
   ].join(" ");
 
   return (
@@ -178,9 +213,14 @@ export function PublicExperience() {
         needsSummary={needsSummary}
         displayName={displayName}
         onDisplayNameChange={changeDisplayName}
-        locationLabel={homeLocation?.label ?? selectedAreaName}
+        locationLabel={practiceScenarioId
+          ? PRACTICE_MENU_COPY.homePlace[language]
+          : homeLocation?.label ?? selectedAreaName}
         onNavigatePrepare={() => navigate("prepare")}
         onNavigateSos={() => navigate("sos")}
+        practice={practiceAvailable
+          ? { scenarioId: practiceScenarioId, onChange: choosePractice }
+          : undefined}
       />
 
       <div data-app-availability-slot className="public-availability-slot" />
@@ -203,6 +243,10 @@ export function PublicExperience() {
             location={homeLocation}
             onLocationChange={setHomeLocation}
             researchHref={process.env.NEXT_PUBLIC_FLOODGUARD_APP_PROFILE === "public-production" ? undefined : researchHref}
+            practice={practice}
+            onPracticeEnd={endPractice}
+            onNavigatePrepare={() => navigate("prepare")}
+            onNavigateSos={() => navigate("sos")}
           />
         )}
 
@@ -212,6 +256,7 @@ export function PublicExperience() {
             selectedArea={reportArea}
             areas={data.publicAreas}
             onSelectArea={selectPlanningArea}
+            practice={practiceView}
           />
         )}
 
@@ -225,6 +270,10 @@ export function PublicExperience() {
             datasetMode={data.status.dataset_mode}
             plan={plan}
             onNavigatePrepare={() => navigate("prepare")}
+            trip={shelterTrip}
+            onTripChange={setShelterTrip}
+            practice={practice}
+            showShelterHistory={practiceAvailable}
           />
         )}
 
@@ -236,6 +285,11 @@ export function PublicExperience() {
               </h1>
               <p>{th ? "เลือกพื้นที่กว้าง ทบทวนความต้องการและรายการเตรียมพร้อม แล้วเก็บสำเนาไว้ในอุปกรณ์นี้" : "Choose a broad area, review household needs and actions, then keep a copy on this device."}</p>
             </header>
+
+            {/* In a practice scenario: the same hour as on the Home map, and what to practise with the plan. */}
+            {practiceView ? (
+              <PublicPracticeStrip view={practiceView} prompt={practiceView.pages.prepare.prompt} />
+            ) : null}
 
             <section className="public-prepare-area-selector" aria-labelledby="public-prepare-area-title">
               <div>
@@ -287,6 +341,7 @@ export function PublicExperience() {
             hotlines={data.hotlines}
             plan={plan}
             selectedAreaName={selectedAreaName}
+            practice={practiceView}
           />
         )}
       </section>

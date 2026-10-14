@@ -11,6 +11,7 @@ export type PublicAppIconName =
   | "layers"
   | "locate"
   | "pin"
+  | "play"
   | "medical"
   | "menu"
   | "message"
@@ -200,6 +201,12 @@ export function PublicAppIcon({ name, className = "" }: PublicAppIconProps) {
         <>
           <path {...common} d="M4 20h4L19.5 8.5a2.1 2.1 0 0 0-3-3L5 17v3Z" />
           <path {...common} d="m14.5 6.5 3 3" />
+        </>
+      )}
+      {name === "play" && (
+        <>
+          <circle {...common} cx="12" cy="12" r="9" />
+          <path {...common} d="M10 8.4v7.2l5.8-3.6Z" />
         </>
       )}
       {name === "check" && <path {...common} d="m5 12 4 4L19 6" />}

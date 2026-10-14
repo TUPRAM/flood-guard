@@ -221,11 +221,25 @@ try {
   // primary mobile viewport. Home owns the full middle row; the other pages
   // retain device-local interactions and safety boundaries.
   await page.setViewportSize({ width: 390, height: 844 });
+  // The routes above may already have kept the replay's files (the Command exercise replay asks for them). They are
+  // taken out of the cache here, so the check below proves that the Public page asks for them itself.
+  const practiceReplayUrls = readCaseReplay(out).assets.map((asset) => asset.url);
+  await page.evaluate(async (urls) => {
+    const key = (await caches.keys()).find((entry) => /^floodguard-offline-[0-9a-f]{12}$/.test(entry));
+    if (!key) return;
+    const cache = await caches.open(key);
+    await Promise.all(urls.map((url) => cache.delete(url)));
+  }, practiceReplayUrls);
   await page.goto(`${baseUrl}/public/`, { waitUntil: "networkidle" });
   await page.locator('.language-toggle button[lang="en"]').click();
   await waitForFinalVisibleCopy(page, "/public/");
+  await assertPublicOpeningScenario(page);
+  // Once the practice has read its replay online, the page asks the worker to keep the files, so the practice opens
+  // without a connection too (14 Oct 2026).
+  await waitForEvaluated(page, buildCacheHolds, practiceReplayUrls, "the practice replay's files to be kept from the Public page", 60_000);
   await assertCompactPublicShell(page);
   await assertPublicNavigation(page);
+  // Looking for one's own area ends the practice: the checks below are of the day without practice.
   await selectPublicPlanningArea(page, "TH570901", "Mae Sai");
 
   const publicMapScope = await firstVisibleSelector(page, [
@@ -294,16 +308,21 @@ try {
   await page.locator("#public-area-search").fill("");
   await page.setViewportSize({ width: 390, height: 844 });
   await assertPublicPlanningFallback(page, publicMapScope);
-  await page.locator(".public-hazard-button").click();
+  // The banner opens the panel; the separate Hazard Info button was removed on 13 Oct 2026.
+  if (await page.locator(".public-hazard-button").count() !== 0) throw new Error("Public Home still has the Hazard Info button beside the banner.");
+  await page.locator(".public-signal-banner").click();
   const hazardPanel = page.locator("#public-hazard-panel");
   await hazardPanel.waitFor({ state: "visible" });
   const hazardText = await hazardPanel.innerText();
-  for (const required of ["Planning indicator", "Evidence sufficiency", "Source time", "candidate planning indicator", "separate from the selected study case", "non-operational", "DDPM"]) {
+  for (const required of ["Evidence sufficiency", "Source time", "does not measure current water levels", "candidate research", "non-operational", "not an official warning", "DDPM"]) {
     if (!hazardText.includes(required)) {
-      throw new Error(`Public Hazard Info is missing its evidence boundary: ${required}.`);
+      throw new Error(`The panel behind the Public banner is missing its evidence boundary: ${required}.`);
     }
   }
+  // No score on a Public page since 13 Oct 2026: the panel shows neither the indicator nor its value.
+  if (/Planning indicator|\/100/.test(hazardText)) throw new Error("The panel behind the Public banner still shows a planning score.");
   await page.getByRole("button", { name: "Close hazard information" }).click();
+  await assertPublicPractice(page);
 
   await activatePublicPage(page, "report", ".public-report-page");
   // Water depth is a continuous slider now; its band buttons set a
@@ -325,10 +344,7 @@ try {
     "shelter",
     ".public-shelter-page, .public-shelter-view",
   );
-  const shelterText = await page.locator("#main-content").innerText();
-  if (!/DDPM|1784|confirm/iu.test(shelterText)) {
-    throw new Error("The Shelter page lost its official-confirmation boundary.");
-  }
+  await assertPublicShelter(page);
 
   await activatePublicPage(page, "prepare", "#household-plan-builder");
   await page.locator(".household-need-options button").first().click();
@@ -986,6 +1002,11 @@ try {
         await activatePublicPage(page, id, selector);
       }
       await activatePublicPage(page, "home", "#main-content .leaflet-container");
+      // The practice opens without a connection from the files the page kept: "Normal day", not the fallback.
+      await page.waitForFunction(() => (
+        document.querySelector(".public-signal-banner")?.getAttribute("data-tone") === "calm"
+        && document.querySelectorAll("canvas.public-practice-water").length === 1
+      ), undefined, { timeout: 30_000 });
       const offlinePublicMapScope = await firstVisibleSelector(page, [
         ".public-home-page",
         ".public-home-view",
@@ -1466,9 +1487,11 @@ async function assertPublicHomeLayout(page, mapScope) {
     const navigation = document.querySelector(".public-bottom-nav")?.getBoundingClientRect();
     const map = document.querySelector(`${scope} .leaflet-container`)?.getBoundingClientRect();
     const trigger = document.querySelector(".public-profile-trigger")?.getBoundingClientRect();
-    const priorityIndicator = document.querySelector(".public-risk-indicator");
-    const risk = priorityIndicator?.getBoundingClientRect();
-    const hazard = document.querySelector(".public-hazard-button")?.getBoundingClientRect();
+    // The note at the foot of the map, where the priority card stood until 13 Oct 2026.
+    const mapNote = document.querySelector(".public-map-note");
+    const risk = mapNote?.getBoundingClientRect();
+    const banner = document.querySelector(".public-signal-banner")?.getBoundingClientRect();
+    const search = document.querySelector(".public-map-search-field")?.getBoundingClientRect();
     const attribution = document.querySelector(".leaflet-control-attribution")?.getBoundingClientRect();
     const availability = document.querySelector('[data-pwa-availability="true"] > summary')?.getBoundingClientRect();
     const closedAvailability = document.querySelector('[data-pwa-availability="true"]:not([open])')?.getBoundingClientRect();
@@ -1512,16 +1535,19 @@ async function assertPublicHomeLayout(page, mapScope) {
       trigger: trigger ? { width: trigger.width, height: trigger.height } : null,
       navigationTargets: navigationTargets.map(({ width, height }) => ({ width, height })),
       lowerControls: {
-        priority: risk?.toJSON(),
-        priorityContentWidth: priorityIndicator?.scrollWidth,
-        priorityClientWidth: priorityIndicator?.clientWidth,
+        note: risk?.toJSON(),
+        noteContentWidth: mapNote?.scrollWidth,
+        noteClientWidth: mapNote?.clientWidth,
+        // The banner stands directly under the search field (13 Oct 2026); the Hazard Info button is gone.
+        priorityCardCount: document.querySelectorAll(".public-risk-indicator").length,
+        hazardButtonCount: document.querySelectorAll(".public-hazard-button").length,
+        bannerUnderSearch: Boolean(banner && search && banner.top >= search.bottom - 1 && banner.top - search.bottom <= 16),
+        bannerHeight: banner ? Math.round(banner.height) : null,
+        noteAttributionOverlap: overlaps(risk, attribution),
         attribution: attribution?.toJSON(),
         availability: availability?.toJSON(),
         riskNavigationGap: risk && navigation ? navigation.top - risk.bottom : null,
-        hazardNavigationGap: hazard && navigation ? navigation.top - hazard.bottom : null,
-        hazardAttributionOverlap: overlaps(hazard, attribution),
         availabilityRiskOverlap: overlaps(availability, risk),
-        availabilityHazardOverlap: overlaps(availability, hazard),
         availabilityAttributionOverlap: overlaps(availability, attribution),
         availabilityMapControlOverlap: mapControls.some((control) => overlaps(availability, control)),
         availabilitySlot: slot?.toJSON(),
@@ -1563,12 +1589,15 @@ async function assertPublicHomeLayout(page, mapScope) {
     throw new Error("Public bottom navigation contains a touch target smaller than 44px.");
   }
   if (
-    audit.lowerControls.priorityContentWidth > audit.lowerControls.priorityClientWidth + 1
+    audit.lowerControls.noteContentWidth > audit.lowerControls.noteClientWidth + 1
+    || audit.lowerControls.priorityCardCount !== 0
+    || !audit.lowerControls.note
+    || !audit.lowerControls.bannerUnderSearch
+    || audit.lowerControls.hazardButtonCount !== 0
+    || audit.lowerControls.bannerHeight !== 46
+    || audit.lowerControls.noteAttributionOverlap
     || audit.lowerControls.riskNavigationGap < 10
-    || audit.lowerControls.hazardNavigationGap < 10
-    || audit.lowerControls.hazardAttributionOverlap
     || audit.lowerControls.availabilityRiskOverlap
-    || audit.lowerControls.availabilityHazardOverlap
     || audit.lowerControls.availabilityAttributionOverlap
     || audit.lowerControls.availabilityMapControlOverlap
     // The status bar is shown only when something needs attention; when it is shown, it is in its slot.
@@ -1622,8 +1651,7 @@ async function assertCompactMapNotice(page, mapScope, language, label, alsoRequi
       "zoom buttons": `${scope} .leaflet-control-zoom`,
       "locate button": ".public-locate-button",
       "map attribution": `${scope} .leaflet-control-attribution`,
-      "priority card": ".public-risk-indicator",
-      "hazard button": ".public-hazard-button",
+      "map note": ".public-map-note",
       "signal banner": ".public-signal-banner",
       "location card": ".public-location-status",
       "status pill": '[data-pwa-availability="true"] > summary',
@@ -1679,7 +1707,7 @@ async function assertCompactMapNotice(page, mapScope, language, label, alsoRequi
     || folded.lines < 1 || folded.lines > 2 || folded.truncated || folded.height > 64) {
     throw new Error(`The compact map notice is not a short line and one button in one row at ${label} (${language}): ${JSON.stringify(folded)}`);
   }
-  for (const required of ["list button", "search field", "map layers button", "zoom buttons", "locate button", "map attribution", "priority card", "hazard button", ...alsoRequired]) {
+  for (const required of ["list button", "search field", "map layers button", "zoom buttons", "locate button", "map note", "signal banner", ...alsoRequired]) {
     if (!folded.found.includes(required)) throw new Error(`The notice check found no ${required} to compare with at ${label} (${language}).`);
   }
   if (folded.overlaps.length > 0 || !folded.insideMap || folded.scroll > 1) {
@@ -1731,12 +1759,17 @@ async function assertCompactMapNoticeActions(page, mapScope) {
 }
 
 async function assertPublicPlanningFallback(page, mapScope) {
-  const indicator = await page.locator(".public-risk-indicator").innerText();
-  for (const required of ["Historical planning priority", "2024", "Confidence: low", "Verify current conditions"]) {
-    if (!indicator.includes(required)) throw new Error(`Public planning context is missing: ${required}.`);
+  // A day without practice: a grey banner (never the green of an all-clear), the note at the foot of the map, and
+  // no planning score anywhere on the page.
+  const banner = page.locator(".public-signal-banner");
+  if (await banner.getAttribute("data-tone") !== "neutral" || !(await banner.innerText()).includes("No flood reports near you")) {
+    throw new Error(`Public Home banner is not the grey line of a day without practice: ${await banner.innerText()}`);
   }
-  if (/Low risk|High risk/.test(indicator)) {
-    throw new Error("Public historical planning priority is still labelled as current risk.");
+  const note = await page.locator(".public-map-note").innerText();
+  if (!note.includes("not an official warning")) throw new Error(`Public Home note does not say what the page is not: ${note}`);
+  const homeText = await page.locator(".public-home-page").innerText();
+  if (/Low risk|High risk|planning priority|Lower priority|Higher priority/i.test(homeText) || await page.locator(".public-risk-indicator").count() !== 0) {
+    throw new Error("Public Home still shows a planning score or a risk label.");
   }
   await page.locator("#public-area-search").fill("Mae Sai Hospital");
   await page.locator(".public-location-status").filter({ hasText: "Online address search is unavailable" }).waitFor({ state: "visible" });
@@ -1749,6 +1782,418 @@ async function assertPublicPlanningFallback(page, mapScope) {
   await toggleMapListFromKeyboard(page, list);
   if (await page.locator("#public-area-search").inputValue() !== "") {
     throw new Error("Choosing a local planning area did not clear the failed online search.");
+  }
+}
+
+/**
+ * The practice scenarios of the Home map (competition build): chosen from the header, each one changes the banner,
+ * the note, the panel and the map together, and "Today" takes all of it away again. The replay files are read from
+ * this origin, so the check needs no street tiles. Nothing of a scenario is written to the saved plan.
+ */
+async function assertPublicPractice(page) {
+  const selectedBefore = await page.locator(".public-home-page .geo-map-shell").getAttribute("data-selected-area");
+  const choose = async (scenario) => {
+    await page.locator(".public-practice-trigger").click();
+    const list = page.locator("#public-practice-list");
+    await list.waitFor({ state: "visible" });
+    await list.locator(`[data-practice-scenario="${scenario}"]`).click();
+    await list.waitFor({ state: "detached" });
+  };
+  const state = () => page.evaluate(() => ({
+    tone: document.querySelector(".public-signal-banner")?.getAttribute("data-tone"),
+    banner: document.querySelector(".public-signal-banner")?.innerText.trim(),
+    note: document.querySelector(".public-map-note")?.innerText.replace(/\s+/g, " ").trim(),
+    practising: document.querySelector(".public-map-note")?.getAttribute("data-practice"),
+    place: document.querySelector(".public-greeting-location")?.innerText.trim(),
+    water: document.querySelectorAll("canvas.public-practice-water").length,
+    reports: document.querySelectorAll(".public-practice-report").length,
+    // A pin's label fades for a moment after its pin is taken away, so the label is looked for by its words.
+    examplePin: [...document.querySelectorAll(".public-area-pin-label")].some((label) => label.textContent === "Example home"),
+    selected: document.querySelector(".public-home-page .geo-map-shell")?.getAttribute("data-selected-area"),
+    menuItems: document.querySelectorAll("#public-practice-list button").length,
+  }));
+  const settle = (tone, text) => page.waitForFunction(([expectedTone, expectedText]) => {
+    const element = document.querySelector(".public-signal-banner");
+    return element?.getAttribute("data-tone") === expectedTone && element.innerText.includes(expectedText);
+  }, [tone, text], { timeout: 45_000 });
+  // The map's layers follow the banner a moment later (they are drawn after the page has painted, and a label
+  // fades out), so the map is waited for, never looked at once.
+  const mapSettles = async (label, expected) => {
+    const settled = await page.waitForFunction(({ water, reports, examplePin }) => {
+      const reportCount = document.querySelectorAll(".public-practice-report").length;
+      const pinShown = [...document.querySelectorAll(".public-area-pin-label")].some((element) => element.textContent === "Example home");
+      return document.querySelectorAll("canvas.public-practice-water").length === water
+        && (reports === "some" ? reportCount > 0 : reportCount === 0)
+        && pinShown === examplePin;
+    }, expected, { timeout: 15_000 }).then(() => true, () => false);
+    if (!settled) throw new Error(`The practice map did not settle for ${label}: ${JSON.stringify(await state())}`);
+  };
+
+  await page.locator(".public-practice-trigger").click();
+  await page.locator("#public-practice-list").waitFor({ state: "visible" });
+  if ((await state()).menuItems !== 7) throw new Error("The practice menu does not list the seven scenarios alone.");
+  await page.keyboard.press("Escape");
+  await page.locator("#public-practice-list").waitFor({ state: "detached" });
+
+  await choose("cut_off");
+  await settle("danger", "No shelter within walking reach");
+  await mapSettles("the scenario \"cut off\"", { water: 1, reports: "some", examplePin: true });
+  const cutOff = await state();
+  if (
+    cutOff.practising !== "true"
+    || !cutOff.note.includes("Practice replay") || !cutOff.note.includes("12 Sep 2024")
+    || !cutOff.note.includes("not real-time") || !cutOff.note.includes("not an official warning")
+    || !cutOff.place.includes("Example home") || cutOff.selected !== selectedBefore
+  ) {
+    throw new Error(`The practice scenario "cut off" is not shown as one message on the banner, the note and the map: ${JSON.stringify(cutOff)}`);
+  }
+  await page.locator(".public-signal-banner").click();
+  const panel = page.locator("#public-hazard-panel");
+  await panel.waitFor({ state: "visible" });
+  const panelText = (await panel.innerText()).replace(/\s+/g, " ");
+  for (const required of [
+    "Example home in Mae Sai town",
+    "No shelter within walking reach",
+    "of road within 1 km are under 30 cm of water or more",
+    "No shelter reported in use in 2024 can be reached within a 2 km walk on passable roads.",
+    "The model has this home dry.",
+    "invented for the exercise",
+    "Practise:",
+    "Not a real address",
+    "low confidence",
+    "Not real-time and not an official warning",
+    "DDPM",
+  ]) {
+    if (!panelText.includes(required)) throw new Error(`The practice panel is missing: ${required}. It reads: ${panelText}`);
+  }
+  if (/Planning indicator|\/100|planning priority/i.test(panelText)) throw new Error("The practice panel shows a planning score.");
+  await page.getByRole("button", { name: "Close hazard information" }).click();
+
+  // The scenario stays on from page to page, and ends from any of them.
+  await assertPracticeAcrossPages(page);
+
+  // The neighbour that floods, then the day without water: the green tick belongs to this scenario alone.
+  await choose("water_at_home");
+  await settle("danger", "Water has reached this home");
+  await choose("normal");
+  await settle("calm", "No water near this home");
+  // No invented item has arrived on the replay's first day.
+  await mapSettles("the scenario without water", { water: 1, reports: "none", examplePin: true });
+  const calm = await state();
+  if (calm.practising !== "true") throw new Error(`The practice scenario without water lost its note: ${JSON.stringify(calm)}`);
+
+  await endPracticeBySearch(page, "Mae Sai");
+  await settle("neutral", "No flood reports near you");
+  await mapSettles("the end of the practice", { water: 0, reports: "none", examplePin: false });
+  const after = await state();
+  if (after.practising !== null || after.selected !== selectedBefore || after.place.includes("Example home")) {
+    throw new Error(`Ending the practice left something of it on the page, or changed the chosen area: ${JSON.stringify(after)}`);
+  }
+}
+
+/**
+ * Ends the practice the one way the page offers (14 Oct 2026): the reader looks for their own place. A planning area
+ * typed in the search field is found on the device, without a connection.
+ */
+async function endPracticeBySearch(page, areaName) {
+  const search = page.locator("#public-area-search");
+  await search.fill(areaName);
+  await search.press("Enter");
+  await page.waitForFunction(() => {
+    const banner = document.querySelector(".public-signal-banner");
+    return banner?.getAttribute("data-tone") === "neutral"
+      && banner.innerText.includes("No flood reports near you")
+      && document.querySelectorAll("canvas.public-practice-water").length === 0
+      && document.querySelector(".public-practice-menu")?.getAttribute("data-active") !== "true";
+  }, undefined, { timeout: 30_000 });
+}
+
+/**
+ * The Public page opens on the practice scenario "Normal day" where the replay ships (14 Oct 2026): the green banner
+ * of the scenario without water, the note of the replay, the example home in the header, and that scenario pressed
+ * in the menu.
+ */
+async function assertPublicOpeningScenario(page) {
+  await page.waitForFunction(() => {
+    const banner = document.querySelector(".public-signal-banner");
+    return banner?.getAttribute("data-tone") === "calm"
+      && banner.innerText.includes("No water near this home")
+      && document.querySelectorAll("canvas.public-practice-water").length === 1;
+  }, undefined, { timeout: 45_000 });
+  const opening = await page.evaluate(() => ({
+    note: document.querySelector(".public-map-note")?.innerText.replace(/\s+/g, " ").trim() ?? "",
+    practising: document.querySelector(".public-map-note")?.getAttribute("data-practice"),
+    place: document.querySelector(".public-greeting-location")?.innerText.trim() ?? "",
+  }));
+  if (opening.practising !== "true" || !opening.note.includes("Practice replay") || !opening.note.includes("not an official warning") || !opening.place.includes("Example home")) {
+    throw new Error(`The Public page does not open on the practice scenario "Normal day": ${JSON.stringify(opening)}`);
+  }
+  await page.locator(".public-practice-trigger").click();
+  const pressed = await page.locator('#public-practice-list button[aria-pressed="true"]').getAttribute("data-practice-scenario");
+  await page.keyboard.press("Escape");
+  await page.locator("#public-practice-list").waitFor({ state: "detached" });
+  if (pressed !== "normal") throw new Error(`The scenario menu does not show "Normal day" as the scenario shown: ${pressed}`);
+}
+
+/**
+ * A scenario is chosen once and stays on from page to page (13 Oct 2026). The Shelter map shows the same hour of the
+ * replay and says whether the example home still has a walk to a shelter; the pages without a map carry a strip with
+ * the sentence of the Home banner and a question of their own. Called with "Cut off, home dry" on the Home map, and
+ * returns on Home without a scenario.
+ *
+ * Leaving Home with a scenario shown ended in "This page couldn't load" before this check existed: the map was
+ * removed before the scenario's own layers were, and their cleanup then moved a map that was gone.
+ */
+async function assertPracticeAcrossPages(page) {
+  const pageErrors = [];
+  const onPageError = (error) => pageErrors.push(error.message);
+  page.on("pageerror", onPageError);
+  const header = () => page.evaluate(() => ({
+    menu: document.querySelectorAll(".public-practice-trigger").length,
+    place: document.querySelector(".public-greeting-location")?.innerText.trim() ?? "",
+  }));
+  const strip = async (id, readySelector, question) => {
+    await activatePublicPage(page, id, readySelector);
+    const element = page.locator(".public-practice-strip");
+    await element.waitFor({ state: "visible", timeout: 30_000 });
+    const text = (await element.innerText()).replace(/\s+/g, " ");
+    for (const required of ["Practice replay", "not real-time", "not an official warning", "No shelter within walking reach", question]) {
+      if (!text.includes(required)) throw new Error(`The practice strip on the ${id} page is missing: ${required}. It reads: ${text}`);
+    }
+    const shown = await header();
+    // No button on the strip ends the practice (14 Oct 2026).
+    if (await element.locator("button").count() !== 0) throw new Error(`The practice strip on the ${id} page has a button.`);
+    if (await element.getAttribute("data-tone") !== "danger" || shown.menu !== 1 || !shown.place.includes("Example home")) {
+      throw new Error(`The ${id} page does not carry the scenario of the Home map: ${JSON.stringify(shown)}`);
+    }
+  };
+
+  // Shelter: the same hour of the replay on its map, with the places of 2024 over it.
+  await activatePublicPage(page, "shelter", ".public-shelter-page");
+  await page.waitForFunction(() => {
+    const banner = document.querySelector(".public-shelter-page .public-signal-banner");
+    return banner?.getAttribute("data-tone") === "danger"
+      && banner.innerText.includes("No shelter within walking reach")
+      && document.querySelectorAll("canvas.public-practice-water").length === 1
+      && document.querySelectorAll(".public-shelter-site").length === 14
+      && [...document.querySelectorAll(".public-area-pin-label")].some((label) => label.textContent === "Example home");
+  }, undefined, { timeout: 45_000 });
+  const shelterNote = page.locator(".public-shelter-page .public-map-note");
+  const shelterNoteText = (await shelterNote.innerText()).replace(/\s+/g, " ");
+  if (await shelterNote.getAttribute("data-practice") !== "true"
+    || !shelterNoteText.includes("Practice replay")
+    || !shelterNoteText.includes("not an official warning")
+    || !shelterNoteText.includes("Markers: reported as shelters in September 2024")) {
+    throw new Error(`The Shelter note does not say that the map shows a practice replay: ${shelterNoteText}`);
+  }
+  // Two places on the map were first used after the peak, so the walk of the replay does not count them: in a
+  // scenario they are grey, and Wat Mueang Daeng, 630 m from the example home, says why.
+  const notCounted = await page.evaluate(() => [...document.querySelectorAll(".public-shelter-site.is-not-counted")].map((marker) => marker.getAttribute("title") ?? ""));
+  if (notCounted.length !== 2 || !notCounted.some((title) => title.startsWith("Wat Mueang Daeng shelter"))) {
+    throw new Error(`The places the walk does not count are not marked in the scenario: ${JSON.stringify(notCounted)}`);
+  }
+  const onShelter = await header();
+  if (onShelter.menu !== 1 || !onShelter.place.includes("Example home")) {
+    throw new Error(`The Shelter page lost the scenario menu or the example home: ${JSON.stringify(onShelter)}`);
+  }
+  await page.locator(".public-shelter-page .public-signal-banner").click();
+  const sheet = page.locator("#public-shelter-panel");
+  await sheet.waitFor({ state: "visible" });
+  const sheetText = (await sheet.innerText()).replace(/\s+/g, " ");
+  for (const required of [
+    "No shelter reported in use in 2024 can be reached within a 2 km walk on passable roads.",
+    "does not know the water of the replay",
+    "Practise: no place is within walking reach in the model.",
+    "Official source · not counted for the walk",
+    "Not a real address",
+    "Not real-time and not an official warning",
+    "does not know its current capacity or operating status",
+  ]) {
+    if (!sheetText.includes(required)) throw new Error(`The Shelter sheet of the practice scenario is missing: ${required}.`);
+  }
+  await page.keyboard.press("Escape");
+  await sheet.waitFor({ state: "detached" });
+
+  // Report: the strip, and the invented items that have arrived, folded away above the form.
+  await strip("report", ".public-report-page", "Practise: what would others need to know from this home now");
+  if (!(await page.locator(".public-practice-strip").innerText()).includes("is a real note on this device")) {
+    throw new Error("The Report strip does not say that a note saved during the practice is a real note.");
+  }
+  const practiceReports = page.locator(".public-practice-reports");
+  if (!/Practice reports by this hour \([1-9]\d*\)/.test(await practiceReports.locator("summary").innerText())) {
+    throw new Error("The Report page does not count the practice reports that have arrived.");
+  }
+  await practiceReports.locator("summary").click();
+  const practiceReportsText = await practiceReports.innerText();
+  if (!practiceReportsText.includes("Invented for the exercise") || !/EX-\d+/.test(practiceReportsText)) {
+    throw new Error("The practice reports on the Report page are not marked as invented exercise items.");
+  }
+
+  await strip("prepare", "#household-plan-builder", "Practise: what do you have upstairs for a day or more");
+
+  // SOS: the official numbers stay first; the strip under them says that no call is placed.
+  await strip("sos", ".public-sos-page", "Practise: say out loud what you would tell 1784");
+  const sosText = await page.locator("#main-content").innerText();
+  if (sosText.indexOf("Official emergency hotlines") > sosText.indexOf("Practice replay") || !sosText.includes("no call is placed")) {
+    throw new Error("The practice strip on the SOS page stands above the official numbers, or does not say that no call is placed.");
+  }
+
+  // Back on Home the scenario is still shown, with its layers.
+  await activatePublicPage(page, "home", "#main-content .leaflet-container");
+  await page.waitForFunction(() => {
+    const banner = document.querySelector(".public-signal-banner");
+    return banner?.getAttribute("data-tone") === "danger"
+      && banner.innerText.includes("No shelter within walking reach")
+      && document.querySelectorAll("canvas.public-practice-water").length === 1;
+  }, undefined, { timeout: 45_000 });
+
+  // Choosing the scenario shown again keeps it: the menu has no way out of the practice (14 Oct 2026).
+  await page.locator(".public-practice-trigger").click();
+  await page.locator('#public-practice-list [data-practice-scenario="cut_off"]').click();
+  await page.locator("#public-practice-list").waitFor({ state: "detached" });
+  if (await page.locator(".public-signal-banner").getAttribute("data-tone") !== "danger") {
+    throw new Error("Choosing the scenario shown again ended the practice.");
+  }
+  // Looking for one's own place is the way to the day without practice; the strips are gone with it.
+  await endPracticeBySearch(page, "Mae Sai");
+  await activatePublicPage(page, "prepare", "#household-plan-builder");
+  if (await page.locator(".public-practice-strip").count() !== 0) throw new Error("The practice strip stayed after the practice ended.");
+  await activatePublicPage(page, "home", "#main-content .leaflet-container");
+
+  page.off("pageerror", onPageError);
+  if (pageErrors.length > 0) throw new Error(`Moving between the Public pages with a scenario shown raised: ${pageErrors.join(" | ")}`);
+}
+
+/**
+ * The Shelter page (13 Oct 2026): the frame of Home, with the places reported in use as shelters in September 2024
+ * on the map (competition build). A place of that list only fills the destination field: the pin and the line to it
+ * wait for the reader's word that an authority confirmed the destination.
+ */
+async function assertPublicShelter(page) {
+  const scope = ".public-shelter-page";
+  const banner = page.locator(`${scope} .public-signal-banner`);
+  const state = () => page.evaluate((root) => {
+    const shell = document.querySelector(`${root} .geo-map-shell`);
+    const element = document.querySelector(`${root} .public-signal-banner`);
+    return {
+      tone: element?.getAttribute("data-tone"),
+      banner: element?.innerText.trim(),
+      note: document.querySelector(`${root} .public-map-note`)?.innerText.replace(/\s+/g, " ").trim(),
+      field: document.querySelector(`${root} .public-map-search input`)?.value,
+      pin: shell?.getAttribute("data-location-source"),
+      latitude: shell?.getAttribute("data-location-latitude"),
+      markers: document.querySelectorAll(".public-shelter-site").length,
+    };
+  }, scope);
+  const settle = (tone) => page.waitForFunction(([root, expected]) => (
+    document.querySelector(`${root} .public-signal-banner`)?.getAttribute("data-tone") === expected
+  ), [scope, tone], { timeout: 30_000 });
+
+  // The first screen: a grey banner under an empty field, and what the page does not know at the foot of the map.
+  const first = await state();
+  if (first.tone !== "neutral" || first.banner !== "No destination chosen yet" || first.field !== "" || first.pin !== "none") {
+    throw new Error(`The Shelter page does not open with an empty field and a grey banner: ${JSON.stringify(first)}`);
+  }
+  if (!first.note.includes("does not know which place is open today") || !first.note.includes("1784")) {
+    throw new Error(`The Shelter page lost its official-confirmation boundary: ${first.note}`);
+  }
+  if (!(await page.locator(`${scope} .public-map-search button[type="submit"]`).isDisabled())) {
+    throw new Error("The Shelter field offers its next step without a destination.");
+  }
+
+  // The credit of the map data folds away from the Shelter map as it does on Home. It is not removed: the layers
+  // menu repeats it, and the open menu lies inside the map with its labels and the credit in full.
+  const shelterMap = page.locator(`${scope} .geo-map-shell`);
+  await page.waitForFunction((root) => ["shown", "folded"].includes(
+    document.querySelector(`${root} .geo-map-shell`)?.getAttribute("data-map-credit"),
+  ), scope);
+  await shelterMap.locator(".map-basemap-menu > summary").click();
+  const shelterMenu = await page.waitForFunction((root) => {
+    const box = document.querySelector(`${root} .public-shelter-map`)?.getBoundingClientRect();
+    const list = document.querySelector(`${root} .map-basemap-menu > div`)?.getBoundingClientRect();
+    const credit = document.querySelector(`${root} .map-basemap-menu .map-credit`);
+    const creditBox = credit?.getBoundingClientRect();
+    if (!box || !list || !creditBox || creditBox.height === 0) return null;
+    return {
+      credit: credit.textContent,
+      inside: list.left >= box.left - 0.5 && list.right <= box.right + 0.5 && list.top >= box.top - 0.5 && creditBox.bottom <= box.bottom + 0.5,
+      width: Math.round(list.width),
+      labels: [...document.querySelectorAll(`${root} .map-basemap-menu button`)]
+        .every((button) => button.scrollWidth <= button.clientWidth + 1),
+    };
+  }, scope, { timeout: 10_000 }).then((handle) => handle.jsonValue(), () => null);
+  if (!shelterMenu || !shelterMenu.inside || !shelterMenu.credit.includes("OpenStreetMap contributors") || shelterMenu.width < 140 || !shelterMenu.labels) {
+    throw new Error(`The Shelter map's layers menu does not show its choices and the map credit in full: ${JSON.stringify(shelterMenu)}`);
+  }
+  await shelterMap.locator(".map-basemap-menu > summary").click();
+
+  // The places of 2024: 14 of the 18 have a position, and the note says what the markers are.
+  await page.waitForFunction(() => document.querySelectorAll(".public-shelter-site").length === 14, undefined, { timeout: 30_000 });
+  if (!(await state()).note.includes("Markers: reported as shelters in September 2024")) {
+    throw new Error("The Shelter note does not say what the markers on the map are.");
+  }
+  if (await page.locator(".public-shelter-site.is-not-counted").count() !== 0) {
+    throw new Error("Without a scenario the Shelter map marks places as not counted for a walk it does not show.");
+  }
+
+  // The sheet behind the banner. With no destination it leads with the list of 2024 and has no checklist yet.
+  await banner.click();
+  const sheet = page.locator("#public-shelter-panel");
+  await sheet.waitFor({ state: "visible" });
+  const sheetText = await sheet.innerText();
+  for (const required of [
+    "does not know its current capacity or operating status",
+    "Reported as shelters in September 2024",
+    "List compiled on 27 Sep 2026 from public sources; not an official list.",
+    "says nothing about today",
+    "position not known",
+    "Safety disclaimer",
+    "Call DDPM 1784 to confirm",
+  ]) {
+    if (!sheetText.includes(required)) throw new Error(`The Shelter sheet is missing: ${required}.`);
+  }
+  if (sheetText.includes("Step-by-step checklist")) throw new Error("The Shelter sheet shows a checklist before any destination.");
+  if (await sheet.locator(".public-shelter-history li").count() !== 18 || await sheet.locator(".public-shelter-history li button").count() !== 14) {
+    throw new Error("The Shelter sheet does not list the 18 places of 2024, 14 of them with a position.");
+  }
+
+  // Taking a place fills the field and asks for the confirmation; nothing is drawn yet.
+  await sheet.locator(".public-shelter-history li").filter({ hasText: "Wat Tham Pha Chom shelter" }).locator("button").click();
+  await settle("watch");
+  const taken = await state();
+  const use = sheet.locator(".public-shelter-primary-action");
+  if (taken.field !== "Wat Tham Pha Chom shelter" || taken.banner !== "Not confirmed yet: Wat Tham Pha Chom shelter" || taken.pin !== "none" || !(await use.isDisabled())) {
+    throw new Error(`A place of 2024 was used as a destination without the reader's confirmation: ${JSON.stringify(taken)}`);
+  }
+  const confirmText = await sheet.innerText();
+  if (!confirmText.includes("Reported in use as a shelter in September 2024. Official source.") || !confirmText.includes("Step-by-step checklist")) {
+    throw new Error("The Shelter sheet does not show the place's record and the checklist once a destination is in the field.");
+  }
+
+  // The reader's word that an authority confirmed it: the sheet makes way for the map, the pin stands on the place.
+  await sheet.locator(".public-shelter-destination__confirmation input").check();
+  await use.click();
+  await sheet.waitFor({ state: "detached" });
+  await settle("easing");
+  await page.waitForFunction((root) => (
+    document.querySelector(`${root} .geo-map-shell`)?.getAttribute("data-location-latitude") === "20.4418139"
+  ), scope);
+  const used = await state();
+  if (!/^(?:Walking route|Straight line|Destination set)/.test(used.banner) || !used.banner.includes("Wat Tham Pha Chom shelter")) {
+    throw new Error(`The Shelter banner does not name the destination in use: ${used.banner}`);
+  }
+  await banner.click();
+  await sheet.waitFor({ state: "visible" });
+  if (!(await sheet.innerText()).includes("Travel mode")) throw new Error("The Shelter sheet does not show the facts of the destination in use.");
+  await page.keyboard.press("Escape");
+  await sheet.waitFor({ state: "detached" });
+
+  // A change in the field withdraws the destination, its pin and its confirmation.
+  await page.locator(`${scope} .public-map-search input`).fill("");
+  await settle("neutral");
+  const cleared = await state();
+  if (cleared.pin !== "none" || cleared.banner !== "No destination chosen yet") {
+    throw new Error(`Clearing the Shelter field left the destination in use: ${JSON.stringify(cleared)}`);
   }
 }
 
@@ -1880,8 +2325,11 @@ function requiredFinalCopy(routePath) {
     : routePath === "/public/"
       // The Public header now shows the FloodGuard logo image instead of a text
       // wordmark, so the brand is no longer body text here. The nav labels and
-      // Hazard Info still prove the finished Public UI rendered.
-      ? ["hazard info", "report", "shelter", "prepare", "sos", "candidate", "non-operational", "lower priority", "higher priority"]
+      // banner still prove the finished Public UI rendered. Since 13 Oct 2026 the first screen has no priority card
+      // and no Hazard Info button: its words are the banner and the note at the foot of the map. Since 14 Oct 2026
+      // the page opens on the practice scenario "Normal day"; without its replay files (offline before they were
+      // saved) it opens on the grey banner of a day without practice. Either banner will do (a list is "one of").
+      ? ["report", "shelter", "prepare", "sos", ["no water near this home", "no flood reports near you"], "not an official warning"]
       : routePath === "/command/planning/"
         ? ["planning overview", "candidate", "accepted fpps and action class remain unavailable"]
         : routePath === "/studio/"
@@ -1899,7 +2347,7 @@ async function waitForFinalVisibleCopy(page, routePath) {
     .waitForFunction(
       (phrases) => {
         const text = document.body.innerText.toLocaleLowerCase("en-US");
-        return phrases.every((phrase) => text.includes(phrase));
+        return phrases.every((phrase) => (Array.isArray(phrase) ? phrase.some((one) => text.includes(one)) : text.includes(phrase)));
       },
       requiredFinalCopy(routePath),
       { timeout: 10_000 },
@@ -1912,8 +2360,9 @@ function assertFinalVisibleCopy(body, routePath) {
   const normalized = body.toLocaleLowerCase("en-US");
   const required = requiredFinalCopy(routePath);
   for (const phrase of required) {
-    if (!normalized.includes(phrase)) {
-      throw new Error(`${routePath} is missing polished final copy: ${phrase}.`);
+    const present = Array.isArray(phrase) ? phrase.some((one) => normalized.includes(one)) : normalized.includes(phrase);
+    if (!present) {
+      throw new Error(`${routePath} is missing polished final copy: ${Array.isArray(phrase) ? phrase.join(" or ") : phrase}.`);
     }
   }
   const forbidden = routePath === "/"

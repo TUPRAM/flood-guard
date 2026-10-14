@@ -268,6 +268,15 @@ try {
   await page.locator('[data-pwa-availability="true"]').waitFor({ state: "hidden" });
   await page.goto(`${baseUrl}/public/`, { waitUntil: "domcontentloaded" });
   await page.locator("main.public-page").waitFor({ state: "visible" });
+  // On a Public page a waiting update shows no bar by itself (13 Oct 2026): the page marks it for the dot on the
+  // profile button, and the panel is asked for as the profile menu's entry does. The bar may still be there for
+  // another reason (this run has no map background), and then it says that reason, never only "App online".
+  await page.waitForFunction(() => document.documentElement.dataset.appUpdate === "available");
+  const barLabel = await page.evaluate(() => (
+    document.querySelector('[data-app-availability-slot] [data-pwa-availability="true"] > summary')?.textContent?.trim() ?? null
+  ));
+  if (barLabel === "App online") throw new Error("A waiting update alone shows the status bar on a Public page.");
+  await showAppStatus(page);
   await page.waitForFunction(() => (
     document.querySelector('[data-pwa-availability="true"]')?.textContent?.includes("Install available update")
     && !document.querySelector('[data-pwa-availability="true"]')?.textContent?.includes("app pages saved offline")

@@ -1,0 +1,167 @@
+{
+ "schema": "floodguard.nan_case_post_test_reasons.v1",
+ "case_id": "nan_case_v1",
+ "generated_at_utc": "2026-10-14T21:34:22Z",
+ "source_timestamp": "Nan passes 2025-07-28T11:20:49Z (Sentinel-1C) and 2025-07-31T23:08:03Z (Sentinel-1A); JAXA ALOS-2 map of 2025-07-28 (its files give no time with a zone); THEOS-2 2025-07-31",
+ "confidence_class": "low",
+ "confidence_basis": "Counts of the frozen map's own reason codes on one event; the references are other maps, not ground checks.",
+ "report_only": true,
+ "binds_nothing": true,
+ "counted_after_the_test": true,
+ "official_warning": false,
+ "operational_status": "non_operational",
+ "what_this_is": "Why M1-z flags or does not flag the cells of three reference sets, by its frozen reason band, counted after test 1 of record and the first run. Figures only.",
+ "assumptions": [
+  "The reason band is reason_central of the maps-stage map; terrain reasons are the same at the three levels.",
+  "Compared cells, the dry chip's answered cells and test 2's water are formed by the frozen code exactly as in the test records, and each count is checked against its record before this file is written.",
+  "HAND is the terrain lane's HAND of the frame (from Copernicus DEM GLO-30, a surface model); cells without a value are left out."
+ ],
+ "read_from": {
+  "test_1_of_record": {
+   "path": "outputs/nan_case/test_1_jaxa_v1.json",
+   "sha256": "a823139f833bfcc6d54c8543e3fc596f5c9f172bb990e9e23d9dfc3362e8ce06"
+  },
+  "first_run": {
+   "path": "outputs/nan_case/test_result_v1.json",
+   "sha256": "6f67d4e37d8a98d28b5a48e19a88263122a2540ffd2b2aed46b55dd9200eab89"
+  },
+  "frozen_code": {
+   "src/floodguard/m1z.py": "17ff735d766638d17386dd72ab3c938affdd46c3f30a4f5cb38b3547960108ed",
+   "scripts/nan_case_method.py": "32e68b0ce94ad631c6efa11be87ffedd2b41aa6e3fa55aaf0164fa5643651549"
+  },
+  "this_script": {
+   "path": "scripts/nan_case_post_test_reasons.py",
+   "sha256": "cee4af8945fb0c84a40db918ef881490e2404310e71d3b372819b54fa5167eaa"
+  }
+ },
+ "test_1_jaxa_water": {
+  "pass": "20250728T1120_o99_S1C",
+  "map": {
+   "name": "m1z_20250728T1120_o99_S1C.tif",
+   "sha256": "c008c205c189223cf3c8fc6493a9bd3831c6673ddfe2497be3ee6b77cb4d6ac2"
+  },
+  "which_cells": "JAXA FLDEXT water of 2025-07-28 on the compared cells of test 1 of record",
+  "reasons_on_jaxa_water": {
+   "cells": 56355,
+   "counts": {
+    "flagged": 16953,
+    "not_flagged_radar_dry": 6092,
+    "not_flagged_group_of_fewer_than_2_cells_dropped": 152,
+    "not_flagged_terrain_hand_above_the_limit": 24365,
+    "not_flagged_terrain_slope_5_degrees_or_more": 3659,
+    "no_answer_built_up_at_low_hand": 395,
+    "no_answer_tree_cover_at_low_hand": 4739
+   },
+   "shares": {
+    "flagged": 0.300825,
+    "not_flagged_radar_dry": 0.1081,
+    "not_flagged_group_of_fewer_than_2_cells_dropped": 0.002697,
+    "not_flagged_terrain_hand_above_the_limit": 0.432349,
+    "not_flagged_terrain_slope_5_degrees_or_more": 0.064928,
+    "no_answer_built_up_at_low_hand": 0.007009,
+    "no_answer_tree_cover_at_low_hand": 0.084092
+   }
+  },
+  "reasons_on_jaxa_water_by_kind": {
+   "answered_by_terrain": 28024,
+   "decided_by_the_radar": 23197,
+   "no_answer": 5134
+  },
+  "hand_on_jaxa_water": {
+   "cells_with_a_value": 56355,
+   "share_above_the_limit": 0.445089,
+   "median_m": 4.21,
+   "limit_m": 5.0
+  }
+ },
+ "dry_chip": {
+  "chip": "nan_chip_001",
+  "which_cells": "answered cells of the chip, permanent water left out (the dry control's cells)",
+  "first_run_pass_20250731T2308_o62_S1A": {
+   "cells": 21408,
+   "counts": {
+    "flagged": 8,
+    "not_flagged_radar_dry": 249,
+    "not_flagged_group_of_fewer_than_2_cells_dropped": 5,
+    "not_flagged_terrain_hand_above_the_limit": 2092,
+    "not_flagged_terrain_slope_5_degrees_or_more": 19054
+   },
+   "shares": {
+    "flagged": 0.000374,
+    "not_flagged_radar_dry": 0.011631,
+    "not_flagged_group_of_fewer_than_2_cells_dropped": 0.000234,
+    "not_flagged_terrain_hand_above_the_limit": 0.09772,
+    "not_flagged_terrain_slope_5_degrees_or_more": 0.890041
+   },
+   "by_kind": {
+    "answered_by_terrain": 21146,
+    "decided_by_the_radar": 262,
+    "no_answer": 0
+   },
+   "flagged_share_of_cells_the_radar_decided": 0.030534,
+   "terrain_share": 0.987762,
+   "map": {
+    "name": "m1z_20250731T2308_o62_S1A.tif",
+    "sha256": "c22c11c2d40118f470e2cc8176221d2cb2db78131b8dd427b31317fdcb849adb"
+   }
+  },
+  "test_1_pass_20250728T1120_o99_S1C": {
+   "cells": 21408,
+   "counts": {
+    "flagged": 8,
+    "not_flagged_radar_dry": 252,
+    "not_flagged_group_of_fewer_than_2_cells_dropped": 2,
+    "not_flagged_terrain_hand_above_the_limit": 2092,
+    "not_flagged_terrain_slope_5_degrees_or_more": 19054
+   },
+   "shares": {
+    "flagged": 0.000374,
+    "not_flagged_radar_dry": 0.011771,
+    "not_flagged_group_of_fewer_than_2_cells_dropped": 9.3e-05,
+    "not_flagged_terrain_hand_above_the_limit": 0.09772,
+    "not_flagged_terrain_slope_5_degrees_or_more": 0.890041
+   },
+   "by_kind": {
+    "answered_by_terrain": 21146,
+    "decided_by_the_radar": 262,
+    "no_answer": 0
+   },
+   "flagged_share_of_cells_the_radar_decided": 0.030534,
+   "terrain_share": 0.987762
+  },
+  "note": "The radar decides only the cells terrain does not answer; the flagged share of the cells the radar decided is given beside the dry control's share of all answered cells."
+ },
+ "test_2_theos2_water": {
+  "chip": "nan_chip_003",
+  "which_cells": "THEOS-2 rule v2 water on the compared cells of test 2 (permanent water left out)",
+  "pass": "20250731T2308_o62_S1A",
+  "cells": 9184,
+  "counts": {
+   "flagged": 599,
+   "not_flagged_radar_dry": 643,
+   "not_flagged_group_of_fewer_than_2_cells_dropped": 41,
+   "not_flagged_terrain_hand_above_the_limit": 5814,
+   "not_flagged_terrain_slope_5_degrees_or_more": 1100,
+   "no_answer_built_up_at_low_hand": 235,
+   "no_answer_tree_cover_at_low_hand": 752
+  },
+  "shares": {
+   "flagged": 0.065222,
+   "not_flagged_radar_dry": 0.070013,
+   "not_flagged_group_of_fewer_than_2_cells_dropped": 0.004464,
+   "not_flagged_terrain_hand_above_the_limit": 0.633057,
+   "not_flagged_terrain_slope_5_degrees_or_more": 0.119774,
+   "no_answer_built_up_at_low_hand": 0.025588,
+   "no_answer_tree_cover_at_low_hand": 0.081882
+  },
+  "by_kind": {
+   "answered_by_terrain": 6914,
+   "decided_by_the_radar": 1283,
+   "no_answer": 987
+  },
+  "flagged_share_of_cells_the_radar_decided": 0.466875,
+  "terrain_share": 0.752831
+ },
+ "rights_note": "Counts and shares only; no JAXA- or GFM-derived raster, map or per-tambon table. JAXA map: Provided by JAXA (Sentinel Asia).",
+ "words": "Agreement with other maps and reason codes of our own map, counted after the test; report only."
+}

@@ -123,6 +123,24 @@ def test_the_map_draws_a_binding_class_solid_and_a_would_be_class_striped() -> N
     assert info["units_labelled"] == 4 and info["metres_per_pixel"] == pytest.approx(20.0 * 70 / 350)
 
 
+def test_a_binding_e_without_a_score_is_drawn_light_not_solid() -> None:
+    lookup, classes = lookup_and_classes()
+    classes["FX-N-04"] = {**classes["FX-N-04"], "confidence": "low", "score": None}
+    image, _info = slide.render_map(invented_units(), lookup, classes, max_size=(350, 300))
+    pixel = tuple(int(value) for value in np.asarray(image)[int(45 * 5), int(65 * 5)])
+    assert pixel == slide.light(slide.CLASS_RGB["E"]) != slide.CLASS_RGB["E"]
+    assert slide.no_score(classes["FX-N-04"]) and not slide.no_score(classes["FX-N-01"])
+
+
+def test_the_test_of_record_card_names_the_reference_without_its_layers() -> None:
+    found = outcome(passed=False)
+    found.update(reference="JAXA ALOS-2 Flood Proxy Map of 2025-07-28 (layer FLDEXT as water, inside layer REGION)",
+                 of_record_under="amendment 2 of the protocol (decision log R53)")
+    cards = slide.cards_of(found)
+    assert cards[0]["line_1"] == "IoU with JAXA ALOS-2 Flood Proxy Map of 2025-07-28"
+    assert cards[0]["line_2"].endswith("inside the strip it observed") and cards[1]["line_2"].endswith("(first run)")
+
+
 def test_a_unit_without_a_row_or_a_raster_without_units_is_refused() -> None:
     lookup, classes = lookup_and_classes()
     del classes["FX-N-03"]
@@ -169,7 +187,8 @@ def test_the_words_follow_the_outcome_of_the_test() -> None:
     assert "81% of 118 labelled points" in cards[2]["small"] and "NOT BINDING" in cards[2]["tag"]
     sources, caution = slide.footer_of(passed, "planning_result_n1_nan_v1.json")
     assert "Provided by JAXA" in sources and "no map drawn" in sources
-    assert caution.startswith("Agreement with another map, not accuracy.") and "not an official warning" in caution
+    assert caution.startswith("Agreement with another map, not a ground check.") and "not an official warning" in caution
+    assert "not real-time" in caution and "Contains modified Copernicus Sentinel data (2025)" in sources
 
     failed = outcome(passed=False)
     assert slide.headline_of(failed).startswith("Our own radar map fell short")
@@ -221,7 +240,7 @@ def test_the_slide_is_one_16_9_png_that_carries_its_record(tmp_path: Path) -> No
         pixels = np.asarray(image.convert("RGB"))
     assert text["generated_at_utc"] == "2026-10-21T00:00:00Z" and text["source_timestamp"] == "2025-07-28T11:21:00Z"
     assert text["confidence_class"] == "low" and text["official_warning"] == "false" and text["operational_status"] == "non_operational"
-    assert any("not accuracy" in item for item in json.loads(text["assumptions"]))
+    assert any("not a ground check" in item for item in json.loads(text["assumptions"]))
     made_from = json.loads(text["made_from"])
     assert made_from["unit_raster"]["sha256"] == hashlib.sha256(raster.read_bytes()).hexdigest()
     assert made_from["result_file"]["sha256"] == hashlib.sha256(result.read_bytes()).hexdigest()

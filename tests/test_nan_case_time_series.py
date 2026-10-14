@@ -444,6 +444,40 @@ def test_passes_of_the_radar_record_without_a_map_are_listed(case: Any) -> None:
     assert [item["map"]["in_the_maps_index"] for item in record["passes"]] == [True, False, False]
 
 
+def test_test_1_of_record_names_the_flood_input_of_case_n1(case: Any) -> None:
+    """Amendment 2: when test 1 of record exists, its binding names the N1 input, not the first run's."""
+
+    write_json(case.root / ts.TEST_1_OF_RECORD, {"binding": {"flood_input_of_case_N1": {"label": LABEL_A}}})
+    record = ts.build(case, generated_at="2026-10-15T01:00:00Z", git_commit="0" * 40)
+    assert [item["is_the_flood_input_of_case_N1"] for item in record["passes"]] == [True, False, False]
+    assert record["order"]["flood_input_of_case_N1_from"]["path"] == ts.TEST_1_OF_RECORD
+    assert record["order"]["flood_input_of_case_N1"] == LABEL_A
+    assert record["order"]["test_result"]["path"] == ts.TEST_RESULT
+
+
+def _entry(label: str, orbit: int, seen: float) -> dict[str, Any]:
+    return {"pass": label, "relative_orbit": orbit,
+            "coverage": {"radar_value_share_of_frame_land_not_answered_by_terrain": seen}}
+
+
+def test_the_comparison_groups_leave_out_a_pass_that_sees_almost_nothing() -> None:
+    passes = [_entry("p1", 62, 1.0), _entry("p2", 135, 0.0005), _entry("p3", 99, 0.98), _entry("p4", 62, 1.0)]
+    groups = ts.comparison_groups(passes)
+    assert list(groups) == ["every pass", ts.SEEN_GROUP, "relative orbit 62", "relative orbit 135", "relative orbit 99"]
+    assert groups[ts.SEEN_GROUP] == ["p1", "p3", "p4"] and groups["every pass"] == ["p1", "p2", "p3", "p4"]
+    # No extra group when it would repeat another one.
+    assert ts.SEEN_GROUP not in ts.comparison_groups([_entry("p1", 62, 1.0), _entry("p2", 135, 0.0), _entry("p4", 62, 1.0)])
+    assert ts.SEEN_GROUP not in ts.comparison_groups([_entry("p1", 62, 1.0), _entry("p3", 99, 0.98)])
+
+
+def test_the_chart_notes_say_which_passes_see_almost_nothing() -> None:
+    lines = ts.chart_coverage_notes([_entry("p1", 62, 1.0), _entry("p2", 135, 0.0005), _entry("p3", 99, 0.98)])
+    assert len(lines) == 2 and "99, 135, 172" in lines[0]
+    assert lines[1].startswith("Orbit 135: radar on under 1% ") and "no observation" in lines[1]
+    assert len(ts.chart_coverage_notes([_entry("p1", 62, 1.0)])) == 1
+    assert ts.under_axis_share(0.0005) == "<1%" and ts.under_axis_share(0.9826) == "98%" and ts.under_axis_share(None) is None
+
+
 def test_the_stage_refuses_before_the_test_and_writes_nothing(case: Any) -> None:
     (case.root / ts.TEST_RESULT).unlink()
     with pytest.raises(ts.TimeSeriesError, match="order rule"):

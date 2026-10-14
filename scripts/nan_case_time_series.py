@@ -21,8 +21,10 @@ and lower / upper), the share of land flagged, the no-answer share, the modelled
 chain, ``floodguard.nan_case_chain.grid_values_at``), the pass time in UTC and Thai time, its platform and relative
 orbit and the share of the frame it covers. Passes on partial footprints (relative orbits 99, 135 and 172, or a
 catalogue footprint under 0.99 of the grid) are labelled with their coverage, and the frame figures are also given
-on the land that every pass of one orbit (and every pass) sees with radar, so that a rise or fall is not read as
-water when it is coverage. The gauge levels at the pass times are set beside them.
+on the land that every pass of one orbit, every pass that sees at least half the land terrain does not answer, and
+every pass see with radar, so that a rise or fall is not read as water when it is coverage. The gauge levels at the
+pass times are set beside them. The pass marked as the flood input of case N1 is the one test 1 of record names
+(``outputs/nan_case/test_1_jaxa_v1.json``, amendment 2), or the first run's when that record does not exist.
 
 Outputs: ``outputs/nan_case/time_series_v1.json`` (figures only, in Git) and a small chart
 ``outputs/nan_case/time_series_v1.png`` (PIL). The stage refuses unless the test record
@@ -94,6 +96,10 @@ RADAR_RECORD = "outputs/nan_case/radar_passes_nan_frame_v1.json"
 NEWS_RECORD = "outputs/nan_case/news_records_v1.json"
 FREEZE = "outputs/nan_case/freeze_v1.json"
 TEST_RESULT = "outputs/nan_case/test_result_v1.json"
+TEST_1_OF_RECORD = "outputs/nan_case/test_1_jaxa_v1.json"
+"""Test 1 of record under amendment 2 (decision log R53). When it exists, its ``binding`` names the flood input of
+case N1 (the pass of 28 July 2025); the first run's record (:data:`TEST_RESULT`) is read only when it does not."""
+AMENDMENT_2 = "docs/proposal_execution/nan_case_protocol_v1_amendment_2.json"
 OUT_JSON = "outputs/nan_case/time_series_v1.json"
 OUT_PNG = "outputs/nan_case/time_series_v1.png"
 CASE = Path("proposal_execution") / "nan_case_v1"
@@ -115,6 +121,11 @@ CELL_KM2 = m1z.CELL_M * m1z.CELL_M / 1e6
 PARTIAL_FOOTPRINT_ORBITS: tuple[int, ...] = (99, 135, 172)
 """The relative orbits whose footprints cover only part of the frame grid (radar record of the frame)."""
 FULL_FOOTPRINT_MIN_SHARE = 0.99
+SEEN_GROUP_MIN_SHARE = 0.5
+SEEN_GROUP = "every pass with radar on at least half the land terrain does not answer"
+"""A group of the common radar land across orbits: the passes whose radar has a value on at least
+:data:`SEEN_GROUP_MIN_SHARE` of the frame land that terrain does not answer. A pass that sees almost none of it
+(orbit 135 on the Nan frame) would leave only terrain-answered land in the group of every pass."""
 PASS_MATCH_MINUTES = 60
 THAI = timezone(timedelta(hours=7))
 GAUGE_INTERPOLATION_MAX_GAP_MINUTES = 180
@@ -723,7 +734,7 @@ def coverage_record(orbit: int | None, entry: Mapping[str, Any] | None, radar_va
     if partial:
         text = (f"partial footprint: the pass's scenes cover {grid_share} of the frame grid (catalogue) and the radar has a "
                 f"value on {seen} of the frame land that terrain does not answer; its totals are not comparable with passes "
-                "of other orbits, only with passes of its own orbit or on the land every pass sees")
+                "of other orbits, only with passes of its own orbit or on the common radar land of a group")
     else:
         text = (f"full footprint: the pass's scenes cover {grid_share} of the frame grid (catalogue); the radar has a value on "
                 f"{seen} of the frame land that terrain does not answer")
@@ -768,6 +779,35 @@ def common_area_figures(groups: Mapping[str, Sequence[str]], masks: Mapping[str,
                         "common_land_share_of_frame_land": share(common_cells, int(land.sum())),  # type: ignore[union-attr]
                         "by_pass": by_pass}
     return result
+
+
+def comparison_groups(passes: Sequence[Mapping[str, Any]]) -> dict[str, list[str]]:
+    """The groups of passes whose common radar land :func:`common_area_figures` measures.
+
+    Every pass; the passes that see most of the land terrain does not answer (:data:`SEEN_GROUP`, only when it holds
+    two passes or more and differs from every other group); and the passes of each relative orbit.
+
+    Args:
+        passes: The pass entries of the record (``pass``, ``relative_orbit`` and ``coverage``), in time order.
+    """
+
+    orbits: dict[str, list[str]] = {}
+    for item in passes:
+        orbits.setdefault(f"relative orbit {item['relative_orbit']}", []).append(item["pass"])
+    groups: dict[str, list[str]] = {"every pass": [item["pass"] for item in passes]}
+    seen = [item["pass"] for item in passes
+            if ((item.get("coverage") or {}).get("radar_value_share_of_frame_land_not_answered_by_terrain") or 0.0) >= SEEN_GROUP_MIN_SHARE]
+    if len(seen) > 1 and all(seen != labels for labels in (*groups.values(), *orbits.values())):
+        groups[SEEN_GROUP] = seen
+    return {**groups, **orbits}
+
+
+def under_axis_share(share_value: float | None) -> str | None:
+    """The radar share printed under a partial pass in the chart: a whole percent, or "<1%" for a share under 0.01."""
+
+    if share_value is None:
+        return None
+    return "<1%" if share_value < 0.01 else f"{share_value:.0%}"
 
 
 def pack_masks(masks: Mapping[str, np.ndarray]) -> dict[str, Any]:
@@ -1027,9 +1067,10 @@ def draw_chart(path: Path, passes: Sequence[Mapping[str, Any]], gauges: Mapping[
 
     Args:
         path: The PNG to write.
-        passes: One dict per pass: ``time`` (Thai wall clock), ``orbit``, ``partial``, ``footprint`` (share of the
-            grid or ``None``), ``lower``, ``central``, ``upper`` (km2, or ``None`` when there is no map) and ``mark``
-            (a short text under the marker, or ``None``).
+        passes: One dict per pass: ``time`` (Thai wall clock), ``orbit``, ``partial``, ``footprint`` (the share of
+            the frame land not answered by terrain where the pass's radar has a value, or ``None``), ``lower``,
+            ``central``, ``upper`` (km2, or ``None`` when there is no map) and ``mark`` (a short text under the marker,
+            or ``None``).
         gauges: Station -> (Thai wall-clock time, level minus the bank level in m), in time order.
         window: First and last Thai wall-clock time of the axis.
         title: The title line.
@@ -1104,11 +1145,11 @@ def draw_chart(path: Path, passes: Sequence[Mapping[str, Any]], gauges: Mapping[
                 draw.line([(x - 5 * SCALE, y_a(value)), (x + 5 * SCALE, y_a(value))], fill=colour, width=2 * SCALE)
         y = y_a(item["central"])
         _marker(draw, shape, x, y, 6 * SCALE, colour, bool(item.get("partial")))
-    # Under the axis: the footprint share of each partial pass, then the mark of a pass (the case N1 input).
+    # Under the axis: the radar share of each partial pass, then the mark of a pass (the case N1 input).
     for item in passes:
         x = x_of(item["time"])
-        if item.get("partial") and item.get("footprint") is not None:
-            text = f"{item['footprint']:.0%}"
+        text = under_axis_share(item.get("footprint")) if item.get("partial") else None
+        if text is not None:
             draw.text((x - draw.textlength(text, font=f_small) / 2, bottom_a + 8 * SCALE), text, font=f_small, fill=INK_2)
         if item.get("mark") and item.get("central") is not None:
             draw.text((x - draw.textlength(item["mark"], font=f_small) / 2, bottom_a + 26 * SCALE), item["mark"], font=f_small, fill=INK_2)
@@ -1124,9 +1165,8 @@ def draw_chart(path: Path, passes: Sequence[Mapping[str, Any]], gauges: Mapping[
     y = legend_y + (36 + 24 * len(shown)) * SCALE
     _marker(draw, "circle", legend_x + 8 * SCALE, y + 8 * SCALE, 6 * SCALE, INK_2, True)
     draw.text((legend_x + 22 * SCALE, y), "hollow: partial", font=f_small, fill=INK)
-    draw.text((legend_x + 22 * SCALE, y + 18 * SCALE), "footprint; % under", font=f_small, fill=INK)
-    draw.text((legend_x + 22 * SCALE, y + 36 * SCALE), "the axis: share of", font=f_small, fill=INK)
-    draw.text((legend_x + 22 * SCALE, y + 54 * SCALE), "the grid it covers", font=f_small, fill=INK)
+    for row, text in enumerate(("footprint; % under", "the axis: share of", "the land terrain", "does not answer", "that its radar sees")):
+        draw.text((legend_x + 22 * SCALE, y + 18 * (row + 1) * SCALE), text, font=f_small, fill=INK)
 
     # Panel B: gauge levels against the bank level.
     draw.text((left, top_b - 34 * SCALE), f"Nan River gauges, thaiwater.net: level minus the station's {bank_name} field (m)",
@@ -1185,12 +1225,28 @@ def draw_chart(path: Path, passes: Sequence[Mapping[str, Any]], gauges: Mapping[
     else:
         draw.text((left + 20 * SCALE, (top_b + bottom_b) / 2), "No gauge series was found.", font=f_text, fill=INK_2)
     for row, text in enumerate(notes):
-        draw.text((left, bottom_b + (54 + 18 * row) * SCALE), text, font=f_small, fill=INK_2)
+        draw.text((left, bottom_b + (52 + 16 * row) * SCALE), text, font=f_small, fill=INK_2)
     final = image.resize((width // SCALE, height // SCALE), Image.Resampling.LANCZOS)
     path.parent.mkdir(parents=True, exist_ok=True)
     final.save(path, format="PNG", optimize=True)
     data = path.read_bytes()
     return {"bytes": len(data), "sha256": sha256_bytes(data), "width": final.width, "height": final.height}
+
+
+def chart_coverage_notes(passes: Sequence[Mapping[str, Any]]) -> list[str]:
+    """The first note lines of the chart: how to read a hollow marker, and the passes whose radar sees almost nothing."""
+
+    lines = ["Hollow marker: a partial footprint (relative orbits " + ", ".join(str(orbit) for orbit in PARTIAL_FOOTPRINT_ORBITS)
+             + "); its total misses the land its radar does not see. Compare passes of one orbit."]
+    blind = [item for item in passes
+             if (item["coverage"].get("radar_value_share_of_frame_land_not_answered_by_terrain") or 0.0) < SEEN_GROUP_MIN_SHARE]
+    if blind:
+        orbits = sorted({int(item["relative_orbit"]) for item in blind})
+        most = max(float(item["coverage"].get("radar_value_share_of_frame_land_not_answered_by_terrain") or 0.0) for item in blind)
+        seen = "under 1%" if most < 0.01 else f"at most {most:.0%}"
+        lines.append(("Orbit " if len(orbits) == 1 else "Orbits ") + ", ".join(str(orbit) for orbit in orbits)
+                     + f": radar on {seen} of the land terrain does not answer, so its total is no observation, not dry land.")
+    return lines
 
 
 def chart_gauge_points(series: Mapping[str, Sequence[Reading]], stations: Sequence[Mapping[str, Any]]) -> dict[str, list[tuple[datetime, float]]]:
@@ -1293,7 +1349,13 @@ def build(paths: Paths, *, generated_at: str | None = None, git_commit: str | No
     freeze_sha256 = sha256_file(freeze_path)
     freeze = read_json(freeze_path)
     test_record = read_json(test_path)
-    flood_input = (test_record.get("binding") or {}).get("flood_input_of_case_N1") or {}
+    binding_path = paths.root / TEST_1_OF_RECORD
+    if binding_path.is_file():   # amendment 2: test 1 of record names the flood input of case N1
+        refuse_firewall([binding_path])
+        binding_record = read_json(binding_path)
+    else:
+        binding_path, binding_record = test_path, test_record
+    flood_input = (binding_record.get("binding") or {}).get("flood_input_of_case_N1") or {}
     n1_label = flood_input.get("label") if isinstance(flood_input, Mapping) else None
     entries, skipped, index_record = discover_maps(paths.maps_dir, freeze_sha256, paths.root, paths.external)
     if not entries:
@@ -1338,12 +1400,10 @@ def build(paths: Paths, *, generated_at: str | None = None, git_commit: str | No
             tambon_rows.append(flat_tambon_row(entry.label, row))
     if not passes:
         raise TimeSeriesError("no frozen map of a Nan pass could be read")
-    orbit_groups: dict[str, list[str]] = {}
+    groups = comparison_groups(passes)
     for item in passes:
-        orbit_groups.setdefault(f"relative orbit {item['relative_orbit']}", []).append(item["pass"])
-    for item in passes:
-        item["passes_of_the_same_orbit"] = orbit_groups[f"relative orbit {item['relative_orbit']}"]
-    common = common_area_figures({"every pass": [item["pass"] for item in passes], **orbit_groups}, masks)
+        item["passes_of_the_same_orbit"] = groups[f"relative orbit {item['relative_orbit']}"]
+    common = common_area_figures(groups, masks)
     del masks
 
     stations, index_source = gauge_index(news, _optional_json(paths.gauge_dir / GAUGE_SUMMARY_NAME))
@@ -1359,13 +1419,12 @@ def build(paths: Paths, *, generated_at: str | None = None, git_commit: str | No
     window = chart_window(inputs["window"], [parse_utc(item["time_utc"]) for item in passes])  # type: ignore[misc]
     chart_passes = [{"time": thai_naive(parse_utc(item["time_utc"])), "orbit": item["relative_orbit"],  # type: ignore[arg-type]
                      "partial": item["coverage"]["footprint"] == "partial",
-                     "footprint": item["coverage"]["catalogue_footprint_share_of_grid"],
+                     "footprint": item["coverage"]["radar_value_share_of_frame_land_not_answered_by_terrain"],
                      **{level: item["frame"]["flooded_land_km2"][level] for level in LEVELS},
                      "mark": "N1 input" if item["is_the_flood_input_of_case_N1"] else None} for item in passes]
     chart = draw_chart(paths.out_png, chart_passes, chart_gauge_points(series, stations), window,
                        title="Nan case N1: frozen M1-z flooded land per Sentinel-1 pass, and Nan River gauges (report only)",
-                       notes=["Hollow marker: a pass on a partial radar footprint; its total is low for lack of radar, not of water. "
-                              "Compare passes of one orbit.",
+                       notes=[*chart_coverage_notes(passes),
                               "Radar: contains modified Copernicus Sentinel data (2025), processed by FloodGuard. Gauges: thaiwater.net "
                               "(Hydro-Informatics Institute).",
                               "Modelled figures for planning; not an official warning. No reference layer is compared here."])
@@ -1397,9 +1456,14 @@ def build(paths: Paths, *, generated_at: str | None = None, git_commit: str | No
                         "modelled residents inside, per tambon and per Sentinel-1 pass, set beside the Nan River gauge levels at the "
                         "pass times. Figures only; no map is in this file.",
         "protocol": {"path": PROTOCOL, "sha256": sha256_file(paths.root / PROTOCOL),
-                     "amendment_1": _record_ref(paths.root / AMENDMENT_1, paths.root)},
+                     "amendment_1": _record_ref(paths.root / AMENDMENT_1, paths.root),
+                     "amendment_2": _record_ref(paths.root / AMENDMENT_2, paths.root)},
         "order": {"test_result": _record_ref(test_path, paths.root), "freeze_record": {"path": FREEZE, "sha256": freeze_sha256},
-                  "rule": "The stage runs after the test record exists; a map counts only when its record names this freeze record."},
+                  "rule": "The stage runs after the test record exists; a map counts only when its record names this freeze record.",
+                  "flood_input_of_case_N1_from": _record_ref(binding_path, paths.root),
+                  "flood_input_of_case_N1": n1_label,
+                  "flood_input_rule": (f"The pass marked as the flood input of case N1 is the one named under binding in {TEST_1_OF_RECORD} "
+                                       f"(test 1 of record, amendment 2) when that record exists, else in {TEST_RESULT}.")},
         "flood_levels_of_the_freeze": freeze.get("flood_levels"),
         "inputs": {
             "frame_record": _record_ref(paths.root / FRAME_RECORD, paths.root),
@@ -1422,9 +1486,12 @@ def build(paths: Paths, *, generated_at: str | None = None, git_commit: str | No
         },
         "passes": passes,
         "common_radar_land": {
-            "rule": "For each group of passes (every pass, and the passes of each relative orbit): the frame land where no pass of "
-                    "the group lacks a radar value after (reason no_answer_rtc_no_data_after), and the land each pass flags inside it. "
-                    "These figures can be compared from pass to pass within the group.",
+            "rule": "For each group of passes (every pass; every pass whose radar has a value on at least half of the frame land "
+                    "that terrain does not answer, when that group differs from the others; and the passes of each relative orbit): "
+                    "the frame land where no pass of the group lacks a radar value after (reason no_answer_rtc_no_data_after), and "
+                    "the land each pass flags inside it. These figures can be compared from pass to pass within the group. When a "
+                    "pass of the group sees almost none of the land terrain does not answer, the common land is little more than "
+                    "terrain-answered land, where no pass flags anything.",
             "groups": common,
         },
         "gauges": {

@@ -3,9 +3,11 @@
 Left, a small map of the frame's tambons coloured by their N1 class, drawn from the frame's unit raster (the 20 m
 grid of ``outputs/nan_case/frame_v1.json``, file ``frame/n1_units_20m.tif`` in the work folder) and the N1 result
 file: a binding class is solid, a would-be class (low confidence, class in effect E) is striped. Right, three figures
-of the test record ``outputs/nan_case/test_result_v1.json``: test 1 (IoU with its reference named), the dry control
-share and the town figures of test 2, and one sentence of what they mean. A footer names the sources and says that
-every figure is agreement with another map, not accuracy.
+of the test record (test 1 of record ``outputs/nan_case/test_1_jaxa_v1.json`` under amendment 2, with the first run's
+``outputs/nan_case/test_result_v1.json`` it names): test 1 (IoU with its reference named), the dry control share and
+the town figures of test 2, and one sentence of what they mean. A footer names the sources and says that
+every test figure is agreement with another map, not a ground check. When the report-only reason counts
+(``outputs/nan_case/post_test_reasons_v1.json``) lie beside the test record and name it, their figures are added.
 
 No JAXA, GFM or THEOS-2 map is drawn or opened: the Sentinel Asia terms allow no modification of the materials, and
 only figures computed by the test stage are shown. The slide reads the result file, the test record, the frame
@@ -26,6 +28,7 @@ import hashlib
 import importlib.util
 import json
 from pathlib import Path
+import re
 import sys
 from typing import Any
 
@@ -69,6 +72,9 @@ PAPER = (248, 247, 241)
 LINE = (174, 190, 176)
 BORDER = (44, 56, 50)
 NO_CLASS_RGB = (196, 198, 192)
+NO_SCORE_SHARE = 0.2
+"""A binding E at low confidence with no score (a component not computed) is drawn in a light tint of E, so the
+tambons the chain could not score do not stand out above the ones it scored."""
 NO_UNIT, SEVERAL_UNITS = 0, 255
 LABEL_MIN_PIXELS = 120
 STRIPE_PX = 3
@@ -158,6 +164,19 @@ def read_unit_raster(path: Path, frame: Mapping[str, Any]) -> np.ndarray:
         return source.read(1)
 
 
+def light(colour: tuple[int, int, int]) -> tuple[int, int, int]:
+    """A light tint of a class colour (the tint between the stripes of a would-be class is darker)."""
+
+    red, green, blue = (int(value * NO_SCORE_SHARE + 255 * (1 - NO_SCORE_SHARE)) for value in colour)
+    return red, green, blue
+
+
+def no_score(row: Mapping[str, Any]) -> bool:
+    """A binding class at low confidence with no score: class E because a part of the score could not be computed."""
+
+    return row["kind"] == brief.BINDING and row.get("confidence") == "low" and row.get("score") is None
+
+
 def classes_of(overlay: Mapping[str, Any]) -> dict[str, dict[str, Any]]:
     """Each unit's class on the map: the class shown, and whether it is binding, would-be or none."""
 
@@ -228,6 +247,8 @@ def render_map(values: np.ndarray, lookup: Mapping[int, str], classes: Mapping[s
         row = classes[unit_id]
         if row["kind"] == brief.NO_CLASS or row["shown"] is None:
             picture[mask] = NO_CLASS_RGB
+        elif no_score(row):
+            picture[mask] = light(CLASS_RGB[row["shown"]])
         elif row["kind"] == brief.WOULD_BE:
             colour = np.array(CLASS_RGB[row["shown"]], dtype=float)
             tint = (colour * 0.35 + 255 * 0.65).astype(np.uint8)
@@ -263,6 +284,10 @@ def render_map(values: np.ndarray, lookup: Mapping[int, str], classes: Mapping[s
 # ---------------------------------------------------------------------------
 
 
+RULE_V2_NOTE = "THEOS-2 water read by rule v2, which finds about 70% of the water three team labellers marked (R47)"
+"""Decision log R47: THEOS-2 water is not named as a reference without the label check's figure beside it."""
+
+
 def reference_kind(outcome: Mapping[str, Any]) -> str:
     return "a same-pass map (not independent)" if outcome["fallback"] else "another satellite's map"
 
@@ -278,12 +303,15 @@ def headline_of(outcome: Mapping[str, Any]) -> str:
 def meaning_of(outcome: Mapping[str, Any], rows: Sequence[Mapping[str, Any]]) -> str:
     """One sentence of what the three figures mean for the classes."""
 
-    tail = "so no class binds: every tambon is E (low confidence), its would-be class shown striped."
+    tail = "so no class above E binds: every tambon is E (low confidence), its would-be class shown striped."
     if not outcome["test_1_run"]:
         return "Test 1 could not be run, " + tail
     if not outcome["test_1_passes"]:
+        missed = (outcome.get("care") or {}).get("missed_terrain_share")
+        why = ("" if missed is None else f" Why, counted after the test: the terrain screen ruled out "
+               f"{brief.share_text(missed)} of the reference water our map does not flag before the radar was read.")
         return (f"Our map reached IoU {brief.figure_text(outcome['iou'])} against {reference_kind(outcome)}, under the bar of "
-                f"{brief.NAN_TEST_IOU_MIN:.2f} fixed before the test, " + tail)
+                f"{brief.NAN_TEST_IOU_MIN:.2f} fixed before the test, " + tail + why)
     if not outcome["dry_control_passes"]:
         return (f"Our map flagged {brief.share_text(outcome['dry_share'])} of dry hills, over the bar of "
                 f"{brief.DRY_CONTROL_MAX_SHARE:.0%} fixed before the test, " + tail)
@@ -307,21 +335,40 @@ def cards_of(outcome: Mapping[str, Any]) -> list[dict[str, str]]:
     if outcome["test_1_run"]:
         interval = outcome["interval"]
         span = "" if not interval else f"  ·  95% interval {brief.figure_text(interval[0])} to {brief.figure_text(interval[1])}"
+        # The reference's name without its closing note in brackets (the layers read), so the line keeps its size.
+        reference = re.sub(r"\s*\([^()]*\)\s*$", "", str(outcome["reference"]))
+        where = ("inside the strip it observed" if outcome.get("of_record_under") else "over the frame's land")
         first = {"tag": f"TEST 1  ·  {verdict[outcome['test_1_passes']]}", "big": brief.figure_text(outcome["iou"]),
-                 "line_1": f"IoU with {outcome['reference']}",
+                 "line_1": f"IoU with {reference}",
                  "line_2": ("the same Sentinel-1 pass (Copernicus GFM): not independent of our map" if outcome["fallback"]
-                            else "another satellite (ALOS-2, L-band radar), over the frame's land"),
+                            else f"another satellite (ALOS-2, L-band radar), {where}"),
                  "small": (f"bar fixed before the test: at least {brief.NAN_TEST_IOU_MIN:.2f}  ·  no answer on "
                            f"{brief.share_text(outcome['no_answer_share'])} of compared cells{span}")}
+        care = outcome.get("care") or {}
+        if care.get("terrain_share") is not None and care.get("radar_share") is not None:
+            first["small_2"] = (f"terrain answered {brief.share_text(care['terrain_share'])} of compared cells before the radar "
+                                f"was read; the radar decided {brief.share_text(care['radar_share'])}")
+            if outcome.get("of_record_under") and care.get("region_share") is not None:
+                first["line_2"] = (f"another satellite (ALOS-2, L-band radar), inside its strip: "
+                                   f"{brief.share_text(care['region_share'])} of the frame's land")
     else:
         first = {"tag": "TEST 1  ·  NOT RUN", "big": "n/a", "line_1": "Test 1 could not be run",
                  "line_2": str(outcome["test_1_not_run"] or "no reference could be read"), "small": "no class of the case binds"}
     answered = outcome["dry_answered_cells"]
+    dry_when = brief.parse_utc(outcome["dry_pass"])
+    dry_time = "" if dry_when is None else f" {dry_when:%H:%M} UTC"
     second = {"tag": f"DRY CONTROL  ·  {verdict[outcome['dry_control_passes']]}", "big": brief.share_text(outcome["dry_share"]),
-              "line_1": "of the answered cells flagged on dry hills with no flood",
-              "line_2": f"a THEOS-2 chip of 31 July 2025, radar pass of {_date_of(outcome['dry_pass'])}",
+              "line_1": "of the answered cells flagged on hills where THEOS-2 shows no water",
+              "line_2": (f"a THEOS-2 chip of 31 July 2025, radar pass of {_date_of(outcome['dry_pass'])}{dry_time}"
+                         + (" (first run)" if outcome.get("of_record_under") else "")),
               "small": (f"bar fixed before the test: at most {brief.DRY_CONTROL_MAX_SHARE:.0%}"
                         + ("" if answered is None else f"  ·  {int(answered):,} answered cells"))}
+    care = outcome.get("care") or {}
+    if care.get("dry_terrain_share") is not None and care.get("dry_radar_cells"):
+        flagged = int(care.get("dry_radar_flagged") or 0)
+        second["small_2"] = (f"terrain answered {brief.share_text(care['dry_terrain_share'])} of them; of the "
+                             f"{int(care['dry_radar_cells']):,} cells the radar decided it flagged {flagged} "
+                             f"({brief.share_text(flagged / float(care['dry_radar_cells']))})")
     town = outcome["town"]
     if town:
         hours = town.get("hours_after_theos2")
@@ -330,9 +377,12 @@ def cards_of(outcome: Mapping[str, Any]) -> list[dict[str, str]]:
                  "line_1": "of the water THEOS-2 shows in Wiang Sa town is flagged by our map",
                  "line_2": ((f"radar {float(hours):.0f} h after THEOS-2 (0.5 m)  ·  " if hours is not None else "")
                             + f"{brief.share_text(town.get('flags_on_water'))} of our flags are THEOS-2 water"),
-                 "small": (f"IoU {brief.figure_text(town.get('iou'))}"
+                 "small": (("IoU n/a" if town.get("iou") is None else f"IoU {float(town['iou']):.3f}")
                            + ("" if points is None else f"  ·  {brief.share_text(town.get('points_share'))} of {int(points)} "
-                              "labelled points agree with our map"))}
+                              "labelled points agree with our map")
+                           + ("" if town.get("points_water") is None else
+                              f" ({town['points_water_flagged']} of the {town['points_water']} labelled water)")),
+                 "small_2": RULE_V2_NOTE}
     else:
         third = {"tag": "TEST 2  ·  REPORTED, NOT BINDING", "big": "n/a", "line_1": "the test record holds no town figures",
                  "line_2": "", "small": ""}
@@ -344,10 +394,11 @@ def footer_of(outcome: Mapping[str, Any], result_name: str) -> tuple[str, str]:
 
     reference = ("Copernicus EMS Global Flood Monitoring (GFM)" if outcome["fallback"]
                  else "JAXA ALOS-2 Flood Proxy Map, Provided by JAXA (Sentinel Asia)")
-    sources = (f"Sources: Copernicus Sentinel-1 (2025, Microsoft Planetary Computer RTC), processed by FloodGuard (M1-z, frozen "
-               f"before the test). Figures only, no map drawn: {reference}; THEOS-2 of 31 July 2025 (GISTDA sample). Tambons: "
-               f"HDX COD-AB. Classes: {result_name}.")
-    caution = "Agreement with another map, not accuracy. One event, one frame. Planning guidance, not an official warning."
+    sources = (f"Sources: Contains modified Copernicus Sentinel data (2025) (Sentinel-1, Microsoft Planetary Computer RTC), "
+               f"processed by FloodGuard (M1-z, frozen before the test). Figures only, no map drawn: {reference}; THEOS-2 of "
+               f"31 July 2025 (GISTDA sample). Tambons: HDX COD-AB. Classes: {result_name}.")
+    caution = ("Agreement with another map, not a ground check. One event, one frame. Planning guidance; not real-time, not "
+               "an official warning.")
     return sources, caution
 
 
@@ -413,12 +464,17 @@ def draw_legend(slide: Image.Image, draw: ImageDraw.ImageDraw, top: int, rows: S
     x = MAP_BOX[0]
     items = [(CLASS_RGB["B"], False, "solid: binding class"),
              (CLASS_RGB["B"], True, "striped: would-be class (in effect E, low confidence)")]
+    if any(no_score(row) for row in rows):
+        items.append((light(CLASS_RGB["E"]), False, "light: E, no score"))
     if any(row["kind"] == brief.NO_CLASS for row in rows):
         items.append((NO_CLASS_RGB, False, "grey: no class"))
     for colour, striped, label in items:
+        width = 22 + int(draw.textlength(label, font=font(15))) + 22
+        if x > MAP_BOX[0] and x + width - 22 > MAP_BOX[0] + MAP_BOX[2]:
+            x, y = MAP_BOX[0], y + 24
         swatch(slide, (x, y + 2, x + 16, y + 18), colour, striped=striped)
         draw.text((x + 22, y + 1), label, font=font(15), fill=MUTED)
-        x += 22 + int(draw.textlength(label, font=font(15))) + 22
+        x += width
     return y + 24
 
 
@@ -432,8 +488,9 @@ def draw_card(draw: ImageDraw.ImageDraw, top: int, card: Mapping[str, str], heig
     for offset, key, size, colour in ((42, "line_1", 19, INK), (70, "line_2", 17, MUTED)):
         if card.get(key):
             draw.text((text_left, top + offset), card[key], font=font(fit(draw, card[key], size, room)), fill=colour)
-    if card.get("small"):
-        draw.text((left + 20, top + 112), card["small"], font=font(fit(draw, card["small"], 15, width - 40, 11)), fill=TEAL)
+    for offset, key in ((100, "small"), (122, "small_2")):
+        if card.get(key):
+            draw.text((left + 20, top + offset), card[key], font=font(fit(draw, card[key], 15, width - 40, 11)), fill=TEAL)
 
 
 def draw_slide(map_image: Image.Image, map_info: Mapping[str, Any], outcome: Mapping[str, Any],
@@ -500,8 +557,10 @@ def build(result_path: Path, test_path: Path, frame_path: Path, unit_raster: Pat
     brief.refuse_behind_the_firewall([result_path, test_path, frame_path, unit_raster, out_path])
     overlay, result_sha = brief.read_json(result_path)
     brief.check_result(overlay)
-    test, test_sha = brief.read_json(test_path)
-    outcome = brief.outcome_of_the_test(test)
+    test, test_sha, first_run = brief.read_test_record(test_path)
+    post_test = brief.read_post_test(test_path, test_sha)
+    outcome = brief.outcome_of_the_test(test, None if first_run is None else first_run["record"],
+                                        None if post_test is None else post_test["record"])
     brief.check_together(overlay, outcome, None, test_sha256=test_sha)
     if (overlay.get("case") or {}).get("fixture_notice") and Path(out_path).resolve() == (ROOT / SLIDE).resolve():
         raise SlideError("a fixture result is never drawn over the slide of the repository")
@@ -522,13 +581,17 @@ def build(result_path: Path, test_path: Path, frame_path: Path, unit_raster: Pat
         "generated_at_utc": generated_at or now_utc(),
         "source_timestamp": str(brief.flood_input_of(overlay).get("source_timestamp")),
         "confidence_class": "low" if any(row["confidence"] == "low" for row in rows) else "medium",
-        "assumptions": json.dumps(["Every figure is agreement with another map, not accuracy.",
+        "assumptions": json.dumps(["Every test figure is agreement with another map, not a ground check.",
                                    "The classes are those of the N1 result file; a would-be class is never binding.",
                                    "No JAXA, GFM or THEOS-2 map is drawn; only figures of the test record are shown."]),
         "official_warning": "false",
         "operational_status": "non_operational",
         "made_from": json.dumps({"result_file": {"name": Path(result_path).name, "sha256": result_sha},
                                  "test_record": {"name": Path(test_path).name, "sha256": test_sha},
+                                 **({} if first_run is None else
+                                    {"first_run_record": {"name": Path(first_run["path"]).name, "sha256": first_run["sha256"]}}),
+                                 **({} if post_test is None else
+                                    {"post_test_reasons": {"name": Path(post_test["path"]).name, "sha256": post_test["sha256"]}}),
                                  "frame_record": {"name": Path(frame_path).name, "sha256": frame_sha},
                                  "unit_raster": {"name": Path(unit_raster).name, "sha256": sha256_file(unit_raster)}}),
     }
@@ -548,7 +611,8 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     parser = argparse.ArgumentParser(description=(__doc__ or "").split("\n")[0])
     parser.add_argument("--result", type=Path, help="the N1 result file (default: as the brief finds it)")
-    parser.add_argument("--test-result", type=Path, default=ROOT / brief.TEST_RESULT)
+    parser.add_argument("--test-result", type=Path, default=brief.default_test_record(),
+                        help=f"the test record (default: {brief.TEST_1_OF_RECORD} when it exists, else {brief.TEST_RESULT})")
     parser.add_argument("--frame-record", type=Path, default=ROOT / FRAME_RECORD)
     parser.add_argument("--unit-raster", type=Path, help="the frame's unit raster (default: the one the frame record names)")
     parser.add_argument("--external-root", type=Path, help="the external data root, where the frame record's unit raster lies")

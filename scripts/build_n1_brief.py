@@ -7,7 +7,9 @@ from nothing else:
 
 * the result file of case N1, in the planning-overlay schema of
   ``apps/web/public/planning-overlays/mae-sai-2024/se1.json`` (written by ``scripts/nan_case_chain.py nan --case N1``);
-* the test record ``outputs/nan_case/test_result_v1.json`` (written by ``scripts/nan_case_method.py test``);
+* the test record: test 1 of record ``outputs/nan_case/test_1_jaxa_v1.json`` under amendment 2 (decision log R53,
+  written by ``scripts/nan_case_test1_jaxa.py``), with the first run's ``outputs/nan_case/test_result_v1.json`` it
+  names for the dry control and test 2; or the first run's record alone;
 * the ensemble record: the run record the chain writes beside the result file (its ``ensemble`` section), or the
   ensemble document of the work folder (``score_chain/ensemble_n1.json``). Without it the brief says so.
 
@@ -21,13 +23,16 @@ line and the line that the Thai text is not reviewed by a native speaker. It reu
 The three files are checked against each other before anything is written: the same case reference date, the same
 radar pass, the same test 1 figure, and an ensemble record of this result file. A result of case N2 is refused (its
 per-tambon results stay in the work folder, protocol ``rights_in_git``), as is any path behind the firewall of the
-case. Every figure is agreement with another map, not accuracy. Planning guidance only; not an official warning.
+case. Every test figure is agreement with another map, not a ground check. Planning guidance only; not an official
+warning. When the report-only reason counts of the case (``post_test_reasons_v1.json``, written by
+``scripts/nan_case_post_test_reasons.py``) lie beside the test record and name it by its SHA-256, the brief adds their
+figures to its lines of care.
 
 Example (from the repository root, after the chain has written the N1 result)::
 
     python scripts/build_n1_brief.py
     python scripts/build_n1_brief.py --result outputs/nan_case/planning_result_n1_nan_v1.json \\
-        --test-result outputs/nan_case/test_result_v1.json \\
+        --test-result outputs/nan_case/test_1_jaxa_v1.json \\
         --ensemble outputs/nan_case/planning_result_n1_nan_v1_record.json
 """
 
@@ -61,10 +66,17 @@ from floodguard.nan_case_chain import (  # noqa: E402
 RESULT_CANDIDATES: tuple[str, ...] = ("outputs/nan_case/n1_result_v1.json", "outputs/nan_case/planning_result_n1_nan_v1.json")
 """Where the N1 result file is looked for, in this order: the name of the task, then the name the chain writes."""
 TEST_RESULT = "outputs/nan_case/test_result_v1.json"
+TEST_1_OF_RECORD = "outputs/nan_case/test_1_jaxa_v1.json"
+"""Test 1 of record under amendment 2 (decision log R53), written by ``scripts/nan_case_test1_jaxa.py``. It binds the
+dry control of the first run (``TEST_RESULT``) and names that record by its SHA-256."""
+POST_TEST_NAME = "post_test_reasons_v1.json"
+"""The report-only reason counts of the case, looked for beside the test record (``scripts/nan_case_post_test_reasons.py``)."""
+POST_TEST_SCHEMA = "floodguard.nan_case_post_test_reasons.v1"
 OUTPUT_DIR = "outputs/planning_brief"
 NAME = "n1_nan_brief"
 CASE_ID = "N1"
 TEST_SCHEMA = "floodguard.nan_case_test_result.v1"
+TEST_1_OF_RECORD_SCHEMA = "floodguard.nan_case_test_1_jaxa.v1"
 FALLBACK_REFERENCE_DATE = "2025-07-31"
 """The case reference date under the fallback of test 1 (the GFM map of the same pass)."""
 DRY_CONTROL_MAX_SHARE = 0.05
@@ -122,10 +134,17 @@ ASSUMPTIONS: tuple[tuple[str, str], ...] = (
      "แผนที่เรดาร์เป็นแผนที่ของโครงการเอง ตรึงค่าไว้ก่อนการทดสอบและใช้ตามที่คำนวณได้ เซลล์ที่เรดาร์ไม่มีคำตอบนับว่าไม่ท่วม"),
     ("Radar does not see water under trees, between buildings or under crops, nor water that drained before the pass.",
      "เรดาร์มองไม่เห็นน้ำใต้ต้นไม้ ระหว่างอาคาร หรือใต้พืชผล และน้ำที่ระบายไปแล้วก่อนดาวเทียมโคจรผ่าน"),
-    ("Every figure is agreement with another map, not accuracy. The score is not accepted for decisions "
+    ("Every test figure is agreement with another map, not a ground check. The score is not accepted for decisions "
      "(accepted_fpps stays null).",
-     "ทุกตัวเลขเป็นความสอดคล้องกับแผนที่อื่น ไม่ใช่ความแม่นยำ คะแนนนี้ยังไม่ได้รับการยอมรับให้ใช้ตัดสินใจ (accepted_fpps เป็นค่าว่าง)"),
+     "ตัวเลขผลการทดสอบทุกตัวเป็นความสอดคล้องกับแผนที่อื่น ไม่ใช่การตรวจสอบภาคสนาม คะแนนนี้ยังไม่ได้รับการยอมรับให้ใช้ตัดสินใจ "
+     "(accepted_fpps เป็นค่าว่าง)"),
 )
+DRIVES = re.compile(r"One flood input drives (\d+) of (\d+) components \((\d+)% of weight\)\.")
+"""The sentence the result file asks the brief to carry (its ``assumptions``)."""
+HOSPITAL_NOTE = ("A tambon in class E, or a cell with no flag, was not shown to be dry: news records of 24 to 27 July 2025 "
+                 "report water at Nan Hospital, and the map answers the whole site 'not flooded' by terrain (test 4).",
+                 "ตำบลระดับ E หรือเซลล์ที่ไม่ได้ระบุเป็นน้ำ ไม่ได้แสดงว่าพื้นที่แห้ง ข่าวระหว่างวันที่ 24 ถึง 27 กรกฎาคม 2025 "
+                 "รายงานว่ามีน้ำที่โรงพยาบาลน่าน แต่แผนที่ให้คำตอบว่า \"ไม่ท่วม\" ทั้งพื้นที่จากภูมิประเทศ (การทดสอบที่ 4)")
 COLUMNS: tuple[tuple[str, str], ...] = (
     ("Tambon", "ตำบล"), ("FPPS", "คะแนน"), ("Class", "ระดับ"), ("Binding or would-be", "มีผลหรือจะได้"),
     ("Confidence", "ความเชื่อมั่น"), ("No answer", "ไม่มีคำตอบ"), ("Reason", "เหตุผล"), ("Holds", "คงเดิม"),
@@ -191,11 +210,16 @@ def read_json(path: Path) -> tuple[Any, str]:
 
 
 def share_text(value: float | None) -> str:
-    """A share as a percentage: one decimal under 10%, whole numbers above; ``n/a`` when missing."""
+    """A share as a percentage: two decimals above 0 and under 0.1%, one under 10%, whole numbers above; ``n/a`` when missing.
+
+    A share such as 8 of 21,408 cells (0.04%) is not printed as 0.0%.
+    """
 
     if value is None:
         return "n/a"
     percent = 100.0 * float(value)
+    if 0.0 < percent < 0.1:
+        return f"{percent:.2f}%"
     return f"{percent:.1f}%" if percent < 10.0 else f"{percent:.0f}%"
 
 
@@ -259,15 +283,135 @@ def flood_input_of(overlay: Mapping[str, Any]) -> Mapping[str, Any]:
     raise N1BriefError("the result file names no flood input")
 
 
-def outcome_of_the_test(test: Mapping[str, Any]) -> dict[str, Any]:
+def default_test_record() -> Path:
+    """The test record read by default: test 1 of record (amendment 2) when it exists, else the first run's record."""
+
+    of_record = ROOT / TEST_1_OF_RECORD
+    return of_record if of_record.is_file() else ROOT / TEST_RESULT
+
+
+def read_test_record(path: Path) -> tuple[Any, str, dict[str, Any] | None]:
+    """The test record, the SHA-256 of its bytes and, for test 1 of record, the first run's record it names.
+
+    The record of amendment 2 binds the dry control of the first run and names that record by path and SHA-256. The
+    first run is looked for beside the test record, then where the record names it in the repository. Without it the
+    brief uses the figures the test record copies from it (the dry control share; no town figures).
+
+    Returns:
+        ``(test, sha256, first_run)``, where ``first_run`` is ``{"record", "path", "sha256"}`` or ``None``.
+
+    Raises:
+        N1BriefError: for a first-run record behind the firewall or with other bytes than the SHA-256 named.
+    """
+
+    test, sha = read_json(path)
+    if not isinstance(test, Mapping) or test.get("schema") != TEST_1_OF_RECORD_SCHEMA:
+        return test, sha, None
+    named = test.get("first_run") or {}
+    stated = str(named.get("path") or "")
+    if not stated:
+        return test, sha, None
+    for candidate in (Path(path).with_name(Path(stated).name), ROOT / stated):
+        if not candidate.is_file():
+            continue
+        refuse_behind_the_firewall([candidate])
+        record, record_sha = read_json(candidate)
+        if record_sha != named.get("sha256"):
+            raise N1BriefError(f"{candidate.name} is not the first run the test record names (its SHA-256 differs)")
+        return test, sha, {"record": record, "path": candidate, "sha256": record_sha}
+    return test, sha, None
+
+
+def read_post_test(test_path: Path, test_sha256: str) -> dict[str, Any] | None:
+    """The report-only reason counts beside the test record, or ``None`` when there are none.
+
+    Returns:
+        ``{"record", "path", "sha256"}``.
+
+    Raises:
+        N1BriefError: for a file of another schema, or one that names another test record.
+    """
+
+    candidate = Path(test_path).with_name(POST_TEST_NAME)
+    if not candidate.is_file():
+        return None
+    refuse_behind_the_firewall([candidate])
+    record, sha = read_json(candidate)
+    if not isinstance(record, Mapping) or record.get("schema") != POST_TEST_SCHEMA:
+        raise N1BriefError(f"{candidate.name} is not the reason record of the case")
+    named = ((record.get("read_from") or {}).get("test_1_of_record") or {}).get("sha256")
+    if named != test_sha256:
+        raise N1BriefError(f"{candidate.name} names another test record (its SHA-256 differs)")
+    if record.get("report_only") is not True:
+        raise N1BriefError(f"{candidate.name} must say it is report only")
+    return {"record": record, "path": candidate, "sha256": sha}
+
+
+def _share(part: Any, whole: Any) -> float | None:
+    try:
+        return None if not whole else float(part) / float(whole)
+    except (TypeError, ValueError):
+        return None
+
+
+def care_figures(test: Mapping[str, Any], post_test: Mapping[str, Any] | None) -> dict[str, Any]:
+    """The figures of the lines of care: what terrain answered, what test 1 measured, and the reason counts.
+
+    Each figure is ``None`` when its record does not hold it (an invented test record, or no reason record).
+    """
+
+    test_1 = test.get("test_1") or {}
+    central = test_1.get("central") or {}
+    compared = central.get("compared_cells")
+    reasons = test_1.get("central_reasons_on_compared_cells") or {}
+    terrain = (reasons.get("not_flagged_terrain_hand_above_the_limit", 0)
+               + reasons.get("not_flagged_terrain_slope_5_degrees_or_more", 0)) if reasons else None
+    radar = (reasons.get("flagged", 0) + reasons.get("not_flagged_radar_dry", 0)
+             + reasons.get("not_flagged_group_of_fewer_than_2_cells_dropped", 0)) if reasons else None
+    simple = ((test_1.get("comparators") or {}).get("r37_simple_threshold") or {})
+    no_radar = simple.get("no_answer_cells")
+    left = reasons.get("no_answer_rtc_no_data_after") if reasons else None
+    hand = (((test.get("frozen_parameters") or {}).get("central") or {}).get("hand_max_m"))
+    figures: dict[str, Any] = {
+        "terrain_share": _share(terrain, compared), "radar_share": _share(radar, compared), "hand_max_m": hand,
+        "region_share": (test_1.get("jaxa") or {}).get("share_of_frame_land_inside_region"),
+        "no_radar_share": _share(no_radar, compared),
+        "no_radar_terrain_share": None if no_radar is None or left is None else _share(no_radar - left, no_radar),
+        "platform_offset_db": test_1.get("platform_offset_db"),
+        "first_run_iou": (((test.get("first_run") or {}).get("test_1_gfm_fallback_reported_beside") or {})
+                          .get("iou_no_answer_as_not_flagged")),
+        "missed_terrain_share": None, "dry_terrain_share": None, "dry_radar_cells": None, "dry_radar_flagged": None,
+    }
+    if post_test:
+        on_jaxa = (post_test.get("test_1_jaxa_water") or {})
+        kind = on_jaxa.get("reasons_on_jaxa_water_by_kind") or {}
+        counts = (on_jaxa.get("reasons_on_jaxa_water") or {}).get("counts") or {}
+        missed = (on_jaxa.get("reasons_on_jaxa_water") or {}).get("cells", 0) - counts.get("flagged", 0)
+        figures["missed_terrain_share"] = _share(kind.get("answered_by_terrain"), missed)
+        dry = (post_test.get("dry_chip") or {}).get("first_run_pass_20250731T2308_o62_S1A") or {}
+        figures["dry_terrain_share"] = dry.get("terrain_share")
+        figures["dry_radar_cells"] = (dry.get("by_kind") or {}).get("decided_by_the_radar")
+        figures["dry_radar_flagged"] = (dry.get("counts") or {}).get("flagged")
+    return figures
+
+
+def outcome_of_the_test(test: Mapping[str, Any], first_run: Mapping[str, Any] | None = None,
+                        post_test: Mapping[str, Any] | None = None) -> dict[str, Any]:
     """The figures of the test record the brief and the slide read.
+
+    The record is the first run's (``TEST_SCHEMA``) or test 1 of record under amendment 2 (``TEST_1_OF_RECORD_SCHEMA``).
+    For the latter, test 1 and the binding outcome come from the record itself, and the dry control and the town
+    figures of test 2 from ``first_run`` (the first run's record, checked by :func:`read_test_record`), or, without
+    it, from the dry control share the record copies. ``post_test`` is the report-only reason record
+    (:func:`read_post_test`); its figures go to ``care`` (:func:`care_figures`).
 
     Raises:
         N1BriefError: for a file that is not the test record of the case, or whose verdict does not fit its figures.
     """
 
-    if test.get("schema") != TEST_SCHEMA:
-        raise N1BriefError(f"the test record is {TEST_SCHEMA}; the file is {test.get('schema')!r}")
+    schema = test.get("schema")
+    if schema not in (TEST_SCHEMA, TEST_1_OF_RECORD_SCHEMA):
+        raise N1BriefError(f"the test record is {TEST_SCHEMA} or {TEST_1_OF_RECORD_SCHEMA}; the file is {schema!r}")
     if test.get("official_warning") is not False or test.get("operational_status") != "non_operational":
         raise N1BriefError("the test record must say it is not operational and not an official warning")
     try:
@@ -283,9 +427,19 @@ def outcome_of_the_test(test: Mapping[str, Any]) -> dict[str, Any]:
     if test_1_passes and (iou is None or float(iou) < NAN_TEST_IOU_MIN):
         raise N1BriefError("the test record says test 1 passed while its figure is missing or under the bar")
     interval = ((test_1.get("central_interval_95") or {}).get("interval") or {}).get("iou_no_answer_as_not_flagged")
-    dry = test.get("dry_control") or {}
+    of_record = schema == TEST_1_OF_RECORD_SCHEMA
+    source: Mapping[str, Any] = test
+    if of_record:
+        source = first_run or {}
+        first_binding = source.get("binding") or {}
+        if first_run is not None and "dry_control_passes" in first_binding and bool(first_binding["dry_control_passes"]) != dry_passes:
+            raise N1BriefError("the first run's dry control is not the one the test record binds")
+    dry = source.get("dry_control") or {}
+    if of_record and not dry:
+        copied = (test.get("first_run") or {}).get("dry_control_used_in_the_binding") or {}
+        dry = {"central": {"flagged_share_of_answered": copied.get("flagged_share_of_answered")}}
     dry_central = dry.get("central") or {}
-    town = test.get("test_2") or {}
+    town = source.get("test_2") or {}
     town_central = town.get("central") or {}
     points = (((town.get("labelled_points") or {}).get("agreement") or {}).get("central")) or {}
     flood = dict(binding.get("flood_input_of_case_N1") or {})
@@ -296,6 +450,7 @@ def outcome_of_the_test(test: Mapping[str, Any]) -> dict[str, Any]:
         "test_1_not_run": test_1.get("not_run"),
         "jaxa_why": (test_1.get("jaxa_usability") or {}).get("why"),
         "fallback": reference_date == FALLBACK_REFERENCE_DATE,
+        "of_record_under": test_1.get("of_record_under") if of_record else None,
         "test_1_passes": test_1_passes,
         "dry_control_passes": dry_passes,
         "passed": test_1_passes and dry_passes,
@@ -315,10 +470,14 @@ def outcome_of_the_test(test: Mapping[str, Any]) -> dict[str, Any]:
             "no_answer_share": town_central.get("no_answer_share"),
             "points_share": points.get("share_agreed_no_answer_as_not_flagged"),
             "points_with_a_label": points.get("points_with_a_label"),
+            "points_water": None if not points.get("table") else sum(int(points["table"].get(name, 0)) for name in
+                                                                     ("water_flagged", "water_not_flagged", "water_no_answer")),
+            "points_water_flagged": None if not points.get("table") else int(points["table"].get("water_flagged", 0)),
             "hours_after_theos2": town.get("hours_after_theos2"),
             "pass": (town.get("pass") or {}).get("time_utc"),
         } if town_central else None,
         "generated_at_utc": test.get("generated_at_utc"),
+        "care": care_figures(test, post_test),
     }
 
 
@@ -367,7 +526,9 @@ def ensemble_view(document: Mapping[str, Any], overlay: Mapping[str, Any], *, re
         cells = next((record.get("cells_run") for record in headlines.values() if record.get("cells_run") is not None), None)
     return {"kind": kind, "cells_run": cells, "headlines": dict(headlines),
             "would_be": dict(section.get("would_be_retention") or {}),
-            "headline_over": section.get("headline_over"), "case_outcome": document.get("case_outcome")}
+            "headline_over": section.get("headline_over"), "case_outcome": document.get("case_outcome"),
+            "sensitivity_class_changes": (document.get("sensitivity_no_answer_counted_as_flagged") or {}).get(
+                "tambons_whose_class_differs")}
 
 
 def check_together(overlay: Mapping[str, Any], outcome: Mapping[str, Any], ensemble: Mapping[str, Any] | None, *,
@@ -516,9 +677,9 @@ def case_line(outcome: Mapping[str, Any], overlay: Mapping[str, Any]) -> tuple[s
 
     words = pass_words(outcome, overlay)
     own_en = (f"What this case is: our own radar flood map (method M1-z on one Copernicus {words['platform']} pass), frozen "
-              "before any reference was opened, ")
+              "before any Nan reference was scored, ")
     own_th = (f"กรณีนี้คืออะไร: แผนที่น้ำท่วมจากเรดาร์ของโครงการเอง (วิธี M1-z จากภาพ Copernicus {words['platform']} หนึ่งรอบ) "
-              "ตรึงค่าวิธีไว้ก่อนเปิดดูแผนที่อ้างอิงใดๆ ")
+              "ตรึงค่าวิธีไว้ก่อนนำไปเทียบกับแผนที่อ้างอิงใดๆ ของน่าน ")
     reference = str(outcome["reference"] or "")
     if not outcome["test_1_run"]:
         why = str(outcome["test_1_not_run"] or "no reference could be read")
@@ -532,8 +693,21 @@ def case_line(outcome: Mapping[str, Any], overlay: Mapping[str, Any]) -> tuple[s
                 own_th + f"แล้วทดสอบหนึ่งครั้งกับ {reference} ซึ่งเป็นแผนที่ของ Copernicus Emergency Management Service "
                 f"จากภาพ Sentinel-1 รอบเดียวกัน ก่อนนำมาคำนวณคะแนน ไม่สามารถใช้แผนที่ของ JAXA ได้ ({why}) "
                 "และแผนที่จากภาพรอบเดียวกันไม่เป็นอิสระจากแผนที่ของเรา")
-    return (own_en + f"then tested once against another satellite's map ({reference}, L-band radar) before it fed the score.",
-            own_th + f"แล้วทดสอบหนึ่งครั้งกับแผนที่จากดาวเทียมอีกดวงหนึ่ง ({reference} เรดาร์ย่าน L) ก่อนนำมาคำนวณคะแนน")
+    english = own_en + f"then tested once against another satellite's map ({reference}, L-band radar) before it fed the score."
+    thai = own_th + f"แล้วทดสอบหนึ่งครั้งกับแผนที่จากดาวเทียมอีกดวงหนึ่ง ({reference} เรดาร์ย่าน L) ก่อนนำมาคำนวณคะแนน"
+    if outcome.get("of_record_under"):
+        english += " This is test 1 of record under amendment 2 of the protocol (decision log R53)"
+        thai += " การทดสอบนี้เป็นการทดสอบที่ 1 ที่ใช้ตัดสินผลตามการแก้ไขโพรโทคอลครั้งที่ 2 (บันทึกการตัดสินใจ R53)"
+        first_iou = (outcome.get("care") or {}).get("first_run_iou")
+        if first_iou is not None:
+            english += (f". A first run, against GFM's map of the same Sentinel-1A pass of 31 July (not independent), also "
+                        f"missed its bar (IoU {float(first_iou):.3f}); amendment 2 came after it, and the first run is kept beside it.")
+            thai += (f" การทดสอบรอบแรกกับแผนที่ GFM จากภาพ Sentinel-1A รอบเดียวกันของวันที่ 31 กรกฎาคม (ไม่เป็นอิสระจากแผนที่ของเรา) "
+                     f"ก็ไม่ผ่านเกณฑ์เช่นกัน (IoU {float(first_iou):.3f}) การแก้ไขครั้งที่ 2 ทำขึ้นหลังรอบนั้น และเก็บผลรอบแรกไว้ข้างกัน")
+        else:
+            english += "; the first run, against a same-pass map, is kept beside it."
+            thai += " ส่วนการทดสอบรอบแรกกับแผนที่จากภาพรอบเดียวกันเก็บไว้ข้างกัน"
+    return english, thai
 
 
 def verdict(outcome: Mapping[str, Any]) -> tuple[str, str]:
@@ -558,18 +732,25 @@ def outcome_line(outcome: Mapping[str, Any]) -> tuple[str, str]:
 
     head_en, head_th = verdict(outcome)
     dry = share_text(outcome["dry_share"])
-    dry_en = f" Dry control on hills with no flood: {dry} of the answered cells flagged (bar ≤ {DRY_CONTROL_MAX_SHARE:.0%})."
-    dry_th = f" พื้นที่ควบคุมบนเนินเขาที่ไม่มีน้ำท่วม: ระบุเป็นน้ำ {dry} ของเซลล์ที่มีคำตอบ (เกณฑ์ ≤ {DRY_CONTROL_MAX_SHARE:.0%})"
+    when = parse_utc(outcome.get("dry_pass"))
+    first_en = first_th = ""
+    if outcome.get("of_record_under") and when is not None:
+        first_en = f" (first run, Sentinel-1A pass of {when:%Y-%m-%d %H:%M} UTC)"
+        first_th = f" (รอบแรก ภาพ Sentinel-1A {when:%Y-%m-%d %H:%M} UTC)"
+    dry_en = (f" Dry control{first_en} on hills where the THEOS-2 image shows no water: {dry} of the answered cells flagged "
+              f"(bar ≤ {DRY_CONTROL_MAX_SHARE:.0%}).")
+    dry_th = (f" พื้นที่ควบคุม{first_th} บนเนินเขาที่ภาพ THEOS-2 ไม่แสดงน้ำ: ระบุเป็นน้ำ {dry} ของเซลล์ที่มีคำตอบ "
+              f"(เกณฑ์ ≤ {DRY_CONTROL_MAX_SHARE:.0%})")
     if not outcome["test_1_run"]:
         return (f"Test outcome: {head_en}" + dry_en, f"ผลการทดสอบ: {head_th}" + dry_th)
     interval = outcome["interval"]
     span_en = "" if not interval else f", 95% interval {figure_text(interval[0])} to {figure_text(interval[1])}"
     span_th = "" if not interval else f" ช่วง 95% {figure_text(interval[0])} ถึง {figure_text(interval[1])}"
     reference = str(outcome["reference"])
-    return (f"Test outcome: {head_en} Test 1, agreement with {reference}, not accuracy: IoU {figure_text(outcome['iou'])}"
+    return (f"Test outcome: {head_en} Test 1, agreement with {reference}, not a ground check: IoU {figure_text(outcome['iou'])}"
             f"{span_en} (bar ≥ {NAN_TEST_IOU_MIN:.2f}), no answer on {share_text(outcome['no_answer_share'])} of the "
             f"compared cells (bar ≤ {NAN_NO_ANSWER_SHARE_MAX:.0%})." + dry_en,
-            f"ผลการทดสอบ: {head_th} การทดสอบที่ 1 ความสอดคล้องกับ {reference} ไม่ใช่ความแม่นยำ: IoU "
+            f"ผลการทดสอบ: {head_th} การทดสอบที่ 1 ความสอดคล้องกับ {reference} ไม่ใช่การตรวจสอบภาคสนาม: IoU "
             f"{figure_text(outcome['iou'])}{span_th} (เกณฑ์ ≥ {NAN_TEST_IOU_MIN:.2f}) ไม่มีคำตอบใน "
             f"{share_text(outcome['no_answer_share'])} ของเซลล์ที่เปรียบเทียบ (เกณฑ์ ≤ {NAN_NO_ANSWER_SHARE_MAX:.0%})" + dry_th)
 
@@ -592,18 +773,28 @@ def source_times(outcome: Mapping[str, Any], overlay: Mapping[str, Any]) -> tupl
 
 
 def confidence_line(rows: Sequence[Mapping[str, Any]]) -> tuple[str, str]:
-    """How many tambons are at each confidence class."""
+    """How many tambons are at each confidence class, the classes in effect and the would-be classes beside them."""
 
     count = {level: sum(1 for row in rows if row["confidence"] == level) for level in ("medium", "low")}
     none = sum(1 for row in rows if row["kind"] == NO_CLASS)
-    binding = sum(1 for row in rows if row["kind"] == BINDING)
-    would_be = sum(1 for row in rows if row["kind"] == WOULD_BE)
+    in_effect = sorted({row["class_in_effect"] for row in rows if row["class_in_effect"]})
+    effect_en = ", ".join(f"{letter} in {sum(1 for row in rows if row['class_in_effect'] == letter)}" for letter in in_effect)
+    effect_th = " ".join(f"{letter} {sum(1 for row in rows if row['class_in_effect'] == letter)} ตำบล" for letter in in_effect)
+    would = [row for row in rows if row["kind"] == WOULD_BE]
+    letters = sorted({row["would_be_class"] for row in would})
+    would_en = ", ".join(f"{letter} in {sum(1 for row in would if row['would_be_class'] == letter)}" for letter in letters)
+    would_th = " ".join(f"{letter} {sum(1 for row in would if row['would_be_class'] == letter)} ตำบล" for letter in letters)
+    no_score = sum(1 for row in rows if row["kind"] == BINDING and row["confidence"] == "low" and row["score"] is None)
     extra_en = f"; {none} with no class (fewer residents than the minimum)" if none else ""
     extra_th = f" ไม่มีระดับ {none} ตำบล (ผู้อยู่อาศัยน้อยกว่าเกณฑ์ขั้นต่ำ)" if none else ""
-    return (f"Confidence: {count['medium']} of {len(rows)} tambons medium, {count['low']} low; {binding} binding classes, "
-            f"{would_be} would-be classes{extra_en}. High confidence is never given in this release.",
+    score_en = f"; {no_score} have no score, so no would-be class" if no_score else ""
+    score_th = f" ไม่มีคะแนน {no_score} ตำบล จึงไม่มีระดับที่จะได้" if no_score else ""
+    would_part_en = f" Would-be class (not binding): {would_en}{score_en}." if would else ""
+    would_part_th = f" ระดับที่จะได้ (ไม่มีผล): {would_th}{score_th}" if would else ""
+    return (f"Confidence: {count['medium']} of {len(rows)} tambons medium, {count['low']} low. Class in effect: "
+            f"{effect_en or 'none'}{extra_en}.{would_part_en} High confidence is never given in this release.",
             f"ความเชื่อมั่น: ปานกลาง {count['medium']} ตำบล ต่ำ {count['low']} ตำบล จากทั้งหมด {len(rows)} ตำบล "
-            f"ระดับที่มีผล {binding} ตำบล ระดับที่จะได้ {would_be} ตำบล{extra_th} รุ่นนี้ไม่มีการให้ความเชื่อมั่นระดับสูง")
+            f"ระดับที่มีผล: {effect_th or 'ไม่มี'}{extra_th}{would_part_th} รุ่นนี้ไม่มีการให้ความเชื่อมั่นระดับสูง")
 
 
 def ensemble_axes(cells: Any) -> tuple[str, str]:
@@ -638,10 +829,14 @@ def stability_lines(rows: Sequence[Mapping[str, Any]], ensemble: Mapping[str, An
         cells = ensemble["cells_run"] if ensemble["cells_run"] is not None else "n/a"
         lead = (f"Stability over the ensemble (report-only): {cells} runs of the chain, {axes_en}.",
                 f"ความเสถียรจากชุดการคำนวณ (รายงานเท่านั้น): คำนวณซ้ำ {cells} รอบ {axes_th}")
-    held_en = (f"The class shown holds in at least {minimum:.0%} of the runs for {len(measured) - len(unstable)} of "
-               f"{len(measured)} tambons with a figure")
-    held_th = (f"ระดับที่แสดงคงเดิมอย่างน้อย {minimum:.0%} ของรอบใน {len(measured) - len(unstable)} จาก {len(measured)} "
-               "ตำบลที่มีค่า")
+    if measured and not unstable and len(measured) == len(rows):
+        held_en = f"The class shown holds in at least {minimum:.0%} of the runs for all {len(rows)} tambons"
+        held_th = f"ระดับที่แสดงคงเดิมอย่างน้อย {minimum:.0%} ของรอบในทั้ง {len(rows)} ตำบล"
+    else:
+        held_en = (f"The class shown holds in at least {minimum:.0%} of the runs for {len(measured) - len(unstable)} of "
+                   f"{len(measured)} tambons with a figure")
+        held_th = (f"ระดับที่แสดงคงเดิมอย่างน้อย {minimum:.0%} ของรอบใน {len(measured) - len(unstable)} จาก {len(measured)} "
+                   "ตำบลที่มีค่า")
     if unstable and len(unstable) <= UNSTABLE_NAMES_MAX:
         held_en += f"; it does not for {', '.join(row['name_en'] for row in unstable)}: verify before use."
         held_th += f" ส่วนตำบล{' '.join(row['name_th'] for row in unstable)}ไม่คงเดิม ควรตรวจสอบก่อนใช้งาน"
@@ -650,7 +845,77 @@ def stability_lines(rows: Sequence[Mapping[str, Any]], ensemble: Mapping[str, An
         held_th += f" อีก {len(unstable)} ตำบลมีเครื่องหมาย * ในตาราง ควรตรวจสอบก่อนใช้งาน"
     else:
         held_en += "."
-    return [lead, (held_en, held_th)]
+    lines = [lead, (held_en, held_th)]
+    changes = None if ensemble is None else ensemble.get("sensitivity_class_changes")
+    if changes is not None:
+        lines.append((f"Counting every no-answer cell as flooded changes the class read in {int(changes)} of {len(rows)} tambons "
+                      "(report only): the low scores rest on counting no answer as not flooded.",
+                      f"หากนับเซลล์ที่ไม่มีคำตอบทั้งหมดเป็นน้ำท่วม ระดับที่อ่านได้จะเปลี่ยนใน {int(changes)} จาก {len(rows)} ตำบล "
+                      "(รายงานเท่านั้น) คะแนนที่ต่ำจึงขึ้นกับการนับเซลล์ที่ไม่มีคำตอบว่าไม่ท่วม"))
+    return lines
+
+
+def care_lines(outcome: Mapping[str, Any]) -> list[tuple[str, str]]:
+    """What a reader must keep in mind beside the test outcome, each line only when its record holds the figures."""
+
+    care = outcome.get("care") or {}
+    lines: list[tuple[str, str]] = []
+    if not outcome["test_1_run"]:
+        return lines
+    terrain, radar, hand = care.get("terrain_share"), care.get("radar_share"), care.get("hand_max_m")
+    if terrain is not None and radar is not None:
+        limit = "the HAND limit" if hand is None else f"{float(hand):g} m"
+        limit_th = "เกณฑ์ HAND" if hand is None else f"{float(hand):g} ม."
+        lines.append((f"Terrain answered {share_text(terrain)} of the compared cells before the radar was read (more than "
+                      f"{limit} above drainage, or a slope of 5° or more); the radar decided {share_text(radar)}. The low "
+                      "no-answer share comes from that, not from the radar seeing the land.",
+                      f"ภูมิประเทศให้คำตอบ {share_text(terrain)} ของเซลล์ที่เปรียบเทียบก่อนอ่านค่าเรดาร์ (สูงกว่าทางระบายน้ำเกิน "
+                      f"{limit_th} หรือลาดชัน 5° ขึ้นไป) ส่วนเรดาร์ตัดสิน {share_text(radar)} สัดส่วนที่ไม่มีคำตอบต่ำจึงมาจากส่วนนี้ "
+                      "ไม่ใช่เพราะเรดาร์มองเห็นพื้นที่"))
+    missed = care.get("missed_terrain_share")
+    if missed is not None:
+        lines.append((f"Of the JAXA water the map does not flag, {share_text(missed)} was ruled out by the terrain screen "
+                      "before the radar was read (counted after the test, report only).",
+                      f"ในพื้นที่น้ำตามแผนที่ JAXA ที่แผนที่ของเราไม่ได้ระบุ {share_text(missed)} ถูกตัดออกโดยเกณฑ์ภูมิประเทศ"
+                      "ก่อนอ่านค่าเรดาร์ (นับหลังการทดสอบ รายงานเท่านั้น)"))
+    region, no_radar, by_terrain = care.get("region_share"), care.get("no_radar_share"), care.get("no_radar_terrain_share")
+    if outcome.get("of_record_under") and region is not None and no_radar is not None and by_terrain is not None:
+        lines.append((f"Test 1 measured {share_text(region)} of the frame's land, inside JAXA's REGION; the rest feeds the "
+                      f"classes untested. There, {share_text(no_radar)} of the compared cells have no radar value on this "
+                      f"pass, and the map answers {share_text(by_terrain)} of those by terrain alone.",
+                      f"การทดสอบที่ 1 วัดได้ {share_text(region)} ของพื้นที่บกในกรอบ (ภายในชั้น REGION ของ JAXA) ส่วนที่เหลือ"
+                      f"ใช้คำนวณระดับโดยไม่ได้ทดสอบ ภายในพื้นที่นั้น {share_text(no_radar)} ของเซลล์ที่เปรียบเทียบไม่มีค่าเรดาร์"
+                      f"จากภาพรอบนี้ และแผนที่ให้คำตอบ {share_text(by_terrain)} ของเซลล์เหล่านั้นจากภูมิประเทศเพียงอย่างเดียว"))
+    dry_terrain, dry_cells, dry_flagged = care.get("dry_terrain_share"), care.get("dry_radar_cells"), care.get("dry_radar_flagged")
+    if dry_terrain is not None and dry_cells and dry_flagged is not None:
+        part = share_text(float(dry_flagged) / float(dry_cells))
+        lines.append((f"Dry control: terrain answered {share_text(dry_terrain)} of its answered cells; of the {int(dry_cells):,} "
+                      f"cells the radar decided, it flagged {int(dry_flagged)} ({part}). It mostly tests the terrain screen.",
+                      f"พื้นที่ควบคุม: ภูมิประเทศให้คำตอบ {share_text(dry_terrain)} ของเซลล์ที่มีคำตอบ ในเซลล์ {int(dry_cells):,} "
+                      f"เซลล์ที่เรดาร์ตัดสิน ระบุเป็นน้ำ {int(dry_flagged)} เซลล์ ({part}) จึงเป็นการทดสอบเกณฑ์ภูมิประเทศเป็นส่วนใหญ่"))
+    offset = care.get("platform_offset_db")
+    if offset:
+        lines.append((f"One event, one frame. The Sentinel-1C pass is raised by {float(offset):g} dB to match its Sentinel-1A "
+                      "dry season (amendment 1).",
+                      f"เหตุการณ์เดียว พื้นที่เดียว ค่าภาพ Sentinel-1C ถูกปรับเพิ่ม {float(offset):g} dB ให้ตรงกับฤดูแล้งของ "
+                      "Sentinel-1A (การแก้ไขครั้งที่ 1)"))
+    if outcome.get("of_record_under"):
+        lines.append(HOSPITAL_NOTE)
+    return lines
+
+
+def assumptions_of(overlay: Mapping[str, Any]) -> list[tuple[str, str]]:
+    """The brief's assumptions, with the sentence on the flood input's weight that the result file asks it to carry."""
+
+    listed = list(ASSUMPTIONS)
+    for text in overlay.get("assumptions") or []:
+        found = DRIVES.search(str(text))
+        if found:
+            parts, total, weight = found.groups()
+            listed.insert(0, (found.group(0), f"ข้อมูลน้ำท่วมชุดเดียวกำหนดองค์ประกอบ {parts} ใน {total} ของคะแนน "
+                                              f"({weight}% ของน้ำหนัก)"))
+            break
+    return listed
 
 
 def condition_lines(rows: Sequence[Mapping[str, Any]], overlay: Mapping[str, Any]) -> list[tuple[str, str]]:
@@ -728,7 +993,7 @@ def _pieces(overlay: Mapping[str, Any], outcome: Mapping[str, Any], ensemble: Ma
         "letters": classes_on_the_brief(rows), "conditions": condition_lines(rows, overlay),
         "stability": stability_lines(rows, ensemble),
         "holds_note": (HOLDS_NOTE[0].format(minimum=f"{minimum:.0%}"), HOLDS_NOTE[1].format(minimum=f"{minimum:.0%}")),
-        "credits": credits_of(overlay, outcome),
+        "credits": credits_of(overlay, outcome), "care": care_lines(outcome), "assumptions": assumptions_of(overlay),
     }
 
 
@@ -743,8 +1008,12 @@ def render_markdown(overlay: Mapping[str, Any], outcome: Mapping[str, Any], ense
         lines += [f"**{case['fixture_notice']}**", ""]
     lines += [f"> **{STATUS[0]}**", ">", f"> **{STATUS[1]}**", "",
               f"{parts['what'][0]}", "", f"{parts['what'][1]}", "",
-              f"**{parts['outcome'][0]}**", "", f"**{parts['outcome'][1]}**", "",
-              f"- {parts['times'][0]}", f"- {parts['times'][1]}", f"- {parts['confidence'][0]} / {parts['confidence'][1]}", "",
+              f"**{parts['outcome'][0]}**", "", f"**{parts['outcome'][1]}**", ""]
+    if parts["care"]:
+        lines += ["### Read with care / ข้อควรระวัง", ""]
+        lines += [f"- {english} / {thai}" for english, thai in parts["care"]]
+        lines += [""]
+    lines += [f"- {parts['times'][0]}", f"- {parts['times'][1]}", f"- {parts['confidence'][0]} / {parts['confidence'][1]}", "",
               "| " + " | ".join(f"{english} / {thai}" for english, thai in COLUMNS) + " |", "|" + "---|" * len(COLUMNS)]
     for row in parts["rows"]:
         cells = [english if english == thai else f"{english} / {thai}" for english, thai in table_cells(row)]
@@ -761,7 +1030,7 @@ def render_markdown(overlay: Mapping[str, Any], outcome: Mapping[str, Any], ense
     lines += ["### Stability / ความเสถียร", ""]
     lines += [f"- {english} / {thai}" for english, thai in parts["stability"]]
     lines += ["", "### Assumptions / สมมติฐาน", ""]
-    lines += [f"- {english} / {thai}" for english, thai in ASSUMPTIONS]
+    lines += [f"- {english} / {thai}" for english, thai in parts["assumptions"]]
     lines += ["", f"{planning_brief.OFFICIAL[0]} / {planning_brief.OFFICIAL[1]}", "", "---", ""]
     lines += [f"Credits: {' '.join(parts['credits'])}", ""]
     lines += ["Made from " + "; ".join(f"`{item['path']}` (SHA-256 `{item['sha256']}`)" for item in made_from) + ".",
@@ -830,20 +1099,20 @@ def render_html(overlay: Mapping[str, Any], outcome: Mapping[str, Any], ensemble
 <style>
 @page {{ size: A4 landscape; margin: 6mm; }}
 * {{ -webkit-print-color-adjust: exact; print-color-adjust: exact; box-sizing: border-box; }}
-body {{ font-family: "Noto Sans Thai", "Sarabun", "Leelawadee UI", Tahoma, Arial, sans-serif; font-size: 7pt; line-height: 1.22; color: #111; margin: 0 auto; max-width: 285mm; padding: 0.5mm; background: #fff; }}
+body {{ font-family: "Noto Sans Thai", "Sarabun", "Leelawadee UI", Tahoma, Arial, sans-serif; font-size: 6.8pt; line-height: 1.17; color: #111; margin: 0 auto; max-width: 285mm; padding: 0.5mm; background: #fff; }}
 h1 {{ font-size: 11pt; margin: 0; }} h2 {{ font-size: 9pt; margin: 0; font-weight: 600; }}
-p {{ margin: 0.6mm 0; }}
+p {{ margin: 0.45mm 0; }}
 .head {{ display: grid; grid-template-columns: 0.85fr 1.15fr; gap: 3mm; align-items: center; }}
 .status {{ border: 1.2pt solid #111; padding: 0.8mm 2mm; font-weight: 700; }}
 .outcome {{ border-left: 2.5pt solid #087f8c; padding: 0.4mm 2mm; margin: 0.8mm 0; }}
 .outcome span[lang="en"] {{ font-weight: 700; }}
 .fixture {{ border: 1pt dashed #725124; padding: 0.6mm 2mm; font-weight: 700; }}
-.meta {{ font-size: 6.4pt; color: #333; }}
-.key {{ font-size: 6.2pt; line-height: 1.17; margin: 0.7mm 0; }}
+.meta {{ font-size: 6pt; line-height: 1.15; color: #333; }}
+.key {{ font-size: 5.7pt; line-height: 1.1; margin: 0.45mm 0; }}
 .strong {{ font-weight: 700; }}
-.foot {{ font-size: 5.8pt; color: #333; overflow-wrap: anywhere; }}
+.foot {{ font-size: 5.4pt; line-height: 1.12; color: #333; overflow-wrap: anywhere; }}
 .tables {{ display: grid; grid-template-columns: 1fr 1fr; gap: 2mm; align-items: start; margin: 0.8mm 0; }}
-table {{ border-collapse: collapse; width: 100%; font-size: 6.2pt; line-height: 1.1; }}
+table {{ border-collapse: collapse; width: 100%; font-size: 6pt; line-height: 1.04; }}
 th, td {{ border: 0.4pt solid #777; padding: 0.12mm 0.7mm; vertical-align: top; white-space: nowrap; }}
 th {{ background: #eee; font-size: 5.9pt; text-align: left; font-weight: 600; }}
 td.number {{ text-align: right; }}
@@ -856,12 +1125,13 @@ td.class {{ text-align: center; font-weight: 700; }}
 <div class="head"><div><h1>{escape(case['title_en'])}</h1><h2 lang="th">{escape(case['title_th'])}</h2></div>{pair(STATUS, "div", ' class="status"')}</div>
 {fixture}{pair(parts['what'], "p", ' class="what"')}
 {pair(parts['outcome'], "div", ' class="outcome"')}
+{key(("Read with care", "ข้อควรระวัง"), parts['care']) if parts['care'] else ""}
 <p class="meta">{escape(parts['times'][0])}<br><span lang="th">{escape(parts['times'][1])}</span><br>{escape(parts['confidence'][0])} <span lang="th">{escape(parts['confidence'][1])}</span></p>
 <div class="tables">{tables}</div>
 {key(("What each class asks", "แต่ละระดับหมายถึงอะไร"), asks, " · ")}
 {key(("How to read the table", "วิธีอ่านตาราง"), reading)}
 {key(("Stability", "ความเสถียร"), parts['stability'])}
-{key(("Assumptions", "สมมติฐาน"), ASSUMPTIONS)}
+{key(("Assumptions", "สมมติฐาน"), parts['assumptions'])}
 {pair((NEVER_SAFE[0] + " " + planning_brief.OFFICIAL[0], NEVER_SAFE[1] + " " + planning_brief.OFFICIAL[1]), "p", ' class="key strong"')}
 <p class="foot">Credits: {escape(' '.join(parts['credits']))}<br>Made from {sources}. {escape(planning_brief.THAI_NOTE[0])} / {escape(planning_brief.THAI_NOTE[1])}</p>
 </body>
@@ -926,8 +1196,10 @@ def build(result_path: Path, test_path: Path, ensemble_path: Path | None, out_di
     refuse_behind_the_firewall([result_path, test_path, ensemble_path, out_dir])
     overlay, result_sha = read_json(result_path)
     check_result(overlay)
-    test, test_sha = read_json(test_path)
-    outcome = outcome_of_the_test(test)
+    test, test_sha, first_run = read_test_record(test_path)
+    post_test = read_post_test(test_path, test_sha)
+    outcome = outcome_of_the_test(test, None if first_run is None else first_run["record"],
+                                  None if post_test is None else post_test["record"])
     ensemble, ensemble_sha = None, None
     if ensemble_path is not None:
         document, ensemble_sha = read_json(ensemble_path)
@@ -937,6 +1209,12 @@ def build(result_path: Path, test_path: Path, ensemble_path: Path | None, out_di
         raise N1BriefError("a fixture result is never written into outputs/planning_brief")
     made_from = [{"what": "result_file", "path": label_of(result_path, external_root), "sha256": result_sha},
                  {"what": "test_record", "path": label_of(test_path, external_root), "sha256": test_sha}]
+    if first_run is not None:
+        made_from.append({"what": "first_run_record", "path": label_of(first_run["path"], external_root),
+                          "sha256": first_run["sha256"]})
+    if post_test is not None:
+        made_from.append({"what": "post_test_reasons", "path": label_of(post_test["path"], external_root),
+                          "sha256": post_test["sha256"]})
     if ensemble_path is not None:
         made_from.append({"what": "ensemble_record", "path": label_of(ensemble_path, external_root), "sha256": str(ensemble_sha)})
     out_dir = Path(out_dir)
@@ -953,21 +1231,22 @@ def build(result_path: Path, test_path: Path, ensemble_path: Path | None, out_di
         "confidence_class": "low" if "low" in levels else "medium",
         "confidence_basis": "The lowest confidence class of the rows on the brief; each row's class is printed beside it.",
         "confidence_classes_of_the_rows": levels,
-        "assumptions": [english for english, _thai in ASSUMPTIONS],
+        "assumptions": [english for english, _thai in assumptions_of(overlay)],
         "official_warning": False,
         "operational_status": "non_operational",
         "can_feed_decision_layer": False,
         "made_from": made_from,
         "ensemble_record": None if ensemble is None else {"kind": ensemble["kind"], "cells_run": ensemble["cells_run"]},
-        "test_outcome": {key: outcome[key] for key in ("reference", "fallback", "test_1_passes", "dry_control_passes", "iou",
-                                                       "no_answer_share", "dry_share", "case_reference_date")},
+        "test_outcome": {key: outcome[key] for key in ("reference", "fallback", "of_record_under", "test_1_passes",
+                                                       "dry_control_passes", "iou", "no_answer_share", "dry_share",
+                                                       "case_reference_date")},
         "files": files,
         "classes_on_the_brief": {row["unit_id"]: {"class_in_effect": row["class_in_effect"], "would_be_class": row["would_be_class"],
                                                   "shown": row["shown"], "kind": row["kind"], "confidence_class": row["confidence"]}
                                  for row in rows},
         "thai_text": planning_brief.THAI_NOTE[0],
         "how_to_print": "Open the HTML file in a browser and print: A4, landscape, one sheet, background graphics on.",
-        "wording": "Every figure is agreement with another map, not accuracy. Planning guidance only.",
+        "wording": "Every test figure is agreement with another map, not a ground check. Planning guidance only.",
     }
     record_text = json.dumps(record, indent=1, ensure_ascii=False) + "\n"
     record_file = write_text(out_dir / f"{NAME}_record.json", record_text)
@@ -979,7 +1258,8 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     parser = argparse.ArgumentParser(description=(__doc__ or "").split("\n")[0])
     parser.add_argument("--result", type=Path, help=f"the N1 result file (default: the first of {', '.join(RESULT_CANDIDATES)})")
-    parser.add_argument("--test-result", type=Path, default=ROOT / TEST_RESULT, help="the test record of the case")
+    parser.add_argument("--test-result", type=Path, default=default_test_record(),
+                        help=f"the test record of the case (default: {TEST_1_OF_RECORD} when it exists, else {TEST_RESULT})")
     parser.add_argument("--ensemble", type=Path, help="the run record of the chain or the ensemble document of the work folder "
                         "(default: the run record beside the result file)")
     parser.add_argument("--no-ensemble", action="store_true", help="make the brief without an ensemble record (it says so)")

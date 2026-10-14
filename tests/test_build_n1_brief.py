@@ -256,15 +256,16 @@ def test_both_forms_carry_every_part_the_brief_promises() -> None:
         assert "JAXA ALOS-2 Flood Proxy Map of 2025-07-28" in text and "แผนที่จากดาวเทียมอีกดวงหนึ่ง" in text
         assert "Test outcome: both tests met the bars fixed before the test" in text and "IoU 0.47" in text
         assert "95% interval 0.41 to 0.52" in text and "no answer on 12% of the compared cells" in text
-        assert "Dry control on hills with no flood: 1.2% of the answered cells flagged" in text
-        assert "ผลการทดสอบ:" in text and "ไม่ใช่ความแม่นยำ" in text
+        assert "Dry control on hills where the THEOS-2 image shows no water: 1.2% of the answered cells flagged" in text
+        assert "ผลการทดสอบ:" in text and "ไม่ใช่การตรวจสอบภาคสนาม" in text and "not a ground check" in text
         # Each tambon: name in both languages, score, class, binding or would-be, reason, confidence.
         for spec in SPECS:
             assert spec[1] in text and spec[2] in text
         assert "71.2" in text and "80.5" in text and "would-be" in text and "จะได้" in text and "binding" in text and "มีผล" in text
         assert "route access" in text and "C1 C4" in text and "C4: the share of residents inside the mapped water" in text
         assert "C6: fewer than 100 modelled residents." in text
-        assert "Confidence: 2 of 5 tambons medium, 3 low; 2 binding classes, 2 would-be classes; 1 with no class" in text
+        assert "Confidence: 2 of 5 tambons medium, 3 low. Class in effect: B in 1, E in 3; 1 with no class" in text
+        assert "Would-be class (not binding): A in 1, D in 1." in text
         # Source times, stability, the planning-only line, the official line and the Thai note.
         assert "radar pass 2025-07-28 11:21 UTC (2025-07-28 18:21 Thai time), Sentinel-1C, relative orbit 99" in text
         assert "Test run 2026-10-19T22:00:00Z" in text and "Result made 2026-10-20T01:02:03Z" in text
@@ -452,6 +453,100 @@ def test_the_fallback_and_the_full_ensemble_go_through_the_build(tmp_path: Path)
     result, test, record = written_inputs(tmp_path / "failed", passed=False)
     brief.build(result, test, record, tmp_path / "out_failed")
     assert "test 1 did not meet its bar" in (tmp_path / "out_failed" / "n1_nan_brief.md").read_text(encoding="utf-8")
+
+
+def invented_test_of_record(first_run_sha256: str, *, first_run_path: str = "outputs/nan_case/test_result_v1.json") -> dict[str, Any]:
+    """An invented test 1 of record under amendment 2, naming a first run by path and SHA-256 (fixture, not a place)."""
+
+    shaped = invented_test(passed=False)
+    return {
+        "schema": brief.TEST_1_OF_RECORD_SCHEMA, "generated_at_utc": "2026-10-19T23:00:00Z",
+        "source_timestamp": "invented passes (fixture, not a place)", "confidence_class": "low",
+        "assumptions": ["Invented for a test (fixture, not a place)."], "official_warning": False,
+        "operational_status": "non_operational", "can_feed_decision_layer": False,
+        "first_run": {"path": first_run_path, "sha256": first_run_sha256, "kept_as_written": True,
+                      "dry_control_used_in_the_binding": {"passes": True, "flagged_share_of_answered": 0.012}},
+        "test_1": {**shaped["test_1"], "of_record_under": "amendment 2 of the protocol (decision log R53)"},
+        "binding": shaped["binding"],
+    }
+
+
+def test_the_test_of_record_reads_its_dry_control_and_town_figures_from_the_first_run_it_names(tmp_path: Path) -> None:
+    folder = tmp_path / "in"
+    overlay = invented_result(passed=False, iou=IOU_FAIL)
+    result = folder / "planning_result_n1_nan_v1.json"
+    result_sha = dump(result, overlay)
+    first_run_sha = dump(folder / "test_result_v1.json", invented_test(passed=False, fallback=True))
+    test = folder / "test_1_jaxa_v1.json"
+    test_sha = dump(test, invented_test_of_record(first_run_sha))
+    record = folder / "planning_result_n1_nan_v1_record.json"
+    run_record = invented_run_record(overlay, result_sha256=result_sha, test_sha256=test_sha)
+    run_record["case_outcome"].update(test_1_passed=False, dry_control_passed=True)
+    dump(record, run_record)
+
+    document, sha, first_run = brief.read_test_record(test)
+    assert sha == test_sha and first_run is not None and first_run["sha256"] == first_run_sha
+    outcome = brief.outcome_of_the_test(document, first_run["record"])
+    assert outcome["of_record_under"].startswith("amendment 2") and not outcome["fallback"] and not outcome["passed"]
+    assert outcome["dry_share"] == 0.012 and outcome["dry_answered_cells"] == 20000 and outcome["town"]["water_found"] == 0.33
+    assert "test 1 of record under amendment 2" in brief.case_line(outcome, overlay)[0]
+    written = brief.build(result, test, record, tmp_path / "out")["record"]
+    assert [item["what"] for item in written["made_from"]] == ["result_file", "test_record", "first_run_record", "ensemble_record"]
+    assert written["test_outcome"]["of_record_under"].startswith("amendment 2")
+    # Without the first run the brief uses the dry control share the record copies, and gives no town figures.
+    alone = brief.outcome_of_the_test(invented_test_of_record(first_run_sha, first_run_path="outputs/nan_case/fx_absent.json"))
+    assert alone["dry_share"] == 0.012 and alone["town"] is None and alone["dry_answered_cells"] is None
+    # A first run with other bytes than the record names is refused.
+    dump(folder / "test_result_v1.json", invented_test(passed=True))
+    with pytest.raises(brief.N1BriefError, match="SHA-256 differs"):
+        brief.read_test_record(test)
+
+
+def invented_post_test(test_sha256: str) -> dict[str, Any]:
+    """An invented reason record of the case (fixture, not a place), naming a test record by its SHA-256."""
+
+    return {
+        "schema": brief.POST_TEST_SCHEMA, "report_only": True,
+        "read_from": {"test_1_of_record": {"path": "outputs/nan_case/test_1_jaxa_v1.json", "sha256": test_sha256}},
+        "test_1_jaxa_water": {"reasons_on_jaxa_water": {"cells": 100, "counts": {"flagged": 20}},
+                              "reasons_on_jaxa_water_by_kind": {"answered_by_terrain": 60}},
+        "dry_chip": {"first_run_pass_20250731T2308_o62_S1A": {"terrain_share": 0.9, "by_kind": {"decided_by_the_radar": 200},
+                                                              "counts": {"flagged": 4}}},
+    }
+
+
+def test_the_reason_record_beside_the_test_record_adds_lines_of_care_and_is_refused_for_another_test(tmp_path: Path) -> None:
+    folder = tmp_path / "in"
+    first_run_sha = dump(folder / "test_result_v1.json", invented_test(passed=False, fallback=True))
+    test = folder / "test_1_jaxa_v1.json"
+    document = invented_test_of_record(first_run_sha)
+    document["test_1"]["central_reasons_on_compared_cells"] = {
+        "flagged": 10, "not_flagged_radar_dry": 30, "not_flagged_terrain_hand_above_the_limit": 500,
+        "not_flagged_terrain_slope_5_degrees_or_more": 400, "no_answer_rtc_no_data_after": 5}
+    document["test_1"]["central"] = {**document["test_1"]["central"], "compared_cells": 1000}
+    test_sha = dump(test, document)
+    assert brief.read_post_test(test, test_sha) is None
+    dump(folder / brief.POST_TEST_NAME, invented_post_test(test_sha))
+    post = brief.read_post_test(test, test_sha)
+    assert post is not None
+    _same_document, _sha, first_run = brief.read_test_record(test)
+    outcome = brief.outcome_of_the_test(document, first_run["record"], post["record"])
+    care = outcome["care"]
+    assert care["terrain_share"] == pytest.approx(0.9) and care["radar_share"] == pytest.approx(0.04)
+    assert care["missed_terrain_share"] == pytest.approx(0.75) and care["dry_radar_cells"] == 200
+    lines = [english for english, _thai in brief.care_lines(outcome)]
+    assert any("Terrain answered 90% of the compared cells" in line for line in lines)
+    assert any("75% was ruled out by the terrain screen" in line and "counted after the test" in line for line in lines)
+    assert any("of the 200 cells the radar decided, it flagged 4 (2.0%)" in line for line in lines)
+    assert all(thai for _english, thai in brief.care_lines(outcome))
+    dump(folder / brief.POST_TEST_NAME, invented_post_test("0" * 64))
+    with pytest.raises(brief.N1BriefError, match="names another test record"):
+        brief.read_post_test(test, test_sha)
+
+
+def test_a_small_share_is_not_printed_as_zero() -> None:
+    assert brief.share_text(8 / 21408) == "0.04%" and brief.share_text(0.0) == "0.0%"
+    assert brief.share_text(0.012) == "1.2%" and brief.share_text(0.33) == "33%" and brief.share_text(None) == "n/a"
 
 
 # ---------------------------------------------------------------------------

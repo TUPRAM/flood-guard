@@ -91,6 +91,8 @@ export interface TownRoute {
   length: number;
   edges: RouteEdge[];
   cutStage: number;
+  /** The sample of the first closing edge that closes the walk (where the "low point" and "walk cut" labels sit). */
+  lowPoint: { x: number; z: number; along: number };
 }
 
 export interface Grid {
@@ -363,7 +365,10 @@ interface RawManifest extends TownManifest {
   };
   roads: { count: number; line_start: number[]; coords: number[]; classes: string[]; class: number[]; width_dm: number[]; bridge: number[] };
   trees: { count: number; coords: number[]; kind: number[]; scale: number[] };
-  route: { destination: string; length_m: number; points: number[]; edges: Array<[number, number, number | null]>; cut_stage_m: number };
+  route: {
+    destination: string; length_m: number; points: number[]; edges: Array<[number, number, number | null]>; cut_stage_m: number;
+    first_cut: { low_point: { x: number; z: number; along_m: number } };
+  };
 }
 
 /** Decoded PNG pixels: `channels` bytes per pixel, rows top to bottom. */
@@ -444,6 +449,7 @@ export function decodeTownPack(manifestText: string, images: { cells: Pixels; re
     length: rt.length_m,
     edges: rt.edges.map(([from, to, closure]) => ({ from, to, closure: closure ?? Number.POSITIVE_INFINITY })),
     cutStage: rt.cut_stage_m,
+    lowPoint: { x: rt.first_cut.low_point.x, z: rt.first_cut.low_point.z, along: rt.first_cut.low_point.along_m },
   };
   const shelterPlace = raw.places.find((place) => place.id === rt.destination);
   const nearestBuilding = (x: number, z: number) => {
@@ -461,6 +467,17 @@ export function decodeTownPack(manifestText: string, images: { cells: Pixels; re
     office: namedBuilding(raw, "district_office", "office", "R05") >= 0 ? namedBuilding(raw, "district_office", "office", "R05") : office ? nearestBuilding(office.x, office.z) : -1,
     shelter: namedBuilding(raw, "municipality_office", "shelter", rt.destination) >= 0 ? namedBuilding(raw, "municipality_office", "shelter", rt.destination) : shelterPlace ? nearestBuilding(shelterPlace.x, shelterPlace.z) : -1,
   };
+  // The story needs all of these; an incomplete bake stops here with a clear reason (the page then shows the text
+  // version) rather than failing somewhere inside the scene.
+  const missing = [
+    raw.replay.stage_anchors.length === 0 && "replay stage anchors",
+    route.edges.length === 0 && "walk edges",
+    !Number.isFinite(route.cutStage) && "the walk's cut stage",
+    special.home < 0 && "the home's building",
+    special.neighbour < 0 && "the neighbours' building",
+    special.office < 0 && "the District Office building",
+  ].filter(Boolean);
+  if (missing.length) throw new Error(`Town bake is incomplete: no ${missing.join(", ")}`);
   return { manifest: raw, cells, relief, cover, backdrop, buildings, roads, trees, route, special };
 }
 

@@ -121,6 +121,12 @@ describe("the journey's town (the bake of Mae Sai)", () => {
     expect(route.cutStage).toBeGreaterThan(stageAtHour(pack.manifest, 48));
     expect(route.cutStage).toBeLessThanOrEqual(stageAtHour(pack.manifest, 49));
     expect(Math.min(...route.edges.map((edge) => edge.closure))).toBeCloseTo(route.cutStage, 3);
+    // The labels' low point: under 30 cm at midnight (hour 48), 30 cm or more at 1:00 (hour 49), in the model.
+    const low = field.cellIndex(route.lowPoint.x, route.lowPoint.z);
+    expect(field.cellDepth(low, stageAtHour(pack.manifest, 48))!).toBeGreaterThan(0);
+    expect(field.cellDepth(low, stageAtHour(pack.manifest, 48))!).toBeLessThan(0.3);
+    expect(field.cellDepth(low, stageAtHour(pack.manifest, 49))!).toBeGreaterThanOrEqual(0.3);
+    expect(Math.hypot(route.lowPoint.x, route.lowPoint.z)).toBeCloseTo(110, -1);
   });
 
   it("keeps Wat Mueang Daeng out of the walk: the record says it was itself flooded", () => {

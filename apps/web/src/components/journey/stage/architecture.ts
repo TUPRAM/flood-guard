@@ -182,7 +182,7 @@ function doorItem(frame: Frame, trim: THREE.Color, wood: THREE.Color): void {
 let groundHeight: (x: number, z: number) => number = terrainHeight;
 
 /** Build on another ground (the real-map town's drawn ground). */
-export function setArchitectureGround(height: (x: number, z: number) => number): void {
+export function setArchitectureGround(height: (x: number, z: number) => number = terrainHeight): void {
   groundHeight = height;
 }
 
@@ -229,6 +229,25 @@ export function houseTopHeight(spec: HouseSpec): number {
   return groundUnder(spec.x, spec.z, spec.w, spec.d, spec.rotation) + PLINTH + spec.storeys * STOREY;
 }
 
+/** The porch's width, depth and centre along the front, in the house's frame. */
+function porchLayout(spec: HouseSpec): { pw: number; pd: number; px: number } {
+  const pw = Math.min(spec.w * 0.62, 4.6);
+  return { pw, pd: 2.3, px: THREE.MathUtils.clamp(spec.doorX, -spec.w / 2 + pw / 2, spec.w / 2 - pw / 2) };
+}
+
+/** Height of the porch slab or its step at a world point (for someone standing on it), or null off the porch. */
+export function porchSurfaceAt(spec: HouseSpec, x: number, z: number): number | null {
+  if (!spec.porch) return null;
+  const c = Math.cos(spec.rotation), s = Math.sin(spec.rotation);
+  const dx = x - spec.x, dz = z - spec.z;
+  const lx = dx * c - dz * s, lz = dx * s + dz * c;
+  const { pw, pd, px } = porchLayout(spec);
+  const base = groundUnder(spec.x, spec.z, spec.w, spec.d, spec.rotation) - 0.04;
+  if (Math.abs(lx - px) <= pw / 2 && lz >= spec.d / 2 && lz <= spec.d / 2 + pd) return base + PLINTH;
+  if (Math.abs(lx - spec.doorX) <= 0.7 && lz > spec.d / 2 + pd && lz <= spec.d / 2 + pd + 0.5) return base + PLINTH * 0.5;
+  return null;
+}
+
 export function buildHouse(parts: Parts, spec: HouseSpec): void {
   const random = seeded(spec.seed);
   const base = groundUnder(spec.x, spec.z, spec.w, spec.d, spec.rotation) - 0.04;
@@ -270,8 +289,7 @@ export function buildHouse(parts: Parts, spec: HouseSpec): void {
 
   if (spec.porch) {
     // Covered veranda in front of the door: slab, two slim columns, a shallow lean-to roof.
-    const pw = Math.min(w * 0.62, 4.6), pd = 2.3;
-    const px = THREE.MathUtils.clamp(spec.doorX, -w / 2 + pw / 2, w / 2 - pw / 2);
+    const { pw, pd, px } = porchLayout(spec);
     F.add("concrete", box(pw, P, pd), PALETTE.concrete, M(px, P / 2, d / 2 + pd / 2));
     F.add("concrete", box(1.4, P * 0.5, 0.5), PALETTE.concrete, M(spec.doorX, P * 0.25, d / 2 + pd + 0.25));
     for (const side of [-1, 1]) {

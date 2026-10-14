@@ -16,7 +16,7 @@ fictional.
 | Buildings | About 20 procedural houses | Open building outlines (Google Open Buildings v3 and Microsoft, combined by VIDA), extruded with a Thai building kit; heights and looks are illustrative |
 | Water | One flat level per state; one stretch of road floods | The replay's water, cell by cell: depth = k × (stage − HAND) at the hour of each beat |
 | Destination | A clinic | The Mae Sai Subdistrict Municipality Office shelter (reported in use from the early hours of 11 Sep 2024), the nearest reported shelter by walk (about 1.6 km) |
-| Narin and Pim | An invented office | Inside the Mae Sai District Office, the reported 2024 incident command centre (exterior on its real outline; interior illustrative) |
+| Narin and Pim | An invented office | At the Mae Sai District Office, the reported 2024 incident command centre (an illustrative operations room at its real place, in place of the real building) |
 | Time | Water states | Replay hours 12, 40, 46, 48, 84 and 132, the hours of the Public app's practice scenarios |
 
 ## Facts the story rests on (read from the published files)

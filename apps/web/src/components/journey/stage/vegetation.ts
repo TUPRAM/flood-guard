@@ -411,29 +411,31 @@ export function buildTrees(options: TreeOptions): Vegetation {
   const bark = new THREE.MeshStandardMaterial({ color: "#6e5d4b", roughness: 0.92 });
   const palmBark = new THREE.MeshStandardMaterial({ color: "#8d7d68", roughness: 0.9 });
   const random = seeded(29);
-  const tiles = new Map<string, Array<{ p: TreePlacement; r: number; tint: number }>>();
+  // One instanced mesh per variant, detail (near the story's places or not) and 300 m tile: a few dozen draws for
+  // the whole town, while tiles out of view are still culled.
+  const tiles = new Map<string, Array<{ p: TreePlacement; y: number; r: number; tint: number }>>();
   for (const p of options.trees) {
     const variant = kindVariant[p.kind] ?? "round";
     const size = VARIANT_SIZE[(variant === "banana" ? "shrub" : variant) as Variant];
+    const y = options.height(p.x, p.z);
     if (options.clearance) {
       const r = (variant === "banana" ? 2 : size.radius) * p.scale + 3, h = (variant === "banana" ? 3.4 : size.height) * p.scale + 3;
-      if (options.clearance.some((c) => c.y < h + options.height(p.x, p.z) && (c.x - p.x) ** 2 + (c.z - p.z) ** 2 < r * r)) continue;
+      if (options.clearance.some((c) => (c.x - p.x) ** 2 + (c.z - p.z) ** 2 < r * r && c.y < h + y)) continue;
     }
-    const key = `${variant}:${Math.floor(p.x / 48)}:${Math.floor(p.z / 48)}`;
+    const near = options.focus.some((f) => Math.hypot(f.x - p.x, f.z - p.z) < f.r);
+    const key = `${variant}:${near ? 1 : 0}:${Math.floor(p.x / 300)}:${Math.floor(p.z / 300)}`;
     if (!tiles.has(key)) tiles.set(key, []);
-    tiles.get(key)!.push({ p, r: random() * Math.PI * 2, tint: 0.88 + random() * 0.24 });
+    tiles.get(key)!.push({ p, y, r: random() * Math.PI * 2, tint: 0.88 + random() * 0.24 });
   }
   const matrix = new THREE.Matrix4(), color = new THREE.Color(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0);
   tiles.forEach((list, key) => {
-    const [variant, tx, tz] = key.split(":");
-    const cx = (Number(tx) + 0.5) * 48, cz = (Number(tz) + 0.5) * 48;
-    const near = options.focus.some((f) => Math.hypot(f.x - cx, f.z - cz) < f.r);
+    const [variant, nearFlag] = key.split(":");
+    const near = nearFlag === "1";
     const geo = (!near ? far[variant] : undefined) ?? variants[variant];
     const leafy = variant === "palm" || variant === "banana";
     const canopy = new THREE.InstancedMesh(geo.canopy, leafy ? fronds : foliage, list.length);
     const trunk = new THREE.InstancedMesh(geo.trunk, variant === "palm" ? palmBark : bark, list.length);
-    list.forEach(({ p, r, tint }, i) => {
-      const y = options.height(p.x, p.z);
+    list.forEach(({ p, y, r, tint }, i) => {
       matrix.compose(new THREE.Vector3(p.x, y - 0.05, p.z), q.setFromAxisAngle(up, r), new THREE.Vector3(p.scale, p.scale * (0.92 + ((i * 7919) % 13) / 60), p.scale));
       canopy.setMatrixAt(i, matrix);
       trunk.setMatrixAt(i, matrix);

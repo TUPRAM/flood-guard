@@ -880,6 +880,36 @@ def plant_trees(cover: np.ndarray, land: SimpleNamespace, roads: SimpleNamespace
 # --- Walking network ----------------------------------------------------------------------------------------------------
 
 
+def road_grids(replay: SimpleNamespace) -> tuple[np.ndarray, np.ndarray, SimpleNamespace]:
+    """The r5 codes, depth factors and the unit grid that ``sample_road`` reads them on."""
+    grid: HandGrid = replay.grid
+    codes = replay.rgb[..., 0]
+    kgrid = replay.rgb[..., 1].astype(np.float64) / 255 * replay.scale
+    # sample_road reads cells as floor(x / res) and floor(-y / res): fractional columns and negated fractional rows
+    # on a unit grid give the r5 Web Mercator cells exactly.
+    unit = SimpleNamespace(bounds=(0.0, -float(grid.height), float(grid.width), 0.0), res=1.0, width=grid.width, height=grid.height)
+    return codes, kgrid, unit
+
+
+def edge_samples(replay: SimpleNamespace, a: np.ndarray, b: np.ndarray, length: float) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """The replay's samples along an edge from lon/lat ``a`` to ``b`` (every 10 m or closer, both ends included)."""
+    steps = np.linspace(0.0, 1.0, max(2, int(length // 10) + 2))
+    lon = a[0] + steps * (b[0] - a[0])
+    lat = a[1] + steps * (b[1] - a[1])
+    col, row = replay.grid.fractional(lon, lat)
+    return steps, col, row
+
+
+def low_point(network: SimpleNamespace, replay: SimpleNamespace, a: int, b: int) -> tuple[float, float, float]:
+    """The sample of the edge from node ``a`` to ``b`` (walk order) that closes first: its fraction along, x and z."""
+    codes, kgrid, unit = road_grids(replay)
+    length = float(np.hypot(network.x[b] - network.x[a], network.z[b] - network.z[a]))
+    steps, col, row = edge_samples(replay, network.lonlat[a], network.lonlat[b], length)
+    closes = [closure_stage(*evac.sample_road(codes, kgrid, unit, col[j:j + 1], -row[j:j + 1]), IMPASSABLE_DEPTH_M) for j in range(len(steps))]
+    t = float(steps[int(np.argmin(closes))])
+    return t, float(network.x[a] + t * (network.x[b] - network.x[a])), float(network.z[a] + t * (network.z[b] - network.z[a]))
+
+
 def load_network(path: Path, replay: SimpleNamespace) -> SimpleNamespace:
     """The replay's walking network with lengths in the local frame and closure stages on the r5 cells."""
     with path.open(encoding="utf-8", newline="") as stream:
@@ -891,18 +921,10 @@ def load_network(path: Path, replay: SimpleNamespace) -> SimpleNamespace:
     u = np.array([index[r["from_node"]] for r in rows], dtype=np.int64)
     v = np.array([index[r["to_node"]] for r in rows], dtype=np.int64)
     length = np.hypot(x[v] - x[u], z[v] - z[u])
-    grid: HandGrid = replay.grid
-    codes = replay.rgb[..., 0]
-    kgrid = replay.rgb[..., 1].astype(np.float64) / 255 * replay.scale
-    # sample_road reads cells as floor(x / res) and floor(-y / res): fractional columns and negated fractional rows
-    # on a unit grid give the r5 Web Mercator cells exactly.
-    unit = SimpleNamespace(bounds=(0.0, -float(grid.height), float(grid.width), 0.0), res=1.0, width=grid.width, height=grid.height)
+    codes, kgrid, unit = road_grids(replay)
     close = np.empty(len(rows))
     for i, (a, b) in enumerate(zip(u, v)):
-        steps = np.linspace(0.0, 1.0, max(2, int(length[i] // 10) + 2))
-        lon = lonlat[a, 0] + steps * (lonlat[b, 0] - lonlat[a, 0])
-        lat = lonlat[a, 1] + steps * (lonlat[b, 1] - lonlat[a, 1])
-        col, row = grid.fractional(lon, lat)
+        steps, col, row = edge_samples(replay, lonlat[a], lonlat[b], float(length[i]))
         h, k = evac.sample_road(codes, kgrid, unit, col, -row)
         close[i] = closure_stage(h, k, IMPASSABLE_DEPTH_M)
     adjacency: list[list[tuple[int, int]]] = [[] for _ in ids]
@@ -1349,6 +1371,8 @@ def bake(external: Path, out_dir: Path, generated_at: str) -> tuple[dict[str, An
     cut_stage = min(edge_close)
     first = int(np.argmin(edge_close))
     along = np.concatenate([[0.0], np.cumsum(np.hypot(*np.diff(usual_points, axis=0).T))])
+    # Points: the home, then the walk's nodes; edge i runs from node i to node i + 1 (points i + 1 and i + 2).
+    low_t, low_x, low_z = low_point(network, replay, usual["nodes"][first], usual["nodes"][first + 1])
     app = app_block(replay)
     if app["cut_level_m"] is None or abs(cut_stage - app["cut_level_m"]) > CUT_TOLERANCE_M:
         raise AssertionError(f"the walk's cut stage {cut_stage} differs from the app's cut level {app['cut_level_m']} by more than {CUT_TOLERANCE_M} m")
@@ -1368,7 +1392,10 @@ def bake(external: Path, out_dir: Path, generated_at: str) -> tuple[dict[str, An
         "cut_stage_m": round(cut_stage, 4),
         "first_cut": {"edge": first, "along_m": [round(float(along[first + 1]), 1), round(float(along[first + 2]), 1)],
                       "x": round(float(usual_points[first + 1, 0]), 1), "z": round(float(usual_points[first + 1, 1]), 1),
-                      "closure_stage_m": round(edge_close[first], 4)},
+                      "closure_stage_m": round(edge_close[first], 4),
+                      "low_point": {"x": round(low_x, 1), "z": round(low_z, 1),
+                                    "along_m": round(float(along[first + 1] + low_t * (along[first + 2] - along[first + 1])), 1),
+                                    "note": "The sample of this edge that closes it (the replay's samples, read one by one)."}},
         "closure_rule": "closure_stage(sample_road(...)) of floodguard.evacuation_access and scripts/mae_sai_timeline_evacuation.py "
                         "on samples every 10 m along the edge, read on the r5 cells: the stage at which the depth k x (stage - "
                         "code x 0.05) first reaches 0.3 m at a usable sample (channel and never-flood samples ignored).",

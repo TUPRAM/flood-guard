@@ -423,6 +423,30 @@ def test_walk_recomputed_from_the_network_and_r5_cells(manifest: dict[str, Any],
             assert abs(beat["best_path"]["length_m"] - found[0]) <= 0.01 * found[0], beat["hour"]
 
 
+def test_first_cut_low_point_is_the_sample_that_closes_the_walk(manifest: dict[str, Any], timeline: dict[str, Any]) -> None:
+    """The scene pins its 'low point' and 'walk cut' labels here: on the first closing edge, on a cell that closes at the
+    walk's cut stage (not at the edge's start, which can be dry when the walk is already cut)."""
+    from PIL import Image
+
+    route = manifest["route"]
+    first = route["first_cut"]
+    low = first["low_point"]
+    assert first["along_m"][0] <= low["along_m"] <= first["along_m"][1]
+    points = decode(route["points"])
+    a, b = points[first["edge"] + 1], points[first["edge"] + 2]
+    t = (low["along_m"] - first["along_m"][0]) / (first["along_m"][1] - first["along_m"][0])
+    assert [low["x"], low["z"]] == pytest.approx(list(a + t * (b - a)), abs=0.3)
+    scale = timeline["hand"]["depth_factor"]["byte_scale"]
+    with Image.open(R5 / "hand-codes.png") as image:
+        rgb = np.asarray(image.convert("RGB"))
+    row, col = r5_cell(timeline, ORIGIN_LAT - low["z"] / M_PER_DEG_LAT, ORIGIN_LON + low["x"] / M_PER_DEG_LON)
+    code, k = np.array([int(rgb[row, col, 0])]), np.array([rgb[row, col, 1] / 255 * scale])
+    assert r5_closure_stage(code, k) == pytest.approx(route["cut_stage_m"], abs=1e-3)
+    # The edge's start is a higher cell that is still dry at hour 49, when the walk is already cut.
+    row0, col0 = r5_cell(timeline, ORIGIN_LAT - first["z"] / M_PER_DEG_LAT, ORIGIN_LON + first["x"] / M_PER_DEG_LON)
+    assert int(rgb[row0, col0, 0]) > code[0]
+
+
 def test_wet_share_recomputed_from_the_cells(manifest: dict[str, Any], timeline: dict[str, Any]) -> None:
     """Share of r5 cells within 450 m of the home with water at each beat (the app's cellDepth rule, exact centres)."""
     from PIL import Image

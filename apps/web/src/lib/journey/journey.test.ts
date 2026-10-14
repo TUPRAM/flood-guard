@@ -6,6 +6,7 @@ import { solveReach, type Point } from "./reach";
 import { applyHomography, quadIsDrawable, quadToMatrix3d, squareToQuad, type Quad } from "./screen-projection";
 import { LAYOUT, WATER_LEVEL, floodedRoadRanges, isUnderWater, roadHeight, terrainHeight } from "./terrain";
 import {
+  CHAPTERS,
   STOP_HOURS,
   STOP_IDS,
   TIMELINE_END,
@@ -56,13 +57,18 @@ describe("journey timeline", () => {
     expect(chapterStart("conditions")).toBeCloseTo(stopPosition("public"));
   });
 
-  it("enters a chapter just past a boundary stop, so chapter links never dock the previous page", () => {
-    for (const chapter of ["conditions", "night", "response", "after"] as const) {
-      expect(stopAt(chapterEntry(chapter))).toBeNull();
-      expect(chapterAt(chapterEntry(chapter))).toBe(chapter);
+  it("enters a chapter inside its own picture: past a boundary stop and past a dip to dark", () => {
+    for (const chapter of CHAPTERS) {
+      const entry = chapterEntry(chapter);
+      expect(stopAt(entry), chapter).toBeNull();
+      expect(chapterAt(entry), chapter).toBe(chapter);
+      expect(veilAt(entry), chapter).toBe(0);
+      expect(entry - chapterStart(chapter), chapter).toBeLessThan(0.2);
     }
-    expect(chapterEntry("everyday")).toBe(chapterStart("everyday"));
+    expect(chapterEntry("opening")).toBe(0);
     expect(stopAt(scenePosition("conditions"))).toBeNull();
+    // 04 opens on the cut-off, not on the last frame of the night behind the dip to dark.
+    expect(sceneAt(chapterEntry("affected"))).toBe("affected");
   });
 
   it("does not let scrolling pass a stop, but scrolling back is free", () => {

@@ -99,8 +99,15 @@ const CAPTION_PAUSES: number[] = (Object.keys(CAPTIONS) as SegmentId[])
   })
   .sort((a, b) => a - b);
 
-/** Everything Next/Previous steps through, in order: every caption pause and every real page. */
-const STEP_POINTS: number[] = [...CAPTION_PAUSES, ...STOP_IDS.map(stopPosition)].sort((a, b) => a - b);
+/**
+ * Everything Next/Previous steps through, in order: every caption pause, every real page, and the very end (where
+ * Next turns into Replay); a last caption pause right at the end stands for it.
+ */
+const STEP_POINTS: number[] = (() => {
+  const points = [...CAPTION_PAUSES, ...STOP_IDS.map(stopPosition)].sort((a, b) => a - b);
+  if (TIMELINE_END - points[points.length - 1] > 1e-3) points.push(TIMELINE_END);
+  return points;
+})();
 
 /** PNG bytes to exact pixels: the replay's own decoder, or the canvas where the browser cannot inflate. */
 function decodeTownPng(bytes: Uint8Array) {
@@ -475,12 +482,28 @@ export function JourneyExperience() {
         }
       });
 
-      // Projected labels.
+      // Projected labels: kept inside the window, and hidden where the caption, the tag, the clock or the chapter bar
+      // would cover them (a label pushed away from its place would point at the wrong thing).
+      const shown = result.labels.filter((label) => label.visible);
+      const root = canvas.closest("main");
+      const covers = shown.length && root
+        ? Array.from(root.querySelectorAll<HTMLElement>(`.${styles.caption}, .${styles.illustrative}, .${styles.clock}, .${styles.chapterNav}`)).map((element) => element.getBoundingClientRect())
+        : [];
       for (const label of result.labels) {
         const element = labelRefs.current[label.id];
         if (!element) continue;
-        element.style.transform = `translate3d(${label.x.toFixed(1)}px, ${label.y.toFixed(1)}px, 0)`;
-        element.dataset.visible = String(label.visible);
+        let { x, y } = label;
+        let visible = label.visible;
+        const box = visible ? (element.firstElementChild as HTMLElement | null) : null;
+        if (box) {
+          const w = box.offsetWidth, h = box.offsetHeight, margin = 8;
+          x = Math.min(Math.max(x, margin + w / 2), window.innerWidth - margin - w / 2);
+          y = Math.max(y, margin + h);
+          const left = x - w / 2, right = x + w / 2, top = y - h;
+          visible = !covers.some((rect) => left < rect.right && right > rect.left && top < rect.bottom && y > rect.top);
+        }
+        element.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0)`;
+        element.dataset.visible = String(visible);
       }
 
       // Lalita's phone shows the page and practice scenario of the story's hour.
@@ -533,8 +556,12 @@ export function JourneyExperience() {
         const probe = document.createElement("canvas");
         const gl = probe.getContext("webgl2") ?? probe.getContext("webgl");
         if (!gl) throw new Error("WebGL unavailable");
-        const lowPower = window.innerWidth < 700 || (navigator.hardwareConcurrency ?? 8) < 4 || ((navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 8) < 4;
-        const [{ JourneyStage: Stage }, town] = await Promise.all([import("./stage/journey-stage"), loadTownPack(decodeTownPng)]);
+        // Phones in either orientation (the short side), few cores or little memory take the light path.
+        const shortSide = Math.min(window.innerWidth, window.innerHeight);
+        const lowPower = window.innerWidth < 700 || shortSide < 500 || (navigator.hardwareConcurrency ?? 8) < 4 || ((navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 8) < 4;
+        // A download that never answers falls back to the text version instead of loading forever.
+        const timeout = typeof AbortSignal.timeout === "function" ? AbortSignal.timeout(25000) : undefined;
+        const [{ JourneyStage: Stage }, town] = await Promise.all([import("./stage/journey-stage"), loadTownPack(decodeTownPng, undefined, timeout)]);
         if (disposed) return;
         setCredits(town.manifest.credits);
         stage = new Stage(canvas, { quality: lowPower ? "low" : "high", town });

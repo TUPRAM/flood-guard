@@ -29,8 +29,8 @@ Opening → 01 Lalita's family (9 Sep 12:00) → [real /public/, Home, "Normal d
   75 m to 112 m along the walk south of the home, closes at a stage of 2.05 m: open at midnight on 11 September, cut
   by about 1:00, as the app's own states say ("Walk to a shelter nearly cut" at hour 48, "Cut off, home dry" at
   hour 84).
-- **The District Office** (the reported 2024 incident command centre) holds the operations room: exterior on its real
-  outline, interior illustrative.
+- **The District Office** (the reported 2024 incident command centre): an illustrative operations room stands at its
+  real place, in place of the real building (whose outline is larger); inside and out, the room is illustrative.
 - **Wat Mueang Daeng** is not a shelter in the story: the record says it was itself flooded and evacuated around 11–12
   September 2024 and used as a shelter from 21 September; the model shows its cell dry. Narin's caption uses it as an
   example of what still needs checking.

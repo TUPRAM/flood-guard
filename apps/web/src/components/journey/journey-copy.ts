@@ -94,6 +94,7 @@ export const UI = {
 export const LABELS: Record<string, Text> = {
   home: t("Lalita's home · the app's example home", "บ้านของลลิตา · บ้านตัวอย่างในแอป"),
   neighbour: t("Neighbours · water at home in the model", "เพื่อนบ้าน · น้ำเข้าบ้านตามแบบจำลอง"),
+  neighbourPeak: t("Neighbours · water reached 0.75 m here at the peak (model)", "เพื่อนบ้าน · น้ำเคยสูงถึง 0.75 ม. ช่วงน้ำสูงสุด (แบบจำลอง)"),
   shelter: t("Municipality office shelter · reported in use, Sept 2024", "ศูนย์พักพิงเทศบาลตำบลแม่สาย · มีรายงานว่าเปิดใช้ ก.ย. 2567"),
   route: t("Usual walk to the shelter", "ทางเดินปกติไปศูนย์พักพิง"),
   low: t("Low point on the walk · cut at 30 cm of water (model)", "จุดต่ำบนทางเดิน · ถูกตัดเมื่อน้ำลึก 30 ซม. (แบบจำลอง)"),
@@ -107,6 +108,13 @@ export const LABELS: Record<string, Text> = {
   dao: t("Dao, her daughter", "ดาว ลูกสาวของเธอ"),
   narin: t("Narin", "นรินทร์"),
   pim: t("Pim", "พิมพ์"),
+};
+
+/** The simulated call on the operations-room monitor: drawn in both languages, as the scene does not change language. */
+export const MONITOR = {
+  header: t("STORY MODE · SIMULATED CALL TO 1784", "โหมดเรื่องราว · จำลองการโทร 1784"),
+  title: t("Dry home, walk to the shelter cut", "บ้านแห้ง ทางเดินไปศูนย์พักพิงถูกตัด"),
+  note: t("Fictional household. Nothing was dialled or sent.", "ครัวเรือนสมมุติ ไม่มีการโทรหรือส่งข้อมูลจริง"),
 };
 
 export interface Caption {
@@ -179,8 +187,8 @@ export const CAPTIONS: Record<SegmentId, Caption[]> = {
       from: 0.12, to: 0.55, pause: 0.5, who: "lalita",
       eyebrow: t("02 · Rain, and a plan", "02 · ฝนตกและแผนรับมือ"),
       text: t(
-        "Tuesday 10 September, afternoon. The rain has not stopped, and in the replay the river begins to rise.",
-        "วันอังคารที่ 10 กันยายน ช่วงบ่าย ฝนยังไม่หยุด และในภาพจำลองย้อนหลัง แม่น้ำเริ่มสูงขึ้น",
+        "Tuesday 10 September, afternoon. The rain has not stopped; in the replay the river is a little above its channel, and the fast rise comes in the evening.",
+        "วันอังคารที่ 10 กันยายน ช่วงบ่าย ฝนยังไม่หยุด ในภาพจำลองย้อนหลัง แม่น้ำสูงกว่าร่องน้ำเล็กน้อย และจะขึ้นเร็วในช่วงค่ำ",
       ),
       points: [
         t("In the model, water collects first in the lowest streets, toward the river.", "ในแบบจำลอง น้ำขังที่ถนนที่ต่ำที่สุดฝั่งแม่น้ำก่อน"),
@@ -191,8 +199,8 @@ export const CAPTIONS: Record<SegmentId, Caption[]> = {
     {
       from: 0.6, to: 1.01, pause: 0.95, who: "lalita",
       text: t(
-        "Their walk to the shelter dips through low ground about 100 m south of the house.",
-        "ทางเดินไปศูนย์พักพิงของพวกเขาผ่านพื้นที่ต่ำห่างจากบ้านไปทางใต้ราว 100 เมตร",
+        "Their walk to the shelter dips through low ground about 110 m south of the house.",
+        "ทางเดินไปศูนย์พักพิงของพวกเขาผ่านพื้นที่ต่ำห่างจากบ้านไปทางใต้ราว 110 เมตร",
       ),
       points: [
         t("If that dip floods, the walk is cut.", "ถ้าจุดต่ำนั้นน้ำท่วม ทางเดินก็ถูกตัด"),
@@ -237,8 +245,8 @@ export const CAPTIONS: Record<SegmentId, Caption[]> = {
     {
       from: 0.3, to: 0.56, pause: 0.42, who: "lalita",
       text: t(
-        "10 September, 22:00. In the model, water now covers the streets between the house and the river.",
-        "10 กันยายน เวลา 22:00 น. ในแบบจำลอง น้ำท่วมถนนระหว่างบ้านกับแม่น้ำแล้ว",
+        "10 September, 22:00. In the model, water is now on many streets between the house and the river.",
+        "10 กันยายน เวลา 22:00 น. ในแบบจำลอง น้ำท่วมถนนหลายสายระหว่างบ้านกับแม่น้ำแล้ว",
       ),
       points: [
         t("The house is still dry.", "บ้านยังแห้งอยู่"),
@@ -248,7 +256,10 @@ export const CAPTIONS: Record<SegmentId, Caption[]> = {
     },
     {
       from: 0.56, to: 0.78, pause: 0.66, who: "lalita",
-      text: t("Midnight. The low point on their walk is almost under water.", "เที่ยงคืน จุดต่ำบนทางเดินของพวกเขาใกล้จะจมน้ำ"),
+      text: t(
+        "Midnight. Water is already over the low point on their walk: about 13 cm in the model. At 30 cm the walk is cut.",
+        "เที่ยงคืน น้ำท่วมจุดต่ำบนทางเดินแล้ว ลึกราว 13 ซม. ตามแบบจำลอง ถ้าลึกถึง 30 ซม. ทางเดินจะถูกตัด",
+      ),
       points: [
         t("Mali cannot walk 1.6 km quickly, at night, in the rain.", "มะลิเดิน 1.6 กม. ได้ไม่เร็ว ในเวลากลางคืนและฝนตก"),
         t("They stay on dry ground at home, the medicine bag ready.", "พวกเขาอยู่บนที่แห้งในบ้าน และเตรียมกระเป๋ายาไว้พร้อม"),
@@ -343,8 +354,8 @@ export const CAPTIONS: Record<SegmentId, Caption[]> = {
     {
       from: 0.38, to: 0.7, pause: 0.6, who: "pim",
       text: t(
-        "From above, Lalita's home is one of many dry homes that are cut off.",
-        "เมื่อมองจากด้านบน บ้านของลลิตาเป็นหนึ่งในบ้านที่แห้งแต่ถูกตัดขาดอีกหลายหลัง",
+        "Across the district, the model finds other dry homes cut off like Lalita's.",
+        "ทั่วทั้งอำเภอ แบบจำลองพบบ้านหลังอื่นที่แห้งแต่ถูกตัดขาดเหมือนบ้านของลลิตา",
       ),
       points: [
         t("Every walk from a home to a shelter can be checked the same way.", "ทางเดินจากบ้านไปศูนย์พักพิงทุกเส้นตรวจได้ด้วยวิธีเดียวกัน"),

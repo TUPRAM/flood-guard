@@ -80,6 +80,11 @@ uniform float uWetness;
 vec4 floodAt(vec2 xz) {
   return texture2D(uFlood, (xz - uFloodXform.xy) * uFloodXform.zw);
 }
+// 1 inside the replay's cells, 0 beyond: the texture clamps to its edge, which would spread edge cells' water outward.
+float floodInside(vec2 xz) {
+  vec2 uv = (xz - uFloodXform.xy) * uFloodXform.zw;
+  return step(0.0, uv.x) * step(0.0, uv.y) * step(uv.x, 1.0) * step(uv.y, 1.0);
+}
 float fgHash(vec3 p) {
   p = fract(p * vec3(0.1031, 0.1030, 0.0973));
   p += dot(p, p.yxz + 33.33);
@@ -274,13 +279,15 @@ export function groundMaterial(cover: THREE.Texture, coverXform: THREE.Vector4, 
         vec3 field = mix(vec3(0.46, 0.55, 0.28), vec3(0.55, 0.53, 0.33), n2);
         vec3 base = cls < 0.5 ? open : cls < 1.5 ? bed : cls < 2.5 ? road : cls < 3.5 ? pad : cls < 4.5 ? green : field;
         base *= 0.86 + 0.28 * n;
-        // Hills and fields beyond the cover (outside the detail box) read as green.
-        if (cuv.x < 0.0 || cuv.y < 0.0 || cuv.x > 1.0 || cuv.y > 1.0) base = mix(vec3(0.36, 0.44, 0.27), vec3(0.45, 0.50, 0.32), n2);
+        // Hills and fields beyond the cover (outside the detail box) read as green, faded in over about 150 m.
+        vec2 beyond = max(max(-cuv, cuv - 1.0), 0.0) / uCoverXform.zw;
+        base = mix(base, mix(vec3(0.36, 0.44, 0.27), vec3(0.45, 0.50, 0.32), n2), smoothstep(0.0, 150.0, length(beyond)));
         vec4 f = floodAt(vTownWorld.xz);
+        float inside = floodInside(vTownWorld.xz);
         float water = f.r * uStage;
         float tide = f.r * uMaxStage;
-        float under = smoothstep(vTownWorld.y - 0.02, vTownWorld.y + 0.06, water);
-        float mud = step(vTownWorld.y, tide - 0.02) * (1.0 - under) * step(0.05, uMaxStage - uStage);
+        float under = smoothstep(vTownWorld.y - 0.02, vTownWorld.y + 0.06, water) * inside;
+        float mud = step(vTownWorld.y, tide - 0.02) * (1.0 - under) * step(0.05, uMaxStage - uStage) * inside;
         base = mix(base, vec3(0.33, 0.26, 0.17) * (0.85 + 0.3 * n), mud * 0.92);
         fgWet = max(max(under, mud * 0.7), uWetness);
         base *= 1.0 - 0.3 * fgWet;
@@ -289,7 +296,7 @@ export function groundMaterial(cover: THREE.Texture, coverXform: THREE.Vector4, 
       )
       .replace("#include <roughnessmap_fragment>", "#include <roughnessmap_fragment>\nroughnessFactor = mix(roughnessFactor, 0.32, fgWet);");
   };
-  material.customProgramCacheKey = () => "fg-ground-v1";
+  material.customProgramCacheKey = () => "fg-ground-v2";
   return material;
 }
 
@@ -312,7 +319,7 @@ export function roadMaterial(map: THREE.Texture, uniforms: TownUniforms, color: 
         /* glsl */ `#include <color_fragment>
         vec4 f = floodAt(vTownWorld.xz);
         float tide = f.r * uMaxStage;
-        float mud = step(vTownWorld.y, tide - 0.02) * step(0.05, uMaxStage - uStage) * step(f.r * uStage, vTownWorld.y);
+        float mud = step(vTownWorld.y, tide - 0.02) * step(0.05, uMaxStage - uStage) * step(f.r * uStage, vTownWorld.y) * floodInside(vTownWorld.xz);
         diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.36, 0.29, 0.2), mud * 0.85);
         float puddle = smoothstep(0.55, 0.75, fgHash(vec3(floor(vTownWorld.xz * 0.45), 3.0)) * 0.6 + 0.4 * sin(vTownWorld.x * 0.7) * sin(vTownWorld.z * 0.9));
         fgWet = max(uWetness, mud * 0.6);
@@ -321,7 +328,7 @@ export function roadMaterial(map: THREE.Texture, uniforms: TownUniforms, color: 
       )
       .replace("#include <roughnessmap_fragment>", "#include <roughnessmap_fragment>\nroughnessFactor = mix(roughnessFactor, 0.25, fgWet);");
   };
-  material.customProgramCacheKey = () => `fg-road-v1-${color}`;
+  material.customProgramCacheKey = () => `fg-road-v2-${color}`;
   return material;
 }
 
@@ -339,7 +346,7 @@ export interface WaterMaterialOptions {
  */
 export function waterMaterial(uniforms: TownUniforms, options: WaterMaterialOptions): THREE.MeshStandardMaterial {
   const material = new THREE.MeshStandardMaterial({
-    color: "#ffffff", roughness: 0.3, metalness: 0, transparent: true, normalMap: options.normalMap, envMapIntensity: 0.18, depthWrite: true,
+    color: "#ffffff", roughness: 0.38, metalness: 0, transparent: true, normalMap: options.normalMap, envMapIntensity: 0.18, depthWrite: true,
   });
   material.normalScale.set(0.35, 0.35);
   material.onBeforeCompile = (shader) => {
@@ -347,7 +354,7 @@ export function waterMaterial(uniforms: TownUniforms, options: WaterMaterialOpti
     shader.vertexShader = shader.vertexShader
       .replace(
         "#include <common>",
-        `#include <common>\n${FLOOD_GLSL}\nattribute vec3 aFlood;\nattribute vec2 aRiver;\nvarying float vDepth;\nvarying float vLow;\nvarying vec3 vTownWorld;`,
+        `#include <common>\n${FLOOD_GLSL}\nattribute vec3 aFlood;\nattribute vec2 aRiver;\nvarying float vDepth;\nvarying float vLow;\nvarying float vRiver;\nvarying vec3 vTownWorld;`,
       )
       .replace("#include <beginnormal_vertex>", "vec3 objectNormal = vec3(0.0, 1.0, 0.0);")
       .replace(
@@ -357,19 +364,22 @@ export function waterMaterial(uniforms: TownUniforms, options: WaterMaterialOpti
         if (aRiver.x > 0.5) surface = max(surface, aRiver.y);
         transformed.y = surface;
         vDepth = surface - aFlood.y;
-        vLow = aFlood.z;`,
+        vLow = aFlood.z;
+        // The river in its banks, fading out as the replay's water spreads over the town.
+        vRiver = aRiver.x * (1.0 - smoothstep(0.5, 1.5, uStage));`,
       )
       .replace("#include <project_vertex>", WORLD_VARYING_VERTEX);
     shader.fragmentShader = shader.fragmentShader
-      .replace("#include <common>", `#include <common>\n${FLOOD_GLSL}\nvarying float vDepth;\nvarying float vLow;\nvarying vec3 vTownWorld;`)
+      .replace("#include <common>", `#include <common>\n${FLOOD_GLSL}\nvarying float vDepth;\nvarying float vLow;\nvarying float vRiver;\nvarying vec3 vTownWorld;`)
       .replace(
         "#include <color_fragment>",
         /* glsl */ `#include <color_fragment>
         if (vDepth < 0.01) discard;
         float deep = smoothstep(0.0, 2.2, vDepth);
-        // Mud-laden flood water: ochre where shallow, dark brown where deep, with slow drifting streaks of silt.
-        vec3 shallow = vec3(0.43, 0.32, 0.18);
-        vec3 deepColor = vec3(0.24, 0.17, 0.10);
+        // Mud-laden flood water: ochre where shallow, dark olive-brown where deep, with slow drifting blotches of silt.
+        // Slightly greyer and greener than the mud and the ground, so water and the mud it leaves read apart.
+        vec3 shallow = vec3(0.42, 0.35, 0.22);
+        vec3 deepColor = vec3(0.23, 0.20, 0.13);
         vec3 col = mix(shallow, deepColor, deep);
         // Soft drifting blotches of silt (no regular pattern: stripes mean low confidence on these maps).
         vec2 drift = vTownWorld.xz / 23.0 + vec2(uTime * 0.01, -uTime * 0.006);
@@ -378,9 +388,11 @@ export function waterMaterial(uniforms: TownUniforms, options: WaterMaterialOpti
         float blotch = mix(mix(fgHash(vec3(cellId, 7.0)), fgHash(vec3(cellId + vec2(1.0, 0.0), 7.0)), u.x),
                            mix(fgHash(vec3(cellId + vec2(0.0, 1.0), 7.0)), fgHash(vec3(cellId + vec2(1.0, 1.0), 7.0)), u.x), u.y);
         col *= 0.9 + 0.22 * blotch;
-        // Foam and a lighter rim where the water meets the ground.
-        float rim = 1.0 - smoothstep(0.0, 0.12, vDepth);
-        col = mix(col, vec3(0.72, 0.66, 0.55), rim * 0.55);
+        // The river in its banks: a little cooler, so it reads apart from its bed.
+        col = mix(col, col * vec3(0.86, 0.95, 1.06) + vec3(0.0, 0.02, 0.04), vRiver * 0.6);
+        // A thin lighter rim where the water meets the ground (only the last few centimetres: shallow water is still water).
+        float rim = 1.0 - smoothstep(0.0, 0.03, vDepth);
+        col = mix(col, vec3(0.72, 0.66, 0.55), rim * 0.2);
         // Low-confidence water, hatched in diagonal stripes as on the 2D maps.
         float stripe = step(0.8, fract((vTownWorld.x + vTownWorld.z) / 6.0));
         col = mix(col, col * 1.25 + 0.05, step(0.5, vLow) * stripe * 0.45);
@@ -397,9 +409,20 @@ export function waterMaterial(uniforms: TownUniforms, options: WaterMaterialOpti
         float facing = clamp(dot(toEye, vec3(0.0, 1.0, 0.0)), 0.0, 1.0);
         float fres = pow(1.0 - facing, 4.0);
         vec3 skyTint = mix(vec3(0.58, 0.60, 0.60), vec3(0.06, 0.07, 0.10), uNight);
-        outgoingLight = mix(outgoingLight, skyTint, min(0.32, fres * 0.6));
-        // At night: dark slate water that still reads as water, the town's orange glow caught at a glancing angle.
-        vec3 nightWater = vec3(0.075, 0.085, 0.11) + vec3(0.22, 0.15, 0.08) * fres + outgoingLight * 0.35;
+        // Clouds drifting across the reflection: broad light and dark patches that ground never shows.
+        vec2 cq = vTownWorld.xz / 70.0 + vec2(uTime * 0.012, uTime * 0.007);
+        vec2 ci = floor(cq), cf = fract(cq);
+        vec2 cu = cf * cf * (3.0 - 2.0 * cf);
+        float cloud = mix(mix(fgHash(vec3(ci, 3.0)), fgHash(vec3(ci + vec2(1.0, 0.0), 3.0)), cu.x),
+                          mix(fgHash(vec3(ci + vec2(0.0, 1.0), 3.0)), fgHash(vec3(ci + vec2(1.0, 1.0), 3.0)), cu.x), cu.y);
+        skyTint *= 0.82 + 0.36 * cloud;
+        // A floor keeps a sheen on the water from above, where the Fresnel term is close to zero.
+        outgoingLight = mix(outgoingLight, skyTint, clamp(fres * 0.6, 0.17 + 0.08 * vRiver, 0.36 + 0.06 * vRiver));
+        // At night: blue-grey water, lighter than the dark wet ground around it, with the glints of the town's lights
+        // caught by the ripples and a pale line along the shore.
+        float glint = pow(max(0.0, dot(normal, normalize(vec3(0.3, 1.0, 0.2)))), 64.0);
+        vec3 nightWater = vec3(0.13, 0.16, 0.21) + vec3(0.22, 0.15, 0.08) * fres + outgoingLight * 0.35 + vec3(0.5, 0.36, 0.18) * glint * 0.35;
+        nightWater = mix(nightWater, vec3(0.3, 0.32, 0.34), (1.0 - smoothstep(0.0, 0.06, vDepth)) * 0.6);
         outgoingLight = mix(outgoingLight, nightWater, uNight);
         #include <opaque_fragment>`,
       )
@@ -419,6 +442,6 @@ export function waterMaterial(uniforms: TownUniforms, options: WaterMaterialOpti
         `,
       );
   };
-  material.customProgramCacheKey = () => "fg-water-v1";
+  material.customProgramCacheKey = () => "fg-water-v2";
   return material;
 }

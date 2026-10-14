@@ -349,7 +349,9 @@ function buildBuildings(pack: TownPack, field: FloodField, atlas: FacadeAtlas, u
     tanks.setColorAt(i, c.set(i % 4 === 0 ? "#3f6fb0" : "#ffffff"));
   });
   tanks.count = tankSpots.length;
-  tanks.castShadow = true;
+  // Rooftop tanks and poles are one mesh each over the whole town: as casters they would redraw town-wide into every
+  // close shadow map. Their shadows are too small to miss.
+  tanks.castShadow = false;
   tanks.computeBoundingSphere();
   group.add(tanks);
   return {
@@ -579,7 +581,7 @@ function glowTexture(): THREE.DataTexture {
   return t;
 }
 
-function buildUtilities(pack: TownPack, height: (x: number, z: number) => number, cover: CoverSampler, quality: Quality): { group: THREE.Group; lamps: Lamps; dispose(): void } {
+function buildUtilities(pack: TownPack, height: (x: number, z: number) => number, cover: CoverSampler): { group: THREE.Group; lamps: Lamps; dispose(): void } {
   const random = seeded(6151);
   const poles: Array<{ x: number; z: number; ry: number; lamp: boolean; road: number }> = [];
   const inner = (x: number, z: number) => x > INNER.x0 + 20 && x < INNER.x1 - 20 && z > INNER.z0 + 20 && z < INNER.z1 - 20;
@@ -618,7 +620,7 @@ function buildUtilities(pack: TownPack, height: (x: number, z: number) => number
     poleMesh.setMatrixAt(i, m);
   });
   poleMesh.count = poles.length;
-  poleMesh.castShadow = quality === "high";
+  poleMesh.castShadow = false;
   poleMesh.computeBoundingSphere();
   group.add(poleMesh);
 
@@ -741,9 +743,9 @@ function bandTexture(): THREE.DataTexture {
 function buildRoute(pack: TownPack, field: FloodField, height: (x: number, z: number) => number, uniforms: TownUniforms): { band: RouteBand; firstCut: { point: THREE.Vector3; stage: number }; dispose(): void } {
   const route = pack.route;
   const n = route.points.length / 2;
-  // Closure stage per point: the edge it starts (the last point takes its edge's).
-  const closureAt = new Float32Array(n).fill(Infinity);
-  for (const edge of route.edges) for (let i = edge.from; i <= edge.to; i += 1) closureAt[i] = Math.min(closureAt[i], edge.closure);
+  // Closure stage per segment i → i + 1: its own edge's only (the home's connector, segment 0 → 1, never closes).
+  const segmentClosure = new Float32Array(Math.max(0, n - 1)).fill(Infinity);
+  for (const edge of route.edges) for (let i = edge.from; i < edge.to; i += 1) segmentClosure[i] = Math.min(segmentClosure[i], edge.closure);
   const raw = Array.from({ length: n }, (_, i) => [route.points[i * 2], route.points[i * 2 + 1]] as [number, number]);
   const pts: Array<[number, number]> = [];
   const closures: number[] = [];
@@ -753,11 +755,11 @@ function buildRoute(pack: TownPack, field: FloodField, height: (x: number, z: nu
     const parts = Math.max(1, Math.ceil(len / 3));
     for (let k = 0; k < parts; k += 1) {
       pts.push([ax + ((bx - ax) * k) / parts, az + ((bz - az) * k) / parts]);
-      closures.push(Math.min(closureAt[i], closureAt[i + 1]));
+      closures.push(segmentClosure[i]);
     }
   }
   pts.push(raw[n - 1]);
-  closures.push(closureAt[n - 1]);
+  closures.push(segmentClosure[n - 2]);
   const buffers = new Buffers();
   addRibbon(buffers, pts, 2.6, pts.map(([x, z]) => height(x, z)), 4, 1);
   // Per vertex: ground, k_s and the closure stage (twice: the ribbon has two vertices per point).
@@ -794,11 +796,8 @@ function buildRoute(pack: TownPack, field: FloodField, height: (x: number, z: nu
   mesh.name = "Route";
   mesh.renderOrder = 5;
   mesh.frustumCulled = false;
-  // The first edge to close, by stage.
-  let best = route.edges[0];
-  for (const edge of route.edges) if (edge.closure < best.closure) best = edge;
-  const mid = Math.floor((best.from + best.to) / 2);
-  const cx = route.points[mid * 2], cz = route.points[mid * 2 + 1];
+  // Where the walk is cut first: the bake's closing sample of the first edge to close.
+  const { x: cx, z: cz } = route.lowPoint;
   return {
     band: {
       mesh,
@@ -808,7 +807,7 @@ function buildRoute(pack: TownPack, field: FloodField, height: (x: number, z: nu
         mesh.visible = value > 0.005;
       },
     },
-    firstCut: { point: new THREE.Vector3(cx, height(cx, cz) + 3, cz), stage: best.closure },
+    firstCut: { point: new THREE.Vector3(cx, height(cx, cz) + 3, cz), stage: route.cutStage },
     dispose() {
       mesh.geometry.dispose();
       material.dispose();
@@ -849,7 +848,9 @@ export function buildTown(pack: TownPack, options: TownOptions): Town {
   const homePlace = place("home");
   const homeCell = field.cellIndex(homePlace?.x ?? 0, homePlace?.z ?? 0);
   const homeGround = homeCell >= 0 ? field.ground[homeCell] : field.groundAt(homeBuilding.obb.cx, homeBuilding.obb.cz);
-  field.addPad({ x: homeBuilding.obb.cx, z: homeBuilding.obb.cz, radius: Math.max(w, d) / 2 + 4.5, blend: 7, height: homeGround });
+  // Just the house kit and its yard, with a short blend: wider, it raised the outline's west end, which the model
+  // has under 0.2 to 0.35 m of water at the peak.
+  field.addPad({ x: homeBuilding.obb.cx, z: homeBuilding.obb.cz, radius: Math.hypot(w / 2, d / 2 + 3) + 0.5, blend: 3, height: homeGround });
 
   const height = (x: number, z: number) => groundHeight(field, cover, x, z);
   const uniforms = createTownUniforms(field);
@@ -998,7 +999,7 @@ export function buildTown(pack: TownPack, options: TownOptions): Town {
     asphalt.dispose(); concrete.dispose(); dash.dispose(); markingMaterial.dispose();
   });
 
-  const utilities = buildUtilities(pack, height, cover, options.quality);
+  const utilities = buildUtilities(pack, height, cover);
   group.add(utilities.group);
   disposers.push(utilities.dispose);
 

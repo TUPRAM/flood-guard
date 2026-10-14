@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { TIMELINE, segmentRange, stopPosition, type SegmentId } from "@/lib/journey/timeline";
 import { describeWordingFindings, findWordingViolations } from "@/lib/replay-wording-lint";
 
-import { CAPTIONS, CHAPTER_LABELS, CHARACTERS, LABELS, STOPS, UI, type CharacterId } from "./journey-copy";
+import { CAPTIONS, CHAPTER_LABELS, CHARACTERS, LABELS, MONITOR, STOPS, UI, type CharacterId } from "./journey-copy";
 
 /** Every caption, with its timeline position (its pause, or its start). */
 const placedCaptions = (Object.keys(CAPTIONS) as SegmentId[]).flatMap((segment) => {
@@ -14,7 +14,8 @@ const placedCaptions = (Object.keys(CAPTIONS) as SegmentId[]).flatMap((segment) 
 describe("journey story copy", () => {
   it("passes the shared wording lint in both languages", () => {
     const texts = [
-      ...Object.values(UI), ...Object.values(LABELS), ...Object.values(CHAPTER_LABELS).map((chapter) => chapter.title),
+      ...Object.values(UI), ...Object.values(LABELS), ...Object.values(MONITOR),
+      ...Object.values(CHAPTER_LABELS).map((chapter) => chapter.title),
       ...Object.values(CHARACTERS).flatMap((person) => [person.name, person.role, person.question]),
       ...placedCaptions.flatMap(({ caption }) => [caption.eyebrow, caption.text, ...(caption.points ?? [])]),
       ...Object.values(STOPS).flatMap((stop) => [stop.page, stop.note, stop.continueLabel, stop.warning]),

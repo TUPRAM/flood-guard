@@ -292,7 +292,11 @@ a.step { display: inline-flex; align-items: center; justify-content: center; tex
   .heroScrim { background: linear-gradient(0deg, rgb(239 234 223 / 95%) 0%, rgb(239 234 223 / 80%) 45%, rgb(239 234 223 / 0%) 75%); }
   .caption { bottom: 128px; }
   .caption p { font-size: 1rem; }
-  .illustrative { left: 10px; right: auto; bottom: 74px; }
+  /* On phones the tag and credits sit under the clock, over the sky: at the bottom they covered the hero's buttons
+     and the captions. They never take taps. */
+  .illustrative { top: 108px; bottom: auto; left: 10px; right: 10px; max-width: none; z-index: 3; pointer-events: none; text-align: center; font-size: 0.64rem; line-height: 1.35; }
+  .illustrative small { font-size: 0.58rem; }
+  .clock { top: 58px; max-width: calc(100vw - 24px); width: max-content; white-space: normal; text-align: center; line-height: 1.3; }
   .chapterNav { left: 8px; right: 8px; bottom: 8px; }
   .chapterNav ol { justify-content: flex-start; }
   .chapterNav ol button span { display: none; }

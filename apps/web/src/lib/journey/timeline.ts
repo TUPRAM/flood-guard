@@ -194,11 +194,14 @@ export function parseScene(search: string): SceneId | null {
 
 /**
  * Where navigating to a chapter lands: its start, nudged just past a stop that sits on the boundary (stops have no
- * length, so "the start of Conditions change" would otherwise be "the public-app stop" and dock that page instead).
+ * length, so "the start of Conditions change" would otherwise be "the public-app stop" and dock that page instead),
+ * and on into the chapter's own picture: a boundary between segments resolves to the segment before it, and a chapter
+ * that opens with a cut in time opens once the dip to dark has cleared.
  */
 export function chapterEntry(chapter: ChapterId): number {
-  const start = chapterStart(chapter);
-  return stopAt(start) ? start + 0.002 : start;
+  let t = chapterStart(chapter);
+  for (let i = 0; i < 1000 && (stopAt(t) || chapterAt(t) !== chapter || veilAt(t) > 0); i += 1) t += 0.002;
+  return t;
 }
 
 export function scenePosition(scene: SceneId): number {

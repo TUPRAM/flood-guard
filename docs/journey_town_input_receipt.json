@@ -4,7 +4,7 @@
  "generated_by": "scripts/build_journey_town.py",
  "purpose": "Every input file the journey town bake opened, so the pack can be rebuilt and compared byte for byte (--verify).",
  "generated_at": {
-  "value": "2026-10-14T15:45:00Z",
+  "value": "2026-10-14T16:10:00Z",
   "basis": "declared"
  },
  "source_timestamp": "2024-09-03T23:16:00Z/2024-09-19T17:00:00Z",
@@ -92,7 +92,7 @@
  "outputs": {
   "folder": "apps/web/public/journey/town",
   "file_count": 6,
-  "bytes": 1414081,
+  "bytes": 1414220,
   "files": [
    {
     "name": "LICENSE.txt",
@@ -121,15 +121,15 @@
    },
    {
     "name": "mae-sai-town.json",
-    "bytes": 1302411,
-    "sha256": "ea3bea7acaabff7bbbdef13ca373bcab7aed1e62424efde0a87d345ef9a3b864"
+    "bytes": 1302550,
+    "sha256": "b2755774ca2ff002c4452cd0f64db86501b121fadb5406297a3cd3c3e4f7d219"
    }
   ]
  },
  "code": [
   {
    "path": "scripts/build_journey_town.py",
-   "sha256": "097769047d8a84596b492b60508f4d49b1e84573295daa746040557ec5b0101b"
+   "sha256": "b1c8267da07e78817083395fb4c8f6c987509d0db8791962d810a6e9f4c71300"
   },
   {
    "path": "scripts/mae_sai_timeline_evacuation.py",

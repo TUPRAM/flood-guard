@@ -1,0 +1,59 @@
+{
+  "schema": "floodguard.nan_case_protocol_amendment.v1",
+  "amends": "docs/proposal_execution/nan_case_protocol_v1.json",
+  "amendment": 1,
+  "written_utc": "2026-10-14T17:20:00Z",
+  "written_by": "the AI coding agent, under the owner's word of 14 October 2026 (decision log R51: take the recommended option and record it)",
+  "official_warning": false,
+  "operational_status": "non_operational",
+  "confidence_class": "not applicable (rules)",
+  "source_timestamp": "not applicable (rules)",
+  "assumptions": [
+    "Committed before any candidate of the method was scored on any tuning set, before any flag of the Nan frame was computed and while the JAXA files, GFM values of the frame and the THEOS-2 Nan chips are still unopened.",
+    "Each change below was prompted by a finding of phase 1 that used terrain, land cover, dry-season radar statistics or road data only; no flood flag, IoU or reference comparison was computed for any change."
+  ],
+  "what_was_known": [
+    "No-answer share of compared cells, from terrain, land cover and dry-season spread only (no radar flag): lowest over all candidates Sukhothai 0.372, Mae Sai 0.063, Chaiyaphum 0.392. Its cause is tree cover (class 10) and built-up (class 50) on low ground: 30.5% and 10.9% of Sukhothai's compared cells, 24.6% and 28.9% of Chaiyaphum's.",
+    "Sentinel-1C reads darker than Sentinel-1A in VH on dry ground: Nan orbit 62 dry season median 0.79 dB (Sentinel-1A minus Sentinel-1C), Sukhothai orbit 62 0.87 dB; the two Sentinel-1C dry passes of Nan orbit 62 sit 0.8 to 1.0 dB below their Sentinel-1A neighbours. The test 1 pass of 2025-07-28 is Sentinel-1C on orbit 99, whose dry season holds Sentinel-1A only.",
+    "Road and hospital placement (outputs/nan_case/consequence_points_v1.json): route Nan 021 is not in OpenStreetMap; highway 1243 has no milestone, so the rule as written places its cut as the whole 29.5 km of the route inside Nam Muap; a fifth entry of the same Ministry list lies in the frame (Nan 3019 km 7+000 to 8+000, Mueang Chang, Phu Phiang); the OSM object of Nan Hospital (MOPH) is way 315323384."
+  ],
+
+  "changes": {
+    "tuning_constraint": {
+      "replaces": "tuning.constraint (the no-answer share of compared cells is at most 0.20 in every set)",
+      "new_rule": "in every set, the no-answer share of compared cells is at most 0.10 above the lowest no-answer share any candidate reaches on that set",
+      "margin": 0.10,
+      "why": "As written, no candidate can meet the constraint: tree cover and built-up on low ground, which the method rightly does not judge, alone exceed 0.20 on two of the three sets. The constraint exists to stop the choice from winning by not answering; measured from each set's own floor, it still does. The score is unchanged (IoU with no-answer cells counted as not flagged)."
+    },
+    "platform_offset": {
+      "replaces": "radar.sensor_agreement_check 'No correction is applied'",
+      "new_rule": "before M1-z and every comparator are applied, VV and VH of every Sentinel-1C event pass are raised by 0.79 dB (multiplied by 10^0.079 in linear units). Dry-season statistics are not changed. Test 1 also reports, beside the binding figures, the central map of its pass without this offset (report only).",
+      "offset_db": {"sentinel-1c": 0.79},
+      "basis": "the median of Sentinel-1A minus Sentinel-1C VH on the Nan frame, orbit 62, dry season 2025 (radar record dry_o62), measured before any flag",
+      "why": "The method compares a pass with its own dry-season mean, so a sensor that reads 0.8 dB darker would be read as water. The offset is a property of the sensors, measured on dry ground, not of the flood."
+    },
+    "tuning_reference_mae_sai_partial_cells": {
+      "rule": "a 20 m cell of the Mae Sai reference is compared when at least 2 of its 4 10 m cells were compared, and is water when at least half of those compared are agency water (ties count as water), as the references lane read the silent rule",
+      "status": "accepted as read"
+    },
+    "test_3b_points": {
+      "points": [
+        "highway 1243 km 59+100 (Nam Muap, read for the list's 'Nam Muan', Wiang Sa): placed at 59.1 km from the southern end of the merged OSM route line, the reading the consequence lane found consistent with the lists (near bridge way 314512631), instead of the whole 29.5 km of the route inside the tambon",
+        "rural road Nan 4020 km 31+690 to 32+200 (Lai Nan, Wiang Sa): placed as recorded",
+        "rural road Nan 4020 km 10+500 to 10+900 (Na Pang, Phu Phiang): placed as recorded",
+        "rural road Nan 021 km 0+000 to 0+300 (Fai Kaeo, Phu Phiang): not in OpenStreetMap; it has no position and counts as not found",
+        "rural road Nan 3019 km 7+000 to 8+000 (Mueang Chang, Phu Phiang): added, from the same Ministry list; placed by its km-0 milestone as recorded"
+      ],
+      "measure": "the share of the five listed points found, with the number that could be placed stated beside it",
+      "buffer_m": 300,
+      "found_if": "unchanged: an edge within the buffer closed at the central level on at least one pass between 2025-07-20 00:00 and 2025-07-31 23:59 Thai time"
+    },
+    "test_4_hospital": {
+      "object": "OpenStreetMap way 315323384 (โรงพยาบาลน่าน, Ministry of Public Health)",
+      "measured_from": "its site polygon: a flagged cell inside it or within 200 m of its edge, or an edge within 200 m closed at the central level"
+    },
+    "jaxa_usability_reading": "The method lane decides usability from the layers and attributes of the JAXA files (an observation-area geometry covering at least half of the frame land). The scene-footprint route is not used: no login-free source of ALOS-2 scene footprints is known. If the files give no observation area, test 1 takes the GFM fallback as written."
+  },
+
+  "unchanged": "Everything else of the protocol: the method and its parameter grid, the tie rule, the tests and their pass rules, the binding rule, the ensemble, the firewall and the order rule."
+}

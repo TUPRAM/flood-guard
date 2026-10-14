@@ -1,0 +1,1526 @@
+{
+ "schema": "floodguard.nan_case_radar_passes.v1",
+ "generated_at_utc": "2026-10-14T14:05:14Z",
+ "source_timestamp": "catalogue searched 2026-10-14T14:05:08Z; event window 2025-07-15T17:00:00Z to 2025-08-13T16:59:59Z; dry season 2025-01-01 to 2025-04-30",
+ "confidence_class": "not applicable (catalogue metadata)",
+ "assumptions": [
+  "Scenes are those of the sentinel-1-rtc catalogue whose footprint intersects the grid's outline (lon/lat, 10 points per side); catalogue holes are not filled from elsewhere.",
+  "Scenes of one platform and one relative orbit whose start times follow each other within 300 s form one pass; a pass starts at its first scene's start.",
+  "A pass belongs to a window when its start (UTC) lies inside it; the dry season runs from the start date 00:00:00 UTC to the end date 23:59:59 UTC.",
+  "Dry-season passes: the latest of the window first, at most 10, of the relative orbit of each event pass, from every platform the catalogue holds.",
+  "footprint_share_of_grid is the share of the grid inside the union of the pass's scene footprints as the catalogue gives them; it is not the share of valid values.",
+  "Metadata only: no asset address and no token is recorded."
+ ],
+ "official_warning": false,
+ "operational_status": "non_operational",
+ "protocol": "docs/proposal_execution/nan_case_protocol_v1.json",
+ "areas_file": "outputs/nan_case/areas_v1.json",
+ "area": "nan_frame",
+ "role": "case frame (test)",
+ "grid": {
+  "epsg": 32647,
+  "cell_m": 20.0,
+  "west": 639520.0,
+  "north": 2111500.0,
+  "rows": 4303,
+  "cols": 4280
+ },
+ "catalogue": {
+  "collection": "sentinel-1-rtc",
+  "search": "https://planetarycomputer.microsoft.com/api/stac/v1/search",
+  "searched_at_utc": "2026-10-14T14:05:08Z",
+  "intersects": "the grid outline in lon/lat (EPSG:4326), 10 points per side",
+  "grouping_rule": "scenes of one platform and one relative orbit whose start times follow each other within 300 s form one pass; a pass starts at its first scene's start"
+ },
+ "event": {
+  "rule": "every pass of the collection that intersects the grid and starts inside the event window",
+  "window_utc": [
+   "2025-07-15T17:00:00Z",
+   "2025-08-13T16:59:59Z"
+  ]
+ },
+ "event_passes": [
+  {
+   "key": "20250716T1120Z_s1c_o99",
+   "platform": "Sentinel-1C",
+   "relative_orbit": 99,
+   "orbit_state": "ascending",
+   "start_utc": "2025-07-16T11:20:48Z",
+   "end_utc": "2025-07-16T11:21:35Z",
+   "start_thai": "2025-07-16T18:20:48+07:00",
+   "scenes": [
+    {
+     "item": "S1C_IW_GRDH_1SDV_20250716T112048_20250716T112113_003245_rtc",
+     "start_utc": "2025-07-16T11:20:48Z",
+     "end_utc": "2025-07-16T11:21:13Z",
+     "file_epsg_in_catalogue": 32647
+    },
+    {
+     "item": "S1C_IW_GRDH_1SDV_20250716T112113_20250716T112135_003245_rtc",
+     "start_utc": "2025-07-16T11:21:13Z",
+     "end_utc": "2025-07-16T11:21:35Z",
+     "file_epsg_in_catalogue": 32647
+    }
+   ],
+   "footprint_share_of_grid": 0.8204,
+   "status": "not fetched yet"
+  },
+  {
+   "key": "20250719T2308Z_s1a_o62",
+   "platform": "Sentinel-1A",
+   "relative_orbit": 62,
+   "orbit_state": "descending",
+   "start_utc": "2025-07-19T23:08:07Z",
+   "end_utc": "2025-07-19T23:08:32Z",
+   "start_thai": "2025-07-20T06:08:07+07:00",
+   "scenes": [
+    {
+     "item": "S1A_IW_GRDH_1SDV_20250719T230807_20250719T230832_060159_rtc",
+     "start_utc": "2025-07-19T23:08:07Z",
+     "end_utc": "2025-07-19T23:08:32Z",
+     "file_epsg_in_catalogue": 32647
+    }
+   ],
+   "footprint_share_of_grid": 1.0,
+   "status": "fetched",
+   "file": "event_20250719T2308Z_s1a_o62.tif",
+   "sha256": "f91ab640bd8b63b875e10643945c6119b53187ec413a716407105c1a8d3376e3",
+   "valid_share": {
+    "vv": 1.0,
+    "vh": 1.0,
+    "both": 1.0
+   },
+   "seconds": 346.8,
+   "fetched_at_utc": "2026-10-14T14:19:24Z"
+  },
+  {
+   "key": "20250722T1122Z_s1a_o99",
+   "platform": "Sentinel-1A",
+   "relative_orbit": 99,
+   "orbit_state": "ascending",
+   "start_utc": "2025-07-22T11:22:07Z",
+   "end_utc": "2025-07-22T11:22:57Z",
+   "start_thai": "2025-07-22T18:22:07+07:00",
+   "scenes": [
+    {
+     "item": "S1A_IW_GRDH_1SDV_20250722T112207_20250722T112232_060196_rtc",
+     "start_utc": "2025-07-22T11:22:07Z",
+     "end_utc": "2025-07-22T11:22:32Z",
+     "file_epsg_in_catalogue": 32647
+    },
+    {
+     "item": "S1A_IW_GRDH_1SDV_20250722T112232_20250722T112257_060196_rtc",
+     "start_utc": "2025-07-22T11:22:32Z",
+     "end_utc": "2025-07-22T11:22:57Z",
+     "file_epsg_in_catalogue": 32647
+    }
+   ],
+   "footprint_share_of_grid": 0.8132,
+   "status": "fetched",
+   "file": "event_20250722T1122Z_s1a_o99.tif",
+   "sha256": "c7469f7b4fa0849898f9757837bc0fe3c5555f3e6ce07a47007b426edcf4d59a",
+   "valid_share": {
+    "vv": 0.817968,
+    "vh": 0.817968,
+    "both": 0.817968
+   },
+   "seconds": 254.9,
+   "fetched_at_utc": "2026-10-14T14:23:42Z"
+  },
+  {
+   "key": "20250724T2316Z_s1a_o135",
+   "platform": "Sentinel-1A",
+   "relative_orbit": 135,
+   "orbit_state": "descending",
+   "start_utc": "2025-07-24T23:16:16Z",
+   "end_utc": "2025-07-24T23:16:41Z",
+   "start_thai": "2025-07-25T06:16:16+07:00",
+   "scenes": [
+    {
+     "item": "S1A_IW_GRDH_1SDV_20250724T231616_20250724T231641_060232_rtc",
+     "start_utc": "2025-07-24T23:16:16Z",
+     "end_utc": "2025-07-24T23:16:41Z",
+     "file_epsg_in_catalogue": 32647
+    }
+   ],
+   "footprint_share_of_grid": 0.1023,
+   "status": "not fetched yet"
+  },
+  {
+   "key": "20250725T2306Z_s1c_o62",
+   "platform": "Sentinel-1C",
+   "relative_orbit": 62,
+   "orbit_state": "descending",
+   "start_utc": "2025-07-25T23:06:50Z",
+   "end_utc": "2025-07-25T23:07:45Z",
+   "start_thai": "2025-07-26T06:06:50+07:00",
+   "scenes": [
+    {
+     "item": "S1C_IW_GRDH_1SDV_20250725T230650_20250725T230720_003383_rtc",
+     "start_utc": "2025-07-25T23:06:50Z",
+     "end_utc": "2025-07-25T23:07:20Z",
+     "file_epsg_in_catalogue": 32647
+    },
+    {
+     "item": "S1C_IW_GRDH_1SDV_20250725T230720_20250725T230745_003383_rtc",
+     "start_utc": "2025-07-25T23:07:20Z",
+     "end_utc": "2025-07-25T23:07:45Z",
+     "file_epsg_in_catalogue": 32647
+    }
+   ],
+   "footprint_share_of_grid": 0.9999,
+   "status": "fetched",
+   "file": "event_20250725T2306Z_s1c_o62.tif",
+   "sha256": "babc7202c28f837219f7886f5044493b00d079e600bb789bf83ec7404314e85b",
+   "valid_share": {
+    "vv": 1.0,
+    "vh": 1.0,
+    "both": 1.0
+   },
+   "seconds": 259.9,
+   "fetched_at_utc": "2026-10-14T14:28:03Z"
+  },
+  {
+   "key": "20250727T1130Z_s1a_o172",
+   "platform": "Sentinel-1A",
+   "relative_orbit": 172,
+   "orbit_state": "ascending",
+   "start_utc": "2025-07-27T11:30:07Z",
+   "end_utc": "2025-07-27T11:30:57Z",
+   "start_thai": "2025-07-27T18:30:07+07:00",
+   "scenes": [
+    {
+     "item": "S1A_IW_GRDH_1SDV_20250727T113007_20250727T113032_060269_rtc",
+     "start_utc": "2025-07-27T11:30:07Z",
+     "end_utc": "2025-07-27T11:30:32Z",
+     "file_epsg_in_catalogue": 32647
+    },
+    {
+     "item": "S1A_IW_GRDH_1SDV_20250727T113032_20250727T113057_060269_rtc",
+     "start_utc": "2025-07-27T11:30:32Z",
+     "end_utc": "2025-07-27T11:30:57Z",
+     "file_epsg_in_catalogue": 32647
+    }
+   ],
+   "footprint_share_of_grid": 0.6308,
+   "status": "not fetched yet"
+  },
+  {
+   "key": "20250728T1120Z_s1c_o99",
+   "platform": "Sentinel-1C",
+   "relative_orbit": 99,
+   "orbit_state": "ascending",
+   "start_utc": "2025-07-28T11:20:49Z",
+   "end_utc": "2025-07-28T11:21:36Z",
+   "start_thai": "2025-07-28T18:20:49+07:00",
+   "scenes": [
+    {
+     "item": "S1C_IW_GRDH_1SDV_20250728T112049_20250728T112114_003420_rtc",
+     "start_utc": "2025-07-28T11:20:49Z",
+     "end_utc": "2025-07-28T11:21:14Z",
+     "file_epsg_in_catalogue": 32647
+    },
+    {
+     "item": "S1C_IW_GRDH_1SDV_20250728T112114_20250728T112136_003420_rtc",
+     "start_utc": "2025-07-28T11:21:14Z",
+     "end_utc": "2025-07-28T11:21:36Z",
+     "file_epsg_in_catalogue": 32647
+    }
+   ],
+   "footprint_share_of_grid": 0.8216,
+   "status": "fetched",
+   "file": "event_20250728T1120Z_s1c_o99.tif",
+   "sha256": "ee88d21834f1daf30862592da255882dc69eea7b3e4083f41c69c0417f298707",
+   "valid_share": {
+    "vv": 0.819611,
+    "vh": 0.819611,
+    "both": 0.819611
+   },
+   "seconds": 202.4,
+   "fetched_at_utc": "2026-10-14T14:10:13Z"
+  },
+  {
+   "key": "20250731T2308Z_s1a_o62",
+   "platform": "Sentinel-1A",
+   "relative_orbit": 62,
+   "orbit_state": "descending",
+   "start_utc": "2025-07-31T23:08:03Z",
+   "end_utc": "2025-07-31T23:08:53Z",
+   "start_thai": "2025-08-01T06:08:03+07:00",
+   "scenes": [
+    {
+     "item": "S1A_IW_GRDH_1SDV_20250731T230803_20250731T230828_060334_rtc",
+     "start_utc": "2025-07-31T23:08:03Z",
+     "end_utc": "2025-07-31T23:08:28Z",
+     "file_epsg_in_catalogue": 32647
+    },
+    {
+     "item": "S1A_IW_GRDH_1SDV_20250731T230828_20250731T230853_060334_rtc",
+     "start_utc": "2025-07-31T23:08:28Z",
+     "end_utc": "2025-07-31T23:08:53Z",
+     "file_epsg_in_catalogue": 32647
+    }
+   ],
+   "footprint_share_of_grid": 0.9999,
+   "status": "fetched",
+   "file": "event_20250731T2308Z_s1a_o62.tif",
+   "sha256": "f5675fadc0204d3ee33d9344060043cd48ffbe7b00b09fb7255319396e76f0b7",
+   "valid_share": {
+    "vv": 1.0,
+    "vh": 1.0,
+    "both": 1.0
+   },
+   "seconds": 202.5,
+   "fetched_at_utc": "2026-10-14T14:13:36Z"
+  },
+  {
+   "key": "20250803T1122Z_s1a_o99",
+   "platform": "Sentinel-1A",
+   "relative_orbit": 99,
+   "orbit_state": "ascending",
+   "start_utc": "2025-08-03T11:22:06Z",
+   "end_utc": "2025-08-03T11:22:56Z",
+   "start_thai": "2025-08-03T18:22:06+07:00",
+   "scenes": [
+    {
+     "item": "S1A_IW_GRDH_1SDV_20250803T112206_20250803T112231_060371_rtc",
+     "start_utc": "2025-08-03T11:22:06Z",
+     "end_utc": "2025-08-03T11:22:31Z",
+     "file_epsg_in_catalogue": 32647
+    },
+    {
+     "item": "S1A_IW_GRDH_1SDV_20250803T112231_20250803T112256_060371_rtc",
+     "start_utc": "2025-08-03T11:22:31Z",
+     "end_utc": "2025-08-03T11:22:56Z",
+     "file_epsg_in_catalogue": 32647
+    }
+   ],
+   "footprint_share_of_grid": 0.8146,
+   "status": "not fetched yet"
+  },
+  {
+   "key": "20250805T2316Z_s1a_o135",
+   "platform": "Sentinel-1A",
+   "relative_orbit": 135,
+   "orbit_state": "descending",
+   "start_utc": "2025-08-05T23:16:12Z",
+   "end_utc": "2025-08-05T23:17:02Z",
+   "start_thai": "2025-08-06T06:16:12+07:00",
+   "scenes": [
+    {
+     "item": "S1A_IW_GRDH_1SDV_20250805T231612_20250805T231637_060407_rtc",
+     "start_utc": "2025-08-05T23:16:12Z",
+     "end_utc": "2025-08-05T23:16:37Z",
+     "file_epsg_in_catalogue": 32647
+    },
+    {
+     "item": "S1A_IW_GRDH_1SDV_20250805T231637_20250805T231702_060407_rtc",
+     "start_utc": "2025-08-05T23:16:37Z",
+     "end_utc": "2025-08-05T23:17:02Z",
+     "file_epsg_in_catalogue": 32647
+    }
+   ],
+   "footprint_share_of_grid": 0.1044,
+   "status": "not fetched yet"
+  },
+  {
+   "key": "20250806T2306Z_s1c_o62",
+   "platform": "Sentinel-1C",
+   "relative_orbit": 62,
+   "orbit_state": "descending",
+   "start_utc": "2025-08-06T23:06:51Z",
+   "end_utc": "2025-08-06T23:07:45Z",
+   "start_thai": "2025-08-07T06:06:51+07:00",
+   "scenes": [
+    {
+     "item": "S1C_IW_GRDH_1SDV_20250806T230651_20250806T230720_003558_rtc",
+     "start_utc": "2025-08-06T23:06:51Z",
+     "end_utc": "2025-08-06T23:07:20Z",
+     "file_epsg_in_catalogue": 32647
+    },
+    {
+     "item": "S1C_IW_GRDH_1SDV_20250806T230720_20250806T230745_003558_rtc",
+     "start_utc": "2025-08-06T23:07:20Z",
+     "end_utc": "2025-08-06T23:07:45Z",
+     "file_epsg_in_catalogue": 32647
+    }
+   ],
+   "footprint_share_of_grid": 0.9999,
+   "status": "not fetched yet"
+  },
+  {
+   "key": "20250808T1130Z_s1a_o172",
+   "platform": "Sentinel-1A",
+   "relative_orbit": 172,
+   "orbit_state": "ascending",
+   "start_utc": "2025-08-08T11:30:07Z",
+   "end_utc": "2025-08-08T11:30:57Z",
+   "start_thai": "2025-08-08T18:30:07+07:00",
+   "scenes": [
+    {
+     "item": "S1A_IW_GRDH_1SDV_20250808T113007_20250808T113032_060444_rtc",
+     "start_utc": "2025-08-08T11:30:07Z",
+     "end_utc": "2025-08-08T11:30:32Z",
+     "file_epsg_in_catalogue": 32647
+    },
+    {
+     "item": "S1A_IW_GRDH_1SDV_20250808T113032_20250808T113057_060444_rtc",
+     "start_utc": "2025-08-08T11:30:32Z",
+     "end_utc": "2025-08-08T11:30:57Z",
+     "file_epsg_in_catalogue": 32647
+    }
+   ],
+   "footprint_share_of_grid": 0.63,
+   "status": "not fetched yet"
+  },
+  {
+   "key": "20250809T1120Z_s1c_o99",
+   "platform": "Sentinel-1C",
+   "relative_orbit": 99,
+   "orbit_state": "ascending",
+   "start_utc": "2025-08-09T11:20:50Z",
+   "end_utc": "2025-08-09T11:21:36Z",
+   "start_thai": "2025-08-09T18:20:50+07:00",
+   "scenes": [
+    {
+     "item": "S1C_IW_GRDH_1SDV_20250809T112050_20250809T112115_003595_rtc",
+     "start_utc": "2025-08-09T11:20:50Z",
+     "end_utc": "2025-08-09T11:21:15Z",
+     "file_epsg_in_catalogue": 32647
+    },
+    {
+     "item": "S1C_IW_GRDH_1SDV_20250809T112115_20250809T112136_003595_rtc",
+     "start_utc": "2025-08-09T11:21:15Z",
+     "end_utc": "2025-08-09T11:21:36Z",
+     "file_epsg_in_catalogue": 32647
+    }
+   ],
+   "footprint_share_of_grid": 0.8204,
+   "status": "not fetched yet"
+  },
+  {
+   "key": "20250812T2308Z_s1a_o62",
+   "platform": "Sentinel-1A",
+   "relative_orbit": 62,
+   "orbit_state": "descending",
+   "start_utc": "2025-08-12T23:08:03Z",
+   "end_utc": "2025-08-12T23:08:53Z",
+   "start_thai": "2025-08-13T06:08:03+07:00",
+   "scenes": [
+    {
+     "item": "S1A_IW_GRDH_1SDV_20250812T230803_20250812T230828_060509_rtc",
+     "start_utc": "2025-08-12T23:08:03Z",
+     "end_utc": "2025-08-12T23:08:28Z",
+     "file_epsg_in_catalogue": 32647
+    },
+    {
+     "item": "S1A_IW_GRDH_1SDV_20250812T230828_20250812T230853_060509_rtc",
+     "start_utc": "2025-08-12T23:08:28Z",
+     "end_utc": "2025-08-12T23:08:53Z",
+     "file_epsg_in_catalogue": 32647
+    }
+   ],
+   "footprint_share_of_grid": 0.9999,
+   "status": "not fetched yet"
+  }
+ ],
+ "dry_season": {
+  "window_utc": [
+   "2025-01-01T00:00:00Z",
+   "2025-04-30T23:59:59Z"
+  ],
+  "cap": 10,
+  "rule": "per relative orbit of the event passes: the latest passes of the window first, at most 10",
+  "min_valid_passes_per_cell_of_the_method": 6,
+  "by_orbit": {
+   "62": {
+    "passes_found": [
+     {
+      "key": "20250108T2308Z_s1a_o62",
+      "platform": "Sentinel-1A",
+      "relative_orbit": 62,
+      "orbit_state": "descending",
+      "start_utc": "2025-01-08T23:08:12Z",
+      "end_utc": "2025-01-08T23:08:37Z",
+      "start_thai": "2025-01-09T06:08:12+07:00",
+      "scenes": [
+       {
+        "item": "S1A_IW_GRDH_1SDV_20250108T230812_20250108T230837_057359_070F2E_rtc",
+        "start_utc": "2025-01-08T23:08:12Z",
+        "end_utc": "2025-01-08T23:08:37Z",
+        "file_epsg_in_catalogue": 32647
+       }
+      ],
+      "footprint_share_of_grid": 1.0
+     },
+     {
+      "key": "20250120T2308Z_s1a_o62",
+      "platform": "Sentinel-1A",
+      "relative_orbit": 62,
+      "orbit_state": "descending",
+      "start_utc": "2025-01-20T23:08:11Z",
+      "end_utc": "2025-01-20T23:08:36Z",
+      "start_thai": "2025-01-21T06:08:11+07:00",
+      "scenes": [
+       {
+        "item": "S1A_IW_GRDH_1SDV_20250120T230811_20250120T230836_057534_07161B_rtc",
+        "start_utc": "2025-01-20T23:08:11Z",
+        "end_utc": "2025-01-20T23:08:36Z",
+        "file_epsg_in_catalogue": 32647
+       }
+      ],
+      "footprint_share_of_grid": 1.0
+     },
+     {
+      "key": "20250201T2308Z_s1a_o62",
+      "platform": "Sentinel-1A",
+      "relative_orbit": 62,
+      "orbit_state": "descending",
+      "start_utc": "2025-02-01T23:08:10Z",
+      "end_utc": "2025-02-01T23:08:35Z",
+      "start_thai": "2025-02-02T06:08:10+07:00",
+      "scenes": [
+       {
+        "item": "S1A_IW_GRDH_1SDV_20250201T230810_20250201T230835_057709_071D0D_rtc",
+        "start_utc": "2025-02-01T23:08:10Z",
+        "end_utc": "2025-02-01T23:08:35Z",
+        "file_epsg_in_catalogue": 32647
+       }
+      ],
+      "footprint_share_of_grid": 1.0
+     },
+     {
+      "key": "20250213T2308Z_s1a_o62",
+      "platform": "Sentinel-1A",
+      "relative_orbit": 62,
+      "orbit_state": "descending",
+      "start_utc": "2025-02-13T23:08:10Z",
+      "end_utc": "2025-02-13T23:08:35Z",
+      "start_thai": "2025-02-14T06:08:10+07:00",
+      "scenes": [
+       {
+        "item": "S1A_IW_GRDH_1SDV_20250213T230810_20250213T230835_057884_07240E_rtc",
+        "start_utc": "2025-02-13T23:08:10Z",
+        "end_utc": "2025-02-13T23:08:35Z",
+        "file_epsg_in_catalogue": 32647
+       }
+      ],
+      "footprint_share_of_grid": 1.0
+     },
+     {
+      "key": "20250225T2308Z_s1a_o62",
+      "platform": "Sentinel-1A",
+      "relative_orbit": 62,
+      "orbit_state": "descending",
+      "start_utc": "2025-02-25T23:08:09Z",
+      "end_utc": "2025-02-25T23:08:34Z",
+      "start_thai": "2025-02-26T06:08:09+07:00",
+      "scenes": [
+       {
+        "item": "S1A_IW_GRDH_1SDV_20250225T230809_20250225T230834_058059_072B31_rtc",
+        "start_utc": "2025-02-25T23:08:09Z",
+        "end_utc": "2025-02-25T23:08:34Z",
+        "file_epsg_in_catalogue": 32647
+       }
+      ],
+      "footprint_share_of_grid": 1.0
+     },
+     {
+      "key": "20250309T2308Z_s1a_o62",
+      "platform": "Sentinel-1A",
+      "relative_orbit": 62,
+      "orbit_state": "descending",
+      "start_utc": "2025-03-09T23:08:10Z",
+      "end_utc": "2025-03-09T23:08:35Z",
+      "start_thai": "2025-03-10T06:08:10+07:00",
+      "scenes": [
+       {
+        "item": "S1A_IW_GRDH_1SDV_20250309T230810_20250309T230835_058234_073251_rtc",
+        "start_utc": "2025-03-09T23:08:10Z",
+        "end_utc": "2025-03-09T23:08:35Z",
+        "file_epsg_in_catalogue": 32647
+       }
+      ],
+      "footprint_share_of_grid": 1.0
+     },
+     {
+      "key": "20250321T2308Z_s1a_o62",
+      "platform": "Sentinel-1A",
+      "relative_orbit": 62,
+      "orbit_state": "descending",
+      "start_utc": "2025-03-21T23:08:10Z",
+      "end_utc": "2025-03-21T23:08:35Z",
+      "start_thai": "2025-03-22T06:08:10+07:00",
+      "scenes": [
+       {
+        "item": "S1A_IW_GRDH_1SDV_20250321T230810_20250321T230835_058409_07393E_rtc",
+        "start_utc": "2025-03-21T23:08:10Z",
+        "end_utc": "2025-03-21T23:08:35Z",
+        "file_epsg_in_catalogue": 32647
+       }
+      ],
+      "footprint_share_of_grid": 1.0
+     },
+     {
+      "key": "20250327T2306Z_s1c_o62",
+      "platform": "Sentinel-1C",
+      "relative_orbit": 62,
+      "orbit_state": "descending",
+      "start_utc": "2025-03-27T23:06:43Z",
+      "end_utc": "2025-03-27T23:07:37Z",
+      "start_thai": "2025-03-28T06:06:43+07:00",
+      "scenes": [
+       {
+        "item": "S1C_IW_GRDH_1SDV_20250327T230643_20250327T230712_001633_rtc",
+        "start_utc": "2025-03-27T23:06:43Z",
+        "end_utc": "2025-03-27T23:07:12Z",
+        "file_epsg_in_catalogue": 32647
+       },
+       {
+        "item": "S1C_IW_GRDH_1SDV_20250327T230712_20250327T230737_001633_rtc",
+        "start_utc": "2025-03-27T23:07:12Z",
+        "end_utc": "2025-03-27T23:07:37Z",
+        "file_epsg_in_catalogue": 32647
+       }
+      ],
+      "footprint_share_of_grid": 0.9999
+     },
+     {
+      "key": "20250402T2308Z_s1a_o62",
+      "platform": "Sentinel-1A",
+      "relative_orbit": 62,
+      "orbit_state": "descending",
+      "start_utc": "2025-04-02T23:08:10Z",
+      "end_utc": "2025-04-02T23:08:35Z",
+      "start_thai": "2025-04-03T06:08:10+07:00",
+      "scenes": [
+       {
+        "item": "S1A_IW_GRDH_1SDV_20250402T230810_20250402T230835_058584_074044_rtc",
+        "start_utc": "2025-04-02T23:08:10Z",
+        "end_utc": "2025-04-02T23:08:35Z",
+        "file_epsg_in_catalogue": 32647
+       }
+      ],
+      "footprint_share_of_grid": 1.0
+     },
+     {
+      "key": "20250414T2308Z_s1a_o62",
+      "platform": "Sentinel-1A",
+      "relative_orbit": 62,
+      "orbit_state": "descending",
+      "start_utc": "2025-04-14T23:08:10Z",
+      "end_utc": "2025-04-14T23:08:35Z",
+      "start_thai": "2025-04-15T06:08:10+07:00",
+      "scenes": [
+       {
+        "item": "S1A_IW_GRDH_1SDV_20250414T230810_20250414T230835_058759_074778_rtc",
+        "start_utc": "2025-04-14T23:08:10Z",
+        "end_utc": "2025-04-14T23:08:35Z",
+        "file_epsg_in_catalogue": 32647
+       }
+      ],
+      "footprint_share_of_grid": 1.0
+     },
+     {
+      "key": "20250420T2306Z_s1c_o62",
+      "platform": "Sentinel-1C",
+      "relative_orbit": 62,
+      "orbit_state": "descending",
+      "start_utc": "2025-04-20T23:06:44Z",
+      "end_utc": "2025-04-20T23:07:38Z",
+      "start_thai": "2025-04-21T06:06:44+07:00",
+      "scenes": [
+       {
+        "item": "S1C_IW_GRDH_1SDV_20250420T230644_20250420T230713_001983_rtc",
+        "start_utc": "2025-04-20T23:06:44Z",
+        "end_utc": "2025-04-20T23:07:13Z",
+        "file_epsg_in_catalogue": 32647
+       },
+       {
+        "item": "S1C_IW_GRDH_1SDV_20250420T230713_20250420T230738_001983_rtc",
+        "start_utc": "2025-04-20T23:07:13Z",
+        "end_utc": "2025-04-20T23:07:38Z",
+        "file_epsg_in_catalogue": 32647
+       }
+      ],
+      "footprint_share_of_grid": 0.9991
+     },
+     {
+      "key": "20250426T2308Z_s1a_o62",
+      "platform": "Sentinel-1A",
+      "relative_orbit": 62,
+      "orbit_state": "descending",
+      "start_utc": "2025-04-26T23:08:11Z",
+      "end_utc": "2025-04-26T23:08:36Z",
+      "start_thai": "2025-04-27T06:08:11+07:00",
+      "scenes": [
+       {
+        "item": "S1A_IW_GRDH_1SDV_20250426T230811_20250426T230836_058934_074E99_rtc",
+        "start_utc": "2025-04-26T23:08:11Z",
+        "end_utc": "2025-04-26T23:08:36Z",
+        "file_epsg_in_catalogue": 32647
+       }
+      ],
+      "footprint_share_of_grid": 1.0
+     }
+    ],
+    "selected_latest_first": [
+     "20250426T2308Z_s1a_o62",
+     "20250420T2306Z_s1c_o62",
+     "20250414T2308Z_s1a_o62",
+     "20250402T2308Z_s1a_o62",
+     "20250327T2306Z_s1c_o62",
+     "20250321T2308Z_s1a_o62",
+     "20250309T2308Z_s1a_o62",
+     "20250225T2308Z_s1a_o62",
+     "20250213T2308Z_s1a_o62",
+     "20250201T2308Z_s1a_o62"
+    ],
+    "selected_platforms": {
+     "Sentinel-1A": 8,
+     "Sentinel-1C": 2
+    },
+    "sensor_agreement_check_applies": true,
+    "fewer_than_the_cap": false,
+    "statistics": {
+     "status": "computed",
+     "file": "dry_o62.tif",
+     "sha256": "89b6aecf30bab7a7f044936b0f0ed79cb6bf14271b3511f05ed65b565bf817d3",
+     "passes_used": [
+      "20250426T2308Z_s1a_o62",
+      "20250420T2306Z_s1c_o62",
+      "20250414T2308Z_s1a_o62",
+      "20250402T2308Z_s1a_o62",
+      "20250327T2306Z_s1c_o62",
+      "20250321T2308Z_s1a_o62",
+      "20250309T2308Z_s1a_o62",
+      "20250225T2308Z_s1a_o62",
+      "20250213T2308Z_s1a_o62",
+      "20250201T2308Z_s1a_o62"
+     ],
+     "share_of_cells_with_at_least_6_valid_passes": 1.0,
+     "sensor_agreement": {
+      "applies": true,
+      "platforms": [
+       "Sentinel-1A",
+       "Sentinel-1C"
+      ],
+      "difference": "mean VH dB of the Sentinel-1A passes minus mean VH dB of the Sentinel-1C passes",
+      "passes_per_platform": {
+       "Sentinel-1A": 8,
+       "Sentinel-1C": 2
+      },
+      "cells_valid_in_both": 18416840,
+      "median_db": 0.7912,
+      "p25_db": -0.331,
+      "p75_db": 1.9123,
+      "flag_abs_median_above_db": 0.5,
+      "flagged": true,
+      "vv_for_information": {
+       "median_db": 0.5663,
+       "p25_db": -0.572,
+       "p75_db": 1.7203
+      },
+      "correction_applied": false,
+      "rule": "for an orbit whose selected dry passes come from two platforms: the median, over cells with at least one valid pass of each platform, of (mean VH dB of the Sentinel-1A passes minus mean VH dB of the other platform's passes); flagged when its absolute value is above 0.5 dB; no correction is applied"
+     },
+     "seconds": 2663.0,
+     "computed_at_utc": "2026-10-14T15:00:04Z"
+    }
+   },
+   "99": {
+    "passes_found": [
+     {
+      "key": "20250111T1122Z_s1a_o99",
+      "platform": "Sentinel-1A",
+      "relative_orbit": 99,
+      "orbit_state": "ascending",
+      "start_utc": "2025-01-11T11:22:12Z",
+      "end_utc": "2025-01-11T11:23:02Z",
+      "start_thai": "2025-01-11T18:22:12+07:00",
+      "scenes": [
+       {
+        "item": "S1A_IW_GRDH_1SDV_20250111T112212_20250111T112237_057396_0710A1_rtc",
+        "start_utc": "2025-01-11T11:22:12Z",
+        "end_utc": "2025-01-11T11:22:37Z",
+        "file_epsg_in_catalogue": 32647
+       },
+       {
+        "item": "S1A_IW_GRDH_1SDV_20250111T112237_20250111T112302_057396_0710A1_rtc",
+        "start_utc": "2025-01-11T11:22:37Z",
+        "end_utc": "2025-01-11T11:23:02Z",
+        "file_epsg_in_catalogue": 32647
+       }
+      ],
+      "footprint_share_of_grid": 0.8147
+     },
+     {
+      "key": "20250123T1122Z_s1a_o99",
+      "platform": "Sentinel-1A",
+      "relative_orbit": 99,
+      "orbit_state": "ascending",
+      "start_utc": "2025-01-23T11:22:11Z",
+      "end_utc": "2025-01-23T11:23:01Z",
+      "start_thai": "2025-01-23T18:22:11+07:00",
+      "scenes": [
+       {
+        "item": "S1A_IW_GRDH_1SDV_20250123T112211_20250123T112236_057571_071795_rtc",
+        "start_utc": "2025-01-23T11:22:11Z",
+        "end_utc": "2025-01-23T11:22:36Z",
+        "file_epsg_in_catalogue": 32647
+       },
+       {
+        "item": "S1A_IW_GRDH_1SDV_20250123T112236_20250123T112301_057571_071795_rtc",
+        "start_utc": "2025-01-23T11:22:36Z",
+        "end_utc": "2025-01-23T11:23:01Z",
+        "file_epsg_in_catalogue": 32647
+       }
+      ],
+      "footprint_share_of_grid": 0.815
+     },
+     {
+      "key": "20250204T1122Z_s1a_o99",
+      "platform": "Sentinel-1A",
+      "relative_orbit": 99,
+      "orbit_state": "ascending",
+      "start_utc": "2025-02-04T11:22:10Z",
+      "end_utc": "2025-02-04T11:22:58Z",
+      "start_thai": "2025-02-04T18:22:10+07:00",
+      "scenes": [
+       {
+        "item": "S1A_IW_GRDH_1SDV_20250204T112210_20250204T112235_057746_rtc",
+        "start_utc": "2025-02-04T11:22:10Z",
+        "end_utc": "2025-02-04T11:22:35Z",
+        "file_epsg_in_catalogue": 32647
+       },
+       {
+        "item": "S1A_IW_GRDH_1SDV_20250204T112235_20250204T112258_057746_rtc",
+        "start_utc": "2025-02-04T11:22:35Z",
+        "end_utc": "2025-02-04T11:22:58Z",
+        "file_epsg_in_catalogue": 32647
+       }
+      ],
+      "footprint_share_of_grid": 0.8157
+     },
+     {
+      "key": "20250216T1122Z_s1a_o99",
+      "platform": "Sentinel-1A",
+      "relative_orbit": 99,
+      "orbit_state": "ascending",
+      "start_utc": "2025-02-16T11:22:10Z",
+      "end_utc": "2025-02-16T11:23:00Z",
+      "start_thai": "2025-02-16T18:22:10+07:00",
+      "scenes": [
+       {
+        "item": "S1A_IW_GRDH_1SDV_20250216T112210_20250216T112235_057921_072589_rtc",
+        "start_utc": "2025-02-16T11:22:10Z",
+        "end_utc": "2025-02-16T11:22:35Z",
+        "file_epsg_in_catalogue": 32647
+       },
+       {
+        "item": "S1A_IW_GRDH_1SDV_20250216T112235_20250216T112300_057921_072589_rtc",
+        "start_utc": "2025-02-16T11:22:35Z",
+        "end_utc": "2025-02-16T11:23:00Z",
+        "file_epsg_in_catalogue": 32647
+       }
+      ],
+      "footprint_share_of_grid": 0.8155
+     },
+     {
+      "key": "20250312T1122Z_s1a_o99",
+      "platform": "Sentinel-1A",
+      "relative_orbit": 99,
+      "orbit_state": "ascending",
+      "start_utc": "2025-03-12T11:22:10Z",
+      "end_utc": "2025-03-12T11:23:00Z",
+      "start_thai": "2025-03-12T18:22:10+07:00",
+      "scenes": [
+       {
+        "item": "S1A_IW_GRDH_1SDV_20250312T112210_20250312T112235_058271_0733C0_rtc",
+        "start_utc": "2025-03-12T11:22:10Z",
+        "end_utc": "2025-03-12T11:22:35Z",
+        "file_epsg_in_catalogue": 32647
+       },
+       {
+        "item": "S1A_IW_GRDH_1SDV_20250312T112235_20250312T112300_058271_0733C0_rtc",
+        "start_utc": "2025-03-12T11:22:35Z",
+        "end_utc": "2025-03-12T11:23:00Z",
+        "file_epsg_in_catalogue": 32647
+       }
+      ],
+      "footprint_share_of_grid": 0.8154
+     },
+     {
+      "key": "20250324T1122Z_s1a_o99",
+      "platform": "Sentinel-1A",
+      "relative_orbit": 99,
+      "orbit_state": "ascending",
+      "start_utc": "2025-03-24T11:22:10Z",
+      "end_utc": "2025-03-24T11:22:57Z",
+      "start_thai": "2025-03-24T18:22:10+07:00",
+      "scenes": [
+       {
+        "item": "S1A_IW_GRDH_1SDV_20250324T112210_20250324T112235_058446_073AAC_rtc",
+        "start_utc": "2025-03-24T11:22:10Z",
+        "end_utc": "2025-03-24T11:22:35Z",
+        "file_epsg_in_catalogue": 32647
+       },
+       {
+        "item": "S1A_IW_GRDH_1SDV_20250324T112235_20250324T112257_058446_073AAC_rtc",
+        "start_utc": "2025-03-24T11:22:35Z",
+        "end_utc": "2025-03-24T11:22:57Z",
+        "file_epsg_in_catalogue": 32647
+       }
+      ],
+      "footprint_share_of_grid": 0.8149
+     },
+     {
+      "key": "20250405T1122Z_s1a_o99",
+      "platform": "Sentinel-1A",
+      "relative_orbit": 99,
+      "orbit_state": "ascending",
+      "start_utc": "2025-04-05T11:22:10Z",
+      "end_utc": "2025-04-05T11:23:00Z",
+      "start_thai": "2025-04-05T18:22:10+07:00",
+      "scenes": [
+       {
+        "item": "S1A_IW_GRDH_1SDV_20250405T112210_20250405T112235_058621_0741C3_rtc",
+        "start_utc": "2025-04-05T11:22:10Z",
+        "end_utc": "2025-04-05T11:22:35Z",
+        "file_epsg_in_catalogue": 32647
+       },
+       {
+        "item": "S1A_IW_GRDH_1SDV_20250405T112235_20250405T112300_058621_0741C3_rtc",
+        "start_utc": "2025-04-05T11:22:35Z",
+        "end_utc": "2025-04-05T11:23:00Z",
+        "file_epsg_in_catalogue": 32647
+       }
+      ],
+      "footprint_share_of_grid": 0.8161
+     },
+     {
+      "key": "20250417T1122Z_s1a_o99",
+      "platform": "Sentinel-1A",
+      "relative_orbit": 99,
+      "orbit_state": "ascending",
+      "start_utc": "2025-04-17T11:22:10Z",
+      "end_utc": "2025-04-17T11:23:00Z",
+      "start_thai": "2025-04-17T18:22:10+07:00",
+      "scenes": [
+       {
+        "item": "S1A_IW_GRDH_1SDV_20250417T112210_20250417T112235_058796_0748EA_rtc",
+        "start_utc": "2025-04-17T11:22:10Z",
+        "end_utc": "2025-04-17T11:22:35Z",
+        "file_epsg_in_catalogue": 32647
+       },
+       {
+        "item": "S1A_IW_GRDH_1SDV_20250417T112235_20250417T112300_058796_0748EA_rtc",
+        "start_utc": "2025-04-17T11:22:35Z",
+        "end_utc": "2025-04-17T11:23:00Z",
+        "file_epsg_in_catalogue": 32647
+       }
+      ],
+      "footprint_share_of_grid": 0.8146
+     },
+     {
+      "key": "20250429T1122Z_s1a_o99",
+      "platform": "Sentinel-1A",
+      "relative_orbit": 99,
+      "orbit_state": "ascending",
+      "start_utc": "2025-04-29T11:22:11Z",
+      "end_utc": "2025-04-29T11:23:01Z",
+      "start_thai": "2025-04-29T18:22:11+07:00",
+      "scenes": [
+       {
+        "item": "S1A_IW_GRDH_1SDV_20250429T112211_20250429T112235_058971_075014_rtc",
+        "start_utc": "2025-04-29T11:22:11Z",
+        "end_utc": "2025-04-29T11:22:35Z",
+        "file_epsg_in_catalogue": 32647
+       },
+       {
+        "item": "S1A_IW_GRDH_1SDV_20250429T112236_20250429T112301_058971_075014_rtc",
+        "start_utc": "2025-04-29T11:22:36Z",
+        "end_utc": "2025-04-29T11:23:01Z",
+        "file_epsg_in_catalogue": 32647
+       }
+      ],
+      "footprint_share_of_grid": 0.8156
+     }
+    ],
+    "selected_latest_first": [
+     "20250429T1122Z_s1a_o99",
+     "20250417T1122Z_s1a_o99",
+     "20250405T1122Z_s1a_o99",
+     "20250324T1122Z_s1a_o99",
+     "20250312T1122Z_s1a_o99",
+     "20250216T1122Z_s1a_o99",
+     "20250204T1122Z_s1a_o99",
+     "20250123T1122Z_s1a_o99",
+     "20250111T1122Z_s1a_o99"
+    ],
+    "selected_platforms": {
+     "Sentinel-1A": 9
+    },
+    "sensor_agreement_check_applies": false,
+    "fewer_than_the_cap": true,
+    "statistics": {
+     "status": "computed",
+     "file": "dry_o99.tif",
+     "sha256": "130d665ab3f2b1d9aed7197fc92b86129e9a5ed7d663676ff57c0f97aabe67b3",
+     "passes_used": [
+      "20250429T1122Z_s1a_o99",
+      "20250417T1122Z_s1a_o99",
+      "20250405T1122Z_s1a_o99",
+      "20250324T1122Z_s1a_o99",
+      "20250312T1122Z_s1a_o99",
+      "20250216T1122Z_s1a_o99",
+      "20250204T1122Z_s1a_o99",
+      "20250123T1122Z_s1a_o99",
+      "20250111T1122Z_s1a_o99"
+     ],
+     "share_of_cells_with_at_least_6_valid_passes": 0.820235,
+     "sensor_agreement": {
+      "applies": false,
+      "platforms": [
+       "Sentinel-1A"
+      ],
+      "reason": "every selected dry pass of orbit 99 is from Sentinel-1A",
+      "rule": "for an orbit whose selected dry passes come from two platforms: the median, over cells with at least one valid pass of each platform, of (mean VH dB of the Sentinel-1A passes minus mean VH dB of the other platform's passes); flagged when its absolute value is above 0.5 dB; no correction is applied"
+     },
+     "seconds": 2546.8,
+     "computed_at_utc": "2026-10-14T14:58:10Z"
+    }
+   },
+   "135": {
+    "passes_found": [
+     {
+      "key": "20250101T2316Z_s1a_o135",
+      "platform": "Sentinel-1A",
+      "relative_orbit": 135,
+      "orbit_state": "descending",
+      "start_utc": "2025-01-01T23:16:22Z",
+      "end_utc": "2025-01-01T23:16:47Z",
+      "start_thai": "2025-01-02T06:16:22+07:00",
+      "scenes": [
+       {
+        "item": "S1A_IW_GRDH_1SDV_20250101T231622_20250101T231647_057257_070B24_rtc",
+        "start_utc": "2025-01-01T23:16:22Z",
+        "end_utc": "2025-01-01T23:16:47Z",
+        "file_epsg_in_catalogue": 32647
+       }
+      ],
+      "footprint_share_of_grid": 0.1023
+     },
+     {
+      "key": "20250113T2316Z_s1a_o135",
+      "platform": "Sentinel-1A",
+      "relative_orbit": 135,
+      "orbit_state": "descending",
+      "start_utc": "2025-01-13T23:16:21Z",
+      "end_utc": "2025-01-13T23:16:46Z",
+      "start_thai": "2025-01-14T06:16:21+07:00",
+      "scenes": [
+       {
+        "item": "S1A_IW_GRDH_1SDV_20250113T231621_20250113T231646_057432_071214_rtc",
+        "start_utc": "2025-01-13T23:16:21Z",
+        "end_utc": "2025-01-13T23:16:46Z",
+        "file_epsg_in_catalogue": 32647
+       }
+      ],
+      "footprint_share_of_grid": 0.1025
+     },
+     {
+      "key": "20250125T2316Z_s1a_o135",
+      "platform": "Sentinel-1A",
+      "relative_orbit": 135,
+      "orbit_state": "descending",
+      "start_utc": "2025-01-25T23:16:20Z",
+      "end_utc": "2025-01-25T23:16:45Z",
+      "start_thai": "2025-01-26T06:16:20+07:00",
+      "scenes": [
+       {
+        "item": "S1A_IW_GRDH_1SDV_20250125T231620_20250125T231645_057607_071906_rtc",
+        "start_utc": "2025-01-25T23:16:20Z",
+        "end_utc": "2025-01-25T23:16:45Z",
+        "file_epsg_in_catalogue": 32647
+       }
+      ],
+      "footprint_share_of_grid": 0.1026
+     },
+     {
+      "key": "20250206T2316Z_s1a_o135",
+      "platform": "Sentinel-1A",
+      "relative_orbit": 135,
+      "orbit_state": "descending",
+      "start_utc": "2025-02-06T23:16:17Z",
+      "end_utc": "2025-02-06T23:17:07Z",
+      "start_thai": "2025-02-07T06:16:17+07:00",
+      "scenes": [
+       {
+        "item": "S1A_IW_GRDH_1SDV_20250206T231617_20250206T231642_057782_071FF5_rtc",
+        "start_utc": "2025-02-06T23:16:17Z",
+        "end_utc": "2025-02-06T23:16:42Z",
+        "file_epsg_in_catalogue": 32647
+       },
+       {
+        "item": "S1A_IW_GRDH_1SDV_20250206T231642_20250206T231707_057782_071FF5_rtc",
+        "start_utc": "2025-02-06T23:16:42Z",
+        "end_utc": "2025-02-06T23:17:07Z",
+        "file_epsg_in_catalogue": 32647
+       }
+      ],
+      "footprint_share_of_grid": 0.1029
+     },
+     {
+      "key": "20250218T2316Z_s1a_o135",
+      "platform": "Sentinel-1A",
+      "relative_orbit": 135,
+      "orbit_state": "descending",
+      "start_utc": "2025-02-18T23:16:19Z",
+      "end_utc": "2025-02-18T23:16:44Z",
+      "start_thai": "2025-02-19T06:16:19+07:00",
+      "scenes": [
+       {
+        "item": "S1A_IW_GRDH_1SDV_20250218T231619_20250218T231644_057957_0726FC_rtc",
+        "start_utc": "2025-02-18T23:16:19Z",
+        "end_utc": "2025-02-18T23:16:44Z",
+        "file_epsg_in_catalogue": 32647
+       }
+      ],
+      "footprint_share_of_grid": 0.1124
+     },
+     {
+      "key": "20250302T2316Z_s1a_o135",
+      "platform": "Sentinel-1A",
+      "relative_orbit": 135,
+      "orbit_state": "descending",
+      "start_utc": "2025-03-02T23:16:14Z",
+      "end_utc": "2025-03-02T23:17:04Z",
+      "start_thai": "2025-03-03T06:16:14+07:00",
+      "scenes": [
+       {
+        "item": "S1A_IW_GRDH_1SDV_20250302T231614_20250302T231639_058132_072E25_rtc",
+        "start_utc": "2025-03-02T23:16:14Z",
+        "end_utc": "2025-03-02T23:16:39Z",
+        "file_epsg_in_catalogue": 32647
+       },
+       {
+        "item": "S1A_IW_GRDH_1SDV_20250302T231639_20250302T231704_058132_072E25_rtc",
+        "start_utc": "2025-03-02T23:16:39Z",
+        "end_utc": "2025-03-02T23:17:04Z",
+        "file_epsg_in_catalogue": 32647
+       }
+      ],
+      "footprint_share_of_grid": 0.1036
+     },
+     {
+      "key": "20250314T2316Z_s1a_o135",
+      "platform": "Sentinel-1A",
+      "relative_orbit": 135,
+      "orbit_state": "descending",
+      "start_utc": "2025-03-14T23:16:19Z",
+      "end_utc": "2025-03-14T23:16:44Z",
+      "start_thai": "2025-03-15T06:16:19+07:00",
+      "scenes": [
+       {
+        "item": "S1A_IW_GRDH_1SDV_20250314T231619_20250314T231644_058307_073532_rtc",
+        "start_utc": "2025-03-14T23:16:19Z",
+        "end_utc": "2025-03-14T23:16:44Z",
+        "file_epsg_in_catalogue": 32647
+       }
+      ],
+      "footprint_share_of_grid": 0.1025
+     },
+     {
+      "key": "20250326T2316Z_s1a_o135",
+      "platform": "Sentinel-1A",
+      "relative_orbit": 135,
+      "orbit_state": "descending",
+      "start_utc": "2025-03-26T23:16:19Z",
+      "end_utc": "2025-03-26T23:16:44Z",
+      "start_thai": "2025-03-27T06:16:19+07:00",
+      "scenes": [
+       {
+        "item": "S1A_IW_GRDH_1SDV_20250326T231619_20250326T231644_058482_073C14_rtc",
+        "start_utc": "2025-03-26T23:16:19Z",
+        "end_utc": "2025-03-26T23:16:44Z",
+        "file_epsg_in_catalogue": 32647
+       }
+      ],
+      "footprint_share_of_grid": 0.112
+     },
+     {
+      "key": "20250407T2316Z_s1a_o135",
+      "platform": "Sentinel-1A",
+      "relative_orbit": 135,
+      "orbit_state": "descending",
+      "start_utc": "2025-04-07T23:16:20Z",
+      "end_utc": "2025-04-07T23:16:45Z",
+      "start_thai": "2025-04-08T06:16:20+07:00",
+      "scenes": [
+       {
+        "item": "S1A_IW_GRDH_1SDV_20250407T231620_20250407T231645_058657_07433D_rtc",
+        "start_utc": "2025-04-07T23:16:20Z",
+        "end_utc": "2025-04-07T23:16:45Z",
+        "file_epsg_in_catalogue": 32647
+       }
+      ],
+      "footprint_share_of_grid": 0.1021
+     },
+     {
+      "key": "20250419T2316Z_s1a_o135",
+      "platform": "Sentinel-1A",
+      "relative_orbit": 135,
+      "orbit_state": "descending",
+      "start_utc": "2025-04-19T23:16:20Z",
+      "end_utc": "2025-04-19T23:16:45Z",
+      "start_thai": "2025-04-20T06:16:20+07:00",
+      "scenes": [
+       {
+        "item": "S1A_IW_GRDH_1SDV_20250419T231620_20250419T231645_058832_074A67_rtc",
+        "start_utc": "2025-04-19T23:16:20Z",
+        "end_utc": "2025-04-19T23:16:45Z",
+        "file_epsg_in_catalogue": 32647
+       }
+      ],
+      "footprint_share_of_grid": 0.1032
+     }
+    ],
+    "selected_latest_first": [
+     "20250419T2316Z_s1a_o135",
+     "20250407T2316Z_s1a_o135",
+     "20250326T2316Z_s1a_o135",
+     "20250314T2316Z_s1a_o135",
+     "20250302T2316Z_s1a_o135",
+     "20250218T2316Z_s1a_o135",
+     "20250206T2316Z_s1a_o135",
+     "20250125T2316Z_s1a_o135",
+     "20250113T2316Z_s1a_o135",
+     "20250101T2316Z_s1a_o135"
+    ],
+    "selected_platforms": {
+     "Sentinel-1A": 10
+    },
+    "sensor_agreement_check_applies": false,
+    "fewer_than_the_cap": false,
+    "statistics": {
+     "status": "not computed yet"
+    }
+   },
+   "172": {
+    "passes_found": [
+     {
+      "key": "20250104T1130Z_s1a_o172",
+      "platform": "Sentinel-1A",
+      "relative_orbit": 172,
+      "orbit_state": "ascending",
+      "start_utc": "2025-01-04T11:30:12Z",
+      "end_utc": "2025-01-04T11:31:02Z",
+      "start_thai": "2025-01-04T18:30:12+07:00",
+      "scenes": [
+       {
+        "item": "S1A_IW_GRDH_1SDV_20250104T113012_20250104T113037_057294_070C93_rtc",
+        "start_utc": "2025-01-04T11:30:12Z",
+        "end_utc": "2025-01-04T11:30:37Z",
+        "file_epsg_in_catalogue": 32647
+       },
+       {
+        "item": "S1A_IW_GRDH_1SDV_20250104T113037_20250104T113102_057294_070C93_rtc",
+        "start_utc": "2025-01-04T11:30:37Z",
+        "end_utc": "2025-01-04T11:31:02Z",
+        "file_epsg_in_catalogue": 32647
+       }
+      ],
+      "footprint_share_of_grid": 0.6298
+     },
+     {
+      "key": "20250116T1130Z_s1a_o172",
+      "platform": "Sentinel-1A",
+      "relative_orbit": 172,
+      "orbit_state": "ascending",
+      "start_utc": "2025-01-16T11:30:11Z",
+      "end_utc": "2025-01-16T11:31:01Z",
+      "start_thai": "2025-01-16T18:30:11+07:00",
+      "scenes": [
+       {
+        "item": "S1A_IW_GRDH_1SDV_20250116T113011_20250116T113036_057469_07137C_rtc",
+        "start_utc": "2025-01-16T11:30:11Z",
+        "end_utc": "2025-01-16T11:30:36Z",
+        "file_epsg_in_catalogue": 32647
+       },
+       {
+        "item": "S1A_IW_GRDH_1SDV_20250116T113036_20250116T113101_057469_rtc",
+        "start_utc": "2025-01-16T11:30:36Z",
+        "end_utc": "2025-01-16T11:31:01Z",
+        "file_epsg_in_catalogue": 32647
+       }
+      ],
+      "footprint_share_of_grid": 0.6297
+     },
+     {
+      "key": "20250128T1130Z_s1a_o172",
+      "platform": "Sentinel-1A",
+      "relative_orbit": 172,
+      "orbit_state": "ascending",
+      "start_utc": "2025-01-28T11:30:11Z",
+      "end_utc": "2025-01-28T11:31:01Z",
+      "start_thai": "2025-01-28T18:30:11+07:00",
+      "scenes": [
+       {
+        "item": "S1A_IW_GRDH_1SDV_20250128T113011_20250128T113036_057644_071A76_rtc",
+        "start_utc": "2025-01-28T11:30:11Z",
+        "end_utc": "2025-01-28T11:30:36Z",
+        "file_epsg_in_catalogue": 32647
+       },
+       {
+        "item": "S1A_IW_GRDH_1SDV_20250128T113036_20250128T113101_057644_071A76_rtc",
+        "start_utc": "2025-01-28T11:30:36Z",
+        "end_utc": "2025-01-28T11:31:01Z",
+        "file_epsg_in_catalogue": 32647
+       }
+      ],
+      "footprint_share_of_grid": 0.6287
+     },
+     {
+      "key": "20250221T1130Z_s1a_o172",
+      "platform": "Sentinel-1A",
+      "relative_orbit": 172,
+      "orbit_state": "ascending",
+      "start_utc": "2025-02-21T11:30:10Z",
+      "end_utc": "2025-02-21T11:31:00Z",
+      "start_thai": "2025-02-21T18:30:10+07:00",
+      "scenes": [
+       {
+        "item": "S1A_IW_GRDH_1SDV_20250221T113010_20250221T113035_057994_07287C_rtc",
+        "start_utc": "2025-02-21T11:30:10Z",
+        "end_utc": "2025-02-21T11:30:35Z",
+        "file_epsg_in_catalogue": 32647
+       },
+       {
+        "item": "S1A_IW_GRDH_1SDV_20250221T113035_20250221T113100_057994_07287C_rtc",
+        "start_utc": "2025-02-21T11:30:35Z",
+        "end_utc": "2025-02-21T11:31:00Z",
+        "file_epsg_in_catalogue": 32647
+       }
+      ],
+      "footprint_share_of_grid": 0.6294
+     },
+     {
+      "key": "20250305T1130Z_s1a_o172",
+      "platform": "Sentinel-1A",
+      "relative_orbit": 172,
+      "orbit_state": "ascending",
+      "start_utc": "2025-03-05T11:30:10Z",
+      "end_utc": "2025-03-05T11:31:00Z",
+      "start_thai": "2025-03-05T18:30:10+07:00",
+      "scenes": [
+       {
+        "item": "S1A_IW_GRDH_1SDV_20250305T113010_20250305T113035_058169_072FA9_rtc",
+        "start_utc": "2025-03-05T11:30:10Z",
+        "end_utc": "2025-03-05T11:30:35Z",
+        "file_epsg_in_catalogue": 32647
+       },
+       {
+        "item": "S1A_IW_GRDH_1SDV_20250305T113035_20250305T113100_058169_072FA9_rtc",
+        "start_utc": "2025-03-05T11:30:35Z",
+        "end_utc": "2025-03-05T11:31:00Z",
+        "file_epsg_in_catalogue": 32647
+       }
+      ],
+      "footprint_share_of_grid": 0.6287
+     },
+     {
+      "key": "20250317T1130Z_s1a_o172",
+      "platform": "Sentinel-1A",
+      "relative_orbit": 172,
+      "orbit_state": "ascending",
+      "start_utc": "2025-03-17T11:30:10Z",
+      "end_utc": "2025-03-17T11:31:00Z",
+      "start_thai": "2025-03-17T18:30:10+07:00",
+      "scenes": [
+       {
+        "item": "S1A_IW_GRDH_1SDV_20250317T113010_20250317T113035_058344_07369C_rtc",
+        "start_utc": "2025-03-17T11:30:10Z",
+        "end_utc": "2025-03-17T11:30:35Z",
+        "file_epsg_in_catalogue": 32647
+       },
+       {
+        "item": "S1A_IW_GRDH_1SDV_20250317T113035_20250317T113100_058344_07369C_rtc",
+        "start_utc": "2025-03-17T11:30:35Z",
+        "end_utc": "2025-03-17T11:31:00Z",
+        "file_epsg_in_catalogue": 32647
+       }
+      ],
+      "footprint_share_of_grid": 0.628
+     },
+     {
+      "key": "20250329T1130Z_s1a_o172",
+      "platform": "Sentinel-1A",
+      "relative_orbit": 172,
+      "orbit_state": "ascending",
+      "start_utc": "2025-03-29T11:30:11Z",
+      "end_utc": "2025-03-29T11:31:01Z",
+      "start_thai": "2025-03-29T18:30:11+07:00",
+      "scenes": [
+       {
+        "item": "S1A_IW_GRDH_1SDV_20250329T113011_20250329T113036_058519_073D94_rtc",
+        "start_utc": "2025-03-29T11:30:11Z",
+        "end_utc": "2025-03-29T11:30:36Z",
+        "file_epsg_in_catalogue": 32647
+       },
+       {
+        "item": "S1A_IW_GRDH_1SDV_20250329T113036_20250329T113101_058519_073D94_rtc",
+        "start_utc": "2025-03-29T11:30:36Z",
+        "end_utc": "2025-03-29T11:31:01Z",
+        "file_epsg_in_catalogue": 32647
+       }
+      ],
+      "footprint_share_of_grid": 0.6275
+     },
+     {
+      "key": "20250404T1129Z_s1c_o172",
+      "platform": "Sentinel-1C",
+      "relative_orbit": 172,
+      "orbit_state": "ascending",
+      "start_utc": "2025-04-04T11:29:04Z",
+      "end_utc": "2025-04-04T11:29:29Z",
+      "start_thai": "2025-04-04T18:29:04+07:00",
+      "scenes": [
+       {
+        "item": "S1C_IW_GRDH_1SDV_20250404T112904_20250404T112929_001743_rtc",
+        "start_utc": "2025-04-04T11:29:04Z",
+        "end_utc": "2025-04-04T11:29:29Z",
+        "file_epsg_in_catalogue": 32647
+       }
+      ],
+      "footprint_share_of_grid": 0.6398
+     },
+     {
+      "key": "20250410T1130Z_s1a_o172",
+      "platform": "Sentinel-1A",
+      "relative_orbit": 172,
+      "orbit_state": "ascending",
+      "start_utc": "2025-04-10T11:30:10Z",
+      "end_utc": "2025-04-10T11:31:00Z",
+      "start_thai": "2025-04-10T18:30:10+07:00",
+      "scenes": [
+       {
+        "item": "S1A_IW_GRDH_1SDV_20250410T113010_20250410T113035_058694_0744BD_rtc",
+        "start_utc": "2025-04-10T11:30:10Z",
+        "end_utc": "2025-04-10T11:30:35Z",
+        "file_epsg_in_catalogue": 32647
+       },
+       {
+        "item": "S1A_IW_GRDH_1SDV_20250410T113035_20250410T113100_058694_0744BD_rtc",
+        "start_utc": "2025-04-10T11:30:35Z",
+        "end_utc": "2025-04-10T11:31:00Z",
+        "file_epsg_in_catalogue": 32647
+       }
+      ],
+      "footprint_share_of_grid": 0.6297
+     },
+     {
+      "key": "20250416T1129Z_s1c_o172",
+      "platform": "Sentinel-1C",
+      "relative_orbit": 172,
+      "orbit_state": "ascending",
+      "start_utc": "2025-04-16T11:29:04Z",
+      "end_utc": "2025-04-16T11:29:29Z",
+      "start_thai": "2025-04-16T18:29:04+07:00",
+      "scenes": [
+       {
+        "item": "S1C_IW_GRDH_1SDV_20250416T112904_20250416T112929_001918_rtc",
+        "start_utc": "2025-04-16T11:29:04Z",
+        "end_utc": "2025-04-16T11:29:29Z",
+        "file_epsg_in_catalogue": 32647
+       }
+      ],
+      "footprint_share_of_grid": 0.6408
+     },
+     {
+      "key": "20250422T1130Z_s1a_o172",
+      "platform": "Sentinel-1A",
+      "relative_orbit": 172,
+      "orbit_state": "ascending",
+      "start_utc": "2025-04-22T11:30:11Z",
+      "end_utc": "2025-04-22T11:31:01Z",
+      "start_thai": "2025-04-22T18:30:11+07:00",
+      "scenes": [
+       {
+        "item": "S1A_IW_GRDH_1SDV_20250422T113011_20250422T113036_058869_074BE7_rtc",
+        "start_utc": "2025-04-22T11:30:11Z",
+        "end_utc": "2025-04-22T11:30:36Z",
+        "file_epsg_in_catalogue": 32647
+       },
+       {
+        "item": "S1A_IW_GRDH_1SDV_20250422T113036_20250422T113101_058869_074BE7_rtc",
+        "start_utc": "2025-04-22T11:30:36Z",
+        "end_utc": "2025-04-22T11:31:01Z",
+        "file_epsg_in_catalogue": 32647
+       }
+      ],
+      "footprint_share_of_grid": 0.6298
+     },
+     {
+      "key": "20250428T1129Z_s1c_o172",
+      "platform": "Sentinel-1C",
+      "relative_orbit": 172,
+      "orbit_state": "ascending",
+      "start_utc": "2025-04-28T11:29:05Z",
+      "end_utc": "2025-04-28T11:29:30Z",
+      "start_thai": "2025-04-28T18:29:05+07:00",
+      "scenes": [
+       {
+        "item": "S1C_IW_GRDH_1SDV_20250428T112905_20250428T112930_002093_rtc",
+        "start_utc": "2025-04-28T11:29:05Z",
+        "end_utc": "2025-04-28T11:29:30Z",
+        "file_epsg_in_catalogue": 32647
+       }
+      ],
+      "footprint_share_of_grid": 0.64
+     }
+    ],
+    "selected_latest_first": [
+     "20250428T1129Z_s1c_o172",
+     "20250422T1130Z_s1a_o172",
+     "20250416T1129Z_s1c_o172",
+     "20250410T1130Z_s1a_o172",
+     "20250404T1129Z_s1c_o172",
+     "20250329T1130Z_s1a_o172",
+     "20250317T1130Z_s1a_o172",
+     "20250305T1130Z_s1a_o172",
+     "20250221T1130Z_s1a_o172",
+     "20250128T1130Z_s1a_o172"
+    ],
+    "selected_platforms": {
+     "Sentinel-1A": 7,
+     "Sentinel-1C": 3
+    },
+    "sensor_agreement_check_applies": true,
+    "fewer_than_the_cap": false,
+    "statistics": {
+     "status": "not computed yet"
+    }
+   }
+  }
+ },
+ "work_folder": "<external data root>/proposal_execution/nan_case_v1/radar/nan_frame/",
+ "file_naming": {
+  "event_pass": "event_<key>.tif and event_<key>.json",
+  "dry_statistics": "dry_o<orbit>.tif and dry_o<orbit>.json"
+ },
+ "problems": [],
+ "status_summary": {
+  "event_passes": {
+   "not fetched yet": 9,
+   "fetched": 5
+  },
+  "dry_orbits": {
+   "62": "computed",
+   "99": "computed",
+   "135": "not computed yet",
+   "172": "not computed yet"
+  },
+  "refreshed_at_utc": "2026-10-14T15:00:43Z"
+ }
+}

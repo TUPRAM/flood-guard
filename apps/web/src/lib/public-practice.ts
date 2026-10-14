@@ -424,7 +424,6 @@ export const PRACTICE_COPY = {
   },
   keyHeading: { en: "On the map", th: "บนแผนที่" },
   reportTag: { en: "Practice report, invented for the exercise. Not a real call or report.", th: "รายงานฝึกซ้อมที่สมมติขึ้นเพื่อการฝึก ไม่ใช่การโทรหรือรายงานจริง" },
-  end: { en: "End practice", th: "จบการฝึกซ้อม" },
   /** The Shelter page: a line drawn to a destination is the road map's and knows nothing of the replay's water. */
   routeCaveat: {
     en: "A line to a destination on this map comes from the road map. It does not know the water of the replay: compare it with the roads marked as under water.",
@@ -599,7 +598,7 @@ export interface PracticeView {
   /** The fixed words around a scenario, in the view's language. */
   copy: Record<
     "heading" | "homeLabel" | "homeNote" | "noteTitle" | "noteBoundary" | "boundary" | "sources" | "keyHeading"
-    | "end" | "reportsHeading" | "reportsNote" | "reportsNone" | "sosReal",
+    | "reportsHeading" | "reportsNote" | "reportsNone" | "sosReal",
     string
   >;
 }
@@ -663,7 +662,6 @@ export function practiceView(
       boundary: PRACTICE_COPY.boundary[language],
       sources: PRACTICE_COPY.sources[language],
       keyHeading: PRACTICE_COPY.keyHeading[language],
-      end: PRACTICE_COPY.end[language],
       reportsHeading: PRACTICE_COPY.reportsHeading[language],
       reportsNote: PRACTICE_COPY.reportsNote[language],
       reportsNone: PRACTICE_COPY.reportsNone[language],

@@ -7,7 +7,6 @@ interface PublicPracticeStripProps {
   prompt: string;
   /** A line of the page's own under the question (the SOS page says that no call is placed). */
   note?: string;
-  onEnd: () => void;
 }
 
 /**
@@ -16,7 +15,7 @@ interface PublicPracticeStripProps {
  * the tone of the banner on the Home map, so the five pages tell one story, and it says on every page what the
  * replay is not.
  */
-export function PublicPracticeStrip({ view, prompt, note, onEnd }: PublicPracticeStripProps) {
+export function PublicPracticeStrip({ view, prompt, note }: PublicPracticeStripProps) {
   return (
     <aside className="public-practice-strip" data-tone={view.tone} aria-label={view.copy.noteTitle}>
       <p className="public-practice-strip__label" data-public-not-a-warning>
@@ -29,7 +28,6 @@ export function PublicPracticeStrip({ view, prompt, note, onEnd }: PublicPractic
       </p>
       <p className="public-practice-strip__prompt">{prompt}</p>
       {note ? <p className="public-practice-strip__note">{note}</p> : null}
-      <button type="button" onClick={onEnd}>{view.copy.end}</button>
     </aside>
   );
 }

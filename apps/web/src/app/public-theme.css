@@ -798,21 +798,6 @@ html[data-app-update="available"] [data-public-app-status] > span::after { conte
 .public-practice-strip__state .public-app-icon { width: 20px; height: 20px; color: var(--tone-stripe); }
 .public-practice-strip__prompt { color: var(--fg-neutral-900); font-size: .74rem; line-height: 1.5; }
 .public-practice-strip__note { color: var(--fg-neutral-700); font-size: .68rem; line-height: 1.45; }
-.public-practice-strip button {
-  justify-self: start;
-  min-height: 44px;
-  margin-top: 2px;
-  padding: 8px 14px;
-  border: 1px solid var(--tone-border);
-  border-radius: var(--fg-radius-md);
-  background: var(--fg-surface);
-  color: var(--fg-primary-700);
-  font: inherit;
-  font-size: .7rem;
-  font-weight: 700;
-  cursor: pointer;
-}
-.public-practice-strip button:hover { background: var(--fg-primary-50); }
 
 /* The Report page: the invented exercise items that have arrived by the hour shown, each with the "EX" tag. */
 .public-practice-reports {

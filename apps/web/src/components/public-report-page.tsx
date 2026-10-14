@@ -31,10 +31,7 @@ interface PublicReportPageProps {
   onSelectArea: (areaId: string) => void;
   /** The practice scenario chosen in the header, once it is read; absent on a day without practice. */
   practice?: PracticeView;
-  onPracticeEnd?: () => void;
 }
-
-const ignoreEnd = () => {};
 
 const DEPTH_ICONS: Record<PublicReportWaterDepth, string> = {
   ankle: "≋",
@@ -49,7 +46,6 @@ export function PublicReportPage({
   areas,
   onSelectArea,
   practice,
-  onPracticeEnd,
 }: PublicReportPageProps) {
   const th = language === "th";
   const { reports, addReport } = usePublicReports();
@@ -153,7 +149,7 @@ export function PublicReportPage({
       */}
       {practice ? (
         <>
-          <PublicPracticeStrip view={practice} prompt={practice.pages.report.prompt} onEnd={onPracticeEnd ?? ignoreEnd} />
+          <PublicPracticeStrip view={practice} prompt={practice.pages.report.prompt} />
           <details className="public-practice-reports">
             <summary>{practice.copy.reportsHeading} ({practice.pages.report.items.length})</summary>
             <p>{practice.copy.reportsNote}</p>

@@ -36,20 +36,21 @@ describe("the practice scenario from page to page", () => {
   it("carries the sentence and the tone of the Home banner on a page without a map, and says what the replay is not", () => {
     const scenario = view("cut_off");
     const html = renderToStaticMarkup(
-      <PublicPracticeStrip view={scenario} prompt={scenario.pages.prepare.prompt} onEnd={() => {}} />,
+      <PublicPracticeStrip view={scenario} prompt={scenario.pages.prepare.prompt} />,
     );
     expect(html).toContain('class="public-practice-strip" data-tone="danger"');
     expect(html).toContain(`Practice replay · ${scenario.moment}`);
     expect(html).toContain("Model · not real-time · not an official warning");
     expect(html).toContain("No shelter within walking reach");
     expect(html).toContain("Practise: what do you have upstairs for a day or more");
-    expect(html).toContain(">End practice</button>");
+    // No button ends the practice (14 Oct 2026): the page leaves it when the reader looks for their own place.
+    expect(html).not.toContain("<button");
   });
 
   it("lists on the Report page the invented items that have arrived, apart from the notes of this device", () => {
     const scenario = view("cut_off");
     const html = renderToStaticMarkup(
-      <PublicReportPage language="en" areas={[]} onSelectArea={() => {}} practice={scenario} onPracticeEnd={() => {}} />,
+      <PublicReportPage language="en" areas={[]} onSelectArea={() => {}} practice={scenario} />,
     );
     expect(html).toContain("Practise: what would others need to know from this home now");
     expect(html).toContain(`Practice reports by this hour (${scenario.pages.report.items.length})`);
@@ -135,11 +136,10 @@ describe("the practice scenario from page to page", () => {
   it("speaks Thai on every page", () => {
     const scenario = view("roads_cut", "th");
     const html = renderToStaticMarkup(
-      <PublicPracticeStrip view={scenario} prompt={scenario.pages.sos.prompt} note={scenario.copy.sosReal} onEnd={() => {}} />,
+      <PublicPracticeStrip view={scenario} prompt={scenario.pages.sos.prompt} note={scenario.copy.sosReal} />,
     );
     expect(html).toContain("ฝึกซ้อมด้วยภาพจำลอง");
     expect(html).toContain("ไม่ใช่คำเตือนทางการ");
     expect(html).toContain("ถนนใกล้บ้านนี้จมน้ำ");
-    expect(html).toContain("จบการฝึกซ้อม");
   });
 });

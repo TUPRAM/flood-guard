@@ -25,10 +25,7 @@ interface PublicSosPageProps {
   selectedAreaName: string;
   /** The practice scenario chosen in the header, once it is read; absent on a day without practice. */
   practice?: PracticeView;
-  onPracticeEnd?: () => void;
 }
-
-const ignoreEnd = () => {};
 
 const HOLD_DURATION_MS = 3_000;
 
@@ -62,7 +59,6 @@ export function PublicSosPage({
   plan,
   selectedAreaName,
   practice,
-  onPracticeEnd,
 }: PublicSosPageProps) {
   const th = language === "th";
   const [holding, setHolding] = useState(false);
@@ -229,7 +225,6 @@ export function PublicSosPage({
           view={practice}
           prompt={practice.pages.sos.prompt}
           note={practice.copy.sosReal}
-          onEnd={onPracticeEnd ?? ignoreEnd}
         />
       ) : null}
 

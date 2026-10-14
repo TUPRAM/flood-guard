@@ -36,7 +36,10 @@ interface PublicHomePageProps {
   researchHref?: string;
   /** The practice scenario chosen in the header, as the Public shell read it; absent on a day without practice. */
   practice?: PublicPractice;
-  /** Called when the reader looks for their own place: that ends the practice. */
+  /**
+   * Called when the reader looks for their own place (address, GPS or an area of the list): that ends the practice.
+   * It is the one way from a scenario to the map without practice; the page has no button for it (14 Oct 2026).
+   */
   onPracticeEnd?: () => void;
   onNavigatePrepare?: () => void;
   onNavigateSos?: () => void;
@@ -738,24 +741,13 @@ export function PublicHomePage({
                     <PublicAppIcon name="prepare" />
                     <p>{practiceView.prompt}</p>
                   </div>
-                  {(onNavigatePrepare || onNavigateSos || onPracticeEnd) && (
+                  {(onNavigatePrepare || onNavigateSos) && (
                     <div className="public-practice-actions">
                       {onNavigatePrepare && (
                         <button type="button" onClick={onNavigatePrepare}>{th ? "ทบทวนแผนของฉัน" : "Review my plan"}</button>
                       )}
                       {onNavigateSos && (
                         <button type="button" onClick={onNavigateSos}>{th ? "หมายเลขฉุกเฉิน" : "Emergency numbers"}</button>
-                      )}
-                      {onPracticeEnd && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            closeHazard();
-                            onPracticeEnd();
-                          }}
-                        >
-                          {practiceView.copy.end}
-                        </button>
                       )}
                     </div>
                   )}

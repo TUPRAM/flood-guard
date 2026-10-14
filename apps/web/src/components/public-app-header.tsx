@@ -187,9 +187,9 @@ export function PublicAppHeader({
                 <div id="public-practice-list" className="public-practice-list" role="group" aria-label={PRACTICE_MENU_COPY.heading[language]}>
                   <p>{PRACTICE_MENU_COPY.heading[language]}</p>
                   {/*
-                    The seven scenarios alone: the entry "Today (no practice)" above them was removed on the owner's
-                    request of 14 Oct 2026. The scenario shown is a pressed toggle and ends when it is chosen again;
-                    every page also has a button that ends it.
+                    The seven scenarios alone (owner requests of 14 Oct 2026): no entry "Today (no practice)", and
+                    choosing the scenario shown again keeps it. The page leaves the practice only when the reader
+                    looks for their own place on Home.
                   */}
                   {PRACTICE_SCENARIOS.map((scenario) => (
                     <button
@@ -198,7 +198,7 @@ export function PublicAppHeader({
                       aria-pressed={practice.scenarioId === scenario.id}
                       data-tone={PRACTICE_STATE_TONE[scenario.id]}
                       data-practice-scenario={scenario.id}
-                      onClick={() => choosePractice(practice.scenarioId === scenario.id ? null : scenario.id)}
+                      onClick={() => choosePractice(scenario.id)}
                     >
                       <i aria-hidden="true" />
                       {PRACTICE_SCENARIO_LABELS[scenario.id][language]}

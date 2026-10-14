@@ -1779,8 +1779,7 @@ async function assertPublicPractice(page) {
     await page.locator(".public-practice-trigger").click();
     const list = page.locator("#public-practice-list");
     await list.waitFor({ state: "visible" });
-    // There is no "Today" entry (14 Oct 2026): the scenario shown ends when it is chosen again.
-    await (scenario ? list.locator(`[data-practice-scenario="${scenario}"]`) : list.locator('button[aria-pressed="true"]')).click();
+    await list.locator(`[data-practice-scenario="${scenario}"]`).click();
     await list.waitFor({ state: "detached" });
   };
   const state = () => page.evaluate(() => ({
@@ -1866,13 +1865,30 @@ async function assertPublicPractice(page) {
   const calm = await state();
   if (calm.practising !== "true") throw new Error(`The practice scenario without water lost its note: ${JSON.stringify(calm)}`);
 
-  await choose(null);
+  await endPracticeBySearch(page, "Mae Sai");
   await settle("neutral", "No flood reports near you");
   await mapSettles("the end of the practice", { water: 0, reports: "none", examplePin: false });
   const after = await state();
   if (after.practising !== null || after.selected !== selectedBefore || after.place.includes("Example home")) {
     throw new Error(`Ending the practice left something of it on the page, or changed the chosen area: ${JSON.stringify(after)}`);
   }
+}
+
+/**
+ * Ends the practice the one way the page offers (14 Oct 2026): the reader looks for their own place. A planning area
+ * typed in the search field is found on the device, without a connection.
+ */
+async function endPracticeBySearch(page, areaName) {
+  const search = page.locator("#public-area-search");
+  await search.fill(areaName);
+  await search.press("Enter");
+  await page.waitForFunction(() => {
+    const banner = document.querySelector(".public-signal-banner");
+    return banner?.getAttribute("data-tone") === "neutral"
+      && banner.innerText.includes("No flood reports near you")
+      && document.querySelectorAll("canvas.public-practice-water").length === 0
+      && document.querySelector(".public-practice-menu")?.getAttribute("data-active") !== "true";
+  }, undefined, { timeout: 30_000 });
 }
 
 /**
@@ -1924,10 +1940,12 @@ async function assertPracticeAcrossPages(page) {
     const element = page.locator(".public-practice-strip");
     await element.waitFor({ state: "visible", timeout: 30_000 });
     const text = (await element.innerText()).replace(/\s+/g, " ");
-    for (const required of ["Practice replay", "not real-time", "not an official warning", "No shelter within walking reach", question, "End practice"]) {
+    for (const required of ["Practice replay", "not real-time", "not an official warning", "No shelter within walking reach", question]) {
       if (!text.includes(required)) throw new Error(`The practice strip on the ${id} page is missing: ${required}. It reads: ${text}`);
     }
     const shown = await header();
+    // No button on the strip ends the practice (14 Oct 2026).
+    if (await element.locator("button").count() !== 0) throw new Error(`The practice strip on the ${id} page has a button.`);
     if (await element.getAttribute("data-tone") !== "danger" || shown.menu !== 1 || !shown.place.includes("Example home")) {
       throw new Error(`The ${id} page does not carry the scenario of the Home map: ${JSON.stringify(shown)}`);
     }
@@ -2002,17 +2020,18 @@ async function assertPracticeAcrossPages(page) {
       && document.querySelectorAll("canvas.public-practice-water").length === 1;
   }, undefined, { timeout: 45_000 });
 
-  // Ended from a page without a map: Home is a day without practice again.
+  // Choosing the scenario shown again keeps it: the menu has no way out of the practice (14 Oct 2026).
+  await page.locator(".public-practice-trigger").click();
+  await page.locator('#public-practice-list [data-practice-scenario="cut_off"]').click();
+  await page.locator("#public-practice-list").waitFor({ state: "detached" });
+  if (await page.locator(".public-signal-banner").getAttribute("data-tone") !== "danger") {
+    throw new Error("Choosing the scenario shown again ended the practice.");
+  }
+  // Looking for one's own place is the way to the day without practice; the strips are gone with it.
+  await endPracticeBySearch(page, "Mae Sai");
   await activatePublicPage(page, "prepare", "#household-plan-builder");
-  await page.locator(".public-practice-strip button").click();
-  await page.locator(".public-practice-strip").waitFor({ state: "detached" });
+  if (await page.locator(".public-practice-strip").count() !== 0) throw new Error("The practice strip stayed after the practice ended.");
   await activatePublicPage(page, "home", "#main-content .leaflet-container");
-  await page.waitForFunction(() => {
-    const banner = document.querySelector(".public-signal-banner");
-    return banner?.getAttribute("data-tone") === "neutral"
-      && banner.innerText.includes("No flood reports near you")
-      && document.querySelectorAll("canvas.public-practice-water").length === 0;
-  }, undefined, { timeout: 30_000 });
 
   page.off("pageerror", onPageError);
   if (pageErrors.length > 0) throw new Error(`Moving between the Public pages with a scenario shown raised: ${pageErrors.join(" | ")}`);

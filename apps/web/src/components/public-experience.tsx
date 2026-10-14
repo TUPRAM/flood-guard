@@ -257,7 +257,6 @@ export function PublicExperience() {
             areas={data.publicAreas}
             onSelectArea={selectPlanningArea}
             practice={practiceView}
-            onPracticeEnd={endPractice}
           />
         )}
 
@@ -274,7 +273,6 @@ export function PublicExperience() {
             trip={shelterTrip}
             onTripChange={setShelterTrip}
             practice={practice}
-            onPracticeEnd={endPractice}
             showShelterHistory={practiceAvailable}
           />
         )}
@@ -290,7 +288,7 @@ export function PublicExperience() {
 
             {/* In a practice scenario: the same hour as on the Home map, and what to practise with the plan. */}
             {practiceView ? (
-              <PublicPracticeStrip view={practiceView} prompt={practiceView.pages.prepare.prompt} onEnd={endPractice} />
+              <PublicPracticeStrip view={practiceView} prompt={practiceView.pages.prepare.prompt} />
             ) : null}
 
             <section className="public-prepare-area-selector" aria-labelledby="public-prepare-area-title">
@@ -344,7 +342,6 @@ export function PublicExperience() {
             plan={plan}
             selectedAreaName={selectedAreaName}
             practice={practiceView}
-            onPracticeEnd={endPractice}
           />
         )}
       </section>

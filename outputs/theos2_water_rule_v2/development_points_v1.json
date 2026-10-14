@@ -1,0 +1,1766 @@
+{
+ "schema": "floodguard.theos2_water_rule_v2.development_points.v1",
+ "generated_at_utc": "2026-10-11T08:19:42Z",
+ "source_timestamp": "THEOS-2 2025-07-30T03:33Z (sukhothai) and 2025-07-31T03:51Z (chip_003, chip_001)",
+ "confidence_class": "low",
+ "confidence_basis": "A rule developed on three THEOS-2 chips with labels by an AI model; no ground check.",
+ "operational_status": "non_operational",
+ "official_warning": false,
+ "can_feed_decision_layer": false,
+ "plan": {
+  "path": "docs/proposal_execution/theos2_water_rule_v2_plan_v1.md",
+  "sha256": "1ba852bf091c112fe11c22562bd5b993e77941d95d378f8d7436ffe448161303"
+ },
+ "what_this_is": "The development points of a second THEOS-2 water rule. They are labelled by the agent that builds the rule (an AI model), from sheets that show a number and three pictures. Development data, not a reference.",
+ "seed": 20261012,
+ "kept_away_from_test_points_m": 20.0,
+ "test_sample": {
+  "path": "outputs/theos2_water_labels/sample_v1.json",
+  "sha256": "448f8187b494e37a63dc7d1c89383731674ffb95563be5a7aaad3418ce2458ea"
+ },
+ "chips": {
+  "sukhothai": {
+   "pixels_by_group": {
+    "water_inside": 516461,
+    "water_edge": 239484,
+    "dropped_small_object": 31840,
+    "land_edge": 213289,
+    "land_inside": 1061549,
+    "unobservable": 190378
+   },
+   "pixels_kept_away_from_test_points": 54671,
+   "points_by_group": {
+    "water_inside": 16,
+    "water_edge": 16,
+    "dropped_small_object": 12,
+    "land_edge": 16,
+    "land_inside": 24,
+    "unobservable": 12
+   },
+   "points": 96
+  },
+  "chip_003": {
+   "pixels_by_group": {
+    "water_inside": 530023,
+    "water_edge": 326124,
+    "dropped_small_object": 46930,
+    "land_edge": 284640,
+    "land_inside": 642689,
+    "unobservable": 421094
+   },
+   "pixels_kept_away_from_test_points": 51252,
+   "points_by_group": {
+    "water_inside": 16,
+    "water_edge": 16,
+    "dropped_small_object": 12,
+    "land_edge": 16,
+    "land_inside": 24,
+    "unobservable": 12
+   },
+   "points": 96
+  },
+  "chip_001": {
+   "pixels_by_group": {
+    "water_inside": 243820,
+    "water_edge": 276894,
+    "dropped_small_object": 46281,
+    "land_edge": 257607,
+    "land_inside": 1426898,
+    "unobservable": 0
+   },
+   "pixels_kept_away_from_test_points": 25841,
+   "points_by_group": {
+    "water_inside": 8,
+    "water_edge": 8,
+    "dropped_small_object": 6,
+    "land_edge": 8,
+    "land_inside": 18,
+    "unobservable": 0
+   },
+   "points": 48
+  }
+ },
+ "points": [
+  {
+   "id": "d001",
+   "chip": "chip_001",
+   "group": "water_edge",
+   "row": 472,
+   "column": 330
+  },
+  {
+   "id": "d002",
+   "chip": "sukhothai",
+   "group": "unobservable",
+   "row": 1360,
+   "column": 21
+  },
+  {
+   "id": "d003",
+   "chip": "chip_003",
+   "group": "land_inside",
+   "row": 983,
+   "column": 1145
+  },
+  {
+   "id": "d004",
+   "chip": "sukhothai",
+   "group": "dropped_small_object",
+   "row": 782,
+   "column": 790
+  },
+  {
+   "id": "d005",
+   "chip": "sukhothai",
+   "group": "land_inside",
+   "row": 826,
+   "column": 378
+  },
+  {
+   "id": "d006",
+   "chip": "chip_001",
+   "group": "water_edge",
+   "row": 188,
+   "column": 782
+  },
+  {
+   "id": "d007",
+   "chip": "sukhothai",
+   "group": "unobservable",
+   "row": 991,
+   "column": 1389
+  },
+  {
+   "id": "d008",
+   "chip": "sukhothai",
+   "group": "water_inside",
+   "row": 660,
+   "column": 53
+  },
+  {
+   "id": "d009",
+   "chip": "chip_001",
+   "group": "water_inside",
+   "row": 1152,
+   "column": 563
+  },
+  {
+   "id": "d010",
+   "chip": "sukhothai",
+   "group": "land_inside",
+   "row": 778,
+   "column": 523
+  },
+  {
+   "id": "d011",
+   "chip": "chip_003",
+   "group": "water_inside",
+   "row": 1253,
+   "column": 615
+  },
+  {
+   "id": "d012",
+   "chip": "chip_001",
+   "group": "land_inside",
+   "row": 1429,
+   "column": 571
+  },
+  {
+   "id": "d013",
+   "chip": "sukhothai",
+   "group": "water_inside",
+   "row": 741,
+   "column": 633
+  },
+  {
+   "id": "d014",
+   "chip": "sukhothai",
+   "group": "water_edge",
+   "row": 641,
+   "column": 122
+  },
+  {
+   "id": "d015",
+   "chip": "chip_001",
+   "group": "land_edge",
+   "row": 1385,
+   "column": 1384
+  },
+  {
+   "id": "d016",
+   "chip": "chip_003",
+   "group": "dropped_small_object",
+   "row": 405,
+   "column": 867
+  },
+  {
+   "id": "d017",
+   "chip": "sukhothai",
+   "group": "land_inside",
+   "row": 57,
+   "column": 973
+  },
+  {
+   "id": "d018",
+   "chip": "chip_003",
+   "group": "unobservable",
+   "row": 1073,
+   "column": 1455
+  },
+  {
+   "id": "d019",
+   "chip": "chip_001",
+   "group": "water_inside",
+   "row": 1214,
+   "column": 1251
+  },
+  {
+   "id": "d020",
+   "chip": "sukhothai",
+   "group": "water_edge",
+   "row": 860,
+   "column": 113
+  },
+  {
+   "id": "d021",
+   "chip": "sukhothai",
+   "group": "land_inside",
+   "row": 508,
+   "column": 801
+  },
+  {
+   "id": "d022",
+   "chip": "chip_003",
+   "group": "land_edge",
+   "row": 366,
+   "column": 752
+  },
+  {
+   "id": "d023",
+   "chip": "chip_001",
+   "group": "land_edge",
+   "row": 794,
+   "column": 1418
+  },
+  {
+   "id": "d024",
+   "chip": "sukhothai",
+   "group": "land_inside",
+   "row": 852,
+   "column": 690
+  },
+  {
+   "id": "d025",
+   "chip": "chip_003",
+   "group": "dropped_small_object",
+   "row": 1153,
+   "column": 335
+  },
+  {
+   "id": "d026",
+   "chip": "sukhothai",
+   "group": "land_edge",
+   "row": 1365,
+   "column": 238
+  },
+  {
+   "id": "d027",
+   "chip": "chip_003",
+   "group": "water_inside",
+   "row": 1135,
+   "column": 1149
+  },
+  {
+   "id": "d028",
+   "chip": "chip_003",
+   "group": "water_inside",
+   "row": 787,
+   "column": 959
+  },
+  {
+   "id": "d029",
+   "chip": "chip_003",
+   "group": "land_inside",
+   "row": 520,
+   "column": 212
+  },
+  {
+   "id": "d030",
+   "chip": "chip_003",
+   "group": "land_edge",
+   "row": 928,
+   "column": 1251
+  },
+  {
+   "id": "d031",
+   "chip": "sukhothai",
+   "group": "land_inside",
+   "row": 1245,
+   "column": 1220
+  },
+  {
+   "id": "d032",
+   "chip": "sukhothai",
+   "group": "water_edge",
+   "row": 1044,
+   "column": 735
+  },
+  {
+   "id": "d033",
+   "chip": "sukhothai",
+   "group": "water_inside",
+   "row": 610,
+   "column": 713
+  },
+  {
+   "id": "d034",
+   "chip": "sukhothai",
+   "group": "land_inside",
+   "row": 1245,
+   "column": 419
+  },
+  {
+   "id": "d035",
+   "chip": "chip_003",
+   "group": "land_inside",
+   "row": 117,
+   "column": 1011
+  },
+  {
+   "id": "d036",
+   "chip": "chip_001",
+   "group": "dropped_small_object",
+   "row": 1328,
+   "column": 455
+  },
+  {
+   "id": "d037",
+   "chip": "chip_003",
+   "group": "land_inside",
+   "row": 333,
+   "column": 716
+  },
+  {
+   "id": "d038",
+   "chip": "chip_003",
+   "group": "water_edge",
+   "row": 1239,
+   "column": 1123
+  },
+  {
+   "id": "d039",
+   "chip": "sukhothai",
+   "group": "land_inside",
+   "row": 639,
+   "column": 935
+  },
+  {
+   "id": "d040",
+   "chip": "sukhothai",
+   "group": "water_inside",
+   "row": 368,
+   "column": 133
+  },
+  {
+   "id": "d041",
+   "chip": "chip_003",
+   "group": "land_inside",
+   "row": 164,
+   "column": 1111
+  },
+  {
+   "id": "d042",
+   "chip": "chip_003",
+   "group": "dropped_small_object",
+   "row": 474,
+   "column": 7
+  },
+  {
+   "id": "d043",
+   "chip": "sukhothai",
+   "group": "land_inside",
+   "row": 14,
+   "column": 998
+  },
+  {
+   "id": "d044",
+   "chip": "sukhothai",
+   "group": "land_edge",
+   "row": 339,
+   "column": 730
+  },
+  {
+   "id": "d045",
+   "chip": "chip_003",
+   "group": "land_inside",
+   "row": 982,
+   "column": 38
+  },
+  {
+   "id": "d046",
+   "chip": "chip_001",
+   "group": "land_inside",
+   "row": 129,
+   "column": 1357
+  },
+  {
+   "id": "d047",
+   "chip": "chip_003",
+   "group": "land_edge",
+   "row": 1049,
+   "column": 591
+  },
+  {
+   "id": "d048",
+   "chip": "chip_001",
+   "group": "land_inside",
+   "row": 627,
+   "column": 909
+  },
+  {
+   "id": "d049",
+   "chip": "chip_001",
+   "group": "land_edge",
+   "row": 636,
+   "column": 1070
+  },
+  {
+   "id": "d050",
+   "chip": "sukhothai",
+   "group": "dropped_small_object",
+   "row": 1488,
+   "column": 840
+  },
+  {
+   "id": "d051",
+   "chip": "chip_003",
+   "group": "water_edge",
+   "row": 1319,
+   "column": 487
+  },
+  {
+   "id": "d052",
+   "chip": "sukhothai",
+   "group": "land_edge",
+   "row": 480,
+   "column": 1039
+  },
+  {
+   "id": "d053",
+   "chip": "chip_001",
+   "group": "land_inside",
+   "row": 558,
+   "column": 1459
+  },
+  {
+   "id": "d054",
+   "chip": "chip_003",
+   "group": "water_inside",
+   "row": 1483,
+   "column": 1065
+  },
+  {
+   "id": "d055",
+   "chip": "chip_003",
+   "group": "water_edge",
+   "row": 150,
+   "column": 237
+  },
+  {
+   "id": "d056",
+   "chip": "sukhothai",
+   "group": "land_edge",
+   "row": 685,
+   "column": 1096
+  },
+  {
+   "id": "d057",
+   "chip": "chip_003",
+   "group": "unobservable",
+   "row": 211,
+   "column": 111
+  },
+  {
+   "id": "d058",
+   "chip": "sukhothai",
+   "group": "land_edge",
+   "row": 1068,
+   "column": 540
+  },
+  {
+   "id": "d059",
+   "chip": "chip_003",
+   "group": "land_edge",
+   "row": 577,
+   "column": 648
+  },
+  {
+   "id": "d060",
+   "chip": "chip_003",
+   "group": "land_inside",
+   "row": 110,
+   "column": 457
+  },
+  {
+   "id": "d061",
+   "chip": "chip_003",
+   "group": "dropped_small_object",
+   "row": 1015,
+   "column": 1124
+  },
+  {
+   "id": "d062",
+   "chip": "sukhothai",
+   "group": "land_edge",
+   "row": 1317,
+   "column": 480
+  },
+  {
+   "id": "d063",
+   "chip": "chip_003",
+   "group": "land_edge",
+   "row": 1111,
+   "column": 218
+  },
+  {
+   "id": "d064",
+   "chip": "chip_003",
+   "group": "water_edge",
+   "row": 529,
+   "column": 760
+  },
+  {
+   "id": "d065",
+   "chip": "sukhothai",
+   "group": "water_inside",
+   "row": 1078,
+   "column": 327
+  },
+  {
+   "id": "d066",
+   "chip": "sukhothai",
+   "group": "land_inside",
+   "row": 225,
+   "column": 834
+  },
+  {
+   "id": "d067",
+   "chip": "sukhothai",
+   "group": "unobservable",
+   "row": 1397,
+   "column": 1405
+  },
+  {
+   "id": "d068",
+   "chip": "sukhothai",
+   "group": "land_inside",
+   "row": 979,
+   "column": 1281
+  },
+  {
+   "id": "d069",
+   "chip": "chip_003",
+   "group": "unobservable",
+   "row": 815,
+   "column": 1338
+  },
+  {
+   "id": "d070",
+   "chip": "chip_001",
+   "group": "water_edge",
+   "row": 675,
+   "column": 745
+  },
+  {
+   "id": "d071",
+   "chip": "sukhothai",
+   "group": "water_edge",
+   "row": 442,
+   "column": 1425
+  },
+  {
+   "id": "d072",
+   "chip": "sukhothai",
+   "group": "land_inside",
+   "row": 265,
+   "column": 907
+  },
+  {
+   "id": "d073",
+   "chip": "chip_003",
+   "group": "land_edge",
+   "row": 607,
+   "column": 482
+  },
+  {
+   "id": "d074",
+   "chip": "sukhothai",
+   "group": "dropped_small_object",
+   "row": 996,
+   "column": 1282
+  },
+  {
+   "id": "d075",
+   "chip": "sukhothai",
+   "group": "dropped_small_object",
+   "row": 90,
+   "column": 804
+  },
+  {
+   "id": "d076",
+   "chip": "chip_001",
+   "group": "land_inside",
+   "row": 354,
+   "column": 1110
+  },
+  {
+   "id": "d077",
+   "chip": "sukhothai",
+   "group": "land_inside",
+   "row": 523,
+   "column": 812
+  },
+  {
+   "id": "d078",
+   "chip": "chip_001",
+   "group": "water_edge",
+   "row": 1094,
+   "column": 700
+  },
+  {
+   "id": "d079",
+   "chip": "chip_003",
+   "group": "water_edge",
+   "row": 498,
+   "column": 907
+  },
+  {
+   "id": "d080",
+   "chip": "chip_003",
+   "group": "water_inside",
+   "row": 1438,
+   "column": 1319
+  },
+  {
+   "id": "d081",
+   "chip": "chip_003",
+   "group": "unobservable",
+   "row": 864,
+   "column": 1485
+  },
+  {
+   "id": "d082",
+   "chip": "sukhothai",
+   "group": "dropped_small_object",
+   "row": 1318,
+   "column": 1089
+  },
+  {
+   "id": "d083",
+   "chip": "chip_003",
+   "group": "unobservable",
+   "row": 8,
+   "column": 908
+  },
+  {
+   "id": "d084",
+   "chip": "chip_003",
+   "group": "water_edge",
+   "row": 581,
+   "column": 904
+  },
+  {
+   "id": "d085",
+   "chip": "chip_003",
+   "group": "water_inside",
+   "row": 1438,
+   "column": 708
+  },
+  {
+   "id": "d086",
+   "chip": "chip_001",
+   "group": "dropped_small_object",
+   "row": 1236,
+   "column": 1191
+  },
+  {
+   "id": "d087",
+   "chip": "sukhothai",
+   "group": "water_edge",
+   "row": 598,
+   "column": 194
+  },
+  {
+   "id": "d088",
+   "chip": "chip_003",
+   "group": "dropped_small_object",
+   "row": 1038,
+   "column": 1448
+  },
+  {
+   "id": "d089",
+   "chip": "sukhothai",
+   "group": "water_edge",
+   "row": 704,
+   "column": 200
+  },
+  {
+   "id": "d090",
+   "chip": "sukhothai",
+   "group": "water_inside",
+   "row": 345,
+   "column": 132
+  },
+  {
+   "id": "d091",
+   "chip": "chip_003",
+   "group": "land_edge",
+   "row": 546,
+   "column": 857
+  },
+  {
+   "id": "d092",
+   "chip": "chip_003",
+   "group": "land_inside",
+   "row": 134,
+   "column": 454
+  },
+  {
+   "id": "d093",
+   "chip": "chip_003",
+   "group": "dropped_small_object",
+   "row": 589,
+   "column": 504
+  },
+  {
+   "id": "d094",
+   "chip": "sukhothai",
+   "group": "water_inside",
+   "row": 1323,
+   "column": 1479
+  },
+  {
+   "id": "d095",
+   "chip": "chip_003",
+   "group": "water_inside",
+   "row": 278,
+   "column": 677
+  },
+  {
+   "id": "d096",
+   "chip": "chip_003",
+   "group": "dropped_small_object",
+   "row": 336,
+   "column": 503
+  },
+  {
+   "id": "d097",
+   "chip": "chip_001",
+   "group": "water_edge",
+   "row": 671,
+   "column": 1252
+  },
+  {
+   "id": "d098",
+   "chip": "chip_003",
+   "group": "water_inside",
+   "row": 374,
+   "column": 497
+  },
+  {
+   "id": "d099",
+   "chip": "chip_001",
+   "group": "water_inside",
+   "row": 1467,
+   "column": 567
+  },
+  {
+   "id": "d100",
+   "chip": "chip_003",
+   "group": "water_edge",
+   "row": 949,
+   "column": 588
+  },
+  {
+   "id": "d101",
+   "chip": "chip_003",
+   "group": "land_edge",
+   "row": 274,
+   "column": 553
+  },
+  {
+   "id": "d102",
+   "chip": "chip_001",
+   "group": "land_inside",
+   "row": 76,
+   "column": 1082
+  },
+  {
+   "id": "d103",
+   "chip": "chip_003",
+   "group": "land_inside",
+   "row": 1210,
+   "column": 72
+  },
+  {
+   "id": "d104",
+   "chip": "chip_003",
+   "group": "land_inside",
+   "row": 309,
+   "column": 1410
+  },
+  {
+   "id": "d105",
+   "chip": "sukhothai",
+   "group": "water_inside",
+   "row": 415,
+   "column": 305
+  },
+  {
+   "id": "d106",
+   "chip": "sukhothai",
+   "group": "water_inside",
+   "row": 609,
+   "column": 757
+  },
+  {
+   "id": "d107",
+   "chip": "chip_003",
+   "group": "water_inside",
+   "row": 612,
+   "column": 1026
+  },
+  {
+   "id": "d108",
+   "chip": "sukhothai",
+   "group": "unobservable",
+   "row": 1413,
+   "column": 60
+  },
+  {
+   "id": "d109",
+   "chip": "chip_001",
+   "group": "land_inside",
+   "row": 806,
+   "column": 982
+  },
+  {
+   "id": "d110",
+   "chip": "chip_003",
+   "group": "land_inside",
+   "row": 568,
+   "column": 1360
+  },
+  {
+   "id": "d111",
+   "chip": "chip_003",
+   "group": "water_inside",
+   "row": 635,
+   "column": 628
+  },
+  {
+   "id": "d112",
+   "chip": "sukhothai",
+   "group": "land_inside",
+   "row": 1317,
+   "column": 973
+  },
+  {
+   "id": "d113",
+   "chip": "chip_003",
+   "group": "unobservable",
+   "row": 876,
+   "column": 1298
+  },
+  {
+   "id": "d114",
+   "chip": "chip_003",
+   "group": "water_inside",
+   "row": 362,
+   "column": 519
+  },
+  {
+   "id": "d115",
+   "chip": "chip_003",
+   "group": "land_inside",
+   "row": 115,
+   "column": 983
+  },
+  {
+   "id": "d116",
+   "chip": "sukhothai",
+   "group": "dropped_small_object",
+   "row": 1033,
+   "column": 1036
+  },
+  {
+   "id": "d117",
+   "chip": "chip_001",
+   "group": "water_inside",
+   "row": 890,
+   "column": 187
+  },
+  {
+   "id": "d118",
+   "chip": "sukhothai",
+   "group": "dropped_small_object",
+   "row": 1172,
+   "column": 1366
+  },
+  {
+   "id": "d119",
+   "chip": "chip_001",
+   "group": "water_inside",
+   "row": 914,
+   "column": 926
+  },
+  {
+   "id": "d120",
+   "chip": "sukhothai",
+   "group": "water_edge",
+   "row": 555,
+   "column": 187
+  },
+  {
+   "id": "d121",
+   "chip": "sukhothai",
+   "group": "dropped_small_object",
+   "row": 1365,
+   "column": 1474
+  },
+  {
+   "id": "d122",
+   "chip": "chip_001",
+   "group": "land_inside",
+   "row": 189,
+   "column": 1144
+  },
+  {
+   "id": "d123",
+   "chip": "sukhothai",
+   "group": "land_edge",
+   "row": 265,
+   "column": 723
+  },
+  {
+   "id": "d124",
+   "chip": "sukhothai",
+   "group": "water_edge",
+   "row": 1209,
+   "column": 479
+  },
+  {
+   "id": "d125",
+   "chip": "chip_001",
+   "group": "dropped_small_object",
+   "row": 1193,
+   "column": 1393
+  },
+  {
+   "id": "d126",
+   "chip": "chip_003",
+   "group": "unobservable",
+   "row": 1355,
+   "column": 751
+  },
+  {
+   "id": "d127",
+   "chip": "sukhothai",
+   "group": "dropped_small_object",
+   "row": 622,
+   "column": 615
+  },
+  {
+   "id": "d128",
+   "chip": "chip_001",
+   "group": "water_inside",
+   "row": 4,
+   "column": 258
+  },
+  {
+   "id": "d129",
+   "chip": "chip_001",
+   "group": "land_inside",
+   "row": 535,
+   "column": 428
+  },
+  {
+   "id": "d130",
+   "chip": "sukhothai",
+   "group": "land_edge",
+   "row": 1057,
+   "column": 356
+  },
+  {
+   "id": "d131",
+   "chip": "chip_003",
+   "group": "water_edge",
+   "row": 541,
+   "column": 529
+  },
+  {
+   "id": "d132",
+   "chip": "chip_003",
+   "group": "water_inside",
+   "row": 1369,
+   "column": 422
+  },
+  {
+   "id": "d133",
+   "chip": "chip_001",
+   "group": "land_inside",
+   "row": 924,
+   "column": 1020
+  },
+  {
+   "id": "d134",
+   "chip": "sukhothai",
+   "group": "water_inside",
+   "row": 868,
+   "column": 160
+  },
+  {
+   "id": "d135",
+   "chip": "chip_003",
+   "group": "land_inside",
+   "row": 15,
+   "column": 1279
+  },
+  {
+   "id": "d136",
+   "chip": "chip_003",
+   "group": "water_edge",
+   "row": 867,
+   "column": 557
+  },
+  {
+   "id": "d137",
+   "chip": "chip_003",
+   "group": "land_inside",
+   "row": 388,
+   "column": 1467
+  },
+  {
+   "id": "d138",
+   "chip": "sukhothai",
+   "group": "water_edge",
+   "row": 402,
+   "column": 1213
+  },
+  {
+   "id": "d139",
+   "chip": "sukhothai",
+   "group": "unobservable",
+   "row": 1251,
+   "column": 1096
+  },
+  {
+   "id": "d140",
+   "chip": "sukhothai",
+   "group": "land_edge",
+   "row": 910,
+   "column": 741
+  },
+  {
+   "id": "d141",
+   "chip": "chip_003",
+   "group": "land_inside",
+   "row": 1498,
+   "column": 991
+  },
+  {
+   "id": "d142",
+   "chip": "chip_001",
+   "group": "land_inside",
+   "row": 301,
+   "column": 732
+  },
+  {
+   "id": "d143",
+   "chip": "chip_003",
+   "group": "land_inside",
+   "row": 1245,
+   "column": 33
+  },
+  {
+   "id": "d144",
+   "chip": "chip_001",
+   "group": "land_edge",
+   "row": 166,
+   "column": 285
+  },
+  {
+   "id": "d145",
+   "chip": "chip_001",
+   "group": "land_edge",
+   "row": 1007,
+   "column": 469
+  },
+  {
+   "id": "d146",
+   "chip": "sukhothai",
+   "group": "unobservable",
+   "row": 885,
+   "column": 1469
+  },
+  {
+   "id": "d147",
+   "chip": "chip_001",
+   "group": "land_inside",
+   "row": 117,
+   "column": 946
+  },
+  {
+   "id": "d148",
+   "chip": "sukhothai",
+   "group": "water_edge",
+   "row": 573,
+   "column": 382
+  },
+  {
+   "id": "d149",
+   "chip": "chip_003",
+   "group": "land_inside",
+   "row": 306,
+   "column": 1370
+  },
+  {
+   "id": "d150",
+   "chip": "chip_001",
+   "group": "land_edge",
+   "row": 1481,
+   "column": 1135
+  },
+  {
+   "id": "d151",
+   "chip": "chip_003",
+   "group": "land_inside",
+   "row": 1176,
+   "column": 1129
+  },
+  {
+   "id": "d152",
+   "chip": "chip_001",
+   "group": "land_inside",
+   "row": 501,
+   "column": 1397
+  },
+  {
+   "id": "d153",
+   "chip": "sukhothai",
+   "group": "water_edge",
+   "row": 312,
+   "column": 1334
+  },
+  {
+   "id": "d154",
+   "chip": "sukhothai",
+   "group": "water_inside",
+   "row": 284,
+   "column": 600
+  },
+  {
+   "id": "d155",
+   "chip": "chip_003",
+   "group": "land_inside",
+   "row": 1118,
+   "column": 921
+  },
+  {
+   "id": "d156",
+   "chip": "chip_003",
+   "group": "land_edge",
+   "row": 624,
+   "column": 838
+  },
+  {
+   "id": "d157",
+   "chip": "chip_001",
+   "group": "land_inside",
+   "row": 753,
+   "column": 469
+  },
+  {
+   "id": "d158",
+   "chip": "sukhothai",
+   "group": "land_inside",
+   "row": 250,
+   "column": 883
+  },
+  {
+   "id": "d159",
+   "chip": "chip_001",
+   "group": "water_edge",
+   "row": 244,
+   "column": 1450
+  },
+  {
+   "id": "d160",
+   "chip": "chip_003",
+   "group": "water_inside",
+   "row": 225,
+   "column": 600
+  },
+  {
+   "id": "d161",
+   "chip": "sukhothai",
+   "group": "water_inside",
+   "row": 359,
+   "column": 654
+  },
+  {
+   "id": "d162",
+   "chip": "chip_003",
+   "group": "dropped_small_object",
+   "row": 826,
+   "column": 327
+  },
+  {
+   "id": "d163",
+   "chip": "sukhothai",
+   "group": "water_edge",
+   "row": 611,
+   "column": 714
+  },
+  {
+   "id": "d164",
+   "chip": "chip_003",
+   "group": "unobservable",
+   "row": 958,
+   "column": 1329
+  },
+  {
+   "id": "d165",
+   "chip": "chip_001",
+   "group": "water_edge",
+   "row": 1156,
+   "column": 212
+  },
+  {
+   "id": "d166",
+   "chip": "sukhothai",
+   "group": "water_edge",
+   "row": 809,
+   "column": 976
+  },
+  {
+   "id": "d167",
+   "chip": "chip_001",
+   "group": "land_edge",
+   "row": 1101,
+   "column": 638
+  },
+  {
+   "id": "d168",
+   "chip": "chip_003",
+   "group": "dropped_small_object",
+   "row": 1394,
+   "column": 689
+  },
+  {
+   "id": "d169",
+   "chip": "chip_003",
+   "group": "land_inside",
+   "row": 1237,
+   "column": 1178
+  },
+  {
+   "id": "d170",
+   "chip": "sukhothai",
+   "group": "unobservable",
+   "row": 117,
+   "column": 1474
+  },
+  {
+   "id": "d171",
+   "chip": "sukhothai",
+   "group": "water_edge",
+   "row": 559,
+   "column": 473
+  },
+  {
+   "id": "d172",
+   "chip": "chip_001",
+   "group": "water_edge",
+   "row": 836,
+   "column": 1233
+  },
+  {
+   "id": "d173",
+   "chip": "chip_003",
+   "group": "water_inside",
+   "row": 292,
+   "column": 1088
+  },
+  {
+   "id": "d174",
+   "chip": "sukhothai",
+   "group": "land_edge",
+   "row": 1180,
+   "column": 526
+  },
+  {
+   "id": "d175",
+   "chip": "sukhothai",
+   "group": "land_inside",
+   "row": 1483,
+   "column": 1430
+  },
+  {
+   "id": "d176",
+   "chip": "sukhothai",
+   "group": "unobservable",
+   "row": 1041,
+   "column": 1215
+  },
+  {
+   "id": "d177",
+   "chip": "sukhothai",
+   "group": "water_inside",
+   "row": 1096,
+   "column": 712
+  },
+  {
+   "id": "d178",
+   "chip": "chip_003",
+   "group": "land_inside",
+   "row": 1211,
+   "column": 1085
+  },
+  {
+   "id": "d179",
+   "chip": "chip_003",
+   "group": "dropped_small_object",
+   "row": 433,
+   "column": 812
+  },
+  {
+   "id": "d180",
+   "chip": "chip_003",
+   "group": "water_edge",
+   "row": 965,
+   "column": 652
+  },
+  {
+   "id": "d181",
+   "chip": "chip_001",
+   "group": "water_inside",
+   "row": 642,
+   "column": 698
+  },
+  {
+   "id": "d182",
+   "chip": "chip_003",
+   "group": "water_edge",
+   "row": 1130,
+   "column": 873
+  },
+  {
+   "id": "d183",
+   "chip": "chip_001",
+   "group": "dropped_small_object",
+   "row": 1025,
+   "column": 1223
+  },
+  {
+   "id": "d184",
+   "chip": "chip_001",
+   "group": "land_inside",
+   "row": 226,
+   "column": 1311
+  },
+  {
+   "id": "d185",
+   "chip": "sukhothai",
+   "group": "land_inside",
+   "row": 899,
+   "column": 46
+  },
+  {
+   "id": "d186",
+   "chip": "chip_003",
+   "group": "dropped_small_object",
+   "row": 674,
+   "column": 367
+  },
+  {
+   "id": "d187",
+   "chip": "chip_001",
+   "group": "water_inside",
+   "row": 847,
+   "column": 734
+  },
+  {
+   "id": "d188",
+   "chip": "chip_003",
+   "group": "land_inside",
+   "row": 922,
+   "column": 771
+  },
+  {
+   "id": "d189",
+   "chip": "chip_003",
+   "group": "water_inside",
+   "row": 953,
+   "column": 681
+  },
+  {
+   "id": "d190",
+   "chip": "sukhothai",
+   "group": "dropped_small_object",
+   "row": 900,
+   "column": 717
+  },
+  {
+   "id": "d191",
+   "chip": "sukhothai",
+   "group": "land_edge",
+   "row": 190,
+   "column": 755
+  },
+  {
+   "id": "d192",
+   "chip": "chip_003",
+   "group": "water_edge",
+   "row": 1219,
+   "column": 868
+  },
+  {
+   "id": "d193",
+   "chip": "chip_003",
+   "group": "water_edge",
+   "row": 76,
+   "column": 483
+  },
+  {
+   "id": "d194",
+   "chip": "sukhothai",
+   "group": "water_edge",
+   "row": 323,
+   "column": 792
+  },
+  {
+   "id": "d195",
+   "chip": "sukhothai",
+   "group": "land_inside",
+   "row": 1251,
+   "column": 1373
+  },
+  {
+   "id": "d196",
+   "chip": "chip_003",
+   "group": "water_edge",
+   "row": 519,
+   "column": 468
+  },
+  {
+   "id": "d197",
+   "chip": "sukhothai",
+   "group": "land_edge",
+   "row": 350,
+   "column": 406
+  },
+  {
+   "id": "d198",
+   "chip": "sukhothai",
+   "group": "land_inside",
+   "row": 1167,
+   "column": 257
+  },
+  {
+   "id": "d199",
+   "chip": "chip_003",
+   "group": "unobservable",
+   "row": 167,
+   "column": 1024
+  },
+  {
+   "id": "d200",
+   "chip": "chip_003",
+   "group": "land_inside",
+   "row": 1170,
+   "column": 1100
+  },
+  {
+   "id": "d201",
+   "chip": "sukhothai",
+   "group": "dropped_small_object",
+   "row": 586,
+   "column": 8
+  },
+  {
+   "id": "d202",
+   "chip": "chip_003",
+   "group": "land_edge",
+   "row": 752,
+   "column": 219
+  },
+  {
+   "id": "d203",
+   "chip": "sukhothai",
+   "group": "unobservable",
+   "row": 1400,
+   "column": 51
+  },
+  {
+   "id": "d204",
+   "chip": "sukhothai",
+   "group": "land_inside",
+   "row": 1479,
+   "column": 1091
+  },
+  {
+   "id": "d205",
+   "chip": "sukhothai",
+   "group": "land_edge",
+   "row": 1206,
+   "column": 337
+  },
+  {
+   "id": "d206",
+   "chip": "sukhothai",
+   "group": "water_inside",
+   "row": 1301,
+   "column": 600
+  },
+  {
+   "id": "d207",
+   "chip": "sukhothai",
+   "group": "water_edge",
+   "row": 393,
+   "column": 649
+  },
+  {
+   "id": "d208",
+   "chip": "chip_001",
+   "group": "dropped_small_object",
+   "row": 1469,
+   "column": 882
+  },
+  {
+   "id": "d209",
+   "chip": "chip_003",
+   "group": "land_edge",
+   "row": 1325,
+   "column": 1089
+  },
+  {
+   "id": "d210",
+   "chip": "sukhothai",
+   "group": "unobservable",
+   "row": 218,
+   "column": 1447
+  },
+  {
+   "id": "d211",
+   "chip": "sukhothai",
+   "group": "land_edge",
+   "row": 1469,
+   "column": 433
+  },
+  {
+   "id": "d212",
+   "chip": "chip_003",
+   "group": "water_edge",
+   "row": 519,
+   "column": 383
+  },
+  {
+   "id": "d213",
+   "chip": "chip_003",
+   "group": "land_edge",
+   "row": 1315,
+   "column": 581
+  },
+  {
+   "id": "d214",
+   "chip": "chip_003",
+   "group": "land_edge",
+   "row": 154,
+   "column": 1218
+  },
+  {
+   "id": "d215",
+   "chip": "sukhothai",
+   "group": "unobservable",
+   "row": 155,
+   "column": 1368
+  },
+  {
+   "id": "d216",
+   "chip": "chip_003",
+   "group": "dropped_small_object",
+   "row": 1081,
+   "column": 65
+  },
+  {
+   "id": "d217",
+   "chip": "chip_003",
+   "group": "water_inside",
+   "row": 1319,
+   "column": 1368
+  },
+  {
+   "id": "d218",
+   "chip": "chip_003",
+   "group": "land_inside",
+   "row": 456,
+   "column": 94
+  },
+  {
+   "id": "d219",
+   "chip": "sukhothai",
+   "group": "land_inside",
+   "row": 1058,
+   "column": 1460
+  },
+  {
+   "id": "d220",
+   "chip": "chip_003",
+   "group": "land_edge",
+   "row": 769,
+   "column": 914
+  },
+  {
+   "id": "d221",
+   "chip": "chip_003",
+   "group": "land_edge",
+   "row": 1077,
+   "column": 644
+  },
+  {
+   "id": "d222",
+   "chip": "sukhothai",
+   "group": "land_inside",
+   "row": 1234,
+   "column": 1208
+  },
+  {
+   "id": "d223",
+   "chip": "sukhothai",
+   "group": "land_edge",
+   "row": 1175,
+   "column": 693
+  },
+  {
+   "id": "d224",
+   "chip": "chip_001",
+   "group": "land_inside",
+   "row": 1231,
+   "column": 1129
+  },
+  {
+   "id": "d225",
+   "chip": "chip_001",
+   "group": "dropped_small_object",
+   "row": 217,
+   "column": 1419
+  },
+  {
+   "id": "d226",
+   "chip": "chip_001",
+   "group": "land_inside",
+   "row": 742,
+   "column": 87
+  },
+  {
+   "id": "d227",
+   "chip": "sukhothai",
+   "group": "water_inside",
+   "row": 1015,
+   "column": 658
+  },
+  {
+   "id": "d228",
+   "chip": "chip_001",
+   "group": "land_edge",
+   "row": 1129,
+   "column": 310
+  },
+  {
+   "id": "d229",
+   "chip": "sukhothai",
+   "group": "land_inside",
+   "row": 512,
+   "column": 321
+  },
+  {
+   "id": "d230",
+   "chip": "sukhothai",
+   "group": "land_edge",
+   "row": 6,
+   "column": 851
+  },
+  {
+   "id": "d231",
+   "chip": "sukhothai",
+   "group": "unobservable",
+   "row": 195,
+   "column": 1344
+  },
+  {
+   "id": "d232",
+   "chip": "chip_003",
+   "group": "land_edge",
+   "row": 1287,
+   "column": 434
+  },
+  {
+   "id": "d233",
+   "chip": "sukhothai",
+   "group": "water_inside",
+   "row": 11,
+   "column": 1157
+  },
+  {
+   "id": "d234",
+   "chip": "chip_003",
+   "group": "water_edge",
+   "row": 331,
+   "column": 333
+  },
+  {
+   "id": "d235",
+   "chip": "chip_003",
+   "group": "unobservable",
+   "row": 245,
+   "column": 21
+  },
+  {
+   "id": "d236",
+   "chip": "chip_001",
+   "group": "land_inside",
+   "row": 1316,
+   "column": 875
+  },
+  {
+   "id": "d237",
+   "chip": "chip_003",
+   "group": "unobservable",
+   "row": 786,
+   "column": 509
+  },
+  {
+   "id": "d238",
+   "chip": "chip_003",
+   "group": "unobservable",
+   "row": 816,
+   "column": 1250
+  },
+  {
+   "id": "d239",
+   "chip": "sukhothai",
+   "group": "land_inside",
+   "row": 227,
+   "column": 808
+  },
+  {
+   "id": "d240",
+   "chip": "sukhothai",
+   "group": "dropped_small_object",
+   "row": 1459,
+   "column": 1457
+  }
+ ],
+ "labels": null
+}

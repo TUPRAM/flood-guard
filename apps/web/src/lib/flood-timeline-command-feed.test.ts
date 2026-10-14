@@ -4,11 +4,13 @@
  * the marks of the time track merge and follow the mode.
  */
 
+// Since 12 Oct 2026 this suite reads the archived revision (r4) as a fixed dataset: its figures are the ones the plans and
+// wireframes were written with. The page serves r5; what it tests here is the logic, which does not depend on the revision.
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { formatLocalStamp, TIMELINE_EPOCH_MS, TIMELINE_MANIFEST_URL, type AreaGeometry, type GeoCollection, type RoadProps, type TambonProps, type TimelineManifest } from "./flood-timeline";
+import { formatLocalStamp, TIMELINE_EPOCH_MS, ARCHIVE_1_MANIFEST_URL, type AreaGeometry, type GeoCollection, type RoadProps, type TambonProps, type TimelineManifest } from "./flood-timeline";
 import { buildCommandModel } from "./flood-timeline-command";
 import {
   buildCommandFeed,
@@ -44,7 +46,7 @@ import { reportedDepthPlaces, reportedDepthPopup, shippableReportedDepths } from
 
 const publicRoot = resolve(import.meta.dirname, "../../public");
 const read = (href: string) => readFileSync(resolve(publicRoot, href.replace(/^\//, "")));
-const manifest = JSON.parse(read(TIMELINE_MANIFEST_URL).toString("utf8")) as TimelineManifest;
+const manifest = JSON.parse(read(ARCHIVE_1_MANIFEST_URL).toString("utf8")) as TimelineManifest;
 const roads = JSON.parse(read(manifest.vectors.roads.href).toString("utf8")) as GeoCollection<unknown, RoadProps>;
 const tambons = JSON.parse(read(manifest.vectors.tambons.href).toString("utf8")) as GeoCollection<AreaGeometry, TambonProps>;
 const model = buildCommandModel({ manifest, roads: roads.features, tambons: tambons.features, nodes: parseAccessNodes(read(manifest.access!.nodes.href), manifest.access!) });

@@ -1,0 +1,940 @@
+{
+ "schema": "floodguard.buildings_in_water.se1_mae_sai.v1",
+ "generated_at_utc": "2026-10-11T13:53:53Z",
+ "source_timestamp": "2024-08-01/2024-10-12; building outlines of 2024",
+ "confidence_class": "low",
+ "confidence_basis": "A scenario layer, outlines drawn by a model and a modelled population grid; nothing was checked on the ground.",
+ "operational_status": "non_operational",
+ "official_warning": false,
+ "can_feed_decision_layer": false,
+ "plan": {
+  "path": "docs/proposal_execution/buildings_in_water_plan_v1.md",
+  "sha256": "032c15a68abea025f97c462729de19a316950b92e810e5117a95924520c7c94d"
+ },
+ "label": "scenario, not an observation",
+ "what_this_is": "For case SE1: where the buildings of Mae Sai district stand against the flood layer of the scenario, and residents in the water by the centre rule of the planning score against the same residents spread over the buildings of their cell. It shows where buildings are, not that they were flooded.",
+ "outlines": {
+  "path": "outputs/buildings_in_water/outlines_v1.json",
+  "sha256": "80d833bac95fac70560bcf5efbec8d25f4c041a85f0a27cb7fbab7a0298bf09e"
+ },
+ "cells": {
+  "receipt": "outputs/cell_outcomes/se1_mae_sai_v1_receipt.json",
+  "sha256": "f1eea949238d79a6439ebe1d17010f8c720fb85a2fa051c64ef0dd44416d62c8",
+  "cells": 36765,
+  "residents": 81837
+ },
+ "need_mix": {
+  "path": "outputs/need_mix/se1_mae_sai_v1.json",
+  "sha256": "35223278cf55e92f26f09a193b2d5097b110ea26454e18a239c89ed1605ced8d"
+ },
+ "a_building_in_the_layer": "the centre of its outline lies inside the flood layer",
+ "a_building_and_its_cell": "the demand cell whose centre is nearest, within 75 m",
+ "buildings": {
+  "outlines_used": 115897,
+  "in_a_demand_cell": 88942,
+  "not_within_reach_of_a_cell": 26955
+ },
+ "flood_levels": [
+  "minus",
+  "as_provided",
+  "plus"
+ ],
+ "published_level": "as_provided",
+ "by_flood_level": {
+  "minus": {
+   "district": {
+    "buildings": 88942,
+    "buildings_in_the_layer": 10312,
+    "share_of_buildings_in_the_layer": 0.1159,
+    "residents_in_the_water_by_the_centre_rule_all_cells": 16205,
+    "share_of_residents_in_the_water_by_the_centre_rule_all_cells": 0.198,
+    "on_the_cells_that_hold_a_building": {
+     "cells_with_residents": 36765,
+     "residents": 81837,
+     "cells_compared": 10743,
+     "residents_compared": 50252,
+     "residents_in_cells_without_an_assessed_building": 31585,
+     "centre_rule": {
+      "residents": 8522,
+      "share": 0.1696
+     },
+     "buildings": {
+      "residents": 8513,
+      "share": 0.1694
+     },
+     "buildings_minus_centre_rule_points": -0.0
+    },
+    "on_the_centre_rule": "the buildings reading is within 5 points of the centre rule",
+    "on_the_cells_without_a_building": {
+     "cells": 26022,
+     "residents": 31585,
+     "share_of_the_residents": 0.386,
+     "in_the_water_by_the_centre_rule": 7683,
+     "share_in_the_water_by_the_centre_rule": 0.2433
+    }
+   },
+   "TH570901": {
+    "unit_name_en": "Mae Sai",
+    "buildings": 15168,
+    "buildings_in_the_layer": 7460,
+    "share_of_buildings_in_the_layer": 0.4918,
+    "residents_in_the_water_by_the_centre_rule_all_cells": 9068,
+    "share_of_residents_in_the_water_by_the_centre_rule_all_cells": 0.5068,
+    "on_the_cells_that_hold_a_building": {
+     "cells_with_residents": 2484,
+     "residents": 17893,
+     "cells_compared": 1264,
+     "residents_compared": 14376,
+     "residents_in_cells_without_an_assessed_building": 3517,
+     "centre_rule": {
+      "residents": 7254,
+      "share": 0.5046
+     },
+     "buildings": {
+      "residents": 7351,
+      "share": 0.5113
+     },
+     "buildings_minus_centre_rule_points": 0.7
+    },
+    "on_the_centre_rule": "the buildings reading is within 5 points of the centre rule",
+    "on_the_cells_without_a_building": {
+     "cells": 1220,
+     "residents": 3517,
+     "share_of_the_residents": 0.1966,
+     "in_the_water_by_the_centre_rule": 1814,
+     "share_in_the_water_by_the_centre_rule": 0.5158
+    }
+   },
+   "TH570902": {
+    "unit_name_en": "Huai Khrai",
+    "buildings": 9637,
+    "buildings_in_the_layer": 0,
+    "share_of_buildings_in_the_layer": 0.0,
+    "residents_in_the_water_by_the_centre_rule_all_cells": 0,
+    "share_of_residents_in_the_water_by_the_centre_rule_all_cells": 0.0,
+    "on_the_cells_that_hold_a_building": {
+     "cells_with_residents": 5523,
+     "residents": 8911,
+     "cells_compared": 1177,
+     "residents_compared": 4547,
+     "residents_in_cells_without_an_assessed_building": 4364,
+     "centre_rule": {
+      "residents": 0,
+      "share": 0.0
+     },
+     "buildings": {
+      "residents": 0,
+      "share": 0.0
+     },
+     "buildings_minus_centre_rule_points": 0.0
+    },
+    "on_the_centre_rule": "the buildings reading is within 5 points of the centre rule",
+    "on_the_cells_without_a_building": {
+     "cells": 4346,
+     "residents": 4364,
+     "share_of_the_residents": 0.4897,
+     "in_the_water_by_the_centre_rule": 0,
+     "share_in_the_water_by_the_centre_rule": 0.0
+    }
+   },
+   "TH570903": {
+    "unit_name_en": "Ko Chang",
+    "buildings": 10937,
+    "buildings_in_the_layer": 1213,
+    "share_of_buildings_in_the_layer": 0.1109,
+    "residents_in_the_water_by_the_centre_rule_all_cells": 2208,
+    "share_of_residents_in_the_water_by_the_centre_rule_all_cells": 0.3292,
+    "on_the_cells_that_hold_a_building": {
+     "cells_with_residents": 5553,
+     "residents": 6708,
+     "cells_compared": 1536,
+     "residents_compared": 2655,
+     "residents_in_cells_without_an_assessed_building": 4054,
+     "centre_rule": {
+      "residents": 447,
+      "share": 0.1685
+     },
+     "buildings": {
+      "residents": 387,
+      "share": 0.1458
+     },
+     "buildings_minus_centre_rule_points": -2.3
+    },
+    "on_the_centre_rule": "the buildings reading is within 5 points of the centre rule",
+    "on_the_cells_without_a_building": {
+     "cells": 4017,
+     "residents": 4054,
+     "share_of_the_residents": 0.6043,
+     "in_the_water_by_the_centre_rule": 1761,
+     "share_in_the_water_by_the_centre_rule": 0.4344
+    }
+   },
+   "TH570904": {
+    "unit_name_en": "Pong Pha",
+    "buildings": 14821,
+    "buildings_in_the_layer": 672,
+    "share_of_buildings_in_the_layer": 0.0453,
+    "residents_in_the_water_by_the_centre_rule_all_cells": 853,
+    "share_of_residents_in_the_water_by_the_centre_rule_all_cells": 0.0912,
+    "on_the_cells_that_hold_a_building": {
+     "cells_with_residents": 5423,
+     "residents": 9349,
+     "cells_compared": 1974,
+     "residents_compared": 5061,
+     "residents_in_cells_without_an_assessed_building": 4289,
+     "centre_rule": {
+      "residents": 218,
+      "share": 0.0431
+     },
+     "buildings": {
+      "residents": 211,
+      "share": 0.0416
+     },
+     "buildings_minus_centre_rule_points": -0.2
+    },
+    "on_the_centre_rule": "the buildings reading is within 5 points of the centre rule",
+    "on_the_cells_without_a_building": {
+     "cells": 3449,
+     "residents": 4289,
+     "share_of_the_residents": 0.4587,
+     "in_the_water_by_the_centre_rule": 634,
+     "share_in_the_water_by_the_centre_rule": 0.1479
+    }
+   },
+   "TH570905": {
+    "unit_name_en": "Si Mueang Chum",
+    "buildings": 6629,
+    "buildings_in_the_layer": 588,
+    "share_of_buildings_in_the_layer": 0.0887,
+    "residents_in_the_water_by_the_centre_rule_all_cells": 2794,
+    "share_of_residents_in_the_water_by_the_centre_rule_all_cells": 0.3904,
+    "on_the_cells_that_hold_a_building": {
+     "cells_with_residents": 5204,
+     "residents": 7158,
+     "cells_compared": 1236,
+     "residents_compared": 2536,
+     "residents_in_cells_without_an_assessed_building": 4621,
+     "centre_rule": {
+      "residents": 438,
+      "share": 0.1727
+     },
+     "buildings": {
+      "residents": 391,
+      "share": 0.1542
+     },
+     "buildings_minus_centre_rule_points": -1.8
+    },
+    "on_the_centre_rule": "the buildings reading is within 5 points of the centre rule",
+    "on_the_cells_without_a_building": {
+     "cells": 3968,
+     "residents": 4621,
+     "share_of_the_residents": 0.6456,
+     "in_the_water_by_the_centre_rule": 2356,
+     "share_in_the_water_by_the_centre_rule": 0.5099
+    }
+   },
+   "TH570906": {
+    "unit_name_en": "Wiang Phang Kham",
+    "buildings": 17340,
+    "buildings_in_the_layer": 9,
+    "share_of_buildings_in_the_layer": 0.0005,
+    "residents_in_the_water_by_the_centre_rule_all_cells": 0,
+    "share_of_residents_in_the_water_by_the_centre_rule_all_cells": 0.0,
+    "on_the_cells_that_hold_a_building": {
+     "cells_with_residents": 3362,
+     "residents": 19532,
+     "cells_compared": 1560,
+     "residents_compared": 15969,
+     "residents_in_cells_without_an_assessed_building": 3563,
+     "centre_rule": {
+      "residents": 0,
+      "share": 0.0
+     },
+     "buildings": {
+      "residents": 17,
+      "share": 0.0011
+     },
+     "buildings_minus_centre_rule_points": 0.1
+    },
+    "on_the_centre_rule": "the buildings reading is within 5 points of the centre rule",
+    "on_the_cells_without_a_building": {
+     "cells": 1802,
+     "residents": 3563,
+     "share_of_the_residents": 0.1824,
+     "in_the_water_by_the_centre_rule": 0,
+     "share_in_the_water_by_the_centre_rule": 0.0
+    }
+   },
+   "TH570908": {
+    "unit_name_en": "Ban Dai",
+    "buildings": 5042,
+    "buildings_in_the_layer": 272,
+    "share_of_buildings_in_the_layer": 0.0539,
+    "residents_in_the_water_by_the_centre_rule_all_cells": 913,
+    "share_of_residents_in_the_water_by_the_centre_rule_all_cells": 0.1813,
+    "on_the_cells_that_hold_a_building": {
+     "cells_with_residents": 4199,
+     "residents": 5036,
+     "cells_compared": 797,
+     "residents_compared": 1498,
+     "residents_in_cells_without_an_assessed_building": 3538,
+     "centre_rule": {
+      "residents": 124,
+      "share": 0.083
+     },
+     "buildings": {
+      "residents": 118,
+      "share": 0.0789
+     },
+     "buildings_minus_centre_rule_points": -0.4
+    },
+    "on_the_centre_rule": "the buildings reading is within 5 points of the centre rule",
+    "on_the_cells_without_a_building": {
+     "cells": 3402,
+     "residents": 3538,
+     "share_of_the_residents": 0.7025,
+     "in_the_water_by_the_centre_rule": 789,
+     "share_in_the_water_by_the_centre_rule": 0.223
+    }
+   },
+   "TH570909": {
+    "unit_name_en": "Pong Ngam",
+    "buildings": 9368,
+    "buildings_in_the_layer": 98,
+    "share_of_buildings_in_the_layer": 0.0105,
+    "residents_in_the_water_by_the_centre_rule_all_cells": 368,
+    "share_of_residents_in_the_water_by_the_centre_rule_all_cells": 0.0508,
+    "on_the_cells_that_hold_a_building": {
+     "cells_with_residents": 5017,
+     "residents": 7249,
+     "cells_compared": 1199,
+     "residents_compared": 3610,
+     "residents_in_cells_without_an_assessed_building": 3639,
+     "centre_rule": {
+      "residents": 39,
+      "share": 0.0109
+     },
+     "buildings": {
+      "residents": 38,
+      "share": 0.0106
+     },
+     "buildings_minus_centre_rule_points": -0.0
+    },
+    "on_the_centre_rule": "the buildings reading is within 5 points of the centre rule",
+    "on_the_cells_without_a_building": {
+     "cells": 3818,
+     "residents": 3639,
+     "share_of_the_residents": 0.502,
+     "in_the_water_by_the_centre_rule": 328,
+     "share_in_the_water_by_the_centre_rule": 0.0903
+    }
+   }
+  },
+  "as_provided": {
+   "district": {
+    "buildings": 88942,
+    "buildings_in_the_layer": 11462,
+    "share_of_buildings_in_the_layer": 0.1289,
+    "residents_in_the_water_by_the_centre_rule_all_cells": 17927,
+    "share_of_residents_in_the_water_by_the_centre_rule_all_cells": 0.2191,
+    "on_the_cells_that_hold_a_building": {
+     "cells_with_residents": 36765,
+     "residents": 81837,
+     "cells_compared": 10743,
+     "residents_compared": 50252,
+     "residents_in_cells_without_an_assessed_building": 31585,
+     "centre_rule": {
+      "residents": 9685,
+      "share": 0.1927
+     },
+     "buildings": {
+      "residents": 9133,
+      "share": 0.1817
+     },
+     "buildings_minus_centre_rule_points": -1.1
+    },
+    "on_the_centre_rule": "the buildings reading is within 5 points of the centre rule",
+    "on_the_cells_without_a_building": {
+     "cells": 26022,
+     "residents": 31585,
+     "share_of_the_residents": 0.386,
+     "in_the_water_by_the_centre_rule": 8243,
+     "share_in_the_water_by_the_centre_rule": 0.261
+    }
+   },
+   "TH570901": {
+    "unit_name_en": "Mae Sai",
+    "buildings": 15168,
+    "buildings_in_the_layer": 7934,
+    "share_of_buildings_in_the_layer": 0.5231,
+    "residents_in_the_water_by_the_centre_rule_all_cells": 10058,
+    "share_of_residents_in_the_water_by_the_centre_rule_all_cells": 0.5621,
+    "on_the_cells_that_hold_a_building": {
+     "cells_with_residents": 2484,
+     "residents": 17893,
+     "cells_compared": 1264,
+     "residents_compared": 14376,
+     "residents_in_cells_without_an_assessed_building": 3517,
+     "centre_rule": {
+      "residents": 8071,
+      "share": 0.5614
+     },
+     "buildings": {
+      "residents": 7746,
+      "share": 0.5388
+     },
+     "buildings_minus_centre_rule_points": -2.3
+    },
+    "on_the_centre_rule": "the buildings reading is within 5 points of the centre rule",
+    "on_the_cells_without_a_building": {
+     "cells": 1220,
+     "residents": 3517,
+     "share_of_the_residents": 0.1966,
+     "in_the_water_by_the_centre_rule": 1987,
+     "share_in_the_water_by_the_centre_rule": 0.565
+    }
+   },
+   "TH570902": {
+    "unit_name_en": "Huai Khrai",
+    "buildings": 9637,
+    "buildings_in_the_layer": 0,
+    "share_of_buildings_in_the_layer": 0.0,
+    "residents_in_the_water_by_the_centre_rule_all_cells": 0,
+    "share_of_residents_in_the_water_by_the_centre_rule_all_cells": 0.0,
+    "on_the_cells_that_hold_a_building": {
+     "cells_with_residents": 5523,
+     "residents": 8911,
+     "cells_compared": 1177,
+     "residents_compared": 4547,
+     "residents_in_cells_without_an_assessed_building": 4364,
+     "centre_rule": {
+      "residents": 0,
+      "share": 0.0
+     },
+     "buildings": {
+      "residents": 0,
+      "share": 0.0
+     },
+     "buildings_minus_centre_rule_points": 0.0
+    },
+    "on_the_centre_rule": "the buildings reading is within 5 points of the centre rule",
+    "on_the_cells_without_a_building": {
+     "cells": 4346,
+     "residents": 4364,
+     "share_of_the_residents": 0.4897,
+     "in_the_water_by_the_centre_rule": 0,
+     "share_in_the_water_by_the_centre_rule": 0.0
+    }
+   },
+   "TH570903": {
+    "unit_name_en": "Ko Chang",
+    "buildings": 10937,
+    "buildings_in_the_layer": 1652,
+    "share_of_buildings_in_the_layer": 0.151,
+    "residents_in_the_water_by_the_centre_rule_all_cells": 2498,
+    "share_of_residents_in_the_water_by_the_centre_rule_all_cells": 0.3724,
+    "on_the_cells_that_hold_a_building": {
+     "cells_with_residents": 5553,
+     "residents": 6708,
+     "cells_compared": 1536,
+     "residents_compared": 2655,
+     "residents_in_cells_without_an_assessed_building": 4054,
+     "centre_rule": {
+      "residents": 581,
+      "share": 0.219
+     },
+     "buildings": {
+      "residents": 493,
+      "share": 0.1858
+     },
+     "buildings_minus_centre_rule_points": -3.3
+    },
+    "on_the_centre_rule": "the buildings reading is within 5 points of the centre rule",
+    "on_the_cells_without_a_building": {
+     "cells": 4017,
+     "residents": 4054,
+     "share_of_the_residents": 0.6043,
+     "in_the_water_by_the_centre_rule": 1917,
+     "share_in_the_water_by_the_centre_rule": 0.4729
+    }
+   },
+   "TH570904": {
+    "unit_name_en": "Pong Pha",
+    "buildings": 14821,
+    "buildings_in_the_layer": 706,
+    "share_of_buildings_in_the_layer": 0.0476,
+    "residents_in_the_water_by_the_centre_rule_all_cells": 908,
+    "share_of_residents_in_the_water_by_the_centre_rule_all_cells": 0.0972,
+    "on_the_cells_that_hold_a_building": {
+     "cells_with_residents": 5423,
+     "residents": 9349,
+     "cells_compared": 1974,
+     "residents_compared": 5061,
+     "residents_in_cells_without_an_assessed_building": 4289,
+     "centre_rule": {
+      "residents": 234,
+      "share": 0.0463
+     },
+     "buildings": {
+      "residents": 222,
+      "share": 0.044
+     },
+     "buildings_minus_centre_rule_points": -0.2
+    },
+    "on_the_centre_rule": "the buildings reading is within 5 points of the centre rule",
+    "on_the_cells_without_a_building": {
+     "cells": 3449,
+     "residents": 4289,
+     "share_of_the_residents": 0.4587,
+     "in_the_water_by_the_centre_rule": 674,
+     "share_in_the_water_by_the_centre_rule": 0.1572
+    }
+   },
+   "TH570905": {
+    "unit_name_en": "Si Mueang Chum",
+    "buildings": 6629,
+    "buildings_in_the_layer": 722,
+    "share_of_buildings_in_the_layer": 0.1089,
+    "residents_in_the_water_by_the_centre_rule_all_cells": 3048,
+    "share_of_residents_in_the_water_by_the_centre_rule_all_cells": 0.4258,
+    "on_the_cells_that_hold_a_building": {
+     "cells_with_residents": 5204,
+     "residents": 7158,
+     "cells_compared": 1236,
+     "residents_compared": 2536,
+     "residents_in_cells_without_an_assessed_building": 4621,
+     "centre_rule": {
+      "residents": 536,
+      "share": 0.2111
+     },
+     "buildings": {
+      "residents": 462,
+      "share": 0.1821
+     },
+     "buildings_minus_centre_rule_points": -2.9
+    },
+    "on_the_centre_rule": "the buildings reading is within 5 points of the centre rule",
+    "on_the_cells_without_a_building": {
+     "cells": 3968,
+     "residents": 4621,
+     "share_of_the_residents": 0.6456,
+     "in_the_water_by_the_centre_rule": 2512,
+     "share_in_the_water_by_the_centre_rule": 0.5436
+    }
+   },
+   "TH570906": {
+    "unit_name_en": "Wiang Phang Kham",
+    "buildings": 17340,
+    "buildings_in_the_layer": 20,
+    "share_of_buildings_in_the_layer": 0.0012,
+    "residents_in_the_water_by_the_centre_rule_all_cells": 78,
+    "share_of_residents_in_the_water_by_the_centre_rule_all_cells": 0.004,
+    "on_the_cells_that_hold_a_building": {
+     "cells_with_residents": 3362,
+     "residents": 19532,
+     "cells_compared": 1560,
+     "residents_compared": 15969,
+     "residents_in_cells_without_an_assessed_building": 3563,
+     "centre_rule": {
+      "residents": 78,
+      "share": 0.0049
+     },
+     "buildings": {
+      "residents": 30,
+      "share": 0.0019
+     },
+     "buildings_minus_centre_rule_points": -0.3
+    },
+    "on_the_centre_rule": "the buildings reading is within 5 points of the centre rule",
+    "on_the_cells_without_a_building": {
+     "cells": 1802,
+     "residents": 3563,
+     "share_of_the_residents": 0.1824,
+     "in_the_water_by_the_centre_rule": 0,
+     "share_in_the_water_by_the_centre_rule": 0.0
+    }
+   },
+   "TH570908": {
+    "unit_name_en": "Ban Dai",
+    "buildings": 5042,
+    "buildings_in_the_layer": 319,
+    "share_of_buildings_in_the_layer": 0.0633,
+    "residents_in_the_water_by_the_centre_rule_all_cells": 957,
+    "share_of_residents_in_the_water_by_the_centre_rule_all_cells": 0.1901,
+    "on_the_cells_that_hold_a_building": {
+     "cells_with_residents": 4199,
+     "residents": 5036,
+     "cells_compared": 797,
+     "residents_compared": 1498,
+     "residents_in_cells_without_an_assessed_building": 3538,
+     "centre_rule": {
+      "residents": 143,
+      "share": 0.0956
+     },
+     "buildings": {
+      "residents": 138,
+      "share": 0.0923
+     },
+     "buildings_minus_centre_rule_points": -0.3
+    },
+    "on_the_centre_rule": "the buildings reading is within 5 points of the centre rule",
+    "on_the_cells_without_a_building": {
+     "cells": 3402,
+     "residents": 3538,
+     "share_of_the_residents": 0.7025,
+     "in_the_water_by_the_centre_rule": 814,
+     "share_in_the_water_by_the_centre_rule": 0.2301
+    }
+   },
+   "TH570909": {
+    "unit_name_en": "Pong Ngam",
+    "buildings": 9368,
+    "buildings_in_the_layer": 109,
+    "share_of_buildings_in_the_layer": 0.0116,
+    "residents_in_the_water_by_the_centre_rule_all_cells": 380,
+    "share_of_residents_in_the_water_by_the_centre_rule_all_cells": 0.0524,
+    "on_the_cells_that_hold_a_building": {
+     "cells_with_residents": 5017,
+     "residents": 7249,
+     "cells_compared": 1199,
+     "residents_compared": 3610,
+     "residents_in_cells_without_an_assessed_building": 3639,
+     "centre_rule": {
+      "residents": 42,
+      "share": 0.0115
+     },
+     "buildings": {
+      "residents": 41,
+      "share": 0.0115
+     },
+     "buildings_minus_centre_rule_points": 0.0
+    },
+    "on_the_centre_rule": "the buildings reading is within 5 points of the centre rule",
+    "on_the_cells_without_a_building": {
+     "cells": 3818,
+     "residents": 3639,
+     "share_of_the_residents": 0.502,
+     "in_the_water_by_the_centre_rule": 338,
+     "share_in_the_water_by_the_centre_rule": 0.0929
+    }
+   }
+  },
+  "plus": {
+   "district": {
+    "buildings": 88942,
+    "buildings_in_the_layer": 13528,
+    "share_of_buildings_in_the_layer": 0.1521,
+    "residents_in_the_water_by_the_centre_rule_all_cells": 19416,
+    "share_of_residents_in_the_water_by_the_centre_rule_all_cells": 0.2373,
+    "on_the_cells_that_hold_a_building": {
+     "cells_with_residents": 36765,
+     "residents": 81837,
+     "cells_compared": 10743,
+     "residents_compared": 50252,
+     "residents_in_cells_without_an_assessed_building": 31585,
+     "centre_rule": {
+      "residents": 10594,
+      "share": 0.2108
+     },
+     "buildings": {
+      "residents": 10214,
+      "share": 0.2033
+     },
+     "buildings_minus_centre_rule_points": -0.7
+    },
+    "on_the_centre_rule": "the buildings reading is within 5 points of the centre rule",
+    "on_the_cells_without_a_building": {
+     "cells": 26022,
+     "residents": 31585,
+     "share_of_the_residents": 0.386,
+     "in_the_water_by_the_centre_rule": 8822,
+     "share_in_the_water_by_the_centre_rule": 0.2793
+    }
+   },
+   "TH570901": {
+    "unit_name_en": "Mae Sai",
+    "buildings": 15168,
+    "buildings_in_the_layer": 8795,
+    "share_of_buildings_in_the_layer": 0.5798,
+    "residents_in_the_water_by_the_centre_rule_all_cells": 10803,
+    "share_of_residents_in_the_water_by_the_centre_rule_all_cells": 0.6037,
+    "on_the_cells_that_hold_a_building": {
+     "cells_with_residents": 2484,
+     "residents": 17893,
+     "cells_compared": 1264,
+     "residents_compared": 14376,
+     "residents_in_cells_without_an_assessed_building": 3517,
+     "centre_rule": {
+      "residents": 8610,
+      "share": 0.5989
+     },
+     "buildings": {
+      "residents": 8403,
+      "share": 0.5845
+     },
+     "buildings_minus_centre_rule_points": -1.4
+    },
+    "on_the_centre_rule": "the buildings reading is within 5 points of the centre rule",
+    "on_the_cells_without_a_building": {
+     "cells": 1220,
+     "residents": 3517,
+     "share_of_the_residents": 0.1966,
+     "in_the_water_by_the_centre_rule": 2192,
+     "share_in_the_water_by_the_centre_rule": 0.6233
+    }
+   },
+   "TH570902": {
+    "unit_name_en": "Huai Khrai",
+    "buildings": 9637,
+    "buildings_in_the_layer": 0,
+    "share_of_buildings_in_the_layer": 0.0,
+    "residents_in_the_water_by_the_centre_rule_all_cells": 0,
+    "share_of_residents_in_the_water_by_the_centre_rule_all_cells": 0.0,
+    "on_the_cells_that_hold_a_building": {
+     "cells_with_residents": 5523,
+     "residents": 8911,
+     "cells_compared": 1177,
+     "residents_compared": 4547,
+     "residents_in_cells_without_an_assessed_building": 4364,
+     "centre_rule": {
+      "residents": 0,
+      "share": 0.0
+     },
+     "buildings": {
+      "residents": 0,
+      "share": 0.0
+     },
+     "buildings_minus_centre_rule_points": 0.0
+    },
+    "on_the_centre_rule": "the buildings reading is within 5 points of the centre rule",
+    "on_the_cells_without_a_building": {
+     "cells": 4346,
+     "residents": 4364,
+     "share_of_the_residents": 0.4897,
+     "in_the_water_by_the_centre_rule": 0,
+     "share_in_the_water_by_the_centre_rule": 0.0
+    }
+   },
+   "TH570903": {
+    "unit_name_en": "Ko Chang",
+    "buildings": 10937,
+    "buildings_in_the_layer": 2394,
+    "share_of_buildings_in_the_layer": 0.2189,
+    "residents_in_the_water_by_the_centre_rule_all_cells": 2810,
+    "share_of_residents_in_the_water_by_the_centre_rule_all_cells": 0.4189,
+    "on_the_cells_that_hold_a_building": {
+     "cells_with_residents": 5553,
+     "residents": 6708,
+     "cells_compared": 1536,
+     "residents_compared": 2655,
+     "residents_in_cells_without_an_assessed_building": 4054,
+     "centre_rule": {
+      "residents": 754,
+      "share": 0.2841
+     },
+     "buildings": {
+      "residents": 699,
+      "share": 0.2633
+     },
+     "buildings_minus_centre_rule_points": -2.1
+    },
+    "on_the_centre_rule": "the buildings reading is within 5 points of the centre rule",
+    "on_the_cells_without_a_building": {
+     "cells": 4017,
+     "residents": 4054,
+     "share_of_the_residents": 0.6043,
+     "in_the_water_by_the_centre_rule": 2056,
+     "share_in_the_water_by_the_centre_rule": 0.5073
+    }
+   },
+   "TH570904": {
+    "unit_name_en": "Pong Pha",
+    "buildings": 14821,
+    "buildings_in_the_layer": 754,
+    "share_of_buildings_in_the_layer": 0.0509,
+    "residents_in_the_water_by_the_centre_rule_all_cells": 976,
+    "share_of_residents_in_the_water_by_the_centre_rule_all_cells": 0.1044,
+    "on_the_cells_that_hold_a_building": {
+     "cells_with_residents": 5423,
+     "residents": 9349,
+     "cells_compared": 1974,
+     "residents_compared": 5061,
+     "residents_in_cells_without_an_assessed_building": 4289,
+     "centre_rule": {
+      "residents": 258,
+      "share": 0.051
+     },
+     "buildings": {
+      "residents": 241,
+      "share": 0.0476
+     },
+     "buildings_minus_centre_rule_points": -0.3
+    },
+    "on_the_centre_rule": "the buildings reading is within 5 points of the centre rule",
+    "on_the_cells_without_a_building": {
+     "cells": 3449,
+     "residents": 4289,
+     "share_of_the_residents": 0.4587,
+     "in_the_water_by_the_centre_rule": 718,
+     "share_in_the_water_by_the_centre_rule": 0.1673
+    }
+   },
+   "TH570905": {
+    "unit_name_en": "Si Mueang Chum",
+    "buildings": 6629,
+    "buildings_in_the_layer": 1027,
+    "share_of_buildings_in_the_layer": 0.1549,
+    "residents_in_the_water_by_the_centre_rule_all_cells": 3347,
+    "share_of_residents_in_the_water_by_the_centre_rule_all_cells": 0.4677,
+    "on_the_cells_that_hold_a_building": {
+     "cells_with_residents": 5204,
+     "residents": 7158,
+     "cells_compared": 1236,
+     "residents_compared": 2536,
+     "residents_in_cells_without_an_assessed_building": 4621,
+     "centre_rule": {
+      "residents": 683,
+      "share": 0.2695
+     },
+     "buildings": {
+      "residents": 598,
+      "share": 0.2358
+     },
+     "buildings_minus_centre_rule_points": -3.4
+    },
+    "on_the_centre_rule": "the buildings reading is within 5 points of the centre rule",
+    "on_the_cells_without_a_building": {
+     "cells": 3968,
+     "residents": 4621,
+     "share_of_the_residents": 0.6456,
+     "in_the_water_by_the_centre_rule": 2664,
+     "share_in_the_water_by_the_centre_rule": 0.5765
+    }
+   },
+   "TH570906": {
+    "unit_name_en": "Wiang Phang Kham",
+    "buildings": 17340,
+    "buildings_in_the_layer": 55,
+    "share_of_buildings_in_the_layer": 0.0032,
+    "residents_in_the_water_by_the_centre_rule_all_cells": 78,
+    "share_of_residents_in_the_water_by_the_centre_rule_all_cells": 0.004,
+    "on_the_cells_that_hold_a_building": {
+     "cells_with_residents": 3362,
+     "residents": 19532,
+     "cells_compared": 1560,
+     "residents_compared": 15969,
+     "residents_in_cells_without_an_assessed_building": 3563,
+     "centre_rule": {
+      "residents": 78,
+      "share": 0.0049
+     },
+     "buildings": {
+      "residents": 79,
+      "share": 0.005
+     },
+     "buildings_minus_centre_rule_points": 0.0
+    },
+    "on_the_centre_rule": "the buildings reading is within 5 points of the centre rule",
+    "on_the_cells_without_a_building": {
+     "cells": 1802,
+     "residents": 3563,
+     "share_of_the_residents": 0.1824,
+     "in_the_water_by_the_centre_rule": 0,
+     "share_in_the_water_by_the_centre_rule": 0.0
+    }
+   },
+   "TH570908": {
+    "unit_name_en": "Ban Dai",
+    "buildings": 5042,
+    "buildings_in_the_layer": 385,
+    "share_of_buildings_in_the_layer": 0.0764,
+    "residents_in_the_water_by_the_centre_rule_all_cells": 1011,
+    "share_of_residents_in_the_water_by_the_centre_rule_all_cells": 0.2007,
+    "on_the_cells_that_hold_a_building": {
+     "cells_with_residents": 4199,
+     "residents": 5036,
+     "cells_compared": 797,
+     "residents_compared": 1498,
+     "residents_in_cells_without_an_assessed_building": 3538,
+     "centre_rule": {
+      "residents": 166,
+      "share": 0.1107
+     },
+     "buildings": {
+      "residents": 150,
+      "share": 0.1004
+     },
+     "buildings_minus_centre_rule_points": -1.0
+    },
+    "on_the_centre_rule": "the buildings reading is within 5 points of the centre rule",
+    "on_the_cells_without_a_building": {
+     "cells": 3402,
+     "residents": 3538,
+     "share_of_the_residents": 0.7025,
+     "in_the_water_by_the_centre_rule": 845,
+     "share_in_the_water_by_the_centre_rule": 0.2388
+    }
+   },
+   "TH570909": {
+    "unit_name_en": "Pong Ngam",
+    "buildings": 9368,
+    "buildings_in_the_layer": 118,
+    "share_of_buildings_in_the_layer": 0.0126,
+    "residents_in_the_water_by_the_centre_rule_all_cells": 392,
+    "share_of_residents_in_the_water_by_the_centre_rule_all_cells": 0.0541,
+    "on_the_cells_that_hold_a_building": {
+     "cells_with_residents": 5017,
+     "residents": 7249,
+     "cells_compared": 1199,
+     "residents_compared": 3610,
+     "residents_in_cells_without_an_assessed_building": 3639,
+     "centre_rule": {
+      "residents": 45,
+      "share": 0.0124
+     },
+     "buildings": {
+      "residents": 44,
+      "share": 0.0122
+     },
+     "buildings_minus_centre_rule_points": -0.0
+    },
+    "on_the_centre_rule": "the buildings reading is within 5 points of the centre rule",
+    "on_the_cells_without_a_building": {
+     "cells": 3818,
+     "residents": 3639,
+     "share_of_the_residents": 0.502,
+     "in_the_water_by_the_centre_rule": 347,
+     "share_in_the_water_by_the_centre_rule": 0.0954
+    }
+   }
+  }
+ },
+ "tambons_where_the_two_readings_differ_by_more_than_5_points": [],
+ "computed_after_the_result_was_seen": {
+  "not_in_the_plan": "The planned comparison leaves out the cells that hold no building. They hold a large share of the modelled residents, so one more figure is given: the residents of each tambon spread over all the buildings of that tambon. It is an illustration of how much the count depends on where the grid puts people, not a second exposure count.",
+  "residents_in_the_layer_if_spread_over_the_buildings_of_their_tambon": {
+   "TH570901": 9360,
+   "TH570902": 0,
+   "TH570903": 1013,
+   "TH570904": 445,
+   "TH570905": 779,
+   "TH570906": 23,
+   "TH570908": 319,
+   "TH570909": 84,
+   "district": 12023,
+   "district_share": 0.1469
+  }
+ },
+ "credits": [
+  "Building outlines: Google Open Buildings v3 (CC BY 4.0) and Microsoft building footprints (ODbL), combined by VIDA and hosted by Source Cooperative.",
+  "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009 (CC BY-SA 4.0). Changed by FloodGuard: laid over modelled residents and roads and counted; the figures derived from it are shared under CC BY-SA 4.0.",
+  "Residents: WorldPop 2020 (CC BY 4.0), in the second demand rescaled to WorldPop 2024 totals. Roads © OpenStreetMap contributors (ODbL 1.0). Boundaries: HDX Thailand COD-AB."
+ ],
+ "limits": [
+  "The outlines are drawn by a model on satellite images of earlier years: not a survey, and not a register of dwellings. Sheds, shops and temples count like houses.",
+  "Spreading the residents of a cell evenly over its buildings is a model, as the population grid is. The comparison sets one model against another; neither is a count of people.",
+  "No published figure changes: the planning score keeps the centre rule.",
+  "There is no image in this comparison: a building inside the layer of the scenario is not a building that was flooded.",
+  "A building belongs to the nearest cell centre, which is not always the cell it stands in at a cell edge."
+ ]
+}

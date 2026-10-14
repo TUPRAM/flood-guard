@@ -57,31 +57,32 @@ def test_the_document_names_the_files_it_was_made_from(files: numbers.ReplayFile
 
 
 @pytest.mark.parametrize("figure", [
+    # The figures of replay revision r5 (12 Oct 2026), whose peak is fitted to the 15 Sep image; r4's are in the Git history.
     # The peak (12 Sep 12:00 ICT, 3.5 m), as the moment line and the impact card show it.
-    "| 88.7 km² | `88.704` |", "| 16,060 | `16060` |", "| 163.8 km | `163.77` |", "| 4 of 42 |", "| 14.0 of 88.7 km² |",
+    "| 98.3 km² | `98.317` |", "| 17,232 | `17232` |", "| 176.1 km | `176.11` |", "| 4 of 42 |", "| 14.0 of 98.3 km² |",
     # The demo's hours: the GISTDA anchor hour, the onset link and the 15 Sep link (the page's moment line).
-    "| 42 | 10 Sep 18:00 ICT", "| 0.10 m | 13.6 km² | 2,667 |", "| 1.26 m | 48.1 km² | 8,211 |", "| 0.24 m | 19.6 km² | 3,559 |",
+    "| 42 | 10 Sep 18:00 ICT", "| 0.10 m | 13.0 km² | 2,577 |", "| 1.26 m | 45.5 km² | 7,349 |", "| 0.24 m | 18.1 km² | 3,292 |",
     # The shelter-set comparison (P2-4): both denominators and the cut-off hours.
-    "| 34,525 of 81,799 | 27,439 | 7,086 (21%) |", "| 5,698 of 14,169 | 299 | 5,400 (95%) | 10 Sep 22:00 ICT (hour 46)",
-    "| 24,910 of 81,799 | 11,481 | 13,429 (54%) | 11 Sep 10:00 ICT (hour 58)", "| 7,580 of 14,169 | 460 | 7,120 (94%) | 10 Sep 23:00 ICT (hour 47)",
+    "| 34,525 of 81,799 | 27,930 | 6,595 (19%) |", "| 5,340 of 14,428 | 305 | 5,035 (94%) | 10 Sep 23:00 ICT (hour 47)",
+    "| 24,817 of 81,799 | 12,437 | 12,380 (50%) | Not reached: at least half keep access at every hour", "| 6,440 of 14,428 | 404 | 6,036 (94%) | 10 Sep 23:00 ICT (hour 47)",
     # The equity gap (R8, option B): within-reach denominators.
-    "| 320 of 373 (85.77%) | 13,109 of 24,537 (53.42%) | 1.61× (higher)", "| 0 of 2,440 | 7,086 of 32,085 (22.08%) |",
+    "| 320 of 373 (85.77%) | 12,060 of 24,444 (49.34%) | 1.74× (higher)", "| 0 of 2,440 | 6,595 of 32,085 (20.55%) |",
     # Capacity bounds (P2-9) and the what-if levels (C-1).
-    "| 7,580 | 495 | 1,057 | 13,112 to 13,674 |", "| 3,283 | 1,805 | 2,441 | 11,728 to 12,364 |", "| not counted | 2,366 | 3,900 | 10,269 to 11,803 |",
-    "| 8,426 | 2,673 | 4,149 | 10,020 to 11,496 |", "| 10,333; 95 sites |", "| 16,069; 94 sites |", "| 5 of 8 |",
+    "| 6,440 | 557 | 1,030 | 13,398 to 13,871 |", "| 2,839 | 1,929 | 2,427 | 12,001 to 12,499 |", "| not counted | 2,290 | 3,626 | 10,802 to 12,138 |",
+    "| 7,176 | 2,679 | 3,888 | 10,540 to 11,749 |", "| 9,956; 95 sites |", "| 16,629; 91 sites |", "| 5 of 8 |",
     # Sentinel-2 on 15 Sep (P2-7) and VIIRS.
     "| 36.8 km² (61% of the district clear) |", "| 13.8 km² (86% clear) |", "| 25.3 km² (of 177.3 km² clear on both dates) |",
-    "| 18.0 km²; 21.4 km² |", "| 7.3 km²; IoU 0.155; 20% |", "| 15 Sep<br>15 ก.ย. | 4% | 292.2 | 46.2 | 19.5 |",
+    "| 16.4 km²; 19.5 km² |", "| 6.8 km²; IoU 0.146; 19% |", "| 15 Sep<br>15 ก.ย. | 4% | 292.2 | 46.2 | 18.1 |",
     # Calibration and calibration-informed checks, and the same-track radar pair (P2-10).
-    "9.9 km² reported (Mae Sai 6,182 rai); model 13.6 km² at 0.10 m", "about 70 km² and 13,600 people; model 72.2 km² and 12,813 residents in water at 2.65 m",
-    "| 19.54 km²; 0.10 m; 22.54 km²; IoU 0.065 |", "| 23.57 km²; 0.10 m; 22.54 km²; IoU 0.074 |",
+    "9.9 km² reported (Mae Sai 6,182 rai); model 13.0 km² at 0.10 m", "about 70 km² and 13,600 people; model 77.4 km² and 12,996 residents in water at 2.65 m",
+    "| 22.11 km²; 0.10 m; 22.59 km²; IoU 0.064 |", "| 26.19 km²; 0.15 m; 25.72 km²; IoU 0.079 |",
     # Reported depths (C-2).
-    "| 12 (9 points) |", "| 1 | 0 | 2 | 9 | 9 | – |", "| 2 | 3 | 4 | 3 | 9 | – |", "| 0 | 0 | 2 | 6 | 8 | 1 |",
+    "| 12 (9 points) |", "| 1 | 0 | 1 | 10 | 9 | – |", "| 2 | 3 | 4 | 3 | 9 | – |", "| 0 | 0 | 1 | 7 | 8 | 1 |",
     "| 21 place records from 17 statements in 14 articles<br>", "Mueang Daeng community (consistent), Pha Mak Khwai community (not comparable)",
     # The season envelope comparison (P2-3).
-    "| IoU 0.48; 60.5%; 70.4% |", "| IoU 0.46; 64.5%; 61.1% |", "| 59.3% against 60.8% |", "| about 17,927; 17,344; 16,060 |", "| 77.74 km²; 76.29 km² |",
+    "| IoU 0.54; 62.2%; 80.1% |", "| IoU 0.51; 66.6%; 67.6% |", "| 59.3% against 62.6% |", "| about 17,927; 17,344; 17,232 |", "| 77.74 km²; 76.29 km² |",
     # The export pack (P3-1, P3-2).
-    "The export pack: 9 files, 906,375 bytes, ODbL 1.0",
+    "The export pack: 9 files, 906,810 bytes, ODbL 1.0",
 ])
 def test_the_figures_the_page_and_the_stage_reports_state(text: str, figure: str) -> None:
     assert figure in text

@@ -1,0 +1,88 @@
+{
+ "schema": "floodguard.buildings_in_water.outlines.v1",
+ "generated_at_utc": "2026-10-11T13:51:45Z",
+ "source_timestamp": "source file of Mon, 26 Aug 2024 19:32:27 GMT",
+ "confidence_class": "low",
+ "confidence_basis": "Outlines drawn by a model on satellite images of earlier years; not a survey.",
+ "operational_status": "non_operational",
+ "official_warning": false,
+ "can_feed_decision_layer": false,
+ "plan": {
+  "path": "docs/proposal_execution/buildings_in_water_plan_v1.md",
+  "sha256": "032c15a68abea025f97c462729de19a316950b92e810e5117a95924520c7c94d"
+ },
+ "what_this_is": "The building outlines read for the two flood chips and for Mae Sai district. Only the outlines inside the bounding boxes were read; they stay outside Git.",
+ "source": {
+  "name": "Google-Microsoft Open Buildings, combined by VIDA (Source Cooperative), Thailand",
+  "url": "https://data.source.coop/vida/google-microsoft-open-buildings/flatgeobuf/by_country/country_iso=THA/THA.fgb",
+  "licence": "Google Open Buildings v3: CC BY 4.0 and ODbL v1.0. Microsoft building footprints: ODbL v1.0.",
+  "credit": "Building outlines: Google Open Buildings v3 (CC BY 4.0) and Microsoft building footprints (ODbL), combined by VIDA and hosted by Source Cooperative.",
+  "bytes_of_the_country_file": 14253502952,
+  "last_modified": "Mon, 26 Aug 2024 19:32:27 GMT",
+  "etag": "\"1801668e57f7d39356495b23f47c443d-1700\"",
+  "read_with": "range requests on the FlatGeobuf file, by bounding box"
+ },
+ "rule_for_using_an_outline": {
+  "min_area_m2": 10.0,
+  "min_confidence_where_given": 0.7
+ },
+ "areas": {
+  "sukhothai": {
+   "bounding_box_lonlat": [
+    99.78602,
+    17.00988,
+    99.81434,
+    17.0369
+   ],
+   "outlines_read": 3049,
+   "by_source": {
+    "google": 2942,
+    "microsoft": 107
+   },
+   "used_by_the_rule_of_the_plan": 2718,
+   "file_outside_git": {
+    "name": "sukhothai_outlines.gpkg",
+    "sha256": "f472de81b5076dba2586bc2463fb6a2535533ea23c3a05317d5ee734d19e0255"
+   }
+  },
+  "chip_003": {
+   "bounding_box_lonlat": [
+    100.74331,
+    18.56032,
+    100.77202,
+    18.58716
+   ],
+   "outlines_read": 5784,
+   "by_source": {
+    "google": 5483,
+    "microsoft": 301
+   },
+   "used_by_the_rule_of_the_plan": 5106,
+   "file_outside_git": {
+    "name": "chip_003_outlines.gpkg",
+    "sha256": "827b6fbf768869fc8b7e3dd62c34c436aec3de518ec75ee94942afe2792ef80a"
+   }
+  },
+  "mae_sai": {
+   "bounding_box_lonlat": [
+    99.81066,
+    20.25768,
+    100.03676,
+    20.46507
+   ],
+   "outlines_read": 133374,
+   "by_source": {
+    "google": 127580,
+    "microsoft": 5794
+   },
+   "used_by_the_rule_of_the_plan": 115897,
+   "file_outside_git": {
+    "name": "mae_sai_outlines.gpkg",
+    "sha256": "5997e45a41ae5dd9794dc201039ddaf643355b76ba4436000f830aa86355955e"
+   }
+  }
+ },
+ "limits": [
+  "The outlines are drawn by a model on satellite images of earlier years: not a survey, and not a register of dwellings. Sheds, shops and temples count like houses."
+ ]
+}

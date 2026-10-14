@@ -1,0 +1,213 @@
+{
+ "schema": "floodguard.theos2_water_labels.sample.v1",
+ "generated_at_utc": "2026-10-11T07:47:31Z",
+ "source_timestamp": "THEOS-2 2025-07-30T03:33Z (sukhothai) and 2025-07-31T03:51Z (chip_003, chip_001)",
+ "confidence_class": "low",
+ "confidence_basis": "Labels by two team members on the image the rule reads; no ground check.",
+ "operational_status": "non_operational",
+ "official_warning": false,
+ "can_feed_decision_layer": false,
+ "plan": {
+  "path": "docs/proposal_execution/theos2_water_label_check_plan_v1.md",
+  "sha256": "e7ea37102f1f1b83a6ac44c8acdd7c9fb767e497f9da1077cf112c0fe4605318"
+ },
+ "what_this_is": "The draw of the points on which two people label water or not water, made before anybody labelled. It holds no place of a point and no group of a point: the key stays outside Git until the figures are computed, because the repository is public and the labellers read it.",
+ "seed": 20261011,
+ "edge_distance_px": 3,
+ "groups": [
+  "water_inside",
+  "water_edge",
+  "dropped_small_object",
+  "land_edge",
+  "land_inside",
+  "unobservable"
+ ],
+ "chips": {
+  "sukhothai": {
+   "file_name": "IMG_T2V_20250730033331_ORTHO_PMS_32-004.tif",
+   "sha256": "1d18c3091f57c784be34216585a1ba22d055471ef5c1ec434c57971c55112134",
+   "rule_run_checked_against": "outputs/theos2_cross_check/sukhothai_20250730_reference_v1.json",
+   "ndwi_threshold_applied": -0.045,
+   "pixels_2m": 2253001,
+   "pixels_by_group": {
+    "water_inside": 516461,
+    "water_edge": 239484,
+    "dropped_small_object": 31840,
+    "land_edge": 213289,
+    "land_inside": 1061549,
+    "unobservable": 190378
+   },
+   "points_by_group": {
+    "water_inside": 20,
+    "water_edge": 20,
+    "dropped_small_object": 15,
+    "land_edge": 20,
+    "land_inside": 30,
+    "unobservable": 15
+   },
+   "points": 120,
+   "stretch_of_the_pictures": {
+    "percentiles": [
+     0.5,
+     99.5
+    ],
+    "gamma": 0.8,
+    "limits_by_band": [
+     [
+      321.0,
+      878.0
+     ],
+     [
+      314.0,
+      681.0
+     ],
+     [
+      402.0,
+      723.0
+     ],
+     [
+      260.0,
+      1162.0
+     ]
+    ]
+   }
+  },
+  "chip_003": {
+   "file_name": "IMG_T2V_20250731035100_ORTHO_PMS_32-003.tif",
+   "sha256": "b8dc72dd30f2149c9f4e76c083403c92b25d8a90e7353d58bdc1131ba867b74d",
+   "rule_run_checked_against": "outputs/radar_detection_improvement/held_out_reference_v1.json",
+   "ndwi_threshold_applied": -0.145,
+   "pixels_2m": 2251500,
+   "pixels_by_group": {
+    "water_inside": 530023,
+    "water_edge": 326124,
+    "dropped_small_object": 46930,
+    "land_edge": 284640,
+    "land_inside": 642689,
+    "unobservable": 421094
+   },
+   "points_by_group": {
+    "water_inside": 20,
+    "water_edge": 20,
+    "dropped_small_object": 15,
+    "land_edge": 20,
+    "land_inside": 30,
+    "unobservable": 15
+   },
+   "points": 120,
+   "stretch_of_the_pictures": {
+    "percentiles": [
+     0.5,
+     99.5
+    ],
+    "gamma": 0.8,
+    "limits_by_band": [
+     [
+      291.0,
+      903.0
+     ],
+     [
+      266.0,
+      686.0
+     ],
+     [
+      323.0,
+      715.0
+     ],
+     [
+      328.0,
+      927.0
+     ]
+    ]
+   }
+  },
+  "chip_001": {
+   "file_name": "IMG_T2V_20250731035100_ORTHO_PMS_32-001.tif",
+   "sha256": "89caf5946e6b25ef855dc95892bfeb4e45b7a67dfce7539465d8a9a0dc1961b5",
+   "rule_run_checked_against": "outputs/radar_detection_improvement/held_out_reference_v1.json",
+   "ndwi_threshold_applied": -0.365,
+   "pixels_2m": 2251500,
+   "pixels_by_group": {
+    "water_inside": 243820,
+    "water_edge": 276894,
+    "dropped_small_object": 46281,
+    "land_edge": 257607,
+    "land_inside": 1426898,
+    "unobservable": 0
+   },
+   "points_by_group": {
+    "water_inside": 10,
+    "water_edge": 10,
+    "dropped_small_object": 8,
+    "land_edge": 10,
+    "land_inside": 22,
+    "unobservable": 0
+   },
+   "points": 60,
+   "stretch_of_the_pictures": {
+    "percentiles": [
+     0.5,
+     99.5
+    ],
+    "gamma": 0.8,
+    "limits_by_band": [
+     [
+      224.0,
+      498.0
+     ],
+     [
+      227.0,
+      379.0
+     ],
+     [
+      281.0,
+      391.0
+     ],
+     [
+      341.0,
+      1118.0
+     ]
+    ]
+   }
+  }
+ },
+ "points": 300,
+ "practice_points": 6,
+ "labels": [
+  "water",
+  "not_water",
+  "cannot_tell"
+ ],
+ "sample_id": "9f5560c5b75e42f389decf131e45fb33626b54161007f6d8673d6529d9779ae4",
+ "key_outside_git": {
+  "name": "key_v1.json",
+  "sha256": "9f5560c5b75e42f389decf131e45fb33626b54161007f6d8673d6529d9779ae4"
+ },
+ "page_outside_git": {
+  "name": "label_page_v1.html",
+  "sha256": "29ed92c43ddcea00343c1dc927ea0154e4442e96a942a253f6311b310978c2fb",
+  "template": {
+   "path": "scripts/theos2_water_label_page.html",
+   "sha256": "3d89c4df8f590b3bfaa8ec55a18d43b87184d215d298424cb44972295c8a73bc"
+  },
+  "megabytes": 20.3,
+  "holds_the_answer_of_the_rule": false
+ },
+ "labels_received": 0,
+ "licence": "THEOS-2 sample imagery provided by GISTDA for GeoHackathon 2026 (docs/theos2_usage_terms_log.md). The page holds pixels of the samples and stays outside Git.",
+ "limits": [
+  "The labels come from the same image the rule reads, in true and false colour: the figures say whether the rule reads the image as a person does, not what was on the ground.",
+  "The labellers are team members, not trained image interpreters.",
+  "Three chips of two days in one season and one region; none of them covers Mae Sai.",
+  "A square of 2 m at the edge of water is often mixed; 'more than half' is a judgement."
+ ],
+ "supersedes": {
+  "reason": "The sentence of the page on false colour was corrected before anybody labelled (plan section 4, amended); the points and the pictures are the same",
+  "generated_at_utc": "2026-10-11T07:45:27Z",
+  "canonical_json_sha256": "82d30bd3b8cef69802279f5c133b878bcc02922f1d6aacfcafc57b2fe191cee7",
+  "figures_same": {
+   "chips": true,
+   "sample_id": true
+  }
+ }
+}

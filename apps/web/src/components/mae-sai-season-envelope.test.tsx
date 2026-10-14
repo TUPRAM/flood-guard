@@ -4,12 +4,14 @@
  * and the credit of the exported PNG and video. The figures are read from the envelope's own statistics file.
  */
 
+// Since 12 Oct 2026 this suite reads the archived revision (r4) as a fixed dataset: its figures are the ones the plans and
+// wireframes were written with. The page serves r5; what it tests here is the logic, which does not depend on the revision.
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { externalChecksByRole, TIMELINE_MANIFEST_URL, type GeoCollection, type TambonProps, type TimelineManifest } from "@/lib/flood-timeline";
+import { externalChecksByRole, ARCHIVE_1_MANIFEST_URL, type GeoCollection, type TambonProps, type TimelineManifest } from "@/lib/flood-timeline";
 import { ENVELOPE_COPY, parseSeasonEnvelopeDocument, shippableEnvelope } from "@/lib/flood-timeline-envelope";
 import { localizedText } from "@/lib/flood-timeline-copy";
 import { findWordingViolations, visibleText } from "@/lib/replay-wording-lint";
@@ -33,7 +35,7 @@ import {
 
 const publicRoot = resolve(import.meta.dirname, "../../public");
 const readJson = <T,>(href: string): T => JSON.parse(readFileSync(resolve(publicRoot, href.replace(/^\//, "")), "utf8")) as T;
-const manifest = readJson<TimelineManifest>(TIMELINE_MANIFEST_URL);
+const manifest = readJson<TimelineManifest>(ARCHIVE_1_MANIFEST_URL);
 const block = shippableEnvelope(manifest)!;
 const document = parseSeasonEnvelopeDocument(readJson<unknown>(block.files.statistics.href), block);
 const ready: SeasonEnvelopeState = { status: "ready", block, document, cells: new Uint32Array(0) };

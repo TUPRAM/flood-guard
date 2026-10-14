@@ -1,8 +1,10 @@
+// Since 12 Oct 2026 this suite reads the archived revision (r4) as a fixed dataset: its figures are the ones the plans and
+// wireframes were written with. The page serves r5; what it tests here is the logic, which does not depend on the revision.
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { TIMELINE_MANIFEST_URL, type ReportedDepthReport, type ReportedDepths, type TimelineManifest } from "./flood-timeline";
+import { ARCHIVE_1_MANIFEST_URL, type ReportedDepthReport, type ReportedDepths, type TimelineManifest } from "./flood-timeline";
 import {
   groupNearbyPlaces,
   REPORTED_DEPTH_APPLIES,
@@ -22,7 +24,7 @@ import {
 } from "./flood-timeline-reported-depths";
 import { findWordingViolations, describeWordingFindings } from "./replay-wording-lint";
 
-const manifest = JSON.parse(readFileSync(resolve(import.meta.dirname, "../../public", TIMELINE_MANIFEST_URL.replace(/^\//, "")), "utf8")) as TimelineManifest;
+const manifest = JSON.parse(readFileSync(resolve(import.meta.dirname, "../../public", ARCHIVE_1_MANIFEST_URL.replace(/^\//, "")), "utf8")) as TimelineManifest;
 const block = manifest.reported_depths!;
 const report = (id: string) => block.reports.find((item) => item.id === id)!;
 const THAI = /[฀-๿]/;

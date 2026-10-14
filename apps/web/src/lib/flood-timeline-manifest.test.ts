@@ -172,9 +172,18 @@ describe("Mae Sai replay manifest reader: the served revision (r4 shape)", () =>
     // VIIRS: not used for tuning; whether it was known then is not recorded, so the field is null, never false.
     expect(items["viirs-daily"]).toMatchObject({ relation: "not_used_for_tuning", known_during_tuning: null });
     expect(items["viirs-daily"].statement).toContain("commit 129ff03");
-    expect(items["unosat-4009"]).toMatchObject({ relation: "computed_after_keyframes_final", known_during_tuning: false });
-    // The recorded rule: nothing is tuned to product 4009 afterwards, or the comparison becomes a calibration figure.
-    expect(items["unosat-4009"].statement).toContain("no keyframe or elevation change is tuned to product 4009 afterwards; if one is, the comparison is relabelled as calibration");
+    // From r5: no level is fitted to product 4009, but it was known when the fitted model was chosen and was a reason for
+    // the choice, so the rule recorded in r4 applies and the comparison is relabelled.
+    expect(items["unosat-4009"]).toMatchObject({ relation: "known_during_tuning", known_during_tuning: true });
+    expect(items["unosat-4009"].statement).toContain("from revision r5 it is calibration-informed, not an independent check");
+    // The two Sentinel-2 scenes the peak is fitted to: neither the mud line nor the water check is an independent check.
+    for (const id of ["sentinel-2-mud-line", "sentinel-2-water-check"]) {
+      expect(items[id], id).toMatchObject({ relation: "used_for_tuning", known_during_tuning: true });
+      expect(items[id].statement, id).toMatch(/(not an|is an) independent check/);
+    }
+    expect(items["sentinel-2-mud-line"].statement).toContain("no comparison with it is an independent check");
+    expect(items["sentinel-2-mud-line"].statement).toContain("the levels did not carry over to the other half");
+    expect(manifest.exploratory_knowledge!.rule).toContain("The depth factor is fitted to the Sentinel-2 scenes from revision r5");
     expect(manifest.s1_anchor.use).toMatch(/not an independent check/);
     expect(manifest.confidence_reason).toMatch(/tuned to one radar pass rather than checked independently/);
   });

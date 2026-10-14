@@ -1,0 +1,1209 @@
+{
+ "schema": "floodguard.theos2_water_labels.labels.v1",
+ "sample_id": "9f5560c5b75e42f389decf131e45fb33626b54161007f6d8673d6529d9779ae4",
+ "labeller": "callixta",
+ "saved_at_utc": "2026-10-11T14:48:16Z",
+ "points": 300,
+ "labels": {
+  "p001": {
+   "label": "not_water",
+   "seconds": 3.6
+  },
+  "p002": {
+   "label": "not_water",
+   "seconds": 2.6
+  },
+  "p003": {
+   "label": "water",
+   "seconds": 13.2
+  },
+  "p004": {
+   "label": "water",
+   "seconds": 2
+  },
+  "p005": {
+   "label": "water",
+   "seconds": 3.3
+  },
+  "p006": {
+   "label": "water",
+   "seconds": 9.4
+  },
+  "p007": {
+   "label": "not_water",
+   "seconds": 2
+  },
+  "p008": {
+   "label": "water",
+   "seconds": 14.5
+  },
+  "p009": {
+   "label": "not_water",
+   "seconds": 1.4
+  },
+  "p010": {
+   "label": "not_water",
+   "seconds": 2.6
+  },
+  "p011": {
+   "label": "water",
+   "seconds": 1.9
+  },
+  "p012": {
+   "label": "water",
+   "seconds": 1.2
+  },
+  "p013": {
+   "label": "water",
+   "seconds": 2.3
+  },
+  "p014": {
+   "label": "water",
+   "seconds": 4
+  },
+  "p015": {
+   "label": "water",
+   "seconds": 0.9
+  },
+  "p016": {
+   "label": "water",
+   "seconds": 1.1
+  },
+  "p017": {
+   "label": "water",
+   "seconds": 3.1
+  },
+  "p018": {
+   "label": "water",
+   "seconds": 37.5
+  },
+  "p019": {
+   "label": "not_water",
+   "seconds": 10.5
+  },
+  "p020": {
+   "label": "not_water",
+   "seconds": 9.5
+  },
+  "p021": {
+   "label": "not_water",
+   "seconds": 2.7
+  },
+  "p022": {
+   "label": "water",
+   "seconds": 4.5
+  },
+  "p023": {
+   "label": "water",
+   "seconds": 2.4
+  },
+  "p024": {
+   "label": "not_water",
+   "seconds": 4.1
+  },
+  "p025": {
+   "label": "water",
+   "seconds": 1.6
+  },
+  "p026": {
+   "label": "water",
+   "seconds": 0.8
+  },
+  "p027": {
+   "label": "water",
+   "seconds": 0.6
+  },
+  "p028": {
+   "label": "water",
+   "seconds": 0.6
+  },
+  "p029": {
+   "label": "not_water",
+   "seconds": 1.9
+  },
+  "p030": {
+   "label": "water",
+   "seconds": 4.4
+  },
+  "p031": {
+   "label": "water",
+   "seconds": 2
+  },
+  "p032": {
+   "label": "water",
+   "seconds": 7.3
+  },
+  "p033": {
+   "label": "water",
+   "seconds": 0.8
+  },
+  "p034": {
+   "label": "water",
+   "seconds": 2.2
+  },
+  "p035": {
+   "label": "water",
+   "seconds": 0.8
+  },
+  "p036": {
+   "label": "water",
+   "seconds": 2.4
+  },
+  "p037": {
+   "label": "water",
+   "seconds": 1.7
+  },
+  "p038": {
+   "label": "water",
+   "seconds": 0.8
+  },
+  "p039": {
+   "label": "water",
+   "seconds": 1.3
+  },
+  "p040": {
+   "label": "water",
+   "seconds": 0.7
+  },
+  "p041": {
+   "label": "water",
+   "seconds": 0.9
+  },
+  "p042": {
+   "label": "water",
+   "seconds": 0.8
+  },
+  "p043": {
+   "label": "water",
+   "seconds": 0.7
+  },
+  "p044": {
+   "label": "not_water",
+   "seconds": 3
+  },
+  "p045": {
+   "label": "water",
+   "seconds": 1.8
+  },
+  "p046": {
+   "label": "water",
+   "seconds": 0.6
+  },
+  "p047": {
+   "label": "not_water",
+   "seconds": 1.3
+  },
+  "p048": {
+   "label": "water",
+   "seconds": 1.2
+  },
+  "p049": {
+   "label": "not_water",
+   "seconds": 1.2
+  },
+  "p050": {
+   "label": "water",
+   "seconds": 1.2
+  },
+  "p051": {
+   "label": "water",
+   "seconds": 0.9
+  },
+  "p052": {
+   "label": "water",
+   "seconds": 0.7
+  },
+  "p053": {
+   "label": "cannot_tell",
+   "seconds": 3.3
+  },
+  "p054": {
+   "label": "water",
+   "seconds": 3.5
+  },
+  "p055": {
+   "label": "water",
+   "seconds": 0.8
+  },
+  "p056": {
+   "label": "not_water",
+   "seconds": 1.3
+  },
+  "p057": {
+   "label": "water",
+   "seconds": 1.2
+  },
+  "p058": {
+   "label": "not_water",
+   "seconds": 1.7
+  },
+  "p059": {
+   "label": "not_water",
+   "seconds": 0.8
+  },
+  "p060": {
+   "label": "water",
+   "seconds": 1.1
+  },
+  "p061": {
+   "label": "water",
+   "seconds": 0.6
+  },
+  "p062": {
+   "label": "not_water",
+   "seconds": 1.4
+  },
+  "p063": {
+   "label": "not_water",
+   "seconds": 1.2
+  },
+  "p064": {
+   "label": "water",
+   "seconds": 4.2
+  },
+  "p065": {
+   "label": "water",
+   "seconds": 2.7
+  },
+  "p066": {
+   "label": "water",
+   "seconds": 1.5
+  },
+  "p067": {
+   "label": "not_water",
+   "seconds": 1.6
+  },
+  "p068": {
+   "label": "not_water",
+   "seconds": 1.2
+  },
+  "p069": {
+   "label": "cannot_tell",
+   "seconds": 1.6
+  },
+  "p070": {
+   "label": "not_water",
+   "seconds": 1.1
+  },
+  "p071": {
+   "label": "water",
+   "seconds": 1.2
+  },
+  "p072": {
+   "label": "water",
+   "seconds": 4
+  },
+  "p073": {
+   "label": "not_water",
+   "seconds": 1.3
+  },
+  "p074": {
+   "label": "water",
+   "seconds": 3.4
+  },
+  "p075": {
+   "label": "water",
+   "seconds": 0.7
+  },
+  "p076": {
+   "label": "water",
+   "seconds": 0.5
+  },
+  "p077": {
+   "label": "not_water",
+   "seconds": 1.1
+  },
+  "p078": {
+   "label": "not_water",
+   "seconds": 3
+  },
+  "p079": {
+   "label": "water",
+   "seconds": 1.2
+  },
+  "p080": {
+   "label": "not_water",
+   "seconds": 1.7
+  },
+  "p081": {
+   "label": "water",
+   "seconds": 1
+  },
+  "p082": {
+   "label": "not_water",
+   "seconds": 1
+  },
+  "p083": {
+   "label": "not_water",
+   "seconds": 0.9
+  },
+  "p084": {
+   "label": "water",
+   "seconds": 1.3
+  },
+  "p085": {
+   "label": "water",
+   "seconds": 2.2
+  },
+  "p086": {
+   "label": "not_water",
+   "seconds": 1
+  },
+  "p087": {
+   "label": "not_water",
+   "seconds": 1.3
+  },
+  "p088": {
+   "label": "not_water",
+   "seconds": 0.9
+  },
+  "p089": {
+   "label": "water",
+   "seconds": 1
+  },
+  "p090": {
+   "label": "not_water",
+   "seconds": 0.9
+  },
+  "p091": {
+   "label": "cannot_tell",
+   "seconds": 1.4
+  },
+  "p092": {
+   "label": "not_water",
+   "seconds": 2.6
+  },
+  "p093": {
+   "label": "water",
+   "seconds": 1
+  },
+  "p094": {
+   "label": "water",
+   "seconds": 0.6
+  },
+  "p095": {
+   "label": "not_water",
+   "seconds": 1
+  },
+  "p096": {
+   "label": "water",
+   "seconds": 2.1
+  },
+  "p097": {
+   "label": "not_water",
+   "seconds": 1
+  },
+  "p098": {
+   "label": "cannot_tell",
+   "seconds": 5.5
+  },
+  "p099": {
+   "label": "not_water",
+   "seconds": 2
+  },
+  "p100": {
+   "label": "not_water",
+   "seconds": 0.8
+  },
+  "p101": {
+   "label": "not_water",
+   "seconds": 0.6
+  },
+  "p102": {
+   "label": "not_water",
+   "seconds": 2.2
+  },
+  "p103": {
+   "label": "not_water",
+   "seconds": 1
+  },
+  "p104": {
+   "label": "not_water",
+   "seconds": 1
+  },
+  "p105": {
+   "label": "not_water",
+   "seconds": 1.1
+  },
+  "p106": {
+   "label": "not_water",
+   "seconds": 0.8
+  },
+  "p107": {
+   "label": "not_water",
+   "seconds": 0.6
+  },
+  "p108": {
+   "label": "water",
+   "seconds": 1.7
+  },
+  "p109": {
+   "label": "not_water",
+   "seconds": 1
+  },
+  "p110": {
+   "label": "not_water",
+   "seconds": 0.6
+  },
+  "p111": {
+   "label": "water",
+   "seconds": 1
+  },
+  "p112": {
+   "label": "water",
+   "seconds": 1.5
+  },
+  "p113": {
+   "label": "water",
+   "seconds": 0.7
+  },
+  "p114": {
+   "label": "water",
+   "seconds": 0.5
+  },
+  "p115": {
+   "label": "not_water",
+   "seconds": 1.8
+  },
+  "p116": {
+   "label": "water",
+   "seconds": 1.8
+  },
+  "p117": {
+   "label": "cannot_tell",
+   "seconds": 1.3
+  },
+  "p118": {
+   "label": "water",
+   "seconds": 5.3
+  },
+  "p119": {
+   "label": "water",
+   "seconds": 2.5
+  },
+  "p120": {
+   "label": "water",
+   "seconds": 0.7
+  },
+  "p121": {
+   "label": "not_water",
+   "seconds": 1.8
+  },
+  "p122": {
+   "label": "water",
+   "seconds": 1.1
+  },
+  "p123": {
+   "label": "not_water",
+   "seconds": 1.1
+  },
+  "p124": {
+   "label": "not_water",
+   "seconds": 1
+  },
+  "p125": {
+   "label": "water",
+   "seconds": 3.6
+  },
+  "p126": {
+   "label": "not_water",
+   "seconds": 1.6
+  },
+  "p127": {
+   "label": "water",
+   "seconds": 3.4
+  },
+  "p128": {
+   "label": "not_water",
+   "seconds": 1.8
+  },
+  "p129": {
+   "label": "not_water",
+   "seconds": 0.8
+  },
+  "p130": {
+   "label": "not_water",
+   "seconds": 0.7
+  },
+  "p131": {
+   "label": "not_water",
+   "seconds": 0.7
+  },
+  "p132": {
+   "label": "water",
+   "seconds": 1.1
+  },
+  "p133": {
+   "label": "not_water",
+   "seconds": 0.7
+  },
+  "p134": {
+   "label": "water",
+   "seconds": 0.8
+  },
+  "p135": {
+   "label": "not_water",
+   "seconds": 0.7
+  },
+  "p136": {
+   "label": "water",
+   "seconds": 0.9
+  },
+  "p137": {
+   "label": "not_water",
+   "seconds": 1.2
+  },
+  "p138": {
+   "label": "not_water",
+   "seconds": 0.6
+  },
+  "p139": {
+   "label": "not_water",
+   "seconds": 0.9
+  },
+  "p140": {
+   "label": "water",
+   "seconds": 1.2
+  },
+  "p141": {
+   "label": "not_water",
+   "seconds": 1
+  },
+  "p142": {
+   "label": "water",
+   "seconds": 0.7
+  },
+  "p143": {
+   "label": "not_water",
+   "seconds": 0.9
+  },
+  "p144": {
+   "label": "not_water",
+   "seconds": 1.7
+  },
+  "p145": {
+   "label": "not_water",
+   "seconds": 0.7
+  },
+  "p146": {
+   "label": "not_water",
+   "seconds": 0.7
+  },
+  "p147": {
+   "label": "water",
+   "seconds": 1.1
+  },
+  "p148": {
+   "label": "water",
+   "seconds": 2.2
+  },
+  "p149": {
+   "label": "water",
+   "seconds": 0.7
+  },
+  "p150": {
+   "label": "not_water",
+   "seconds": 1.1
+  },
+  "p151": {
+   "label": "not_water",
+   "seconds": 0.8
+  },
+  "p152": {
+   "label": "water",
+   "seconds": 0.9
+  },
+  "p153": {
+   "label": "water",
+   "seconds": 2.4
+  },
+  "p154": {
+   "label": "not_water",
+   "seconds": 2.3
+  },
+  "p155": {
+   "label": "not_water",
+   "seconds": 1.8
+  },
+  "p156": {
+   "label": "water",
+   "seconds": 3.9
+  },
+  "p157": {
+   "label": "not_water",
+   "seconds": 1
+  },
+  "p158": {
+   "label": "water",
+   "seconds": 1
+  },
+  "p159": {
+   "label": "not_water",
+   "seconds": 2
+  },
+  "p160": {
+   "label": "not_water",
+   "seconds": 0.8
+  },
+  "p161": {
+   "label": "water",
+   "seconds": 1
+  },
+  "p162": {
+   "label": "not_water",
+   "seconds": 0.9
+  },
+  "p163": {
+   "label": "water",
+   "seconds": 0.7
+  },
+  "p164": {
+   "label": "water",
+   "seconds": 0.7
+  },
+  "p165": {
+   "label": "not_water",
+   "seconds": 2
+  },
+  "p166": {
+   "label": "water",
+   "seconds": 0.7
+  },
+  "p167": {
+   "label": "water",
+   "seconds": 0.5
+  },
+  "p168": {
+   "label": "not_water",
+   "seconds": 1.1
+  },
+  "p169": {
+   "label": "not_water",
+   "seconds": 0.7
+  },
+  "p170": {
+   "label": "water",
+   "seconds": 0.9
+  },
+  "p171": {
+   "label": "water",
+   "seconds": 0.5
+  },
+  "p172": {
+   "label": "not_water",
+   "seconds": 1.8
+  },
+  "p173": {
+   "label": "not_water",
+   "seconds": 0.7
+  },
+  "p174": {
+   "label": "water",
+   "seconds": 1.7
+  },
+  "p175": {
+   "label": "water",
+   "seconds": 0.9
+  },
+  "p176": {
+   "label": "not_water",
+   "seconds": 1.4
+  },
+  "p177": {
+   "label": "water",
+   "seconds": 2.5
+  },
+  "p178": {
+   "label": "water",
+   "seconds": 1.3
+  },
+  "p179": {
+   "label": "water",
+   "seconds": 0.8
+  },
+  "p180": {
+   "label": "not_water",
+   "seconds": 2
+  },
+  "p181": {
+   "label": "water",
+   "seconds": 0.9
+  },
+  "p182": {
+   "label": "not_water",
+   "seconds": 2.5
+  },
+  "p183": {
+   "label": "not_water",
+   "seconds": 1.3
+  },
+  "p184": {
+   "label": "not_water",
+   "seconds": 0.8
+  },
+  "p185": {
+   "label": "not_water",
+   "seconds": 0.6
+  },
+  "p186": {
+   "label": "water",
+   "seconds": 1
+  },
+  "p187": {
+   "label": "not_water",
+   "seconds": 0.8
+  },
+  "p188": {
+   "label": "not_water",
+   "seconds": 0.5
+  },
+  "p189": {
+   "label": "water",
+   "seconds": 1.3
+  },
+  "p190": {
+   "label": "not_water",
+   "seconds": 1.8
+  },
+  "p191": {
+   "label": "water",
+   "seconds": 1
+  },
+  "p192": {
+   "label": "water",
+   "seconds": 2
+  },
+  "p193": {
+   "label": "water",
+   "seconds": 1.1
+  },
+  "p194": {
+   "label": "water",
+   "seconds": 1.1
+  },
+  "p195": {
+   "label": "water",
+   "seconds": 1.1
+  },
+  "p196": {
+   "label": "water",
+   "seconds": 0.5
+  },
+  "p197": {
+   "label": "not_water",
+   "seconds": 1
+  },
+  "p198": {
+   "label": "water",
+   "seconds": 4
+  },
+  "p199": {
+   "label": "water",
+   "seconds": 1.5
+  },
+  "p200": {
+   "label": "not_water",
+   "seconds": 1
+  },
+  "p201": {
+   "label": "water",
+   "seconds": 0.9
+  },
+  "p202": {
+   "label": "water",
+   "seconds": 0.9
+  },
+  "p203": {
+   "label": "water",
+   "seconds": 0.8
+  },
+  "p204": {
+   "label": "water",
+   "seconds": 1.1
+  },
+  "p205": {
+   "label": "water",
+   "seconds": 0.5
+  },
+  "p206": {
+   "label": "water",
+   "seconds": 0.5
+  },
+  "p207": {
+   "label": "water",
+   "seconds": 0.6
+  },
+  "p208": {
+   "label": "water",
+   "seconds": 1
+  },
+  "p209": {
+   "label": "water",
+   "seconds": 0.7
+  },
+  "p210": {
+   "label": "water",
+   "seconds": 2.2
+  },
+  "p211": {
+   "label": "not_water",
+   "seconds": 1.4
+  },
+  "p212": {
+   "label": "water",
+   "seconds": 1.6
+  },
+  "p213": {
+   "label": "water",
+   "seconds": 0.7
+  },
+  "p214": {
+   "label": "water",
+   "seconds": 0.5
+  },
+  "p215": {
+   "label": "water",
+   "seconds": 0.7
+  },
+  "p216": {
+   "label": "water",
+   "seconds": 0.8
+  },
+  "p217": {
+   "label": "water",
+   "seconds": 0.5
+  },
+  "p218": {
+   "label": "water",
+   "seconds": 1.2
+  },
+  "p219": {
+   "label": "water",
+   "seconds": 0.6
+  },
+  "p220": {
+   "label": "water",
+   "seconds": 1
+  },
+  "p221": {
+   "label": "water",
+   "seconds": 0.6
+  },
+  "p222": {
+   "label": "water",
+   "seconds": 0.5
+  },
+  "p223": {
+   "label": "water",
+   "seconds": 2.5
+  },
+  "p224": {
+   "label": "water",
+   "seconds": 0.9
+  },
+  "p225": {
+   "label": "water",
+   "seconds": 1.8
+  },
+  "p226": {
+   "label": "water",
+   "seconds": 0.9
+  },
+  "p227": {
+   "label": "not_water",
+   "seconds": 1.3
+  },
+  "p228": {
+   "label": "water",
+   "seconds": 1.7
+  },
+  "p229": {
+   "label": "water",
+   "seconds": 0.9
+  },
+  "p230": {
+   "label": "water",
+   "seconds": 0.8
+  },
+  "p231": {
+   "label": "water",
+   "seconds": 0.8
+  },
+  "p232": {
+   "label": "not_water",
+   "seconds": 1.3
+  },
+  "p233": {
+   "label": "water",
+   "seconds": 0.9
+  },
+  "p234": {
+   "label": "water",
+   "seconds": 0.7
+  },
+  "p235": {
+   "label": "water",
+   "seconds": 1.1
+  },
+  "p236": {
+   "label": "not_water",
+   "seconds": 1.5
+  },
+  "p237": {
+   "label": "water",
+   "seconds": 1.6
+  },
+  "p238": {
+   "label": "water",
+   "seconds": 0.8
+  },
+  "p239": {
+   "label": "water",
+   "seconds": 0.5
+  },
+  "p240": {
+   "label": "water",
+   "seconds": 0.7
+  },
+  "p241": {
+   "label": "water",
+   "seconds": 0.9
+  },
+  "p242": {
+   "label": "water",
+   "seconds": 0.5
+  },
+  "p243": {
+   "label": "not_water",
+   "seconds": 1.6
+  },
+  "p244": {
+   "label": "water",
+   "seconds": 1.8
+  },
+  "p245": {
+   "label": "water",
+   "seconds": 1.7
+  },
+  "p246": {
+   "label": "water",
+   "seconds": 0.7
+  },
+  "p247": {
+   "label": "water",
+   "seconds": 0.9
+  },
+  "p248": {
+   "label": "not_water",
+   "seconds": 1.8
+  },
+  "p249": {
+   "label": "water",
+   "seconds": 2.6
+  },
+  "p250": {
+   "label": "water",
+   "seconds": 1.1
+  },
+  "p251": {
+   "label": "not_water",
+   "seconds": 0.9
+  },
+  "p252": {
+   "label": "water",
+   "seconds": 1.1
+  },
+  "p253": {
+   "label": "water",
+   "seconds": 0.5
+  },
+  "p254": {
+   "label": "not_water",
+   "seconds": 1.3
+  },
+  "p255": {
+   "label": "water",
+   "seconds": 1
+  },
+  "p256": {
+   "label": "water",
+   "seconds": 0.9
+  },
+  "p257": {
+   "label": "water",
+   "seconds": 0.7
+  },
+  "p258": {
+   "label": "water",
+   "seconds": 0.7
+  },
+  "p259": {
+   "label": "water",
+   "seconds": 2.5
+  },
+  "p260": {
+   "label": "water",
+   "seconds": 0.9
+  },
+  "p261": {
+   "label": "water",
+   "seconds": 0.8
+  },
+  "p262": {
+   "label": "water",
+   "seconds": 0.7
+  },
+  "p263": {
+   "label": "not_water",
+   "seconds": 2.3
+  },
+  "p264": {
+   "label": "water",
+   "seconds": 1.5
+  },
+  "p265": {
+   "label": "not_water",
+   "seconds": 2.4
+  },
+  "p266": {
+   "label": "not_water",
+   "seconds": 0.9
+  },
+  "p267": {
+   "label": "not_water",
+   "seconds": 0.7
+  },
+  "p268": {
+   "label": "not_water",
+   "seconds": 1.2
+  },
+  "p269": {
+   "label": "water",
+   "seconds": 3.4
+  },
+  "p270": {
+   "label": "not_water",
+   "seconds": 1.4
+  },
+  "p271": {
+   "label": "not_water",
+   "seconds": 1.6
+  },
+  "p272": {
+   "label": "water",
+   "seconds": 3.8
+  },
+  "p273": {
+   "label": "water",
+   "seconds": 1.1
+  },
+  "p274": {
+   "label": "water",
+   "seconds": 1.8
+  },
+  "p275": {
+   "label": "water",
+   "seconds": 2
+  },
+  "p276": {
+   "label": "water",
+   "seconds": 1.6
+  },
+  "p277": {
+   "label": "not_water",
+   "seconds": 1.2
+  },
+  "p278": {
+   "label": "water",
+   "seconds": 1
+  },
+  "p279": {
+   "label": "water",
+   "seconds": 0.7
+  },
+  "p280": {
+   "label": "water",
+   "seconds": 0.6
+  },
+  "p281": {
+   "label": "not_water",
+   "seconds": 1.3
+  },
+  "p282": {
+   "label": "not_water",
+   "seconds": 1
+  },
+  "p283": {
+   "label": "water",
+   "seconds": 1.2
+  },
+  "p284": {
+   "label": "not_water",
+   "seconds": 0.9
+  },
+  "p285": {
+   "label": "water",
+   "seconds": 0.9
+  },
+  "p286": {
+   "label": "water",
+   "seconds": 1.9
+  },
+  "p287": {
+   "label": "water",
+   "seconds": 2.2
+  },
+  "p288": {
+   "label": "not_water",
+   "seconds": 4.6
+  },
+  "p289": {
+   "label": "not_water",
+   "seconds": 1.5
+  },
+  "p290": {
+   "label": "not_water",
+   "seconds": 0.7
+  },
+  "p291": {
+   "label": "water",
+   "seconds": 1.3
+  },
+  "p292": {
+   "label": "water",
+   "seconds": 1.3
+  },
+  "p293": {
+   "label": "not_water",
+   "seconds": 1.3
+  },
+  "p294": {
+   "label": "not_water",
+   "seconds": 0.8
+  },
+  "p295": {
+   "label": "not_water",
+   "seconds": 0.8
+  },
+  "p296": {
+   "label": "water",
+   "seconds": 1.1
+  },
+  "p297": {
+   "label": "not_water",
+   "seconds": 1.1
+  },
+  "p298": {
+   "label": "water",
+   "seconds": 1.3
+  },
+  "p299": {
+   "label": "not_water",
+   "seconds": 3.4
+  },
+  "p300": {
+   "label": "water",
+   "seconds": 2.6
+  }
+ }
+}

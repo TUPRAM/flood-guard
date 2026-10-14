@@ -14,7 +14,13 @@ export interface Localized { en: string; th: string }
  * vectors) is read from this manifest, and the offline cache inventory and the study-integrity
  * check derive their file lists from it at build time.
  */
-export const TIMELINE_MANIFEST_URL = "/studies/mae-sai-2024-timeline/r4/timeline.json";
+export const TIMELINE_MANIFEST_URL = "/studies/mae-sai-2024-timeline/r5/timeline.json";
+
+/**
+ * The revision before the peak was fitted to the mud line (decision of 12 Oct 2026). It stays public as an archive and is
+ * shown at `/archive1/`; nothing else reads it except the policy page, which names its revision itself.
+ */
+export const ARCHIVE_1_MANIFEST_URL = "/studies/mae-sai-2024-timeline/r4/timeline.json";
 
 /** Directory of a manifest URL (with trailing slash); every asset the manifest lists must live under it. */
 export function manifestDirectory(manifestUrl: string = TIMELINE_MANIFEST_URL): string {
@@ -802,6 +808,26 @@ export interface Rainfall {
   note: string;
 }
 
+/** Area of flood evidence on the 15 Sep 2024 Sentinel-2 scene, the modelled peak, and how much of each lies in the other. */
+export interface RiverFitShares {
+  evidence_km2: number;
+  peak_km2: number;
+  share_of_the_evidence_inside_the_peak: number | null;
+  share_of_the_judged_peak_with_evidence: number | null;
+}
+
+/**
+ * The fit of the peak level of each stretch of channel to the mud line of the 15 Sep 2024 Sentinel-2 scene (r5 on).
+ * `held_back_squares` is the test the fit failed: fitted on half of the area, it covers less of the other half than the
+ * model before it.
+ */
+export interface RiverFit {
+  plan: string;
+  label: string;
+  replay_area: { model_before_the_fit: RiverFitShares; fitted_model: RiverFitShares };
+  held_back_squares: { what: string; model_before_the_fit: RiverFitShares; fitted_on_the_other_squares: RiverFitShares; reading: string };
+}
+
 export interface TimelineManifest {
   study_id: string;
   revision: string;
@@ -829,7 +855,11 @@ export interface TimelineManifest {
     stream_threshold_km2?: number;
     depth_factor_channel?: string | null;
     /** How k was derived: clip((A / reference_km2) ** exponent, floor, 1) from each channel's upstream area A. */
-    depth_factor?: { exponent: number; floor: number; reference_km2: number; reference: string };
+    /**
+     * From r5 a stretch fitted to the mud line can have a factor above 1: the channel then holds k / `byte_scale` (absent: 1),
+     * `max` is the largest factor a stretch can have and `fitted` says where the factor is fitted.
+     */
+    depth_factor?: { exponent: number; floor: number; reference_km2: number; reference: string; byte_scale?: number; max?: number; fitted?: string };
     /**
      * Channel of an RGB raster that flags low-confidence water ("B" from r3 on): 255 on filled pits and dead-flat
      * ground less than 0.1 m above its channel, which reads as wet at almost any stage. Absent or null: no flag.
@@ -886,6 +916,8 @@ export interface TimelineManifest {
   viirs_daily?: ViirsDaily;
   /** Sentinel-2 water check for the first clear scene after the river fell (15 Sep); absent before the later r4 bakes. */
   s2_crosscheck?: S2Crosscheck;
+  /** The peak fitted to the mud line of the 15 Sep 2024 Sentinel-2 scene; absent before r5, so absent in the archive. */
+  river_fit?: RiverFit;
   /** Depths reported in news at named places, with their consistency with the model (r4 bakes from 3 Oct 2026). */
   reported_depths?: ReportedDepths;
   /** Observed hourly rain at nearby gauges (forcing, not flooding); absent before r3. */
@@ -2013,15 +2045,19 @@ export function paintLowConfidence(cells: Uint32Array, stripes: Uint8Array, pixe
 }
 
 /** Depth factor k for a stored byte round(k * 255); 255 is full depth. */
-export const depthFactor = (byte: number): number => byte / 255;
+export const depthFactor = (byte: number, scale = 1): number => (byte / 255) * scale;
+
+/** What a full factor byte stands for in this manifest: 1 up to r4, `hand.depth_factor.byte_scale` from r5. */
+export const depthFactorScale = (manifest: { hand: { depth_factor?: { byte_scale?: number } } }): number =>
+  manifest.hand.depth_factor?.byte_scale ?? 1;
 
 /**
  * Reconstructed depth (m) of one HAND cell at `stage`, or `null` when it is dry.
  * Wet iff it is the channel or `code * step < stage` (never for `neverCode`); depth = k * (stage - code * step),
  * channel depth = k * stage. `factorByte` is 255 (k = 1) when the manifest has no factor channel.
  */
-export function cellDepth(code: number, stage: number, step: number, factorByte = 255, channelCode = 0, neverCode = 255): number | null {
-  const k = depthFactor(factorByte);
+export function cellDepth(code: number, stage: number, step: number, factorByte = 255, channelCode = 0, neverCode = 255, factorScale = 1): number | null {
+  const k = depthFactor(factorByte, factorScale);
   if (code === channelCode) return k * Math.max(0, stage);
   if (code === neverCode || !(code * step < stage)) return null;
   return k * (stage - code * step);
@@ -2042,7 +2078,7 @@ export function depthFactorKeys(codes: Uint8Array, factors: Uint8Array): Uint16A
  * Depth LUT indexed by `code | factor << 8`: the five depth classes of `buildDepthLut`, applied to
  * k * (stage - code * step). Wetness still depends on the code alone. The factor-255 slice equals `buildDepthLut`.
  */
-export function buildFactorDepthLut(stage: number, step: number, littleEndian = true, out?: Uint32Array): Uint32Array {
+export function buildFactorDepthLut(stage: number, step: number, littleEndian = true, out?: Uint32Array, factorScale = 1): Uint32Array {
   if (out && out.length !== FACTOR_LUT_SIZE) throw new Error(`LUT buffer must have ${FACTOR_LUT_SIZE} entries`);
   const lut = out ?? new Uint32Array(FACTOR_LUT_SIZE);
   if (out) lut.fill(0);
@@ -2050,7 +2086,7 @@ export function buildFactorDepthLut(stage: number, step: number, littleEndian = 
   const classes = DEPTH_CLASSES.map((item) => pack(item.rgba, littleEndian));
   for (let factor = 0; factor < 256; factor += 1) {
     const base = factor << 8;
-    const k = depthFactor(factor);
+    const k = depthFactor(factor, factorScale);
     lut[base] = channel;
     for (let code = 1; code < 255; code += 1) {
       const hand = code * step;

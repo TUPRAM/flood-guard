@@ -1,0 +1,224 @@
+{
+ "schema": "floodguard.buildings_in_water.theos2_chips.v1",
+ "generated_at_utc": "2026-10-11T13:51:58Z",
+ "source_timestamp": "THEOS-2 2025-07-30T03:33Z (sukhothai) and 2025-07-31T03:51Z (chip_003); WorldPop 2020; outlines of 2024",
+ "confidence_class": "low",
+ "confidence_basis": "A water rule on one optical image, outlines drawn by a model, and a modelled population grid; no ground check.",
+ "operational_status": "non_operational",
+ "official_warning": false,
+ "can_feed_decision_layer": false,
+ "plan": {
+  "path": "docs/proposal_execution/buildings_in_water_plan_v1.md",
+  "sha256": "032c15a68abea025f97c462729de19a316950b92e810e5117a95924520c7c94d"
+ },
+ "what_this_is": "On two THEOS-2 chips: the buildings that stand in water by the ground around them, and three readings of residents in the water on the population grid. Neither water rule has been scored on the test points yet; both are given and neither is called right.",
+ "outlines": {
+  "path": "outputs/buildings_in_water/outlines_v1.json",
+  "sha256": "80d833bac95fac70560bcf5efbec8d25f4c041a85f0a27cb7fbab7a0298bf09e"
+ },
+ "water_rules": {
+  "rule_v1": "as run for the earlier checks",
+  "rule_v2": {
+   "freeze": "outputs/theos2_water_rule_v2/freeze_v1.json",
+   "sha256": "f6cc40e1db8f37cc2fe5d3bebeb5d83e478211c3ceb364d89d2525d9ed3ae168"
+  }
+ },
+ "a_building_in_the_water": {
+  "ring": "pixels of 2 m more than 2 m and at most 8 m from the outline, nearer to this building than to any other",
+  "assessed": "a ring of at least 6 pixels, at least 0.5 of them with an answer",
+  "in_the_water": "at least 0.5 of the answered pixels of the ring are water",
+  "counted": "centre at least 20 m inside the chip"
+ },
+ "population": {
+  "grid": "WorldPop Thailand 100 m 2020 (tha_ppp_2020.tif), the grid of the planning score",
+  "cells_used": "centre at least 50 m inside the chip, so that the whole cell is on the image (a detail fixed when the stage was written; the plan says 'in the chip')"
+ },
+ "chips": {
+  "sukhothai": {
+   "outlines_used": 2718,
+   "buildings_counted": 2497,
+   "population_cells_inside_the_chip": 1023,
+   "by_water_rule": {
+    "rule_v1": {
+     "water_share_of_the_chip": 0.3355,
+     "buildings_assessed": 1848,
+     "buildings_not_assessed": 649,
+     "buildings_in_the_water": {
+      "at_0.5_of_the_ring": {
+       "buildings": 39,
+       "share": 0.0211
+      },
+      "at_0.25_of_the_ring": {
+       "buildings": 81,
+       "share": 0.0438
+      },
+      "at_0.75_of_the_ring": {
+       "buildings": 20,
+       "share": 0.0108
+      }
+     },
+     "residents_in_the_water": {
+      "cells_with_residents": 947,
+      "residents": 6016,
+      "cells_compared": 263,
+      "residents_compared": 2863,
+      "residents_in_cells_without_an_assessed_building": 2647,
+      "centre_rule": {
+       "residents": 260,
+       "share": 0.0909
+      },
+      "buildings": {
+       "residents": 69,
+       "share": 0.0241
+      },
+      "area": {
+       "residents": 227,
+       "share": 0.0794
+      },
+      "buildings_minus_centre_rule_points": -6.7
+     },
+     "on_the_centre_rule": "the buildings reading is lower than the centre rule by 6.7 points"
+    },
+    "rule_v2": {
+     "water_share_of_the_chip": 0.4173,
+     "buildings_assessed": 2121,
+     "buildings_not_assessed": 376,
+     "buildings_in_the_water": {
+      "at_0.5_of_the_ring": {
+       "buildings": 263,
+       "share": 0.124
+      },
+      "at_0.25_of_the_ring": {
+       "buildings": 503,
+       "share": 0.2372
+      },
+      "at_0.75_of_the_ring": {
+       "buildings": 127,
+       "share": 0.0599
+      }
+     },
+     "residents_in_the_water": {
+      "cells_with_residents": 947,
+      "residents": 6016,
+      "cells_compared": 315,
+      "residents_compared": 3567,
+      "residents_in_cells_without_an_assessed_building": 2413,
+      "centre_rule": {
+       "residents": 907,
+       "share": 0.2543
+      },
+      "buildings": {
+       "residents": 487,
+       "share": 0.1364
+      },
+      "area": {
+       "residents": 775,
+       "share": 0.2174
+      },
+      "buildings_minus_centre_rule_points": -11.8
+     },
+     "on_the_centre_rule": "the buildings reading is lower than the centre rule by 11.8 points"
+    }
+   }
+  },
+  "chip_003": {
+   "outlines_used": 5106,
+   "buildings_counted": 5031,
+   "population_cells_inside_the_chip": 1056,
+   "by_water_rule": {
+    "rule_v1": {
+     "water_share_of_the_chip": 0.3803,
+     "buildings_assessed": 3862,
+     "buildings_not_assessed": 1169,
+     "buildings_in_the_water": {
+      "at_0.5_of_the_ring": {
+       "buildings": 1017,
+       "share": 0.2633
+      },
+      "at_0.25_of_the_ring": {
+       "buildings": 1565,
+       "share": 0.4052
+      },
+      "at_0.75_of_the_ring": {
+       "buildings": 536,
+       "share": 0.1388
+      }
+     },
+     "residents_in_the_water": {
+      "cells_with_residents": 1032,
+      "residents": 3264,
+      "cells_compared": 469,
+      "residents_compared": 1940,
+      "residents_in_cells_without_an_assessed_building": 1227,
+      "centre_rule": {
+       "residents": 631,
+       "share": 0.3252
+      },
+      "buildings": {
+       "residents": 513,
+       "share": 0.2642
+      },
+      "area": {
+       "residents": 633,
+       "share": 0.3263
+      },
+      "buildings_minus_centre_rule_points": -6.1
+     },
+     "on_the_centre_rule": "the buildings reading is lower than the centre rule by 6.1 points"
+    },
+    "rule_v2": {
+     "water_share_of_the_chip": 0.4477,
+     "buildings_assessed": 4094,
+     "buildings_not_assessed": 937,
+     "buildings_in_the_water": {
+      "at_0.5_of_the_ring": {
+       "buildings": 956,
+       "share": 0.2335
+      },
+      "at_0.25_of_the_ring": {
+       "buildings": 1565,
+       "share": 0.3823
+      },
+      "at_0.75_of_the_ring": {
+       "buildings": 468,
+       "share": 0.1143
+      }
+     },
+     "residents_in_the_water": {
+      "cells_with_residents": 1032,
+      "residents": 3264,
+      "cells_compared": 522,
+      "residents_compared": 2102,
+      "residents_in_cells_without_an_assessed_building": 1134,
+      "centre_rule": {
+       "residents": 607,
+       "share": 0.2887
+      },
+      "buildings": {
+       "residents": 474,
+       "share": 0.2255
+      },
+      "area": {
+       "residents": 647,
+       "share": 0.3079
+      },
+      "buildings_minus_centre_rule_points": -6.3
+     },
+     "on_the_centre_rule": "the buildings reading is lower than the centre rule by 6.3 points"
+    }
+   }
+  }
+ },
+ "credits": [
+  "Building outlines: Google Open Buildings v3 (CC BY 4.0) and Microsoft building footprints (ODbL), combined by VIDA and hosted by Source Cooperative.",
+  "Residents: WorldPop (CC BY 4.0).",
+  "THEOS-2 sample imagery provided by GISTDA for GeoHackathon 2026."
+ ],
+ "limits": [
+  "The outlines are drawn by a model on satellite images of earlier years: not a survey, and not a register of dwellings. Sheds, shops and temples count like houses.",
+  "Spreading the residents of a cell evenly over its buildings is a model, as the population grid is. The comparison sets one model against another; neither is a count of people.",
+  "No published figure changes: the planning score keeps the centre rule.",
+  "On the image, 'in the water' is the water rule's reading of the ground 2 to 8 m from the wall. Water under trees is missed, so buildings in the water are under-counted where houses stand under trees.",
+  "Two chips of two days in one region; neither is Mae Sai."
+ ]
+}

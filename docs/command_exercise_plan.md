@@ -397,7 +397,7 @@ Every pan, fit and popup uses the measured clear rectangle. This needs a new hel
 
 Portrait tablets and phones are out of scope this week. Below 900 px wide the page shows the map, banner and time dock, and the table as a simple bottom sheet.
 
-Desktop wireframe (1440 x 800, right card open on an invented exercise call; the model figures are the values I recomputed for 12 Sep 12:00, replay hour 84):
+Desktop wireframe (1440 x 800, right card open on an invented exercise call; the model figures are the values I recomputed for 12 Sep 12:00, replay hour 84, on replay revision r4. Since 12 Oct 2026 the page reads revision r5 and shows other figures: `docs/replay_river_fit.md`):
 
 ```
 +--------------------------------------------------------------------------------------------------+

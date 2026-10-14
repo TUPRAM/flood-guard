@@ -63,7 +63,16 @@
     }
    ],
    "footprint_share_of_grid": 0.8204,
-   "status": "not fetched yet"
+   "status": "fetched",
+   "file": "event_20250716T1120Z_s1c_o99.tif",
+   "sha256": "7904f9546dc1513209223d5ef8fa5fe8eb75a4fc6d7b8c9dd236c9ac59e5f8a0",
+   "valid_share": {
+    "vv": 0.819689,
+    "vh": 0.819689,
+    "both": 0.819689
+   },
+   "seconds": 206.5,
+   "fetched_at_utc": "2026-10-14T18:45:20Z"
   },
   {
    "key": "20250719T2308Z_s1a_o62",
@@ -144,7 +153,16 @@
     }
    ],
    "footprint_share_of_grid": 0.1023,
-   "status": "not fetched yet"
+   "status": "fetched",
+   "file": "event_20250724T2316Z_s1a_o135.tif",
+   "sha256": "9a16ff6f92dbb75444a3dc9f94c534a26a33f02f4afdb55628ae36567a17132a",
+   "valid_share": {
+    "vv": 0.106409,
+    "vh": 0.106409,
+    "both": 0.106409
+   },
+   "seconds": 116.2,
+   "fetched_at_utc": "2026-10-14T18:41:53Z"
   },
   {
    "key": "20250725T2306Z_s1c_o62",
@@ -305,7 +323,16 @@
     }
    ],
    "footprint_share_of_grid": 0.8146,
-   "status": "not fetched yet"
+   "status": "fetched",
+   "file": "event_20250803T1122Z_s1a_o99.tif",
+   "sha256": "3435b75263b6a04593d4e8db415d76f6cf9a24cf36f83cb6ce89c7d8e5606c21",
+   "valid_share": {
+    "vv": 0.81965,
+    "vh": 0.81965,
+    "both": 0.81965
+   },
+   "seconds": 204.6,
+   "fetched_at_utc": "2026-10-14T18:48:45Z"
   },
   {
    "key": "20250805T2316Z_s1a_o135",
@@ -330,7 +357,16 @@
     }
    ],
    "footprint_share_of_grid": 0.1044,
-   "status": "not fetched yet"
+   "status": "fetched",
+   "file": "event_20250805T2316Z_s1a_o135.tif",
+   "sha256": "3a75d4ab50b8dfe65a6c2bc923fc2fcd4b47f14dde314df7c4975f5dc1b2f487",
+   "valid_share": {
+    "vv": 0.106155,
+    "vh": 0.106155,
+    "both": 0.106155
+   },
+   "seconds": 137.3,
+   "fetched_at_utc": "2026-10-14T18:51:03Z"
   },
   {
    "key": "20250806T2306Z_s1c_o62",
@@ -355,7 +391,16 @@
     }
    ],
    "footprint_share_of_grid": 0.9999,
-   "status": "not fetched yet"
+   "status": "fetched",
+   "file": "event_20250806T2306Z_s1c_o62.tif",
+   "sha256": "7abb964cabadf79642c9a0fe770ee1716a22e259051e9f5397b5181089174f77",
+   "valid_share": {
+    "vv": 1.0,
+    "vh": 1.0,
+    "both": 1.0
+   },
+   "seconds": 225.5,
+   "fetched_at_utc": "2026-10-14T18:54:49Z"
   },
   {
    "key": "20250808T1130Z_s1a_o172",
@@ -380,7 +425,16 @@
     }
    ],
    "footprint_share_of_grid": 0.63,
-   "status": "not fetched yet"
+   "status": "fetched",
+   "file": "event_20250808T1130Z_s1a_o172.tif",
+   "sha256": "f86c9e590ce45a75812036379e32ca6bcd9183275cd9773226eb301a933f75a1",
+   "valid_share": {
+    "vv": 0.630902,
+    "vh": 0.630902,
+    "both": 0.630902
+   },
+   "seconds": 206.7,
+   "fetched_at_utc": "2026-10-14T18:58:17Z"
   },
   {
    "key": "20250809T1120Z_s1c_o99",
@@ -405,7 +459,16 @@
     }
    ],
    "footprint_share_of_grid": 0.8204,
-   "status": "not fetched yet"
+   "status": "fetched",
+   "file": "event_20250809T1120Z_s1c_o99.tif",
+   "sha256": "d6b286e7c5e4e235bf4c3a558c69c7d21e4dc72f1a714835fe654549ba939ec1",
+   "valid_share": {
+    "vv": 0.819662,
+    "vh": 0.819662,
+    "both": 0.819662
+   },
+   "seconds": 198.5,
+   "fetched_at_utc": "2026-10-14T19:01:36Z"
   },
   {
    "key": "20250812T2308Z_s1a_o62",
@@ -430,7 +493,16 @@
     }
    ],
    "footprint_share_of_grid": 0.9999,
-   "status": "not fetched yet"
+   "status": "fetched",
+   "file": "event_20250812T2308Z_s1a_o62.tif",
+   "sha256": "91cb19e98ea19540b38884bd17ab6f8c5f88d1ee1eecb4db56db1b0777eaecc6",
+   "valid_share": {
+    "vv": 1.0,
+    "vh": 1.0,
+    "both": 1.0
+   },
+   "seconds": 242.3,
+   "fetched_at_utc": "2026-10-14T19:05:39Z"
   }
  ],
  "dry_season": {
@@ -1213,7 +1285,32 @@
     "sensor_agreement_check_applies": false,
     "fewer_than_the_cap": false,
     "statistics": {
-     "status": "not computed yet"
+     "status": "computed",
+     "file": "dry_o135.tif",
+     "sha256": "92429dec8ca5377f2a524ac05e1bb26b7cdcdc0f52ef2d5eebabc820f65fc6d0",
+     "passes_used": [
+      "20250419T2316Z_s1a_o135",
+      "20250407T2316Z_s1a_o135",
+      "20250326T2316Z_s1a_o135",
+      "20250314T2316Z_s1a_o135",
+      "20250302T2316Z_s1a_o135",
+      "20250218T2316Z_s1a_o135",
+      "20250206T2316Z_s1a_o135",
+      "20250125T2316Z_s1a_o135",
+      "20250113T2316Z_s1a_o135",
+      "20250101T2316Z_s1a_o135"
+     ],
+     "share_of_cells_with_at_least_6_valid_passes": 0.106552,
+     "sensor_agreement": {
+      "applies": false,
+      "platforms": [
+       "Sentinel-1A"
+      ],
+      "reason": "every selected dry pass of orbit 135 is from Sentinel-1A",
+      "rule": "for an orbit whose selected dry passes come from two platforms: the median, over cells with at least one valid pass of each platform, of (mean VH dB of the Sentinel-1A passes minus mean VH dB of the other platform's passes); flagged when its absolute value is above 0.5 dB; no correction is applied"
+     },
+     "seconds": 1186.9,
+     "computed_at_utc": "2026-10-14T18:39:56Z"
     }
    },
    "172": {
@@ -1563,15 +1660,14 @@
  "problems": [],
  "status_summary": {
   "event_passes": {
-   "not fetched yet": 8,
-   "fetched": 6
+   "fetched": 14
   },
   "dry_orbits": {
    "62": "computed",
    "99": "computed",
-   "135": "not computed yet",
+   "135": "computed",
    "172": "computed"
   },
-  "refreshed_at_utc": "2026-10-14T17:58:52Z"
+  "refreshed_at_utc": "2026-10-14T19:05:39Z"
  }
 }

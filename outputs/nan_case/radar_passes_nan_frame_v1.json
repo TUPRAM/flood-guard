@@ -203,7 +203,16 @@
     }
    ],
    "footprint_share_of_grid": 0.6308,
-   "status": "not fetched yet"
+   "status": "fetched",
+   "file": "event_20250727T1130Z_s1a_o172.tif",
+   "sha256": "d17cd51c151bb2432f09003060c4b479cf0ae6de91068b5f192f8100fb11f2c6",
+   "valid_share": {
+    "vv": 0.631675,
+    "vh": 0.631675,
+    "both": 0.631675
+   },
+   "seconds": 213.4,
+   "fetched_at_utc": "2026-10-14T17:58:52Z"
   },
   {
    "key": "20250728T1120Z_s1c_o99",
@@ -1499,7 +1508,49 @@
     "sensor_agreement_check_applies": true,
     "fewer_than_the_cap": false,
     "statistics": {
-     "status": "not computed yet"
+     "status": "computed",
+     "file": "dry_o172.tif",
+     "sha256": "fa2f6348bb2793690f1955970702c6e1faed0c9ae0bd2504828d7dc45a07b8e3",
+     "passes_used": [
+      "20250428T1129Z_s1c_o172",
+      "20250422T1130Z_s1a_o172",
+      "20250416T1129Z_s1c_o172",
+      "20250410T1130Z_s1a_o172",
+      "20250404T1129Z_s1c_o172",
+      "20250329T1130Z_s1a_o172",
+      "20250317T1130Z_s1a_o172",
+      "20250305T1130Z_s1a_o172",
+      "20250221T1130Z_s1a_o172",
+      "20250128T1130Z_s1a_o172"
+     ],
+     "share_of_cells_with_at_least_6_valid_passes": 0.630219,
+     "sensor_agreement": {
+      "applies": true,
+      "platforms": [
+       "Sentinel-1A",
+       "Sentinel-1C"
+      ],
+      "difference": "mean VH dB of the Sentinel-1A passes minus mean VH dB of the Sentinel-1C passes",
+      "passes_per_platform": {
+       "Sentinel-1A": 7,
+       "Sentinel-1C": 3
+      },
+      "cells_valid_in_both": 11614605,
+      "median_db": 0.7614,
+      "p25_db": -0.4009,
+      "p75_db": 1.9233,
+      "flag_abs_median_above_db": 0.5,
+      "flagged": true,
+      "vv_for_information": {
+       "median_db": 0.6459,
+       "p25_db": -0.5645,
+       "p75_db": 1.8538
+      },
+      "correction_applied": false,
+      "rule": "for an orbit whose selected dry passes come from two platforms: the median, over cells with at least one valid pass of each platform, of (mean VH dB of the Sentinel-1A passes minus mean VH dB of the other platform's passes); flagged when its absolute value is above 0.5 dB; no correction is applied"
+     },
+     "seconds": 2075.8,
+     "computed_at_utc": "2026-10-14T17:55:17Z"
     }
    }
   }
@@ -1512,15 +1563,15 @@
  "problems": [],
  "status_summary": {
   "event_passes": {
-   "not fetched yet": 9,
-   "fetched": 5
+   "not fetched yet": 8,
+   "fetched": 6
   },
   "dry_orbits": {
    "62": "computed",
    "99": "computed",
    "135": "not computed yet",
-   "172": "not computed yet"
+   "172": "computed"
   },
-  "refreshed_at_utc": "2026-10-14T15:00:43Z"
+  "refreshed_at_utc": "2026-10-14T17:58:52Z"
  }
 }

@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useId, useMemo, useState } from "react";
+import type { Map as LeafletMap } from "leaflet";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 
 import type { DatasetMode, PublicPreparednessArea } from "@floodguard/contracts";
 
 import { GeoMap } from "@/components/geo-map";
+import { PublicAppIcon } from "@/components/public-app-icon";
 import {
   HOUSEHOLD_NEEDS,
   householdNeedCountLabel,
@@ -25,7 +27,29 @@ import {
   formatRouteDistance,
   type WalkingRoute,
 } from "@/lib/public-route";
+import {
+  loadShelterHistory,
+  SHELTER_HISTORY_COPY,
+  shelterListCompiled,
+  shelterSiteLines,
+  shelterSiteSummary,
+  type ShelterHistory,
+  type ShelterHistorySite,
+} from "@/lib/public-shelter-history";
+import {
+  EMPTY_SHELTER_TRIP,
+  SHELTER_PAGE_COPY,
+  shelterBanner,
+  shelterTone,
+  type ShelterStepId,
+  type ShelterTrip,
+} from "@/lib/public-shelter-view";
 import type { FeatureCollection, Language } from "@/lib/types";
+import type { PublicPractice } from "@/lib/use-public-practice";
+import { useSheetKeyboard } from "@/lib/use-sheet-keyboard";
+
+type LeafletModule = typeof import("leaflet");
+type MountShelterHistory = typeof import("@/components/public-shelter-layer").mountShelterHistory;
 
 interface PublicShelterPageProps {
   language: Language;
@@ -36,6 +60,19 @@ interface PublicShelterPageProps {
   datasetMode: DatasetMode;
   plan: HouseholdPlan;
   onNavigatePrepare: () => void;
+  /** What the reader has entered here. The Public shell keeps it, so it survives a visit to another page. */
+  trip: ShelterTrip;
+  onTripChange: (update: (trip: ShelterTrip) => ShelterTrip) => void;
+  /**
+   * The practice scenario chosen in the header, if any. While one is shown this map shows the same hour of the
+   * replay around the example home, and distances are measured from that home.
+   */
+  practice?: PublicPractice;
+  /**
+   * Whether the places reported in use as shelters in September 2024 are shown. Their list is part of the Mae Sai
+   * replay, which ships in the competition build alone.
+   */
+  showShelterHistory?: boolean;
 }
 
 const EMPTY_FEATURES: FeatureCollection = {
@@ -43,12 +80,16 @@ const EMPTY_FEATURES: FeatureCollection = {
   name: "public_shelter_withheld",
   features: [],
 };
+const NO_EXTRA_CREDITS: string[] = [];
+/** The practice replay draws road pieces from OpenStreetMap on every background, so its credit joins the map's. */
+const PRACTICE_CREDITS = ["© OpenStreetMap contributors"];
+const PRACTICE_OFF: PublicPractice = { status: "off" };
+/** The areas are drawn for orientation on this map; a tap on one chooses nothing. */
+const ignoreAreaSelection = () => {};
+/** What the route keeps clear of when the map frames it: the field and the banner above, the tools and the note below. */
+const ROUTE_VIEW_PADDING = { topLeft: [24, 176], bottomRight: [72, 120] } as const;
 
-type RouteStepId =
-  | "confirm_destination"
-  | "confirm_route"
-  | "prepare_household"
-  | "share_plan";
+type RouteStepId = ShelterStepId;
 type ShelterIconName =
   | "accessibility"
   | "arrow"
@@ -275,31 +316,113 @@ export function PublicShelterPage({
   datasetMode,
   plan,
   onNavigatePrepare,
+  trip,
+  onTripChange,
+  practice = PRACTICE_OFF,
+  showShelterHistory = false,
 }: PublicShelterPageProps) {
   const th = language === "th";
   const destinationInputId = useId();
   const destinationConfirmationId = useId();
   const routeChecklistId = useId();
-  const [destinationDraft, setDestinationDraft] = useState("");
-  const [selectedDestination, setSelectedDestination] = useState("");
-  const [authorityConfirmed, setAuthorityConfirmed] = useState(false);
-  const [completedSteps, setCompletedSteps] = useState<Set<RouteStepId>>(() => new Set());
+  // A site is a place taken from the list of 2024. Its position is the list's own, so no address is looked up for it.
+  const {
+    draft: destinationDraft,
+    draftSite,
+    destination: selectedDestination,
+    destinationSite: selectedSite,
+    authorityConfirmed,
+  } = trip;
+  const completedSteps = useMemo(() => new Set(trip.completedSteps), [trip.completedSteps]);
+  const practiceView = practice.status === "ready" ? practice.view : undefined;
+  const drawPractice = practice.status === "ready" ? practice.overlay : undefined;
   const [resolvedPin, setResolvedPin] = useState<{
     destination: string;
     location: PublicMapLocation;
   } | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [history, setHistory] = useState<(ShelterHistory & { mount: MountShelterHistory }) | null>(null);
+  // The banner is the control that opens the sheet, so the focus goes back to it when the sheet closes.
+  const bannerRef = useRef<HTMLButtonElement>(null);
+  const sheetCloseRef = useRef<HTMLButtonElement>(null);
+  const sheetRef = useRef<HTMLElement>(null);
+  // The map moves to the places of 2024 once, when they arrive; after that the view is the reader's.
+  const historyFramedRef = useRef(false);
 
-  // Tagged with the destination it belongs to, so a pin for a previous
-  // destination is filtered out by derivation rather than cleared in an effect.
-  const destinationPin = resolvedPin?.destination === selectedDestination
-    ? resolvedPin.location
-    : undefined;
+  const closeSheet = useCallback(() => {
+    setSheetOpen(false);
+    bannerRef.current?.focus();
+  }, []);
+  useSheetKeyboard(sheetOpen, sheetRef, sheetCloseRef, closeSheet);
 
-  // The pin comes from geocoding whatever destination is confirmed, so the map
-  // never shows a coordinate the app invented. Offline it stays absent and the
-  // map still shows the real planning-area boundary.
+  // The places reported as shelters in 2024 and the code that draws them. They are an addition: without them (the
+  // public build, or no connection on a first visit) the page works as it did.
   useEffect(() => {
-    if (!selectedDestination) return;
+    if (!showShelterHistory) return;
+    const controller = new AbortController();
+    Promise.all([
+      loadShelterHistory(controller.signal),
+      import("@/components/public-shelter-layer"),
+    ])
+      .then(([list, layer]) => {
+        if (controller.signal.aborted || list.sites.length === 0) return;
+        setHistory({ ...list, mount: layer.mountShelterHistory });
+      })
+      .catch(() => {
+        /* The list of 2024 is an addition; the map and the destination field stay. */
+      });
+    return () => controller.abort();
+  }, [showShelterHistory]);
+
+  // A new destination in the field: whatever was confirmed or ticked before belongs to the old one.
+  const startDestination = useCallback((value: string, site: ShelterHistorySite | null) => {
+    onTripChange(() => ({ ...EMPTY_SHELTER_TRIP, draft: value, draftSite: site }));
+  }, [onTripChange]);
+
+  // Taking a place of 2024 only fills the field. The sheet opens on the step that asks whether an authority
+  // confirmed it: the list is history and says nothing about today.
+  const chooseSite = useCallback((site: ShelterHistorySite) => {
+    startDestination(site.name[language], site);
+    setSheetOpen(true);
+    sheetRef.current?.scrollTo({ top: 0 });
+  }, [language, startDestination]);
+
+  const hasMarkers = Boolean(history?.sites.some((site) => site.point));
+  const overlay = useMemo(() => {
+    const places = history && hasMarkers ? history : null;
+    if (!drawPractice && !places) return undefined;
+    return (map: LeafletMap, leaflet: LeafletModule) => {
+      // The scenario first: it draws the hour of the replay and moves the map to the example home. The markers of
+      // 2024 lie over it.
+      const removePractice = drawPractice?.(map, leaflet);
+      let removePlaces: (() => void) | undefined;
+      if (places) {
+        // With a scenario or an area chosen the map already shows where the reader is looking.
+        const frame = !drawPractice && !historyFramedRef.current && !selectedAreaId;
+        if (!drawPractice) historyFramedRef.current = true;
+        removePlaces = places.mount(leaflet, map, places, language, chooseSite, { frame, practice: Boolean(drawPractice) });
+      }
+      return () => {
+        removePlaces?.();
+        removePractice?.();
+      };
+    };
+  }, [chooseSite, drawPractice, hasMarkers, history, language, selectedAreaId]);
+
+  // The pin is the position of the place taken from the list, or comes from geocoding whatever destination is
+  // confirmed, so the map never shows a coordinate the app invented. Tagged with the destination it belongs to, so a
+  // pin for a previous destination is filtered out by derivation rather than cleared in an effect. Offline it stays
+  // absent and the map still shows the real planning-area boundary.
+  const destinationPin = useMemo<PublicMapLocation | undefined>(() => {
+    if (!selectedDestination) return undefined;
+    if (selectedSite?.point) {
+      return { ...selectedSite.point, label: selectedDestination, source: "address" };
+    }
+    return resolvedPin?.destination === selectedDestination ? resolvedPin.location : undefined;
+  }, [resolvedPin, selectedDestination, selectedSite]);
+
+  useEffect(() => {
+    if (!selectedDestination || selectedSite?.point) return;
     const controller = new AbortController();
     searchPublicAddresses(selectedDestination, language, controller.signal)
       .then((matches) => {
@@ -319,17 +442,25 @@ export function PublicShelterPage({
         /* Address lookup is an enhancement; the boundary map still renders. */
       });
     return () => controller.abort();
-  }, [language, selectedDestination]);
+  }, [language, selectedDestination, selectedSite]);
 
-  // Straight-line leg from the planning area to the geocoded destination. Both
-  // ends come from real geometry, so the distance and bearing below are
-  // measured rather than invented.
+  // Where distances start: the centre of the chosen planning area, never a position of the reader. In a practice
+  // scenario it is the example home, which is a point of the model and nobody's address.
+  const practiceHome = practiceView?.home;
+  const origin = useMemo(() => (
+    practiceHome
+      ? { latitude: practiceHome.latitude, longitude: practiceHome.longitude }
+      : areaCentre(areaFeatures, selectedAreaId)
+  ), [areaFeatures, practiceHome, selectedAreaId]);
+
+  // Straight-line leg from there to the destination. Both ends come from real geometry, so the distance and bearing
+  // below are measured rather than invented.
   const routeLeg = useMemo(() => buildRouteLeg(
-    areaCentre(areaFeatures, selectedAreaId),
+    origin,
     destinationPin
       ? { latitude: destinationPin.latitude, longitude: destinationPin.longitude }
       : undefined,
-  ), [areaFeatures, destinationPin, selectedAreaId]);
+  ), [destinationPin, origin]);
 
   const [resolvedRoute, setResolvedRoute] = useState<{
     key: string;
@@ -446,265 +577,389 @@ export function PublicShelterPage({
     [plan.needs],
   );
   const completedStepCount = completedSteps.size;
+  const draftName = destinationDraft.trim();
 
   const saveDestination = () => {
-    const normalizedDestination = destinationDraft.trim();
-    if (!normalizedDestination || !authorityConfirmed) return;
-    setSelectedDestination(normalizedDestination);
-    setCompletedSteps(new Set());
+    if (!draftName || !authorityConfirmed) return;
+    onTripChange((current) => ({ ...current, destination: draftName, destinationSite: current.draftSite, completedSteps: [] }));
+    // The sheet makes way for the map, which now shows the pin and the line to it.
+    closeSheet();
   };
 
   const toggleStep = (stepId: RouteStepId) => {
-    setCompletedSteps((current) => {
-      const next = new Set(current);
-      if (next.has(stepId)) next.delete(stepId);
-      else next.add(stepId);
-      return next;
-    });
+    onTripChange((current) => ({
+      ...current,
+      completedSteps: current.completedSteps.includes(stepId)
+        ? current.completedSteps.filter((id) => id !== stepId)
+        : [...current.completedSteps, stepId],
+    }));
   };
 
-  return (
-    <section className="public-shelter-page" aria-labelledby="public-shelter-title">
-      <header className="public-shelter-page__heading">
-        <h1 id="public-shelter-title">{th ? "ตรวจสอบจุดหมายและการเดินทาง" : "Check a destination and travel options"}</h1>
-        <p>{th ? "เริ่มจากจุดหมายที่คุณตรวจสอบกับหน่วยงานแล้ว ความจุและการเปิดใช้จริงยังไม่ทราบจากแอปนี้" : "Start with a destination you checked with an authority. This app does not know its current capacity or operating status."}</p>
-      </header>
+  const banner = shelterBanner({
+    draft: destinationDraft,
+    destination: selectedDestination,
+    practice: practiceView ? { tone: practiceView.tone, text: practiceView.pages.shelter.banner } : undefined,
+    walk: walkingRoute ? { metres: walkingRoute.metres, minutes: walkingRoute.minutes } : undefined,
+    directMetres: routeLeg?.metres,
+  }, language);
 
-      <section className="public-shelter-profile" aria-labelledby="public-shelter-profile-title">
-        <div className="public-shelter-profile__copy">
-          <div className="public-shelter-section-heading">
-            <ShelterIcon name="house" />
-            <h2 id="public-shelter-profile-title">
-              {th ? "ข้อมูลครัวเรือน" : "Household profile"}
-            </h2>
-          </div>
-          <p className="public-shelter-profile__summary">
-            {selectedNeeds.length > 0
-              ? (th ? "ความต้องการที่ควรคำนึงถึงระหว่างเดินทาง" : "Needs to account for while travelling")
-              : (th ? "ยังไม่ได้บันทึกความต้องการช่วยเหลือ" : "No support needs recorded")}
-          </p>
-          {selectedNeeds.length > 0 && (
-            <ul className="public-shelter-profile__needs" aria-label={th ? "ความต้องการของครัวเรือน" : "Household needs"}>
-              {selectedNeeds.map(({ id }) => (
-                <li key={id}>
-                  {/* Each need carries its own icon, so the card describes the
-                      household rather than showing one stand-in symbol. */}
-                  <ShelterIcon name={NEED_ICONS[id]} />
-                  <span>
-                    {householdNeedCountLabel(id, plan.need_counts[id] ?? 1, language)
-                      ?? NEED_SHORT_LABELS[id][language]}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-        <button className="public-shelter-profile__edit" type="button" onClick={onNavigatePrepare}>
-          {th ? "แก้ไข" : "Edit"}
-        </button>
-      </section>
-
-      <section className="public-shelter-destination" aria-labelledby="public-shelter-destination-title">
-        <div className="public-shelter-section-heading">
-          <ShelterIcon name="destination" />
-          <div>
-            <h2 id="public-shelter-destination-title">{th ? "เลือกจุดหมาย" : "Choose a destination"}</h2>
-          </div>
-        </div>
-
-        <form
-          className="public-shelter-destination__form"
-          onSubmit={(event) => {
-            event.preventDefault();
-            saveDestination();
-          }}
-        >
-          <label htmlFor={destinationInputId}>{th ? "ชื่อหรือที่อยู่ของจุดหมาย" : "Destination name or address"}</label>
-          <input
-            id={destinationInputId}
-            autoComplete="off"
-            value={destinationDraft}
-            onChange={(event) => {
-              setDestinationDraft(event.target.value);
-              setAuthorityConfirmed(false);
-              setSelectedDestination("");
-              setCompletedSteps(new Set());
-            }}
-            placeholder={th ? "กรอกจุดหมายที่ยืนยันแล้ว" : "Enter the confirmed destination"}
-            type="text"
-          />
-          <label className="public-shelter-destination__confirmation" htmlFor={destinationConfirmationId}>
-            <input
-              id={destinationConfirmationId}
-              checked={authorityConfirmed}
-              onChange={(event) => setAuthorityConfirmed(event.target.checked)}
-              type="checkbox"
-            />
+  const historySection = history ? (
+    <section className="public-shelter-sheet-section public-shelter-history" aria-labelledby="public-shelter-history-title">
+      <h3 id="public-shelter-history-title">{SHELTER_HISTORY_COPY.listHeading[language]}</h3>
+      <p>{shelterListCompiled(history.compiled, language)} {SHELTER_HISTORY_COPY.listNote[language]}</p>
+      <ul>
+        {history.sites.map((site) => (
+          <li key={site.id}>
             <span>
-              {th
-                ? "ฉันได้ยืนยันจุดหมายและเส้นทางกับ ปภ. หรือหน่วยงานท้องถิ่นแล้ว"
-                : "I confirmed this destination and route with DDPM or a local authority."}
+              <strong>{site.name[language]}</strong>
+              <small>{shelterSiteSummary(site, language, Boolean(practiceView))}</small>
             </span>
-          </label>
-          <div className="public-shelter-destination__actions">
-            <button
-              className="public-shelter-primary-action"
-              disabled={!destinationDraft.trim() || !authorityConfirmed}
-              type="button"
-              onClick={saveDestination}
+            {/* A place without a known position cannot be drawn, so it is listed and not offered. */}
+            {site.point ? (
+              <button type="button" onClick={() => chooseSite(site)}>
+                {SHELTER_HISTORY_COPY.use[language]}
+              </button>
+            ) : null}
+          </li>
+        ))}
+      </ul>
+    </section>
+  ) : null;
+
+  return (
+    <section className="public-home-page public-shelter-page" aria-labelledby="public-shelter-title">
+      {/*
+        Until 13 Oct 2026 this page was a column of cards with a small map among them. On the owner's request it has
+        the frame of Home, whose class names it wears for that: the map takes the page, the destination field and
+        the banner stand over it, and everything else is in the sheet the banner opens.
+      */}
+      <h1 id="public-shelter-title" className="sr-only">{SHELTER_PAGE_COPY.title[language]}</h1>
+      <div className="public-home-map public-shelter-map">
+        {/* Road-following routes and direct orientation lines are labelled separately, in the note at the foot. */}
+        <GeoMap
+          areas={areas}
+          selectedId={selectedAreaId}
+          onSelect={ignoreAreaSelection}
+          language={language}
+          showRoads={false}
+          showFacilities={false}
+          showAccess={false}
+          height="100%"
+          areaFeatures={areaFeatures}
+          roadFeatures={EMPTY_FEATURES}
+          facilityFeatures={EMPTY_FEATURES}
+          accessFeatures={EMPTY_FEATURES}
+          contextFeatures={EMPTY_FEATURES}
+          datasetMode={datasetMode}
+          showSelectionSheet={false}
+          attributions={drawPractice ? PRACTICE_CREDITS : NO_EXTRA_CREDITS}
+          // As on Home: the credit of the map data folds away once shown and is repeated in the layers menu.
+          collapseAttribution
+          visualPalette="public-outline"
+          enableBasemaps
+          basemapControlVariant="menu"
+          compactBasemapNotice
+          showLegend={false}
+          showProvenanceBadge={false}
+          showTextAlternative={false}
+          showDataAttribution={false}
+          audience="public"
+          location={destinationPin}
+          initialFocus={selectedAreaId ? "selection" : "region"}
+          routePath={routePath}
+          routeViewPadding={ROUTE_VIEW_PADDING}
+          overlay={overlay}
+        />
+        <p className="sr-only">
+          {th
+            ? `แผนที่แสดงขอบเขตพื้นที่ ${selectedAreaName || "ที่เลือก"} และหมุดจุดหมาย ${selectedDestination || "ที่ยังไม่ได้เลือก"} ${walkingRoute ? "มีเส้นทางเดินตามแผนที่ถนนที่ต้องตรวจสอบสภาพจริง" : "อาจมีเส้นตรงเพื่อดูทิศทางซึ่งไม่ใช่เส้นทางเดิน"}${hasMarkers ? " หมุดรูปบ้านคือสถานที่ที่มีรายงานว่าใช้เป็นที่พักพิงในเดือนกันยายน 2567 (2024) ซึ่งมีรายการอยู่ในรายละเอียดด้านหลังแถบข้อความ" : ""}`
+            : `Map showing the ${selectedAreaName || "selected"} area boundary and a pin for ${selectedDestination || "the destination yet to be selected"}. ${walkingRoute ? "A road-map walking route requires on-site verification." : "Any direct line is orientation only, not a walking route."}${hasMarkers ? " The house markers are the places reported as shelters in September 2024; they are listed in the details behind the banner." : ""}`}
+        </p>
+
+        <div className="public-map-rail">
+          <div className="public-map-search-field">
+            <form
+              className="public-map-search"
+              onSubmit={(event) => {
+                event.preventDefault();
+                if (draftName) setSheetOpen(true);
+              }}
             >
-              {th ? "ใช้จุดหมายนี้" : "Use this destination"}
-            </button>
-            <a className="public-shelter-call-action" href="tel:1784">
-              <ShelterIcon name="phone" />
-              <span>{th ? "โทร 1784 เพื่อยืนยัน" : "Call 1784 to confirm"}</span>
-            </a>
+              <PublicAppIcon name="pin" />
+              <label className="sr-only" htmlFor={destinationInputId}>{SHELTER_PAGE_COPY.fieldLabel[language]}</label>
+              <input
+                id={destinationInputId}
+                autoComplete="off"
+                value={destinationDraft}
+                onChange={(event) => startDestination(event.target.value, null)}
+                placeholder={SHELTER_PAGE_COPY.fieldLabel[language]}
+                type="text"
+              />
+              <button type="submit" disabled={!draftName}>{SHELTER_PAGE_COPY.fieldNext[language]}</button>
+            </form>
           </div>
-        </form>
-      </section>
 
-      <section className="public-shelter-route-overview" aria-labelledby="public-shelter-route-title">
-        {/* Road-following routes and direct orientation lines are labelled separately. */}
-        <div className="public-shelter-route-overview__graphic">
-          <GeoMap
-            areas={areas}
-            selectedId={selectedAreaId}
-            onSelect={() => {}}
-            language={language}
-            showRoads={false}
-            showFacilities={false}
-            showAccess={false}
-            height="100%"
-            areaFeatures={areaFeatures}
-            roadFeatures={EMPTY_FEATURES}
-            facilityFeatures={EMPTY_FEATURES}
-            accessFeatures={EMPTY_FEATURES}
-            contextFeatures={EMPTY_FEATURES}
-            datasetMode={datasetMode}
-            showSelectionSheet={false}
-            attributions={[]}
-            visualPalette="public-risk"
-            enableBasemaps
-            basemapControlVariant="menu"
-            showLegend={false}
-            showProvenanceBadge={false}
-            showTextAlternative={false}
-            showDataAttribution={false}
-            audience="public"
-            location={destinationPin}
-            initialFocus="selection"
-            routePath={routePath}
-          />
-          {routePath ? <p className="public-shelter-route-label">{walkingRoute
-            ? (th ? "เส้นทางเดินตามถนน · ตรวจสอบสภาพจริง" : "Road-following walk · verify conditions")
-            : (th ? "เส้นตรงเพื่อดูทิศทางเท่านั้น · ไม่ใช่เส้นทางเดิน" : "Straight line for orientation only · not a walking route")}</p> : null}
-          <p className="sr-only">
-            {th
-              ? `แผนที่แสดงขอบเขตพื้นที่ ${selectedAreaName || "ที่เลือก"} และหมุดจุดหมาย ${selectedDestination || "ที่ยังไม่ได้เลือก"} ${walkingRoute ? "มีเส้นทางเดินตามแผนที่ถนนที่ต้องตรวจสอบสภาพจริง" : "อาจมีเส้นตรงเพื่อดูทิศทางซึ่งไม่ใช่เส้นทางเดิน"}`
-              : `Map showing the ${selectedAreaName || "selected"} area boundary and a pin for ${selectedDestination || "the destination yet to be selected"}. ${walkingRoute ? "A road-map walking route requires on-site verification." : "Any direct line is orientation only, not a walking route."}`}
+          {/*
+            The banner is always there and opens the sheet, as on Home. It is never green: the page knows no shelter
+            that is open today.
+          */}
+          <button
+            ref={bannerRef}
+            type="button"
+            className="public-signal-banner"
+            data-tone={banner.tone}
+            aria-controls="public-shelter-panel"
+            aria-expanded={sheetOpen}
+            onClick={() => setSheetOpen(true)}
+          >
+            <PublicAppIcon name={banner.icon} />
+            <span>{banner.text}</span>
+            <PublicAppIcon name="chevron" />
+          </button>
+        </div>
+
+        <div className="public-map-dock">
+          {/*
+            In a practice scenario the note says, as on Home, which hour of the replay the map shows and what the
+            replay is not. What the page does not know about today is then the first line of the sheet.
+          */}
+          <p className="public-map-note" data-practice={practiceView ? "true" : undefined} data-public-not-a-warning={practiceView ? true : undefined}>
+            {practiceView ? (
+              <>
+                <strong>{practiceView.copy.noteTitle} · {practiceView.moment}</strong>
+                <span>{practiceView.copy.noteBoundary}</span>
+              </>
+            ) : null}
+            {routePath ? (
+              <strong>{(walkingRoute ? SHELTER_PAGE_COPY.routeWalk : SHELTER_PAGE_COPY.routeDirect)[language]}</strong>
+            ) : null}
+            {practiceView ? null : <span>{SHELTER_PAGE_COPY.noteUnknown[language]}</span>}
+            {hasMarkers ? <span>{SHELTER_HISTORY_COPY.mapNote[language]}</span> : null}
           </p>
         </div>
 
-        <div className="public-shelter-route-overview__summary">
-          <p className="eyebrow">{th ? "จุดหมายที่เลือก" : "Selected destination"}</p>
-          <h2 id="public-shelter-route-title">
-            {selectedDestination || (th ? "กรอกและยืนยันจุดหมายด้านบน" : "Enter and confirm a destination above")}
-          </h2>
-          <dl>
-            <div>
-              <dt>{th ? "พื้นที่วางแผน" : "Planning area"}</dt>
-              <dd>{selectedAreaName || (th ? "ไม่ได้เลือกพื้นที่" : "No area selected")}</dd>
-            </div>
-            <div>
-              <dt>{th ? "รูปแบบการเดินทาง" : "Travel mode"}</dt>
-              <dd>{th ? "เดินเท้า" : "Walking"}</dd>
-            </div>
-            <div>
-              <dt>{walkingRoute
-                ? (th ? "ระยะเดิน" : "Walking distance")
-                : (th ? "ระยะเส้นตรง" : "Direct distance")}</dt>
-              <dd>
-                {walkingRoute
-                  ? `${formatRouteDistance(walkingRoute.metres, language)} · ${walkingRoute.minutes} ${th ? "นาที" : "min"}`
-                  : routeLeg
-                    ? formatRouteDistance(routeLeg.metres, language)
-                    : (th ? "ยังคำนวณไม่ได้" : "Not available yet")}
-              </dd>
-            </div>
-          </dl>
-        </div>
-      </section>
-
-      <section className="public-shelter-directions" aria-labelledby="public-shelter-directions-title">
-        <h2 id="public-shelter-directions-title">
-          {walkingRoute ? (th ? "ข้อมูลเส้นทางเดิน" : "Walking route information") : (th ? "ข้อมูลทิศทาง" : "Orientation information")}
-        </h2>
-        {directions.length > 0 ? (
-          <ol className="public-shelter-directions__list">
-            {directions.map((step) => (
-              <li key={step.id}>
-                <span className="public-shelter-directions__icon" aria-hidden="true">
-                  <ShelterIcon name={step.icon} />
-                </span>
+        {sheetOpen && (
+          <div
+            className="public-hazard-overlay"
+            role="presentation"
+            onMouseDown={(event) => {
+              if (event.currentTarget === event.target) closeSheet();
+            }}
+          >
+            <aside
+              ref={sheetRef}
+              id="public-shelter-panel"
+              className="public-hazard-panel public-shelter-panel"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="public-shelter-panel-title"
+            >
+              <div className="public-hazard-panel-heading">
                 <div>
-                  <h3>{step.title}</h3>
-                  <p>{step.detail}</p>
+                  <p>{SHELTER_PAGE_COPY.panelEyebrow[language]}</p>
+                  <h2 id="public-shelter-panel-title">
+                    {selectedDestination || draftName || SHELTER_PAGE_COPY.panelHeading[language]}
+                  </h2>
                 </div>
-              </li>
-            ))}
-          </ol>
-        ) : (
-          <p className="public-shelter-directions__empty">
-            {th
-              ? "ยืนยันจุดหมายด้านบนเพื่อดูทิศทางและระยะทาง"
-              : "Confirm a destination above to see the heading and distance."}
-          </p>
-        )}
-      </section>
+                <button
+                  ref={sheetCloseRef}
+                  type="button"
+                  className="public-icon-button"
+                  aria-label={SHELTER_PAGE_COPY.panelClose[language]}
+                  onClick={closeSheet}
+                >
+                  <PublicAppIcon name="close" />
+                </button>
+              </div>
+              <p className="public-hazard-explain">{SHELTER_PAGE_COPY.unknown[language]}</p>
 
-      <section className="public-shelter-checklist" aria-labelledby={routeChecklistId}>
-        <div className="public-shelter-checklist__heading">
-          <div>
-            <h2 id={routeChecklistId}>{th ? "รายการตรวจสอบทีละขั้น" : "Step-by-step checklist"}</h2>
+              {practiceView ? (
+                <section className="public-shelter-practice" aria-label={practiceView.copy.noteTitle}>
+                  <p className="public-practice-state" data-tone={shelterTone(practiceView.tone)}>
+                    <strong>{practiceView.pages.shelter.banner}</strong>
+                    <span>{practiceView.copy.noteTitle} · {practiceView.moment} · {practiceView.copy.homeLabel}</span>
+                  </p>
+                  <ul className="public-practice-lines">
+                    {practiceView.pages.shelter.lines.map((line) => <li key={line}>{line}</li>)}
+                  </ul>
+                  <div className="public-hazard-guidance">
+                    <PublicAppIcon name="prepare" />
+                    <p>{practiceView.pages.shelter.prompt}</p>
+                  </div>
+                  <p className="public-hazard-boundary" data-public-not-a-warning>{practiceView.copy.homeNote} {practiceView.copy.boundary}</p>
+                </section>
+              ) : null}
+
+              {selectedDestination ? (
+                <>
+                  <dl className="public-hazard-facts">
+                    <div>
+                      <dt>{practiceView ? SHELTER_PAGE_COPY.from[language] : (th ? "พื้นที่วางแผน" : "Planning area")}</dt>
+                      <dd>{practiceView ? practiceView.copy.heading : selectedAreaName || (th ? "ไม่ได้เลือกพื้นที่" : "No area selected")}</dd>
+                    </div>
+                    <div>
+                      <dt>{th ? "รูปแบบการเดินทาง" : "Travel mode"}</dt>
+                      <dd>{th ? "เดินเท้า" : "Walking"}</dd>
+                    </div>
+                    <div>
+                      <dt>{walkingRoute
+                        ? (th ? "ระยะเดิน" : "Walking distance")
+                        : (th ? "ระยะเส้นตรง" : "Direct distance")}</dt>
+                      <dd>
+                        {walkingRoute
+                          ? `${formatRouteDistance(walkingRoute.metres, language)} · ${walkingRoute.minutes} ${th ? "นาที" : "min"}`
+                          : routeLeg
+                            ? formatRouteDistance(routeLeg.metres, language)
+                            : (th ? "ยังคำนวณไม่ได้" : "Not available yet")}
+                      </dd>
+                    </div>
+                  </dl>
+
+                  <section className="public-shelter-sheet-section" aria-labelledby="public-shelter-directions-title">
+                    <h3 id="public-shelter-directions-title">
+                      {walkingRoute ? (th ? "ข้อมูลเส้นทางเดิน" : "Walking route information") : (th ? "ข้อมูลทิศทาง" : "Orientation information")}
+                    </h3>
+                    {directions.length > 0 ? (
+                      <ol className="public-shelter-directions__list">
+                        {directions.map((step) => (
+                          <li key={step.id}>
+                            <span className="public-shelter-directions__icon" aria-hidden="true">
+                              <ShelterIcon name={step.icon} />
+                            </span>
+                            <div>
+                              <h4>{step.title}</h4>
+                              <p>{step.detail}</p>
+                            </div>
+                          </li>
+                        ))}
+                      </ol>
+                    ) : (
+                      <p>
+                        {th
+                          ? "ยังคำนวณระยะทางไม่ได้ ต้องมีพื้นที่วางแผน (เลือกได้ในหน้าแรกหรือหน้าเตรียมพร้อม) และชื่อสถานที่ที่ระบบค้นหาที่อยู่พบ"
+                          : "The distance is not available yet. It needs a planning area (choose one on Home or in Prepare) and a place the address search can find."}
+                      </p>
+                    )}
+                  </section>
+                </>
+              ) : draftName ? (
+                <div className="public-shelter-confirm">
+                  {draftSite ? (
+                    <ul className="public-practice-lines">
+                      {shelterSiteLines(draftSite, language, { compiled: history?.compiled ?? "", practice: Boolean(practiceView) })
+                        .map((line) => <li key={line}>{line}</li>)}
+                    </ul>
+                  ) : null}
+                  <label className="public-shelter-destination__confirmation" htmlFor={destinationConfirmationId}>
+                    <input
+                      id={destinationConfirmationId}
+                      checked={authorityConfirmed}
+                      onChange={(event) => {
+                        const authorityConfirmed = event.target.checked;
+                        onTripChange((current) => ({ ...current, authorityConfirmed }));
+                      }}
+                      type="checkbox"
+                    />
+                    <span>{SHELTER_PAGE_COPY.confirmation[language]}</span>
+                  </label>
+                  <button
+                    className="public-shelter-primary-action"
+                    disabled={!authorityConfirmed}
+                    type="button"
+                    onClick={saveDestination}
+                  >
+                    {SHELTER_PAGE_COPY.use[language]}
+                  </button>
+                </div>
+              ) : (
+                <p className="public-hazard-empty">
+                  {(history ? SHELTER_PAGE_COPY.emptyWithHistory : SHELTER_PAGE_COPY.empty)[language]}
+                </p>
+              )}
+
+              {/*
+                With no destination the list of 2024 comes first: it is what the reader can start from. Once a
+                destination is in the field the checklist for it comes first, and the list moves below.
+              */}
+              {!draftName && !selectedDestination ? historySection : null}
+              {draftName || selectedDestination ? (
+                <section className="public-shelter-sheet-section public-shelter-checklist" aria-labelledby={routeChecklistId}>
+                  <div className="public-shelter-checklist__heading">
+                    <h3 id={routeChecklistId}>{th ? "รายการตรวจสอบทีละขั้น" : "Step-by-step checklist"}</h3>
+                    <span aria-label={th ? `ทำแล้ว ${completedStepCount} จาก ${ROUTE_STEPS.length} ขั้น` : `${completedStepCount} of ${ROUTE_STEPS.length} steps complete`}>
+                      {completedStepCount}/{ROUTE_STEPS.length}
+                    </span>
+                  </div>
+                  <progress max={ROUTE_STEPS.length} value={completedStepCount}>
+                    {completedStepCount}/{ROUTE_STEPS.length}
+                  </progress>
+                  <ol>
+                    {ROUTE_STEPS.map((step, index) => (
+                      <li className={completedSteps.has(step.id) ? "completed" : ""} key={step.id}>
+                        <label>
+                          <input
+                            checked={completedSteps.has(step.id)}
+                            onChange={() => toggleStep(step.id)}
+                            type="checkbox"
+                          />
+                          <span className="public-shelter-checklist__number" aria-hidden="true">
+                            {completedSteps.has(step.id) ? <ShelterIcon name="check" /> : index + 1}
+                          </span>
+                          <span>{step[language]}</span>
+                        </label>
+                      </li>
+                    ))}
+                  </ol>
+                </section>
+              ) : null}
+
+              <section className="public-shelter-sheet-section public-shelter-profile" aria-labelledby="public-shelter-profile-title">
+                <div>
+                  <h3 id="public-shelter-profile-title">{th ? "ข้อมูลครัวเรือน" : "Household profile"}</h3>
+                  <p className="public-shelter-profile__summary">
+                    {selectedNeeds.length > 0
+                      ? (th ? "ความต้องการที่ควรคำนึงถึงระหว่างเดินทาง" : "Needs to account for while travelling")
+                      : (th ? "ยังไม่ได้บันทึกความต้องการช่วยเหลือ" : "No support needs recorded")}
+                  </p>
+                  {selectedNeeds.length > 0 && (
+                    <ul className="public-shelter-profile__needs" aria-label={th ? "ความต้องการของครัวเรือน" : "Household needs"}>
+                      {selectedNeeds.map(({ id }) => (
+                        <li key={id}>
+                          {/* Each need carries its own icon, so the list describes the
+                              household rather than showing one stand-in symbol. */}
+                          <ShelterIcon name={NEED_ICONS[id]} />
+                          <span>
+                            {householdNeedCountLabel(id, plan.need_counts[id] ?? 1, language)
+                              ?? NEED_SHORT_LABELS[id][language]}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+                <button className="public-shelter-profile__edit" type="button" onClick={onNavigatePrepare}>
+                  {th ? "แก้ไข" : "Edit"}
+                </button>
+              </section>
+
+              {draftName || selectedDestination ? historySection : null}
+
+              <aside className="public-shelter-safety" aria-labelledby="public-shelter-safety-title">
+                <ShelterIcon name="warning" />
+                <div>
+                  <h3 id="public-shelter-safety-title">{SHELTER_PAGE_COPY.safetyHeading[language]}</h3>
+                  <p>{SHELTER_PAGE_COPY.safety[language]}</p>
+                </div>
+              </aside>
+
+              <a className="public-hazard-official-link" href="tel:1784">
+                {SHELTER_PAGE_COPY.call[language]}
+                <ShelterIcon name="phone" />
+              </a>
+            </aside>
           </div>
-          <span aria-label={th ? `ทำแล้ว ${completedStepCount} จาก ${ROUTE_STEPS.length} ขั้น` : `${completedStepCount} of ${ROUTE_STEPS.length} steps complete`}>
-            {completedStepCount}/{ROUTE_STEPS.length}
-          </span>
-        </div>
-        <progress max={ROUTE_STEPS.length} value={completedStepCount}>
-          {completedStepCount}/{ROUTE_STEPS.length}
-        </progress>
-        <ol>
-          {ROUTE_STEPS.map((step, index) => (
-            <li className={completedSteps.has(step.id) ? "completed" : ""} key={step.id}>
-              <label>
-                <input
-                  checked={completedSteps.has(step.id)}
-                  onChange={() => toggleStep(step.id)}
-                  type="checkbox"
-                />
-                <span className="public-shelter-checklist__number" aria-hidden="true">
-                  {completedSteps.has(step.id) ? <ShelterIcon name="check" /> : index + 1}
-                </span>
-                <span>{step[language]}</span>
-              </label>
-            </li>
-          ))}
-        </ol>
-      </section>
-
-      <aside className="public-shelter-safety" aria-labelledby="public-shelter-safety-title">
-        <ShelterIcon name="warning" />
-        <div>
-          <h2 id="public-shelter-safety-title">{th ? "ข้อควรระวังด้านความปลอดภัย" : "Safety disclaimer"}</h2>
-          <p>
-            {th
-              ? "แอปนี้ไม่ทราบว่าสถานที่เปิดอยู่ มีความจุเท่าใด หรือถนนสายใดถูกน้ำท่วมในขณะนี้ หากแสดงเส้นทางเดิน จะคำนวณจากแผนที่ถนนเท่านั้น หากไม่มีเส้นทาง จะแสดงเพียงทิศทางและระยะเส้นตรง โปรดยืนยันข้อมูลกับ ปภ. หรือหน่วยงานท้องถิ่น ห้ามเดินหรือขับรถลงในน้ำท่วมที่ไหลเชี่ยวหรือลึก"
-              : "This app does not know whether the destination is open, its capacity, or which roads are flooded now. A walking route, when available, comes from road-map data; otherwise only straight-line orientation is shown. Confirm conditions with DDPM or local authorities. Do not walk or drive into moving or deep floodwater."}
-          </p>
-        </div>
-      </aside>
-
+        )}
+      </div>
     </section>
   );
 }

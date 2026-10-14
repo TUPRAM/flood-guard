@@ -1,6 +1,6 @@
 # Validation check: state of the team's acceptance
 
-Written by `scripts/import_validation_records.py` on 2026-10-13T05:53:04Z from 9 record(s). Do not edit by hand.
+Written by `scripts/import_validation_records.py` on 2026-10-14T05:08:33Z from 9 record(s). Do not edit by hand.
 
 This is the word of the three team members on the project's own work. It is not a review by an independent expert, it qualifies no flood map, and it is not an official approval.
 
@@ -46,3 +46,4 @@ This is the word of the three team members on the project's own work. It is not 
 | V-38 | Buildings against residents in the water: fewer in the water, more cut off, and no class changes | Waiting |  |  |  |
 | V-39 | The replay's peak fitted to the image of 15 September, with the earlier replay kept as an archive | Waiting |  |  |  |
 | V-40 | The plain-language policy page, its sources, and the test of the five weights | Waiting |  |  |  |
+| V-41 | The Public home map without a score, its practice scenarios, and the Shelter map | Waiting |  |  |  |

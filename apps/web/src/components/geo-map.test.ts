@@ -392,7 +392,8 @@ describe("facility presentation", () => {
     const globals = readFileSync(resolve(import.meta.dirname, "../app/globals.css"), "utf8");
     const publicTheme = readFileSync(resolve(import.meta.dirname, "../app/public-theme.css"), "utf8");
     expect(globals).toContain(".map-top-stack { display: contents; }");
-    expect(publicTheme).toMatch(/\.public-home-map \.map-top-stack \{\s+position: absolute;\s+top: 76px;/);
+    // Under the search field and the banner, which stands directly below it since 13 Oct 2026.
+    expect(publicTheme).toMatch(/\.public-home-map \.map-top-stack \{\s+position: absolute;\s+top: 130px;/);
     expect(publicTheme).toContain("flex-direction: column;");
     for (const sheet of [globals, publicTheme]) {
       for (const rule of sheet.match(/[^{}]*\.map-basemap-notice[^{}]*\{[^}]*\}/g) ?? []) expect(rule).not.toMatch(/[^-]bottom:\s*\d/);

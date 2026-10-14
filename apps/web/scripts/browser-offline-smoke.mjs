@@ -224,8 +224,10 @@ try {
   await page.goto(`${baseUrl}/public/`, { waitUntil: "networkidle" });
   await page.locator('.language-toggle button[lang="en"]').click();
   await waitForFinalVisibleCopy(page, "/public/");
+  await assertPublicOpeningScenario(page);
   await assertCompactPublicShell(page);
   await assertPublicNavigation(page);
+  // Looking for one's own area ends the practice: the checks below are of the day without practice.
   await selectPublicPlanningArea(page, "TH570901", "Mae Sai");
 
   const publicMapScope = await firstVisibleSelector(page, [
@@ -1874,6 +1876,33 @@ async function assertPublicPractice(page) {
 }
 
 /**
+ * The Public page opens on the practice scenario "Normal day" where the replay ships (14 Oct 2026): the green banner
+ * of the scenario without water, the note of the replay, the example home in the header, and that scenario pressed
+ * in the menu.
+ */
+async function assertPublicOpeningScenario(page) {
+  await page.waitForFunction(() => {
+    const banner = document.querySelector(".public-signal-banner");
+    return banner?.getAttribute("data-tone") === "calm"
+      && banner.innerText.includes("No water near this home")
+      && document.querySelectorAll("canvas.public-practice-water").length === 1;
+  }, undefined, { timeout: 45_000 });
+  const opening = await page.evaluate(() => ({
+    note: document.querySelector(".public-map-note")?.innerText.replace(/\s+/g, " ").trim() ?? "",
+    practising: document.querySelector(".public-map-note")?.getAttribute("data-practice"),
+    place: document.querySelector(".public-greeting-location")?.innerText.trim() ?? "",
+  }));
+  if (opening.practising !== "true" || !opening.note.includes("Practice replay") || !opening.note.includes("not an official warning") || !opening.place.includes("Example home")) {
+    throw new Error(`The Public page does not open on the practice scenario "Normal day": ${JSON.stringify(opening)}`);
+  }
+  await page.locator(".public-practice-trigger").click();
+  const pressed = await page.locator('#public-practice-list button[aria-pressed="true"]').getAttribute("data-practice-scenario");
+  await page.keyboard.press("Escape");
+  await page.locator("#public-practice-list").waitFor({ state: "detached" });
+  if (pressed !== "normal") throw new Error(`The scenario menu does not show "Normal day" as the scenario shown: ${pressed}`);
+}
+
+/**
  * A scenario is chosen once and stays on from page to page (13 Oct 2026). The Shelter map shows the same hour of the
  * replay and says whether the example home still has a walk to a shelter; the pages without a map carry a strip with
  * the sentence of the Home banner and a question of their own. Called with "Cut off, home dry" on the Home map, and
@@ -2248,9 +2277,10 @@ function requiredFinalCopy(routePath) {
       // The Public header now shows the FloodGuard logo image instead of a text
       // wordmark, so the brand is no longer body text here. The nav labels and
       // banner still prove the finished Public UI rendered. Since 13 Oct 2026 the first screen has no priority card
-      // and no Hazard Info button: its words are the grey banner of a day without practice and the note at the foot
-      // of the map.
-      ? ["report", "shelter", "prepare", "sos", "no flood reports near you", "not an official warning"]
+      // and no Hazard Info button: its words are the banner and the note at the foot of the map. Since 14 Oct 2026
+      // the page opens on the practice scenario "Normal day"; without its replay files (offline before they were
+      // saved) it opens on the grey banner of a day without practice. Either banner will do (a list is "one of").
+      ? ["report", "shelter", "prepare", "sos", ["no water near this home", "no flood reports near you"], "not an official warning"]
       : routePath === "/command/planning/"
         ? ["planning overview", "candidate", "accepted fpps and action class remain unavailable"]
         : routePath === "/studio/"
@@ -2268,7 +2298,7 @@ async function waitForFinalVisibleCopy(page, routePath) {
     .waitForFunction(
       (phrases) => {
         const text = document.body.innerText.toLocaleLowerCase("en-US");
-        return phrases.every((phrase) => text.includes(phrase));
+        return phrases.every((phrase) => (Array.isArray(phrase) ? phrase.some((one) => text.includes(one)) : text.includes(phrase)));
       },
       requiredFinalCopy(routePath),
       { timeout: 10_000 },
@@ -2281,8 +2311,9 @@ function assertFinalVisibleCopy(body, routePath) {
   const normalized = body.toLocaleLowerCase("en-US");
   const required = requiredFinalCopy(routePath);
   for (const phrase of required) {
-    if (!normalized.includes(phrase)) {
-      throw new Error(`${routePath} is missing polished final copy: ${phrase}.`);
+    const present = Array.isArray(phrase) ? phrase.some((one) => normalized.includes(one)) : normalized.includes(phrase);
+    if (!present) {
+      throw new Error(`${routePath} is missing polished final copy: ${Array.isArray(phrase) ? phrase.join(" or ") : phrase}.`);
     }
   }
   const forbidden = routePath === "/"

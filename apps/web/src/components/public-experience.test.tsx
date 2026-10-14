@@ -1,11 +1,15 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { FeatureCollection } from "@/lib/types";
 
 import { PublicExperience, projectPublicFacilityFeatures, readPublicPage } from "./public-experience";
 
 describe("PublicExperience", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it("renders the compact Public shell without the removed logo, subtitle, or historical banner", () => {
     const html = renderToStaticMarkup(<PublicExperience />);
     const visibleText = html.replace(/<[^>]*>/g, " ");
@@ -29,8 +33,9 @@ describe("PublicExperience", () => {
     expect(visibleText).not.toMatch(/Public preparedness/iu);
     expect(visibleText).not.toMatch(/Historical preparedness information/iu);
     expect(html).not.toContain('href="/studio/"');
-    // No example area is framed for the reader any more (13 Oct 2026); the note at the foot of the map stays.
-    expect(visibleText).not.toMatch(/ตัวอย่าง/u);
+    // No example area is framed for the reader any more (13 Oct 2026); the note at the foot of the map stays. The
+    // only example named is the example home of the practice scenario the page opens on (14 Oct 2026).
+    expect(visibleText.replaceAll("บ้านตัวอย่าง", "")).not.toMatch(/ตัวอย่าง/u);
     expect(visibleText).toMatch(/ไม่ใช่คำเตือนทางการ/u);
     // The research link moved into the panel behind the banner (owner request of 7 Oct 2026), which is closed at first, and
     // nothing stands between the header and the map: no intro block, and no status bar while everything is in order.
@@ -82,7 +87,9 @@ describe("PublicExperience", () => {
     expect(html).not.toContain('class="map-attribution"');
   });
 
-  it("opens Home on the whole district, with no score and no example area", () => {
+  it("opens Home of the public build on the whole district, with no score and no example area", () => {
+    // The public build does not carry the replay, so it has no practice scenario to open on.
+    vi.stubEnv("NEXT_PUBLIC_FLOODGUARD_APP_PROFILE", "public-production");
     const html = renderToStaticMarkup(<PublicExperience />);
     const visibleText = html.replace(/<[^>]*>/g, " ");
 
@@ -106,7 +113,7 @@ describe("PublicExperience", () => {
     expect(note).toContain("ข้อมูลเพื่อการเตรียมพร้อม · ไม่ใช่คำเตือนทางการ");
   });
 
-  it("offers the practice scenarios from the header, to the right of the language switch, with none chosen", () => {
+  it("opens on the practice scenario \"Normal day\" where the replay ships, with its menu right of the language switch", () => {
     const html = renderToStaticMarkup(<PublicExperience />);
     const actions = html.match(/<div class="public-header-actions">[\s\S]*?<\/header>/)?.[0] ?? "";
 
@@ -114,9 +121,21 @@ describe("PublicExperience", () => {
     expect(actions.indexOf('class="public-practice-trigger"')).toBeGreaterThan(actions.indexOf('class="language-toggle"'));
     expect(actions).toContain('aria-label="สถานการณ์ฝึกซ้อม"');
     expect(actions).toContain('aria-expanded="false"');
-    // The list is closed at first, and no scenario is shown until the reader chooses one.
     expect(html).not.toContain('class="public-practice-list"');
-    expect(actions).not.toContain('data-active="true"');
+    // A scenario is shown from the first paint (owner request of 14 Oct 2026): the replay is still being read here,
+    // so the banner says so, and the header names the example home.
+    expect(actions).toContain('data-active="true"');
+    expect(html).toContain('data-practice="true"');
+    const banner = html.match(/<button type="button" class="public-signal-banner"[\s\S]*?<\/button>/)?.[0] ?? "";
+    expect(banner).toContain("กำลังโหลดภาพจำลองเพื่อฝึกซ้อม…");
+    const greeting = html.match(/<span class="public-greeting-location">[\s\S]*?<\/span><\/span>/)?.[0] ?? "";
+    expect(greeting).toContain("บ้านตัวอย่าง · แม่สาย");
+  });
+
+  it("has no scenario menu and no scenario in the public build", () => {
+    vi.stubEnv("NEXT_PUBLIC_FLOODGUARD_APP_PROFILE", "public-production");
+    const html = renderToStaticMarkup(<PublicExperience />);
+    expect(html).not.toContain('class="public-practice-trigger"');
     expect(html).not.toContain('data-practice="true"');
   });
 

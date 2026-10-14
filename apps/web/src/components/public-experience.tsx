@@ -21,9 +21,16 @@ import { useDisplayName } from "@/lib/use-display-name";
 import { useHouseholdPlan } from "@/lib/use-household-plan";
 import { useLanguage } from "@/lib/use-language";
 import { usePublicFloodGuardData } from "@/lib/use-public-floodguard-data";
-import { usePublicPractice } from "@/lib/use-public-practice";
+import { usePublicPractice, type PublicPractice } from "@/lib/use-public-practice";
 
 type PublicPage = "home" | "report" | "shelter" | "prepare" | "sos";
+
+/**
+ * The scenario the Public page opens on where the replay ships: "Normal day" (owner request of 14 Oct 2026), so a
+ * visit starts in the practice replay and not on the map without it.
+ */
+const OPENING_SCENARIO: PracticeState = "normal";
+const PRACTICE_OFF: PublicPractice = { status: "off" };
 
 export function readPublicPage(search: string): PublicPage {
   const value = new URLSearchParams(search).get("tab");
@@ -98,9 +105,14 @@ export function PublicExperience() {
   // kept in this visit only and never written to the saved plan. The replay it reads ships in the competition build
   // alone, so the public build has no menu for it, and no markers of the places reported as shelters in 2024 on the
   // Shelter map.
-  const [practiceScenarioId, setPracticeScenarioId] = useState<PracticeState | null>(null);
   const practiceAvailable = competitionPagesAvailable();
-  const endPractice = useCallback(() => setPracticeScenarioId(null), []);
+  // `chosen` tells the reader's own choice from the scenario the page opens on.
+  const [practiceChoice, setPracticeChoice] = useState<{ id: PracticeState | null; chosen: boolean }>(() => ({
+    id: practiceAvailable ? OPENING_SCENARIO : null,
+    chosen: false,
+  }));
+  const choosePractice = useCallback((id: PracticeState | null) => setPracticeChoice({ id, chosen: true }), []);
+  const endPractice = useCallback(() => setPracticeChoice({ id: null, chosen: true }), []);
   // What the reader entered on the Shelter page, kept while they visit another page.
   const [shelterTrip, setShelterTrip] = useState(EMPTY_SHELTER_TRIP);
   const contentRef = useRef<HTMLElement>(null);
@@ -117,7 +129,12 @@ export function PublicExperience() {
     clearPlan,
   } = useHouseholdPlan("");
   const th = language === "th";
-  const practice = usePublicPractice(practiceAvailable ? practiceScenarioId : null, language);
+  const requestedPractice = usePublicPractice(practiceAvailable ? practiceChoice.id : null, language);
+  // The opening scenario is the page's default, not the reader's choice. When the replay cannot be read (offline
+  // before its files were saved on the device) the page opens on the day without practice, not on a message that
+  // the replay is unavailable; a scenario the reader chose says so.
+  const practice = !practiceChoice.chosen && requestedPractice.status === "unavailable" ? PRACTICE_OFF : requestedPractice;
+  const practiceScenarioId = practice.status === "off" ? null : practiceChoice.id;
   const practiceView = practice.status === "ready" ? practice.view : undefined;
   const selectedArea = data.publicAreas.find(
     (area) => area.area_id === plan.planning_area_id,
@@ -202,7 +219,7 @@ export function PublicExperience() {
         onNavigatePrepare={() => navigate("prepare")}
         onNavigateSos={() => navigate("sos")}
         practice={practiceAvailable
-          ? { scenarioId: practiceScenarioId, onChange: setPracticeScenarioId }
+          ? { scenarioId: practiceScenarioId, onChange: choosePractice }
           : undefined}
       />
 

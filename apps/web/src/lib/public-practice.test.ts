@@ -268,6 +268,21 @@ describe("practice wording", () => {
     }
   });
 
+  it("uses none of the words the Public pages keep out as signs of unfinished work", () => {
+    // The browser checks of the Public pages fail on these words (scripts/browser-offline-smoke.mjs); a question
+    // that asked "What is not ready yet?" did.
+    const unfinished = /(?:^|[^\p{L}\p{N}])(?:rehearsals?|demos?|prototypes?|mocks?|samples?|illustrative|placeholders?|fixtures?|synthetic)(?=$|[^\p{L}\p{N}])|coming soon|under construction|not ready|work in progress/iu;
+    const texts: string[] = [];
+    for (const table of [PRACTICE_BANNER, PRACTICE_PROMPT, PRACTICE_SCENARIO_LABELS, PRACTICE_COPY, PRACTICE_MENU_COPY, ...Object.values(PRACTICE_PAGE_PROMPT)]) {
+      for (const value of Object.values(table)) texts.push(value.en, value.th);
+    }
+    for (const scenario of PRACTICE_SCENARIOS) {
+      const view = practiceView(replay, exercise.items, scenario, "en")!;
+      texts.push(view.banner, ...view.lines, ...view.pages.shelter.lines, ...view.pages.report.items.flatMap((item) => [item.title, item.text]));
+    }
+    expect(texts.filter((text) => unfinished.test(text))).toEqual([]);
+  });
+
   it("passes the replay's wording rules: no present-moment claim, no promise of what comes, no instruction to move", () => {
     const texts: { source: string; text: string }[] = [];
     const add = (source: string, table: Record<string, Record<"en" | "th", string>>) => {

@@ -342,8 +342,8 @@ export const PRACTICE_PAGE_PROMPT: Readonly<Record<PracticePage, Readonly<Record
   },
   prepare: {
     normal: {
-      en: "Practise: go through the checklist below on a quiet day. What is not ready yet?",
-      th: "ลองฝึก: ทบทวนรายการด้านล่างในวันปกติ ยังมีอะไรที่ยังไม่พร้อม",
+      en: "Practise: go through the checklist below on a quiet day. What is still missing?",
+      th: "ลองฝึก: ทบทวนรายการด้านล่างในวันปกติ ยังขาดอะไรอยู่บ้าง",
     },
     heads_up: {
       en: "Practise: which items of the checklist would you do first today: phone, medicine, documents?",

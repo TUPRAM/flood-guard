@@ -1036,7 +1036,6 @@ export class JourneyStage {
         raise = ramp(p, 0.88, 0.99);
         glow = ramp(p, 0.92, 1);
         phoneShow = ramp(p, 0.94, 1);
-        labels.home = labels.route = labels.shelter = p > 0.3 && p < 0.5;
         labels.mali = labels.dao = p > 0.9;
         if (this.camera.aspect < 0.8) labels.dao = false;
         route = 1 - ramp(p, 0.48, 0.62);

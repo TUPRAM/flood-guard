@@ -51,10 +51,10 @@ export const CHAPTER_LABELS: Record<ChapterId, { number: string; title: Text }> 
 };
 
 export const UI = {
-  title: t("Home dry.\nWay cut off.", "บ้านยังแห้ง\nแต่ทางออกถูกตัดขาด"),
+  title: t("See the flood.\nUnderstand what it changes.", "เห็นน้ำท่วม\nเข้าใจว่ามันเปลี่ยนอะไร"),
   subtitle: t(
-    "Mae Sai, September 2024. Lalita looks after her mother and daughter. Narin checks what is known. Pim brings the district together. Fictional people on the real map, with the replay's modelled water.",
-    "แม่สาย กันยายน 2567 (2024) ลลิตาดูแลแม่และลูกสาว นรินทร์ตรวจสอบสิ่งที่รู้แล้ว พิมพ์ประสานภาพรวมของอำเภอ ตัวละครสมมุติบนแผนที่จริง กับน้ำจากแบบจำลองของภาพจำลองย้อนหลัง",
+    "FloodGuard connects flood evidence with communities, roads, and essential services to support informed local planning.",
+    "FloodGuard เชื่อมหลักฐานน้ำท่วมเข้ากับชุมชน ถนน และบริการที่จำเป็น เพื่อช่วยให้การวางแผนในพื้นที่ตั้งอยู่บนข้อมูล",
   ),
   begin: t("Begin the story", "เริ่มเรื่องราว"),
   skip: t("Skip to the apps", "ข้ามไปที่แอป"),
@@ -80,8 +80,6 @@ export const UI = {
     "© OpenStreetMap contributors · Google Open Buildings (CC BY 4.0) · Microsoft footprints (ODbL) · Copernicus DEM",
     "© ผู้ร่วมให้ข้อมูล OpenStreetMap · Google Open Buildings (CC BY 4.0) · Microsoft footprints (ODbL) · Copernicus DEM",
   ),
-  /** The replay clock: `{moment}` is the replay hour as the case view writes it. */
-  clock: t("Replay · {moment} · model, low confidence", "ภาพจำลองย้อนหลัง · {moment} · แบบจำลอง ความเชื่อมั่นต่ำ"),
   fictional: t("Fictional character", "ตัวละครสมมุติ"),
   previous: t("Previous", "ก่อนหน้า"),
   next: t("Next", "ถัดไป"),
@@ -474,9 +472,4 @@ export const STOPS: Record<StopId, StopCopy> = {
 /** The iframe address for a stop: the real route, untouched. Both public-app stops share one frame at `/public/`. */
 export function stopFrameSrc(stop: StopId, language: JourneyLanguage): string {
   return stop === "public-prepare" ? STOPS.public.href(language) : STOPS[stop].href(language);
-}
-
-/** The replay clock line for a moment written by `formatMoment` (flood-timeline.ts). */
-export function clockText(moment: string, language: JourneyLanguage): string {
-  return UI.clock[language].replace("{moment}", moment);
 }

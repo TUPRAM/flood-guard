@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 
-import { decodePng, formatMoment, inflateZlib } from "@/lib/flood-timeline";
+import { decodePng, inflateZlib } from "@/lib/flood-timeline";
 import { decodeWithCanvas } from "@/lib/flood-timeline-command-data";
 import { LANDSCAPE_PAGE_FILL, PHONE_PAGE_FILL, quadBounds, quadIsDrawable, quadToMatrix3d, type Quad } from "@/lib/journey/screen-projection";
 import {
@@ -32,7 +32,7 @@ import {
 import { loadTownPack, type Localized } from "@/lib/journey/town-data";
 import { useLanguage } from "@/lib/use-language";
 
-import { CAPTIONS, CHAPTER_LABELS, CHARACTERS, LABELS, STOPS, UI, clockText, stopFrameSrc, type Caption, type JourneyLanguage, type PublicTab } from "./journey-copy";
+import { CAPTIONS, CHAPTER_LABELS, CHARACTERS, LABELS, STOPS, UI, stopFrameSrc, type Caption, type JourneyLanguage, type PublicTab } from "./journey-copy";
 import type { JourneyStage, ScreenAspects, ScreenId, StageFrame } from "./stage/journey-stage";
 
 import styles from "./journey.module.css";
@@ -239,8 +239,17 @@ export function JourneyExperience() {
   /** The real page whose note the visitor closed (it stays closed for that page). */
   const [closedNote, setClosedNote] = useState<StopId | null>(null);
   const [sizes, setSizes] = useState<Sizes | null>(null);
-  /** The replay hour on the clock (whole hours since 9 Sep 2024 00:00 ICT). */
-  const [clockHour, setClockHour] = useState(12);
+  /** The chapter list opened from the middle of the compact chapter bar. */
+  const [chaptersOpen, setChaptersOpen] = useState(false);
+  // A press anywhere outside the chapter bar closes its list.
+  useEffect(() => {
+    if (!chaptersOpen) return;
+    const onDown = (event: PointerEvent) => {
+      if (!(event.target instanceof Element && event.target.closest(`.${styles.chapterNav}`))) setChaptersOpen(false);
+    };
+    window.addEventListener("pointerdown", onDown);
+    return () => window.removeEventListener("pointerdown", onDown);
+  }, [chaptersOpen]);
   /** Credits of the map (building outlines, OpenStreetMap, DEM, replay), from the bake. */
   const [credits, setCredits] = useState<Localized | null>(null);
 
@@ -501,8 +510,6 @@ export function JourneyExperience() {
       const position = m.display;
       const result: StageFrame = stage.update(position, dt);
       if (veilRef.current) veilRef.current.style.opacity = result.veil.toFixed(3);
-      const wholeHour = Math.floor(result.hour + 1e-6);
-      setClockHour((current) => (current === wholeHour ? current : wholeHour));
 
       // Real pages on the 3D screens.
       (Object.keys(result.screens) as ScreenId[]).forEach((screen) => {
@@ -529,12 +536,12 @@ export function JourneyExperience() {
         }
       });
 
-      // Projected labels: kept inside the window, and hidden where the caption, the tag, the clock or the chapter bar
+      // Projected labels: kept inside the window, and hidden where the caption, the credits or the chapter bar
       // would cover them (a label pushed away from its place would point at the wrong thing).
       const shown = result.labels.filter((label) => label.visible);
       const root = canvas.closest("main");
       const covers = shown.length && root
-        ? Array.from(root.querySelectorAll<HTMLElement>(`.${styles.caption}, .${styles.creditsPanel}, .${styles.clock}, .${styles.chapterNav}`)).map((element) => element.getBoundingClientRect())
+        ? Array.from(root.querySelectorAll<HTMLElement>(`.${styles.caption}, .${styles.creditsPanel}, .${styles.chapterNav}`)).map((element) => element.getBoundingClientRect())
         : [];
       for (const label of result.labels) {
         const element = labelRefs.current[label.id];
@@ -939,9 +946,6 @@ export function JourneyExperience() {
           {leavingCaption && renderCaption(leavingCaption, true, `leaving-${leavingCaptionKey}-${language}`)}
           {caption && renderCaption(caption, false, `${view.segment}-${view.caption}-${language}`)}
 
-          {!view.heroVisible && status === "ready" && (
-            <p className={styles.clock} aria-live="off">{clockText(formatMoment(clockHour / 24, language), language)}</p>
-          )}
           {/* What the story is and whose data it draws on: behind the Credits button, off the scene. */}
           {creditsOpen && (
             <aside
@@ -973,20 +977,44 @@ export function JourneyExperience() {
         </aside>
       )}
 
-      {/* One navigation bar, always at the bottom: in the 3D story and over a real page alike. */}
+      {/* One compact chapter bar under the caption, bottom left: in the 3D story and over a real page alike. The
+          chapter's name opens the list of chapters. */}
       {status !== "failed" && (
-          <nav className={styles.chapterNav} data-docked={docked ? "true" : "false"} aria-label={tr(UI.chapters)}>
-            <button type="button" className={styles.step} onClick={() => step(-1)} aria-label={tr(UI.previous)}>←</button>
-            <ol>
-              {CHAPTERS.map((chapter, index) => (
-                <li key={chapter}>
-                  <button type="button" aria-label={`${CHAPTER_LABELS[chapter].number ? `${CHAPTER_LABELS[chapter].number} ` : ""}${tr(CHAPTER_LABELS[chapter].title)}`} aria-current={chapter === view.chapter ? "step" : undefined} data-done={index < chapterIndex} onClick={() => void goTo(chapterEntry(chapter))}>
-                    {CHAPTER_LABELS[chapter].number && <b>{CHAPTER_LABELS[chapter].number}</b>}
-                    <span>{tr(CHAPTER_LABELS[chapter].title)}</span>
-                  </button>
-                </li>
-              ))}
-            </ol>
+          <nav
+            className={styles.chapterNav}
+            data-docked={docked ? "true" : "false"}
+            aria-label={tr(UI.chapters)}
+            onKeyDown={(event) => { if (event.key === "Escape" && chaptersOpen) { event.stopPropagation(); setChaptersOpen(false); } }}
+          >
+            <button type="button" className={styles.step} onClick={() => step(-1)} aria-label={tr(UI.previous)} title={tr(UI.previous)}>←</button>
+            <button
+              type="button"
+              className={styles.current}
+              aria-expanded={chaptersOpen}
+              aria-controls="journey-chapters"
+              onClick={() => setChaptersOpen((open) => !open)}
+            >
+              {CHAPTER_LABELS[view.chapter].number && <b>{CHAPTER_LABELS[view.chapter].number}</b>}
+              <span>{tr(CHAPTER_LABELS[view.chapter].title)}</span>
+            </button>
+            {chaptersOpen && (
+              <ol id="journey-chapters" className={styles.chapterList}>
+                {CHAPTERS.map((chapter, index) => (
+                  <li key={chapter}>
+                    <button
+                      type="button"
+                      aria-current={chapter === view.chapter ? "step" : undefined}
+                      data-done={index < chapterIndex}
+                      autoFocus={chapter === view.chapter}
+                      onClick={() => { setChaptersOpen(false); void goTo(chapterEntry(chapter)); }}
+                    >
+                      <b>{CHAPTER_LABELS[chapter].number}</b>
+                      <span>{tr(CHAPTER_LABELS[chapter].title)}</span>
+                    </button>
+                  </li>
+                ))}
+              </ol>
+            )}
             {docked && stopCopy && (
               <a className={styles.step} href={stopCopy.href(language)} target="_top" aria-label={tr(UI.openPage)} title={tr(UI.openPage)}>↗</a>
             )}

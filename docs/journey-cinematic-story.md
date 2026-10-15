@@ -52,7 +52,7 @@ Opening → 01 Lalita's family (9 Sep 12:00) → [real /public/, Home, "Normal d
 | People | `characters.ts`, `figure.ts` | Unchanged from cinematic-journey-v2: rigged Lalita and Narin; stand-in Mali, Dao and Pim. The family stands side by side at the gate, facing the street; the front shot looks at them from the street with the house behind. |
 | Camera paths | `apps/web/src/lib/journey/camera-path.ts` | Unit-tested. Position on a centripetal Catmull-Rom spline; orientation interpolated as heading, tilt and roll (a move between opposite headings turns round the horizon, never through straight down); each move eases in and out once (sine) and is paced by how fast the picture changes (travel relative to height, plus rotation), so a dive slows near the street and turns get their time. A key can widen the lens (`zoom`) where the street is too narrow to back off. |
 | Camera, light, weather | `journey-stage.ts` | Shots anchored to real places (the gate, the walk's low point, the deepest lane near the home, the river, the office window); tall screens get their own framings of the family. Light follows the replay hour (day, dusk, night), with the sky blended over a moment after the Public app's page (Monday noon to Tuesday afternoon); the sun is fixed in the east-south-east, so Lalita's house front is lit; weather is illustrative, rain from 10 September easing after the peak. |
-| Shell | `journey-experience.tsx` | Loads the bake before the stage; sets the phone's page and practice scenario through the frame's address (while the phone shows, or at a rest before it shows again); loads the Public app at the title and each next page after the previous one has docked; keeps loaded pages painted at near-zero opacity (inert) so they are first drawn at rest; the replay clock (date, hour, "model, low confidence"); the dips to dark; fades for the title and captions; the Credits panel (Escape closes it). |
+| Shell | `journey-experience.tsx` | Loads the bake before the stage; sets the phone's page and practice scenario through the frame's address (while the phone shows, or at a rest before it shows again); loads the Public app at the title and each next page after the previous one has docked; keeps loaded pages painted at near-zero opacity (inert) so they are first drawn at rest; the compact chapter bar under the caption (previous, the chapter's name, which opens the list of chapters, next; the owner's request of 15 October 2026); the dips to dark; fades for the title and captions; the Credits panel (Escape closes it). |
 | Copy (EN/TH) | `journey-copy.ts` | Linted by the shared wording lint in both languages. Thai is written by the assistant and has not had a native review. |
 
 **Real pages, not mockups.** Each real route runs in its own same-origin `<iframe>`. The Public app reads `?practice=`
@@ -65,9 +65,15 @@ whenever its hour changes.
   reconstruction of September 2024, low confidence; not a forecast, not real-time) and a one-line data credit are on the
   title screen; the full credits and "heights and looks of buildings, and Lalita's house and yard, are illustrative"
   are in the Credits panel of the top bar. The scene itself carries no corner text (the owner's request of 15 October
-  2026). Each beat shows its replay date and hour and "model, low confidence" in the clock. Credits: Google Open
+  2026). The replay clock over the scene was removed at the owner's request (15 October 2026, later the same day):
+  the captions name the replay date and hour where a beat depends on it, and the real pages show their own replay
+  stamp. Credits: Google Open
   Buildings v3 (CC BY 4.0), Microsoft footprints (ODbL), © OpenStreetMap contributors, Copernicus DEM © DLR, Airbus DS.
-- Every time and depth a caption names is the replay's, at the hour on the clock. Weather is illustrative.
+- Every time and depth a caption names is the replay's, at that beat's replay hour. Weather is illustrative.
+- The title is the owner's text (15 October 2026): "See the flood. / Understand what it changes." with "FloodGuard
+  connects flood evidence with communities, roads, and essential services to support informed local planning." (Thai
+  written by the assistant, not native-reviewed). The Meet Lalita overview carries no place labels (the owner's
+  request, same day): the caption names the home, the shelter and the walk, and the teal line draws the walk.
 - The story never triggers the real SOS and never says FloodGuard sends a request for help: the call to 1784 is
   simulated and goes through the hotline. No report, case change or dispatch is created by any transition.
 - Real reported places are named with their record (reported in use, reported command centre, reported flooded); no

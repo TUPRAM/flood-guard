@@ -117,7 +117,7 @@
 .sos { border: 1px solid #a3401f; background: #b84a25; color: #fff; }
 .link { padding: 0 6px; border: 0; background: none; color: var(--teal-strong); }
 .primary:focus-visible, .secondary:focus-visible, .ghost:focus-visible, .sos:focus-visible, .link:focus-visible,
-.language button:focus-visible, .chapterNav button:focus-visible, .skipPanel button:focus-visible, .skipPanel a:focus-visible, .wordmark:focus-visible {
+.language button:focus-visible, .chapterNav button:focus-visible, .chapterNav a:focus-visible, .skipPanel button:focus-visible, .skipPanel a:focus-visible, .wordmark:focus-visible {
   outline: 3px solid #e8a526;
   outline-offset: 2px;
 }
@@ -149,7 +149,7 @@
   position: absolute;
   z-index: 4;
   left: clamp(16px, 4vw, 56px);
-  bottom: 96px;
+  bottom: 80px;
   max-width: min(520px, calc(100vw - 32px));
   padding: 16px 18px;
   border: 1px solid rgb(21 43 41 / 10%);
@@ -186,66 +186,87 @@
 .creditsPanel p { margin: 0; }
 .hero small.heroNote { margin-top: 8px; color: var(--ink); font-size: 0.72rem; opacity: 0.78; }
 
-/* The replay clock: the date and hour of the scene, and what it is (a model, low confidence). */
-.clock {
-  position: absolute;
-  z-index: 4;
-  top: 64px;
-  left: 50%;
-  transform: translateX(-50%);
-  margin: 0;
-  padding: 5px 12px;
-  border: 1px solid rgb(21 43 41 / 12%);
-  border-radius: 999px;
-  background: rgb(250 248 242 / 90%);
-  color: var(--ink);
-  font-size: 0.8rem;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
 /* A dip to dark for a cut in time (the story skips ahead behind it). */
 .veil { position: absolute; inset: 0; z-index: 3; background: #07090c; opacity: 0; pointer-events: none; }
 
+/* The chapter bar: compact, bottom left under the caption — previous, the chapter (opens the list), next. */
 .chapterNav {
   position: absolute;
   z-index: 5;
-  left: 16px;
-  right: 16px;
+  left: clamp(16px, 4vw, 56px);
   bottom: 16px;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px;
+  gap: 6px;
+  max-width: calc(100vw - 32px);
+  padding: 6px;
   border: 1px solid rgb(21 43 41 / 10%);
-  border-radius: 12px;
-  background: rgb(250 248 242 / 92%);
+  border-radius: 999px;
+  background: rgb(250 248 242 / 94%);
+  box-shadow: 0 8px 24px rgb(21 43 41 / 12%);
 }
-.chapterNav ol { display: flex; flex: 1; justify-content: center; gap: 4px; margin: 0; padding: 0; list-style: none; overflow-x: auto; scrollbar-width: none; }
-.chapterNav ol button {
+.current {
   display: inline-flex;
+  flex: 0 1 auto;
   align-items: center;
   gap: 6px;
+  min-width: 0;
   min-height: 40px;
   padding: 0 12px;
   border: 0;
-  border-bottom: 2px solid transparent;
+  border-radius: 999px;
   background: transparent;
-  color: var(--muted);
+  color: var(--ink);
   font: inherit;
-  font-size: 0.8rem;
-  font-weight: 600;
+  font-size: 0.86rem;
+  font-weight: 700;
   white-space: nowrap;
   cursor: pointer;
 }
-.chapterNav ol button b { color: var(--teal); font-weight: 800; }
-.chapterNav ol button[aria-current="step"] { border-bottom-color: var(--teal); color: var(--ink); }
+.current span { overflow: hidden; text-overflow: ellipsis; }
+.current:hover, .current[aria-expanded="true"] { background: rgb(21 43 41 / 6%); }
+.current b, .chapterList b { color: var(--teal); font-weight: 800; }
+/* The list of chapters, opened above the bar. */
+.chapterList {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 8px);
+  display: grid;
+  gap: 2px;
+  min-width: 240px;
+  margin: 0;
+  padding: 6px;
+  border: 1px solid rgb(21 43 41 / 12%);
+  border-radius: 12px;
+  background: var(--paper);
+  box-shadow: 0 14px 40px rgb(21 43 41 / 16%);
+  list-style: none;
+  animation: rise 200ms ease both;
+}
+.chapterList button {
+  display: grid;
+  grid-template-columns: 26px 1fr;
+  align-items: center;
+  width: 100%;
+  min-height: 38px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+.chapterList button:hover { background: rgb(21 43 41 / 6%); color: var(--ink); }
+.chapterList button[aria-current="step"] { background: rgb(21 43 41 / 8%); color: var(--ink); }
 .step { flex: none; width: 40px; height: 40px; border: 1px solid var(--line); border-radius: 999px; background: var(--paper); color: var(--ink); font-size: 1.05rem; cursor: pointer; }
 .step:disabled { opacity: 0.35; cursor: default; }
 a.step { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; font-size: 0.95rem; }
-/* Over a real page the bar stays where it was and looks the same (see-through, over the scene). */
-.chapterNav[data-docked="true"] { position: fixed; z-index: 7; }
+/* Over a real page the bar stays where it was and looks the same. */
+.chapterNav[data-docked="true"] { position: fixed; z-index: 7; left: 16px; }
 
 /* Story bar over a docked real page. */
 .storyBar {
@@ -293,7 +314,6 @@ a.step { display: inline-flex; align-items: center; justify-content: center; tex
 /* Panels fade out too (they used to vanish in one frame): the outgoing caption, the title and its scrim. */
 @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
 .caption.captionLeaving { animation: fadeOut 240ms ease forwards; pointer-events: none; }
-.clock { animation: rise 320ms ease both; }
 .hero[data-leaving], .heroScrim[data-leaving] { animation: fadeOut 320ms ease forwards; pointer-events: none; }
 .hero { animation-name: heroRise; }
 @keyframes heroRise { from { opacity: 0; transform: translateY(-50%); } to { opacity: 1; transform: translateY(-55%); } }
@@ -304,16 +324,12 @@ a.step { display: inline-flex; align-items: center; justify-content: center; tex
   .topActions .ghost:last-child { display: none; }
   .hero { top: auto; bottom: 120px; transform: none; animation-name: rise; }
   .heroScrim { background: linear-gradient(0deg, rgb(239 234 223 / 95%) 0%, rgb(239 234 223 / 80%) 45%, rgb(239 234 223 / 0%) 75%); }
-  .caption { bottom: 128px; }
+  .caption { bottom: 72px; }
   .caption p { font-size: 1rem; }
   .creditsPanel { top: 100px; left: 10px; right: 10px; max-width: none; }
   /* The title stays between the header and the chapter bar, however short the screen. */
   .hero { max-height: calc(100svh - 190px); overflow-y: auto; }
-  .clock { top: 58px; max-width: calc(100vw - 24px); width: max-content; white-space: normal; text-align: center; line-height: 1.3; }
-  .chapterNav { left: 8px; right: 8px; bottom: 8px; }
-  .chapterNav ol { justify-content: flex-start; }
-  .chapterNav ol button span { display: none; }
-  .chapterNav ol button[aria-current="step"] span { display: inline; }
+  .chapterNav, .chapterNav[data-docked="true"] { left: 8px; bottom: 8px; max-width: calc(100vw - 16px); }
   .barNote, .barChapter { display: none; }
   .barMain { gap: 6px 8px; padding: 6px 10px; }
   .barMain strong { flex: 1 1 auto; font-size: 0.8rem; }
@@ -392,7 +408,7 @@ a.step { display: inline-flex; align-items: center; justify-content: center; tex
   .points { margin-top: 6px; font-size: 0.82rem; line-height: 1.4; }
 }
 
-/* Narrow phones: the top bar keeps to one row so it never covers the replay clock. */
+/* Narrow phones: the top bar keeps to one row. */
 @media (max-width: 400px) {
   .topbar { gap: 8px; }
   .topActions { gap: 6px; flex-wrap: nowrap; }

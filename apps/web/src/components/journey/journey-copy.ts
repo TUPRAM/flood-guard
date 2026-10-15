@@ -58,15 +58,27 @@ export const UI = {
   ),
   begin: t("Begin the story", "เริ่มเรื่องราว"),
   skip: t("Skip to the apps", "ข้ามไปที่แอป"),
+  skipShort: t("Apps", "แอป"),
   scrollHint: t("Scroll, swipe or use the arrow keys", "เลื่อน ปัด หรือใช้ปุ่มลูกศร"),
   illustrative: t(
     "Fictional people on the real map of Mae Sai · water from the FloodGuard replay (r5): a model reconstruction of September 2024, low confidence · not a forecast, not real-time",
     "ตัวละครสมมุติบนแผนที่จริงของแม่สาย · น้ำจากภาพจำลองย้อนหลัง (r5) ของ FloodGuard: การสร้างเหตุการณ์กันยายน 2567 (2024) ขึ้นใหม่ด้วยแบบจำลอง ความเชื่อมั่นต่ำ · ไม่ใช่การพยากรณ์ ไม่ใช่ข้อมูลเรียลไทม์",
   ),
-  /** Short credits under the tag; the full credits and licences are in public/journey/town/LICENSE.txt. */
+  /** Short credits, in the Credits panel; the full credits and licences are in public/journey/town/LICENSE.txt. */
   credits: t(
     "Buildings: Google Open Buildings v3 (CC BY 4.0), Microsoft footprints (ODbL) · © OpenStreetMap contributors · Copernicus DEM © DLR, Airbus DS · Water: FloodGuard replay r5 · Heights and looks of buildings illustrative",
     "อาคาร: Google Open Buildings v3 (CC BY 4.0), Microsoft footprints (ODbL) · © ผู้ร่วมให้ข้อมูล OpenStreetMap · Copernicus DEM © DLR, Airbus DS · น้ำ: ภาพจำลองย้อนหลัง r5 ของ FloodGuard · ความสูงและรูปลักษณ์ของอาคารเป็นภาพประกอบ",
+  ),
+  creditsButton: t("Credits", "เครดิต"),
+  creditsTitle: t("About this story and its data", "เกี่ยวกับเรื่องราวและข้อมูลนี้"),
+  illustrativeLooks: t(
+    "Heights and looks of buildings, and Lalita's house and yard, are illustrative.",
+    "ความสูงและรูปลักษณ์ของอาคาร รวมถึงบ้านและลานบ้านของลลิตา เป็นภาพประกอบ",
+  ),
+  /** One line of data credits on the title screen; the full credits are in the Credits panel. */
+  creditsShort: t(
+    "© OpenStreetMap contributors · Google Open Buildings (CC BY 4.0) · Microsoft footprints (ODbL) · Copernicus DEM",
+    "© ผู้ร่วมให้ข้อมูล OpenStreetMap · Google Open Buildings (CC BY 4.0) · Microsoft footprints (ODbL) · Copernicus DEM",
   ),
   /** The replay clock: `{moment}` is the replay hour as the case view writes it. */
   clock: t("Replay · {moment} · model, low confidence", "ภาพจำลองย้อนหลัง · {moment} · แบบจำลอง ความเชื่อมั่นต่ำ"),
@@ -147,7 +159,7 @@ export const CAPTIONS: Record<SegmentId, Caption[]> = {
   opening: [],
   everyday: [
     {
-      from: 0.08, to: 0.5, pause: 0.46, who: "lalita", meet: true,
+      from: 0.2, to: 0.52, pause: 0.4, who: "lalita", meet: true,
       eyebrow: t("01 · Meet Lalita", "01 · พบกับลลิตา"),
       text: t(
         "This is Mae Sai, a few hundred metres from the Sai River. Lalita lives here with her mother, Mali, and her daughter, Dao, who is eight.",
@@ -160,7 +172,7 @@ export const CAPTIONS: Record<SegmentId, Caption[]> = {
       ],
     },
     {
-      from: 0.55, to: 1.01, pause: 0.985, who: "lalita",
+      from: 0.9, to: 1.01, pause: 0.985, who: "lalita",
       text: t(
         "Monday 9 September 2024, midday. Heavy rain is expected. Lalita checks what is known about her area.",
         "วันจันทร์ที่ 9 กันยายน 2567 (2024) เที่ยงวัน คาดว่าจะมีฝนตกหนัก ลลิตาตรวจดูว่ามีข้อมูลอะไรเกี่ยวกับพื้นที่ของเธอบ้าง",
@@ -243,7 +255,7 @@ export const CAPTIONS: Record<SegmentId, Caption[]> = {
       ],
     },
     {
-      from: 0.3, to: 0.56, pause: 0.42, who: "lalita",
+      from: 0.38, to: 0.56, pause: 0.42, who: "lalita",
       text: t(
         "10 September, 22:00. In the model, water is now on many streets between the house and the river.",
         "10 กันยายน เวลา 22:00 น. ในแบบจำลอง น้ำท่วมถนนหลายสายระหว่างบ้านกับแม่น้ำแล้ว",
@@ -311,7 +323,7 @@ export const CAPTIONS: Record<SegmentId, Caption[]> = {
       ],
     },
     {
-      from: 0.9, to: 1.01, pause: 0.985, who: "narin", meet: true,
+      from: 0.95, to: 1.01, pause: 0.985, who: "narin", meet: true,
       eyebrow: t("Meet Narin", "พบกับนรินทร์"),
       text: t(
         "Narin is a planning officer at the Mae Sai District Office. Calls like Lalita's are part of what he has to make sense of.",
@@ -377,7 +389,7 @@ export const CAPTIONS: Record<SegmentId, Caption[]> = {
   ],
   after: [
     {
-      from: 0.2, to: 0.66, pause: 0.5, who: "lalita",
+      from: 0.14, to: 0.62, pause: 0.5, who: "lalita",
       eyebrow: t("06 · Water going down", "06 · น้ำลด"),
       text: t("Saturday 14 September. In the replay, the water is going down.", "วันเสาร์ที่ 14 กันยายน ในภาพจำลองย้อนหลัง น้ำกำลังลด"),
       points: [

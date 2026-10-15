@@ -22,8 +22,12 @@ Opening → 01 Lalita's family (9 Sep 12:00) → [real /public/, Home, "Normal d
 | **Narin** | Planning officer at the Mae Sai District Office | What do we know, and what still needs checking? | Case view, opened at hour 84 (12 Sep 12:00) |
 | **Pim** | District planning coordinator | What should our team review together first? | Command exercise, opened at hour 84 |
 
-- **Lalita's home** stands on the outline nearest the Public app's dry example home (cell code 76: dry at every hour).
-  Her neighbours 110 m away are the app's flooded example home (0.75 m of modelled water at the peak).
+- **Lalita's home** stands on the outline nearest the Public app's dry example home (cell code 76: dry at every hour),
+  facing the street the walk starts from (road 112): a two-storey house kit set back behind a small yard and garden
+  wall (with a spirit house and potted plants), and a one-storey back wing on the rest of the outline. The plot is
+  laid out by `home-plot.ts` so that the roof, the wall and the wing clear every other outline; the real building
+  reaches the street, so the yard and the house's looks are illustrative. Her neighbours 110 m away are the app's
+  flooded example home (0.75 m of modelled water at the peak).
 - **The walk** is the family's usual way to the nearest reported shelter in use in September 2024 by the replay's own
   walking network: the Mae Sai Subdistrict Municipality Office shelter, about 1.6 km south. Its first low edge, from
   75 m to 112 m along the walk south of the home, closes at a stage of 2.05 m: open at midnight on 11 September, cut
@@ -41,12 +45,14 @@ Opening → 01 Lalita's family (9 Sep 12:00) → [real /public/, Home, "Normal d
 |---|---|---|
 | Story timeline, replay time, phone state | `apps/web/src/lib/journey/timeline.ts` | Pure, unit-tested. Segments, stops and chapters; replay hour per position (`replayHourAt`), skips in time behind a page or a dip to dark (`veilAt`); the Public app's page and practice scenario per position (`phoneAt`). |
 | The town bake | `scripts/build_journey_town.py` → `apps/web/public/journey/town/` | Building outlines, OSM roads and land cover, DEM relief, the r5 cells of the area, places, the walk, beats. Deterministic, `--verify`, receipt `docs/journey_town_input_receipt.json`; tests `tests/test_journey_town.py`. |
-| Decoding and the flood field | `apps/web/src/lib/journey/town-data.ts` | Pure, unit-tested on the committed bake. Ground of a floodable cell = k_s × h, water surface = k_s × stage; wet exactly where stage > h (the model's rule). Pads hold the story's dry places at their cell's height. |
+| Decoding and the flood field | `apps/web/src/lib/journey/town-data.ts` | Pure, unit-tested on the committed bake. Ground of a floodable cell = k_s × h, water surface = k_s × stage; wet exactly where stage > h (the model's rule). Pads (round or rectangular) hold the story's dry places at their cell's height. |
+| Lalita's plot | `apps/web/src/lib/journey/home-plot.ts` | Pure, unit-tested: faces the street nearest the home place, sets the house back behind a yard, sizes it so its roof, garden wall and back wing touch no other outline, and keeps the house on cells dry at the peak. Roads, poles and cables are not drawn on the plot. |
 | The town | `apps/web/src/components/journey/stage/town.ts` | Ground (fine grid near the story, coarser beyond, DEM hills), water mesh where the replay can wet the ground and on the river, extruded outlines with pitched or flat roofs, awnings and rooftop tanks, roads, poles, cables and lamps, the walk band. Merged per material and per 300 m tile. |
 | Shading | `apps/web/src/components/journey/stage/town-materials.ts`, `facade-atlas.ts` | One flood field for every surface: water depth and colour, wet bands and mud tide lines on walls and ground once the water goes down, lit windows at night (dark where a ground floor is under water). A painted atlas of Thai facade bays (no words on signs). |
-| People | `characters.ts`, `figure.ts` | Unchanged from cinematic-journey-v2: rigged Lalita and Narin; stand-in Mali, Dao and Pim. The family stands at the gate of the house kit built on the home outline; street-level shots look along the clearest line of the real lane. |
-| Camera, light, weather | `journey-stage.ts` | Shots anchored to real places (the gate, the walk's low point, the deepest lane near the home, the river, the office window). Light follows the replay hour (day, dusk, night); weather is illustrative, rain from 10 September easing after the peak. |
-| Shell | `journey-experience.tsx` | Loads the bake before the stage; sets the phone's page and practice scenario through the frame's address; the replay clock (date, hour, "model, low confidence"); the dip to dark. |
+| People | `characters.ts`, `figure.ts` | Unchanged from cinematic-journey-v2: rigged Lalita and Narin; stand-in Mali, Dao and Pim. The family stands side by side at the gate, facing the street; the front shot looks at them from the street with the house behind. |
+| Camera paths | `apps/web/src/lib/journey/camera-path.ts` | Unit-tested. Position on a centripetal Catmull-Rom spline; orientation interpolated as heading, tilt and roll (a move between opposite headings turns round the horizon, never through straight down); each move eases in and out once (sine) and is paced by how fast the picture changes (travel relative to height, plus rotation), so a dive slows near the street and turns get their time. A key can widen the lens (`zoom`) where the street is too narrow to back off. |
+| Camera, light, weather | `journey-stage.ts` | Shots anchored to real places (the gate, the walk's low point, the deepest lane near the home, the river, the office window); tall screens get their own framings of the family. Light follows the replay hour (day, dusk, night), with the sky blended over a moment after the Public app's page (Monday noon to Tuesday afternoon); the sun is fixed in the east-south-east, so Lalita's house front is lit; weather is illustrative, rain from 10 September easing after the peak. |
+| Shell | `journey-experience.tsx` | Loads the bake before the stage; sets the phone's page and practice scenario through the frame's address (while the phone shows, or at a rest before it shows again); loads the Public app at the title and each next page after the previous one has docked; keeps loaded pages painted at near-zero opacity (inert) so they are first drawn at rest; the replay clock (date, hour, "model, low confidence"); the dips to dark; fades for the title and captions; the Credits panel (Escape closes it). |
 | Copy (EN/TH) | `journey-copy.ts` | Linted by the shared wording lint in both languages. Thai is written by the assistant and has not had a native review. |
 
 **Real pages, not mockups.** Each real route runs in its own same-origin `<iframe>`. The Public app reads `?practice=`
@@ -55,10 +61,12 @@ whenever its hour changes.
 
 ## Safety and honesty
 
-- A permanent tag: fictional people on the real map of Mae Sai; water from the FloodGuard replay (r5), a model
-  reconstruction of September 2024, low confidence; not a forecast, not real-time. Each beat shows its replay date and
-  hour and "model, low confidence". Credits: Google Open Buildings v3 (CC BY 4.0), Microsoft footprints (ODbL),
-  © OpenStreetMap contributors, Copernicus DEM © DLR, Airbus DS; heights and looks of buildings are illustrative.
+- The notice (fictional people on the real map of Mae Sai; water from the FloodGuard replay (r5), a model
+  reconstruction of September 2024, low confidence; not a forecast, not real-time) and a one-line data credit are on the
+  title screen; the full credits and "heights and looks of buildings, and Lalita's house and yard, are illustrative"
+  are in the Credits panel of the top bar. The scene itself carries no corner text (the owner's request of 15 October
+  2026). Each beat shows its replay date and hour and "model, low confidence" in the clock. Credits: Google Open
+  Buildings v3 (CC BY 4.0), Microsoft footprints (ODbL), © OpenStreetMap contributors, Copernicus DEM © DLR, Airbus DS.
 - Every time and depth a caption names is the replay's, at the hour on the clock. Weather is illustrative.
 - The story never triggers the real SOS and never says FloodGuard sends a request for help: the call to 1784 is
   simulated and goes through the hotline. No report, case change or dispatch is created by any transition.
@@ -101,3 +109,7 @@ whenever its hour changes.
   between the two.
 - Mali, Dao and Pim are procedural stand-ins until rigged models of them are made.
 - Hidden iframes keep running their pages; unmounting far-away pages would raise frame rates on low-end laptops.
+- Docking a real page, and leaving the Prepare page into the night, can still drop a few frames (the page's own
+  layout and re-render); camera moves through the town run at full rate on the test machine (headless Chrome,
+  Direct3D 11), helped by a WebGL flush after each frame and a draw of every segment behind the loading screen.
+- Lalita's house is set back behind a yard; the real building on that outline reaches the street.

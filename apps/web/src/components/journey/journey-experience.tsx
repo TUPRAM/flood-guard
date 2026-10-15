@@ -32,7 +32,7 @@ import {
 import { loadTownPack, type Localized } from "@/lib/journey/town-data";
 import { useLanguage } from "@/lib/use-language";
 
-import { CAPTIONS, CHAPTER_LABELS, CHARACTERS, LABELS, STOPS, UI, clockText, stopFrameSrc, type JourneyLanguage, type PublicTab } from "./journey-copy";
+import { CAPTIONS, CHAPTER_LABELS, CHARACTERS, LABELS, STOPS, UI, clockText, stopFrameSrc, type Caption, type JourneyLanguage, type PublicTab } from "./journey-copy";
 import type { JourneyStage, ScreenAspects, ScreenId, StageFrame } from "./stage/journey-stage";
 
 import styles from "./journey.module.css";
@@ -100,11 +100,11 @@ const CAPTION_PAUSES: number[] = (Object.keys(CAPTIONS) as SegmentId[])
   .sort((a, b) => a - b);
 
 /**
- * Everything Next/Previous steps through, in order: every caption pause, every real page, and the very end (where
- * Next turns into Replay); a last caption pause right at the end stands for it.
+ * Everything Next/Previous steps through, in order: the title, every caption pause, every real page, and the very end
+ * (where Next turns into Replay); a last caption pause right at the end stands for it.
  */
 const STEP_POINTS: number[] = (() => {
-  const points = [...CAPTION_PAUSES, ...STOP_IDS.map(stopPosition)].sort((a, b) => a - b);
+  const points = [0, ...CAPTION_PAUSES, ...STOP_IDS.map(stopPosition)].sort((a, b) => a - b);
   if (TIMELINE_END - points[points.length - 1] > 1e-3) points.push(TIMELINE_END);
   return points;
 })();
@@ -112,6 +112,24 @@ const STEP_POINTS: number[] = (() => {
 /** PNG bytes to exact pixels: the replay's own decoder, or the canvas where the browser cannot inflate. */
 function decodeTownPng(bytes: Uint8Array) {
   return typeof DecompressionStream === "function" ? decodePng(bytes, inflateZlib) : decodeWithCanvas(bytes);
+}
+
+/**
+ * The last value shown, kept for `ms` after it goes, so its panel can fade out instead of vanishing in one frame. The
+ * outgoing value is taken in the same render as the change (React's "previous value in state" pattern), so the fading
+ * copy is in the same commit as the removal: no blank frame between them.
+ */
+function useLeaving(value: string | null, ms: number): string | null {
+  const [state, setState] = useState<{ value: string | null; leaving: string | null }>({ value, leaving: null });
+  const changed = state.value !== value;
+  const leaving = changed ? (state.value ?? state.leaving) : state.leaving;
+  if (changed) setState({ value, leaving });
+  useEffect(() => {
+    if (!leaving) return;
+    const timer = window.setTimeout(() => setState((current) => (current.leaving === leaving ? { ...current, leaving: null } : current)), ms);
+    return () => window.clearTimeout(timer);
+  }, [leaving, ms]);
+  return leaving;
 }
 
 function nextPoint(points: number[], after: number): number | null {
@@ -174,6 +192,22 @@ export function JourneyExperience() {
   const [mounted, setMounted] = useState<Record<ScreenId, boolean>>({ phone: false, monitor: false, table: false });
   const [loaded, setLoaded] = useState<Record<ScreenId, boolean>>({ phone: false, monitor: false, table: false });
   const [skipOpen, setSkipOpenState] = useState(false);
+  const [creditsOpen, setCreditsOpen] = useState(false);
+  const creditsButtonRef = useRef<HTMLButtonElement>(null);
+  const creditsCloseRef = useRef<HTMLButtonElement>(null);
+  const closeCredits = useCallback(() => {
+    setCreditsOpen(false);
+    creditsButtonRef.current?.focus();
+  }, []);
+  // Opening the panel moves focus into it (its Close button); Escape, anywhere, closes it.
+  useEffect(() => {
+    if (!creditsOpen) return;
+    creditsCloseRef.current?.focus();
+    // Not while the Skip dialog is open: its Escape is its own.
+    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape" && !skipOpen) closeCredits(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [creditsOpen, closeCredits, skipOpen]);
   const skipTrigger = useRef<HTMLElement | null>(null);
   const skipDialog = useRef<HTMLDivElement>(null);
   const setSkipOpen = useCallback((open: boolean) => {
@@ -264,9 +298,9 @@ export function JourneyExperience() {
       /* not reachable yet; applied on load */
     }
   }, []);
-  const wantPhone = useCallback((wanted: { tab: PublicTab; practice: string }) => {
+  const wantPhone = useCallback((wanted: { tab: PublicTab; practice: string }, applyNow = true) => {
     phoneState.current.wanted = wanted;
-    syncPhone();
+    if (applyNow) syncPhone();
   }, [syncPhone]);
 
   /** Puts a host into "on a 3D screen" mode at its CSS layout size. */
@@ -309,6 +343,8 @@ export function JourneyExperience() {
     const start = endRect(screen);
     setFrameScrollbar(screen, true);
     host.dataset.mode = "docked";
+    host.inert = false;
+    host.removeAttribute("aria-hidden");
     host.style.transformOrigin = "0 0";
     host.style.transform = `scale(${start.scale})`;
     host.style.opacity = "1";
@@ -414,6 +450,8 @@ export function JourneyExperience() {
     const canvas = canvasRef.current;
     if (!canvas) return;
     let disposed = false;
+    /** A page to start at the next rest (the viewer left its dock before the deferred start). */
+    let pendingMount: ScreenId | null = null;
     let raf = 0;
     let last = performance.now();
     let stage: JourneyStage | null = null;
@@ -477,8 +515,17 @@ export function JourneyExperience() {
           lastQuads.current[screen] = info.quad;
           host.style.opacity = String(info.opacity);
           host.style.visibility = "visible";
+          host.inert = false;
+          host.removeAttribute("aria-hidden");
         } else {
-          host.style.visibility = "hidden";
+          // Off its screen: once loaded, the page stays painted at a near-invisible opacity (inert, hidden from
+          // assistive technology), so the browser draws it for the first time at rest rather than mid-move, which
+          // stalled the camera for a fifth of a second as each page first appeared.
+          const loaded = frameRefs.current[screen]?.contentDocument?.readyState === "complete";
+          host.style.visibility = loaded ? "visible" : "hidden";
+          host.style.opacity = "0.002";
+          host.inert = true;
+          host.setAttribute("aria-hidden", "true");
         }
       });
 
@@ -487,7 +534,7 @@ export function JourneyExperience() {
       const shown = result.labels.filter((label) => label.visible);
       const root = canvas.closest("main");
       const covers = shown.length && root
-        ? Array.from(root.querySelectorAll<HTMLElement>(`.${styles.caption}, .${styles.illustrative}, .${styles.clock}, .${styles.chapterNav}`)).map((element) => element.getBoundingClientRect())
+        ? Array.from(root.querySelectorAll<HTMLElement>(`.${styles.caption}, .${styles.creditsPanel}, .${styles.clock}, .${styles.chapterNav}`)).map((element) => element.getBoundingClientRect())
         : [];
       for (const label of result.labels) {
         const element = labelRefs.current[label.id];
@@ -497,22 +544,36 @@ export function JourneyExperience() {
         const box = visible ? (element.firstElementChild as HTMLElement | null) : null;
         if (box) {
           const w = box.offsetWidth, h = box.offsetHeight, margin = 8;
-          x = Math.min(Math.max(x, margin + w / 2), window.innerWidth - margin - w / 2);
-          y = Math.max(y, margin + h);
+          const cx = Math.min(Math.max(x, margin + w / 2), window.innerWidth - margin - w / 2), cy = Math.max(y, margin + h);
+          // Nudged a little to stay on screen, or hidden: moved far, it would point at something else.
+          if (Math.hypot(cx - x, cy - y) > 24) visible = false;
+          x = cx;
+          y = cy;
           const left = x - w / 2, right = x + w / 2, top = y - h;
-          visible = !covers.some((rect) => left < rect.right && right > rect.left && top < rect.bottom && y > rect.top);
+          if (visible) visible = !covers.some((rect) => left < rect.right && right > rect.left && top < rect.bottom && y > rect.top);
         }
         element.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0)`;
         element.dataset.visible = String(visible);
       }
 
-      // Lalita's phone shows the page and practice scenario of the story's hour.
-      wantPhone(phoneAt(position));
+      // Lalita's phone shows the page and practice scenario of the story's hour. The app re-renders when they change
+      // (up to a fifth of a second on this page's thread), so a change waits for the camera to come to rest or for
+      // the phone to be on screen, instead of interrupting a move.
+      // Changes are not applied at all after the phone's last appearance (they would re-render a page never seen).
+      const resting = Math.abs(m.target - m.display) < 1e-3;
+      const phoneAhead = position <= stopPosition("public-prepare") + 1e-3;
+      wantPhone(phoneAt(position), result.screens.phone.opacity > 0 || (resting && phoneAhead));
 
-      // Lazy-load the real pages a little before they are needed.
-      if (position > 0.25 || m.target > 0.25) ensureMounted("phone");
-      if (position > stopPosition("public") + 0.5 || m.target >= stopPosition("public-prepare")) ensureMounted("monitor");
-      if (position > stopPosition("case") - 0.4 || m.target >= stopPosition("case")) ensureMounted("table");
+      // Load the real pages ahead of need, but only while the camera rests (the title, a caption, a docked page):
+      // a page starting up shares this thread and made moves stutter. A jump past a page's point loads it at once.
+      // The case view and the planning table start once the Public app has finished docking (see the stop block).
+      if (resting || m.target > 0.25) ensureMounted("phone");
+      if (pendingMount && resting) {
+        ensureMounted(pendingMount);
+        pendingMount = null;
+      }
+      if (m.target >= stopPosition("public-prepare")) ensureMounted("monitor");
+      if (m.target >= stopPosition("case")) ensureMounted("table");
 
       // View state (React only when something visible changes).
       const where = locate(position);
@@ -541,6 +602,15 @@ export function JourneyExperience() {
         m.docked = stop;
         if (screen === "phone") wantPhone(phoneAt(position));
         dockHost(screen, !m.reduced);
+        // Start the next real page after this one has docked: starting it during the dock made the dock stutter.
+        const next: ScreenId | null = stop === "public" ? "monitor" : stop === "public-prepare" ? "table" : null;
+        // Only while the viewer is still on this page; if they have moved on, at the next rest instead (frame loop).
+        if (next) window.setTimeout(() => {
+          if (disposed) return;
+          if (m.docked === stop) ensureMounted(next);
+          else pendingMount = next;
+        }, 900);
+        setCreditsOpen(false);
         // The 3D stays visible (its last frame) under the see-through bottom bar; rendering pauses while docked.
         setView((current) => ({ ...current, docked: stop }));
         const warning = STOPS[stop].warning;
@@ -716,6 +786,34 @@ export function JourneyExperience() {
 
   // --- Render ------------------------------------------------------------------------------------------------------
   const caption = view.caption >= 0 ? CAPTIONS[view.segment][view.caption] : null;
+  const captionKey = caption ? `${view.segment}|${view.caption}` : null;
+  const leavingCaptionKey = useLeaving(captionKey, 240);
+  const leavingCaption = leavingCaptionKey && leavingCaptionKey !== captionKey
+    ? CAPTIONS[leavingCaptionKey.split("|")[0] as SegmentId][Number(leavingCaptionKey.split("|")[1])] ?? null
+    : null;
+  const heroShown = view.heroVisible && status === "ready";
+  const heroLeaving = useLeaving(heroShown ? "hero" : null, 320) === "hero" && !heroShown;
+  const renderCaption = (shown: Caption, leaving: boolean, key: string) => (
+    <div className={leaving ? `${styles.caption} ${styles.captionLeaving}` : styles.caption} key={key} aria-live={leaving ? undefined : "polite"} aria-hidden={leaving ? true : undefined} data-who={shown.who}>
+      {shown.eyebrow && <span className={styles.eyebrow}>{tr(shown.eyebrow)}</span>}
+      {shown.who && (
+        <div className={styles.person} data-who={shown.who}>
+          <span className={styles.avatar} aria-hidden="true">{tr(CHARACTERS[shown.who].name).slice(0, 1)}</span>
+          <span>
+            <b>{tr(CHARACTERS[shown.who].name)}</b>
+            {shown.meet && <small>{tr(CHARACTERS[shown.who].role)} · {tr(UI.fictional)}</small>}
+          </span>
+        </div>
+      )}
+      <p>{tr(shown.text)}</p>
+      {shown.points && shown.points.length > 0 && (
+        <ul className={styles.points}>
+          {shown.points.map((point, index) => <li key={index}>{tr(point)}</li>)}
+        </ul>
+      )}
+      {shown.who && shown.meet && <q className={styles.question}>{tr(CHARACTERS[shown.who].question)}</q>}
+    </div>
+  );
   const docked = view.docked;
   const stopCopy = docked ? STOPS[docked] : null;
   const chapterIndex = CHAPTERS.indexOf(view.chapter);
@@ -765,6 +863,16 @@ export function JourneyExperience() {
                   title={tr(STOPS[SCREEN_STOP[screen]].page)}
                   onLoad={() => {
                     setLoaded((current) => ({ ...current, [screen]: true }));
+                    // Painted at once, at a near-invisible opacity, while nothing moves: its first draw is then not
+                    // in the first frames of the next move (the frame loop keeps it so while it is off its screen).
+                    const host = hostRefs.current[screen];
+                    const onItsScreen = host?.style.visibility === "visible" && Number(host.style.opacity || "0") > 0.005;
+                    if (host && host.dataset.mode !== "docked" && !onItsScreen) {
+                      host.style.opacity = "0.002";
+                      host.style.visibility = "visible";
+                      host.inert = true;
+                      host.setAttribute("aria-hidden", "true");
+                    }
                     setFrameScrollbar(screen, hostRefs.current[screen]?.dataset.mode === "docked");
                     if (screen === "phone") {
                       phoneState.current.applied = null;
@@ -798,7 +906,12 @@ export function JourneyExperience() {
           <header className={styles.topbar}>
             <Link className={styles.wordmark} href="/">FloodGuard<span>.</span></Link>
             <div className={styles.topActions}>
-              <button type="button" className={styles.ghost} onClick={() => setSkipOpen(true)}>{tr(UI.skip)}</button>
+              <button type="button" className={styles.ghost} aria-label={tr(UI.skip)} onClick={() => setSkipOpen(true)}>
+                <span className={styles.long}>{tr(UI.skip)}</span><span className={styles.short} aria-hidden="true">{tr(UI.skipShort)}</span>
+              </button>
+              <button type="button" ref={creditsButtonRef} className={styles.ghost} aria-label={tr(UI.creditsButton)} aria-expanded={creditsOpen} aria-controls="journey-credits" onClick={() => setCreditsOpen((open) => !open)}>
+                <span className={styles.long}>{tr(UI.creditsButton)}</span><span className={styles.short} aria-hidden="true">ⓘ</span>
+              </button>
               <div className={styles.language} role="group" aria-label="Language">
                 <button type="button" aria-pressed={language === "en"} onClick={() => changeLanguage("en")}>EN</button>
                 <button type="button" aria-pressed={language === "th"} onClick={() => changeLanguage("th")}>ไทย</button>
@@ -806,11 +919,11 @@ export function JourneyExperience() {
             </div>
           </header>
 
-          {view.heroVisible && status === "ready" && (
-            <div className={styles.heroScrim} aria-hidden="true" />
+          {(heroShown || heroLeaving) && (
+            <div className={styles.heroScrim} aria-hidden="true" data-leaving={heroLeaving ? "true" : undefined} />
           )}
-          {view.heroVisible && status === "ready" && (
-            <section className={styles.hero} aria-labelledby="journey-title">
+          {(heroShown || heroLeaving) && (
+            <section className={styles.hero} aria-labelledby="journey-title" data-leaving={heroLeaving ? "true" : undefined} inert={heroLeaving || undefined}>
               <h1 id="journey-title">{tr(UI.title).split("\n").map((line) => <span key={line}>{line}</span>)}</h1>
               <p>{tr(UI.subtitle)}</p>
               <div className={styles.heroActions}>
@@ -818,38 +931,32 @@ export function JourneyExperience() {
                 <button type="button" className={styles.secondary} onClick={() => setSkipOpen(true)}>{tr(UI.skip)}</button>
               </div>
               <small>{tr(UI.scrollHint)}</small>
+              <small className={styles.heroNote}>{tr(UI.illustrative)}</small>
+              <small className={styles.heroNote}>{tr(UI.creditsShort)}</small>
             </section>
           )}
 
-          {caption && (
-            <div className={styles.caption} key={`${view.segment}-${view.caption}-${language}`} aria-live="polite" data-who={caption.who}>
-              {caption.eyebrow && <span className={styles.eyebrow}>{tr(caption.eyebrow)}</span>}
-              {caption.who && (
-                <div className={styles.person} data-who={caption.who}>
-                  <span className={styles.avatar} aria-hidden="true">{tr(CHARACTERS[caption.who].name).slice(0, 1)}</span>
-                  <span>
-                    <b>{tr(CHARACTERS[caption.who].name)}</b>
-                    {caption.meet && <small>{tr(CHARACTERS[caption.who].role)} · {tr(UI.fictional)}</small>}
-                  </span>
-                </div>
-              )}
-              <p>{tr(caption.text)}</p>
-              {caption.points && caption.points.length > 0 && (
-                <ul className={styles.points}>
-                  {caption.points.map((point, index) => <li key={index}>{tr(point)}</li>)}
-                </ul>
-              )}
-              {caption.who && caption.meet && <q className={styles.question}>{tr(CHARACTERS[caption.who].question)}</q>}
-            </div>
-          )}
+          {leavingCaption && renderCaption(leavingCaption, true, `leaving-${leavingCaptionKey}-${language}`)}
+          {caption && renderCaption(caption, false, `${view.segment}-${view.caption}-${language}`)}
 
           {!view.heroVisible && status === "ready" && (
             <p className={styles.clock} aria-live="off">{clockText(formatMoment(clockHour / 24, language), language)}</p>
           )}
-          <p className={styles.illustrative}>
-            {tr(UI.illustrative)}
-            {credits && <small title={tr(credits)}>{tr(UI.credits)}</small>}
-          </p>
+          {/* What the story is and whose data it draws on: behind the Credits button, off the scene. */}
+          {creditsOpen && (
+            <aside
+              id="journey-credits"
+              className={styles.creditsPanel}
+              aria-label={tr(UI.creditsTitle)}
+              onKeyDown={(event) => { if (event.key === "Escape") { event.stopPropagation(); closeCredits(); } }}
+            >
+              <strong>{tr(UI.creditsTitle)}</strong>
+              <p>{tr(UI.illustrative)}</p>
+              <p>{credits ? tr(credits) : tr(UI.credits)}</p>
+              <p>{tr(UI.illustrativeLooks)}</p>
+              <button type="button" ref={creditsCloseRef} className={styles.ghost} onClick={closeCredits}>{tr(UI.close)}</button>
+            </aside>
+          )}
         </>
       )}
 
@@ -873,7 +980,7 @@ export function JourneyExperience() {
             <ol>
               {CHAPTERS.map((chapter, index) => (
                 <li key={chapter}>
-                  <button type="button" aria-current={chapter === view.chapter ? "step" : undefined} data-done={index < chapterIndex} onClick={() => void goTo(chapterEntry(chapter))}>
+                  <button type="button" aria-label={`${CHAPTER_LABELS[chapter].number ? `${CHAPTER_LABELS[chapter].number} ` : ""}${tr(CHAPTER_LABELS[chapter].title)}`} aria-current={chapter === view.chapter ? "step" : undefined} data-done={index < chapterIndex} onClick={() => void goTo(chapterEntry(chapter))}>
                     {CHAPTER_LABELS[chapter].number && <b>{CHAPTER_LABELS[chapter].number}</b>}
                     <span>{tr(CHAPTER_LABELS[chapter].title)}</span>
                   </button>

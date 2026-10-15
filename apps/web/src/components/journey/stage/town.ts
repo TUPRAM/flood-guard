@@ -1,5 +1,6 @@
 import * as THREE from "three";
 
+import { homePad, homePlot, onPlot, type HomePlot } from "@/lib/journey/home-plot";
 import { COVER, FloodField, type TownBuilding, type TownPack, type TownRoad } from "@/lib/journey/town-data";
 
 import { buildFacadeAtlas, type FacadeAtlas } from "./facade-atlas";
@@ -31,8 +32,8 @@ export interface Town {
   field: FloodField;
   /** Where the story's places are (at about roof height, for labels). */
   anchors: Record<"home" | "neighbour" | "shelter" | "office" | "wat" | "river" | "cut", THREE.Vector3>;
-  /** Lalita's home: the outline's box, facing its street (the stage builds the detailed house there). */
-  home: { x: number; z: number; w: number; d: number; rotation: number; yard: number; ground: number };
+  /** Lalita's home: the house on its plot, facing its street (the stage builds the detailed house and wing there). */
+  home: { x: number; z: number; w: number; d: number; rotation: number; yard: number; ground: number; plot: HomePlot };
   /** Where the operations room stands, in the District Office's outline. */
   office: { x: number; z: number; ground: number };
   route: RouteBand;
@@ -581,7 +582,7 @@ function glowTexture(): THREE.DataTexture {
   return t;
 }
 
-function buildUtilities(pack: TownPack, height: (x: number, z: number) => number, cover: CoverSampler): { group: THREE.Group; lamps: Lamps; dispose(): void } {
+function buildUtilities(pack: TownPack, height: (x: number, z: number) => number, cover: CoverSampler, allowed: (x: number, z: number) => boolean): { group: THREE.Group; lamps: Lamps; dispose(): void } {
   const random = seeded(6151);
   const poles: Array<{ x: number; z: number; ry: number; lamp: boolean; road: number }> = [];
   const inner = (x: number, z: number) => x > INNER.x0 + 20 && x < INNER.x1 - 20 && z > INNER.z0 + 20 && z < INNER.z1 - 20;
@@ -602,7 +603,7 @@ function buildUtilities(pack: TownPack, height: (x: number, z: number) => number
       const nx = -(z - pz) / tl, nz = (x - px) / tl;
       const off = road.width / 2 + 0.7;
       const sx = x + nx * off, sz = z + nz * off;
-      if (!inner(sx, sz) || cover.classAt(sx, sz) === COVER.building || cover.classAt(sx, sz) === COVER.water) continue;
+      if (!inner(sx, sz) || !allowed(sx, sz) || cover.classAt(sx, sz) === COVER.building || cover.classAt(sx, sz) === COVER.water) continue;
       lampToggle += 1;
       // Main roads light every other pole; lanes every third (a lamp on a pole is common in Thai sois).
       const lamp = style.lamps ? lampToggle % 2 === 0 : lampToggle % 3 === 0;
@@ -629,6 +630,10 @@ function buildUtilities(pack: TownPack, height: (x: number, z: number) => number
   for (let i = 1; i < poles.length; i += 1) {
     const a = poles[i - 1], b = poles[i];
     if (a.road !== b.road || Math.hypot(a.x - b.x, a.z - b.z) > 60) continue;
+    // No cable over a place the town does not draw on (Lalita's plot).
+    let crosses = false;
+    for (let t = 0.05; t < 1 && !crosses; t += 0.05) crosses = !allowed(a.x + (b.x - a.x) * t, a.z + (b.z - a.z) * t);
+    if (crosses) continue;
     const ya = height(a.x, a.z) - 0.2, yb = height(b.x, b.z) - 0.2;
     const lines: Array<[number, number, number]> = [[-0.7, 8.5, 0.5], [0.7, 8.5, 0.5], [-0.25, 8.5, 0.45], [-0.45, 6.6, 0.9], [-0.3, 6.5, 1.1], [-0.15, 6.55, 1.3], [0.0, 6.4, 1.5]];
     for (const [offset, h, sagBase] of lines) {
@@ -830,27 +835,16 @@ export function buildTown(pack: TownPack, options: TownOptions): Town {
   const special = pack.special;
   const place = (id: string) => pack.manifest.places.find((entry) => entry.id === id);
 
-  // Lalita's home: the outline's box, turned to face its street; a pad holds it at its own cell's height.
-  const homeBuilding = pack.buildings[special.home];
-  const homeRing = new Float32Array(homeBuilding.ring);
-  const homeFront = orient(homeRing, homeBuilding.front);
-  const hn = homeRing.length / 2;
-  const fa = homeFront, fb = (homeFront + 1) % hn;
-  const ex = homeRing[fb * 2] - homeRing[fa * 2], ez = homeRing[fb * 2 + 1] - homeRing[fa * 2 + 1];
-  const el = Math.hypot(ex, ez) || 1;
-  const nx = ez / el, nz = -ex / el;
-  const rotation = Math.atan2(nx, nz);
-  let { w, d } = homeBuilding.obb;
-  const axis = Math.abs(Math.cos(homeBuilding.obb.angle) * nx + Math.sin(homeBuilding.obb.angle) * nz);
-  if (axis > 0.7) { const t = w; w = d; d = t; }
-  w = Math.min(Math.max(w, 7.2), 10.5);
-  d = Math.min(Math.max(d, 6.0), 9.0);
+  // Lalita's home: the plot laid out on the real outline (home-plot.ts). A flat pad holds the house and its yard, out
+  // to the garden wall, at the height of the home's own cell (dry at every hour); the back wing keeps the model's ground.
+  const plot = homePlot(pack);
+  const { house } = plot;
   const homePlace = place("home");
   const homeCell = field.cellIndex(homePlace?.x ?? 0, homePlace?.z ?? 0);
-  const homeGround = homeCell >= 0 ? field.ground[homeCell] : field.groundAt(homeBuilding.obb.cx, homeBuilding.obb.cz);
-  // Just the house kit and its yard, with a short blend: wider, it raised the outline's west end, which the model
-  // has under 0.2 to 0.35 m of water at the peak.
-  field.addPad({ x: homeBuilding.obb.cx, z: homeBuilding.obb.cz, radius: Math.hypot(w / 2, d / 2 + 3) + 0.5, blend: 3, height: homeGround });
+  const homeGround = homeCell >= 0 ? field.ground[homeCell] : field.groundAt(house.x, house.z);
+  field.addPad(homePad(plot, homeGround));
+  // Nothing of the town is drawn on the plot (the bake's lane centreline runs straight through it).
+  const offPlot = (x: number, z: number) => !onPlot(plot, x, z, 0.4);
 
   const height = (x: number, z: number) => groundHeight(field, cover, x, z);
   const uniforms = createTownUniforms(field);
@@ -963,19 +957,27 @@ export function buildTown(pack: TownPack, options: TownOptions): Town {
   pack.roads.forEach((road: TownRoad) => {
     const style = ROAD_STYLE[road.cls];
     if (!style) return;
-    const pts = densify(road.points, 4);
-    let heights = pts.map(([x, z]) => height(x, z) + style.lift);
-    if (road.bridge && pts.length > 1) {
-      const y0 = heights[0], y1 = heights[heights.length - 1];
-      const deck = Math.max(y0, y1, 1.6);
-      heights = heights.map((_, i) => {
-        const t = i / (heights.length - 1);
-        const ramp = Math.min(1, Math.min(t, 1 - t) * 8);
-        return (y0 * (1 - t) + y1 * t) * (1 - ramp) + deck * ramp;
-      });
+    const all = densify(road.points, 2);
+    // Runs of the road off the plot, each drawn as its own ribbon.
+    const runs: Array<Array<[number, number]>> = [[]];
+    for (const point of all) {
+      if (offPlot(point[0], point[1])) runs[runs.length - 1].push(point);
+      else if (runs[runs.length - 1].length) runs.push([]);
     }
-    addRibbon(surfaces[style.surface].buffers, pts, road.width, heights, 4);
-    if (style.marking && road.width >= 8) addRibbon(markings, pts, 0.14, heights.map((y) => y + 0.015), 6, 1);
+    for (const pts of runs.filter((run) => run.length >= 2)) {
+      let heights = pts.map(([x, z]) => height(x, z) + style.lift);
+      if (road.bridge && pts.length > 1) {
+        const y0 = heights[0], y1 = heights[heights.length - 1];
+        const deck = Math.max(y0, y1, 1.6);
+        heights = heights.map((_, i) => {
+          const t = i / (heights.length - 1);
+          const ramp = Math.min(1, Math.min(t, 1 - t) * 8);
+          return (y0 * (1 - t) + y1 * t) * (1 - ramp) + deck * ramp;
+        });
+      }
+      addRibbon(surfaces[style.surface].buffers, pts, road.width, heights, 4);
+      if (style.marking && road.width >= 8) addRibbon(markings, pts, 0.14, heights.map((y) => y + 0.015), 6, 1);
+    }
   });
   for (const { buffers, material } of Object.values(surfaces)) {
     if (!buffers.count) continue;
@@ -999,7 +1001,7 @@ export function buildTown(pack: TownPack, options: TownOptions): Town {
     asphalt.dispose(); concrete.dispose(); dash.dispose(); markingMaterial.dispose();
   });
 
-  const utilities = buildUtilities(pack, height, cover);
+  const utilities = buildUtilities(pack, height, cover, offPlot);
   group.add(utilities.group);
   disposers.push(utilities.dispose);
 
@@ -1021,7 +1023,7 @@ export function buildTown(pack: TownPack, options: TownOptions): Town {
     uniforms,
     field,
     anchors: {
-      home: new THREE.Vector3(homeBuilding.obb.cx, homeGround + 10.5, homeBuilding.obb.cz),
+      home: new THREE.Vector3(house.x, homeGround + 10.5, house.z),
       neighbour: new THREE.Vector3(neighbour.obb.cx, field.groundAt(neighbour.obb.cx, neighbour.obb.cz) + 8.5, neighbour.obb.cz),
       shelter: anchorAt(pack.route.destination, 14),
       office: new THREE.Vector3(officeBuilding.obb.cx, officeGround + 12, officeBuilding.obb.cz),
@@ -1029,7 +1031,7 @@ export function buildTown(pack: TownPack, options: TownOptions): Town {
       river: anchorAt("sai_river", 6),
       cut: route.firstCut.point,
     },
-    home: { x: homeBuilding.obb.cx, z: homeBuilding.obb.cz, w, d, rotation, yard: 3.0, ground: homeGround },
+    home: { x: house.x, z: house.z, w: house.w, d: house.d, rotation: plot.rotation, yard: plot.yard, ground: homeGround, plot },
     office: { x: officeBuilding.obb.cx, z: officeBuilding.obb.cz, ground: officeGround },
     route: route.band,
     lamps: utilities.lamps,

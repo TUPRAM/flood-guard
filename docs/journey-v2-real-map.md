@@ -60,7 +60,9 @@ cell is wet exactly when stage > code × 0.05 (the model's rule; it does not dep
 the relief height, reached over about four cells from the nearest floodable ground and never lower than 0.5 m above
 its highest water: the relief and k_s × HAND have different bases, and met directly they made cliffs of up to 29 m.
 The river at a dry hour is drawn from the OSM water cover, not from channel cells (the Public map shows no water at
-stage 0). Through town the replay's channel cells run about 100 to 150 m south of the OSM river (a property of r5's
+stage 0). Lalita's house faces the street nearest the home place (road 112) on its real outline, set back behind a
+yard (`home-plot.ts`); a rectangular pad holds the house and yard at the home cell's height, the back wing keeps the
+model's ground, and roads, poles and cables are not drawn on the plot. Through town the replay's channel cells run about 100 to 150 m south of the OSM river (a property of r5's
 30 m surface model, recorded in the manifest's limitations), so the water rises from the model's lines, not from the
 drawn river.
 

@@ -220,6 +220,13 @@ export interface HouseSpec {
   gateX: number;
   doorX: number;
   seed: number;
+  /** Roof overhang beyond the walls (m); 0.66 if not given. */
+  eaves?: number;
+  /** The garden wall's ends along the front (local x); 1.3 m past each side of the house if not given. */
+  fenceFrom?: number;
+  fenceTo?: number;
+  /** A spirit house on its post in the front yard, and potted plants along the garden wall and the porch. */
+  yardLife?: boolean;
 }
 
 const PLINTH = 0.38;
@@ -304,7 +311,7 @@ export function buildHouse(parts: Parts, spec: HouseSpec): void {
   }
 
   // Roof.
-  const ov = 0.66;
+  const ov = spec.eaves ?? 0.66;
   if (spec.roof === "hip") {
     F.add("roof", hipRoof(w + 2 * ov, d + 2 * ov, spec.pitch, 0.2, 1.6), spec.roofColor, M(0, eave + 0.06, 0));
   } else {
@@ -332,10 +339,10 @@ export function buildHouse(parts: Parts, spec: HouseSpec): void {
   if (spec.fence) {
     // Garden wall along the front with posts and a gate opening; short returns along the sides.
     const fz = d / 2 + spec.yard;
-    const half = w / 2 + 1.3;
+    const lo = spec.fenceFrom ?? -(w / 2 + 1.3), hi = spec.fenceTo ?? w / 2 + 1.3;
     const gate = 3.2;
     const g0 = spec.gateX - gate / 2, g1 = spec.gateX + gate / 2;
-    const runs: Array<[number, number]> = [[-half, g0], [g1, half]].filter(([a, b]) => b - a > 0.3) as Array<[number, number]>;
+    const runs: Array<[number, number]> = [[lo, g0], [g1, hi]].filter(([a, b]) => b - a > 0.3) as Array<[number, number]>;
     for (const [a, b] of runs) {
       const len = b - a;
       const cx = (a + b) / 2;
@@ -348,10 +355,62 @@ export function buildHouse(parts: Parts, spec: HouseSpec): void {
         F.add("trim", box(0.38, 0.07, 0.38), spec.trim, M(px, 1.22, fz));
       }
     }
-    for (const side of [-1, 1]) {
+    for (const end of [lo, hi]) {
       const len = spec.yard + 1;
-      F.add("plaster", worldUV(box(0.16, 0.95, len), 2.2), spec.wall, M(side * half, 0.375, fz - len / 2));
-      F.add("trim", box(0.24, 0.06, len), spec.trim, M(side * half, 0.88, fz - len / 2));
+      F.add("plaster", worldUV(box(0.16, 0.95, len), 2.2), spec.wall, M(end, 0.375, fz - len / 2));
+      F.add("trim", box(0.24, 0.06, len), spec.trim, M(end, 0.88, fz - len / 2));
+    }
+    if (spec.yardLife) yardLife(F, spec, lo, hi, random);
+  }
+}
+
+/**
+ * The life of a Thai front yard: a spirit house (san phra phum) on its post in the corner away from the gate, facing
+ * the street, and potted plants along the inside of the garden wall and beside the porch steps.
+ */
+function yardLife(F: Frame, spec: HouseSpec, lo: number, hi: number, random: () => number): void {
+  const { w, d } = spec;
+  const fz = d / 2 + spec.yard;
+  // The corner farther from the gate, inside the wall.
+  const far = Math.abs(lo - spec.gateX) > Math.abs(hi - spec.gateX) ? lo + 0.75 : hi - 0.75;
+  const shrine = F.child(M(far, 0, fz - 0.75));
+  const white = new THREE.Color("#ece6d8"), gold = new THREE.Color("#c9a14a"), red = new THREE.Color("#9c3b2b");
+  shrine.add("concrete", box(0.5, 0.12, 0.5), PALETTE.concrete, M(0, 0.06, 0));
+  shrine.add("plaster", box(0.2, 1.2, 0.2), white, M(0, 0.72, 0));
+  shrine.add("trim", box(0.78, 0.06, 0.78), gold, M(0, 1.33, 0));
+  shrine.add("trim", box(0.46, 0.36, 0.42), white, M(0, 1.54, 0));
+  shrine.add("dark", box(0.16, 0.22, 0.02), new THREE.Color("#3a2a20"), M(0, 1.5, 0.215));
+  for (const side of [-1, 1]) shrine.add("trim", box(0.05, 0.38, 0.05), gold, M(side * 0.21, 1.55, 0.2));
+  const { geometry: roof, h } = gableRoof(0.66, 0.6, THREE.MathUtils.degToRad(40), 0.03, 1);
+  shrine.add("roof", roof, red, M(0, 1.73, 0, Math.PI / 2));
+  shrine.add("trim", box(0.04, 0.16, 0.04), gold, M(0, 1.73 + h + 0.08, 0));
+  shrine.add("trim", box(0.5, 0.04, 0.36), gold, M(0, 1.36, 0.05));
+  // Pots: terracotta, each with a leafy plant.
+  const pot = new THREE.Color("#a8583a"), leaf = [new THREE.Color("#4f7a3a"), new THREE.Color("#5f8a3f"), new THREE.Color("#3f6a35")];
+  const spots: Array<[number, number, number]> = [];
+  const gateLo = spec.gateX - 1.7, gateHi = spec.gateX + 1.7;
+  for (let x = lo + 0.5; x <= hi - 0.5; x += 1.15) {
+    if (x > gateLo && x < gateHi) continue;
+    if (Math.abs(x - far) < 0.8) continue;
+    spots.push([x, fz - 0.35, 0.8 + random() * 0.35]);
+  }
+  const step = Math.max(-w / 2 + 0.4, Math.min(w / 2 - 0.4, spec.doorX));
+  // Two larger pots beside the porch steps, set back from the over-the-shoulder shots' foreground.
+  for (const side of [-1, 1]) spots.push([step + side * 1.35, d / 2 + 2.6, 1.05]);
+  for (const [x, z, s] of spots) {
+    const r = 0.17 * s;
+    F.add("concrete", cylinder(r * 0.82, r, 0.34 * s, 10), pot, M(x, 0.17 * s, z));
+    const tint = leaf[Math.floor(random() * leaf.length)];
+    for (let k = 0; k < 3; k += 1) {
+      const a = random() * Math.PI * 2, rr = r * 0.6 * random();
+      // Rounded leaf clusters (a subdivided icosahedron), not faceted gems.
+      const ball = new THREE.IcosahedronGeometry(r * (0.95 + random() * 0.5), 1);
+      const position = ball.getAttribute("position"), normal = ball.getAttribute("normal"), n = new THREE.Vector3();
+      for (let i = 0; i < position.count; i += 1) {
+        n.fromBufferAttribute(position, i).normalize();
+        normal.setXYZ(i, n.x, n.y, n.z);
+      }
+      F.add("trim", ball, tint, M(x + Math.cos(a) * rr, 0.34 * s + r * (0.7 + random() * 0.6), z + Math.sin(a) * rr));
     }
   }
 }

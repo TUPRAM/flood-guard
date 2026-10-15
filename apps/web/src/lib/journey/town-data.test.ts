@@ -74,6 +74,16 @@ describe("the journey's town (the bake of Mae Sai)", () => {
     for (const beat of pack.manifest.beats) expect(beat.stage_m).toBe(stageAt(beat.hour / 24, pack.manifest.replay.stage_anchors));
   });
 
+  it("holds a pad's flat top even with no blend, and blends a round pad into the ground", () => {
+    const local = new FloodField(pack);
+    const home = place("home");
+    const homeCell = local.cellIndex(home.x, home.z);
+    local.addPad({ x: home.x, z: home.z, radius: 3, blend: 0, height: 9 });
+    expect(local.groundAt(home.x, home.z)).toBe(9);
+    expect(local.groundAt(home.x + 5, home.z)).toBeLessThan(9);
+    expect(local.ground[homeCell]).toBeLessThan(9);
+  });
+
   it("draws the home on its cell's height, so it stays dry in the 3D scene at the peak", () => {
     const home = pack.buildings[pack.special.home];
     const homeCell = field.cellIndex(place("home").x, place("home").z);

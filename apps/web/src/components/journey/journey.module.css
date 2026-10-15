@@ -161,21 +161,30 @@
 .caption p { margin: 0; font-size: 1.12rem; font-weight: 600; line-height: 1.38; letter-spacing: -0.01em; }
 .eyebrow { display: block; margin-bottom: 6px; color: var(--teal); font-size: 0.72rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; }
 
-.illustrative {
+/* The Credits panel: what the story is and whose data it draws on (opened from the top bar). */
+.creditsPanel {
   position: absolute;
-  z-index: 4;
+  z-index: 6;
+  top: 64px;
   right: 16px;
-  bottom: 84px;
-  max-width: min(640px, calc(100vw - 32px));
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+  max-width: min(460px, calc(100vw - 32px));
   margin: 0;
-  padding: 4px 9px;
-  border-radius: 6px;
-  background: rgb(250 248 242 / 85%);
+  padding: 14px 16px;
+  border: 1px solid rgb(21 43 41 / 12%);
+  border-radius: 10px;
+  background: rgb(250 248 242 / 97%);
+  box-shadow: 0 14px 40px rgb(21 43 41 / 16%);
   color: var(--muted);
-  font-size: 0.7rem;
-  text-align: right;
+  font-size: 0.76rem;
+  line-height: 1.45;
+  animation: rise 240ms ease both;
 }
-.illustrative small { display: block; margin-top: 2px; font-size: 0.62rem; opacity: 0.85; }
+.creditsPanel strong { color: var(--ink); font-size: 0.82rem; }
+.creditsPanel p { margin: 0; }
+.hero small.heroNote { margin-top: 8px; color: var(--ink); font-size: 0.72rem; opacity: 0.78; }
 
 /* The replay clock: the date and hour of the scene, and what it is (a model, low confidence). */
 .clock {
@@ -281,6 +290,11 @@ a.step { display: inline-flex; align-items: center; justify-content: center; tex
 .srOnly { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 @keyframes rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+/* Panels fade out too (they used to vanish in one frame): the outgoing caption, the title and its scrim. */
+@keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+.caption.captionLeaving { animation: fadeOut 240ms ease forwards; pointer-events: none; }
+.clock { animation: rise 320ms ease both; }
+.hero[data-leaving], .heroScrim[data-leaving] { animation: fadeOut 320ms ease forwards; pointer-events: none; }
 .hero { animation-name: heroRise; }
 @keyframes heroRise { from { opacity: 0; transform: translateY(-50%); } to { opacity: 1; transform: translateY(-55%); } }
 @keyframes drop { from { transform: translateY(-100%); } to { transform: translateY(0); } }
@@ -292,10 +306,9 @@ a.step { display: inline-flex; align-items: center; justify-content: center; tex
   .heroScrim { background: linear-gradient(0deg, rgb(239 234 223 / 95%) 0%, rgb(239 234 223 / 80%) 45%, rgb(239 234 223 / 0%) 75%); }
   .caption { bottom: 128px; }
   .caption p { font-size: 1rem; }
-  /* On phones the tag and credits sit under the clock, over the sky: at the bottom they covered the hero's buttons
-     and the captions. They never take taps. */
-  .illustrative { top: 108px; bottom: auto; left: 10px; right: 10px; max-width: none; z-index: 3; pointer-events: none; text-align: center; font-size: 0.64rem; line-height: 1.35; }
-  .illustrative small { font-size: 0.58rem; }
+  .creditsPanel { top: 100px; left: 10px; right: 10px; max-width: none; }
+  /* The title stays between the header and the chapter bar, however short the screen. */
+  .hero { max-height: calc(100svh - 190px); overflow-y: auto; }
   .clock { top: 58px; max-width: calc(100vw - 24px); width: max-content; white-space: normal; text-align: center; line-height: 1.3; }
   .chapterNav { left: 8px; right: 8px; bottom: 8px; }
   .chapterNav ol { justify-content: flex-start; }
@@ -379,3 +392,16 @@ a.step { display: inline-flex; align-items: center; justify-content: center; tex
   .points { margin-top: 6px; font-size: 0.82rem; line-height: 1.4; }
 }
 
+/* Narrow phones: the top bar keeps to one row so it never covers the replay clock. */
+@media (max-width: 400px) {
+  .topbar { gap: 8px; }
+  .topActions { gap: 6px; flex-wrap: nowrap; }
+  .wordmark { font-size: 1.15rem; }
+}
+
+/* Short screens (landscape phones): a smaller title, so the whole block fits. */
+@media (max-height: 640px) {
+  .hero h1 { font-size: clamp(1.8rem, 9vh, 4.6rem); margin-bottom: 8px; }
+  .hero p { margin-bottom: 12px; font-size: 0.95rem; }
+  .hero { top: 72px; bottom: auto; transform: none; max-height: calc(100svh - 150px); overflow-y: auto; animation-name: rise; }
+}

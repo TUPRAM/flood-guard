@@ -34,19 +34,20 @@ export type TimelineItem =
 
 export const TIMELINE: readonly TimelineItem[] = [
   { kind: "segment", id: "opening", length: 1, chapter: "opening" },
-  { kind: "segment", id: "everyday", length: 1.4, chapter: "everyday" },
-  { kind: "segment", id: "enter-phone", length: 1, chapter: "everyday" },
+  // Long: the walk from above, then a slow move down Lalita's street to the family at the gate.
+  { kind: "segment", id: "everyday", length: 2.6, chapter: "everyday" },
+  { kind: "segment", id: "enter-phone", length: 1.3, chapter: "everyday" },
   { kind: "stop", id: "public", chapter: "everyday" },
-  { kind: "segment", id: "conditions", length: 1.6, chapter: "conditions" },
-  { kind: "segment", id: "return-phone", length: 1, chapter: "conditions" },
+  { kind: "segment", id: "conditions", length: 2, chapter: "conditions" },
+  { kind: "segment", id: "return-phone", length: 1.8, chapter: "conditions" },
   { kind: "stop", id: "public-prepare", chapter: "conditions" },
-  { kind: "segment", id: "night", length: 2.4, chapter: "night" },
-  { kind: "segment", id: "cut-off", length: 2.6, chapter: "affected" },
+  { kind: "segment", id: "night", length: 2.8, chapter: "night" },
+  { kind: "segment", id: "cut-off", length: 3.6, chapter: "affected" },
   { kind: "segment", id: "enter-monitor", length: 1, chapter: "affected" },
   { kind: "stop", id: "case", chapter: "affected" },
-  { kind: "segment", id: "aerial", length: 2.2, chapter: "response" },
+  { kind: "segment", id: "aerial", length: 3, chapter: "response" },
   { kind: "stop", id: "command", chapter: "response" },
-  { kind: "segment", id: "after", length: 1.8, chapter: "after" },
+  { kind: "segment", id: "after", length: 2.6, chapter: "after" },
 ];
 
 export const CHAPTERS: readonly ChapterId[] = ["opening", "everyday", "conditions", "night", "affected", "response", "after"];
@@ -63,7 +64,8 @@ const PLACED: readonly Placed[] = (() => {
   let at = 0;
   return TIMELINE.map((item) => {
     const start = at;
-    if (item.kind === "segment") at += item.length;
+    // Rounded, so positions are the decimals they look like (1 + 2.6 + … is otherwise 7.199999999999999).
+    if (item.kind === "segment") at = Math.round((at + item.length) * 1e9) / 1e9;
     return { item, start, end: at };
   });
 })();
@@ -232,11 +234,14 @@ const SEGMENT_HOURS: Record<SegmentId, readonly HourKey[]> = {
   conditions: [{ at: 0, hour: 38 }, { at: 1, hour: 40 }],
   "return-phone": [{ at: 0, hour: 40 }],
   // Dusk to the small hours of 11 September: roads under water (46), the walk nearly cut (48), then cut (49).
-  night: [{ at: 0, hour: 40 }, { at: 0.16, hour: 41 }, { at: 0.42, hour: 46 }, { at: 0.66, hour: 48 }, { at: 0.88, hour: 49 }],
+  // Dusk falls over about a second (p 0.12-0.30) before the 22:00 caption appears.
+  // The clock reaches 22:00 as that caption appears (p 0.38) and holds it to the pause.
+  night: [{ at: 0, hour: 40 }, { at: 0.12, hour: 41.6 }, { at: 0.3, hour: 43.5 }, { at: 0.38, hour: 46 }, { at: 0.42, hour: 46 }, { at: 0.66, hour: 48 }, { at: 0.88, hour: 49 }],
   "cut-off": [{ at: 0, hour: 84 }],
   "enter-monitor": [{ at: 0, hour: 84 }],
   aerial: [{ at: 0, hour: 84 }],
-  after: [{ at: 0, hour: 130 }, { at: 0.45, hour: 132 }],
+  // Thursday until the screen is fully dark (p 0.02-0.04), Saturday from then on.
+  after: [{ at: 0, hour: 84 }, { at: 0.03, hour: 84 }, { at: 0.031, hour: 130 }, { at: 0.45, hour: 132 }],
 };
 
 /** The replay hour a real page opens at: the hour of the scene around it. */
@@ -259,6 +264,26 @@ export function replayHourAt(t: number): number {
   return hourAlong(SEGMENT_HOURS[segment], progress);
 }
 
+/**
+ * How the sky blends just after a page whose hour is earlier than the segment's (Monday 12:00 on the Public app, then
+ * Tuesday afternoon): the light and weather of hour `from` turn into those of hour `to` with `weight` over the first
+ * tenth of the segment, instead of switching in one frame as the page undocks. The light itself is blended, not the
+ * hour (blending the hour would pass through the night between). Elsewhere `from` and `to` are the clock's hour.
+ */
+export function skyHoursAt(t: number): { from: number; to: number; weight: number } {
+  const hour = replayHourAt(t);
+  const none = { from: hour, to: hour, weight: 1 };
+  if (stopAt(t)) return none;
+  const { segment, progress } = locate(t);
+  const index = PLACED.findIndex((entry) => entry.item.kind === "segment" && entry.item.id === segment);
+  const before = index > 0 ? PLACED[index - 1].item : null;
+  if (!before || before.kind !== "stop" || progress >= 0.1) return none;
+  const from = STOP_HOURS[before.id];
+  if (Math.abs(from - SEGMENT_HOURS[segment][0].hour) < 1e-9) return none;
+  const w = progress / 0.1;
+  return { from, to: hour, weight: w * w * (3 - 2 * w) };
+}
+
 /** Every distinct replay hour a segment key names, in story order (for tests and the text version). */
 export function storyHours(): number[] {
   return [...new Set(SEGMENT_IDS.flatMap((id) => SEGMENT_HOURS[id].map((key) => key.hour)))];
@@ -266,13 +291,18 @@ export function storyHours(): number[] {
 
 /**
  * How dark the screen is for a cut in time (0 = clear, 1 = black): the end of the night fades out and the cut-off
- * chapter, two and a half days later, fades in. Other cuts happen while a page covers the scene.
+ * chapter, two and a half days later, fades in; the last chapter, two days after the planning table, fades in too.
+ * Other cuts happen while a page covers the scene.
  */
 export function veilAt(t: number): number {
   const { segment, progress } = locate(t);
   const smooth = (x: number) => x * x * (3 - 2 * x);
   if (segment === "night" && progress > 0.94) return smooth(Math.min(1, (progress - 0.94) / 0.06));
   if (segment === "cut-off" && progress < 0.06) return smooth(1 - progress / 0.06);
+  // Two days on, after the planning table: a dip to dark (in, hold, out) instead of a long flight across town.
+  if (segment === "after" && progress < 0.02) return smooth(progress / 0.02);
+  if (segment === "after" && progress < 0.04) return 1;
+  if (segment === "after" && progress < 0.1) return smooth(1 - (progress - 0.04) / 0.06);
   return 0;
 }
 
@@ -299,7 +329,8 @@ export function phoneAt(t: number): { tab: PublicTab; practice: PracticeState } 
   if (stop === "public-prepare") return { tab: "prepare", practice };
   if (stop) return { tab: "home", practice };
   const { segment, progress } = locate(t);
-  if (segment === "return-phone") return { tab: progress < 0.5 ? "home" : "prepare", practice };
+  // Prepare from the family's rest (p 0.45), while the phone is off screen: the app re-renders unseen.
+  if (segment === "return-phone") return { tab: progress < 0.44 ? "home" : "prepare", practice };
   if (segment === "night" && progress < 0.3) return { tab: "report", practice };
   return { tab: "home", practice };
 }

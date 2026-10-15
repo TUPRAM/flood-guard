@@ -153,10 +153,22 @@ export function decodeRun(coords: readonly number[]): Float32Array {
 export interface Pad {
   x: number;
   z: number;
-  /** Radius (m) of the flat top and of the blend around it. */
+  /** Radius (m) of the flat top (0 for a rectangular pad: `rect` gives its top) and of the blend around it. */
   radius: number;
   blend: number;
   height: number;
+  /** A rectangular flat top instead of a round one: width along S, depth along F, rotation as a house's. */
+  rect?: { w: number; d: number; rotation: number };
+}
+
+/** Distance (m) from a point to a pad's flat top (0 on it). */
+function padDistance(pad: Pad, x: number, z: number): number {
+  const dx = x - pad.x, dz = z - pad.z;
+  if (!pad.rect) return Math.max(0, Math.hypot(dx, dz) - pad.radius);
+  const { w, d, rotation } = pad.rect;
+  const along = Math.abs(dx * Math.cos(rotation) - dz * Math.sin(rotation)) - w / 2;
+  const across = Math.abs(dx * Math.sin(rotation) + dz * Math.cos(rotation)) - d / 2;
+  return Math.hypot(Math.max(0, along), Math.max(0, across));
 }
 
 /**
@@ -280,9 +292,10 @@ export class FloodField implements Grid {
   groundAt(x: number, z: number): number {
     let y = this.bilinear(this.ground, x, z);
     for (const pad of this.pads) {
-      const d = Math.hypot(x - pad.x, z - pad.z);
-      if (d >= pad.radius + pad.blend) continue;
-      const w = d <= pad.radius ? 1 : 1 - (d - pad.radius) / pad.blend;
+      const d = padDistance(pad, x, z);
+      // On the flat top the pad holds fully; around it, it fades out over `blend` (none with a blend of 0).
+      if (d > 0 && d >= pad.blend) continue;
+      const w = d === 0 || pad.blend <= 0 ? 1 : 1 - d / pad.blend;
       y = Math.max(y, y + (pad.height - y) * w * w * (3 - 2 * w));
     }
     return y;

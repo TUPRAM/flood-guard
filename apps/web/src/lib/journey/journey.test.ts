@@ -30,7 +30,9 @@ import {
   storyBeats,
   storyHours,
   veilAt,
+  skyHoursAt,
 } from "./timeline";
+import { nightAt, skyAt } from "./sky";
 
 describe("journey timeline", () => {
   it("places the four real-page stops in story order, with the closing chapter after the last one", () => {
@@ -63,12 +65,42 @@ describe("journey timeline", () => {
       expect(stopAt(entry), chapter).toBeNull();
       expect(chapterAt(entry), chapter).toBe(chapter);
       expect(veilAt(entry), chapter).toBe(0);
-      expect(entry - chapterStart(chapter), chapter).toBeLessThan(0.2);
+      // Just past the dip to dark at most (6 to 7% of the first segment).
+      expect(entry - chapterStart(chapter), chapter).toBeLessThan(0.3);
     }
     expect(chapterEntry("opening")).toBe(0);
     expect(stopAt(scenePosition("conditions"))).toBeNull();
     // 04 opens on the cut-off, not on the last frame of the night behind the dip to dark.
     expect(sceneAt(chapterEntry("affected"))).toBe("affected");
+  });
+
+  it("dips to dark smoothly: never more than a fifth darker or lighter between two close positions", () => {
+    for (let t = 0; t <= TIMELINE_END; t += 0.002) expect(Math.abs(veilAt(t + 0.002) - veilAt(t)), `t ${t.toFixed(3)}`).toBeLessThan(0.2);
+    // Each cut in time happens under full dark.
+    expect(veilAt(segmentRange("cut-off").start + 1e-4)).toBeGreaterThan(0.99);
+    expect(Math.max(...[0.02, 0.03, 0.04].map((p) => veilAt(segmentRange("after").start + p * 2.6)))).toBe(1);
+  });
+
+  it("blends the sky's light (not its hour) from the Public app into Tuesday afternoon, never through a night", () => {
+    const { start, end } = segmentRange("conditions");
+    const at = (p: number) => start + p * (end - start);
+    const first = skyAt(at(1e-4)), settled = skyAt(at(0.12));
+    expect(first.night).toBeCloseTo(nightAt(STOP_HOURS.public), 3);
+    expect(settled.night).toBe(nightAt(replayHourAt(at(0.12))));
+    const ceiling = Math.max(nightAt(STOP_HOURS.public), nightAt(replayHourAt(at(0.1))));
+    let previousRain = first.rain;
+    for (let p = 0.005; p <= 0.1; p += 0.005) {
+      const sky = skyAt(at(p));
+      expect(sky.night, `p ${p}`).toBeLessThanOrEqual(ceiling + 1e-9);
+      expect(sky.rain, `p ${p}`).toBeGreaterThanOrEqual(previousRain - 1e-9);
+      previousRain = sky.rain;
+    }
+    // Into chapter 06 the dip to dark covers the cut: no blend, and the clock skips only under full dark.
+    const after = segmentRange("after");
+    expect(skyHoursAt(after.start + 0.01).weight).toBe(1);
+    expect(replayHourAt(after.start + 0.01)).toBe(STOP_HOURS.command);
+    expect(replayHourAt(after.start + 0.05 * (after.end - after.start))).toBeGreaterThanOrEqual(130);
+    expect(veilAt(after.start + 0.031 * (after.end - after.start))).toBe(1);
   });
 
   it("does not let scrolling pass a stop, but scrolling back is free", () => {

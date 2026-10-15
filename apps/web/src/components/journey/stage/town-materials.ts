@@ -294,7 +294,7 @@ export function groundMaterial(cover: THREE.Texture, coverXform: THREE.Vector4, 
         diffuseColor.rgb *= base;
         `,
       )
-      .replace("#include <roughnessmap_fragment>", "#include <roughnessmap_fragment>\nroughnessFactor = mix(roughnessFactor, 0.32, fgWet);");
+      .replace("#include <roughnessmap_fragment>", "#include <roughnessmap_fragment>\nroughnessFactor = mix(roughnessFactor, 0.45, fgWet);");
   };
   material.customProgramCacheKey = () => "fg-ground-v2";
   return material;
@@ -326,7 +326,7 @@ export function roadMaterial(map: THREE.Texture, uniforms: TownUniforms, color: 
         diffuseColor.rgb *= 1.0 - 0.28 * fgWet - 0.15 * puddle * uWetness;
         `,
       )
-      .replace("#include <roughnessmap_fragment>", "#include <roughnessmap_fragment>\nroughnessFactor = mix(roughnessFactor, 0.25, fgWet);");
+      .replace("#include <roughnessmap_fragment>", "#include <roughnessmap_fragment>\nroughnessFactor = mix(roughnessFactor, 0.38, fgWet);");
   };
   material.customProgramCacheKey = () => `fg-road-v2-${color}`;
   return material;

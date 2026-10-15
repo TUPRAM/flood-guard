@@ -6,7 +6,7 @@ import type { BilingualText } from "./policy-evidence";
  * the published case (`policy-case.ts`), the weights from the signed scoring frame (`policy-evidence.ts`) and the
  * weight test from `policy-weight-sensitivity.json`.
  *
- * The English text follows the team's policy document of 12 October 2026. The Thai text is written by the assistant
+ * The English text follows the team's policy document of 12 October 2026, as revised on 15 October 2026. The Thai text is written by the assistant
  * and has not been reviewed by a native speaker.
  */
 
@@ -66,8 +66,8 @@ export const POLICY_GOVERNMENT_POINTS: readonly PolicyPoint[] = [
     id: "know-the-risk",
     title: { en: "Know the risk before the water comes", th: "รู้ความเสี่ยงก่อนน้ำมา" },
     says: {
-      en: "Reducing risk is the first strategy of the National Plan 2021–2027, with risk assessment at national, provincial, district and local level. The 2007 Act requires every province to have its own plan that matches the national one. In May 2026 Chiang Rai described its flood plan for Mae Sai in three steps (repair the walls now, and study a permanent barrier estimated at about 2.9 billion baht) and its warning times: about 4 hours’ notice for Mae Sai and 9 to 12 hours for Chiang Rai city.",
-      th: "การลดความเสี่ยงเป็นยุทธศาสตร์แรกของแผนแห่งชาติ พ.ศ. 2564–2570 โดยให้ประเมินความเสี่ยงทั้งระดับชาติ จังหวัด อำเภอ และท้องถิ่น พระราชบัญญัติ พ.ศ. 2550 กำหนดให้ทุกจังหวัดมีแผนของตนเองที่สอดคล้องกับแผนแห่งชาติ ในเดือนพฤษภาคม 2569 จังหวัดเชียงรายชี้แจงแผนรับมือน้ำท่วมแม่สายเป็นสามระยะ (ซ่อมพนังกั้นน้ำทันที และศึกษาพนังถาวรซึ่งประมาณการไว้ราว 2,900 ล้านบาท) และเวลาแจ้งเตือนล่วงหน้า: ประมาณ 4 ชั่วโมงสำหรับแม่สาย และ 9 ถึง 12 ชั่วโมงสำหรับตัวเมืองเชียงราย",
+      en: "Reducing risk is the first strategy of the National Plan 2021–2027, with risk assessment at national, provincial, district and local level. The 2007 Act requires every province to have its own plan that matches the national one. In May 2026, Chiang Rai described a three-step flood plan for Mae Sai (repair the walls now, study a permanent barrier estimated at about 2.9 billion baht) and faster early warning, about 4 hours’ notice for Mae Sai and 9–12 hours for Chiang Rai city.",
+      th: "การลดความเสี่ยงเป็นยุทธศาสตร์แรกของแผนแห่งชาติ พ.ศ. 2564–2570 โดยให้ประเมินความเสี่ยงทั้งระดับชาติ จังหวัด อำเภอ และท้องถิ่น พระราชบัญญัติ พ.ศ. 2550 กำหนดให้ทุกจังหวัดมีแผนของตนเองที่สอดคล้องกับแผนแห่งชาติ ในเดือนพฤษภาคม 2569 จังหวัดเชียงรายชี้แจงแผนรับมือน้ำท่วมแม่สายสามระยะ (ซ่อมพนังกั้นน้ำทันที ศึกษาพนังถาวรซึ่งประมาณการไว้ราว 2,900 ล้านบาท) และการแจ้งเตือนล่วงหน้าที่เร็วขึ้น ประมาณ 4 ชั่วโมงสำหรับแม่สาย และ 9–12 ชั่วโมงสำหรับตัวเมืองเชียงราย",
     },
     means: {
       en: "Government is already investing in “when will the water arrive”. The next question is “who is affected when it does”. That is the question FloodGuard answers.",
@@ -75,7 +75,7 @@ export const POLICY_GOVERNMENT_POINTS: readonly PolicyPoint[] = [
     },
     sources: [
       { label: { en: "National Plan, Strategy 1", th: "แผนแห่งชาติ ยุทธศาสตร์ที่ 1" }, source: "plan" },
-      { label: { en: "Act, sections 15–16", th: "พระราชบัญญัติ มาตรา 15–16" }, source: "act" },
+      { label: { en: "Act ss. 15–16", th: "พระราชบัญญัติ มาตรา 15–16" }, source: "act" },
       { label: { en: "Chiang Rai PRD, May 2026", th: "สำนักงานประชาสัมพันธ์จังหวัดเชียงราย พ.ค. 2569" }, source: "prd" },
     ],
   },
@@ -87,12 +87,12 @@ export const POLICY_GOVERNMENT_POINTS: readonly PolicyPoint[] = [
       th: "แผนแห่งชาติต้องการให้การแจ้งเตือนเข้าถึงกลุ่มเปราะบางอย่างเท่าเทียม ให้แผนอพยพระบุเส้นทางหลักและเส้นทางสำรองสำหรับภัยแต่ละประเภท และให้ศูนย์พักพิงตั้งอยู่ในที่ปลอดภัยและเดินทางไปถึงได้ง่าย ตัวชี้วัดระดับชาติของแผนรวมถึงการหยุดชะงักของบริการพื้นฐาน เช่น โรงพยาบาลและโรงเรียน และประชาชนได้รับการแจ้งเตือนจริงหรือไม่",
     },
     means: {
-      en: "“Access” is already a national standard. FloodGuard measures it place by place: which roads, hospitals and shelters people could lose.",
+      en: "“Access” is already a national standard. FloodGuard measures it place by place, which roads, hospitals and shelters people could lose.",
       th: "“การเข้าถึง” เป็นมาตรฐานระดับชาติอยู่แล้ว FloodGuard วัดการเข้าถึงเป็นรายพื้นที่ ว่าประชาชนอาจสูญเสียถนน โรงพยาบาล และศูนย์พักพิงใด",
     },
     sources: [
-      { label: { en: "National Plan, chapter 2 indicators and emergency-management guidance (evacuation, shelters, warnings)", th: "แผนแห่งชาติ ตัวชี้วัดในบทที่ 2 และแนวทางการจัดการภาวะฉุกเฉิน (การอพยพ ศูนย์พักพิง การแจ้งเตือน)" }, source: "plan" },
-      { label: { en: "Act, section 12(2)", th: "พระราชบัญญัติ มาตรา 12 (2)" }, source: "act" },
+      { label: { en: "National Plan, Chapter 2 indicators and emergency-management guidance (evacuation, shelters, warnings)", th: "แผนแห่งชาติ ตัวชี้วัดในบทที่ 2 และแนวทางการจัดการภาวะฉุกเฉิน (การอพยพ ศูนย์พักพิง การแจ้งเตือน)" }, source: "plan" },
+      { label: { en: "Act s. 12(2)", th: "พระราชบัญญัติ มาตรา 12 (2)" }, source: "act" },
     ],
   },
   {
@@ -107,7 +107,7 @@ export const POLICY_GOVERNMENT_POINTS: readonly PolicyPoint[] = [
       th: "การฝึกซ้อมคือเวทีทดสอบหลักฐานใหม่ เราเสนอสถานการณ์จำลองสำหรับการฝึกครั้งถัดไป",
     },
     sources: [
-      { label: { en: "Act, sections 15, 20–21 and 44", th: "พระราชบัญญัติ มาตรา 15, 20–21 และ 44" }, source: "act" },
+      { label: { en: "Act ss. 15, 20–21, 44", th: "พระราชบัญญัติ มาตรา 15, 20–21 และ 44" }, source: "act" },
       { label: { en: "National Plan, drills", th: "แผนแห่งชาติ ส่วนการฝึกซ้อม" }, source: "plan" },
       { label: { en: "Chiang Rai PRD, May 2026", th: "สำนักงานประชาสัมพันธ์จังหวัดเชียงราย พ.ค. 2569" }, source: "prd" },
     ],

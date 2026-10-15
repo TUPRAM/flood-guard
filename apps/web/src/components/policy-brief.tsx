@@ -58,6 +58,7 @@ export function PolicyBrief() {
   const components = SIGNED_SCORING_FRAME.components.map((component, index) => ({
     key: component.key, weight: Math.round(component.weight * 100), plain: tx(COMPONENT_PLAIN[component.key]), color: COMPONENT_COLORS[index],
   }));
+  const maxWeight = Math.max(...components.map((c) => c.weight));
   const test = POLICY_WEIGHT_TEST;
   const equal = test.named.find((item) => item.id === "equal")!;
   const withoutAccess = test.named.find((item) => item.id === "without_access")!;
@@ -79,7 +80,7 @@ export function PolicyBrief() {
     <div className={base.container}>
       <section className={base.hero} id="purpose" aria-labelledby="policy-title">
         <div>
-          <p className={base.eyebrow}>{t("POLICY BRIEF · A PROPOSAL, NOT A GOVERNMENT PLAN", "สรุปเชิงนโยบาย · ข้อเสนอ ไม่ใช่แผนของภาครัฐ")}</p>
+          <p className={base.eyebrow}>{t("POLICY BRIEF · PROPOSAL", "สรุปเชิงนโยบาย · ข้อเสนอ")}</p>
           <h1 id="policy-title">{t("Flood maps show where the water goes.", "แผนที่น้ำท่วมบอกว่าน้ำไปที่ใด")}<br /><span>{t("We show who could be cut off.", "เราแสดงว่าใครอาจถูกตัดขาด")}</span></h1>
           <p className={base.lead}>{t(
             "FloodGuard helps local teams see which communities could lose their roads, hospitals and shelters in a flood, so preparation can start where it matters most.",
@@ -107,10 +108,9 @@ export function PolicyBrief() {
 
     <div className={base.container}>
       <section id="government" className={base.section} aria-labelledby="government-title">
-        <div className={base.sectionHeading}>
-          <p className={base.eyebrow}>{t("01 · WHAT THE GOVERNMENT IS FOCUSED ON", "01 · สิ่งที่ภาครัฐให้ความสำคัญ")}</p>
-          <h2 id="government-title">{t("We did not invent this direction.", "เราไม่ได้คิดทิศทางนี้ขึ้นเอง")}</h2>
-          <p>{t("Three government sources point the same way.", "แหล่งข้อมูลของภาครัฐสามแหล่งชี้ไปในทางเดียวกัน")}</p>
+        <div className={styles.chapterHeading}>
+          <h2 id="government-title" className={styles.chapterTitle}><span>01</span> {t("What the government is focused on", "สิ่งที่ภาครัฐให้ความสำคัญ")}</h2>
+          <p className={styles.statement}>{t("Three government sources point the same way.", "แหล่งข้อมูลของภาครัฐสามแหล่งชี้ไปในทางเดียวกัน")}</p>
         </div>
         <div className={styles.points}>{POLICY_GOVERNMENT_POINTS.map((point, index) => <article key={point.id} data-testid={`policy-point-${point.id}`}>
           <span className={styles.number} aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
@@ -124,10 +124,10 @@ export function PolicyBrief() {
       </section>
 
       <section id="proposals" className={base.section} aria-labelledby="proposals-title">
-        <div className={base.sectionHeading}>
-          <p className={base.eyebrow}>{t("02 · WHAT WE PROPOSE", "02 · ข้อเสนอของเรา")}</p>
-          <h2 id="proposals-title">{t("Three practical steps.", "สามขั้นตอนที่ทำได้จริง")}</h2>
-          <p>{t("Based on this direction. None replaces an official plan.", "อิงจากทิศทางข้างต้น ไม่มีข้อใดใช้แทนแผนทางการ")}</p>
+        <div className={styles.chapterHeading}>
+          <h2 id="proposals-title" className={styles.chapterTitle}><span>02</span> {t("What we propose", "ข้อเสนอของเรา")}</h2>
+          <p className={styles.statement}>{t("Based on this direction, we propose three practical steps.", "จากทิศทางข้างต้น เราเสนอสามขั้นตอนที่ทำได้จริง")}</p>
+          <p className={styles.lead}>{t("None replaces an official plan.", "ไม่มีข้อใดใช้แทนแผนทางการ")}</p>
         </div>
         <div className={styles.proposals}>{POLICY_PROPOSALS.map((proposal, index) => <article key={proposal.id} data-testid={`policy-proposal-${proposal.id}`}>
           <span className={styles.number} aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
@@ -142,13 +142,13 @@ export function PolicyBrief() {
       </section>
 
       <section id="example" className={`${base.section} ${base.evidence}`} aria-labelledby="example-title">
-        <div className={base.sectionHeading}>
-          <p className={base.eyebrow}>{t("03 · ONE EXAMPLE · A SCENARIO, NOT A REAL DAY", "03 · ตัวอย่างหนึ่งกรณี · สถานการณ์จำลอง ไม่ใช่วันที่เกิดขึ้นจริง")}</p>
-          <h2 id="example-title">{t(
+        <div className={styles.chapterHeading}>
+          <h2 id="example-title" className={styles.chapterTitle}><span>03</span> {t("One example scenario", "ตัวอย่างสถานการณ์จำลอง")}</h2>
+          <p className={styles.statement}>{t(
             "In our worst-case scenario, Ko Chang scores highest because its roads would fail, not because most of it floods.",
             "ในสถานการณ์เลวร้ายที่สุดของเรา ตำบลเกาะช้างได้คะแนนสูงสุดเพราะถนนจะใช้การไม่ได้ ไม่ใช่เพราะพื้นที่ส่วนใหญ่ถูกน้ำท่วม",
-          )}</h2>
-          <p>{t(
+          )}</p>
+          <p className={styles.lead}>{t(
             "We tested a “worst season” scenario for eight tambons in Mae Sai district: every area mapped as flooded in 2024 is flooded at once.",
             "เราทดสอบสถานการณ์ “ฤดูที่เลวร้ายที่สุด” กับแปดตำบลในอำเภอแม่สาย โดยให้ทุกพื้นที่ที่เคยถูกบันทึกว่าน้ำท่วมในปี 2567 ท่วมพร้อมกัน",
           )}</p>
@@ -184,18 +184,20 @@ export function PolicyBrief() {
       </section>
 
       <section id="score" className={base.section} aria-labelledby="score-title">
-        <div className={base.sectionHeading}>
-          <p className={base.eyebrow}>{t("04 · HOW THE SCORE WORKS", "04 · คะแนนทำงานอย่างไร")}</p>
-          <h2 id="score-title">{t("The priority score compares places. It is not a probability.", "คะแนนลำดับความสำคัญใช้เปรียบเทียบพื้นที่ ไม่ใช่ความน่าจะเป็น")}</h2>
-          <p>{t("A score of 65 out of 100 does not mean a 65% chance of flooding.", "คะแนน 65 จาก 100 ไม่ได้หมายถึงโอกาสน้ำท่วม 65%")}</p>
+        <div className={styles.chapterHeading}>
+          <h2 id="score-title" className={styles.chapterTitle}><span>04</span> {t("How the score works", "คะแนนทำงานอย่างไร")}</h2>
+          <p className={styles.statement}>{t("The priority score compares places. It is not a probability.", "คะแนนลำดับความสำคัญใช้เปรียบเทียบพื้นที่ ไม่ใช่ความน่าจะเป็น")}</p>
+          <p className={styles.lead}>{t("A score of 65 out of 100 does not mean a 65% chance of flooding.", "คะแนน 65 จาก 100 ไม่ได้หมายถึงโอกาสน้ำท่วม 65%")}</p>
         </div>
-        <div className={base.weightBar} aria-hidden="true">{components.map((c) => <div key={c.key} style={{ flex: c.weight, background: c.color }}>{c.weight}%</div>)}</div>
-        <div className={base.components} data-testid="policy-five-things">{components.map((c) => <div key={c.key} style={{ "--component-color": c.color } as CSSProperties}>
-          <span className={base.componentWeight}>{c.weight}%</span><h3>{c.plain}</h3>
-        </div>)}</div>
+        {/* One column per part, as wide as its weight, so each label sits under its own block. */}
+        <div className={styles.weights} data-testid="policy-five-things" style={{ "--columns": components.map((c) => `${c.weight}fr`).join(" ") } as CSSProperties}>
+          {components.map((c) => <div key={c.key} style={{ "--component-color": c.color, "--share": c.weight / maxWeight } as CSSProperties}>
+            <span className={styles.weightBlock}>{c.weight}%</span><h3>{c.plain}</h3>
+          </div>)}
+        </div>
         <p className={styles.plainNote}>{t(
-          "These weights are our choices, open for review. They are not Thai warning levels. “People more likely to be left out” always means children under 15 and adults aged 60 or over, in the score and in the equity check alike. Shelter access is measured beside the score, not inside the published score.",
-          "น้ำหนักเหล่านี้เป็นทางเลือกของเรา เปิดให้ทบทวนได้ และไม่ใช่ระดับการเตือนภัยของไทย “ผู้ที่มีแนวโน้มถูกมองข้าม” หมายถึงเด็กอายุต่ำกว่า 15 ปีและผู้ใหญ่อายุ 60 ปีขึ้นไปเสมอ ทั้งในคะแนนและในการตรวจสอบความเป็นธรรม การเข้าถึงศูนย์พักพิงวัดแยกไว้ข้างคะแนน ไม่ได้อยู่ในคะแนนที่เผยแพร่",
+          "These weights are our choices, open for review. They are not Thai warning levels. “People more likely to be left out” always means children under 15 and adults aged 60 or over, in the score and in the equity check alike.",
+          "น้ำหนักเหล่านี้เป็นทางเลือกของเรา เปิดให้ทบทวนได้ และไม่ใช่ระดับการเตือนภัยของไทย “ผู้ที่มีแนวโน้มถูกมองข้าม” หมายถึงเด็กอายุต่ำกว่า 15 ปีและผู้ใหญ่อายุ 60 ปีขึ้นไปเสมอ ทั้งในคะแนนและในการตรวจสอบความเป็นธรรม",
         )}</p>
 
         <div className={styles.weightTest} data-testid="policy-weight-test">
@@ -237,33 +239,29 @@ export function PolicyBrief() {
       </section>
 
       <section id="attention" className={base.section} aria-labelledby="attention-title">
-        <div className={base.sectionHeading}>
-          <p className={base.eyebrow}>{t("05 · FIVE KINDS OF ATTENTION", "05 · การให้ความสำคัญห้าแบบ")}</p>
-          <h2 id="attention-title">{t("A letter says what kind of attention, not how bad.", "ตัวอักษรบอกว่าควรให้ความสำคัญด้านใด ไม่ได้บอกว่ารุนแรงเพียงใด")}</h2>
+        <div className={styles.chapterHeading}>
+          <h2 id="attention-title" className={styles.chapterTitle}><span>05</span> {t("Five kinds of attention", "การให้ความสำคัญห้าแบบ")}</h2>
+          <p className={styles.statement}>{t("A letter says what kind of attention, not how bad.", "ตัวอักษรบอกว่าควรให้ความสำคัญด้านใด ไม่ได้บอกว่ารุนแรงเพียงใด")}</p>
         </div>
         <ol className={styles.attentionList}>{POLICY_ATTENTION.map((item) => <li key={item.letter} data-letter={item.letter}>
           <b aria-hidden="true">{item.letter}</b><div><h3><span className={styles.srOnly}>{item.letter} · </span>{tx(item.title)}</h3><p>{tx(item.text)}</p></div>
         </li>)}</ol>
-        <p className={base.caution}><span aria-hidden="true">↳</span> <strong>{t("Class E never means safe.", "ระดับ E ไม่ได้หมายความว่าปลอดภัย ไม่ว่ากรณีใด")}</strong> {t(
-          "Official instructions and credible immediate threats take precedence over this planning score.",
-          "คำสั่งทางการและภัยคุกคามเฉพาะหน้าที่น่าเชื่อถือมาก่อนคะแนนวางแผนนี้เสมอ",
-        )}</p>
       </section>
 
       <section id="rules" className={base.section} aria-labelledby="rules-title">
-        <div className={base.sectionHeading}>
-          <p className={base.eyebrow}>{t("06 · GROUND RULES", "06 · หลักการพื้นฐาน")}</p>
-          <h2 id="rules-title">{t("Evidence informs. Responsible people decide.", "หลักฐานช่วยพิจารณา ผู้รับผิดชอบเป็นผู้ตัดสินใจ")}</h2>
+        <div className={styles.chapterHeading}>
+          <h2 id="rules-title" className={styles.chapterTitle}><span>06</span> {t("Ground rules", "หลักการพื้นฐาน")}</h2>
+          <p className={styles.statement}>{t("Evidence informs. Responsible people decide.", "หลักฐานช่วยพิจารณา ผู้รับผิดชอบเป็นผู้ตัดสินใจ")}</p>
         </div>
-        <div className={base.commitments}>{POLICY_GROUND_RULES.map((rule, index) => <article key={index}>
+        <div className={`${base.commitments} ${styles.rules}`}>{POLICY_GROUND_RULES.map((rule, index) => <article key={index}>
           <b>{String(index + 1).padStart(2, "0")}</b><h3>{tx(rule.title)}</h3><p>{tx(rule.text)}</p>
         </article>)}</div>
       </section>
 
       <section id="questions" className={base.section} aria-labelledby="questions-title">
-        <div className={base.sectionHeading}>
-          <p className={base.eyebrow}>{t("07 · COMMON QUESTIONS", "07 · คำถามที่พบบ่อย")}</p>
-          <h2 id="questions-title">{t("Short answers.", "คำตอบสั้น ๆ")}</h2>
+        <div className={styles.chapterHeading}>
+          <h2 id="questions-title" className={styles.chapterTitle}><span>07</span> {t("Common questions", "คำถามที่พบบ่อย")}</h2>
+          <p className={styles.statement}>{t("Short answers.", "คำตอบสั้น ๆ")}</p>
         </div>
         <dl className={styles.questions} data-testid="policy-questions">{POLICY_QUESTIONS.map((item, index) => <div key={index}>
           <dt>{tx(item.question)}</dt><dd>{tx(item.answer)}</dd>
@@ -271,11 +269,11 @@ export function PolicyBrief() {
       </section>
 
       <section id="reading" className={base.section} aria-labelledby="reading-title">
-        <div className={base.sectionHeading}>
-          <p className={base.eyebrow}>{t("08 · SOURCES AND FURTHER READING", "08 · แหล่งข้อมูลและเอกสารอ่านเพิ่มเติม")}</p>
-          <h2 id="reading-title">{t("Where each claim comes from.", "ข้ออ้างแต่ละข้อมาจากที่ใด")}</h2>
-          <p>{t(
-            "Links opened on 12 October 2026. A paper listed here supports an idea on this page; none endorses FloodGuard, and none gives our five weights.",
+        <div className={styles.chapterHeading}>
+          <h2 id="reading-title" className={styles.chapterTitle}><span>08</span> {t("Sources", "แหล่งข้อมูล")}</h2>
+          <p className={styles.statement}>{t("Where each claim comes from.", "ข้ออ้างแต่ละข้อมาจากที่ใด")}</p>
+          <p className={styles.lead}>{t(
+            "Links opened on 12 October 2026. A paper listed here supports an idea on this page, none endorses FloodGuard, and none gives our five weights.",
             "เปิดลิงก์ตรวจสอบเมื่อ 12 ตุลาคม 2569 งานวิจัยในรายการนี้สนับสนุนแนวคิดในหน้านี้ ไม่มีชิ้นใดรับรอง FloodGuard และไม่มีชิ้นใดกำหนดน้ำหนักทั้งห้าของเรา",
           )}</p>
         </div>

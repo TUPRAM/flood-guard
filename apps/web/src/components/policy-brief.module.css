@@ -2,8 +2,22 @@
 .number { font-size: 11px; letter-spacing: .12em; color: var(--teal); font-weight: 600; }
 .srOnly { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
+/* Numbers hang in a column of their own (`--hang`), so every title, statement and point starts on one line. */
+.chapterHeading, .points { --hang: clamp(62px, 5.6vw, 80px); }
+
+/* Each chapter opens with its numbered name, larger than the statement under it. */
+.chapterHeading { margin-bottom: 32px; padding-left: var(--hang); }
+.chapterHeading > .chapterTitle { display: flex; align-items: baseline; margin-left: calc(-1 * var(--hang)); font-family: "Manrope Variable", "Noto Sans Thai Variable", sans-serif; font-size: clamp(32px, 3.4vw, 46px); font-weight: 650; letter-spacing: -.045em; line-height: 1.1; }
+/* The number is as large as the title and shares its baseline. */
+.chapterTitle span { flex: 0 0 var(--hang); font-family: "Manrope Variable", sans-serif; font-size: 1em; font-weight: 500; letter-spacing: -.02em; font-variant-numeric: tabular-nums; color: var(--teal); }
+.chapterHeading > .statement { margin-top: 14px; font-size: clamp(18px, 1.5vw, 21px); font-weight: 550; line-height: 1.45; letter-spacing: -.01em; max-width: 900px; }
+.chapterHeading > .lead { margin-top: 10px; font-size: 14px; color: var(--muted); max-width: 660px; }
+.chapterTitle:lang(th) { letter-spacing: 0; line-height: 1.3; }
+
 .points { display: grid; gap: 0; }
-.points article { display: flex; gap: 22px; padding: 26px 0; border-bottom: 1px solid var(--line); }
+.points article { display: grid; grid-template-columns: var(--hang) minmax(0, 1fr); align-items: first baseline; padding: 26px 0; border-bottom: 1px solid var(--line); }
+/* As large as the point's title, on its baseline. */
+.points .number { font-family: "Manrope Variable", sans-serif; font-size: 20px; line-height: 1.3; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
 .points article:first-child { padding-top: 0; }
 .points h3 { margin: 0 0 10px; font-size: 20px; font-weight: 600; line-height: 1.3; }
 .points p { margin: 0 0 10px; font-size: 14px; line-height: 1.7; max-width: 900px; }
@@ -14,7 +28,8 @@
 
 .proposals { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; }
 .proposals article { padding: 22px; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
-.proposals h3 { margin: 10px 0 10px; font-size: 17px; font-weight: 600; line-height: 1.35; }
+.proposals .number { display: block; font-family: "Manrope Variable", sans-serif; font-size: 26px; line-height: 1; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.proposals h3 { margin: 14px 0 10px; font-size: 17px; font-weight: 600; line-height: 1.35; }
 .proposals p { margin: 0 0 14px; font-size: 13px; line-height: 1.7; }
 .proposals dl { margin: 0; display: grid; gap: 10px; }
 .proposals dt { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
@@ -31,6 +46,13 @@
 .attention { font-weight: 600; }
 .contrast { margin: 22px 0 14px; font-size: 16px; line-height: 1.6; font-weight: 600; max-width: 900px; }
 
+/* The five weights: each column is as wide as its weight (`--columns`), the label sits under its block. */
+.weights { display: grid; grid-template-columns: var(--columns); gap: 3px; }
+.weights > div { display: flex; flex-direction: column; min-width: 0; }
+.weightBlock { min-height: 48px; display: grid; place-items: center; background: var(--component-color); color: #fff; font-size: 12px; font-weight: 600; }
+.weights > div:first-child .weightBlock { border-radius: 5px 0 0 5px; }
+.weights > div:last-child .weightBlock { border-radius: 0 5px 5px 0; }
+.weights h3 { margin: 12px 0 0; padding: 10px 14px 0 0; border-top: 2px solid var(--component-color); font-size: 14px; font-weight: 600; line-height: 1.4; overflow-wrap: anywhere; }
 .plainNote { margin: 22px 0 0; font-size: 13px; line-height: 1.7; color: var(--muted); max-width: 900px; }
 .weightTest { margin-top: 26px; padding: 22px; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
 .weightTest h3 { margin: 0 0 10px; font-size: 17px; font-weight: 600; }
@@ -43,6 +65,8 @@
 .attentionList b { display: block; font-size: 26px; font-weight: 600; color: var(--teal); line-height: 1; margin-bottom: 10px; }
 .attentionList h3 { margin: 0 0 6px; font-size: 14px; font-weight: 600; line-height: 1.35; }
 .attentionList p { margin: 0; font-size: 12px; line-height: 1.6; color: var(--muted); }
+
+.rules > article > b { font-family: "Manrope Variable", sans-serif; font-size: 26px; font-weight: 600; line-height: 1; letter-spacing: -.02em; font-variant-numeric: tabular-nums; padding-bottom: 14px; }
 
 .questions { margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 34px; }
 .questions > div { padding: 16px 0; border-bottom: 1px solid var(--line); }
@@ -59,7 +83,21 @@
 @media (max-width: 900px) {
   .proposals, .example, .questions { grid-template-columns: 1fr; }
   .attentionList { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .points article { flex-direction: column; gap: 8px; }
+
+  /* Too narrow for five columns: one row per part, label first, its block as long as its share of the largest weight. */
+  .weights { grid-template-columns: 1fr; gap: 14px; }
+  .weights h3 { order: -1; margin: 0 0 6px; padding: 0; border-top: 0; }
+  .weightBlock, .weights > div:first-child .weightBlock, .weights > div:last-child .weightBlock { width: calc(var(--share) * 100%); min-width: 52px; min-height: 32px; border-radius: 4px; }
+}
+@media (max-width: 700px) {
+  .chapterHeading, .points { --hang: 48px; }
+  .chapterHeading { margin-bottom: 24px; }
+  .chapterHeading > .chapterTitle { font-size: 30px; }
+  .points .number { font-size: 18px; }
+  .chapterHeading > .statement { font-size: 17px; }
+}
+@media print {
+  .chapterHeading > .chapterTitle { font-size: 28px; }
 }
 @media (max-width: 520px) {
   .attentionList { grid-template-columns: 1fr; }

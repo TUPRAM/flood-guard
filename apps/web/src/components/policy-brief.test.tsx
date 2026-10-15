@@ -38,9 +38,8 @@ describe("plain-language policy page", () => {
 
   it("never reads as a warning service, a forecast or a government plan", () => {
     expect(text).not.toMatch(/real-time|live warning|flood forecast|we warn/i);
-    expect(text).toContain("A PROPOSAL, NOT A GOVERNMENT PLAN");
+    expect(text).toContain("POLICY BRIEF · PROPOSAL");
     expect(text).toContain("None replaces an official plan.");
-    expect(text).toContain("Class E never means safe.");
     expect(text).toContain("E never means safe.");
     expect(text).toContain("No. These are our proposals. No agency has adopted them.");
     expect(text).toContain("FloodGuard does not issue warnings, order evacuations, allocate budgets or decide who receives relief.");
@@ -61,7 +60,7 @@ describe("plain-language policy page", () => {
     }
     // The figures of the Chiang Rai release of 15 May 2026, as the release gives them.
     expect(text).toContain("about 2.9 billion baht");
-    expect(text).toContain("about 4 hours’ notice for Mae Sai and 9 to 12 hours for Chiang Rai city");
+    expect(text).toContain("about 4 hours’ notice for Mae Sai and 9–12 hours for Chiang Rai city");
     expect(text).toContain("a tabletop exercise on 20 May 2026 (about 350 people) and a field exercise on 22 May (about 890 people)");
   });
 
@@ -106,9 +105,8 @@ describe("plain-language policy page", () => {
     for (const weight of weights) expect(five).toContain(`>${weight}%<`);
     expect(text).toContain("How much land floods");
     expect(text).toContain("Who lives in the flooded area");
-    // The published score counts a hospital and a main road; shelter access is measured beside it.
+    // The published score counts a hospital and a main road.
     expect(text).toContain("Who loses access they had to a hospital or a main road");
-    expect(text).toContain("Shelter access is measured beside the score, not inside the published score.");
     expect(text).toContain("Who loses every route");
     expect(text).toContain("How many children and older people live there");
     expect(text).toContain("These weights are our choices, open for review. They are not Thai warning levels.");

@@ -128,7 +128,7 @@ with a warm sun and soft shadows; no post-processing. Weather animates: sky goes
 fog closes in, sun dims, rain streaks appear, the ground darkens with wetness.
 
 **The people.** All five are rigged 3D models generated with Meshy from single images and simplified for the web
-(~100k–300k → ~27k–42k triangles, ~15 MB total):
+(~100k–300k → ~30k–57k triangles, ~18 MB total; Dao and Pim keep every UV seam, so they simplify less):
 - **Lalita** (rigged) — a woman in warm-climate clothes at her garden gate, holding a phone in her right hand. She lowers
   and raises it during the story (a blend between a relaxed pose and a reading pose, plus breathing and small head
   movements). Her grip was rebuilt so no finger crosses the screen (the real page is drawn over the whole screen).

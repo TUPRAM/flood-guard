@@ -34,8 +34,8 @@ const CHARACTERS = [
   { source: "phone_woman/phone_woman_rigged.glb", out: "phone-woman.glb", triangles: 42000, lockBones: /^RightHand/ },
   { source: "office_man/office_man_rigged.glb", out: "office-man.glb", triangles: 38000, lockBones: null },
   { source: "mali/mali_rigged.glb", out: "mali.glb", triangles: 30000, lockBones: null, rig: "meshy" },
-  { source: "dao/dao_rigged.glb", out: "dao.glb", triangles: 22000, lockBones: null, rig: "meshy" },
-  { source: "pim/pim_rigged.glb", out: "pim.glb", triangles: 30000, lockBones: null, rig: "meshy" },
+  { source: "dao/dao_rigged.glb", out: "dao.glb", triangles: 22000, lockBones: null, lockSeams: true, rig: "meshy" },
+  { source: "pim/pim_rigged.glb", out: "pim.glb", triangles: 30000, lockBones: null, lockSeams: true, rig: "meshy" },
 ];
 
 // --- GLB reading and writing -----------------------------------------------------------------------------------------
@@ -183,7 +183,7 @@ function pruneUnused(json, chunks) {
 
 // --- Build -----------------------------------------------------------------------------------------------------------
 
-async function buildCharacter({ source, out, triangles, lockBones, rig }) {
+async function buildCharacter({ source, out, triangles, lockBones, lockSeams = false, rig }) {
   const file = path.join(deliver, source);
   if (!existsSync(file)) {
     console.log(`${out}: skipped (no ${source} in ${deliver})`);
@@ -226,6 +226,22 @@ async function buildCharacter({ source, out, triangles, lockBones, rig }) {
       if (handWeight > 0.35) {
         lock[v] = 1;
         locked += 1;
+      }
+    }
+  }
+  // Lock every vertex on a UV seam (a position shared by more than one vertex). Meshy's remeshed models are unwrapped
+  // into many small islands; collapsing their edges drags texels from one island into another, which shows as patches
+  // of the wrong colour (white streaks on Dao's skirt, navy on her blouse). Inside an island the mesh still simplifies.
+  if (lockSeams) {
+    lock ??= new Uint8Array(vertexCount);
+    const first = new Map();
+    for (let v = 0; v < vertexCount; v += 1) {
+      const key = `${positions[v * 3]},${positions[v * 3 + 1]},${positions[v * 3 + 2]}`;
+      const other = first.get(key);
+      if (other === undefined) first.set(key, v);
+      else {
+        if (!lock[other]) { lock[other] = 1; locked += 1; }
+        if (!lock[v]) { lock[v] = 1; locked += 1; }
       }
     }
   }

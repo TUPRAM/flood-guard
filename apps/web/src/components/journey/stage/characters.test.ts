@@ -4,10 +4,20 @@ import { fileURLToPath } from "node:url";
 import * as THREE from "three";
 import { describe, expect, it } from "vitest";
 
-import { poseResident, poseResponder, prepareResident, prepareResponder, type Character, type Workstation } from "./characters";
+import {
+  poseAtRest,
+  poseResident,
+  poseResponder,
+  prepareLeaning,
+  prepareResident,
+  prepareResponder,
+  prepareStanding,
+  type Character,
+  type Workstation,
+} from "./characters";
 
 /**
- * The two rigged people, checked against what they hold and touch: the resident's hand around her phone (nothing over
+ * The rigged people, checked against what they hold and touch: the resident's hand around her phone (nothing over
  * the screen the real page is drawn on) and the responder's fingertips on the keyboard. The stage loads the models
  * with GLTFLoader, which needs a browser to decode textures; the rig, the skin and the held poses are enough here, so
  * this reads them straight from the files.
@@ -22,7 +32,7 @@ interface Gltf {
   nodes: Array<{ name: string; children?: number[]; mesh?: number; skin?: number; translation?: number[]; rotation?: number[]; scale?: number[] }>;
   meshes: Array<{ primitives: Array<{ attributes: Record<string, number>; indices: number }> }>;
   skins: Array<{ joints: number[]; inverseBindMatrices: number }>;
-  animations: Array<{ name: string; channels: Array<{ sampler: number; target: { node: number; path: string } }>; samplers: Array<{ output: number }> }>;
+  animations?: Array<{ name: string; channels: Array<{ sampler: number; target: { node: number; path: string } }>; samplers: Array<{ output: number }> }>;
   scenes: Array<{ nodes: number[] }>;
 }
 
@@ -84,7 +94,7 @@ function readCharacter(file: string): Character {
   });
   const poses: Character["poses"] = {};
   const posed: Record<string, THREE.Vector3> = {};
-  for (const clip of json.animations) {
+  for (const clip of json.animations ?? []) {
     const pose = new Map<string, THREE.Quaternion>();
     for (const channel of clip.channels) {
       const name = json.nodes[channel.target.node].name;
@@ -94,6 +104,7 @@ function readCharacter(file: string): Character {
     }
     poses[clip.name] = pose;
   }
+  if (!poses.APose) poses.APose = new Map([...bones].map(([name, bone]) => [name, bone.quaternion.clone()]));
   return { root, bones, poses, hips: { bind: bones.get("Hips")!.position.clone(), posed }, meshes };
 }
 
@@ -252,6 +263,82 @@ describe("the responder at his desk", () => {
     poseResponder(moved, 0, 0);
     for (const finger of FINGERS) {
       for (const tip of tips(moved, finger)) expect(Math.abs(tip - other.keys.y), finger).toBeLessThan(3 * MM);
+    }
+  });
+});
+
+describe("Mali, Dao and Pim (Meshy rigs)", () => {
+  const people = { mali: 1.52, dao: 1.28, pim: 1.58 } as const;
+  const placed = (id: keyof typeof people) => {
+    const person = readCharacter(`${id}.glb`);
+    person.root.position.set(-11, 1.4, 5);
+    person.root.rotation.y = -0.75;
+    person.root.updateMatrixWorld(true);
+    return person;
+  };
+  const top = (person: Character) => Math.max(...skinPoints(person, () => true).map((point) => point.y));
+
+  it("stand at their heights on the ground, with the bone names the stage reads", () => {
+    for (const [id, height] of Object.entries(people) as Array<[keyof typeof people, number]>) {
+      const person = placed(id);
+      expect(Math.abs(lowest(skinPoints(person, () => true)) - 1.4), id).toBeLessThan(10 * MM);
+      expect(Math.abs(top(person) - 1.4 - height), id).toBeLessThan(20 * MM);
+      for (const bone of ["Hips", "Spine", "Spine1", "Spine2", "Neck", "Head", "LeftArm", "RightForeArm", "LeftHandMiddle1", "RightHandPinky1"]) {
+        expect(person.bones.has(bone), `${id} ${bone}`).toBe(true);
+      }
+    }
+  });
+
+  it("let their arms hang at their sides and keep their feet on the ground while they breathe", () => {
+    for (const id of ["mali", "dao"] as const) {
+      const person = placed(id);
+      prepareStanding(person, { stoop: 0.12 });
+      for (const time of [0, 1.1, 2.7]) {
+        poseAtRest(person, "Standing", time);
+        expect(Math.abs(lowest(skinPoints(person, (name) => /Foot|Toe/.test(name))) - 1.4), id).toBeLessThan(15 * MM);
+        const hips = person.bones.get("Hips")!.getWorldPosition(new THREE.Vector3());
+        for (const side of ["Left", "Right"]) {
+          const at = (bone: string) => person.bones.get(`${side}${bone}`)!.getWorldPosition(new THREE.Vector3());
+          const wrist = at("Hand"), shoulder = at("Arm");
+          const length = shoulder.distanceTo(at("ForeArm")) + at("ForeArm").distanceTo(wrist);
+          // Hanging: the wrist almost an arm's length below the shoulder, close to the body.
+          expect(shoulder.y - wrist.y, `${id} ${side}`).toBeGreaterThan(0.9 * length);
+          expect(Math.hypot(wrist.x - hips.x, wrist.z - hips.z), `${id} ${side}`).toBeLessThan(0.3);
+        }
+      }
+    }
+  });
+
+  it("turns Dao's face up toward her mother", () => {
+    const dao = placed("dao");
+    const head = dao.bones.get("Head")!;
+    const restFace = new THREE.Vector3(0, 0, 1).applyQuaternion(dao.root.quaternion);
+    const rest = head.getWorldQuaternion(new THREE.Quaternion());
+    const mother = dao.root.position.clone().add(new THREE.Vector3(-0.5, 1.5, 0.3));
+    prepareStanding(dao, { lookAt: mother });
+    poseAtRest(dao, "Standing", 0);
+    const face = restFace.clone().applyQuaternion(head.getWorldQuaternion(new THREE.Quaternion()).multiply(rest.clone().invert()));
+    const toMother = mother.clone().sub(head.getWorldPosition(new THREE.Vector3())).normalize();
+    expect(face.y).toBeGreaterThan(0.2);
+    expect(face.angleTo(toMother)).toBeLessThan(0.35);
+  });
+
+  it("rests Pim's palms on the table's rim", () => {
+    const pim = readCharacter("pim.glb");
+    pim.root.position.set(30, 3, -9.2);
+    pim.root.updateMatrixWorld(true);
+    const rim = { y: 3.92, z: -8.92 };
+    const palms = { Left: new THREE.Vector3(30.24, rim.y, rim.z), Right: new THREE.Vector3(29.76, rim.y, rim.z) };
+    prepareLeaning(pim, palms, new THREE.Vector3(29.6, rim.y, -8.3));
+    for (const time of [0, 1.7]) {
+      poseAtRest(pim, "Leaning", time, 0);
+      for (const side of ["Left", "Right"] as const) {
+        const hand = skinPoints(pim, (name) => name.startsWith(`${side}Hand`));
+        expect(Math.abs(lowest(hand) - rim.y), side).toBeLessThan(3 * MM);
+        const centre = hand.reduce((sum, point) => sum.add(point), new THREE.Vector3()).divideScalar(hand.length);
+        expect(Math.hypot(centre.x - palms[side].x, centre.z - palms[side].z), side).toBeLessThan(0.1);
+      }
+      expect(Math.abs(lowest(skinPoints(pim, (name) => /Foot|Toe/.test(name))) - 3), "feet").toBeLessThan(15 * MM);
     }
   });
 });

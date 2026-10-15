@@ -1,11 +1,15 @@
-// Builds web versions of the journey's two rigged characters from the delivered source models.
+// Builds web versions of the journey's rigged characters from the delivered source models.
 //
 //   node scripts/build-journey-characters.mjs [deliverDir]
 //
-// Source: <repo>/deliver/{phone_woman,office_man}/*_rigged.glb (about 300k triangles and 8K textures each, 40–47 MB).
-// Output: public/journey/characters/{phone-woman,office-man}.glb. The body mesh is simplified with meshoptimizer
-// (UV seams, normals and skin weights kept; the phone hand is locked at full detail because the camera pushes in on
-// it), textures are resized to 2K/1K JPEG, and the rig, the clips and the attached phone are copied unchanged.
+// Source: <repo>/deliver/<name>/<name>_rigged.glb (100k–300k triangles, 2K–8K textures, 20–47 MB). A character whose
+// source is not in deliverDir is skipped, so one person can be rebuilt without the others' sources.
+// Output: public/journey/characters/<out>.glb. The body mesh is simplified with meshoptimizer (UV seams, normals and
+// skin weights kept; the phone hand is locked at full detail because the camera pushes in on it), textures are resized
+// to 2K/1K JPEG, and the rig, the clips and the attached phone are copied unchanged.
+// Mali, Dao and Pim come from Meshy's auto-rig ("meshy" below): their spine and neck bones are renamed to the names the
+// other two use (Spine, Spine1, Spine2, Neck, from the hips up), and Meshy's sample Walking/Running clips are dropped;
+// their story poses are fitted in the scene (`characters.ts`), from the bind (A) pose.
 // meshoptimizer and sharp are already in the workspace (via @types/three and next); nothing is downloaded.
 import { createRequire } from "node:module";
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -29,6 +33,9 @@ MeshoptSimplifier.useExperimentalFeatures = true;
 const CHARACTERS = [
   { source: "phone_woman/phone_woman_rigged.glb", out: "phone-woman.glb", triangles: 42000, lockBones: /^RightHand/ },
   { source: "office_man/office_man_rigged.glb", out: "office-man.glb", triangles: 38000, lockBones: null },
+  { source: "mali/mali_rigged.glb", out: "mali.glb", triangles: 30000, lockBones: null, rig: "meshy" },
+  { source: "dao/dao_rigged.glb", out: "dao.glb", triangles: 22000, lockBones: null, rig: "meshy" },
+  { source: "pim/pim_rigged.glb", out: "pim.glb", triangles: 30000, lockBones: null, rig: "meshy" },
 ];
 
 // --- GLB reading and writing -----------------------------------------------------------------------------------------
@@ -93,17 +100,105 @@ function writeGlb(json, chunks) {
   return Buffer.concat([header, jsonHeader, text, binHeader, bin]);
 }
 
+// --- Meshy rigs ------------------------------------------------------------------------------------------------------
+
+/** Rename Meshy's spine and neck (Spine02 → Spine01 → Spine → neck, from the hips up) to Spine, Spine1, Spine2, Neck. */
+function renameMeshyRig(json) {
+  const childNamed = (index, pattern) => (json.nodes[index].children ?? []).find((child) => pattern.test(json.nodes[child].name));
+  let node = json.nodes.findIndex((n) => n.name === "Hips");
+  if (node < 0) throw new Error("The Meshy rig has no Hips bone");
+  for (const name of ["Spine", "Spine1", "Spine2"]) {
+    node = childNamed(node, /^Spine\d*$/);
+    if (node === undefined) throw new Error(`The Meshy rig has no bone for ${name}`);
+    json.nodes[node].name = name;
+  }
+  const neck = childNamed(node, /^neck$/i);
+  if (neck === undefined) throw new Error("The Meshy rig has no neck bone");
+  json.nodes[neck].name = "Neck";
+}
+
+/**
+ * three.js skins with four influences per vertex (JOINTS_0/WEIGHTS_0) and ignores a second set, so a vertex weighted
+ * to eight bones would lose part of its weight and pull toward the origin. Keep each vertex's four strongest bones,
+ * scaled to sum to one, and drop JOINTS_1/WEIGHTS_1.
+ */
+function keepFourInfluences(json, primitive, chunks, remapped, count) {
+  const sets = [0, 1].map((k) => ({ joints: remapped[`JOINTS_${k}`], weights: remapped[`WEIGHTS_${k}`] }));
+  if (sets.some((set) => !(set.weights instanceof Float32Array))) throw new Error("Only float skin weights can be merged");
+  const joints = new sets[0].joints.constructor(count * 4), weights = new Float32Array(count * 4);
+  for (let v = 0; v < count; v += 1) {
+    const all = sets.flatMap(({ joints: j, weights: w }) => [0, 1, 2, 3].map((k) => [j[v * 4 + k], w[v * 4 + k]]));
+    all.sort((a, b) => b[1] - a[1]);
+    const total = all[0][1] + all[1][1] + all[2][1] + all[3][1] || 1;
+    for (let k = 0; k < 4; k += 1) {
+      joints[v * 4 + k] = all[k][0];
+      weights[v * 4 + k] = all[k][1] / total;
+    }
+  }
+  chunks[json.accessors[primitive.attributes.JOINTS_0].bufferView] = new Uint8Array(joints.buffer);
+  chunks[json.accessors[primitive.attributes.WEIGHTS_0].bufferView] = new Uint8Array(weights.buffer);
+  delete primitive.attributes.JOINTS_1;
+  delete primitive.attributes.WEIGHTS_1;
+}
+
+/** Drop the animation clips; `pruneUnused` then removes the data only they used. */
+function dropClips(json) {
+  delete json.animations;
+}
+
+/** Remove the accessors and buffer views nothing refers to any more. */
+function pruneUnused(json, chunks) {
+  const usedAccessors = new Set();
+  for (const animation of json.animations ?? []) for (const sampler of animation.samplers) usedAccessors.add(sampler.input).add(sampler.output);
+  for (const mesh of json.meshes) {
+    for (const primitive of mesh.primitives) {
+      Object.values(primitive.attributes).forEach((index) => usedAccessors.add(index));
+      if (primitive.indices !== undefined) usedAccessors.add(primitive.indices);
+      for (const target of primitive.targets ?? []) Object.values(target).forEach((index) => usedAccessors.add(index));
+    }
+  }
+  for (const skin of json.skins ?? []) if (skin.inverseBindMatrices !== undefined) usedAccessors.add(skin.inverseBindMatrices);
+  const accessorOrder = [...usedAccessors].sort((a, b) => a - b);
+  const usedViews = new Set([...accessorOrder.map((index) => json.accessors[index].bufferView), ...(json.images ?? []).map((image) => image.bufferView)]);
+  const viewOrder = [...usedViews].filter((index) => index !== undefined).sort((a, b) => a - b);
+  const accessorMap = new Map(accessorOrder.map((old, index) => [old, index]));
+  const viewMap = new Map(viewOrder.map((old, index) => [old, index]));
+  json.accessors = accessorOrder.map((old) => ({ ...json.accessors[old], bufferView: viewMap.get(json.accessors[old].bufferView) }));
+  const keptChunks = viewOrder.map((old) => chunks[old]);
+  json.bufferViews = viewOrder.map((old) => json.bufferViews[old]);
+  chunks.splice(0, chunks.length, ...keptChunks);
+  for (const mesh of json.meshes) {
+    for (const primitive of mesh.primitives) {
+      for (const name of Object.keys(primitive.attributes)) primitive.attributes[name] = accessorMap.get(primitive.attributes[name]);
+      if (primitive.indices !== undefined) primitive.indices = accessorMap.get(primitive.indices);
+      for (const target of primitive.targets ?? []) for (const name of Object.keys(target)) target[name] = accessorMap.get(target[name]);
+    }
+  }
+  for (const skin of json.skins ?? []) if (skin.inverseBindMatrices !== undefined) skin.inverseBindMatrices = accessorMap.get(skin.inverseBindMatrices);
+  for (const animation of json.animations ?? []) {
+    for (const sampler of animation.samplers) Object.assign(sampler, { input: accessorMap.get(sampler.input), output: accessorMap.get(sampler.output) });
+  }
+  for (const image of json.images ?? []) if (image.bufferView !== undefined) image.bufferView = viewMap.get(image.bufferView);
+}
+
 // --- Build -----------------------------------------------------------------------------------------------------------
 
-async function buildCharacter({ source, out, triangles, lockBones }) {
+async function buildCharacter({ source, out, triangles, lockBones, rig }) {
   const file = path.join(deliver, source);
+  if (!existsSync(file)) {
+    console.log(`${out}: skipped (no ${source} in ${deliver})`);
+    return;
+  }
   const gltf = readGlb(file);
   const { json } = gltf;
   const chunks = json.bufferViews.map((view) => {
     const start = gltf.bin.byteOffset + (view.byteOffset ?? 0);
     return new Uint8Array(gltf.bin.buffer.slice(start, start + view.byteLength));
   });
-  const meshIndex = json.meshes.findIndex((mesh) => mesh.name === "Body");
+  // The body is the mesh named Body, or (Meshy) the one skinned mesh.
+  let meshIndex = json.meshes.findIndex((mesh) => mesh.name === "Body");
+  if (meshIndex < 0) meshIndex = json.nodes.find((node) => node.skin !== undefined && node.mesh !== undefined)?.mesh ?? -1;
+  if (meshIndex < 0) throw new Error(`${source} has no body mesh`);
   const primitive = json.meshes[meshIndex].primitives[0];
   const attributes = Object.fromEntries(Object.entries(primitive.attributes).map(([name, index]) => [name, readAccessor(gltf, index)]));
   const indices = readAccessor(gltf, primitive.indices);
@@ -140,9 +235,11 @@ async function buildCharacter({ source, out, triangles, lockBones }) {
   const IndexType = unique > 65535 ? Uint32Array : Uint16Array;
   chunks[json.accessors[primitive.indices].bufferView] = new Uint8Array(IndexType.from(simplified).buffer);
   Object.assign(json.accessors[primitive.indices], { count: simplified.length, componentType: IndexType === Uint32Array ? 5125 : 5123 });
+  const remapped = {};
   for (const [name, { array, size, accessor }] of Object.entries(attributes)) {
     const Type = array.constructor;
     const next = new Type(unique * size);
+    remapped[name] = next;
     for (let v = 0; v < vertexCount; v += 1) {
       const to = remap[v];
       if (to === 0xffffffff || to >= unique) continue;
@@ -157,6 +254,7 @@ async function buildCharacter({ source, out, triangles, lockBones }) {
       Object.assign(json.accessors[primitive.attributes[name]], { min, max });
     }
   }
+  if (primitive.attributes.JOINTS_1 !== undefined) keepFourInfluences(json, primitive, chunks, remapped, unique);
 
   // Textures: base colour 2048 (JPEG), normal 2048 (JPEG, high quality), metallic-roughness 1024.
   const material = json.materials[primitive.material ?? 0];
@@ -173,6 +271,11 @@ async function buildCharacter({ source, out, triangles, lockBones }) {
     chunks[image.bufferView] = new Uint8Array(resized);
     image.mimeType = "image/jpeg";
   }
+  if (rig === "meshy") {
+    renameMeshyRig(json);
+    dropClips(json);
+  }
+  pruneUnused(json, chunks);
   json.asset = { ...json.asset, generator: `${json.asset.generator}; FloodGuard build-journey-characters (meshoptimizer ${meshoptDir.split("@")[1]})` };
   mkdirSync(outDir, { recursive: true });
   const glb = writeGlb(json, chunks);

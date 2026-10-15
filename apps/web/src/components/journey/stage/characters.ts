@@ -4,8 +4,9 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { solveReach } from "@/lib/journey/reach";
 
 /**
- * The two people of the story as rigged models (built from the delivered characters by
- * `scripts/build-journey-characters.mjs`): the resident holding her phone and the responder typing at the desk.
+ * The people of the story as rigged models (built from the delivered characters by
+ * `scripts/build-journey-characters.mjs`): the resident holding her phone and the responder typing at the desk, and
+ * (from Meshy, posed from their bind pose at the end of this file) Lalita's mother and daughter and the coordinator.
  * Each file carries its bind (A) pose and one held pose (`PhoneHold`, `Typing`). The held poses were made without the
  * scene, so this module fits them to it: the responder is seated on the room's chair with his feet on the floor and
  * his fingertips on the keyboard, and the resident's hand is closed around the phone it holds (fingers behind it,
@@ -14,7 +15,7 @@ import { solveReach } from "@/lib/journey/reach";
  */
 
 export type Pose = Map<string, THREE.Quaternion>;
-type Side = "Left" | "Right";
+export type Side = "Left" | "Right";
 
 export interface Character {
   root: THREE.Group;
@@ -63,6 +64,8 @@ export async function loadCharacter(url: string): Promise<Character> {
     }
     poses[clip.name] = pose;
   }
+  // Models without an APose clip (Mali, Dao, Pim) rest in their A-pose: that is their bind pose.
+  if (!poses.APose) poses.APose = new Map([...bones].map(([name, bone]) => [name, bone.quaternion.clone()]));
   const hipsBone = bones.get("Hips");
   return { root, bones, poses, hips: { bind: hipsBone ? hipsBone.position.clone() : new THREE.Vector3(), posed }, meshes };
 }
@@ -445,6 +448,132 @@ export function poseResponder(character: Character, attention: number, time: num
       bend(character, `${side}Hand${finger}1`, -lift);
     });
   }
+}
+
+// --- Mali, Dao and Pim -----------------------------------------------------------------------------------------------
+// Rigged by Meshy, so their bones' own axes differ from the two above; these poses are built in world space only (the
+// character's own axes: x to its left, y up, z ahead), from the bind A-pose each file rests in.
+
+const left = new THREE.Vector3(), ahead = new THREE.Vector3(), down = new THREE.Vector3(0, -1, 0);
+
+/** The character's left and ahead directions, in world space. */
+function ownAxes(character: Character): THREE.Quaternion {
+  character.root.updateMatrixWorld(true);
+  const rotation = character.root.getWorldQuaternion(new THREE.Quaternion());
+  left.copy(axisX).applyQuaternion(rotation);
+  ahead.copy(axisZ).applyQuaternion(rotation);
+  return rotation;
+}
+
+/** Turn a bone about a world-space axis. */
+function turnWorld(bone: THREE.Object3D, axis: THREE.Vector3, radians: number): void {
+  setWorldQuaternion(bone, bone.getWorldQuaternion(new THREE.Quaternion()).premultiply(new THREE.Quaternion().setFromAxisAngle(axis, radians)));
+}
+
+/** Bend the upper back forward (positive) or back, shared between the two upper spine bones. */
+function leanForward(character: Character, radians: number): void {
+  for (const name of ["Spine1", "Spine2"]) turnWorld(need(character, name), left, radians / 2);
+}
+
+/** Let both arms hang from the A-pose: wrists beside the thighs (`out` from below the shoulder), elbows soft and back. */
+function lowerArms(character: Character, out: number, forward: number): void {
+  const rotation = ownAxes(character);
+  for (const side of SIDES) {
+    const sign = side === "Left" ? 1 : -1;
+    const upper = need(character, `${side}Arm`), lower = need(character, `${side}ForeArm`), hand = need(character, `${side}Hand`);
+    const shoulder = upper.getWorldPosition(new THREE.Vector3());
+    const length = shoulder.distanceTo(lower.getWorldPosition(pointB)) + pointB.distanceTo(hand.getWorldPosition(pointC));
+    const own = character.root.worldToLocal(shoulder.clone());
+    const wrist = character.root.localToWorld(new THREE.Vector3(own.x + sign * out, own.y - length * 0.96, own.z + forward));
+    reach(upper, lower, hand, wrist, shoulder.clone().add(new THREE.Vector3(sign * 0.15, -0.6, -0.5).applyQuaternion(rotation)));
+  }
+}
+
+/** Turn the head toward a point: the neck takes two fifths of the turn, the head the rest; `limit` caps the whole turn. */
+function turnHeadTo(character: Character, target: THREE.Vector3, limit: number): void {
+  const neck = need(character, "Neck"), head = need(character, "Head");
+  ownAxes(character);
+  const eyes = head.getWorldPosition(new THREE.Vector3()).addScaledVector(axisY, 0.08);
+  const full = new THREE.Quaternion().setFromUnitVectors(ahead, target.clone().sub(eyes).normalize());
+  const angle = 2 * Math.acos(Math.min(1, Math.abs(full.w)));
+  const share = angle > limit ? limit / angle : 1;
+  const neckTurn = new THREE.Quaternion().slerp(full, 0.4 * share);
+  // Both turns are about the same axis, so the head's part is the rest of the whole.
+  const headTurn = new THREE.Quaternion().slerp(full, share).multiply(neckTurn.clone().invert());
+  setWorldQuaternion(neck, neck.getWorldQuaternion(new THREE.Quaternion()).premultiply(neckTurn));
+  setWorldQuaternion(head, head.getWorldQuaternion(new THREE.Quaternion()).premultiply(headTurn));
+}
+
+export interface StandingOptions {
+  /** Forward bend of the upper back (radians); the neck takes back part of it so the eyes stay up. */
+  stoop?: number;
+  /** A point to look at (world space), e.g. a parent's face. */
+  lookAt?: THREE.Vector3;
+}
+
+/**
+ * Builds a standing person's `Standing` pose from the bind (A) pose: the back bent by `stoop`, the arms hanging at the
+ * sides and, if given, the head turned toward a point. Call once the model stands in its place.
+ */
+export function prepareStanding(character: Character, { stoop = 0, lookAt }: StandingOptions = {}): void {
+  const bind = character.poses.APose;
+  applyBlend(character, bind, bind, 1);
+  ownAxes(character);
+  leanForward(character, stoop);
+  turnWorld(need(character, "Neck"), left, -stoop * 0.6);
+  lowerArms(character, 0.05, 0.03);
+  if (lookAt) turnHeadTo(character, lookAt, 0.9);
+  character.poses.Standing = snapshot(character);
+}
+
+/**
+ * Builds Pim's `Leaning` pose: the upper back bent over the planning table, the head turned down to it, and each palm
+ * flat on the table's rim at the given point (world space, on the rim's top), fingers ahead and a little outward.
+ */
+export function prepareLeaning(character: Character, palms: Record<Side, THREE.Vector3>, look: THREE.Vector3, lean = 0.22): void {
+  const bind = character.poses.APose;
+  applyBlend(character, bind, bind, 1);
+  const rotation = ownAxes(character);
+  // Each hand's frame in the bind pose: fingers along the hand, palm facing out of it (anatomically, from the thumb's side).
+  const bound = SIDES.map((side) => {
+    const sign = side === "Left" ? 1 : -1;
+    const hand = need(character, `${side}Hand`);
+    const wrist = hand.getWorldPosition(new THREE.Vector3());
+    const fingers = need(character, `${side}HandMiddle1`).getWorldPosition(new THREE.Vector3()).sub(wrist);
+    const across = need(character, `${side}HandIndex1`).getWorldPosition(new THREE.Vector3()).sub(need(character, `${side}HandPinky1`).getWorldPosition(new THREE.Vector3()));
+    const palm = new THREE.Vector3().crossVectors(fingers, across).multiplyScalar(sign);
+    return { side, sign, hand, frame: handRotation(fingers, palm), world: hand.getWorldQuaternion(new THREE.Quaternion()) };
+  });
+  leanForward(character, lean);
+  turnHeadTo(character, look, 0.7);
+  const low = new THREE.Vector3();
+  for (const { side, sign, hand, frame, world } of bound) {
+    const upper = need(character, `${side}Arm`), lower = need(character, `${side}ForeArm`);
+    const fingers = ahead.clone().multiplyScalar(0.98).addScaledVector(down, 0.17).addScaledVector(left, sign * 0.2);
+    const handWorld = handRotation(fingers, down).multiply(frame.clone().invert()).multiply(world);
+    const pole = () => upper.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(sign * 0.6, -0.3, -0.4).applyQuaternion(rotation));
+    const skin = skinVertices(character, (name) => name.startsWith(`${side}Hand`));
+    const wrist = palms[side].clone().addScaledVector(fingers.normalize(), -0.07).addScaledVector(axisY, 0.03);
+    for (let pass = 0; pass < 3; pass += 1) {
+      reach(upper, lower, hand, wrist, pole());
+      setWorldQuaternion(hand, handWorld);
+      wrist.y += palms[side].y - lowestPoint(character, skin, low).y;
+    }
+    reach(upper, lower, hand, wrist, pole());
+    setWorldQuaternion(hand, handWorld);
+  }
+  character.poses.Leaning = snapshot(character);
+}
+
+/** A held pose (`Standing` or `Leaning`) with life in it: breathing in the upper back and a slow drift of the head. */
+export function poseAtRest(character: Character, pose: "Standing" | "Leaning", time: number, breathing = 1): void {
+  const held = character.poses[pose];
+  if (!held) return;
+  applyBlend(character, held, held, 1);
+  ownAxes(character);
+  const breath = Math.sin(time * 1.5);
+  turnWorld(need(character, "Spine2"), left, breath * 0.01 * breathing);
+  turnWorld(need(character, "Head"), axisY, Math.sin(time * 0.37) * 0.03);
 }
 
 // --- The held phone's screen -----------------------------------------------------------------------------------------

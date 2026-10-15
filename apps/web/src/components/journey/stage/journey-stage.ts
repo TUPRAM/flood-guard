@@ -19,10 +19,13 @@ import {
 import {
   attachScreen,
   loadCharacter,
+  poseAtRest,
   poseResident as poseResidentModel,
   poseResponder as poseResponderModel,
+  prepareLeaning,
   prepareResident,
   prepareResponder,
+  prepareStanding,
   type Character,
   type HeldScreen,
 } from "./characters";
@@ -169,7 +172,7 @@ export class JourneyStage {
   private vegetation!: Vegetation;
   private readonly resident: Figure;
   private readonly responder: Figure;
-  /** Lalita's mother and daughter, and the district coordinator: simpler stand-in figures (no rigged models yet). */
+  /** Lalita's mother and daughter, and the district coordinator: stand-in figures until their rigged models load. */
   private readonly mali: Figure;
   private readonly dao: Figure;
   private readonly pim: Figure;
@@ -186,6 +189,10 @@ export class JourneyStage {
   private phoneScreen!: THREE.Mesh;
   private residentModel: Character | null = null;
   private responderModel: Character | null = null;
+  /** Mali, Dao and Pim as rigged models (each replaces its stand-in once loaded). */
+  private castModels: Partial<Record<"mali" | "dao" | "pim", Character>> = {};
+  /** The planning-table rim Pim's pose was fitted to (it moves when the table follows the page's aspect). */
+  private pimFit = "";
   private heldScreen: HeldScreen | null = null;
   private disposed = false;
   /** Resolves when the rigged people are in the scene (or failed to load; the procedural figures then stay). */
@@ -469,12 +476,14 @@ export class JourneyStage {
 
   /** The rigged resident and responder (`characters.ts`) replace the procedural figures once loaded. */
   private async loadCharacters(): Promise<void> {
-    const [woman, man] = await Promise.all([
+    const [woman, man, ...cast] = await Promise.all([
       loadCharacter("/journey/characters/phone-woman.glb"),
       loadCharacter("/journey/characters/office-man.glb"),
+      // A person who fails to load keeps their stand-in.
+      ...(["mali", "dao", "pim"] as const).map((id) => loadCharacter(`/journey/characters/${id}.glb`).catch(() => null)),
     ]);
     if (this.disposed) {
-      for (const character of [woman, man]) character.root.traverse((object) => (object as THREE.Mesh).geometry?.dispose());
+      for (const character of [woman, man, ...cast]) character?.root.traverse((object) => (object as THREE.Mesh).geometry?.dispose());
       return;
     }
     // Fit both people to what they hold and touch before either joins the scene: if a model cannot be fitted, the
@@ -502,6 +511,27 @@ export class JourneyStage {
     this.scene.add(man.root);
     this.responder.root.visible = false;
     this.responderModel = man;
+
+    const [mali, dao, pim] = cast;
+    // Mali and Dao take their stand-ins' places at the gate: Mali a little stooped, Dao looking up at her mother.
+    const lalitaFace = this.resident.root.position.clone().add(v(0, 1.5, 0));
+    for (const [model, figure, options] of [[mali, this.mali, { stoop: 0.12 }], [dao, this.dao, { lookAt: lalitaFace }]] as const) {
+      if (!model) continue;
+      model.root.position.copy(figure.root.position);
+      model.root.rotation.y = figure.root.rotation.y;
+      prepareStanding(model, options);
+      model.root.visible = figure.root.visible;
+      figure.root.visible = false;
+      this.scene.add(model.root);
+    }
+    if (mali) this.castModels.mali = mali;
+    if (dao) this.castModels.dao = dao;
+    if (pim) {
+      pim.root.visible = this.pim.root.visible;
+      this.pim.root.visible = false;
+      this.scene.add(pim.root);
+      this.castModels.pim = pim;
+    }
   }
 
   /** Place the phone in the resident's hand (raise 0 = at the side, 1 = reading in front of the face). */
@@ -580,8 +610,11 @@ export class JourneyStage {
 
   /** Mali and Dao stand with Lalita: breathing, Mali a little stooped, Dao looking up at her mother. */
   private poseFamily(): void {
-    poseStanding(this.mali, 0.12, this.time + 1.3, 0.07);
-    poseStanding(this.dao, -0.16, this.time + 2.1, 0);
+    const { mali, dao } = this.castModels;
+    if (mali) poseAtRest(mali, "Standing", this.time + 1.3);
+    else poseStanding(this.mali, 0.12, this.time + 1.3, 0.07);
+    if (dao) poseAtRest(dao, "Standing", this.time + 2.1);
+    else poseStanding(this.dao, -0.16, this.time + 2.1, 0);
   }
 
   /** Pim leans over the planning table with her hands on its near (north) edge, looking down at it. */
@@ -592,6 +625,22 @@ export class JourneyStage {
     figure.root.position.set(table.center.x + 0.45, this.ops.floor, edge - 0.2);
     figure.root.rotation.y = 0;
     this.pimShadow.position.copy(figure.root.position).add(v(0, 0.02, 0.02));
+    const model = this.castModels.pim;
+    if (model) {
+      // Palms flat on the rim (its top is 0.92 m above the floor; the rim runs 0.13 m out from the screen).
+      model.root.position.copy(figure.root.position);
+      model.root.rotation.y = 0;
+      const fit = `${edge.toFixed(3)} ${table.center.x.toFixed(3)}`;
+      if (fit !== this.pimFit) {
+        this.pimFit = fit;
+        const palm = (side: number) => v(figure.root.position.x + side * 0.24, this.ops.floor + 0.92, edge + 0.08);
+        prepareLeaning(model, { Left: palm(1), Right: palm(-1) }, v(table.center.x, this.ops.floor + 0.92, table.center.z));
+      }
+      // No breathing in the back: it would slide her hands on the table.
+      poseAtRest(model, "Leaning", this.time + 0.7, 0);
+      model.root.updateMatrixWorld(true);
+      return;
+    }
     poseStanding(figure, 0.5, this.time + 0.7, 0.2);
     figure.root.updateMatrixWorld(true);
     const j = figure.joints;
@@ -608,7 +657,7 @@ export class JourneyStage {
 
   /** A point just above a person's head, for their name label. */
   private headAnchor(id: PersonId): THREE.Vector3 {
-    const model = id === "lalita" ? this.residentModel : id === "narin" ? this.responderModel : null;
+    const model = id === "lalita" ? this.residentModel : id === "narin" ? this.responderModel : this.castModels[id] ?? null;
     const bone = model?.bones.get("Head");
     if (bone) return bone.getWorldPosition(new THREE.Vector3()).add(v(0, 0.32, 0));
     const figure = { lalita: this.resident, mali: this.mali, dao: this.dao, narin: this.responder, pim: this.pim }[id];
@@ -884,10 +933,10 @@ export class JourneyStage {
     this.responder.root.visible = nearOps && !this.responderModel;
     if (this.responderModel) this.responderModel.root.visible = nearOps;
     const nearHome = pos.distanceTo(this.anchors.resident) < 60;
-    for (const figure of [this.mali, this.dao]) figure.root.visible = nearHome;
+    for (const id of ["mali", "dao"] as const) (this.castModels[id] ?? this[id]).root.visible = nearHome;
     for (const shadow of this.familyShadows) shadow.visible = nearHome;
     if (nearHome) this.poseFamily();
-    this.pim.root.visible = this.pimShadow.visible = nearOps;
+    (this.castModels.pim ?? this.pim).root.visible = this.pimShadow.visible = nearOps;
     if (nearOps) this.posePim();
     this.clearCloseUps(pos);
     const opsLit = pos.distanceTo(this.ops.seat) < 48;

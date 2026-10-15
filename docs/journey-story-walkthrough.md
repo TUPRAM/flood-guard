@@ -127,20 +127,20 @@ road is covered and turns **amber and dashed** when the connection is affected.
 with a warm sun and soft shadows; no post-processing. Weather animates: sky goes from clear warm blue to grey overcast,
 fog closes in, sun dims, rain streaks appear, the ground darkens with wetness.
 
-**The people.** Two are rigged 3D models (generated with Meshy from single images, simplified for the web ~300k → ~40k
-triangles, ~5.5 MB total); three are simpler procedural stand-in figures until rigged models of them exist:
+**The people.** All five are rigged 3D models generated with Meshy from single images and simplified for the web
+(~100k–300k → ~27k–42k triangles, ~15 MB total):
 - **Lalita** (rigged) — a woman in warm-climate clothes at her garden gate, holding a phone in her right hand. She lowers
   and raises it during the story (a blend between a relaxed pose and a reading pose, plus breathing and small head
   movements). Her grip was rebuilt so no finger crosses the screen (the real page is drawn over the whole screen).
-- **Mali** (stand-in) — an older woman with grey hair in a bun and a muted green blouse, standing just behind Lalita in
-  the gate opening, slightly stooped.
-- **Dao** (stand-in) — an 8-year-old in a white school shirt and navy trousers (a scaled figure with a child's larger
-  head), beside her mother, looking up at her.
+- **Mali** (rigged) — an older woman with grey hair in a low bun, a pale green blouse, a striped wrap skirt and a small
+  cloth shoulder bag, standing just behind Lalita in the gate opening, slightly stooped, arms at her sides.
+- **Dao** (rigged) — an 8-year-old in a white school blouse and navy pleated skirt, beside her mother, looking up at
+  her.
 - **Narin** (rigged) — a man in a teal shirt seated at the desk, hands on the keyboard, fingertips resting on the home
   row, breathing and tapping lightly, glancing at the screen.
-- **Pim** (stand-in) — a woman in a muted purple top standing at the far edge of the planning table, leaning over it
+- **Pim** (rigged) — a woman in a muted purple blouse with a plain lanyard standing at the far edge of the planning table, leaning over it
   with both hands on its edge, looking down at it.
-- While the rigged models download (up to 9 s), procedural figures stand in for Lalita and Narin too.
+- While the rigged models download (up to 9 s), or if one fails to load, simpler procedural figures stand in.
 
 **Floating labels** (small cream pills projected onto 3D points): places — "Lalita's home", "Clinic", "Usual way to the
 clinic", "Connection potentially affected" (amber), "District office (illustrative)", "Simulated call to hotline 1784 ·
@@ -400,9 +400,8 @@ shoulder, and square onto the monitor until it fills ~86% of the window; the rea
 
 1. **Not public:** only in the staff/competition build, not linked from anywhere, branch not merged.
 2. **Characters:** Lalita and Narin are single-image AI-generated models (Meshy); licence for publishing must be
-   confirmed. Phone raise is a blend between two held poses (not motion capture); typing is an in-place tap. **Mali, Dao
-   and Pim are simpler procedural stand-ins** and look noticeably less detailed; rigged models for them would replace
-   them through the same pipeline.
+   confirmed. Phone raise is a blend between two held poses (not motion capture); typing is an in-place tap. Mali, Dao
+   and Pim (Meshy, Premium plan, so owned and private) each hold one pose fitted in the scene.
 3. **Phone hand-off reflow** on desktop: the public app widens from a phone column to full width when docked.
 4. **Portrait phones:** monitor and table hand-offs fade rather than fly seamlessly.
 5. **Hidden iframes keep running**, which lowers frame rates on low-end laptops.

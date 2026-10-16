@@ -227,8 +227,8 @@ export const BLOCKERS: Blocker[] = [
 ];
 
 export const AGENDA = [
-  { time: "0:10–0:14", part: "1 · Data pipeline status" },
-  { time: "0:14–0:19", part: "2 · GeoAI workflow decisions" },
-  { time: "0:19–0:23", part: "3 · How we handle uncertainty" },
-  { time: "0:23–0:25", part: "4 · Unresolved blockers" },
+  { part: "1 · Data pipeline status" },
+  { part: "2 · GeoAI workflow decisions" },
+  { part: "3 · How we handle uncertainty" },
+  { part: "4 · Unresolved blockers" },
 ];

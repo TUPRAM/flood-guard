@@ -11,10 +11,10 @@
 .eyebrow, .kicker { margin: 0; color: #087f8c; font-size: 13px; font-weight: 700; letter-spacing: 0.12em; }
 .lead { max-width: 860px; margin: 10px 0 18px !important; padding: 12px 16px; border-left: 4px solid #087f8c; background: #fff; border-radius: 6px; font-size: 18px; }
 
-.agenda { border-collapse: collapse; min-width: min(520px, 100%); background: #fff; border: 1px solid #d5dbd4; border-radius: 10px; overflow: hidden; font-size: 15px; }
-.agenda th, .agenda td { padding: 8px 14px; border-bottom: 1px solid #e6ebe7; text-align: left; }
-.agenda th { background: #eff3ec; font-size: 13px; letter-spacing: 0.04em; color: #44524a; }
-.agenda td:first-child { font-variant-numeric: tabular-nums; color: #44524a; white-space: nowrap; }
+.agenda { display: inline-flex; flex-direction: column; min-width: min(420px, 100%); margin: 0; padding: 0; list-style: none; background: #fff; border: 1px solid #d5dbd4; border-radius: 10px; overflow: hidden; font-size: 16px; }
+.agenda li { padding: 10px 16px; border-bottom: 1px solid #e6ebe7; }
+.agenda li:last-child { border-bottom: 0; }
+
 
 .part { margin-top: 44px; padding-top: 6px; scroll-margin-top: 16px; }
 .hint { color: #44524a; }

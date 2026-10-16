@@ -60,22 +60,18 @@ export function TechnicalFollowUp() {
     <main id="main-content" className={styles.page} lang="en">
       <header className={styles.head}>
         <a className={styles.back} href="/studio/">← Studio</a>
-        <p className={styles.eyebrow}>TEAM BEATS · FLOODGUARD THAILAND · MENTORING SESSION II · 0:10–0:25</p>
+        <p className={styles.eyebrow}>TEAM BEATS · FLOODGUARD THAILAND · MENTORING SESSION II</p>
         <h1>Follow-up on technical mentoring</h1>
         <p className={styles.lead}><strong>Since Session I:</strong> the pipeline runs end to end on eight real tambons. Every test bar was fixed before the test, and we publish the misses.</p>
-        <table className={styles.agenda}>
-          <caption className={styles.srOnly}>Agenda</caption>
-          <thead><tr><th scope="col">Time</th><th scope="col">Part</th></tr></thead>
-          <tbody>
-            {AGENDA.map((item, index) => (
-              <tr key={item.time}><td>{item.time}</td><td><a href={`#part-${index + 1}`}>{item.part}</a></td></tr>
-            ))}
-          </tbody>
-        </table>
+        <ol className={styles.agenda} aria-label="Parts of this segment">
+          {AGENDA.map((item, index) => (
+            <li key={item.part}><a href={`#part-${index + 1}`}>{item.part}</a></li>
+          ))}
+        </ol>
       </header>
 
       <section id="part-1" className={styles.part} aria-labelledby="part-1-title">
-        <p className={styles.kicker}>PART 1 · 0:10–0:14</p>
+        <p className={styles.kicker}>PART 1</p>
         <h2 id="part-1-title">Data pipeline: {counts.done} of {ALL_STAGES.length} stages run end to end</h2>
         <p className={styles.hint}>Select a stage to see what it does, where it stands, and the documents, pages and images behind it.</p>
         <div className={styles.board}>
@@ -119,7 +115,7 @@ export function TechnicalFollowUp() {
       </section>
 
       <section id="part-2" className={styles.part} aria-labelledby="part-2-title">
-        <p className={styles.kicker}>PART 2 · 0:14–0:19</p>
+        <p className={styles.kicker}>PART 2</p>
         <h2 id="part-2-title">GeoAI decisions: bars fixed in advance, simple models held up</h2>
         <figure className={styles.graphic}>
           <a href="/studio-pipeline/geoai-decisions.png" target="_blank" rel="noreferrer" title="Open the graphic at full size">
@@ -136,7 +132,7 @@ export function TechnicalFollowUp() {
       </section>
 
       <section id="part-3" className={styles.part} aria-labelledby="part-3-title">
-        <p className={styles.kicker}>PART 3 · 0:19–0:23</p>
+        <p className={styles.kicker}>PART 3</p>
         <h2 id="part-3-title">Uncertainty is measured, and it changes what the page says</h2>
         <figure className={styles.graphic}>
           <a href="/studio-pipeline/uncertainty.png" target="_blank" rel="noreferrer" title="Open the graphic at full size">
@@ -152,7 +148,7 @@ export function TechnicalFollowUp() {
       </section>
 
       <section id="part-4" className={styles.part} aria-labelledby="part-4-title">
-        <p className={styles.kicker}>PART 4 · 0:23–0:25</p>
+        <p className={styles.kicker}>PART 4</p>
         <h2 id="part-4-title">Unresolved blockers</h2>
         <table className={styles.blockers}>
           <thead><tr><th scope="col">#</th><th scope="col">Blocker</th><th scope="col">What would unblock it</th></tr></thead>

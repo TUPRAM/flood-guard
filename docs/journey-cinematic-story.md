@@ -10,8 +10,7 @@ Opening → 01 Lalita's family (9 Sep 12:00) → [real /public/, Home, "Normal d
 → 02 Rain, and a plan (10 Sep 14:00–16:00) → [real /public/, Prepare, "Shallow water on roads"]
 → 03 The night (10 Sep 16:00 → 11 Sep 01:00)
 → 04 Cut off · Narin (12 Sep 12:00) → [real /studio/cases/mae-sai-2024/?t=84]
-→ 05 The district · Pim → [real /command/?t=84]
-→ 06 Water going down (14 Sep 12:00)
+→ 05 The district · Pim → [real /command/?t=84, on the planning table from her first scene; the story ends here]
 ```
 
 ## The people and the place

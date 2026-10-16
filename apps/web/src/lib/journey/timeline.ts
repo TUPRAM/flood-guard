@@ -20,13 +20,12 @@ export type SegmentId =
   | "night"
   | "cut-off"
   | "enter-monitor"
-  | "aerial"
-  | "after";
+  | "aerial";
 
 export type StopId = "public" | "public-prepare" | "case" | "command";
 
 /** `affected` (the cut-off chapter) and `response` keep their old ids so existing `?scene=` links still open. */
-export type ChapterId = "opening" | "everyday" | "conditions" | "night" | "affected" | "response" | "after";
+export type ChapterId = "opening" | "everyday" | "conditions" | "night" | "affected" | "response";
 
 export type TimelineItem =
   | { kind: "segment"; id: SegmentId; length: number; chapter: ChapterId }
@@ -46,11 +45,11 @@ export const TIMELINE: readonly TimelineItem[] = [
   { kind: "segment", id: "enter-monitor", length: 1, chapter: "affected" },
   { kind: "stop", id: "case", chapter: "affected" },
   { kind: "segment", id: "aerial", length: 3, chapter: "response" },
+  // The story ends on the planning table: Next there replays it from the start.
   { kind: "stop", id: "command", chapter: "response" },
-  { kind: "segment", id: "after", length: 2.6, chapter: "after" },
 ];
 
-export const CHAPTERS: readonly ChapterId[] = ["opening", "everyday", "conditions", "night", "affected", "response", "after"];
+export const CHAPTERS: readonly ChapterId[] = ["opening", "everyday", "conditions", "night", "affected", "response"];
 
 /** Every stop, in story order. */
 export const STOP_IDS: readonly StopId[] = TIMELINE.flatMap((item) => (item.kind === "stop" ? [item.id] : []));
@@ -76,7 +75,7 @@ export function segmentRange(id: SegmentId): { start: number; end: number } {
   return { start: placed.start, end: placed.end };
 }
 
-/** Total story length in units (the position of the final stop). */
+/** Total story length in units: the position of the final stop, where the story ends. */
 export const TIMELINE_END = PLACED[PLACED.length - 1].end;
 
 /** Position of a stop on the timeline. */
@@ -224,7 +223,7 @@ interface HourKey {
 }
 
 /**
- * Replay hours along each segment. Between some segments the story skips ahead in time (12 → 38, 49 → 84, 84 → 130):
+ * Replay hours along each segment. Between some segments the story skips ahead in time (12 → 38, 49 → 84):
  * those cuts happen while a real page is docked, or behind a short dip to dark (`veilAt`).
  */
 const SEGMENT_HOURS: Record<SegmentId, readonly HourKey[]> = {
@@ -240,8 +239,6 @@ const SEGMENT_HOURS: Record<SegmentId, readonly HourKey[]> = {
   "cut-off": [{ at: 0, hour: 84 }],
   "enter-monitor": [{ at: 0, hour: 84 }],
   aerial: [{ at: 0, hour: 84 }],
-  // Thursday until the screen is fully dark (p 0.02-0.04), Saturday from then on.
-  after: [{ at: 0, hour: 84 }, { at: 0.03, hour: 84 }, { at: 0.031, hour: 130 }, { at: 0.45, hour: 132 }],
 };
 
 /** The replay hour a real page opens at: the hour of the scene around it. */
@@ -291,18 +288,13 @@ export function storyHours(): number[] {
 
 /**
  * How dark the screen is for a cut in time (0 = clear, 1 = black): the end of the night fades out and the cut-off
- * chapter, two and a half days later, fades in; the last chapter, two days after the planning table, fades in too.
- * Other cuts happen while a page covers the scene.
+ * chapter, two and a half days later, fades in. Other cuts happen while a page covers the scene.
  */
 export function veilAt(t: number): number {
   const { segment, progress } = locate(t);
   const smooth = (x: number) => x * x * (3 - 2 * x);
   if (segment === "night" && progress > 0.94) return smooth(Math.min(1, (progress - 0.94) / 0.06));
   if (segment === "cut-off" && progress < 0.06) return smooth(1 - progress / 0.06);
-  // Two days on, after the planning table: a dip to dark (in, hold, out) instead of a long flight across town.
-  if (segment === "after" && progress < 0.02) return smooth(progress / 0.02);
-  if (segment === "after" && progress < 0.04) return 1;
-  if (segment === "after" && progress < 0.1) return smooth(1 - (progress - 0.04) / 0.06);
   return 0;
 }
 

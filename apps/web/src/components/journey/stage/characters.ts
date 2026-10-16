@@ -447,6 +447,87 @@ export function poseResponder(character: Character, attention: number, time: num
   }
 }
 
+// --- Mali, Dao and Pim -----------------------------------------------------------------------------------------------
+// Their files (Meshy rig) carry only the rest (A) pose and a different spine (Hips > Spine02 > Spine01 > Spine > neck >
+// Head), so their poses are built here in world space: the model faces +z with its left side toward +x, like the
+// procedural figures they replace. A positive turn about the model's +x axis bends forward (or looks down).
+
+/** The spine bones from the hips up, and how much of a forward lean each one takes. */
+const SPINE_LEAN = [["Spine02", 0.4], ["Spine01", 0.35], ["Spine", 0.25]] as const;
+
+/** Turn a bone by `radians` about an axis given in world space (its children follow). */
+function turnAbout(bone: THREE.Object3D, axis: THREE.Vector3, radians: number): void {
+  setWorldQuaternion(bone, bone.getWorldQuaternion(tmp).premultiply(turn.setFromAxisAngle(axis, radians)));
+}
+
+/**
+ * Builds a `Standing` pose from the rest (A) pose: the arms come down to the sides, a little out from the thighs, and
+ * the elbows bend slightly forward. Call once, before the model is placed (its root still at the origin).
+ */
+export function prepareStanding(character: Character): void {
+  character.poses.Rest = snapshot(character);
+  character.root.updateMatrixWorld(true);
+  const left = need(character, "LeftArm").getWorldPosition(new THREE.Vector3()).x > need(character, "Hips").getWorldPosition(new THREE.Vector3()).x ? 1 : -1;
+  for (const side of SIDES) {
+    const out = side === "Left" ? left : -left;
+    const upper = need(character, `${side}Arm`), lower = need(character, `${side}ForeArm`), hand = need(character, `${side}Hand`);
+    swing(upper, lower.getWorldPosition(pointB).sub(upper.getWorldPosition(pointA)), new THREE.Vector3(out * 0.16, -1, 0.02));
+    swing(lower, hand.getWorldPosition(pointC).sub(lower.getWorldPosition(pointB)), new THREE.Vector3(out * 0.06, -1, 0.2));
+  }
+  character.poses.Standing = snapshot(character);
+}
+
+/**
+ * Standing with the family or at the table: breathing, a slow glance, a forward `lean` (radians, shared along the
+ * spine) and `look` (radians; positive looks down, negative looks up).
+ */
+export function poseStandingModel(character: Character, look: number, time: number, lean: number): void {
+  const standing = character.poses.Standing;
+  if (!standing) return;
+  applyBlend(character, standing, standing, 1);
+  character.root.updateMatrixWorld(true);
+  const rotation = character.root.getWorldQuaternion(new THREE.Quaternion());
+  const across = axisX.clone().applyQuaternion(rotation), up = axisY.clone().applyQuaternion(rotation);
+  const breath = Math.sin(time * 1.5) * 0.012;
+  for (const [name, share] of SPINE_LEAN) {
+    const bone = character.bones.get(name);
+    if (bone) turnAbout(bone, across, lean * share + (name === "Spine01" ? breath : 0));
+  }
+  const head = character.bones.get("Head");
+  if (head) {
+    turnAbout(head, across, look - lean * 0.5 - breath * 0.5);
+    turnAbout(head, up, Math.sin(time * 0.37) * 0.04);
+  }
+}
+
+/**
+ * Both hands flat on a surface (Pim at the planning table): each wrist brought to its target (world space), the
+ * fingers pointing along `forward` and a little down, and the palm turned to face the surface.
+ */
+export function placeHandsOn(character: Character, targets: Record<Side, THREE.Vector3>, forward: THREE.Vector3): void {
+  const rotation = character.root.getWorldQuaternion(new THREE.Quaternion());
+  const left = axisX.clone().applyQuaternion(rotation);
+  const down = new THREE.Vector3(0, -1, 0);
+  for (const side of SIDES) {
+    const sign = side === "Left" ? 1 : -1;
+    const upper = character.bones.get(`${side}Arm`), lower = character.bones.get(`${side}ForeArm`), hand = character.bones.get(`${side}Hand`);
+    const index = character.bones.get(`${side}HandIndex1`), middle = character.bones.get(`${side}HandMiddle1`), pinky = character.bones.get(`${side}HandPinky1`);
+    if (!upper || !lower || !hand || !index || !middle || !pinky) continue;
+    // The elbows bend out and back, as when leaning on the hands.
+    const pole = upper.getWorldPosition(new THREE.Vector3()).addScaledVector(left, sign * 0.45).add(new THREE.Vector3(0, -0.5, 0)).addScaledVector(forward, -0.1);
+    reach(upper, lower, hand, targets[side], pole);
+    const wrist = hand.getWorldPosition(new THREE.Vector3());
+    swing(hand, middle.getWorldPosition(new THREE.Vector3()).sub(wrist), forward.clone().setY(0).normalize().add(new THREE.Vector3(0, -0.25, 0)));
+    // Roll about the fingers until the palm faces the surface (the index finger is on the thumb's side of the hand).
+    const fingers = middle.getWorldPosition(new THREE.Vector3()).sub(hand.getWorldPosition(new THREE.Vector3())).normalize();
+    const across = index.getWorldPosition(new THREE.Vector3()).sub(pinky.getWorldPosition(new THREE.Vector3()));
+    const palm = side === "Left" ? fingers.clone().cross(across) : across.clone().cross(fingers);
+    palm.addScaledVector(fingers, -palm.dot(fingers));
+    const target = down.clone().addScaledVector(fingers, -down.dot(fingers));
+    if (palm.lengthSq() > 1e-8 && target.lengthSq() > 1e-8) swing(hand, palm, target);
+  }
+}
+
 // --- The held phone's screen -----------------------------------------------------------------------------------------
 
 export interface HeldScreen {

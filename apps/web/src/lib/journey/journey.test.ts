@@ -30,24 +30,23 @@ import {
   storyBeats,
   storyHours,
   veilAt,
-  skyHoursAt,
 } from "./timeline";
 import { nightAt, skyAt } from "./sky";
 
 describe("journey timeline", () => {
-  it("places the four real-page stops in story order, with the closing chapter after the last one", () => {
+  it("places the four real-page stops in story order, and ends the story on the last one", () => {
     const positions = STOP_IDS.map(stopPosition);
     expect(STOP_IDS).toEqual(["public", "public-prepare", "case", "command"]);
     expect([...positions].sort((a, b) => a - b)).toEqual(positions);
-    expect(segmentRange("after").start).toBeCloseTo(stopPosition("command"));
-    expect(segmentRange("after").end).toBe(TIMELINE_END);
+    expect(segmentRange("aerial").end).toBeCloseTo(stopPosition("command"));
+    expect(stopPosition("command")).toBe(TIMELINE_END);
   });
 
   it("locates segments and progress", () => {
     expect(locate(0)).toMatchObject({ segment: "opening", progress: 0, chapter: "opening" });
     expect(locate(0.5).progress).toBeCloseTo(0.5);
     expect(locate(stopPosition("public"))).toMatchObject({ segment: "enter-phone", progress: 1 });
-    expect(locate(TIMELINE_END + 5)).toMatchObject({ segment: "after", progress: 1 });
+    expect(locate(TIMELINE_END + 5)).toMatchObject({ segment: "aerial", progress: 1 });
     expect(locate(-3)).toMatchObject({ segment: "opening", progress: 0 });
   });
 
@@ -78,7 +77,6 @@ describe("journey timeline", () => {
     for (let t = 0; t <= TIMELINE_END; t += 0.002) expect(Math.abs(veilAt(t + 0.002) - veilAt(t)), `t ${t.toFixed(3)}`).toBeLessThan(0.2);
     // Each cut in time happens under full dark.
     expect(veilAt(segmentRange("cut-off").start + 1e-4)).toBeGreaterThan(0.99);
-    expect(Math.max(...[0.02, 0.03, 0.04].map((p) => veilAt(segmentRange("after").start + p * 2.6)))).toBe(1);
   });
 
   it("blends the sky's light (not its hour) from the Public app into Tuesday afternoon, never through a night", () => {
@@ -95,12 +93,6 @@ describe("journey timeline", () => {
       expect(sky.rain, `p ${p}`).toBeGreaterThanOrEqual(previousRain - 1e-9);
       previousRain = sky.rain;
     }
-    // Into chapter 06 the dip to dark covers the cut: no blend, and the clock skips only under full dark.
-    const after = segmentRange("after");
-    expect(skyHoursAt(after.start + 0.01).weight).toBe(1);
-    expect(replayHourAt(after.start + 0.01)).toBe(STOP_HOURS.command);
-    expect(replayHourAt(after.start + 0.05 * (after.end - after.start))).toBeGreaterThanOrEqual(130);
-    expect(veilAt(after.start + 0.031 * (after.end - after.start))).toBe(1);
   });
 
   it("does not let scrolling pass a stop, but scrolling back is free", () => {
@@ -147,7 +139,8 @@ describe("journey timeline", () => {
     expect(parseScene("?scene=case")).toBe("case");
     expect(parseScene("?scene=affected")).toBe("affected");
     expect(parseScene("?scene=night")).toBe("night");
-    expect(parseScene("?scene=after")).toBe("after");
+    // Chapter 06 was removed: an old link to it opens the story from the start.
+    expect(parseScene("?scene=after")).toBeNull();
     expect(parseScene("?scene=nope")).toBeNull();
     expect(sceneAt(stopPosition("command"))).toBe("command");
     expect(sceneAt(scenePosition("conditions") + 0.3)).toBe("conditions");
@@ -155,8 +148,9 @@ describe("journey timeline", () => {
 });
 
 describe("journey replay time", () => {
-  it("runs at the Public app's practice-scenario hours", () => {
-    for (const scenario of PRACTICE_SCENARIOS.filter((entry) => entry.home === "dry")) {
+  it("runs at the Public app's practice-scenario hours, up to the planning table", () => {
+    // The story ends on the planning table (hour 84): the later "water going down" scenario is not part of it.
+    for (const scenario of PRACTICE_SCENARIOS.filter((entry) => entry.home === "dry" && entry.hour <= STOP_HOURS.command)) {
       expect(storyHours(), scenario.id).toContain(scenario.hour);
       expect(practiceForHour(scenario.hour)).toBe(scenario.id);
     }
@@ -181,7 +175,7 @@ describe("journey replay time", () => {
       }
       previous = hour;
     }
-    expect(replayHourAt(TIMELINE_END)).toBe(132);
+    expect(replayHourAt(TIMELINE_END)).toBe(STOP_HOURS.command);
   });
 
   it("shows on the phone the scenario of the hour, on the page the story is about", () => {
@@ -190,7 +184,7 @@ describe("journey replay time", () => {
     expect(phoneAt(segmentRange("night").start + 0.05)).toMatchObject({ tab: "report" });
     const peak = segmentRange("cut-off");
     expect(phoneAt((peak.start + peak.end) / 2)).toEqual({ tab: "home", practice: "cut_off" });
-    expect(phoneAt(TIMELINE_END)).toEqual({ tab: "home", practice: "going_down" });
+    expect(phoneAt(TIMELINE_END)).toEqual({ tab: "home", practice: "cut_off" });
   });
 });
 

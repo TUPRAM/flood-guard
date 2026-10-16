@@ -10,10 +10,13 @@ import { Parts, architectureMaterials, architectureTextures, buildHouse, houseTo
 import {
   attachScreen,
   loadCharacter,
+  placeHandsOn,
   poseResident as poseResidentModel,
   poseResponder as poseResponderModel,
+  poseStandingModel,
   prepareResident,
   prepareResponder,
+  prepareStanding,
   type Character,
   type HeldScreen,
 } from "./characters";
@@ -75,7 +78,7 @@ const PHONE_SCREEN_HEIGHT = 0.15;
 const MONITOR_WIDTH = 0.66;
 const TABLE_WIDTH = 2.9;
 /** The labels the stage places (the keys of LABELS in journey-copy.ts). */
-export const LABEL_IDS = ["home", "neighbour", "neighbourPeak", "shelter", "route", "low", "cut", "river", "office", "wat", "signal", "lalita", "mali", "dao", "narin", "pim"] as const;
+export const LABEL_IDS = ["home", "neighbour", "shelter", "route", "low", "cut", "river", "office", "wat", "signal", "lalita", "mali", "dao", "narin", "pim"] as const;
 type LabelId = (typeof LABEL_IDS)[number];
 
 const v = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z);
@@ -89,19 +92,6 @@ const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
 /** Point in a ring of x/z pairs (even-odd rule). */
-/** Distance (m) from a point to a ring's nearest edge. */
-function ringDistance(ring: Float32Array, x: number, z: number): number {
-  let best = Infinity;
-  const n = ring.length / 2;
-  for (let i = 0; i < n; i += 1) {
-    const ax = ring[i * 2], az = ring[i * 2 + 1], bx = ring[((i + 1) % n) * 2], bz = ring[((i + 1) % n) * 2 + 1];
-    const l2 = (bx - ax) ** 2 + (bz - az) ** 2 || 1;
-    const t = Math.max(0, Math.min(1, ((x - ax) * (bx - ax) + (z - az) * (bz - az)) / l2));
-    best = Math.min(best, Math.hypot(ax + t * (bx - ax) - x, az + t * (bz - az) - z));
-  }
-  return best;
-}
-
 function insideRing(ring: Float32Array, x: number, z: number): boolean {
   let inside = false;
   const n = ring.length / 2;
@@ -142,7 +132,7 @@ export class JourneyStage {
   private vegetation!: Vegetation;
   private readonly resident: Figure;
   private readonly responder: Figure;
-  /** Lalita's mother and daughter, and the district coordinator: simpler stand-in figures (no rigged models yet). */
+  /** Lalita's mother and daughter, and the district coordinator: stand-in figures until their rigged models load. */
   private readonly mali: Figure;
   private readonly dao: Figure;
   private readonly pim: Figure;
@@ -157,12 +147,8 @@ export class JourneyStage {
   private street!: { dir: THREE.Vector3; clear: number };
   /** The nearest river channel to the home (replay cells), for the shot toward the river. */
   private river!: THREE.Vector3;
-  /** Where the water was deepest at the peak among the lanes near the home (for the tide lines). */
-  private deep!: THREE.Vector3;
   /** The steep view of the home at the peak: the bearing with nothing taller in the way and the most water beyond. */
   private islandPose!: Pose;
-  /** Low along a lane where the water stood deep, for the tide lines after it has gone down. */
-  private tidePose!: Pose;
   private readonly anchors: Record<string, THREE.Vector3>;
   /** The town's drawn ground, for pacing camera moves by height. */
   private readonly groundAt: (x: number, z: number) => number;
@@ -178,6 +164,8 @@ export class JourneyStage {
   private phoneScreen!: THREE.Mesh;
   private residentModel: Character | null = null;
   private responderModel: Character | null = null;
+  /** Mali, Dao and Pim as rigged models (`loadFamily`); each replaces its stand-in once it has loaded. */
+  private readonly familyModels: Partial<Record<"mali" | "dao" | "pim", Character>> = {};
   private heldScreen: HeldScreen | null = null;
   private disposed = false;
   /** Resolves when the rigged people are in the scene (or failed to load; the procedural figures then stay). */
@@ -288,9 +276,7 @@ export class JourneyStage {
     // Toward the Sai River (its label's place), else the nearest of the replay's channel cells.
     const riverPlace = this.pack.manifest.places.find((entry) => entry.id === "sai_river");
     this.river = riverPlace ? v(riverPlace.x, 0, riverPlace.z) : this.nearestChannel();
-    this.deep = this.deepestNear(170);
     this.islandPose = this.islandView();
-    this.tidePose = this.tideView();
 
     // The District Office: the operations room in the office's outline (exterior on its place; interior illustrative).
     this.ops = buildOperations(alertTexture(), tableTexture(), this.town.office);
@@ -378,7 +364,6 @@ export class JourneyStage {
     this.anchors = {
       home: v(home.x, this.frame.homeTop + 3.2, home.z),
       neighbour: this.town.anchors.neighbour,
-      neighbourPeak: this.town.anchors.neighbour,
       shelter: this.town.anchors.shelter,
       route: this.routePoint(0.45).add(v(0, 4, 0)),
       cut: this.town.anchors.cut,
@@ -407,6 +392,8 @@ export class JourneyStage {
     this.charactersReady = this.loadCharacters().catch(() => {
       // Keep the procedural figures (offline, blocked or failed download).
     });
+    // Not awaited: the story starts without them, and each stand-in stays until its model is in.
+    void this.loadFamily();
   }
 
   /**
@@ -485,61 +472,7 @@ export class JourneyStage {
     return best.pose;
   }
 
-  /**
-   * A lane near the home where the water stood deep at the replay's peak (about 0.8 to 2 m) with houses close on
-   * both sides, so their walls carry the line of the highest water once it has gone down.
-   */
-  private deepestNear(radius: number): THREE.Vector3 {
-    const field = this.town.field;
-    const { R } = this.frame;
-    const near = this.pack.buildings.filter((b) => Math.hypot(b.obb.cx - R.x, b.obb.cz - R.z) < radius + 20);
-    let best = v(R.x, 0, R.z - 60), bestScore = -Infinity;
-    for (let r = 0; r < field.rows; r += 1) for (let c = 0; c < field.cols; c += 1) {
-      const x = field.x0 + (c + 0.5) * field.dx, z = field.z0 + (r + 0.5) * field.dz;
-      if (Math.hypot(x - R.x, z - R.z) > radius) continue;
-      const depth = field.cellDepth(r * field.cols + c, this.peakStage);
-      if (depth === null || depth < 0.8 || depth > 2) continue;
-      if (near.some((b) => insideRing(b.ring, x, z))) continue;
-      const walls = near.filter((b) => Math.hypot(b.obb.cx - x, b.obb.cz - z) < 16).length;
-      const score = Math.min(walls, 8) + depth;
-      if (score > bestScore) { bestScore = score; best = v(x, field.groundAt(x, z), z); }
-    }
-    return best;
-  }
 
-  /**
-   * Low over that lane, looking along it: of the bearings around it, one whose camera stands clear of every outline,
-   * with nothing taller in the way, the most walls close to the line of sight, and the sun not in front.
-   */
-  private tideView(): Pose {
-    const field = this.town.field;
-    const D = this.deep;
-    const near = this.pack.buildings.filter((b) => Math.hypot(b.obb.cx - D.x, b.obb.cz - D.z) < 60);
-    const topOf = (b: TownBuilding) => field.groundAt(b.obb.cx, b.obb.cz) + b.floors * 3.4 + 2;
-    const look = D.clone().add(v(0, 1.4, 0));
-    let best: { score: number; pose: Pose } = { score: -Infinity, pose: { pos: D.clone().add(v(-18, 12, 18)), target: look } };
-    for (let deg = 0; deg < 360; deg += 10) {
-      const a = THREE.MathUtils.degToRad(deg);
-      const dir = v(Math.sin(a), 0, -Math.cos(a));
-      const pos = D.clone().addScaledVector(dir, -22).add(v(0, 4.5, 0));
-      // Clear of every wall by 1.5 m, so the hold does not hug a building (nor clip it on the way out).
-      if (near.some((b) => insideRing(b.ring, pos.x, pos.z) || ringDistance(b.ring, pos.x, pos.z) < 1.5)) continue;
-      let hidden = 0;
-      for (let i = 1; i < 20; i += 1) {
-        const q = pos.clone().lerp(look, i / 20);
-        if (near.some((b) => insideRing(b.ring, q.x, q.z) && topOf(b) > q.y)) hidden += 1;
-      }
-      // Walls beside the line of sight, within 12 m of it.
-      const walls = near.filter((b) => {
-        const t = THREE.MathUtils.clamp((b.obb.cx - pos.x) * dir.x + (b.obb.cz - pos.z) * dir.z, 0, 40);
-        return Math.hypot(pos.x + dir.x * t - b.obb.cx, pos.z + dir.z * t - b.obb.cz) < 12;
-      }).length;
-      const intoSun = Math.max(0, dir.x * this.sunDir.x + dir.z * this.sunDir.z) / Math.hypot(this.sunDir.x, this.sunDir.z);
-      const score = -hidden * 10 + Math.min(walls, 8) - 2 * intoSun;
-      if (score > best.score) best = { score, pose: { pos, target: look } };
-    }
-    return best.pose;
-  }
 
   /** A point in the house's frame around Lalita: x along the front, y up, z toward the street. */
   private rel(x: number, y: number, z: number): THREE.Vector3 {
@@ -689,6 +622,34 @@ export class JourneyStage {
     this.responderModel = man;
   }
 
+  /**
+   * Mali, Dao (at the gate) and Pim (at the planning table) as rigged models. Each is loaded on its own: one that fails
+   * keeps its stand-in figure, the others still come in.
+   */
+  private async loadFamily(): Promise<void> {
+    const people = [["mali", this.mali], ["dao", this.dao], ["pim", this.pim]] as const;
+    await Promise.all(people.map(async ([id, figure]) => {
+      let model: Character;
+      try {
+        model = await loadCharacter(`/journey/characters/${id}.glb`);
+      } catch {
+        return;
+      }
+      if (this.disposed) {
+        model.root.traverse((object) => (object as THREE.Mesh).geometry?.dispose());
+        return;
+      }
+      prepareStanding(model);
+      // At the gate they stand where their stand-ins stood; Pim is placed at the table every frame (`posePim`).
+      model.root.position.copy(figure.root.position);
+      model.root.rotation.y = figure.root.rotation.y;
+      model.root.visible = figure.root.visible;
+      figure.root.visible = false;
+      this.scene.add(model.root);
+      this.familyModels[id] = model;
+    }));
+  }
+
   /** Place the phone in the resident's hand (raise 0 = at the side, 1 = reading in front of the face). */
   private poseResident(raise: number, glow: number): void {
     if (this.residentModel) {
@@ -759,8 +720,11 @@ export class JourneyStage {
 
   /** Mali and Dao stand with Lalita: breathing, Mali a little stooped, Dao looking up at her mother. */
   private poseFamily(): void {
-    poseStanding(this.mali, 0.12, this.time + 1.3, 0.07);
-    poseStanding(this.dao, -0.16, this.time + 2.1, 0);
+    const { mali, dao } = this.familyModels;
+    if (mali) poseStandingModel(mali, 0.12, this.time + 1.3, 0.07);
+    else poseStanding(this.mali, 0.12, this.time + 1.3, 0.07);
+    if (dao) poseStandingModel(dao, -0.16, this.time + 2.1, 0);
+    else poseStanding(this.dao, -0.16, this.time + 2.1, 0);
   }
 
   /** Pim leans over the planning table with her hands on its near (north) edge, looking down at it. */
@@ -771,6 +735,16 @@ export class JourneyStage {
     figure.root.position.set(table.center.x + 0.45, this.ops.floor, edge - 0.2);
     figure.root.rotation.y = 0;
     this.pimShadow.position.copy(figure.root.position).add(v(0, 0.02, 0));
+    const model = this.familyModels.pim;
+    if (model) {
+      model.root.position.copy(figure.root.position);
+      model.root.rotation.y = 0;
+      poseStandingModel(model, 0.45, this.time + 0.7, 0.24);
+      // Wrists on the frame, so her fingertips stop at the screen's edge: the page is drawn over the screen.
+      const wrist = (side: number) => v(figure.root.position.x + side * 0.24, this.ops.floor + 0.975, edge + 0.02);
+      placeHandsOn(model, { Left: wrist(1), Right: wrist(-1) }, v(0, 0, 1));
+      return;
+    }
     poseStanding(figure, 0.5, this.time + 0.7, 0.2);
     figure.root.updateMatrixWorld(true);
     const j = figure.joints;
@@ -786,9 +760,9 @@ export class JourneyStage {
 
   /** A point just above a person's head, for their name label. */
   private headAnchor(id: PersonId): THREE.Vector3 {
-    const model = id === "lalita" ? this.residentModel : id === "narin" ? this.responderModel : null;
+    const model = id === "lalita" ? this.residentModel : id === "narin" ? this.responderModel : this.familyModels[id] ?? null;
     const bone = model?.bones.get("Head");
-    if (bone) return bone.getWorldPosition(new THREE.Vector3()).add(v(0, 0.32, 0));
+    if (bone) return bone.getWorldPosition(new THREE.Vector3()).add(v(0, id === "dao" ? 0.26 : 0.32, 0));
     const figure = { lalita: this.resident, mali: this.mali, dao: this.dao, narin: this.responder, pim: this.pim }[id];
     return figure.joints.head.getWorldPosition(new THREE.Vector3()).add(v(0, id === "dao" ? 0.26 : 0.34, 0));
   }
@@ -915,8 +889,6 @@ export class JourneyStage {
     const mid = H.clone().lerp(O, 0.42);
     const overview: Pose = { pos: mid.clone().add(v(980, 760, -260)), target: mid.clone().add(v(-60, 0, -120)) };
     // Over the deepest lane near the home: the walls carry the line of the highest water.
-    const tide = this.tidePose;
-    const alongTide = tide.target.clone().sub(tide.pos).setY(0).normalize();
     // South of the office, on the window's side: the descent arrives already facing the window.
     // An arc round to the window side (two waypoints): one waypoint south of the office made the path double back.
     const officeArc1: Pose = { pos: O.clone().add(v(130, 150, 10)), target: O.clone() };
@@ -984,17 +956,6 @@ export class JourneyStage {
           through(0.94, underSky),
           { ...this.endPose(ops.tableScreen, LANDSCAPE_PAGE_FILL), up: NORTH },
         ];
-      case "after": {
-        // Two days later, behind a dip to dark (veilAt): down onto the lane where the water stood deepest, then up out
-        // of it before turning back to the family at the gate.
-        const establish: Pose = { pos: tide.pos.clone().add(v(0, 36, 0)).addScaledVector(alongTide, -36), target: tide.target.clone() };
-        const tideUp: Pose = { pos: tide.pos.clone().add(v(0, 16, 0)), target: tide.target.clone().addScaledVector(alongTide, 10) };
-        // A small step back along the lane at the end, never up into the eaves.
-        const stepBack: Pose = { pos: family.pos.clone().addScaledVector(look, Math.max(0, Math.min(2.5, clear - reachFamily - 0.4))).add(v(0, 0.6, 0)), target: family.target };
-        // The table's page shrinks back and the screen dips to dark (veilAt, p 0-0.04); the camera crosses town under it.
-        const tableEnd: Key = { ...this.endPose(ops.tableScreen, LANDSCAPE_PAGE_FILL), up: NORTH };
-        return [{ ...tableEnd, at: 0 }, { ...tableEnd, at: 0.02 }, k(0.04, establish), k(0.1, establish), k(0.34, tide), k(0.56, tide), through(0.66, tideUp), through(0.76, overFamily), k(0.9, family), k(1, stepBack)];
-      }
     }
   }
 
@@ -1090,18 +1051,11 @@ export class JourneyStage {
       case "aerial":
         attention = 1;
         monitorShow = 1 - ramp(p, 0.22, 0.3);
-        tableShow = ramp(p, 0.8, 0.96);
+        // The planning table runs the real command exercise from the first sight of it, not a drawing until it docks.
+        tableShow = 1;
         labels.home = labels.cut = labels.shelter = labels.river = p > 0.46 && p < 0.78;
         labels.pim = p > 0.15 && p < 0.26;
         route = p > 0.36 && p < 0.84 ? 1 : 0;
-        break;
-      case "after":
-        tableShow = 1 - ramp(p, 0, 0.02);
-        labels.neighbourPeak = p > 0.36 && p < 0.58;
-        labels.lalita = labels.mali = labels.dao = p > 0.88 && p < 0.98;
-        if (this.camera.aspect < 0.8) labels.dao = false;
-        raise = 0.4;
-        route = ramp(p, 0.85, 0.95);
         break;
     }
 
@@ -1184,10 +1138,15 @@ export class JourneyStage {
     this.responder.root.visible = nearOps && !this.responderModel;
     if (this.responderModel) this.responderModel.root.visible = nearOps;
     const nearHome = pos.distanceTo(this.frame.R) < 90;
-    for (const figure of [this.mali, this.dao]) figure.root.visible = nearHome;
+    for (const [figure, model] of [[this.mali, this.familyModels.mali], [this.dao, this.familyModels.dao]] as const) {
+      figure.root.visible = nearHome && !model;
+      if (model) model.root.visible = nearHome;
+    }
     for (const shadow of this.familyShadows) shadow.visible = nearHome;
     if (nearHome) this.poseFamily();
-    this.pim.root.visible = this.pimShadow.visible = nearOps;
+    this.pim.root.visible = nearOps && !this.familyModels.pim;
+    if (this.familyModels.pim) this.familyModels.pim.root.visible = nearOps;
+    this.pimShadow.visible = nearOps;
     if (nearOps) this.posePim();
     this.clearCloseUps(pos);
     const opsLit = pos.distanceTo(this.ops.seat) < 48;

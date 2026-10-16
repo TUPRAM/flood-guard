@@ -47,7 +47,6 @@ export const CHAPTER_LABELS: Record<ChapterId, { number: string; title: Text }> 
   night: { number: "03", title: t("The night", "คืนนั้น") },
   affected: { number: "04", title: t("Cut off · Narin", "ถูกตัดขาด · นรินทร์") },
   response: { number: "05", title: t("The district · Pim", "ภาพรวมอำเภอ · พิมพ์") },
-  after: { number: "06", title: t("Water going down", "น้ำลด") },
 };
 
 export const UI = {
@@ -57,25 +56,13 @@ export const UI = {
     "FloodGuard เชื่อมหลักฐานน้ำท่วมเข้ากับชุมชน ถนน และบริการที่จำเป็น เพื่อช่วยให้การวางแผนในพื้นที่ตั้งอยู่บนข้อมูล",
   ),
   begin: t("Begin the story", "เริ่มเรื่องราว"),
-  skip: t("Skip to the apps", "ข้ามไปที่แอป"),
-  skipShort: t("Apps", "แอป"),
+  navigation: t("Navigation", "การนำทาง"),
   scrollHint: t("Scroll, swipe or use the arrow keys", "เลื่อน ปัด หรือใช้ปุ่มลูกศร"),
   illustrative: t(
     "Fictional people on the real map of Mae Sai · water from the FloodGuard replay (r5): a model reconstruction of September 2024, low confidence · not a forecast, not real-time",
     "ตัวละครสมมุติบนแผนที่จริงของแม่สาย · น้ำจากภาพจำลองย้อนหลัง (r5) ของ FloodGuard: การสร้างเหตุการณ์กันยายน 2567 (2024) ขึ้นใหม่ด้วยแบบจำลอง ความเชื่อมั่นต่ำ · ไม่ใช่การพยากรณ์ ไม่ใช่ข้อมูลเรียลไทม์",
   ),
-  /** Short credits, in the Credits panel; the full credits and licences are in public/journey/town/LICENSE.txt. */
-  credits: t(
-    "Buildings: Google Open Buildings v3 (CC BY 4.0), Microsoft footprints (ODbL) · © OpenStreetMap contributors · Copernicus DEM © DLR, Airbus DS · Water: FloodGuard replay r5 · Heights and looks of buildings illustrative",
-    "อาคาร: Google Open Buildings v3 (CC BY 4.0), Microsoft footprints (ODbL) · © ผู้ร่วมให้ข้อมูล OpenStreetMap · Copernicus DEM © DLR, Airbus DS · น้ำ: ภาพจำลองย้อนหลัง r5 ของ FloodGuard · ความสูงและรูปลักษณ์ของอาคารเป็นภาพประกอบ",
-  ),
-  creditsButton: t("Credits", "เครดิต"),
-  creditsTitle: t("About this story and its data", "เกี่ยวกับเรื่องราวและข้อมูลนี้"),
-  illustrativeLooks: t(
-    "Heights and looks of buildings, and Lalita's house and yard, are illustrative.",
-    "ความสูงและรูปลักษณ์ของอาคาร รวมถึงบ้านและลานบ้านของลลิตา เป็นภาพประกอบ",
-  ),
-  /** One line of data credits on the title screen; the full credits are in the Credits panel. */
+  /** One line of data credits on the title screen; the full credits and licences are in public/journey/town/LICENSE.txt. */
   creditsShort: t(
     "© OpenStreetMap contributors · Google Open Buildings (CC BY 4.0) · Microsoft footprints (ODbL) · Copernicus DEM",
     "© ผู้ร่วมให้ข้อมูล OpenStreetMap · Google Open Buildings (CC BY 4.0) · Microsoft footprints (ODbL) · Copernicus DEM",
@@ -85,13 +72,15 @@ export const UI = {
   next: t("Next", "ถัดไป"),
   backToStory: t("Back to the story", "กลับไปที่เรื่องราว"),
   story: t("Story", "เรื่องราว"),
-  openPage: t("Open as its own page", "เปิดเป็นหน้าแยก"),
+  openPage: t("Open page", "เปิดหน้า"),
   loadingPage: t("Loading the real page…", "กำลังโหลดหน้าจริง…"),
   loadingWorld: t("Preparing the neighbourhood…", "กำลังเตรียมชุมชน…"),
   home: t("FloodGuard home", "หน้าแรก FloodGuard"),
   replay: t("Replay the story", "เล่นเรื่องราวอีกครั้ง"),
   chapters: t("Story chapters", "บทของเรื่องราว"),
-  skipTitle: t("Go straight to a real FloodGuard page", "ไปที่หน้า FloodGuard จริงโดยตรง"),
+  navigationTitle: t("Go straight to a FloodGuard page", "ไปที่หน้า FloodGuard โดยตรง"),
+  /** The policy brief: not a stop of the story, so the Navigation dialog only links to it. */
+  policy: t("Policy brief", "สรุปเชิงนโยบาย"),
   close: t("Close", "ปิด"),
   fallbackTitle: t("The 3D story could not start on this device", "ไม่สามารถเริ่มเรื่องราวแบบ 3 มิติบนอุปกรณ์นี้ได้"),
   fallbackBody: t(
@@ -104,7 +93,6 @@ export const UI = {
 export const LABELS: Record<string, Text> = {
   home: t("Lalita's home · the app's example home", "บ้านของลลิตา · บ้านตัวอย่างในแอป"),
   neighbour: t("Neighbours · water at home in the model", "เพื่อนบ้าน · น้ำเข้าบ้านตามแบบจำลอง"),
-  neighbourPeak: t("Neighbours · water reached 0.75 m here at the peak (model)", "เพื่อนบ้าน · น้ำเคยสูงถึง 0.75 ม. ช่วงน้ำสูงสุด (แบบจำลอง)"),
   shelter: t("Municipality office shelter · reported in use, Sept 2024", "ศูนย์พักพิงเทศบาลตำบลแม่สาย · มีรายงานว่าเปิดใช้ ก.ย. 2567"),
   route: t("Usual walk to the shelter", "ทางเดินปกติไปศูนย์พักพิง"),
   low: t("Low point on the walk · cut at 30 cm of water (model)", "จุดต่ำบนทางเดิน · ถูกตัดเมื่อน้ำลึก 30 ซม. (แบบจำลอง)"),
@@ -385,30 +373,12 @@ export const CAPTIONS: Record<SegmentId, Caption[]> = {
       ],
     },
   ],
-  after: [
-    {
-      from: 0.14, to: 0.62, pause: 0.5, who: "lalita",
-      eyebrow: t("06 · Water going down", "06 · น้ำลด"),
-      text: t("Saturday 14 September. In the replay, the water is going down.", "วันเสาร์ที่ 14 กันยายน ในภาพจำลองย้อนหลัง น้ำกำลังลด"),
-      points: [
-        t("The lines on the walls show how high it came in the model.", "รอยบนผนังแสดงว่าน้ำขึ้นสูงแค่ไหนตามแบบจำลอง"),
-        t("Practice scenario on her phone: water going down.", "สถานการณ์ฝึกซ้อมในโทรศัพท์ของเธอ: น้ำกำลังลด"),
-      ],
-    },
-    {
-      from: 0.7, to: 1.01, pause: 0.97, who: "lalita",
-      text: t("Make the plan before you need it: know your walk, and where it gets cut.", "วางแผนไว้ก่อนที่จะต้องใช้: รู้จักทางเดินของคุณ และรู้ว่าจุดไหนจะถูกตัด"),
-      points: [
-        t("Try the practice scenarios for the example home in the Public app.", "ลองใช้สถานการณ์ฝึกซ้อมของบ้านตัวอย่างในแอปประชาชน"),
-        t("Coordinators can replay the same hours in the command exercise.", "ผู้ประสานงานย้อนดูชั่วโมงเดียวกันได้ในแบบฝึกบัญชาการ"),
-        t("The people are fictional. The place, the replay and its limits are real.", "ตัวละครเป็นเรื่องสมมุติ แต่สถานที่ ภาพจำลองย้อนหลัง และข้อจำกัดของมันเป็นของจริง"),
-      ],
-    },
-  ],
 };
 
 export interface StopCopy {
   page: Text;
+  /** The page's own name, in the Navigation dialog. */
+  name: Text;
   note: Text;
   /** Whose page this is in the story. */
   who: CharacterId;
@@ -423,6 +393,7 @@ export interface StopCopy {
 export const STOPS: Record<StopId, StopCopy> = {
   public: {
     page: t("Real page · Public app", "หน้าจริง · แอปประชาชน"),
+    name: t("Public app", "แอปประชาชน"),
     note: t(
       "Lalita's first look, on a normal day. The app opens on the example home in Mae Sai town, the place of this story.",
       "การเปิดดูครั้งแรกของลลิตาในวันปกติ แอปเปิดที่บ้านตัวอย่างในตัวเมืองแม่สาย ซึ่งเป็นสถานที่ของเรื่องนี้",
@@ -434,6 +405,7 @@ export const STOPS: Record<StopId, StopCopy> = {
   },
   "public-prepare": {
     page: t("Real page · Prepare", "หน้าจริง · เตรียมพร้อม"),
+    name: t("Prepare", "เตรียมพร้อม"),
     note: t(
       "Lalita's household plan. It stays on this device; nothing is sent. Practice scenario: shallow water on roads.",
       "แผนของครัวเรือนของลลิตา เก็บไว้ในอุปกรณ์นี้ ไม่มีการส่งข้อมูล สถานการณ์ฝึกซ้อม: น้ำตื้นบนถนน",
@@ -449,6 +421,7 @@ export const STOPS: Record<StopId, StopCopy> = {
   },
   case: {
     page: t("Real page · Case view", "หน้าจริง · หน้าเคส"),
+    name: t("Case view", "หน้าเคส"),
     note: t(
       "Narin's evidence, opened at 12 September 2024, 12:00: the same replay as the story. Historical, reconstructed, low confidence.",
       "หลักฐานของนรินทร์ เปิดที่ 12 กันยายน 2567 เวลา 12:00 น. ภาพจำลองย้อนหลังเดียวกับในเรื่อง ข้อมูลในอดีต สร้างขึ้นใหม่ ความเชื่อมั่นต่ำ",
@@ -459,13 +432,15 @@ export const STOPS: Record<StopId, StopCopy> = {
   },
   command: {
     page: t("Real page · Command exercise", "หน้าจริง · แบบฝึกบัญชาการ"),
+    name: t("Command exercise", "แบบฝึกบัญชาการ"),
     note: t(
       "Pim's planning table, opened at the same hour. An exercise replay for review and coordination: not real-time, not dispatch. Reports saved on this device appear here too.",
       "โต๊ะวางแผนของพิมพ์ เปิดที่ชั่วโมงเดียวกัน การเล่นซ้ำเพื่อฝึกทบทวนและประสานงาน ไม่ใช่ข้อมูลเรียลไทม์ และไม่ใช่การสั่งการ รายงานที่บันทึกในอุปกรณ์นี้จะแสดงที่นี่ด้วย",
     ),
     who: "pim",
     href: (language) => `/command/?t=${STOP_HOURS.command}&lang=${language}`,
-    continueLabel: t("Continue: water going down", "ไปต่อ: น้ำลด"),
+    // The last page of the story: Next starts it again.
+    continueLabel: t("Replay the story", "เล่นเรื่องราวอีกครั้ง"),
   },
 };
 

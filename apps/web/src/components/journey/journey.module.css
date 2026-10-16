@@ -161,29 +161,6 @@
 .caption p { margin: 0; font-size: 1.12rem; font-weight: 600; line-height: 1.38; letter-spacing: -0.01em; }
 .eyebrow { display: block; margin-bottom: 6px; color: var(--teal); font-size: 0.72rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; }
 
-/* The Credits panel: what the story is and whose data it draws on (opened from the top bar). */
-.creditsPanel {
-  position: absolute;
-  z-index: 6;
-  top: 64px;
-  right: 16px;
-  display: grid;
-  gap: 8px;
-  justify-items: start;
-  max-width: min(460px, calc(100vw - 32px));
-  margin: 0;
-  padding: 14px 16px;
-  border: 1px solid rgb(21 43 41 / 12%);
-  border-radius: 10px;
-  background: rgb(250 248 242 / 97%);
-  box-shadow: 0 14px 40px rgb(21 43 41 / 16%);
-  color: var(--muted);
-  font-size: 0.76rem;
-  line-height: 1.45;
-  animation: rise 240ms ease both;
-}
-.creditsPanel strong { color: var(--ink); font-size: 0.82rem; }
-.creditsPanel p { margin: 0; }
 .hero small.heroNote { margin-top: 8px; color: var(--ink); font-size: 0.72rem; opacity: 0.78; }
 
 /* A dip to dark for a cut in time (the story skips ahead behind it). */
@@ -295,6 +272,8 @@ a.step { display: inline-flex; align-items: center; justify-content: center; tex
 .skipPanel li { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; }
 .skipPanel li button { min-height: 36px; border: 0; background: none; color: var(--ink); font: inherit; font-weight: 700; text-align: left; cursor: pointer; }
 .skipPanel li a { color: var(--teal-strong); font-size: 0.8rem; font-weight: 600; }
+/* The policy brief's name: a link that reads like the page buttons above it. */
+.skipPanel li a.navName { display: flex; align-items: center; min-height: 36px; color: var(--ink); font-size: inherit; font-weight: 700; text-decoration: none; }
 
 .loading { position: absolute; z-index: 7; inset: 0; display: grid; place-items: center; background: #efeadf; color: var(--muted); font-size: 0.9rem; }
 
@@ -307,7 +286,6 @@ a.step { display: inline-flex; align-items: center; justify-content: center; tex
 .fallback li a { color: var(--teal-strong); font-weight: 700; }
 .illustrativeStatic { color: var(--muted); font-size: 0.8rem; }
 
-.short { display: none; }
 .srOnly { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 @keyframes rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
@@ -321,12 +299,10 @@ a.step { display: inline-flex; align-items: center; justify-content: center; tex
 
 @media (max-width: 760px) {
   .topbar { top: 10px; left: 10px; right: 10px; }
-  .topActions .ghost:last-child { display: none; }
   .hero { top: auto; bottom: 120px; transform: none; animation-name: rise; }
   .heroScrim { background: linear-gradient(0deg, rgb(239 234 223 / 95%) 0%, rgb(239 234 223 / 80%) 45%, rgb(239 234 223 / 0%) 75%); }
   .caption { bottom: 72px; }
   .caption p { font-size: 1rem; }
-  .creditsPanel { top: 100px; left: 10px; right: 10px; max-width: none; }
   /* The title stays between the header and the chapter bar, however short the screen. */
   .hero { max-height: calc(100svh - 190px); overflow-y: auto; }
   .chapterNav, .chapterNav[data-docked="true"] { left: 8px; bottom: 8px; max-width: calc(100vw - 16px); }
@@ -335,8 +311,6 @@ a.step { display: inline-flex; align-items: center; justify-content: center; tex
   .barMain strong { flex: 1 1 auto; font-size: 0.8rem; }
   .barActions { margin-left: 0; flex-wrap: nowrap; }
   .barActions .primary, .barActions .secondary, .barActions .sos { min-height: 34px; padding: 0 10px; font-size: 0.76rem; white-space: normal; text-align: center; }
-  .long { display: none; }
-  .short { display: inline; }
   .barWarning { padding: 4px 10px; font-size: 0.72rem; }
 }
 

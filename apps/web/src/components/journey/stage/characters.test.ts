@@ -1,10 +1,20 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 import * as THREE from "three";
 import { describe, expect, it } from "vitest";
 
-import { poseResident, poseResponder, prepareResident, prepareResponder, type Character, type Workstation } from "./characters";
+import {
+  placeHandsOn,
+  poseResident,
+  poseResponder,
+  poseStandingModel,
+  prepareResident,
+  prepareResponder,
+  prepareStanding,
+  type Character,
+  type Workstation,
+} from "./characters";
 
 /**
  * The two rigged people, checked against what they hold and touch: the resident's hand around her phone (nothing over
@@ -84,7 +94,7 @@ function readCharacter(file: string): Character {
   });
   const poses: Character["poses"] = {};
   const posed: Record<string, THREE.Vector3> = {};
-  for (const clip of json.animations) {
+  for (const clip of json.animations ?? []) {
     const pose = new Map<string, THREE.Quaternion>();
     for (const channel of clip.channels) {
       const name = json.nodes[channel.target.node].name;
@@ -253,5 +263,74 @@ describe("the responder at his desk", () => {
     for (const finger of FINGERS) {
       for (const tip of tips(moved, finger)) expect(Math.abs(tip - other.keys.y), finger).toBeLessThan(3 * MM);
     }
+  });
+});
+
+describe("Mali, Dao and Pim", () => {
+  const FAMILY = [
+    { file: "mali.glb", height: 1.52 },
+    { file: "dao.glb", height: 1.28 },
+    { file: "pim.glb", height: 1.58 },
+  ] as const;
+  const at = (character: Character, bone: string) => character.bones.get(bone)!.getWorldPosition(new THREE.Vector3());
+
+  for (const { file, height } of FAMILY) {
+    describe(file, () => {
+      const person = readCharacter(file);
+
+      it("is a light web build: one skinned body, four influences per vertex, no clips", () => {
+        expect(statSync(fileURLToPath(new URL(`../../../../public/journey/characters/${file}`, import.meta.url))).size).toBeLessThan(4e6);
+        const skins = person.meshes.filter((mesh) => (mesh as THREE.SkinnedMesh).isSkinnedMesh) as THREE.SkinnedMesh[];
+        expect(skins).toHaveLength(1);
+        const weight = skins[0].geometry.getAttribute("skinWeight");
+        for (let i = 0; i < weight.count; i += 997) {
+          expect(weight.getX(i) + weight.getY(i) + weight.getZ(i) + weight.getW(i)).toBeCloseTo(1, 2);
+        }
+        expect(Object.keys(person.poses)).toHaveLength(0);
+      });
+
+      it("stands at real height, feet on the ground, facing +z", () => {
+        const points = skinPoints(person, () => true);
+        expect(lowest(points)).toBeGreaterThan(-0.01);
+        expect(lowest(points)).toBeLessThan(0.03);
+        expect(Math.max(...points.map((point) => point.y))).toBeCloseTo(height, 1);
+        expect(at(person, "headfront").z).toBeGreaterThan(at(person, "Head").z);
+      });
+
+      it("stands with the arms down at the sides, out from the thighs", () => {
+        prepareStanding(person);
+        poseStandingModel(person, 0, 0, 0);
+        person.root.updateMatrixWorld(true);
+        const hips = at(person, "Hips");
+        for (const side of ["Left", "Right"] as const) {
+          const shoulder = at(person, `${side}Arm`), elbow = at(person, `${side}ForeArm`), wrist = at(person, `${side}Hand`);
+          expect(elbow.y).toBeLessThan(shoulder.y - 0.15);
+          expect(wrist.y).toBeLessThan(elbow.y - 0.15);
+          // Close to the body (an A pose holds the hands far out) and a little forward of the elbow.
+          expect(Math.abs(wrist.x - hips.x)).toBeLessThan(Math.abs(shoulder.x - hips.x) + 0.12);
+          expect(Math.abs(wrist.x - hips.x)).toBeGreaterThan(0.1);
+          expect(wrist.z).toBeGreaterThan(elbow.z);
+        }
+      });
+    });
+  }
+
+  it("Pim leans over the table with both wrists where the table's edge puts them", () => {
+    const pim = readCharacter("pim.glb");
+    prepareStanding(pim);
+    pim.root.position.set(4, 2, -3);
+    pim.root.updateMatrixWorld(true);
+    poseStandingModel(pim, 0.45, 0.7, 0.24);
+    const targets = { Left: new THREE.Vector3(4.24, 2.975, -2.73), Right: new THREE.Vector3(3.76, 2.975, -2.73) };
+    placeHandsOn(pim, targets, new THREE.Vector3(0, 0, 1));
+    pim.root.updateMatrixWorld(true);
+    for (const side of ["Left", "Right"] as const) {
+      expect(at(pim, `${side}Hand`).distanceTo(targets[side]), side).toBeLessThan(0.01);
+      // Fingers forward over the table, palm down: the fingertips are ahead of the wrist and no higher than it.
+      const tip = at(pim, `${side}HandMiddle3`);
+      expect(tip.z).toBeGreaterThan(targets[side].z + 0.05);
+      expect(tip.y).toBeLessThan(targets[side].y + 0.01);
+    }
+    expect(at(pim, "Head").z).toBeGreaterThan(at(pim, "Hips").z + 0.05);
   });
 });

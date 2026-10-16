@@ -83,7 +83,6 @@ credit. This is an engineering note on the right to use, not a legal clearance.
 | 02 Rain, and a plan | 10 Sep 16:00 | Rain; shallow water in the lowest streets by the river; the family plans | Prepare, "Shallow water on roads" |
 | 03 The night | 10 Sep 22:00 to 11 Sep 01:00 | Night; water fills the streets toward the river; the walk's low points go under | Report; "Roads under water", then "Walk to a shelter nearly cut" |
 | 04 Cut off · Narin | 12 Sep 12:00 | Home dry, the street not: the island; the simulated call to 1784; over the town to the District Office; Narin | "Cut off, home dry"; then the case view at hour 84 |
-| 05 The district · Pim | 12 Sep 12:00 | Pim at the planning table; from above, homes cut off like hers | Command exercise at hour 84 |
-| 06 Water going down | 14 Sep 12:00 | The water goes down; mud and tide lines; the family | "Water going down" |
+| 05 The district · Pim | 12 Sep 12:00 | Pim at the planning table (the real command exercise on it throughout); from above, homes cut off like hers. The story ends here | Command exercise at hour 84 |
 
 Every beat shows its replay date and time and "model reconstruction, low confidence".

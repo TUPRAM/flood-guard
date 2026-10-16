@@ -29,7 +29,8 @@ import {
   type SegmentId,
   type StopId,
 } from "@/lib/journey/timeline";
-import { loadTownPack, type Localized } from "@/lib/journey/town-data";
+import { loadTownPack } from "@/lib/journey/town-data";
+import { POLICY_ROUTE } from "@/lib/policy-links";
 import { useLanguage } from "@/lib/use-language";
 
 import { CAPTIONS, CHAPTER_LABELS, CHARACTERS, LABELS, STOPS, UI, stopFrameSrc, type Caption, type JourneyLanguage, type PublicTab } from "./journey-copy";
@@ -192,22 +193,6 @@ export function JourneyExperience() {
   const [mounted, setMounted] = useState<Record<ScreenId, boolean>>({ phone: false, monitor: false, table: false });
   const [loaded, setLoaded] = useState<Record<ScreenId, boolean>>({ phone: false, monitor: false, table: false });
   const [skipOpen, setSkipOpenState] = useState(false);
-  const [creditsOpen, setCreditsOpen] = useState(false);
-  const creditsButtonRef = useRef<HTMLButtonElement>(null);
-  const creditsCloseRef = useRef<HTMLButtonElement>(null);
-  const closeCredits = useCallback(() => {
-    setCreditsOpen(false);
-    creditsButtonRef.current?.focus();
-  }, []);
-  // Opening the panel moves focus into it (its Close button); Escape, anywhere, closes it.
-  useEffect(() => {
-    if (!creditsOpen) return;
-    creditsCloseRef.current?.focus();
-    // Not while the Skip dialog is open: its Escape is its own.
-    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape" && !skipOpen) closeCredits(); };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [creditsOpen, closeCredits, skipOpen]);
   const skipTrigger = useRef<HTMLElement | null>(null);
   const skipDialog = useRef<HTMLDivElement>(null);
   const setSkipOpen = useCallback((open: boolean) => {
@@ -216,7 +201,7 @@ export function JourneyExperience() {
     // Return focus to whatever opened the dialog.
     if (!open) window.setTimeout(() => skipTrigger.current?.focus(), 0);
   }, []);
-  /** Keeps keyboard focus inside the skip dialog; Escape closes it. */
+  /** Keeps keyboard focus inside the Navigation dialog; Escape closes it. */
   const onSkipKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (event.key === "Escape") {
       event.preventDefault();
@@ -250,8 +235,6 @@ export function JourneyExperience() {
     window.addEventListener("pointerdown", onDown);
     return () => window.removeEventListener("pointerdown", onDown);
   }, [chaptersOpen]);
-  /** Credits of the map (building outlines, OpenStreetMap, DEM, replay), from the bake. */
-  const [credits, setCredits] = useState<Localized | null>(null);
 
   const tr = useCallback((text: Record<JourneyLanguage, string>) => text[language], [language]);
   const trRef = useRef(tr);
@@ -444,8 +427,11 @@ export function JourneyExperience() {
   }, [undockIfNeeded]);
 
   const continueFrom = useCallback((stop: StopId) => {
-    // Glide to the next chapter's first caption and wait there (with reduced motion, fade to it).
-    void goTo(nextPoint(CAPTION_PAUSES, stopPosition(stop)) ?? stopPosition(stop) + 0.5, { animate: !motion.current.reduced });
+    // Glide to the next chapter's first caption and wait there (with reduced motion, fade to it). The last page ends
+    // the story: from there it starts again.
+    const next = nextPoint(CAPTION_PAUSES, stopPosition(stop));
+    if (next === null) void goTo(0, { animate: false });
+    else void goTo(next, { animate: !motion.current.reduced });
   }, [goTo]);
 
   const jumpToStop = useCallback((stop: StopId) => {
@@ -536,12 +522,12 @@ export function JourneyExperience() {
         }
       });
 
-      // Projected labels: kept inside the window, and hidden where the caption, the credits or the chapter bar
+      // Projected labels: kept inside the window, and hidden where the caption or the chapter bar
       // would cover them (a label pushed away from its place would point at the wrong thing).
       const shown = result.labels.filter((label) => label.visible);
       const root = canvas.closest("main");
       const covers = shown.length && root
-        ? Array.from(root.querySelectorAll<HTMLElement>(`.${styles.caption}, .${styles.creditsPanel}, .${styles.chapterNav}`)).map((element) => element.getBoundingClientRect())
+        ? Array.from(root.querySelectorAll<HTMLElement>(`.${styles.caption}, .${styles.chapterNav}`)).map((element) => element.getBoundingClientRect())
         : [];
       for (const label of result.labels) {
         const element = labelRefs.current[label.id];
@@ -580,7 +566,7 @@ export function JourneyExperience() {
         pendingMount = null;
       }
       if (m.target >= stopPosition("public-prepare")) ensureMounted("monitor");
-      if (m.target >= stopPosition("case")) ensureMounted("table");
+      if (m.target >= segmentRange("enter-monitor").start) ensureMounted("table");
 
       // View state (React only when something visible changes).
       const where = locate(position);
@@ -617,7 +603,6 @@ export function JourneyExperience() {
           if (m.docked === stop) ensureMounted(next);
           else pendingMount = next;
         }, 900);
-        setCreditsOpen(false);
         // The 3D stays visible (its last frame) under the see-through bottom bar; rendering pauses while docked.
         setView((current) => ({ ...current, docked: stop }));
         const warning = STOPS[stop].warning;
@@ -640,7 +625,6 @@ export function JourneyExperience() {
         const timeout = typeof AbortSignal.timeout === "function" ? AbortSignal.timeout(25000) : undefined;
         const [{ JourneyStage: Stage }, town] = await Promise.all([import("./stage/journey-stage"), loadTownPack(decodeTownPng, undefined, timeout)]);
         if (disposed) return;
-        setCredits(town.manifest.credits);
         stage = new Stage(canvas, { quality: lowPower ? "low" : "high", town });
         stageRef.current = stage;
         canvas.addEventListener("webglcontextlost", onContextLost);
@@ -913,12 +897,7 @@ export function JourneyExperience() {
           <header className={styles.topbar}>
             <Link className={styles.wordmark} href="/">FloodGuard<span>.</span></Link>
             <div className={styles.topActions}>
-              <button type="button" className={styles.ghost} aria-label={tr(UI.skip)} onClick={() => setSkipOpen(true)}>
-                <span className={styles.long}>{tr(UI.skip)}</span><span className={styles.short} aria-hidden="true">{tr(UI.skipShort)}</span>
-              </button>
-              <button type="button" ref={creditsButtonRef} className={styles.ghost} aria-label={tr(UI.creditsButton)} aria-expanded={creditsOpen} aria-controls="journey-credits" onClick={() => setCreditsOpen((open) => !open)}>
-                <span className={styles.long}>{tr(UI.creditsButton)}</span><span className={styles.short} aria-hidden="true">ⓘ</span>
-              </button>
+              <button type="button" className={styles.ghost} aria-haspopup="dialog" onClick={() => setSkipOpen(true)}>{tr(UI.navigation)}</button>
               <div className={styles.language} role="group" aria-label="Language">
                 <button type="button" aria-pressed={language === "en"} onClick={() => changeLanguage("en")}>EN</button>
                 <button type="button" aria-pressed={language === "th"} onClick={() => changeLanguage("th")}>ไทย</button>
@@ -935,7 +914,7 @@ export function JourneyExperience() {
               <p>{tr(UI.subtitle)}</p>
               <div className={styles.heroActions}>
                 <button type="button" className={styles.primary} onClick={() => void goTo(CAPTION_PAUSES[0], { animate: !reducedMotion })}>{tr(UI.begin)}</button>
-                <button type="button" className={styles.secondary} onClick={() => setSkipOpen(true)}>{tr(UI.skip)}</button>
+                <button type="button" className={styles.secondary} onClick={() => setSkipOpen(true)}>{tr(UI.navigation)}</button>
               </div>
               <small>{tr(UI.scrollHint)}</small>
               <small className={styles.heroNote}>{tr(UI.illustrative)}</small>
@@ -946,21 +925,6 @@ export function JourneyExperience() {
           {leavingCaption && renderCaption(leavingCaption, true, `leaving-${leavingCaptionKey}-${language}`)}
           {caption && renderCaption(caption, false, `${view.segment}-${view.caption}-${language}`)}
 
-          {/* What the story is and whose data it draws on: behind the Credits button, off the scene. */}
-          {creditsOpen && (
-            <aside
-              id="journey-credits"
-              className={styles.creditsPanel}
-              aria-label={tr(UI.creditsTitle)}
-              onKeyDown={(event) => { if (event.key === "Escape") { event.stopPropagation(); closeCredits(); } }}
-            >
-              <strong>{tr(UI.creditsTitle)}</strong>
-              <p>{tr(UI.illustrative)}</p>
-              <p>{credits ? tr(credits) : tr(UI.credits)}</p>
-              <p>{tr(UI.illustrativeLooks)}</p>
-              <button type="button" ref={creditsCloseRef} className={styles.ghost} onClick={closeCredits}>{tr(UI.close)}</button>
-            </aside>
-          )}
         </>
       )}
 
@@ -1024,21 +988,26 @@ export function JourneyExperience() {
               onClick={() => step(1)}
               aria-label={docked && stopCopy?.continueLabel ? tr(stopCopy.continueLabel) : view.atEnd ? tr(UI.replay) : tr(UI.next)}
               title={docked && stopCopy?.continueLabel ? tr(stopCopy.continueLabel) : view.atEnd ? tr(UI.replay) : tr(UI.next)}
-            >{view.atEnd && !docked ? "↺" : "→"}</button>
+            >{view.atEnd ? "↺" : "→"}</button>
           </nav>
       )}
 
       {skipOpen && (
         <div className={styles.skipPanel} role="dialog" aria-modal="true" aria-labelledby="journey-skip-title" onKeyDown={onSkipKeyDown}>
           <div ref={skipDialog}>
-            <h2 id="journey-skip-title">{tr(UI.skipTitle)}</h2>
+            <h2 id="journey-skip-title">{tr(UI.navigationTitle)}</h2>
             <ul>
               {(["public", "case", "command"] as const).map((stop) => (
                 <li key={stop}>
-                  <button type="button" onClick={() => jumpToStop(stop)} autoFocus={stop === "public"}>{tr(STOPS[stop].page)}</button>
+                  <button type="button" onClick={() => jumpToStop(stop)} autoFocus={stop === "public"}>{tr(STOPS[stop].name)}</button>
                   <a href={STOPS[stop].href(language)}>{tr(UI.openPage)} ↗</a>
                 </li>
               ))}
+              {/* The policy brief is not a stop of the story: its name opens the page, like the link beside it. */}
+              <li>
+                <a className={styles.navName} href={POLICY_ROUTE}>{tr(UI.policy)}</a>
+                <a href={POLICY_ROUTE}>{tr(UI.openPage)} ↗</a>
+              </li>
             </ul>
             <button type="button" className={styles.secondary} onClick={() => setSkipOpen(false)}>{tr(UI.close)}</button>
           </div>

@@ -7,6 +7,7 @@ import styles from "./studio-library.module.css";
 
 export const C2S_STUDY_ROUTE = "/studio/studies/c2s-ms-20260915/";
 export const MAE_SAI_REPLAY_ROUTE = "/studio/cases/mae-sai-2024/";
+export const PIPELINE_PROGRESS_ROUTE = "/studio/pipeline/";
 
 export function StudioLibraryHeader() {
   const [language, setLanguage] = useLanguage("en");
@@ -25,6 +26,11 @@ export function StudioLibrary() {
           <h1 id="studio-library-title">{t("Every result has a context.", "ทุกผลลัพธ์มีบริบทของตัวเอง")}</h1>
           <p className={styles.lead}>{t("Explore the research behind FloodGuard. Choose a study to inspect its data, methods, measured results and limitations.", "สำรวจงานวิจัยเบื้องหลัง FloodGuard เลือกงานศึกษาเพื่อดูข้อมูล วิธีการ ผลการประเมิน และข้อจำกัด")}</p>
           <div className={styles.principles}><span>{t("Public data", "ข้อมูลสาธารณะ")}</span><span>{t("Traceable evidence", "หลักฐานที่ตรวจสอบย้อนกลับได้")}</span><span>{t("Study-specific evaluation", "การประเมินแยกตามงานศึกษา")}</span></div>
+        </section>
+
+        <section aria-labelledby="pipeline-progress-title" className={styles.section}>
+          <div className={styles.sectionHeading}><div><p className={styles.eyebrow}>{t("00 · PIPELINE", "00 · ขั้นตอนการทำงาน")}</p><h2 id="pipeline-progress-title">{t("Pipeline progress", "ความคืบหน้าของขั้นตอนการทำงาน")}</h2></div><p>{t("The proposal's five figures, box by box: done, in progress or not started.", "แผนภาพห้ารูปจากข้อเสนอโครงการ ทีละกล่อง: เสร็จแล้ว กำลังดำเนินการ หรือยังไม่เริ่ม")}</p></div>
+          <article className={`${styles.card} ${styles.wide}`}><div><span className={styles.kind}>{t("PROPOSAL AGAINST THE WORK", "ข้อเสนอเทียบกับงานที่ทำ")}</span><h3>{t("Every box of the pipeline, with its evidence", "ทุกกล่องของขั้นตอนการทำงาน พร้อมหลักฐาน")}</h3><p>{t("Select a box in any of the five figures to see what it does, where the work stands, and the figures, charts, images and files behind it.", "เลือกกล่องในแผนภาพใดก็ได้ เพื่อดูว่ากล่องนั้นทำอะไร งานไปถึงไหนแล้ว และตัวเลข แผนภูมิ ภาพ และไฟล์ที่อยู่เบื้องหลัง")}</p></div><a className={styles.open} href={PIPELINE_PROGRESS_ROUTE}>{t("Open pipeline ", "เปิดขั้นตอนการทำงาน ")}<span aria-hidden="true">↗</span></a></article>
         </section>
 
         <section aria-labelledby="research-studies-title" className={styles.section}>

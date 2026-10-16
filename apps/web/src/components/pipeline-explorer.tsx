@@ -302,7 +302,7 @@ function SvgBadge({ status, x, y }: { status: StageStatus; x: number; y: number 
   );
 }
 
-function StatusIcon({ status }: { status: StageStatus }) {
+export function StatusIcon({ status }: { status: StageStatus }) {
   return (
     <svg className={styles.icon} viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
       <SvgBadge status={status} x={12} y={12} />
@@ -319,7 +319,7 @@ function ProgressBar({ counts }: { counts: Record<StageStatus, number> }) {
   );
 }
 
-function DetailPanel({ topic, onClose }: { topic: PipelineTopic; onClose: () => void }) {
+export function DetailPanel({ topic, onClose }: { topic: PipelineTopic; onClose: () => void }) {
   const closeButton = useRef<HTMLButtonElement>(null);
   const titleId = useId();
 
@@ -339,7 +339,7 @@ function DetailPanel({ topic, onClose }: { topic: PipelineTopic; onClose: () => 
           <button ref={closeButton} type="button" className={styles.close} onClick={onClose} aria-label="Close the details">×</button>
         </div>
         <h2 id={titleId}>{topic.title}</h2>
-        <p className={styles.panelMeta}>Drawn in figure{figures.length > 1 ? "s" : ""} {figures.join(", ")} · as of {PIPELINE_AS_OF}</p>
+        <p className={styles.panelMeta}>{figures.length ? `Drawn in proposal figure${figures.length > 1 ? "s" : ""} ${figures.join(", ")} · ` : ""}as of {PIPELINE_AS_OF}</p>
         <p className={styles.summary}>{topic.summary}</p>
 
         <h3>What the proposal plans</h3>

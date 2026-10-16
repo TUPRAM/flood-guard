@@ -7,6 +7,9 @@
  * repository. Several boxes can share a topic (road disruption appears in figures 1, 2 and 4), so one piece of work has
  * one status wherever it is drawn.
  *
+ * Two record files are deliberately not linked: the repository's tests forbid code from naming the Sentinel-1 rights
+ * record and the age-data purpose review, so that only the code that reads them names them.
+ *
  * Every figure here is a modelled planning figure or an agreement with another map or image. None is an observation of
  * a flood, and nothing on the page is real-time or an official warning.
  */
@@ -209,7 +212,6 @@ export const PIPELINE_TOPICS: PipelineTopic[] = [
     links: [
       { label: "Age exposure, Mae Sai", path: "outputs/planning_v1/age_exposure_mae_sai_v1.json" },
       { label: "Access loss by age", path: "docs/equity_by_age.md" },
-      { label: "Purpose review of the age data", path: "docs/proposal_execution/age_data_purpose_review_v1.md" },
     ],
   },
   {
@@ -294,7 +296,6 @@ export const PIPELINE_TOPICS: PipelineTopic[] = [
     missing: ["The Sentinel-1 rights record is drafted and still waits for the owners' confirmation."],
     links: [
       { label: "The Sentinel-1 pass gap", path: "outputs/a1_diagnosis/sentinel1_pass_gap.json" },
-      { label: "Sentinel-1 rights record (draft)", path: "docs/proposal_execution/rights_basis_sentinel1_v1.json" },
     ],
   },
   {

@@ -797,9 +797,164 @@ def stage_freeze2(arguments: argparse.Namespace) -> None:
                       "by_order": {name: {order: by_order[name][order] for order in orders} for name in by_order}}, indent=1))
 
 
+# ---------------------------------------------------------------------------
+# Section 4.4: the test points and the page the three team members label on
+# ---------------------------------------------------------------------------
+
+TEST_NAME = "test_points_v1.json"
+TEST_KEY = "test_key_v1.json"
+TEST_PAGE = "mud_label_page_v1.html"
+TEST_TEMPLATE = "scripts/theos2_mud_label_page.html"
+NATIVE_M = 0.5
+DETAIL_PX = 128          # 64 m at 0.5 m
+SQUARE_AT_PX = 62        # the 4 by 4 pixels of the square start here in the detail picture
+CONTEXT_NATIVE_PX = 640  # 320 m at 0.5 m
+CONTEXT_PX = 320         # shown at 1 m
+STRETCH_PERCENTILES = (0.5, 99.5)
+STRETCH_GAMMA = 0.8
+JPEG_QUALITY = 90
+PRACTICE_SEED = mud.TEST_SEED + 1
+
+
+def stretch_limits(layers: dict[str, Any]) -> list[tuple[float, float]]:
+    """The dark and the bright end of each band over the scene, the same for every picture."""
+
+    sample = layers["covered"][::7, ::7]
+    return [tuple(float(value) for value in np.percentile(layers["image"][band][::7, ::7][sample], STRETCH_PERCENTILES)) for band in range(4)]
+
+
+def page_pictures(external: Path, delivery: dict[str, Any], point: dict[str, Any], limits: list[tuple[float, float]]) -> dict[str, str]:
+    """The three pictures of a point, from the first product by name that holds its square, as on the water page."""
+
+    import base64
+    import io
+
+    import rasterio
+    from PIL import Image
+    from rasterio.windows import Window
+
+    def to_bytes(bands: np.ndarray, order: tuple[int, int, int]) -> np.ndarray:
+        layers = []
+        for band in order:
+            low, high = limits[band]
+            scaled = np.clip((bands[band].astype("float64") - low) / max(high - low, 1.0), 0.0, 1.0) ** STRETCH_GAMMA
+            layers.append(np.round(scaled * 255).astype("uint8"))
+        return np.stack(layers, axis=-1)
+
+    def jpeg(picture: np.ndarray) -> str:
+        buffer = io.BytesIO()
+        Image.fromarray(picture).save(buffer, format="JPEG", quality=JPEG_QUALITY, subsampling=0)
+        return base64.b64encode(buffer.getvalue()).decode("ascii")
+
+    grid = delivery["one_pixel_grid"]
+    x_left, y_top = grid["west"] + point["column"] * grid["cell_m"], grid["north"] - point["row"] * grid["cell_m"]
+    folder = external / delivery["work_folder_outside_git"]
+    for product in sorted(delivery["products"], key=lambda item: item["product"]):
+        with rasterio.open(folder / product["image"]["path"]) as source:
+            column = int(round((x_left - source.transform.c) / NATIVE_M))
+            row = int(round((source.transform.f - y_top) / NATIVE_M))
+            if not (0 <= row and 0 <= column and row + 4 <= source.height and column + 4 <= source.width):
+                continue
+            if source.read(window=Window(column, row, 4, 4)).min() == 0:
+                continue
+            detail = source.read(window=Window(column - SQUARE_AT_PX, row - SQUARE_AT_PX, DETAIL_PX, DETAIL_PX), boundless=True, fill_value=0)
+            half = CONTEXT_NATIVE_PX // 2
+            context = source.read(window=Window(column + 2 - half, row + 2 - half, CONTEXT_NATIVE_PX, CONTEXT_NATIVE_PX),
+                                  boundless=True, fill_value=0).astype("float64")
+        factor = CONTEXT_NATIVE_PX // CONTEXT_PX
+        context = context.reshape(4, CONTEXT_PX, factor, CONTEXT_PX, factor).mean(axis=(2, 4))
+        true_colour, false_colour = (0, 1, 2), (3, 0, 1)
+        return {"d": jpeg(to_bytes(detail, true_colour)), "f": jpeg(to_bytes(detail, false_colour)), "c": jpeg(to_bytes(context, true_colour))}
+    raise BuildError(f"no product holds the square of {point.get('id', point)}")
+
+
+def stage_test(arguments: argparse.Namespace) -> None:
+    import rasterio
+
+    from floodguard import theos2_water_rule_v2 as v2
+
+    external = Path(arguments.external_root)
+    work = external / WORK
+    record_path = ROOT / OUTPUT_DIR / TEST_NAME
+    freeze_path = ROOT / OUTPUT_DIR / FREEZE_V2_NAME
+    if record_path.exists():
+        raise BuildError("the test points are drawn once")
+    if not freeze_path.exists():
+        raise BuildError("the test points are drawn only after the freeze of amendment 1 is committed")
+    freeze = json.loads(freeze_path.read_text(encoding="utf-8"))
+    raster_path = work / freeze["raster_outside_git"]["name"]
+    if sha256_file(raster_path) != freeze["raster_outside_git"]["sha256"]:
+        raise BuildError("the mud raster is not the one the freeze binds")
+    delivery, reference = check_inputs()
+    layers = scene_layers(external, delivery, reference)
+    with rasterio.open(raster_path) as source:
+        frozen = source.read(1)
+    group_raster = mud.groups(frozen)
+    group_raster[~layers["covered"]] = 255
+    sizes = group_sizes(group_raster, layers["order"])
+    counts = mud.allocate(sizes, mud.TEST_POINTS, delivery_meta.ORDERS)
+    development = [*json.loads((work / "development_key_v1.json").read_text(encoding="utf-8"))["points"],
+                   *json.loads((work / "development_key_v2.json").read_text(encoding="utf-8"))["points"]]
+    free = v2.away_from(group_raster.shape, [(point["row"], point["column"]) for point in development], mud.KEEP_AWAY_PX)
+    points = mud.draw(group_raster, layers["order"], delivery_meta.ORDERS, counts, mud.TEST_SEED, free=free)
+    practice_free = free & v2.away_from(group_raster.shape, [(point["row"], point["column"]) for point in points], mud.KEEP_AWAY_PX)
+    practice_counts = {(group, delivery_meta.ORDERS[index % 2]): 1 for index, group in enumerate(mud.GROUPS)}
+    practice = mud.draw(group_raster, layers["order"], delivery_meta.ORDERS, practice_counts, PRACTICE_SEED, free=practice_free)
+    grid = delivery["one_pixel_grid"]
+    for index, point in enumerate(points, start=1):
+        point.update({"id": f"t{index:03d}", "x": grid["west"] + (point["column"] + 0.5) * grid["cell_m"],
+                      "y": grid["north"] - (point["row"] + 0.5) * grid["cell_m"]})
+    limits = stretch_limits(layers)
+    shown = [{"id": point["id"], **page_pictures(external, delivery, point, limits)} for point in points]
+    practice_shown = [page_pictures(external, delivery, point, limits) for point in practice]
+    test_work = work / "test"
+    test_work.mkdir(parents=True, exist_ok=True)
+    key_path = test_work / TEST_KEY
+    write_json(key_path, {"schema": "floodguard.theos2_17sep_mud.test_key.v1", "plan": PLAN, "seed": mud.TEST_SEED, "epsg": delivery_meta.EPSG,
+                          "what_a_point_is": "One pixel of the 2 m mud raster of freeze_v2; x and y are its centre.",
+                          "points": [{key: point[key] for key in ("id", "group", "order", "row", "column", "x", "y")} for point in points],
+                          "practice": [{key: point[key] for key in ("group", "order", "row", "column")} for point in practice]})
+    sample_id = sha256_file(key_path)
+    page = (ROOT / TEST_TEMPLATE).read_text(encoding="utf-8")
+    for token, value in (("/*SAMPLE_ID*/", sample_id), ("/*PRACTICE*/[]", json.dumps(practice_shown, separators=(",", ":"))),
+                         ("/*POINTS*/[]", json.dumps(shown, separators=(",", ":")))):
+        if page.count(token) != 1:
+            raise BuildError(f"the page template does not hold {token} exactly once")
+        page = page.replace(token, value)
+    page_path = test_work / TEST_PAGE
+    page_path.write_bytes(page.encode("utf-8"))
+    record = {
+        "schema": "floodguard.theos2_17sep_mud.test_points.v1",
+        **envelope(),
+        "what_this_is": "The draw of the 150 test points of question 4 in the groups of the rule frozen by amendment 1, made before anybody labelled. "
+                        "It holds no place and no group of a point: the key stays outside Git until the score is computed, because the repository is public and the labellers read it.",
+        "freeze": {"path": f"{OUTPUT_DIR}/{FREEZE_V2_NAME}", "sha256": sha256_file(freeze_path)},
+        "seed": mud.TEST_SEED, "practice_seed": PRACTICE_SEED,
+        "group_pixels": {f"{group}|{order}": size for (group, order), size in sizes.items()},
+        "points_per_group": {f"{group}|{order}": count for (group, order), count in counts.items() if count},
+        "points": len(points), "practice_points": len(practice),
+        "kept_away_from_development_points_m": mud.KEEP_AWAY_PX * 2,
+        "labels": list(mud.LABELS),
+        "sample_id": sample_id,
+        "key_outside_git": {"name": f"test/{TEST_KEY}", "sha256": sample_id},
+        "page_outside_git": {"name": f"test/{TEST_PAGE}", "sha256": sha256_file(page_path),
+                             "template": {"path": TEST_TEMPLATE, "sha256": sha256_file(ROOT / TEST_TEMPLATE)},
+                             "megabytes": round(page_path.stat().st_size / 1e6, 1), "holds_the_answer_of_the_rule": False,
+                             "stretch_of_the_pictures": {"percentiles": list(STRETCH_PERCENTILES), "gamma": STRETCH_GAMMA,
+                                                         "limits_by_band": [[round(low, 1), round(high, 1)] for low, high in limits]}},
+        "labellers": "three team members, each alone",
+        "labels_received": 0,
+        "licence": "THEOS-2 imagery provided by GISTDA for GeoHackathon 2026. The page holds pixels of the scene and stays outside Git.",
+        "assumptions": ASSUMPTIONS, "limits": LIMITS,
+    }
+    write_json(record_path, record)
+    print(json.dumps({"points_per_group": record["points_per_group"], "page_megabytes": record["page_outside_git"]["megabytes"],
+                      "page": str(page_path)}, indent=1))
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    parser.add_argument("stage", choices=("points", "freeze", "points2", "freeze2"))
+    parser.add_argument("stage", choices=("points", "freeze", "points2", "freeze2", "test"))
     parser.add_argument("--external-root", required=True)
     parser.add_argument("--labels")
     parser.add_argument("--old-labels", help="freeze2: the label file of plan v1, as the first freeze binds it")
@@ -808,7 +963,8 @@ def main() -> None:
         raise BuildError("a freeze stage needs --labels")
     if arguments.stage == "freeze2" and not arguments.old_labels:
         raise BuildError("the second freeze needs --old-labels")
-    {"points": stage_points, "freeze": stage_freeze, "points2": stage_points2, "freeze2": stage_freeze2}[arguments.stage](arguments)
+    {"points": stage_points, "freeze": stage_freeze, "points2": stage_points2, "freeze2": stage_freeze2,
+     "test": stage_test}[arguments.stage](arguments)
 
 
 if __name__ == "__main__":

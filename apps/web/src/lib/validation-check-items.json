@@ -933,6 +933,29 @@
       "gates": "Questions 3 and 4 on the THEOS-2 scene of 17 September 2024.",
       "ready": true,
       "added": "2026-10-19"
+    },
+    {
+      "id": "V-48",
+      "group": "theos2",
+      "title": "Label 150 points of the THEOS-2 scene of 17 September 2024: mud or not mud",
+      "check": "Putu hands you the page mud_label_page_v1.html (about 9 MB; it is not in the repository). Open it in a browser, type your first name and label alone: five practice points, then 150 points, about 30 minutes; you can stop and come back in the same browser. For each yellow square choose Mud, Bare (cannot tell), Not mud or Cannot tell; brown water in a pond or a river is water, so not mud. Do not look at any mud or water map of the project while you label and do not compare points with the others until all three files are saved. At the end press 'Save the label file' and send the file to Putu. Then choose 'accept' here with the note 'labelled'; choose 'change' with a note if the page or the instructions made a point impossible to label.",
+      "evidence": [
+        {
+          "label": "The plan, section 4.4",
+          "path": "docs/proposal_execution/theos2_17sep_recession_and_mud_plan_v1.md"
+        },
+        {
+          "label": "The draw record: group sizes, counts, and the SHA-256 of the key and the page",
+          "path": "outputs/theos2_17sep_mud/test_points_v1.json"
+        },
+        {
+          "label": "The page template",
+          "path": "scripts/theos2_mud_label_page.html"
+        }
+      ],
+      "gates": "The test score of the mud rule (question 4); the bar of 0.60 for using the mud as a map.",
+      "ready": true,
+      "added": "2026-10-19"
     }
   ]
 }

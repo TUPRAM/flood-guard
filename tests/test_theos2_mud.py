@@ -154,3 +154,25 @@ def test_the_second_freeze_follows_amendment_1() -> None:
     assert freeze["chosen"] in ("mud_s0", "mud_s3", "mud_s4") and len(freeze["labels"]["by_point_new"]) == 40
     assert sum(points["points_per_stratum"].values()) == 40 and points["seed"] == mud.NEW_DEVELOPMENT_SEED
     assert freeze["official_warning"] is False and freeze["source_timestamp"] and freeze["confidence_class"] == "low"
+
+
+def test_the_test_points_come_after_the_second_freeze_and_hold_no_answer() -> None:
+    import hashlib
+    import json
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[1]
+    folder = root / "outputs" / "theos2_17sep_mud"
+    record_path = folder / "test_points_v1.json"
+    if not record_path.exists():
+        pytest.skip("the test points have not been drawn")
+    record = json.loads(record_path.read_text(encoding="utf-8"))
+    assert record["freeze"]["sha256"] == hashlib.sha256((folder / "freeze_v2.json").read_bytes()).hexdigest()
+    assert record["points"] == sum(mud.TEST_POINTS.values()) == sum(record["points_per_group"].values()) and record["seed"] == mud.TEST_SEED
+    assert record["page_outside_git"]["holds_the_answer_of_the_rule"] is False and record["labels"] == list(mud.LABELS)
+    template = root / record["page_outside_git"]["template"]["path"]
+    assert record["page_outside_git"]["template"]["sha256"] == hashlib.sha256(template.read_bytes()).hexdigest()
+    page = template.read_text(encoding="utf-8")
+    for label in mud.LABELS:
+        assert f'data-label="{label}"' in page, label
+    assert "/*POINTS*/[]" in page and "/*PRACTICE*/[]" in page

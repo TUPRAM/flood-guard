@@ -19,6 +19,11 @@ TEST_SEED: int = 20261020
 CLEAR_SCL: tuple[int, ...] = (4, 5, 6, 7, 11)  # the clear classes of the river fit
 GREEN_BEFORE_NDVI: float = 0.45
 MIN_OBJECT_PX: int = 5  # 20 square metres at 2 m
+MIN_OBJECT_PX_V2: int = 25  # 100 square metres at 2 m, amendment 1
+NEW_DEVELOPMENT_SEED: int = 20261021
+OPENED_STRATA: tuple[str, ...] = ("opened_mud", "opened_not_mud")
+OPENED_POINTS: dict[str, int] = {"opened_mud": 20, "opened_not_mud": 20}
+KEEP_AWAY_PX: int = 10  # 20 m from every earlier development point
 EDGE_PX: int = 3  # 6 m at 2 m, a square neighbourhood
 CHOICE_MARGIN: float = 0.02
 CANDIDATES: tuple[str, ...] = ("mud_s0", "mud_s1", "mud_s2")
@@ -144,13 +149,14 @@ def drop_small(mask: np.ndarray, min_px: int = MIN_OBJECT_PX) -> np.ndarray:
     return keep[labels]
 
 
-def answer(colour: np.ndarray, observable: np.ndarray, before_ok: np.ndarray | None = None) -> np.ndarray:
+def answer(colour: np.ndarray, observable: np.ndarray, before_ok: np.ndarray | None = None,
+           min_px: int = MIN_OBJECT_PX) -> np.ndarray:
     """Mud (1), not mud (0) or unobservable (255) from a colour mask, the observable pixels and, for ``mud_s1``, the condition before."""
 
     mud = colour & observable
     if before_ok is not None:
         mud &= before_ok
-    mud = drop_small(mud)
+    mud = drop_small(mud, min_px)
     result = np.full(colour.shape, MUD_UNOBSERVABLE, dtype="uint8")
     result[observable] = MUD_NO
     result[mud] = MUD_YES
@@ -188,15 +194,16 @@ def groups(answers: np.ndarray, edge_px: int = EDGE_PX) -> np.ndarray:
     return result
 
 
-def allocate(available: Mapping[tuple[str, str], int], wanted: Mapping[str, int], orders: Sequence[str]) -> dict[tuple[str, str], int]:
-    """Points per (group, order): half of a group in each order; a shortfall goes to the other order, then to ``ground_far``.
+def allocate(available: Mapping[tuple[str, str], int], wanted: Mapping[str, int], orders: Sequence[str],
+             group_names: Sequence[str] = GROUPS, spill_to: str = "ground_far") -> dict[tuple[str, str], int]:
+    """Points per (group, order): half of a group in each order; a shortfall goes to the other order, then to ``spill_to``.
 
     ``available`` counts the pixels of each (group, order). The first order takes the odd point.
     """
 
-    taken: dict[tuple[str, str], int] = {(group, order): 0 for group in GROUPS for order in orders}
+    taken: dict[tuple[str, str], int] = {(group, order): 0 for group in group_names for order in orders}
     spill: dict[str, int] = {order: 0 for order in orders}
-    for group in GROUPS:
+    for group in group_names:
         want = wanted.get(group, 0)
         share = [want - want // 2, want // 2][:len(orders)] if len(orders) == 2 else [want]
         for index, order in enumerate(orders):
@@ -210,17 +217,21 @@ def allocate(available: Mapping[tuple[str, str], int], wanted: Mapping[str, int]
                     short -= extra
             spill[order] += short
     for order in orders:
-        extra = min(spill[order], available.get(("ground_far", order), 0) - taken[("ground_far", order)])
-        taken[("ground_far", order)] += extra
+        # The shortfall goes to ``spill_to`` in the same order first, then in the other order.
+        for target_order in [order, *[other for other in orders if other != order]]:
+            key = (spill_to, target_order)
+            extra = min(spill[order], available.get(key, 0) - taken[key])
+            taken[key] += extra
+            spill[order] -= extra
     return taken
 
 
 def draw(group_raster: np.ndarray, order_raster: np.ndarray, orders: Sequence[str], counts: Mapping[tuple[str, str], int],
-         seed: int, *, free: np.ndarray | None = None) -> list[dict[str, Any]]:
+         seed: int, *, free: np.ndarray | None = None, group_names: Sequence[str] = GROUPS) -> list[dict[str, Any]]:
     """Draw pixels at random inside each (group, order) without drawing a pixel twice; ``free`` marks pixels that may be drawn."""
 
     points: list[dict[str, Any]] = []
-    for group_index, group in enumerate(GROUPS):
+    for group_index, group in enumerate(group_names):
         for order_index, order in enumerate(orders):
             want = counts.get((group, order), 0)
             if not want:
@@ -283,11 +294,15 @@ def mean_score(values: Sequence[float | None]) -> float | None:
     return None if not kept else round(float(np.mean(kept)), 4)
 
 
-def choose(scores: Mapping[str, float | None], margin: float = CHOICE_MARGIN) -> str:
-    """``mud_s0`` stays unless ``mud_s1`` is better by the margin; the one kept stays unless ``mud_s2`` is better by it."""
+def choose(scores: Mapping[str, float | None], margin: float = CHOICE_MARGIN,
+           order: Sequence[str] = ("mud_s0", "mud_s1", "mud_s2")) -> str:
+    """The first candidate stays unless the next is better by the margin, and so on along ``order``.
 
-    chosen = "mud_s0"
-    for candidate in ("mud_s1", "mud_s2"):
+    Plan v1: ``mud_s0``, ``mud_s1``, ``mud_s2``. Amendment 1: ``mud_s0``, ``mud_s3``, ``mud_s4``.
+    """
+
+    chosen = order[0]
+    for candidate in order[1:]:
         if scores.get(candidate) is not None and (scores.get(chosen) is None or scores[candidate] >= scores[chosen] + margin - 1e-12):
             chosen = candidate
     return chosen

@@ -248,8 +248,14 @@ def to_pixels(cells: np.ndarray, shape: tuple[int, int], window: tuple[int, ...]
 def built_up_pixels(external: Path, grid: dict[str, Any]) -> np.ndarray:
     """WorldCover built-up under each 2 m pixel centre, from the 10 m lattice of the district."""
 
-    event = load_script("build_theos2_study_event_check")
-    area = event.mae_sai(external)
+    area = load_script("build_theos2_study_event_check").mae_sai(external)
+    return lattice_pixels(area, area["land_cover"] == BUILT_UP, grid)
+
+
+def lattice_pixels(area: dict[str, Any], values: np.ndarray, grid: dict[str, Any]) -> np.ndarray:
+    """A boolean of the 10 m lattice of the district under each 2 m pixel centre; False outside the lattice."""
+
+    built = values
     west, north, rows, columns = area["grid"]
     xs = grid["west"] + (np.arange(grid["columns"]) + 0.5) * grid["cell_m"]
     ys = grid["north"] - (np.arange(grid["rows"]) + 0.5) * grid["cell_m"]
@@ -257,7 +263,6 @@ def built_up_pixels(external: Path, grid: dict[str, Any]) -> np.ndarray:
     row_index = np.floor((north - ys) / 10.0).astype(int)
     inside_columns = (column_index >= 0) & (column_index < columns)
     inside_rows = (row_index >= 0) & (row_index < rows)
-    built = area["land_cover"] == BUILT_UP
     result = np.zeros((grid["rows"], grid["columns"]), dtype=bool)
     result[np.ix_(inside_rows, inside_columns)] = built[np.ix_(row_index[inside_rows], column_index[inside_columns])]
     return result
@@ -558,15 +563,252 @@ def stage_freeze(arguments: argparse.Namespace) -> None:
                       "mud_km2": result["mud_km2_in_the_scene"]}, indent=1))
 
 
+# ---------------------------------------------------------------------------
+# Amendment 1: new masks, mud_s3 and mud_s4, forty points in the opened ground, the second freeze
+# ---------------------------------------------------------------------------
+
+AMENDMENT = "docs/proposal_execution/theos2_17sep_recession_and_mud_plan_v1_amendment_1.md"
+POINTS_V2_NAME = "development_points_v2.json"
+FREEZE_V2_NAME = "freeze_v2.json"
+OSM_WATER = "derived_context/mae_sai_2024/mae_sai_osm_multipolygons.gpkg"
+OSM_WATER_TAGS = r'"natural"=>"water"|"water"=>|"landuse"=>"(?:aquaculture|reservoir|basin)"'
+WATER_SCL = 6
+
+
+def water_before(external: Path, grid: dict[str, Any], shape: tuple[int, int]) -> tuple[np.ndarray, dict[str, Any]]:
+    """Water before the flood under each 2 m pixel: Sentinel-2 of 5 September, OSM water, the permanent water of the lattice."""
+
+    import pyogrio
+    import rasterio
+    from rasterio.windows import Window
+
+    bands, scl, window = read_s2(external, "before", grid)
+    row0, column0, rows, columns = window[:4]
+    with rasterio.open(external / S2["before"] / "swir16.tif") as source:
+        swir = source.read(1, window=Window(column0 // 2, row0 // 2, columns // 2 + 2, rows // 2 + 2), boundless=True, fill_value=0)
+    swir = np.repeat(np.repeat(swir, 2, axis=0), 2, axis=1)[row0 % 2:row0 % 2 + rows, column0 % 2:column0 % 2 + columns].astype("float32") / 10000.0
+    with np.errstate(divide="ignore", invalid="ignore"):
+        mndwi = np.where(bands["green"] + swir > 0, (bands["green"] - swir) / (bands["green"] + swir), np.nan)
+    s2_water = (scl == WATER_SCL) | (np.isin(scl, mud.CLEAR_SCL) & (mndwi > 0))
+    frame = pyogrio.read_dataframe(external / OSM_WATER, bbox=grid_bounds_lonlat(grid))
+    frame = frame[frame["other_tags"].fillna("").str.contains(OSM_WATER_TAGS, regex=True)].to_crs(delivery_meta.EPSG)
+    osm = rasterize_lines_or_shapes(list(frame.geometry), grid, all_touched=False)
+    area = load_script("build_theos2_study_event_check").mae_sai(external)
+    permanent = lattice_pixels(area, area["permanent_water"], grid)
+    from_s2 = to_pixels(s2_water, shape, window)
+    detail = {"sentinel2_cells_water_on_5_september": int(s2_water.sum()), "sentinel2_cells_clear_on_5_september": int(np.isin(scl, mud.CLEAR_SCL).sum()),
+              "sentinel2_cells_in_window": int(scl.size), "osm_polygons": int(len(frame)),
+              "km2": {"sentinel2": round(float(from_s2.sum()) * 4e-6, 3), "osm": round(float(osm.sum()) * 4e-6, 3),
+                      "permanent": round(float(permanent.sum()) * 4e-6, 3)}}
+    return from_s2 | osm | permanent, detail
+
+
+def scene_layers_v2(external: Path, delivery: dict[str, Any], reference: dict[str, Any], layers: dict[str, Any]) -> dict[str, Any]:
+    """The masks of amendment 1, cached outside Git beside those of plan v1."""
+
+    import rasterio
+
+    work = external / WORK
+    cache = work / "scene_2m_v2.npz"
+    if cache.exists():
+        with np.load(cache) as stored:
+            return {name: stored[name] for name in stored.files} | json.loads((work / "scene_2m_v2.json").read_text(encoding="utf-8"))
+    grid = delivery["one_pixel_grid"]
+    with rasterio.open(external / STUDY_WORK / "reference_20240917_water_2m.tif") as source:
+        rule_v2 = source.read(1)
+    roofs, _outlines = buildings_mask(external, grid)
+    before, detail = water_before(external, grid, rule_v2.shape)
+    cloud = layers["covered"] & (rule_v2 == 255)
+    observable = layers["covered"] & ~cloud & ~roofs & ~before
+    opened = observable & ~layers["observable"]
+    np.savez_compressed(cache, observable_v2=observable, opened=opened)
+    meta = {"water_before": detail,
+            "masks_v2_km2": {"observable": round(float(observable.sum()) * 4e-6, 3), "opened": round(float(opened.sum()) * 4e-6, 3),
+                             "cloud": round(float(cloud.sum()) * 4e-6, 3),
+                             "water_before_in_covered": round(float((before & layers["covered"]).sum()) * 4e-6, 3),
+                             "observable_in_v1_now_water_before": round(float((layers["observable"] & before).sum()) * 4e-6, 3)}}
+    write_json(work / "scene_2m_v2.json", meta)
+    return {"observable_v2": observable, "opened": opened} | meta
+
+
+def candidate_v2(bands: dict[str, np.ndarray], layers: dict[str, Any], limits: mud.MudLimits | None = None) -> np.ndarray:
+    colour = mud.colour_rule(bands["red"], bands["green"], bands["blue"], bands["nir"], limits or mud.MudLimits())
+    return mud.answer(colour, layers["observable_v2"], None, mud.MIN_OBJECT_PX_V2)
+
+
+def strata_v2(s0: np.ndarray, s3: np.ndarray, layers: dict[str, Any]) -> tuple[np.ndarray, list[str]]:
+    """The strata of amendment 1: the groups of mud_s0 outside the opened ground, two strata of mud_s3 inside it."""
+
+    names = [*mud.GROUPS, *mud.OPENED_STRATA]
+    raster = mud.groups(s0)
+    raster[~layers["covered"]] = 255
+    raster[layers["opened"] & (s3 == mud.MUD_YES)] = len(mud.GROUPS)
+    raster[layers["opened"] & (s3 != mud.MUD_YES)] = len(mud.GROUPS) + 1
+    return raster, names
+
+
+def stage_points2(arguments: argparse.Namespace) -> None:
+    from floodguard import theos2_water_rule_v2 as v2
+
+    external = Path(arguments.external_root)
+    work = external / WORK
+    record_path = ROOT / OUTPUT_DIR / POINTS_V2_NAME
+    if record_path.exists():
+        raise BuildError("the points of amendment 1 are drawn once")
+    if not (ROOT / OUTPUT_DIR / FREEZE_NAME).exists() or any((ROOT / OUTPUT_DIR).glob("test_*")):
+        raise BuildError("amendment 1 comes after the first freeze and before any test point")
+    delivery, reference = check_inputs()
+    layers = scene_layers(external, delivery, reference)
+    layers |= scene_layers_v2(external, delivery, reference, layers)
+    bands = scaled_bands(layers)
+    s0, s3 = candidate("mud_s0", bands, layers), candidate_v2(bands, layers)
+    del bands
+    raster, names = strata_v2(s0, s3, layers)
+    orders = delivery_meta.ORDERS
+    sizes = {(name, order): int(((raster == index) & (layers["order"] == order_index)).sum())
+             for index, name in enumerate(names) for order_index, order in enumerate(orders)}
+    old = json.loads((work / "development_key_v1.json").read_text(encoding="utf-8"))["points"]
+    free = v2.away_from(raster.shape, [(point["row"], point["column"]) for point in old], mud.KEEP_AWAY_PX)
+    opened_raster = np.where(raster >= len(mud.GROUPS), raster - len(mud.GROUPS), 255).astype("uint8")
+    opened_sizes = {(name, order): sizes[(name, order)] for name in mud.OPENED_STRATA for order in orders}
+    counts = mud.allocate(opened_sizes, mud.OPENED_POINTS, orders, mud.OPENED_STRATA, spill_to="opened_not_mud")
+    points = mud.draw(opened_raster, layers["order"], orders, counts, mud.NEW_DEVELOPMENT_SEED, free=free, group_names=mud.OPENED_STRATA)
+    grid = delivery["one_pixel_grid"]
+    for index, point in enumerate(points, start=1):
+        point.update({"name": f"e{index:03d}", "x": grid["west"] + (point["column"] + 0.5) * grid["cell_m"],
+                      "y": grid["north"] - (point["row"] + 0.5) * grid["cell_m"]})
+    key_path = work / "development_key_v2.json"
+    write_json(key_path, {"points": points})
+    sheets = write_sheets(external, delivery, points, picture_scale(layers), "development2")
+    record = {
+        "schema": "floodguard.theos2_17sep_mud_points.v2",
+        **envelope(),
+        "what_this_is": "The masks of amendment 1, the strata of the rescore and the 40 new development points in the ground the new masks open, drawn before any of them was labelled.",
+        "amendment": {"path": AMENDMENT, "sha256": sha256_file(ROOT / AMENDMENT)},
+        "points_v1": {"path": f"{OUTPUT_DIR}/{POINTS_NAME}", "sha256": sha256_file(ROOT / OUTPUT_DIR / POINTS_NAME)},
+        "freeze_v1": {"path": f"{OUTPUT_DIR}/{FREEZE_NAME}", "sha256": sha256_file(ROOT / OUTPUT_DIR / FREEZE_NAME)},
+        "water_before": layers["water_before"], "masks_v2_km2": layers["masks_v2_km2"],
+        "mud_s3_km2_in_the_scene": round(float((s3 == mud.MUD_YES).sum()) * 4e-6, 3),
+        "stratum_pixels": {f"{name}|{order}": size for (name, order), size in sizes.items()},
+        "points_per_stratum": {f"{name}|{order}": count for (name, order), count in counts.items() if count},
+        "seed": mud.NEW_DEVELOPMENT_SEED,
+        "files_outside_git": [{"name": path.relative_to(work).as_posix(), "sha256": sha256_file(path)} for path in (key_path, *sheets)],
+        "assumptions": ASSUMPTIONS, "limits": LIMITS,
+    }
+    write_json(record_path, record)
+    print(json.dumps({"masks_v2_km2": layers["masks_v2_km2"], "water_before": layers["water_before"]["km2"],
+                      "mud_s3_km2": record["mud_s3_km2_in_the_scene"], "points": record["points_per_stratum"], "sheets": len(sheets)}, indent=1))
+
+
+def stage_freeze2(arguments: argparse.Namespace) -> None:
+    external = Path(arguments.external_root)
+    work = external / WORK
+    points_path, freeze_path = ROOT / OUTPUT_DIR / POINTS_V2_NAME, ROOT / OUTPUT_DIR / FREEZE_V2_NAME
+    if freeze_path.exists():
+        raise BuildError("the second freeze is made once")
+    record = json.loads(points_path.read_text(encoding="utf-8"))
+    if record["amendment"]["sha256"] != sha256_file(ROOT / AMENDMENT):
+        raise BuildError("the amendment changed after its points were drawn")
+    for item in record["files_outside_git"]:
+        if sha256_file(work / item["name"]) != item["sha256"]:
+            raise BuildError(f"{item['name']} is not the file the points record binds")
+    first = json.loads((ROOT / OUTPUT_DIR / FREEZE_NAME).read_text(encoding="utf-8"))
+    old_labels_path, new_labels_path = Path(arguments.old_labels), Path(arguments.labels)
+    if sha256_file(old_labels_path) != first["labels"]["file_sha256"]:
+        raise BuildError("the labels of plan v1 are not the file the first freeze binds")
+    old_labels = json.loads(old_labels_path.read_text(encoding="utf-8"))["labels"]
+    new_labels = json.loads(new_labels_path.read_text(encoding="utf-8"))["labels"]
+    old = json.loads((work / "development_key_v1.json").read_text(encoding="utf-8"))["points"]
+    new = json.loads((work / "development_key_v2.json").read_text(encoding="utf-8"))["points"]
+    for point in old:
+        point["label"] = old_labels[point["name"]]
+    for point in new:
+        point["label"] = new_labels.get(point["name"])
+    if any(point["label"] not in mud.LABELS for point in new):
+        raise BuildError("a new point has no label of the plan")
+    delivery, reference = check_inputs()
+    layers = scene_layers(external, delivery, reference)
+    layers |= scene_layers_v2(external, delivery, reference, layers)
+    bands = scaled_bands(layers)
+    s0, s3 = candidate("mud_s0", bands, layers), candidate_v2(bands, layers)
+    raster, names = strata_v2(s0, s3, layers)
+    points = old + new
+    for point in points:
+        point["group"] = names[raster[point["row"], point["column"]]]
+    sizes = {tuple(key.split("|")): value for key, value in record["stratum_pixels"].items()}
+    at = (np.array([point["row"] for point in points]), np.array([point["column"] for point in points]))
+
+    def said(values: np.ndarray) -> list[bool]:
+        return (values[at] == mud.MUD_YES).tolist()
+
+    def score_on(order: str | None, saids: list[bool]) -> dict[str, Any]:
+        chosen = [(point, value) for point, value in zip(points, saids) if order is None or point["order"] == order]
+        kept = [point for point, _ in chosen]
+        return mud.weighted_f1(kept, [value for _, value in chosen], mud.point_weights(sizes, kept))
+
+    answers = {"mud_s0": said(s0), "mud_s3": said(s3)}
+    grid_answers = [said(candidate_v2(bands, layers, limits)) for limits in mud.threshold_grid()]
+    orders = delivery_meta.ORDERS
+    by_order = {name: {order: score_on(order, values) for order in orders} for name, values in answers.items()}
+    scores = {name: mud.mean_score([by_order[name][order]["f1"] for order in orders]) for name in answers}
+
+    def best(order: str | None) -> int:
+        values = [score_on(order, values)["f1"] for values in grid_answers]
+        return int(np.argmax([-1.0 if value is None else value for value in values]))
+
+    crossed = {}
+    for fit, held in (orders, orders[::-1]):
+        index = best(fit)
+        crossed[f"fitted_on_{fit}"] = {"limits": mud.limits_dict(mud.threshold_grid()[index]), "scored_on": held, **score_on(held, grid_answers[index])}
+    scores["mud_s4"] = mud.mean_score([item["f1"] for item in crossed.values()])
+    chosen = mud.choose(scores, order=("mud_s0", "mud_s3", "mud_s4"))
+    limits = mud.threshold_grid()[best(None)] if chosen == "mud_s4" else mud.MudLimits()
+    final = s0 if chosen == "mud_s0" else candidate_v2(bands, layers, limits)
+    raster_path = work / "mud_frozen_v2_2m.tif"
+    write_raster(raster_path, final, delivery["one_pixel_grid"])
+    result = {
+        "schema": "floodguard.theos2_17sep_mud_freeze.v2",
+        **envelope(),
+        "what_this_is": "The mud rule of question 4 after amendment 1: mud_s0, mud_s3 and mud_s4 scored on 200 development points the agent labelled; it supersedes freeze_v1.json for the test.",
+        "amendment": record["amendment"],
+        "points_record": {"path": f"{OUTPUT_DIR}/{POINTS_V2_NAME}", "sha256": sha256_file(points_path)},
+        "supersedes": {"path": f"{OUTPUT_DIR}/{FREEZE_NAME}", "sha256": sha256_file(ROOT / OUTPUT_DIR / FREEZE_NAME)},
+        "labels": {"by": "the agent that builds the rule (an AI model), from the sheets alone", "old_file_sha256": sha256_file(old_labels_path),
+                   "new_file_sha256": sha256_file(new_labels_path),
+                   "counts_new": {label: sum(1 for point in new if point["label"] == label) for label in mud.LABELS},
+                   "by_point_new": {point["name"]: point["label"] for point in new},
+                   "old_points_moved_to_the_opened_ground": [point["name"] for point in old if point["group"] in mud.OPENED_STRATA],
+                   "note": "Development data, not a reference. No label of plan v1 was changed."},
+        "scores": {"mud_s0": {"mean_f1": scores["mud_s0"], "by_order": by_order["mud_s0"]},
+                   "mud_s3": {"mean_f1": scores["mud_s3"], "by_order": by_order["mud_s3"]},
+                   "mud_s4": {"mean_f1": scores["mud_s4"], "crossed": crossed}},
+        "choice_rule": f"mud_s0 stays unless mud_s3 is better by {mud.CHOICE_MARGIN} or more; the one kept stays unless mud_s4 is better than it by {mud.CHOICE_MARGIN} or more.",
+        "chosen": chosen,
+        "frozen_rule": {"candidate": chosen, "limits": mud.limits_dict(limits), "scaling_lines": layers["scaling"]["lines"],
+                        "masks": "plan v1" if chosen == "mud_s0" else "amendment 1",
+                        "min_object_px": mud.MIN_OBJECT_PX if chosen == "mud_s0" else mud.MIN_OBJECT_PX_V2,
+                        "code": "floodguard.theos2_mud and scripts/build_theos2_17sep_mud.py (candidate, candidate_v2)"},
+        "mud_km2_in_the_scene": round(float((final == mud.MUD_YES).sum()) * 4e-6, 3),
+        "raster_outside_git": {"name": raster_path.name, "sha256": sha256_file(raster_path), "values": "1 mud, 0 not mud, 255 unobservable or outside the scene"},
+        "assumptions": ASSUMPTIONS, "limits": LIMITS,
+    }
+    write_json(freeze_path, result)
+    print(json.dumps({"scores": scores, "chosen": chosen, "limits": mud.limits_dict(limits), "mud_km2": result["mud_km2_in_the_scene"],
+                      "by_order": {name: {order: by_order[name][order] for order in orders} for name in by_order}}, indent=1))
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    parser.add_argument("stage", choices=("points", "freeze"))
+    parser.add_argument("stage", choices=("points", "freeze", "points2", "freeze2"))
     parser.add_argument("--external-root", required=True)
     parser.add_argument("--labels")
+    parser.add_argument("--old-labels", help="freeze2: the label file of plan v1, as the first freeze binds it")
     arguments = parser.parse_args()
-    if arguments.stage == "freeze" and not arguments.labels:
-        raise BuildError("the freeze stage needs --labels")
-    {"points": stage_points, "freeze": stage_freeze}[arguments.stage](arguments)
+    if arguments.stage in ("freeze", "freeze2") and not arguments.labels:
+        raise BuildError("a freeze stage needs --labels")
+    if arguments.stage == "freeze2" and not arguments.old_labels:
+        raise BuildError("the second freeze needs --old-labels")
+    {"points": stage_points, "freeze": stage_freeze, "points2": stage_points2, "freeze2": stage_freeze2}[arguments.stage](arguments)
 
 
 if __name__ == "__main__":

@@ -114,3 +114,43 @@ def test_the_mud_records_were_made_in_the_order_of_the_plan() -> None:
     assert freeze["chosen"] in mud.CANDIDATES and len(freeze["labels"]["by_point"]) == sum(mud.DEVELOPMENT_POINTS.values())
     assert set(freeze["labels"]["by_point"].values()) <= set(mud.LABELS)
     assert not (folder / "test_points_v1.json").exists() or freeze_path.stat().st_size > 0
+
+
+def test_amendment_1_objects_of_100_square_metres_and_the_new_choice_order() -> None:
+    colour = np.zeros((10, 10), dtype=bool)
+    colour[0:4, 0:6] = True  # 24 pixels: kept at 5, dropped at 25
+    colour[6:10, 3:10] = True  # 28 pixels: kept at both
+    observable = np.ones((10, 10), dtype=bool)
+    assert (mud.answer(colour, observable) == mud.MUD_YES).sum() == 52
+    assert (mud.answer(colour, observable, None, mud.MIN_OBJECT_PX_V2) == mud.MUD_YES).sum() == 28
+    order = ("mud_s0", "mud_s3", "mud_s4")
+    assert mud.choose({"mud_s0": 0.23, "mud_s3": 0.40, "mud_s4": 0.41}, order=order) == "mud_s3"
+    assert mud.choose({"mud_s0": 0.23, "mud_s3": 0.24, "mud_s4": 0.30}, order=order) == "mud_s4"
+    assert mud.choose({"mud_s0": 0.23, "mud_s3": 0.24, "mud_s4": 0.24}, order=order) == "mud_s0"
+
+
+def test_a_shortfall_in_the_opened_ground_goes_to_the_other_order_then_to_the_other_half() -> None:
+    available = {("opened_mud", "a"): 3, ("opened_mud", "b"): 4, ("opened_not_mud", "a"): 500, ("opened_not_mud", "b"): 500}
+    taken = mud.allocate(available, mud.OPENED_POINTS, ("a", "b"), mud.OPENED_STRATA, spill_to="opened_not_mud")
+    assert taken[("opened_mud", "a")] == 3 and taken[("opened_mud", "b")] == 4
+    assert sum(taken.values()) == 40 and taken[("opened_not_mud", "a")] + taken[("opened_not_mud", "b")] == 33
+
+
+def test_the_second_freeze_follows_amendment_1() -> None:
+    import hashlib
+    import json
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[1]
+    folder = root / "outputs" / "theos2_17sep_mud"
+    freeze_path = folder / "freeze_v2.json"
+    if not freeze_path.exists():
+        pytest.skip("the second freeze has not been made")
+    amendment = root / "docs" / "proposal_execution" / "theos2_17sep_recession_and_mud_plan_v1_amendment_1.md"
+    freeze = json.loads(freeze_path.read_text(encoding="utf-8"))
+    points = json.loads((folder / "development_points_v2.json").read_text(encoding="utf-8"))
+    assert freeze["amendment"]["sha256"] == hashlib.sha256(amendment.read_bytes()).hexdigest() == points["amendment"]["sha256"]
+    assert freeze["supersedes"]["sha256"] == hashlib.sha256((folder / "freeze_v1.json").read_bytes()).hexdigest()
+    assert freeze["chosen"] in ("mud_s0", "mud_s3", "mud_s4") and len(freeze["labels"]["by_point_new"]) == 40
+    assert sum(points["points_per_stratum"].values()) == 40 and points["seed"] == mud.NEW_DEVELOPMENT_SEED
+    assert freeze["official_warning"] is False and freeze["source_timestamp"] and freeze["confidence_class"] == "low"

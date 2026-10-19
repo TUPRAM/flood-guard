@@ -105,3 +105,35 @@ def test_the_records_were_made_in_the_order_of_the_plan() -> None:
         comparison = json.loads(comparison_path.read_text(encoding="utf-8"))
         assert comparison["radar_freeze"]["sha256"] == freeze_sha
         assert (ROOT / comparison["reference"]["path"]).exists()
+
+
+def test_a_2m_pixel_is_the_mean_of_16_pixels_and_valid_only_when_all_have_counts() -> None:
+    block = np.arange(1, 1 + 4 * 4 * 8, dtype="uint16").reshape(4, 4, 8)
+    block[2, 0, 5] = 0  # one pixel of the second 2 m pixel has no count in one band: outside a footprint
+    mean, valid = study.block_mean(block)
+    assert mean.shape == (4, 1, 2) and valid.tolist() == [[True, False]]
+    assert mean[0, 0, 0] == pytest.approx(block[0, :, :4].mean()) and (mean[:, 0, 1] == 0).all()
+    with pytest.raises(study.StudyEventError):
+        study.block_mean(np.ones((4, 3, 4), dtype="uint16"))
+
+
+def test_where_products_overlap_the_first_one_stays_and_its_disagreements_are_counted() -> None:
+    mosaic = np.full((3, 4), 255, dtype="uint8")
+    covered = np.zeros((3, 4), dtype=bool)
+    first = np.array([[1, 0], [0, 0]], dtype="uint8")
+    assert study.place_first_valid(mosaic, covered, first, np.ones((2, 2), dtype=bool), 0, 0) == 0
+    second = np.array([[1, 1], [1, 1]], dtype="uint8")
+    valid = np.array([[True, True], [False, True]])
+    assert study.place_first_valid(mosaic, covered, second, valid, 0, 1) == 1, "pixel (0, 1) said 0 first and 1 now"
+    assert mosaic.tolist() == [[1, 0, 1, 255], [0, 0, 1, 255], [255, 255, 255, 255]]
+    assert covered.sum() == 6
+    with pytest.raises(study.StudyEventError):
+        study.place_first_valid(mosaic, covered, second, valid, 2, 3)
+
+
+def test_the_reference_stage_reads_rule_v2_with_rule_v1_beside_it_as_amendment_1_says() -> None:
+    script = (ROOT / "scripts" / "build_theos2_study_event_check.py").read_text(encoding="utf-8")
+    amendment = (ROOT / "docs" / "proposal_execution" / "theos2_study_event_check_plan_v1_amendment_1.md").read_text(encoding="utf-8")
+    assert 'RULES = ("rule_v2", "rule_v1")' in script and "theos2_study_event_check_plan_v1_amendment_1.md" in script
+    assert '"reference_rule": "rule_v2"' in script and "rule_v1_left_out" in script
+    assert "rule v2" in amendment and "names this amendment with its SHA-256" in amendment

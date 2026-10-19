@@ -136,4 +136,6 @@ def test_the_reference_stage_reads_rule_v2_with_rule_v1_beside_it_as_amendment_1
     amendment = (ROOT / "docs" / "proposal_execution" / "theos2_study_event_check_plan_v1_amendment_1.md").read_text(encoding="utf-8")
     assert 'RULES = ("rule_v2", "rule_v1")' in script and "theos2_study_event_check_plan_v1_amendment_1.md" in script
     assert '"reference_rule": "rule_v2"' in script and "rule_v1_left_out" in script
+    # The pictures are made before the look is written: a draft outside Git first, the record only with --looked-at.
+    assert "def finish_reference" in script and "_draft.json" in script and "changed after the draft was written" in script
     assert "rule v2" in amendment and "names this amendment with its SHA-256" in amendment

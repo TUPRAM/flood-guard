@@ -262,8 +262,12 @@ def stage_reference(arguments: argparse.Namespace) -> None:
         raise BuildError("no radar freeze record: the radar readings are frozen and committed before an image is read")
     if record_path.exists() or (ROOT / OUTPUT_DIR / f"comparison_{arguments.scene_key}_v1.json").exists():
         raise BuildError("this scene has a reference record; a reference is built once and not after its comparison")
-    if not arguments.looked_at.strip():
-        raise BuildError("--looked-at is needed: what the reference looked like beside the image, written before any comparison")
+    draft_path = work / f"reference_{arguments.scene_key}_draft.json"
+    if arguments.looked_at.strip():
+        finish_reference(arguments, work, draft_path, record_path)
+        return
+    if draft_path.exists():
+        raise BuildError(f"{draft_path.name} exists: look at its pictures and run again with --looked-at; the rasters are not computed twice")
     delivery_path = ROOT / arguments.delivery
     delivery = json.loads(delivery_path.read_text(encoding="utf-8"))
     folder = external / delivery["work_folder_outside_git"]
@@ -352,13 +356,33 @@ def stage_reference(arguments: argparse.Namespace) -> None:
         "products_read": per_product,
         "grid_2m": grid,
         "cells_10m_in_the_district": cells_by_rule,
-        "looked_at": arguments.looked_at,
-        "set_aside_from_the_comparison": arguments.set_aside or None,
-        "rule_v1_left_out": arguments.rule_v1_left_out or None,
+        "looked_at": None,
+        "set_aside_from_the_comparison": None,
+        "rule_v1_left_out": None,
         "rasters_outside_git": [{"name": path.name, "sha256": t2.sha256_file(path)} for path in (raster, *fine.values())],
+        "pictures_looked_at_outside_git": [f"reference_{arguments.scene_key}_look_{name}.png" for name in RULES],
         "licence": "THEOS-2 imagery provided by GISTDA for GeoHackathon 2026. The imagery stays outside Git; derived figures are shared.",
         "assumptions": ASSUMPTIONS, "limits": LIMITS,
     }
+    t2.write_json(draft_path, record)
+    print(json.dumps(record["cells_10m_in_the_district"]), flush=True)
+    print(f"Look at {', '.join(record['pictures_looked_at_outside_git'])} beside the image, then run again with --looked-at.", flush=True)
+
+
+def finish_reference(arguments: argparse.Namespace, work: Path, draft_path: Path, record_path: Path) -> None:
+    """The second run of the reference stage: the look written into the draft, which becomes the record. Nothing is recomputed."""
+
+    if not draft_path.exists():
+        raise BuildError("no draft: run the reference stage without --looked-at first, then look at its pictures")
+    record = json.loads(draft_path.read_text(encoding="utf-8"))
+    for item in record["rasters_outside_git"]:
+        if t2.sha256_file(work / item["name"]) != item["sha256"]:
+            raise BuildError(f"{item['name']} changed after the draft was written")
+    if record["amendment"]["sha256"] != t2.sha256_file(ROOT / AMENDMENT) or record["delivery"]["sha256"] != t2.sha256_file(ROOT / record["delivery"]["path"]):
+        raise BuildError("the amendment or the delivery record changed after the draft was written")
+    record.update({"looked_at": arguments.looked_at, "set_aside_from_the_comparison": arguments.set_aside or None,
+                   "rule_v1_left_out": arguments.rule_v1_left_out or None,
+                   "look_written_at_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())})
     t2.write_json(record_path, record)
     print(json.dumps(record["cells_10m_in_the_district"]), flush=True)
 

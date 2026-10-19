@@ -1,6 +1,6 @@
 {
   "schema": "floodguard.validation_check.items.v1",
-  "updated": "2026-10-13",
+  "updated": "2026-10-19",
   "repository": "https://github.com/TUPRAM/flood-guard",
   "reviewers": [
     "Rachmania",
@@ -910,6 +910,29 @@
       "gates": "What the Public view shows in the pitch, and whether the practice mode goes into master.",
       "ready": true,
       "added": "2026-10-13"
+    },
+    {
+      "id": "V-47",
+      "group": "theos2",
+      "title": "The THEOS-2 scene of 17 September 2024: the plan for the replay's recession and for the mud the flood left, written before anybody looked at it",
+      "check": "Read the plan. It adds two questions to the frozen check of the radar: (3) the replay says the water had left the plain by 10:54 on 17 September; the image contradicts it if it shows 0.25 km2 or more of water outside the channel, outside permanent water and outside cropland; (4) mud on the image is read by one of three fixed rules, chosen on 160 points the agent labels, then tested on 150 points that three of you label (about 30 minutes each); the mud map is used only if at least 60 percent of what the rule calls mud is mud to you. Accept if the questions, the bar of 0.25 km2, the bar of 60 percent and the fixed sentences are what you want decided before anybody looks. Choose 'change' with a note for any bar or sentence; it can still change now and not after the look. Do not open the image before the plan is committed.",
+      "evidence": [
+        {
+          "label": "The plan, written before the look",
+          "path": "docs/proposal_execution/theos2_17sep_recession_and_mud_plan_v1.md"
+        },
+        {
+          "label": "The delivery record: files, time, cloud and footprints, read from the metadata only",
+          "path": "outputs/theos2_delivery/delivery_20240917_v1.json"
+        },
+        {
+          "label": "The frozen check of the radar this plan stands beside",
+          "path": "docs/proposal_execution/theos2_study_event_check_plan_v1.md"
+        }
+      ],
+      "gates": "Questions 3 and 4 on the THEOS-2 scene of 17 September 2024.",
+      "ready": true,
+      "added": "2026-10-19"
     }
   ]
 }

@@ -1,0 +1,230 @@
+{
+ "schema": "floodguard.theos2_17sep_mud_points.v1",
+ "generated_at_utc": "2026-10-19T14:59:01Z",
+ "source_timestamp": "THEOS-2 2024-09-17T03:54:20Z; Sentinel-2 L2A 2024-09-15T03:58:15Z and 2024-09-05T03:58:19Z",
+ "confidence_class": "low",
+ "confidence_basis": "One optical image read by a colour rule; development labels by an AI model; nobody went to the ground.",
+ "operational_status": "non_operational",
+ "official_warning": false,
+ "can_feed_decision_layer": false,
+ "plan": {
+  "path": "docs/proposal_execution/theos2_17sep_recession_and_mud_plan_v1.md",
+  "sha256": "5d4aee69eff4a62b7f20e7d1c8fcac5184f50c2d0a5e5254097ae4c8816b57a8"
+ },
+ "what_this_is": "The scaling of the THEOS-2 counts, the groups of mud_s0 and the 160 development points of question 4, drawn before any label.",
+ "reference": {
+  "path": "outputs/theos2_study_event_check/reference_20240917_v1.json",
+  "sha256": "dd787374bf2239d166d2fa856d7e0e4da9d51d57cb0f0e0c18785d1a260adcc7"
+ },
+ "delivery": {
+  "path": "outputs/theos2_delivery/delivery_20240917_v1.json",
+  "sha256": "1b750384b01bb9e6ed8598e442a1d57931106a52f4f484bfb26b89598ff1a664"
+ },
+ "scaling": {
+  "lines": {
+   "red": {
+    "slope": 0.0004208414917399852,
+    "intercept": -0.08173971724536785,
+    "pairs": 199987741
+   },
+   "green": {
+    "slope": 0.00043365347535573453,
+    "intercept": -0.05756677096584781,
+    "pairs": 199986262
+   },
+   "blue": {
+    "slope": 0.0003258295083269528,
+    "intercept": -0.06870346630729057,
+    "pairs": 199985904
+   },
+   "nir": {
+    "slope": 0.00033800282758380027,
+    "intercept": 0.07134219389371285,
+    "pairs": 199988997
+   }
+  },
+  "cells_usable": 828695,
+  "cells_drawn": 20000,
+  "seed": 20261019,
+  "sentinel2_bands": {
+   "red": "B04",
+   "green": "B03",
+   "blue": "B02",
+   "nir": "B08"
+  }
+ },
+ "inputs": {
+  "buildings": "proposal_execution/buildings_in_water/mae_sai_outlines.gpkg",
+  "outlines_read": 61415,
+  "roads": "derived_context/mae_sai_2024/mae_sai_osm_roads.geojson",
+  "road_lines_read": 3128,
+  "roads_left_out": [
+   "path",
+   "footway",
+   "steps"
+  ],
+  "built_up": "WorldCover 2021 class 50 on the 10 m lattice of the district",
+  "roof_rasterization": "outlines widened by 1 m, every pixel they touch",
+  "condition_before": "the Sentinel-2 cell under the pixel centre is clear and has NDVI 0.45 or more on 5 September 2024, or the pixel centre lies within 10 m of a mapped road, or in WorldCover built-up"
+ },
+ "masks_km2": {
+  "covered": 131.605,
+  "observable": 117.086,
+  "roofs_in_covered": 10.355,
+  "condition_before_met_in_observable": 91.864
+ },
+ "mud_s0_km2_in_the_scene": 2.012,
+ "group_pixels": {
+  "mud_inside|AWG_20261014_bc7a15": 15573,
+  "mud_inside|AWG_20261014_417d92": 10838,
+  "mud_edge|AWG_20261014_bc7a15": 379568,
+  "mud_edge|AWG_20261014_417d92": 97008,
+  "near_mud|AWG_20261014_bc7a15": 1116444,
+  "near_mud|AWG_20261014_417d92": 225622,
+  "ground_far|AWG_20261014_bc7a15": 22846017,
+  "ground_far|AWG_20261014_417d92": 4580532,
+  "unobservable|AWG_20261014_bc7a15": 2702384,
+  "unobservable|AWG_20261014_417d92": 927243
+ },
+ "points_per_group": {
+  "mud_inside|AWG_20261014_bc7a15": 20,
+  "mud_inside|AWG_20261014_417d92": 20,
+  "mud_edge|AWG_20261014_bc7a15": 15,
+  "mud_edge|AWG_20261014_417d92": 15,
+  "near_mud|AWG_20261014_bc7a15": 15,
+  "near_mud|AWG_20261014_417d92": 15,
+  "ground_far|AWG_20261014_bc7a15": 23,
+  "ground_far|AWG_20261014_417d92": 22,
+  "unobservable|AWG_20261014_bc7a15": 8,
+  "unobservable|AWG_20261014_417d92": 7
+ },
+ "seed": 20261019,
+ "files_outside_git": [
+  {
+   "name": "development_key_v1.json",
+   "sha256": "46bfa7771c8c2d8d0089dc718710a57e83547c5bc721a826442f3164e547073d"
+  },
+  {
+   "name": "mud_s0_2m.tif",
+   "sha256": "ddca30832014d58ac3c72be927a466d185d8aca2698d0329b5b0e63784aa87af"
+  },
+  {
+   "name": "sheets/development_01.png",
+   "sha256": "0d83b5b594a0425b0b8c6cc31f97f2903d0e878aa300788af7baa76d0bc9cf91"
+  },
+  {
+   "name": "sheets/development_02.png",
+   "sha256": "9cd04932c42d15bf7fc4c17a6f8eca21e6cd1eb8c64f0c32c371a2cbf62b8ece"
+  },
+  {
+   "name": "sheets/development_03.png",
+   "sha256": "c787195fb1f6dfeb0a8da8e09fc80a9692d838fabaece8423c0c65201bb7b101"
+  },
+  {
+   "name": "sheets/development_04.png",
+   "sha256": "1cfc8153498d830be0bd2ea2be1feff0f9d6c48e418ff612d5f2846ddf86141d"
+  },
+  {
+   "name": "sheets/development_05.png",
+   "sha256": "4f5e2d1b019251b99c90621a438de34e2ff0fdf27e1efda2212f3bdaf70cccd3"
+  },
+  {
+   "name": "sheets/development_06.png",
+   "sha256": "3de987088fc029591508e2b98faad91cb715c5dd6c7cf37b45197d2053b6e9a4"
+  },
+  {
+   "name": "sheets/development_07.png",
+   "sha256": "5d07819589f7a61f9f9dbe2358e8cc988c13bc70f139a7cc4348c29075f3b9c8"
+  },
+  {
+   "name": "sheets/development_08.png",
+   "sha256": "2c8773dbb5d87fe9bf30192d49c364e2f44fd4f83bf9ef44cf96a693e9c77079"
+  },
+  {
+   "name": "sheets/development_09.png",
+   "sha256": "ceedbd84e76c2b4b6b5345ed9d08eb953892fbf3725f309c99a86beac138f31c"
+  },
+  {
+   "name": "sheets/development_10.png",
+   "sha256": "033e44a1c95a3caf68c52dcd09ab48958c77c9098faa8c1ab160513d0a229710"
+  },
+  {
+   "name": "sheets/development_11.png",
+   "sha256": "5dccb8b5057a6d9ee318afc4eafd5b0b1669ff19d4b639f91215e7403b6c6e13"
+  },
+  {
+   "name": "sheets/development_12.png",
+   "sha256": "0edff6cfe87190edc64024d8adf3d2736dc0b6d0a55b94e4ef542491876f21f7"
+  },
+  {
+   "name": "sheets/development_13.png",
+   "sha256": "38feaf451d7bfe722542a7f4e2328c9a83af6673c545fb1d6158ad29fd0598ae"
+  },
+  {
+   "name": "sheets/development_14.png",
+   "sha256": "32616fc531fae3aa2b3380227039bbca48b2d474ab25a8724812105e63bfa50c"
+  },
+  {
+   "name": "sheets/development_15.png",
+   "sha256": "fe6e3af5fd53821d3d8398e1ae911fa8277347d6207258a552f46f90b2c378d7"
+  },
+  {
+   "name": "sheets/development_16.png",
+   "sha256": "3d51d652c54b8cc23a6909458ffc2695c64cae2805b2e2b73adc9af3a61a1b67"
+  },
+  {
+   "name": "sheets/development_17.png",
+   "sha256": "16f2387e5d2fe3124261c94bcdb8f742434507205d090baa9f14016908814c77"
+  },
+  {
+   "name": "sheets/development_18.png",
+   "sha256": "5b758704d1f7956b966fb1710daf0685ca766377ec746275f6ca952d5be0ccdd"
+  },
+  {
+   "name": "sheets/development_19.png",
+   "sha256": "9355b18b8d01a338298d9193bb231a26492341b5b1141c12adbc54ab8b730590"
+  },
+  {
+   "name": "sheets/development_20.png",
+   "sha256": "a780997e8ae3d9eaca1bd3d752de828cf8b667541242c5bff1ad8995c86da7c3"
+  },
+  {
+   "name": "sheets/development_21.png",
+   "sha256": "9486e4d5e828bdb8cccdcc41f67ad297883500edcbb1c3b9b5cb5aa6bc0002f3"
+  },
+  {
+   "name": "sheets/development_22.png",
+   "sha256": "24f4457006e987f31bebd6809028ef667037caf1ebed49ba0875de4d1d78fe27"
+  },
+  {
+   "name": "sheets/development_23.png",
+   "sha256": "c893820b1b470d430da5306ee2301185cedddf1ad62c784ec13e3445224480a9"
+  },
+  {
+   "name": "sheets/development_24.png",
+   "sha256": "5fdc670c85061580b4607af2c42b70634ef357dced6764871efbd8c42174dc7b"
+  },
+  {
+   "name": "sheets/development_25.png",
+   "sha256": "6b6684f0cdae869e247e106d78101d711bcfdba4cdaaf75d8a87e03fa48287b6"
+  },
+  {
+   "name": "sheets/development_26.png",
+   "sha256": "da513bc016e6ca6045453a109c458786c03bd51aa4ef4dc1968d518c0b208b9d"
+  },
+  {
+   "name": "sheets/development_27.png",
+   "sha256": "eb34a0bdad1e9b085c50379ba89dd3d09cc6f613580ce5e4888527aa0877bd66"
+  }
+ ],
+ "labels": "The agent labels the points from the sheets alone: a number and three pictures, never the group. Labels: mud, bare_cannot_tell, not_mud, cannot_tell.",
+ "assumptions": [
+  "Mud is a 2 m square more than half covered by a fresh deposit of the flood, read from one image; it is not a ground survey.",
+  "The counts of the image are put on the scale of Sentinel-2 surface reflectance by one Theil-Sen line per band, fitted on the scene of two days earlier.",
+  "Roofs are the Google Open Buildings v3 and Microsoft outlines widened by 1 m; a roof missing from them can read as mud."
+ ],
+ "limits": [
+  "One image, about five days after the peak: mud cleared before it is not seen, and no mud never means a place stayed dry.",
+  "Report-only. No published class changes and nothing enters a planning score."
+ ]
+}

@@ -192,6 +192,12 @@ def test_a_label_file_must_belong_to_the_draw_and_label_every_point() -> None:
     ids = ["t001", "t002"]
     good = {"t001": "mud", "t002": "bare_cannot_tell"}
     assert mud.check_label_file(_label_file(good), "abc", ids) == good
+    # The label page stores each answer with the seconds spent on it.
+    as_the_page_saves = {"t001": {"label": "mud", "seconds": 4.2}, "t002": {"label": "bare_cannot_tell", "seconds": 7}}
+    assert mud.check_label_file(_label_file(as_the_page_saves), "abc", ids) == good
+    assert mud.seconds_of(_label_file(as_the_page_saves)) == [4.2, 7.0]
+    with pytest.raises(mud.MudError):
+        mud.check_label_file(_label_file({"t001": {"label": "maybe", "seconds": 1}, "t002": {"label": "mud"}}), "abc", ids)
     for bad in (_label_file(good, schema="other"), _label_file(good, sample_id="xyz"), _label_file(good, labeller=" "),
                 _label_file({"t001": "mud"}), _label_file({**good, "t999": "mud"}), _label_file({"t001": "mud", "t002": "maybe"}),
                 {**_label_file(good), "labels": ["mud", "mud"]}):

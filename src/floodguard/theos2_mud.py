@@ -343,10 +343,23 @@ def check_label_file(content: Mapping[str, Any], sample_id: str, point_ids: Sequ
     known = set(point_ids)
     missing = [point for point in point_ids if point not in labels]
     extra = [point for point in labels if point not in known]
-    wrong = [point for point in point_ids if point in labels and labels[point] not in LABELS]
+    wrong = [point for point in point_ids if point in labels and label_of(labels[point]) not in LABELS]
     if missing or extra or wrong:
         raise MudError(f"labels missing for {missing[:5]}, for unknown points {extra[:5]}, not of the plan for {wrong[:5]}")
-    return {point: str(labels[point]) for point in point_ids}
+    return {point: str(label_of(labels[point])) for point in point_ids}
+
+
+def label_of(entry: Any) -> Any:
+    """The label of one entry: the page stores {"label": ..., "seconds": ...}; a bare label is read as it is."""
+
+    return entry.get("label") if isinstance(entry, Mapping) else entry
+
+
+def seconds_of(content: Mapping[str, Any]) -> list[float]:
+    """The seconds the labeller spent on each point, where the page recorded them."""
+
+    labels = content.get("labels") or {}
+    return [float(entry["seconds"]) for entry in labels.values() if isinstance(entry, Mapping) and isinstance(entry.get("seconds"), (int, float))]
 
 
 def majority_label(labels: Sequence[str]) -> str | None:

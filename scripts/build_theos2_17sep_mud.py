@@ -1012,8 +1012,10 @@ def stage_score(arguments: argparse.Namespace) -> None:
         if target.exists() and sha256_file(target) != sha256_file(path):
             raise BuildError(f"{target.name} is already taken in with other content")
         target.write_bytes(path.read_bytes())
+        seconds = mud.seconds_of(content)
         received.append({"labeller": str(content["labeller"]).strip(), "file": f"test/labels/{path.name}", "sha256": sha256_file(target),
-                         "saved_at_utc": content.get("saved_at_utc")})
+                         "saved_at_utc": content.get("saved_at_utc"),
+                         "median_seconds_per_point": round(float(np.median(seconds)), 1) if seconds else None})
 
     names = sorted(by_labeller)
     sizes = {tuple(key.split("|")): value for key, value in record["group_pixels"].items()}

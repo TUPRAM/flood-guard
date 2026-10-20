@@ -956,6 +956,29 @@
       "gates": "The test score of the mud rule (question 4); the bar of 0.60 for using the mud as a map.",
       "ready": true,
       "added": "2026-10-19"
+    },
+    {
+      "id": "V-49",
+      "group": "theos2",
+      "title": "Check the score of the mud test: 0.88 of what the rule calls mud is mud to at least two of us",
+      "check": "Open outputs/theos2_17sep_mud/test_score_v1.json. It scores the frozen mud rule once on your three label files, on the label at least two of you gave, area-weighted by group as plan section 4.4 fixed: of the area the rule calls mud, 0.88 is labelled mud (bar 0.60; 95 percent interval 0.76 to 1.00), and the rule finds 0.64 of the area labelled mud. Check that your file is the one listed under labels_received (name, time saved and SHA-256), that labels_by_point shows your own labels, and that the bar sentence is the one the plan wrote in advance. Choose 'accept' if the score is what the plan said would be computed; choose 'change' with a note if a label of yours is wrong or the counting is not what the plan says.",
+      "evidence": [
+        {
+          "label": "The score record",
+          "path": "outputs/theos2_17sep_mud/test_score_v1.json"
+        },
+        {
+          "label": "The plan, section 4.4",
+          "path": "docs/proposal_execution/theos2_17sep_recession_and_mud_plan_v1.md"
+        },
+        {
+          "label": "The score stage",
+          "path": "scripts/build_theos2_17sep_mud.py"
+        }
+      ],
+      "gates": "Using the mud raster as a map in section 4.5, and the THEOS-2 figure of the final pitch.",
+      "ready": true,
+      "added": "2026-10-20"
     }
   ]
 }

@@ -282,3 +282,67 @@ def test_the_score_record_follows_the_draw_and_the_bar() -> None:
     assert score["sentence"] == mud.bar_sentence(share)
     assert score["official_warning"] is False and score["can_feed_decision_layer"] is False and score["source_timestamp"]
     assert score["confidence_class"] == "low" and score["key_stays_outside_git"] is True
+
+
+# ---------------------------------------------------------------------------
+# Section 4.5: roads, the replay's peak, case SE1 and buildings (written and tested before the run)
+# ---------------------------------------------------------------------------
+
+
+def test_the_four_metre_disk_on_the_two_metre_grid_and_within() -> None:
+    footprint = mud.disk(4.0, 2.0)
+    assert footprint.shape == (5, 5) and footprint.sum() == 13, "centres within 4 m: the cross of radius 2 and the inner ring"
+    assert not footprint[0, 0] and footprint[0, 2] and footprint[1, 1]
+    mask = np.zeros((9, 9), dtype=bool)
+    mask[4, 4] = True
+    near = mud.within(mask, 4.0, 2.0)
+    assert near.sum() == 13 and near[4, 6] and near[2, 4] and not near[1, 4] and not near[6, 6]
+    assert not mud.within(np.zeros((3, 3), dtype=bool), 4.0, 2.0).any()
+
+
+def test_a_piece_is_read_every_metre_and_classed_by_the_twenty_metre_rule() -> None:
+    xs, ys, each = mud.sample_segment(0.0, 0.0, 30.0, 40.0)
+    assert len(xs) == 50 and each == pytest.approx(1.0) and xs[0] == pytest.approx(0.3) and ys[-1] == pytest.approx(39.6)
+    xs, _ys, each = mud.sample_segment(0.0, 0.0, 2.5, 0.0)
+    assert len(xs) == 3 and each == pytest.approx(2.5 / 3)
+    assert mud.piece_class(80.0, 80.0, 20.0) == "shows_mud"
+    assert mud.piece_class(80.0, 10.0, 25.0) == "shows_mud", "mud within 4 m counts even where the road itself is hidden"
+    assert mud.piece_class(80.0, 79.0, 19.9) == "not_shown"
+    assert mud.piece_class(80.0, 39.0, 0.0) == "not_observable" and mud.piece_class(0.0, 0.0, 0.0) == "not_observable"
+    assert mud.piece_class(12.0, 12.0, 12.0) == "not_shown", "a piece shorter than 20 m never shows mud"
+    assert set(mud.ROAD_SENTENCES) == {"shows_mud", "not_shown", "not_observable"}
+    assert "never means the road stayed dry or passable" in mud.ROAD_SENTENCES["not_shown"]
+
+
+def test_the_replays_own_wet_rule_and_the_height_bins() -> None:
+    from floodguard import flood_timeline
+
+    codes = np.array([flood_timeline.CHANNEL_CODE, 1, 69, 70, 100, 254, flood_timeline.NEVER_CODE])
+    assert mud.replay_wet(codes, 3.5).tolist() == [True, True, True, False, False, False, False]
+    assert flood_timeline.HAND_STEP_M == 0.05
+    bins = mud.height_bins(np.array([70, 99, 100, 199, 200, 399, 400, 255]))
+    assert bins == {"0_to_5_m": 2, "5_to_10_m": 2, "10_to_20_m": 2, "20_m_or_more": 1, "no_height": 1}
+
+
+def test_the_section_4_5_record_follows_the_score_and_lists_the_road_sheet_first() -> None:
+    import hashlib
+    import json
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[1]
+    folder = root / "outputs" / "theos2_17sep_mud"
+    path = folder / "section_4_5_v1.json"
+    if not path.exists():
+        pytest.skip("section 4.5 has not run")
+    record = json.loads(path.read_text(encoding="utf-8"))
+    assert record["inputs"]["test_score"]["sha256"] == hashlib.sha256((folder / "test_score_v1.json").read_bytes()).hexdigest()
+    assert record["inputs"]["freeze"]["sha256"] == hashlib.sha256((folder / "freeze_v2.json").read_bytes()).hexdigest()
+    roads = record["roads_4a"]
+    assert list(roads)[1] == "the_eight_roads_of_the_road_sheet" and [road["road"] for road in roads["the_eight_roads_of_the_road_sheet"]] == list(range(1, 9))
+    assert roads["the_eight_roads_of_the_road_sheet"][0]["osm_way_id"] == "206803562"
+    for road in roads["the_eight_roads_of_the_road_sheet"]:
+        assert sum(value["pieces"] for value in road["by_class"].values()) == road["pieces_inside_the_products"]
+    strata = record["replay_peak_4b"]["strata"]
+    assert strata["judged_by_the_river_fit"]["independent"] is False and strata["not_judged_by_the_river_fit"]["independent"] is True
+    assert record["buildings_4d"]["no_resident_figure"] is True
+    assert record["official_warning"] is False and record["can_feed_decision_layer"] is False and record["confidence_class"] == "low"

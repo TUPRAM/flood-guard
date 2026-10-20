@@ -453,3 +453,81 @@ def bar_sentence(share: float | None) -> str:
     """The sentence of section 4.4 for the share of the area the rule calls mud that is labelled mud."""
 
     return SENTENCE_BAR_MET if share is not None and share >= TEST_BAR - 1e-12 else SENTENCE_BAR_MISSED
+
+
+# ---------------------------------------------------------------------------
+# Section 4.5: what the frozen mud raster is set against, each run once
+# ---------------------------------------------------------------------------
+
+ROAD_MUD_RADIUS_M: float = 4.0  # a mud pixel within 4 m of the centreline (4a, 4d)
+ROAD_SHOWS_MUD_M: float = 20.0  # a piece "shows mud" with 20 m of centreline or more (4a)
+ROAD_SAMPLE_M: float = 1.0  # the centreline is read every metre
+ROAD_SHOWN_SHARE: float = 0.5  # a piece the image shows less than half of is "not observable"
+OUTSIDE_PEAK_HEIGHT_BINS_M: tuple[float, ...] = (5.0, 10.0, 20.0)
+ROAD_SENTENCES: dict[str, str] = {
+    "shows_mud": "The water reached this piece at the peak. Mud does not give the depth; a shallow flow leaves a film too.",
+    "not_shown": "Not shown: streets may have been cleared of mud in the five days after the peak. No mud never means the road stayed dry or passable.",
+    "not_observable": "Not observable: the image does not show this piece (cloud, roofs, water before the flood or outside the products).",
+}
+
+
+def disk(radius_m: float, cell_m: float) -> np.ndarray:
+    """The pixels whose centre lies within ``radius_m`` of a pixel centre, as a square boolean footprint."""
+
+    reach = int(np.floor(radius_m / cell_m))
+    offsets = np.arange(-reach, reach + 1)
+    return (offsets[:, None] ** 2 + offsets[None, :] ** 2) * cell_m**2 <= radius_m**2 + 1e-9
+
+
+def within(mask: np.ndarray, radius_m: float, cell_m: float) -> np.ndarray:
+    """True where a pixel of ``mask`` lies within ``radius_m`` (centre to centre)."""
+
+    from scipy import ndimage
+
+    if not mask.any():
+        return np.zeros(mask.shape, dtype=bool)
+    return ndimage.binary_dilation(mask, structure=disk(radius_m, cell_m))
+
+
+def sample_segment(x0: float, y0: float, x1: float, y1: float, step_m: float = ROAD_SAMPLE_M) -> tuple[np.ndarray, np.ndarray, float]:
+    """Points at the middle of equal parts of a straight piece, no part longer than ``step_m``, and the metres each stands for."""
+
+    length = float(np.hypot(x1 - x0, y1 - y0))
+    parts = max(1, int(np.ceil(length / step_m)))
+    t = (np.arange(parts) + 0.5) / parts
+    return x0 + t * (x1 - x0), y0 + t * (y1 - y0), length / parts
+
+
+def piece_class(covered_m: float, shown_m: float, mud_m: float) -> str:
+    """Section 4.5a: "shows_mud" with 20 m of centreline or more near mud; "not_observable" when the image shows less
+    than half of the part inside the products; otherwise "not_shown"."""
+
+    if mud_m >= ROAD_SHOWS_MUD_M - 1e-9:
+        return "shows_mud"
+    if covered_m <= 0 or shown_m < ROAD_SHOWN_SHARE * covered_m:
+        return "not_observable"
+    return "not_shown"
+
+
+def replay_wet(codes: np.ndarray, stage_m: float, *, channel_code: int = 0, never_code: int = 255, step_m: float = 0.05) -> np.ndarray:
+    """The replay's own rule (plan section 3): wet when the code is the channel code or its code times 0.05 m is below the stage."""
+
+    c = np.asarray(codes).astype(np.int32)
+    return (c == channel_code) | ((c != never_code) & (c * step_m < stage_m))
+
+
+def height_bins(codes: np.ndarray, *, never_code: int = 255, step_m: float = 0.05,
+                edges_m: Sequence[float] = OUTSIDE_PEAK_HEIGHT_BINS_M) -> dict[str, int]:
+    """Counts of pixels by the replay's height above the channel (code times 0.05 m); "no_height" for the never code."""
+
+    c = np.asarray(codes).astype(np.int32)
+    has = c != never_code
+    height = c * step_m
+    out: dict[str, int] = {}
+    low = 0.0
+    for edge in edges_m:
+        out[f"{low:g}_to_{edge:g}_m"] = int((has & (height >= low) & (height < edge)).sum())
+        low = edge
+    out[f"{low:g}_m_or_more"] = int((has & (height >= low)).sum())
+    out["no_height"] = int((~has).sum())
+    return out

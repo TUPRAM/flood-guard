@@ -18,7 +18,12 @@ Stage ``score`` (section 4.4)
 
     python scripts/build_theos2_17sep_mud.py points --external-root <root>
     python scripts/build_theos2_17sep_mud.py freeze --external-root <root> --labels <labels.json>
+Stage ``section45`` (section 4.5, once, after a passed test)
+    Sets the frozen mud raster against the road pieces of the planning context (the road sheet first), the replay's
+    largest extent in two strata, the season layer of case SE1 and the building outlines.
+
     python scripts/build_theos2_17sep_mud.py score --external-root <root> --label-files <a.json> <b.json> <c.json>
+    python scripts/build_theos2_17sep_mud.py section45 --external-root <root>
 
 The development labels are the reading of an AI model, not of a person, and are never a reference. Report-only.
 """
@@ -1074,9 +1079,298 @@ def stage_score(arguments: argparse.Namespace) -> None:
                       "by_order": {name: value["labels_of_the_plan"] for name, value in by_order.items()}}, indent=1))
 
 
+# ---------------------------------------------------------------------------
+# Section 4.5: the frozen mud raster set against the roads, the replay's peak, case SE1 and the buildings, once
+# ---------------------------------------------------------------------------
+
+SECTION45_NAME = "section_4_5_v1.json"
+PLANNING = Path("proposal_execution") / "planning_v1" / "se1_mae_sai"
+CONTEXT = PLANNING / "e4_vehicle" / "context_inputs.json"
+INTERSECTIONS = PLANNING / "ko_chang_road_sheet" / "edge_intersections_5d7c1c0ca7909284.json"
+SEASON = PLANNING / "e1_flood_input" / "flood_extent__as_provided__reporting_frame.geojson"
+PROTOCOL_V1B = "docs/proposal_execution/planning_protocol_v1b.json"
+TAMBONS = "outputs/mae_sai_admin_context.geojson"
+ROAD_SHEET = "outputs/ko_chang_road_check/ko_chang_roads_se1_v1.json"
+REPLAY = "apps/web/public/studies/mae-sai-2024-timeline/r5"
+REPLAY_AOI_UTM = (584400.0, 2240100.0, 608400.0, 2266100.0)  # AOI_UTM of scripts/build_mae_sai_flood_timeline.py
+CLOSED_CENTRAL_EDGES = 7926  # case SE1, the published run (season layer, central level)
+SECTION45_LIMITS = [
+    "Mud on a road says the water reached it; no mud never says a road stayed dry or passable, and mud gives no depth.",
+    "The image is five days after the modelled peak: streets cleared of mud in between are silent, not dry.",
+    "Road pieces are the edges of the planning context; the closure state beside them is modelled (closure rule v1, central level).",
+    "The replay's peak and case SE1 are modelled scenarios; agreement with them is not a check of either where the replay was fitted (judged cells).",
+]
+
+
+def grid_transform(grid: dict[str, Any]) -> Any:
+    from rasterio.transform import from_origin
+
+    return from_origin(grid["west"], grid["north"], grid["cell_m"], grid["cell_m"])
+
+
+def burn(shapes: Any, grid: dict[str, Any], dtype: str, *, all_touched: bool = False) -> np.ndarray:
+    from rasterio.features import rasterize
+
+    return rasterize(shapes, out_shape=(grid["rows"], grid["columns"]), transform=grid_transform(grid), fill=0,
+                     all_touched=all_touched, dtype=dtype)
+
+
+def rows_columns(xs: np.ndarray, ys: np.ndarray, grid: dict[str, Any]) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    columns = np.floor((np.asarray(xs) - grid["west"]) / grid["cell_m"]).astype(np.int64)
+    rows = np.floor((grid["north"] - np.asarray(ys)) / grid["cell_m"]).astype(np.int64)
+    inside = (rows >= 0) & (rows < grid["rows"]) & (columns >= 0) & (columns < grid["columns"])
+    return rows, columns, inside
+
+
+def read_s2_swir(external: Path, key: str, window: tuple[int, ...]) -> np.ndarray:
+    import rasterio
+    from rasterio.windows import Window
+
+    row0, column0, rows, columns = window[:4]
+    with rasterio.open(external / S2[key] / "swir16.tif") as source:
+        swir = source.read(1, window=Window(column0 // 2, row0 // 2, columns // 2 + 2, rows // 2 + 2), boundless=True, fill_value=0)
+    return np.repeat(np.repeat(swir, 2, axis=0), 2, axis=1)[row0 % 2:row0 % 2 + rows, column0 % 2:column0 % 2 + columns].astype("float32") / 10000.0
+
+
+def km2_of(pixels: float) -> float:
+    return round(float(pixels) * 4e-6, 4)
+
+
+def tally(pieces: list[dict[str, Any]]) -> dict[str, Any]:
+    out = {name: {"pieces": 0, "km": 0.0} for name in mud.ROAD_SENTENCES}
+    for piece in pieces:
+        out[piece["class"]]["pieces"] += 1
+        out[piece["class"]]["km"] += piece["inside_products_m"] / 1000
+    for value in out.values():
+        value["km"] = round(value["km"], 3)
+    return out
+
+
+def stage_section45(arguments: argparse.Namespace) -> None:
+    import pyogrio
+    import rasterio
+    from PIL import Image
+    from pyproj import Transformer
+    from rasterio.transform import from_bounds
+    from rasterio.warp import transform_bounds
+    from shapely.geometry import shape
+    from shapely.ops import transform as shapely_transform
+
+    from floodguard import access_diff, closure_rules, replay_river_fit
+
+    external = Path(arguments.external_root)
+    work = external / WORK
+    out_path, score_path, freeze_path = ROOT / OUTPUT_DIR / SECTION45_NAME, ROOT / OUTPUT_DIR / SCORE_NAME, ROOT / OUTPUT_DIR / FREEZE_V2_NAME
+    if out_path.exists():
+        raise BuildError("section 4.5 runs once")
+    if not score_path.exists():
+        raise BuildError("section 4.5 comes after the test score")
+    score = json.loads(score_path.read_text(encoding="utf-8"))
+    if score["test_points"]["sha256"] != sha256_file(ROOT / OUTPUT_DIR / TEST_NAME) or score["freeze"]["sha256"] != sha256_file(freeze_path):
+        raise BuildError("the score is not bound to the test points and the freeze in the repository")
+    if not score["bar"]["met"]:
+        raise BuildError("the bar was missed: section 4.5 then reports the labelled points alone, which this stage does not do")
+    freeze = json.loads(freeze_path.read_text(encoding="utf-8"))
+    if freeze["plan"]["sha256"] != sha256_file(ROOT / PLAN):
+        raise BuildError("the plan changed after the freeze")
+    raster_path = work / freeze["raster_outside_git"]["name"]
+    if sha256_file(raster_path) != freeze["raster_outside_git"]["sha256"]:
+        raise BuildError("the mud raster is not the one the freeze binds")
+    delivery, reference = check_inputs()
+    grid = delivery["one_pixel_grid"]
+    cell = grid["cell_m"]
+    layers = scene_layers(external, delivery, reference)
+    covered = layers["covered"]
+    with rasterio.open(raster_path) as source:
+        frozen = source.read(1)
+    if frozen.shape != covered.shape:
+        raise BuildError("the mud raster is not on the grid of the delivery")
+    mud_px = frozen == mud.MUD_YES
+    shown = frozen != mud.MUD_UNOBSERVABLE
+    near = mud.within(mud_px, mud.ROAD_MUD_RADIUS_M, cell)
+    epsg = delivery_meta.EPSG
+    to_utm = Transformer.from_crs(4326, epsg, always_xy=True).transform
+    admin = json.loads((ROOT / TAMBONS).read_text(encoding="utf-8"))
+    tambon_ids = [feature["properties"]["subdistrict_id"] for feature in admin["features"]]
+    tambon_names = {feature["properties"]["subdistrict_id"]: feature["properties"]["subdistrict_name"] for feature in admin["features"]}
+    tambons = burn(((shapely_transform(to_utm, shape(feature["geometry"])), index + 1) for index, feature in enumerate(admin["features"])), grid, "uint8")
+
+    def tambon_at(value: int) -> str:
+        return tambon_ids[value - 1] if value else "outside_the_eight_tambons"
+
+    # ---- 4a: the road pieces of the planning context inside the products
+    context = json.loads((external / CONTEXT).read_text(encoding="utf-8"))
+    edges, nodes = context["edges"], context["node_coordinates"]
+    intersections = json.loads((external / INTERSECTIONS).read_text(encoding="utf-8"))
+    arguments_v1b = access_diff.closure_arguments(json.loads((ROOT / PROTOCOL_V1B).read_text(encoding="utf-8")))
+    closure = closure_rules.apply_closure_rule("central", edges, intersections, flood_input_id="season_layer_whole_corridor",
+                                               length_thresholds_m=arguments_v1b["length_thresholds_m"], strict_delays=arguments_v1b["strict_delays"])
+    closed = set(closure["closed_edge_ids"])
+    if len(closed) != CLOSED_CENTRAL_EDGES:
+        raise BuildError(f"the closure rule closes {len(closed)} edges, not the {CLOSED_CENTRAL_EDGES} of case SE1")
+    node_xy = {key: to_utm(value[0], value[1]) for key, value in nodes.items()}
+    sheet = json.loads((ROOT / ROAD_SHEET).read_text(encoding="utf-8"))
+    sheet_steps = sheet["what_if_roads_stay_passable_one_after_another"]["steps"]
+    pieces: list[dict[str, Any]] = []
+    for edge in edges:
+        (x0, y0), (x1, y1) = node_xy[edge["from_node"]], node_xy[edge["to_node"]]
+        xs, ys, each = mud.sample_segment(x0, y0, x1, y1)
+        rows, columns, inside = rows_columns(xs, ys, grid)
+        if not inside.any():
+            continue
+        rows, columns = rows[inside], columns[inside]
+        inside_products = covered[rows, columns]
+        if not inside_products.any():
+            continue
+        covered_m = float(inside_products.sum()) * each
+        shown_m = float((shown[rows, columns] & inside_products).sum()) * each
+        mud_m = float((near[rows, columns] & inside_products).sum()) * each
+        middle = len(rows) // 2
+        pieces.append({"edge_id": edge["edge_id"], "osm_way_id": edge["osm_way_id"], "road_class": edge["road_class"],
+                       "length_m": round(float(edge["length_m"]), 1), "inside_products_m": round(covered_m, 1), "shown_m": round(shown_m, 1),
+                       "metres_with_mud_within_4_m": round(mud_m, 1), "class": mud.piece_class(covered_m, shown_m, mud_m),
+                       "closed_in_case_se1": edge["edge_id"] in closed, "tambon": tambon_at(int(tambons[rows[middle], columns[middle]]))})
+    sheet_roads = []
+    for number, step in enumerate(sheet_steps, start=1):
+        rows_of = [piece for piece in pieces if piece["osm_way_id"] == step["osm_way_id"]]
+        road = {"road": number, "osm_way_id": step["osm_way_id"], "name": step.get("name_en") or step.get("name") or "", "ref": step.get("ref", ""),
+                "pieces_inside_the_products": len(rows_of),
+                "metres_inside_the_products": round(sum(p["inside_products_m"] for p in rows_of), 1),
+                "metres_shown": round(sum(p["shown_m"] for p in rows_of), 1),
+                "metres_with_mud_within_4_m": round(sum(p["metres_with_mud_within_4_m"] for p in rows_of), 1),
+                "by_class": tally(rows_of), "closed_pieces_by_class": tally([p for p in rows_of if p["closed_in_case_se1"]]),
+                "pieces": [{key: p[key] for key in ("edge_id", "length_m", "inside_products_m", "shown_m", "metres_with_mud_within_4_m", "class", "closed_in_case_se1")}
+                           for p in rows_of]}
+        road["answer"] = ("not in the products" if not rows_of else
+                          f"{road['by_class']['shows_mud']['pieces']} of {len(rows_of)} pieces show mud; "
+                          f"{road['by_class']['not_shown']['pieces']} not shown; {road['by_class']['not_observable']['pieces']} not observable")
+        sheet_roads.append(road)
+    roads = {
+        "rule": {"mud_within_m": mud.ROAD_MUD_RADIUS_M, "shows_mud_from_m": mud.ROAD_SHOWS_MUD_M, "centreline_read_every_m": mud.ROAD_SAMPLE_M,
+                 "not_observable_when_shown_below": mud.ROAD_SHOWN_SHARE,
+                 "closure_beside": "case SE1, closure rule v1 at the central level, re-applied with floodguard.closure_rules and checked against 7,926 closed edges"},
+        "the_eight_roads_of_the_road_sheet": sheet_roads,
+        "all_pieces_inside_the_products": tally(pieces),
+        "pieces_the_model_closes_in_case_se1": tally([p for p in pieces if p["closed_in_case_se1"]]),
+        "pieces_the_model_leaves_open": tally([p for p in pieces if not p["closed_in_case_se1"]]),
+        "by_tambon": {tid: tally([p for p in pieces if p["tambon"] == tid]) for tid in [*tambon_ids, "outside_the_eight_tambons"]},
+        "sentences": mud.ROAD_SENTENCES,
+    }
+
+    # ---- 4b: the replay's largest extent, in two strata
+    timeline = json.loads((ROOT / REPLAY / "timeline.json").read_text(encoding="utf-8"))
+    hand_path = ROOT / REPLAY / "hand-codes.png"
+    if sha256_file(hand_path) != timeline["hand"]["sha256"]:
+        raise BuildError("hand-codes.png is not the file the replay's timeline binds")
+    codes_image = np.asarray(Image.open(hand_path).convert("RGB"))[:, :, 0]
+    height_px, width_px = codes_image.shape
+    extent = transform_bounds(f"EPSG:{epsg}", "EPSG:3857", *REPLAY_AOI_UTM, densify_pts=41)
+    inverse = ~from_bounds(*extent, width_px, height_px)
+    peak_stage = max(anchor["stage_m"] for anchor in timeline["stage_anchors"])
+    compared = shown & (tambons > 0)
+    mud_rows, mud_columns = np.nonzero(mud_px & compared)
+    xs = grid["west"] + (mud_columns + 0.5) * cell
+    ys = grid["north"] - (mud_rows + 0.5) * cell
+    mx, my = Transformer.from_crs(epsg, 3857, always_xy=True).transform(xs, ys)
+    replay_columns, replay_rows = inverse * (np.asarray(mx), np.asarray(my))
+    replay_columns, replay_rows = np.floor(replay_columns).astype(np.int64), np.floor(replay_rows).astype(np.int64)
+    on_replay = (replay_rows >= 0) & (replay_rows < height_px) & (replay_columns >= 0) & (replay_columns < width_px)
+    codes = np.full(mud_rows.shape, 255, dtype=np.int32)
+    codes[on_replay] = codes_image[replay_rows[on_replay], replay_columns[on_replay]]
+    wet = mud.replay_wet(codes, peak_stage)
+    before_bands, scl_before, window = read_s2(external, "before", grid)
+    after_bands, scl_after, window_after = read_s2(external, "after", grid)
+    if window != window_after:
+        raise BuildError("the two Sentinel-2 scenes do not sit on one window")
+    judged_cells, _evidence = replay_river_fit.flood_evidence({"red": before_bands["red"], "nir": before_bands["nir"], "scl": scl_before},
+                                                              {**after_bands, "swir16": read_s2_swir(external, "after", window), "scl": scl_after})
+    judged = to_pixels(judged_cells, covered.shape, window)[mud_rows, mud_columns]
+    compared_judged = to_pixels(judged_cells, covered.shape, window) & compared
+    mud_tambon = tambons[mud_rows, mud_columns]
+    strata = {}
+    for name, keep, ground in (("judged_by_the_river_fit", judged, compared_judged), ("not_judged_by_the_river_fit", ~judged, compared & ~compared_judged)):
+        outside = keep & ~wet
+        strata[name] = {
+            "compared_km2": km2_of(ground.sum()), "mud_km2": km2_of(keep.sum()), "mud_inside_the_peak_km2": km2_of((keep & wet).sum()),
+            "share_of_the_mud_inside_the_peak": None if not keep.any() else round(float((keep & wet).sum() / keep.sum()), 4),
+            "mud_outside_the_peak_km2_by_tambon": {tid: km2_of((outside & (mud_tambon == index + 1)).sum()) for index, tid in enumerate(tambon_ids)},
+            "mud_outside_the_peak_by_the_replays_height_above_the_channel_km2": {key: km2_of(value) for key, value in mud.height_bins(codes[outside]).items()},
+        }
+    strata["judged_by_the_river_fit"]["independent"] = False
+    strata["judged_by_the_river_fit"]["note"] = "The replay was fitted to the Sentinel-2 mud line on these cells, so agreement here is not independent."
+    strata["not_judged_by_the_river_fit"]["independent"] = True
+    strata["not_judged_by_the_river_fit"]["note"] = "The replay never saw mud on these cells (most are built-up or road), so agreement here is an independent check."
+    replay_peak = {"stage_m": peak_stage, "rule": "wet when the code is the channel code or its code times 0.05 m is below the stage (plan section 3)",
+                   "judged_rule": "replay_river_fit.flood_evidence: clear on both Sentinel-2 scenes (5 and 15 Sep 2024) and NDVI 0.45 or more on 5 Sep, on the 10 m cell under each 2 m pixel",
+                   "mud_pixels_outside_the_replay_grid": int((~on_replay).sum()), "strata": strata}
+
+    # ---- 4c: case SE1, the season layer cut to the district
+    season = shape(json.loads((external / SEASON).read_text(encoding="utf-8"))["features"][0]["geometry"])
+    in_season = burn([(season, 1)], grid, "uint8") > 0
+    se1 = {"by_tambon": {}, "note": "Report-only. The season layer is a scenario of everything mapped as water from August to October 2024."}
+    for index, tid in enumerate(tambon_ids):
+        here = mud_px & compared & (tambons == index + 1)
+        if not (covered & (tambons == index + 1)).any():
+            continue
+        se1["by_tambon"][tid] = {"name": tambon_names[tid], "mud_km2": km2_of(here.sum()), "mud_inside_the_season_layer_km2": km2_of((here & in_season).sum()),
+                                 "share_of_the_mud_inside": None if not here.any() else round(float((here & in_season).sum() / here.sum()), 4)}
+    district = mud_px & compared
+    se1["district_part_covered"] = {"mud_km2": km2_of(district.sum()), "mud_inside_the_season_layer_km2": km2_of((district & in_season).sum()),
+                                    "share_of_the_mud_inside": None if not district.any() else round(float((district & in_season).sum() / district.sum()), 4)}
+
+    # ---- 4d: buildings with a mud pixel within 4 m
+    frame = pyogrio.read_dataframe(external / BUILDINGS, bbox=grid_bounds_lonlat(grid)).to_crs(epsg)
+    ids = np.arange(1, len(frame) + 1, dtype=np.int32)
+    buildings_raster = burn(zip(frame.geometry, ids), grid, "int32", all_touched=True)
+    reached = np.zeros(len(frame) + 1, dtype=bool)
+    reached[np.unique(buildings_raster[near & (buildings_raster > 0)])] = True
+    centroids = frame.geometry.centroid
+    b_rows, b_columns, b_inside = rows_columns(centroids.x.to_numpy(), centroids.y.to_numpy(), grid)
+    b_covered = np.zeros(len(frame), dtype=bool)
+    b_tambon = np.zeros(len(frame), dtype=np.int64)
+    b_covered[b_inside] = covered[b_rows[b_inside], b_columns[b_inside]]
+    b_tambon[b_inside] = tambons[b_rows[b_inside], b_columns[b_inside]]
+    buildings = {"rule": "an outline (every 2 m pixel it touches) with a mud pixel within 4 m; counted by the tambon of its centre, among outlines whose centre the products cover",
+                 "by_tambon": {}, "no_resident_figure": True}
+    for index, tid in enumerate([*tambon_ids, "outside_the_eight_tambons"]):
+        value = index + 1 if tid != "outside_the_eight_tambons" else 0
+        pick = b_covered & (b_tambon == value)
+        if not pick.any():
+            continue
+        buildings["by_tambon"][tid] = {"outlines": int(pick.sum()), "reached": int(reached[1:][pick].sum()),
+                                       "share": round(float(reached[1:][pick].sum() / pick.sum()), 4)}
+
+    result = {
+        "schema": "floodguard.theos2_17sep_mud.section_4_5.v1",
+        **envelope(),
+        "confidence_basis": "One optical image read by a mud rule that passed a blind test by three team members (R60); roads, replay and case SE1 are modelled; nobody went to the ground.",
+        "what_this_is": "Plan section 4.5, run once after the test score: the frozen mud raster (mud_s4) set against the road pieces (4a), the replay's largest extent (4b), the season layer of case SE1 (4c) and the building outlines (4d).",
+        "inputs": {"test_score": {"path": f"{OUTPUT_DIR}/{SCORE_NAME}", "sha256": sha256_file(score_path)},
+                   "freeze": {"path": f"{OUTPUT_DIR}/{FREEZE_V2_NAME}", "sha256": sha256_file(freeze_path)},
+                   "mud_raster_outside_git": {"name": raster_path.name, "sha256": freeze["raster_outside_git"]["sha256"]},
+                   "planning_context_outside_git": {"path": CONTEXT.as_posix(), "sha256": sha256_file(external / CONTEXT)},
+                   "intersections_outside_git": {"path": INTERSECTIONS.as_posix(), "sha256": sha256_file(external / INTERSECTIONS)},
+                   "season_layer_outside_git": {"path": SEASON.as_posix(), "sha256": sha256_file(external / SEASON)},
+                   "replay_hand_codes": {"path": f"{REPLAY}/hand-codes.png", "sha256": timeline["hand"]["sha256"]},
+                   "road_sheet": {"path": ROAD_SHEET, "sha256": sha256_file(ROOT / ROAD_SHEET)},
+                   "tambons": {"path": TAMBONS, "sha256": sha256_file(ROOT / TAMBONS)},
+                   "buildings_outside_git": {"path": BUILDINGS, "outlines_read": int(len(frame))},
+                   "sentinel2": S2},
+        "mud_km2_in_the_district_part_covered": km2_of((mud_px & compared).sum()),
+        "roads_4a": roads, "replay_peak_4b": replay_peak, "case_se1_4c": se1, "buildings_4d": buildings,
+        "assumptions": ASSUMPTIONS, "limits": LIMITS + SECTION45_LIMITS,
+    }
+    write_json(out_path, result)
+    print(json.dumps({"road_sheet": [{key: road[key] for key in ("road", "osm_way_id", "answer", "metres_with_mud_within_4_m", "metres_shown")} for road in sheet_roads],
+                      "all_pieces": roads["all_pieces_inside_the_products"], "closed": roads["pieces_the_model_closes_in_case_se1"],
+                      "open": roads["pieces_the_model_leaves_open"],
+                      "replay": {name: {k: v for k, v in value.items() if k in ("mud_km2", "share_of_the_mud_inside_the_peak", "independent")} for name, value in strata.items()},
+                      "se1": se1["district_part_covered"], "buildings": buildings["by_tambon"]}, indent=1))
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    parser.add_argument("stage", choices=("points", "freeze", "points2", "freeze2", "test", "score"))
+    parser.add_argument("stage", choices=("points", "freeze", "points2", "freeze2", "test", "score", "section45"))
     parser.add_argument("--external-root", required=True)
     parser.add_argument("--labels")
     parser.add_argument("--old-labels", help="freeze2: the label file of plan v1, as the first freeze binds it")
@@ -1087,7 +1381,7 @@ def main() -> None:
     if arguments.stage == "freeze2" and not arguments.old_labels:
         raise BuildError("the second freeze needs --old-labels")
     {"points": stage_points, "freeze": stage_freeze, "points2": stage_points2, "freeze2": stage_freeze2,
-     "test": stage_test, "score": stage_score}[arguments.stage](arguments)
+     "test": stage_test, "score": stage_score, "section45": stage_section45}[arguments.stage](arguments)
 
 
 if __name__ == "__main__":

@@ -979,6 +979,29 @@
       "gates": "Using the mud raster as a map in section 4.5, and the THEOS-2 figure of the final pitch.",
       "ready": true,
       "added": "2026-10-20"
+    },
+    {
+      "id": "V-50",
+      "group": "theos2",
+      "title": "Check section 4.5 of the mud track: road 1 shows flood mud on 2 of its 15 pieces",
+      "check": "Open outputs/theos2_17sep_mud/section_4_5_v1.json. Under roads_4a, the eight roads of the Ko Chang road sheet come first: road 1 (OSM way 206803562) is shown over its whole 1.33 km and shows mud on 2 pieces, both pieces the model closes; the other 13 are 'not shown', which never means passable. Check that the per-road answers read as the plan's sentences say, that the replay figures keep the two strata apart (judged cells are not independent) and that no resident figure is derived from the buildings. Choose 'accept' if the record says what plan section 4.5 said would be computed; choose 'change' with a note otherwise.",
+      "evidence": [
+        {
+          "label": "The section 4.5 record",
+          "path": "outputs/theos2_17sep_mud/section_4_5_v1.json"
+        },
+        {
+          "label": "The plan, section 4.5",
+          "path": "docs/proposal_execution/theos2_17sep_recession_and_mud_plan_v1.md"
+        },
+        {
+          "label": "The stage",
+          "path": "scripts/build_theos2_17sep_mud.py"
+        }
+      ],
+      "gates": "The THEOS-2 sentence of the final pitch about road 1.",
+      "ready": true,
+      "added": "2026-10-20"
     }
   ]
 }

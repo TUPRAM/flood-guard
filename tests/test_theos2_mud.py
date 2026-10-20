@@ -176,3 +176,103 @@ def test_the_test_points_come_after_the_second_freeze_and_hold_no_answer() -> No
     for label in mud.LABELS:
         assert f'data-label="{label}"' in page, label
     assert "/*POINTS*/[]" in page and "/*PRACTICE*/[]" in page
+
+
+# ---------------------------------------------------------------------------
+# Section 4.4: the score of the test (written and tested before any label file was read)
+# ---------------------------------------------------------------------------
+
+
+def _label_file(labels: dict[str, str], **changes: object) -> dict[str, object]:
+    return {"schema": mud.LABEL_SCHEMA, "sample_id": "abc", "labeller": "Somchai", "saved_at_utc": "2026-10-20T00:00:00Z",
+            "points": len(labels), "labels": labels, **changes}
+
+
+def test_a_label_file_must_belong_to_the_draw_and_label_every_point() -> None:
+    ids = ["t001", "t002"]
+    good = {"t001": "mud", "t002": "bare_cannot_tell"}
+    assert mud.check_label_file(_label_file(good), "abc", ids) == good
+    for bad in (_label_file(good, schema="other"), _label_file(good, sample_id="xyz"), _label_file(good, labeller=" "),
+                _label_file({"t001": "mud"}), _label_file({**good, "t999": "mud"}), _label_file({"t001": "mud", "t002": "maybe"}),
+                {**_label_file(good), "labels": ["mud", "mud"]}):
+        with pytest.raises(mud.MudError):
+            mud.check_label_file(bad, "abc", ids)
+
+
+def test_the_label_two_of_three_gave_and_the_label_a_pair_shares() -> None:
+    assert mud.majority_label(["mud", "not_mud", "mud"]) == "mud"
+    assert mud.majority_label(["cannot_tell", "cannot_tell", "cannot_tell"]) == "cannot_tell"
+    assert mud.majority_label(["mud", "not_mud", "bare_cannot_tell"]) is None
+    assert mud.agreed_label(["not_mud", "not_mud"]) == "not_mud" and mud.agreed_label(["mud", "not_mud"]) is None
+    with pytest.raises(mud.MudError):
+        mud.majority_label(["mud", "mud"])
+
+
+def test_the_two_shares_of_section_4_4_on_invented_points() -> None:
+    points = [{"id": "p1", "group": "mud_inside", "order": "a"}, {"id": "p2", "group": "mud_edge", "order": "a"},
+              {"id": "p3", "group": "ground_far", "order": "a"}, {"id": "p4", "group": "unobservable", "order": "a"},
+              {"id": "p5", "group": "near_mud", "order": "a"}, {"id": "p6", "group": "mud_inside", "order": "a"},
+              {"id": "p7", "group": "mud_edge", "order": "a"}]
+    labels = {"p1": "mud", "p2": "not_mud", "p3": "mud", "p4": "mud", "p5": "bare_cannot_tell", "p6": "cannot_tell", "p7": None}
+    weights = {("mud_inside", "a"): 10.0, ("mud_edge", "a"): 30.0, ("ground_far", "a"): 100.0, ("unobservable", "a"): 50.0,
+               ("near_mud", "a"): 20.0}
+    plain = mud.area_shares(points, labels, weights)
+    # Of the area the rule calls mud (p1, p2 answered), 10 of 40 is labelled mud; of the area labelled mud (p1, p3, p4),
+    # 10 of 160 is called mud by the rule (unobservable counts as the rule not calling it mud).
+    assert plain == {"points_used": 4, "rule_mud_points": 2, "labelled_mud_points": 3,
+                     "share_of_rule_mud_labelled_mud": 0.25, "share_of_labelled_mud_the_rule_calls_mud": 0.0625}
+    bare = mud.area_shares(points, labels, weights, bare_as_mud=True)
+    assert bare["points_used"] == 5 and bare["share_of_rule_mud_labelled_mud"] == 0.25
+    assert bare["share_of_labelled_mud_the_rule_calls_mud"] == pytest.approx(10 / 180, abs=1e-4)
+    assert mud.area_shares(points[2:5], labels, weights)["share_of_rule_mud_labelled_mud"] is None
+
+
+def test_weights_count_every_drawn_point_so_a_left_out_label_does_not_reweight_its_group() -> None:
+    points = [{"id": f"p{i}", "group": "mud_inside", "order": "a"} for i in range(4)] + [{"id": "q", "group": "mud_edge", "order": "a"}]
+    weights = mud.point_weights({("mud_inside", "a"): 400, ("mud_edge", "a"): 100}, points)
+    assert weights == {("mud_inside", "a"): 100.0, ("mud_edge", "a"): 100.0}
+    labels = {"p0": "mud", "p1": "mud", "p2": "cannot_tell", "p3": "not_mud", "q": "not_mud"}
+    assert mud.area_shares(points, labels, weights)["share_of_rule_mud_labelled_mud"] == 0.5
+
+
+def test_the_bootstrap_interval_is_reproducible_and_holds_the_score() -> None:
+    rng = np.random.default_rng(5)
+    points, labels = [], {}
+    for index in range(60):
+        group = mud.GROUPS[index % 4]
+        points.append({"id": f"t{index:03d}", "group": group, "order": "ab"[index % 2]})
+        labels[f"t{index:03d}"] = "mud" if rng.random() < (0.7 if mud.RULE_SAYS[group] == "mud" else 0.2) else "not_mud"
+    weights = mud.point_weights({(g, o): 1000 for g in mud.GROUPS for o in "ab"}, points)
+    first = mud.bootstrap_share(points, labels, weights, draws=300)
+    assert first == mud.bootstrap_share(points, labels, weights, draws=300)
+    score = mud.area_shares(points, labels, weights)["share_of_rule_mud_labelled_mud"]
+    assert first["low"] <= score <= first["high"] and first["draws_with_a_value"] == 300
+
+
+def test_the_bar_and_its_two_sentences() -> None:
+    assert mud.bar_sentence(0.60) == mud.SENTENCE_BAR_MET and mud.bar_sentence(0.75) == mud.SENTENCE_BAR_MET
+    assert mud.bar_sentence(0.5999) == mud.SENTENCE_BAR_MISSED and mud.bar_sentence(None) == mud.SENTENCE_BAR_MISSED
+    assert mud.TEST_BAR == 0.60 and set(mud.RULE_SAYS) == set(mud.GROUPS)
+
+
+def test_the_score_record_follows_the_draw_and_the_bar() -> None:
+    import hashlib
+    import json
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[1]
+    folder = root / "outputs" / "theos2_17sep_mud"
+    score_path = folder / "test_score_v1.json"
+    if not score_path.exists():
+        pytest.skip("the test has not been scored")
+    score = json.loads(score_path.read_text(encoding="utf-8"))
+    record = json.loads((folder / "test_points_v1.json").read_text(encoding="utf-8"))
+    assert score["test_points"]["sha256"] == hashlib.sha256((folder / "test_points_v1.json").read_bytes()).hexdigest()
+    assert score["sample_id"] == record["sample_id"] and score["freeze"] == record["freeze"]
+    assert len(score["labels_received"]) == 3 and len({item["labeller"].casefold() for item in score["labels_received"]}) == 3
+    assert len(score["labels_by_point"]) == record["points"]
+    share = score["result"]["labels_of_the_plan"]["share_of_rule_mud_labelled_mud"]
+    assert score["bar"]["share"] == share and score["bar"]["met"] == (share is not None and share >= mud.TEST_BAR)
+    assert score["sentence"] == mud.bar_sentence(share)
+    assert score["official_warning"] is False and score["can_feed_decision_layer"] is False and score["source_timestamp"]
+    assert score["confidence_class"] == "low" and score["key_stays_outside_git"] is True

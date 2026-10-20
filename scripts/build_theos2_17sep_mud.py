@@ -12,8 +12,13 @@ Stage ``freeze``
     order and scored on the other), applies the choice of the plan, writes the 2 m mud raster of the chosen rule
     outside Git and the freeze record in Git, with the labels.
 
+Stage ``score`` (section 4.4)
+    Checks the three label files against the draw, takes them in beside the key outside Git, and scores the frozen rule
+    once on the label at least two of three gave, area-weighted by group, against the bar of 0.60.
+
     python scripts/build_theos2_17sep_mud.py points --external-root <root>
     python scripts/build_theos2_17sep_mud.py freeze --external-root <root> --labels <labels.json>
+    python scripts/build_theos2_17sep_mud.py score --external-root <root> --label-files <a.json> <b.json> <c.json>
 
 The development labels are the reading of an AI model, not of a person, and are never a reference. Report-only.
 """
@@ -952,19 +957,135 @@ def stage_test(arguments: argparse.Namespace) -> None:
                       "page": str(page_path)}, indent=1))
 
 
+# ---------------------------------------------------------------------------
+# Section 4.4: the score of the test, once, on the label files of three team members
+# ---------------------------------------------------------------------------
+
+SCORE_NAME = "test_score_v1.json"
+ORDER_NAMES = {"AWG_20261014_bc7a15": "town box", "AWG_20261014_417d92": "west edge of the Ko Chang box"}
+SCORE_LIMITS = [
+    "Three team members labelled each point alone from three pictures of the image; nobody went to the ground.",
+    "A test point stands for the pixels of the group it was drawn in; the shares are shares of that area, not of the district.",
+    "Mud on a road says the water reached it; no mud never says a place stayed dry or a road stayed passable.",
+]
+
+
+def stage_score(arguments: argparse.Namespace) -> None:
+    from collections import Counter
+    from itertools import combinations
+
+    external = Path(arguments.external_root)
+    test_work = external / WORK / "test"
+    record_path, score_path = ROOT / OUTPUT_DIR / TEST_NAME, ROOT / OUTPUT_DIR / SCORE_NAME
+    if score_path.exists():
+        raise BuildError("the test is scored once")
+    if not record_path.exists():
+        raise BuildError("no test points")
+    record = json.loads(record_path.read_text(encoding="utf-8"))
+    if record["plan"]["sha256"] != sha256_file(ROOT / PLAN):
+        raise BuildError("the plan changed after the test points were drawn")
+    if record["freeze"]["sha256"] != sha256_file(ROOT / OUTPUT_DIR / FREEZE_V2_NAME):
+        raise BuildError("the freeze is not the one the test points were drawn from")
+    key_path = test_work / TEST_KEY
+    if sha256_file(key_path) != record["sample_id"]:
+        raise BuildError("the key is not the one the test record binds")
+    points = json.loads(key_path.read_text(encoding="utf-8"))["points"]
+    ids = [point["id"] for point in points]
+    files = [Path(path) for path in arguments.label_files]
+    if len(files) != 3:
+        raise BuildError("the test is scored on three label files")
+    contents = [json.loads(path.read_text(encoding="utf-8")) for path in files]
+    by_labeller: dict[str, dict[str, str]] = {}
+    for content in contents:
+        labels = mud.check_label_file(content, record["sample_id"], ids)
+        name = str(content["labeller"]).strip()
+        if name.casefold() in {known.casefold() for known in by_labeller}:
+            raise BuildError("two label files name the same labeller")
+        by_labeller[name] = labels
+
+    # The files are taken in beside the key, outside Git, and bound by SHA-256.
+    labels_dir = test_work / "labels"
+    labels_dir.mkdir(parents=True, exist_ok=True)
+    received = []
+    for path, content in zip(files, contents):
+        target = labels_dir / path.name
+        if target.exists() and sha256_file(target) != sha256_file(path):
+            raise BuildError(f"{target.name} is already taken in with other content")
+        target.write_bytes(path.read_bytes())
+        received.append({"labeller": str(content["labeller"]).strip(), "file": f"test/labels/{path.name}", "sha256": sha256_file(target),
+                         "saved_at_utc": content.get("saved_at_utc")})
+
+    names = sorted(by_labeller)
+    sizes = {tuple(key.split("|")): value for key, value in record["group_pixels"].items()}
+    weights = mud.point_weights(sizes, points)
+    majority = {point: mud.majority_label([by_labeller[name][point] for name in names]) for point in ids}
+
+    def shares(labels: dict[str, str | None], subset: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+        chosen = points if subset is None else subset
+        return {"labels_of_the_plan": mud.area_shares(chosen, labels, weights),
+                "bare_counted_as_mud": mud.area_shares(chosen, labels, weights, bare_as_mud=True)}
+
+    result_main = shares(majority)
+    bar_share = result_main["labels_of_the_plan"]["share_of_rule_mud_labelled_mud"]
+    met = bar_share is not None and bar_share >= mud.TEST_BAR - 1e-12
+    by_order = {f"{order} ({ORDER_NAMES.get(order, order)})": shares(majority, [point for point in points if point["order"] == order])
+                for order in delivery_meta.ORDERS}
+    pairs = {f"{first} + {second}": shares({point: mud.agreed_label([by_labeller[first][point], by_labeller[second][point]]) for point in ids})
+             for first, second in combinations(names, 2)}
+    triples = [[by_labeller[name][point] for name in names] for point in ids]
+    agreement = {"all_three_agree": sum(1 for labels in triples if len(set(labels)) == 1),
+                 "two_of_three_agree": sum(1 for labels in triples if len(set(labels)) == 2),
+                 "all_three_differ": sum(1 for labels in triples if len(set(labels)) == 3),
+                 "pairs_agree": {f"{first} + {second}": sum(1 for point in ids if by_labeller[first][point] == by_labeller[second][point])
+                                 for first, second in combinations(names, 2)},
+                 "points": len(ids)}
+    result = {
+        "schema": "floodguard.theos2_17sep_mud.test_score.v1",
+        **envelope(),
+        "confidence_basis": "Three team members labelled 150 points alone from pictures of one optical image; nobody went to the ground.",
+        "what_this_is": "The test of the frozen mud rule (freeze_v2, mud_s4), scored once on the labels of three team members, as plan section 4.4 fixed before any test point was drawn.",
+        "test_points": {"path": f"{OUTPUT_DIR}/{TEST_NAME}", "sha256": sha256_file(record_path)},
+        "freeze": record["freeze"],
+        "sample_id": record["sample_id"],
+        "labels_received": received,
+        "rule_says_by_group": mud.RULE_SAYS,
+        "weights": "pixels of each (group, order) over the test points drawn in it, as in the development score",
+        "scored_on": "the label at least two of the three gave; a point where all three differ is left out, as are 'cannot tell' and, "
+                     "in 'labels_of_the_plan', 'bare, cannot tell'",
+        "bar": {"value": mud.TEST_BAR, "on": "share_of_rule_mud_labelled_mud, labels_of_the_plan", "share": bar_share, "met": met},
+        "sentence": mud.bar_sentence(bar_share),
+        "result": result_main,
+        "interval_95_of_the_bar_share": {**mud.bootstrap_share(points, majority, weights),
+                                         "how": "points drawn again with replacement inside each (group, order); beside the score, not used by the bar"},
+        "beside_not_binding": {"by_order": by_order, "each_labeller": {name: shares(by_labeller[name]) for name in names}, "each_pair": pairs},
+        "agreement": agreement,
+        "label_counts": {"two_of_three": {str(label): count for label, count in Counter(majority.values()).items()},
+                         **{name: dict(Counter(by_labeller[name].values())) for name in names}},
+        "labels_by_point": {point: {**{name: by_labeller[name][point] for name in names}, "two_of_three": majority[point]} for point in ids},
+        "next": "Section 4.5, once, with the mud raster as a map." if met else "Section 4.5, once, with the labelled points alone: no mud map is used.",
+        "key_stays_outside_git": True,
+        "assumptions": ASSUMPTIONS, "limits": LIMITS + SCORE_LIMITS,
+    }
+    write_json(score_path, result)
+    print(json.dumps({"bar": result["bar"], "sentence": result["sentence"], "result": result_main,
+                      "interval": result["interval_95_of_the_bar_share"], "agreement": agreement,
+                      "by_order": {name: value["labels_of_the_plan"] for name, value in by_order.items()}}, indent=1))
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    parser.add_argument("stage", choices=("points", "freeze", "points2", "freeze2", "test"))
+    parser.add_argument("stage", choices=("points", "freeze", "points2", "freeze2", "test", "score"))
     parser.add_argument("--external-root", required=True)
     parser.add_argument("--labels")
     parser.add_argument("--old-labels", help="freeze2: the label file of plan v1, as the first freeze binds it")
+    parser.add_argument("--label-files", nargs="+", default=[], help="score: the label files of the three team members")
     arguments = parser.parse_args()
     if arguments.stage in ("freeze", "freeze2") and not arguments.labels:
         raise BuildError("a freeze stage needs --labels")
     if arguments.stage == "freeze2" and not arguments.old_labels:
         raise BuildError("the second freeze needs --old-labels")
     {"points": stage_points, "freeze": stage_freeze, "points2": stage_points2, "freeze2": stage_freeze2,
-     "test": stage_test}[arguments.stage](arguments)
+     "test": stage_test, "score": stage_score}[arguments.stage](arguments)
 
 
 if __name__ == "__main__":

@@ -310,3 +310,133 @@ def choose(scores: Mapping[str, float | None], margin: float = CHOICE_MARGIN,
 
 def limits_dict(limits: MudLimits) -> dict[str, float]:
     return asdict(limits)
+
+
+# ---------------------------------------------------------------------------
+# Section 4.4: the test, scored once on the labels of three people
+# ---------------------------------------------------------------------------
+
+LABEL_SCHEMA: str = "floodguard.theos2_17sep_mud.labels.v1"
+TEST_BAR: float = 0.60
+# What the frozen rule says at a test point follows from the group it was drawn in (section 4.3).
+RULE_SAYS: dict[str, str] = {"mud_inside": "mud", "mud_edge": "mud", "near_mud": "not_mud", "ground_far": "not_mud",
+                             "unobservable": "unobservable"}
+BOOTSTRAP_DRAWS: int = 2000
+BOOTSTRAP_SEED: int = 20261022
+SENTENCE_BAR_MET: str = ("Of the area the frozen rule calls mud, the share three team members label mud is at or above the bar "
+                         "of 0.60: the mud raster is used as a map for section 4.5.")
+SENTENCE_BAR_MISSED: str = "The mud rule does not read the image as people do; no map of the mud is used."
+
+
+def check_label_file(content: Mapping[str, Any], sample_id: str, point_ids: Sequence[str]) -> dict[str, str]:
+    """The labels of one file, by point id, after checking it belongs to this draw and gives a label of the plan to every point."""
+
+    if content.get("schema") != LABEL_SCHEMA:
+        raise MudError(f"not a label file of the mud test: schema {content.get('schema')!r}")
+    if content.get("sample_id") != sample_id:
+        raise MudError("the label file belongs to another draw of points (its sample id is not the SHA-256 of the key)")
+    if not str(content.get("labeller", "")).strip():
+        raise MudError("the label file names no labeller")
+    labels = content.get("labels")
+    if not isinstance(labels, Mapping):
+        raise MudError("the label file holds no labels by point")
+    known = set(point_ids)
+    missing = [point for point in point_ids if point not in labels]
+    extra = [point for point in labels if point not in known]
+    wrong = [point for point in point_ids if point in labels and labels[point] not in LABELS]
+    if missing or extra or wrong:
+        raise MudError(f"labels missing for {missing[:5]}, for unknown points {extra[:5]}, not of the plan for {wrong[:5]}")
+    return {point: str(labels[point]) for point in point_ids}
+
+
+def majority_label(labels: Sequence[str]) -> str | None:
+    """The label at least two of three gave; None when all three differ."""
+
+    if len(labels) != 3:
+        raise MudError("the test is scored on the labels of three people")
+    for label in LABELS:
+        if sum(1 for given in labels if given == label) >= 2:
+            return label
+    return None
+
+
+def agreed_label(labels: Sequence[str]) -> str | None:
+    """The label two people both gave; None when they differ."""
+
+    if len(labels) != 2:
+        raise MudError("a pair is two people")
+    return labels[0] if labels[0] == labels[1] else None
+
+
+def area_shares(points: Sequence[Mapping[str, Any]], labels: Mapping[str, str | None],
+                weights: Mapping[tuple[str, str], float], *, bare_as_mud: bool = False) -> dict[str, Any]:
+    """The two area-weighted shares of section 4.4, on the points labelled mud or not mud.
+
+    ``share_of_rule_mud_labelled_mud``: of the area the rule calls mud, the share labelled mud; the bar of 0.60 is set on it.
+    ``share_of_labelled_mud_the_rule_calls_mud``: of the area labelled mud, the share the rule calls mud; a point of the group
+    ``unobservable`` counts as the rule not calling it mud, as in the development score. With ``bare_as_mud`` the label
+    "bare, cannot tell" counts as mud; otherwise it is left out, as are "cannot tell" and points without a label.
+    ``weights`` maps (group, order) to the pixels a point of it stands for (``point_weights`` over all drawn points).
+    """
+
+    rule_mud_area = rule_mud_labelled = labelled_area = labelled_rule_mud = 0.0
+    used = rule_mud_points = labelled_points = 0
+    for point in points:
+        label = labels.get(point["id"])
+        if bare_as_mud and label == "bare_cannot_tell":
+            label = "mud"
+        if label not in ("mud", "not_mud"):
+            continue
+        weight = float(weights[(point["group"], point["order"])])
+        rule_mud = RULE_SAYS[point["group"]] == "mud"
+        used += 1
+        if rule_mud:
+            rule_mud_points += 1
+            rule_mud_area += weight
+            if label == "mud":
+                rule_mud_labelled += weight
+        if label == "mud":
+            labelled_points += 1
+            labelled_area += weight
+            if rule_mud:
+                labelled_rule_mud += weight
+    return {"points_used": used, "rule_mud_points": rule_mud_points, "labelled_mud_points": labelled_points,
+            "share_of_rule_mud_labelled_mud": None if rule_mud_area == 0 else round(rule_mud_labelled / rule_mud_area, 4),
+            "share_of_labelled_mud_the_rule_calls_mud": None if labelled_area == 0 else round(labelled_rule_mud / labelled_area, 4)}
+
+
+def bootstrap_share(points: Sequence[Mapping[str, Any]], labels: Mapping[str, str | None], weights: Mapping[tuple[str, str], float],
+                    *, draws: int = BOOTSTRAP_DRAWS, seed: int = BOOTSTRAP_SEED) -> dict[str, Any]:
+    """A 95 percent interval of ``share_of_rule_mud_labelled_mud``, reported beside the score and not used by the bar.
+
+    The points are drawn again with replacement inside each (group, order), as many as were drawn there; the weights stay.
+    """
+
+    strata: dict[tuple[str, str], list[Mapping[str, Any]]] = {}
+    for point in points:
+        strata.setdefault((point["group"], point["order"]), []).append(point)
+    rng = np.random.default_rng(seed)
+    values = []
+    for _ in range(draws):
+        sample: list[dict[str, Any]] = []
+        sample_labels: dict[str, str | None] = {}
+        for key in sorted(strata):
+            members = strata[key]
+            for index in rng.integers(0, len(members), len(members)):
+                member = members[int(index)]
+                copy_id = f"{member['id']}#{len(sample)}"
+                sample.append({**member, "id": copy_id})
+                sample_labels[copy_id] = labels.get(member["id"])
+        value = area_shares(sample, sample_labels, weights)["share_of_rule_mud_labelled_mud"]
+        if value is not None:
+            values.append(value)
+    if not values:
+        return {"low": None, "high": None, "draws": draws, "draws_with_a_value": 0, "seed": seed}
+    return {"low": round(float(np.percentile(values, 2.5)), 4), "high": round(float(np.percentile(values, 97.5)), 4),
+            "draws": draws, "draws_with_a_value": len(values), "seed": seed}
+
+
+def bar_sentence(share: float | None) -> str:
+    """The sentence of section 4.4 for the share of the area the rule calls mud that is labelled mud."""
+
+    return SENTENCE_BAR_MET if share is not None and share >= TEST_BAR - 1e-12 else SENTENCE_BAR_MISSED

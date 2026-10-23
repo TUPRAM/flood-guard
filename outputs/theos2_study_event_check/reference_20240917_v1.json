@@ -1,0 +1,325 @@
+{
+ "schema": "floodguard.theos2_study_event_reference.v2",
+ "generated_at_utc": "2026-10-19T14:41:11Z",
+ "source_timestamp": "THEOS-2 2024-09-17T03:54:20Z",
+ "confidence_class": "low",
+ "confidence_basis": "Sentinel-1 backscatter read by fixed rules and one frozen detector; no reading was checked on the ground.",
+ "operational_status": "non_operational",
+ "official_warning": false,
+ "can_feed_decision_layer": false,
+ "plan": {
+  "path": "docs/proposal_execution/theos2_study_event_check_plan_v1.md",
+  "sha256": "29ec9e1cfcf4a7f4ae09601bc6dfaa78139d6340e308e6cbcc54b958d19423fc"
+ },
+ "what_this_is": "The water of the THEOS-2 image of the study event, read from the image alone on the lattice of the district by rule v2 (amendment 1) with rule v1 beside it. No radar reading was opened.",
+ "radar_read": false,
+ "radar_freeze": {
+  "path": "outputs/theos2_study_event_check/radar_freeze_v1.json",
+  "sha256": "a4b789d249b6e9147cc57624b33915f474986fe5fa6ad9973cb12e04c4196a85"
+ },
+ "amendment": {
+  "path": "docs/proposal_execution/theos2_study_event_check_plan_v1_amendment_1.md",
+  "sha256": "c3df8d03b16920bccce32705f1f064783d9ed4e4e4cf033a5f890a67cf5b6fc2"
+ },
+ "delivery": {
+  "path": "outputs/theos2_delivery/delivery_20240917_v1.json",
+  "sha256": "1b750384b01bb9e6ed8598e442a1d57931106a52f4f484bfb26b89598ff1a664"
+ },
+ "scene": {
+  "key": "20240917",
+  "acquired_utc": "2024-09-17T03:54:20Z",
+  "products": [
+   {
+    "product": "T2_PRO_ISP202610140441460021_20261014044522534_2",
+    "image_sha256": "26b59ef96c9f97f001b74272eb95228afd48154780c4516b520444d77a55f374"
+   },
+   {
+    "product": "T2_PRO_ISP202610140441460823_20261014044522552_2",
+    "image_sha256": "f2a61db23c22a6b088eb7f8058d24d3045c529526ca6a10de5d9cfe8177c2f61"
+   },
+   {
+    "product": "T2_PRO_ISP202610140444280310_20261014045022337_2",
+    "image_sha256": "b2be1f43e356e7585ab9a3fa7c028d72afd6dda1756ab91f14a0e24c76e5a704"
+   },
+   {
+    "product": "T2_PRO_ISP202610140444290217_20261014045022328_2",
+    "image_sha256": "e582cbeb145eea6453682354b259f08defb6d78c30397a579bc51d5678fed814"
+   }
+  ]
+ },
+ "reference_rule": "rule_v2",
+ "rules": {
+  "rule_v2": "Near infrared at or below red (red-NIR index at or below -0.01), cloud set aside (floodguard.theos2_water_rule_v2, frozen on 11 October 2026).",
+  "rule_v1": "NDWI above the upper threshold of a three-class Otsu split computed on each delivered product; bright objects unobservable; water objects under 1,000 square metres dropped."
+ },
+ "products_read": [
+  {
+   "product": "T2_PRO_ISP202610140441460021_20261014044522534_2",
+   "order": "AWG_20261014_bc7a15",
+   "valid_pixels_2m": 9768254,
+   "red_percentile_99": 906.75,
+   "rule_v2": {
+    "configuration": {
+     "index_water_max": -0.01,
+     "index_cloud_min": -0.04,
+     "bright_brightness_min": 520.0,
+     "bright_nir_min": 560.0,
+     "cloud_min_width_px": 40,
+     "cloud_margin_px": 10
+    },
+    "pixels": 15324115,
+    "valid_pixels": 9768254,
+    "unobservable_cloud_pixels": 46550,
+    "observable_pixels": 9721704,
+    "water_pixels": 280353,
+    "water_pixels_inside_bright_objects": 0,
+    "pixels_that_disagree_with_an_earlier_product": 0
+   },
+   "rule_v1": {
+    "configuration": {
+     "ndwi_threshold": null,
+     "histogram_low": -0.6,
+     "histogram_high": 0.4,
+     "histogram_bins": 200,
+     "bright_brightness_min": 520.0,
+     "bright_nir_min": 560.0,
+     "bright_min_width_px": 11,
+     "bright_margin_px": 10,
+     "min_object_px": 250,
+     "unobservable_boxes": []
+    },
+    "ndwi_threshold_applied": -0.255,
+    "ndwi_threshold_source": "three_class_otsu_upper",
+    "ndwi_two_class_otsu": -0.32,
+    "ndwi_three_class_otsu": [
+     -0.395,
+     -0.255
+    ],
+    "pixels": 15324115,
+    "valid_pixels": 9768254,
+    "unobservable_bright_object_pixels": 301278,
+    "unobservable_boxed_pixels": 0,
+    "observable_pixels": 9466976,
+    "flagged_pixels_before_object_rule": 4066858,
+    "pixels_dropped_by_object_rule": 99715,
+    "water_pixels": 3967143,
+    "pixels_that_disagree_with_an_earlier_product": 0
+   }
+  },
+  {
+   "product": "T2_PRO_ISP202610140441460823_20261014044522552_2",
+   "order": "AWG_20261014_bc7a15",
+   "valid_pixels_2m": 18434774,
+   "red_percentile_99": 735.75,
+   "rule_v2": {
+    "configuration": {
+     "index_water_max": -0.01,
+     "index_cloud_min": -0.04,
+     "bright_brightness_min": 520.0,
+     "bright_nir_min": 560.0,
+     "cloud_min_width_px": 40,
+     "cloud_margin_px": 10
+    },
+    "pixels": 24203875,
+    "valid_pixels": 18434774,
+    "unobservable_cloud_pixels": 0,
+    "observable_pixels": 18434774,
+    "water_pixels": 222560,
+    "water_pixels_inside_bright_objects": 0,
+    "pixels_that_disagree_with_an_earlier_product": 6901
+   },
+   "rule_v1": {
+    "configuration": {
+     "ndwi_threshold": null,
+     "histogram_low": -0.6,
+     "histogram_high": 0.4,
+     "histogram_bins": 200,
+     "bright_brightness_min": 520.0,
+     "bright_nir_min": 560.0,
+     "bright_min_width_px": 11,
+     "bright_margin_px": 10,
+     "min_object_px": 250,
+     "unobservable_boxes": []
+    },
+    "ndwi_threshold_applied": -0.285,
+    "ndwi_threshold_source": "three_class_otsu_upper",
+    "ndwi_two_class_otsu": -0.34,
+    "ndwi_three_class_otsu": [
+     -0.415,
+     -0.285
+    ],
+    "pixels": 24203875,
+    "valid_pixels": 18434774,
+    "unobservable_bright_object_pixels": 171637,
+    "unobservable_boxed_pixels": 0,
+    "observable_pixels": 18263137,
+    "flagged_pixels_before_object_rule": 3843663,
+    "pixels_dropped_by_object_rule": 248302,
+    "water_pixels": 3595361,
+    "pixels_that_disagree_with_an_earlier_product": 69075
+   }
+  },
+  {
+   "product": "T2_PRO_ISP202610140444280310_20261014045022337_2",
+   "order": "AWG_20261014_417d92",
+   "valid_pixels_2m": 7871205,
+   "red_percentile_99": 810.9375,
+   "rule_v2": {
+    "configuration": {
+     "index_water_max": -0.01,
+     "index_cloud_min": -0.04,
+     "bright_brightness_min": 520.0,
+     "bright_nir_min": 560.0,
+     "cloud_min_width_px": 40,
+     "cloud_margin_px": 10
+    },
+    "pixels": 10060560,
+    "valid_pixels": 7871205,
+    "unobservable_cloud_pixels": 253233,
+    "observable_pixels": 7617972,
+    "water_pixels": 439934,
+    "water_pixels_inside_bright_objects": 4094,
+    "pixels_that_disagree_with_an_earlier_product": 14907
+   },
+   "rule_v1": {
+    "configuration": {
+     "ndwi_threshold": null,
+     "histogram_low": -0.6,
+     "histogram_high": 0.4,
+     "histogram_bins": 200,
+     "bright_brightness_min": 520.0,
+     "bright_nir_min": 560.0,
+     "bright_min_width_px": 11,
+     "bright_margin_px": 10,
+     "min_object_px": 250,
+     "unobservable_boxes": []
+    },
+    "ndwi_threshold_applied": -0.27,
+    "ndwi_threshold_source": "three_class_otsu_upper",
+    "ndwi_two_class_otsu": -0.345,
+    "ndwi_three_class_otsu": [
+     -0.42,
+     -0.27
+    ],
+    "pixels": 10060560,
+    "valid_pixels": 7871205,
+    "unobservable_bright_object_pixels": 452145,
+    "unobservable_boxed_pixels": 0,
+    "observable_pixels": 7419060,
+    "flagged_pixels_before_object_rule": 2586103,
+    "pixels_dropped_by_object_rule": 103971,
+    "water_pixels": 2482132,
+    "pixels_that_disagree_with_an_earlier_product": 123832
+   }
+  },
+  {
+   "product": "T2_PRO_ISP202610140444290217_20261014045022328_2",
+   "order": "AWG_20261014_417d92",
+   "valid_pixels_2m": 3571014,
+   "red_percentile_99": 797.0,
+   "rule_v2": {
+    "configuration": {
+     "index_water_max": -0.01,
+     "index_cloud_min": -0.04,
+     "bright_brightness_min": 520.0,
+     "bright_nir_min": 560.0,
+     "cloud_min_width_px": 40,
+     "cloud_margin_px": 10
+    },
+    "pixels": 4572540,
+    "valid_pixels": 3571014,
+    "unobservable_cloud_pixels": 0,
+    "observable_pixels": 3571014,
+    "water_pixels": 131774,
+    "water_pixels_inside_bright_objects": 0,
+    "pixels_that_disagree_with_an_earlier_product": 10881
+   },
+   "rule_v1": {
+    "configuration": {
+     "ndwi_threshold": null,
+     "histogram_low": -0.6,
+     "histogram_high": 0.4,
+     "histogram_bins": 200,
+     "bright_brightness_min": 520.0,
+     "bright_nir_min": 560.0,
+     "bright_min_width_px": 11,
+     "bright_margin_px": 10,
+     "min_object_px": 250,
+     "unobservable_boxes": []
+    },
+    "ndwi_threshold_applied": -0.275,
+    "ndwi_threshold_source": "three_class_otsu_upper",
+    "ndwi_two_class_otsu": -0.335,
+    "ndwi_three_class_otsu": [
+     -0.415,
+     -0.275
+    ],
+    "pixels": 4572540,
+    "valid_pixels": 3571014,
+    "unobservable_bright_object_pixels": 111780,
+    "unobservable_boxed_pixels": 0,
+    "observable_pixels": 3459234,
+    "flagged_pixels_before_object_rule": 993626,
+    "pixels_dropped_by_object_rule": 64832,
+    "water_pixels": 928794,
+    "pixels_that_disagree_with_an_earlier_product": 70006
+   }
+  }
+ ],
+ "grid_2m": {
+  "epsg": 32647,
+  "cell_m": 2.0,
+  "west": 587324.0,
+  "north": 2263608.0,
+  "columns": 7170,
+  "rows": 5526,
+  "overlap_rule": "Every product's upper-left corner lies on this grid; where products overlap, the first in the order of its product name is read."
+ },
+ "cells_10m_in_the_district": {
+  "rule_v2": {
+   "compared": 1048710,
+   "wet": 17808,
+   "compared_km2": 104.871,
+   "wet_km2": 1.781
+  },
+  "rule_v1": {
+   "compared": 1027997,
+   "wet": 274057,
+   "compared_km2": 102.8,
+   "wet_km2": 27.406
+  }
+ },
+ "looked_at": "Looked at by the agent on 19 October 2026, before any radar reading was opened: the whole mosaic in true colour beside each rule at about 6 m, four parts at about 2 m, and three squares of 300 m at 0.5 m in true and false colour (near infrared as red). The scene is dry: no open flood water is seen anywhere at these scales; the Sai River is brown and full, fields are green or bare, and light-brown deposits of sand and silt lie in the town and over fields, largest east of the clouds in the north-east corner. Rule v2 calls 1.8 km2 of the compared district water. Its real water is ponds and the reservoir in the south-west. Most of the rest is not water: bare fields in the south-east (near 597764 E, 2256408 N, pale green in false colour, no dark surface), the fresh deposit east of the clouds (near 600884 E, 2262168 N, 69 percent of the 300 m square called water, textured sand and silt with flow marks), and metal roofs and their shadows in town. It misses the brown river. Cloud is set aside, its thin edges and shadows are not. Rule v1 calls 27.4 km2 water: the whole town, the roads, the brown river and many fields.",
+ "set_aside_from_the_comparison": "Rule v2 fails on this scene in the way plan section 4 names: bare soil and fresh flood sediment read as water (south-east fields; the deposit east of the clouds in the north-east), and roofs in town. What it calls water is mostly not water, so it cannot serve as the water of the image for question 1. Set aside before any comparison, as amendment 1 says.",
+ "rule_v1_left_out": "Rule v1 fails too: it calls the town, the roads, the brown river and many fields water (27.4 km2).",
+ "rasters_outside_git": [
+  {
+   "name": "reference_20240917_10m.tif",
+   "sha256": "01053687a9dc23bbd67c95ea663e8931b9c2aad2d82fbbfa8132191ea3ec4b4d"
+  },
+  {
+   "name": "reference_20240917_water_2m.tif",
+   "sha256": "43c4d5d5d08412c6695f23eb3f1d92d69e1e23bfcb17bfefb649ac7a4d6229bb"
+  },
+  {
+   "name": "reference_20240917_water_2m_rule_v1.tif",
+   "sha256": "a725d04209454583da5a3886f9256f378358ff2b160749462946d3cdc7ac4811"
+  }
+ ],
+ "pictures_looked_at_outside_git": [
+  "reference_20240917_look_rule_v2.png",
+  "reference_20240917_look_rule_v1.png"
+ ],
+ "licence": "THEOS-2 imagery provided by GISTDA for GeoHackathon 2026. The imagery stays outside Git; derived figures are shared.",
+ "assumptions": [
+  "The radar readings are those of one Sentinel-1 pass, four to five days after the peak of the flood at Mae Sai.",
+  "The water of a THEOS-2 image is read by rule v2 (amendment 1), with rule v1 beside it, with no setting made by eye; it is not a check on the ground.",
+  "Cells of permanent water and cells outside the district are left out of every count."
+ ],
+ "limits": [
+  "One optical image, hours after the radar pass: water that came or went in between counts against the radar.",
+  "Radar cannot see water under roofs and trees; the counts by stratum say how much of the compared ground that is.",
+  "Report-only. No published class changes and nothing enters a planning score."
+ ],
+ "look_written_at_utc": "2026-10-19T14:43:11Z"
+}

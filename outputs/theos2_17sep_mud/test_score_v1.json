@@ -1,0 +1,1177 @@
+{
+ "schema": "floodguard.theos2_17sep_mud.test_score.v1",
+ "generated_at_utc": "2026-10-20T06:01:59Z",
+ "source_timestamp": "THEOS-2 2024-09-17T03:54:20Z; Sentinel-2 L2A 2024-09-15T03:58:15Z and 2024-09-05T03:58:19Z",
+ "confidence_class": "low",
+ "confidence_basis": "Three team members labelled 150 points alone from pictures of one optical image; nobody went to the ground.",
+ "operational_status": "non_operational",
+ "official_warning": false,
+ "can_feed_decision_layer": false,
+ "plan": {
+  "path": "docs/proposal_execution/theos2_17sep_recession_and_mud_plan_v1.md",
+  "sha256": "5d4aee69eff4a62b7f20e7d1c8fcac5184f50c2d0a5e5254097ae4c8816b57a8"
+ },
+ "what_this_is": "The test of the frozen mud rule (freeze_v2, mud_s4), scored once on the labels of three team members, as plan section 4.4 fixed before any test point was drawn.",
+ "test_points": {
+  "path": "outputs/theos2_17sep_mud/test_points_v1.json",
+  "sha256": "04f9722657f83c56c1b71b0dbd0f89a6686e394c7bdc508944cf16d634749f03"
+ },
+ "freeze": {
+  "path": "outputs/theos2_17sep_mud/freeze_v2.json",
+  "sha256": "7a741601782ac474b47521925c3813b76d7bc66d933c78d101837726e9bccbca"
+ },
+ "sample_id": "c6255ab69ec536203c55fcf9e748d566c96bfe93912f96f145829fa52605153d",
+ "labels_received": [
+  {
+   "labeller": "Putu",
+   "file": "test/labels/floodguard_mud_labels_putu.json",
+   "sha256": "bd8f058e1f143999a2b9c7e2c00d28ea68f74a780c429a2cfbbd6210c328c896",
+   "saved_at_utc": "2026-10-20T03:27:47Z",
+   "median_seconds_per_point": 1.4
+  },
+  {
+   "labeller": "callixta",
+   "file": "test/labels/floodguard_mud_labels_callixta.json",
+   "sha256": "1e2d5ee7e649853f2819a52965a6e8163ff351a7d225c390dd64a7861868e9db",
+   "saved_at_utc": "2026-10-20T05:48:45Z",
+   "median_seconds_per_point": 1.0
+  },
+  {
+   "labeller": "rachmania",
+   "file": "test/labels/floodguard_mud_labels_rachmania.json",
+   "sha256": "f3948e96da2a18a69df843d016de928b1f3ac5a7242a711ba21783829834d959",
+   "saved_at_utc": "2026-10-20T05:49:57Z",
+   "median_seconds_per_point": 1.6
+  }
+ ],
+ "rule_says_by_group": {
+  "mud_inside": "mud",
+  "mud_edge": "mud",
+  "near_mud": "not_mud",
+  "ground_far": "not_mud",
+  "unobservable": "unobservable"
+ },
+ "weights": "pixels of each (group, order) over the test points drawn in it, as in the development score",
+ "scored_on": "the label at least two of the three gave; a point where all three differ is left out, as are 'cannot tell' and, in 'labels_of_the_plan', 'bare, cannot tell'",
+ "bar": {
+  "value": 0.6,
+  "on": "share_of_rule_mud_labelled_mud, labels_of_the_plan",
+  "share": 0.8792,
+  "met": true
+ },
+ "sentence": "Of the area the frozen rule calls mud, the share three team members label mud is at or above the bar of 0.60: the mud raster is used as a map for section 4.5.",
+ "result": {
+  "labels_of_the_plan": {
+   "points_used": 137,
+   "rule_mud_points": 73,
+   "labelled_mud_points": 78,
+   "share_of_rule_mud_labelled_mud": 0.8792,
+   "share_of_labelled_mud_the_rule_calls_mud": 0.6447
+  },
+  "bare_counted_as_mud": {
+   "points_used": 140,
+   "rule_mud_points": 74,
+   "labelled_mud_points": 81,
+   "share_of_rule_mud_labelled_mud": 0.8799,
+   "share_of_labelled_mud_the_rule_calls_mud": 0.5804
+  }
+ },
+ "interval_95_of_the_bar_share": {
+  "low": 0.7577,
+  "high": 0.9958,
+  "draws": 2000,
+  "draws_with_a_value": 2000,
+  "seed": 20261022,
+  "how": "points drawn again with replacement inside each (group, order); beside the score, not used by the bar"
+ },
+ "beside_not_binding": {
+  "by_order": {
+   "AWG_20261014_bc7a15 (town box)": {
+    "labels_of_the_plan": {
+     "points_used": 72,
+     "rule_mud_points": 38,
+     "labelled_mud_points": 39,
+     "share_of_rule_mud_labelled_mud": 0.8221,
+     "share_of_labelled_mud_the_rule_calls_mud": 0.6235
+    },
+    "bare_counted_as_mud": {
+     "points_used": 72,
+     "rule_mud_points": 38,
+     "labelled_mud_points": 39,
+     "share_of_rule_mud_labelled_mud": 0.8221,
+     "share_of_labelled_mud_the_rule_calls_mud": 0.6235
+    }
+   },
+   "AWG_20261014_417d92 (west edge of the Ko Chang box)": {
+    "labels_of_the_plan": {
+     "points_used": 65,
+     "rule_mud_points": 35,
+     "labelled_mud_points": 39,
+     "share_of_rule_mud_labelled_mud": 1.0,
+     "share_of_labelled_mud_the_rule_calls_mud": 0.6853
+    },
+    "bare_counted_as_mud": {
+     "points_used": 68,
+     "rule_mud_points": 36,
+     "labelled_mud_points": 42,
+     "share_of_rule_mud_labelled_mud": 1.0,
+     "share_of_labelled_mud_the_rule_calls_mud": 0.5191
+    }
+   }
+  },
+  "each_labeller": {
+   "Putu": {
+    "labels_of_the_plan": {
+     "points_used": 138,
+     "rule_mud_points": 69,
+     "labelled_mud_points": 63,
+     "share_of_rule_mud_labelled_mud": 0.7149,
+     "share_of_labelled_mud_the_rule_calls_mud": 0.4763
+    },
+    "bare_counted_as_mud": {
+     "points_used": 148,
+     "rule_mud_points": 74,
+     "labelled_mud_points": 73,
+     "share_of_rule_mud_labelled_mud": 0.7274,
+     "share_of_labelled_mud_the_rule_calls_mud": 0.2544
+    }
+   },
+   "callixta": {
+    "labels_of_the_plan": {
+     "points_used": 141,
+     "rule_mud_points": 73,
+     "labelled_mud_points": 86,
+     "share_of_rule_mud_labelled_mud": 0.9181,
+     "share_of_labelled_mud_the_rule_calls_mud": 0.291
+    },
+    "bare_counted_as_mud": {
+     "points_used": 145,
+     "rule_mud_points": 74,
+     "labelled_mud_points": 90,
+     "share_of_rule_mud_labelled_mud": 0.9185,
+     "share_of_labelled_mud_the_rule_calls_mud": 0.2556
+    }
+   },
+   "rachmania": {
+    "labels_of_the_plan": {
+     "points_used": 130,
+     "rule_mud_points": 71,
+     "labelled_mud_points": 73,
+     "share_of_rule_mud_labelled_mud": 0.8694,
+     "share_of_labelled_mud_the_rule_calls_mud": 0.7041
+    },
+    "bare_counted_as_mud": {
+     "points_used": 144,
+     "rule_mud_points": 73,
+     "labelled_mud_points": 87,
+     "share_of_rule_mud_labelled_mud": 0.875,
+     "share_of_labelled_mud_the_rule_calls_mud": 0.2264
+    }
+   }
+  },
+  "each_pair": {
+   "Putu + callixta": {
+    "labels_of_the_plan": {
+     "points_used": 111,
+     "rule_mud_points": 56,
+     "labelled_mud_points": 61,
+     "share_of_rule_mud_labelled_mud": 0.8945,
+     "share_of_labelled_mud_the_rule_calls_mud": 0.6361
+    },
+    "bare_counted_as_mud": {
+     "points_used": 112,
+     "rule_mud_points": 57,
+     "labelled_mud_points": 62,
+     "share_of_rule_mud_labelled_mud": 0.8953,
+     "share_of_labelled_mud_the_rule_calls_mud": 0.638
+    }
+   },
+   "Putu + rachmania": {
+    "labels_of_the_plan": {
+     "points_used": 107,
+     "rule_mud_points": 53,
+     "labelled_mud_points": 56,
+     "share_of_rule_mud_labelled_mud": 0.8877,
+     "share_of_labelled_mud_the_rule_calls_mud": 0.7115
+    },
+    "bare_counted_as_mud": {
+     "points_used": 108,
+     "rule_mud_points": 53,
+     "labelled_mud_points": 57,
+     "share_of_rule_mud_labelled_mud": 0.8877,
+     "share_of_labelled_mud_the_rule_calls_mud": 0.6195
+    }
+   },
+   "callixta + rachmania": {
+    "labels_of_the_plan": {
+     "points_used": 121,
+     "rule_mud_points": 68,
+     "labelled_mud_points": 73,
+     "share_of_rule_mud_labelled_mud": 0.9508,
+     "share_of_labelled_mud_the_rule_calls_mud": 0.7041
+    },
+    "bare_counted_as_mud": {
+     "points_used": 122,
+     "rule_mud_points": 68,
+     "labelled_mud_points": 74,
+     "share_of_rule_mud_labelled_mud": 0.9508,
+     "share_of_labelled_mud_the_rule_calls_mud": 0.6923
+    }
+   }
+  }
+ },
+ "agreement": {
+  "all_three_agree": 101,
+  "two_of_three_agree": 44,
+  "all_three_differ": 5,
+  "pairs_agree": {
+   "Putu + callixta": 112,
+   "Putu + rachmania": 109,
+   "callixta + rachmania": 126
+  },
+  "points": 150
+ },
+ "label_counts": {
+  "two_of_three": {
+   "mud": 78,
+   "bare_cannot_tell": 3,
+   "not_mud": 59,
+   "None": 5,
+   "cannot_tell": 5
+  },
+  "Putu": {
+   "mud": 63,
+   "not_mud": 75,
+   "cannot_tell": 2,
+   "bare_cannot_tell": 10
+  },
+  "callixta": {
+   "mud": 86,
+   "bare_cannot_tell": 4,
+   "not_mud": 55,
+   "cannot_tell": 5
+  },
+  "rachmania": {
+   "mud": 73,
+   "bare_cannot_tell": 14,
+   "not_mud": 57,
+   "cannot_tell": 6
+  }
+ },
+ "labels_by_point": {
+  "t001": {
+   "Putu": "mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t002": {
+   "Putu": "not_mud",
+   "callixta": "bare_cannot_tell",
+   "rachmania": "bare_cannot_tell",
+   "two_of_three": "bare_cannot_tell"
+  },
+  "t003": {
+   "Putu": "not_mud",
+   "callixta": "not_mud",
+   "rachmania": "not_mud",
+   "two_of_three": "not_mud"
+  },
+  "t004": {
+   "Putu": "mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t005": {
+   "Putu": "not_mud",
+   "callixta": "not_mud",
+   "rachmania": "not_mud",
+   "two_of_three": "not_mud"
+  },
+  "t006": {
+   "Putu": "not_mud",
+   "callixta": "not_mud",
+   "rachmania": "bare_cannot_tell",
+   "two_of_three": "not_mud"
+  },
+  "t007": {
+   "Putu": "mud",
+   "callixta": "not_mud",
+   "rachmania": "not_mud",
+   "two_of_three": "not_mud"
+  },
+  "t008": {
+   "Putu": "not_mud",
+   "callixta": "not_mud",
+   "rachmania": "bare_cannot_tell",
+   "two_of_three": "not_mud"
+  },
+  "t009": {
+   "Putu": "not_mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t010": {
+   "Putu": "not_mud",
+   "callixta": "not_mud",
+   "rachmania": "bare_cannot_tell",
+   "two_of_three": "not_mud"
+  },
+  "t011": {
+   "Putu": "mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t012": {
+   "Putu": "cannot_tell",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t013": {
+   "Putu": "not_mud",
+   "callixta": "mud",
+   "rachmania": "bare_cannot_tell",
+   "two_of_three": null
+  },
+  "t014": {
+   "Putu": "mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t015": {
+   "Putu": "not_mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t016": {
+   "Putu": "not_mud",
+   "callixta": "not_mud",
+   "rachmania": "bare_cannot_tell",
+   "two_of_three": "not_mud"
+  },
+  "t017": {
+   "Putu": "not_mud",
+   "callixta": "not_mud",
+   "rachmania": "not_mud",
+   "two_of_three": "not_mud"
+  },
+  "t018": {
+   "Putu": "cannot_tell",
+   "callixta": "bare_cannot_tell",
+   "rachmania": "cannot_tell",
+   "two_of_three": "cannot_tell"
+  },
+  "t019": {
+   "Putu": "mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t020": {
+   "Putu": "mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t021": {
+   "Putu": "mud",
+   "callixta": "not_mud",
+   "rachmania": "bare_cannot_tell",
+   "two_of_three": null
+  },
+  "t022": {
+   "Putu": "mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t023": {
+   "Putu": "not_mud",
+   "callixta": "not_mud",
+   "rachmania": "not_mud",
+   "two_of_three": "not_mud"
+  },
+  "t024": {
+   "Putu": "bare_cannot_tell",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t025": {
+   "Putu": "mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t026": {
+   "Putu": "not_mud",
+   "callixta": "not_mud",
+   "rachmania": "not_mud",
+   "two_of_three": "not_mud"
+  },
+  "t027": {
+   "Putu": "mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t028": {
+   "Putu": "mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t029": {
+   "Putu": "mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t030": {
+   "Putu": "not_mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t031": {
+   "Putu": "bare_cannot_tell",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t032": {
+   "Putu": "not_mud",
+   "callixta": "not_mud",
+   "rachmania": "not_mud",
+   "two_of_three": "not_mud"
+  },
+  "t033": {
+   "Putu": "mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t034": {
+   "Putu": "not_mud",
+   "callixta": "not_mud",
+   "rachmania": "not_mud",
+   "two_of_three": "not_mud"
+  },
+  "t035": {
+   "Putu": "mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t036": {
+   "Putu": "mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t037": {
+   "Putu": "mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t038": {
+   "Putu": "bare_cannot_tell",
+   "callixta": "not_mud",
+   "rachmania": "not_mud",
+   "two_of_three": "not_mud"
+  },
+  "t039": {
+   "Putu": "mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t040": {
+   "Putu": "not_mud",
+   "callixta": "not_mud",
+   "rachmania": "not_mud",
+   "two_of_three": "not_mud"
+  },
+  "t041": {
+   "Putu": "mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t042": {
+   "Putu": "mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t043": {
+   "Putu": "not_mud",
+   "callixta": "mud",
+   "rachmania": "not_mud",
+   "two_of_three": "not_mud"
+  },
+  "t044": {
+   "Putu": "not_mud",
+   "callixta": "mud",
+   "rachmania": "not_mud",
+   "two_of_three": "not_mud"
+  },
+  "t045": {
+   "Putu": "bare_cannot_tell",
+   "callixta": "bare_cannot_tell",
+   "rachmania": "cannot_tell",
+   "two_of_three": "bare_cannot_tell"
+  },
+  "t046": {
+   "Putu": "mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t047": {
+   "Putu": "not_mud",
+   "callixta": "not_mud",
+   "rachmania": "not_mud",
+   "two_of_three": "not_mud"
+  },
+  "t048": {
+   "Putu": "mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t049": {
+   "Putu": "not_mud",
+   "callixta": "not_mud",
+   "rachmania": "bare_cannot_tell",
+   "two_of_three": "not_mud"
+  },
+  "t050": {
+   "Putu": "not_mud",
+   "callixta": "not_mud",
+   "rachmania": "not_mud",
+   "two_of_three": "not_mud"
+  },
+  "t051": {
+   "Putu": "not_mud",
+   "callixta": "mud",
+   "rachmania": "bare_cannot_tell",
+   "two_of_three": null
+  },
+  "t052": {
+   "Putu": "not_mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t053": {
+   "Putu": "mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t054": {
+   "Putu": "not_mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t055": {
+   "Putu": "not_mud",
+   "callixta": "not_mud",
+   "rachmania": "not_mud",
+   "two_of_three": "not_mud"
+  },
+  "t056": {
+   "Putu": "not_mud",
+   "callixta": "not_mud",
+   "rachmania": "not_mud",
+   "two_of_three": "not_mud"
+  },
+  "t057": {
+   "Putu": "not_mud",
+   "callixta": "not_mud",
+   "rachmania": "not_mud",
+   "two_of_three": "not_mud"
+  },
+  "t058": {
+   "Putu": "not_mud",
+   "callixta": "not_mud",
+   "rachmania": "not_mud",
+   "two_of_three": "not_mud"
+  },
+  "t059": {
+   "Putu": "not_mud",
+   "callixta": "not_mud",
+   "rachmania": "not_mud",
+   "two_of_three": "not_mud"
+  },
+  "t060": {
+   "Putu": "bare_cannot_tell",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t061": {
+   "Putu": "not_mud",
+   "callixta": "not_mud",
+   "rachmania": "not_mud",
+   "two_of_three": "not_mud"
+  },
+  "t062": {
+   "Putu": "not_mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t063": {
+   "Putu": "not_mud",
+   "callixta": "mud",
+   "rachmania": "not_mud",
+   "two_of_three": "not_mud"
+  },
+  "t064": {
+   "Putu": "not_mud",
+   "callixta": "not_mud",
+   "rachmania": "not_mud",
+   "two_of_three": "not_mud"
+  },
+  "t065": {
+   "Putu": "not_mud",
+   "callixta": "not_mud",
+   "rachmania": "not_mud",
+   "two_of_three": "not_mud"
+  },
+  "t066": {
+   "Putu": "not_mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t067": {
+   "Putu": "mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t068": {
+   "Putu": "not_mud",
+   "callixta": "not_mud",
+   "rachmania": "not_mud",
+   "two_of_three": "not_mud"
+  },
+  "t069": {
+   "Putu": "not_mud",
+   "callixta": "not_mud",
+   "rachmania": "not_mud",
+   "two_of_three": "not_mud"
+  },
+  "t070": {
+   "Putu": "not_mud",
+   "callixta": "cannot_tell",
+   "rachmania": "cannot_tell",
+   "two_of_three": "cannot_tell"
+  },
+  "t071": {
+   "Putu": "not_mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t072": {
+   "Putu": "not_mud",
+   "callixta": "not_mud",
+   "rachmania": "not_mud",
+   "two_of_three": "not_mud"
+  },
+  "t073": {
+   "Putu": "not_mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t074": {
+   "Putu": "not_mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t075": {
+   "Putu": "mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t076": {
+   "Putu": "not_mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t077": {
+   "Putu": "mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t078": {
+   "Putu": "not_mud",
+   "callixta": "not_mud",
+   "rachmania": "not_mud",
+   "two_of_three": "not_mud"
+  },
+  "t079": {
+   "Putu": "mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t080": {
+   "Putu": "mud",
+   "callixta": "mud",
+   "rachmania": "bare_cannot_tell",
+   "two_of_three": "mud"
+  },
+  "t081": {
+   "Putu": "not_mud",
+   "callixta": "not_mud",
+   "rachmania": "not_mud",
+   "two_of_three": "not_mud"
+  },
+  "t082": {
+   "Putu": "not_mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t083": {
+   "Putu": "not_mud",
+   "callixta": "not_mud",
+   "rachmania": "not_mud",
+   "two_of_three": "not_mud"
+  },
+  "t084": {
+   "Putu": "not_mud",
+   "callixta": "not_mud",
+   "rachmania": "not_mud",
+   "two_of_three": "not_mud"
+  },
+  "t085": {
+   "Putu": "not_mud",
+   "callixta": "not_mud",
+   "rachmania": "not_mud",
+   "two_of_three": "not_mud"
+  },
+  "t086": {
+   "Putu": "mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t087": {
+   "Putu": "not_mud",
+   "callixta": "mud",
+   "rachmania": "bare_cannot_tell",
+   "two_of_three": null
+  },
+  "t088": {
+   "Putu": "not_mud",
+   "callixta": "not_mud",
+   "rachmania": "not_mud",
+   "two_of_three": "not_mud"
+  },
+  "t089": {
+   "Putu": "not_mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t090": {
+   "Putu": "mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t091": {
+   "Putu": "mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t092": {
+   "Putu": "not_mud",
+   "callixta": "not_mud",
+   "rachmania": "not_mud",
+   "two_of_three": "not_mud"
+  },
+  "t093": {
+   "Putu": "mud",
+   "callixta": "mud",
+   "rachmania": "not_mud",
+   "two_of_three": "mud"
+  },
+  "t094": {
+   "Putu": "mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t095": {
+   "Putu": "mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t096": {
+   "Putu": "not_mud",
+   "callixta": "not_mud",
+   "rachmania": "not_mud",
+   "two_of_three": "not_mud"
+  },
+  "t097": {
+   "Putu": "mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t098": {
+   "Putu": "mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t099": {
+   "Putu": "mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t100": {
+   "Putu": "not_mud",
+   "callixta": "not_mud",
+   "rachmania": "not_mud",
+   "two_of_three": "not_mud"
+  },
+  "t101": {
+   "Putu": "not_mud",
+   "callixta": "not_mud",
+   "rachmania": "not_mud",
+   "two_of_three": "not_mud"
+  },
+  "t102": {
+   "Putu": "not_mud",
+   "callixta": "not_mud",
+   "rachmania": "not_mud",
+   "two_of_three": "not_mud"
+  },
+  "t103": {
+   "Putu": "mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t104": {
+   "Putu": "not_mud",
+   "callixta": "not_mud",
+   "rachmania": "not_mud",
+   "two_of_three": "not_mud"
+  },
+  "t105": {
+   "Putu": "mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t106": {
+   "Putu": "mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t107": {
+   "Putu": "not_mud",
+   "callixta": "mud",
+   "rachmania": "not_mud",
+   "two_of_three": "not_mud"
+  },
+  "t108": {
+   "Putu": "mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t109": {
+   "Putu": "mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t110": {
+   "Putu": "mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t111": {
+   "Putu": "mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t112": {
+   "Putu": "not_mud",
+   "callixta": "not_mud",
+   "rachmania": "not_mud",
+   "two_of_three": "not_mud"
+  },
+  "t113": {
+   "Putu": "not_mud",
+   "callixta": "mud",
+   "rachmania": "bare_cannot_tell",
+   "two_of_three": null
+  },
+  "t114": {
+   "Putu": "not_mud",
+   "callixta": "not_mud",
+   "rachmania": "not_mud",
+   "two_of_three": "not_mud"
+  },
+  "t115": {
+   "Putu": "not_mud",
+   "callixta": "not_mud",
+   "rachmania": "not_mud",
+   "two_of_three": "not_mud"
+  },
+  "t116": {
+   "Putu": "mud",
+   "callixta": "mud",
+   "rachmania": "not_mud",
+   "two_of_three": "mud"
+  },
+  "t117": {
+   "Putu": "mud",
+   "callixta": "mud",
+   "rachmania": "not_mud",
+   "two_of_three": "mud"
+  },
+  "t118": {
+   "Putu": "mud",
+   "callixta": "mud",
+   "rachmania": "bare_cannot_tell",
+   "two_of_three": "mud"
+  },
+  "t119": {
+   "Putu": "mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t120": {
+   "Putu": "not_mud",
+   "callixta": "not_mud",
+   "rachmania": "not_mud",
+   "two_of_three": "not_mud"
+  },
+  "t121": {
+   "Putu": "mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t122": {
+   "Putu": "not_mud",
+   "callixta": "not_mud",
+   "rachmania": "not_mud",
+   "two_of_three": "not_mud"
+  },
+  "t123": {
+   "Putu": "bare_cannot_tell",
+   "callixta": "cannot_tell",
+   "rachmania": "cannot_tell",
+   "two_of_three": "cannot_tell"
+  },
+  "t124": {
+   "Putu": "bare_cannot_tell",
+   "callixta": "not_mud",
+   "rachmania": "not_mud",
+   "two_of_three": "not_mud"
+  },
+  "t125": {
+   "Putu": "mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t126": {
+   "Putu": "bare_cannot_tell",
+   "callixta": "cannot_tell",
+   "rachmania": "cannot_tell",
+   "two_of_three": "cannot_tell"
+  },
+  "t127": {
+   "Putu": "bare_cannot_tell",
+   "callixta": "cannot_tell",
+   "rachmania": "cannot_tell",
+   "two_of_three": "cannot_tell"
+  },
+  "t128": {
+   "Putu": "not_mud",
+   "callixta": "not_mud",
+   "rachmania": "not_mud",
+   "two_of_three": "not_mud"
+  },
+  "t129": {
+   "Putu": "mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t130": {
+   "Putu": "not_mud",
+   "callixta": "not_mud",
+   "rachmania": "not_mud",
+   "two_of_three": "not_mud"
+  },
+  "t131": {
+   "Putu": "mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t132": {
+   "Putu": "mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t133": {
+   "Putu": "mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t134": {
+   "Putu": "mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t135": {
+   "Putu": "not_mud",
+   "callixta": "cannot_tell",
+   "rachmania": "not_mud",
+   "two_of_three": "not_mud"
+  },
+  "t136": {
+   "Putu": "mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t137": {
+   "Putu": "not_mud",
+   "callixta": "not_mud",
+   "rachmania": "not_mud",
+   "two_of_three": "not_mud"
+  },
+  "t138": {
+   "Putu": "not_mud",
+   "callixta": "not_mud",
+   "rachmania": "not_mud",
+   "two_of_three": "not_mud"
+  },
+  "t139": {
+   "Putu": "mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t140": {
+   "Putu": "mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t141": {
+   "Putu": "mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t142": {
+   "Putu": "mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t143": {
+   "Putu": "mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t144": {
+   "Putu": "mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t145": {
+   "Putu": "mud",
+   "callixta": "mud",
+   "rachmania": "mud",
+   "two_of_three": "mud"
+  },
+  "t146": {
+   "Putu": "not_mud",
+   "callixta": "not_mud",
+   "rachmania": "not_mud",
+   "two_of_three": "not_mud"
+  },
+  "t147": {
+   "Putu": "not_mud",
+   "callixta": "bare_cannot_tell",
+   "rachmania": "not_mud",
+   "two_of_three": "not_mud"
+  },
+  "t148": {
+   "Putu": "not_mud",
+   "callixta": "not_mud",
+   "rachmania": "not_mud",
+   "two_of_three": "not_mud"
+  },
+  "t149": {
+   "Putu": "bare_cannot_tell",
+   "callixta": "not_mud",
+   "rachmania": "bare_cannot_tell",
+   "two_of_three": "bare_cannot_tell"
+  },
+  "t150": {
+   "Putu": "not_mud",
+   "callixta": "not_mud",
+   "rachmania": "not_mud",
+   "two_of_three": "not_mud"
+  }
+ },
+ "next": "Section 4.5, once, with the mud raster as a map.",
+ "key_stays_outside_git": true,
+ "assumptions": [
+  "Mud is a 2 m square more than half covered by a fresh deposit of the flood, read from one image; it is not a ground survey.",
+  "The counts of the image are put on the scale of Sentinel-2 surface reflectance by one Theil-Sen line per band, fitted on the scene of two days earlier.",
+  "Roofs are the Google Open Buildings v3 and Microsoft outlines widened by 1 m; a roof missing from them can read as mud."
+ ],
+ "limits": [
+  "One image, about five days after the peak: mud cleared before it is not seen, and no mud never means a place stayed dry.",
+  "Report-only. No published class changes and nothing enters a planning score.",
+  "Three team members labelled each point alone from three pictures of the image; nobody went to the ground.",
+  "A test point stands for the pixels of the group it was drawn in; the shares are shares of that area, not of the district.",
+  "Mud on a road says the water reached it; no mud never says a place stayed dry or a road stayed passable."
+ ]
+}

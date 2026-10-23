@@ -1,0 +1,421 @@
+{
+  "schema": "floodguard.theos2_17sep_review.v1",
+  "generated_at_utc": "2026-10-23T11:33:45.236872Z",
+  "source_timestamp": "THEOS-2 2024-09-17T03:54:20Z",
+  "confidence_class": "low",
+  "confidence_basis": "One image and team labels of pictures; verification of retained evidence is not field validation.",
+  "operational_status": "non_operational",
+  "official_warning": false,
+  "can_feed_decision_layer": false,
+  "analysis_source_commit": "7dc50d6bc8e64e005bc0d4357103f22520ae4c71",
+  "analysis_source_tree": "b97f77cbfb10b6052ec93091de9cd3e29867c8d9",
+  "analysis_stages_rerun": false,
+  "source_imagery_decoded_in_review": false,
+  "programme_complete": false,
+  "questions": {
+    "Q1": {
+      "status": "NOT_RUN_EXCLUDED",
+      "reason": "Rule v2 fails on this scene in the way plan section 4 names: bare soil and fresh flood sediment read as water (south-east fields; the deposit east of the clouds in the north-east), and roofs in town. What it calls water is mostly not water, so it cannot serve as the water of the image for question 1. Set aside before any comparison, as amendment 1 says."
+    },
+    "Q2": {
+      "status": "NOT_RUN_EXCLUDED",
+      "reason": "Same failed water reference; sediment on a road would be called water."
+    },
+    "Q3": {
+      "status": "BLOCKED_NOT_RUN",
+      "water_area_km2": null,
+      "contradicts_recession": null,
+      "threshold_km2": 0.25,
+      "authority": "docs/decision-log-d1-d16.md R56",
+      "reason": "Rejected water reference; separate prospective Q3 amendment required before any Q3 figure.",
+      "q4_amendment_does_not_unblock_q3": true
+    },
+    "Q4": {
+      "status": "COMPLETED_EXISTING_RESULTS_VERIFIED",
+      "rule": "mud_s4",
+      "test": {
+        "labels_of_the_plan": {
+          "points_used": 137,
+          "rule_mud_points": 73,
+          "labelled_mud_points": 78,
+          "share_of_rule_mud_labelled_mud": 0.8792,
+          "share_of_labelled_mud_the_rule_calls_mud": 0.6447
+        },
+        "bare_counted_as_mud": {
+          "points_used": 140,
+          "rule_mud_points": 74,
+          "labelled_mud_points": 81,
+          "share_of_rule_mud_labelled_mud": 0.8799,
+          "share_of_labelled_mud_the_rule_calls_mud": 0.5804
+        }
+      },
+      "bar": {
+        "value": 0.6,
+        "on": "share_of_rule_mud_labelled_mud, labels_of_the_plan",
+        "share": 0.8792,
+        "met": true
+      },
+      "section_4_5": "roads, replay peak, case SE1 and buildings complete in original receipt"
+    }
+  },
+  "order_exception": "R56 suspended Q3 after reference failure; separately authorized Q4 proceeded. Original Q3-before-Q4 sequence was not completed.",
+  "repository_hash_bindings": {
+    "checks": 30,
+    "status": "PASS",
+    "bindings": [
+      {
+        "record": "outputs/theos2_study_event_check/radar_freeze_v1.json",
+        "field": "plan",
+        "path": "docs/proposal_execution/theos2_study_event_check_plan_v1.md",
+        "sha256": "29ec9e1cfcf4a7f4ae09601bc6dfaa78139d6340e308e6cbcc54b958d19423fc",
+        "status": "PASS"
+      },
+      {
+        "record": "outputs/theos2_study_event_check/reference_20240917_v1.json",
+        "field": "plan",
+        "path": "docs/proposal_execution/theos2_study_event_check_plan_v1.md",
+        "sha256": "29ec9e1cfcf4a7f4ae09601bc6dfaa78139d6340e308e6cbcc54b958d19423fc",
+        "status": "PASS"
+      },
+      {
+        "record": "outputs/theos2_study_event_check/reference_20240917_v1.json",
+        "field": "radar_freeze",
+        "path": "outputs/theos2_study_event_check/radar_freeze_v1.json",
+        "sha256": "a4b789d249b6e9147cc57624b33915f474986fe5fa6ad9973cb12e04c4196a85",
+        "status": "PASS"
+      },
+      {
+        "record": "outputs/theos2_study_event_check/reference_20240917_v1.json",
+        "field": "amendment",
+        "path": "docs/proposal_execution/theos2_study_event_check_plan_v1_amendment_1.md",
+        "sha256": "c3df8d03b16920bccce32705f1f064783d9ed4e4e4cf033a5f890a67cf5b6fc2",
+        "status": "PASS"
+      },
+      {
+        "record": "outputs/theos2_study_event_check/reference_20240917_v1.json",
+        "field": "delivery",
+        "path": "outputs/theos2_delivery/delivery_20240917_v1.json",
+        "sha256": "1b750384b01bb9e6ed8598e442a1d57931106a52f4f484bfb26b89598ff1a664",
+        "status": "PASS"
+      },
+      {
+        "record": "outputs/theos2_17sep_mud/development_points_v1.json",
+        "field": "plan",
+        "path": "docs/proposal_execution/theos2_17sep_recession_and_mud_plan_v1.md",
+        "sha256": "5d4aee69eff4a62b7f20e7d1c8fcac5184f50c2d0a5e5254097ae4c8816b57a8",
+        "status": "PASS"
+      },
+      {
+        "record": "outputs/theos2_17sep_mud/development_points_v1.json",
+        "field": "reference",
+        "path": "outputs/theos2_study_event_check/reference_20240917_v1.json",
+        "sha256": "dd787374bf2239d166d2fa856d7e0e4da9d51d57cb0f0e0c18785d1a260adcc7",
+        "status": "PASS"
+      },
+      {
+        "record": "outputs/theos2_17sep_mud/development_points_v1.json",
+        "field": "delivery",
+        "path": "outputs/theos2_delivery/delivery_20240917_v1.json",
+        "sha256": "1b750384b01bb9e6ed8598e442a1d57931106a52f4f484bfb26b89598ff1a664",
+        "status": "PASS"
+      },
+      {
+        "record": "outputs/theos2_17sep_mud/freeze_v1.json",
+        "field": "plan",
+        "path": "docs/proposal_execution/theos2_17sep_recession_and_mud_plan_v1.md",
+        "sha256": "5d4aee69eff4a62b7f20e7d1c8fcac5184f50c2d0a5e5254097ae4c8816b57a8",
+        "status": "PASS"
+      },
+      {
+        "record": "outputs/theos2_17sep_mud/freeze_v1.json",
+        "field": "points_record",
+        "path": "outputs/theos2_17sep_mud/development_points_v1.json",
+        "sha256": "63f815344714ce935209821ccbb99c06799e970a22da2735cccd4b4121d42075",
+        "status": "PASS"
+      },
+      {
+        "record": "outputs/theos2_17sep_mud/development_points_v2.json",
+        "field": "plan",
+        "path": "docs/proposal_execution/theos2_17sep_recession_and_mud_plan_v1.md",
+        "sha256": "5d4aee69eff4a62b7f20e7d1c8fcac5184f50c2d0a5e5254097ae4c8816b57a8",
+        "status": "PASS"
+      },
+      {
+        "record": "outputs/theos2_17sep_mud/development_points_v2.json",
+        "field": "amendment",
+        "path": "docs/proposal_execution/theos2_17sep_recession_and_mud_plan_v1_amendment_1.md",
+        "sha256": "c7bc2f0e31e54a1836c23d2c0f3080572cf3186c36765a7de7f4f93c3cd5ecf1",
+        "status": "PASS"
+      },
+      {
+        "record": "outputs/theos2_17sep_mud/development_points_v2.json",
+        "field": "points_v1",
+        "path": "outputs/theos2_17sep_mud/development_points_v1.json",
+        "sha256": "63f815344714ce935209821ccbb99c06799e970a22da2735cccd4b4121d42075",
+        "status": "PASS"
+      },
+      {
+        "record": "outputs/theos2_17sep_mud/development_points_v2.json",
+        "field": "freeze_v1",
+        "path": "outputs/theos2_17sep_mud/freeze_v1.json",
+        "sha256": "ce8ab042f7add57cdd6d43d2d60a1656bb897585e9b91f2a26683f0c170c609f",
+        "status": "PASS"
+      },
+      {
+        "record": "outputs/theos2_17sep_mud/freeze_v2.json",
+        "field": "plan",
+        "path": "docs/proposal_execution/theos2_17sep_recession_and_mud_plan_v1.md",
+        "sha256": "5d4aee69eff4a62b7f20e7d1c8fcac5184f50c2d0a5e5254097ae4c8816b57a8",
+        "status": "PASS"
+      },
+      {
+        "record": "outputs/theos2_17sep_mud/freeze_v2.json",
+        "field": "amendment",
+        "path": "docs/proposal_execution/theos2_17sep_recession_and_mud_plan_v1_amendment_1.md",
+        "sha256": "c7bc2f0e31e54a1836c23d2c0f3080572cf3186c36765a7de7f4f93c3cd5ecf1",
+        "status": "PASS"
+      },
+      {
+        "record": "outputs/theos2_17sep_mud/freeze_v2.json",
+        "field": "points_record",
+        "path": "outputs/theos2_17sep_mud/development_points_v2.json",
+        "sha256": "d8bee08344c24c25b7f60ea2f17af1467867d3cc7807d89c62f00452545ec9f2",
+        "status": "PASS"
+      },
+      {
+        "record": "outputs/theos2_17sep_mud/freeze_v2.json",
+        "field": "supersedes",
+        "path": "outputs/theos2_17sep_mud/freeze_v1.json",
+        "sha256": "ce8ab042f7add57cdd6d43d2d60a1656bb897585e9b91f2a26683f0c170c609f",
+        "status": "PASS"
+      },
+      {
+        "record": "outputs/theos2_17sep_mud/test_points_v1.json",
+        "field": "plan",
+        "path": "docs/proposal_execution/theos2_17sep_recession_and_mud_plan_v1.md",
+        "sha256": "5d4aee69eff4a62b7f20e7d1c8fcac5184f50c2d0a5e5254097ae4c8816b57a8",
+        "status": "PASS"
+      },
+      {
+        "record": "outputs/theos2_17sep_mud/test_points_v1.json",
+        "field": "freeze",
+        "path": "outputs/theos2_17sep_mud/freeze_v2.json",
+        "sha256": "7a741601782ac474b47521925c3813b76d7bc66d933c78d101837726e9bccbca",
+        "status": "PASS"
+      },
+      {
+        "record": "outputs/theos2_17sep_mud/test_points_v1.json",
+        "field": "page_outside_git.template",
+        "path": "scripts/theos2_mud_label_page.html",
+        "sha256": "64a85f763f9efaac778ed3f11baa4c4c4e65252790d2b1892988b1875d65d4b2",
+        "status": "PASS"
+      },
+      {
+        "record": "outputs/theos2_17sep_mud/test_score_v1.json",
+        "field": "plan",
+        "path": "docs/proposal_execution/theos2_17sep_recession_and_mud_plan_v1.md",
+        "sha256": "5d4aee69eff4a62b7f20e7d1c8fcac5184f50c2d0a5e5254097ae4c8816b57a8",
+        "status": "PASS"
+      },
+      {
+        "record": "outputs/theos2_17sep_mud/test_score_v1.json",
+        "field": "test_points",
+        "path": "outputs/theos2_17sep_mud/test_points_v1.json",
+        "sha256": "04f9722657f83c56c1b71b0dbd0f89a6686e394c7bdc508944cf16d634749f03",
+        "status": "PASS"
+      },
+      {
+        "record": "outputs/theos2_17sep_mud/test_score_v1.json",
+        "field": "freeze",
+        "path": "outputs/theos2_17sep_mud/freeze_v2.json",
+        "sha256": "7a741601782ac474b47521925c3813b76d7bc66d933c78d101837726e9bccbca",
+        "status": "PASS"
+      },
+      {
+        "record": "outputs/theos2_17sep_mud/section_4_5_v1.json",
+        "field": "plan",
+        "path": "docs/proposal_execution/theos2_17sep_recession_and_mud_plan_v1.md",
+        "sha256": "5d4aee69eff4a62b7f20e7d1c8fcac5184f50c2d0a5e5254097ae4c8816b57a8",
+        "status": "PASS"
+      },
+      {
+        "record": "outputs/theos2_17sep_mud/section_4_5_v1.json",
+        "field": "inputs.test_score",
+        "path": "outputs/theos2_17sep_mud/test_score_v1.json",
+        "sha256": "527f698f8d62b1a2f77d244c6fddf410598c2959104b6fdc3ea59104da790cb3",
+        "status": "PASS"
+      },
+      {
+        "record": "outputs/theos2_17sep_mud/section_4_5_v1.json",
+        "field": "inputs.freeze",
+        "path": "outputs/theos2_17sep_mud/freeze_v2.json",
+        "sha256": "7a741601782ac474b47521925c3813b76d7bc66d933c78d101837726e9bccbca",
+        "status": "PASS"
+      },
+      {
+        "record": "outputs/theos2_17sep_mud/section_4_5_v1.json",
+        "field": "inputs.replay_hand_codes",
+        "path": "apps/web/public/studies/mae-sai-2024-timeline/r5/hand-codes.png",
+        "sha256": "384bca34e3577c1d592994111e4361788a2fd0e1722767c94b1ecf53bab6eb79",
+        "status": "PASS"
+      },
+      {
+        "record": "outputs/theos2_17sep_mud/section_4_5_v1.json",
+        "field": "inputs.road_sheet",
+        "path": "outputs/ko_chang_road_check/ko_chang_roads_se1_v1.json",
+        "sha256": "3c42b7436c72d12c7e13e1ce8f2e03d9fd96c477f6fcd38a84da3afc647884dc",
+        "status": "PASS"
+      },
+      {
+        "record": "outputs/theos2_17sep_mud/section_4_5_v1.json",
+        "field": "inputs.tambons",
+        "path": "outputs/mae_sai_admin_context.geojson",
+        "sha256": "5cd03ca936c188d37704f5249afa87da0c687b967db8a0f9c9ebd72b27204db1",
+        "status": "PASS"
+      }
+    ]
+  },
+  "original_analysis_receipts": [
+    {
+      "path": "outputs/theos2_delivery/delivery_20240917_v1.json",
+      "sha256": "1b750384b01bb9e6ed8598e442a1d57931106a52f4f484bfb26b89598ff1a664",
+      "unchanged_from_analysis_source": true
+    },
+    {
+      "path": "outputs/theos2_study_event_check/radar_freeze_v1.json",
+      "sha256": "a4b789d249b6e9147cc57624b33915f474986fe5fa6ad9973cb12e04c4196a85",
+      "unchanged_from_analysis_source": true
+    },
+    {
+      "path": "outputs/theos2_study_event_check/reference_20240917_v1.json",
+      "sha256": "dd787374bf2239d166d2fa856d7e0e4da9d51d57cb0f0e0c18785d1a260adcc7",
+      "unchanged_from_analysis_source": true
+    },
+    {
+      "path": "outputs/theos2_17sep_mud/development_points_v1.json",
+      "sha256": "63f815344714ce935209821ccbb99c06799e970a22da2735cccd4b4121d42075",
+      "unchanged_from_analysis_source": true
+    },
+    {
+      "path": "outputs/theos2_17sep_mud/freeze_v1.json",
+      "sha256": "ce8ab042f7add57cdd6d43d2d60a1656bb897585e9b91f2a26683f0c170c609f",
+      "unchanged_from_analysis_source": true
+    },
+    {
+      "path": "outputs/theos2_17sep_mud/development_points_v2.json",
+      "sha256": "d8bee08344c24c25b7f60ea2f17af1467867d3cc7807d89c62f00452545ec9f2",
+      "unchanged_from_analysis_source": true
+    },
+    {
+      "path": "outputs/theos2_17sep_mud/freeze_v2.json",
+      "sha256": "7a741601782ac474b47521925c3813b76d7bc66d933c78d101837726e9bccbca",
+      "unchanged_from_analysis_source": true
+    },
+    {
+      "path": "outputs/theos2_17sep_mud/test_points_v1.json",
+      "sha256": "04f9722657f83c56c1b71b0dbd0f89a6686e394c7bdc508944cf16d634749f03",
+      "unchanged_from_analysis_source": true
+    },
+    {
+      "path": "outputs/theos2_17sep_mud/test_score_v1.json",
+      "sha256": "527f698f8d62b1a2f77d244c6fddf410598c2959104b6fdc3ea59104da790cb3",
+      "unchanged_from_analysis_source": true
+    },
+    {
+      "path": "outputs/theos2_17sep_mud/section_4_5_v1.json",
+      "sha256": "f179ef158f9afab7cc8a21ac89a18e5971022b12fe607303e4b6928a465bd6fe",
+      "unchanged_from_analysis_source": true
+    }
+  ],
+  "external_integrity": {
+    "checks": 86,
+    "unique_external_paths": 84,
+    "statuses": {
+      "PASS": 67,
+      "UNBOUND_PRESENT": 19
+    },
+    "all_receipt_bound_files_match": true
+  },
+  "independent_existing_score_arithmetic": {
+    "status": "PASS",
+    "checks": {
+      "key_matches_sample_id": true,
+      "points_count_150": true,
+      "label_hash_Putu": true,
+      "label_sample_and_point_ids_Putu": true,
+      "label_matches_committed_score_Putu": true,
+      "label_hash_callixta": true,
+      "label_sample_and_point_ids_callixta": true,
+      "label_matches_committed_score_callixta": true,
+      "label_hash_rachmania": true,
+      "label_sample_and_point_ids_rachmania": true,
+      "label_matches_committed_score_rachmania": true,
+      "majority_matches_committed_score": true,
+      "stratum_counts_match_draw_record": true,
+      "main_metrics_match": true,
+      "bar_matches": true,
+      "each_labeller_matches": true,
+      "each_pair_matches": true,
+      "each_order_matches": true,
+      "agreement_matches": true
+    },
+    "method": "Independent arithmetic from the existing SHA-bound external test key and three SHA-bound team label files; no build/score stage, no imagery read, no bootstrap or evaluation rerun. Frozen per-stratum area weights and original majority/ambiguity handling retained.",
+    "bootstrap_recomputed": false
+  },
+  "supporting_local_evidence": [
+    {
+      "name": "external-integrity.json",
+      "sha256": "0c57bc760ce752877459929864085e4da530e02ed81c8138cb56969e6cc4beb5"
+    },
+    {
+      "name": "score-verification.json",
+      "sha256": "b60bbef9ee17b2d333194a458575d76feab8d1c37d4d5f1d4498257ee97f693f"
+    },
+    {
+      "name": "focused-tests.xml",
+      "sha256": "962aa50ea35fb2b9d79c167b2430aeff9d6f10975c0325b0a1f0cf1fb0e51165"
+    },
+    {
+      "name": "focused-tests.txt",
+      "sha256": "dd8e58ff1c202c973b4103c7f38e7cd4e5d1fc6d869058ab34c828e26ff33088"
+    }
+  ],
+  "verification": {
+    "focused_pytest": {
+      "status": "PASS",
+      "passed": 94,
+      "seconds": 7.32,
+      "files": [
+        "tests/test_theos2_event_delivery.py",
+        "tests/test_theos2_study_event.py",
+        "tests/test_theos2_mud.py",
+        "tests/test_theos2_water_rule_v2.py",
+        "tests/test_theos2_water_labels.py",
+        "tests/test_theos2_water_label_records.py",
+        "tests/test_owner_unblocker_records.py"
+      ]
+    },
+    "comparison_guard": {
+      "status": "PASS_EXPECTED_REFUSAL",
+      "command_exit_code": 1,
+      "error": "BuildError: this scene was set aside before any comparison",
+      "comparison_output_exists": false
+    },
+    "full_repository_browser_production_tests": "NOT_RUN"
+  },
+  "acceptance": {
+    "V-47": "Waiting",
+    "V-48": "Waiting",
+    "V-49": "Waiting",
+    "V-50": "Waiting"
+  },
+  "assumptions": [
+    "Original receipts describe the original one-time analyses; this receipt describes evidence verification only.",
+    "Area weights, labels and thresholds are unchanged; Q3 missing evidence is null."
+  ],
+  "limits": [
+    "19 external-file checks have no historical expected digest; current hashes do not prove unchanged historical bytes.",
+    "No general accuracy, operational road status, resident exposure, team acceptance or release approval follows from the mud test.",
+    "Road summary kilometres are whole lengths of classified pieces, not measured mud-adjacent centreline totals."
+  ]
+}

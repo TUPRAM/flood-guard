@@ -120,3 +120,49 @@ def road_reading(pieces: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
                     "water on the image" if under else "no piece seen under water on the image"),
         "caution": ROAD_WET_SENTENCE if under else ROAD_DRY_SENTENCE,
     }
+
+
+# ---------------------------------------------------------------------------
+# A scene delivered in several products (amendment 1, delivery of 14 October 2026)
+# ---------------------------------------------------------------------------
+
+BLOCK = 4
+"""Pixels of 0.5 m per side of a pixel of 2 m, the raster the water rules read."""
+
+
+def block_mean(block: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Average a ``(bands, rows, columns)`` block of 0.5 m counts to 2 m.
+
+    A 2 m pixel is valid only when each of its 16 pixels has a count above zero in every band: the products hold
+    zeros outside their footprint, and a mean over part of a footprint would darken the pixel. Invalid pixels are 0.
+    """
+
+    values = np.asarray(block)
+    if values.ndim != 3 or values.shape[1] % BLOCK or values.shape[2] % BLOCK:
+        raise StudyEventError(f"a block must be (bands, rows, columns) with rows and columns divisible by {BLOCK}")
+    bands, rows, columns = values.shape
+    shaped = values.reshape(bands, rows // BLOCK, BLOCK, columns // BLOCK, BLOCK)
+    valid = (shaped > 0).all(axis=(0, 2, 4))
+    mean = shaped.astype("float32").mean(axis=(2, 4))
+    mean[:, ~valid] = 0.0
+    return mean, valid
+
+
+def place_first_valid(mosaic: np.ndarray, covered: np.ndarray, values: np.ndarray, valid: np.ndarray,
+                      row: int, column: int) -> int:
+    """Write the answers of one product into the mosaic where no earlier product answered; return the disagreements.
+
+    ``covered`` marks pixels an earlier product holds. Where a pixel is covered already, the earlier answer stays and
+    a different answer of this product is counted. Both arrays are changed in place.
+    """
+
+    rows, columns = values.shape
+    if valid.shape != values.shape or row < 0 or column < 0 or row + rows > mosaic.shape[0] or column + columns > mosaic.shape[1]:
+        raise StudyEventError("the product does not fit inside the mosaic")
+    window = (slice(row, row + rows), slice(column, column + columns))
+    earlier = covered[window] & valid
+    disagreements = int((mosaic[window][earlier] != values[earlier]).sum())
+    new = valid & ~covered[window]
+    mosaic[window][new] = values[new]
+    covered[window] |= new
+    return disagreements

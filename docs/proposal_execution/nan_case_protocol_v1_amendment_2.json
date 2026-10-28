@@ -1,0 +1,32 @@
+{
+  "schema": "floodguard.nan_case_protocol_amendment.v1",
+  "amends": "docs/proposal_execution/nan_case_protocol_v1.json (with amendment 1)",
+  "amendment": 2,
+  "written_utc": "2026-10-14T18:55:00Z",
+  "written_by": "the AI coding agent, under the owner's word of 14 October 2026 (decision log R51: take the recommended option and record it)",
+  "official_warning": false,
+  "operational_status": "non_operational",
+  "confidence_class": "not applicable (rules)",
+  "source_timestamp": "not applicable (rules)",
+  "assumptions": [
+    "Written after the first run of the test stage (outputs/nan_case/test_result_v1.json, run 2026-10-14 18:03 to 18:10 UTC) and before anyone scored the project's map against the JAXA map.",
+    "The method, its frozen parameters and the code the freeze binds are not changed."
+  ],
+  "what_happened": [
+    "The test stage judged the JAXA files unusable ('no observation-area geometry') and ran test 1 on the GFM fallback: IoU 0.068 against GFM's map of the Sentinel-1A pass of 2025-07-31, a fail.",
+    "An independent check then read the sealed 28 July zip in memory. Besides the flood layer (..._FLDEXT.geojson, 464.8 km2) it holds one more layer, ..._REGION.geojson: one polygon whose smallest enclosing rectangle is 72.9 km by 349.5 km, turned to 168.6 degrees (ALOS-2's track at 19 N), filled to 0.972, with 99.96% of the flood area inside it. It covers 0.739 of the frame's land outside permanent water.",
+    "The frozen code's keyword pattern matches 'region' only after 'obs', so it read REGION as a flood layer and found no observation area. Had it judged JAXA usable, it would also have merged the strip into JAXA's water. The fallback was therefore taken because of how the code reads file names, not because of what the files hold.",
+    "The check did not score the project's map against JAXA, and nobody has since."
+  ],
+  "decision": {
+    "test_1_of_record": "the comparison the protocol names: the JAXA ALOS-2 Flood Proxy Map of 2025-07-28 (layer FLDEXT as water) inside its observation area (layer REGION), on the frame's land outside permanent water, against the frozen M1-z map of the Sentinel-1C pass of 2025-07-28 11:20 UTC (JAXA's files give no time with a zone, so the protocol's named pass applies, as the frozen code does), with the 0.79 dB offset of amendment 1 and its uncorrected figure beside it as report only",
+    "pass_rule": "unchanged: IoU with no-answer cells counted as not flagged >= 0.40 and no-answer share <= 0.20 on the compared cells",
+    "how_it_is_run": "once, by a separate script (scripts/nan_case_test1_jaxa.py) that imports the frozen functions of scripts/nan_case_method.py and src/floodguard/m1z.py unchanged; only the reading of the two JAXA layers is new. The freeze record stands.",
+    "first_run": "kept as written (outputs/nan_case/test_result_v1.json) and reported beside it: the GFM comparison of 2025-07-31, test 2 and the dry control. Test 2 and the dry control do not depend on the test 1 reference and stand as run.",
+    "case_reference_date": "2025-07-28",
+    "flood_input_of_case_N1": "the frozen map of the Sentinel-1C pass of 2025-07-28 (lower, central, upper levels), made by the maps stage with the offset of amendment 1",
+    "case_N2": "JAXA's FLDEXT polygons as provided by cell centre, inside REGION, 255 outside; kept in the work folder, never in Git (Sentinel Asia terms)",
+    "binding": "the binding rule of the protocol applies with this test 1 and the dry control of the first run"
+  },
+  "unchanged": "Everything else of the protocol and amendment 1."
+}

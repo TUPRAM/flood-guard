@@ -1,0 +1,994 @@
+{
+ "schema": "floodguard.nan_case_test_1_jaxa.v1",
+ "generated_at_utc": "2026-10-14T19:13:29Z",
+ "source_timestamp": "Nan passes 2025-07-28T11:20:49Z, 2025-07-19T23:08:07Z; JAXA ALOS-2 maps of 2025-07-28 and 2025-07-19 (their files give no time with a zone)",
+ "confidence_class": "low",
+ "assumptions": [
+  "M1-z is applied as the protocol writes it, on the 20 m grid of each area: z_vh = (VH after dB - dry mean dB) / dry spread dB.",
+  "Permanent water is ESA WorldCover 2021 class 80; it is never flagged and is left out of the compared cells of every measure.",
+  "The terrain answer comes first: HAND above the limit or a slope of 5 degrees or more is answered not flooded even where the radar has no value.",
+  "A cell without a HAND or slope value that terrain does not answer gets no answer; the protocol does not name this case, it is a data gap.",
+  "The no-answer share and the binding IoU are counted on the compared cells only; a cell without an answer counts as not flagged in the binding IoU.",
+  "Test 1 of record (amendment 2): JAXA's layer whose name ends with _FLDEXT.geojson is the water and the layer ending with _REGION.geojson the observation area; both are put on the 20 m grid by cell centre.",
+  "Compared cells: frame land (cell centre inside the 35 units, outside WorldCover class 80) whose centre lies inside REGION.",
+  "The pass is the Sentinel-1C pass of 2025-07-28 about 11:20 UTC, because JAXA's files give no time with a zone (amendment 2); its VV and VH are raised by 0.79 dB before M1-z and the comparators run (amendment 1).",
+  "The JAXA zips are read in memory and never extracted; their SHA-256 is checked against the protocol before the reading and after the scoring.",
+  "The dry control of the binding rule is that of the first run (outputs/nan_case/test_result_v1.json); it does not depend on the test 1 reference.",
+  "The 95% intervals come from 1000 draws of 2 km tiles (100 by 100 cells from the frame's north-west corner) with the seed recorded."
+ ],
+ "official_warning": false,
+ "operational_status": "non_operational",
+ "can_feed_decision_layer": false,
+ "confidence_basis": "One event and one frame; the reference is another satellite's automatic map, not a ground check.",
+ "what_this_is": "Test 1 of record of the Nan case under amendment 2: the frozen M1-z of the Sentinel-1C pass of 2025-07-28 against JAXA's ALOS-2 map of the same day inside its observation area, with the comparators, the map of 2025-07-19 (report only) and the binding outcome of the case.",
+ "freeze_record": {
+  "path": "outputs/nan_case/freeze_v1.json",
+  "sha256": "a658d60daf3f985a0369d2a300e02e4981d07fa01b2aa3c6932f18d2c72f74b4"
+ },
+ "protocol": {
+  "path": "docs/proposal_execution/nan_case_protocol_v1.json",
+  "sha256": "e40966c7474e2168f732fa77de51d02efb128fa063757aa774085dc981d4d7cd"
+ },
+ "amendment_1": {
+  "path": "docs/proposal_execution/nan_case_protocol_v1_amendment_1.json",
+  "sha256": "2b2b8cb476bea4905c893d4ae429f8b598a558c9aa6a71f7a209ee7d737102f7",
+  "platform_offset_db_applied_to_event_passes": {
+   "sentinel-1c": 0.79
+  }
+ },
+ "amendment_2": {
+  "path": "docs/proposal_execution/nan_case_protocol_v1_amendment_2.json",
+  "sha256": "bf0895eb114c71aebe2224f50f715a7a8bccf94385075a83e967623f71c6df15"
+ },
+ "first_run": {
+  "path": "outputs/nan_case/test_result_v1.json",
+  "sha256": "6f67d4e37d8a98d28b5a48e19a88263122a2540ffd2b2aed46b55dd9200eab89",
+  "generated_at_utc": "2026-10-14T18:10:18Z",
+  "kept_as_written": true,
+  "test_1_gfm_fallback_reported_beside": {
+   "reference": "GFM ensemble flood extent of the Sentinel-1A pass of 2025-07-31 (fallback)",
+   "pass": "20250731T2308_o62_S1A",
+   "iou_no_answer_as_not_flagged": 0.068102,
+   "no_answer_share": 0.072106,
+   "passes": false
+  },
+  "test_2_reported_beside": {
+   "pass": "20250731T2308_o62_S1A",
+   "iou_no_answer_as_not_flagged": 0.065172
+  },
+  "dry_control_used_in_the_binding": {
+   "passes": true,
+   "pass": "20250731T2308_o62_S1A",
+   "flagged_share_of_answered": 0.000374
+  },
+  "binding_of_the_first_run_set_aside_by_amendment_2": {
+   "test_1_passes": false,
+   "case_reference_date": "2025-07-31",
+   "flood_input_of_case_N1": "20250731T2308_o62_S1A",
+   "reference_of_case_N2": "reference_test_1_gfm_20250731T2308.tif"
+  }
+ },
+ "code_sha256": {
+  "scripts/nan_case_test1_jaxa.py": "19b458427e58d70e598baefc77ebbfbe3ad1fd04860cfa9d289cac0ec35be1bd",
+  "src/floodguard/m1z.py": "17ff735d766638d17386dd72ab3c938affdd46c3f30a4f5cb38b3547960108ed",
+  "scripts/nan_case_method.py": "32e68b0ce94ad631c6efa11be87ffedd2b41aa6e3fa55aaf0164fa5643651549"
+ },
+ "comparator_code_sha256": {
+  "src/floodguard/radar_candidates.py": "0d6fdbd8ce4bcd22ce4628208f2af47055cceb1e1ae9e4dd15ab5e22dcf5ece0",
+  "src/floodguard/sar_change_v2.py": "3127b370303b08902dc545442f7aa5a2aa54d283b471c0d65f5899c9c19e1134",
+  "src/floodguard/geoid_m1_review.py": "5eec3548778914c54da6d9f294029ed4a51a86b24b5cb833ddf634969a2abf7b",
+  "src/floodguard/radar_detection.py": "d5d200658eb9bf57382b31d48bd6a048cc12a5e06ad67353b01343e1150835bf",
+  "src/floodguard/radar_flood_classifier.py": "c02710e7adb45c7ac40a9b39149ea91ec34aa1788bb84588155542e82323e49e"
+ },
+ "git_commit": "0fb28e5ed9f6bb2fd08ab72b91a15e5b32b963ae",
+ "frozen_parameters": {
+  "lower": {
+   "z_vh_max": -1.5,
+   "vh_after_max_db": -18.0,
+   "hand_max_m": 5.0,
+   "dry_spread_max_db": null
+  },
+  "central": {
+   "z_vh_max": -1.0,
+   "vh_after_max_db": -18.0,
+   "hand_max_m": 5.0,
+   "dry_spread_max_db": null
+  },
+  "upper": {
+   "z_vh_max": -0.5,
+   "vh_after_max_db": -18.0,
+   "hand_max_m": 5.0,
+   "dry_spread_max_db": null
+  }
+ },
+ "frame": {
+  "file": "tha_admin_boundaries.gdb.zip",
+  "layer": "tha_admin3",
+  "units": 35,
+  "units_by_district": {
+   "TH5501": 11,
+   "TH5507": 17,
+   "TH5514": 7
+  },
+  "cells_inside": 9006963,
+  "units_the_protocol_names": 35,
+  "matches_the_protocol": true,
+  "boundaries_sha256": "09e62345481bb80030ff6779e074bfb2c16629b70ae1e373ebd31945f1c6e0d8",
+  "frame_land_cells": 8984701,
+  "grid": {
+   "west": 639520.0,
+   "north": 2111500.0,
+   "rows": 4303,
+   "cols": 4280
+  },
+  "terrain_inputs": {
+   "hand": {
+    "name": "hand_m.tif",
+    "sha256": "1d0e98741498f071a2752f24378977f299118ea2ca1d9cdb609dec3bb876e0cd"
+   },
+   "slope": {
+    "name": "slope_deg.tif",
+    "sha256": "d1c92ddb7a0f54f050cf6ba85d4325ad3bef5c0f254b822ce53db496135949d0"
+   },
+   "cover": {
+    "name": "worldcover.tif",
+    "sha256": "34a51675e09a6dd92cdd9fc1f2203b96302c7b9045202af6eed566df8ecf5854"
+   },
+   "permanent_water": {
+    "name": "permanent_water.tif",
+    "sha256": "587d1cb981880d6a0602e7ccf3af655c03d04ae56cce671611df313d0bab9043"
+   }
+  },
+  "cells_where_the_lane_permanent_water_differs_from_class_80": 0
+ },
+ "passes_on_disk": [
+  {
+   "file": "event_20250716T1120Z_s1c_o99.tif",
+   "time_utc": "2025-07-16T11:20:48Z",
+   "relative_orbit": 99,
+   "platform": "Sentinel-1C",
+   "label": "20250716T1120_o99_S1C"
+  },
+  {
+   "file": "event_20250719T2308Z_s1a_o62.tif",
+   "time_utc": "2025-07-19T23:08:07Z",
+   "relative_orbit": 62,
+   "platform": "Sentinel-1A",
+   "label": "20250719T2308_o62_S1A"
+  },
+  {
+   "file": "event_20250722T1122Z_s1a_o99.tif",
+   "time_utc": "2025-07-22T11:22:07Z",
+   "relative_orbit": 99,
+   "platform": "Sentinel-1A",
+   "label": "20250722T1122_o99_S1A"
+  },
+  {
+   "file": "event_20250724T2316Z_s1a_o135.tif",
+   "time_utc": "2025-07-24T23:16:16Z",
+   "relative_orbit": 135,
+   "platform": "Sentinel-1A",
+   "label": "20250724T2316_o135_S1A"
+  },
+  {
+   "file": "event_20250725T2306Z_s1c_o62.tif",
+   "time_utc": "2025-07-25T23:06:50Z",
+   "relative_orbit": 62,
+   "platform": "Sentinel-1C",
+   "label": "20250725T2306_o62_S1C"
+  },
+  {
+   "file": "event_20250727T1130Z_s1a_o172.tif",
+   "time_utc": "2025-07-27T11:30:07Z",
+   "relative_orbit": 172,
+   "platform": "Sentinel-1A",
+   "label": "20250727T1130_o172_S1A"
+  },
+  {
+   "file": "event_20250728T1120Z_s1c_o99.tif",
+   "time_utc": "2025-07-28T11:20:49Z",
+   "relative_orbit": 99,
+   "platform": "Sentinel-1C",
+   "label": "20250728T1120_o99_S1C"
+  },
+  {
+   "file": "event_20250731T2308Z_s1a_o62.tif",
+   "time_utc": "2025-07-31T23:08:03Z",
+   "relative_orbit": 62,
+   "platform": "Sentinel-1A",
+   "label": "20250731T2308_o62_S1A"
+  },
+  {
+   "file": "event_20250803T1122Z_s1a_o99.tif",
+   "time_utc": "2025-08-03T11:22:06Z",
+   "relative_orbit": 99,
+   "platform": "Sentinel-1A",
+   "label": "20250803T1122_o99_S1A"
+  },
+  {
+   "file": "event_20250805T2316Z_s1a_o135.tif",
+   "time_utc": "2025-08-05T23:16:12Z",
+   "relative_orbit": 135,
+   "platform": "Sentinel-1A",
+   "label": "20250805T2316_o135_S1A"
+  },
+  {
+   "file": "event_20250806T2306Z_s1c_o62.tif",
+   "time_utc": "2025-08-06T23:06:51Z",
+   "relative_orbit": 62,
+   "platform": "Sentinel-1C",
+   "label": "20250806T2306_o62_S1C"
+  },
+  {
+   "file": "event_20250808T1130Z_s1a_o172.tif",
+   "time_utc": "2025-08-08T11:30:07Z",
+   "relative_orbit": 172,
+   "platform": "Sentinel-1A",
+   "label": "20250808T1130_o172_S1A"
+  },
+  {
+   "file": "event_20250809T1120Z_s1c_o99.tif",
+   "time_utc": "2025-08-09T11:20:50Z",
+   "relative_orbit": 99,
+   "platform": "Sentinel-1C",
+   "label": "20250809T1120_o99_S1C"
+  },
+  {
+   "file": "event_20250812T2308Z_s1a_o62.tif",
+   "time_utc": "2025-08-12T23:08:03Z",
+   "relative_orbit": 62,
+   "platform": "Sentinel-1A",
+   "label": "20250812T2308_o62_S1A"
+  }
+ ],
+ "jaxa_files": {
+  "JAXA_20250728_FPM_ALOS2_Thailand_geojson.zip": {
+   "sha256_in_the_protocol": "a0ce263e5a7235b90664704071533481bd5d16eabfca93bb0d450e5e431d9b3f",
+   "sha256_of_the_bytes_read": "a0ce263e5a7235b90664704071533481bd5d16eabfca93bb0d450e5e431d9b3f",
+   "sha256_after_the_scoring": "a0ce263e5a7235b90664704071533481bd5d16eabfca93bb0d450e5e431d9b3f",
+   "unchanged": true,
+   "read": "in memory; never extracted or changed"
+  },
+  "JAXA_20250719_FPM_ALOS2_Thailand_geojson.zip": {
+   "sha256_in_the_protocol": "20ff2fc101464da7c25f237db09dcb8cc25e0faca10052ccb682efd9b0e881ba",
+   "sha256_of_the_bytes_read": "20ff2fc101464da7c25f237db09dcb8cc25e0faca10052ccb682efd9b0e881ba",
+   "sha256_after_the_scoring": "20ff2fc101464da7c25f237db09dcb8cc25e0faca10052ccb682efd9b0e881ba",
+   "unchanged": true,
+   "read": "in memory; never extracted or changed"
+  }
+ },
+ "test_1": {
+  "reference": "JAXA ALOS-2 Flood Proxy Map of 2025-07-28 (layer FLDEXT as water, inside layer REGION)",
+  "label": "Agreement with JAXA's ALOS-2 map (another satellite, L-band, automatic analysis), not a ground check.",
+  "of_record_under": "amendment 2 of the protocol (decision log R53)",
+  "pass_choice": "the Sentinel-1C pass of 2025-07-28 about 11:20 UTC that amendment 2 names, because JAXA's files give no acquisition time with a zone",
+  "compared_cells_rule": "frame land (cell centre inside the 35 units, outside WorldCover class 80) whose cell centre lies inside REGION",
+  "jaxa": {
+   "file": "JAXA_20250728_FPM_ALOS2_Thailand_geojson.zip",
+   "read": "in memory from the sealed zip; nothing extracted or changed",
+   "members": [
+    {
+     "member": "JAXA_20250728_FPM_ALOS2_Thailand_geojson/2025-00032-WLD_202507281720_FLDEXT.geojson",
+     "bytes": 3525710
+    },
+    {
+     "member": "JAXA_20250728_FPM_ALOS2_Thailand_geojson/2025-00032-WLD_202507281720_REGION.geojson",
+     "bytes": 28601
+    },
+    {
+     "member": "JAXA_20250728_FPM_ALOS2_Thailand_geojson/ReadMe.txt",
+     "bytes": 590
+    }
+   ],
+   "flood_layer": {
+    "member": "JAXA_20250728_FPM_ALOS2_Thailand_geojson/2025-00032-WLD_202507281720_FLDEXT.geojson",
+    "sha256": "cf878f9a5cb3d777551bf8c006c0e58d6d43f6d8b2053083ac10ac531ed0a36e",
+    "features": 1,
+    "polygon_features": 1,
+    "geometry_types": [
+     "MultiPolygon"
+    ],
+    "crs": "EPSG:4326",
+    "fields": [
+     "polygon"
+    ]
+   },
+   "observation_area_layer": {
+    "member": "JAXA_20250728_FPM_ALOS2_Thailand_geojson/2025-00032-WLD_202507281720_REGION.geojson",
+    "sha256": "285c74a830b9a09c7074b6ca9fc4fa2e142c9713d76cac359cf148c8a80f4fbf",
+    "features": 1,
+    "polygon_features": 1,
+    "geometry_types": [
+     "Polygon"
+    ],
+    "crs": "EPSG:4326",
+    "fields": [
+     "polygon"
+    ]
+   },
+   "members_not_used": [
+    "JAXA_20250728_FPM_ALOS2_Thailand_geojson/ReadMe.txt"
+   ],
+   "times_with_a_zone_utc": [],
+   "region_cells_on_the_grid": 11621351,
+   "frame_land_cells": 8984701,
+   "frame_land_cells_inside_region": 6643967,
+   "share_of_frame_land_inside_region": 0.739476,
+   "fldext_cells_on_the_grid": 59580,
+   "fldext_cells_inside_region": 59580,
+   "fldext_cells_on_compared_cells": 56355,
+   "usable_rule": "REGION covers at least half of the frame's land outside permanent water (protocol test 1, usable_if)",
+   "usable": true
+  },
+  "pass": {
+   "file": "event_20250728T1120Z_s1c_o99.tif",
+   "time_utc": "2025-07-28T11:20:49Z",
+   "relative_orbit": 99,
+   "platform": "Sentinel-1C",
+   "label": "20250728T1120_o99_S1C"
+  },
+  "central": {
+   "compared_cells": 6643967,
+   "reference_water_cells": 56355,
+   "answered_cells": 6494662,
+   "no_answer_cells": 149305,
+   "true_positive": 16953,
+   "false_positive": 18653,
+   "false_negative_answered": 34268,
+   "true_negative_answered": 6424788,
+   "no_answer_reference_water": 5134,
+   "no_answer_reference_dry": 144171,
+   "iou_no_answer_as_not_flagged": 0.226016,
+   "iou_answered_cells": 0.242622,
+   "flagged_that_is_reference_water": 0.476128,
+   "reference_water_flagged_no_answer_as_not_flagged": 0.300825,
+   "reference_water_flagged_answered_cells": 0.330978,
+   "no_answer_share": 0.022472
+  },
+  "lower": {
+   "compared_cells": 6643967,
+   "reference_water_cells": 56355,
+   "answered_cells": 6494662,
+   "no_answer_cells": 149305,
+   "true_positive": 15895,
+   "false_positive": 14162,
+   "false_negative_answered": 35326,
+   "true_negative_answered": 6429279,
+   "no_answer_reference_water": 5134,
+   "no_answer_reference_dry": 144171,
+   "iou_no_answer_as_not_flagged": 0.225407,
+   "iou_answered_cells": 0.243106,
+   "flagged_that_is_reference_water": 0.528829,
+   "reference_water_flagged_no_answer_as_not_flagged": 0.282051,
+   "reference_water_flagged_answered_cells": 0.310322,
+   "no_answer_share": 0.022472
+  },
+  "upper": {
+   "compared_cells": 6643967,
+   "reference_water_cells": 56355,
+   "answered_cells": 6494662,
+   "no_answer_cells": 149305,
+   "true_positive": 17529,
+   "false_positive": 22275,
+   "false_negative_answered": 33692,
+   "true_negative_answered": 6421166,
+   "no_answer_reference_water": 5134,
+   "no_answer_reference_dry": 144171,
+   "iou_no_answer_as_not_flagged": 0.22293,
+   "iou_answered_cells": 0.238503,
+   "flagged_that_is_reference_water": 0.440383,
+   "reference_water_flagged_no_answer_as_not_flagged": 0.311046,
+   "reference_water_flagged_answered_cells": 0.342223,
+   "no_answer_share": 0.022472
+  },
+  "central_by_worldcover_group": {
+   "built_up": {
+    "compared_cells": 72387,
+    "reference_water_cells": 840,
+    "answered_cells": 52876,
+    "no_answer_cells": 19511,
+    "true_positive": 0,
+    "false_positive": 0,
+    "false_negative_answered": 445,
+    "true_negative_answered": 52431,
+    "no_answer_reference_water": 395,
+    "no_answer_reference_dry": 19116,
+    "iou_no_answer_as_not_flagged": 0.0,
+    "iou_answered_cells": 0.0,
+    "flagged_that_is_reference_water": null,
+    "reference_water_flagged_no_answer_as_not_flagged": 0.0,
+    "reference_water_flagged_answered_cells": 0.0,
+    "no_answer_share": 0.269537
+   },
+   "cropland": {
+    "compared_cells": 497348,
+    "reference_water_cells": 44603,
+    "answered_cells": 495478,
+    "no_answer_cells": 1870,
+    "true_positive": 16199,
+    "false_positive": 17378,
+    "false_negative_answered": 28404,
+    "true_negative_answered": 433497,
+    "no_answer_reference_water": 0,
+    "no_answer_reference_dry": 1870,
+    "iou_no_answer_as_not_flagged": 0.261354,
+    "iou_answered_cells": 0.261354,
+    "flagged_that_is_reference_water": 0.482443,
+    "reference_water_flagged_no_answer_as_not_flagged": 0.363182,
+    "reference_water_flagged_answered_cells": 0.363182,
+    "no_answer_share": 0.00376
+   },
+   "tree_cover": {
+    "compared_cells": 5373929,
+    "reference_water_cells": 9407,
+    "answered_cells": 5246546,
+    "no_answer_cells": 127383,
+    "true_positive": 0,
+    "false_positive": 0,
+    "false_negative_answered": 4668,
+    "true_negative_answered": 5241878,
+    "no_answer_reference_water": 4739,
+    "no_answer_reference_dry": 122644,
+    "iou_no_answer_as_not_flagged": 0.0,
+    "iou_answered_cells": 0.0,
+    "flagged_that_is_reference_water": null,
+    "reference_water_flagged_no_answer_as_not_flagged": 0.0,
+    "reference_water_flagged_answered_cells": 0.0,
+    "no_answer_share": 0.023704
+   },
+   "other": {
+    "compared_cells": 700303,
+    "reference_water_cells": 1505,
+    "answered_cells": 699762,
+    "no_answer_cells": 541,
+    "true_positive": 754,
+    "false_positive": 1275,
+    "false_negative_answered": 751,
+    "true_negative_answered": 696982,
+    "no_answer_reference_water": 0,
+    "no_answer_reference_dry": 541,
+    "iou_no_answer_as_not_flagged": 0.271223,
+    "iou_answered_cells": 0.271223,
+    "flagged_that_is_reference_water": 0.371612,
+    "reference_water_flagged_no_answer_as_not_flagged": 0.500997,
+    "reference_water_flagged_answered_cells": 0.500997,
+    "no_answer_share": 0.000773
+   }
+  },
+  "central_interval_95": {
+   "resamples": 1000,
+   "seed": 20261014,
+   "tile_cells": 100,
+   "tile_m": 2000.0,
+   "tiles": 755,
+   "percentiles": [
+    2.5,
+    97.5
+   ],
+   "interval": {
+    "iou_no_answer_as_not_flagged": [
+     0.173007,
+     0.281678
+    ],
+    "iou_answered_cells": [
+     0.18489,
+     0.30487
+    ],
+    "flagged_that_is_reference_water": [
+     0.396383,
+     0.557537
+    ],
+    "reference_water_flagged_no_answer_as_not_flagged": [
+     0.223052,
+     0.390233
+    ],
+    "no_answer_share": [
+     0.018675,
+     0.026551
+    ]
+   }
+  },
+  "central_reasons_on_compared_cells": {
+   "flagged": 35606,
+   "not_flagged_radar_dry": 119080,
+   "not_flagged_group_of_fewer_than_2_cells_dropped": 1617,
+   "not_flagged_terrain_hand_above_the_limit": 1074617,
+   "not_flagged_terrain_slope_5_degrees_or_more": 5263742,
+   "no_answer_rtc_no_data_after": 5795,
+   "no_answer_built_up_at_low_hand": 19511,
+   "no_answer_tree_cover_at_low_hand": 123999
+  },
+  "platform_offset_db": 0.79,
+  "comparators": {
+   "r37_frozen_detector": {
+    "compared_cells": 6643967,
+    "reference_water_cells": 56355,
+    "answered_cells": 5841234,
+    "no_answer_cells": 802733,
+    "true_positive": 43591,
+    "false_positive": 52890,
+    "false_negative_answered": 12764,
+    "true_negative_answered": 5731989,
+    "no_answer_reference_water": 0,
+    "no_answer_reference_dry": 802733,
+    "iou_no_answer_as_not_flagged": 0.399021,
+    "iou_answered_cells": 0.399021,
+    "flagged_that_is_reference_water": 0.451809,
+    "reference_water_flagged_no_answer_as_not_flagged": 0.773507,
+    "reference_water_flagged_answered_cells": 0.773507,
+    "no_answer_share": 0.120821
+   },
+   "r37_simple_threshold": {
+    "compared_cells": 6643967,
+    "reference_water_cells": 56355,
+    "answered_cells": 5841234,
+    "no_answer_cells": 802733,
+    "true_positive": 40095,
+    "false_positive": 29553,
+    "false_negative_answered": 16260,
+    "true_negative_answered": 5755326,
+    "no_answer_reference_water": 0,
+    "no_answer_reference_dry": 802733,
+    "iou_no_answer_as_not_flagged": 0.46672,
+    "iou_answered_cells": 0.46672,
+    "flagged_that_is_reference_water": 0.575681,
+    "reference_water_flagged_no_answer_as_not_flagged": 0.711472,
+    "reference_water_flagged_answered_cells": 0.711472,
+    "no_answer_share": 0.120821
+   },
+   "un_spider_dry_mean_before": {
+    "compared_cells": 6643967,
+    "reference_water_cells": 56355,
+    "answered_cells": 5839317,
+    "no_answer_cells": 804650,
+    "true_positive": 33301,
+    "false_positive": 8950,
+    "false_negative_answered": 23054,
+    "true_negative_answered": 5774012,
+    "no_answer_reference_water": 0,
+    "no_answer_reference_dry": 804650,
+    "iou_no_answer_as_not_flagged": 0.50993,
+    "iou_answered_cells": 0.50993,
+    "flagged_that_is_reference_water": 0.788171,
+    "reference_water_flagged_no_answer_as_not_flagged": 0.590915,
+    "reference_water_flagged_answered_cells": 0.590915,
+    "no_answer_share": 0.12111
+   },
+   "m1_literal_dry_mean_before": {
+    "compared_cells": 6643967,
+    "reference_water_cells": 56355,
+    "answered_cells": 5839317,
+    "no_answer_cells": 804650,
+    "true_positive": 50506,
+    "false_positive": 309075,
+    "false_negative_answered": 5849,
+    "true_negative_answered": 5473887,
+    "no_answer_reference_water": 0,
+    "no_answer_reference_dry": 804650,
+    "iou_no_answer_as_not_flagged": 0.13821,
+    "iou_answered_cells": 0.13821,
+    "flagged_that_is_reference_water": 0.140458,
+    "reference_water_flagged_no_answer_as_not_flagged": 0.896212,
+    "reference_water_flagged_answered_cells": 0.896212,
+    "no_answer_share": 0.12111
+   },
+   "m1_v2_dry_mean_before": {
+    "compared_cells": 6643967,
+    "reference_water_cells": 56355,
+    "answered_cells": 1787589,
+    "no_answer_cells": 4856378,
+    "true_positive": 41026,
+    "false_positive": 43484,
+    "false_negative_answered": 8119,
+    "true_negative_answered": 1694960,
+    "no_answer_reference_water": 7210,
+    "no_answer_reference_dry": 4849168,
+    "iou_no_answer_as_not_flagged": 0.410922,
+    "iou_answered_cells": 0.442907,
+    "flagged_that_is_reference_water": 0.485457,
+    "reference_water_flagged_no_answer_as_not_flagged": 0.727992,
+    "reference_water_flagged_answered_cells": 0.834795,
+    "no_answer_share": 0.730946
+   }
+  },
+  "central_without_platform_offset_report_only": {
+   "compared_cells": 6643967,
+   "reference_water_cells": 56355,
+   "answered_cells": 6494662,
+   "no_answer_cells": 149305,
+   "true_positive": 18405,
+   "false_positive": 27059,
+   "false_negative_answered": 32816,
+   "true_negative_answered": 6416382,
+   "no_answer_reference_water": 5134,
+   "no_answer_reference_dry": 144171,
+   "iou_no_answer_as_not_flagged": 0.220646,
+   "iou_answered_cells": 0.235118,
+   "flagged_that_is_reference_water": 0.404826,
+   "reference_water_flagged_no_answer_as_not_flagged": 0.32659,
+   "reference_water_flagged_answered_cells": 0.359325,
+   "no_answer_share": 0.022472,
+   "platform_offset_db": 0.0
+  },
+  "external_comparator_gfm_same_pass": {
+   "not_run": "GFM holds no item of this pass over the frame"
+  },
+  "measures_named": {
+   "iou_no_answer_as_not_flagged": "IoU with no-answer cells counted as not flagged (the binding figure)",
+   "iou_answered_cells": "IoU on the answered cells",
+   "flagged_that_is_reference_water": "the share of our flagged cells that lie on JAXA water",
+   "reference_water_flagged_no_answer_as_not_flagged": "the share of JAXA water our map flags (no answer counted as not flagged)",
+   "reference_water_flagged_answered_cells": "the share of JAXA water our map flags, on answered cells",
+   "no_answer_share": "the share of compared cells without an answer"
+  },
+  "pass_if": "IoU (no answer counted as not flagged) >= 0.4 and no-answer share <= 0.2",
+  "passes": false,
+  "verdict": "does not pass",
+  "comparators_better_by_iou": {
+   "r37_frozen_detector": 0.399021,
+   "r37_simple_threshold": 0.46672,
+   "un_spider_dry_mean_before": 0.50993,
+   "m1_v2_dry_mean_before": 0.410922
+  }
+ },
+ "test_1b_report_only": {
+  "report_only": true,
+  "jaxa": {
+   "file": "JAXA_20250719_FPM_ALOS2_Thailand_geojson.zip",
+   "read": "in memory from the sealed zip; nothing extracted or changed",
+   "members": [
+    {
+     "member": "JAXA_20250719_FPM_ALOS2_Thailand_geojson/2025-00032-WLD_202507191727_FLDEXT.geojson",
+     "bytes": 441051
+    },
+    {
+     "member": "JAXA_20250719_FPM_ALOS2_Thailand_geojson/2025-00032-WLD_202507191727_REGION.geojson",
+     "bytes": 12196
+    },
+    {
+     "member": "JAXA_20250719_FPM_ALOS2_Thailand_geojson/ReadMe.txt",
+     "bytes": 590
+    }
+   ],
+   "flood_layer": {
+    "member": "JAXA_20250719_FPM_ALOS2_Thailand_geojson/2025-00032-WLD_202507191727_FLDEXT.geojson",
+    "sha256": "5961797af6c4fddc3e61db5d0715f0e66f8595ff0f9274952eb8f186534e178e",
+    "features": 1,
+    "polygon_features": 1,
+    "geometry_types": [
+     "MultiPolygon"
+    ],
+    "crs": "EPSG:4326",
+    "fields": [
+     "polygon"
+    ]
+   },
+   "observation_area_layer": {
+    "member": "JAXA_20250719_FPM_ALOS2_Thailand_geojson/2025-00032-WLD_202507191727_REGION.geojson",
+    "sha256": "1b0d016089538b1a6b741a18f8c1cc9f51be2e392d95af62dd3f4bc7235631e4",
+    "features": 1,
+    "polygon_features": 1,
+    "geometry_types": [
+     "Polygon"
+    ],
+    "crs": "EPSG:4326",
+    "fields": [
+     "polygon"
+    ]
+   },
+   "members_not_used": [
+    "JAXA_20250719_FPM_ALOS2_Thailand_geojson/ReadMe.txt"
+   ],
+   "times_with_a_zone_utc": [],
+   "region_cells_on_the_grid": 4031295,
+   "frame_land_cells": 8984701,
+   "frame_land_cells_inside_region": 738099,
+   "share_of_frame_land_inside_region": 0.082151,
+   "fldext_cells_on_the_grid": 5074,
+   "fldext_cells_inside_region": 5074,
+   "fldext_cells_on_compared_cells": 0,
+   "region_covers_at_least_half_of_the_frame_land": false
+  },
+  "pass_choice": "the pass nearest to 2025-07-19 12:00 Thai time",
+  "pass_target": {
+   "target_utc": "2025-07-19T05:00:00Z",
+   "target_words": "2025-07-19 12:00 Thai time",
+   "hours_from_the_target": 18.14
+  },
+  "pass": {
+   "file": "event_20250719T2308Z_s1a_o62.tif",
+   "time_utc": "2025-07-19T23:08:07Z",
+   "relative_orbit": 62,
+   "platform": "Sentinel-1A",
+   "label": "20250719T2308_o62_S1A"
+  },
+  "central": {
+   "compared_cells": 738099,
+   "reference_water_cells": 0,
+   "answered_cells": 735603,
+   "no_answer_cells": 2496,
+   "true_positive": 0,
+   "false_positive": 4,
+   "false_negative_answered": 0,
+   "true_negative_answered": 735599,
+   "no_answer_reference_water": 0,
+   "no_answer_reference_dry": 2496,
+   "iou_no_answer_as_not_flagged": 0.0,
+   "iou_answered_cells": 0.0,
+   "flagged_that_is_reference_water": 0.0,
+   "reference_water_flagged_no_answer_as_not_flagged": null,
+   "reference_water_flagged_answered_cells": null,
+   "no_answer_share": 0.003382
+  },
+  "lower": {
+   "compared_cells": 738099,
+   "reference_water_cells": 0,
+   "answered_cells": 735603,
+   "no_answer_cells": 2496,
+   "true_positive": 0,
+   "false_positive": 0,
+   "false_negative_answered": 0,
+   "true_negative_answered": 735603,
+   "no_answer_reference_water": 0,
+   "no_answer_reference_dry": 2496,
+   "iou_no_answer_as_not_flagged": null,
+   "iou_answered_cells": null,
+   "flagged_that_is_reference_water": null,
+   "reference_water_flagged_no_answer_as_not_flagged": null,
+   "reference_water_flagged_answered_cells": null,
+   "no_answer_share": 0.003382
+  },
+  "upper": {
+   "compared_cells": 738099,
+   "reference_water_cells": 0,
+   "answered_cells": 735603,
+   "no_answer_cells": 2496,
+   "true_positive": 0,
+   "false_positive": 18,
+   "false_negative_answered": 0,
+   "true_negative_answered": 735585,
+   "no_answer_reference_water": 0,
+   "no_answer_reference_dry": 2496,
+   "iou_no_answer_as_not_flagged": 0.0,
+   "iou_answered_cells": 0.0,
+   "flagged_that_is_reference_water": 0.0,
+   "reference_water_flagged_no_answer_as_not_flagged": null,
+   "reference_water_flagged_answered_cells": null,
+   "no_answer_share": 0.003382
+  },
+  "central_by_worldcover_group": {
+   "built_up": {
+    "compared_cells": 408,
+    "reference_water_cells": 0,
+    "answered_cells": 354,
+    "no_answer_cells": 54,
+    "true_positive": 0,
+    "false_positive": 0,
+    "false_negative_answered": 0,
+    "true_negative_answered": 354,
+    "no_answer_reference_water": 0,
+    "no_answer_reference_dry": 54,
+    "iou_no_answer_as_not_flagged": null,
+    "iou_answered_cells": null,
+    "flagged_that_is_reference_water": null,
+    "reference_water_flagged_no_answer_as_not_flagged": null,
+    "reference_water_flagged_answered_cells": null,
+    "no_answer_share": 0.132353
+   },
+   "cropland": {
+    "compared_cells": 4497,
+    "reference_water_cells": 0,
+    "answered_cells": 4497,
+    "no_answer_cells": 0,
+    "true_positive": 0,
+    "false_positive": 1,
+    "false_negative_answered": 0,
+    "true_negative_answered": 4496,
+    "no_answer_reference_water": 0,
+    "no_answer_reference_dry": 0,
+    "iou_no_answer_as_not_flagged": 0.0,
+    "iou_answered_cells": 0.0,
+    "flagged_that_is_reference_water": 0.0,
+    "reference_water_flagged_no_answer_as_not_flagged": null,
+    "reference_water_flagged_answered_cells": null,
+    "no_answer_share": 0.0
+   },
+   "tree_cover": {
+    "compared_cells": 642478,
+    "reference_water_cells": 0,
+    "answered_cells": 640036,
+    "no_answer_cells": 2442,
+    "true_positive": 0,
+    "false_positive": 0,
+    "false_negative_answered": 0,
+    "true_negative_answered": 640036,
+    "no_answer_reference_water": 0,
+    "no_answer_reference_dry": 2442,
+    "iou_no_answer_as_not_flagged": null,
+    "iou_answered_cells": null,
+    "flagged_that_is_reference_water": null,
+    "reference_water_flagged_no_answer_as_not_flagged": null,
+    "reference_water_flagged_answered_cells": null,
+    "no_answer_share": 0.003801
+   },
+   "other": {
+    "compared_cells": 90716,
+    "reference_water_cells": 0,
+    "answered_cells": 90716,
+    "no_answer_cells": 0,
+    "true_positive": 0,
+    "false_positive": 3,
+    "false_negative_answered": 0,
+    "true_negative_answered": 90713,
+    "no_answer_reference_water": 0,
+    "no_answer_reference_dry": 0,
+    "iou_no_answer_as_not_flagged": 0.0,
+    "iou_answered_cells": 0.0,
+    "flagged_that_is_reference_water": 0.0,
+    "reference_water_flagged_no_answer_as_not_flagged": null,
+    "reference_water_flagged_answered_cells": null,
+    "no_answer_share": 0.0
+   }
+  },
+  "central_interval_95": {
+   "resamples": 1000,
+   "seed": 20261014,
+   "tile_cells": 100,
+   "tile_m": 2000.0,
+   "tiles": 106,
+   "percentiles": [
+    2.5,
+    97.5
+   ],
+   "interval": {
+    "iou_no_answer_as_not_flagged": [
+     0.0,
+     0.0
+    ],
+    "iou_no_answer_as_not_flagged_draws_left_out": 136,
+    "iou_answered_cells": [
+     0.0,
+     0.0
+    ],
+    "iou_answered_cells_draws_left_out": 136,
+    "flagged_that_is_reference_water": [
+     0.0,
+     0.0
+    ],
+    "flagged_that_is_reference_water_draws_left_out": 136,
+    "reference_water_flagged_no_answer_as_not_flagged": null,
+    "reference_water_flagged_no_answer_as_not_flagged_draws_left_out": 1000,
+    "no_answer_share": [
+     0.001931,
+     0.005291
+    ]
+   }
+  },
+  "central_reasons_on_compared_cells": {
+   "flagged": 4,
+   "not_flagged_radar_dry": 443,
+   "not_flagged_group_of_fewer_than_2_cells_dropped": 12,
+   "not_flagged_terrain_hand_above_the_limit": 30241,
+   "not_flagged_terrain_slope_5_degrees_or_more": 704903,
+   "no_answer_built_up_at_low_hand": 54,
+   "no_answer_tree_cover_at_low_hand": 2442
+  },
+  "platform_offset_db": 0.0,
+  "label": "Agreement with JAXA's ALOS-2 map of 2025-07-19 inside its REGION, not a ground check; report only."
+ },
+ "dry_chip_report_only_on_the_test_1_pass": {
+  "report_only": true,
+  "pass": {
+   "file": "event_20250728T1120Z_s1c_o99.tif",
+   "time_utc": "2025-07-28T11:20:49Z",
+   "relative_orbit": 99,
+   "platform": "Sentinel-1C",
+   "label": "20250728T1120_o99_S1C"
+  },
+  "rule_of_the_first_run": "our map flags at most 0.05 of the chip's answered cells (permanent water left out)",
+  "central": {
+   "cells": 22500,
+   "answered_cells": 21408,
+   "flagged_cells": 8,
+   "flagged_share_of_answered": 0.000374
+  },
+  "lower": {
+   "cells": 22500,
+   "answered_cells": 21408,
+   "flagged_cells": 6,
+   "flagged_share_of_answered": 0.00028
+  },
+  "upper": {
+   "cells": 22500,
+   "answered_cells": 21408,
+   "flagged_cells": 11,
+   "flagged_share_of_answered": 0.000514
+  }
+ },
+ "binding": {
+  "test_1_passes": false,
+  "dry_control_passes": true,
+  "dry_control_taken_from": {
+   "path": "outputs/nan_case/test_result_v1.json",
+   "sha256": "6f67d4e37d8a98d28b5a48e19a88263122a2540ffd2b2aed46b55dd9200eab89"
+  },
+  "case_reference_date": "2025-07-28",
+  "flood_input_of_case_N1": {
+   "file": "event_20250728T1120Z_s1c_o99.tif",
+   "time_utc": "2025-07-28T11:20:49Z",
+   "relative_orbit": 99,
+   "platform": "Sentinel-1C",
+   "label": "20250728T1120_o99_S1C",
+   "map": {
+    "name": "m1z_20250728T1120_o99_S1C.tif",
+    "sha256": "c008c205c189223cf3c8fc6493a9bd3831c6673ddfe2497be3ee6b77cb4d6ac2",
+    "record": "m1z_20250728T1120_o99_S1C.json"
+   },
+   "levels": "bands code_lower, code_central and code_upper of the map (lower, central and upper flood)",
+   "platform_offset_db": 0.79,
+   "days_from_the_case_reference_date_thai_calendar": 0
+  },
+  "per_tambon_conditions": "set by the planning lane from the map of the flood input: no-answer share <= 0.20, answered land >= 0.80, pass within 3 days, C4 to C8",
+  "reference_of_case_N2": {
+   "name": "reference_test_1_jaxa_20250728.tif",
+   "sha256": "ddd1a60e6ca0331af63c352fa5880460f1cc277fe2eec656020f5e6b317087ef",
+   "folder": "<external>/proposal_execution/nan_case_v1/method/case_n2_reference",
+   "what": "JAXA's FLDEXT polygons of 2025-07-28 as provided, by cell centre, inside its REGION layer; 255 outside REGION",
+   "codes": "1 water, 0 not water, 255 not observed (no answer)",
+   "cells_by_code": {
+    "1": 59580,
+    "0": 11561771,
+    "255": 6795489
+   },
+   "use": "the flood input of case N2 (test 5): scripts/nan_case_chain.py nan --case N2 --flood-central <this file>",
+   "rights": "a raster made from the reference for the chain; it stays outside Git and is never published"
+  },
+  "under": "amendment 2: the binding rule of the protocol applies with this test 1 and the dry control of the first run"
+ },
+ "comparators": {
+  "what": {
+   "r37_frozen_detector": "Decision log R37 frozen detector (simple_threshold_cleaned): VH after, a 3 by 3 mean at 20 m (the 5 by 5 at 10 m), at or below -18.46 dB; flags on slopes of 5 degrees or more dropped, then groups of fewer than 2 cells (800 m2), then growth into touching cells within 1.5 dB.",
+   "r37_simple_threshold": "Decision log R37 simple threshold: VH after, a 3 by 3 mean at 20 m, at or below -18.46 dB; no cleaning.",
+   "un_spider_dry_mean_before": "UN-SPIDER recommended practice with the dry-season mean of VH as its image before; groups of fewer than 2 cells at 20 m (the 8 cells at 10 m).",
+   "m1_literal_dry_mean_before": "M1-literal (frozen configuration) with the dry-season means of VV and VH as the image before, per 10,240 m lattice tile at 20 m.",
+   "m1_v2_dry_mean_before": "M1-v2 (frozen configuration, checked by geoid_m1_review.require_frozen_m1_v2) with the dry-season means as the image before, per lattice tile at 20 m."
+  },
+  "rule": "a comparator that does better is reported, never renamed as the result"
+ },
+ "map_files": {
+  "test_1_pass": {
+   "name": "m1z_20250728T1120_o99_S1C.tif",
+   "sha256": "c008c205c189223cf3c8fc6493a9bd3831c6673ddfe2497be3ee6b77cb4d6ac2",
+   "record": "m1z_20250728T1120_o99_S1C.json",
+   "listed_in_the_maps_index_with_these_bytes": true,
+   "status": "found in the maps folder (written by the maps stage or an earlier run of this script); this run read it and found the same values in its four bands"
+  },
+  "inputs_of_the_test_1_pass": {
+   "event": {
+    "name": "event_20250728T1120Z_s1c_o99.tif",
+    "sha256": "ee88d21834f1daf30862592da255882dc69eea7b3e4083f41c69c0417f298707"
+   },
+   "dry_season": {
+    "name": "dry_o99.tif",
+    "sha256": "130d665ab3f2b1d9aed7197fc92b86129e9a5ed7d663676ff57c0f97aabe67b3"
+   }
+  },
+  "inputs_of_the_test_1b_pass": {
+   "event": {
+    "name": "event_20250719T2308Z_s1a_o62.tif",
+    "sha256": "f91ab640bd8b63b875e10643945c6119b53187ec413a716407105c1a8d3376e3"
+   },
+   "dry_season": {
+    "name": "dry_o62.tif",
+    "sha256": "89b6aecf30bab7a7f044936b0f0ed79cb6bf14271b3511f05ed65b565bf817d3"
+   }
+  }
+ },
+ "rights_note": "Only figures are recorded; no JAXA geometry or raster enters Git, and the case N2 reference stays in the work folder. Credit: JAXA ALOS-2 maps 'Provided by JAXA' (Sentinel Asia).",
+ "limits": [
+  "C-band radar does not see water under trees, between buildings or under rice canopy, nor water that drained before the pass.",
+  "JAXA's map is another satellite's automatic analysis (ALOS-2, L-band), not a ground check; its files give no acquisition time with a zone, so the hours between it and our pass are not known.",
+  "Every figure is agreement with a reference layer. Planning guidance only; not an official warning."
+ ],
+ "supersedes": null
+}

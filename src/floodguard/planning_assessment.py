@@ -40,7 +40,7 @@ an official warning and not an observation of a flood, and class E never means s
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 from datetime import date
 import math
@@ -57,6 +57,7 @@ from floodguard.confidence import (
     SCENARIO_LANES,
     ConfidenceError,
     ConfidenceInputs,
+    ConfidenceRule,
     coverage_by_construction_applies,
     derive_confidence,
 )
@@ -246,6 +247,13 @@ OPEN_POINTS: tuple[Mapping[str, str], ...] = (
     },
 )
 """What the signed files leave open for this task. None of it is decided here."""
+
+ConfidenceDerivation = Callable[[ConfidenceInputs, ConfidenceRule], dict[str, Any]]
+"""A function in the place of :func:`floodguard.confidence.derive_confidence` (same arguments, same record shape).
+
+Every caller of this module passes none, and confidence rule v1 is applied as written. A later case protocol that
+replaces a condition of the rule passes its own function (``floodguard.nan_case_chain``); the rest of the row is
+assembled by the same code."""
 
 
 class PlanningAssessmentError(ValueError):
@@ -886,8 +894,12 @@ def assess_unit(
     *,
     routing_context_id: str,
     frame_header: Mapping[str, Any] | None = None,
+    derive: ConfidenceDerivation | None = None,
 ) -> dict[str, Any]:
     """Assemble the overlay row of one unit: components, confidence, FPPS, classes, leave-one-out, headline slot.
+
+    ``derive`` takes the place of :func:`floodguard.confidence.derive_confidence` when a case protocol replaces a
+    condition of confidence rule v1 (:data:`ConfidenceDerivation`). Without it the rule is applied as written.
 
     Raises:
         PlanningAssessmentError: when the measurements break the contract of the confidence rule (coverage
@@ -912,7 +924,7 @@ def assess_unit(
             "reporting frame only; the coverage of any other unit or input is measured"
         )
     try:
-        confidence = derive_confidence(
+        confidence = (derive or derive_confidence)(
             ConfidenceInputs(
                 unit_id=unit.unit_id,
                 lane=case.lane,
@@ -1038,6 +1050,7 @@ def assemble_overlay(
     source_name: str,
     data_version: str = ASSESSMENT_VERSION,
     assumptions: Sequence[str] = (),
+    derive: ConfidenceDerivation | None = None,
 ) -> dict[str, Any]:
     """Assemble the overlay of one case: the header, the lineage inputs and one row for each unit.
 
@@ -1054,6 +1067,7 @@ def assemble_overlay(
         routing_context_id: The ``input_id`` of the one routing context of every row.
         generated_at, git_commit, source_name, data_version: Header fields.
         assumptions: What the overlay assumes, beyond what this function states.
+        derive: Passed to :func:`assess_unit` for every row; ``None`` applies confidence rule v1 as written.
 
     Raises:
         PlanningAssessmentError: for no unit or a repeated one, a lineage that does not name the flood input
@@ -1077,7 +1091,8 @@ def assemble_overlay(
         raise PlanningAssessmentError("the lineage does not hold the routing context of the rows")
     header = frame_record(rules.binding.frame)
     rows = [
-        assess_unit(rules, case, flood, closure, unit, routing_context_id=routing_context_id, frame_header=header)
+        assess_unit(rules, case, flood, closure, unit, routing_context_id=routing_context_id, frame_header=header,
+                    derive=derive)
         for unit in units
     ]
     eligibility = rights.minimum_level(str(item["rights_level"]) for item in inputs)

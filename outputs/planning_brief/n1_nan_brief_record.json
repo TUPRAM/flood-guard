@@ -1,0 +1,327 @@
+{
+ "schema": "floodguard.planning_brief_record.v1",
+ "what_this_is": "The record of the printable brief of case N1: what it was made from, and that it changes nothing it read.",
+ "generated_at_utc": "2026-10-14T21:39:10Z",
+ "source_timestamp": "2025-07-28T11:20:49Z",
+ "result_generated_at": "2026-10-14T19:32:52Z",
+ "confidence_class": "low",
+ "confidence_basis": "The lowest confidence class of the rows on the brief; each row's class is printed beside it.",
+ "confidence_classes_of_the_rows": [
+  "low"
+ ],
+ "assumptions": [
+  "One flood input drives 4 of 5 components (90% of weight).",
+  "Road closures are modelled from the radar map by closure rule v1. No closure was observed.",
+  "Residents are modelled counts (WorldPop 2020).",
+  "The radar map is the project's own map, frozen before the test and used as computed. Where the radar gives no answer, a cell counts as not flooded.",
+  "Radar does not see water under trees, between buildings or under crops, nor water that drained before the pass.",
+  "Every test figure is agreement with another map, not a ground check. The score is not accepted for decisions (accepted_fpps stays null)."
+ ],
+ "official_warning": false,
+ "operational_status": "non_operational",
+ "can_feed_decision_layer": false,
+ "made_from": [
+  {
+   "what": "result_file",
+   "path": "outputs/nan_case/planning_result_n1_nan_v1.json",
+   "sha256": "903d96df99b357f12ce3e79e40eb11c13f1416c16fa3ccdb6d9fdb726342ef7c"
+  },
+  {
+   "what": "test_record",
+   "path": "outputs/nan_case/test_1_jaxa_v1.json",
+   "sha256": "a823139f833bfcc6d54c8543e3fc596f5c9f172bb990e9e23d9dfc3362e8ce06"
+  },
+  {
+   "what": "first_run_record",
+   "path": "outputs/nan_case/test_result_v1.json",
+   "sha256": "6f67d4e37d8a98d28b5a48e19a88263122a2540ffd2b2aed46b55dd9200eab89"
+  },
+  {
+   "what": "post_test_reasons",
+   "path": "outputs/nan_case/post_test_reasons_v1.json",
+   "sha256": "0bd45cdd4827765a64f2b820113a0b8c36430a0dc5be1269b1417b71cc153148"
+  },
+  {
+   "what": "ensemble_record",
+   "path": "outputs/nan_case/planning_result_n1_nan_v1_record.json",
+   "sha256": "36c5d7afc304da4b005bd83b4d54165e3b70c699dbbd051557ff0f872636c991"
+  }
+ ],
+ "ensemble_record": {
+  "kind": "run record of the chain",
+  "cells_run": 180
+ },
+ "test_outcome": {
+  "reference": "JAXA ALOS-2 Flood Proxy Map of 2025-07-28 (layer FLDEXT as water, inside layer REGION)",
+  "fallback": false,
+  "of_record_under": "amendment 2 of the protocol (decision log R53)",
+  "test_1_passes": false,
+  "dry_control_passes": true,
+  "iou": 0.226016,
+  "no_answer_share": 0.022472,
+  "dry_share": 0.000374,
+  "case_reference_date": "2025-07-28"
+ },
+ "files": [
+  {
+   "name": "n1_nan_brief.md",
+   "sha256": "a38a66cb72d3b51e11503701a52dc5b1979ce731904c3e798409e2a2637ef6ab",
+   "bytes": 24982
+  },
+  {
+   "name": "n1_nan_brief.html",
+   "sha256": "122198d8d44356f1a7944c6e522c267886e2184e9085257dd728ef9fee2c9a20",
+   "bytes": 38041
+  }
+ ],
+ "classes_on_the_brief": {
+  "TH550707": {
+   "class_in_effect": "E",
+   "would_be_class": "E",
+   "shown": "E",
+   "kind": "would_be",
+   "confidence_class": "low"
+  },
+  "TH550702": {
+   "class_in_effect": "E",
+   "would_be_class": "E",
+   "shown": "E",
+   "kind": "would_be",
+   "confidence_class": "low"
+  },
+  "TH551401": {
+   "class_in_effect": "E",
+   "would_be_class": "E",
+   "shown": "E",
+   "kind": "would_be",
+   "confidence_class": "low"
+  },
+  "TH551406": {
+   "class_in_effect": "E",
+   "would_be_class": "E",
+   "shown": "E",
+   "kind": "would_be",
+   "confidence_class": "low"
+  },
+  "TH550701": {
+   "class_in_effect": "E",
+   "would_be_class": "E",
+   "shown": "E",
+   "kind": "would_be",
+   "confidence_class": "low"
+  },
+  "TH550704": {
+   "class_in_effect": "E",
+   "would_be_class": "E",
+   "shown": "E",
+   "kind": "would_be",
+   "confidence_class": "low"
+  },
+  "TH550708": {
+   "class_in_effect": "E",
+   "would_be_class": "E",
+   "shown": "E",
+   "kind": "would_be",
+   "confidence_class": "low"
+  },
+  "TH550716": {
+   "class_in_effect": "E",
+   "would_be_class": "E",
+   "shown": "E",
+   "kind": "would_be",
+   "confidence_class": "low"
+  },
+  "TH550105": {
+   "class_in_effect": "E",
+   "would_be_class": "E",
+   "shown": "E",
+   "kind": "would_be",
+   "confidence_class": "low"
+  },
+  "TH550715": {
+   "class_in_effect": "E",
+   "would_be_class": "E",
+   "shown": "E",
+   "kind": "would_be",
+   "confidence_class": "low"
+  },
+  "TH550109": {
+   "class_in_effect": "E",
+   "would_be_class": "E",
+   "shown": "E",
+   "kind": "would_be",
+   "confidence_class": "low"
+  },
+  "TH550706": {
+   "class_in_effect": "E",
+   "would_be_class": "E",
+   "shown": "E",
+   "kind": "would_be",
+   "confidence_class": "low"
+  },
+  "TH550703": {
+   "class_in_effect": "E",
+   "would_be_class": "E",
+   "shown": "E",
+   "kind": "would_be",
+   "confidence_class": "low"
+  },
+  "TH550705": {
+   "class_in_effect": "E",
+   "would_be_class": "E",
+   "shown": "E",
+   "kind": "would_be",
+   "confidence_class": "low"
+  },
+  "TH550104": {
+   "class_in_effect": "E",
+   "would_be_class": "E",
+   "shown": "E",
+   "kind": "would_be",
+   "confidence_class": "low"
+  },
+  "TH551402": {
+   "class_in_effect": "E",
+   "would_be_class": "E",
+   "shown": "E",
+   "kind": "would_be",
+   "confidence_class": "low"
+  },
+  "TH550710": {
+   "class_in_effect": "E",
+   "would_be_class": "E",
+   "shown": "E",
+   "kind": "would_be",
+   "confidence_class": "low"
+  },
+  "TH550108": {
+   "class_in_effect": "E",
+   "would_be_class": "E",
+   "shown": "E",
+   "kind": "would_be",
+   "confidence_class": "low"
+  },
+  "TH550711": {
+   "class_in_effect": "E",
+   "would_be_class": "E",
+   "shown": "E",
+   "kind": "would_be",
+   "confidence_class": "low"
+  },
+  "TH550714": {
+   "class_in_effect": "E",
+   "would_be_class": "E",
+   "shown": "E",
+   "kind": "would_be",
+   "confidence_class": "low"
+  },
+  "TH550717": {
+   "class_in_effect": "E",
+   "would_be_class": "E",
+   "shown": "E",
+   "kind": "would_be",
+   "confidence_class": "low"
+  },
+  "TH550709": {
+   "class_in_effect": "E",
+   "would_be_class": "E",
+   "shown": "E",
+   "kind": "would_be",
+   "confidence_class": "low"
+  },
+  "TH550106": {
+   "class_in_effect": "E",
+   "would_be_class": "E",
+   "shown": "E",
+   "kind": "would_be",
+   "confidence_class": "low"
+  },
+  "TH551407": {
+   "class_in_effect": "E",
+   "would_be_class": "E",
+   "shown": "E",
+   "kind": "would_be",
+   "confidence_class": "low"
+  },
+  "TH550116": {
+   "class_in_effect": "E",
+   "would_be_class": "E",
+   "shown": "E",
+   "kind": "would_be",
+   "confidence_class": "low"
+  },
+  "TH551404": {
+   "class_in_effect": "E",
+   "would_be_class": "E",
+   "shown": "E",
+   "kind": "would_be",
+   "confidence_class": "low"
+  },
+  "TH551403": {
+   "class_in_effect": "E",
+   "would_be_class": "E",
+   "shown": "E",
+   "kind": "would_be",
+   "confidence_class": "low"
+  },
+  "TH551405": {
+   "class_in_effect": "E",
+   "would_be_class": "E",
+   "shown": "E",
+   "kind": "would_be",
+   "confidence_class": "low"
+  },
+  "TH550101": {
+   "class_in_effect": "E",
+   "would_be_class": "E",
+   "shown": "E",
+   "kind": "would_be",
+   "confidence_class": "low"
+  },
+  "TH550107": {
+   "class_in_effect": "E",
+   "would_be_class": "E",
+   "shown": "E",
+   "kind": "would_be",
+   "confidence_class": "low"
+  },
+  "TH550117": {
+   "class_in_effect": "E",
+   "would_be_class": "E",
+   "shown": "E",
+   "kind": "would_be",
+   "confidence_class": "low"
+  },
+  "TH550102": {
+   "class_in_effect": "E",
+   "would_be_class": "E",
+   "shown": "E",
+   "kind": "would_be",
+   "confidence_class": "low"
+  },
+  "TH550103": {
+   "class_in_effect": "E",
+   "would_be_class": "E",
+   "shown": "E",
+   "kind": "would_be",
+   "confidence_class": "low"
+  },
+  "TH550712": {
+   "class_in_effect": "E",
+   "would_be_class": null,
+   "shown": "E",
+   "kind": "binding",
+   "confidence_class": "low"
+  },
+  "TH550713": {
+   "class_in_effect": "E",
+   "would_be_class": null,
+   "shown": "E",
+   "kind": "binding",
+   "confidence_class": "low"
+  }
+ },
+ "thai_text": "Thai text written by the project's assistant; not reviewed by a native speaker.",
+ "how_to_print": "Open the HTML file in a browser and print: A4, landscape, one sheet, background graphics on.",
+ "wording": "Every test figure is agreement with another map, not a ground check. Planning guidance only."
+}

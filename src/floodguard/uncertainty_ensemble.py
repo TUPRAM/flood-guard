@@ -1035,6 +1035,7 @@ def run_ensemble(
     level: str = PUBLIC_LEVEL,
     not_run: Sequence[LevelNotRun] = (),
     people_losing_access: Mapping[RoutingKey, Mapping[str, Mapping[str, float]]] | None = None,
+    derive: planning_assessment.ConfidenceDerivation | None = None,
 ) -> dict[str, Any]:
     """Run the ensemble of one case over every cell that has measurements, and report every cell of the lane.
 
@@ -1056,6 +1057,8 @@ def run_ensemble(
             reason is refused.
         people_losing_access: ``combination -> unit -> service -> residents newly losing access within 30
             minutes``, from the access runs.
+        derive: Passed to ``planning_assessment.assess_unit`` for every unit of every combination; ``None``
+            applies confidence rule v1 as written.
 
     Returns:
         ``grid`` (the grid as the protocols state it), ``cells`` (every core cell with its status), ``units``
@@ -1099,7 +1102,8 @@ def run_ensemble(
         for unit in entry:
             try:
                 rows[key][unit.unit_id] = planning_assessment.assess_unit(
-                    rules, case, flood, closure, unit, routing_context_id=routing_context_id, frame_header=header)
+                    rules, case, flood, closure, unit, routing_context_id=routing_context_id, frame_header=header,
+                    derive=derive)
             except ValueError as error:
                 rows[key][unit.unit_id] = MeasurementFailure("row_assembly", type(error).__name__, str(error))
     if unit_order is None:

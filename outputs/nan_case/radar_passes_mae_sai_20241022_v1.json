@@ -1,0 +1,248 @@
+{
+ "schema": "floodguard.nan_case_radar_passes.v1",
+ "generated_at_utc": "2026-10-14T14:04:42Z",
+ "source_timestamp": "catalogue searched 2026-10-14T14:04:40Z; named event pass 2024-10-21T23:16 UTC; dry season 2024-01-01 to 2024-04-30",
+ "confidence_class": "not applicable (catalogue metadata)",
+ "assumptions": [
+  "Scenes are those of the sentinel-1-rtc catalogue whose footprint intersects the grid's outline (lon/lat, 10 points per side); catalogue holes are not filled from elsewhere.",
+  "Scenes of one platform and one relative orbit whose start times follow each other within 300 s form one pass; a pass starts at its first scene's start.",
+  "A pass belongs to a window when its start (UTC) lies inside it; the dry season runs from the start date 00:00:00 UTC to the end date 23:59:59 UTC.",
+  "Dry-season passes: the latest of the window first, at most 10, of the relative orbit of each event pass, from every platform the catalogue holds.",
+  "footprint_share_of_grid is the share of the grid inside the union of the pass's scene footprints as the catalogue gives them; it is not the share of valid values.",
+  "Metadata only: no asset address and no token is recorded."
+ ],
+ "official_warning": false,
+ "operational_status": "non_operational",
+ "protocol": "docs/proposal_execution/nan_case_protocol_v1.json",
+ "areas_file": "outputs/nan_case/areas_v1.json",
+ "area": "mae_sai_20241022",
+ "role": "tuning",
+ "grid": {
+  "epsg": 32647,
+  "cell_m": 20.0,
+  "west": 583680.0,
+  "north": 2273280.0,
+  "rows": 2048,
+  "cols": 1536
+ },
+ "catalogue": {
+  "collection": "sentinel-1-rtc",
+  "search": "https://planetarycomputer.microsoft.com/api/stac/v1/search",
+  "searched_at_utc": "2026-10-14T14:04:40Z",
+  "intersects": "the grid outline in lon/lat (EPSG:4326), 10 points per side",
+  "grouping_rule": "scenes of one platform and one relative orbit whose start times follow each other within 300 s form one pass; a pass starts at its first scene's start"
+ },
+ "event": {
+  "rule": "the one pass named in outputs/nan_case/areas_v1.json: Sentinel-1A, relative orbit 135, starting within 600 s of 2024-10-21T23:16 UTC",
+  "named_pass": {
+   "pass_utc": "2024-10-21T23:16",
+   "relative_orbit": 135,
+   "platform": "Sentinel-1A"
+  }
+ },
+ "event_passes": [
+  {
+   "key": "20241021T2316Z_s1a_o135",
+   "platform": "Sentinel-1A",
+   "relative_orbit": 135,
+   "orbit_state": "descending",
+   "start_utc": "2024-10-21T23:16:02Z",
+   "end_utc": "2024-10-21T23:16:27Z",
+   "start_thai": "2024-10-22T06:16:02+07:00",
+   "scenes": [
+    {
+     "item": "S1A_IW_GRDH_1SDV_20241021T231602_20241021T231627_056207_06E178_rtc",
+     "start_utc": "2024-10-21T23:16:02Z",
+     "end_utc": "2024-10-21T23:16:27Z",
+     "file_epsg_in_catalogue": 32647
+    }
+   ],
+   "footprint_share_of_grid": 1.0,
+   "status": "fetched",
+   "file": "event_20241021T2316Z_s1a_o135.tif",
+   "sha256": "4e6c1da6b73eb344a520bcc3505ead2019003e0b5994672532cdb91c080fdbdc",
+   "valid_share": {
+    "vv": 1.0,
+    "vh": 1.0,
+    "both": 1.0
+   },
+   "seconds": 64.6,
+   "fetched_at_utc": "2026-10-14T14:07:49Z"
+  }
+ ],
+ "dry_season": {
+  "window_utc": [
+   "2024-01-01T00:00:00Z",
+   "2024-04-30T23:59:59Z"
+  ],
+  "cap": 10,
+  "rule": "per relative orbit of the event passes: the latest passes of the window first, at most 10",
+  "min_valid_passes_per_cell_of_the_method": 6,
+  "by_orbit": {
+   "135": {
+    "passes_found": [
+     {
+      "key": "20240107T2316Z_s1a_o135",
+      "platform": "Sentinel-1A",
+      "relative_orbit": 135,
+      "orbit_state": "descending",
+      "start_utc": "2024-01-07T23:16:02Z",
+      "end_utc": "2024-01-07T23:16:27Z",
+      "start_thai": "2024-01-08T06:16:02+07:00",
+      "scenes": [
+       {
+        "item": "S1A_IW_GRDH_1SDV_20240107T231602_20240107T231627_052007_0648EA_rtc",
+        "start_utc": "2024-01-07T23:16:02Z",
+        "end_utc": "2024-01-07T23:16:27Z",
+        "file_epsg_in_catalogue": 32647
+       }
+      ],
+      "footprint_share_of_grid": 1.0
+     },
+     {
+      "key": "20240119T2316Z_s1a_o135",
+      "platform": "Sentinel-1A",
+      "relative_orbit": 135,
+      "orbit_state": "descending",
+      "start_utc": "2024-01-19T23:16:02Z",
+      "end_utc": "2024-01-19T23:16:27Z",
+      "start_thai": "2024-01-20T06:16:02+07:00",
+      "scenes": [
+       {
+        "item": "S1A_IW_GRDH_1SDV_20240119T231602_20240119T231627_052182_064ECF_rtc",
+        "start_utc": "2024-01-19T23:16:02Z",
+        "end_utc": "2024-01-19T23:16:27Z",
+        "file_epsg_in_catalogue": 32647
+       }
+      ],
+      "footprint_share_of_grid": 1.0
+     },
+     {
+      "key": "20240224T2316Z_s1a_o135",
+      "platform": "Sentinel-1A",
+      "relative_orbit": 135,
+      "orbit_state": "descending",
+      "start_utc": "2024-02-24T23:16:01Z",
+      "end_utc": "2024-02-24T23:16:26Z",
+      "start_thai": "2024-02-25T06:16:01+07:00",
+      "scenes": [
+       {
+        "item": "S1A_IW_GRDH_1SDV_20240224T231601_20240224T231626_052707_066098_rtc",
+        "start_utc": "2024-02-24T23:16:01Z",
+        "end_utc": "2024-02-24T23:16:26Z",
+        "file_epsg_in_catalogue": 32647
+       }
+      ],
+      "footprint_share_of_grid": 1.0
+     },
+     {
+      "key": "20240307T2316Z_s1a_o135",
+      "platform": "Sentinel-1A",
+      "relative_orbit": 135,
+      "orbit_state": "descending",
+      "start_utc": "2024-03-07T23:16:01Z",
+      "end_utc": "2024-03-07T23:16:26Z",
+      "start_thai": "2024-03-08T06:16:01+07:00",
+      "scenes": [
+       {
+        "item": "S1A_IW_GRDH_1SDV_20240307T231601_20240307T231626_052882_06668F_rtc",
+        "start_utc": "2024-03-07T23:16:01Z",
+        "end_utc": "2024-03-07T23:16:26Z",
+        "file_epsg_in_catalogue": 32647
+       }
+      ],
+      "footprint_share_of_grid": 1.0
+     },
+     {
+      "key": "20240412T2316Z_s1a_o135",
+      "platform": "Sentinel-1A",
+      "relative_orbit": 135,
+      "orbit_state": "descending",
+      "start_utc": "2024-04-12T23:16:01Z",
+      "end_utc": "2024-04-12T23:16:26Z",
+      "start_thai": "2024-04-13T06:16:01+07:00",
+      "scenes": [
+       {
+        "item": "S1A_IW_GRDH_1SDV_20240412T231601_20240412T231626_053407_067A69_rtc",
+        "start_utc": "2024-04-12T23:16:01Z",
+        "end_utc": "2024-04-12T23:16:26Z",
+        "file_epsg_in_catalogue": 32647
+       }
+      ],
+      "footprint_share_of_grid": 1.0
+     },
+     {
+      "key": "20240424T2316Z_s1a_o135",
+      "platform": "Sentinel-1A",
+      "relative_orbit": 135,
+      "orbit_state": "descending",
+      "start_utc": "2024-04-24T23:16:02Z",
+      "end_utc": "2024-04-24T23:16:27Z",
+      "start_thai": "2024-04-25T06:16:02+07:00",
+      "scenes": [
+       {
+        "item": "S1A_IW_GRDH_1SDV_20240424T231602_20240424T231627_053582_068144_rtc",
+        "start_utc": "2024-04-24T23:16:02Z",
+        "end_utc": "2024-04-24T23:16:27Z",
+        "file_epsg_in_catalogue": 32647
+       }
+      ],
+      "footprint_share_of_grid": 1.0
+     }
+    ],
+    "selected_latest_first": [
+     "20240424T2316Z_s1a_o135",
+     "20240412T2316Z_s1a_o135",
+     "20240307T2316Z_s1a_o135",
+     "20240224T2316Z_s1a_o135",
+     "20240119T2316Z_s1a_o135",
+     "20240107T2316Z_s1a_o135"
+    ],
+    "selected_platforms": {
+     "Sentinel-1A": 6
+    },
+    "sensor_agreement_check_applies": false,
+    "fewer_than_the_cap": true,
+    "statistics": {
+     "status": "computed",
+     "file": "dry_o135.tif",
+     "sha256": "03fd6fb59e9691c56658fd3f6fa4d239416f11f4e7671271785707c4a387e543",
+     "passes_used": [
+      "20240424T2316Z_s1a_o135",
+      "20240412T2316Z_s1a_o135",
+      "20240307T2316Z_s1a_o135",
+      "20240224T2316Z_s1a_o135",
+      "20240119T2316Z_s1a_o135",
+      "20240107T2316Z_s1a_o135"
+     ],
+     "share_of_cells_with_at_least_6_valid_passes": 1.0,
+     "sensor_agreement": {
+      "applies": false,
+      "platforms": [
+       "Sentinel-1A"
+      ],
+      "reason": "every selected dry pass of orbit 135 is from Sentinel-1A",
+      "rule": "for an orbit whose selected dry passes come from two platforms: the median, over cells with at least one valid pass of each platform, of (mean VH dB of the Sentinel-1A passes minus mean VH dB of the other platform's passes); flagged when its absolute value is above 0.5 dB; no correction is applied"
+     },
+     "seconds": 341.7,
+     "computed_at_utc": "2026-10-14T14:13:32Z"
+    }
+   }
+  }
+ },
+ "work_folder": "<external data root>/proposal_execution/nan_case_v1/radar/mae_sai_20241022/",
+ "file_naming": {
+  "event_pass": "event_<key>.tif and event_<key>.json",
+  "dry_statistics": "dry_o<orbit>.tif and dry_o<orbit>.json"
+ },
+ "problems": [],
+ "status_summary": {
+  "event_passes": {
+   "fetched": 1
+  },
+  "dry_orbits": {
+   "135": "computed"
+  },
+  "refreshed_at_utc": "2026-10-14T15:00:42Z"
+ }
+}

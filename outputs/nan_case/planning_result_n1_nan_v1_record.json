@@ -1,0 +1,3937 @@
+{
+  "schema_version": "floodguard.nan_case_chain_record.v1",
+  "what": "The run record of the score chain for case N1: what was read, what was checked, the per-tambon no-answer figures, the sensitivity run and the ensemble, beside the result file.",
+  "generated_at_utc": "2026-10-14T19:32:52Z",
+  "source_timestamp": "2025-07-28T11:20:49Z",
+  "confidence_class": "low",
+  "confidence_basis": "Planning classes from modelled access on OpenStreetMap roads, modelled resident and age counts, and closures assumed from a flood map. The confidence class of each row is in the result file; this line is the confidence of the run as evidence.",
+  "assumptions": [
+    "A closure is a modelled assumption of closure rule v1 (closure_basis), not an observed closure. A flood intersection does not prove that a road was closed.",
+    "The flood input is the project's own radar flood map (M1-z, frozen before the test; tier T2), a candidate map used as computed. Every figure of the case is agreement with a reference layer, not accuracy.",
+    "In the binding chain a no-answer cell (code 255) counts as not flagged, as test 1 counts it. The run record gives, per tambon, the no-answer share of the land outside permanent water, the residents in no-answer cells and the vehicle edges crossing them, and a sensitivity run of this cell with no-answer counted as flagged.",
+    "Residents are modelled WorldPop 2020 counts. A cell counts for the unit whose polygon holds its centre, and a resident is inside the flood extent when the cell centre lies in a flagged cell (the extent covers the point).",
+    "Flood likelihood is measured on the unit's land outside permanent water (the footprints of the ESA WorldCover 2021 class-80 cells), by polygon overlay in EPSG:32647, with the footprints of the flagged 20 m cells.",
+    "Confidence condition C4 compares the exposure with the flood input grown and shrunk by 20 m (one pixel, owner choice 2 of protocol v1b). The lower and upper maps are the flood axis of the ensemble, not C4.",
+    "Closure rule v1 measures roads against the flagged cells; for a tier T2 raster, polygons under 5 cells (8-connected; open point E1-OP6) are dropped first (protocol v1b raster_minimum_polygon_px).",
+    "Confidence is rule v1 with the binding rule of the Nan protocol in the place of the T2 skill condition behind C1 (the case-level test outcome, the tambon's no-answer share, the share of its land with an answer, and the days from the pass to the case reference date); C2 to C8 are rule v1 as written.",
+    "The access gap and the road criticality are computed from the resident counts of the access runs of the score chain at the closure level of the row (hospital by vehicle within 30 minutes, main road within 15 minutes). No stored ratio is read.",
+    "Vulnerability is computed from the modelled 2024 age counts of each unit on the national anchors of protocol v1b.",
+    "The headline slot of each row carries guardrail GR8 over the 180 cells of the Nan ensemble that were run.",
+    "Planning guidance only. Not an official warning. Class E never means safe.",
+    "Every row is the default cell of protocol v1b: the central flood map, the central closure level, the public services, WorldPop 2020, the P10 / P90 anchors and the default weights. The ensemble of the Nan protocol has run; the headline slot of each row carries guardrail GR8 over its cells.",
+    "source_timestamp is the last date of the flood input's source period at 00:00:00 UTC: the schema takes an instant, and the flood input has no time of day. Each input states its own source time.",
+    "The component records were produced by floodguard.normalisation and the confidence records by floodguard.confidence under the two signed protocol files, from the measurements each record echoes.",
+    "One flood input drives 4 of 5 components (90% of weight). This sentence appears on the overlay and in the brief appendix."
+  ],
+  "official_warning": false,
+  "operational_status": "non_operational",
+  "can_feed_decision_layer": false,
+  "accepted_fpps": null,
+  "accepted_action_class": null,
+  "chain_version": "nan_case_chain_v1",
+  "protocol_sha256": {
+    "v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+    "v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7",
+    "nan_case_v1": "e40966c7474e2168f732fa77de51d02efb128fa063757aa774085dc981d4d7cd"
+  },
+  "case": {
+    "case_id": "N1",
+    "tier": "T2",
+    "lane": "OBS",
+    "kind": "portfolio_case",
+    "case_reference_date": "2025-07-28"
+  },
+  "case_outcome": {
+    "test_1_passed": false,
+    "dry_control_passed": true,
+    "test_1_iou_no_answer_counted_as_not_flagged": 0.226016,
+    "reference": "JAXA ALOS-2 Flood Proxy Map of 2025-07-28 (layer FLDEXT as water, inside layer REGION)",
+    "case_reference_date": "2025-07-28",
+    "fallback_used": false,
+    "case_level_test_outcome_passed": false,
+    "wording": "agreement with JAXA ALOS-2 Flood Proxy Map of 2025-07-28 (layer FLDEXT as water, inside layer REGION), not accuracy",
+    "read_from": {
+      "test_result": {
+        "path": "outputs/nan_case/test_1_jaxa_v1.json",
+        "sha256": "a823139f833bfcc6d54c8543e3fc596f5c9f172bb990e9e23d9dfc3362e8ce06"
+      },
+      "flood_input": {
+        "file": "event_20250728T1120Z_s1c_o99.tif",
+        "time_utc": "2025-07-28T11:20:49Z",
+        "relative_orbit": 99,
+        "platform": "Sentinel-1C",
+        "label": "20250728T1120_o99_S1C",
+        "map": {
+          "name": "m1z_20250728T1120_o99_S1C.tif",
+          "sha256": "c008c205c189223cf3c8fc6493a9bd3831c6673ddfe2497be3ee6b77cb4d6ac2",
+          "record": "m1z_20250728T1120_o99_S1C.json"
+        },
+        "levels": "bands code_lower, code_central and code_upper of the map (lower, central and upper flood)",
+        "platform_offset_db": 0.79,
+        "days_from_the_case_reference_date_thai_calendar": 0
+      }
+    }
+  },
+  "publication_eligibility": "public",
+  "parameters": {
+    "grid": {
+      "west": 639520.0,
+      "north": 2111500.0,
+      "rows": 4303,
+      "cols": 4280,
+      "cell_m": 20.0,
+      "epsg": 32647
+    },
+    "one_pixel_m": 20.0,
+    "raster_minimum_polygon_px": 5,
+    "closure_polygon_connectivity": 8,
+    "closure_level_of_the_row": "central",
+    "services": [
+      "hospital",
+      "main_road_entry"
+    ],
+    "binding_treatment": "no_answer_counted_as_not_flagged",
+    "flood_axis_keys": {
+      "lower": "minus",
+      "central": "as_provided",
+      "upper": "plus"
+    },
+    "ensemble_cells_run": 180,
+    "tile_cells_of_the_report_only_figures": 64
+  },
+  "inputs": {
+    "flood_maps": {
+      "central": {
+        "file": "m1z_20250728T1120_o99_S1C.tif",
+        "band": 2,
+        "sha256": "c008c205c189223cf3c8fc6493a9bd3831c6673ddfe2497be3ee6b77cb4d6ac2",
+        "bytes": 1558504,
+        "nodata_tag": 255.0,
+        "cell_counts": {
+          "cells": 18416840,
+          "flagged": 49431,
+          "not_flagged": 18100317,
+          "no_answer": 267092
+        }
+      },
+      "lower": {
+        "file": "m1z_20250728T1120_o99_S1C.tif",
+        "band": 1,
+        "sha256": "c008c205c189223cf3c8fc6493a9bd3831c6673ddfe2497be3ee6b77cb4d6ac2",
+        "bytes": 1558504,
+        "nodata_tag": 255.0,
+        "cell_counts": {
+          "cells": 18416840,
+          "flagged": 42238,
+          "not_flagged": 18107510,
+          "no_answer": 267092
+        }
+      },
+      "upper": {
+        "file": "m1z_20250728T1120_o99_S1C.tif",
+        "band": 3,
+        "sha256": "c008c205c189223cf3c8fc6493a9bd3831c6673ddfe2497be3ee6b77cb4d6ac2",
+        "bytes": 1558504,
+        "nodata_tag": 255.0,
+        "cell_counts": {
+          "cells": 18416840,
+          "flagged": 55077,
+          "not_flagged": 18094671,
+          "no_answer": 267092
+        }
+      }
+    },
+    "context": {
+      "path": "<external_data_workspace>/proposal_execution/nan_case_v1/frame/e4_vehicle_candidate/context_inputs.json",
+      "file_sha256": "a9890d64c355a5bddad8fd278dbc55978d7cafdb37418e7535c51ccfadf46933",
+      "canonical_sha256": "b30c50ac0ba693db1164520a5f635134273919dcc22f1d61f78df4f47b79a9b0",
+      "generated_at": "2026-10-14T14:42:42.210166+00:00",
+      "osm_retrieved_at_utc": "2026-07-10T02:46:49Z",
+      "input_hashes": {
+        "osm": "b7f46018249638413b1d318bc86519f140c27af20cac7c00d42fe03775b7add1",
+        "worldpop": "fb39d85dd150c45c7b25771f29bcd548e611afa0967224ac6d8ca05727230e20",
+        "aoi_geometry": "ed7633a5fb88b2150f24b664b1ec87f7c316664cddd349506171e2638e639805",
+        "routing_geometry": "45cf6c629d2e57999cd67bb1b5abf1ca6c58dbb49138365e2a838fab549ec9f7",
+        "supplied_facilities": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "extracted_osm_roads": "d6994254ea79bd8ded4fbb7db387a6f780a0134819babdadc38d9c792f427212",
+        "extracted_osm_points": "1f97f349bcbfd45f5027bf7646a98046b1f61a588558ccfc6ec8ec6d08063277",
+        "reporting_geometry": "9e71faba25fa90413eabd191b158de1664dfb72d27cf920c9914cd41e8bd5bd2",
+        "reviewed_junctions": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "public_origin_records": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      }
+    },
+    "graph": {
+      "travel_mode": "legacy_vehicle",
+      "context_edges": 139441,
+      "grade_join_connectors": 264,
+      "joins_sha256": "00798a486df0d2bbfef5c53a62fbec81d36c04c0df3a7ec524684c878af9dc9d",
+      "road_nodes": 135866,
+      "demand_cells": 443739,
+      "destinations": {
+        "hospital": 5,
+        "main_road_entry": 2215,
+        "ddpm_located_shelter": 0
+      },
+      "destinations_snapped_to_the_graph": {
+        "hospital": 5,
+        "main_road_entry": 2215,
+        "ddpm_located_shelter": 0
+      }
+    },
+    "units": {
+      "units": 35,
+      "by_district": {
+        "TH5501": 11,
+        "TH5514": 7,
+        "TH5507": 17
+      },
+      "layer": "tha_admin3",
+      "unit_id_field": "adm3_pcode"
+    },
+    "routing_frame": {
+      "source": "given",
+      "path": "<external_data_workspace>/proposal_execution/nan_case_v1/frame/n1_routing_geometry.geojson",
+      "sha256": "924bf34b01c4ef6ff297b96a29aecc63a84900e868b6c4456c66d8f20e2b155a",
+      "area_km2": 4562.478
+    },
+    "boundaries": {
+      "path": "<external_data_workspace>/open_context/hdx_cod_ab/tha_admin_boundaries.gdb.zip",
+      "sha256": "09e62345481bb80030ff6779e074bfb2c16629b70ae1e373ebd31945f1c6e0d8"
+    },
+    "permanent_water": {
+      "rule": "Protocol v1a, scoring_frame.components.flood_likelihood_0_100: the component is the flooded share of the unit's non-permanent-water land, and permanent water is ESA WorldCover 2021 v200 class 80 in every case. The scoring frame names permanent water for this component only, so the extents are written as they are and are not cut by it; exposure and closures read the whole extent.",
+      "source": "ESA WorldCover 2021 v200",
+      "class": 80,
+      "file": "ESA_WorldCover_10m_2021_v200_N18E099_Map.tif",
+      "sha256": "e02c02859074bc0ff0cf1bed21b074520be46c4385e0071c327c173e0ec9f4eb",
+      "bytes": 80234221,
+      "raster_crs": "EPSG:4326",
+      "cell_size": [
+        8.333333333333333e-05,
+        8.333333333333333e-05
+      ],
+      "product_version": "V2.0.0",
+      "time_start": "2021-01-01T00:00:00Z",
+      "time_end": "2021-12-31T23:59:59Z",
+      "licence": "CC-BY 4.0 - https://creativecommons.org/licenses/by/4.0/",
+      "attribution": "ESA WorldCover project 2021 / Contains modified Copernicus Sentinel data (2021) processed by ESA WorldCover consortium",
+      "window": {
+        "col_off": 16218,
+        "row_off": 23255,
+        "width": 9031,
+        "height": 8707
+      },
+      "cells_read": 78632917,
+      "class_cells_in_window": 145596,
+      "no_value_cells_in_window": 0,
+      "frame": "reporting_frame",
+      "frame_km2": 3602.788818,
+      "permanent_water_km2": 9.728625,
+      "non_permanent_water_km2": 3593.060193,
+      "no_land_cover_value_km2": 0.0,
+      "measurement": "The footprint of every cell of the class, projected vertex by vertex to EPSG:32647, clipped to the frame and snapped to a 1 mm grid; areas by polygon overlay (open point E1-OP3)."
+    },
+    "age_counts": {
+      "source": "computed",
+      "path": "<external_data_workspace>/proposal_execution/nan_case_v1/score_chain/age_table_n1.json",
+      "bytes": 73325,
+      "sha256": "1ee82bbd21ef3ef83c4b68982af41bd752773a2d2ca52f39a55a29d17c30877e",
+      "age_manifest_sha256": "f7a169877177a374bc461724dcb93b6ec96d76451347cd2e98dc2fc7b0f8356c",
+      "source_timestamp": "2024"
+    },
+    "rescaled_demand": {
+      "source": "built with build_uncertainty_ensemble.rescaled_residents (decision log R38, R39)",
+      "rules": [
+        "A 100 m count belongs to the 1 km cell that holds the centre of its 100 m cell.",
+        "A positive 2020 count whose 1 km cell has no valid 2024 total keeps its 2020 value and is reported; it is neither set to zero nor rescaled."
+      ],
+      "counts_2020": 838831,
+      "positive_counts_2020": 828523,
+      "residents_2020": 261717.06453711912,
+      "residents_after": 288848.5609581853,
+      "cells_1km_with_a_ratio": 4975,
+      "ratio_lowest_median_highest": [
+        0.0,
+        0.294285,
+        14.936866
+      ],
+      "kept_at_2020_because_the_1km_cell_has_no_2024_total": {
+        "counts": 331890,
+        "residents_2020": 38355.19931731373,
+        "cells_1km": 3335
+      },
+      "residents_2024_in_1km_cells_with_no_2020_count": 0.0,
+      "decision": "The two rules are the readings of decision log R38, accepted by the team (R39, item V-27 of the team page).",
+      "scope_of_the_counts_above": "every 2020 100 m count of the 1 km cells that hold a demand cell of the planning context, and one ring of cells around them",
+      "demand_cells": 443739,
+      "demand_residents_2020": 173144.78902267292,
+      "demand_residents_rescaled": 199515.4876948975,
+      "demand_cells_kept_at_2020": 143855,
+      "demand_residents_kept_at_2020": 16474.327936071903,
+      "sources": {
+        "worldpop_2020": {
+          "file": "open_context/worldpop_population/tha_ppp_2020.tif",
+          "sha256": "fb39d85dd150c45c7b25771f29bcd548e611afa0967224ac6d8ca05727230e20"
+        },
+        "worldpop_2024_age_counts": {
+          "product": "Global2 R2025A v1, Thailand constrained total-sex age estimates",
+          "year_represented": 2024,
+          "manifest_sha256": "f7a169877177a374bc461724dcb93b6ec96d76451347cd2e98dc2fc7b0f8356c",
+          "rights_level": "public (decision log R21)",
+          "total": "the sum of the 20 age bands of a 1 km cell; no total where a band has no valid count"
+        }
+      }
+    },
+    "national_anchors": {
+      "path": "outputs/planning_v1/national_vulnerability_anchors_v1.json",
+      "sha256": "2ad161d4c67cbe1567fbb853fe951da3ffb257f06088fbc80e8e297938c73a59"
+    },
+    "lineage_of_the_result_file": {
+      "nan_m1z.20250728t1120_o99_s1c": "c008c205c189223cf3c8fc6493a9bd3831c6673ddfe2497be3ee6b77cb4d6ac2",
+      "nan_planning_context_vehicle": "b30c50ac0ba693db1164520a5f635134273919dcc22f1d61f78df4f47b79a9b0",
+      "worldpop_2020_100m": "fb39d85dd150c45c7b25771f29bcd548e611afa0967224ac6d8ca05727230e20",
+      "unit_boundaries": "09e62345481bb80030ff6779e074bfb2c16629b70ae1e373ebd31945f1c6e0d8",
+      "nan_permanent_water": "e02c02859074bc0ff0cf1bed21b074520be46c4385e0071c327c173e0ec9f4eb",
+      "nan_age_counts": "1ee82bbd21ef3ef83c4b68982af41bd752773a2d2ca52f39a55a29d17c30877e",
+      "nan_access_runs": "2692bb7868bfa044e9534795b98513cb9c3f5115e966dc0c74fc77280e8f58f5",
+      "national_vulnerability_anchors": "2ad161d4c67cbe1567fbb853fe951da3ffb257f06088fbc80e8e297938c73a59"
+    }
+  },
+  "flood_extents": {
+    "lower": {
+      "rule": "polygons under the minimum dropped (tier T2 raster)",
+      "polygons": 3105,
+      "polygons_dropped": 1856,
+      "cells_dropped": 4862,
+      "minimum_px": 5,
+      "connectivity": 8,
+      "reporting_frame": {
+        "area_m2": 12467341.387,
+        "area_km2": 12.467341,
+        "polygons": 3663,
+        "vertices": 35017
+      },
+      "routing_frame": {
+        "area_m2": 11505200.0,
+        "area_km2": 11.5052,
+        "polygons": 1985,
+        "vertices": 26309
+      }
+    },
+    "central": {
+      "rule": "polygons under the minimum dropped (tier T2 raster)",
+      "polygons": 3380,
+      "polygons_dropped": 1974,
+      "cells_dropped": 5213,
+      "minimum_px": 5,
+      "connectivity": 8,
+      "reporting_frame": {
+        "area_m2": 14800311.196,
+        "area_km2": 14.800311,
+        "polygons": 3970,
+        "vertices": 39773
+      },
+      "routing_frame": {
+        "area_m2": 13764000.0,
+        "area_km2": 13.764,
+        "polygons": 2220,
+        "vertices": 30669
+      }
+    },
+    "upper": {
+      "rule": "polygons under the minimum dropped (tier T2 raster)",
+      "polygons": 3520,
+      "polygons_dropped": 1995,
+      "cells_dropped": 5288,
+      "minimum_px": 5,
+      "connectivity": 8,
+      "reporting_frame": {
+        "area_m2": 16591717.075,
+        "area_km2": 16.591717,
+        "polygons": 4095,
+        "vertices": 42823
+      },
+      "routing_frame": {
+        "area_m2": 15592800.0,
+        "area_km2": 15.5928,
+        "polygons": 2384,
+        "vertices": 33913
+      }
+    }
+  },
+  "no_answer_by_tambon": [
+    {
+      "unit_id": "TH550101",
+      "land_outside_permanent_water_m2": 5596847.926090799,
+      "no_answer_land_m2": 1984659.5427542955,
+      "no_answer_share_of_land": 0.35460308533709084,
+      "answered_share_of_land": 0.6453969146629092,
+      "residents": 11985.611561775208,
+      "residents_in_no_answer_cells": 4879.966278553009,
+      "vehicle_edges_crossing_no_answer_cells": 914,
+      "length_of_those_edges_inside_no_answer_cells_m": 33900.73036224243,
+      "residents_in_flagged_cells_by_grid_lookup": 45.087610721588135
+    },
+    {
+      "unit_id": "TH550102",
+      "land_outside_permanent_water_m2": 235765927.09293717,
+      "no_answer_land_m2": 1587531.4315259182,
+      "no_answer_share_of_land": 0.0067335066228638085,
+      "answered_share_of_land": 0.9932664933771362,
+      "residents": 6956.686813361943,
+      "residents_in_no_answer_cells": 92.55445193499327,
+      "vehicle_edges_crossing_no_answer_cells": 276,
+      "length_of_those_edges_inside_no_answer_cells_m": 6252.402174477906,
+      "residents_in_flagged_cells_by_grid_lookup": 7.8820130825042725
+    },
+    {
+      "unit_id": "TH550103",
+      "land_outside_permanent_water_m2": 88292272.32872681,
+      "no_answer_land_m2": 1707299.7996343519,
+      "no_answer_share_of_land": 0.01933691085985182,
+      "answered_share_of_land": 0.9806630891401482,
+      "residents": 9629.915283665061,
+      "residents_in_no_answer_cells": 862.0002815723419,
+      "vehicle_edges_crossing_no_answer_cells": 503,
+      "length_of_those_edges_inside_no_answer_cells_m": 15720.573156682212,
+      "residents_in_flagged_cells_by_grid_lookup": 2.194671154022217
+    },
+    {
+      "unit_id": "TH550104",
+      "land_outside_permanent_water_m2": 23298945.31791095,
+      "no_answer_land_m2": 3827289.244991453,
+      "no_answer_share_of_land": 0.16426877666643747,
+      "answered_share_of_land": 0.8357312233335625,
+      "residents": 6399.573734879494,
+      "residents_in_no_answer_cells": 1256.5447410941124,
+      "vehicle_edges_crossing_no_answer_cells": 1249,
+      "length_of_those_edges_inside_no_answer_cells_m": 38335.10607081928,
+      "residents_in_flagged_cells_by_grid_lookup": 118.71391481161118
+    },
+    {
+      "unit_id": "TH550105",
+      "land_outside_permanent_water_m2": 13285604.901341245,
+      "no_answer_land_m2": 1379023.9337601375,
+      "no_answer_share_of_land": 0.10379835498652519,
+      "answered_share_of_land": 0.8962016450134748,
+      "residents": 2443.9221010506153,
+      "residents_in_no_answer_cells": 373.93988275527954,
+      "vehicle_edges_crossing_no_answer_cells": 493,
+      "length_of_those_edges_inside_no_answer_cells_m": 14610.138529051255,
+      "residents_in_flagged_cells_by_grid_lookup": 95.98648989200592
+    },
+    {
+      "unit_id": "TH550106",
+      "land_outside_permanent_water_m2": 76870187.1334051,
+      "no_answer_land_m2": 864905.1050953472,
+      "no_answer_share_of_land": 0.011251502531070197,
+      "answered_share_of_land": 0.9887484974689298,
+      "residents": 3026.4635153114796,
+      "residents_in_no_answer_cells": 131.74754295498133,
+      "vehicle_edges_crossing_no_answer_cells": 179,
+      "length_of_those_edges_inside_no_answer_cells_m": 4937.4432311726805,
+      "residents_in_flagged_cells_by_grid_lookup": 7.227757513523102
+    },
+    {
+      "unit_id": "TH550107",
+      "land_outside_permanent_water_m2": 29072720.392215904,
+      "no_answer_land_m2": 1108809.1380176565,
+      "no_answer_share_of_land": 0.03813916011501061,
+      "answered_share_of_land": 0.9618608398849894,
+      "residents": 1807.053001664579,
+      "residents_in_no_answer_cells": 90.69149705767632,
+      "vehicle_edges_crossing_no_answer_cells": 197,
+      "length_of_those_edges_inside_no_answer_cells_m": 5987.431619059354,
+      "residents_in_flagged_cells_by_grid_lookup": 8.084972381591797
+    },
+    {
+      "unit_id": "TH550108",
+      "land_outside_permanent_water_m2": 29189527.836720232,
+      "no_answer_land_m2": 2868887.2353310036,
+      "no_answer_share_of_land": 0.09828481129872757,
+      "answered_share_of_land": 0.9017151887012724,
+      "residents": 10532.035038560629,
+      "residents_in_no_answer_cells": 2301.8043221235275,
+      "vehicle_edges_crossing_no_answer_cells": 854,
+      "length_of_those_edges_inside_no_answer_cells_m": 29274.639525670984,
+      "residents_in_flagged_cells_by_grid_lookup": 352.262543797493
+    },
+    {
+      "unit_id": "TH550109",
+      "land_outside_permanent_water_m2": 32106566.760942608,
+      "no_answer_land_m2": 1870170.3144943567,
+      "no_answer_share_of_land": 0.058248841379371794,
+      "answered_share_of_land": 0.9417511586206282,
+      "residents": 6268.433979392052,
+      "residents_in_no_answer_cells": 760.8229826688766,
+      "vehicle_edges_crossing_no_answer_cells": 549,
+      "length_of_those_edges_inside_no_answer_cells_m": 15173.724433162048,
+      "residents_in_flagged_cells_by_grid_lookup": 259.9183303117752
+    },
+    {
+      "unit_id": "TH550116",
+      "land_outside_permanent_water_m2": 60839692.37764454,
+      "no_answer_land_m2": 1063884.9611346412,
+      "no_answer_share_of_land": 0.017486691986062116,
+      "answered_share_of_land": 0.9825133080139379,
+      "residents": 3417.6416582614183,
+      "residents_in_no_answer_cells": 110.10747477412224,
+      "vehicle_edges_crossing_no_answer_cells": 364,
+      "length_of_those_edges_inside_no_answer_cells_m": 6763.649915460222,
+      "residents_in_flagged_cells_by_grid_lookup": 38.670604795217514
+    },
+    {
+      "unit_id": "TH550117",
+      "land_outside_permanent_water_m2": 469519942.8866237,
+      "no_answer_land_m2": 4815084.06385435,
+      "no_answer_share_of_land": 0.010255334489630107,
+      "answered_share_of_land": 0.9897446655103699,
+      "residents": 11651.128904744983,
+      "residents_in_no_answer_cells": 475.11753077059984,
+      "vehicle_edges_crossing_no_answer_cells": 1311,
+      "length_of_those_edges_inside_no_answer_cells_m": 28653.50347006727,
+      "residents_in_flagged_cells_by_grid_lookup": 13.672806799411774
+    },
+    {
+      "unit_id": "TH550701",
+      "land_outside_permanent_water_m2": 30046375.558875307,
+      "no_answer_land_m2": 2059691.4478687758,
+      "no_answer_share_of_land": 0.06855041280545965,
+      "answered_share_of_land": 0.9314495871945403,
+      "residents": 8318.697363227606,
+      "residents_in_no_answer_cells": 921.1325867176056,
+      "vehicle_edges_crossing_no_answer_cells": 651,
+      "length_of_those_edges_inside_no_answer_cells_m": 20753.182248460802,
+      "residents_in_flagged_cells_by_grid_lookup": 343.7645398378372
+    },
+    {
+      "unit_id": "TH550702",
+      "land_outside_permanent_water_m2": 78624306.32462178,
+      "no_answer_land_m2": 1063517.3636977596,
+      "no_answer_share_of_land": 0.013526572295680925,
+      "answered_share_of_land": 0.9864734277043191,
+      "residents": 3720.9089606180787,
+      "residents_in_no_answer_cells": 179.03497226536274,
+      "vehicle_edges_crossing_no_answer_cells": 114,
+      "length_of_those_edges_inside_no_answer_cells_m": 2816.1036899086566,
+      "residents_in_flagged_cells_by_grid_lookup": 150.17287708818913
+    },
+    {
+      "unit_id": "TH550703",
+      "land_outside_permanent_water_m2": 119000703.43535355,
+      "no_answer_land_m2": 758783.1702804173,
+      "no_answer_share_of_land": 0.006376291470349349,
+      "answered_share_of_land": 0.9936237085296507,
+      "residents": 4973.309796497226,
+      "residents_in_no_answer_cells": 62.37292446196079,
+      "vehicle_edges_crossing_no_answer_cells": 23,
+      "length_of_those_edges_inside_no_answer_cells_m": 325.74725205708563,
+      "residents_in_flagged_cells_by_grid_lookup": 34.23004199564457
+    },
+    {
+      "unit_id": "TH550704",
+      "land_outside_permanent_water_m2": 30622432.413123798,
+      "no_answer_land_m2": 2512806.3385021836,
+      "no_answer_share_of_land": 0.08205769889870913,
+      "answered_share_of_land": 0.9179423011012908,
+      "residents": 2414.3462569266558,
+      "residents_in_no_answer_cells": 289.9760477542877,
+      "vehicle_edges_crossing_no_answer_cells": 552,
+      "length_of_those_edges_inside_no_answer_cells_m": 11696.642197103472,
+      "residents_in_flagged_cells_by_grid_lookup": 85.57505384087563
+    },
+    {
+      "unit_id": "TH550705",
+      "land_outside_permanent_water_m2": 26584966.483636923,
+      "no_answer_land_m2": 1240852.5336066925,
+      "no_answer_share_of_land": 0.04667497077231369,
+      "answered_share_of_land": 0.9533250292276864,
+      "residents": 1592.5819489434361,
+      "residents_in_no_answer_cells": 109.60319983959198,
+      "vehicle_edges_crossing_no_answer_cells": 239,
+      "length_of_those_edges_inside_no_answer_cells_m": 5124.419713432145,
+      "residents_in_flagged_cells_by_grid_lookup": 38.98289340734482
+    },
+    {
+      "unit_id": "TH550706",
+      "land_outside_permanent_water_m2": 134650629.4825654,
+      "no_answer_land_m2": 2222522.455847388,
+      "no_answer_share_of_land": 0.016505845270743134,
+      "answered_share_of_land": 0.9834941547292568,
+      "residents": 4587.287990525365,
+      "residents_in_no_answer_cells": 185.48752084374428,
+      "vehicle_edges_crossing_no_answer_cells": 234,
+      "length_of_those_edges_inside_no_answer_cells_m": 6433.9743503634645,
+      "residents_in_flagged_cells_by_grid_lookup": 129.9023785442114
+    },
+    {
+      "unit_id": "TH550707",
+      "land_outside_permanent_water_m2": 350540203.7268307,
+      "no_answer_land_m2": 2414975.5361386663,
+      "no_answer_share_of_land": 0.006889296892234965,
+      "answered_share_of_land": 0.9931107031077651,
+      "residents": 5896.2348296791315,
+      "residents_in_no_answer_cells": 106.76699911057949,
+      "vehicle_edges_crossing_no_answer_cells": 126,
+      "length_of_those_edges_inside_no_answer_cells_m": 3299.579270624632,
+      "residents_in_flagged_cells_by_grid_lookup": 9.986866801977158
+    },
+    {
+      "unit_id": "TH550708",
+      "land_outside_permanent_water_m2": 37367712.3524149,
+      "no_answer_land_m2": 3257823.0281344377,
+      "no_answer_share_of_land": 0.0871828330674864,
+      "answered_share_of_land": 0.9128171669325136,
+      "residents": 4183.7070906460285,
+      "residents_in_no_answer_cells": 702.0546557307243,
+      "vehicle_edges_crossing_no_answer_cells": 601,
+      "length_of_those_edges_inside_no_answer_cells_m": 15740.422097848328,
+      "residents_in_flagged_cells_by_grid_lookup": 155.3939849436283
+    },
+    {
+      "unit_id": "TH550709",
+      "land_outside_permanent_water_m2": 421933607.6935265,
+      "no_answer_land_m2": 3846635.7018142194,
+      "no_answer_share_of_land": 0.009116684785650546,
+      "answered_share_of_land": 0.9908833152143495,
+      "residents": 5696.7857511900365,
+      "residents_in_no_answer_cells": 100.54818636924028,
+      "vehicle_edges_crossing_no_answer_cells": 133,
+      "length_of_those_edges_inside_no_answer_cells_m": 4182.918444685831,
+      "residents_in_flagged_cells_by_grid_lookup": 0.0
+    },
+    {
+      "unit_id": "TH550710",
+      "land_outside_permanent_water_m2": 78274470.0877936,
+      "no_answer_land_m2": 1596974.3128666608,
+      "no_answer_share_of_land": 0.020402237294937606,
+      "answered_share_of_land": 0.9795977627050624,
+      "residents": 2519.3026933968067,
+      "residents_in_no_answer_cells": 102.68674418330193,
+      "vehicle_edges_crossing_no_answer_cells": 160,
+      "length_of_those_edges_inside_no_answer_cells_m": 4342.627600313841,
+      "residents_in_flagged_cells_by_grid_lookup": 23.67347365617752
+    },
+    {
+      "unit_id": "TH550711",
+      "land_outside_permanent_water_m2": 174703231.20785126,
+      "no_answer_land_m2": 4316950.204975728,
+      "no_answer_share_of_land": 0.024710190962865957,
+      "answered_share_of_land": 0.975289809037134,
+      "residents": 5989.047949701548,
+      "residents_in_no_answer_cells": 286.148211941123,
+      "vehicle_edges_crossing_no_answer_cells": 465,
+      "length_of_those_edges_inside_no_answer_cells_m": 9709.638192362672,
+      "residents_in_flagged_cells_by_grid_lookup": 44.39624436199665
+    },
+    {
+      "unit_id": "TH550712",
+      "land_outside_permanent_water_m2": 150252953.8799634,
+      "no_answer_land_m2": 352873.1882424449,
+      "no_answer_share_of_land": 0.0023485274607270225,
+      "answered_share_of_land": 0.997651472539273,
+      "residents": 2793.335254922509,
+      "residents_in_no_answer_cells": 23.313394017517567,
+      "vehicle_edges_crossing_no_answer_cells": 10,
+      "length_of_those_edges_inside_no_answer_cells_m": 191.36192844085247,
+      "residents_in_flagged_cells_by_grid_lookup": 4.560661107301712
+    },
+    {
+      "unit_id": "TH550713",
+      "land_outside_permanent_water_m2": 147430400.6693052,
+      "no_answer_land_m2": 1661416.764154061,
+      "no_answer_share_of_land": 0.011269159933172219,
+      "answered_share_of_land": 0.9887308400668278,
+      "residents": 2479.73139949888,
+      "residents_in_no_answer_cells": 41.15177331119776,
+      "vehicle_edges_crossing_no_answer_cells": 71,
+      "length_of_those_edges_inside_no_answer_cells_m": 1724.8281566034752,
+      "residents_in_flagged_cells_by_grid_lookup": 0.5439339280128479
+    },
+    {
+      "unit_id": "TH550714",
+      "land_outside_permanent_water_m2": 108330213.46310306,
+      "no_answer_land_m2": 2491634.6053229314,
+      "no_answer_share_of_land": 0.02300036643213645,
+      "answered_share_of_land": 0.9769996335678636,
+      "residents": 2973.879026196897,
+      "residents_in_no_answer_cells": 126.45979948341846,
+      "vehicle_edges_crossing_no_answer_cells": 199,
+      "length_of_those_edges_inside_no_answer_cells_m": 5795.3540262470215,
+      "residents_in_flagged_cells_by_grid_lookup": 0.0
+    },
+    {
+      "unit_id": "TH550715",
+      "land_outside_permanent_water_m2": 66880466.0537973,
+      "no_answer_land_m2": 416696.42221443093,
+      "no_answer_share_of_land": 0.006230465288313762,
+      "answered_share_of_land": 0.9937695347116863,
+      "residents": 2245.4298151880503,
+      "residents_in_no_answer_cells": 32.25098659098148,
+      "vehicle_edges_crossing_no_answer_cells": 45,
+      "length_of_those_edges_inside_no_answer_cells_m": 878.6266537267737,
+      "residents_in_flagged_cells_by_grid_lookup": 15.368032529950142
+    },
+    {
+      "unit_id": "TH550716",
+      "land_outside_permanent_water_m2": 37528549.32339467,
+      "no_answer_land_m2": 1181663.7094492712,
+      "no_answer_share_of_land": 0.031487060671237875,
+      "answered_share_of_land": 0.9685129393287621,
+      "residents": 1749.9743405133486,
+      "residents_in_no_answer_cells": 126.60452295839787,
+      "vehicle_edges_crossing_no_answer_cells": 178,
+      "length_of_those_edges_inside_no_answer_cells_m": 5841.958833339963,
+      "residents_in_flagged_cells_by_grid_lookup": 76.913838326931
+    },
+    {
+      "unit_id": "TH550717",
+      "land_outside_permanent_water_m2": 93464156.7823565,
+      "no_answer_land_m2": 1782863.9635386122,
+      "no_answer_share_of_land": 0.019075376325175048,
+      "answered_share_of_land": 0.9809246236748249,
+      "residents": 2831.844213090837,
+      "residents_in_no_answer_cells": 83.69709040224552,
+      "vehicle_edges_crossing_no_answer_cells": 83,
+      "length_of_those_edges_inside_no_answer_cells_m": 2280.2189860763356,
+      "residents_in_flagged_cells_by_grid_lookup": 0.642697274684906
+    },
+    {
+      "unit_id": "TH551401",
+      "land_outside_permanent_water_m2": 13485641.97522718,
+      "no_answer_land_m2": 1846173.9187929917,
+      "no_answer_share_of_land": 0.13689922379552796,
+      "answered_share_of_land": 0.863100776204472,
+      "residents": 4452.527718484402,
+      "residents_in_no_answer_cells": 1477.0305329561234,
+      "vehicle_edges_crossing_no_answer_cells": 712,
+      "length_of_those_edges_inside_no_answer_cells_m": 22600.709614547577,
+      "residents_in_flagged_cells_by_grid_lookup": 623.7109543681145
+    },
+    {
+      "unit_id": "TH551402",
+      "land_outside_permanent_water_m2": 13992845.455070427,
+      "no_answer_land_m2": 921372.1867573459,
+      "no_answer_share_of_land": 0.06584594889693997,
+      "answered_share_of_land": 0.93415405110306,
+      "residents": 1549.92367836833,
+      "residents_in_no_answer_cells": 268.3136464357376,
+      "vehicle_edges_crossing_no_answer_cells": 489,
+      "length_of_those_edges_inside_no_answer_cells_m": 11176.854501879296,
+      "residents_in_flagged_cells_by_grid_lookup": 48.54690980911255
+    },
+    {
+      "unit_id": "TH551403",
+      "land_outside_permanent_water_m2": 62855470.96710918,
+      "no_answer_land_m2": 478049.94827101275,
+      "no_answer_share_of_land": 0.007605542380251439,
+      "answered_share_of_land": 0.9923944576197485,
+      "residents": 2699.4289606809616,
+      "residents_in_no_answer_cells": 51.7394992262125,
+      "vehicle_edges_crossing_no_answer_cells": 71,
+      "length_of_those_edges_inside_no_answer_cells_m": 1636.4691622315456,
+      "residents_in_flagged_cells_by_grid_lookup": 6.227330029010773
+    },
+    {
+      "unit_id": "TH551404",
+      "land_outside_permanent_water_m2": 43502612.28410099,
+      "no_answer_land_m2": 702814.4184231497,
+      "no_answer_share_of_land": 0.016155683107793715,
+      "answered_share_of_land": 0.9838443168922063,
+      "residents": 1958.749999448657,
+      "residents_in_no_answer_cells": 89.28687325119972,
+      "vehicle_edges_crossing_no_answer_cells": 177,
+      "length_of_those_edges_inside_no_answer_cells_m": 4454.294567001033,
+      "residents_in_flagged_cells_by_grid_lookup": 6.633562505245209
+    },
+    {
+      "unit_id": "TH551405",
+      "land_outside_permanent_water_m2": 83155639.49119025,
+      "no_answer_land_m2": 1053901.288099003,
+      "no_answer_share_of_land": 0.01267384021754359,
+      "answered_share_of_land": 0.9873261597824564,
+      "residents": 5924.914070174098,
+      "residents_in_no_answer_cells": 111.17991325259209,
+      "vehicle_edges_crossing_no_answer_cells": 119,
+      "length_of_those_edges_inside_no_answer_cells_m": 2299.20752217731,
+      "residents_in_flagged_cells_by_grid_lookup": 12.474380612373352
+    },
+    {
+      "unit_id": "TH551406",
+      "land_outside_permanent_water_m2": 18071436.40268469,
+      "no_answer_land_m2": 1046486.2701697972,
+      "no_answer_share_of_land": 0.057908306061068365,
+      "answered_share_of_land": 0.9420916939389317,
+      "residents": 3345.8475657999516,
+      "residents_in_no_answer_cells": 425.581913203001,
+      "vehicle_edges_crossing_no_answer_cells": 268,
+      "length_of_those_edges_inside_no_answer_cells_m": 8364.289678816995,
+      "residents_in_flagged_cells_by_grid_lookup": 454.37319046258926
+    },
+    {
+      "unit_id": "TH551407",
+      "land_outside_permanent_water_m2": 207922934.03792673,
+      "no_answer_land_m2": 2852459.3900922863,
+      "no_answer_share_of_land": 0.013718830023685487,
+      "answered_share_of_land": 0.9862811699763145,
+      "residents": 14128.526756286621,
+      "residents_in_no_answer_cells": 1369.441832318902,
+      "vehicle_edges_crossing_no_answer_cells": 881,
+      "length_of_those_edges_inside_no_answer_cells_m": 22731.43367890224,
+      "residents_in_flagged_cells_by_grid_lookup": 332.80204728245735
+    }
+  ],
+  "sensitivity_no_answer_counted_as_flagged": {
+    "what": "The central cell (central map, central closure level, public services, WorldPop 2020, P10 / P90, default weights) with every no-answer cell counted as flagged. Report-only; never binding.",
+    "closure_measurement": "The length of each edge inside the extent, summed over its tile pieces (64 x 64 cells), from the straight node-to-node segment in EPSG:32647; closure rule v1 at the central level.",
+    "table": [
+      {
+        "unit_id": "TH550101",
+        "binding": {
+          "components": {
+            "flood_likelihood_0_100": 3.6247229827966567,
+            "exposure_0_100": 0.37618114427621363,
+            "access_gap_0_100": 0.0,
+            "road_criticality_0_100": 0.0,
+            "vulnerability_context_0_100": 35.825709125860776
+          },
+          "fpps_0_100": 4.76,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "E",
+          "confidence_class": "low"
+        },
+        "no_answer_counted_as_flagged": {
+          "components": {
+            "flood_likelihood_0_100": 100.0,
+            "exposure_0_100": 41.09138581615388,
+            "access_gap_0_100": 44.72689707983217,
+            "road_criticality_0_100": 42.719476096780404,
+            "vulnerability_context_0_100": 35.825709125860776
+          },
+          "fpps_0_100": 59.21,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "D",
+          "confidence_class": "low"
+        },
+        "class_same": false
+      },
+      {
+        "unit_id": "TH550102",
+        "binding": {
+          "components": {
+            "flood_likelihood_0_100": 0.10289301463703152,
+            "exposure_0_100": 0.11330124948797499,
+            "access_gap_0_100": 0.0,
+            "road_criticality_0_100": 0.0,
+            "vulnerability_context_0_100": 35.87623707599801
+          },
+          "fpps_0_100": 3.65,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "E",
+          "confidence_class": "low"
+        },
+        "no_answer_counted_as_flagged": {
+          "components": {
+            "flood_likelihood_0_100": 3.469645485825202,
+            "exposure_0_100": 1.4437399255143388,
+            "access_gap_0_100": 19.248191950533453,
+            "road_criticality_0_100": 29.03974582689759,
+            "vulnerability_context_0_100": 35.87623707599801
+          },
+          "fpps_0_100": 13.2,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "E",
+          "confidence_class": "low"
+        },
+        "class_same": true
+      },
+      {
+        "unit_id": "TH550103",
+        "binding": {
+          "components": {
+            "flood_likelihood_0_100": 0.15282342773976587,
+            "exposure_0_100": 0.022790139781862593,
+            "access_gap_0_100": 0.04717157699967726,
+            "road_criticality_0_100": 0.04662885611900683,
+            "vulnerability_context_0_100": 35.74605367903104
+          },
+          "fpps_0_100": 3.64,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "E",
+          "confidence_class": "low"
+        },
+        "no_answer_counted_as_flagged": {
+          "components": {
+            "flood_likelihood_0_100": 9.821278857665696,
+            "exposure_0_100": 8.974065994041219,
+            "access_gap_0_100": 20.439313060684793,
+            "road_criticality_0_100": 16.708663300086712,
+            "vulnerability_context_0_100": 35.74605367903104
+          },
+          "fpps_0_100": 15.36,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "E",
+          "confidence_class": "low"
+        },
+        "class_same": true
+      },
+      {
+        "unit_id": "TH550104",
+        "binding": {
+          "components": {
+            "flood_likelihood_0_100": 17.242996683180838,
+            "exposure_0_100": 1.855028471108734,
+            "access_gap_0_100": 0.7062015722583895,
+            "road_criticality_0_100": 0.4741745552982673,
+            "vulnerability_context_0_100": 35.31701084001055
+          },
+          "fpps_0_100": 9.38,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "E",
+          "confidence_class": "low"
+        },
+        "no_answer_counted_as_flagged": {
+          "components": {
+            "flood_likelihood_0_100": 99.37738501639957,
+            "exposure_0_100": 21.48984780674021,
+            "access_gap_0_100": 46.560488175894434,
+            "road_criticality_0_100": 40.82391925458141,
+            "vulnerability_context_0_100": 35.31701084001055
+          },
+          "fpps_0_100": 54.15,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "D",
+          "confidence_class": "low"
+        },
+        "class_same": false
+      },
+      {
+        "unit_id": "TH550105",
+        "binding": {
+          "components": {
+            "flood_likelihood_0_100": 18.576381573208806,
+            "exposure_0_100": 3.9275593052144493,
+            "access_gap_0_100": 1.1999833555083728,
+            "road_criticality_0_100": 0.9382042018638163,
+            "vulnerability_context_0_100": 35.31701313604007
+          },
+          "fpps_0_100": 10.47,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "E",
+          "confidence_class": "low"
+        },
+        "no_answer_counted_as_flagged": {
+          "components": {
+            "flood_likelihood_0_100": 70.47555906647136,
+            "exposure_0_100": 19.228369531306637,
+            "access_gap_0_100": 58.96533455527502,
+            "road_criticality_0_100": 44.18875478320914,
+            "vulnerability_context_0_100": 35.31701313604007
+          },
+          "fpps_0_100": 47.9,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "D",
+          "confidence_class": "low"
+        },
+        "class_same": false
+      },
+      {
+        "unit_id": "TH550106",
+        "binding": {
+          "components": {
+            "flood_likelihood_0_100": 0.5803557676420584,
+            "exposure_0_100": 0.23881859064074099,
+            "access_gap_0_100": 8.748644536068031,
+            "road_criticality_0_100": 0.032616778898226305,
+            "vulnerability_context_0_100": 39.03209255444876
+          },
+          "fpps_0_100": 5.89,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "E",
+          "confidence_class": "low"
+        },
+        "no_answer_counted_as_flagged": {
+          "components": {
+            "flood_likelihood_0_100": 6.206107033177162,
+            "exposure_0_100": 4.592003166910845,
+            "access_gap_0_100": 100.0,
+            "road_criticality_0_100": 10.810239036967248,
+            "vulnerability_context_0_100": 39.03209255444876
+          },
+          "fpps_0_100": 28.53,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "E",
+          "confidence_class": "low"
+        },
+        "class_same": true
+      },
+      {
+        "unit_id": "TH550107",
+        "binding": {
+          "components": {
+            "flood_likelihood_0_100": 1.9267300242240128,
+            "exposure_0_100": 0.44741202245558215,
+            "access_gap_0_100": 0.34434950279944077,
+            "road_criticality_0_100": 0.0,
+            "vulnerability_context_0_100": 35.69299393580221
+          },
+          "fpps_0_100": 4.33,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "E",
+          "confidence_class": "low"
+        },
+        "no_answer_counted_as_flagged": {
+          "components": {
+            "flood_likelihood_0_100": 20.99631008172933,
+            "exposure_0_100": 5.46616338028157,
+            "access_gap_0_100": 99.47643542395541,
+            "road_criticality_0_100": 23.705408735656547,
+            "vulnerability_context_0_100": 35.69299393580221
+          },
+          "fpps_0_100": 34.69,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "E",
+          "confidence_class": "low"
+        },
+        "class_same": true
+      },
+      {
+        "unit_id": "TH550108",
+        "binding": {
+          "components": {
+            "flood_likelihood_0_100": 12.786605460359942,
+            "exposure_0_100": 3.3446769072431355,
+            "access_gap_0_100": 2.696162328460872,
+            "road_criticality_0_100": 2.6802155959098597,
+            "vulnerability_context_0_100": 35.69299606521645
+          },
+          "fpps_0_100": 9.18,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "E",
+          "confidence_class": "low"
+        },
+        "no_answer_counted_as_flagged": {
+          "components": {
+            "flood_likelihood_0_100": 61.92901110972383,
+            "exposure_0_100": 25.199943374701693,
+            "access_gap_0_100": 65.44690148539578,
+            "road_criticality_0_100": 35.75583408040639,
+            "vulnerability_context_0_100": 35.69299606521645
+          },
+          "fpps_0_100": 46.9,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "D",
+          "confidence_class": "low"
+        },
+        "class_same": false
+      },
+      {
+        "unit_id": "TH550109",
+        "binding": {
+          "components": {
+            "flood_likelihood_0_100": 15.000642880877866,
+            "exposure_0_100": 4.146463553198076,
+            "access_gap_0_100": 2.7105457362808654,
+            "road_criticality_0_100": 2.4773200032150213,
+            "vulnerability_context_0_100": 36.239409560711714
+          },
+          "fpps_0_100": 10.07,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "E",
+          "confidence_class": "low"
+        },
+        "no_answer_counted_as_flagged": {
+          "components": {
+            "flood_likelihood_0_100": 44.125063570563704,
+            "exposure_0_100": 16.28383287335267,
+            "access_gap_0_100": 63.798641522430955,
+            "road_criticality_0_100": 28.48235927565049,
+            "vulnerability_context_0_100": 36.239409560711714
+          },
+          "fpps_0_100": 37.96,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "D",
+          "confidence_class": "low"
+        },
+        "class_same": false
+      },
+      {
+        "unit_id": "TH550116",
+        "binding": {
+          "components": {
+            "flood_likelihood_0_100": 3.038026822222706,
+            "exposure_0_100": 1.1314996907806174,
+            "access_gap_0_100": 3.0905537201072137,
+            "road_criticality_0_100": 0.8704848927963172,
+            "vulnerability_context_0_100": 35.361143418927995
+          },
+          "fpps_0_100": 5.48,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "E",
+          "confidence_class": "low"
+        },
+        "no_answer_counted_as_flagged": {
+          "components": {
+            "flood_likelihood_0_100": 11.781372815253754,
+            "exposure_0_100": 4.353238122835393,
+            "access_gap_0_100": 100.0,
+            "road_criticality_0_100": 15.635924263785933,
+            "vulnerability_context_0_100": 35.361143418927995
+          },
+          "fpps_0_100": 30.5,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "E",
+          "confidence_class": "low"
+        },
+        "class_same": true
+      },
+      {
+        "unit_id": "TH550117",
+        "binding": {
+          "components": {
+            "flood_likelihood_0_100": 0.08443448746177572,
+            "exposure_0_100": 0.11735177690672921,
+            "access_gap_0_100": 0.5796855495842702,
+            "road_criticality_0_100": 0.18934218440648548,
+            "vulnerability_context_0_100": 37.6337175394814
+          },
+          "fpps_0_100": 3.96,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "E",
+          "confidence_class": "low"
+        },
+        "no_answer_counted_as_flagged": {
+          "components": {
+            "flood_likelihood_0_100": 5.212101631089463,
+            "exposure_0_100": 4.195218691391778,
+            "access_gap_0_100": 85.49205798687473,
+            "road_criticality_0_100": 68.09308373333678,
+            "vulnerability_context_0_100": 37.6337175394814
+          },
+          "fpps_0_100": 33.69,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "E",
+          "confidence_class": "low"
+        },
+        "class_same": true
+      },
+      {
+        "unit_id": "TH550701",
+        "binding": {
+          "components": {
+            "flood_likelihood_0_100": 19.67450151340834,
+            "exposure_0_100": 4.132432336791473,
+            "access_gap_0_100": 2.1221906769710492,
+            "road_criticality_0_100": 1.7001331305399638,
+            "vulnerability_context_0_100": 79.46188229559145
+          },
+          "fpps_0_100": 15.56,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "E",
+          "confidence_class": "low"
+        },
+        "no_answer_counted_as_flagged": {
+          "components": {
+            "flood_likelihood_0_100": 53.94970791613807,
+            "exposure_0_100": 15.205471137186196,
+            "access_gap_0_100": 34.17043076011575,
+            "road_criticality_0_100": 22.21608553848006,
+            "vulnerability_context_0_100": 79.46188229559145
+          },
+          "fpps_0_100": 38.1,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "D",
+          "confidence_class": "low"
+        },
+        "class_same": false
+      },
+      {
+        "unit_id": "TH550702",
+        "binding": {
+          "components": {
+            "flood_likelihood_0_100": 5.878559933497793,
+            "exposure_0_100": 4.0359191444244304,
+            "access_gap_0_100": 63.29352786415655,
+            "road_criticality_0_100": 5.169440610087643,
+            "vulnerability_context_0_100": 79.46188272289352
+          },
+          "fpps_0_100": 24.15,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "E",
+          "confidence_class": "low"
+        },
+        "no_answer_counted_as_flagged": {
+          "components": {
+            "flood_likelihood_0_100": 12.641846081338212,
+            "exposure_0_100": 8.847511531130483,
+            "access_gap_0_100": 99.49116987951442,
+            "road_criticality_0_100": 99.56778080636491,
+            "vulnerability_context_0_100": 79.46188272289352
+          },
+          "fpps_0_100": 48.78,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "B",
+          "confidence_class": "low"
+        },
+        "class_same": false
+      },
+      {
+        "unit_id": "TH550703",
+        "binding": {
+          "components": {
+            "flood_likelihood_0_100": 1.7017498963740176,
+            "exposure_0_100": 0.6882748792313981,
+            "access_gap_0_100": 4.742980332599257,
+            "road_criticality_0_100": 1.2546851510040427,
+            "vulnerability_context_0_100": 78.8654211623644
+          },
+          "fpps_0_100": 9.71,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "E",
+          "confidence_class": "low"
+        },
+        "no_answer_counted_as_flagged": {
+          "components": {
+            "flood_likelihood_0_100": 4.889895240751848,
+            "exposure_0_100": 1.9424280893509636,
+            "access_gap_0_100": 96.62265609158783,
+            "road_criticality_0_100": 97.91490071693846,
+            "vulnerability_context_0_100": 78.8654211623644
+          },
+          "fpps_0_100": 43.85,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "B",
+          "confidence_class": "low"
+        },
+        "class_same": false
+      },
+      {
+        "unit_id": "TH550704",
+        "binding": {
+          "components": {
+            "flood_likelihood_0_100": 13.392429442323511,
+            "exposure_0_100": 3.5444399739832044,
+            "access_gap_0_100": 2.4981082778899433,
+            "road_criticality_0_100": 1.7801996408553074,
+            "vulnerability_context_0_100": 79.42342751619458
+          },
+          "fpps_0_100": 13.61,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "E",
+          "confidence_class": "low"
+        },
+        "no_answer_counted_as_flagged": {
+          "components": {
+            "flood_likelihood_0_100": 54.42127889167809,
+            "exposure_0_100": 15.554981002319918,
+            "access_gap_0_100": 99.8156995629429,
+            "road_criticality_0_100": 99.66462501047289,
+            "vulnerability_context_0_100": 79.42342751619458
+          },
+          "fpps_0_100": 63.07,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "B",
+          "confidence_class": "low"
+        },
+        "class_same": false
+      },
+      {
+        "unit_id": "TH550705",
+        "binding": {
+          "components": {
+            "flood_likelihood_0_100": 5.783097367132281,
+            "exposure_0_100": 2.447779433466967,
+            "access_gap_0_100": 0.6373807657906949,
+            "road_criticality_0_100": 0.0,
+            "vulnerability_context_0_100": 70.74375686160988
+          },
+          "fpps_0_100": 9.55,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "E",
+          "confidence_class": "low"
+        },
+        "no_answer_counted_as_flagged": {
+          "components": {
+            "flood_likelihood_0_100": 29.120582753289113,
+            "exposure_0_100": 9.329886813392116,
+            "access_gap_0_100": 91.63766600469032,
+            "road_criticality_0_100": 85.61607456172038,
+            "vulnerability_context_0_100": 70.74375686160988
+          },
+          "fpps_0_100": 49.31,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "B",
+          "confidence_class": "low"
+        },
+        "class_same": false
+      },
+      {
+        "unit_id": "TH550706",
+        "binding": {
+          "components": {
+            "flood_likelihood_0_100": 3.304225934476853,
+            "exposure_0_100": 2.831790347859415,
+            "access_gap_0_100": 0.6398807046501446,
+            "road_criticality_0_100": 0.3508440118296629,
+            "vulnerability_context_0_100": 79.46147262404672
+          },
+          "fpps_0_100": 9.83,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "E",
+          "confidence_class": "low"
+        },
+        "no_answer_counted_as_flagged": {
+          "components": {
+            "flood_likelihood_0_100": 11.557148520903862,
+            "exposure_0_100": 6.875301922167639,
+            "access_gap_0_100": 79.61626406452356,
+            "road_criticality_0_100": 82.34803154358433,
+            "vulnerability_context_0_100": 79.46147262404672
+          },
+          "fpps_0_100": 41.41,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "B",
+          "confidence_class": "low"
+        },
+        "class_same": false
+      },
+      {
+        "unit_id": "TH550707",
+        "binding": {
+          "components": {
+            "flood_likelihood_0_100": 0.17918679108256844,
+            "exposure_0_100": 0.16937701924128817,
+            "access_gap_0_100": 100.0,
+            "road_criticality_0_100": 0.0,
+            "vulnerability_context_0_100": 79.44422047116963
+          },
+          "fpps_0_100": 28.04,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "E",
+          "confidence_class": "low"
+        },
+        "no_answer_counted_as_flagged": {
+          "components": {
+            "flood_likelihood_0_100": 3.6238348457292986,
+            "exposure_0_100": 1.9801427399883647,
+            "access_gap_0_100": 100.0,
+            "road_criticality_0_100": 100.0,
+            "vulnerability_context_0_100": 79.44422047116963
+          },
+          "fpps_0_100": 44.53,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "B",
+          "confidence_class": "low"
+        },
+        "class_same": false
+      },
+      {
+        "unit_id": "TH550708",
+        "binding": {
+          "components": {
+            "flood_likelihood_0_100": 11.130706697886332,
+            "exposure_0_100": 3.7142654009182348,
+            "access_gap_0_100": 0.274862614147335,
+            "road_criticality_0_100": 0.26950755763571815,
+            "vulnerability_context_0_100": 78.51166863730474
+          },
+          "fpps_0_100": 12.21,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "E",
+          "confidence_class": "low"
+        },
+        "no_answer_counted_as_flagged": {
+          "components": {
+            "flood_likelihood_0_100": 54.72212323162955,
+            "exposure_0_100": 20.49494914668965,
+            "access_gap_0_100": 68.5870158307912,
+            "road_criticality_0_100": 35.15286345862749,
+            "vulnerability_context_0_100": 78.51166863730474
+          },
+          "fpps_0_100": 48.38,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "D",
+          "confidence_class": "low"
+        },
+        "class_same": false
+      },
+      {
+        "unit_id": "TH550709",
+        "binding": {
+          "components": {
+            "flood_likelihood_0_100": 0.0023700411196596475,
+            "exposure_0_100": 0.0,
+            "access_gap_0_100": 0.0,
+            "road_criticality_0_100": 0.0,
+            "vulnerability_context_0_100": 79.29822190741204
+          },
+          "fpps_0_100": 7.93,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "E",
+          "confidence_class": "low"
+        },
+        "no_answer_counted_as_flagged": {
+          "components": {
+            "flood_likelihood_0_100": 4.560712433944932,
+            "exposure_0_100": 1.7649985581472176,
+            "access_gap_0_100": 52.036729258300554,
+            "road_criticality_0_100": 76.50735106432086,
+            "vulnerability_context_0_100": 79.29822190741204
+          },
+          "fpps_0_100": 31.62,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "E",
+          "confidence_class": "low"
+        },
+        "class_same": true
+      },
+      {
+        "unit_id": "TH550710",
+        "binding": {
+          "components": {
+            "flood_likelihood_0_100": 1.9621617747330127,
+            "exposure_0_100": 0.9396835766589956,
+            "access_gap_0_100": 1.4675715992192413,
+            "road_criticality_0_100": 0.9061179506402837,
+            "vulnerability_context_0_100": 79.46188200835657
+          },
+          "fpps_0_100": 9.2,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "E",
+          "confidence_class": "low"
+        },
+        "no_answer_counted_as_flagged": {
+          "components": {
+            "flood_likelihood_0_100": 12.163280422201813,
+            "exposure_0_100": 5.015682242974401,
+            "access_gap_0_100": 70.70775171813597,
+            "road_criticality_0_100": 16.778499032671174,
+            "vulnerability_context_0_100": 79.46188200835657
+          },
+          "fpps_0_100": 29.51,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "E",
+          "confidence_class": "low"
+        },
+        "class_same": true
+      },
+      {
+        "unit_id": "TH550711",
+        "binding": {
+          "components": {
+            "flood_likelihood_0_100": 0.9901552077050806,
+            "exposure_0_100": 0.7412905145334335,
+            "access_gap_0_100": 0.6379528151362147,
+            "road_criticality_0_100": 0.6240148327782531,
+            "vulnerability_context_0_100": 79.45348980643315
+          },
+          "fpps_0_100": 8.65,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "E",
+          "confidence_class": "low"
+        },
+        "no_answer_counted_as_flagged": {
+          "components": {
+            "flood_likelihood_0_100": 13.34525068913806,
+            "exposure_0_100": 5.519148603904426,
+            "access_gap_0_100": 37.1959238261655,
+            "road_criticality_0_100": 24.95313936004001,
+            "vulnerability_context_0_100": 79.45348980643315
+          },
+          "fpps_0_100": 24.51,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "E",
+          "confidence_class": "low"
+        },
+        "class_same": true
+      },
+      {
+        "unit_id": "TH550712",
+        "binding": {
+          "components": {
+            "flood_likelihood_0_100": 0.1961827129190373,
+            "exposure_0_100": 0.163269378398628,
+            "access_gap_0_100": null,
+            "road_criticality_0_100": 0.0,
+            "vulnerability_context_0_100": 79.46187399109178
+          },
+          "fpps_0_100": null,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": null,
+          "confidence_class": "low"
+        },
+        "no_answer_counted_as_flagged": {
+          "components": {
+            "flood_likelihood_0_100": 1.370445870087995,
+            "exposure_0_100": 0.9978771819708602,
+            "access_gap_0_100": null,
+            "road_criticality_0_100": 100.0,
+            "vulnerability_context_0_100": 79.46187399109178
+          },
+          "fpps_0_100": null,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": null,
+          "confidence_class": "low"
+        },
+        "class_same": true
+      },
+      {
+        "unit_id": "TH550713",
+        "binding": {
+          "components": {
+            "flood_likelihood_0_100": 0.017635440100525458,
+            "exposure_0_100": 0.02193519540554955,
+            "access_gap_0_100": null,
+            "road_criticality_0_100": 0.0,
+            "vulnerability_context_0_100": 79.38934332677809
+          },
+          "fpps_0_100": null,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": null,
+          "confidence_class": "low"
+        },
+        "no_answer_counted_as_flagged": {
+          "components": {
+            "flood_likelihood_0_100": 5.6522154066866355,
+            "exposure_0_100": 1.6814606310843483,
+            "access_gap_0_100": null,
+            "road_criticality_0_100": 21.606527848078652,
+            "vulnerability_context_0_100": 79.38934332677809
+          },
+          "fpps_0_100": null,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": null,
+          "confidence_class": "low"
+        },
+        "class_same": true
+      },
+      {
+        "unit_id": "TH550714",
+        "binding": {
+          "components": {
+            "flood_likelihood_0_100": 0.018462070147043454,
+            "exposure_0_100": 0.0,
+            "access_gap_0_100": 0.0,
+            "road_criticality_0_100": 0.0,
+            "vulnerability_context_0_100": 79.42991270574414
+          },
+          "fpps_0_100": 7.95,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "E",
+          "confidence_class": "low"
+        },
+        "no_answer_counted_as_flagged": {
+          "components": {
+            "flood_likelihood_0_100": 11.51864528621527,
+            "exposure_0_100": 4.252351839783469,
+            "access_gap_0_100": 82.4461469388662,
+            "road_criticality_0_100": 83.45090873913522,
+            "vulnerability_context_0_100": 79.42991270574414
+          },
+          "fpps_0_100": 41.47,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "B",
+          "confidence_class": "low"
+        },
+        "class_same": false
+      },
+      {
+        "unit_id": "TH550715",
+        "binding": {
+          "components": {
+            "flood_likelihood_0_100": 0.8495753886493623,
+            "exposure_0_100": 0.6844138447793391,
+            "access_gap_0_100": 9.42681071638107,
+            "road_criticality_0_100": 0.0,
+            "vulnerability_context_0_100": 79.34975779189321
+          },
+          "fpps_0_100": 10.25,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "E",
+          "confidence_class": "low"
+        },
+        "no_answer_counted_as_flagged": {
+          "components": {
+            "flood_likelihood_0_100": 3.964807990731805,
+            "exposure_0_100": 2.120708418443425,
+            "access_gap_0_100": 100.0,
+            "road_criticality_0_100": 100.0,
+            "vulnerability_context_0_100": 79.34975779189321
+          },
+          "fpps_0_100": 44.65,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "B",
+          "confidence_class": "low"
+        },
+        "class_same": false
+      },
+      {
+        "unit_id": "TH550716",
+        "binding": {
+          "components": {
+            "flood_likelihood_0_100": 6.860220578459788,
+            "exposure_0_100": 4.39514091985878,
+            "access_gap_0_100": 2.3453825319632218,
+            "road_criticality_0_100": 2.2321262103424155,
+            "vulnerability_context_0_100": 79.46187983893034
+          },
+          "fpps_0_100": 11.91,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "E",
+          "confidence_class": "low"
+        },
+        "no_answer_counted_as_flagged": {
+          "components": {
+            "flood_likelihood_0_100": 22.603750914078734,
+            "exposure_0_100": 11.629791167430918,
+            "access_gap_0_100": 35.140965724933686,
+            "road_criticality_0_100": 24.487226313165934,
+            "vulnerability_context_0_100": 79.46187983893034
+          },
+          "fpps_0_100": 28.34,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "E",
+          "confidence_class": "low"
+        },
+        "class_same": true
+      },
+      {
+        "unit_id": "TH550717",
+        "binding": {
+          "components": {
+            "flood_likelihood_0_100": 0.2962647736901149,
+            "exposure_0_100": 0.022695361267187412,
+            "access_gap_0_100": 0.0,
+            "road_criticality_0_100": 0.0,
+            "vulnerability_context_0_100": 78.53422212110048
+          },
+          "fpps_0_100": 7.95,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "E",
+          "confidence_class": "low"
+        },
+        "no_answer_counted_as_flagged": {
+          "components": {
+            "flood_likelihood_0_100": 9.833952936277639,
+            "exposure_0_100": 2.9782636801505813,
+            "access_gap_0_100": 91.65176406766876,
+            "road_criticality_0_100": 11.504638469885336,
+            "vulnerability_context_0_100": 78.53422212110048
+          },
+          "fpps_0_100": 31.6,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "E",
+          "confidence_class": "low"
+        },
+        "class_same": true
+      },
+      {
+        "unit_id": "TH551401",
+        "binding": {
+          "components": {
+            "flood_likelihood_0_100": 44.6013229953676,
+            "exposure_0_100": 14.008019574562464,
+            "access_gap_0_100": 6.744837478372852,
+            "road_criticality_0_100": 6.599213117754872,
+            "vulnerability_context_0_100": 48.649202756906746
+          },
+          "fpps_0_100": 24.09,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "E",
+          "confidence_class": "low"
+        },
+        "no_answer_counted_as_flagged": {
+          "components": {
+            "flood_likelihood_0_100": 100.0,
+            "exposure_0_100": 47.18087387986684,
+            "access_gap_0_100": 99.76806107850965,
+            "road_criticality_0_100": 99.54063616193662,
+            "vulnerability_context_0_100": 48.649202756906746
+          },
+          "fpps_0_100": 81.54,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "B",
+          "confidence_class": "low"
+        },
+        "class_same": false
+      },
+      {
+        "unit_id": "TH551402",
+        "binding": {
+          "components": {
+            "flood_likelihood_0_100": 9.481459900826815,
+            "exposure_0_100": 3.1322129267823,
+            "access_gap_0_100": 1.937016751131855,
+            "road_criticality_0_100": 1.3681690580643184,
+            "vulnerability_context_0_100": 49.92086217468674
+          },
+          "fpps_0_100": 9.21,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "E",
+          "confidence_class": "low"
+        },
+        "no_answer_counted_as_flagged": {
+          "components": {
+            "flood_likelihood_0_100": 42.40443434929676,
+            "exposure_0_100": 20.443623171072698,
+            "access_gap_0_100": 100.0,
+            "road_criticality_0_100": 100.0,
+            "vulnerability_context_0_100": 49.92086217468674
+          },
+          "fpps_0_100": 57.82,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "B",
+          "confidence_class": "low"
+        },
+        "class_same": false
+      },
+      {
+        "unit_id": "TH551403",
+        "binding": {
+          "components": {
+            "flood_likelihood_0_100": 0.5028696445300056,
+            "exposure_0_100": 0.23069064308474554,
+            "access_gap_0_100": 0.13325460720197824,
+            "road_criticality_0_100": 0.0,
+            "vulnerability_context_0_100": 51.07469622883685
+          },
+          "fpps_0_100": 5.34,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "E",
+          "confidence_class": "low"
+        },
+        "no_answer_counted_as_flagged": {
+          "components": {
+            "flood_likelihood_0_100": 4.305640834655726,
+            "exposure_0_100": 2.147373763101381,
+            "access_gap_0_100": 100.0,
+            "road_criticality_0_100": 100.0,
+            "vulnerability_context_0_100": 51.07469622883685
+          },
+          "fpps_0_100": 41.94,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "B",
+          "confidence_class": "low"
+        },
+        "class_same": false
+      },
+      {
+        "unit_id": "TH551404",
+        "binding": {
+          "components": {
+            "flood_likelihood_0_100": 1.0209173764942177,
+            "exposure_0_100": 0.3386630507779147,
+            "access_gap_0_100": 0.0,
+            "road_criticality_0_100": 0.0,
+            "vulnerability_context_0_100": 50.87412423462203
+          },
+          "fpps_0_100": 5.48,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "E",
+          "confidence_class": "low"
+        },
+        "no_answer_counted_as_flagged": {
+          "components": {
+            "flood_likelihood_0_100": 9.098758930391076,
+            "exposure_0_100": 4.8970228862000935,
+            "access_gap_0_100": 100.0,
+            "road_criticality_0_100": 100.0,
+            "vulnerability_context_0_100": 50.87412423462203
+          },
+          "fpps_0_100": 44.04,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "B",
+          "confidence_class": "low"
+        },
+        "class_same": false
+      },
+      {
+        "unit_id": "TH551405",
+        "binding": {
+          "components": {
+            "flood_likelihood_0_100": 0.7415199600724587,
+            "exposure_0_100": 0.21054112286909174,
+            "access_gap_0_100": 0.05921758918277657,
+            "road_criticality_0_100": 0.07496560875052838,
+            "vulnerability_context_0_100": 50.420287663578335
+          },
+          "fpps_0_100": 5.34,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "E",
+          "confidence_class": "low"
+        },
+        "no_answer_counted_as_flagged": {
+          "components": {
+            "flood_likelihood_0_100": 7.078439942161219,
+            "exposure_0_100": 2.0870225694485387,
+            "access_gap_0_100": 95.89963833880496,
+            "road_criticality_0_100": 6.8206490075036585,
+            "vulnerability_context_0_100": 50.420287663578335
+          },
+          "fpps_0_100": 27.89,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "E",
+          "confidence_class": "low"
+        },
+        "class_same": true
+      },
+      {
+        "unit_id": "TH551406",
+        "binding": {
+          "components": {
+            "flood_likelihood_0_100": 41.409112360661155,
+            "exposure_0_100": 13.580211935146966,
+            "access_gap_0_100": 4.784606852580823,
+            "road_criticality_0_100": 3.816510740946262,
+            "vulnerability_context_0_100": 50.281711769917315
+          },
+          "fpps_0_100": 22.38,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "E",
+          "confidence_class": "low"
+        },
+        "no_answer_counted_as_flagged": {
+          "components": {
+            "flood_likelihood_0_100": 70.3632653911955,
+            "exposure_0_100": 26.299916130674163,
+            "access_gap_0_100": 89.25402772583293,
+            "road_criticality_0_100": 78.84997686735082,
+            "vulnerability_context_0_100": 50.281711769917315
+          },
+          "fpps_0_100": 62.39,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "B",
+          "confidence_class": "low"
+        },
+        "class_same": false
+      },
+      {
+        "unit_id": "TH551407",
+        "binding": {
+          "components": {
+            "flood_likelihood_0_100": 1.7272690779922013,
+            "exposure_0_100": 2.3555325549733905,
+            "access_gap_0_100": 0.0026149799413772382,
+            "road_criticality_0_100": 0.0,
+            "vulnerability_context_0_100": 46.93167662381945
+          },
+          "fpps_0_100": 5.8,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "E",
+          "confidence_class": "low"
+        },
+        "no_answer_counted_as_flagged": {
+          "components": {
+            "flood_likelihood_0_100": 8.586684089834952,
+            "exposure_0_100": 12.048275867432038,
+            "access_gap_0_100": 57.74755259081088,
+            "road_criticality_0_100": 42.214815786989604,
+            "vulnerability_context_0_100": 46.93167662381945
+          },
+          "fpps_0_100": 28.16,
+          "action_class": "E",
+          "action_reason_code": "low_confidence",
+          "would_be_class": "E",
+          "confidence_class": "low"
+        },
+        "class_same": true
+      }
+    ],
+    "tambons_whose_class_differs": 20
+  },
+  "rows": [
+    {
+      "unit_id": "TH550101",
+      "fpps_0_100": 4.76,
+      "action_class": "E",
+      "action_reason_code": "low_confidence",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier",
+        "C3_coverage",
+        "C4_input_uncertainty"
+      ],
+      "headline_status": "headline_eligible",
+      "class_retention": 1.0
+    },
+    {
+      "unit_id": "TH550102",
+      "fpps_0_100": 3.65,
+      "action_class": "E",
+      "action_reason_code": "low_confidence",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier"
+      ],
+      "headline_status": "headline_eligible",
+      "class_retention": 1.0
+    },
+    {
+      "unit_id": "TH550103",
+      "fpps_0_100": 3.64,
+      "action_class": "E",
+      "action_reason_code": "low_confidence",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier"
+      ],
+      "headline_status": "headline_eligible",
+      "class_retention": 1.0
+    },
+    {
+      "unit_id": "TH550104",
+      "fpps_0_100": 9.38,
+      "action_class": "E",
+      "action_reason_code": "low_confidence",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier"
+      ],
+      "headline_status": "headline_eligible",
+      "class_retention": 1.0
+    },
+    {
+      "unit_id": "TH550105",
+      "fpps_0_100": 10.47,
+      "action_class": "E",
+      "action_reason_code": "low_confidence",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier"
+      ],
+      "headline_status": "headline_eligible",
+      "class_retention": 1.0
+    },
+    {
+      "unit_id": "TH550106",
+      "fpps_0_100": 5.89,
+      "action_class": "E",
+      "action_reason_code": "low_confidence",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier"
+      ],
+      "headline_status": "headline_eligible",
+      "class_retention": 1.0
+    },
+    {
+      "unit_id": "TH550107",
+      "fpps_0_100": 4.33,
+      "action_class": "E",
+      "action_reason_code": "low_confidence",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier"
+      ],
+      "headline_status": "headline_eligible",
+      "class_retention": 1.0
+    },
+    {
+      "unit_id": "TH550108",
+      "fpps_0_100": 9.18,
+      "action_class": "E",
+      "action_reason_code": "low_confidence",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier"
+      ],
+      "headline_status": "headline_eligible",
+      "class_retention": 1.0
+    },
+    {
+      "unit_id": "TH550109",
+      "fpps_0_100": 10.07,
+      "action_class": "E",
+      "action_reason_code": "low_confidence",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier"
+      ],
+      "headline_status": "headline_eligible",
+      "class_retention": 1.0
+    },
+    {
+      "unit_id": "TH550116",
+      "fpps_0_100": 5.48,
+      "action_class": "E",
+      "action_reason_code": "low_confidence",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier"
+      ],
+      "headline_status": "headline_eligible",
+      "class_retention": 1.0
+    },
+    {
+      "unit_id": "TH550117",
+      "fpps_0_100": 3.96,
+      "action_class": "E",
+      "action_reason_code": "low_confidence",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier"
+      ],
+      "headline_status": "headline_eligible",
+      "class_retention": 1.0
+    },
+    {
+      "unit_id": "TH550701",
+      "fpps_0_100": 15.56,
+      "action_class": "E",
+      "action_reason_code": "low_confidence",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier"
+      ],
+      "headline_status": "headline_eligible",
+      "class_retention": 1.0
+    },
+    {
+      "unit_id": "TH550702",
+      "fpps_0_100": 24.15,
+      "action_class": "E",
+      "action_reason_code": "low_confidence",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier"
+      ],
+      "headline_status": "headline_eligible",
+      "class_retention": 1.0
+    },
+    {
+      "unit_id": "TH550703",
+      "fpps_0_100": 9.71,
+      "action_class": "E",
+      "action_reason_code": "low_confidence",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier"
+      ],
+      "headline_status": "headline_eligible",
+      "class_retention": 1.0
+    },
+    {
+      "unit_id": "TH550704",
+      "fpps_0_100": 13.61,
+      "action_class": "E",
+      "action_reason_code": "low_confidence",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier"
+      ],
+      "headline_status": "headline_eligible",
+      "class_retention": 1.0
+    },
+    {
+      "unit_id": "TH550705",
+      "fpps_0_100": 9.55,
+      "action_class": "E",
+      "action_reason_code": "low_confidence",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier"
+      ],
+      "headline_status": "headline_eligible",
+      "class_retention": 1.0
+    },
+    {
+      "unit_id": "TH550706",
+      "fpps_0_100": 9.83,
+      "action_class": "E",
+      "action_reason_code": "low_confidence",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier"
+      ],
+      "headline_status": "headline_eligible",
+      "class_retention": 1.0
+    },
+    {
+      "unit_id": "TH550707",
+      "fpps_0_100": 28.04,
+      "action_class": "E",
+      "action_reason_code": "low_confidence",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier"
+      ],
+      "headline_status": "headline_eligible",
+      "class_retention": 1.0
+    },
+    {
+      "unit_id": "TH550708",
+      "fpps_0_100": 12.21,
+      "action_class": "E",
+      "action_reason_code": "low_confidence",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier"
+      ],
+      "headline_status": "headline_eligible",
+      "class_retention": 1.0
+    },
+    {
+      "unit_id": "TH550709",
+      "fpps_0_100": 7.93,
+      "action_class": "E",
+      "action_reason_code": "low_confidence",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier",
+        "C7_baseline_no_route"
+      ],
+      "headline_status": "headline_eligible",
+      "class_retention": 1.0
+    },
+    {
+      "unit_id": "TH550710",
+      "fpps_0_100": 9.2,
+      "action_class": "E",
+      "action_reason_code": "low_confidence",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier"
+      ],
+      "headline_status": "headline_eligible",
+      "class_retention": 1.0
+    },
+    {
+      "unit_id": "TH550711",
+      "fpps_0_100": 8.65,
+      "action_class": "E",
+      "action_reason_code": "low_confidence",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier"
+      ],
+      "headline_status": "headline_eligible",
+      "class_retention": 1.0
+    },
+    {
+      "unit_id": "TH550712",
+      "fpps_0_100": null,
+      "action_class": "E",
+      "action_reason_code": "low_confidence",
+      "would_be_class": null,
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier",
+        "C5_components"
+      ],
+      "headline_status": "headline_eligible",
+      "class_retention": 1.0
+    },
+    {
+      "unit_id": "TH550713",
+      "fpps_0_100": null,
+      "action_class": "E",
+      "action_reason_code": "low_confidence",
+      "would_be_class": null,
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier",
+        "C5_components"
+      ],
+      "headline_status": "headline_eligible",
+      "class_retention": 1.0
+    },
+    {
+      "unit_id": "TH550714",
+      "fpps_0_100": 7.95,
+      "action_class": "E",
+      "action_reason_code": "low_confidence",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier"
+      ],
+      "headline_status": "headline_eligible",
+      "class_retention": 1.0
+    },
+    {
+      "unit_id": "TH550715",
+      "fpps_0_100": 10.25,
+      "action_class": "E",
+      "action_reason_code": "low_confidence",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier"
+      ],
+      "headline_status": "headline_eligible",
+      "class_retention": 1.0
+    },
+    {
+      "unit_id": "TH550716",
+      "fpps_0_100": 11.91,
+      "action_class": "E",
+      "action_reason_code": "low_confidence",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier"
+      ],
+      "headline_status": "headline_eligible",
+      "class_retention": 1.0
+    },
+    {
+      "unit_id": "TH550717",
+      "fpps_0_100": 7.95,
+      "action_class": "E",
+      "action_reason_code": "low_confidence",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier"
+      ],
+      "headline_status": "headline_eligible",
+      "class_retention": 1.0
+    },
+    {
+      "unit_id": "TH551401",
+      "fpps_0_100": 24.09,
+      "action_class": "E",
+      "action_reason_code": "low_confidence",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier",
+        "C4_input_uncertainty"
+      ],
+      "headline_status": "headline_eligible",
+      "class_retention": 1.0
+    },
+    {
+      "unit_id": "TH551402",
+      "fpps_0_100": 9.21,
+      "action_class": "E",
+      "action_reason_code": "low_confidence",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier"
+      ],
+      "headline_status": "headline_eligible",
+      "class_retention": 1.0
+    },
+    {
+      "unit_id": "TH551403",
+      "fpps_0_100": 5.34,
+      "action_class": "E",
+      "action_reason_code": "low_confidence",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier"
+      ],
+      "headline_status": "headline_eligible",
+      "class_retention": 1.0
+    },
+    {
+      "unit_id": "TH551404",
+      "fpps_0_100": 5.48,
+      "action_class": "E",
+      "action_reason_code": "low_confidence",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier"
+      ],
+      "headline_status": "headline_eligible",
+      "class_retention": 1.0
+    },
+    {
+      "unit_id": "TH551405",
+      "fpps_0_100": 5.34,
+      "action_class": "E",
+      "action_reason_code": "low_confidence",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier"
+      ],
+      "headline_status": "headline_eligible",
+      "class_retention": 1.0
+    },
+    {
+      "unit_id": "TH551406",
+      "fpps_0_100": 22.38,
+      "action_class": "E",
+      "action_reason_code": "low_confidence",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier",
+        "C4_input_uncertainty"
+      ],
+      "headline_status": "headline_eligible",
+      "class_retention": 1.0
+    },
+    {
+      "unit_id": "TH551407",
+      "fpps_0_100": 5.8,
+      "action_class": "E",
+      "action_reason_code": "low_confidence",
+      "would_be_class": "E",
+      "confidence_class": "low",
+      "failed_conditions": [
+        "C1_tier"
+      ],
+      "headline_status": "headline_eligible",
+      "class_retention": 1.0
+    }
+  ],
+  "ensemble": {
+    "summary": {
+      "units": 35,
+      "level": "public",
+      "core_cells_per_lane": 540,
+      "cells_run": 180,
+      "cells_not_run": 360,
+      "cells_not_run_by_reason": {
+        "facility_set_not_in_the_nan_ensemble": 360
+      },
+      "cells_of_the_protocol_set_for_retention": 180,
+      "cells_run_with_a_failed_unit": 0,
+      "unit_cells_run": 6300,
+      "unit_cells_with_a_result": 6300,
+      "unit_cells_failed": 0,
+      "unit_cells_failed_by_stage_and_error": {},
+      "unit_cells_with_a_component_not_computed": 360,
+      "cells_ranked": 0,
+      "reference_class_counts": {
+        "A": 0,
+        "B": 0,
+        "C": 0,
+        "D": 0,
+        "E": 35,
+        "no_class": 0
+      },
+      "units_without_a_default_cell_result": 0,
+      "class_counts_over_every_unit_cell": {
+        "A": 0,
+        "B": 0,
+        "C": 0,
+        "D": 0,
+        "E": 6300,
+        "no_class": 0
+      },
+      "units_by_number_of_classes_over_the_cells_run": {
+        "1": 35
+      },
+      "retention_over_the_cells_run": {
+        "what": "The share of the cells that were run in which a unit keeps the class of its default cell. A cell that was run and failed counts as run and keeps no class. It is not the retention of the headline rule unless every cell of the protocol's set was run.",
+        "class_retention_min": 0.6,
+        "units_keeping_the_class_in_every_cell_run": 35,
+        "units_keeping_the_class_in_at_least_the_minimum_share": 35,
+        "units_keeping_the_class_in_less_than_the_minimum_share": 0,
+        "units_without_a_class_to_keep": 0
+      },
+      "headline_status_counts": {
+        "not_evaluated": 0,
+        "headline_eligible": 35,
+        "unstable_verify": 0
+      },
+      "outcome_fixed_by_the_bounds_counts": {
+        "at_or_above_the_minimum": 0,
+        "below_the_minimum": 0,
+        "not_fixed": 0
+      },
+      "other_reading_of_the_protocol_set": null,
+      "after_declared_cut_line_6": {
+        "levels_kept": {
+          "population_vintage": "worldpop_2020",
+          "vulnerability_anchors": "P10_P90"
+        },
+        "cells": 45,
+        "units_at_or_above_the_minimum": 35,
+        "units_below_the_minimum": 0,
+        "units_keeping_the_class_in_every_one_of_those_cells": 35,
+        "units_without_a_class_in_every_one_of_those_cells": 0,
+        "levels_kept_are": "the levels of the default cell",
+        "other_levels_the_cut_could_keep": [
+          {
+            "levels_kept": {
+              "population_vintage": "worldpop_2020",
+              "vulnerability_anchors": "P5_P95"
+            },
+            "cells": 45,
+            "units_at_or_above_the_minimum": 35,
+            "units_below_the_minimum": 0,
+            "units_keeping_the_class_in_every_one_of_those_cells": 35,
+            "units_without_a_class_in_every_one_of_those_cells": 0
+          },
+          {
+            "levels_kept": {
+              "population_vintage": "rescaled_2024",
+              "vulnerability_anchors": "P10_P90"
+            },
+            "cells": 45,
+            "units_at_or_above_the_minimum": 35,
+            "units_below_the_minimum": 0,
+            "units_keeping_the_class_in_every_one_of_those_cells": 35,
+            "units_without_a_class_in_every_one_of_those_cells": 0
+          },
+          {
+            "levels_kept": {
+              "population_vintage": "rescaled_2024",
+              "vulnerability_anchors": "P5_P95"
+            },
+            "cells": 45,
+            "units_at_or_above_the_minimum": 35,
+            "units_below_the_minimum": 0,
+            "units_keeping_the_class_in_every_one_of_those_cells": 35,
+            "units_without_a_class_in_every_one_of_those_cells": 0
+          }
+        ],
+        "note": "Counts over the cells that declared cut line 6 would leave. Not the headline: the owners have not invoked the cut (open point E10-OP1). The cut does not say which level of its two axes stays: the first counts keep the levels of the default cell, and other_levels_the_cut_could_keep gives the counts for every other pair (open point E10-OP12)."
+      },
+      "units_whose_fpps_lies_on_both_sides_of_the_class_e_threshold": 1,
+      "class_e_threshold_fpps": 35.0,
+      "units_whose_class_changes_under_leave_one_component_out_in_the_default_cell": 0,
+      "units_with_one_rank_in_every_cell_ranked": 0,
+      "class_counts_by_cell": {
+        "minus|strict|public|worldpop_2020|P10_P90|default": {
+          "E": 35
+        },
+        "minus|strict|public|worldpop_2020|P10_P90|access_heavy": {
+          "E": 35
+        },
+        "minus|strict|public|worldpop_2020|P10_P90|exposure_heavy": {
+          "E": 35
+        },
+        "minus|strict|public|worldpop_2020|P10_P90|road_heavy": {
+          "E": 35
+        },
+        "minus|strict|public|worldpop_2020|P10_P90|vulnerability_heavy": {
+          "E": 35
+        },
+        "minus|strict|public|worldpop_2020|P5_P95|default": {
+          "E": 35
+        },
+        "minus|strict|public|worldpop_2020|P5_P95|access_heavy": {
+          "E": 35
+        },
+        "minus|strict|public|worldpop_2020|P5_P95|exposure_heavy": {
+          "E": 35
+        },
+        "minus|strict|public|worldpop_2020|P5_P95|road_heavy": {
+          "E": 35
+        },
+        "minus|strict|public|worldpop_2020|P5_P95|vulnerability_heavy": {
+          "E": 35
+        },
+        "minus|strict|public|rescaled_2024|P10_P90|default": {
+          "E": 35
+        },
+        "minus|strict|public|rescaled_2024|P10_P90|access_heavy": {
+          "E": 35
+        },
+        "minus|strict|public|rescaled_2024|P10_P90|exposure_heavy": {
+          "E": 35
+        },
+        "minus|strict|public|rescaled_2024|P10_P90|road_heavy": {
+          "E": 35
+        },
+        "minus|strict|public|rescaled_2024|P10_P90|vulnerability_heavy": {
+          "E": 35
+        },
+        "minus|strict|public|rescaled_2024|P5_P95|default": {
+          "E": 35
+        },
+        "minus|strict|public|rescaled_2024|P5_P95|access_heavy": {
+          "E": 35
+        },
+        "minus|strict|public|rescaled_2024|P5_P95|exposure_heavy": {
+          "E": 35
+        },
+        "minus|strict|public|rescaled_2024|P5_P95|road_heavy": {
+          "E": 35
+        },
+        "minus|strict|public|rescaled_2024|P5_P95|vulnerability_heavy": {
+          "E": 35
+        },
+        "minus|central|public|worldpop_2020|P10_P90|default": {
+          "E": 35
+        },
+        "minus|central|public|worldpop_2020|P10_P90|access_heavy": {
+          "E": 35
+        },
+        "minus|central|public|worldpop_2020|P10_P90|exposure_heavy": {
+          "E": 35
+        },
+        "minus|central|public|worldpop_2020|P10_P90|road_heavy": {
+          "E": 35
+        },
+        "minus|central|public|worldpop_2020|P10_P90|vulnerability_heavy": {
+          "E": 35
+        },
+        "minus|central|public|worldpop_2020|P5_P95|default": {
+          "E": 35
+        },
+        "minus|central|public|worldpop_2020|P5_P95|access_heavy": {
+          "E": 35
+        },
+        "minus|central|public|worldpop_2020|P5_P95|exposure_heavy": {
+          "E": 35
+        },
+        "minus|central|public|worldpop_2020|P5_P95|road_heavy": {
+          "E": 35
+        },
+        "minus|central|public|worldpop_2020|P5_P95|vulnerability_heavy": {
+          "E": 35
+        },
+        "minus|central|public|rescaled_2024|P10_P90|default": {
+          "E": 35
+        },
+        "minus|central|public|rescaled_2024|P10_P90|access_heavy": {
+          "E": 35
+        },
+        "minus|central|public|rescaled_2024|P10_P90|exposure_heavy": {
+          "E": 35
+        },
+        "minus|central|public|rescaled_2024|P10_P90|road_heavy": {
+          "E": 35
+        },
+        "minus|central|public|rescaled_2024|P10_P90|vulnerability_heavy": {
+          "E": 35
+        },
+        "minus|central|public|rescaled_2024|P5_P95|default": {
+          "E": 35
+        },
+        "minus|central|public|rescaled_2024|P5_P95|access_heavy": {
+          "E": 35
+        },
+        "minus|central|public|rescaled_2024|P5_P95|exposure_heavy": {
+          "E": 35
+        },
+        "minus|central|public|rescaled_2024|P5_P95|road_heavy": {
+          "E": 35
+        },
+        "minus|central|public|rescaled_2024|P5_P95|vulnerability_heavy": {
+          "E": 35
+        },
+        "minus|permissive|public|worldpop_2020|P10_P90|default": {
+          "E": 35
+        },
+        "minus|permissive|public|worldpop_2020|P10_P90|access_heavy": {
+          "E": 35
+        },
+        "minus|permissive|public|worldpop_2020|P10_P90|exposure_heavy": {
+          "E": 35
+        },
+        "minus|permissive|public|worldpop_2020|P10_P90|road_heavy": {
+          "E": 35
+        },
+        "minus|permissive|public|worldpop_2020|P10_P90|vulnerability_heavy": {
+          "E": 35
+        },
+        "minus|permissive|public|worldpop_2020|P5_P95|default": {
+          "E": 35
+        },
+        "minus|permissive|public|worldpop_2020|P5_P95|access_heavy": {
+          "E": 35
+        },
+        "minus|permissive|public|worldpop_2020|P5_P95|exposure_heavy": {
+          "E": 35
+        },
+        "minus|permissive|public|worldpop_2020|P5_P95|road_heavy": {
+          "E": 35
+        },
+        "minus|permissive|public|worldpop_2020|P5_P95|vulnerability_heavy": {
+          "E": 35
+        },
+        "minus|permissive|public|rescaled_2024|P10_P90|default": {
+          "E": 35
+        },
+        "minus|permissive|public|rescaled_2024|P10_P90|access_heavy": {
+          "E": 35
+        },
+        "minus|permissive|public|rescaled_2024|P10_P90|exposure_heavy": {
+          "E": 35
+        },
+        "minus|permissive|public|rescaled_2024|P10_P90|road_heavy": {
+          "E": 35
+        },
+        "minus|permissive|public|rescaled_2024|P10_P90|vulnerability_heavy": {
+          "E": 35
+        },
+        "minus|permissive|public|rescaled_2024|P5_P95|default": {
+          "E": 35
+        },
+        "minus|permissive|public|rescaled_2024|P5_P95|access_heavy": {
+          "E": 35
+        },
+        "minus|permissive|public|rescaled_2024|P5_P95|exposure_heavy": {
+          "E": 35
+        },
+        "minus|permissive|public|rescaled_2024|P5_P95|road_heavy": {
+          "E": 35
+        },
+        "minus|permissive|public|rescaled_2024|P5_P95|vulnerability_heavy": {
+          "E": 35
+        },
+        "as_provided|strict|public|worldpop_2020|P10_P90|default": {
+          "E": 35
+        },
+        "as_provided|strict|public|worldpop_2020|P10_P90|access_heavy": {
+          "E": 35
+        },
+        "as_provided|strict|public|worldpop_2020|P10_P90|exposure_heavy": {
+          "E": 35
+        },
+        "as_provided|strict|public|worldpop_2020|P10_P90|road_heavy": {
+          "E": 35
+        },
+        "as_provided|strict|public|worldpop_2020|P10_P90|vulnerability_heavy": {
+          "E": 35
+        },
+        "as_provided|strict|public|worldpop_2020|P5_P95|default": {
+          "E": 35
+        },
+        "as_provided|strict|public|worldpop_2020|P5_P95|access_heavy": {
+          "E": 35
+        },
+        "as_provided|strict|public|worldpop_2020|P5_P95|exposure_heavy": {
+          "E": 35
+        },
+        "as_provided|strict|public|worldpop_2020|P5_P95|road_heavy": {
+          "E": 35
+        },
+        "as_provided|strict|public|worldpop_2020|P5_P95|vulnerability_heavy": {
+          "E": 35
+        },
+        "as_provided|strict|public|rescaled_2024|P10_P90|default": {
+          "E": 35
+        },
+        "as_provided|strict|public|rescaled_2024|P10_P90|access_heavy": {
+          "E": 35
+        },
+        "as_provided|strict|public|rescaled_2024|P10_P90|exposure_heavy": {
+          "E": 35
+        },
+        "as_provided|strict|public|rescaled_2024|P10_P90|road_heavy": {
+          "E": 35
+        },
+        "as_provided|strict|public|rescaled_2024|P10_P90|vulnerability_heavy": {
+          "E": 35
+        },
+        "as_provided|strict|public|rescaled_2024|P5_P95|default": {
+          "E": 35
+        },
+        "as_provided|strict|public|rescaled_2024|P5_P95|access_heavy": {
+          "E": 35
+        },
+        "as_provided|strict|public|rescaled_2024|P5_P95|exposure_heavy": {
+          "E": 35
+        },
+        "as_provided|strict|public|rescaled_2024|P5_P95|road_heavy": {
+          "E": 35
+        },
+        "as_provided|strict|public|rescaled_2024|P5_P95|vulnerability_heavy": {
+          "E": 35
+        },
+        "as_provided|central|public|worldpop_2020|P10_P90|default": {
+          "E": 35
+        },
+        "as_provided|central|public|worldpop_2020|P10_P90|access_heavy": {
+          "E": 35
+        },
+        "as_provided|central|public|worldpop_2020|P10_P90|exposure_heavy": {
+          "E": 35
+        },
+        "as_provided|central|public|worldpop_2020|P10_P90|road_heavy": {
+          "E": 35
+        },
+        "as_provided|central|public|worldpop_2020|P10_P90|vulnerability_heavy": {
+          "E": 35
+        },
+        "as_provided|central|public|worldpop_2020|P5_P95|default": {
+          "E": 35
+        },
+        "as_provided|central|public|worldpop_2020|P5_P95|access_heavy": {
+          "E": 35
+        },
+        "as_provided|central|public|worldpop_2020|P5_P95|exposure_heavy": {
+          "E": 35
+        },
+        "as_provided|central|public|worldpop_2020|P5_P95|road_heavy": {
+          "E": 35
+        },
+        "as_provided|central|public|worldpop_2020|P5_P95|vulnerability_heavy": {
+          "E": 35
+        },
+        "as_provided|central|public|rescaled_2024|P10_P90|default": {
+          "E": 35
+        },
+        "as_provided|central|public|rescaled_2024|P10_P90|access_heavy": {
+          "E": 35
+        },
+        "as_provided|central|public|rescaled_2024|P10_P90|exposure_heavy": {
+          "E": 35
+        },
+        "as_provided|central|public|rescaled_2024|P10_P90|road_heavy": {
+          "E": 35
+        },
+        "as_provided|central|public|rescaled_2024|P10_P90|vulnerability_heavy": {
+          "E": 35
+        },
+        "as_provided|central|public|rescaled_2024|P5_P95|default": {
+          "E": 35
+        },
+        "as_provided|central|public|rescaled_2024|P5_P95|access_heavy": {
+          "E": 35
+        },
+        "as_provided|central|public|rescaled_2024|P5_P95|exposure_heavy": {
+          "E": 35
+        },
+        "as_provided|central|public|rescaled_2024|P5_P95|road_heavy": {
+          "E": 35
+        },
+        "as_provided|central|public|rescaled_2024|P5_P95|vulnerability_heavy": {
+          "E": 35
+        },
+        "as_provided|permissive|public|worldpop_2020|P10_P90|default": {
+          "E": 35
+        },
+        "as_provided|permissive|public|worldpop_2020|P10_P90|access_heavy": {
+          "E": 35
+        },
+        "as_provided|permissive|public|worldpop_2020|P10_P90|exposure_heavy": {
+          "E": 35
+        },
+        "as_provided|permissive|public|worldpop_2020|P10_P90|road_heavy": {
+          "E": 35
+        },
+        "as_provided|permissive|public|worldpop_2020|P10_P90|vulnerability_heavy": {
+          "E": 35
+        },
+        "as_provided|permissive|public|worldpop_2020|P5_P95|default": {
+          "E": 35
+        },
+        "as_provided|permissive|public|worldpop_2020|P5_P95|access_heavy": {
+          "E": 35
+        },
+        "as_provided|permissive|public|worldpop_2020|P5_P95|exposure_heavy": {
+          "E": 35
+        },
+        "as_provided|permissive|public|worldpop_2020|P5_P95|road_heavy": {
+          "E": 35
+        },
+        "as_provided|permissive|public|worldpop_2020|P5_P95|vulnerability_heavy": {
+          "E": 35
+        },
+        "as_provided|permissive|public|rescaled_2024|P10_P90|default": {
+          "E": 35
+        },
+        "as_provided|permissive|public|rescaled_2024|P10_P90|access_heavy": {
+          "E": 35
+        },
+        "as_provided|permissive|public|rescaled_2024|P10_P90|exposure_heavy": {
+          "E": 35
+        },
+        "as_provided|permissive|public|rescaled_2024|P10_P90|road_heavy": {
+          "E": 35
+        },
+        "as_provided|permissive|public|rescaled_2024|P10_P90|vulnerability_heavy": {
+          "E": 35
+        },
+        "as_provided|permissive|public|rescaled_2024|P5_P95|default": {
+          "E": 35
+        },
+        "as_provided|permissive|public|rescaled_2024|P5_P95|access_heavy": {
+          "E": 35
+        },
+        "as_provided|permissive|public|rescaled_2024|P5_P95|exposure_heavy": {
+          "E": 35
+        },
+        "as_provided|permissive|public|rescaled_2024|P5_P95|road_heavy": {
+          "E": 35
+        },
+        "as_provided|permissive|public|rescaled_2024|P5_P95|vulnerability_heavy": {
+          "E": 35
+        },
+        "plus|strict|public|worldpop_2020|P10_P90|default": {
+          "E": 35
+        },
+        "plus|strict|public|worldpop_2020|P10_P90|access_heavy": {
+          "E": 35
+        },
+        "plus|strict|public|worldpop_2020|P10_P90|exposure_heavy": {
+          "E": 35
+        },
+        "plus|strict|public|worldpop_2020|P10_P90|road_heavy": {
+          "E": 35
+        },
+        "plus|strict|public|worldpop_2020|P10_P90|vulnerability_heavy": {
+          "E": 35
+        },
+        "plus|strict|public|worldpop_2020|P5_P95|default": {
+          "E": 35
+        },
+        "plus|strict|public|worldpop_2020|P5_P95|access_heavy": {
+          "E": 35
+        },
+        "plus|strict|public|worldpop_2020|P5_P95|exposure_heavy": {
+          "E": 35
+        },
+        "plus|strict|public|worldpop_2020|P5_P95|road_heavy": {
+          "E": 35
+        },
+        "plus|strict|public|worldpop_2020|P5_P95|vulnerability_heavy": {
+          "E": 35
+        },
+        "plus|strict|public|rescaled_2024|P10_P90|default": {
+          "E": 35
+        },
+        "plus|strict|public|rescaled_2024|P10_P90|access_heavy": {
+          "E": 35
+        },
+        "plus|strict|public|rescaled_2024|P10_P90|exposure_heavy": {
+          "E": 35
+        },
+        "plus|strict|public|rescaled_2024|P10_P90|road_heavy": {
+          "E": 35
+        },
+        "plus|strict|public|rescaled_2024|P10_P90|vulnerability_heavy": {
+          "E": 35
+        },
+        "plus|strict|public|rescaled_2024|P5_P95|default": {
+          "E": 35
+        },
+        "plus|strict|public|rescaled_2024|P5_P95|access_heavy": {
+          "E": 35
+        },
+        "plus|strict|public|rescaled_2024|P5_P95|exposure_heavy": {
+          "E": 35
+        },
+        "plus|strict|public|rescaled_2024|P5_P95|road_heavy": {
+          "E": 35
+        },
+        "plus|strict|public|rescaled_2024|P5_P95|vulnerability_heavy": {
+          "E": 35
+        },
+        "plus|central|public|worldpop_2020|P10_P90|default": {
+          "E": 35
+        },
+        "plus|central|public|worldpop_2020|P10_P90|access_heavy": {
+          "E": 35
+        },
+        "plus|central|public|worldpop_2020|P10_P90|exposure_heavy": {
+          "E": 35
+        },
+        "plus|central|public|worldpop_2020|P10_P90|road_heavy": {
+          "E": 35
+        },
+        "plus|central|public|worldpop_2020|P10_P90|vulnerability_heavy": {
+          "E": 35
+        },
+        "plus|central|public|worldpop_2020|P5_P95|default": {
+          "E": 35
+        },
+        "plus|central|public|worldpop_2020|P5_P95|access_heavy": {
+          "E": 35
+        },
+        "plus|central|public|worldpop_2020|P5_P95|exposure_heavy": {
+          "E": 35
+        },
+        "plus|central|public|worldpop_2020|P5_P95|road_heavy": {
+          "E": 35
+        },
+        "plus|central|public|worldpop_2020|P5_P95|vulnerability_heavy": {
+          "E": 35
+        },
+        "plus|central|public|rescaled_2024|P10_P90|default": {
+          "E": 35
+        },
+        "plus|central|public|rescaled_2024|P10_P90|access_heavy": {
+          "E": 35
+        },
+        "plus|central|public|rescaled_2024|P10_P90|exposure_heavy": {
+          "E": 35
+        },
+        "plus|central|public|rescaled_2024|P10_P90|road_heavy": {
+          "E": 35
+        },
+        "plus|central|public|rescaled_2024|P10_P90|vulnerability_heavy": {
+          "E": 35
+        },
+        "plus|central|public|rescaled_2024|P5_P95|default": {
+          "E": 35
+        },
+        "plus|central|public|rescaled_2024|P5_P95|access_heavy": {
+          "E": 35
+        },
+        "plus|central|public|rescaled_2024|P5_P95|exposure_heavy": {
+          "E": 35
+        },
+        "plus|central|public|rescaled_2024|P5_P95|road_heavy": {
+          "E": 35
+        },
+        "plus|central|public|rescaled_2024|P5_P95|vulnerability_heavy": {
+          "E": 35
+        },
+        "plus|permissive|public|worldpop_2020|P10_P90|default": {
+          "E": 35
+        },
+        "plus|permissive|public|worldpop_2020|P10_P90|access_heavy": {
+          "E": 35
+        },
+        "plus|permissive|public|worldpop_2020|P10_P90|exposure_heavy": {
+          "E": 35
+        },
+        "plus|permissive|public|worldpop_2020|P10_P90|road_heavy": {
+          "E": 35
+        },
+        "plus|permissive|public|worldpop_2020|P10_P90|vulnerability_heavy": {
+          "E": 35
+        },
+        "plus|permissive|public|worldpop_2020|P5_P95|default": {
+          "E": 35
+        },
+        "plus|permissive|public|worldpop_2020|P5_P95|access_heavy": {
+          "E": 35
+        },
+        "plus|permissive|public|worldpop_2020|P5_P95|exposure_heavy": {
+          "E": 35
+        },
+        "plus|permissive|public|worldpop_2020|P5_P95|road_heavy": {
+          "E": 35
+        },
+        "plus|permissive|public|worldpop_2020|P5_P95|vulnerability_heavy": {
+          "E": 35
+        },
+        "plus|permissive|public|rescaled_2024|P10_P90|default": {
+          "E": 35
+        },
+        "plus|permissive|public|rescaled_2024|P10_P90|access_heavy": {
+          "E": 35
+        },
+        "plus|permissive|public|rescaled_2024|P10_P90|exposure_heavy": {
+          "E": 35
+        },
+        "plus|permissive|public|rescaled_2024|P10_P90|road_heavy": {
+          "E": 35
+        },
+        "plus|permissive|public|rescaled_2024|P10_P90|vulnerability_heavy": {
+          "E": 35
+        },
+        "plus|permissive|public|rescaled_2024|P5_P95|default": {
+          "E": 35
+        },
+        "plus|permissive|public|rescaled_2024|P5_P95|access_heavy": {
+          "E": 35
+        },
+        "plus|permissive|public|rescaled_2024|P5_P95|exposure_heavy": {
+          "E": 35
+        },
+        "plus|permissive|public|rescaled_2024|P5_P95|road_heavy": {
+          "E": 35
+        },
+        "plus|permissive|public|rescaled_2024|P5_P95|vulnerability_heavy": {
+          "E": 35
+        }
+      },
+      "class_counts_by_cell_note": "For each cell that was run, the number of units in each class; a class no unit has in the cell is left out.",
+      "note": "Counts for the whole case. No unit is named beside a value here. Some counts state a value of a single unit all the same: a count that covers every unit states that value for each unit, and a class that one unit alone holds in the default cell marks that unit in every cell (open point E10-OP10; counts_that_state_a_value_of_a_single_unit counts them).",
+      "counts_that_state_a_value_of_a_single_unit": {
+        "cells_in_which_every_unit_has_one_class": 180,
+        "classes_one_unit_alone_holds_in_the_default_cell": [],
+        "cells_in_which_such_a_class_has_another_count": 0,
+        "cells_whose_class_counts_differ_from_the_default_cell": 0,
+        "units_with_more_than_one_class_over_the_cells_run": 0,
+        "states_a_value_of_a_single_unit": true,
+        "what": "A count names no unit. Two kinds of count state the class of a single unit all the same. In a cell where every unit of the case has one class, class_counts_by_cell states the class of each unit. And a class that one unit alone holds in the default cell marks that unit: in every cell, the count of that class says whether the unit holds it there, for whoever knows which unit it is. A cell whose counts differ from those of the default cell says that a unit changed class there, and between which classes."
+      }
+    },
+    "headline_over": "the 180 cells of the Nan ensemble that were run (nan_case_protocol_v1, ensemble: 180 cells, or 90 when the population axis is dropped)",
+    "headlines": {
+      "TH550101": {
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "reference_class": "E",
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "TH550102": {
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "reference_class": "E",
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "TH550103": {
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "reference_class": "E",
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "TH550104": {
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "reference_class": "E",
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "TH550105": {
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "reference_class": "E",
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "TH550106": {
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "reference_class": "E",
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "TH550107": {
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "reference_class": "E",
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "TH550108": {
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "reference_class": "E",
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "TH550109": {
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "reference_class": "E",
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "TH550116": {
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "reference_class": "E",
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "TH550117": {
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "reference_class": "E",
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "TH550701": {
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "reference_class": "E",
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "TH550702": {
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "reference_class": "E",
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "TH550703": {
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "reference_class": "E",
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "TH550704": {
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "reference_class": "E",
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "TH550705": {
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "reference_class": "E",
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "TH550706": {
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "reference_class": "E",
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "TH550707": {
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "reference_class": "E",
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "TH550708": {
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "reference_class": "E",
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "TH550709": {
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "reference_class": "E",
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "TH550710": {
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "reference_class": "E",
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "TH550711": {
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "reference_class": "E",
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "TH550712": {
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "reference_class": "E",
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "TH550713": {
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "reference_class": "E",
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "TH550714": {
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "reference_class": "E",
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "TH550715": {
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "reference_class": "E",
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "TH550716": {
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "reference_class": "E",
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "TH550717": {
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "reference_class": "E",
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "TH551401": {
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "reference_class": "E",
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "TH551402": {
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "reference_class": "E",
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "TH551403": {
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "reference_class": "E",
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "TH551404": {
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "reference_class": "E",
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "TH551405": {
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "reference_class": "E",
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "TH551406": {
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "reference_class": "E",
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      },
+      "TH551407": {
+        "status": "headline_eligible",
+        "class_retention": 1.0,
+        "reference_class": "E",
+        "cells_run": 180,
+        "cells_keeping_the_reference_class": 180
+      }
+    },
+    "would_be_retention": {
+      "TH550101": {
+        "class_with_confidence_medium_in_the_default_cell": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "note": "Report-only: the binding class or, for a low-confidence cell, the would-be class. Never binding."
+      },
+      "TH550102": {
+        "class_with_confidence_medium_in_the_default_cell": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "note": "Report-only: the binding class or, for a low-confidence cell, the would-be class. Never binding."
+      },
+      "TH550103": {
+        "class_with_confidence_medium_in_the_default_cell": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "note": "Report-only: the binding class or, for a low-confidence cell, the would-be class. Never binding."
+      },
+      "TH550104": {
+        "class_with_confidence_medium_in_the_default_cell": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "note": "Report-only: the binding class or, for a low-confidence cell, the would-be class. Never binding."
+      },
+      "TH550105": {
+        "class_with_confidence_medium_in_the_default_cell": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "note": "Report-only: the binding class or, for a low-confidence cell, the would-be class. Never binding."
+      },
+      "TH550106": {
+        "class_with_confidence_medium_in_the_default_cell": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "note": "Report-only: the binding class or, for a low-confidence cell, the would-be class. Never binding."
+      },
+      "TH550107": {
+        "class_with_confidence_medium_in_the_default_cell": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "note": "Report-only: the binding class or, for a low-confidence cell, the would-be class. Never binding."
+      },
+      "TH550108": {
+        "class_with_confidence_medium_in_the_default_cell": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "note": "Report-only: the binding class or, for a low-confidence cell, the would-be class. Never binding."
+      },
+      "TH550109": {
+        "class_with_confidence_medium_in_the_default_cell": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "note": "Report-only: the binding class or, for a low-confidence cell, the would-be class. Never binding."
+      },
+      "TH550116": {
+        "class_with_confidence_medium_in_the_default_cell": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "note": "Report-only: the binding class or, for a low-confidence cell, the would-be class. Never binding."
+      },
+      "TH550117": {
+        "class_with_confidence_medium_in_the_default_cell": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "note": "Report-only: the binding class or, for a low-confidence cell, the would-be class. Never binding."
+      },
+      "TH550701": {
+        "class_with_confidence_medium_in_the_default_cell": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "note": "Report-only: the binding class or, for a low-confidence cell, the would-be class. Never binding."
+      },
+      "TH550702": {
+        "class_with_confidence_medium_in_the_default_cell": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "note": "Report-only: the binding class or, for a low-confidence cell, the would-be class. Never binding."
+      },
+      "TH550703": {
+        "class_with_confidence_medium_in_the_default_cell": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "note": "Report-only: the binding class or, for a low-confidence cell, the would-be class. Never binding."
+      },
+      "TH550704": {
+        "class_with_confidence_medium_in_the_default_cell": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "note": "Report-only: the binding class or, for a low-confidence cell, the would-be class. Never binding."
+      },
+      "TH550705": {
+        "class_with_confidence_medium_in_the_default_cell": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "note": "Report-only: the binding class or, for a low-confidence cell, the would-be class. Never binding."
+      },
+      "TH550706": {
+        "class_with_confidence_medium_in_the_default_cell": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "note": "Report-only: the binding class or, for a low-confidence cell, the would-be class. Never binding."
+      },
+      "TH550707": {
+        "class_with_confidence_medium_in_the_default_cell": "E",
+        "cells": 180,
+        "cells_keeping_it": 156,
+        "share": 0.8666666666666667,
+        "note": "Report-only: the binding class or, for a low-confidence cell, the would-be class. Never binding."
+      },
+      "TH550708": {
+        "class_with_confidence_medium_in_the_default_cell": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "note": "Report-only: the binding class or, for a low-confidence cell, the would-be class. Never binding."
+      },
+      "TH550709": {
+        "class_with_confidence_medium_in_the_default_cell": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "note": "Report-only: the binding class or, for a low-confidence cell, the would-be class. Never binding."
+      },
+      "TH550710": {
+        "class_with_confidence_medium_in_the_default_cell": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "note": "Report-only: the binding class or, for a low-confidence cell, the would-be class. Never binding."
+      },
+      "TH550711": {
+        "class_with_confidence_medium_in_the_default_cell": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "note": "Report-only: the binding class or, for a low-confidence cell, the would-be class. Never binding."
+      },
+      "TH550712": {
+        "class_with_confidence_medium_in_the_default_cell": null,
+        "cells": 180,
+        "cells_keeping_it": 0,
+        "share": null,
+        "note": "Report-only: the binding class or, for a low-confidence cell, the would-be class. Never binding."
+      },
+      "TH550713": {
+        "class_with_confidence_medium_in_the_default_cell": null,
+        "cells": 180,
+        "cells_keeping_it": 0,
+        "share": null,
+        "note": "Report-only: the binding class or, for a low-confidence cell, the would-be class. Never binding."
+      },
+      "TH550714": {
+        "class_with_confidence_medium_in_the_default_cell": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "note": "Report-only: the binding class or, for a low-confidence cell, the would-be class. Never binding."
+      },
+      "TH550715": {
+        "class_with_confidence_medium_in_the_default_cell": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "note": "Report-only: the binding class or, for a low-confidence cell, the would-be class. Never binding."
+      },
+      "TH550716": {
+        "class_with_confidence_medium_in_the_default_cell": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "note": "Report-only: the binding class or, for a low-confidence cell, the would-be class. Never binding."
+      },
+      "TH550717": {
+        "class_with_confidence_medium_in_the_default_cell": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "note": "Report-only: the binding class or, for a low-confidence cell, the would-be class. Never binding."
+      },
+      "TH551401": {
+        "class_with_confidence_medium_in_the_default_cell": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "note": "Report-only: the binding class or, for a low-confidence cell, the would-be class. Never binding."
+      },
+      "TH551402": {
+        "class_with_confidence_medium_in_the_default_cell": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "note": "Report-only: the binding class or, for a low-confidence cell, the would-be class. Never binding."
+      },
+      "TH551403": {
+        "class_with_confidence_medium_in_the_default_cell": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "note": "Report-only: the binding class or, for a low-confidence cell, the would-be class. Never binding."
+      },
+      "TH551404": {
+        "class_with_confidence_medium_in_the_default_cell": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "note": "Report-only: the binding class or, for a low-confidence cell, the would-be class. Never binding."
+      },
+      "TH551405": {
+        "class_with_confidence_medium_in_the_default_cell": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "note": "Report-only: the binding class or, for a low-confidence cell, the would-be class. Never binding."
+      },
+      "TH551406": {
+        "class_with_confidence_medium_in_the_default_cell": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "note": "Report-only: the binding class or, for a low-confidence cell, the would-be class. Never binding."
+      },
+      "TH551407": {
+        "class_with_confidence_medium_in_the_default_cell": "E",
+        "cells": 180,
+        "cells_keeping_it": 180,
+        "share": 1.0,
+        "note": "Report-only: the binding class or, for a low-confidence cell, the would-be class. Never binding."
+      }
+    },
+    "levels_not_run": [
+      {
+        "axis": "facilities",
+        "level": "corroborated",
+        "code": "facility_set_not_in_the_nan_ensemble",
+        "reason": "The ensemble of the Nan protocol has the public facility set only (hospitals by vehicle, main road): no shelter set is part of the case.",
+        "open_points": [
+          "nan_case_protocol_v1"
+        ]
+      },
+      {
+        "axis": "facilities",
+        "level": "all_listed",
+        "code": "facility_set_not_in_the_nan_ensemble",
+        "reason": "The ensemble of the Nan protocol has the public facility set only (hospitals by vehicle, main road): no shelter set is part of the case.",
+        "open_points": [
+          "nan_case_protocol_v1"
+        ]
+      }
+    ]
+  },
+  "checks": {
+    "guardrails": {
+      "every_reporting_unit_has_one_row": {
+        "result": "PASS",
+        "units": 35,
+        "lane": "OBS"
+      },
+      "GR1_minimum_denominators": {
+        "result": "PASS",
+        "units_without_a_class": 0,
+        "unit_residents_min_for_class": 100.0
+      },
+      "GR2_no_max_normalisation": {
+        "guardrail": "GR2_no_max_normalisation",
+        "result": "PASS",
+        "normalisation_version": "planning_frame_v1",
+        "protocol_sha256": {
+          "v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+          "v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+        },
+        "components": [
+          "flood_likelihood_0_100",
+          "exposure_0_100",
+          "access_gap_0_100",
+          "road_criticality_0_100",
+          "vulnerability_context_0_100"
+        ],
+        "rows_checked": 33,
+        "components_checked": 165,
+        "tolerance": 1e-09,
+        "fields_compared": "every field of every record; value_0_100 within the tolerance, the others exactly",
+        "rows_with_a_component_not_computed": 2,
+        "note": "Every record of a row with all five components is recomputed from the inputs it echoes. The overlay parser (floodguard.planning_overlay) recomputes the records of every other row one by one."
+      },
+      "GR3_lane_purity": {
+        "result": "PASS",
+        "flood_input_id": "nan_m1z.20250728t1120_o99_s1c",
+        "routing_context_id": "nan_planning_context_vehicle",
+        "closure_rule": {
+          "version": "closure_rule_v1",
+          "level": "central",
+          "closure_basis": "modelled_from_nan_m1z.20250728t1120_o99_s1c"
+        },
+        "lane_disclosure": "One flood input drives 4 of 5 components (90% of weight). This sentence appears on the overlay and in the brief appendix."
+      },
+      "GR5_blinding": {
+        "result": "PASS",
+        "protocol_sha256": {
+          "v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+          "v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+        },
+        "note": "Both protocol files were in force when the rules were read."
+      },
+      "GR6_publication_eligibility": {
+        "result": "PASS",
+        "publication_eligibility": "public",
+        "lineage_levels": {
+          "nan_m1z.20250728t1120_o99_s1c": "public",
+          "nan_planning_context_vehicle": "public",
+          "worldpop_2020_100m": "public",
+          "unit_boundaries": "public",
+          "nan_permanent_water": "public",
+          "nan_age_counts": "public",
+          "nan_access_runs": "public",
+          "national_vulnerability_anchors": "public"
+        }
+      },
+      "GR7_temporal_honesty": {
+        "result": "PASS",
+        "obs_rows_not_event_aligned": 0
+      },
+      "GR8_headline_stability": {
+        "result": "PASS",
+        "status_of_every_row": "not_evaluated",
+        "class_retention_min": 0.6,
+        "note": "The ensemble is plan task E10. No class is headlined before it has run."
+      }
+    },
+    "whole_case": {
+      "result": "PASS",
+      "rows": 35,
+      "component_values": 173,
+      "every_component_value_within_0_100": true,
+      "rows_with_an_fpps": 33,
+      "every_fpps_within_0_100": true,
+      "every_fpps_is_the_weighted_sum_of_its_components": true,
+      "rows_with_leave_one_component_out": 33,
+      "leave_one_component_out_consistent_with_the_fpps": true,
+      "residents_of_the_rows": 173144.78902267292,
+      "residents_counted_by_the_access_table": 173144.78902267292,
+      "residents_same_as_the_access_table": true,
+      "note": "Results and counts for the whole case. The resident total is the modelled WorldPop 2020 count of the units; no value of a single unit is stated here."
+    },
+    "result_file": {
+      "verified": true,
+      "accepted": [
+        {
+          "code": "confidence_not_rule_record",
+          "path": "$.rows[0].confidence",
+          "message": "rule v1 derives other values from the echoed measurements: ['assumptions', 't2_skill_condition']",
+          "why": "The Nan binding rule replaces the T2 skill condition behind C1; the record is exactly what that rule derives from the measurements it echoes."
+        },
+        {
+          "code": "confidence_not_rule_record",
+          "path": "$.rows[1].confidence",
+          "message": "rule v1 derives other values from the echoed measurements: ['assumptions', 't2_skill_condition']",
+          "why": "The Nan binding rule replaces the T2 skill condition behind C1; the record is exactly what that rule derives from the measurements it echoes."
+        },
+        {
+          "code": "confidence_not_rule_record",
+          "path": "$.rows[2].confidence",
+          "message": "rule v1 derives other values from the echoed measurements: ['assumptions', 't2_skill_condition']",
+          "why": "The Nan binding rule replaces the T2 skill condition behind C1; the record is exactly what that rule derives from the measurements it echoes."
+        },
+        {
+          "code": "confidence_not_rule_record",
+          "path": "$.rows[3].confidence",
+          "message": "rule v1 derives other values from the echoed measurements: ['assumptions', 't2_skill_condition']",
+          "why": "The Nan binding rule replaces the T2 skill condition behind C1; the record is exactly what that rule derives from the measurements it echoes."
+        },
+        {
+          "code": "confidence_not_rule_record",
+          "path": "$.rows[4].confidence",
+          "message": "rule v1 derives other values from the echoed measurements: ['assumptions', 't2_skill_condition']",
+          "why": "The Nan binding rule replaces the T2 skill condition behind C1; the record is exactly what that rule derives from the measurements it echoes."
+        },
+        {
+          "code": "confidence_not_rule_record",
+          "path": "$.rows[5].confidence",
+          "message": "rule v1 derives other values from the echoed measurements: ['assumptions', 't2_skill_condition']",
+          "why": "The Nan binding rule replaces the T2 skill condition behind C1; the record is exactly what that rule derives from the measurements it echoes."
+        },
+        {
+          "code": "confidence_not_rule_record",
+          "path": "$.rows[6].confidence",
+          "message": "rule v1 derives other values from the echoed measurements: ['assumptions', 't2_skill_condition']",
+          "why": "The Nan binding rule replaces the T2 skill condition behind C1; the record is exactly what that rule derives from the measurements it echoes."
+        },
+        {
+          "code": "confidence_not_rule_record",
+          "path": "$.rows[7].confidence",
+          "message": "rule v1 derives other values from the echoed measurements: ['assumptions', 't2_skill_condition']",
+          "why": "The Nan binding rule replaces the T2 skill condition behind C1; the record is exactly what that rule derives from the measurements it echoes."
+        },
+        {
+          "code": "confidence_not_rule_record",
+          "path": "$.rows[8].confidence",
+          "message": "rule v1 derives other values from the echoed measurements: ['assumptions', 't2_skill_condition']",
+          "why": "The Nan binding rule replaces the T2 skill condition behind C1; the record is exactly what that rule derives from the measurements it echoes."
+        },
+        {
+          "code": "confidence_not_rule_record",
+          "path": "$.rows[9].confidence",
+          "message": "rule v1 derives other values from the echoed measurements: ['assumptions', 't2_skill_condition']",
+          "why": "The Nan binding rule replaces the T2 skill condition behind C1; the record is exactly what that rule derives from the measurements it echoes."
+        },
+        {
+          "code": "confidence_not_rule_record",
+          "path": "$.rows[10].confidence",
+          "message": "rule v1 derives other values from the echoed measurements: ['assumptions', 't2_skill_condition']",
+          "why": "The Nan binding rule replaces the T2 skill condition behind C1; the record is exactly what that rule derives from the measurements it echoes."
+        },
+        {
+          "code": "confidence_not_rule_record",
+          "path": "$.rows[11].confidence",
+          "message": "rule v1 derives other values from the echoed measurements: ['assumptions', 't2_skill_condition']",
+          "why": "The Nan binding rule replaces the T2 skill condition behind C1; the record is exactly what that rule derives from the measurements it echoes."
+        },
+        {
+          "code": "confidence_not_rule_record",
+          "path": "$.rows[12].confidence",
+          "message": "rule v1 derives other values from the echoed measurements: ['assumptions', 't2_skill_condition']",
+          "why": "The Nan binding rule replaces the T2 skill condition behind C1; the record is exactly what that rule derives from the measurements it echoes."
+        },
+        {
+          "code": "confidence_not_rule_record",
+          "path": "$.rows[13].confidence",
+          "message": "rule v1 derives other values from the echoed measurements: ['assumptions', 't2_skill_condition']",
+          "why": "The Nan binding rule replaces the T2 skill condition behind C1; the record is exactly what that rule derives from the measurements it echoes."
+        },
+        {
+          "code": "confidence_not_rule_record",
+          "path": "$.rows[14].confidence",
+          "message": "rule v1 derives other values from the echoed measurements: ['assumptions', 't2_skill_condition']",
+          "why": "The Nan binding rule replaces the T2 skill condition behind C1; the record is exactly what that rule derives from the measurements it echoes."
+        },
+        {
+          "code": "confidence_not_rule_record",
+          "path": "$.rows[15].confidence",
+          "message": "rule v1 derives other values from the echoed measurements: ['assumptions', 't2_skill_condition']",
+          "why": "The Nan binding rule replaces the T2 skill condition behind C1; the record is exactly what that rule derives from the measurements it echoes."
+        },
+        {
+          "code": "confidence_not_rule_record",
+          "path": "$.rows[16].confidence",
+          "message": "rule v1 derives other values from the echoed measurements: ['assumptions', 't2_skill_condition']",
+          "why": "The Nan binding rule replaces the T2 skill condition behind C1; the record is exactly what that rule derives from the measurements it echoes."
+        },
+        {
+          "code": "confidence_not_rule_record",
+          "path": "$.rows[17].confidence",
+          "message": "rule v1 derives other values from the echoed measurements: ['assumptions', 't2_skill_condition']",
+          "why": "The Nan binding rule replaces the T2 skill condition behind C1; the record is exactly what that rule derives from the measurements it echoes."
+        },
+        {
+          "code": "confidence_not_rule_record",
+          "path": "$.rows[18].confidence",
+          "message": "rule v1 derives other values from the echoed measurements: ['assumptions', 't2_skill_condition']",
+          "why": "The Nan binding rule replaces the T2 skill condition behind C1; the record is exactly what that rule derives from the measurements it echoes."
+        },
+        {
+          "code": "confidence_not_rule_record",
+          "path": "$.rows[19].confidence",
+          "message": "rule v1 derives other values from the echoed measurements: ['assumptions', 't2_skill_condition']",
+          "why": "The Nan binding rule replaces the T2 skill condition behind C1; the record is exactly what that rule derives from the measurements it echoes."
+        },
+        {
+          "code": "confidence_not_rule_record",
+          "path": "$.rows[20].confidence",
+          "message": "rule v1 derives other values from the echoed measurements: ['assumptions', 't2_skill_condition']",
+          "why": "The Nan binding rule replaces the T2 skill condition behind C1; the record is exactly what that rule derives from the measurements it echoes."
+        },
+        {
+          "code": "confidence_not_rule_record",
+          "path": "$.rows[21].confidence",
+          "message": "rule v1 derives other values from the echoed measurements: ['assumptions', 't2_skill_condition']",
+          "why": "The Nan binding rule replaces the T2 skill condition behind C1; the record is exactly what that rule derives from the measurements it echoes."
+        },
+        {
+          "code": "confidence_not_rule_record",
+          "path": "$.rows[22].confidence",
+          "message": "rule v1 derives other values from the echoed measurements: ['assumptions', 't2_skill_condition']",
+          "why": "The Nan binding rule replaces the T2 skill condition behind C1; the record is exactly what that rule derives from the measurements it echoes."
+        },
+        {
+          "code": "confidence_not_rule_record",
+          "path": "$.rows[23].confidence",
+          "message": "rule v1 derives other values from the echoed measurements: ['assumptions', 't2_skill_condition']",
+          "why": "The Nan binding rule replaces the T2 skill condition behind C1; the record is exactly what that rule derives from the measurements it echoes."
+        },
+        {
+          "code": "confidence_not_rule_record",
+          "path": "$.rows[24].confidence",
+          "message": "rule v1 derives other values from the echoed measurements: ['assumptions', 't2_skill_condition']",
+          "why": "The Nan binding rule replaces the T2 skill condition behind C1; the record is exactly what that rule derives from the measurements it echoes."
+        },
+        {
+          "code": "confidence_not_rule_record",
+          "path": "$.rows[25].confidence",
+          "message": "rule v1 derives other values from the echoed measurements: ['assumptions', 't2_skill_condition']",
+          "why": "The Nan binding rule replaces the T2 skill condition behind C1; the record is exactly what that rule derives from the measurements it echoes."
+        },
+        {
+          "code": "confidence_not_rule_record",
+          "path": "$.rows[26].confidence",
+          "message": "rule v1 derives other values from the echoed measurements: ['assumptions', 't2_skill_condition']",
+          "why": "The Nan binding rule replaces the T2 skill condition behind C1; the record is exactly what that rule derives from the measurements it echoes."
+        },
+        {
+          "code": "confidence_not_rule_record",
+          "path": "$.rows[27].confidence",
+          "message": "rule v1 derives other values from the echoed measurements: ['assumptions', 't2_skill_condition']",
+          "why": "The Nan binding rule replaces the T2 skill condition behind C1; the record is exactly what that rule derives from the measurements it echoes."
+        },
+        {
+          "code": "confidence_not_rule_record",
+          "path": "$.rows[28].confidence",
+          "message": "rule v1 derives other values from the echoed measurements: ['assumptions', 't2_skill_condition']",
+          "why": "The Nan binding rule replaces the T2 skill condition behind C1; the record is exactly what that rule derives from the measurements it echoes."
+        },
+        {
+          "code": "confidence_not_rule_record",
+          "path": "$.rows[29].confidence",
+          "message": "rule v1 derives other values from the echoed measurements: ['assumptions', 't2_skill_condition']",
+          "why": "The Nan binding rule replaces the T2 skill condition behind C1; the record is exactly what that rule derives from the measurements it echoes."
+        },
+        {
+          "code": "confidence_not_rule_record",
+          "path": "$.rows[30].confidence",
+          "message": "rule v1 derives other values from the echoed measurements: ['assumptions', 't2_skill_condition']",
+          "why": "The Nan binding rule replaces the T2 skill condition behind C1; the record is exactly what that rule derives from the measurements it echoes."
+        },
+        {
+          "code": "confidence_not_rule_record",
+          "path": "$.rows[31].confidence",
+          "message": "rule v1 derives other values from the echoed measurements: ['assumptions', 't2_skill_condition']",
+          "why": "The Nan binding rule replaces the T2 skill condition behind C1; the record is exactly what that rule derives from the measurements it echoes."
+        },
+        {
+          "code": "confidence_not_rule_record",
+          "path": "$.rows[32].confidence",
+          "message": "rule v1 derives other values from the echoed measurements: ['assumptions', 't2_skill_condition']",
+          "why": "The Nan binding rule replaces the T2 skill condition behind C1; the record is exactly what that rule derives from the measurements it echoes."
+        },
+        {
+          "code": "confidence_not_rule_record",
+          "path": "$.rows[33].confidence",
+          "message": "rule v1 derives other values from the echoed measurements: ['assumptions', 't2_skill_condition']",
+          "why": "The Nan binding rule replaces the T2 skill condition behind C1; the record is exactly what that rule derives from the measurements it echoes."
+        },
+        {
+          "code": "confidence_not_rule_record",
+          "path": "$.rows[34].confidence",
+          "message": "rule v1 derives other values from the echoed measurements: ['assumptions', 't2_skill_condition']",
+          "why": "The Nan binding rule replaces the T2 skill condition behind C1; the record is exactly what that rule derives from the measurements it echoes."
+        },
+        {
+          "code": "case_not_protocol_case",
+          "path": "$.case.case_id",
+          "message": "'N1' is not a case of protocol v1a case_portfolio",
+          "why": "The case is a case of the Nan protocol (nan_case_protocol_v1), not of protocol v1a."
+        }
+      ],
+      "refused": [],
+      "tier_t2_rows_derived_again": 35,
+      "parser": "floodguard.planning_overlay.overlay_problems, bound to the two protocol files in force"
+    },
+    "default_cell_of_the_ensemble_is_the_row": true,
+    "residents_in_flagged_cells_polygon_and_grid_lookup_differ_by": 0.0
+  },
+  "outputs": [
+    {
+      "what": "result_file",
+      "path": "outputs/nan_case/planning_result_n1_nan_v1.json",
+      "bytes": 554915,
+      "sha256": "903d96df99b357f12ce3e79e40eb11c13f1416c16fa3ccdb6d9fdb726342ef7c",
+      "in_git": true
+    },
+    {
+      "what": "access_runs",
+      "path": "<external_data_workspace>/proposal_execution/nan_case_v1/score_chain/access_runs_n1.json",
+      "bytes": 3236026,
+      "sha256": "2692bb7868bfa044e9534795b98513cb9c3f5115e966dc0c74fc77280e8f58f5",
+      "in_git": false
+    },
+    {
+      "what": "ensemble_cells",
+      "path": "<external_data_workspace>/proposal_execution/nan_case_v1/score_chain/ensemble_n1.json",
+      "bytes": 9723918,
+      "sha256": "92624e80c5dd4a18caab78d6950f5c1257ba23067513f01a9ffbde92493d0fd2",
+      "in_git": false
+    }
+  ],
+  "implementation": {
+    "base_commit": "e9c6576e57a338c200ed2ed5a46e1286f34b1efb",
+    "chain_script_sha256": "08f45f12aa063490a83b54333f39bd71af7ed4c10b5129fafe513dcff0999650",
+    "e5_builder_sha256": "fa376c611b2d2d2b509d9d8ac408034b81ad7964d3da56d4f17788360e38e749",
+    "e8_builder_sha256": "245e66f44c27ef4fe7023028d9f4db2367365908c8f44e661073bcbba0528077",
+    "e10_builder_sha256": "3074602f65bb202a4dd89ad2026e8f79385e61d28e777eb2f3a5aaf0a7daefb8",
+    "nan_case_chain_module_sha256": "ca241330521c88aba6f3424208d7c9f68a568efc6c69e1927e08effbfae0a428",
+    "planning_assessment_module_sha256": "e9b8dd1c5bc3aad39958ed5f6edb1fbc527c21e6957a22eafa271b49bdd69980",
+    "uncertainty_ensemble_module_sha256": "eccf6fdec9a5bc27b5be9fa13dfeab75b8e87a45420930cb09fab6d7f4b54155",
+    "planning_overlay_module_sha256": "f3075fa1539db1287a7fc700707e25648ba62feadc61efc75bd32824ab2f91cb",
+    "normalisation_module_sha256": "731e50596822cd5798fa2298d957c17bf44b3771536f3ed8c50930c43f545cfb",
+    "confidence_module_sha256": "acb762cf56e41c86b4af40a5ce8108072b87e2dd7d35e86f56487bfa59eb54f0",
+    "scoring_module_sha256": "b42439ca3b4b84202f422456a1d7b075dccbdc71e8dfc20aa4ecff494389a307",
+    "flood_inputs_module_sha256": "1d3b3d6328ad50eb7f26455ea576748a546f82f391a83aeb01da46da8d643e5d",
+    "access_diff_module_sha256": "c6178a93fb8f92c17cf1038366cc76f8184112f9b4a6115f26c567ee73209f1c",
+    "closure_rules_module_sha256": "204b591c69cccf39d69131e1fe950dac9d01bd129c0b628b87531f4479aef921",
+    "line_ends": "LF: the bytes Git holds; a checkout's CRLF line ends are read as LF",
+    "software": {
+      "python": "3.11.8",
+      "numpy": "2.2.6",
+      "shapely": "2.1.2",
+      "geos": "3.13.1",
+      "pyproj": "3.7.2",
+      "proj": "9.5.1",
+      "pyogrio": "0.13.0",
+      "rasterio": "1.4.4",
+      "python_build": "3.11.8"
+    }
+  },
+  "timing_seconds": {
+    "inputs_read": 11.7,
+    "flood_extents": 14.5,
+    "no_answer_figures": 36.0,
+    "access_runs": 632.8,
+    "units_measured": 260.7,
+    "sensitivity_run": 217.9,
+    "rows_assembled_and_checked": 4.7,
+    "ensemble": 856.8,
+    "headline_verify_and_write": 16.9
+  }
+}

@@ -1,0 +1,1889 @@
+{
+  "schema": "floodguard.nan_case_frame.v1",
+  "case_id": "N1",
+  "generated_at_utc": "2026-10-14T14:46:07Z",
+  "source_timestamp": "2026-07-10T02:46:49Z",
+  "source_timestamps": {
+    "boundaries_valid_on": "2022-01-22",
+    "osm_extract_retrieved_at_utc": "2026-07-10T02:46:49Z",
+    "population_year_represented": 2020,
+    "age_counts_year_represented": 2024,
+    "age_counts_publication_date": "2025-09-01"
+  },
+  "status": "frame_and_context_inputs_of_case_n1",
+  "status_note": "The frame of case N1 and the inputs the chain stage scores it with. It holds baseline (no flood) counts per tambon and no flood figure, closure, access loss, component value, FPPS, A-E class or ensemble. Planning guidance only: not an official warning and not real-time.",
+  "confidence_class": "low",
+  "confidence_basis": "Administrative boundaries valid on 2022-01-22, OpenStreetMap roads and hospitals retrieved on 2026-07-10 and WorldPop modelled residents, none checked on the ground. Travel times are modelled class speeds on an undirected graph. The rules are those of the case protocol and of protocols v1a and v1b; the build has not been reviewed.",
+  "official_warning": false,
+  "operational_status": "non_operational",
+  "assumptions": [
+    "The 35 units are the 2022 COD-AB tha_admin3 polygons of districts TH5501, TH5514 and TH5507, copied unchanged.",
+    "The routing geometry is the area the N1 context may route through; it is not a flood extent. Roads and hospitals outside it are not seen, even where a route would leave and re-enter it.",
+    "OpenStreetMap was retrieved on 2026-07-10, about a year after the event of July and August 2025; roads and hospitals mapped or changed in between are taken as they stood in July 2026.",
+    "WorldPop 2020 counts are modelled residents of 2020, not event-year counts and not observed evacuation demand.",
+    "Nothing here is an observation of a flood. No flood layer is read and no flood flag is computed.",
+    "Road times are fixed class speeds on an undirected graph; one-way rules, turn restrictions and road condition are not represented. A grade join shows that two ways end at one OSM coordinate (0 m), not that the transition can be driven.",
+    "A main-road entry is a node of a trunk or primary edge of the context, links included (owner choice 8); grade-join connectors are not main roads.",
+    "A demand cell counts for the unit that holds its centre; WorldPop 2020 counts are modelled residents.",
+    "The 2024-rescaled demand is another model of where residents are counted, not four years of growth."
+  ],
+  "protocol_sha256": {
+    "nan_case_protocol_v1": "e40966c7474e2168f732fa77de51d02efb128fa063757aa774085dc981d4d7cd",
+    "nan_case_areas_v1": "7c9d1cf0ee6b4405d8d9eda0a41f8395e71a954971f3c8a0e0b5ebb068723be5",
+    "planning_protocol_v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+    "planning_protocol_v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+  },
+  "protocol": {
+    "path": "docs/proposal_execution/nan_case_protocol_v1.json",
+    "decision_log": "R51",
+    "frame_rules": {
+      "province_pcode": "TH55",
+      "district_pcodes": [
+        "TH5501",
+        "TH5514",
+        "TH5507"
+      ],
+      "district_names": [
+        "Mueang Nan",
+        "Phu Phiang",
+        "Wiang Sa"
+      ],
+      "units": "every COD-AB tha_admin3 unit whose adm2_pcode is one of the three (35 units: 11, 7 and 17)",
+      "boundary_source": "<external data root>/open_context/hdx_cod_ab/tha_admin_boundaries.gdb.zip, layer tha_admin3",
+      "routing_geometry": "the union of the units buffered by 3 km (the SE2 frame rule of protocol v1b)",
+      "hospitals": "every OpenStreetMap hospital whose routing point lies inside the routing geometry (the SE2 rule of v1b)",
+      "everything_else": "closure rule v1 and its three levels, the services (hospital by vehicle within 30 minutes, main road within 15 minutes), the national vulnerability anchors, the flood anchor 0.20, the weights and the class rules are those of protocols v1a and v1b, unchanged"
+    }
+  },
+  "counts": {
+    "units": 35,
+    "units_by_district": {
+      "TH5501": 11,
+      "TH5514": 7,
+      "TH5507": 17
+    },
+    "osm_hospital_objects": 5,
+    "distinct_named_hospitals": 3,
+    "main_road_entries": 2215,
+    "context_edges": 139441,
+    "grade_joins": 264,
+    "demand_cells": 443739,
+    "residents_2020": 173144.789
+  },
+  "units": [
+    {
+      "adm3_pcode": "TH550101",
+      "adm3_name": "Nai Wiang",
+      "adm3_name_th": "\u0e43\u0e19\u0e40\u0e27\u0e35\u0e22\u0e07",
+      "adm2_pcode": "TH5501",
+      "adm2_name": "Mueang Nan",
+      "area_km2": 5.747123,
+      "raster_value": 1,
+      "dependent_share_2024": 0.3966498985994031
+    },
+    {
+      "adm3_pcode": "TH550102",
+      "adm3_name": "Bo",
+      "adm3_name_th": "\u0e1a\u0e48\u0e2d",
+      "adm2_pcode": "TH5501",
+      "adm2_name": "Mueang Nan",
+      "area_km2": 235.943832,
+      "raster_value": 2,
+      "dependent_share_2024": 0.39671369569452586
+    },
+    {
+      "adm3_pcode": "TH550103",
+      "adm3_name": "Pha Sing",
+      "adm3_name_th": "\u0e1c\u0e32\u0e2a\u0e34\u0e07\u0e2b\u0e4c",
+      "adm2_pcode": "TH5501",
+      "adm2_name": "Mueang Nan",
+      "area_km2": 88.326996,
+      "raster_value": 3,
+      "dependent_share_2024": 0.3965493248356814
+    },
+    {
+      "adm3_pcode": "TH550104",
+      "adm3_name": "Chai Sathan",
+      "adm3_name_th": "\u0e44\u0e0a\u0e22\u0e2a\u0e16\u0e32\u0e19",
+      "adm2_pcode": "TH5501",
+      "adm2_name": "Mueang Nan",
+      "area_km2": 23.463785,
+      "raster_value": 4,
+      "dependent_share_2024": 0.39600761105670573
+    },
+    {
+      "adm3_pcode": "TH550105",
+      "adm3_name": "Thuem Tong",
+      "adm3_name_th": "\u0e16\u0e37\u0e21\u0e15\u0e2d\u0e07",
+      "adm2_pcode": "TH5501",
+      "adm2_name": "Mueang Nan",
+      "area_km2": 13.312589,
+      "raster_value": 5,
+      "dependent_share_2024": 0.39600761395569556
+    },
+    {
+      "adm3_pcode": "TH550106",
+      "adm3_name": "Rueang",
+      "adm3_name_th": "\u0e40\u0e23\u0e37\u0e2d\u0e07",
+      "adm2_pcode": "TH5501",
+      "adm2_name": "Mueang Nan",
+      "area_km2": 76.93418,
+      "raster_value": 6,
+      "dependent_share_2024": 0.40069831038017256
+    },
+    {
+      "adm3_pcode": "TH550107",
+      "adm3_name": "Na Sao",
+      "adm3_name_th": "\u0e19\u0e32\u0e0b\u0e32\u0e27",
+      "adm2_pcode": "TH5501",
+      "adm2_name": "Mueang Nan",
+      "area_km2": 29.107594,
+      "raster_value": 7,
+      "dependent_share_2024": 0.39648233107328323
+    },
+    {
+      "adm3_pcode": "TH550108",
+      "adm3_name": "Du Tai",
+      "adm3_name_th": "\u0e14\u0e39\u0e48\u0e43\u0e15\u0e49",
+      "adm2_pcode": "TH5501",
+      "adm2_name": "Mueang Nan",
+      "area_km2": 29.387161,
+      "raster_value": 8,
+      "dependent_share_2024": 0.39648233376190295
+    },
+    {
+      "adm3_pcode": "TH550109",
+      "adm3_name": "Kong Khwai",
+      "adm3_name_th": "\u0e01\u0e2d\u0e07\u0e04\u0e27\u0e32\u0e22",
+      "adm2_pcode": "TH5501",
+      "adm2_name": "Mueang Nan",
+      "area_km2": 32.70696,
+      "raster_value": 9,
+      "dependent_share_2024": 0.3971722409054502
+    },
+    {
+      "adm3_pcode": "TH550116",
+      "adm3_name": "Bo Suak",
+      "adm3_name_th": "\u0e1a\u0e48\u0e2d\u0e2a\u0e27\u0e01",
+      "adm2_pcode": "TH5501",
+      "adm2_name": "Mueang Nan",
+      "area_km2": 60.901635,
+      "raster_value": 10,
+      "dependent_share_2024": 0.3960633332921727
+    },
+    {
+      "adm3_pcode": "TH550117",
+      "adm3_name": "Sanian",
+      "adm3_name_th": "\u0e2a\u0e30\u0e40\u0e19\u0e35\u0e22\u0e19",
+      "adm2_pcode": "TH5501",
+      "adm2_name": "Mueang Nan",
+      "area_km2": 469.588056,
+      "raster_value": 11,
+      "dependent_share_2024": 0.3989327081025246
+    },
+    {
+      "adm3_pcode": "TH550701",
+      "adm3_name": "Klang Wiang",
+      "adm3_name_th": "\u0e01\u0e25\u0e32\u0e07\u0e40\u0e27\u0e35\u0e22\u0e07",
+      "adm2_pcode": "TH5507",
+      "adm2_name": "Wiang Sa",
+      "area_km2": 30.532379,
+      "raster_value": 12,
+      "dependent_share_2024": 0.4517453672052367
+    },
+    {
+      "adm3_pcode": "TH550702",
+      "adm3_name": "Khueng",
+      "adm3_name_th": "\u0e02\u0e36\u0e48\u0e07",
+      "adm2_pcode": "TH5507",
+      "adm2_name": "Wiang Sa",
+      "area_km2": 79.321359,
+      "raster_value": 13,
+      "dependent_share_2024": 0.4517453677447526
+    },
+    {
+      "adm3_pcode": "TH550703",
+      "adm3_name": "Lai Nan",
+      "adm3_name_th": "\u0e44\u0e2b\u0e25\u0e48\u0e19\u0e48\u0e32\u0e19",
+      "adm2_pcode": "TH5507",
+      "adm2_name": "Wiang Sa",
+      "area_km2": 119.921542,
+      "raster_value": 14,
+      "dependent_share_2024": 0.45099226941381293
+    },
+    {
+      "adm3_pcode": "TH550704",
+      "adm3_name": "Tan Chum",
+      "adm3_name_th": "\u0e15\u0e32\u0e25\u0e0a\u0e38\u0e21",
+      "adm2_pcode": "TH5507",
+      "adm2_name": "Wiang Sa",
+      "area_km2": 31.310599,
+      "raster_value": 15,
+      "dependent_share_2024": 0.45169681381622245
+    },
+    {
+      "adm3_pcode": "TH550705",
+      "adm3_name": "Na Lueang",
+      "adm3_name_th": "\u0e19\u0e32\u0e40\u0e2b\u0e25\u0e37\u0e2d\u0e07",
+      "adm2_pcode": "TH5507",
+      "adm2_name": "Wiang Sa",
+      "area_km2": 26.735329,
+      "raster_value": 16,
+      "dependent_share_2024": 0.44073777485103727
+    },
+    {
+      "adm3_pcode": "TH550706",
+      "adm3_name": "San",
+      "adm3_name_th": "\u0e2a\u0e49\u0e32\u0e19",
+      "adm2_pcode": "TH5507",
+      "adm2_name": "Wiang Sa",
+      "area_km2": 135.452342,
+      "raster_value": 17,
+      "dependent_share_2024": 0.45174484994984765
+    },
+    {
+      "adm3_pcode": "TH550707",
+      "adm3_name": "Nam Muap",
+      "adm3_name_th": "\u0e19\u0e49\u0e33\u0e21\u0e27\u0e1a",
+      "adm2_pcode": "TH5507",
+      "adm2_name": "Wiang Sa",
+      "area_km2": 351.254836,
+      "raster_value": 18,
+      "dependent_share_2024": 0.4517230672091035
+    },
+    {
+      "adm3_pcode": "TH550708",
+      "adm3_name": "Nam Pua",
+      "adm3_name_th": "\u0e19\u0e49\u0e33\u0e1b\u0e31\u0e49\u0e27",
+      "adm2_pcode": "TH5507",
+      "adm2_name": "Wiang Sa",
+      "area_km2": 37.879721,
+      "raster_value": 19,
+      "dependent_share_2024": 0.45054561793814735
+    },
+    {
+      "adm3_pcode": "TH550709",
+      "adm3_name": "Yap Hua Na",
+      "adm3_name_th": "\u0e22\u0e32\u0e1a\u0e2b\u0e31\u0e27\u0e19\u0e32",
+      "adm2_pcode": "TH5507",
+      "adm2_name": "Wiang Sa",
+      "area_km2": 421.935635,
+      "raster_value": 20,
+      "dependent_share_2024": 0.45153872796251754
+    },
+    {
+      "adm3_pcode": "TH550710",
+      "adm3_name": "Pong Sanuk",
+      "adm3_name_th": "\u0e1b\u0e07\u0e2a\u0e19\u0e38\u0e01",
+      "adm2_pcode": "TH5507",
+      "adm2_name": "Wiang Sa",
+      "area_km2": 78.523587,
+      "raster_value": 21,
+      "dependent_share_2024": 0.4517453668425711
+    },
+    {
+      "adm3_pcode": "TH550711",
+      "adm3_name": "Ai Na Lai",
+      "adm3_name_th": "\u0e2d\u0e48\u0e32\u0e22\u0e19\u0e32\u0e44\u0e25\u0e22",
+      "adm2_pcode": "TH5507",
+      "adm2_name": "Wiang Sa",
+      "area_km2": 174.77434,
+      "raster_value": 22,
+      "dependent_share_2024": 0.4517347707645006
+    },
+    {
+      "adm3_pcode": "TH550712",
+      "adm3_name": "Sanna Nong Mai",
+      "adm3_name_th": "\u0e2a\u0e49\u0e32\u0e19\u0e19\u0e32\u0e2b\u0e19\u0e2d\u0e07\u0e43\u0e2b\u0e21\u0e48",
+      "adm2_pcode": "TH5507",
+      "adm2_name": "Wiang Sa",
+      "area_km2": 150.621518,
+      "raster_value": 23,
+      "dependent_share_2024": 0.4517453567198924
+    },
+    {
+      "adm3_pcode": "TH550713",
+      "adm3_name": "Mae Khaning",
+      "adm3_name_th": "\u0e41\u0e21\u0e48\u0e02\u0e30\u0e19\u0e34\u0e07",
+      "adm2_pcode": "TH5507",
+      "adm2_name": "Wiang Sa",
+      "area_km2": 147.430401,
+      "raster_value": 24,
+      "dependent_share_2024": 0.4516537787778233
+    },
+    {
+      "adm3_pcode": "TH550714",
+      "adm3_name": "Mae Sakhon",
+      "adm3_name_th": "\u0e41\u0e21\u0e48\u0e2a\u0e32\u0e04\u0e23",
+      "adm2_pcode": "TH5507",
+      "adm2_name": "Wiang Sa",
+      "area_km2": 108.342961,
+      "raster_value": 25,
+      "dependent_share_2024": 0.45170500208139963
+    },
+    {
+      "adm3_pcode": "TH550715",
+      "adm3_name": "Chom Chan",
+      "adm3_name_th": "\u0e08\u0e2d\u0e21\u0e08\u0e31\u0e19\u0e17\u0e23\u0e4c",
+      "adm2_pcode": "TH5507",
+      "adm2_name": "Wiang Sa",
+      "area_km2": 67.086434,
+      "raster_value": 26,
+      "dependent_share_2024": 0.4516037976856223
+    },
+    {
+      "adm3_pcode": "TH550716",
+      "adm3_name": "Mae Sa",
+      "adm3_name_th": "\u0e41\u0e21\u0e48\u0e2a\u0e32",
+      "adm2_pcode": "TH5507",
+      "adm2_name": "Wiang Sa",
+      "area_km2": 37.543837,
+      "raster_value": 27,
+      "dependent_share_2024": 0.45174536410343186
+    },
+    {
+      "adm3_pcode": "TH550717",
+      "adm3_name": "Thung Si Thong",
+      "adm3_name_th": "\u0e17\u0e38\u0e48\u0e07\u0e28\u0e23\u0e35\u0e17\u0e2d\u0e07",
+      "adm2_pcode": "TH5507",
+      "adm2_name": "Wiang Sa",
+      "area_km2": 93.507535,
+      "raster_value": 28,
+      "dependent_share_2024": 0.4505740941923227
+    },
+    {
+      "adm3_pcode": "TH551401",
+      "adm3_name": "Muang Tuet",
+      "adm3_name_th": "\u0e21\u0e48\u0e27\u0e07\u0e15\u0e36\u0e4a\u0e14",
+      "adm2_pcode": "TH5514",
+      "adm2_name": "Phu Phiang",
+      "area_km2": 13.760129,
+      "raster_value": 29,
+      "dependent_share_2024": 0.41284096989289804
+    },
+    {
+      "adm3_pcode": "TH551402",
+      "adm3_name": "Na Pang",
+      "adm3_name_th": "\u0e19\u0e32\u0e1b\u0e31\u0e07",
+      "adm2_pcode": "TH5514",
+      "adm2_name": "Phu Phiang",
+      "area_km2": 14.038087,
+      "raster_value": 30,
+      "dependent_share_2024": 0.41444657979038124
+    },
+    {
+      "adm3_pcode": "TH551403",
+      "adm3_name": "Nam Kaen",
+      "adm3_name_th": "\u0e19\u0e49\u0e33\u0e41\u0e01\u0e48\u0e19",
+      "adm2_pcode": "TH5514",
+      "adm2_name": "Phu Phiang",
+      "area_km2": 62.993422,
+      "raster_value": 31,
+      "dependent_share_2024": 0.4159034222054917
+    },
+    {
+      "adm3_pcode": "TH551404",
+      "adm3_name": "Nam Kian",
+      "adm3_name_th": "\u0e19\u0e49\u0e33\u0e40\u0e01\u0e35\u0e4b\u0e22\u0e19",
+      "adm2_pcode": "TH5514",
+      "adm2_name": "Phu Phiang",
+      "area_km2": 43.642869,
+      "raster_value": 32,
+      "dependent_share_2024": 0.41565017799987614
+    },
+    {
+      "adm3_pcode": "TH551405",
+      "adm3_name": "Mueang Chang",
+      "adm3_name_th": "\u0e40\u0e21\u0e37\u0e2d\u0e07\u0e08\u0e31\u0e07",
+      "adm2_pcode": "TH5514",
+      "adm2_name": "Phu Phiang",
+      "area_km2": 83.972411,
+      "raster_value": 33,
+      "dependent_share_2024": 0.41507715940691065
+    },
+    {
+      "adm3_pcode": "TH551406",
+      "adm3_name": "Tha Nao",
+      "adm3_name_th": "\u0e17\u0e48\u0e32\u0e19\u0e49\u0e32\u0e27",
+      "adm2_pcode": "TH5514",
+      "adm2_name": "Phu Phiang",
+      "area_km2": 18.273784,
+      "raster_value": 34,
+      "dependent_share_2024": 0.4149021920978153
+    },
+    {
+      "adm3_pcode": "TH551407",
+      "adm3_name": "Fai Kaeo",
+      "adm3_name_th": "\u0e1d\u0e32\u0e22\u0e41\u0e01\u0e49\u0e27",
+      "adm2_pcode": "TH5514",
+      "adm2_name": "Phu Phiang",
+      "area_km2": 208.513851,
+      "raster_value": 35,
+      "dependent_share_2024": 0.4106724042220007
+    }
+  ],
+  "frame_area_km2": 3602.788819,
+  "routing_geometry": {
+    "rule": "The union of the 35 units, buffered by 3,000 m in EPSG:32647 (16 segments per quarter circle), projected to WGS84 and intersected with the COD-AB tha_admin0 polygon of Thailand (floodguard.planning_frames.routing_geometry, the SE2 frame rule of protocol v1b).",
+    "path": "<external_data_workspace>/proposal_execution/nan_case_v1/frame/n1_routing_geometry.geojson",
+    "file_sha256": "924bf34b01c4ef6ff297b96a29aecc63a84900e868b6c4456c66d8f20e2b155a",
+    "geometry_sha256": "45cf6c629d2e57999cd67bb1b5abf1ca6c58dbb49138365e2a838fab549ec9f7",
+    "geometry_type": "Polygon",
+    "area_km2": 4562.477576,
+    "area_removed_by_the_clip_to_thailand_km2": 43.737197,
+    "bounds_wgs84": [
+      100.323146,
+      18.309475,
+      101.131998,
+      19.089061
+    ]
+  },
+  "grid_check": {
+    "rule": "The bounds of the units' union buffered by 3 km in EPSG:32647 (before the clip to Thailand), snapped outward to 20 m, against the frame grid of the case protocol (grid.frame) and of outputs/nan_case/areas_v1.json.",
+    "computed": {
+      "west": 639520,
+      "north": 2111500,
+      "rows": 4303,
+      "cols": 4280
+    },
+    "stated_in_the_protocol": {
+      "west": 639520,
+      "north": 2111500,
+      "rows": 4303,
+      "cols": 4280
+    },
+    "differing_keys": [],
+    "same": true,
+    "after_the_clip_to_thailand": {
+      "computed": {
+        "west": 639520,
+        "north": 2111500,
+        "rows": 4303,
+        "cols": 4278
+      },
+      "stated_in_the_protocol": {
+        "west": 639520,
+        "north": 2111500,
+        "rows": 4303,
+        "cols": 4280
+      },
+      "differing_keys": [
+        "cols"
+      ],
+      "same": false
+    }
+  },
+  "hospitals": {
+    "rule": "Every OSM object tagged amenity=hospital or healthcare=hospital whose routing point the routing geometry covers. Object, identity and routing point as in floodguard.evidence_context.build_context_inputs: a node is its point; a way or relation is its representative point, or its one tagged entrance node when it has exactly one. The OSM extract is the bounding box of the routing geometry (scripts/build_planning_frames.py).",
+    "counts": {
+      "osm_objects": 5,
+      "distinct_named_hospitals": 3,
+      "unnamed_objects": 1,
+      "objects_that_repeat_a_named_hospital": 1
+    },
+    "counts_note": "osm_objects counts OSM objects; distinct_named_hospitals is the unit of owner choice 22 (decision log R12). Every object is a destination, named or not.",
+    "hospitals": [
+      {
+        "facility_id": "OSM-node-2649623698",
+        "osm_url": "https://www.openstreetmap.org/node/2649623698",
+        "name": "Unnamed OSM candidate",
+        "routing_point_lon_lat": [
+          100.7641613,
+          18.6901665
+        ],
+        "source_geometry_type": "Point",
+        "geometry_role": "osm_facility_node",
+        "unit_holding_the_routing_point": "TH550109",
+        "destination_in_the_context": true,
+        "node_id": "osm-node-04e75fd77efcd42713c2",
+        "snap_distance_m": 27.059127313663396,
+        "dga_records_within_150_m": 1
+      },
+      {
+        "facility_id": "OSM-way-1464956018",
+        "osm_url": "https://www.openstreetmap.org/way/1464956018",
+        "name": "\u0e42\u0e23\u0e07\u0e1e\u0e22\u0e32\u0e1a\u0e32\u0e25\u0e04\u0e48\u0e32\u0e22\u0e2a\u0e38\u0e23\u0e34\u0e22\u0e1e\u0e07\u0e29\u0e4c",
+        "name_en": "Nan Hospital",
+        "routing_point_lon_lat": [
+          100.795601,
+          18.7906334
+        ],
+        "source_geometry_type": "MultiPolygon",
+        "geometry_role": "derived_site_interior_representative_not_entrance",
+        "unit_holding_the_routing_point": "TH551407",
+        "destination_in_the_context": true,
+        "node_id": "osm-node-b21a3930f93496694131",
+        "snap_distance_m": 46.46054453633621,
+        "dga_records_within_150_m": 0
+      },
+      {
+        "facility_id": "OSM-way-315323384",
+        "osm_url": "https://www.openstreetmap.org/way/315323384",
+        "name": "Nan central hospital",
+        "routing_point_lon_lat": [
+          100.7887299,
+          18.7957123
+        ],
+        "source_geometry_type": "MultiPolygon",
+        "geometry_role": "derived_site_interior_representative_not_entrance",
+        "unit_holding_the_routing_point": "TH550101",
+        "destination_in_the_context": true,
+        "node_id": "osm-node-d68f56edb25173a22582",
+        "snap_distance_m": 76.93882260916199,
+        "dga_records_within_150_m": 1
+      },
+      {
+        "facility_id": "OSM-way-315330559",
+        "osm_url": "https://www.openstreetmap.org/way/315330559",
+        "name": "\u0e42\u0e23\u0e07\u0e1e\u0e22\u0e32\u0e1a\u0e32\u0e25\u0e04\u0e48\u0e32\u0e22\u0e2a\u0e38\u0e23\u0e34\u0e22\u0e1e\u0e07\u0e29\u0e4c",
+        "routing_point_lon_lat": [
+          100.7962569,
+          18.7907776
+        ],
+        "source_geometry_type": "MultiPolygon",
+        "geometry_role": "derived_site_interior_representative_not_entrance",
+        "unit_holding_the_routing_point": "TH551407",
+        "destination_in_the_context": true,
+        "node_id": "osm-node-f066cfbabd8640433485",
+        "snap_distance_m": 28.6900850062005,
+        "dga_records_within_150_m": 0
+      },
+      {
+        "facility_id": "OSM-way-315331634",
+        "osm_url": "https://www.openstreetmap.org/way/315331634",
+        "name": "\u0e42\u0e23\u0e07\u0e1e\u0e22\u0e32\u0e1a\u0e32\u0e25\u0e2d\u0e33\u0e40\u0e20\u0e2d\u0e40\u0e27\u0e35\u0e22\u0e07\u0e2a\u0e32",
+        "name_en": "Wiangsa Hospital",
+        "routing_point_lon_lat": [
+          100.7275943,
+          18.5658893
+        ],
+        "source_geometry_type": "MultiPolygon",
+        "geometry_role": "derived_site_interior_representative_not_entrance",
+        "unit_holding_the_routing_point": "TH550701",
+        "destination_in_the_context": true,
+        "node_id": "osm-node-3ddcd478aaee25d9d721",
+        "snap_distance_m": 27.24084752165538,
+        "dga_records_within_150_m": 1
+      }
+    ],
+    "context_check": {
+      "rule": "The hospital destinations of the context (eligible, routing point inside the routing context) against the frame list above.",
+      "missing": [],
+      "extra": [],
+      "same": true
+    }
+  },
+  "main_road_destinations": {
+    "definition": "The destination is the nearest node on a trunk or primary edge (including links) inside the routing context.",
+    "implemented_by": "floodguard.planning_context.main_road_entries: every node of a trunk or primary edge of the context, links included; grade-join connectors are not main roads.",
+    "entries": 2215,
+    "node_ids_sha256": "79ae83eeefb3e1044862d0bbbfa34ccffc15ad7c822d0026848999c7103b4419",
+    "entries_by_road_class": {
+      "primary": 868,
+      "trunk": 1348
+    },
+    "ways_by_road_class": {
+      "primary": 49,
+      "trunk": 81
+    },
+    "osm_way_ids": [
+      "12526580",
+      "40131787",
+      "40134360",
+      "40134370",
+      "40134373",
+      "85387672",
+      "95763189",
+      "96596553",
+      "96675625",
+      "96675629",
+      "105672737",
+      "105672739",
+      "114774831",
+      "114774843",
+      "114774846",
+      "114774849",
+      "114775418",
+      "114775438",
+      "114782929",
+      "114782930",
+      "114782932",
+      "114782933",
+      "114782939",
+      "114797418",
+      "114797419",
+      "114797437",
+      "114797439",
+      "114915981",
+      "247767580",
+      "247767581",
+      "259533932",
+      "259533933",
+      "259533934",
+      "259533935",
+      "278193212",
+      "278202296",
+      "278202305",
+      "278202308",
+      "278202312",
+      "279027143",
+      "279027147",
+      "279027152",
+      "279027154",
+      "279027155",
+      "279027654",
+      "283195997",
+      "283206005",
+      "283206013",
+      "306464132",
+      "306464133",
+      "306464134",
+      "306464537",
+      "306464539",
+      "306464540",
+      "306464782",
+      "306464783",
+      "314507990",
+      "314507991",
+      "314507992",
+      "314507993",
+      "314507994",
+      "314507995",
+      "314507996",
+      "314508147",
+      "315404928",
+      "315404934",
+      "315404935",
+      "315404937",
+      "315404938",
+      "315404940",
+      "317632915",
+      "317632916",
+      "317632929",
+      "317633689",
+      "317633690",
+      "318692752",
+      "319398473",
+      "352082161",
+      "352082162",
+      "352082163",
+      "353726355",
+      "353726359",
+      "426854964",
+      "446444397",
+      "446450410",
+      "497868843",
+      "497868844",
+      "499268621",
+      "500337736",
+      "500337743",
+      "500337748",
+      "552939946",
+      "743541936",
+      "743541939",
+      "743541944",
+      "743541952",
+      "984235920",
+      "1038175747",
+      "1038175751",
+      "1038175752",
+      "1038175756",
+      "1038175758",
+      "1038177749",
+      "1038182049",
+      "1038182050",
+      "1038182051",
+      "1038188312",
+      "1038188315",
+      "1038188316",
+      "1038190820",
+      "1038190822",
+      "1038190823",
+      "1038190826",
+      "1075535848",
+      "1083754758",
+      "1083754759",
+      "1083754760",
+      "1115623462",
+      "1115626081",
+      "1115626082",
+      "1115626083",
+      "1115626084",
+      "1115626086",
+      "1115626756",
+      "1115626757",
+      "1115626758",
+      "1115626761",
+      "1159369325",
+      "1159369326",
+      "1159369327"
+    ],
+    "rows_in": "<external_data_workspace>/proposal_execution/nan_case_v1/frame/e4_vehicle_candidate/planning_facilities.json (services.main_road_entry.rows)"
+  },
+  "context": {
+    "rules": "Plan task E4 (build_planning_context.build, unchanged): floodguard.evidence_context.build_context_inputs with the units' union as demand area, the N1 routing geometry, the union of the tha_admin3 polygons that meet it as reporting geometry, travel mode legacy_vehicle; the grade joins of floodguard.grade_join at 0 m.",
+    "run_kind": "candidate",
+    "status": "candidate",
+    "osm_extract": {
+      "file": "thailand-latest.osm.pbf",
+      "sha256": "b7f46018249638413b1d318bc86519f140c27af20cac7c00d42fe03775b7add1",
+      "same_extract_as_the_mae_sai_e4_build_of_record": true,
+      "retrieved_at_utc": "2026-07-10T02:46:49Z"
+    },
+    "canonical_sha256": "b30c50ac0ba693db1164520a5f635134273919dcc22f1d61f78df4f47b79a9b0",
+    "edges": 139441,
+    "road_nodes": 135866,
+    "connected_components": 272,
+    "segments_omitted_at_routing_boundary_or_degenerate": 77027,
+    "edge_counts_by_road_class": {
+      "local": 71612,
+      "primary": 880,
+      "residential": 39405,
+      "secondary": 8363,
+      "tertiary": 8164,
+      "trunk": 1338,
+      "unclassified": 9679
+    },
+    "bridge_yes_edges": 149,
+    "tunnel_culvert_edges": 0,
+    "edge_attributes_for_closure_rule_v1": "edge_id, from_node, to_node (node_coordinates in WGS84), length_m, road_class, normal_minutes, osm_way_id, bridge, layer, tunnel; culvert=* is not carried (owner choice 23).",
+    "grade_joins": {
+      "join_count": 264,
+      "joins_sha256": "00798a486df0d2bbfef5c53a62fbec81d36c04c0df3a7ec524684c878af9dc9d",
+      "coincidence_tolerance_m": 0.0,
+      "log_sha256": "3626633ad60792ed326799d5a31f27e36fd378274b2a5866267b3f465c42f69e"
+    },
+    "population_cells": 443739,
+    "population_snap_coverage_fraction": 0.739258,
+    "baseline_no_route_whole_frame": {
+      "residents": 173144.789023,
+      "graph_connected_residents": 127998.665753,
+      "connected_residents_without_a_route": 873.569858,
+      "share": 0.006825,
+      "residents_not_connected_to_the_graph": 45146.12327
+    },
+    "plan_row_e4_acceptance": {
+      "hospitals_in_context_min": false,
+      "named_ways_within_routing_context": true,
+      "baseline_vehicle_no_route_share_max": true,
+      "pii_whitelist": true,
+      "load_aois_still_returns_6": true
+    }
+  },
+  "demand": {
+    "rule": "WorldPop 2020 100 m cells with a positive count whose centre lies in the units' union (the E4 builder's read); each counts for the unit that holds its centre (access_diff.assign_cells).",
+    "assignment_counts": {
+      "cell_centre_in_one_unit": 443739,
+      "cell_centre_in_no_unit": 0,
+      "cell_centre_in_more_than_one_unit": 0
+    },
+    "residents_2020": 173144.789,
+    "cells_in_no_unit_or_several": {
+      "demand_cells": 0,
+      "residents_2020": 0.0,
+      "residents_rescaled_2024": 0.0
+    },
+    "boundless_check": {
+      "rule": "An independent read of tha_ppp_2020.tif over the bounds of the 35 units (one pixel more on each side), boundless=True with fill 0; a cell is counted when its count is positive and its centre is covered by the union of the units (shapely covers). The context's demand cells come from the E4 builder's own read (rasterio mask, cell centre inside, values above 0).",
+      "window_inside_the_raster": true,
+      "independent_read": {
+        "cells": 443739,
+        "residents_2020": 173144.78902267292
+      },
+      "context_demand": {
+        "cells": 443739,
+        "residents_2020": 173144.78902267292
+      },
+      "cell_difference": 0,
+      "resident_difference": 0.0
+    },
+    "rescaled_2024": {
+      "status": "built",
+      "how": "build_ensemble_rescaled_demand.rescaled_residents, unchanged, called with the N1 demand cells and the SHA-256 of tha_ppp_2020.tif from the committed source manifest (the one check it makes of the registered run).",
+      "residents_rescaled_2024": 199515.488,
+      "ratio_lowest_median_highest": [
+        0.0,
+        0.294285,
+        14.936866
+      ],
+      "demand_cells_kept_at_2020": 143855,
+      "demand_residents_kept_at_2020": 16474.327936071903,
+      "kept_at_2020_because_the_1km_cell_has_no_2024_total": {
+        "counts": 331890,
+        "residents_2020": 38355.19931731373,
+        "cells_1km": 3335
+      },
+      "residents_2024_in_1km_cells_with_no_2020_count": 0.0,
+      "population_axis_of_the_ensemble": "kept: the rescaled demand was built for the frame",
+      "by_cell_file": "<external_data_workspace>/proposal_execution/nan_case_v1/frame/rescaled_demand_2024_v1.json"
+    }
+  },
+  "age_counts": {
+    "rule": "The E7 rows (age_exposure.age_exposure_frame) of the 35 units from the WorldPop 2024 1 km age counts, allocated by projected-area fraction (reading DR-B04), with the national-anchor consistency check of scripts/build_age_exposure.py.",
+    "units_with_a_share": 35,
+    "anchor_consistency_all_same": true,
+    "border_cells": {
+      "distinct_cells": 0,
+      "residents_in_those_cells": 0.0,
+      "residents_of_those_cells_in_no_unit": 0.0
+    }
+  },
+  "baseline_access": {
+    "what": "Baseline (no flood) vehicle access per tambon on the context's graph with its grade joins, for the chain stage to check its own baseline. Hospital within 30 minutes and main-road entry within 15 minutes are the access-gap thresholds of protocols v1a and v1b.",
+    "check_against_the_context_receipt": {
+      "rule": "The whole-frame baseline of this stage against the baseline no-route figures of the context's own receipt (calculate_total_access with the grade joins), as task E5 checks its baseline run.",
+      "connected_residents": {
+        "this_stage": 127998.66575303674,
+        "context_receipt": 127998.665753
+      },
+      "connected_residents_without_a_hospital_route": {
+        "this_stage": 873.5698580853641,
+        "context_receipt": 873.569858
+      },
+      "same": true
+    },
+    "whole_frame_worldpop_2020": {
+      "residents": 173144.789023,
+      "demand_cells": 443739,
+      "residents_connected_to_the_graph": 127998.665753,
+      "residents_not_connected_to_the_graph": 45146.12327,
+      "hospital_within_30_minutes_residents": 109743.765859,
+      "main_road_within_15_minutes_residents": 92888.184627,
+      "connected_residents_without_a_hospital_route": 873.569858,
+      "baseline_vehicle_no_route_share": 0.006825,
+      "residents_with_a_route_to_a_hospital_or_main_road": 127125.095895,
+      "connected_residents_without_any_route": 873.569858
+    },
+    "whole_frame_rescaled_2024": {
+      "residents": 199515.487695,
+      "demand_cells": 443739,
+      "residents_connected_to_the_graph": 171451.761645,
+      "residents_not_connected_to_the_graph": 28063.72605,
+      "hospital_within_30_minutes_residents": 154229.89818,
+      "main_road_within_15_minutes_residents": 132419.629052,
+      "connected_residents_without_a_hospital_route": 1423.162337,
+      "baseline_vehicle_no_route_share": 0.008301,
+      "residents_with_a_route_to_a_hospital_or_main_road": 170028.599308,
+      "connected_residents_without_any_route": 1423.162337
+    },
+    "cells_in_no_unit": {
+      "demand_cells": 0,
+      "residents": 0.0,
+      "note": "Cells whose centre lies in no unit of the frame, or in more than one. They are in the whole frame and in no unit row."
+    },
+    "units": [
+      {
+        "unit_id": "TH550101",
+        "unit_name": "Nai Wiang",
+        "residents": 11985.611562,
+        "demand_cells": 701,
+        "residents_connected_to_the_graph": 11985.611562,
+        "residents_not_connected_to_the_graph": 0.0,
+        "hospital_within_30_minutes_residents": 11932.496167,
+        "main_road_within_15_minutes_residents": 11932.496167,
+        "connected_residents_without_a_hospital_route": 53.115395,
+        "baseline_vehicle_no_route_share": 0.004432,
+        "residents_with_a_route_to_a_hospital_or_main_road": 11932.496167,
+        "connected_residents_without_any_route": 53.115395,
+        "hospitals_reachable_at_baseline": 5,
+        "rescaled_2024": {
+          "residents": 26058.092492,
+          "residents_connected_to_the_graph": 26058.092492,
+          "hospital_within_30_minutes_residents": 25906.493315,
+          "main_road_within_15_minutes_residents": 25906.493315,
+          "connected_residents_without_a_hospital_route": 151.599177,
+          "baseline_vehicle_no_route_share": 0.005818
+        }
+      },
+      {
+        "unit_id": "TH550102",
+        "unit_name": "Bo",
+        "residents": 6956.686813,
+        "demand_cells": 29144,
+        "residents_connected_to_the_graph": 4548.670694,
+        "residents_not_connected_to_the_graph": 2408.016119,
+        "hospital_within_30_minutes_residents": 618.515947,
+        "main_road_within_15_minutes_residents": 2492.458659,
+        "connected_residents_without_a_hospital_route": 44.279917,
+        "baseline_vehicle_no_route_share": 0.009735,
+        "residents_with_a_route_to_a_hospital_or_main_road": 4504.390778,
+        "connected_residents_without_any_route": 44.279917,
+        "hospitals_reachable_at_baseline": 5,
+        "rescaled_2024": {
+          "residents": 4133.209876,
+          "residents_connected_to_the_graph": 2720.527375,
+          "hospital_within_30_minutes_residents": 697.011752,
+          "main_road_within_15_minutes_residents": 1662.181655,
+          "connected_residents_without_a_hospital_route": 16.533245,
+          "baseline_vehicle_no_route_share": 0.006077
+        }
+      },
+      {
+        "unit_id": "TH550103",
+        "unit_name": "Pha Sing",
+        "residents": 9629.915284,
+        "demand_cells": 10899,
+        "residents_connected_to_the_graph": 8878.549114,
+        "residents_not_connected_to_the_graph": 751.36617,
+        "hospital_within_30_minutes_residents": 8808.444722,
+        "main_road_within_15_minutes_residents": 8744.353616,
+        "connected_residents_without_a_hospital_route": 0.0,
+        "baseline_vehicle_no_route_share": 0.0,
+        "residents_with_a_route_to_a_hospital_or_main_road": 8878.549114,
+        "connected_residents_without_any_route": 0.0,
+        "hospitals_reachable_at_baseline": 5,
+        "rescaled_2024": {
+          "residents": 11599.571681,
+          "residents_connected_to_the_graph": 11200.226606,
+          "hospital_within_30_minutes_residents": 11175.665879,
+          "main_road_within_15_minutes_residents": 11145.554974,
+          "connected_residents_without_a_hospital_route": 0.0,
+          "baseline_vehicle_no_route_share": 0.0
+        }
+      },
+      {
+        "unit_id": "TH550104",
+        "unit_name": "Chai Sathan",
+        "residents": 6399.573735,
+        "demand_cells": 2897,
+        "residents_connected_to_the_graph": 6275.842382,
+        "residents_not_connected_to_the_graph": 123.731353,
+        "hospital_within_30_minutes_residents": 6275.842382,
+        "main_road_within_15_minutes_residents": 6253.323572,
+        "connected_residents_without_a_hospital_route": 0.0,
+        "baseline_vehicle_no_route_share": 0.0,
+        "residents_with_a_route_to_a_hospital_or_main_road": 6275.842382,
+        "connected_residents_without_any_route": 0.0,
+        "hospitals_reachable_at_baseline": 5,
+        "rescaled_2024": {
+          "residents": 7447.796715,
+          "residents_connected_to_the_graph": 7338.133908,
+          "hospital_within_30_minutes_residents": 7338.133908,
+          "main_road_within_15_minutes_residents": 7314.197806,
+          "connected_residents_without_a_hospital_route": 0.0,
+          "baseline_vehicle_no_route_share": 0.0
+        }
+      },
+      {
+        "unit_id": "TH550105",
+        "unit_name": "Thuem Tong",
+        "residents": 2443.922101,
+        "demand_cells": 1643,
+        "residents_connected_to_the_graph": 2386.319247,
+        "residents_not_connected_to_the_graph": 57.602854,
+        "hospital_within_30_minutes_residents": 2380.190021,
+        "main_road_within_15_minutes_residents": 2039.83726,
+        "connected_residents_without_a_hospital_route": 4.201075,
+        "baseline_vehicle_no_route_share": 0.00176,
+        "residents_with_a_route_to_a_hospital_or_main_road": 2382.118171,
+        "connected_residents_without_any_route": 4.201075,
+        "hospitals_reachable_at_baseline": 5,
+        "rescaled_2024": {
+          "residents": 2837.137523,
+          "residents_connected_to_the_graph": 2785.969987,
+          "hospital_within_30_minutes_residents": 2781.149643,
+          "main_road_within_15_minutes_residents": 2550.160732,
+          "connected_residents_without_a_hospital_route": 4.12879,
+          "baseline_vehicle_no_route_share": 0.001482
+        }
+      },
+      {
+        "unit_id": "TH550106",
+        "unit_name": "Rueang",
+        "residents": 3026.463515,
+        "demand_cells": 9477,
+        "residents_connected_to_the_graph": 2233.4814,
+        "residents_not_connected_to_the_graph": 792.982115,
+        "hospital_within_30_minutes_residents": 1865.906541,
+        "main_road_within_15_minutes_residents": 269.554178,
+        "connected_residents_without_a_hospital_route": 15.665926,
+        "baseline_vehicle_no_route_share": 0.007014,
+        "residents_with_a_route_to_a_hospital_or_main_road": 2217.815474,
+        "connected_residents_without_any_route": 15.665926,
+        "hospitals_reachable_at_baseline": 5,
+        "rescaled_2024": {
+          "residents": 3625.465505,
+          "residents_connected_to_the_graph": 3041.48798,
+          "hospital_within_30_minutes_residents": 2713.508484,
+          "main_road_within_15_minutes_residents": 399.131994,
+          "connected_residents_without_a_hospital_route": 15.11268,
+          "baseline_vehicle_no_route_share": 0.004969
+        }
+      },
+      {
+        "unit_id": "TH550107",
+        "unit_name": "Na Sao",
+        "residents": 1807.053002,
+        "demand_cells": 3586,
+        "residents_connected_to_the_graph": 1571.626584,
+        "residents_not_connected_to_the_graph": 235.426418,
+        "hospital_within_30_minutes_residents": 386.155934,
+        "main_road_within_15_minutes_residents": 108.567729,
+        "connected_residents_without_a_hospital_route": 0.0,
+        "baseline_vehicle_no_route_share": 0.0,
+        "residents_with_a_route_to_a_hospital_or_main_road": 1571.626584,
+        "connected_residents_without_any_route": 0.0,
+        "hospitals_reachable_at_baseline": 5,
+        "rescaled_2024": {
+          "residents": 2313.492243,
+          "residents_connected_to_the_graph": 2200.52202,
+          "hospital_within_30_minutes_residents": 759.13515,
+          "main_road_within_15_minutes_residents": 224.436102,
+          "connected_residents_without_a_hospital_route": 0.0,
+          "baseline_vehicle_no_route_share": 0.0
+        }
+      },
+      {
+        "unit_id": "TH550108",
+        "unit_name": "Du Tai",
+        "residents": 10532.035039,
+        "demand_cells": 3610,
+        "residents_connected_to_the_graph": 10293.190581,
+        "residents_not_connected_to_the_graph": 238.844458,
+        "hospital_within_30_minutes_residents": 10257.834164,
+        "main_road_within_15_minutes_residents": 10163.174708,
+        "connected_residents_without_a_hospital_route": 21.93574,
+        "baseline_vehicle_no_route_share": 0.002131,
+        "residents_with_a_route_to_a_hospital_or_main_road": 10271.254841,
+        "connected_residents_without_any_route": 21.93574,
+        "hospitals_reachable_at_baseline": 5,
+        "rescaled_2024": {
+          "residents": 10020.786364,
+          "residents_connected_to_the_graph": 9906.321569,
+          "hospital_within_30_minutes_residents": 9873.86104,
+          "main_road_within_15_minutes_residents": 9829.036918,
+          "connected_residents_without_a_hospital_route": 29.098333,
+          "baseline_vehicle_no_route_share": 0.002937
+        }
+      },
+      {
+        "unit_id": "TH550109",
+        "unit_name": "Kong Khwai",
+        "residents": 6268.433979,
+        "demand_cells": 3989,
+        "residents_connected_to_the_graph": 5765.808604,
+        "residents_not_connected_to_the_graph": 502.625376,
+        "hospital_within_30_minutes_residents": 5750.553756,
+        "main_road_within_15_minutes_residents": 5590.870883,
+        "connected_residents_without_a_hospital_route": 10.409562,
+        "baseline_vehicle_no_route_share": 0.001805,
+        "residents_with_a_route_to_a_hospital_or_main_road": 5755.399041,
+        "connected_residents_without_any_route": 10.409562,
+        "hospitals_reachable_at_baseline": 5,
+        "rescaled_2024": {
+          "residents": 6683.836852,
+          "residents_connected_to_the_graph": 6471.780445,
+          "hospital_within_30_minutes_residents": 6465.517387,
+          "main_road_within_15_minutes_residents": 6397.420313,
+          "connected_residents_without_a_hospital_route": 5.096605,
+          "baseline_vehicle_no_route_share": 0.000788
+        }
+      },
+      {
+        "unit_id": "TH550116",
+        "unit_name": "Bo Suak",
+        "residents": 3417.641658,
+        "demand_cells": 7512,
+        "residents_connected_to_the_graph": 2680.534292,
+        "residents_not_connected_to_the_graph": 737.107366,
+        "hospital_within_30_minutes_residents": 1468.996346,
+        "main_road_within_15_minutes_residents": 94.482775,
+        "connected_residents_without_a_hospital_route": 0.0,
+        "baseline_vehicle_no_route_share": 0.0,
+        "residents_with_a_route_to_a_hospital_or_main_road": 2680.534292,
+        "connected_residents_without_any_route": 0.0,
+        "hospitals_reachable_at_baseline": 5,
+        "rescaled_2024": {
+          "residents": 4181.25431,
+          "residents_connected_to_the_graph": 3788.122942,
+          "hospital_within_30_minutes_residents": 2308.800701,
+          "main_road_within_15_minutes_residents": 161.849262,
+          "connected_residents_without_a_hospital_route": 0.0,
+          "baseline_vehicle_no_route_share": 0.0
+        }
+      },
+      {
+        "unit_id": "TH550117",
+        "unit_name": "Sanian",
+        "residents": 11651.128905,
+        "demand_cells": 57993,
+        "residents_connected_to_the_graph": 6882.031151,
+        "residents_not_connected_to_the_graph": 4769.097753,
+        "hospital_within_30_minutes_residents": 3180.735863,
+        "main_road_within_15_minutes_residents": 1248.356846,
+        "connected_residents_without_a_hospital_route": 102.028457,
+        "baseline_vehicle_no_route_share": 0.014825,
+        "residents_with_a_route_to_a_hospital_or_main_road": 6780.002695,
+        "connected_residents_without_any_route": 102.028457,
+        "hospitals_reachable_at_baseline": 5,
+        "rescaled_2024": {
+          "residents": 8886.250562,
+          "residents_connected_to_the_graph": 5954.471667,
+          "hospital_within_30_minutes_residents": 3148.617883,
+          "main_road_within_15_minutes_residents": 1070.074868,
+          "connected_residents_without_a_hospital_route": 81.397677,
+          "baseline_vehicle_no_route_share": 0.01367
+        }
+      },
+      {
+        "unit_id": "TH550701",
+        "unit_name": "Klang Wiang",
+        "residents": 8318.697363,
+        "demand_cells": 3733,
+        "residents_connected_to_the_graph": 8027.709297,
+        "residents_not_connected_to_the_graph": 290.988066,
+        "hospital_within_30_minutes_residents": 8020.067225,
+        "main_road_within_15_minutes_residents": 8020.067225,
+        "connected_residents_without_a_hospital_route": 7.642072,
+        "baseline_vehicle_no_route_share": 0.000952,
+        "residents_with_a_route_to_a_hospital_or_main_road": 8020.067225,
+        "connected_residents_without_any_route": 7.642072,
+        "hospitals_reachable_at_baseline": 5,
+        "rescaled_2024": {
+          "residents": 14422.961085,
+          "residents_connected_to_the_graph": 14152.760847,
+          "hospital_within_30_minutes_residents": 14126.237061,
+          "main_road_within_15_minutes_residents": 14126.237061,
+          "connected_residents_without_a_hospital_route": 26.523786,
+          "baseline_vehicle_no_route_share": 0.001874
+        }
+      },
+      {
+        "unit_id": "TH550702",
+        "unit_name": "Khueng",
+        "residents": 3720.908961,
+        "demand_cells": 9725,
+        "residents_connected_to_the_graph": 1988.309549,
+        "residents_not_connected_to_the_graph": 1732.599411,
+        "hospital_within_30_minutes_residents": 1946.423509,
+        "main_road_within_15_minutes_residents": 1431.464377,
+        "connected_residents_without_a_hospital_route": 0.0,
+        "baseline_vehicle_no_route_share": 0.0,
+        "residents_with_a_route_to_a_hospital_or_main_road": 1988.309549,
+        "connected_residents_without_any_route": 0.0,
+        "hospitals_reachable_at_baseline": 5,
+        "rescaled_2024": {
+          "residents": 3784.598554,
+          "residents_connected_to_the_graph": 2922.575692,
+          "hospital_within_30_minutes_residents": 2896.387397,
+          "main_road_within_15_minutes_residents": 2492.814545,
+          "connected_residents_without_a_hospital_route": 0.0,
+          "baseline_vehicle_no_route_share": 0.0
+        }
+      },
+      {
+        "unit_id": "TH550703",
+        "unit_name": "Lai Nan",
+        "residents": 4973.309796,
+        "demand_cells": 14757,
+        "residents_connected_to_the_graph": 2724.953367,
+        "residents_not_connected_to_the_graph": 2248.356429,
+        "hospital_within_30_minutes_residents": 1816.482719,
+        "main_road_within_15_minutes_residents": 1220.251677,
+        "connected_residents_without_a_hospital_route": 0.0,
+        "baseline_vehicle_no_route_share": 0.0,
+        "residents_with_a_route_to_a_hospital_or_main_road": 2724.953367,
+        "connected_residents_without_any_route": 0.0,
+        "hospitals_reachable_at_baseline": 5,
+        "rescaled_2024": {
+          "residents": 4433.213022,
+          "residents_connected_to_the_graph": 3467.29357,
+          "hospital_within_30_minutes_residents": 2564.855826,
+          "main_road_within_15_minutes_residents": 1844.765686,
+          "connected_residents_without_a_hospital_route": 0.0,
+          "baseline_vehicle_no_route_share": 0.0
+        }
+      },
+      {
+        "unit_id": "TH550704",
+        "unit_name": "Tan Chum",
+        "residents": 2414.346257,
+        "demand_cells": 3824,
+        "residents_connected_to_the_graph": 1941.010873,
+        "residents_not_connected_to_the_graph": 473.335384,
+        "hospital_within_30_minutes_residents": 1941.010873,
+        "main_road_within_15_minutes_residents": 1591.083308,
+        "connected_residents_without_a_hospital_route": 0.0,
+        "baseline_vehicle_no_route_share": 0.0,
+        "residents_with_a_route_to_a_hospital_or_main_road": 1941.010873,
+        "connected_residents_without_any_route": 0.0,
+        "hospitals_reachable_at_baseline": 5,
+        "rescaled_2024": {
+          "residents": 3423.51415,
+          "residents_connected_to_the_graph": 3066.77015,
+          "hospital_within_30_minutes_residents": 3066.77015,
+          "main_road_within_15_minutes_residents": 2626.420176,
+          "connected_residents_without_a_hospital_route": 0.0,
+          "baseline_vehicle_no_route_share": 0.0
+        }
+      },
+      {
+        "unit_id": "TH550705",
+        "unit_name": "Na Lueang",
+        "residents": 1592.581949,
+        "demand_cells": 3278,
+        "residents_connected_to_the_graph": 1344.180157,
+        "residents_not_connected_to_the_graph": 248.401792,
+        "hospital_within_30_minutes_residents": 1334.866874,
+        "main_road_within_15_minutes_residents": 977.237278,
+        "connected_residents_without_a_hospital_route": 0.0,
+        "baseline_vehicle_no_route_share": 0.0,
+        "residents_with_a_route_to_a_hospital_or_main_road": 1344.180157,
+        "connected_residents_without_any_route": 0.0,
+        "hospitals_reachable_at_baseline": 5,
+        "rescaled_2024": {
+          "residents": 3027.349891,
+          "residents_connected_to_the_graph": 2851.751573,
+          "hospital_within_30_minutes_residents": 2850.876214,
+          "main_road_within_15_minutes_residents": 1852.376599,
+          "connected_residents_without_a_hospital_route": 0.0,
+          "baseline_vehicle_no_route_share": 0.0
+        }
+      },
+      {
+        "unit_id": "TH550706",
+        "unit_name": "San",
+        "residents": 4587.287991,
+        "demand_cells": 16642,
+        "residents_connected_to_the_graph": 2123.657712,
+        "residents_not_connected_to_the_graph": 2463.630279,
+        "hospital_within_30_minutes_residents": 2103.804332,
+        "main_road_within_15_minutes_residents": 1574.298549,
+        "connected_residents_without_a_hospital_route": 0.0,
+        "baseline_vehicle_no_route_share": 0.0,
+        "residents_with_a_route_to_a_hospital_or_main_road": 2123.657712,
+        "connected_residents_without_any_route": 0.0,
+        "hospitals_reachable_at_baseline": 5,
+        "rescaled_2024": {
+          "residents": 7196.742491,
+          "residents_connected_to_the_graph": 5240.934788,
+          "hospital_within_30_minutes_residents": 5235.152965,
+          "main_road_within_15_minutes_residents": 4782.83591,
+          "connected_residents_without_a_hospital_route": 0.0,
+          "baseline_vehicle_no_route_share": 0.0
+        }
+      },
+      {
+        "unit_id": "TH550707",
+        "unit_name": "Nam Muap",
+        "residents": 5896.23483,
+        "demand_cells": 43227,
+        "residents_connected_to_the_graph": 1544.742575,
+        "residents_not_connected_to_the_graph": 4351.492255,
+        "hospital_within_30_minutes_residents": 45.127814,
+        "main_road_within_15_minutes_residents": 0.0,
+        "connected_residents_without_a_hospital_route": 8.404071,
+        "baseline_vehicle_no_route_share": 0.00544,
+        "residents_with_a_route_to_a_hospital_or_main_road": 1536.338504,
+        "connected_residents_without_any_route": 8.404071,
+        "hospitals_reachable_at_baseline": 5,
+        "rescaled_2024": {
+          "residents": 5556.134183,
+          "residents_connected_to_the_graph": 2346.266823,
+          "hospital_within_30_minutes_residents": 14.273861,
+          "main_road_within_15_minutes_residents": 0.0,
+          "connected_residents_without_a_hospital_route": 9.492573,
+          "baseline_vehicle_no_route_share": 0.004046
+        }
+      },
+      {
+        "unit_id": "TH550708",
+        "unit_name": "Nam Pua",
+        "residents": 4183.707091,
+        "demand_cells": 4615,
+        "residents_connected_to_the_graph": 3585.867388,
+        "residents_not_connected_to_the_graph": 597.839703,
+        "hospital_within_30_minutes_residents": 3561.703571,
+        "main_road_within_15_minutes_residents": 3470.306691,
+        "connected_residents_without_a_hospital_route": 0.0,
+        "baseline_vehicle_no_route_share": 0.0,
+        "residents_with_a_route_to_a_hospital_or_main_road": 3585.867388,
+        "connected_residents_without_any_route": 0.0,
+        "hospitals_reachable_at_baseline": 5,
+        "rescaled_2024": {
+          "residents": 4806.253335,
+          "residents_connected_to_the_graph": 4386.771157,
+          "hospital_within_30_minutes_residents": 4381.225647,
+          "main_road_within_15_minutes_residents": 4341.123782,
+          "connected_residents_without_a_hospital_route": 0.0,
+          "baseline_vehicle_no_route_share": 0.0
+        }
+      },
+      {
+        "unit_id": "TH550709",
+        "unit_name": "Yap Hua Na",
+        "residents": 5696.785751,
+        "demand_cells": 52025,
+        "residents_connected_to_the_graph": 1055.699755,
+        "residents_not_connected_to_the_graph": 4641.085996,
+        "hospital_within_30_minutes_residents": 149.88766,
+        "main_road_within_15_minutes_residents": 216.632325,
+        "connected_residents_without_a_hospital_route": 300.163441,
+        "baseline_vehicle_no_route_share": 0.284327,
+        "residents_with_a_route_to_a_hospital_or_main_road": 755.536315,
+        "connected_residents_without_any_route": 300.163441,
+        "hospitals_reachable_at_baseline": 5,
+        "rescaled_2024": {
+          "residents": 5385.438389,
+          "residents_connected_to_the_graph": 2357.18139,
+          "hospital_within_30_minutes_residents": 327.699279,
+          "main_road_within_15_minutes_residents": 498.86146,
+          "connected_residents_without_a_hospital_route": 822.14939,
+          "baseline_vehicle_no_route_share": 0.348785
+        }
+      },
+      {
+        "unit_id": "TH550710",
+        "unit_name": "Pong Sanuk",
+        "residents": 2519.302693,
+        "demand_cells": 9680,
+        "residents_connected_to_the_graph": 1586.190781,
+        "residents_not_connected_to_the_graph": 933.111912,
+        "hospital_within_30_minutes_residents": 1233.714592,
+        "main_road_within_15_minutes_residents": 896.034304,
+        "connected_residents_without_a_hospital_route": 0.0,
+        "baseline_vehicle_no_route_share": 0.0,
+        "residents_with_a_route_to_a_hospital_or_main_road": 1586.190781,
+        "connected_residents_without_any_route": 0.0,
+        "hospitals_reachable_at_baseline": 5,
+        "rescaled_2024": {
+          "residents": 1818.548228,
+          "residents_connected_to_the_graph": 1511.193507,
+          "hospital_within_30_minutes_residents": 1376.803691,
+          "main_road_within_15_minutes_residents": 1216.274747,
+          "connected_residents_without_a_hospital_route": 0.0,
+          "baseline_vehicle_no_route_share": 0.0
+        }
+      },
+      {
+        "unit_id": "TH550711",
+        "unit_name": "Ai Na Lai",
+        "residents": 5989.04795,
+        "demand_cells": 21552,
+        "residents_connected_to_the_graph": 3419.320239,
+        "residents_not_connected_to_the_graph": 2569.72771,
+        "hospital_within_30_minutes_residents": 3348.288811,
+        "main_road_within_15_minutes_residents": 3320.86102,
+        "connected_residents_without_a_hospital_route": 10.264328,
+        "baseline_vehicle_no_route_share": 0.003002,
+        "residents_with_a_route_to_a_hospital_or_main_road": 3409.055911,
+        "connected_residents_without_any_route": 10.264328,
+        "hospitals_reachable_at_baseline": 5,
+        "rescaled_2024": {
+          "residents": 5893.05431,
+          "residents_connected_to_the_graph": 4509.369238,
+          "hospital_within_30_minutes_residents": 4478.376236,
+          "main_road_within_15_minutes_residents": 4486.399496,
+          "connected_residents_without_a_hospital_route": 2.596698,
+          "baseline_vehicle_no_route_share": 0.000576
+        }
+      },
+      {
+        "unit_id": "TH550712",
+        "unit_name": "Sanna Nong Mai",
+        "residents": 2793.335255,
+        "demand_cells": 18549,
+        "residents_connected_to_the_graph": 720.640451,
+        "residents_not_connected_to_the_graph": 2072.694804,
+        "hospital_within_30_minutes_residents": 0.0,
+        "main_road_within_15_minutes_residents": 0.0,
+        "connected_residents_without_a_hospital_route": 66.251672,
+        "baseline_vehicle_no_route_share": 0.091934,
+        "residents_with_a_route_to_a_hospital_or_main_road": 654.38878,
+        "connected_residents_without_any_route": 66.251672,
+        "hospitals_reachable_at_baseline": 5,
+        "rescaled_2024": {
+          "residents": 2374.613562,
+          "residents_connected_to_the_graph": 909.064851,
+          "hospital_within_30_minutes_residents": 0.0,
+          "main_road_within_15_minutes_residents": 0.0,
+          "connected_residents_without_a_hospital_route": 101.872086,
+          "baseline_vehicle_no_route_share": 0.112063
+        }
+      },
+      {
+        "unit_id": "TH550713",
+        "unit_name": "Mae Khaning",
+        "residents": 2479.731399,
+        "demand_cells": 18180,
+        "residents_connected_to_the_graph": 617.946736,
+        "residents_not_connected_to_the_graph": 1861.784663,
+        "hospital_within_30_minutes_residents": 0.0,
+        "main_road_within_15_minutes_residents": 0.0,
+        "connected_residents_without_a_hospital_route": 9.81954,
+        "baseline_vehicle_no_route_share": 0.015891,
+        "residents_with_a_route_to_a_hospital_or_main_road": 608.127196,
+        "connected_residents_without_any_route": 9.81954,
+        "hospitals_reachable_at_baseline": 5,
+        "rescaled_2024": {
+          "residents": 1833.813718,
+          "residents_connected_to_the_graph": 712.148267,
+          "hospital_within_30_minutes_residents": 0.0,
+          "main_road_within_15_minutes_residents": 0.0,
+          "connected_residents_without_a_hospital_route": 16.450517,
+          "baseline_vehicle_no_route_share": 0.0231
+        }
+      },
+      {
+        "unit_id": "TH550714",
+        "unit_name": "Mae Sakhon",
+        "residents": 2973.879026,
+        "demand_cells": 13343,
+        "residents_connected_to_the_graph": 930.243931,
+        "residents_not_connected_to_the_graph": 2043.635095,
+        "hospital_within_30_minutes_residents": 479.347816,
+        "main_road_within_15_minutes_residents": 412.857515,
+        "connected_residents_without_a_hospital_route": 0.0,
+        "baseline_vehicle_no_route_share": 0.0,
+        "residents_with_a_route_to_a_hospital_or_main_road": 930.243931,
+        "connected_residents_without_any_route": 0.0,
+        "hospitals_reachable_at_baseline": 5,
+        "rescaled_2024": {
+          "residents": 2272.26718,
+          "residents_connected_to_the_graph": 1184.792469,
+          "hospital_within_30_minutes_residents": 652.492286,
+          "main_road_within_15_minutes_residents": 562.790941,
+          "connected_residents_without_a_hospital_route": 0.0,
+          "baseline_vehicle_no_route_share": 0.0
+        }
+      },
+      {
+        "unit_id": "TH550715",
+        "unit_name": "Chom Chan",
+        "residents": 2245.429815,
+        "demand_cells": 8265,
+        "residents_connected_to_the_graph": 1500.863022,
+        "residents_not_connected_to_the_graph": 744.566793,
+        "hospital_within_30_minutes_residents": 1283.054698,
+        "main_road_within_15_minutes_residents": 0.0,
+        "connected_residents_without_a_hospital_route": 0.0,
+        "baseline_vehicle_no_route_share": 0.0,
+        "residents_with_a_route_to_a_hospital_or_main_road": 1500.863022,
+        "connected_residents_without_any_route": 0.0,
+        "hospitals_reachable_at_baseline": 5,
+        "rescaled_2024": {
+          "residents": 3066.23825,
+          "residents_connected_to_the_graph": 2497.911426,
+          "hospital_within_30_minutes_residents": 2346.314141,
+          "main_road_within_15_minutes_residents": 0.0,
+          "connected_residents_without_a_hospital_route": 0.0,
+          "baseline_vehicle_no_route_share": 0.0
+        }
+      },
+      {
+        "unit_id": "TH550716",
+        "unit_name": "Mae Sa",
+        "residents": 1749.974341,
+        "demand_cells": 4626,
+        "residents_connected_to_the_graph": 1481.797099,
+        "residents_not_connected_to_the_graph": 268.177242,
+        "hospital_within_30_minutes_residents": 1478.618607,
+        "main_road_within_15_minutes_residents": 1361.690067,
+        "connected_residents_without_a_hospital_route": 0.73117,
+        "baseline_vehicle_no_route_share": 0.000493,
+        "residents_with_a_route_to_a_hospital_or_main_road": 1481.065929,
+        "connected_residents_without_any_route": 0.73117,
+        "hospitals_reachable_at_baseline": 5,
+        "rescaled_2024": {
+          "residents": 2139.574733,
+          "residents_connected_to_the_graph": 1997.128025,
+          "hospital_within_30_minutes_residents": 1994.071215,
+          "main_road_within_15_minutes_residents": 1896.756548,
+          "connected_residents_without_a_hospital_route": 0.121118,
+          "baseline_vehicle_no_route_share": 6.1e-05
+        }
+      },
+      {
+        "unit_id": "TH550717",
+        "unit_name": "Thung Si Thong",
+        "residents": 2831.844213,
+        "demand_cells": 11535,
+        "residents_connected_to_the_graph": 1469.612061,
+        "residents_not_connected_to_the_graph": 1362.232152,
+        "hospital_within_30_minutes_residents": 1178.260948,
+        "main_road_within_15_minutes_residents": 814.71895,
+        "connected_residents_without_a_hospital_route": 0.0,
+        "baseline_vehicle_no_route_share": 0.0,
+        "residents_with_a_route_to_a_hospital_or_main_road": 1469.612061,
+        "connected_residents_without_any_route": 0.0,
+        "hospitals_reachable_at_baseline": 5,
+        "rescaled_2024": {
+          "residents": 2722.778529,
+          "residents_connected_to_the_graph": 1931.365767,
+          "hospital_within_30_minutes_residents": 1720.735197,
+          "main_road_within_15_minutes_residents": 1220.385253,
+          "connected_residents_without_a_hospital_route": 0.0,
+          "baseline_vehicle_no_route_share": 0.0
+        }
+      },
+      {
+        "unit_id": "TH551401",
+        "unit_name": "Muang Tuet",
+        "residents": 4452.527718,
+        "demand_cells": 1678,
+        "residents_connected_to_the_graph": 4328.905308,
+        "residents_not_connected_to_the_graph": 123.622411,
+        "hospital_within_30_minutes_residents": 4328.905308,
+        "main_road_within_15_minutes_residents": 4244.655973,
+        "connected_residents_without_a_hospital_route": 0.0,
+        "baseline_vehicle_no_route_share": 0.0,
+        "residents_with_a_route_to_a_hospital_or_main_road": 4328.905308,
+        "connected_residents_without_any_route": 0.0,
+        "hospitals_reachable_at_baseline": 5,
+        "rescaled_2024": {
+          "residents": 5009.38968,
+          "residents_connected_to_the_graph": 4934.096805,
+          "hospital_within_30_minutes_residents": 4934.096805,
+          "main_road_within_15_minutes_residents": 4887.583115,
+          "connected_residents_without_a_hospital_route": 0.0,
+          "baseline_vehicle_no_route_share": 0.0
+        }
+      },
+      {
+        "unit_id": "TH551402",
+        "unit_name": "Na Pang",
+        "residents": 1549.923678,
+        "demand_cells": 1727,
+        "residents_connected_to_the_graph": 1336.625641,
+        "residents_not_connected_to_the_graph": 213.298037,
+        "hospital_within_30_minutes_residents": 1336.625641,
+        "main_road_within_15_minutes_residents": 830.935144,
+        "connected_residents_without_a_hospital_route": 0.0,
+        "baseline_vehicle_no_route_share": 0.0,
+        "residents_with_a_route_to_a_hospital_or_main_road": 1336.625641,
+        "connected_residents_without_any_route": 0.0,
+        "hospitals_reachable_at_baseline": 5,
+        "rescaled_2024": {
+          "residents": 2478.116216,
+          "residents_connected_to_the_graph": 2358.116923,
+          "hospital_within_30_minutes_residents": 2358.116923,
+          "main_road_within_15_minutes_residents": 1673.790153,
+          "connected_residents_without_a_hospital_route": 0.0,
+          "baseline_vehicle_no_route_share": 0.0
+        }
+      },
+      {
+        "unit_id": "TH551403",
+        "unit_name": "Nam Kaen",
+        "residents": 2699.428961,
+        "demand_cells": 7760,
+        "residents_connected_to_the_graph": 1988.454745,
+        "residents_not_connected_to_the_graph": 710.974216,
+        "hospital_within_30_minutes_residents": 1737.972225,
+        "main_road_within_15_minutes_residents": 88.935304,
+        "connected_residents_without_a_hospital_route": 4.041641,
+        "baseline_vehicle_no_route_share": 0.002033,
+        "residents_with_a_route_to_a_hospital_or_main_road": 1984.413104,
+        "connected_residents_without_any_route": 4.041641,
+        "hospitals_reachable_at_baseline": 5,
+        "rescaled_2024": {
+          "residents": 4002.681948,
+          "residents_connected_to_the_graph": 3460.830238,
+          "hospital_within_30_minutes_residents": 3307.211023,
+          "main_road_within_15_minutes_residents": 146.11883,
+          "connected_residents_without_a_hospital_route": 4.041641,
+          "baseline_vehicle_no_route_share": 0.001168
+        }
+      },
+      {
+        "unit_id": "TH551404",
+        "unit_name": "Nam Kian",
+        "residents": 1958.749999,
+        "demand_cells": 5356,
+        "residents_connected_to_the_graph": 1527.374443,
+        "residents_not_connected_to_the_graph": 431.375556,
+        "hospital_within_30_minutes_residents": 1316.176935,
+        "main_road_within_15_minutes_residents": 513.011072,
+        "connected_residents_without_a_hospital_route": 1.081553,
+        "baseline_vehicle_no_route_share": 0.000708,
+        "residents_with_a_route_to_a_hospital_or_main_road": 1526.29289,
+        "connected_residents_without_any_route": 1.081553,
+        "hospitals_reachable_at_baseline": 5,
+        "rescaled_2024": {
+          "residents": 2873.874504,
+          "residents_connected_to_the_graph": 2536.340429,
+          "hospital_within_30_minutes_residents": 2395.707834,
+          "main_road_within_15_minutes_residents": 1562.215766,
+          "connected_residents_without_a_hospital_route": 1.081553,
+          "baseline_vehicle_no_route_share": 0.000426
+        }
+      },
+      {
+        "unit_id": "TH551405",
+        "unit_name": "Mueang Chang",
+        "residents": 5924.91407,
+        "demand_cells": 10311,
+        "residents_connected_to_the_graph": 4874.933867,
+        "residents_not_connected_to_the_graph": 1049.980203,
+        "hospital_within_30_minutes_residents": 4627.801428,
+        "main_road_within_15_minutes_residents": 1543.547153,
+        "connected_residents_without_a_hospital_route": 0.0,
+        "baseline_vehicle_no_route_share": 0.0,
+        "residents_with_a_route_to_a_hospital_or_main_road": 4874.933867,
+        "connected_residents_without_any_route": 0.0,
+        "hospitals_reachable_at_baseline": 5,
+        "rescaled_2024": {
+          "residents": 5802.254457,
+          "residents_connected_to_the_graph": 5222.795823,
+          "hospital_within_30_minutes_residents": 5132.629713,
+          "main_road_within_15_minutes_residents": 1801.717456,
+          "connected_residents_without_a_hospital_route": 0.0,
+          "baseline_vehicle_no_route_share": 0.0
+        }
+      },
+      {
+        "unit_id": "TH551406",
+        "unit_name": "Tha Nao",
+        "residents": 3345.847566,
+        "demand_cells": 2237,
+        "residents_connected_to_the_graph": 3165.531445,
+        "residents_not_connected_to_the_graph": 180.316121,
+        "hospital_within_30_minutes_residents": 3165.531445,
+        "main_road_within_15_minutes_residents": 3064.808778,
+        "connected_residents_without_a_hospital_route": 0.0,
+        "baseline_vehicle_no_route_share": 0.0,
+        "residents_with_a_route_to_a_hospital_or_main_road": 3165.531445,
+        "connected_residents_without_any_route": 0.0,
+        "hospitals_reachable_at_baseline": 5,
+        "rescaled_2024": {
+          "residents": 3541.177883,
+          "residents_connected_to_the_graph": 3421.228435,
+          "hospital_within_30_minutes_residents": 3421.228435,
+          "main_road_within_15_minutes_residents": 3378.010634,
+          "connected_residents_without_a_hospital_route": 0.0,
+          "baseline_vehicle_no_route_share": 0.0
+        }
+      },
+      {
+        "unit_id": "TH551407",
+        "unit_name": "Fai Kaeo",
+        "residents": 14128.526756,
+        "demand_cells": 25663,
+        "residents_connected_to_the_graph": 11212.4297,
+        "residents_not_connected_to_the_graph": 2916.097056,
+        "hospital_within_30_minutes_residents": 10384.420986,
+        "main_road_within_15_minutes_residents": 8357.311522,
+        "connected_residents_without_a_hospital_route": 213.5343,
+        "baseline_vehicle_no_route_share": 0.019044,
+        "residents_with_a_route_to_a_hospital_or_main_road": 10998.8954,
+        "connected_residents_without_any_route": 213.5343,
+        "hospitals_reachable_at_baseline": 5,
+        "rescaled_2024": {
+          "residents": 13864.005277,
+          "residents_connected_to_the_graph": 12007.416459,
+          "hospital_within_30_minutes_residents": 11480.741138,
+          "main_road_within_15_minutes_residents": 10361.612957,
+          "connected_residents_without_a_hospital_route": 135.866468,
+          "baseline_vehicle_no_route_share": 0.011315
+        }
+      }
+    ]
+  },
+  "unit_raster": {
+    "path": "<external_data_workspace>/proposal_execution/nan_case_v1/frame/n1_units_20m.tif",
+    "grid": {
+      "west": 639520,
+      "north": 2111500,
+      "rows": 4303,
+      "cols": 4280,
+      "epsg": 32647,
+      "cell_m": 20
+    },
+    "rule": "Each 20 m cell takes the unit whose polygon holds its centre (GDAL rasterize, all_touched false). 0: no unit; 255: more than one unit.",
+    "cells_with_a_unit": 9006963,
+    "cells_in_several_units": 0,
+    "sha256": "80f8d69942a266b0fc0fe3ebcd5c8c5d668a6178a96b2430276865d765c51fe2"
+  },
+  "files_outside_git": {
+    "frame_stage_record": {
+      "path": "<external_data_workspace>/proposal_execution/nan_case_v1/frame/frame_stage_v1.json",
+      "sha256": "02a7fcf369841688c52447cd959cb124759e37c73a5bee2e91280f13a656e766",
+      "bytes": 19218
+    },
+    "units": {
+      "path": "<external_data_workspace>/proposal_execution/nan_case_v1/frame/n1_units.geojson",
+      "sha256": "691580a9cb55548d533d461a13b7f8386104dc541f76249120071de8c7ad5cee",
+      "bytes": 5894057
+    },
+    "routing_geometry": {
+      "path": "<external_data_workspace>/proposal_execution/nan_case_v1/frame/n1_routing_geometry.geojson",
+      "sha256": "924bf34b01c4ef6ff297b96a29aecc63a84900e868b6c4456c66d8f20e2b155a",
+      "bytes": 87476
+    },
+    "unit_raster": {
+      "path": "<external_data_workspace>/proposal_execution/nan_case_v1/frame/n1_units_20m.tif",
+      "sha256": "80f8d69942a266b0fc0fe3ebcd5c8c5d668a6178a96b2430276865d765c51fe2",
+      "bytes": 102273
+    },
+    "context": {
+      "path": "<external_data_workspace>/proposal_execution/nan_case_v1/frame/e4_vehicle_candidate/context_inputs.json",
+      "sha256": "a9890d64c355a5bddad8fd278dbc55978d7cafdb37418e7535c51ccfadf46933",
+      "bytes": 282464337
+    },
+    "context_receipt": {
+      "path": "<external_data_workspace>/proposal_execution/nan_case_v1/frame/e4_vehicle_candidate/receipt.json",
+      "sha256": "9406fd82b37c6e231704789914fc55c83dd156ff9aad9c60be5964d2e847daf9",
+      "bytes": 19054
+    },
+    "facility_table": {
+      "path": "<external_data_workspace>/proposal_execution/nan_case_v1/frame/e4_vehicle_candidate/planning_facilities.json",
+      "sha256": "30739329e050651808f52bc3bd4c11fe5df21e52f5f0acd5f2a288aedda6b908",
+      "bytes": 527741
+    },
+    "grade_join_log": {
+      "path": "<external_data_workspace>/proposal_execution/nan_case_v1/frame/e4_vehicle_candidate/grade_join_log.json",
+      "sha256": "3626633ad60792ed326799d5a31f27e36fd378274b2a5866267b3f465c42f69e",
+      "bytes": 208678
+    },
+    "age_counts": {
+      "path": "<external_data_workspace>/proposal_execution/nan_case_v1/frame/age_exposure_n1_v1.json",
+      "sha256": "7df73427cb1bae705e425450dad7baa23a790017376ebc07bb43adc235ba76dd",
+      "bytes": 96979
+    },
+    "demand_cells": {
+      "path": "<external_data_workspace>/proposal_execution/nan_case_v1/frame/demand_cells_v1.json",
+      "sha256": "e5dc22d19dde01aa1f27bd608cbc58d6173dbf48892d76d0691629c4eb59332c",
+      "bytes": 101029762
+    },
+    "baseline_access": {
+      "path": "<external_data_workspace>/proposal_execution/nan_case_v1/frame/baseline_access_v1.json",
+      "sha256": "d182ddf57cd4fa39dfc899293b3288fee47bdd46007fefec27fb90ebc689e87a",
+      "bytes": 103283
+    },
+    "rescaled_demand_2024": {
+      "path": "<external_data_workspace>/proposal_execution/nan_case_v1/frame/rescaled_demand_2024_v1.json",
+      "sha256": "87a9aa2cb0439243988423cbd40be3f5ab24fcd66feb943c72d0ce6c6ff7744b",
+      "bytes": 26594072
+    }
+  },
+  "inputs_for_the_chain_stage": {
+    "context": "files_outside_git.context (a vehicle context in the format of scripts/build_planning_context.py; its canonical SHA-256 is context.canonical_sha256)",
+    "routing_geometry": "files_outside_git.routing_geometry (one GeoJSON feature, EPSG:4326)",
+    "age_table": "files_outside_git.age_counts (the format of the task E7 table)",
+    "rescaled_population": "files_outside_git.rescaled_demand_2024 (population_id to residents under by_cell)",
+    "unit_raster": "files_outside_git.unit_raster (the 20 m frame grid; values are units[].raster_value)",
+    "demand_cells": "files_outside_git.demand_cells (columns and rows; unit, EPSG:32647 centre and 20 m grid cell of every demand cell)",
+    "baseline": "baseline_access here, and files_outside_git.baseline_access for every threshold"
+  },
+  "deviations": [
+    {
+      "id": "N1F-D1",
+      "rule": "Plan task E4: the facilities supplied to build_context_inputs are the DDPM located shelters (plan 3.1 P2).",
+      "what_was_done": "No DDPM shelter was supplied, and none of the facility table's shelter rows exists. Shelters are not part of the N1 score (the case protocol's ensemble keeps the public facility set only). The road graph, the demand cells, the OSM hospitals and the main-road entries do not depend on the supplied facilities; the context's canonical SHA-256 does."
+    },
+    {
+      "id": "N1F-D2",
+      "rule": "Plan task E4 at Mae Sai supplied the 20 reviewed junctions of AOI-01 (osm_junction_review.json).",
+      "what_was_done": "No reviewed junction was supplied: none exists for the Nan frame, and the 20 of AOI-01 lie about 250 km away. The grade joins of decision D13 at 0 m are applied as at Mae Sai."
+    },
+    {
+      "id": "N1F-D3",
+      "rule": "Plan 5 item 1: a build of record runs serially in a declared compute window.",
+      "what_was_done": "The context is a candidate build in the words of task E4: no compute window was declared, because other lanes of the overnight run used the machine at the same time. Its receipt says so (run_kind candidate). Nothing of the computation depends on it."
+    },
+    {
+      "id": "N1F-D4",
+      "rule": "Case SE2 committed its frame and routing GeoJSON under resources/planning_frames/ and protocol v1b records their SHA-256 (corridor_polygon.se2_frame).",
+      "what_was_done": "The N1 units and routing geometry stay in the work folder outside Git; this record names them by SHA-256 (files_outside_git) and the context build checked the routing geometry against the frame stage record, not against a signed protocol (routing_source.checked_against_protocol_v1b false)."
+    },
+    {
+      "id": "N1F-D5",
+      "rule": "Task E7 writes its age table to outputs/planning_v1/ with a registered receipt (scripts/build_age_exposure.py, which knows the Mae Sai frame only).",
+      "what_was_done": "The E7 rows of the 35 units were computed with the same functions and checks (the readers and source checks of the national anchors, the anchor-consistency check, age_exposure_frame) and written to the work folder in the E7 table format, without a separate receipt; the table carries its input hashes, the consistency check and the code hashes itself."
+    },
+    {
+      "id": "N1F-D6",
+      "rule": "The 2024-rescaled demand is built by scripts/build_ensemble_rescaled_demand.py for a registered E10 run.",
+      "what_was_done": "Its function rescaled_residents was called unchanged with the N1 demand cells; in the place of the registered run's receipt it was given the SHA-256 of tha_ppp_2020.tif from the committed source manifest, which is the one value it reads from that receipt. Mae Sai's behaviour is unchanged (no file of that builder was edited)."
+    },
+    {
+      "id": "N1F-D7",
+      "rule": "Task E5 tables hold counts of residents and no ratio of them (open point E5-OP8).",
+      "what_was_done": "baseline_access.units gives, beside the counts, the baseline vehicle no-route share of each tambon (condition C7 of confidence rule v1), because the lane was asked for it. It is a baseline figure with no flood; it is not the access-gap or the road-criticality component."
+    }
+  ],
+  "open_points": [
+    {
+      "id": "N1F-OP1",
+      "point": "Hospital objects that are small facilities.",
+      "what_this_file_does": "The SE2 rule takes every OSM object tagged amenity=hospital or healthcare=hospital, as for Mueang Chiang Rai (where health-promoting hospitals and clinics tagged as hospitals were kept). The list is in hospitals.hospitals; no object was removed."
+    },
+    {
+      "id": "N1F-OP3",
+      "point": "Which OSM object is Nan Hospital (test 4 of the case protocol).",
+      "what_this_file_does": "The tags are listed as found. OSM way 315323384 is named 'Nan central hospital'. OSM ways 1464956018 and 315330559 carry one Thai name, that of the hospital of the Suriyaphong army camp, and way 1464956018 also carries name:en 'Nan Hospital'. Both are kept as destinations under the SE2 rule; the stage that runs test 4 says which object it takes."
+    },
+    {
+      "id": "N1F-OP4",
+      "point": "Plan row E4 asks for at least 4 hospitals in a context.",
+      "what_this_file_does": "The SE2 rule gives 5 OSM hospital objects and 3 distinct named hospitals (owner choice 22), so the E4 criterion hospitals_in_context_min is not met (context.plan_row_e4_acceptance). The case protocol names the rule, not a minimum; nothing was added."
+    },
+    {
+      "id": "N1F-OP5",
+      "point": "Residents whose demand cell does not snap to the vehicle graph within 250 m.",
+      "what_this_file_does": "About a quarter of the modelled 2020 residents of the frame (context.baseline_no_route_whole_frame.residents_not_connected_to_the_graph) lie in such cells, mostly in rural tambons with few mapped roads; they are in no numerator and no denominator of the access figures (E5-OP3). The share per tambon is in baseline_access.units."
+    },
+    {
+      "id": "N1F-OP6",
+      "point": "Demand cells whose 1 km cell has no 2024 total.",
+      "what_this_file_does": "They keep their 2020 count under the second rule of floodguard.demand_rescale (demand.rescaled_2024.demand_cells_kept_at_2020). The 2024 product is constrained to mapped settlement, so the two demands differ most where the 2020 product spreads residents over unsettled land."
+    },
+    {
+      "id": "N1F-OP2",
+      "point": "Demand cells whose centre lies in no unit or in more than one.",
+      "what_this_file_does": "They stay in the whole-frame figures and in no unit row, as in tasks E5 and E8 (demand.assignment_counts)."
+    }
+  ],
+  "not_computed": [
+    "flood flag of the Nan frame",
+    "flood extent",
+    "closure",
+    "access loss",
+    "any component value",
+    "FPPS",
+    "A-E class",
+    "would-be class",
+    "ensemble cell",
+    "anything of case N2"
+  ],
+  "rights": "Open context only: OpenStreetMap (ODbL 1.0), WorldPop (CC BY 4.0) and HDX COD-AB. No JAXA, GFM or THEOS-2 file was opened by this lane.",
+  "credits": [
+    "Roads and hospitals (c) OpenStreetMap contributors, ODbL 1.0, via Geofabrik.",
+    "Residents: WorldPop (www.worldpop.org), University of Southampton, Thailand 100 m 2020, CC BY 4.0. Modelled, not observed.",
+    "Age counts: WorldPop Global2 R2025A v1, 2024, 1 km constrained age counts, CC BY 4.0. Modelled, not observed.",
+    "Boundaries: OCHA / HDX Thailand COD-AB (tha_admin3, tha_admin0), valid on 2022-01-22."
+  ],
+  "implementation": {
+    "base_commit": "fa7a4eda28bbbe4125d65128cda61bacf0b09f57",
+    "base_commit_note": "The commit the working tree was on; the files below are identified by their own SHA-256, committed or not.",
+    "script_sha256": "e077ae7aa541d3a1f38a658c5635942a702f54c7b2279365262fb1ee1d6f85e3",
+    "nan_frame_module_sha256": "e9bf0434f49eb87a2c01667197fd6589f936361d3415ae90bb2465b75fb41c71",
+    "planning_frames_module_sha256": "b52cf9e4acd69df705024a9ddad68d95292a9c4b0e2c2ef5e84ac8515923ee7c",
+    "planning_context_module_sha256": "f2f56151fd20527b8a0aa159fc76a68a5339b6179cef26fbf7c63ad9deb819a8",
+    "evidence_context_module_sha256": "3e85955494e0bf2d4592ea772322afcb20a7a5cdf00036e52a4e33d1263c2994",
+    "grade_join_module_sha256": "87247e54da2acbdbbf5e00f5353b0aedf68e471eb463df99b46d9163aec7d634",
+    "access_diff_module_sha256": "c6178a93fb8f92c17cf1038366cc76f8184112f9b4a6115f26c567ee73209f1c",
+    "age_exposure_module_sha256": "07acdd7d2f5ae152cba8a135db1f8c4f91bf4b9a979ea59c832fe539a45ec278",
+    "demand_rescale_module_sha256": "96906150691b05e6713a01965b0701dacaa4449e0f94888ae0f4ac6c1e7f4018",
+    "build_planning_context_sha256": "32115d7e71203f97f8b03fb84028dfac3f2884d423405f84e6dd45d0c2e13ec5",
+    "build_planning_frames_sha256": "d05ec6bfe7a4531ee47c082ce9954a408a2b7560b4be23acc248a6047f1c7db1",
+    "build_access_diff_sha256": "fa376c611b2d2d2b509d9d8ac408034b81ad7964d3da56d4f17788360e38e749",
+    "build_age_exposure_sha256": "ed9dd7262cc022c99382b9c2eaed29d0dbc46096d3e9aea4ce8ecc1ab14c80dc",
+    "build_ensemble_rescaled_demand_sha256": "69be100634be4843ecd0995be9fffa5fb40ca3e100e6510f870ec0c95fce1f2c",
+    "libraries": {
+      "python": "3.11.8",
+      "numpy": "2.2.6",
+      "shapely": "2.1.2",
+      "geos": "3.13.1",
+      "pyproj": "3.7.2",
+      "proj": "9.5.1",
+      "rasterio": "1.4.4",
+      "gdal": "3.10.3"
+    }
+  },
+  "supersedes": {
+    "sha256": "90947ce2c3cce2f188c688d3c79494c9063370cfed7a94bc2f6f6a2b6a72d528",
+    "generated_at_utc": "2026-10-14T14:31:23Z",
+    "reason": "Final run of every stage with the final code of the frame lane; the first record was written by a development run whose frame, context and age stages ran on earlier versions of the script."
+  }
+}

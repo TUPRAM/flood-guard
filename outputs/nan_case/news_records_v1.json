@@ -1,0 +1,543 @@
+{
+ "schema": "floodguard.nan_case_news_records.v1",
+ "case_id": "N1",
+ "generated_at_utc": "2026-10-14T14:34:08Z",
+ "source_timestamp": "news and lists of 23 July to 1 August 2025 (one of 20 August 2026, marked); thaiwater.net hourly levels of 15 July to 15 August 2025",
+ "confidence_class": "low",
+ "confidence_basis": "Press reports and copies of agency lists, paraphrased; a public gauge service read without a login; nothing checked on the ground.",
+ "assumptions": [
+  "OpenStreetMap is the Geofabrik extract recorded in outputs/open_context_data_file_manifest.csv (retrieved 2026-07-10), a year after the event; a road, milestone or hospital mapped differently in July 2025 is not seen.",
+  "A milestone's distance tag is the official km of the route at that node; between two milestones the official km is spread evenly along the merged OSM line, and beyond the last one the line is read at one OSM metre per official metre.",
+  "A milestone counts as on the route when it lies within 30 m of the merged route line; it is moved onto the line.",
+  "Tambon names of the list are matched to COD-AB tha_admin3 polygons (boundaries valid 2022-01-22); the COD-AB polygons and the OSM roads were not drawn together and can disagree by a few hundred metres.",
+  "A route of the list is found only by its reference on OSM ways (or a name that carries the route number); a road not tagged that way is recorded as not found and given no position.",
+  "Hospitals are OSM map records; their operation, entrances and the parts that flooded are not checked here."
+ ],
+ "official_warning": false,
+ "operational_status": "non_operational",
+ "can_feed_decision_layer": false,
+ "what_this_is": "Dated public records set beside the Nan case: the reported road cuts, the flooding of Nan Hospital and the Nan River levels. Facts with a citation, paraphrased; quotations are a few words at most. They are context for tests 3b and 4, not a reference layer.",
+ "times": "Thai time (UTC+7) unless marked. published_local is the publication time in each page's metadata (datePublished), put in Thai time. thaiwater.net series are in Thai time: five news readings of 23 and 24 July agree with the series to the centimetre at the stated Thai hours.",
+ "records": [
+  {
+   "id": "bangkokinsight_20250731_mot_list",
+   "topic": "road_cuts",
+   "source_url": "https://www.thebangkokinsight.com/news/politics-general/general/1528937/",
+   "publisher": "The Bangkok Insight",
+   "published_local": "2025-07-31T15:44+07:00",
+   "language": "th",
+   "paraphrase": "The Ministry of Transport summarised road points hit by floods from 1 to 31 July 2025 (189 points, 18 impassable) and listed for Nan highway 1243 at km 59+100 in Wiang Sa and rural roads Nan 4020 (two stretches), Nan 021 and Nan 3019 among others.",
+   "time_said": "cumulative 1 to 31 July 2025, as of 31 July 2025; no time of day and no start or end of any cut",
+   "place_said": "route, km and tambon (district for most entries); the four protocol entries match the protocol's text, the tambon of highway 1243 written น้ำม่วน; a fifth entry inside the frame (Nan 3019 km 7+000 to 8+000, Mueang Chang) has no district",
+   "use": "the list of test 3b"
+  },
+  {
+   "id": "thansettakij_20250726_drr_list",
+   "topic": "road_cuts",
+   "source_url": "https://www.thansettakij.com/general-news/634140",
+   "publisher": "Thansettakij (ฐานเศรษฐกิจ)",
+   "published_local": "2025-07-26T15:06+07:00",
+   "language": "th",
+   "paraphrase": "The Department of Rural Roads listed 21 impassable rural roads in the north, nine of them in Nan, including Nan 4020 at km 10+500 to 10+900 and km 31+690 to 32+200, Nan 3019 at km 7+000 to 8+000, the approach road of the Hua Wiang Nuea – Nam Tuan Phatthana bridge (Nan 021, km 0+000 to 0+300) and the Nakhon Nan Phatthana bridge road (Nan 012) beside Nan Hospital.",
+   "time_said": "situation at 09:00 on 26 July 2025",
+   "place_said": "route name, km range and district; Nan 4020 is the road from highway 1168 to Ban Huai Son in Phu Phiang and Wiang Sa",
+   "use": "dates three of the four protocol points (and Nan 3019) as impassable on 26 July 2025, inside the window of test 3b; names the road of Nan 021"
+  },
+  {
+   "id": "thansettakij_20250801_doh_drr_list",
+   "topic": "road_cuts",
+   "source_url": "https://www.thansettakij.com/general-news/634749",
+   "publisher": "Thansettakij (ฐานเศรษฐกิจ)",
+   "published_local": "2025-08-01T13:56+07:00",
+   "language": "th",
+   "paraphrase": "On 1 August 2025 highway 1243 (section Huai Phai – Hat Rai) was impassable at km 58+875 to 58+900 in Wiang Sa where a bridge approach had washed out, with a local detour, and over a long stretch from km 34+036 in Na Noi because of landslides; no rural road of Nan was listed.",
+   "time_said": "status of 1 August 2025",
+   "place_said": "route, section name, km and district",
+   "use": "places the 1243 cut of the 31 July list at a bridge approach about km 58.9 (report only; the protocol placement is by tambon)"
+  },
+  {
+   "id": "thansettakij_20260820_drr_list_other_event",
+   "topic": "road_cuts",
+   "source_url": "https://www.thansettakij.com/general-news/666967",
+   "publisher": "Thansettakij (ฐานเศรษฐกิจ)",
+   "published_local": "2026-08-20T13:44+07:00",
+   "language": "th",
+   "paraphrase": "During a later flood (August 2026) the Department of Rural Roads closed seven Nan roads, among them the Hua Wiang Nuea – Nam Tuan Phatthana bridge road (Nan 021, km 0+000 to 0+600) in Phu Phiang with water 130 cm deep at the bridge approach.",
+   "time_said": "20 August 2026: a different event, not the 2025 case",
+   "place_said": "route name, km range and district",
+   "use": "identification of the Nan 021 road only; no fact of 2025"
+  },
+  {
+   "id": "khaosod_lineToday_20250724_hospital",
+   "topic": "hospital",
+   "source_url": "https://today.line.me/th/v3/article/nXOBrGM",
+   "publisher": "Khaosod via LINE TODAY",
+   "published_local": "2025-07-24T08:13+07:00",
+   "language": "th",
+   "paraphrase": "Water from the Nan River had entered Nan Hospital, reaching its emergency department; critically ill patients, including those on ventilators, were moved to nearby hospitals, the emergency service moved to the Air Force Wing 466 base in Nan, and barriers were raised around the ICU and operating rooms.",
+   "time_said": "by the morning of 24 July 2025 (LINE TODAY stamps 01:13 UTC, updated 05:13 UTC); no hour of entry given",
+   "place_said": "Nan Hospital, its emergency department; the town's economic quarter flooded",
+   "use": "test 4: the hospital was flooded by the early hours of 24 July 2025"
+  },
+  {
+   "id": "thairath_20250724_update",
+   "topic": "hospital_and_river",
+   "source_url": "https://www.thairath.co.th/news/local/north/2872477",
+   "publisher": "Thairath",
+   "published_local": "2025-07-24T18:26+07:00",
+   "language": "th",
+   "paraphrase": "Staff reached Nan Hospital in small boats against a strong current while patients without severe conditions were moved to Wing 466, and at 05:00 the river stood at 9.27 m at the Nan town station (bank 7 m) and 14.65 m at the Pha Khwang bridge station, above the 2024 peaks.",
+   "time_said": "the night of 23 July and 24 July 2025; river levels at 05:00 on 24 July",
+   "place_said": "Nan Hospital; Nan town and Phu Phiang, where the river left its banks from about 09:00",
+   "use": "test 4 and the gauge check (N.1 at 05:00 on 24 July)"
+  },
+  {
+   "id": "thairath_20250724_town",
+   "topic": "river_and_town",
+   "source_url": "https://www.thairath.co.th/news/local/northeast/2872276",
+   "publisher": "Thairath",
+   "published_local": "2025-07-24T09:14+07:00",
+   "language": "th",
+   "paraphrase": "Flooding in Nan municipality grew from 18:30 on 23 July, and the provincial water centre expected the Nan River at the Phatthana Phak Nuea bridge to peak at about 9.51 m between 04:00 and 06:00 on 24 July.",
+   "time_said": "from 18:30 on 23 July 2025; expected peak 04:00 to 06:00 on 24 July",
+   "place_said": "Nan municipality; the Phatthana Phak Nuea bridge (the N.1 station's bridge)",
+   "use": "time of town flooding beside the gauge record"
+  },
+  {
+   "id": "thansettakij_20250723_levels",
+   "topic": "river",
+   "source_url": "https://www.thansettakij.com/general-news/633657",
+   "publisher": "Thansettakij (ฐานเศรษฐกิจ)",
+   "published_local": "2025-07-23T07:21+07:00",
+   "language": "th",
+   "paraphrase": "The Upper Northern Region Irrigation Hydrology Center gave Nan River levels at 06:00 on 23 July: N.64 7.99 m (bank 9.50 m), N.1 5.82 m (7.00 m), N.13A 5.00 m (6.50 m) and N.75 7.69 m (10.00 m).",
+   "time_said": "06:00 on 23 July 2025",
+   "place_said": "stations N.64 Ban Pha Khwang, N.1 Nan town, N.13A Ban Phai Ngam (Wiang Sa), N.75 Tha Li bridge",
+   "use": "gauge check"
+  },
+  {
+   "id": "thansettakij_20250725_hospital",
+   "topic": "hospital",
+   "source_url": "https://www.thansettakij.com/general-news/634023",
+   "publisher": "Thansettakij (ฐานเศรษฐกิจ)",
+   "published_local": "2025-07-25T11:45+07:00",
+   "language": "th",
+   "paraphrase": "At 09:30 on 25 July Nan Hospital had been under water for 35 hours; the water had fallen by about 90 cm, but the hospital could not yet run normal services and could not yet assess the damage.",
+   "time_said": "09:30 on 25 July 2025, which puts the water's entry at about 22:30 on 23 July (inferred, not stated)",
+   "place_said": "Nan Hospital (inside the hospital; no building named)",
+   "use": "test 4: duration and fall of the water"
+  },
+  {
+   "id": "thansettakij_20250725_moph",
+   "topic": "hospital",
+   "source_url": "https://www.thansettakij.com/health-wellness/wellbeing/634064",
+   "publisher": "Thansettakij (ฐานเศรษฐกิจ)",
+   "published_local": "2025-07-25T17:15+07:00",
+   "language": "th",
+   "paraphrase": "The Ministry of Public Health counted 19 health facilities hit by Storm Wipha and 9 closed; Nan Hospital was among the hardest hit and closed, while Wiang Sa Hospital was listed as affected but not closed.",
+   "time_said": "25 July 2025",
+   "place_said": "Nan Hospital, Wiang Sa Hospital and other Nan facilities by name",
+   "use": "test 4; Wiang Sa Hospital affected"
+  },
+  {
+   "id": "matichon_20250726_hospital",
+   "topic": "hospital",
+   "source_url": "https://www.matichon.co.th/social/news_5293520",
+   "publisher": "Matichon",
+   "published_local": "2025-07-26T09:41+07:00",
+   "language": "th",
+   "paraphrase": "The governor reported that at 08:00 on 26 July water no longer covered the Nakhon Nan Phatthana bridge beside Nan Hospital, and that the hospital's accident and emergency building had stood in more than 1 m of water for over 40 hours; staff could enter it that morning to clean, but normal services could not resume yet.",
+   "time_said": "morning of 26 July 2025; the water stood in the building for more than 40 hours before",
+   "place_said": "Nan Hospital, its accident and emergency building; the Nakhon Nan Phatthana bridge beside it; Phu Phiang side still partly under water",
+   "use": "test 4: depth (over 1 m in the emergency building) and the water leaving by the morning of 26 July"
+  },
+  {
+   "id": "matichon_20250727_hospital_reopens",
+   "topic": "hospital",
+   "source_url": "https://www.matichon.co.th/region/news_5295722",
+   "publisher": "Matichon",
+   "published_local": "2025-07-27T22:20+07:00",
+   "language": "th",
+   "paraphrase": "Nan Hospital, whose services had been cut back since 24 July, announced at 20:00 on 27 July that its accident and emergency service would reopen in its accident building from 28 July, with other services to follow; the governor said the Nan River was back within its banks except at N.13A.",
+   "time_said": "services reduced from 24 July 2025; emergency service from 28 July 2025",
+   "place_said": "Nan Hospital, accident building; the Nan River at the Phatthana Phak Nuea bridge; station N.13A (Wiang Sa) still above its bank on 27 July",
+   "use": "test 4: end of the closure; Wiang Sa still high on 27 July"
+  }
+ ],
+ "gauge_records": [
+  {
+   "station": "N.64",
+   "agency": "RID",
+   "place": "Ban Pha Khwang, Mueang Nan (upstream of the town)",
+   "river": "Nan",
+   "source_url": "https://api-v3.thaiwater.net/api/v1/thaiwater30/public/waterlevel_graph?station_type=tele_waterlevel&station_id=3246&start_date=2025-07-15&end_date=2025-08-15",
+   "publisher": "thaiwater.net (Hydro-Informatics Institute)",
+   "retrieved_at_utc": "2026-10-14T14:33:59Z",
+   "period_thai_time": [
+    "2025-07-15",
+    "2025-08-15"
+   ],
+   "file_outside_git": {
+    "folder": "<external>/proposal_execution/nan_case_v1/consequence/gauge",
+    "name": "thaiwater_3246_2025-07-15_2025-08-15.csv",
+    "sha256": "b3e2536bceb22bc9943c03d39151b4ec19bcfcbc4d2d239e2f0d6a91b42ee5a3"
+   },
+   "reading_step": "hourly",
+   "peak_m_msl": 225.55,
+   "peak_gauge_height_m": 14.65,
+   "peak_times_thai_time": [
+    "2025-07-24 05:00",
+    "2025-07-24 06:00"
+   ],
+   "readings_at_peak": 2,
+   "gauge_zero_m_msl": 210.899994,
+   "levels": {
+    "min_bank": {
+     "level_m_msl": 220.4,
+     "readings_above": 70,
+     "first_above_thai_time": "2025-07-17 23:00",
+     "last_above_thai_time": "2025-07-25 19:00",
+     "runs_above_thai_time": [
+      [
+       "2025-07-17 23:00",
+       "2025-07-18 14:00"
+      ],
+      [
+       "2025-07-23 10:00",
+       "2025-07-25 19:00"
+      ]
+     ],
+     "peak_minus_level_m": 5.15
+    }
+   },
+   "level_note": "min_bank is the bank level the news gives (9.50 m above the gauge zero).",
+   "checks_against_news": [
+    {
+     "news_record": "thansettakij_20250723_levels",
+     "datetime_thai_time": "2025-07-23 06:00",
+     "gauge_m_in_news": 7.99,
+     "gauge_m_in_series": 7.99,
+     "same_to_1_cm": true
+    },
+    {
+     "news_record": "thairath_20250724_update",
+     "datetime_thai_time": "2025-07-24 05:00",
+     "gauge_m_in_news": 14.65,
+     "gauge_m_in_series": 14.65,
+     "same_to_1_cm": true
+    }
+   ]
+  },
+  {
+   "station": "N.1",
+   "agency": "RID",
+   "place": "in front of the Forest Office, Mueang Nan town",
+   "river": "Nan",
+   "source_url": "https://api-v3.thaiwater.net/api/v1/thaiwater30/public/waterlevel_graph?station_type=tele_waterlevel&station_id=3219&start_date=2025-07-15&end_date=2025-08-15",
+   "publisher": "thaiwater.net (Hydro-Informatics Institute)",
+   "retrieved_at_utc": "2026-10-14T14:33:59Z",
+   "period_thai_time": [
+    "2025-07-15",
+    "2025-08-15"
+   ],
+   "file_outside_git": {
+    "folder": "<external>/proposal_execution/nan_case_v1/consequence/gauge",
+    "name": "thaiwater_3219_2025-07-15_2025-08-15.csv",
+    "sha256": "7703cd3ee328749cbd9c90d5f3fa8674f9e54456d26b74dcc6fcd2b2cb7e6704"
+   },
+   "reading_step": "hourly",
+   "peak_m_msl": 201.69,
+   "peak_gauge_height_m": 9.49,
+   "peak_times_thai_time": [
+    "2025-07-24 16:00",
+    "2025-07-24 17:00",
+    "2025-07-24 18:00"
+   ],
+   "readings_at_peak": 3,
+   "gauge_zero_m_msl": 192.199997,
+   "levels": {
+    "min_bank": {
+     "level_m_msl": 199.2,
+     "readings_above": 151,
+     "first_above_thai_time": "2025-07-18 03:00",
+     "last_above_thai_time": "2025-07-30 21:00",
+     "runs_above_thai_time": [
+      [
+       "2025-07-18 03:00",
+       "2025-07-19 02:00"
+      ],
+      [
+       "2025-07-23 09:00",
+       "2025-07-26 10:00"
+      ],
+      [
+       "2025-07-28 09:00",
+       "2025-07-30 21:00"
+      ]
+     ],
+     "peak_minus_level_m": 2.49
+    }
+   },
+   "level_note": "min_bank is the bank level the news gives (7.00 m above the gauge zero); two news readings match the series to the centimetre at the stated Thai hours.",
+   "checks_against_news": [
+    {
+     "news_record": "thansettakij_20250723_levels",
+     "datetime_thai_time": "2025-07-23 06:00",
+     "gauge_m_in_news": 5.82,
+     "gauge_m_in_series": 5.82,
+     "same_to_1_cm": true
+    },
+    {
+     "news_record": "thairath_20250724_update",
+     "datetime_thai_time": "2025-07-24 05:00",
+     "gauge_m_in_news": 9.27,
+     "gauge_m_in_series": 9.27,
+     "same_to_1_cm": true
+    }
+   ]
+  },
+  {
+   "station": "NAN003",
+   "agency": "HII",
+   "place": "Mueang Nan",
+   "river": "Nan",
+   "source_url": "https://api-v3.thaiwater.net/api/v1/thaiwater30/public/waterlevel_graph?station_type=tele_waterlevel&station_id=523&start_date=2025-07-15&end_date=2025-08-15",
+   "publisher": "thaiwater.net (Hydro-Informatics Institute)",
+   "retrieved_at_utc": "2026-10-14T14:33:59Z",
+   "period_thai_time": [
+    "2025-07-15",
+    "2025-08-15"
+   ],
+   "file_outside_git": {
+    "folder": "<external>/proposal_execution/nan_case_v1/consequence/gauge",
+    "name": "thaiwater_523_2025-07-15_2025-08-15.csv",
+    "sha256": "a05c689eac5e41ced4ff380ef6e370cb3d6f9c76f3c47b8c55aac432970b7704"
+   },
+   "reading_step": "10 minutes",
+   "peak_m_msl": 198.71,
+   "peak_gauge_height_m": null,
+   "peak_times_thai_time": [
+    "2025-07-24 16:10"
+   ],
+   "readings_at_peak": 1,
+   "gauge_zero_m_msl": null,
+   "levels": {
+    "min_bank": {
+     "level_m_msl": 195.43,
+     "readings_above": 1359,
+     "first_above_thai_time": "2025-07-17 18:10",
+     "last_above_thai_time": "2025-07-31 21:00",
+     "runs_above_thai_time": [
+      [
+       "2025-07-17 18:10",
+       "2025-07-19 13:20"
+      ],
+      [
+       "2025-07-23 08:10",
+       "2025-07-27 07:50"
+      ],
+      [
+       "2025-07-27 23:00",
+       "2025-07-31 21:00"
+      ]
+     ],
+     "peak_minus_level_m": 3.28
+    }
+   },
+   "level_note": "HII station; min_bank as published, not checked against a news reading.",
+   "checks_against_news": []
+  },
+  {
+   "station": "SKU04 (N.13A)",
+   "agency": "EGAT",
+   "place": "Wiang Sa",
+   "river": "Nan",
+   "source_url": "https://api-v3.thaiwater.net/api/v1/thaiwater30/public/waterlevel_graph?station_type=tele_waterlevel&station_id=1113292&start_date=2025-07-15&end_date=2025-08-15",
+   "publisher": "thaiwater.net (Hydro-Informatics Institute)",
+   "retrieved_at_utc": "2026-10-14T14:33:59Z",
+   "period_thai_time": [
+    "2025-07-15",
+    "2025-08-15"
+   ],
+   "file_outside_git": {
+    "folder": "<external>/proposal_execution/nan_case_v1/consequence/gauge",
+    "name": "thaiwater_1113292_2025-07-15_2025-08-15.csv",
+    "sha256": "20aba989f0ea600a9e939cb57881c8b77c9844f11aacaa05ab385d02ac9b10e6"
+   },
+   "reading_step": "hourly",
+   "peak_m_msl": 189.55,
+   "peak_gauge_height_m": null,
+   "peak_times_thai_time": [
+    "2025-07-25 05:00",
+    "2025-07-25 06:00",
+    "2025-07-25 07:00"
+   ],
+   "readings_at_peak": 3,
+   "gauge_zero_m_msl": null,
+   "levels": {
+    "min_bank": {
+     "level_m_msl": 190.32,
+     "readings_above": 0,
+     "first_above_thai_time": null,
+     "last_above_thai_time": null,
+     "runs_above_thai_time": [],
+     "peak_minus_level_m": -0.78
+    },
+    "critical_level_msl": {
+     "level_m_msl": 183.9,
+     "readings_above": 278,
+     "first_above_thai_time": "2025-07-17 18:00",
+     "last_above_thai_time": "2025-08-01 18:00",
+     "runs_above_thai_time": [
+      [
+       "2025-07-17 18:00",
+       "2025-07-19 22:00"
+      ],
+      [
+       "2025-07-23 10:00",
+       "2025-08-01 18:00"
+      ]
+     ],
+     "peak_minus_level_m": 5.65
+    }
+   },
+   "level_note": "The station's min_bank field (about 190.3 m) is never reached, although the governor said N.13A was still above its bank on 27 July; its critical_level_msl field (183.9 m) fits the news reading of 23 July (1.50 m below the bank in the news, 1.60 m below that field in the series) and is read as the bank. The two fields are given as published.",
+   "checks_against_news": [
+    {
+     "news_record": "thansettakij_20250723_levels",
+     "datetime_thai_time": "2025-07-23 06:00",
+     "metres_below_bank_in_news": 1.5,
+     "metres_below_critical_level_msl_in_series": 1.6
+    }
+   ]
+  },
+  {
+   "station": "NAN009",
+   "agency": "HII",
+   "place": "Wiang Sa",
+   "river": "Nan",
+   "source_url": "https://api-v3.thaiwater.net/api/v1/thaiwater30/public/waterlevel_graph?station_type=tele_waterlevel&station_id=512&start_date=2025-07-15&end_date=2025-08-15",
+   "publisher": "thaiwater.net (Hydro-Informatics Institute)",
+   "retrieved_at_utc": "2026-10-14T14:33:59Z",
+   "period_thai_time": [
+    "2025-07-15",
+    "2025-08-15"
+   ],
+   "file_outside_git": {
+    "folder": "<external>/proposal_execution/nan_case_v1/consequence/gauge",
+    "name": "thaiwater_512_2025-07-15_2025-08-15.csv",
+    "sha256": "d9421b1037083f20ab20b386bc41546ea7e0ef703778072f749c30e42ef93afb"
+   },
+   "reading_step": "10 minutes",
+   "peak_m_msl": 190.66,
+   "peak_gauge_height_m": null,
+   "peak_times_thai_time": [
+    "2025-07-25 04:20",
+    "2025-07-25 07:40"
+   ],
+   "readings_at_peak": 16,
+   "gauge_zero_m_msl": null,
+   "levels": {
+    "min_bank": {
+     "level_m_msl": 185.01,
+     "readings_above": 1537,
+     "first_above_thai_time": "2025-07-17 17:20",
+     "last_above_thai_time": "2025-08-01 18:50",
+     "runs_above_thai_time": [
+      [
+       "2025-07-17 17:20",
+       "2025-07-19 22:20"
+      ],
+      [
+       "2025-07-23 09:40",
+       "2025-08-01 18:50"
+      ]
+     ],
+     "peak_minus_level_m": 5.65
+    }
+   },
+   "level_note": "HII station; min_bank as published, not checked against a news reading.",
+   "checks_against_news": []
+  },
+  {
+   "station": "N.75",
+   "agency": "RID",
+   "place": "Tha Li bridge, Wiang Sa",
+   "river": "Wa (Nam Wa)",
+   "source_url": "https://api-v3.thaiwater.net/api/v1/thaiwater30/public/waterlevel_graph?station_type=tele_waterlevel&station_id=3221&start_date=2025-07-15&end_date=2025-08-15",
+   "publisher": "thaiwater.net (Hydro-Informatics Institute)",
+   "retrieved_at_utc": "2026-10-14T14:33:59Z",
+   "period_thai_time": [
+    "2025-07-15",
+    "2025-08-15"
+   ],
+   "file_outside_git": {
+    "folder": "<external>/proposal_execution/nan_case_v1/consequence/gauge",
+    "name": "thaiwater_3221_2025-07-15_2025-08-15.csv",
+    "sha256": "d9f978f7f60da5336b0ff54748802bd2ac2e7eab8e3e033b707b100b35c49c31"
+   },
+   "reading_step": "hourly",
+   "peak_m_msl": 196.29,
+   "peak_gauge_height_m": 13.49,
+   "peak_times_thai_time": [
+    "2025-07-23 17:00"
+   ],
+   "readings_at_peak": 1,
+   "gauge_zero_m_msl": 182.800003,
+   "levels": {
+    "min_bank": {
+     "level_m_msl": 192.8,
+     "readings_above": 20,
+     "first_above_thai_time": "2025-07-23 10:00",
+     "last_above_thai_time": "2025-07-24 07:00",
+     "runs_above_thai_time": [
+      [
+       "2025-07-23 10:00",
+       "2025-07-24 07:00"
+      ]
+     ],
+     "peak_minus_level_m": 3.49
+    }
+   },
+   "level_note": "min_bank is the bank level the news gives (10.00 m above the gauge zero).",
+   "checks_against_news": [
+    {
+     "news_record": "thansettakij_20250723_levels",
+     "datetime_thai_time": "2025-07-23 06:00",
+     "gauge_m_in_news": 7.69,
+     "gauge_m_in_series": 7.69,
+     "same_to_1_cm": true
+    }
+   ]
+  }
+ ],
+ "gauge_note": null,
+ "searches_without_result": [
+  {
+   "what": "the original Ministry of Transport release of 31 July 2025",
+   "where_looked": "web search; www.mot.go.th (news pages built by a script); its content service rapi.mot.go.th refused automated requests (HTTP 418 from a web firewall)",
+   "outcome": "not found; the press copy of The Bangkok Insight is the source, and the Department of Rural Roads list of 26 July 2025 carries the same three rural-road entries"
+  },
+  {
+   "what": "a public record of the hour Nan Hospital's water entered and left, and its peak depth",
+   "where_looked": "news search in Thai and English",
+   "outcome": "no stated hour of entry; 35 hours under water at 09:30 on 25 July (entry about 22:30 on 23 July by inference); more than 1 m for over 40 hours in the emergency building; water off the bridge beside the hospital by 08:00 on 26 July; emergency service from 28 July"
+  },
+  {
+   "what": "the RID Upper Northern hydrology centre's own station pages (hydro-1.net)",
+   "where_looked": "https and http from this machine",
+   "outcome": "not reachable from this machine (https refused; http answered by a national web filter page); the same RID stations were read through thaiwater.net"
+  }
+ ],
+ "rights": "News texts belong to their publishers and are not copied; the gauge series stay outside Git and only their peaks are given, with the source address.",
+ "code": {
+  "path": "scripts/nan_case_consequence_points.py",
+  "sha256": "f06fa7386e65a9e8c2483c47aea4a25e7cea8647967952298565703d9b517dc1"
+ },
+ "limits": [
+  "Positions are OpenStreetMap data, not surveyed; the km of a cut comes from the list, its place on the map from the milestones or the tambon.",
+  "The list is a month's cumulative summary: it says where roads were affected during 1 to 31 July 2025, not when each cut began or ended.",
+  "Nothing here is a flag or a flood map; the points are placed before any flag of the frame is computed.",
+  "Planning guidance only; not an official warning."
+ ]
+}

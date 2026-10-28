@@ -1,0 +1,226 @@
+{
+  "schema": "floodguard.nan_case_protocol.v1",
+  "case_id": "N1",
+  "comparison_case_id": "N2",
+  "written_utc": "2026-10-14T13:40:00Z",
+  "written_by": "the AI coding agent, on the owner's word of 14 October 2026: \"go, do it with the recommended decisions\"",
+  "owner": "Putu, for both owners (decision log R20 and R51)",
+  "official_warning": false,
+  "operational_status": "non_operational",
+  "confidence_class": "low until test 1 is read; set per tambon by the binding rule below",
+  "source_timestamp": "event window 2025-07-16 to 2025-08-13 (Thai time); THEOS-2 2025-07-31T03:51:00Z; JAXA ALOS-2 maps of 2025-07-19 and 2025-07-28",
+  "purpose": "One case that tests the project's own radar flood map end to end on a real Thai flood with references from other satellites, and then feeds that map through the unchanged planning chain to a score and a class per tambon. Every figure is agreement with a reference layer, not accuracy. Planning guidance only.",
+  "plan": "docs/proposal_execution/nan_case_plan_v1.md",
+  "order_rule": "This file is committed and pushed before any reference of the case is opened. The method is then tuned on other events only and frozen by SHA-256 in outputs/nan_case/freeze_v1.json, committed and pushed, before the test stage reads any reference. The test stage runs once. A stage that finds the order broken refuses to run.",
+
+  "event": {
+    "name": "Nan River floods of July and August 2025 (Tropical Storm Wipha)",
+    "window_local": ["2025-07-16T00:00:00+07:00", "2025-08-13T23:59:59+07:00"],
+    "window_utc": ["2025-07-15T17:00:00Z", "2025-08-13T16:59:59Z"]
+  },
+
+  "frame": {
+    "province_pcode": "TH55",
+    "district_pcodes": ["TH5501", "TH5514", "TH5507"],
+    "district_names": ["Mueang Nan", "Phu Phiang", "Wiang Sa"],
+    "units": "every COD-AB tha_admin3 unit whose adm2_pcode is one of the three (35 units: 11, 7 and 17)",
+    "boundary_source": "<external data root>/open_context/hdx_cod_ab/tha_admin_boundaries.gdb.zip, layer tha_admin3",
+    "routing_geometry": "the union of the units buffered by 3 km (the SE2 frame rule of protocol v1b)",
+    "hospitals": "every OpenStreetMap hospital whose routing point lies inside the routing geometry (the SE2 rule of v1b)",
+    "everything_else": "closure rule v1 and its three levels, the services (hospital by vehicle within 30 minutes, main road within 15 minutes), the national vulnerability anchors, the flood anchor 0.20, the weights and the class rules are those of protocols v1a and v1b, unchanged"
+  },
+
+  "grid": {
+    "epsg": 32647,
+    "cell_m": 20,
+    "frame": {"west": 639520, "north": 2111500, "rows": 4303, "cols": 4280, "note": "the units' union buffered by 3 km, snapped outward to 20 m"},
+    "chips": {
+      "nan_chip_003": {"west": 683982.0, "south": 2053070.0, "east": 686984.0, "north": 2056070.0, "what": "THEOS-2 IMG_T2V_20250731035100_ORTHO_PMS_32-003.tif, a flooded part of Wiang Sa town", "cells": "the frame cells whose centre lies inside the rectangle"},
+      "nan_chip_001": {"west": 677582.0, "south": 2043732.0, "east": 680584.0, "north": 2046732.0, "what": "THEOS-2 IMG_T2V_20250731035100_ORTHO_PMS_32-001.tif, hill country with no flood (the dry control)", "cells": "the frame cells whose centre lies inside the rectangle"}
+    },
+    "aggregation": "the mean of linear gamma0 over the 10 m cells of a 20 m cell, then 10 log10; a 20 m cell with fewer than 3 valid 10 m cells is no data"
+  },
+
+  "radar": {
+    "collection": "sentinel-1-rtc of Microsoft Planetary Computer (gamma0, terrain-corrected), read anonymously through floodguard.s1_rtc",
+    "event_passes": "every scene of the collection that intersects the frame and starts inside the event window; scenes of one pass are mosaicked by the s1_rtc rule",
+    "dry_season": {
+      "start": "2025-01-01",
+      "end": "2025-04-30",
+      "same_relative_orbit_as_the_event_pass": true,
+      "platforms": "Sentinel-1A and Sentinel-1C",
+      "max_passes_per_orbit": 10,
+      "which_passes": "the latest passes of the window first, until 10 are taken",
+      "min_valid_passes_per_cell": 6,
+      "statistics": "per cell: mean and standard deviation (population) of VH dB and of VV dB over the valid passes, and the number of valid passes"
+    },
+    "sensor_agreement_check": "for each orbit with passes of both platforms in the dry season: the median of (mean VH dB of the Sentinel-1A passes minus mean VH dB of the Sentinel-1C passes) over cells valid in both. Reported; an absolute median above 0.5 dB is flagged in the record. No correction is applied."
+  },
+
+  "method": {
+    "name": "M1-z",
+    "what": "a multi-temporal radar anomaly: each cell's VH backscatter on the flood day against its own dry-season mean and spread",
+    "steps": [
+      "z_vh = (VH_after_db - VH_dry_mean_db) / VH_dry_std_db",
+      "a cell is flagged when z_vh <= z_vh_max and VH_after_db <= vh_after_max_db",
+      "permanent water (ESA WorldCover 2021 class 80) is never flagged",
+      "terrain answer: a cell with HAND above hand_max_m, or a slope of 5 degrees or more, is answered 'not flooded' by terrain and never flagged",
+      "no answer: RTC no data after; fewer than 6 valid dry passes; VH dry spread above dry_spread_max_db; WorldCover class 50 (built-up) or 10 (tree cover) at HAND <= hand_max_m",
+      "flagged groups of fewer than 2 cells (800 m2, the 8 cells at 10 m of the October detector) are dropped, 8-connected"
+    ],
+    "hand": "height above nearest drainage from Copernicus DEM GLO-30, computed by the code of work package 4 (floodguard.flood_susceptibility_ml or the script that built its HAND feature), resampled to the 20 m grid by bilinear interpolation",
+    "slope": "from Copernicus DEM GLO-30 on the 20 m grid",
+    "tuned_parameters": {
+      "z_vh_max": [-1.0, -1.5, -2.0, -2.5, -3.0],
+      "vh_after_max_db": [-15.0, -16.0, -17.0, -18.0, -19.0, -20.0],
+      "hand_max_m": [5, 10, 15, 20],
+      "dry_spread_max_db": [2.0, 3.0, null]
+    },
+    "comparators": {
+      "required": ["frozen detector of R37 (VH after <= -18.46 dB with its cleaning), applied unchanged at 20 m", "the simple VH threshold of R37"],
+      "if_time_allows": ["UN-SPIDER practice, M1-literal and M1-v2, each with the dry-season mean as the image before"],
+      "external": ["the GFM ensemble flood extent of the same pass, where GFM holds that pass"],
+      "rule": "a comparator that does better is reported, never renamed as the result"
+    }
+  },
+
+  "tuning": {
+    "sets": [
+      {
+        "id": "sukhothai_theos2_20250730",
+        "event_pass": "the Sentinel-1A pass of 2025-07-31 23:08 UTC, relative orbit 62, the radar after-image of the R26 cross-check (43.6 h after THEOS-2)",
+        "shared_datatake": "the same Sentinel-1A datatake as test 2 and the GFM fallback of test 1 over Nan, about 180 km to the north; disclosed, not avoided, because this is the only THEOS-2 tuning set with team labels",
+        "dry_season": "2025-01-01 to 2025-04-30, relative orbit 62",
+        "reference": "the frozen THEOS-2 water rule v2 on the Sukhothai chip: a 20 m cell is water when at least half of its 2 m pixels are water, not compared when fewer than half of them hold a value",
+        "status": "seen: development data since R37"
+      },
+      {
+        "id": "mae_sai_20241022",
+        "event_pass": "the Sentinel-1A pass of 2024-10-21 23:16 UTC, relative orbit 135 (work package 3)",
+        "dry_season": "2024-01-01 to 2024-04-30, relative orbit 135",
+        "reference": "the UNOSAT/GISTDA layer CHIANGRAI_20241022_FloodExtent inside Mae Sai district, held at the local level (R33)",
+        "status": "seen: development data since R37"
+      },
+      {
+        "id": "chaiyaphum_20210928",
+        "event_pass": "the Sentinel-1B pass of 2021-09-27 23:00 UTC, relative orbit 164",
+        "dry_season": "2021-01-01 to 2021-04-30, relative orbit 164, Sentinel-1A and 1B",
+        "reference": "automated_optical_reference_v2.tif of the optical v2 final hold-out (Sentinel-2B of 2021-09-28, 4.9 h after the radar): code 1 is water, code 0 is dry, every other code is not compared",
+        "status": "its optical reference was used once for the optical v2 test; radar was never run there",
+        "drop_rule": "dropped before the freeze, with the reason recorded, if its reference cannot be read as recorded or its radar cannot be fetched"
+      }
+    ],
+    "never_read_before_the_freeze": [
+      "the contents of the JAXA files (they stay sealed as downloaded, hashes below)",
+      "any GFM value inside the frame",
+      "the two THEOS-2 Nan chips, their labels and their rule v2 water",
+      "any flag of the Nan frame computed with a candidate parameter set",
+      "the Ministry of Transport points set against any radar flag"
+    ],
+    "score": "the mean over the sets of IoU, a no-answer cell counted as not flagged, each set on its own compared cells",
+    "constraint": "the no-answer share of compared cells is at most 0.20 in every set",
+    "ties": "every set within 0.01 of the best score: take the most negative z_vh_max, then the most negative vh_after_max_db, then the smallest hand_max_m, then the smallest dry_spread_max_db (null counts as the largest)",
+    "flood_axis_of_the_ensemble": "lower flood = the selected parameters with z_vh_max minus 0.5; upper flood = z_vh_max plus 0.5; other parameters as selected",
+    "freeze_record": "outputs/nan_case/freeze_v1.json, with the selected parameters, the score table of every candidate and the SHA-256 of the code that applies the method"
+  },
+
+  "tests": {
+    "test_1_district_water": {
+      "reference": "the JAXA ALOS-2 Flood Proxy Map of 2025-07-28 (L-band, automatic analysis)",
+      "our_map": "M1-z (frozen) on the event pass nearest in time to JAXA's acquisition; the Sentinel-1C pass of 2025-07-28 11:21 UTC if JAXA's time cannot be read",
+      "usable_if": "the JAXA product defines where ALOS-2 looked (an observation-area geometry in its files, or scene footprints readable without a login from the scene identifiers it lists), and that area covers at least half of the frame's land outside permanent water",
+      "compared_cells": "frame land inside JAXA's observed area, outside permanent water; JAXA polygons rasterised by cell centre",
+      "measures": "IoU with no-answer cells counted as not flagged (the binding figure), IoU on answered cells, precision, recall, no-answer share; all by ESA WorldCover group (built-up, cropland, tree cover, other); a 95% interval from 1000 resamples of 2 km tiles",
+      "pass_if": "IoU (no answer counted as not flagged) >= 0.40 and no-answer share <= 0.20",
+      "second_date_report_only": "the JAXA map of 2025-07-19 against our map of the pass nearest to it",
+      "fallback_if_not_usable": "the GFM ensemble flood extent of the Sentinel-1A pass of 2025-07-31 23:08 UTC against our map of the same pass, on cells where GFM holds data outside its exclusion mask; the same pass_if; worded as agreement with a same-pass CEMS map, not independent (the precedent of v1a's GEOID test). The case reference date then becomes 2025-07-31."
+    },
+    "test_2_town_and_dry_control": {
+      "reference": "the frozen THEOS-2 water rule v2 on nan_chip_003 (20 m cell water when at least half of its 2 m pixels are water; not compared when fewer than half hold a value), and the 120 points the three team members labelled there (the label at least two of three gave)",
+      "our_map": "M1-z (frozen) on the Sentinel-1A pass of 2025-07-31 23:08 UTC (1 Aug 06:08 Thai time), 19 h after THEOS-2",
+      "measures": "IoU, precision, recall, by built-up and open land; share of labelled points our map agrees with",
+      "status": "seen image, new method: the chip was the held-out test of R37 and was labelled in R47; reported, not binding",
+      "dry_control": "nan_chip_001: our map flags at most 0.05 of its answered cells; part of the binding rule"
+    },
+    "test_3a_roads_on_theos2": "closure rule v1 at the central level on our map of the 2025-07-31 pass; inside nan_chip_003: the share of closed vehicle-graph edges with at least 20 m of centreline on THEOS-2 rule v2 water, as in R26; also the share of edges with 20 m on water that our map closes",
+    "test_3b_reported_cuts": {
+      "record": "the Ministry of Transport list of 31 July 2025 (impassable points during 1 to 31 July), the four points inside the frame: highway 1243 km 59+100 (Nam Muan, Wiang Sa); rural road Nan 4020 km 31+690 to 32+200 (Lai Nan, Wiang Sa); Nan 4020 km 10+500 to 10+900 (Na Pang, Phu Phiang); Nan 021 km 0+000 to 0+300 (Fai Kaeo, Phu Phiang)",
+      "placement": "each point placed on the OpenStreetMap way with that route reference, by milestone nodes where they exist, otherwise as the part of the route inside the named tambon; written to outputs/nan_case/consequence_points_v1.json and committed before any flag of the frame is computed",
+      "buffer_m": 300,
+      "found_if": "at least one vehicle-graph edge within the buffer is closed at the central level on at least one pass between 2025-07-20 00:00 and 2025-07-31 23:59 Thai time",
+      "measure": "recall over the four points; no precision (the list is a month's summary)"
+    },
+    "test_4_hospital": "Nan Hospital located from OpenStreetMap: is any cell within 200 m of it flagged, or any edge within 200 m closed at the central level, on the passes of 2025-07-22 and 2025-07-26 (Thai time)? Set beside news reports of the hospital flooding, cited. A check only.",
+    "test_5_decisions": {
+      "classes": "the class each tambon gets from our map (binding or would-be) against the class from case N2 (the test 1 reference as provided, put through the same chain): pass if at least 70% of tambons get the same class",
+      "stability": "the ensemble below: a class holds when kept in at least 60% of the cells (guardrail GR8 of v1a)"
+    }
+  },
+
+  "binding_rule": {
+    "medium_confidence_when_all": [
+      "test 1 passes",
+      "the dry control passes",
+      "the tambon's no-answer share is at most 0.20",
+      "at least 0.80 of the tambon's land has an answer (radar or terrain)",
+      "the flood input's pass lies within 3 days of the case reference date",
+      "conditions C4 to C8 of confidence rule v1 pass as written"
+    ],
+    "otherwise": "low confidence: binding class E with the reason low_confidence; the would-be class is recorded beside it",
+    "case_reference_date": "2025-07-28 (the JAXA date); 2025-07-31 under the fallback",
+    "flood_input_of_case_N1": "our frozen map of the pass used in test 1",
+    "never": "accepted_fpps and accepted_action_class stay null; can_feed_decision_layer stays false"
+  },
+
+  "ensemble": {
+    "flood": ["lower", "central", "upper"],
+    "closure": ["strict", "central", "permissive"],
+    "population": ["WorldPop 2020", "WorldPop 2020 rescaled to the 2024 totals (if the rescale builder runs for the frame; otherwise this axis is dropped, the ensemble has 90 cells and the record says so)"],
+    "vulnerability_anchors": ["national P10/P90", "national P5/P95"],
+    "weights": "the five weight sets of v1b",
+    "cells": 180
+  },
+
+  "time_series": "the frozen central M1-z on every event pass: flooded area and residents inside per tambon and per pass, report-only, set beside a public gauge record of the Nan River if one is found",
+
+  "consequence_and_context_sources": {
+    "ministry_list": "Ministry of Transport summary of 31 July 2025 as reported by The Bangkok Insight, https://www.thebangkokinsight.com/news/politics-general/general/1528937/ (facts with citation)",
+    "hospital": "news reports of Nan Hospital flooding about 23 to 25 July 2025, to be located and cited",
+    "gauge": "a public record of the Nan River level for July 2025, if one is found"
+  },
+
+  "sealed_references": {
+    "folder": "<external data root>/proposal_execution/nan_case_v1/jaxa_sealed/",
+    "downloaded_utc": "2026-10-14T13:38:43Z",
+    "source": "https://sentinel-asia.org/EO/2025/article20250717TH/JAXA/",
+    "terms": "Sentinel Asia site policy: use for disaster management or scientific purposes without permission; no modification of the materials; credit 'Provided by JAXA'. The files stay unmodified outside Git; only figures computed from them are published.",
+    "files": {
+      "JAXA_20250728_FPM_ALOS2_Thailand_geojson.zip": "a0ce263e5a7235b90664704071533481bd5d16eabfca93bb0d450e5e431d9b3f",
+      "JAXA_20250728_FPM_ALOS2_Thailand_shapefile.zip": "15145de648f1086cfe8713d397f796fa404f77752aca40ed3831425a39a71416",
+      "JAXA_20250719_FPM_ALOS2_Thailand_geojson.zip": "20ff2fc101464da7c25f237db09dcb8cc25e0faca10052ccb682efd9b0e881ba",
+      "JAXA_20250719_FPM_ALOS2_Thailand_shapefile.zip": "bf7d146148afc36cdf7646f33ed6e2b74848d10fc99c46799a9837c0a436a55c"
+    }
+  },
+
+  "rights_in_git": {
+    "allowed": "records, figures and per-tambon tables of case N1 (Copernicus Sentinel data and open context); THEOS-2 derived figures (hackathon free use, originals outside Git); positions of the reported cuts (OpenStreetMap, ODbL)",
+    "not_in_git": "rasters; anything that reproduces a JAXA or GFM map; per-tambon results of case N2, which stay in the work folder"
+  },
+
+  "known_before_this_file": [
+    "GFM coverage was probed at one dry hill point of Wiang Sa (100.70 E, 18.49 N), no flood value inside the frame",
+    "the two THEOS-2 Nan chips were seen, labelled by three team members (R47) and used once as the held-out test of R37, where the October detectors flagged about a quarter of chip_003's water",
+    "the names, sizes and hashes of the JAXA files; the Sentinel Asia page says the 2025-07-28 map is an automatic ALOS-2 analysis",
+    "the Ministry of Transport list and news that Nan Hospital was flooded in late July",
+    "catalogue metadata: Sentinel-1 passes in the window, Sentinel-2 and Landsat cloud cover",
+    "the Sukhothai tuning pass and the Nan pass of 2025-07-31 23:08 UTC are one Sentinel-1A datatake"
+  ],
+
+  "not_done_in_this_run": [
+    "turning z-scores into probabilities (calibration)",
+    "a Studio web page for the case",
+    "DOPA registered ages for Nan",
+    "a rerun on a second machine",
+    "10 m maps across the frame"
+  ]
+}

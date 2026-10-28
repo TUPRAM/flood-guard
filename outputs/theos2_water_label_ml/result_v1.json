@@ -1,0 +1,2925 @@
+{
+  "schema": "floodguard.theos2_water_label_ml.result.v1",
+  "generated_at_utc": "2026-10-12T08:22:01Z",
+  "source_timestamp": "THEOS-2 2025-07-30T03:33Z (sukhothai) and 2025-07-31T03:51Z (chip_003, chip_001)",
+  "confidence_class": "low",
+  "confidence_basis": "Labels by three team members on the image the models read; three chips; no ground check.",
+  "operational_status": "non_operational",
+  "official_warning": false,
+  "can_feed_decision_layer": false,
+  "plan": {
+    "path": "docs/proposal_execution/theos2_water_label_ml_plan_v1.md",
+    "sha256": "b3b098c427532afece8f1984791a7c12e0b57e317b941ed7b637b3818dcffa59"
+  },
+  "what_this_is": "Four classifiers fitted on the team's labels of two chips and scored on the third, each chip left out once, beside the two hand-written rules on the same 300 points. Agreement with the readers of an image; no ground check.",
+  "inputs": {
+    "sample": {
+      "path": "outputs/theos2_water_labels/sample_v1.json",
+      "sha256": "448f8187b494e37a63dc7d1c89383731674ffb95563be5a7aaad3418ce2458ea"
+    },
+    "key": {
+      "path": "outputs/theos2_water_labels/key_v1.json",
+      "sha256": "9f5560c5b75e42f389decf131e45fb33626b54161007f6d8673d6529d9779ae4"
+    },
+    "labels": {
+      "callixta": {
+        "path": "outputs/theos2_water_labels/labels_callixta.json",
+        "sha256": "dffd41fb3fb4298bf1a79482c55d355e9fe5059ecf9282456ecf79afe38edc2a"
+      },
+      "putu": {
+        "path": "outputs/theos2_water_labels/labels_putu.json",
+        "sha256": "47e8e7b412d4c7423af5ffaab2b1a2b94870ce5a5fc1f0f4b2a6a47b3175ed01"
+      },
+      "rachmania": {
+        "path": "outputs/theos2_water_labels/labels_rachmania.json",
+        "sha256": "3743b27e628c776a424afbcb04d41a988173eb5013de3fe0c0b80de944ca98e6"
+      }
+    },
+    "rule_v2_freeze": {
+      "path": "outputs/theos2_water_rule_v2/freeze_v1.json",
+      "sha256": "f6cc40e1db8f37cc2fe5d3bebeb5d83e478211c3ceb364d89d2525d9ed3ae168"
+    },
+    "scenes_outside_git": {
+      "sukhothai": {
+        "file_name": "IMG_T2V_20250730033331_ORTHO_PMS_32-004.tif",
+        "sha256": "1d18c3091f57c784be34216585a1ba22d055471ef5c1ec434c57971c55112134",
+        "points": 120
+      },
+      "chip_003": {
+        "file_name": "IMG_T2V_20250731035100_ORTHO_PMS_32-003.tif",
+        "sha256": "b8dc72dd30f2149c9f4e76c083403c92b25d8a90e7353d58bdc1131ba867b74d",
+        "points": 120
+      },
+      "chip_001": {
+        "file_name": "IMG_T2V_20250731035100_ORTHO_PMS_32-001.tif",
+        "sha256": "89caf5946e6b25ef855dc95892bfeb4e45b7a67dfce7539465d8a9a0dc1961b5",
+        "points": 60
+      }
+    }
+  },
+  "scoring_label": "The label at least two of the three gave, where it is water or not water.",
+  "points": {
+    "all": 300,
+    "with_a_scoring_label": 275,
+    "labelled_water": 126
+  },
+  "features": [
+    "blue",
+    "green",
+    "red",
+    "nir",
+    "green_nir_index",
+    "red_nir_index",
+    "blue_nir_index",
+    "brightness",
+    "nir_mean_5x5",
+    "nir_sd_5x5",
+    "red_nir_index_mean_5x5",
+    "red_nir_index_sd_5x5"
+  ],
+  "models": {
+    "one_index": "logistic regression on red_nir_index alone",
+    "logistic": "logistic regression on the twelve features, standardised, C = 1",
+    "forest": "random forest, 500 trees, at least 5 points in a leaf",
+    "boosting": "gradient-boosted trees (histogram), depth 3, 200 rounds, learning rate 0.1",
+    "seed": 20261012
+  },
+  "folds": {
+    "chip_001": {
+      "points_fitted_on": 216,
+      "of_them_water": 125,
+      "points_predicted": 60
+    },
+    "chip_003": {
+      "points_fitted_on": 166,
+      "of_them_water": 61,
+      "points_predicted": 120
+    },
+    "sukhothai": {
+      "points_fitted_on": 168,
+      "of_them_water": 66,
+      "points_predicted": 120
+    }
+  },
+  "rules_on_the_same_points": {
+    "rule_v1": {
+      "sukhothai": {
+        "points_scored": 107,
+        "share_answered_and_alike": {
+          "estimate": 0.7917,
+          "standard_error": 0.03,
+          "interval_95": [
+            0.733,
+            0.8504
+          ],
+          "points": 107,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        },
+        "share_of_map_water_labelled_water": {
+          "estimate": 0.9824,
+          "standard_error": 0.0176,
+          "interval_95": [
+            0.9479,
+            1.0
+          ],
+          "points": 107,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        },
+        "share_of_labelled_water_the_map_finds": {
+          "estimate": 0.7365,
+          "standard_error": 0.0485,
+          "interval_95": [
+            0.6415,
+            0.8316
+          ],
+          "points": 107,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        }
+      },
+      "chip_003": {
+        "points_scored": 109,
+        "share_answered_and_alike": {
+          "estimate": 0.5978,
+          "standard_error": 0.0355,
+          "interval_95": [
+            0.5283,
+            0.6673
+          ],
+          "points": 109,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        },
+        "share_of_map_water_labelled_water": {
+          "estimate": 0.8261,
+          "standard_error": 0.0608,
+          "interval_95": [
+            0.7069,
+            0.9452
+          ],
+          "points": 109,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        },
+        "share_of_labelled_water_the_map_finds": {
+          "estimate": 0.6782,
+          "standard_error": 0.0425,
+          "interval_95": [
+            0.5949,
+            0.7616
+          ],
+          "points": 109,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        }
+      },
+      "chip_001": {
+        "points_scored": 59,
+        "share_answered_and_alike": {
+          "estimate": 0.781,
+          "standard_error": 0.0123,
+          "interval_95": [
+            0.7569,
+            0.8051
+          ],
+          "points": 59,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        },
+        "share_of_map_water_labelled_water": {
+          "estimate": 0.0532,
+          "standard_error": 0.0532,
+          "interval_95": [
+            0.0,
+            0.1574
+          ],
+          "points": 59,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        },
+        "share_of_labelled_water_the_map_finds": {
+          "estimate": 1.0,
+          "standard_error": 0.0,
+          "interval_95": [
+            1.0,
+            1.0
+          ],
+          "points": 59,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        }
+      },
+      "reference_chips_together": {
+        "points_scored": 216,
+        "share_answered_and_alike": {
+          "estimate": 0.6948,
+          "standard_error": 0.0232,
+          "interval_95": [
+            0.6493,
+            0.7403
+          ],
+          "points": 216,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        },
+        "share_of_map_water_labelled_water": {
+          "estimate": 0.8994,
+          "standard_error": 0.0333,
+          "interval_95": [
+            0.834,
+            0.9647
+          ],
+          "points": 216,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        },
+        "share_of_labelled_water_the_map_finds": {
+          "estimate": 0.7069,
+          "standard_error": 0.0319,
+          "interval_95": [
+            0.6445,
+            0.7693
+          ],
+          "points": 216,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        }
+      },
+      "three_chips_together": {
+        "points_scored": 275,
+        "share_answered_and_alike": {
+          "estimate": 0.7235,
+          "standard_error": 0.016,
+          "interval_95": [
+            0.6921,
+            0.7549
+          ],
+          "points": 275,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        },
+        "share_of_map_water_labelled_water": {
+          "estimate": 0.6928,
+          "standard_error": 0.0283,
+          "interval_95": [
+            0.6372,
+            0.7483
+          ],
+          "points": 275,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        },
+        "share_of_labelled_water_the_map_finds": {
+          "estimate": 0.7108,
+          "standard_error": 0.0318,
+          "interval_95": [
+            0.6485,
+            0.7731
+          ],
+          "points": 275,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        }
+      }
+    },
+    "rule_v2": {
+      "sukhothai": {
+        "points_scored": 107,
+        "share_answered_and_alike": {
+          "estimate": 0.8211,
+          "standard_error": 0.0361,
+          "interval_95": [
+            0.7504,
+            0.8918
+          ],
+          "points": 107,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        },
+        "share_of_map_water_labelled_water": {
+          "estimate": 0.8198,
+          "standard_error": 0.0441,
+          "interval_95": [
+            0.7333,
+            0.9063
+          ],
+          "points": 107,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        },
+        "share_of_labelled_water_the_map_finds": {
+          "estimate": 0.7694,
+          "standard_error": 0.0511,
+          "interval_95": [
+            0.6692,
+            0.8695
+          ],
+          "points": 107,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        }
+      },
+      "chip_003": {
+        "points_scored": 109,
+        "share_answered_and_alike": {
+          "estimate": 0.7354,
+          "standard_error": 0.0423,
+          "interval_95": [
+            0.6524,
+            0.8183
+          ],
+          "points": 109,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        },
+        "share_of_map_water_labelled_water": {
+          "estimate": 0.9392,
+          "standard_error": 0.0337,
+          "interval_95": [
+            0.8731,
+            1.0
+          ],
+          "points": 109,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        },
+        "share_of_labelled_water_the_map_finds": {
+          "estimate": 0.6496,
+          "standard_error": 0.055,
+          "interval_95": [
+            0.5419,
+            0.7573
+          ],
+          "points": 109,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        }
+      },
+      "chip_001": {
+        "points_scored": 59,
+        "share_answered_and_alike": {
+          "estimate": 0.9877,
+          "standard_error": 0.0123,
+          "interval_95": [
+            0.9636,
+            1.0
+          ],
+          "points": 59,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        },
+        "share_of_map_water_labelled_water": {
+          "estimate": null,
+          "standard_error": null,
+          "interval_95": null,
+          "points": 59,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        },
+        "share_of_labelled_water_the_map_finds": {
+          "estimate": 0.0,
+          "standard_error": 0.0,
+          "interval_95": [
+            0.0,
+            0.0
+          ],
+          "points": 59,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        }
+      },
+      "reference_chips_together": {
+        "points_scored": 216,
+        "share_answered_and_alike": {
+          "estimate": 0.7782,
+          "standard_error": 0.0278,
+          "interval_95": [
+            0.7237,
+            0.8328
+          ],
+          "points": 216,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        },
+        "share_of_map_water_labelled_water": {
+          "estimate": 0.8808,
+          "standard_error": 0.029,
+          "interval_95": [
+            0.824,
+            0.9376
+          ],
+          "points": 216,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        },
+        "share_of_labelled_water_the_map_finds": {
+          "estimate": 0.6992,
+          "standard_error": 0.0379,
+          "interval_95": [
+            0.6249,
+            0.7734
+          ],
+          "points": 216,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        }
+      },
+      "three_chips_together": {
+        "points_scored": 275,
+        "share_answered_and_alike": {
+          "estimate": 0.8481,
+          "standard_error": 0.019,
+          "interval_95": [
+            0.8108,
+            0.8853
+          ],
+          "points": 275,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        },
+        "share_of_map_water_labelled_water": {
+          "estimate": 0.8808,
+          "standard_error": 0.029,
+          "interval_95": [
+            0.824,
+            0.9376
+          ],
+          "points": 275,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        },
+        "share_of_labelled_water_the_map_finds": {
+          "estimate": 0.6913,
+          "standard_error": 0.0381,
+          "interval_95": [
+            0.6166,
+            0.766
+          ],
+          "points": 275,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        }
+      }
+    }
+  },
+  "models_scored": {
+    "area_weighted": {
+      "one_index": {
+        "sukhothai": {
+          "points_scored": 107,
+          "share_answered_and_alike": {
+            "estimate": 0.8212,
+            "standard_error": 0.0339,
+            "interval_95": [
+              0.7549,
+              0.8876
+            ],
+            "points": 107,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_map_water_labelled_water": {
+            "estimate": 0.8484,
+            "standard_error": 0.0342,
+            "interval_95": [
+              0.7814,
+              0.9153
+            ],
+            "points": 107,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_labelled_water_the_map_finds": {
+            "estimate": 0.7312,
+            "standard_error": 0.0513,
+            "interval_95": [
+              0.6306,
+              0.8318
+            ],
+            "points": 107,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "minus_rule_v2": {
+            "estimate": 0.0001,
+            "standard_error": 0.0189,
+            "interval_95": [
+              -0.0369,
+              0.0371
+            ],
+            "points": 107,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          }
+        },
+        "chip_003": {
+          "points_scored": 109,
+          "share_answered_and_alike": {
+            "estimate": 0.3498,
+            "standard_error": 0.0355,
+            "interval_95": [
+              0.2803,
+              0.4193
+            ],
+            "points": 109,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_map_water_labelled_water": {
+            "estimate": null,
+            "standard_error": null,
+            "interval_95": null,
+            "points": 109,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_labelled_water_the_map_finds": {
+            "estimate": 0.0,
+            "standard_error": 0.0,
+            "interval_95": [
+              0.0,
+              0.0
+            ],
+            "points": 109,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "minus_rule_v2": {
+            "estimate": -0.3855,
+            "standard_error": 0.0459,
+            "interval_95": [
+              -0.4755,
+              -0.2955
+            ],
+            "points": 109,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          }
+        },
+        "chip_001": {
+          "points_scored": 59,
+          "share_answered_and_alike": {
+            "estimate": 0.6054,
+            "standard_error": 0.0525,
+            "interval_95": [
+              0.5026,
+              0.7082
+            ],
+            "points": 59,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_map_water_labelled_water": {
+            "estimate": 0.0302,
+            "standard_error": 0.0305,
+            "interval_95": [
+              0.0,
+              0.0899
+            ],
+            "points": 59,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_labelled_water_the_map_finds": {
+            "estimate": 1.0,
+            "standard_error": 0.0,
+            "interval_95": [
+              1.0,
+              1.0
+            ],
+            "points": 59,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "minus_rule_v2": {
+            "estimate": -0.3823,
+            "standard_error": 0.0566,
+            "interval_95": [
+              -0.4932,
+              -0.2714
+            ],
+            "points": 59,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          }
+        },
+        "reference_chips_together": {
+          "points_scored": 216,
+          "share_answered_and_alike": {
+            "estimate": 0.5856,
+            "standard_error": 0.0245,
+            "interval_95": [
+              0.5376,
+              0.6337
+            ],
+            "points": 216,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_map_water_labelled_water": {
+            "estimate": 0.8484,
+            "standard_error": 0.0342,
+            "interval_95": [
+              0.7814,
+              0.9153
+            ],
+            "points": 216,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_labelled_water_the_map_finds": {
+            "estimate": 0.2982,
+            "standard_error": 0.0149,
+            "interval_95": [
+              0.269,
+              0.3274
+            ],
+            "points": 216,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "minus_rule_v2": {
+            "estimate": -0.1926,
+            "standard_error": 0.0248,
+            "interval_95": [
+              -0.2412,
+              -0.144
+            ],
+            "points": 216,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          }
+        },
+        "three_chips_together": {
+          "points_scored": 275,
+          "share_answered_and_alike": {
+            "estimate": 0.5922,
+            "standard_error": 0.0239,
+            "interval_95": [
+              0.5453,
+              0.6391
+            ],
+            "points": 275,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_map_water_labelled_water": {
+            "estimate": 0.4285,
+            "standard_error": 0.0338,
+            "interval_95": [
+              0.3623,
+              0.4947
+            ],
+            "points": 275,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_labelled_water_the_map_finds": {
+            "estimate": 0.306,
+            "standard_error": 0.0169,
+            "interval_95": [
+              0.273,
+              0.339
+            ],
+            "points": 275,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "minus_rule_v2": {
+            "estimate": -0.2559,
+            "standard_error": 0.0251,
+            "interval_95": [
+              -0.3051,
+              -0.2067
+            ],
+            "points": 275,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          }
+        }
+      },
+      "logistic": {
+        "sukhothai": {
+          "points_scored": 107,
+          "share_answered_and_alike": {
+            "estimate": 0.5654,
+            "standard_error": 0.0438,
+            "interval_95": [
+              0.4795,
+              0.6513
+            ],
+            "points": 107,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_map_water_labelled_water": {
+            "estimate": 0.5489,
+            "standard_error": 0.1335,
+            "interval_95": [
+              0.2873,
+              0.8104
+            ],
+            "points": 107,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_labelled_water_the_map_finds": {
+            "estimate": 0.1624,
+            "standard_error": 0.052,
+            "interval_95": [
+              0.0604,
+              0.2644
+            ],
+            "points": 107,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "minus_rule_v2": {
+            "estimate": -0.2557,
+            "standard_error": 0.0322,
+            "interval_95": [
+              -0.3188,
+              -0.1926
+            ],
+            "points": 107,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          }
+        },
+        "chip_003": {
+          "points_scored": 109,
+          "share_answered_and_alike": {
+            "estimate": 0.348,
+            "standard_error": 0.0377,
+            "interval_95": [
+              0.274,
+              0.422
+            ],
+            "points": 109,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_map_water_labelled_water": {
+            "estimate": 0.4957,
+            "standard_error": 0.1045,
+            "interval_95": [
+              0.2909,
+              0.7005
+            ],
+            "points": 109,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_labelled_water_the_map_finds": {
+            "estimate": 0.1584,
+            "standard_error": 0.0413,
+            "interval_95": [
+              0.0774,
+              0.2394
+            ],
+            "points": 109,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "minus_rule_v2": {
+            "estimate": -0.3873,
+            "standard_error": 0.0536,
+            "interval_95": [
+              -0.4924,
+              -0.2822
+            ],
+            "points": 109,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          }
+        },
+        "chip_001": {
+          "points_scored": 59,
+          "share_answered_and_alike": {
+            "estimate": 0.3837,
+            "standard_error": 0.0716,
+            "interval_95": [
+              0.2434,
+              0.5241
+            ],
+            "points": 59,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_map_water_labelled_water": {
+            "estimate": 0.0,
+            "standard_error": 0.0,
+            "interval_95": [
+              0.0,
+              0.0
+            ],
+            "points": 59,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_labelled_water_the_map_finds": {
+            "estimate": 0.0,
+            "standard_error": 0.0,
+            "interval_95": [
+              0.0,
+              0.0
+            ],
+            "points": 59,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "minus_rule_v2": {
+            "estimate": -0.604,
+            "standard_error": 0.0726,
+            "interval_95": [
+              -0.7463,
+              -0.4617
+            ],
+            "points": 59,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          }
+        },
+        "reference_chips_together": {
+          "points_scored": 216,
+          "share_answered_and_alike": {
+            "estimate": 0.4568,
+            "standard_error": 0.0289,
+            "interval_95": [
+              0.4001,
+              0.5135
+            ],
+            "points": 216,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_map_water_labelled_water": {
+            "estimate": 0.5164,
+            "standard_error": 0.0821,
+            "interval_95": [
+              0.3555,
+              0.6772
+            ],
+            "points": 216,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_labelled_water_the_map_finds": {
+            "estimate": 0.16,
+            "standard_error": 0.0324,
+            "interval_95": [
+              0.0966,
+              0.2235
+            ],
+            "points": 216,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "minus_rule_v2": {
+            "estimate": -0.3215,
+            "standard_error": 0.0312,
+            "interval_95": [
+              -0.3827,
+              -0.2603
+            ],
+            "points": 216,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          }
+        },
+        "three_chips_together": {
+          "points_scored": 275,
+          "share_answered_and_alike": {
+            "estimate": 0.4324,
+            "standard_error": 0.0307,
+            "interval_95": [
+              0.3723,
+              0.4926
+            ],
+            "points": 275,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_map_water_labelled_water": {
+            "estimate": 0.1861,
+            "standard_error": 0.0357,
+            "interval_95": [
+              0.1161,
+              0.256
+            ],
+            "points": 275,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_labelled_water_the_map_finds": {
+            "estimate": 0.1583,
+            "standard_error": 0.0321,
+            "interval_95": [
+              0.0954,
+              0.2211
+            ],
+            "points": 275,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "minus_rule_v2": {
+            "estimate": -0.4156,
+            "standard_error": 0.0319,
+            "interval_95": [
+              -0.4781,
+              -0.3531
+            ],
+            "points": 275,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          }
+        }
+      },
+      "forest": {
+        "sukhothai": {
+          "points_scored": 107,
+          "share_answered_and_alike": {
+            "estimate": 0.651,
+            "standard_error": 0.0475,
+            "interval_95": [
+              0.5579,
+              0.744
+            ],
+            "points": 107,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_map_water_labelled_water": {
+            "estimate": 0.7496,
+            "standard_error": 0.1028,
+            "interval_95": [
+              0.5482,
+              0.9511
+            ],
+            "points": 107,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_labelled_water_the_map_finds": {
+            "estimate": 0.3305,
+            "standard_error": 0.0688,
+            "interval_95": [
+              0.1956,
+              0.4654
+            ],
+            "points": 107,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "minus_rule_v2": {
+            "estimate": -0.1701,
+            "standard_error": 0.0485,
+            "interval_95": [
+              -0.2652,
+              -0.075
+            ],
+            "points": 107,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          }
+        },
+        "chip_003": {
+          "points_scored": 109,
+          "share_answered_and_alike": {
+            "estimate": 0.3498,
+            "standard_error": 0.0355,
+            "interval_95": [
+              0.2803,
+              0.4193
+            ],
+            "points": 109,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_map_water_labelled_water": {
+            "estimate": null,
+            "standard_error": null,
+            "interval_95": null,
+            "points": 109,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_labelled_water_the_map_finds": {
+            "estimate": 0.0,
+            "standard_error": 0.0,
+            "interval_95": [
+              0.0,
+              0.0
+            ],
+            "points": 109,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "minus_rule_v2": {
+            "estimate": -0.3855,
+            "standard_error": 0.0459,
+            "interval_95": [
+              -0.4755,
+              -0.2955
+            ],
+            "points": 109,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          }
+        },
+        "chip_001": {
+          "points_scored": 59,
+          "share_answered_and_alike": {
+            "estimate": 0.5825,
+            "standard_error": 0.0513,
+            "interval_95": [
+              0.4819,
+              0.6831
+            ],
+            "points": 59,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_map_water_labelled_water": {
+            "estimate": 0.0286,
+            "standard_error": 0.0288,
+            "interval_95": [
+              0.0,
+              0.0851
+            ],
+            "points": 59,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_labelled_water_the_map_finds": {
+            "estimate": 1.0,
+            "standard_error": 0.0,
+            "interval_95": [
+              1.0,
+              1.0
+            ],
+            "points": 59,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "minus_rule_v2": {
+            "estimate": -0.4052,
+            "standard_error": 0.0556,
+            "interval_95": [
+              -0.5142,
+              -0.2962
+            ],
+            "points": 59,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          }
+        },
+        "reference_chips_together": {
+          "points_scored": 216,
+          "share_answered_and_alike": {
+            "estimate": 0.5005,
+            "standard_error": 0.0296,
+            "interval_95": [
+              0.4424,
+              0.5585
+            ],
+            "points": 216,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_map_water_labelled_water": {
+            "estimate": 0.7496,
+            "standard_error": 0.1028,
+            "interval_95": [
+              0.5482,
+              0.9511
+            ],
+            "points": 216,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_labelled_water_the_map_finds": {
+            "estimate": 0.1348,
+            "standard_error": 0.0273,
+            "interval_95": [
+              0.0813,
+              0.1882
+            ],
+            "points": 216,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "minus_rule_v2": {
+            "estimate": -0.2778,
+            "standard_error": 0.0334,
+            "interval_95": [
+              -0.3433,
+              -0.2123
+            ],
+            "points": 216,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          }
+        },
+        "three_chips_together": {
+          "points_scored": 275,
+          "share_answered_and_alike": {
+            "estimate": 0.5278,
+            "standard_error": 0.0261,
+            "interval_95": [
+              0.4766,
+              0.579
+            ],
+            "points": 275,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_map_water_labelled_water": {
+            "estimate": 0.2556,
+            "standard_error": 0.046,
+            "interval_95": [
+              0.1654,
+              0.3457
+            ],
+            "points": 275,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_labelled_water_the_map_finds": {
+            "estimate": 0.1444,
+            "standard_error": 0.0287,
+            "interval_95": [
+              0.0882,
+              0.2005
+            ],
+            "points": 275,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "minus_rule_v2": {
+            "estimate": -0.3203,
+            "standard_error": 0.029,
+            "interval_95": [
+              -0.3771,
+              -0.2635
+            ],
+            "points": 275,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          }
+        }
+      },
+      "boosting": {
+        "sukhothai": {
+          "points_scored": 107,
+          "share_answered_and_alike": {
+            "estimate": 0.6171,
+            "standard_error": 0.0469,
+            "interval_95": [
+              0.5252,
+              0.7089
+            ],
+            "points": 107,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_map_water_labelled_water": {
+            "estimate": 0.6805,
+            "standard_error": 0.125,
+            "interval_95": [
+              0.4355,
+              0.9254
+            ],
+            "points": 107,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_labelled_water_the_map_finds": {
+            "estimate": 0.2722,
+            "standard_error": 0.0723,
+            "interval_95": [
+              0.1304,
+              0.4139
+            ],
+            "points": 107,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "minus_rule_v2": {
+            "estimate": -0.204,
+            "standard_error": 0.0524,
+            "interval_95": [
+              -0.3067,
+              -0.1013
+            ],
+            "points": 107,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          }
+        },
+        "chip_003": {
+          "points_scored": 109,
+          "share_answered_and_alike": {
+            "estimate": 0.3681,
+            "standard_error": 0.037,
+            "interval_95": [
+              0.2957,
+              0.4406
+            ],
+            "points": 109,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_map_water_labelled_water": {
+            "estimate": 0.6258,
+            "standard_error": 0.1689,
+            "interval_95": [
+              0.2947,
+              0.9569
+            ],
+            "points": 109,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_labelled_water_the_map_finds": {
+            "estimate": 0.0701,
+            "standard_error": 0.0256,
+            "interval_95": [
+              0.0199,
+              0.1202
+            ],
+            "points": 109,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "minus_rule_v2": {
+            "estimate": -0.3672,
+            "standard_error": 0.0489,
+            "interval_95": [
+              -0.463,
+              -0.2714
+            ],
+            "points": 109,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          }
+        },
+        "chip_001": {
+          "points_scored": 59,
+          "share_answered_and_alike": {
+            "estimate": 0.5894,
+            "standard_error": 0.0583,
+            "interval_95": [
+              0.4752,
+              0.7036
+            ],
+            "points": 59,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_map_water_labelled_water": {
+            "estimate": 0.0291,
+            "standard_error": 0.0291,
+            "interval_95": [
+              0.0,
+              0.0861
+            ],
+            "points": 59,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_labelled_water_the_map_finds": {
+            "estimate": 1.0,
+            "standard_error": 0.0,
+            "interval_95": [
+              1.0,
+              1.0
+            ],
+            "points": 59,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "minus_rule_v2": {
+            "estimate": -0.3983,
+            "standard_error": 0.0612,
+            "interval_95": [
+              -0.5182,
+              -0.2784
+            ],
+            "points": 59,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          }
+        },
+        "reference_chips_together": {
+          "points_scored": 216,
+          "share_answered_and_alike": {
+            "estimate": 0.4927,
+            "standard_error": 0.0298,
+            "interval_95": [
+              0.4342,
+              0.5512
+            ],
+            "points": 216,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_map_water_labelled_water": {
+            "estimate": 0.6647,
+            "standard_error": 0.1012,
+            "interval_95": [
+              0.4663,
+              0.8631
+            ],
+            "points": 216,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_labelled_water_the_map_finds": {
+            "estimate": 0.1525,
+            "standard_error": 0.0334,
+            "interval_95": [
+              0.087,
+              0.218
+            ],
+            "points": 216,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "minus_rule_v2": {
+            "estimate": -0.2856,
+            "standard_error": 0.0358,
+            "interval_95": [
+              -0.3558,
+              -0.2154
+            ],
+            "points": 216,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          }
+        },
+        "three_chips_together": {
+          "points_scored": 275,
+          "share_answered_and_alike": {
+            "estimate": 0.5249,
+            "standard_error": 0.0278,
+            "interval_95": [
+              0.4704,
+              0.5794
+            ],
+            "points": 275,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_map_water_labelled_water": {
+            "estimate": 0.2664,
+            "standard_error": 0.0518,
+            "interval_95": [
+              0.1649,
+              0.3678
+            ],
+            "points": 275,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_labelled_water_the_map_finds": {
+            "estimate": 0.1619,
+            "standard_error": 0.0343,
+            "interval_95": [
+              0.0946,
+              0.2291
+            ],
+            "points": 275,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "minus_rule_v2": {
+            "estimate": -0.3231,
+            "standard_error": 0.0314,
+            "interval_95": [
+              -0.3846,
+              -0.2616
+            ],
+            "points": 275,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          }
+        }
+      }
+    },
+    "every_point_the_same": {
+      "one_index": {
+        "sukhothai": {
+          "points_scored": 107,
+          "share_answered_and_alike": {
+            "estimate": 0.8297,
+            "standard_error": 0.034,
+            "interval_95": [
+              0.7631,
+              0.8963
+            ],
+            "points": 107,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_map_water_labelled_water": {
+            "estimate": 0.8674,
+            "standard_error": 0.0361,
+            "interval_95": [
+              0.7966,
+              0.9382
+            ],
+            "points": 107,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_labelled_water_the_map_finds": {
+            "estimate": 0.7312,
+            "standard_error": 0.0513,
+            "interval_95": [
+              0.6306,
+              0.8318
+            ],
+            "points": 107,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "minus_rule_v2": {
+            "estimate": 0.0086,
+            "standard_error": 0.0207,
+            "interval_95": [
+              -0.032,
+              0.0492
+            ],
+            "points": 107,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          }
+        },
+        "chip_003": {
+          "points_scored": 109,
+          "share_answered_and_alike": {
+            "estimate": 0.3498,
+            "standard_error": 0.0355,
+            "interval_95": [
+              0.2803,
+              0.4193
+            ],
+            "points": 109,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_map_water_labelled_water": {
+            "estimate": null,
+            "standard_error": null,
+            "interval_95": null,
+            "points": 109,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_labelled_water_the_map_finds": {
+            "estimate": 0.0,
+            "standard_error": 0.0,
+            "interval_95": [
+              0.0,
+              0.0
+            ],
+            "points": 109,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "minus_rule_v2": {
+            "estimate": -0.3855,
+            "standard_error": 0.0459,
+            "interval_95": [
+              -0.4755,
+              -0.2955
+            ],
+            "points": 109,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          }
+        },
+        "chip_001": {
+          "points_scored": 59,
+          "share_answered_and_alike": {
+            "estimate": 0.6054,
+            "standard_error": 0.0525,
+            "interval_95": [
+              0.5026,
+              0.7082
+            ],
+            "points": 59,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_map_water_labelled_water": {
+            "estimate": 0.0302,
+            "standard_error": 0.0305,
+            "interval_95": [
+              0.0,
+              0.0899
+            ],
+            "points": 59,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_labelled_water_the_map_finds": {
+            "estimate": 1.0,
+            "standard_error": 0.0,
+            "interval_95": [
+              1.0,
+              1.0
+            ],
+            "points": 59,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "minus_rule_v2": {
+            "estimate": -0.3823,
+            "standard_error": 0.0566,
+            "interval_95": [
+              -0.4932,
+              -0.2714
+            ],
+            "points": 59,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          }
+        },
+        "reference_chips_together": {
+          "points_scored": 216,
+          "share_answered_and_alike": {
+            "estimate": 0.5898,
+            "standard_error": 0.0246,
+            "interval_95": [
+              0.5417,
+              0.638
+            ],
+            "points": 216,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_map_water_labelled_water": {
+            "estimate": 0.8674,
+            "standard_error": 0.0361,
+            "interval_95": [
+              0.7966,
+              0.9382
+            ],
+            "points": 216,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_labelled_water_the_map_finds": {
+            "estimate": 0.2982,
+            "standard_error": 0.0149,
+            "interval_95": [
+              0.269,
+              0.3274
+            ],
+            "points": 216,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "minus_rule_v2": {
+            "estimate": -0.1884,
+            "standard_error": 0.0252,
+            "interval_95": [
+              -0.2378,
+              -0.139
+            ],
+            "points": 216,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          }
+        },
+        "three_chips_together": {
+          "points_scored": 275,
+          "share_answered_and_alike": {
+            "estimate": 0.595,
+            "standard_error": 0.024,
+            "interval_95": [
+              0.5481,
+              0.642
+            ],
+            "points": 275,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_map_water_labelled_water": {
+            "estimate": 0.4331,
+            "standard_error": 0.0344,
+            "interval_95": [
+              0.3656,
+              0.5006
+            ],
+            "points": 275,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_labelled_water_the_map_finds": {
+            "estimate": 0.306,
+            "standard_error": 0.0169,
+            "interval_95": [
+              0.273,
+              0.339
+            ],
+            "points": 275,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "minus_rule_v2": {
+            "estimate": -0.253,
+            "standard_error": 0.0253,
+            "interval_95": [
+              -0.3026,
+              -0.2034
+            ],
+            "points": 275,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          }
+        }
+      },
+      "logistic": {
+        "sukhothai": {
+          "points_scored": 107,
+          "share_answered_and_alike": {
+            "estimate": 0.638,
+            "standard_error": 0.0485,
+            "interval_95": [
+              0.543,
+              0.733
+            ],
+            "points": 107,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_map_water_labelled_water": {
+            "estimate": 0.6815,
+            "standard_error": 0.1002,
+            "interval_95": [
+              0.4852,
+              0.8778
+            ],
+            "points": 107,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_labelled_water_the_map_finds": {
+            "estimate": 0.3588,
+            "standard_error": 0.0756,
+            "interval_95": [
+              0.2106,
+              0.5069
+            ],
+            "points": 107,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "minus_rule_v2": {
+            "estimate": -0.1831,
+            "standard_error": 0.0447,
+            "interval_95": [
+              -0.2707,
+              -0.0955
+            ],
+            "points": 107,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          }
+        },
+        "chip_003": {
+          "points_scored": 109,
+          "share_answered_and_alike": {
+            "estimate": 0.3739,
+            "standard_error": 0.0391,
+            "interval_95": [
+              0.2973,
+              0.4506
+            ],
+            "points": 109,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_map_water_labelled_water": {
+            "estimate": 0.7929,
+            "standard_error": 0.1957,
+            "interval_95": [
+              0.4093,
+              1.0
+            ],
+            "points": 109,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_labelled_water_the_map_finds": {
+            "estimate": 0.0502,
+            "standard_error": 0.0299,
+            "interval_95": [
+              0.0,
+              0.1088
+            ],
+            "points": 109,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "minus_rule_v2": {
+            "estimate": -0.3614,
+            "standard_error": 0.0511,
+            "interval_95": [
+              -0.4616,
+              -0.2612
+            ],
+            "points": 109,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          }
+        },
+        "chip_001": {
+          "points_scored": 59,
+          "share_answered_and_alike": {
+            "estimate": 0.5999,
+            "standard_error": 0.0432,
+            "interval_95": [
+              0.5153,
+              0.6845
+            ],
+            "points": 59,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_map_water_labelled_water": {
+            "estimate": 0.0298,
+            "standard_error": 0.03,
+            "interval_95": [
+              0.0,
+              0.0886
+            ],
+            "points": 59,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_labelled_water_the_map_finds": {
+            "estimate": 1.0,
+            "standard_error": 0.0,
+            "interval_95": [
+              1.0,
+              1.0
+            ],
+            "points": 59,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "minus_rule_v2": {
+            "estimate": -0.3878,
+            "standard_error": 0.0481,
+            "interval_95": [
+              -0.4821,
+              -0.2935
+            ],
+            "points": 59,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          }
+        },
+        "reference_chips_together": {
+          "points_scored": 216,
+          "share_answered_and_alike": {
+            "estimate": 0.506,
+            "standard_error": 0.0311,
+            "interval_95": [
+              0.445,
+              0.567
+            ],
+            "points": 216,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_map_water_labelled_water": {
+            "estimate": 0.6981,
+            "standard_error": 0.0913,
+            "interval_95": [
+              0.5192,
+              0.877
+            ],
+            "points": 216,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_labelled_water_the_map_finds": {
+            "estimate": 0.176,
+            "standard_error": 0.036,
+            "interval_95": [
+              0.1054,
+              0.2467
+            ],
+            "points": 216,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "minus_rule_v2": {
+            "estimate": -0.2722,
+            "standard_error": 0.034,
+            "interval_95": [
+              -0.3388,
+              -0.2056
+            ],
+            "points": 216,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          }
+        },
+        "three_chips_together": {
+          "points_scored": 275,
+          "share_answered_and_alike": {
+            "estimate": 0.5373,
+            "standard_error": 0.0253,
+            "interval_95": [
+              0.4878,
+              0.5868
+            ],
+            "points": 275,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_map_water_labelled_water": {
+            "estimate": 0.2983,
+            "standard_error": 0.0503,
+            "interval_95": [
+              0.1997,
+              0.3968
+            ],
+            "points": 275,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_labelled_water_the_map_finds": {
+            "estimate": 0.1852,
+            "standard_error": 0.0368,
+            "interval_95": [
+              0.1131,
+              0.2572
+            ],
+            "points": 275,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "minus_rule_v2": {
+            "estimate": -0.3108,
+            "standard_error": 0.0277,
+            "interval_95": [
+              -0.3651,
+              -0.2565
+            ],
+            "points": 275,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          }
+        }
+      },
+      "forest": {
+        "sukhothai": {
+          "points_scored": 107,
+          "share_answered_and_alike": {
+            "estimate": 0.647,
+            "standard_error": 0.044,
+            "interval_95": [
+              0.5608,
+              0.7333
+            ],
+            "points": 107,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_map_water_labelled_water": {
+            "estimate": 0.8721,
+            "standard_error": 0.1155,
+            "interval_95": [
+              0.6458,
+              1.0
+            ],
+            "points": 107,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_labelled_water_the_map_finds": {
+            "estimate": 0.2476,
+            "standard_error": 0.068,
+            "interval_95": [
+              0.1144,
+              0.3808
+            ],
+            "points": 107,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "minus_rule_v2": {
+            "estimate": -0.1741,
+            "standard_error": 0.0424,
+            "interval_95": [
+              -0.2572,
+              -0.091
+            ],
+            "points": 107,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          }
+        },
+        "chip_003": {
+          "points_scored": 109,
+          "share_answered_and_alike": {
+            "estimate": 0.3583,
+            "standard_error": 0.0358,
+            "interval_95": [
+              0.2881,
+              0.4286
+            ],
+            "points": 109,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_map_water_labelled_water": {
+            "estimate": 0.6667,
+            "standard_error": 0.2805,
+            "interval_95": [
+              0.1168,
+              1.0
+            ],
+            "points": 109,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_labelled_water_the_map_finds": {
+            "estimate": 0.0262,
+            "standard_error": 0.0178,
+            "interval_95": [
+              0.0,
+              0.0612
+            ],
+            "points": 109,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "minus_rule_v2": {
+            "estimate": -0.377,
+            "standard_error": 0.0476,
+            "interval_95": [
+              -0.4703,
+              -0.2837
+            ],
+            "points": 109,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          }
+        },
+        "chip_001": {
+          "points_scored": 59,
+          "share_answered_and_alike": {
+            "estimate": 0.5711,
+            "standard_error": 0.0503,
+            "interval_95": [
+              0.4724,
+              0.6697
+            ],
+            "points": 59,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_map_water_labelled_water": {
+            "estimate": 0.0279,
+            "standard_error": 0.028,
+            "interval_95": [
+              0.0,
+              0.0828
+            ],
+            "points": 59,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_labelled_water_the_map_finds": {
+            "estimate": 1.0,
+            "standard_error": 0.0,
+            "interval_95": [
+              1.0,
+              1.0
+            ],
+            "points": 59,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "minus_rule_v2": {
+            "estimate": -0.4166,
+            "standard_error": 0.0547,
+            "interval_95": [
+              -0.5238,
+              -0.3094
+            ],
+            "points": 59,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          }
+        },
+        "reference_chips_together": {
+          "points_scored": 216,
+          "share_answered_and_alike": {
+            "estimate": 0.5027,
+            "standard_error": 0.0284,
+            "interval_95": [
+              0.4471,
+              0.5584
+            ],
+            "points": 216,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_map_water_labelled_water": {
+            "estimate": 0.8377,
+            "standard_error": 0.1068,
+            "interval_95": [
+              0.6285,
+              1.0
+            ],
+            "points": 216,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_labelled_water_the_map_finds": {
+            "estimate": 0.1165,
+            "standard_error": 0.0293,
+            "interval_95": [
+              0.0592,
+              0.1739
+            ],
+            "points": 216,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "minus_rule_v2": {
+            "estimate": -0.2755,
+            "standard_error": 0.0318,
+            "interval_95": [
+              -0.3378,
+              -0.2132
+            ],
+            "points": 216,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          }
+        },
+        "three_chips_together": {
+          "points_scored": 275,
+          "share_answered_and_alike": {
+            "estimate": 0.5255,
+            "standard_error": 0.0253,
+            "interval_95": [
+              0.4759,
+              0.5751
+            ],
+            "points": 275,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_map_water_labelled_water": {
+            "estimate": 0.2361,
+            "standard_error": 0.0505,
+            "interval_95": [
+              0.137,
+              0.3352
+            ],
+            "points": 275,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_labelled_water_the_map_finds": {
+            "estimate": 0.1263,
+            "standard_error": 0.0306,
+            "interval_95": [
+              0.0664,
+              0.1862
+            ],
+            "points": 275,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "minus_rule_v2": {
+            "estimate": -0.3225,
+            "standard_error": 0.028,
+            "interval_95": [
+              -0.3774,
+              -0.2676
+            ],
+            "points": 275,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          }
+        }
+      },
+      "boosting": {
+        "sukhothai": {
+          "points_scored": 107,
+          "share_answered_and_alike": {
+            "estimate": 0.6223,
+            "standard_error": 0.0469,
+            "interval_95": [
+              0.5305,
+              0.7142
+            ],
+            "points": 107,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_map_water_labelled_water": {
+            "estimate": 0.6896,
+            "standard_error": 0.1221,
+            "interval_95": [
+              0.4503,
+              0.9289
+            ],
+            "points": 107,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_labelled_water_the_map_finds": {
+            "estimate": 0.2839,
+            "standard_error": 0.0729,
+            "interval_95": [
+              0.141,
+              0.4269
+            ],
+            "points": 107,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "minus_rule_v2": {
+            "estimate": -0.1988,
+            "standard_error": 0.0526,
+            "interval_95": [
+              -0.3019,
+              -0.0957
+            ],
+            "points": 107,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          }
+        },
+        "chip_003": {
+          "points_scored": 109,
+          "share_answered_and_alike": {
+            "estimate": 0.4109,
+            "standard_error": 0.0416,
+            "interval_95": [
+              0.3294,
+              0.4925
+            ],
+            "points": 109,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_map_water_labelled_water": {
+            "estimate": 0.7572,
+            "standard_error": 0.1198,
+            "interval_95": [
+              0.5224,
+              0.992
+            ],
+            "points": 109,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_labelled_water_the_map_finds": {
+            "estimate": 0.1383,
+            "standard_error": 0.0409,
+            "interval_95": [
+              0.0581,
+              0.2185
+            ],
+            "points": 109,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "minus_rule_v2": {
+            "estimate": -0.3244,
+            "standard_error": 0.0507,
+            "interval_95": [
+              -0.4238,
+              -0.225
+            ],
+            "points": 109,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          }
+        },
+        "chip_001": {
+          "points_scored": 59,
+          "share_answered_and_alike": {
+            "estimate": 0.6009,
+            "standard_error": 0.0591,
+            "interval_95": [
+              0.485,
+              0.7168
+            ],
+            "points": 59,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_map_water_labelled_water": {
+            "estimate": 0.0299,
+            "standard_error": 0.0299,
+            "interval_95": [
+              0.0,
+              0.0885
+            ],
+            "points": 59,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_labelled_water_the_map_finds": {
+            "estimate": 1.0,
+            "standard_error": 0.0,
+            "interval_95": [
+              1.0,
+              1.0
+            ],
+            "points": 59,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "minus_rule_v2": {
+            "estimate": -0.3868,
+            "standard_error": 0.062,
+            "interval_95": [
+              -0.5083,
+              -0.2653
+            ],
+            "points": 59,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          }
+        },
+        "reference_chips_together": {
+          "points_scored": 216,
+          "share_answered_and_alike": {
+            "estimate": 0.5167,
+            "standard_error": 0.0313,
+            "interval_95": [
+              0.4553,
+              0.5781
+            ],
+            "points": 216,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_map_water_labelled_water": {
+            "estimate": 0.7161,
+            "standard_error": 0.0888,
+            "interval_95": [
+              0.5421,
+              0.8901
+            ],
+            "points": 216,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_labelled_water_the_map_finds": {
+            "estimate": 0.1977,
+            "standard_error": 0.0385,
+            "interval_95": [
+              0.1222,
+              0.2732
+            ],
+            "points": 216,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "minus_rule_v2": {
+            "estimate": -0.2616,
+            "standard_error": 0.0365,
+            "interval_95": [
+              -0.3331,
+              -0.1901
+            ],
+            "points": 216,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          }
+        },
+        "three_chips_together": {
+          "points_scored": 275,
+          "share_answered_and_alike": {
+            "estimate": 0.5447,
+            "standard_error": 0.0287,
+            "interval_95": [
+              0.4884,
+              0.601
+            ],
+            "points": 275,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_map_water_labelled_water": {
+            "estimate": 0.321,
+            "standard_error": 0.0539,
+            "interval_95": [
+              0.2153,
+              0.4267
+            ],
+            "points": 275,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "share_of_labelled_water_the_map_finds": {
+            "estimate": 0.2066,
+            "standard_error": 0.0391,
+            "interval_95": [
+              0.13,
+              0.2832
+            ],
+            "points": 275,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          },
+          "minus_rule_v2": {
+            "estimate": -0.3033,
+            "standard_error": 0.032,
+            "interval_95": [
+              -0.366,
+              -0.2406
+            ],
+            "points": 275,
+            "strata_without_a_scored_point": 0,
+            "strata_with_one_point": 0
+          }
+        }
+      }
+    }
+  },
+  "decision": {
+    "rule": "A model is called better than rule v2 only if, in the area-weighted run and over the three chips together, its difference with rule v2 is above zero by more than 2.4977 standard errors (95% shared over 4 comparisons).",
+    "set": "three_chips_together",
+    "shown_better_than_rule_v2": {
+      "one_index": false,
+      "logistic": false,
+      "forest": false,
+      "boosting": false
+    },
+    "rule_that_reads_mae_sai": "rule v2, unchanged"
+  },
+  "each_team_member_against_the_other_two": {
+    "callixta": {
+      "sukhothai": {
+        "points_scored": 74,
+        "share_answered_and_alike": {
+          "estimate": 0.7728,
+          "standard_error": 0.0484,
+          "interval_95": [
+            0.6779,
+            0.8677
+          ],
+          "points": 74,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        },
+        "share_of_map_water_labelled_water": {
+          "estimate": 0.6258,
+          "standard_error": 0.0549,
+          "interval_95": [
+            0.5183,
+            0.7333
+          ],
+          "points": 74,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        },
+        "share_of_labelled_water_the_map_finds": {
+          "estimate": 0.9939,
+          "standard_error": 0.0041,
+          "interval_95": [
+            0.9859,
+            1.0
+          ],
+          "points": 74,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        }
+      },
+      "chip_003": {
+        "points_scored": 88,
+        "share_answered_and_alike": {
+          "estimate": 0.7591,
+          "standard_error": 0.0416,
+          "interval_95": [
+            0.6777,
+            0.8406
+          ],
+          "points": 88,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        },
+        "share_of_map_water_labelled_water": {
+          "estimate": 0.7141,
+          "standard_error": 0.0427,
+          "interval_95": [
+            0.6305,
+            0.7977
+          ],
+          "points": 88,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        },
+        "share_of_labelled_water_the_map_finds": {
+          "estimate": 1.0,
+          "standard_error": 0.0,
+          "interval_95": [
+            1.0,
+            1.0
+          ],
+          "points": 88,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        }
+      },
+      "chip_001": {
+        "points_scored": 50,
+        "share_answered_and_alike": {
+          "estimate": 0.952,
+          "standard_error": 0.0357,
+          "interval_95": [
+            0.8821,
+            1.0
+          ],
+          "points": 50,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        },
+        "share_of_map_water_labelled_water": {
+          "estimate": 0.2038,
+          "standard_error": 0.2021,
+          "interval_95": [
+            0.0,
+            0.6
+          ],
+          "points": 50,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        },
+        "share_of_labelled_water_the_map_finds": {
+          "estimate": 1.0,
+          "standard_error": 0.0,
+          "interval_95": [
+            1.0,
+            1.0
+          ],
+          "points": 50,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        }
+      },
+      "reference_chips_together": {
+        "points_scored": 162,
+        "share_answered_and_alike": {
+          "estimate": 0.766,
+          "standard_error": 0.0319,
+          "interval_95": [
+            0.7035,
+            0.8285
+          ],
+          "points": 162,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        },
+        "share_of_map_water_labelled_water": {
+          "estimate": 0.6784,
+          "standard_error": 0.0345,
+          "interval_95": [
+            0.6108,
+            0.7461
+          ],
+          "points": 162,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        },
+        "share_of_labelled_water_the_map_finds": {
+          "estimate": 0.9977,
+          "standard_error": 0.0015,
+          "interval_95": [
+            0.9947,
+            1.0
+          ],
+          "points": 162,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        }
+      },
+      "three_chips_together": {
+        "points_scored": 212,
+        "share_answered_and_alike": {
+          "estimate": 0.828,
+          "standard_error": 0.0244,
+          "interval_95": [
+            0.7802,
+            0.8757
+          ],
+          "points": 212,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        },
+        "share_of_map_water_labelled_water": {
+          "estimate": 0.659,
+          "standard_error": 0.0364,
+          "interval_95": [
+            0.5877,
+            0.7303
+          ],
+          "points": 212,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        },
+        "share_of_labelled_water_the_map_finds": {
+          "estimate": 0.9978,
+          "standard_error": 0.0015,
+          "interval_95": [
+            0.9948,
+            1.0
+          ],
+          "points": 212,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        }
+      }
+    },
+    "putu": {
+      "sukhothai": {
+        "points_scored": 63,
+        "share_answered_and_alike": {
+          "estimate": 0.8919,
+          "standard_error": 0.042,
+          "interval_95": [
+            0.8096,
+            0.9742
+          ],
+          "points": 63,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        },
+        "share_of_map_water_labelled_water": {
+          "estimate": 1.0,
+          "standard_error": 0.0,
+          "interval_95": [
+            1.0,
+            1.0
+          ],
+          "points": 63,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        },
+        "share_of_labelled_water_the_map_finds": {
+          "estimate": 0.857,
+          "standard_error": 0.0869,
+          "interval_95": [
+            0.6866,
+            1.0
+          ],
+          "points": 63,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        }
+      },
+      "chip_003": {
+        "points_scored": 72,
+        "share_answered_and_alike": {
+          "estimate": 0.8922,
+          "standard_error": 0.0405,
+          "interval_95": [
+            0.8128,
+            0.9717
+          ],
+          "points": 72,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        },
+        "share_of_map_water_labelled_water": {
+          "estimate": 0.9523,
+          "standard_error": 0.0338,
+          "interval_95": [
+            0.8861,
+            1.0
+          ],
+          "points": 72,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        },
+        "share_of_labelled_water_the_map_finds": {
+          "estimate": 0.9264,
+          "standard_error": 0.0395,
+          "interval_95": [
+            0.8489,
+            1.0
+          ],
+          "points": 72,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        }
+      },
+      "chip_001": {
+        "points_scored": 57,
+        "share_answered_and_alike": {
+          "estimate": 0.8628,
+          "standard_error": 0.0493,
+          "interval_95": [
+            0.7663,
+            0.9594
+          ],
+          "points": 57,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        },
+        "share_of_map_water_labelled_water": {
+          "estimate": 0.1054,
+          "standard_error": 0.1009,
+          "interval_95": [
+            0.0,
+            0.3032
+          ],
+          "points": 57,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        },
+        "share_of_labelled_water_the_map_finds": {
+          "estimate": 1.0,
+          "standard_error": 0.0,
+          "interval_95": [
+            1.0,
+            1.0
+          ],
+          "points": 57,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        }
+      },
+      "reference_chips_together": {
+        "points_scored": 135,
+        "share_answered_and_alike": {
+          "estimate": 0.8921,
+          "standard_error": 0.0292,
+          "interval_95": [
+            0.8349,
+            0.9493
+          ],
+          "points": 135,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        },
+        "share_of_map_water_labelled_water": {
+          "estimate": 0.968,
+          "standard_error": 0.0229,
+          "interval_95": [
+            0.9231,
+            1.0
+          ],
+          "points": 135,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        },
+        "share_of_labelled_water_the_map_finds": {
+          "estimate": 0.9016,
+          "standard_error": 0.0402,
+          "interval_95": [
+            0.8227,
+            0.9804
+          ],
+          "points": 135,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        }
+      },
+      "three_chips_together": {
+        "points_scored": 192,
+        "share_answered_and_alike": {
+          "estimate": 0.8823,
+          "standard_error": 0.0255,
+          "interval_95": [
+            0.8324,
+            0.9322
+          ],
+          "points": 192,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        },
+        "share_of_map_water_labelled_water": {
+          "estimate": 0.8798,
+          "standard_error": 0.0369,
+          "interval_95": [
+            0.8075,
+            0.952
+          ],
+          "points": 192,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        },
+        "share_of_labelled_water_the_map_finds": {
+          "estimate": 0.9027,
+          "standard_error": 0.0398,
+          "interval_95": [
+            0.8246,
+            0.9807
+          ],
+          "points": 192,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        }
+      }
+    },
+    "rachmania": {
+      "sukhothai": {
+        "points_scored": 84,
+        "share_answered_and_alike": {
+          "estimate": 0.6694,
+          "standard_error": 0.0561,
+          "interval_95": [
+            0.5595,
+            0.7793
+          ],
+          "points": 84,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        },
+        "share_of_map_water_labelled_water": {
+          "estimate": 0.8918,
+          "standard_error": 0.0793,
+          "interval_95": [
+            0.7363,
+            1.0
+          ],
+          "points": 84,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        },
+        "share_of_labelled_water_the_map_finds": {
+          "estimate": 0.7068,
+          "standard_error": 0.0812,
+          "interval_95": [
+            0.5476,
+            0.8659
+          ],
+          "points": 84,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        }
+      },
+      "chip_003": {
+        "points_scored": 79,
+        "share_answered_and_alike": {
+          "estimate": 0.8285,
+          "standard_error": 0.0437,
+          "interval_95": [
+            0.7428,
+            0.9141
+          ],
+          "points": 79,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        },
+        "share_of_map_water_labelled_water": {
+          "estimate": 1.0,
+          "standard_error": 0.0,
+          "interval_95": [
+            1.0,
+            1.0
+          ],
+          "points": 79,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        },
+        "share_of_labelled_water_the_map_finds": {
+          "estimate": 0.8751,
+          "standard_error": 0.0382,
+          "interval_95": [
+            0.8002,
+            0.9499
+          ],
+          "points": 79,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        }
+      },
+      "chip_001": {
+        "points_scored": 48,
+        "share_answered_and_alike": {
+          "estimate": 1.0,
+          "standard_error": 0.0,
+          "interval_95": [
+            1.0,
+            1.0
+          ],
+          "points": 48,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        },
+        "share_of_map_water_labelled_water": {
+          "estimate": 1.0,
+          "standard_error": 0.0,
+          "interval_95": [
+            1.0,
+            1.0
+          ],
+          "points": 48,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        },
+        "share_of_labelled_water_the_map_finds": {
+          "estimate": 1.0,
+          "standard_error": 0.0,
+          "interval_95": [
+            1.0,
+            1.0
+          ],
+          "points": 48,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        }
+      },
+      "reference_chips_together": {
+        "points_scored": 163,
+        "share_answered_and_alike": {
+          "estimate": 0.7489,
+          "standard_error": 0.0355,
+          "interval_95": [
+            0.6792,
+            0.8185
+          ],
+          "points": 163,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        },
+        "share_of_map_water_labelled_water": {
+          "estimate": 0.9686,
+          "standard_error": 0.0245,
+          "interval_95": [
+            0.9205,
+            1.0
+          ],
+          "points": 163,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        },
+        "share_of_labelled_water_the_map_finds": {
+          "estimate": 0.8227,
+          "standard_error": 0.0367,
+          "interval_95": [
+            0.7508,
+            0.8945
+          ],
+          "points": 163,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        }
+      },
+      "three_chips_together": {
+        "points_scored": 211,
+        "share_answered_and_alike": {
+          "estimate": 0.8326,
+          "standard_error": 0.0237,
+          "interval_95": [
+            0.7861,
+            0.879
+          ],
+          "points": 211,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        },
+        "share_of_map_water_labelled_water": {
+          "estimate": 0.969,
+          "standard_error": 0.0242,
+          "interval_95": [
+            0.9216,
+            1.0
+          ],
+          "points": 211,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        },
+        "share_of_labelled_water_the_map_finds": {
+          "estimate": 0.8248,
+          "standard_error": 0.0363,
+          "interval_95": [
+            0.7537,
+            0.896
+          ],
+          "points": 211,
+          "strata_without_a_scored_point": 0,
+          "strata_with_one_point": 0
+        }
+      }
+    }
+  },
+  "limits": [
+    "All three team members gave the same label on 57% of the points: a model learns the majority's reading, with its mistakes.",
+    "Three chips make three folds; a chip is one image of one place on one day.",
+    "The points were drawn in groups cut from rule v1. Area weights correct the estimate; they do not put points where rule v1 never looked.",
+    "No ground check exists for any of the three chips, and none of them covers Mae Sai."
+  ]
+}

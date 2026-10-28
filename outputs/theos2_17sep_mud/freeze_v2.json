@@ -1,0 +1,199 @@
+{
+ "schema": "floodguard.theos2_17sep_mud_freeze.v2",
+ "generated_at_utc": "2026-10-19T15:19:15Z",
+ "source_timestamp": "THEOS-2 2024-09-17T03:54:20Z; Sentinel-2 L2A 2024-09-15T03:58:15Z and 2024-09-05T03:58:19Z",
+ "confidence_class": "low",
+ "confidence_basis": "One optical image read by a colour rule; development labels by an AI model; nobody went to the ground.",
+ "operational_status": "non_operational",
+ "official_warning": false,
+ "can_feed_decision_layer": false,
+ "plan": {
+  "path": "docs/proposal_execution/theos2_17sep_recession_and_mud_plan_v1.md",
+  "sha256": "5d4aee69eff4a62b7f20e7d1c8fcac5184f50c2d0a5e5254097ae4c8816b57a8"
+ },
+ "what_this_is": "The mud rule of question 4 after amendment 1: mud_s0, mud_s3 and mud_s4 scored on 200 development points the agent labelled; it supersedes freeze_v1.json for the test.",
+ "amendment": {
+  "path": "docs/proposal_execution/theos2_17sep_recession_and_mud_plan_v1_amendment_1.md",
+  "sha256": "c7bc2f0e31e54a1836c23d2c0f3080572cf3186c36765a7de7f4f93c3cd5ecf1"
+ },
+ "points_record": {
+  "path": "outputs/theos2_17sep_mud/development_points_v2.json",
+  "sha256": "d8bee08344c24c25b7f60ea2f17af1467867d3cc7807d89c62f00452545ec9f2"
+ },
+ "supersedes": {
+  "path": "outputs/theos2_17sep_mud/freeze_v1.json",
+  "sha256": "ce8ab042f7add57cdd6d43d2d60a1656bb897585e9b91f2a26683f0c170c609f"
+ },
+ "labels": {
+  "by": "the agent that builds the rule (an AI model), from the sheets alone",
+  "old_file_sha256": "9591c835653bf924525e861f7fa29bddb4b76e49fb57bb2f93958861aa591a2a",
+  "new_file_sha256": "061ea90e15f1a414c8ea1d66b8452ac9a9994da0a082c3b4dcb79097b6b0ac33",
+  "counts_new": {
+   "mud": 17,
+   "bare_cannot_tell": 3,
+   "not_mud": 19,
+   "cannot_tell": 1
+  },
+  "by_point_new": {
+   "e001": "cannot_tell",
+   "e002": "mud",
+   "e003": "bare_cannot_tell",
+   "e004": "mud",
+   "e005": "mud",
+   "e006": "bare_cannot_tell",
+   "e007": "mud",
+   "e008": "mud",
+   "e009": "mud",
+   "e010": "not_mud",
+   "e011": "mud",
+   "e012": "not_mud",
+   "e013": "mud",
+   "e014": "mud",
+   "e015": "mud",
+   "e016": "mud",
+   "e017": "bare_cannot_tell",
+   "e018": "not_mud",
+   "e019": "not_mud",
+   "e020": "not_mud",
+   "e021": "not_mud",
+   "e022": "not_mud",
+   "e023": "mud",
+   "e024": "mud",
+   "e025": "mud",
+   "e026": "not_mud",
+   "e027": "not_mud",
+   "e028": "not_mud",
+   "e029": "mud",
+   "e030": "mud",
+   "e031": "mud",
+   "e032": "not_mud",
+   "e033": "not_mud",
+   "e034": "not_mud",
+   "e035": "not_mud",
+   "e036": "not_mud",
+   "e037": "not_mud",
+   "e038": "not_mud",
+   "e039": "not_mud",
+   "e040": "not_mud"
+  },
+  "old_points_moved_to_the_opened_ground": [
+   "d004"
+  ],
+  "note": "Development data, not a reference. No label of plan v1 was changed."
+ },
+ "scores": {
+  "mud_s0": {
+   "mean_f1": 0.1905,
+   "by_order": {
+    "AWG_20261014_bc7a15": {
+     "f1": 0.2763,
+     "points": 85,
+     "precision": 0.2434,
+     "recall": 0.3196
+    },
+    "AWG_20261014_417d92": {
+     "f1": 0.1046,
+     "points": 82,
+     "precision": 0.2205,
+     "recall": 0.0686
+    }
+   }
+  },
+  "mud_s3": {
+   "mean_f1": 0.5787,
+   "by_order": {
+    "AWG_20261014_bc7a15": {
+     "f1": 0.2946,
+     "points": 85,
+     "precision": 0.2367,
+     "recall": 0.3899
+    },
+    "AWG_20261014_417d92": {
+     "f1": 0.8628,
+     "points": 82,
+     "precision": 0.8355,
+     "recall": 0.892
+    }
+   }
+  },
+  "mud_s4": {
+   "mean_f1": 0.6962,
+   "crossed": {
+    "fitted_on_AWG_20261014_bc7a15": {
+     "limits": {
+      "ndvi_max": 0.3,
+      "red_over_green_min": 1.12,
+      "red_over_blue_min": 1.1
+     },
+     "scored_on": "AWG_20261014_417d92",
+     "f1": 0.8922,
+     "points": 82,
+     "precision": 0.8172,
+     "recall": 0.9824
+    },
+    "fitted_on_AWG_20261014_417d92": {
+     "limits": {
+      "ndvi_max": 0.3,
+      "red_over_green_min": 1.12,
+      "red_over_blue_min": 1.1
+     },
+     "scored_on": "AWG_20261014_bc7a15",
+     "f1": 0.5001,
+     "points": 85,
+     "precision": 0.3337,
+     "recall": 0.997
+    }
+   }
+  }
+ },
+ "choice_rule": "mud_s0 stays unless mud_s3 is better by 0.02 or more; the one kept stays unless mud_s4 is better than it by 0.02 or more.",
+ "chosen": "mud_s4",
+ "frozen_rule": {
+  "candidate": "mud_s4",
+  "limits": {
+   "ndvi_max": 0.3,
+   "red_over_green_min": 1.12,
+   "red_over_blue_min": 1.1
+  },
+  "scaling_lines": {
+   "red": {
+    "slope": 0.0004208414917399852,
+    "intercept": -0.08173971724536785,
+    "pairs": 199987741
+   },
+   "green": {
+    "slope": 0.00043365347535573453,
+    "intercept": -0.05756677096584781,
+    "pairs": 199986262
+   },
+   "blue": {
+    "slope": 0.0003258295083269528,
+    "intercept": -0.06870346630729057,
+    "pairs": 199985904
+   },
+   "nir": {
+    "slope": 0.00033800282758380027,
+    "intercept": 0.07134219389371285,
+    "pairs": 199988997
+   }
+  },
+  "masks": "amendment 1",
+  "min_object_px": 25,
+  "code": "floodguard.theos2_mud and scripts/build_theos2_17sep_mud.py (candidate, candidate_v2)"
+ },
+ "mud_km2_in_the_scene": 6.405,
+ "raster_outside_git": {
+  "name": "mud_frozen_v2_2m.tif",
+  "sha256": "60932888a93b404998ffc099ad813e84b88732ce30cf605240a8a2f6d00e8cfa",
+  "values": "1 mud, 0 not mud, 255 unobservable or outside the scene"
+ },
+ "assumptions": [
+  "Mud is a 2 m square more than half covered by a fresh deposit of the flood, read from one image; it is not a ground survey.",
+  "The counts of the image are put on the scale of Sentinel-2 surface reflectance by one Theil-Sen line per band, fitted on the scene of two days earlier.",
+  "Roofs are the Google Open Buildings v3 and Microsoft outlines widened by 1 m; a roof missing from them can read as mud."
+ ],
+ "limits": [
+  "One image, about five days after the peak: mud cleared before it is not seen, and no mud never means a place stayed dry.",
+  "Report-only. No published class changes and nothing enters a planning score."
+ ]
+}

@@ -1,6 +1,6 @@
 {
   "schema": "floodguard.validation_check.items.v1",
-  "updated": "2026-10-13",
+  "updated": "2026-10-19",
   "repository": "https://github.com/TUPRAM/flood-guard",
   "reviewers": [
     "Rachmania",
@@ -910,6 +910,98 @@
       "gates": "What the Public view shows in the pitch, and whether the practice mode goes into master.",
       "ready": true,
       "added": "2026-10-13"
+    },
+    {
+      "id": "V-47",
+      "group": "theos2",
+      "title": "The THEOS-2 scene of 17 September 2024: the plan for the replay's recession and for the mud the flood left, written before anybody looked at it",
+      "check": "Read the plan. It adds two questions to the frozen check of the radar: (3) the replay says the water had left the plain by 10:54 on 17 September; the image contradicts it if it shows 0.25 km2 or more of water outside the channel, outside permanent water and outside cropland; (4) mud on the image is read by one of three fixed rules, chosen on 160 points the agent labels, then tested on 150 points that three of you label (about 30 minutes each); the mud map is used only if at least 60 percent of what the rule calls mud is mud to you. Accept if the questions, the bar of 0.25 km2, the bar of 60 percent and the fixed sentences are what you want decided before anybody looks. Choose 'change' with a note for any bar or sentence; it can still change now and not after the look. Do not open the image before the plan is committed.",
+      "evidence": [
+        {
+          "label": "The plan, written before the look",
+          "path": "docs/proposal_execution/theos2_17sep_recession_and_mud_plan_v1.md"
+        },
+        {
+          "label": "The delivery record: files, time, cloud and footprints, read from the metadata only",
+          "path": "outputs/theos2_delivery/delivery_20240917_v1.json"
+        },
+        {
+          "label": "The frozen check of the radar this plan stands beside",
+          "path": "docs/proposal_execution/theos2_study_event_check_plan_v1.md"
+        }
+      ],
+      "gates": "Questions 3 and 4 on the THEOS-2 scene of 17 September 2024.",
+      "ready": true,
+      "added": "2026-10-19"
+    },
+    {
+      "id": "V-48",
+      "group": "theos2",
+      "title": "Label 150 points of the THEOS-2 scene of 17 September 2024: mud or not mud",
+      "check": "Putu hands you the page mud_label_page_v1.html (about 9 MB; it is not in the repository). Open it in a browser, type your first name and label alone: five practice points, then 150 points, about 30 minutes; you can stop and come back in the same browser. For each yellow square choose Mud, Bare (cannot tell), Not mud or Cannot tell; brown water in a pond or a river is water, so not mud. Do not look at any mud or water map of the project while you label and do not compare points with the others until all three files are saved. At the end press 'Save the label file' and send the file to Putu. Then choose 'accept' here with the note 'labelled'; choose 'change' with a note if the page or the instructions made a point impossible to label.",
+      "evidence": [
+        {
+          "label": "The plan, section 4.4",
+          "path": "docs/proposal_execution/theos2_17sep_recession_and_mud_plan_v1.md"
+        },
+        {
+          "label": "The draw record: group sizes, counts, and the SHA-256 of the key and the page",
+          "path": "outputs/theos2_17sep_mud/test_points_v1.json"
+        },
+        {
+          "label": "The page template",
+          "path": "scripts/theos2_mud_label_page.html"
+        }
+      ],
+      "gates": "The test score of the mud rule (question 4); the bar of 0.60 for using the mud as a map.",
+      "ready": true,
+      "added": "2026-10-19"
+    },
+    {
+      "id": "V-49",
+      "group": "theos2",
+      "title": "Check the score of the mud test: 0.88 of what the rule calls mud is mud to at least two of us",
+      "check": "Open outputs/theos2_17sep_mud/test_score_v1.json. It scores the frozen mud rule once on your three label files, on the label at least two of you gave, area-weighted by group as plan section 4.4 fixed: of the area the rule calls mud, 0.88 is labelled mud (bar 0.60; 95 percent interval 0.76 to 1.00), and the rule finds 0.64 of the area labelled mud. Check that your file is the one listed under labels_received (name, time saved and SHA-256), that labels_by_point shows your own labels, and that the bar sentence is the one the plan wrote in advance. Choose 'accept' if the score is what the plan said would be computed; choose 'change' with a note if a label of yours is wrong or the counting is not what the plan says.",
+      "evidence": [
+        {
+          "label": "The score record",
+          "path": "outputs/theos2_17sep_mud/test_score_v1.json"
+        },
+        {
+          "label": "The plan, section 4.4",
+          "path": "docs/proposal_execution/theos2_17sep_recession_and_mud_plan_v1.md"
+        },
+        {
+          "label": "The score stage",
+          "path": "scripts/build_theos2_17sep_mud.py"
+        }
+      ],
+      "gates": "Using the mud raster as a map in section 4.5, and the THEOS-2 figure of the final pitch.",
+      "ready": true,
+      "added": "2026-10-20"
+    },
+    {
+      "id": "V-50",
+      "group": "theos2",
+      "title": "Check section 4.5 of the mud track: road 1 shows flood mud on 2 of its 15 pieces",
+      "check": "Open outputs/theos2_17sep_mud/section_4_5_v1.json. Under roads_4a, the eight roads of the Ko Chang road sheet come first: road 1 (OSM way 206803562) is shown over its whole 1.33 km and shows mud on 2 pieces, both pieces the model closes; the other 13 are 'not shown', which never means passable. Check that the per-road answers read as the plan's sentences say, that the replay figures keep the two strata apart (judged cells are not independent) and that no resident figure is derived from the buildings. Choose 'accept' if the record says what plan section 4.5 said would be computed; choose 'change' with a note otherwise.",
+      "evidence": [
+        {
+          "label": "The section 4.5 record",
+          "path": "outputs/theos2_17sep_mud/section_4_5_v1.json"
+        },
+        {
+          "label": "The plan, section 4.5",
+          "path": "docs/proposal_execution/theos2_17sep_recession_and_mud_plan_v1.md"
+        },
+        {
+          "label": "The stage",
+          "path": "scripts/build_theos2_17sep_mud.py"
+        }
+      ],
+      "gates": "The THEOS-2 sentence of the final pitch about road 1.",
+      "ready": true,
+      "added": "2026-10-20"
     }
   ]
 }

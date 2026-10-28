@@ -1,0 +1,4332 @@
+{
+ "schema": "floodguard.theos2_17sep_mud.section_4_5.v1",
+ "generated_at_utc": "2026-10-20T06:30:07Z",
+ "source_timestamp": "THEOS-2 2024-09-17T03:54:20Z; Sentinel-2 L2A 2024-09-15T03:58:15Z and 2024-09-05T03:58:19Z",
+ "confidence_class": "low",
+ "confidence_basis": "One optical image read by a mud rule that passed a blind test by three team members (R60); roads, replay and case SE1 are modelled; nobody went to the ground.",
+ "operational_status": "non_operational",
+ "official_warning": false,
+ "can_feed_decision_layer": false,
+ "plan": {
+  "path": "docs/proposal_execution/theos2_17sep_recession_and_mud_plan_v1.md",
+  "sha256": "5d4aee69eff4a62b7f20e7d1c8fcac5184f50c2d0a5e5254097ae4c8816b57a8"
+ },
+ "what_this_is": "Plan section 4.5, run once after the test score: the frozen mud raster (mud_s4) set against the road pieces (4a), the replay's largest extent (4b), the season layer of case SE1 (4c) and the building outlines (4d).",
+ "inputs": {
+  "test_score": {
+   "path": "outputs/theos2_17sep_mud/test_score_v1.json",
+   "sha256": "527f698f8d62b1a2f77d244c6fddf410598c2959104b6fdc3ea59104da790cb3"
+  },
+  "freeze": {
+   "path": "outputs/theos2_17sep_mud/freeze_v2.json",
+   "sha256": "7a741601782ac474b47521925c3813b76d7bc66d933c78d101837726e9bccbca"
+  },
+  "mud_raster_outside_git": {
+   "name": "mud_frozen_v2_2m.tif",
+   "sha256": "60932888a93b404998ffc099ad813e84b88732ce30cf605240a8a2f6d00e8cfa"
+  },
+  "planning_context_outside_git": {
+   "path": "proposal_execution/planning_v1/se1_mae_sai/e4_vehicle/context_inputs.json",
+   "sha256": "37e47f2e4cede433aa709e0154e9d39e921d1359d69b10642e3385267ca01385"
+  },
+  "intersections_outside_git": {
+   "path": "proposal_execution/planning_v1/se1_mae_sai/ko_chang_road_sheet/edge_intersections_5d7c1c0ca7909284.json",
+   "sha256": "6a994d0eced83d5a507e9ee7bd2168ece7093a849640a3d4884cdd84dbb1f75c"
+  },
+  "season_layer_outside_git": {
+   "path": "proposal_execution/planning_v1/se1_mae_sai/e1_flood_input/flood_extent__as_provided__reporting_frame.geojson",
+   "sha256": "405918085b2cf9ce38b46143de0a27efb02ce919a5d8e146b4954f47d10f8368"
+  },
+  "replay_hand_codes": {
+   "path": "apps/web/public/studies/mae-sai-2024-timeline/r5/hand-codes.png",
+   "sha256": "384bca34e3577c1d592994111e4361788a2fd0e1722767c94b1ecf53bab6eb79"
+  },
+  "road_sheet": {
+   "path": "outputs/ko_chang_road_check/ko_chang_roads_se1_v1.json",
+   "sha256": "3c42b7436c72d12c7e13e1ce8f2e03d9fd96c477f6fcd38a84da3afc647884dc"
+  },
+  "tambons": {
+   "path": "outputs/mae_sai_admin_context.geojson",
+   "sha256": "5cd03ca936c188d37704f5249afa87da0c687b967db8a0f9c9ebd72b27204db1"
+  },
+  "buildings_outside_git": {
+   "path": "proposal_execution/buildings_in_water/mae_sai_outlines.gpkg",
+   "outlines_read": 61415
+  },
+  "sentinel2": {
+   "after": "earth_search/mae_sai_2024/S2B_47QNC_20240915_0_L2A",
+   "before": "earth_search/mae_sai_2024/S2B_47QNC_20240905_0_L2A"
+  }
+ },
+ "mud_km2_in_the_district_part_covered": 3.9552,
+ "roads_4a": {
+  "rule": {
+   "mud_within_m": 4.0,
+   "shows_mud_from_m": 20.0,
+   "centreline_read_every_m": 1.0,
+   "not_observable_when_shown_below": 0.5,
+   "closure_beside": "case SE1, closure rule v1 at the central level, re-applied with floodguard.closure_rules and checked against 7,926 closed edges"
+  },
+  "the_eight_roads_of_the_road_sheet": [
+   {
+    "road": 1,
+    "osm_way_id": "206803562",
+    "name": "",
+    "ref": "",
+    "pieces_inside_the_products": 15,
+    "metres_inside_the_products": 1331.8,
+    "metres_shown": 1331.8,
+    "metres_with_mud_within_4_m": 110.6,
+    "by_class": {
+     "shows_mud": {
+      "pieces": 2,
+      "km": 0.278
+     },
+     "not_shown": {
+      "pieces": 13,
+      "km": 1.053
+     },
+     "not_observable": {
+      "pieces": 0,
+      "km": 0.0
+     }
+    },
+    "closed_pieces_by_class": {
+     "shows_mud": {
+      "pieces": 2,
+      "km": 0.278
+     },
+     "not_shown": {
+      "pieces": 11,
+      "km": 1.012
+     },
+     "not_observable": {
+      "pieces": 0,
+      "km": 0.0
+     }
+    },
+    "pieces": [
+     {
+      "edge_id": "osm-way-206803562-segment-0",
+      "length_m": 30.2,
+      "inside_products_m": 30.2,
+      "shown_m": 30.2,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-206803562-segment-1",
+      "length_m": 79.2,
+      "inside_products_m": 79.2,
+      "shown_m": 79.2,
+      "metres_with_mud_within_4_m": 5.9,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-206803562-segment-2",
+      "length_m": 79.3,
+      "inside_products_m": 79.3,
+      "shown_m": 79.3,
+      "metres_with_mud_within_4_m": 2.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-206803562-segment-3",
+      "length_m": 79.9,
+      "inside_products_m": 79.9,
+      "shown_m": 79.9,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-206803562-segment-4",
+      "length_m": 39.9,
+      "inside_products_m": 39.9,
+      "shown_m": 39.9,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-206803562-segment-5",
+      "length_m": 47.1,
+      "inside_products_m": 47.1,
+      "shown_m": 47.1,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-206803562-segment-6",
+      "length_m": 58.3,
+      "inside_products_m": 58.3,
+      "shown_m": 58.3,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-206803562-segment-7",
+      "length_m": 245.4,
+      "inside_products_m": 245.4,
+      "shown_m": 245.4,
+      "metres_with_mud_within_4_m": 76.8,
+      "class": "shows_mud",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-206803562-segment-8",
+      "length_m": 114.6,
+      "inside_products_m": 114.6,
+      "shown_m": 114.6,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-206803562-segment-9",
+      "length_m": 3.4,
+      "inside_products_m": 3.4,
+      "shown_m": 3.4,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-206803562-segment-10",
+      "length_m": 246.1,
+      "inside_products_m": 246.1,
+      "shown_m": 246.1,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-206803562-segment-11",
+      "length_m": 32.9,
+      "inside_products_m": 32.9,
+      "shown_m": 32.9,
+      "metres_with_mud_within_4_m": 25.9,
+      "class": "shows_mud",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-206803562-segment-12",
+      "length_m": 105.1,
+      "inside_products_m": 105.1,
+      "shown_m": 105.1,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-206803562-segment-13",
+      "length_m": 159.4,
+      "inside_products_m": 159.4,
+      "shown_m": 159.4,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-206803562-segment-14",
+      "length_m": 11.0,
+      "inside_products_m": 11.0,
+      "shown_m": 11.0,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     }
+    ],
+    "answer": "2 of 15 pieces show mud; 13 not shown; 0 not observable"
+   },
+   {
+    "road": 2,
+    "osm_way_id": "1112593664",
+    "name": "Mueangdang Road",
+    "ref": "ชร.3059",
+    "pieces_inside_the_products": 56,
+    "metres_inside_the_products": 2820.8,
+    "metres_shown": 2552.7,
+    "metres_with_mud_within_4_m": 457.6,
+    "by_class": {
+     "shows_mud": {
+      "pieces": 6,
+      "km": 0.465
+     },
+     "not_shown": {
+      "pieces": 50,
+      "km": 2.356
+     },
+     "not_observable": {
+      "pieces": 0,
+      "km": 0.0
+     }
+    },
+    "closed_pieces_by_class": {
+     "shows_mud": {
+      "pieces": 0,
+      "km": 0.0
+     },
+     "not_shown": {
+      "pieces": 0,
+      "km": 0.0
+     },
+     "not_observable": {
+      "pieces": 0,
+      "km": 0.0
+     }
+    },
+    "pieces": [
+     {
+      "edge_id": "osm-way-1112593664-segment-0",
+      "length_m": 41.8,
+      "inside_products_m": 41.8,
+      "shown_m": 40.9,
+      "metres_with_mud_within_4_m": 1.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-1112593664-segment-1",
+      "length_m": 48.4,
+      "inside_products_m": 48.4,
+      "shown_m": 46.4,
+      "metres_with_mud_within_4_m": 16.8,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-1112593664-segment-2",
+      "length_m": 41.4,
+      "inside_products_m": 41.4,
+      "shown_m": 41.4,
+      "metres_with_mud_within_4_m": 12.8,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-1112593664-segment-3",
+      "length_m": 75.6,
+      "inside_products_m": 75.6,
+      "shown_m": 66.7,
+      "metres_with_mud_within_4_m": 36.8,
+      "class": "shows_mud",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-1112593664-segment-4",
+      "length_m": 54.3,
+      "inside_products_m": 54.3,
+      "shown_m": 53.3,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-1112593664-segment-5",
+      "length_m": 73.8,
+      "inside_products_m": 73.8,
+      "shown_m": 73.8,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-1112593664-segment-6",
+      "length_m": 79.2,
+      "inside_products_m": 79.2,
+      "shown_m": 79.2,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-1112593664-segment-7",
+      "length_m": 16.5,
+      "inside_products_m": 16.5,
+      "shown_m": 16.5,
+      "metres_with_mud_within_4_m": 11.6,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-1112593664-segment-8",
+      "length_m": 61.9,
+      "inside_products_m": 61.9,
+      "shown_m": 61.9,
+      "metres_with_mud_within_4_m": 5.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-1112593664-segment-9",
+      "length_m": 87.6,
+      "inside_products_m": 87.6,
+      "shown_m": 87.6,
+      "metres_with_mud_within_4_m": 52.8,
+      "class": "shows_mud",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-1112593664-segment-10",
+      "length_m": 24.8,
+      "inside_products_m": 24.8,
+      "shown_m": 24.8,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-1112593664-segment-11",
+      "length_m": 65.2,
+      "inside_products_m": 65.2,
+      "shown_m": 65.2,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-1112593664-segment-12",
+      "length_m": 39.1,
+      "inside_products_m": 39.1,
+      "shown_m": 39.1,
+      "metres_with_mud_within_4_m": 10.7,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-1112593664-segment-13",
+      "length_m": 83.4,
+      "inside_products_m": 83.4,
+      "shown_m": 75.5,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-1112593664-segment-14",
+      "length_m": 27.2,
+      "inside_products_m": 27.2,
+      "shown_m": 27.2,
+      "metres_with_mud_within_4_m": 13.6,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-1112593664-segment-15",
+      "length_m": 55.0,
+      "inside_products_m": 55.0,
+      "shown_m": 44.2,
+      "metres_with_mud_within_4_m": 32.4,
+      "class": "shows_mud",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-1112593664-segment-16",
+      "length_m": 99.9,
+      "inside_products_m": 99.9,
+      "shown_m": 82.9,
+      "metres_with_mud_within_4_m": 33.0,
+      "class": "shows_mud",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-1112593664-segment-17",
+      "length_m": 13.1,
+      "inside_products_m": 13.1,
+      "shown_m": 9.3,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-1112593664-segment-18",
+      "length_m": 40.0,
+      "inside_products_m": 40.0,
+      "shown_m": 40.0,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-1112593664-segment-19",
+      "length_m": 16.8,
+      "inside_products_m": 16.8,
+      "shown_m": 16.8,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-1112593664-segment-20",
+      "length_m": 33.1,
+      "inside_products_m": 33.1,
+      "shown_m": 33.1,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-1112593664-segment-21",
+      "length_m": 18.3,
+      "inside_products_m": 18.3,
+      "shown_m": 14.4,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-1112593664-segment-22",
+      "length_m": 14.5,
+      "inside_products_m": 14.5,
+      "shown_m": 14.5,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-1112593664-segment-23",
+      "length_m": 51.8,
+      "inside_products_m": 51.8,
+      "shown_m": 51.8,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-1112593664-segment-24",
+      "length_m": 24.5,
+      "inside_products_m": 24.5,
+      "shown_m": 24.5,
+      "metres_with_mud_within_4_m": 9.8,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-1112593664-segment-25",
+      "length_m": 32.7,
+      "inside_products_m": 32.7,
+      "shown_m": 32.7,
+      "metres_with_mud_within_4_m": 17.8,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-1112593664-segment-26",
+      "length_m": 54.5,
+      "inside_products_m": 54.5,
+      "shown_m": 54.5,
+      "metres_with_mud_within_4_m": 30.7,
+      "class": "shows_mud",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-1112593664-segment-27",
+      "length_m": 92.4,
+      "inside_products_m": 92.4,
+      "shown_m": 92.4,
+      "metres_with_mud_within_4_m": 56.6,
+      "class": "shows_mud",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-1112593664-segment-28",
+      "length_m": 28.2,
+      "inside_products_m": 28.2,
+      "shown_m": 27.2,
+      "metres_with_mud_within_4_m": 19.4,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-1112593664-segment-29",
+      "length_m": 38.5,
+      "inside_products_m": 38.5,
+      "shown_m": 32.6,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-1112593664-segment-30",
+      "length_m": 44.3,
+      "inside_products_m": 44.3,
+      "shown_m": 44.3,
+      "metres_with_mud_within_4_m": 3.9,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-1112593664-segment-31",
+      "length_m": 18.3,
+      "inside_products_m": 18.3,
+      "shown_m": 18.3,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-1112593664-segment-32",
+      "length_m": 24.2,
+      "inside_products_m": 24.2,
+      "shown_m": 16.4,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-1112593664-segment-33",
+      "length_m": 47.1,
+      "inside_products_m": 47.1,
+      "shown_m": 28.5,
+      "metres_with_mud_within_4_m": 13.7,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-1112593664-segment-34",
+      "length_m": 19.4,
+      "inside_products_m": 19.4,
+      "shown_m": 19.4,
+      "metres_with_mud_within_4_m": 18.5,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-1112593664-segment-35",
+      "length_m": 28.7,
+      "inside_products_m": 28.7,
+      "shown_m": 28.7,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-1112593664-segment-36",
+      "length_m": 22.7,
+      "inside_products_m": 22.7,
+      "shown_m": 22.7,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-1112593664-segment-37",
+      "length_m": 17.5,
+      "inside_products_m": 17.5,
+      "shown_m": 17.5,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-1112593664-segment-38",
+      "length_m": 57.0,
+      "inside_products_m": 57.0,
+      "shown_m": 40.0,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-1112593664-segment-39",
+      "length_m": 67.5,
+      "inside_products_m": 67.5,
+      "shown_m": 63.6,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-1112593664-segment-40",
+      "length_m": 41.4,
+      "inside_products_m": 41.4,
+      "shown_m": 41.4,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-1112593664-segment-41",
+      "length_m": 48.3,
+      "inside_products_m": 48.3,
+      "shown_m": 48.3,
+      "metres_with_mud_within_4_m": 7.9,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-1112593664-segment-42",
+      "length_m": 49.2,
+      "inside_products_m": 49.2,
+      "shown_m": 38.4,
+      "metres_with_mud_within_4_m": 7.9,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-1112593664-segment-43",
+      "length_m": 53.7,
+      "inside_products_m": 53.7,
+      "shown_m": 53.7,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-1112593664-segment-44",
+      "length_m": 29.2,
+      "inside_products_m": 29.2,
+      "shown_m": 29.2,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-1112593664-segment-45",
+      "length_m": 35.2,
+      "inside_products_m": 35.2,
+      "shown_m": 17.6,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-1112593664-segment-46",
+      "length_m": 154.9,
+      "inside_products_m": 154.9,
+      "shown_m": 138.9,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-1112593664-segment-47",
+      "length_m": 81.0,
+      "inside_products_m": 81.0,
+      "shown_m": 81.0,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-1112593664-segment-48",
+      "length_m": 28.5,
+      "inside_products_m": 28.5,
+      "shown_m": 16.7,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-1112593664-segment-49",
+      "length_m": 84.5,
+      "inside_products_m": 84.5,
+      "shown_m": 57.6,
+      "metres_with_mud_within_4_m": 10.9,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-1112593664-segment-50",
+      "length_m": 123.7,
+      "inside_products_m": 123.7,
+      "shown_m": 97.7,
+      "metres_with_mud_within_4_m": 14.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-1112593664-segment-51",
+      "length_m": 117.1,
+      "inside_products_m": 117.1,
+      "shown_m": 109.2,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-1112593664-segment-52",
+      "length_m": 64.6,
+      "inside_products_m": 64.6,
+      "shown_m": 41.8,
+      "metres_with_mud_within_4_m": 9.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-1112593664-segment-53",
+      "length_m": 78.8,
+      "inside_products_m": 78.8,
+      "shown_m": 74.8,
+      "metres_with_mud_within_4_m": 9.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-1112593664-segment-54",
+      "length_m": 40.5,
+      "inside_products_m": 40.5,
+      "shown_m": 26.6,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-1112593664-segment-55",
+      "length_m": 72.8,
+      "inside_products_m": 10.0,
+      "shown_m": 10.0,
+      "metres_with_mud_within_4_m": 2.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     }
+    ],
+    "answer": "6 of 56 pieces show mud; 50 not shown; 0 not observable"
+   },
+   {
+    "road": 3,
+    "osm_way_id": "206803573",
+    "name": "",
+    "ref": "ชร.5055",
+    "pieces_inside_the_products": 40,
+    "metres_inside_the_products": 3546.7,
+    "metres_shown": 3492.9,
+    "metres_with_mud_within_4_m": 94.2,
+    "by_class": {
+     "shows_mud": {
+      "pieces": 1,
+      "km": 0.176
+     },
+     "not_shown": {
+      "pieces": 39,
+      "km": 3.371
+     },
+     "not_observable": {
+      "pieces": 0,
+      "km": 0.0
+     }
+    },
+    "closed_pieces_by_class": {
+     "shows_mud": {
+      "pieces": 1,
+      "km": 0.176
+     },
+     "not_shown": {
+      "pieces": 14,
+      "km": 1.052
+     },
+     "not_observable": {
+      "pieces": 0,
+      "km": 0.0
+     }
+    },
+    "pieces": [
+     {
+      "edge_id": "osm-way-206803573-segment-0",
+      "length_m": 175.9,
+      "inside_products_m": 175.9,
+      "shown_m": 153.9,
+      "metres_with_mud_within_4_m": 46.0,
+      "class": "shows_mud",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-206803573-segment-1",
+      "length_m": 86.3,
+      "inside_products_m": 86.3,
+      "shown_m": 86.3,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-206803573-segment-2",
+      "length_m": 151.8,
+      "inside_products_m": 151.8,
+      "shown_m": 146.8,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-206803573-segment-3",
+      "length_m": 50.0,
+      "inside_products_m": 50.0,
+      "shown_m": 50.0,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-206803573-segment-4",
+      "length_m": 25.4,
+      "inside_products_m": 25.4,
+      "shown_m": 25.4,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-206803573-segment-5",
+      "length_m": 19.2,
+      "inside_products_m": 19.2,
+      "shown_m": 19.2,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-206803573-segment-6",
+      "length_m": 237.3,
+      "inside_products_m": 237.3,
+      "shown_m": 237.3,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-206803573-segment-7",
+      "length_m": 158.1,
+      "inside_products_m": 158.1,
+      "shown_m": 144.2,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-206803573-segment-8",
+      "length_m": 51.3,
+      "inside_products_m": 51.3,
+      "shown_m": 46.3,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-206803573-segment-9",
+      "length_m": 26.9,
+      "inside_products_m": 26.9,
+      "shown_m": 26.9,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-206803573-segment-10",
+      "length_m": 20.1,
+      "inside_products_m": 20.1,
+      "shown_m": 20.1,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-206803573-segment-11",
+      "length_m": 19.4,
+      "inside_products_m": 19.4,
+      "shown_m": 19.4,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-206803573-segment-12",
+      "length_m": 19.4,
+      "inside_products_m": 19.4,
+      "shown_m": 19.4,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-206803573-segment-13",
+      "length_m": 90.2,
+      "inside_products_m": 90.2,
+      "shown_m": 90.2,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-206803573-segment-14",
+      "length_m": 157.5,
+      "inside_products_m": 157.5,
+      "shown_m": 149.6,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-206803573-segment-15",
+      "length_m": 37.2,
+      "inside_products_m": 37.2,
+      "shown_m": 37.2,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-206803573-segment-16",
+      "length_m": 35.8,
+      "inside_products_m": 35.8,
+      "shown_m": 35.8,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-206803573-segment-17",
+      "length_m": 22.4,
+      "inside_products_m": 22.4,
+      "shown_m": 22.4,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-206803573-segment-18",
+      "length_m": 27.0,
+      "inside_products_m": 27.0,
+      "shown_m": 27.0,
+      "metres_with_mud_within_4_m": 19.3,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-206803573-segment-19",
+      "length_m": 15.5,
+      "inside_products_m": 15.5,
+      "shown_m": 15.5,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-206803573-segment-20",
+      "length_m": 158.8,
+      "inside_products_m": 158.8,
+      "shown_m": 158.8,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-206803573-segment-21",
+      "length_m": 30.8,
+      "inside_products_m": 30.8,
+      "shown_m": 30.8,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-206803573-segment-22",
+      "length_m": 39.8,
+      "inside_products_m": 39.8,
+      "shown_m": 39.8,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-206803573-segment-23",
+      "length_m": 53.8,
+      "inside_products_m": 53.8,
+      "shown_m": 53.8,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-206803573-segment-24",
+      "length_m": 302.5,
+      "inside_products_m": 302.5,
+      "shown_m": 302.5,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-206803573-segment-25",
+      "length_m": 48.2,
+      "inside_products_m": 48.2,
+      "shown_m": 48.2,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-206803573-segment-26",
+      "length_m": 63.4,
+      "inside_products_m": 63.4,
+      "shown_m": 63.4,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-206803573-segment-27",
+      "length_m": 135.8,
+      "inside_products_m": 135.8,
+      "shown_m": 135.8,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-206803573-segment-28",
+      "length_m": 273.5,
+      "inside_products_m": 273.5,
+      "shown_m": 273.5,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-206803573-segment-29",
+      "length_m": 70.7,
+      "inside_products_m": 70.7,
+      "shown_m": 70.7,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-206803573-segment-30",
+      "length_m": 129.4,
+      "inside_products_m": 129.4,
+      "shown_m": 129.4,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-206803573-segment-31",
+      "length_m": 33.2,
+      "inside_products_m": 33.2,
+      "shown_m": 33.2,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-206803573-segment-32",
+      "length_m": 188.6,
+      "inside_products_m": 188.6,
+      "shown_m": 188.6,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-206803573-segment-33",
+      "length_m": 36.7,
+      "inside_products_m": 36.7,
+      "shown_m": 36.7,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-206803573-segment-34",
+      "length_m": 33.8,
+      "inside_products_m": 33.8,
+      "shown_m": 33.8,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-206803573-segment-35",
+      "length_m": 109.6,
+      "inside_products_m": 109.6,
+      "shown_m": 109.6,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-206803573-segment-36",
+      "length_m": 244.6,
+      "inside_products_m": 244.6,
+      "shown_m": 244.6,
+      "metres_with_mud_within_4_m": 4.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-206803573-segment-37",
+      "length_m": 31.8,
+      "inside_products_m": 31.8,
+      "shown_m": 31.8,
+      "metres_with_mud_within_4_m": 7.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-206803573-segment-38",
+      "length_m": 38.6,
+      "inside_products_m": 38.6,
+      "shown_m": 38.6,
+      "metres_with_mud_within_4_m": 2.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-206803573-segment-39",
+      "length_m": 132.2,
+      "inside_products_m": 96.4,
+      "shown_m": 96.4,
+      "metres_with_mud_within_4_m": 15.9,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     }
+    ],
+    "answer": "1 of 40 pieces show mud; 39 not shown; 0 not observable"
+   },
+   {
+    "road": 4,
+    "osm_way_id": "345929304",
+    "name": "",
+    "ref": "",
+    "pieces_inside_the_products": 87,
+    "metres_inside_the_products": 5216.2,
+    "metres_shown": 5149.8,
+    "metres_with_mud_within_4_m": 1530.7,
+    "by_class": {
+     "shows_mud": {
+      "pieces": 23,
+      "km": 1.611
+     },
+     "not_shown": {
+      "pieces": 63,
+      "km": 3.576
+     },
+     "not_observable": {
+      "pieces": 1,
+      "km": 0.029
+     }
+    },
+    "closed_pieces_by_class": {
+     "shows_mud": {
+      "pieces": 23,
+      "km": 1.611
+     },
+     "not_shown": {
+      "pieces": 46,
+      "km": 2.512
+     },
+     "not_observable": {
+      "pieces": 1,
+      "km": 0.029
+     }
+    },
+    "pieces": [
+     {
+      "edge_id": "osm-way-345929304-segment-0",
+      "length_m": 55.3,
+      "inside_products_m": 55.3,
+      "shown_m": 55.3,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-1",
+      "length_m": 140.9,
+      "inside_products_m": 140.9,
+      "shown_m": 140.9,
+      "metres_with_mud_within_4_m": 12.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-2",
+      "length_m": 56.9,
+      "inside_products_m": 56.9,
+      "shown_m": 56.9,
+      "metres_with_mud_within_4_m": 20.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-3",
+      "length_m": 55.0,
+      "inside_products_m": 55.0,
+      "shown_m": 55.0,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-4",
+      "length_m": 28.0,
+      "inside_products_m": 28.0,
+      "shown_m": 28.0,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-5",
+      "length_m": 28.1,
+      "inside_products_m": 28.1,
+      "shown_m": 28.1,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-6",
+      "length_m": 81.0,
+      "inside_products_m": 81.0,
+      "shown_m": 81.0,
+      "metres_with_mud_within_4_m": 79.0,
+      "class": "shows_mud",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-7",
+      "length_m": 133.8,
+      "inside_products_m": 133.8,
+      "shown_m": 133.8,
+      "metres_with_mud_within_4_m": 133.8,
+      "class": "shows_mud",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-8",
+      "length_m": 44.4,
+      "inside_products_m": 44.4,
+      "shown_m": 44.4,
+      "metres_with_mud_within_4_m": 44.4,
+      "class": "shows_mud",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-9",
+      "length_m": 13.0,
+      "inside_products_m": 13.0,
+      "shown_m": 13.0,
+      "metres_with_mud_within_4_m": 13.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-10",
+      "length_m": 69.0,
+      "inside_products_m": 69.0,
+      "shown_m": 69.0,
+      "metres_with_mud_within_4_m": 36.0,
+      "class": "shows_mud",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-11",
+      "length_m": 169.9,
+      "inside_products_m": 169.9,
+      "shown_m": 169.9,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-12",
+      "length_m": 37.1,
+      "inside_products_m": 37.1,
+      "shown_m": 37.1,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-13",
+      "length_m": 34.9,
+      "inside_products_m": 34.9,
+      "shown_m": 34.9,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-14",
+      "length_m": 18.9,
+      "inside_products_m": 18.9,
+      "shown_m": 18.9,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-15",
+      "length_m": 49.3,
+      "inside_products_m": 49.3,
+      "shown_m": 49.3,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-16",
+      "length_m": 199.2,
+      "inside_products_m": 199.2,
+      "shown_m": 199.2,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-17",
+      "length_m": 32.4,
+      "inside_products_m": 32.4,
+      "shown_m": 32.4,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-18",
+      "length_m": 56.4,
+      "inside_products_m": 56.4,
+      "shown_m": 56.4,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-19",
+      "length_m": 204.9,
+      "inside_products_m": 204.9,
+      "shown_m": 204.9,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-20",
+      "length_m": 36.4,
+      "inside_products_m": 36.4,
+      "shown_m": 36.4,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-21",
+      "length_m": 77.3,
+      "inside_products_m": 77.3,
+      "shown_m": 77.3,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-22",
+      "length_m": 60.2,
+      "inside_products_m": 60.2,
+      "shown_m": 60.2,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-23",
+      "length_m": 41.6,
+      "inside_products_m": 41.6,
+      "shown_m": 41.6,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-24",
+      "length_m": 70.0,
+      "inside_products_m": 70.0,
+      "shown_m": 70.0,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-25",
+      "length_m": 40.7,
+      "inside_products_m": 40.7,
+      "shown_m": 40.7,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-26",
+      "length_m": 192.7,
+      "inside_products_m": 192.7,
+      "shown_m": 192.7,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-27",
+      "length_m": 30.9,
+      "inside_products_m": 30.9,
+      "shown_m": 30.9,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-28",
+      "length_m": 31.0,
+      "inside_products_m": 31.0,
+      "shown_m": 31.0,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-29",
+      "length_m": 35.3,
+      "inside_products_m": 35.3,
+      "shown_m": 35.3,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-30",
+      "length_m": 30.5,
+      "inside_products_m": 30.5,
+      "shown_m": 30.5,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-31",
+      "length_m": 54.9,
+      "inside_products_m": 54.9,
+      "shown_m": 54.9,
+      "metres_with_mud_within_4_m": 11.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-32",
+      "length_m": 48.7,
+      "inside_products_m": 48.7,
+      "shown_m": 48.7,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-33",
+      "length_m": 63.3,
+      "inside_products_m": 63.3,
+      "shown_m": 63.3,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-34",
+      "length_m": 87.6,
+      "inside_products_m": 87.6,
+      "shown_m": 76.7,
+      "metres_with_mud_within_4_m": 34.8,
+      "class": "shows_mud",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-35",
+      "length_m": 164.3,
+      "inside_products_m": 164.3,
+      "shown_m": 164.3,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-36",
+      "length_m": 66.9,
+      "inside_products_m": 66.9,
+      "shown_m": 66.9,
+      "metres_with_mud_within_4_m": 30.0,
+      "class": "shows_mud",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-37",
+      "length_m": 102.0,
+      "inside_products_m": 102.0,
+      "shown_m": 102.0,
+      "metres_with_mud_within_4_m": 5.9,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-38",
+      "length_m": 77.8,
+      "inside_products_m": 77.8,
+      "shown_m": 77.8,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-39",
+      "length_m": 40.0,
+      "inside_products_m": 40.0,
+      "shown_m": 40.0,
+      "metres_with_mud_within_4_m": 11.7,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-40",
+      "length_m": 77.7,
+      "inside_products_m": 77.7,
+      "shown_m": 77.7,
+      "metres_with_mud_within_4_m": 29.9,
+      "class": "shows_mud",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-41",
+      "length_m": 27.5,
+      "inside_products_m": 27.5,
+      "shown_m": 27.5,
+      "metres_with_mud_within_4_m": 26.5,
+      "class": "shows_mud",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-42",
+      "length_m": 29.8,
+      "inside_products_m": 29.8,
+      "shown_m": 28.8,
+      "metres_with_mud_within_4_m": 29.8,
+      "class": "shows_mud",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-43",
+      "length_m": 52.3,
+      "inside_products_m": 52.3,
+      "shown_m": 52.3,
+      "metres_with_mud_within_4_m": 29.6,
+      "class": "shows_mud",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-44",
+      "length_m": 71.3,
+      "inside_products_m": 71.3,
+      "shown_m": 71.3,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-45",
+      "length_m": 97.7,
+      "inside_products_m": 97.7,
+      "shown_m": 97.7,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-46",
+      "length_m": 8.5,
+      "inside_products_m": 8.5,
+      "shown_m": 8.5,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-47",
+      "length_m": 18.5,
+      "inside_products_m": 18.5,
+      "shown_m": 18.5,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-48",
+      "length_m": 86.3,
+      "inside_products_m": 86.3,
+      "shown_m": 86.3,
+      "metres_with_mud_within_4_m": 15.9,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-49",
+      "length_m": 64.8,
+      "inside_products_m": 64.8,
+      "shown_m": 64.8,
+      "metres_with_mud_within_4_m": 64.8,
+      "class": "shows_mud",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-50",
+      "length_m": 29.4,
+      "inside_products_m": 29.4,
+      "shown_m": 13.7,
+      "metres_with_mud_within_4_m": 18.6,
+      "class": "not_observable",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-51",
+      "length_m": 28.4,
+      "inside_products_m": 28.4,
+      "shown_m": 22.5,
+      "metres_with_mud_within_4_m": 27.4,
+      "class": "shows_mud",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-52",
+      "length_m": 27.1,
+      "inside_products_m": 27.1,
+      "shown_m": 27.1,
+      "metres_with_mud_within_4_m": 27.1,
+      "class": "shows_mud",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-53",
+      "length_m": 20.6,
+      "inside_products_m": 20.6,
+      "shown_m": 20.6,
+      "metres_with_mud_within_4_m": 9.8,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-54",
+      "length_m": 27.8,
+      "inside_products_m": 27.8,
+      "shown_m": 27.8,
+      "metres_with_mud_within_4_m": 1.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-55",
+      "length_m": 21.7,
+      "inside_products_m": 21.7,
+      "shown_m": 21.7,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-56",
+      "length_m": 59.4,
+      "inside_products_m": 59.4,
+      "shown_m": 59.4,
+      "metres_with_mud_within_4_m": 40.6,
+      "class": "shows_mud",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-57",
+      "length_m": 18.5,
+      "inside_products_m": 18.5,
+      "shown_m": 18.5,
+      "metres_with_mud_within_4_m": 18.5,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-58",
+      "length_m": 19.5,
+      "inside_products_m": 19.5,
+      "shown_m": 19.5,
+      "metres_with_mud_within_4_m": 19.5,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-59",
+      "length_m": 14.9,
+      "inside_products_m": 14.9,
+      "shown_m": 14.9,
+      "metres_with_mud_within_4_m": 2.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-60",
+      "length_m": 7.0,
+      "inside_products_m": 7.0,
+      "shown_m": 7.0,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-61",
+      "length_m": 8.9,
+      "inside_products_m": 8.9,
+      "shown_m": 8.9,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-62",
+      "length_m": 37.2,
+      "inside_products_m": 37.2,
+      "shown_m": 37.2,
+      "metres_with_mud_within_4_m": 3.9,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-63",
+      "length_m": 114.7,
+      "inside_products_m": 114.7,
+      "shown_m": 114.7,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-64",
+      "length_m": 27.5,
+      "inside_products_m": 27.5,
+      "shown_m": 27.5,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-65",
+      "length_m": 37.2,
+      "inside_products_m": 37.2,
+      "shown_m": 37.2,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-66",
+      "length_m": 24.3,
+      "inside_products_m": 24.3,
+      "shown_m": 24.3,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-67",
+      "length_m": 57.9,
+      "inside_products_m": 57.9,
+      "shown_m": 57.9,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-68",
+      "length_m": 106.7,
+      "inside_products_m": 106.7,
+      "shown_m": 106.7,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-69",
+      "length_m": 54.3,
+      "inside_products_m": 54.3,
+      "shown_m": 54.3,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-70",
+      "length_m": 76.9,
+      "inside_products_m": 76.9,
+      "shown_m": 76.9,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-71",
+      "length_m": 62.3,
+      "inside_products_m": 62.3,
+      "shown_m": 62.3,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-72",
+      "length_m": 56.0,
+      "inside_products_m": 56.0,
+      "shown_m": 56.0,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-73",
+      "length_m": 87.9,
+      "inside_products_m": 87.9,
+      "shown_m": 87.9,
+      "metres_with_mud_within_4_m": 46.0,
+      "class": "shows_mud",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-74",
+      "length_m": 134.1,
+      "inside_products_m": 134.1,
+      "shown_m": 134.1,
+      "metres_with_mud_within_4_m": 130.1,
+      "class": "shows_mud",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-75",
+      "length_m": 152.0,
+      "inside_products_m": 152.0,
+      "shown_m": 132.0,
+      "metres_with_mud_within_4_m": 152.0,
+      "class": "shows_mud",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-76",
+      "length_m": 105.0,
+      "inside_products_m": 105.0,
+      "shown_m": 105.0,
+      "metres_with_mud_within_4_m": 105.0,
+      "class": "shows_mud",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-77",
+      "length_m": 49.0,
+      "inside_products_m": 49.0,
+      "shown_m": 49.0,
+      "metres_with_mud_within_4_m": 49.0,
+      "class": "shows_mud",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-78",
+      "length_m": 71.9,
+      "inside_products_m": 71.9,
+      "shown_m": 70.9,
+      "metres_with_mud_within_4_m": 71.9,
+      "class": "shows_mud",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-79",
+      "length_m": 42.5,
+      "inside_products_m": 42.5,
+      "shown_m": 30.6,
+      "metres_with_mud_within_4_m": 42.5,
+      "class": "shows_mud",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-80",
+      "length_m": 55.3,
+      "inside_products_m": 55.3,
+      "shown_m": 55.3,
+      "metres_with_mud_within_4_m": 55.3,
+      "class": "shows_mud",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-81",
+      "length_m": 63.4,
+      "inside_products_m": 63.4,
+      "shown_m": 63.4,
+      "metres_with_mud_within_4_m": 62.4,
+      "class": "shows_mud",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-82",
+      "length_m": 13.2,
+      "inside_products_m": 13.2,
+      "shown_m": 13.2,
+      "metres_with_mud_within_4_m": 13.2,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-83",
+      "length_m": 11.7,
+      "inside_products_m": 11.7,
+      "shown_m": 11.7,
+      "metres_with_mud_within_4_m": 6.8,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-84",
+      "length_m": 25.5,
+      "inside_products_m": 25.5,
+      "shown_m": 25.5,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-85",
+      "length_m": 50.1,
+      "inside_products_m": 50.1,
+      "shown_m": 50.1,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-345929304-segment-86",
+      "length_m": 21.5,
+      "inside_products_m": 21.5,
+      "shown_m": 21.5,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     }
+    ],
+    "answer": "23 of 87 pieces show mud; 63 not shown; 1 not observable"
+   },
+   {
+    "road": 5,
+    "osm_way_id": "546447060",
+    "name": "",
+    "ref": "",
+    "pieces_inside_the_products": 113,
+    "metres_inside_the_products": 3856.5,
+    "metres_shown": 3828.0,
+    "metres_with_mud_within_4_m": 295.9,
+    "by_class": {
+     "shows_mud": {
+      "pieces": 6,
+      "km": 0.281
+     },
+     "not_shown": {
+      "pieces": 106,
+      "km": 3.559
+     },
+     "not_observable": {
+      "pieces": 1,
+      "km": 0.017
+     }
+    },
+    "closed_pieces_by_class": {
+     "shows_mud": {
+      "pieces": 6,
+      "km": 0.281
+     },
+     "not_shown": {
+      "pieces": 35,
+      "km": 1.06
+     },
+     "not_observable": {
+      "pieces": 1,
+      "km": 0.017
+     }
+    },
+    "pieces": [
+     {
+      "edge_id": "osm-way-546447060-segment-0",
+      "length_m": 25.2,
+      "inside_products_m": 25.2,
+      "shown_m": 25.2,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-1",
+      "length_m": 30.6,
+      "inside_products_m": 30.6,
+      "shown_m": 30.6,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-2",
+      "length_m": 27.9,
+      "inside_products_m": 27.9,
+      "shown_m": 27.9,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-3",
+      "length_m": 15.9,
+      "inside_products_m": 15.9,
+      "shown_m": 15.9,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-4",
+      "length_m": 47.2,
+      "inside_products_m": 47.2,
+      "shown_m": 47.2,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-5",
+      "length_m": 27.7,
+      "inside_products_m": 27.7,
+      "shown_m": 27.7,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-6",
+      "length_m": 62.8,
+      "inside_products_m": 62.8,
+      "shown_m": 62.8,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-7",
+      "length_m": 50.5,
+      "inside_products_m": 50.5,
+      "shown_m": 50.5,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-8",
+      "length_m": 41.7,
+      "inside_products_m": 41.7,
+      "shown_m": 41.7,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-9",
+      "length_m": 21.4,
+      "inside_products_m": 21.4,
+      "shown_m": 21.4,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-10",
+      "length_m": 9.4,
+      "inside_products_m": 9.4,
+      "shown_m": 9.4,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-11",
+      "length_m": 41.2,
+      "inside_products_m": 41.2,
+      "shown_m": 41.2,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-12",
+      "length_m": 35.8,
+      "inside_products_m": 35.8,
+      "shown_m": 35.8,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-13",
+      "length_m": 13.8,
+      "inside_products_m": 13.8,
+      "shown_m": 13.8,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-14",
+      "length_m": 16.5,
+      "inside_products_m": 16.5,
+      "shown_m": 16.5,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-15",
+      "length_m": 23.1,
+      "inside_products_m": 23.1,
+      "shown_m": 23.1,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-16",
+      "length_m": 49.2,
+      "inside_products_m": 49.2,
+      "shown_m": 49.2,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-17",
+      "length_m": 23.8,
+      "inside_products_m": 23.8,
+      "shown_m": 23.8,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-18",
+      "length_m": 9.7,
+      "inside_products_m": 9.7,
+      "shown_m": 9.7,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-19",
+      "length_m": 19.4,
+      "inside_products_m": 19.4,
+      "shown_m": 19.4,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-20",
+      "length_m": 53.4,
+      "inside_products_m": 53.4,
+      "shown_m": 53.4,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-21",
+      "length_m": 74.1,
+      "inside_products_m": 74.1,
+      "shown_m": 74.1,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-22",
+      "length_m": 28.1,
+      "inside_products_m": 28.1,
+      "shown_m": 28.1,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-23",
+      "length_m": 36.4,
+      "inside_products_m": 36.4,
+      "shown_m": 36.4,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-24",
+      "length_m": 33.2,
+      "inside_products_m": 33.2,
+      "shown_m": 33.2,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-25",
+      "length_m": 22.1,
+      "inside_products_m": 22.1,
+      "shown_m": 22.1,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-26",
+      "length_m": 26.2,
+      "inside_products_m": 26.2,
+      "shown_m": 26.2,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-27",
+      "length_m": 20.6,
+      "inside_products_m": 20.6,
+      "shown_m": 20.6,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-28",
+      "length_m": 18.8,
+      "inside_products_m": 18.8,
+      "shown_m": 18.8,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-29",
+      "length_m": 23.6,
+      "inside_products_m": 23.6,
+      "shown_m": 23.6,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-30",
+      "length_m": 30.5,
+      "inside_products_m": 30.5,
+      "shown_m": 30.5,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-31",
+      "length_m": 40.0,
+      "inside_products_m": 40.0,
+      "shown_m": 40.0,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-32",
+      "length_m": 29.5,
+      "inside_products_m": 29.5,
+      "shown_m": 29.5,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-33",
+      "length_m": 11.4,
+      "inside_products_m": 11.4,
+      "shown_m": 11.4,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-34",
+      "length_m": 21.1,
+      "inside_products_m": 21.1,
+      "shown_m": 21.1,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-35",
+      "length_m": 41.6,
+      "inside_products_m": 41.6,
+      "shown_m": 41.6,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-36",
+      "length_m": 24.9,
+      "inside_products_m": 24.9,
+      "shown_m": 24.9,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-37",
+      "length_m": 23.4,
+      "inside_products_m": 23.4,
+      "shown_m": 23.4,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-38",
+      "length_m": 34.4,
+      "inside_products_m": 34.4,
+      "shown_m": 34.4,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-39",
+      "length_m": 86.5,
+      "inside_products_m": 86.5,
+      "shown_m": 86.5,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-40",
+      "length_m": 36.8,
+      "inside_products_m": 36.8,
+      "shown_m": 36.8,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-41",
+      "length_m": 30.7,
+      "inside_products_m": 30.7,
+      "shown_m": 30.7,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-42",
+      "length_m": 47.4,
+      "inside_products_m": 47.4,
+      "shown_m": 47.4,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-43",
+      "length_m": 80.2,
+      "inside_products_m": 80.2,
+      "shown_m": 80.2,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-44",
+      "length_m": 95.8,
+      "inside_products_m": 95.8,
+      "shown_m": 95.8,
+      "metres_with_mud_within_4_m": 2.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-45",
+      "length_m": 38.8,
+      "inside_products_m": 38.8,
+      "shown_m": 38.8,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-46",
+      "length_m": 22.0,
+      "inside_products_m": 22.0,
+      "shown_m": 22.0,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-47",
+      "length_m": 18.8,
+      "inside_products_m": 18.8,
+      "shown_m": 18.8,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-48",
+      "length_m": 22.4,
+      "inside_products_m": 22.4,
+      "shown_m": 22.4,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-49",
+      "length_m": 99.8,
+      "inside_products_m": 99.8,
+      "shown_m": 99.8,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-50",
+      "length_m": 28.9,
+      "inside_products_m": 28.9,
+      "shown_m": 28.9,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-51",
+      "length_m": 76.3,
+      "inside_products_m": 76.3,
+      "shown_m": 72.3,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-52",
+      "length_m": 26.1,
+      "inside_products_m": 26.1,
+      "shown_m": 25.2,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-53",
+      "length_m": 20.3,
+      "inside_products_m": 20.3,
+      "shown_m": 20.3,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-54",
+      "length_m": 122.1,
+      "inside_products_m": 122.1,
+      "shown_m": 122.1,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-55",
+      "length_m": 14.9,
+      "inside_products_m": 14.9,
+      "shown_m": 14.9,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-56",
+      "length_m": 64.5,
+      "inside_products_m": 64.5,
+      "shown_m": 64.5,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-57",
+      "length_m": 15.2,
+      "inside_products_m": 15.2,
+      "shown_m": 15.2,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-58",
+      "length_m": 33.8,
+      "inside_products_m": 33.8,
+      "shown_m": 33.8,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-59",
+      "length_m": 93.4,
+      "inside_products_m": 93.4,
+      "shown_m": 93.4,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-60",
+      "length_m": 21.6,
+      "inside_products_m": 21.6,
+      "shown_m": 21.6,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-61",
+      "length_m": 27.9,
+      "inside_products_m": 27.9,
+      "shown_m": 27.9,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-62",
+      "length_m": 94.6,
+      "inside_products_m": 94.6,
+      "shown_m": 94.6,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-63",
+      "length_m": 75.4,
+      "inside_products_m": 75.4,
+      "shown_m": 75.4,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-64",
+      "length_m": 22.5,
+      "inside_products_m": 22.5,
+      "shown_m": 22.5,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-65",
+      "length_m": 41.7,
+      "inside_products_m": 41.7,
+      "shown_m": 41.7,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-66",
+      "length_m": 55.0,
+      "inside_products_m": 55.0,
+      "shown_m": 55.0,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-67",
+      "length_m": 26.2,
+      "inside_products_m": 26.2,
+      "shown_m": 26.2,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-68",
+      "length_m": 36.8,
+      "inside_products_m": 36.8,
+      "shown_m": 36.8,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-69",
+      "length_m": 21.1,
+      "inside_products_m": 21.1,
+      "shown_m": 21.1,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-70",
+      "length_m": 21.3,
+      "inside_products_m": 21.3,
+      "shown_m": 21.3,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-71",
+      "length_m": 18.3,
+      "inside_products_m": 18.3,
+      "shown_m": 18.3,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-72",
+      "length_m": 16.8,
+      "inside_products_m": 16.8,
+      "shown_m": 16.8,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-73",
+      "length_m": 70.3,
+      "inside_products_m": 70.3,
+      "shown_m": 70.3,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-74",
+      "length_m": 17.7,
+      "inside_products_m": 17.7,
+      "shown_m": 17.7,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-75",
+      "length_m": 16.3,
+      "inside_products_m": 16.3,
+      "shown_m": 16.3,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-76",
+      "length_m": 37.3,
+      "inside_products_m": 37.3,
+      "shown_m": 37.3,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-77",
+      "length_m": 8.4,
+      "inside_products_m": 8.4,
+      "shown_m": 8.4,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-78",
+      "length_m": 27.7,
+      "inside_products_m": 27.7,
+      "shown_m": 27.7,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-79",
+      "length_m": 38.7,
+      "inside_products_m": 38.7,
+      "shown_m": 38.7,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-80",
+      "length_m": 20.7,
+      "inside_products_m": 20.7,
+      "shown_m": 20.7,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-81",
+      "length_m": 2.2,
+      "inside_products_m": 2.2,
+      "shown_m": 2.2,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-82",
+      "length_m": 23.2,
+      "inside_products_m": 23.2,
+      "shown_m": 23.2,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-83",
+      "length_m": 12.2,
+      "inside_products_m": 12.2,
+      "shown_m": 12.2,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-84",
+      "length_m": 12.8,
+      "inside_products_m": 12.8,
+      "shown_m": 12.8,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-85",
+      "length_m": 12.6,
+      "inside_products_m": 12.6,
+      "shown_m": 12.6,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-86",
+      "length_m": 13.6,
+      "inside_products_m": 13.6,
+      "shown_m": 9.7,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-87",
+      "length_m": 23.7,
+      "inside_products_m": 23.7,
+      "shown_m": 17.8,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-88",
+      "length_m": 14.3,
+      "inside_products_m": 14.3,
+      "shown_m": 12.4,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-89",
+      "length_m": 16.9,
+      "inside_products_m": 16.9,
+      "shown_m": 5.0,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_observable",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-90",
+      "length_m": 28.2,
+      "inside_products_m": 28.2,
+      "shown_m": 28.2,
+      "metres_with_mud_within_4_m": 6.8,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-91",
+      "length_m": 8.7,
+      "inside_products_m": 8.7,
+      "shown_m": 8.7,
+      "metres_with_mud_within_4_m": 4.8,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-92",
+      "length_m": 61.7,
+      "inside_products_m": 61.7,
+      "shown_m": 61.7,
+      "metres_with_mud_within_4_m": 1.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-93",
+      "length_m": 29.4,
+      "inside_products_m": 29.4,
+      "shown_m": 29.4,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-94",
+      "length_m": 11.2,
+      "inside_products_m": 11.2,
+      "shown_m": 11.2,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-95",
+      "length_m": 10.3,
+      "inside_products_m": 10.3,
+      "shown_m": 10.3,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-96",
+      "length_m": 38.0,
+      "inside_products_m": 38.0,
+      "shown_m": 38.0,
+      "metres_with_mud_within_4_m": 38.0,
+      "class": "shows_mud",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-97",
+      "length_m": 26.3,
+      "inside_products_m": 26.3,
+      "shown_m": 26.3,
+      "metres_with_mud_within_4_m": 18.5,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-98",
+      "length_m": 28.2,
+      "inside_products_m": 28.2,
+      "shown_m": 28.2,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-99",
+      "length_m": 37.0,
+      "inside_products_m": 37.0,
+      "shown_m": 37.0,
+      "metres_with_mud_within_4_m": 4.9,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-100",
+      "length_m": 21.3,
+      "inside_products_m": 21.3,
+      "shown_m": 21.3,
+      "metres_with_mud_within_4_m": 10.7,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-101",
+      "length_m": 14.2,
+      "inside_products_m": 14.2,
+      "shown_m": 14.2,
+      "metres_with_mud_within_4_m": 14.2,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-102",
+      "length_m": 52.3,
+      "inside_products_m": 52.3,
+      "shown_m": 52.3,
+      "metres_with_mud_within_4_m": 52.3,
+      "class": "shows_mud",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-103",
+      "length_m": 80.1,
+      "inside_products_m": 80.1,
+      "shown_m": 80.1,
+      "metres_with_mud_within_4_m": 44.5,
+      "class": "shows_mud",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-104",
+      "length_m": 74.3,
+      "inside_products_m": 74.3,
+      "shown_m": 74.3,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-105",
+      "length_m": 18.4,
+      "inside_products_m": 18.4,
+      "shown_m": 18.4,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-106",
+      "length_m": 21.6,
+      "inside_products_m": 21.6,
+      "shown_m": 21.6,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-107",
+      "length_m": 29.7,
+      "inside_products_m": 29.7,
+      "shown_m": 29.7,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-108",
+      "length_m": 34.0,
+      "inside_products_m": 34.0,
+      "shown_m": 34.0,
+      "metres_with_mud_within_4_m": 32.0,
+      "class": "shows_mud",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-109",
+      "length_m": 36.4,
+      "inside_products_m": 36.4,
+      "shown_m": 36.4,
+      "metres_with_mud_within_4_m": 20.7,
+      "class": "shows_mud",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-110",
+      "length_m": 19.6,
+      "inside_products_m": 19.6,
+      "shown_m": 19.6,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-111",
+      "length_m": 27.1,
+      "inside_products_m": 27.1,
+      "shown_m": 27.1,
+      "metres_with_mud_within_4_m": 11.6,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447060-segment-112",
+      "length_m": 39.9,
+      "inside_products_m": 39.9,
+      "shown_m": 39.9,
+      "metres_with_mud_within_4_m": 33.9,
+      "class": "shows_mud",
+      "closed_in_case_se1": true
+     }
+    ],
+    "answer": "6 of 113 pieces show mud; 106 not shown; 1 not observable"
+   },
+   {
+    "road": 6,
+    "osm_way_id": "206803548",
+    "name": "",
+    "ref": "ชร.5054",
+    "pieces_inside_the_products": 0,
+    "metres_inside_the_products": 0,
+    "metres_shown": 0,
+    "metres_with_mud_within_4_m": 0,
+    "by_class": {
+     "shows_mud": {
+      "pieces": 0,
+      "km": 0.0
+     },
+     "not_shown": {
+      "pieces": 0,
+      "km": 0.0
+     },
+     "not_observable": {
+      "pieces": 0,
+      "km": 0.0
+     }
+    },
+    "closed_pieces_by_class": {
+     "shows_mud": {
+      "pieces": 0,
+      "km": 0.0
+     },
+     "not_shown": {
+      "pieces": 0,
+      "km": 0.0
+     },
+     "not_observable": {
+      "pieces": 0,
+      "km": 0.0
+     }
+    },
+    "pieces": [],
+    "answer": "not in the products"
+   },
+   {
+    "road": 7,
+    "osm_way_id": "546447123",
+    "name": "",
+    "ref": "",
+    "pieces_inside_the_products": 89,
+    "metres_inside_the_products": 3698.6,
+    "metres_shown": 3676.7,
+    "metres_with_mud_within_4_m": 1013.1,
+    "by_class": {
+     "shows_mud": {
+      "pieces": 13,
+      "km": 1.255
+     },
+     "not_shown": {
+      "pieces": 76,
+      "km": 2.444
+     },
+     "not_observable": {
+      "pieces": 0,
+      "km": 0.0
+     }
+    },
+    "closed_pieces_by_class": {
+     "shows_mud": {
+      "pieces": 12,
+      "km": 1.07
+     },
+     "not_shown": {
+      "pieces": 55,
+      "km": 1.616
+     },
+     "not_observable": {
+      "pieces": 0,
+      "km": 0.0
+     }
+    },
+    "pieces": [
+     {
+      "edge_id": "osm-way-546447123-segment-0",
+      "length_m": 184.7,
+      "inside_products_m": 184.7,
+      "shown_m": 167.8,
+      "metres_with_mud_within_4_m": 115.8,
+      "class": "shows_mud",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-1",
+      "length_m": 21.8,
+      "inside_products_m": 21.8,
+      "shown_m": 21.8,
+      "metres_with_mud_within_4_m": 19.8,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-2",
+      "length_m": 46.4,
+      "inside_products_m": 46.4,
+      "shown_m": 46.4,
+      "metres_with_mud_within_4_m": 13.8,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-3",
+      "length_m": 28.2,
+      "inside_products_m": 28.2,
+      "shown_m": 28.2,
+      "metres_with_mud_within_4_m": 6.8,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-4",
+      "length_m": 98.5,
+      "inside_products_m": 98.5,
+      "shown_m": 98.5,
+      "metres_with_mud_within_4_m": 8.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-5",
+      "length_m": 65.2,
+      "inside_products_m": 65.2,
+      "shown_m": 65.2,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-6",
+      "length_m": 42.5,
+      "inside_products_m": 42.5,
+      "shown_m": 42.5,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-7",
+      "length_m": 86.8,
+      "inside_products_m": 86.8,
+      "shown_m": 86.8,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-8",
+      "length_m": 35.2,
+      "inside_products_m": 35.2,
+      "shown_m": 35.2,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-9",
+      "length_m": 32.9,
+      "inside_products_m": 32.9,
+      "shown_m": 32.9,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-10",
+      "length_m": 30.9,
+      "inside_products_m": 30.9,
+      "shown_m": 30.9,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-11",
+      "length_m": 64.2,
+      "inside_products_m": 64.2,
+      "shown_m": 64.2,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-12",
+      "length_m": 52.2,
+      "inside_products_m": 52.2,
+      "shown_m": 52.2,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-13",
+      "length_m": 48.0,
+      "inside_products_m": 48.0,
+      "shown_m": 48.0,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-14",
+      "length_m": 16.1,
+      "inside_products_m": 16.1,
+      "shown_m": 16.1,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-15",
+      "length_m": 23.2,
+      "inside_products_m": 23.2,
+      "shown_m": 23.2,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-16",
+      "length_m": 43.9,
+      "inside_products_m": 43.9,
+      "shown_m": 43.9,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-17",
+      "length_m": 10.2,
+      "inside_products_m": 10.2,
+      "shown_m": 10.2,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-18",
+      "length_m": 12.4,
+      "inside_products_m": 12.4,
+      "shown_m": 12.4,
+      "metres_with_mud_within_4_m": 12.4,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-19",
+      "length_m": 28.6,
+      "inside_products_m": 28.6,
+      "shown_m": 28.6,
+      "metres_with_mud_within_4_m": 8.9,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-20",
+      "length_m": 120.1,
+      "inside_products_m": 120.1,
+      "shown_m": 115.1,
+      "metres_with_mud_within_4_m": 68.5,
+      "class": "shows_mud",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-21",
+      "length_m": 7.2,
+      "inside_products_m": 7.2,
+      "shown_m": 7.2,
+      "metres_with_mud_within_4_m": 7.2,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-22",
+      "length_m": 6.4,
+      "inside_products_m": 6.4,
+      "shown_m": 6.4,
+      "metres_with_mud_within_4_m": 6.4,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-23",
+      "length_m": 33.7,
+      "inside_products_m": 33.7,
+      "shown_m": 33.7,
+      "metres_with_mud_within_4_m": 12.9,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-24",
+      "length_m": 7.3,
+      "inside_products_m": 7.3,
+      "shown_m": 7.3,
+      "metres_with_mud_within_4_m": 7.3,
+      "class": "not_shown",
+      "closed_in_case_se1": false
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-25",
+      "length_m": 13.9,
+      "inside_products_m": 13.9,
+      "shown_m": 13.9,
+      "metres_with_mud_within_4_m": 13.9,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-26",
+      "length_m": 19.5,
+      "inside_products_m": 19.5,
+      "shown_m": 19.5,
+      "metres_with_mud_within_4_m": 19.5,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-27",
+      "length_m": 105.9,
+      "inside_products_m": 105.9,
+      "shown_m": 105.9,
+      "metres_with_mud_within_4_m": 105.9,
+      "class": "shows_mud",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-28",
+      "length_m": 54.6,
+      "inside_products_m": 54.6,
+      "shown_m": 54.6,
+      "metres_with_mud_within_4_m": 54.6,
+      "class": "shows_mud",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-29",
+      "length_m": 8.9,
+      "inside_products_m": 8.9,
+      "shown_m": 8.9,
+      "metres_with_mud_within_4_m": 8.9,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-30",
+      "length_m": 50.5,
+      "inside_products_m": 50.5,
+      "shown_m": 50.5,
+      "metres_with_mud_within_4_m": 35.7,
+      "class": "shows_mud",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-31",
+      "length_m": 18.1,
+      "inside_products_m": 18.1,
+      "shown_m": 18.1,
+      "metres_with_mud_within_4_m": 14.3,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-32",
+      "length_m": 16.2,
+      "inside_products_m": 16.2,
+      "shown_m": 16.2,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-33",
+      "length_m": 23.9,
+      "inside_products_m": 23.9,
+      "shown_m": 23.9,
+      "metres_with_mud_within_4_m": 20.9,
+      "class": "shows_mud",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-34",
+      "length_m": 9.5,
+      "inside_products_m": 9.5,
+      "shown_m": 9.5,
+      "metres_with_mud_within_4_m": 3.8,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-35",
+      "length_m": 242.6,
+      "inside_products_m": 242.6,
+      "shown_m": 242.6,
+      "metres_with_mud_within_4_m": 80.9,
+      "class": "shows_mud",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-36",
+      "length_m": 19.4,
+      "inside_products_m": 19.4,
+      "shown_m": 19.4,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-37",
+      "length_m": 10.7,
+      "inside_products_m": 10.7,
+      "shown_m": 10.7,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-38",
+      "length_m": 7.5,
+      "inside_products_m": 7.5,
+      "shown_m": 7.5,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-39",
+      "length_m": 8.3,
+      "inside_products_m": 8.3,
+      "shown_m": 8.3,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-40",
+      "length_m": 133.9,
+      "inside_products_m": 133.9,
+      "shown_m": 133.9,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-41",
+      "length_m": 24.6,
+      "inside_products_m": 24.6,
+      "shown_m": 24.6,
+      "metres_with_mud_within_4_m": 4.9,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-42",
+      "length_m": 19.1,
+      "inside_products_m": 19.1,
+      "shown_m": 19.1,
+      "metres_with_mud_within_4_m": 10.5,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-43",
+      "length_m": 46.3,
+      "inside_products_m": 46.3,
+      "shown_m": 46.3,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-44",
+      "length_m": 25.7,
+      "inside_products_m": 22.7,
+      "shown_m": 22.7,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-60",
+      "length_m": 18.3,
+      "inside_products_m": 12.5,
+      "shown_m": 12.5,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-61",
+      "length_m": 24.4,
+      "inside_products_m": 24.4,
+      "shown_m": 24.4,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-62",
+      "length_m": 19.4,
+      "inside_products_m": 19.4,
+      "shown_m": 19.4,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-63",
+      "length_m": 313.5,
+      "inside_products_m": 313.5,
+      "shown_m": 313.5,
+      "metres_with_mud_within_4_m": 151.7,
+      "class": "shows_mud",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-64",
+      "length_m": 27.9,
+      "inside_products_m": 27.9,
+      "shown_m": 27.9,
+      "metres_with_mud_within_4_m": 5.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-65",
+      "length_m": 25.4,
+      "inside_products_m": 25.4,
+      "shown_m": 25.4,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-66",
+      "length_m": 24.4,
+      "inside_products_m": 24.4,
+      "shown_m": 24.4,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-67",
+      "length_m": 42.6,
+      "inside_products_m": 42.6,
+      "shown_m": 42.6,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-68",
+      "length_m": 31.1,
+      "inside_products_m": 31.1,
+      "shown_m": 31.1,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-69",
+      "length_m": 48.4,
+      "inside_products_m": 48.4,
+      "shown_m": 48.4,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-70",
+      "length_m": 13.0,
+      "inside_products_m": 13.0,
+      "shown_m": 13.0,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-71",
+      "length_m": 23.4,
+      "inside_products_m": 23.4,
+      "shown_m": 23.4,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-72",
+      "length_m": 112.7,
+      "inside_products_m": 112.7,
+      "shown_m": 112.7,
+      "metres_with_mud_within_4_m": 15.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-73",
+      "length_m": 24.0,
+      "inside_products_m": 24.0,
+      "shown_m": 24.0,
+      "metres_with_mud_within_4_m": 24.0,
+      "class": "shows_mud",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-74",
+      "length_m": 25.9,
+      "inside_products_m": 25.9,
+      "shown_m": 25.9,
+      "metres_with_mud_within_4_m": 25.9,
+      "class": "shows_mud",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-75",
+      "length_m": 17.1,
+      "inside_products_m": 17.1,
+      "shown_m": 17.1,
+      "metres_with_mud_within_4_m": 17.1,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-76",
+      "length_m": 21.0,
+      "inside_products_m": 21.0,
+      "shown_m": 21.0,
+      "metres_with_mud_within_4_m": 21.0,
+      "class": "shows_mud",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-77",
+      "length_m": 45.6,
+      "inside_products_m": 45.6,
+      "shown_m": 45.6,
+      "metres_with_mud_within_4_m": 45.6,
+      "class": "shows_mud",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-78",
+      "length_m": 31.4,
+      "inside_products_m": 31.4,
+      "shown_m": 31.4,
+      "metres_with_mud_within_4_m": 2.9,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-79",
+      "length_m": 19.9,
+      "inside_products_m": 19.9,
+      "shown_m": 19.9,
+      "metres_with_mud_within_4_m": 10.9,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-80",
+      "length_m": 19.8,
+      "inside_products_m": 19.8,
+      "shown_m": 19.8,
+      "metres_with_mud_within_4_m": 6.9,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-81",
+      "length_m": 42.2,
+      "inside_products_m": 42.2,
+      "shown_m": 42.2,
+      "metres_with_mud_within_4_m": 25.5,
+      "class": "shows_mud",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-82",
+      "length_m": 12.0,
+      "inside_products_m": 12.0,
+      "shown_m": 12.0,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-83",
+      "length_m": 15.6,
+      "inside_products_m": 15.6,
+      "shown_m": 15.6,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-84",
+      "length_m": 16.9,
+      "inside_products_m": 16.9,
+      "shown_m": 16.9,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-85",
+      "length_m": 97.5,
+      "inside_products_m": 97.5,
+      "shown_m": 97.5,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-86",
+      "length_m": 32.8,
+      "inside_products_m": 32.8,
+      "shown_m": 32.8,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-87",
+      "length_m": 13.5,
+      "inside_products_m": 13.5,
+      "shown_m": 13.5,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-88",
+      "length_m": 13.0,
+      "inside_products_m": 13.0,
+      "shown_m": 13.0,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-89",
+      "length_m": 8.0,
+      "inside_products_m": 8.0,
+      "shown_m": 8.0,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-90",
+      "length_m": 13.0,
+      "inside_products_m": 13.0,
+      "shown_m": 13.0,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-91",
+      "length_m": 14.6,
+      "inside_products_m": 14.6,
+      "shown_m": 14.6,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-92",
+      "length_m": 8.6,
+      "inside_products_m": 8.6,
+      "shown_m": 8.6,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-93",
+      "length_m": 49.2,
+      "inside_products_m": 49.2,
+      "shown_m": 49.2,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-94",
+      "length_m": 17.1,
+      "inside_products_m": 17.1,
+      "shown_m": 17.1,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-95",
+      "length_m": 10.8,
+      "inside_products_m": 10.8,
+      "shown_m": 10.8,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-96",
+      "length_m": 13.0,
+      "inside_products_m": 13.0,
+      "shown_m": 13.0,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-97",
+      "length_m": 15.5,
+      "inside_products_m": 15.5,
+      "shown_m": 15.5,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-98",
+      "length_m": 17.1,
+      "inside_products_m": 17.1,
+      "shown_m": 17.1,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-99",
+      "length_m": 37.4,
+      "inside_products_m": 37.4,
+      "shown_m": 37.4,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-100",
+      "length_m": 178.5,
+      "inside_products_m": 178.5,
+      "shown_m": 178.5,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-101",
+      "length_m": 72.5,
+      "inside_products_m": 72.5,
+      "shown_m": 72.5,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-102",
+      "length_m": 44.5,
+      "inside_products_m": 44.5,
+      "shown_m": 44.5,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     },
+     {
+      "edge_id": "osm-way-546447123-segment-103",
+      "length_m": 29.2,
+      "inside_products_m": 29.2,
+      "shown_m": 29.2,
+      "metres_with_mud_within_4_m": 0.0,
+      "class": "not_shown",
+      "closed_in_case_se1": true
+     }
+    ],
+    "answer": "13 of 89 pieces show mud; 76 not shown; 0 not observable"
+   },
+   {
+    "road": 8,
+    "osm_way_id": "546688135",
+    "name": "",
+    "ref": "",
+    "pieces_inside_the_products": 0,
+    "metres_inside_the_products": 0,
+    "metres_shown": 0,
+    "metres_with_mud_within_4_m": 0,
+    "by_class": {
+     "shows_mud": {
+      "pieces": 0,
+      "km": 0.0
+     },
+     "not_shown": {
+      "pieces": 0,
+      "km": 0.0
+     },
+     "not_observable": {
+      "pieces": 0,
+      "km": 0.0
+     }
+    },
+    "closed_pieces_by_class": {
+     "shows_mud": {
+      "pieces": 0,
+      "km": 0.0
+     },
+     "not_shown": {
+      "pieces": 0,
+      "km": 0.0
+     },
+     "not_observable": {
+      "pieces": 0,
+      "km": 0.0
+     }
+    },
+    "pieces": [],
+    "answer": "not in the products"
+   }
+  ],
+  "all_pieces_inside_the_products": {
+   "shows_mud": {
+    "pieces": 1845,
+    "km": 148.638
+   },
+   "not_shown": {
+    "pieces": 12485,
+    "km": 458.07
+   },
+   "not_observable": {
+    "pieces": 1763,
+    "km": 52.587
+   }
+  },
+  "pieces_the_model_closes_in_case_se1": {
+   "shows_mud": {
+    "pieces": 693,
+    "km": 53.671
+   },
+   "not_shown": {
+    "pieces": 2159,
+    "km": 71.45
+   },
+   "not_observable": {
+    "pieces": 443,
+    "km": 13.787
+   }
+  },
+  "pieces_the_model_leaves_open": {
+   "shows_mud": {
+    "pieces": 1152,
+    "km": 94.967
+   },
+   "not_shown": {
+    "pieces": 10326,
+    "km": 386.62
+   },
+   "not_observable": {
+    "pieces": 1320,
+    "km": 38.801
+   }
+  },
+  "by_tambon": {
+   "TH570901": {
+    "shows_mud": {
+     "pieces": 910,
+     "km": 70.037
+    },
+    "not_shown": {
+     "pieces": 2693,
+     "km": 91.815
+    },
+    "not_observable": {
+     "pieces": 496,
+     "km": 14.658
+    }
+   },
+   "TH570902": {
+    "shows_mud": {
+     "pieces": 0,
+     "km": 0.0
+    },
+    "not_shown": {
+     "pieces": 0,
+     "km": 0.0
+    },
+    "not_observable": {
+     "pieces": 0,
+     "km": 0.0
+    }
+   },
+   "TH570903": {
+    "shows_mud": {
+     "pieces": 129,
+     "km": 10.06
+    },
+    "not_shown": {
+     "pieces": 1481,
+     "km": 57.253
+    },
+    "not_observable": {
+     "pieces": 202,
+     "km": 6.852
+    }
+   },
+   "TH570904": {
+    "shows_mud": {
+     "pieces": 149,
+     "km": 13.212
+    },
+    "not_shown": {
+     "pieces": 2434,
+     "km": 108.367
+    },
+    "not_observable": {
+     "pieces": 145,
+     "km": 4.521
+    }
+   },
+   "TH570905": {
+    "shows_mud": {
+     "pieces": 101,
+     "km": 8.083
+    },
+    "not_shown": {
+     "pieces": 1143,
+     "km": 53.736
+    },
+    "not_observable": {
+     "pieces": 57,
+     "km": 1.557
+    }
+   },
+   "TH570906": {
+    "shows_mud": {
+     "pieces": 556,
+     "km": 47.245
+    },
+    "not_shown": {
+     "pieces": 4563,
+     "km": 143.907
+    },
+    "not_observable": {
+     "pieces": 863,
+     "km": 24.999
+    }
+   },
+   "TH570908": {
+    "shows_mud": {
+     "pieces": 0,
+     "km": 0.0
+    },
+    "not_shown": {
+     "pieces": 0,
+     "km": 0.0
+    },
+    "not_observable": {
+     "pieces": 0,
+     "km": 0.0
+    }
+   },
+   "TH570909": {
+    "shows_mud": {
+     "pieces": 0,
+     "km": 0.0
+    },
+    "not_shown": {
+     "pieces": 171,
+     "km": 2.993
+    },
+    "not_observable": {
+     "pieces": 0,
+     "km": 0.0
+    }
+   },
+   "outside_the_eight_tambons": {
+    "shows_mud": {
+     "pieces": 0,
+     "km": 0.0
+    },
+    "not_shown": {
+     "pieces": 0,
+     "km": 0.0
+    },
+    "not_observable": {
+     "pieces": 0,
+     "km": 0.0
+    }
+   }
+  },
+  "sentences": {
+   "shows_mud": "The water reached this piece at the peak. Mud does not give the depth; a shallow flow leaves a film too.",
+   "not_shown": "Not shown: streets may have been cleared of mud in the five days after the peak. No mud never means the road stayed dry or passable.",
+   "not_observable": "Not observable: the image does not show this piece (cloud, roofs, water before the flood or outside the products)."
+  }
+ },
+ "replay_peak_4b": {
+  "stage_m": 3.5,
+  "rule": "wet when the code is the channel code or its code times 0.05 m is below the stage (plan section 3)",
+  "judged_rule": "replay_river_fit.flood_evidence: clear on both Sentinel-2 scenes (5 and 15 Sep 2024) and NDVI 0.45 or more on 5 Sep, on the 10 m cell under each 2 m pixel",
+  "mud_pixels_outside_the_replay_grid": 0,
+  "strata": {
+   "judged_by_the_river_fit": {
+    "compared_km2": 56.3219,
+    "mud_km2": 1.2012,
+    "mud_inside_the_peak_km2": 0.8613,
+    "share_of_the_mud_inside_the_peak": 0.717,
+    "mud_outside_the_peak_km2_by_tambon": {
+     "TH570901": 0.1854,
+     "TH570902": 0.0,
+     "TH570903": 0.0416,
+     "TH570904": 0.0167,
+     "TH570905": 0.046,
+     "TH570906": 0.0502,
+     "TH570908": 0.0,
+     "TH570909": 0.0
+    },
+    "mud_outside_the_peak_by_the_replays_height_above_the_channel_km2": {
+     "0_to_5_m": 0.0907,
+     "5_to_10_m": 0.1573,
+     "10_to_20_m": 0.0266,
+     "20_m_or_more": 0.0,
+     "no_height": 0.0654
+    },
+    "independent": false,
+    "note": "The replay was fitted to the Sentinel-2 mud line on these cells, so agreement here is not independent."
+   },
+   "not_judged_by_the_river_fit": {
+    "compared_km2": 37.0297,
+    "mud_km2": 2.7539,
+    "mud_inside_the_peak_km2": 1.065,
+    "share_of_the_mud_inside_the_peak": 0.3867,
+    "mud_outside_the_peak_km2_by_tambon": {
+     "TH570901": 0.751,
+     "TH570902": 0.0,
+     "TH570903": 0.1618,
+     "TH570904": 0.1045,
+     "TH570905": 0.1361,
+     "TH570906": 0.5355,
+     "TH570908": 0.0,
+     "TH570909": 0.0
+    },
+    "mud_outside_the_peak_by_the_replays_height_above_the_channel_km2": {
+     "0_to_5_m": 0.325,
+     "5_to_10_m": 0.614,
+     "10_to_20_m": 0.1356,
+     "20_m_or_more": 0.0,
+     "no_height": 0.6144
+    },
+    "independent": true,
+    "note": "The replay never saw mud on these cells (most are built-up or road), so agreement here is an independent check."
+   }
+  }
+ },
+ "case_se1_4c": {
+  "by_tambon": {
+   "TH570901": {
+    "name": "Mae Sai",
+    "mud_km2": 1.7162,
+    "mud_inside_the_season_layer_km2": 1.3024,
+    "share_of_the_mud_inside": 0.7589
+   },
+   "TH570903": {
+    "name": "Ko Chang",
+    "mud_km2": 0.56,
+    "mud_inside_the_season_layer_km2": 0.3983,
+    "share_of_the_mud_inside": 0.7112
+   },
+   "TH570904": {
+    "name": "Pong Pha",
+    "mud_km2": 0.1925,
+    "mud_inside_the_season_layer_km2": 0.0,
+    "share_of_the_mud_inside": 0.0
+   },
+   "TH570905": {
+    "name": "Si Mueang Chum",
+    "mud_km2": 0.8821,
+    "mud_inside_the_season_layer_km2": 0.7001,
+    "share_of_the_mud_inside": 0.7937
+   },
+   "TH570906": {
+    "name": "Wiang Phang Kham",
+    "mud_km2": 0.6043,
+    "mud_inside_the_season_layer_km2": 0.0208,
+    "share_of_the_mud_inside": 0.0345
+   },
+   "TH570909": {
+    "name": "Pong Ngam",
+    "mud_km2": 0.0,
+    "mud_inside_the_season_layer_km2": 0.0,
+    "share_of_the_mud_inside": null
+   }
+  },
+  "note": "Report-only. The season layer is a scenario of everything mapped as water from August to October 2024.",
+  "district_part_covered": {
+   "mud_km2": 3.9552,
+   "mud_inside_the_season_layer_km2": 2.4216,
+   "share_of_the_mud_inside": 0.6123
+  }
+ },
+ "buildings_4d": {
+  "rule": "an outline (every 2 m pixel it touches) with a mud pixel within 4 m; counted by the tambon of its centre, among outlines whose centre the products cover",
+  "by_tambon": {
+   "TH570901": {
+    "outlines": 18619,
+    "reached": 4913,
+    "share": 0.2639
+   },
+   "TH570903": {
+    "outlines": 6357,
+    "reached": 810,
+    "share": 0.1274
+   },
+   "TH570904": {
+    "outlines": 7429,
+    "reached": 636,
+    "share": 0.0856
+   },
+   "TH570905": {
+    "outlines": 3711,
+    "reached": 539,
+    "share": 0.1452
+   },
+   "TH570906": {
+    "outlines": 20903,
+    "reached": 2904,
+    "share": 0.1389
+   },
+   "TH570909": {
+    "outlines": 35,
+    "reached": 0,
+    "share": 0.0
+   },
+   "outside_the_eight_tambons": {
+    "outlines": 25,
+    "reached": 18,
+    "share": 0.72
+   }
+  },
+  "no_resident_figure": true
+ },
+ "assumptions": [
+  "Mud is a 2 m square more than half covered by a fresh deposit of the flood, read from one image; it is not a ground survey.",
+  "The counts of the image are put on the scale of Sentinel-2 surface reflectance by one Theil-Sen line per band, fitted on the scene of two days earlier.",
+  "Roofs are the Google Open Buildings v3 and Microsoft outlines widened by 1 m; a roof missing from them can read as mud."
+ ],
+ "limits": [
+  "One image, about five days after the peak: mud cleared before it is not seen, and no mud never means a place stayed dry.",
+  "Report-only. No published class changes and nothing enters a planning score.",
+  "Mud on a road says the water reached it; no mud never says a road stayed dry or passable, and mud gives no depth.",
+  "The image is five days after the modelled peak: streets cleared of mud in between are silent, not dry.",
+  "Road pieces are the edges of the planning context; the closure state beside them is modelled (closure rule v1, central level).",
+  "The replay's peak and case SE1 are modelled scenarios; agreement with them is not a check of either where the replay was fitted (judged cells)."
+ ]
+}

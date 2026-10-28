@@ -1,6 +1,6 @@
 # Validation check: state of the team's acceptance
 
-Written by `scripts/import_validation_records.py` on 2026-10-14T05:08:33Z from 9 record(s). Do not edit by hand.
+Written by `scripts/import_validation_records.py` on 2026-10-20T06:30:52Z from 9 record(s). Do not edit by hand.
 
 This is the word of the three team members on the project's own work. It is not a review by an independent expert, it qualifies no flood map, and it is not an official approval.
 
@@ -47,3 +47,7 @@ This is the word of the three team members on the project's own work. It is not 
 | V-39 | The replay's peak fitted to the image of 15 September, with the earlier replay kept as an archive | Waiting |  |  |  |
 | V-40 | The plain-language policy page, its sources, and the test of the five weights | Waiting |  |  |  |
 | V-41 | The Public home map without a score, its practice scenarios, and the Shelter map | Waiting |  |  |  |
+| V-47 | The THEOS-2 scene of 17 September 2024: the plan for the replay's recession and for the mud the flood left, written before anybody looked at it | Waiting |  |  |  |
+| V-48 | Label 150 points of the THEOS-2 scene of 17 September 2024: mud or not mud | Waiting |  |  |  |
+| V-49 | Check the score of the mud test: 0.88 of what the rule calls mud is mud to at least two of us | Waiting |  |  |  |
+| V-50 | Check section 4.5 of the mud track: road 1 shows flood mud on 2 of its 15 pieces | Waiting |  |  |  |

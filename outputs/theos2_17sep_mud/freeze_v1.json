@@ -1,0 +1,307 @@
+{
+ "schema": "floodguard.theos2_17sep_mud_freeze.v1",
+ "generated_at_utc": "2026-10-19T15:02:38Z",
+ "source_timestamp": "THEOS-2 2024-09-17T03:54:20Z; Sentinel-2 L2A 2024-09-15T03:58:15Z and 2024-09-05T03:58:19Z",
+ "confidence_class": "low",
+ "confidence_basis": "One optical image read by a colour rule; development labels by an AI model; nobody went to the ground.",
+ "operational_status": "non_operational",
+ "official_warning": false,
+ "can_feed_decision_layer": false,
+ "plan": {
+  "path": "docs/proposal_execution/theos2_17sep_recession_and_mud_plan_v1.md",
+  "sha256": "5d4aee69eff4a62b7f20e7d1c8fcac5184f50c2d0a5e5254097ae4c8816b57a8"
+ },
+ "what_this_is": "The mud rule of question 4, chosen on 160 development points the agent labelled and frozen before any test point is drawn.",
+ "points_record": {
+  "path": "outputs/theos2_17sep_mud/development_points_v1.json",
+  "sha256": "63f815344714ce935209821ccbb99c06799e970a22da2735cccd4b4121d42075"
+ },
+ "labels": {
+  "by": "the agent that builds the rule (an AI model), from the sheets alone",
+  "file_sha256": "9591c835653bf924525e861f7fa29bddb4b76e49fb57bb2f93958861aa591a2a",
+  "counts": {
+   "mud": 22,
+   "bare_cannot_tell": 20,
+   "not_mud": 109,
+   "cannot_tell": 9
+  },
+  "by_point": {
+   "d001": "not_mud",
+   "d002": "cannot_tell",
+   "d003": "not_mud",
+   "d004": "mud",
+   "d005": "not_mud",
+   "d006": "not_mud",
+   "d007": "not_mud",
+   "d008": "not_mud",
+   "d009": "not_mud",
+   "d010": "not_mud",
+   "d011": "bare_cannot_tell",
+   "d012": "not_mud",
+   "d013": "not_mud",
+   "d014": "not_mud",
+   "d015": "mud",
+   "d016": "not_mud",
+   "d017": "not_mud",
+   "d018": "bare_cannot_tell",
+   "d019": "mud",
+   "d020": "bare_cannot_tell",
+   "d021": "not_mud",
+   "d022": "not_mud",
+   "d023": "not_mud",
+   "d024": "not_mud",
+   "d025": "not_mud",
+   "d026": "not_mud",
+   "d027": "not_mud",
+   "d028": "not_mud",
+   "d029": "bare_cannot_tell",
+   "d030": "not_mud",
+   "d031": "not_mud",
+   "d032": "bare_cannot_tell",
+   "d033": "bare_cannot_tell",
+   "d034": "not_mud",
+   "d035": "not_mud",
+   "d036": "bare_cannot_tell",
+   "d037": "mud",
+   "d038": "cannot_tell",
+   "d039": "bare_cannot_tell",
+   "d040": "mud",
+   "d041": "not_mud",
+   "d042": "not_mud",
+   "d043": "not_mud",
+   "d044": "mud",
+   "d045": "not_mud",
+   "d046": "bare_cannot_tell",
+   "d047": "not_mud",
+   "d048": "mud",
+   "d049": "bare_cannot_tell",
+   "d050": "not_mud",
+   "d051": "not_mud",
+   "d052": "mud",
+   "d053": "not_mud",
+   "d054": "mud",
+   "d055": "not_mud",
+   "d056": "bare_cannot_tell",
+   "d057": "mud",
+   "d058": "bare_cannot_tell",
+   "d059": "bare_cannot_tell",
+   "d060": "not_mud",
+   "d061": "not_mud",
+   "d062": "not_mud",
+   "d063": "not_mud",
+   "d064": "not_mud",
+   "d065": "cannot_tell",
+   "d066": "not_mud",
+   "d067": "not_mud",
+   "d068": "not_mud",
+   "d069": "bare_cannot_tell",
+   "d070": "not_mud",
+   "d071": "not_mud",
+   "d072": "not_mud",
+   "d073": "bare_cannot_tell",
+   "d074": "cannot_tell",
+   "d075": "not_mud",
+   "d076": "cannot_tell",
+   "d077": "not_mud",
+   "d078": "mud",
+   "d079": "not_mud",
+   "d080": "mud",
+   "d081": "not_mud",
+   "d082": "not_mud",
+   "d083": "not_mud",
+   "d084": "mud",
+   "d085": "not_mud",
+   "d086": "not_mud",
+   "d087": "not_mud",
+   "d088": "bare_cannot_tell",
+   "d089": "not_mud",
+   "d090": "not_mud",
+   "d091": "not_mud",
+   "d092": "not_mud",
+   "d093": "not_mud",
+   "d094": "not_mud",
+   "d095": "not_mud",
+   "d096": "not_mud",
+   "d097": "mud",
+   "d098": "mud",
+   "d099": "not_mud",
+   "d100": "not_mud",
+   "d101": "not_mud",
+   "d102": "not_mud",
+   "d103": "not_mud",
+   "d104": "not_mud",
+   "d105": "not_mud",
+   "d106": "not_mud",
+   "d107": "cannot_tell",
+   "d108": "not_mud",
+   "d109": "not_mud",
+   "d110": "not_mud",
+   "d111": "not_mud",
+   "d112": "not_mud",
+   "d113": "not_mud",
+   "d114": "not_mud",
+   "d115": "cannot_tell",
+   "d116": "not_mud",
+   "d117": "not_mud",
+   "d118": "not_mud",
+   "d119": "not_mud",
+   "d120": "not_mud",
+   "d121": "cannot_tell",
+   "d122": "not_mud",
+   "d123": "bare_cannot_tell",
+   "d124": "not_mud",
+   "d125": "not_mud",
+   "d126": "not_mud",
+   "d127": "mud",
+   "d128": "not_mud",
+   "d129": "mud",
+   "d130": "mud",
+   "d131": "mud",
+   "d132": "not_mud",
+   "d133": "not_mud",
+   "d134": "not_mud",
+   "d135": "mud",
+   "d136": "not_mud",
+   "d137": "not_mud",
+   "d138": "not_mud",
+   "d139": "not_mud",
+   "d140": "bare_cannot_tell",
+   "d141": "cannot_tell",
+   "d142": "not_mud",
+   "d143": "not_mud",
+   "d144": "mud",
+   "d145": "not_mud",
+   "d146": "not_mud",
+   "d147": "not_mud",
+   "d148": "not_mud",
+   "d149": "not_mud",
+   "d150": "not_mud",
+   "d151": "not_mud",
+   "d152": "not_mud",
+   "d153": "not_mud",
+   "d154": "bare_cannot_tell",
+   "d155": "not_mud",
+   "d156": "not_mud",
+   "d157": "not_mud",
+   "d158": "not_mud",
+   "d159": "bare_cannot_tell",
+   "d160": "mud"
+  },
+  "note": "Development data, not a reference."
+ },
+ "scores": {
+  "mud_s0": {
+   "mean_f1": 0.2312,
+   "by_order": {
+    "AWG_20261014_bc7a15": {
+     "f1": 0.289,
+     "points": 65,
+     "precision": 0.2434,
+     "recall": 0.3556
+    },
+    "AWG_20261014_417d92": {
+     "f1": 0.1735,
+     "points": 66,
+     "precision": 0.2205,
+     "recall": 0.143
+    }
+   }
+  },
+  "mud_s1": {
+   "mean_f1": 0.0566,
+   "by_order": {
+    "AWG_20261014_bc7a15": {
+     "f1": 0.1133,
+     "points": 65,
+     "precision": 0.1138,
+     "recall": 0.1129
+    },
+    "AWG_20261014_417d92": {
+     "f1": 0.0,
+     "points": 66,
+     "precision": 0.0,
+     "recall": 0.0
+    }
+   }
+  },
+  "mud_s2": {
+   "mean_f1": 0.0,
+   "crossed": {
+    "fitted_on_AWG_20261014_bc7a15": {
+     "limits": {
+      "ndvi_max": 0.3,
+      "red_over_green_min": 1.12,
+      "red_over_blue_min": 1.1
+     },
+     "scored_on": "AWG_20261014_417d92",
+     "f1": 0.0,
+     "points": 66,
+     "precision": 0.0,
+     "recall": 0.0
+    },
+    "fitted_on_AWG_20261014_417d92": {
+     "limits": {
+      "ndvi_max": 0.15,
+      "red_over_green_min": 1.0,
+      "red_over_blue_min": 1.1
+     },
+     "scored_on": "AWG_20261014_bc7a15",
+     "f1": 0.0,
+     "points": 65,
+     "precision": 0.0,
+     "recall": 0.0
+    }
+   }
+  }
+ },
+ "choice_rule": "mud_s0 stays unless mud_s1 is better by 0.02 or more; the one kept stays unless mud_s2 is better than it by 0.02 or more.",
+ "chosen": "mud_s0",
+ "frozen_rule": {
+  "candidate": "mud_s0",
+  "limits": {
+   "ndvi_max": 0.25,
+   "red_over_green_min": 1.08,
+   "red_over_blue_min": 1.3
+  },
+  "scaling_lines": {
+   "red": {
+    "slope": 0.0004208414917399852,
+    "intercept": -0.08173971724536785,
+    "pairs": 199987741
+   },
+   "green": {
+    "slope": 0.00043365347535573453,
+    "intercept": -0.05756677096584781,
+    "pairs": 199986262
+   },
+   "blue": {
+    "slope": 0.0003258295083269528,
+    "intercept": -0.06870346630729057,
+    "pairs": 199985904
+   },
+   "nir": {
+    "slope": 0.00033800282758380027,
+    "intercept": 0.07134219389371285,
+    "pairs": 199988997
+   }
+  },
+  "condition_before": false,
+  "min_object_px": 5,
+  "code": "floodguard.theos2_mud (colour_rule, answer) and scripts/build_theos2_17sep_mud.py (candidate)"
+ },
+ "mud_km2_in_the_scene": 2.012,
+ "raster_outside_git": {
+  "name": "mud_frozen_2m.tif",
+  "sha256": "ddca30832014d58ac3c72be927a466d185d8aca2698d0329b5b0e63784aa87af",
+  "values": "1 mud, 0 not mud, 255 unobservable or outside the scene"
+ },
+ "assumptions": [
+  "Mud is a 2 m square more than half covered by a fresh deposit of the flood, read from one image; it is not a ground survey.",
+  "The counts of the image are put on the scale of Sentinel-2 surface reflectance by one Theil-Sen line per band, fitted on the scene of two days earlier.",
+  "Roofs are the Google Open Buildings v3 and Microsoft outlines widened by 1 m; a roof missing from them can read as mud."
+ ],
+ "limits": [
+  "One image, about five days after the peak: mud cleared before it is not seen, and no mud never means a place stayed dry.",
+  "Report-only. No published class changes and nothing enters a planning score."
+ ]
+}

@@ -1,0 +1,112 @@
+{
+ "schema": "floodguard.theos2_17sep_mud_points.v2",
+ "generated_at_utc": "2026-10-19T15:17:43Z",
+ "source_timestamp": "THEOS-2 2024-09-17T03:54:20Z; Sentinel-2 L2A 2024-09-15T03:58:15Z and 2024-09-05T03:58:19Z",
+ "confidence_class": "low",
+ "confidence_basis": "One optical image read by a colour rule; development labels by an AI model; nobody went to the ground.",
+ "operational_status": "non_operational",
+ "official_warning": false,
+ "can_feed_decision_layer": false,
+ "plan": {
+  "path": "docs/proposal_execution/theos2_17sep_recession_and_mud_plan_v1.md",
+  "sha256": "5d4aee69eff4a62b7f20e7d1c8fcac5184f50c2d0a5e5254097ae4c8816b57a8"
+ },
+ "what_this_is": "The masks of amendment 1, the strata of the rescore and the 40 new development points in the ground the new masks open, drawn before any of them was labelled.",
+ "amendment": {
+  "path": "docs/proposal_execution/theos2_17sep_recession_and_mud_plan_v1_amendment_1.md",
+  "sha256": "c7bc2f0e31e54a1836c23d2c0f3080572cf3186c36765a7de7f4f93c3cd5ecf1"
+ },
+ "points_v1": {
+  "path": "outputs/theos2_17sep_mud/development_points_v1.json",
+  "sha256": "63f815344714ce935209821ccbb99c06799e970a22da2735cccd4b4121d42075"
+ },
+ "freeze_v1": {
+  "path": "outputs/theos2_17sep_mud/freeze_v1.json",
+  "sha256": "ce8ab042f7add57cdd6d43d2d60a1656bb897585e9b91f2a26683f0c170c609f"
+ },
+ "water_before": {
+  "sentinel2_cells_water_on_5_september": 20532,
+  "sentinel2_cells_clear_on_5_september": 1417990,
+  "sentinel2_cells_in_window": 1587110,
+  "osm_polygons": 16,
+  "km2": {
+   "sentinel2": 2.047,
+   "osm": 0.465,
+   "permanent": 0.433
+  }
+ },
+ "masks_v2_km2": {
+  "observable": 117.995,
+  "opened": 2.356,
+  "cloud": 1.174,
+  "water_before_in_covered": 2.257,
+  "observable_in_v1_now_water_before": 1.447
+ },
+ "mud_s3_km2_in_the_scene": 3.465,
+ "stratum_pixels": {
+  "mud_inside|AWG_20261014_bc7a15": 15573,
+  "mud_inside|AWG_20261014_417d92": 10838,
+  "mud_edge|AWG_20261014_bc7a15": 379568,
+  "mud_edge|AWG_20261014_417d92": 97008,
+  "near_mud|AWG_20261014_bc7a15": 1116444,
+  "near_mud|AWG_20261014_417d92": 225622,
+  "ground_far|AWG_20261014_bc7a15": 22846017,
+  "ground_far|AWG_20261014_417d92": 4580532,
+  "unobservable|AWG_20261014_bc7a15": 2442110,
+  "unobservable|AWG_20261014_417d92": 598488,
+  "opened_mud|AWG_20261014_bc7a15": 188578,
+  "opened_mud|AWG_20261014_417d92": 272005,
+  "opened_not_mud|AWG_20261014_bc7a15": 71696,
+  "opened_not_mud|AWG_20261014_417d92": 56750
+ },
+ "points_per_stratum": {
+  "opened_mud|AWG_20261014_bc7a15": 10,
+  "opened_mud|AWG_20261014_417d92": 10,
+  "opened_not_mud|AWG_20261014_bc7a15": 10,
+  "opened_not_mud|AWG_20261014_417d92": 10
+ },
+ "seed": 20261021,
+ "files_outside_git": [
+  {
+   "name": "development_key_v2.json",
+   "sha256": "8934e68eeecdaa0ef3e7f0b1ae93882ab877e7d99edd3ef04ec8ea3326a952fa"
+  },
+  {
+   "name": "sheets/development2_01.png",
+   "sha256": "70d5c607ac79c3d5d0d0318c3f0d2507342885c5b92fc53d96f8fa1de4cc27a9"
+  },
+  {
+   "name": "sheets/development2_02.png",
+   "sha256": "6e8d3e003ed11311627cbb54a27578886601b47419ebc982332af7681f6dacb8"
+  },
+  {
+   "name": "sheets/development2_03.png",
+   "sha256": "377e9780e19a058dd5a7ba1ffda61c1737ff857e1924945a6c9ce8d7c58c3c43"
+  },
+  {
+   "name": "sheets/development2_04.png",
+   "sha256": "382351243852e6d9957af9e641a6c63f8f4f4cf2735891723c867dfb4402a59c"
+  },
+  {
+   "name": "sheets/development2_05.png",
+   "sha256": "c5a7d7560705094bc3a0b11c2d6d993afa3483a1b900a6cbaccba9a7d601c170"
+  },
+  {
+   "name": "sheets/development2_06.png",
+   "sha256": "21db11381b14edaa0a2c223f017dece8d050b996de9588ed88c4a7da8ed4eabd"
+  },
+  {
+   "name": "sheets/development2_07.png",
+   "sha256": "dccfe276cb39d7210c10190569fa2334dddab4e937b7ad0e2d4d582d3f507eba"
+  }
+ ],
+ "assumptions": [
+  "Mud is a 2 m square more than half covered by a fresh deposit of the flood, read from one image; it is not a ground survey.",
+  "The counts of the image are put on the scale of Sentinel-2 surface reflectance by one Theil-Sen line per band, fitted on the scene of two days earlier.",
+  "Roofs are the Google Open Buildings v3 and Microsoft outlines widened by 1 m; a roof missing from them can read as mud."
+ ],
+ "limits": [
+  "One image, about five days after the peak: mud cleared before it is not seen, and no mud never means a place stayed dry.",
+  "Report-only. No published class changes and nothing enters a planning score."
+ ]
+}

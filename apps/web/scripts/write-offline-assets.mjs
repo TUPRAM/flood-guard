@@ -12,6 +12,8 @@ const out = resolve(process.cwd(), "out");
 const nextStatic = resolve(out, "_next", "static");
 /** Marker string compiled into the cinematic journey's chunks (see components/journey). */
 const JOURNEY_MARKER = "data-floodguard-journey";
+/** Marker string compiled into the reference list's chunks (see components/journal-page). */
+const REFERENCES_MARKER = "data-floodguard-references";
 const appProfile = resolveAppProfile(process.env.FLOODGUARD_APP_PROFILE ?? process.env.NEXT_PUBLIC_FLOODGUARD_APP_PROFILE);
 
 if (appProfile === "public-production") prunePublicProductionOutput();
@@ -250,9 +252,12 @@ function collectOptionalLandingAssets() {
       }
     }
   }
-  // The journey page's own chunks carry a marker; they are never needed offline.
+  // The journey page's own chunks carry a marker, as do the reference list's (opened from a QR code, online); they
+  // are never needed offline.
   for (const path of walk(nextStatic)) {
-    if (path.endsWith(".js") && readFileSync(path, "utf8").includes(JOURNEY_MARKER)) {
+    if (!path.endsWith(".js")) continue;
+    const source = readFileSync(path, "utf8");
+    if (source.includes(JOURNEY_MARKER) || source.includes(REFERENCES_MARKER)) {
       optional.add(`/${relative(out, path).split(sep).join("/")}`);
     }
   }
@@ -289,6 +294,7 @@ function prunePublicProductionOutput() {
   const excluded = [
     "landing",
     "policy",
+    "journal",
     "journey",
     "command",
     "studio",

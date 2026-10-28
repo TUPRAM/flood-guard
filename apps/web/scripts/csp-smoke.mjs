@@ -29,7 +29,7 @@ const OUT_DIR = resolve(HERE, "..", "out");
 const VERCEL_JSON = resolve(HERE, "..", "..", "..", "vercel.json");
 
 const ROUTES = [
-  "/", "/policy/", "/policy/technical/", "/public/", "/public-cases/", "/command/", "/studio/archive/command-workspace/", "/command/planning/", "/command/cases/",
+  "/", "/policy/", "/policy/technical/", "/journal/", "/public/", "/public-cases/", "/command/", "/studio/archive/command-workspace/", "/command/planning/", "/command/cases/",
   "/command/archive/", "/command/ver2/", "/command/exercise/",
   // The cinematic story frames the real pages in same-origin iframes, so it checks the framing headers too.
   "/journey/", "/journey/?scene=case",

@@ -73,6 +73,7 @@ function validatePublicProduction() {
   for (const excluded of [
     "landing",
     "policy",
+    "journal",
     "journey",
     "command",
     "studio",
@@ -148,13 +149,13 @@ function validatePublicProduction() {
     if (hit) throw new Error(`Public profile contains staff-only sentinel ${JSON.stringify(forbidden)} in ${hit}`);
     if (serviceWorker.includes(forbidden)) throw new Error(`Public service-worker cache inventory contains ${forbidden}`);
   }
-  for (const route of ["/command/", "/studio/archive/command-workspace/", "/command/planning/", "/command/cases/", "/command/archive/", "/command/ver2/", "/command/exercise/", "/studio/", "/studio/candidate-report/", "/studio/library/", "/studio/brief/", "/studio/archive/", "/policy/"]) {
+  for (const route of ["/command/", "/studio/archive/command-workspace/", "/command/planning/", "/command/cases/", "/command/archive/", "/command/ver2/", "/command/exercise/", "/studio/", "/studio/candidate-report/", "/studio/library/", "/studio/brief/", "/studio/archive/", "/policy/", "/journal/"]) {
     if (serviceWorker.includes(`"${route}"`)) throw new Error(`Public cache list contains staff route ${route}`);
   }
   // Also no page below those routes (e.g. the /studio/ case replay) in the built precache list.
   const publicCore = serviceWorker.match(/const CORE_ASSETS = (\[[^;]*\]);/)?.[1];
   if (!publicCore) throw new Error("Public service worker has no CORE_ASSETS list.");
-  const staffCore = JSON.parse(publicCore).filter((url) => /^\/(command|studio|policy|archive1)\//.test(url));
+  const staffCore = JSON.parse(publicCore).filter((url) => /^\/(command|studio|policy|journal|archive1)\//.test(url));
   if (staffCore.length > 0) throw new Error(`Public cache list contains staff pages: ${staffCore.join(", ")}`);
 }
 
@@ -191,6 +192,7 @@ function validateCompetition() {
   for (const required of [
     "policy/index.html",
     "policy/technical/index.html",
+    "journal/index.html",
     "command/index.html",
     "studio/archive/command-workspace/index.html",
     "command/planning/index.html",

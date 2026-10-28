@@ -1,0 +1,47 @@
+/* The reference list (/journal/). Page chrome, tokens and the chapter bar come from policy-page.module.css. */
+.hero { padding: 72px 0 56px; max-width: 860px; }
+.hero h1 { font-family: "Manrope Variable", "Noto Sans Thai Variable", sans-serif; font-size: clamp(34px, 4vw, 56px); letter-spacing: -.05em; font-weight: 650; line-height: 1.12; margin: 18px 0 22px; }
+.lead { font-size: 17px; color: var(--muted); line-height: 1.7; max-width: 640px; }
+.counts { display: flex; flex-wrap: wrap; gap: 12px; margin: 30px 0 0; }
+.counts > div { border: 1px solid var(--line); border-radius: 9px; background: #fffdf8; padding: 12px 18px; min-width: 132px; display: flex; flex-direction: column; justify-content: space-between; }
+.counts dt { font-size: 11px; color: var(--muted); }
+.counts dd { margin: 2px 0 0; font-family: "Manrope Variable", sans-serif; font-size: 28px; font-weight: 650; letter-spacing: -.03em; color: var(--teal); }
+.note { font-size: 12px; color: var(--muted); max-width: 700px; margin-top: 24px !important; border-left: 3px solid var(--teal); padding-left: 14px; }
+
+.section { padding: 56px 0; border-bottom: 1px solid var(--line); }
+.heading { margin-bottom: 26px; }
+.heading h2 { font-family: "Manrope Variable", "Noto Sans Thai Variable", sans-serif; font-size: clamp(24px, 2.4vw, 32px); font-weight: 600; letter-spacing: -.04em; line-height: 1.2; margin-top: 10px; }
+
+.papers { list-style: none; padding: 0; display: grid; gap: 22px; max-width: 940px; }
+.papers > li { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 14px; scroll-margin-top: 92px; }
+.number { font-family: "JetBrains Mono Variable", monospace; font-size: 11px; color: var(--teal); border: 1px solid #b9c9bb; border-radius: 50%; width: 30px; height: 30px; display: grid; place-items: center; background: #fffdf8; }
+.papers > li > div > a { font-size: 14px; line-height: 1.55; color: var(--teal); text-underline-offset: 4px; overflow-wrap: anywhere; }
+.papers > li p { font-size: 13px; line-height: 1.6; color: var(--ink); margin-top: 5px !important; }
+.papers .meta { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 11px !important; color: var(--muted) !important; }
+.meta a { font-family: "JetBrains Mono Variable", monospace; color: var(--muted); text-underline-offset: 3px; display: inline-flex; align-items: center; min-height: 24px; }
+.meta a::before { content: "</>"; margin-right: 6px; color: var(--teal); }
+
+.resources { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.resources > li { display: grid; gap: 4px; align-content: start; border: 1px solid var(--line); border-radius: 9px; background: #fffdf8; padding: 16px 18px; }
+.resources a { font-size: 14px; font-weight: 550; line-height: 1.45; color: var(--teal); text-underline-offset: 4px; overflow-wrap: anywhere; }
+.resources span { font-size: 13px; line-height: 1.55; }
+.resources small { font-size: 11px; line-height: 1.5; color: var(--muted); }
+.repo { font-size: 13px; margin: 26px 0 18px !important; color: var(--muted); }
+.repo a { color: var(--teal); font-weight: 550; text-underline-offset: 4px; }
+
+@media (max-width: 700px) {
+  .hero { padding: 40px 0 36px; }
+  .lead { font-size: 15px; }
+  .counts > div { flex: 1 1 0; min-width: 0; padding: 10px 12px; }
+  .counts dd { font-size: 24px; }
+  .section { padding: 40px 0; }
+  .papers > li { grid-template-columns: 26px minmax(0, 1fr); gap: 10px; }
+  .number { width: 26px; height: 26px; font-size: 10px; }
+  .papers > li > div > a { font-size: 13px; }
+  .resources { grid-template-columns: 1fr; }
+}
+@media print {
+  .section { padding: 18px 0; }
+  .papers > li { break-inside: avoid; }
+  .resources > li { break-inside: avoid; border-color: #ccc; }
+}

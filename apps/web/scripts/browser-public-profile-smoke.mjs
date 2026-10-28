@@ -205,6 +205,7 @@ try {
   for (const forbidden of [
     "/policy/",
     "/policy/technical/",
+    "/journal/",
     "/command/",
     "/command/ver2/",
     "/command/cases/",

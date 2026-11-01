@@ -9,18 +9,18 @@ description = "Typed, artifact-backed FastAPI boundary for FloodGuard Thailand."
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
 dependencies = [
-  "fastapi==0.141.1",
+  "fastapi==0.162.0",
   "floodguard-thailand",
-  "pydantic==2.11.7",
-  "uvicorn[standard]==0.35.0",
+  "pydantic==2.14.1",
+  "uvicorn[standard]==0.54.0",
 ]
 
 [dependency-groups]
 dev = [
   "httpx==0.28.1",
-  "jsonschema==4.25.1",
-  "pytest==9.1.1",
-  "ruff==0.12.4",
+  "jsonschema==4.26.0",
+  "pytest==9.2.0",
+  "ruff==0.17.3",
 ]
 
 [tool.ruff]
